@@ -1,0 +1,40 @@
+{
+  "id": "spec_quality",
+  "label": "Spec Quality",
+  "label_term": "spec-quality",
+  "values": [
+    {
+      "name": "score",
+      "label": "Overall spec score",
+      "description": "Overall quality of the spec, 0–5.",
+      "min": 0,
+      "max": 5,
+      "direction": "up"
+    },
+    {
+      "name": "ac_coverage",
+      "label": "Acceptance-criteria coverage",
+      "description": "Fraction of acceptance criteria that are concrete and testable.",
+      "unit": "ratio",
+      "min": 0,
+      "max": 1,
+      "direction": "up"
+    },
+    {
+      "name": "risk_clarity",
+      "label": "Risk clarity",
+      "description": "How clearly risks and open questions are surfaced, 0–5.",
+      "min": 0,
+      "max": 5,
+      "direction": "up"
+    },
+    {
+      "name": "open_questions",
+      "label": "Open questions",
+      "description": "Number of unresolved open questions left for coding.",
+      "unit": "count",
+      "min": 0,
+      "direction": "down"
+    }
+  ]
+}

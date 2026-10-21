@@ -1,0 +1,38 @@
+{
+  "id": "mr_changes",
+  "label": "MR Changes",
+  "values": [
+    {
+      "name": "score",
+      "label": "Changed lines",
+      "description": "Size of the ticket's merge request: additions + deletions, summed over the first two columns of `git diff --numstat -M origin/<base_branch>...HEAD` run in the ticket's worktree after `git fetch origin <base_branch>`. The three-dot form diffs against the merge base, the same diff the MR's Changes tab shows; `HEAD` because the merge deletes the remote branch; `-M` counts a rename as a rename whatever `diff.renames` says. A binary file prints `-` in both columns and counts as 0 lines but still as one file. The conductor records it when it reaps a done ticket that has an MR.",
+      "unit": "lines",
+      "min": 0,
+      "direction": "neutral"
+    },
+    {
+      "name": "files_changed",
+      "label": "Files changed",
+      "description": "Number of lines in the same numstat output, binary files included.",
+      "unit": "count",
+      "min": 0,
+      "direction": "neutral"
+    },
+    {
+      "name": "additions",
+      "label": "Added lines",
+      "description": "Sum of the first numstat column (added lines), binary files as 0.",
+      "unit": "lines",
+      "min": 0,
+      "direction": "neutral"
+    },
+    {
+      "name": "deletions",
+      "label": "Deleted lines",
+      "description": "Sum of the second numstat column (deleted lines), binary files as 0.",
+      "unit": "lines",
+      "min": 0,
+      "direction": "neutral"
+    }
+  ]
+}

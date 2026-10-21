@@ -1,0 +1,15 @@
+{
+  "id": "job_rating",
+  "label": "Job Rating",
+  "label_term": "retro",
+  "values": [
+    {
+      "name": "score",
+      "label": "Human job rating",
+      "description": "The human's integer rating of delivered work. 5 — Excellent: delivered what I wanted; nothing to correct.\n4 — Good: minor corrections only; no rework.\n3 — Flawed: usable, but it cost me effort it should not have.\n2 — Poor: substantial rework, or pieces missing.\n1 — Unusable: I would have been faster doing it myself.\nInvestigate at score <= 3. No answer or cancellation means no metric row, never zero.",
+      "min": 1,
+      "max": 5,
+      "direction": "up"
+    }
+  ]
+}

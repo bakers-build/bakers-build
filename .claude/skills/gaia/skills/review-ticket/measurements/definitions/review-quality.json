@@ -1,0 +1,38 @@
+{
+  "id": "review_quality",
+  "label": "Review Quality",
+  "label_term": "review-quality",
+  "values": [
+    {
+      "name": "score",
+      "label": "Overall review score",
+      "description": "Overall quality of the review, 0–5.",
+      "min": 0,
+      "max": 5,
+      "direction": "up"
+    },
+    {
+      "name": "defects_found",
+      "label": "Defects found",
+      "description": "Number of defects the review surfaced.",
+      "unit": "count",
+      "min": 0,
+      "direction": "down"
+    },
+    {
+      "name": "rework_bounces",
+      "label": "Rework bounces",
+      "description": "Number of times the ticket bounced review → coding.",
+      "unit": "count",
+      "min": 0,
+      "direction": "down"
+    },
+    {
+      "name": "coverage_delta",
+      "label": "Coverage delta",
+      "description": "Change in test coverage introduced by the change, as a ratio.",
+      "unit": "ratio",
+      "direction": "up"
+    }
+  ]
+}
