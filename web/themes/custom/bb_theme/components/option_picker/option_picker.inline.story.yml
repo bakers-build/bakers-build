@@ -1,0 +1,33 @@
+component: bb_theme:option_picker
+name: Inline
+variant: inline
+props:
+  variant: inline
+  label: Priority
+  value_label: P2
+  aria_label: Change priority. Currently P2.
+  open: true
+  name: priority
+  id: inline-priority
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: priority
+        multiple: false
+        clearable: true
+        clear_label: No priority
+        options:
+          - value: p1
+            label: P1
+            description: Urgent
+            selected: false
+          - value: p2
+            label: P2
+            description: Normal
+            selected: true
+          - value: p3
+            label: P3
+            description: Low
+            selected: false

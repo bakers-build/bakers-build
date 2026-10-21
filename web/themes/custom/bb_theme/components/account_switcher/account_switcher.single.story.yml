@@ -1,0 +1,8 @@
+component: bb_theme:account_switcher
+name: Single workspace
+props:
+  workspace_label: keytec
+  workspace_initials: KT
+  workspace_color: running
+  multiple: false
+  collapsed: false

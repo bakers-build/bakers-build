@@ -1,0 +1,33 @@
+langcode: en
+status: true
+dependencies: {  }
+id: run_tokens_running
+label: Running token spend
+value_type: integer
+unit: tokens
+source:
+  entity_type: bb_run
+  time_field: created
+operation:
+  type: sum
+  field: tokens
+predicates:
+  - field: state
+    operator: =
+    value: running
+bindings:
+  workspace:
+    field: ticket_id.entity.project_id
+    resolver: workspace_projects
+  project:
+    field: ticket_id.entity.project_id
+    resolver: entity_id
+  team:
+    field: ticket_id.entity.project_id
+    resolver: team_projects
+  user:
+    field: ticket_id.entity.assignee_user_id
+    resolver: entity_id
+dimensions:
+  model:
+    field: model

@@ -1,0 +1,18 @@
+component: bb_theme:badge
+name: Priority
+# A PRIORITY IS A BADGE WITH A LABEL, not a kind of its own. The `priority` prop
+# and its variant are gone.
+#
+# P1 IS `tone: critical`, and that is the whole point of the tone existing. The
+# absorbed `priority` variant rendered P1 through the red pair; after the
+# absorption P1 borrowed `tone: wait`, which drew the right colour and said the
+# wrong thing — `wait` means nobody is acting on this, and a P1 somebody is
+# actively working is not waiting for anybody. `critical` is the name for the red
+# that RANKS rather than the red that stalls. It maps onto the same token pair,
+# because the token layer defines no critical hue and a template is the wrong
+# place to invent one.
+#
+# Every other priority stays neutral: a P3 is a label, not a warning.
+props:
+  label: P1
+  tone: critical

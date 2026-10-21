@@ -1,0 +1,41 @@
+# An enabled workspace template of the default workspace: no project, no
+# conductor. Instantiated by the ticket-template scenarios into a project they
+# pass.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket_template
+  uuid: 684a0000-0000-4000-8000-000000000006
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    dbe50000-0000-4000-8000-000000000001: user
+    db1a0000-0000-4000-8000-000000000010: bb_term
+default:
+  name:
+    -
+      value: "Workspace fixture template"
+  enabled:
+    -
+      value: true
+  title_pattern:
+    -
+      value: "Workspace ticket {{date}}"
+  description:
+    -
+      value: "Generated from the workspace fixture template."
+      format: bb_rich
+  workflow:
+    -
+      value: "bb_chore"
+  target_state:
+    -
+      value: "qualification"
+  labels:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000010"
+  workspace_id:
+    -
+      entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

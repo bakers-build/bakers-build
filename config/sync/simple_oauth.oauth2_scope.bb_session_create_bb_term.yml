@@ -1,0 +1,16 @@
+uuid: 13cae01a-843c-4135-b53a-ac57a18ae517
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_create_bb_term
+name: 'bb:session:create_bb_term'
+description: 'bakers.build session ceiling — create bb_term'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'create bb_term'

@@ -1,0 +1,38 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_project.epics
+  module:
+    - display_builder
+    - bb_core
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: bb_project_overview
+        source:
+          section: epics
+          context_mapping:
+            entity: entity
+        node_id: overview_epics
+id: bb_project.bb_project.epics
+targetEntityType: bb_project
+bundle: bb_project
+mode: epics
+content: {  }
+hidden:
+  coder_config: true
+  description: true
+  env_vars: true
+  environments: true
+  group_id: true
+  image: true
+  key: true
+  name: true
+  next_number: true
+  owner_user_id: true
+  repository: true
+  search_api_excerpt: true
+  teams: true

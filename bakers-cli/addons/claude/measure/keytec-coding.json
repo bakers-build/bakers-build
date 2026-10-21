@@ -1,0 +1,36 @@
+{
+  "effortLevel": "high",
+  "autoMemoryEnabled": false,
+  "enabledPlugins": {
+    "bakers@bakers": true,
+    "superpowers@claude-plugins-official": true,
+    "mattpocock-skills@keytec-mattpocock": true,
+    "keytec-drupal@keytec": true,
+    "designbook@designbook": true,
+    "designbook-drupal@designbook": true,
+    "designbook-css-tailwind@designbook": true
+  },
+  "permissions": {
+    "deny": [
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "ScheduleWakeup",
+      "RemoteTrigger",
+      "SendMessage",
+      "EnterWorktree",
+      "ExitWorktree",
+      "ReportFindings",
+      "Workflow",
+      "WebSearch",
+      "Artifact",
+      "ArtifactComments",
+      "ArtifactData",
+      "DesignSync",
+      "SendFeedback",
+      "ShareOnboardingGuide",
+      "PushNotification",
+      "mcp__claude-in-chrome"
+    ]
+  }
+}

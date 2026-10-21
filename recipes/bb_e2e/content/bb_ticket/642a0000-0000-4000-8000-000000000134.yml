@@ -1,0 +1,31 @@
+# Search target for the time form's server-side ticket search: more tickets
+# on Time capture than the picker renders before searching.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket
+  uuid: 642a0000-0000-4000-8000-000000000134
+  depends:
+    612a0000-0000-4000-8000-000000000001: bb_project
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  identifier:
+    -
+      value: "TIME-35"
+  number:
+    -
+      value: 35
+  workflow:
+    -
+      value: "bb_feature"
+  title:
+    -
+      value: "Search target 34"
+  project_id:
+    -
+      entity: "612a0000-0000-4000-8000-000000000001"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  closed:
+    -
+      value: false

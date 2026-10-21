@@ -1,0 +1,70 @@
+(
+  /* THE ADDONS LISTING (BB-654). Workspace Settings › Addons, view `addons`, display `settings`
+     at /{ws}/settings/addons, workspace leads only: every registered addon ONCE, at its newest
+     version, and the conductors of THIS workspace that run any of its versions. Read-only — no
+     item url, no actions, no search. The mapping emits ONE `list` node whose `pattern` is the
+     `bb_list` Views style's own pattern in config/sync/views.view.addons.yml — avatar: icon;
+     headline: label, name; meta: versions ("Versions"), contract ("Contract"); right: conductors;
+     no description, no right_meta.
+
+     A view address takes no record, so the rows below are mirrored BY HAND, as in
+     view.groups / view.conductors. Ports carries an inline SVG icon; Bare has none.
+
+     ICON is the AddonDefinitionFormatter person mark of the newest version: compact, `md`,
+     `image_fit: contain`, the initials of the label, the colour keyed on the addon id
+     (PersonIdentityTrait: id 1 attention, id 2 unassigned) and, only when the definition carries
+     an icon, `picture` as a data:image/svg+xml;base64 URI.
+
+     VERSIONS is the formatter's `versions` part: every version of the name once, newest first.
+
+     CONDUCTORS: in Drupal AddonConductorsFormatter emits one `badge` per (conductor, version) —
+     "<conductor> <version>", newest version first, tone `running` when online, `offline` when
+     offline, dot — or the text "No conductor in this workspace". A list cell holds exactly one
+     kind, so the second badge rides on a second cell key, `conductors_2`, listed beside
+     `conductors` in `right`; a row without it renders nothing there.
+
+     The view's empty text is "No addon is registered yet." — not rendered while rows exist. */
+  $icon := "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iNCIgZmlsbD0iIzJmNmY1ZSIvPjxjaXJjbGUgY3g9IjgiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2ZmZiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMTIiIHI9IjIiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMTAgMTJoNCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=";
+  $rows := [
+    { "id": "1", "label": "Ports", "name": "ports", "versions": "1.2.3, 1.1.0", "contract": 1, "initials": "P", "color": "attention", "picture": $icon,
+      "conductors": [ { "label": "srv01-bakers 1.2.3", "status": "online" }, { "label": "laptop-cw 1.1.0", "status": "offline" } ] },
+    { "id": "2", "label": "Bare", "name": "bare", "versions": "1.0.0", "contract": 1, "initials": "B", "color": "unassigned",
+      "conductors": [] }
+  ];
+  $badge := function($c) { { "kind": "badge", "label": $c.label, "tone": $c.status = "online" ? "running" : "offline", "dot": true } };
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "pattern": {
+          "avatar": ["icon"],
+          "headline": ["label", "name"],
+          "meta": ["versions", "contract"],
+          "right": ["conductors", "conductors_2"],
+          "captions": { "versions": "Versions", "contract": "Contract" }
+        },
+        "items": [$map($rows, function ($a) {
+          {
+            "cells": $merge([
+              {
+                "icon": $merge([
+                  { "kind": "person", "initials": $a.initials, "color": $a.color, "size": "md", "image_fit": "contain" },
+                  $a.picture ? { "picture": $a.picture } : {}
+                ]),
+                "label": { "kind": "text", "value": $a.label },
+                "name": { "kind": "text", "value": $a.name },
+                "versions": { "kind": "text", "value": $a.versions },
+                "contract": { "kind": "text", "value": $string($a.contract) },
+                "conductors": $count($a.conductors) > 0
+                  ? $badge($a.conductors[0])
+                  : { "kind": "text", "value": "No conductor in this workspace" }
+              },
+              $count($a.conductors) > 1 ? { "conductors_2": $badge($a.conductors[1]) } : {}
+            ])
+          }
+        })]
+      }
+    }
+  ]
+)

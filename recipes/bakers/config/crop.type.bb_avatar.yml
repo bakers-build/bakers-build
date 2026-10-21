@@ -1,0 +1,11 @@
+langcode: en
+status: true
+dependencies: {  }
+label: Avatar
+id: bb_avatar
+description: 'The square framing chosen for an image wherever it is uploaded; every avatar derived from the file uses it.'
+aspect_ratio: '1:1'
+soft_limit_width: null
+soft_limit_height: null
+hard_limit_width: null
+hard_limit_height: null

@@ -1,0 +1,8 @@
+/* Motion — minimal. A status dot may pulse; the refresh ring counts down. */
+:root {
+  --dur-fast: 120ms; /* @kind other */
+  --ease: linear; /* @kind other */
+  --poll-interval: 15s; /* @kind other */
+}
+@keyframes bakers-status-pulse { 0% { box-shadow: 0 0 0 0 currentColor; } 70%,100% { box-shadow: 0 0 0 6px transparent; } }
+@keyframes bakers-ring { from { stroke-dashoffset: 50.27; } to { stroke-dashoffset: 0; } }

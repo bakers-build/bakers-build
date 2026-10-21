@@ -1,0 +1,24 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Collapsible
+status: stable
+group: Layout
+description: 'A native <details>/<summary> collapsible, not a scripted accordion. Renamed from `disclosure` (BB-378 D9): the markup and behaviour are untouched. Storybook never calls Drupal.attachBehaviors, so a JS-driven collapse would be a dead control on this review surface — clicking it would do nothing. <details> needs no JavaScript at all and keeps working with JavaScript disabled entirely, which is why this component ships with no behaviour script of its own attached (D2, R1). The chevron affordance rotates via a pure CSS ancestor selector, not a script.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    open:
+      type: boolean
+      title: Open
+      default: false
+      description: Whether the collapsible starts open. Rendered with `{% if open %}` gating the `open` attribute, so the closed state still renders correctly when the prop is false or absent.
+slots:
+  label:
+    title: Label
+    description: Summary content — the always-visible heading row that toggles the collapsible.
+  content:
+    title: Content
+    description: 'The collapsible content, hidden until it is opened. When it is empty the component renders nothing, using `zone`''s emptiness test.'
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

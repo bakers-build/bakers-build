@@ -1,0 +1,20 @@
+# Dedicated API contract fixture; independent of the product-navigation seed.
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: ed6f78b2-8b4f-5a49-9f6d-65d812c2f991
+  default_langcode: en
+  depends:
+    b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
+    db58173e-ed5d-50cf-af02-2943a2803c36: user
+default:
+  conductor_id:
+  - value: api-contract-conductor
+  label:
+  - value: API contract conductor
+  status:
+  - value: online
+  project_id:
+  - entity: b76b40df-436c-5d3d-9bf1-5745fa621a7a
+  owner_user_id:
+  - entity: db58173e-ed5d-50cf-af02-2943a2803c36

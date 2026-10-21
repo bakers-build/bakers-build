@@ -1,0 +1,44 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: dbf00000-0000-4000-8000-000000000001
+  depends:
+    dbc50000-0000-4000-8000-0000000000c1: bb_group
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbc70000-0000-4000-8000-000000000002: bb_team
+default:
+  created:
+    -
+      value: 1768467600
+  changed:
+    -
+      value: 1782657000
+  group_id:
+    -
+      entity: "dbc50000-0000-4000-8000-0000000000c1"
+  name:
+    -
+      value: "bakers.build Platform"
+  key:
+    -
+      value: "bakers.build"
+  next_number:
+    -
+      value: 147
+  repository:
+    -
+      url: "https://gitlab.example.com/bakers/bakers"
+      default_branch: "main"
+  # BOTH crews, so the seeded world exhibits the MULTI-VALUE case (BB-419).
+  # A project belongs to at least one team; with every fixture at exactly one,
+  # "unlimited cardinality" would be delivered and never demonstrated, and the
+  # team's computed inverse would never be asked about a project it shares.
+  teams:
+    -
+      entity: "dbc70000-0000-4000-8000-000000000001"
+    -
+      entity: "dbc70000-0000-4000-8000-000000000002"
+# BB-462 D7: bb_project is no longer an OG group, so this project carries
+# no membership of its own any more. Access to it is read off `teams` above:
+# a member of dbc70000-…-000000000001 or …000000000002 reaches it, which
+# dbd10000-0000-4000-8000-000000000006/0007/0008 already exercise.

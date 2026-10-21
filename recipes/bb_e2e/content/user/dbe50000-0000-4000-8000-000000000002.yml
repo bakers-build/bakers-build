@@ -1,0 +1,24 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: dbe50000-0000-4000-8000-000000000002
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: "en"
+  name:
+    -
+      value: "sgruber"
+  mail:
+    -
+      value: "sgruber@example.com"
+  timezone:
+    -
+      value: "Europe/Berlin"
+  status:
+    -
+      value: true
+  field_onboarding_completed:
+    -
+      value: true

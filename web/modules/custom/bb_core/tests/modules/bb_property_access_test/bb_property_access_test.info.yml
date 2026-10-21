@@ -1,0 +1,5 @@
+name: bakers.build property access test
+type: module
+description: Applies selected field and run access restrictions in access tests.
+package: Testing
+core_version_requirement: ^11

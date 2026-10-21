@@ -1,0 +1,16 @@
+services:
+  bb_scope_identity_test.scope_access_policy:
+    class: Drupal\bb_scope_identity_test\Access\ScopeCeilingAccessPolicy
+    arguments:
+      - '@state'
+    tags:
+      - { name: access_policy }
+  # BB-462 D9: backs BbRankCapability's machine-identity branch. Defined
+  # under the REAL service id simple_oauth would use, because an optional `@?`
+  # reference is resolved once at container-compile time — a runtime
+  # `$container->set()` after bb_core.rank_capability is already built
+  # cannot retrofit the NULL its constructor was compiled with.
+  simple_oauth.oauth2_scope.provider:
+    class: Drupal\bb_scope_identity_test\Oauth2ScopeProviderStub
+    arguments:
+      - '@state'

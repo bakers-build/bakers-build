@@ -1,0 +1,46 @@
+component: bb_theme:page_header
+name: With tabs
+# An entity place: the tab row sits below the title row and above the header's
+# bottom border, so the active tab reads as attached to the body it reveals (D7).
+# The tab items use `label`, never `title` — `title:` is the rail's word and
+# sample data must not be mistakable for a navigation entry.
+props:
+  title: bakers.build
+  description: keytec · 24 open tickets
+slots:
+  actions:
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: primary
+        icon_only: true
+        label: New ticket
+        href: /admin/bakers/ticket/add
+      slots:
+        icon:
+          - type: component
+            component: bb_theme:icon
+            props:
+              name: plus
+              size: sm
+  tabs:
+    - type: component
+      component: bb_theme:tabs
+      props:
+        label: Project sections
+        items:
+          - label: Overview
+            url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+            active: true
+          - label: Board
+            url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+            active: false
+          - label: Delivery
+            url: /?path=/story/designbook-sections-projects-scenes--project-detail-delivery
+            active: false
+          - label: Runs
+            url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+            active: false
+          - label: Settings
+            url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+            active: false

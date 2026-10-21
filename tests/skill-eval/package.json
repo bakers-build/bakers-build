@@ -1,0 +1,7 @@
+{
+  "name": "bakers-skill-eval",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.22.0" },
+  "dependencies": { "promptfoo": "0.121.20" }
+}

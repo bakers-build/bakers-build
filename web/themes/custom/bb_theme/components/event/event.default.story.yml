@@ -1,0 +1,16 @@
+component: bb_theme:event
+name: Default
+props:
+  author_name: bakers-agent
+  author_initials: GA
+  author_color: running
+  role: agent
+  tag: plan
+  timestamp: 2026-06-29 09:14
+  body: >-
+    <p>Extracted the transition table into
+    <code>config/install/bb_ticket.workflow.yml</code>. Plan:</p><ul><li>Load
+    transitions in
+    <code>WorkflowStateManager::__construct</code></li><li>Validate edges
+    against the config on save</li><li>Keep the e2e fixture states
+    unchanged</li></ul>

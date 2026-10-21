@@ -1,0 +1,17 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 583baba2-c96c-5793-9261-639523f30955
+  default_langcode: en
+default:
+  name:
+  - value: create-lead-b
+  mail:
+  - value: create-lead-b@example.com
+  status:
+  - value: true
+  preferred_langcode:
+  - value: en
+  field_onboarding_completed:
+    -
+      value: true

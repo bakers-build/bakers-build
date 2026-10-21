@@ -1,0 +1,35 @@
+# Ingress overlay — caddy-docker-proxy hosts (e.g. the coder/komodo control host).
+# Layered on top of docker-compose.yml via the Komodo stack's file_paths:
+#   file_paths = ["docker-compose.yml", "docker-compose.caddy.yml"]
+# The host runs Caddy with the lucaslorentz/caddy-docker-proxy plugin: it reads
+# these container labels off the docker socket and builds the reverse-proxy route.
+# TLS is issued by the host's global DigitalOcean DNS-01 wildcard policy for
+# *.keytec.de, so a single-level domain needs no per-service tls.dns label
+# (mirrors the existing n8n/komodo-core services). nginx listens on :80.
+services:
+  nginx:
+    labels:
+      - "caddy=${DOMAIN}"
+      - "caddy.reverse_proxy={{upstreams 80}}"
+    networks:
+      - internal
+      - caddy_net
+
+  # /mcp on the same domain, routed to the mcp service's in-container nginx
+  # (port 8080) instead of the Drupal nginx. caddy-docker-proxy merges labels
+  # from multiple containers sharing the same `caddy=` host into one site
+  # block; `@mcp` scopes the reverse_proxy to the /mcp path only so the nginx
+  # service above keeps handling everything else.
+  mcp:
+    labels:
+      - "caddy=${DOMAIN}"
+      - "caddy.@mcp.path=/mcp*"
+      - "caddy.reverse_proxy_@mcp={{upstreams 8080}}"
+    networks:
+      - internal
+      - caddy_net
+
+networks:
+  caddy_net:
+    external: true
+    name: caddy_net

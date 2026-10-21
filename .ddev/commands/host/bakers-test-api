@@ -1,0 +1,19 @@
+#!/bin/bash
+## Description: Run full bakers.build API test path
+## Usage: bakers-test-api
+
+set -euo pipefail
+
+echo "==> Preparing bakers.build E2E fixtures"
+ddev init --recipe --test
+
+echo "==> Running bakers.build Functional JSON:API contract"
+ddev bakers-test-functional
+
+echo "==> Refreshing bakers.build E2E fixtures after functional test"
+ddev init --recipe --test
+
+echo "==> Running bakers.build Vitest integration E2E"
+ddev bakers-test-integration
+
+echo "bakers.build E2E API passed."

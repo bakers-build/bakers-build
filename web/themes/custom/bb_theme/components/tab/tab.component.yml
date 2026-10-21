@@ -1,0 +1,35 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Tab
+status: stable
+group: Navigation
+description: >-
+  One destination of `tabs`: a lightweight text link with a thin underline on
+  the current place. The single owner of the tab link look; Drupal's local-task
+  presenter passes its link render element through the `link` slot.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: Link text, used when no `link` slot is given.
+    url:
+      type: string
+      title: URL
+      description: Destination, used when no `link` slot is given.
+    active:
+      type: boolean
+      title: Active
+      description: The current place; rendered as aria-current=page.
+      default: false
+slots:
+  link:
+    title: Link
+    description: >-
+      A ready link render element (Drupal's local-task link), printed whole with
+      the tab classes added.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

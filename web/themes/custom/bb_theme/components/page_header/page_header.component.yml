@@ -1,0 +1,78 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Page Header
+status: stable
+group: Layout
+description: >-
+  The header of a SCREEN (renamed from `content_header` — BB-378 D9/D13, after
+  Ant Design, Primer and Atlassian, which all ship a `PageHeader` for exactly
+  this): what the screen is, what can be done to it, and — on an entity place —
+  which of its faces you are looking at. It fills `canvas.header` and owns the
+  screen's single `<h1>` (D5); every further heading on the screen is a `zone`
+  heading and renders `<h2>`. It exists because the add action is owned by the
+  screen that can receive the addition rather than by the shell chrome — a
+  global "Add entity" button in a top bar cannot know whether the screen under
+  it accepts additions, so it either shows an action that sometimes lies or
+  hides one that sometimes puzzles. The actions slot is right-aligned by this
+  component, so every screen puts its actions in the same place. Filling nothing
+  is the supported case: a screen that cannot add renders no action at all,
+  rather than a hidden or disabled one. The tabs of an entity place live here
+  too rather than in a chrome component of their own (D7). The rule is written
+  in designbook/design-system/action-pattern.md.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    title:
+      type: string
+      title: Screen title
+      description: What this screen is. Rendered as the region's h1.
+    description:
+      type: string
+      title: Sub-line
+      description: One line of context beneath the title, where the screen needs it.
+slots:
+  breadcrumb:
+    title: Breadcrumb
+    description: >-
+      Optional trail ABOVE the title row, still inside this header. Normally a
+      `breadcrumb` component. Empty is the normal case and renders no extra row
+      — Default and With tabs stay one title row. Not a Drupal breadcrumb
+      region.
+  leading:
+    title: Leading
+    description: >-
+      Optional mark to the left of the title — a project logo beside the name.
+      Renders in the title row, outside the h1, so the mark is not part of the
+      heading's accessible name. Filling nothing is the normal case and the
+      title row is unchanged.
+  heading:
+    title: Heading
+    description: >-
+      Replaces the `title` prop's plain text INSIDE the h1, for the case where a
+      screen's heading is the thing being edited. A screen that shows one object
+      — the workspace screen — carries that object's name as its heading, and
+      the name is a reversible field, so it is edited in place: the heading
+      holds a `bb_theme:form_input` (BB-420 Task 31; formerly the bespoke
+      `text_line`) rather than a string. Filling nothing is the normal case and
+      renders the `title` prop exactly as before. The h1 is kept rather than
+      swapped for a div: an editable heading is still the region's heading, and
+      a text input contributes its value to the heading's accessible name.
+  actions:
+    title: Actions
+    description: >-
+      Right-aligned actions this screen owns — typically the icon-only primary
+      add action. Leave it empty on a screen that cannot add, and the affordance
+      is then absent rather than disabled.
+  tabs:
+    title: Tabs
+    description: >-
+      The faces of an entity place, rendered BELOW the title row and above this
+      header's bottom border so the active tab reads as attached to the body it
+      reveals — normally a `tabs` component. D7 folds them in here rather than
+      into a second chrome component whose only content would be a header and a
+      tab row. Empty on every screen that is not an entity place, and the header
+      then renders exactly one row.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

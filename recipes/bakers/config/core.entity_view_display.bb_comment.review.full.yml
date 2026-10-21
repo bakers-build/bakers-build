@@ -1,0 +1,161 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_comment.full
+    - bb_core.bb_comment_type.review
+  module:
+    - display_builder
+    - text
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:canvas'
+            variant_id: null
+            props: {  }
+            slots:
+              main:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:event'
+                        variant_id: null
+                        props:
+                          author_name:
+                            source_id: 'field_formatter:bb_comment:bb_comment:author_name'
+                            source:
+                              type: string
+                              settings: {  }
+                              third_party_settings: {  }
+                          author_initials:
+                            source_id: 'field_formatter:bb_comment:bb_comment:author_initials'
+                            source:
+                              type: string
+                              settings: {  }
+                              third_party_settings: {  }
+                          author_color:
+                            source_id: 'field_formatter:bb_comment:bb_comment:author_color'
+                            source:
+                              type: string
+                              settings: {  }
+                              third_party_settings: {  }
+                          body:
+                            source_id: 'field_formatter:bb_comment:bb_comment:body'
+                            source:
+                              type: text_default
+                              settings: {  }
+                              third_party_settings: {  }
+                          tag:
+                            source_id: 'field_property:bb_comment:type:value'
+                            source: {  }
+                          timestamp:
+                            source_id: 'field_formatter:bb_comment:bb_comment:created'
+                            source:
+                              type: timestamp
+                              settings:
+                                date_format: normal
+                                custom_date_format: ''
+                                timezone: ''
+                                tooltip:
+                                  date_format: long
+                                  custom_date_format: ''
+                                time_diff:
+                                  enabled: false
+                                  future_format: '@interval hence'
+                                  past_format: '@interval ago'
+                                  granularity: 2
+                                  refresh: 60
+                              third_party_settings: {  }
+                        slots: {  }
+                        third_party_settings: ''
+                    node_id: event_component
+              inspector:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:inspector'
+                        variant_id: null
+                        props:
+                          surface:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          rows:
+                            sources:
+                              -
+                                source_id: bb_comment_context
+                                source:
+                                  context_mapping:
+                                    entity: entity
+                                node_id: comment_context
+                    node_id: comment_inspector
+        node_id: comment_canonical_canvas
+id: bb_comment.review.full
+targetEntityType: bb_comment
+bundle: review
+mode: full
+content:
+  author:
+    type: entity_reference_label
+    label: inline
+    settings:
+      link: false
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  body:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  created:
+    type: timestamp
+    label: inline
+    settings:
+      date_format: normal
+      custom_date_format: ''
+      timezone: ''
+      tooltip:
+        date_format: long
+        custom_date_format: ''
+      time_diff:
+        enabled: false
+        future_format: '@interval hence'
+        past_format: '@interval ago'
+        granularity: 2
+        refresh: 60
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  type:
+    type: string
+    label: inline
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  author_color: true
+  author_initials: true
+  author_name: true
+  decided_at: true
+  decided_by: true
+  review_state: true
+  search_api_excerpt: true
+  submitted_at: true

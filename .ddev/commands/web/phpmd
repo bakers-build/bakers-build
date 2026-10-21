@@ -1,0 +1,13 @@
+#!/bin/bash
+#ddev-generated
+## Description: Run phpmd mess detection on custom code (keytec)
+## Usage: phpmd
+set -e
+CR="${DDEV_COMPOSER_ROOT:-${DDEV_APPROOT:-/var/www/html}}"
+BIN="${CR}/vendor/bin/phpmd"
+if [ ! -x "${BIN}" ]; then
+  echo "phpmd not found at ${BIN}. Run: ddev qa-setup" >&2
+  exit 1
+fi
+DR="${DDEV_DOCROOT:-web}"
+exec "${BIN}" "${CR}/${DR}/modules/custom,${CR}/${DR}/themes/custom" text "${DDEV_APPROOT}/phpmd.xml.dist" --exclude '*/node_modules/*,*/tests/*,*/vendor/*'

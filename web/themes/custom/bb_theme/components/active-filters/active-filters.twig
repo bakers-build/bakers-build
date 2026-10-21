@@ -1,0 +1,156 @@
+{# What the `filters` aside has narrowed the list to, stated once ABOVE THE ROWS
+   (C22). A column of eight controls is where the narrowing is done; it does not
+   answer "what am I looking at" at a glance, so the answer is written here,
+   immediately above the results it describes. It renders in `canvas.main`, above
+   the results — which is where `facet_sidebar` already put it before the layout
+   moved into `canvas` (BB-378 D15).
+
+   THE CHIPS WRAP IN A ROW, and the position indicator sits beneath them,
+   left-aligned. Both follow from where this renders. The third iteration put it
+   inside a 236px aside, where a row had nowhere to go and the chips had to be a
+   column; the fourth moved it back into the main region, which is as wide as
+   the table, so a column of chips would push the rows down for nothing. What is
+   NOT restored is the spacer that used to shove the indicator to the far right:
+   the human asked for this left-aligned, and a value flung to the opposite edge
+   of a wide region is read last rather than read with the chips.
+
+   The horizontal padding matches the table's cells (`px-[10px]`) so the first
+   chip starts on the same vertical line as the first column heading. Aligning it
+   to the region instead would be a second, nearly-right edge two pixels off the
+   one below it, which reads as a mistake rather than as a decision.
+
+   THE OPERATOR IS DERIVED FROM THE NUMBER OF VALUES, not typed by the caller:
+   one value reads "is", several read "is either of". That is Linear's own
+   behaviour, and deriving it is what keeps it right — a scene that had to type
+   the operator per facet would eventually type the wrong one. A facet may
+   override it (`includes any of` for labels, `is not` for a negation), and then
+   the override is that facet's own word.
+
+   THERE ARE TWO WAYS TO GIVE THIS COMPONENT ITS CHIPS, and the second one is
+   new. `facets` is the props route: a caller that holds the applied set as data
+   hands it over and this template writes the sentences. `chips` is the SLOT
+   route: a caller that can only hand over ALREADY-RENDERED chips — a Views area
+   whose markup another component produced — puts them there instead. The slot
+   wins when both are given, because a caller that filled it has markup this
+   template cannot second-guess.
+
+   THE SLOT EXISTS FOR ONE MEASURED REASON: `empty_label` was unreachable
+   without it. `views_filters_summary`'s area is declared `empty: true`, so
+   `Result::render()` returns `['#markup' => '']` when no filter has a value and
+   Views' `header` is TRUTHY either way — there is no Views option, no config
+   and no condition that distinguishes "the module stated nothing" from "the
+   module was never asked". A component CAN tell, because a slot that renders
+   nothing renders nothing: `chips|render|striptags|trim` is the whole test. So
+   the caller nests one of these inside another — the inner one in the
+   `chips_only` variant, writing sentences from `facets`; the outer one owning
+   the wrapper, the accessible name and the unfiltered statement — and the
+   outer states `empty_label` exactly when the inner produced no text.
+
+   `striptags` RATHER THAN `trim` ALONE, and both halves of that were measured
+   rather than reasoned. On the tickets surface `trim` would do: the module's
+   strip arrives as a plain-string `#markup`, so `Xss::filterAdmin()` has
+   already removed every HTML comment before this template sees it — measured,
+   `filterAdmin("<!-- THEME DEBUG -->\n<span>x</span>")` returns
+   `"\n<span>x</span>"`. But the slot is a CONTRACT and not that one surface: a
+   caller that fills it from an ordinary Drupal render with
+   `twig.config.debug` on hands over `<!-- THEME DEBUG -->` comments, which
+   `trim` keeps and which would make an empty slot read as full on exactly the
+   surfaces that check the most. `striptags` drops comments and tags alike and
+   leaves the text, which is what "did this state anything" means. The cost is
+   stated too: a slot whose only content is an image states nothing by this
+   test. Both filters exist in PHP Twig and in Storybook's Twing environment
+   (`render` through `@christianwiedemann/drupal-twig-extensions`).
+
+   THE `chips_only` VARIANT IS THE INNER HALF, and it renders NO WRAPPER: no
+   root element, no border, no padding, no meta. Two reasons, both load-bearing.
+   A wrapper would double the border and the padding the outer already draws.
+   And an always-present wrapper would make the emptiness test above always
+   false — the inner would render a div even with nothing to say, and the outer
+   would never reach `empty_label`, which is the defect this variant exists to
+   fix. With no facets it emits nothing at all.
+
+   A CHIP IS REMOVABLE, AND THE AFFORDANCE IS A LINK. This template used to say
+   the opposite — "a chip is a statement, not a control", "nothing here posts,
+   and a little × that removed nothing would be a worse lie than no × at all" —
+   and it was right for as long as this screen had no query. It has one now, so
+   the caller knows the address the list was narrowed by and can hand each facet
+   the address MINUS that facet; following it is a real removal. The reason it is
+   an ANCHOR and not a button is the same reason it is not a script: the region
+   this renders inside is boosted, so following an anchor swaps that region's
+   fragment and pushes the shorter URL exactly as picking a facet does, and it
+   still works with JavaScript off. Nothing here posts, which is the half that
+   never changed. (The boost declaration itself is deliberately not named here —
+   no component may carry one, and naming the attribute in a comment is the
+   invitation that rule exists to refuse.)
+
+   THE × IS A TEXT GLYPH AND NOT THE SPRITE ICON, which is a correction of what
+   this file used to draw. It included `bb_theme:icon` with `x-circle`, and on
+   the one surface that matters the icon never arrived: `views_filters_summary`
+   returns its strip as a plain-string `#markup`, so
+   `Renderer::ensureMarkupIsSafe()` puts everything below through
+   `Xss::filterAdmin()`, whose tag list holds neither `svg` nor `use`. The
+   `<svg><use>` was deleted and the anchor arrived with NO CONTENT — an
+   `inline-flex` element with no content has a zero box, so the affordance was
+   invisible and unclickable. A stylesheet rule used to put a `×` back through
+   `::after`; that rule is gone, because the honest place for the glyph is here
+   and a text `×` is something no XSS filter has a reason to remove.
+
+   THE ACCESSIBLE NAME CARRIES NO COLON, for the other half of the same seam.
+   It read `Remove filter: {{ field }}`, and `Xss::filterAdmin()` also
+   protocol-filters attribute values: `filterBadProtocol()` treats everything up
+   to the first colon as a scheme and drops it, so the name arrived as
+   `" State"`. `Remove the State filter` says the same thing with the words in
+   an order that has no colon in it.
+
+   IT REMOVES THE WHOLE FACET, NOT ONE VALUE. A chip is one facet and its
+   sentence is about the facet, so one control that undoes one statement is the
+   honest granularity — and the accessible name says which, because an × whose
+   scope a reader has to guess is the lie the old comment was worried about.
+   Removing a single value belongs to the `filters` aside, where every option row
+   is already a real control. A facet with no `remove_url` renders no × at all.
+
+   Emptiness is tested with `is not empty` rather than bare truthiness, because
+   this template is rendered by PHP Twig in Drupal and by Twing in Storybook, and
+   the two disagree about `[]` — PHP reads it as false, JavaScript as true. The
+   guard has to hold on both, which is the defect link-group records in full. #}
+{%- set bb_facets = facets|default([]) -%}
+{%- set bb_slot = chips is defined and chips is not empty ? chips|render|striptags|trim : '' -%}
+{%- set bb_own %}
+  {%- for facet in bb_facets %}
+    {%- set values = facet.values|default([]) %}
+    {%- set derived = values|length > 1 ? 'is either of' : 'is' %}
+    <span data-facet class="inline-flex items-baseline flex-wrap gap-x-1 px-2 py-1 rounded-xs bg-primary/10 border border-transparent text-caption text-primary">
+      <span data-part="field" class="font-semibold">{{ facet.field }}</span>
+      <span data-part="operator" class="text-text-faint">{{ facet.operator|default(derived) }}</span>
+      <span data-part="values">{{ values|join(', ') }}</span>
+      {%- if facet.remove_url|default('') is not empty %}
+        <a data-remove-facet class="inline-flex self-center text-body leading-none text-text-faint no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          href="{{ facet.remove_url }}"
+          aria-label="Remove the {{ facet.field }} filter"
+          >×</a>
+      {%- endif %}
+    </span>
+  {%- endfor %}
+{% endset -%}
+{%- if variant|default('') == 'chips_only' -%}
+  {{- bb_facets is not empty ? bb_own -}}
+{%- else -%}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'flex', 'flex-col', 'items-start', 'gap-2',
+    'px-3', 'pb-4',
+  ]) }}
+  {%- if label %} aria-label="{{ label }}"{% endif %}>
+  <div data-active-filters="chips" class="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
+    {%- if bb_slot is not empty %}
+      {% block chips %}{{ chips }}{% endblock %}
+    {%- elseif bb_facets is not empty %}
+      {{- bb_own -}}
+    {%- else %}
+      <span data-active-filters="empty" class="text-caption text-text-light">{{ empty_label|default('All results') }}</span>
+    {%- endif %}
+  </div>
+  {%- if meta %}
+    <span data-active-filters="meta">{% block meta %}{{ meta }}{% endblock %}</span>
+  {%- endif %}
+</div>
+{%- endif -%}

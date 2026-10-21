@@ -1,0 +1,26 @@
+uuid: 71e72fe3-3998-4875-a375-6cb3c34661ca
+langcode: en
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: IzFBtikhHbi_wlNPpx2cQJhLf1lylGT4fPXLZAN5R4M
+id: bb_session
+name: 'bb:session'
+description: 'The one bakers.build scope. An umbrella over one child per permission, so it grants no role.'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build machine identity'
+  authorization_code:
+    status: true
+    description: 'Human CLI sign-in via browser'
+  'urn:ietf:params:oauth:grant-type:device_code':
+    status: true
+    description: 'Human CLI sign-in without a local browser'
+  refresh_token:
+    status: true
+    description: 'Renew a human CLI sign-in'
+umbrella: true
+parent: null
+granularity_id: null
+granularity_configuration: null

@@ -1,0 +1,89 @@
+(
+  /* The PROJECT OVERVIEW TAB BODY, one `canvas` like its sync generator
+     (core.entity_view_display.bb_project.bb_project.full). The section
+     scene owns `page_header` (mark, plain title, tabs) and places this entity
+     as `canvas.main`. Count figures belong on the Board.
+
+     `main`: the Activities zone, its Refresh control and its rows.
+     `inspector`: one surface whose zones are the cards, all read-only —
+     the project is edited in its Settings, never on this tab —
+       Identity     name and description.
+       Properties   key, repository, teams, group and environments.
+       Epics        this project's `epics` view mode.
+
+     Drupal fills the Activities zone (`bb_entity_detail_activities`) and
+     the Identity and Properties cards (the shared detail-card `entity_form`)
+     from sources, so the preview pins their reader output as text and names
+     exactly the generator's components. Epics stays an entity node — it
+     names no component of its own here.
+
+     PINNED FACTS. A mapping is evaluated against one record and cannot join
+     the activity, environment, group or team collections, so rows and labels
+     are pinned per record — a sample-data change is a visible diff. */
+  $p := $;
+  $facts := {
+    "1": {
+      "activities": [
+        "Christian Wiedemann · claimed · 2 hours ago — BB-142 claimed at coding.",
+        "Sven Gruber · status · yesterday — BB-118 moved from spec to coding.",
+        "Christian Wiedemann · status · 3 days ago — BB-105 moved from review to done."
+      ],
+      "environments": ["production", "develop"]
+    },
+    "3": {
+      "activities": [],
+      "environments": ["develop"]
+    }
+  };
+  $groups := { "1": "keytec", "2": "Northwind Trading" };
+  $teams := { "1": "Platform crew", "2": "Commerce crew", "3": "Design crew" };
+  $f := $lookup($facts, $p.id);
+  $activities := $exists($f) ? $f.activities : [];
+  $envs := $exists($f) ? $f.environments : [];
+  $teamLabels := [$map([$p.teams], function ($id) { $lookup($teams, $id) })];
+  $or := function ($v) { $v ? $v : "—" };
+  $zone := function ($heading, $content) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      "slots": { "heading": $heading, "content": $content }
+    }
+  };
+  $surface := function ($rows) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:inspector",
+      "props": { "surface": true },
+      "slots": { "rows": $rows }
+    }
+  };
+  [{
+    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:canvas",
+    "slots": {
+      "main": [{
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+        "props": { "inset": "none", "gap": "sm", "columns": 1 },
+        "slots": {
+          "heading": "Activities",
+          "actions": "Refresh",
+          "content": $count($activities) > 0 ? $join($activities, "<br>") : "No activity yet."
+        }
+      }],
+      "inspector": [$surface([
+        $zone("Identity",
+          "Name: " & $or($p.name)
+          & "<br>Description: " & $or($p.description)),
+        $zone("Properties",
+          "Key: " & $or($p.key)
+          & "<br>Repository: " & $or($p.repository.url)
+          & "<br>Teams: " & ($count($teamLabels) > 0 ? $join($teamLabels, ", ") : "—")
+          & "<br>Group: " & $or($lookup($groups, $p.group_id))
+          & "<br>Environments: " & ($count($envs) > 0 ? $join($envs, ", ") : "—")),
+        $zone("Epics", [{
+          "entity": "bb_project.bb_project",
+          "view_mode": "epics",
+          "select": "$[id='" & $p.id & "']"
+        }])
+      ])]
+    }
+  }]
+)

@@ -1,0 +1,4 @@
+component: bb_theme:copied
+name: Hidden
+props:
+  message: ''

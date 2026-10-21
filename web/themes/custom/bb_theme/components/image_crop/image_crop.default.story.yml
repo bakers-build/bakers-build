@@ -1,0 +1,10 @@
+component: bb_theme:image_crop
+name: Default
+props:
+  label: Profile picture
+  id: story-image-crop
+  src: https://placehold.co/600x200/dc2626/2563eb.png?text=crop+me
+  width: 600
+  height: 200
+  crop: '{"x":0,"y":0,"size":200}'
+  hint: PNG, GIF, JPG, JPEG, WEBP

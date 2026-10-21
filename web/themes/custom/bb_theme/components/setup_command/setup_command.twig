@@ -1,0 +1,29 @@
+{# A copyable command. The command is escaped pre/code so it stays selectable
+   when JavaScript is off or the clipboard is denied. Copy is a native
+   type=button so it never submits a wrapping form. Alpine reads the command
+   from this component's own DOM (`x-ref`) rather than embedding it in a
+   JavaScript expression. The confirmation is `bb_theme:copied`, absolutely
+   positioned slightly below this relative box so a copy never grows the card. #}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'flex', 'items-center', 'gap-2', 'min-w-0', 'max-w-full',
+  ]) }}
+  x-data="{ status: '', timer: 0, copy() { const text = this.$refs.command.textContent; const show = (msg) => { this.status = msg; clearTimeout(this.timer); this.timer = setTimeout(() => { this.status = '' }, 2000) }; Promise.resolve().then(() => navigator.clipboard.writeText(text)).then(() => show('Copied')).catch(() => show('Copy failed. Select the command and copy it yourself.')) } }">
+  <pre class="m-0 min-w-0 flex-1 overflow-x-auto rounded-sm border border-border bg-app p-3 text-caption font-mono text-text"><code x-ref="command" class="whitespace-pre">{{ command }}</code></pre>
+  <div class="relative shrink-0 overflow-visible">
+    {{ include('bb_theme:button', {
+      label: 'Copy',
+      type: 'button',
+      variant: 'neutral',
+      attributes: create_attribute({
+        'x-on:click': 'copy()',
+        'aria-label': label,
+      }),
+    }, with_context = false) }}
+    {{ include('bb_theme:copied', {
+      attributes: create_attribute({
+        'x-text': 'status',
+        'x-bind:hidden': '!status',
+      }),
+    }, with_context = false) }}
+  </div>
+</div>

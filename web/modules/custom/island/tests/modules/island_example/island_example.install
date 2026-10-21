@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for the island_example demo module.
+ */
+
+declare(strict_types=1);
+
+use Drupal\island_example\Entity\Note;
+
+/**
+ * Implements hook_install().
+ */
+function island_example_install(): void {
+  \Drupal::service('island_example.task_store')->reset();
+
+  // Seed the demo note edited through the entity-form island.
+  Note::create(['title' => 'Release note', 'body' => 'Ship it'])->save();
+}

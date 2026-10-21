@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<ruleset name="Drupal Project PHPMD"
+         xmlns="http://pmd.sf.net/ruleset/1.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd">
+  <description>PHPMD configuration for Key-Tec Drupal projects.</description>
+  <rule ref="rulesets/cleancode.xml">
+    <exclude name="StaticAccess"/>
+    <!-- Drupal coding standards (phpcs) require global classes to be referenced
+         with a leading backslash, not imported via `use`; MissingImport would
+         otherwise conflict with that rule, so ignore global symbols. -->
+    <exclude name="MissingImport"/>
+  </rule>
+  <rule ref="rulesets/cleancode.xml/MissingImport">
+    <properties>
+      <property name="ignore-global" value="true"/>
+    </properties>
+  </rule>
+  <rule ref="rulesets/codesize.xml">
+    <exclude name="ExcessiveMethodLength"/>
+    <exclude name="ExcessiveClassComplexity"/>
+    <exclude name="CyclomaticComplexity"/>
+  </rule>
+  <!-- BB-319 raised this, 10 -> 11: StatisticsCounter::block() decides which
+       of the five figure surfaces a document carries, and scoping the figures to
+       the caller's workspaces added one more branch to that single decision.
+       Extraction is the wrong remedy here and measurably so — the class-level
+       metric is the SUM of per-method complexity and a new method starts at 1,
+       so moving branches out of block() raises the class total while lowering
+       only the method. The four narrowings block() dispatches on (project, team,
+       user, workspace scope) are one concept expressed as four parameters; when
+       they become a value object the branch count drops for real, and that is
+       the follow-up. Until then the ceiling reflects the real surface. -->
+  <rule ref="rulesets/codesize.xml/CyclomaticComplexity">
+    <properties>
+      <property name="reportLevel" value="11"/>
+    </properties>
+  </rule>
+  <!-- The blocked_by constraint validator implements graph cycle detection
+       (reference validation plus DFS traversal). Splitting into small private
+       helpers keeps each method simple but raises the summed class complexity
+       just past the default 50; allow a modest headroom.
+       BB-263 raised it again, 60 -> 65: BbTicket sat at exactly 59 and its
+       third presave derivation (deriveAssigneeFromConductor, a four-branch
+       guard beside allocateNumber and freezeBranchName) costs 5. Same reasoning
+       as the CouplingBetweenObjects ceiling below, and for the same class —
+       raise the ceiling rather than artificially splitting the entity, which
+       would leave one derivation in a collaborator while its two siblings stay
+       inline.
+       BB-413 did NOT raise it a third time. BbTicket reached 66 on one
+       added method (getBbPhase) and the four branch-naming members moved out
+       to Drupal\bb_core\Ticket\BranchName instead: 66 -> 53, with BranchName
+       at 14 of its own. The extraction works BECAUSE the metric is a per-class
+       sum — moving branches to a new CLASS removes them, whereas moving them
+       to a new private METHOD of the same class adds one (see the
+       CyclomaticComplexity note above, which is why StatisticsCounter was
+       raised instead). The ceiling therefore now has real headroom rather than
+       sitting one point under the largest class; the next class to reach it
+       should be read as a genuine signal, not as this entry's history
+       repeating. -->
+  <rule ref="rulesets/codesize.xml/ExcessiveClassComplexity">
+    <properties>
+      <property name="maximum" value="65"/>
+    </properties>
+  </rule>
+  <!-- Drupal entity baseFieldDefinitions() methods are inherently long (one
+       block per base field); raise the threshold so idiomatic definitions pass. -->
+  <rule ref="rulesets/codesize.xml/ExcessiveMethodLength">
+    <properties>
+      <property name="minimum" value="250"/>
+    </properties>
+  </rule>
+  <rule ref="rulesets/design.xml">
+    <exclude name="CouplingBetweenObjects"/>
+  </rule>
+  <!-- BbTicket is a rich, central entity (ticket state machine, links,
+       comments, run/conductor relations, computed base_branch/branch_name and
+       the inherited effective_env_vars, …); its coupling sits a few over the
+       default limit, one per computed-field ItemList. Raise the ceiling rather
+       than artificially splitting the entity class.
+       BB-305 raised it again, 17 -> 20: every bakers.build content entity gained an
+       owner key, which costs three references on each of them
+       (EntityOwnerInterface, EntityOwnerTrait, and the query_access handler).
+       BbTicket was already sitting at the ceiling, so the same reasoning as
+       above applies — the coupling is the entity's real surface, not a symptom
+       of a class doing two jobs.
+       BB-319 raised it again, 20 -> 21: StatisticsResource gained exactly two
+       collaborators, AccountInterface and BbWorkspaceReadScopeInterface, which
+       ARE the mechanism that stops an out-of-workspace uuid answering 200 — the
+       cross-tenant existence oracle the ticket exists to close. Removing either
+       removes the fix, so the same reasoning applies once more: this is the
+       resource's real surface. It sat at exactly the ceiling beforehand. -->
+  <rule ref="rulesets/design.xml/CouplingBetweenObjects">
+    <properties>
+      <property name="maximum" value="21"/>
+    </properties>
+  </rule>
+  <rule ref="rulesets/naming.xml">
+    <exclude name="ShortVariable"/>
+    <exclude name="LongVariable"/>
+    <exclude name="LongClassName"/>
+  </rule>
+  <!-- Idiomatic Drupal plugin naming pairs a descriptive `<Thing>Constraint`
+       with its `<Thing>ConstraintValidator`; both suffixes push
+       BbEnvironmentUniquePerProject past the default 40-char limit. Raise
+       the ceiling to fit the longer of the two (…ConstraintValidator). -->
+  <rule ref="rulesets/naming.xml/LongClassName">
+    <properties>
+      <property name="maximum" value="52"/>
+    </properties>
+  </rule>
+  <rule ref="rulesets/unusedcode.xml"/>
+</ruleset>

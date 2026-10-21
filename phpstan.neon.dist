@@ -1,0 +1,86 @@
+parameters:
+  treatPhpDocTypesAsCertain: false
+  level: 7
+  reportUnmatchedIgnoredErrors: false
+  inferPrivatePropertyTypeFromConstructor: true
+  paths:
+    - web/modules/custom
+    - web/themes/custom
+  excludePaths:
+    - */node_modules/*
+    - */vendor/*
+  ignoreErrors:
+    - identifier: missingType.generics
+    - identifier: missingType.iterableValue
+    -
+      identifier: missingType.parameter
+      paths:
+        - */*.inc
+        - */*.install
+        - */*.module
+        - */*.profile
+        - */*.theme
+    -
+      identifier: missingType.return
+      paths:
+        - */*.inc
+        - */*.install
+        - */*.module
+        - */*.profile
+        - */*.theme
+    - "#^Unsafe usage of new static#"
+    - "#expects string, Drupal\\\\Core\\\\StringTranslation\\\\TranslatableMarkup given\\.#"
+    - "#expects string\\|null, Drupal\\\\Core\\\\StringTranslation\\\\TranslatableMarkup given\\.#"
+    -
+      # OgScopeFixtureTrait is namespaced under Kernel/ because every prior
+      # user was a KernelTestBase; BB-556's RunLogDownloadTest is the first
+      # BrowserTestBase (Functional) consumer, and it only calls the trait's
+      # registerShippedOgGroups() half, never installOgScopeFixture(). PHPStan
+      # still type-checks the whole trait body against every class that uses
+      # it, including installOgScopeFixture()'s installConfig() call — a
+      # KernelTestBase-only method the Functional class genuinely does not
+      # have. The trait method itself remains correct for every Kernel test.
+      identifiers:
+        - method.notFound
+        - getDeprecatedService.deprecated
+      path: web/modules/custom/bb_core/tests/src/Kernel/OgScopeFixtureTrait.php
+    -
+      # LinkKindTest::testKindsConstantIsComplete() intentionally asserts the
+      # full, literal KINDS constant value as a completeness guard against a
+      # new LinkKind being added without updating the constant. PHPStan
+      # correctly infers the constant's literal type, which makes the
+      # assertion look tautological, but the test still has value.
+      identifier: method.alreadyNarrowedType
+      path: web/modules/custom/bb_core/tests/src/Unit/LinkKindTest.php
+    -
+      # drupal/config_inspector is a require-dev-only module (see
+      # designbook_config_schema.info.yml's hard module dependency); it is
+      # not installed in this vendor tree, so PHPStan cannot resolve
+      # ConfigInspectorManager. The `use` import is correct at runtime once
+      # the module is enabled.
+      identifier: class.notFound
+      path: web/modules/custom/designbook_config_schema/src/Commands/ConfigSchemaCommands.php
+    -
+      # BB-305 D9: meta.count on a collection response is core behaviour
+      # gated on ResourceType::includeCount(), a hardcoded FALSE whose own
+      # comment says it exists "so we can allow polymorphic implementations".
+      # ResourceTypeBuildEvent can rename and disable a resource type but
+      # cannot set that flag, and ResourceTypeRepository::createResourceType()
+      # is protected, so a decorator cannot reach it either. Subclassing both
+      # @internal classes is the only lever core offers; the alternative
+      # (jsonapi_extras) swaps the same repository globally and ships one
+      # config entity per resource type into two install paths.
+      identifier: classExtendsInternalClass.classExtendsInternalClass
+      paths:
+        - web/modules/custom/bb_core/src/JsonApi/BbResourceType.php
+        - web/modules/custom/bb_core/src/JsonApi/BbResourceTypeRepository.php
+    -
+      # The HTML mail backend extends core's @internal Symfony mail plugin to
+      # keep its DSN transport and header mapping rather than copy them; the
+      # kernel test pins that behaviour against the locked core version.
+      identifier: classExtendsInternalClass.classExtendsInternalClass
+      path: web/modules/custom/bb_core/src/Plugin/Mail/BbHtmlMail.php
+
+services:
+  errorFormatter.junit:
+    class: PHPStan\Command\ErrorFormatter\JUnitErrorFormatter

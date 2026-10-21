@@ -1,0 +1,28 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Mode Toggle
+status: stable
+group: Action
+description: >-
+  Appearance picker with five palettes and independent light/dark mode.
+  Persists selections locally through the synchronous skin bootstrap.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    mode:
+      type: string
+      enum:
+        - light
+        - dark
+      title: Mode
+      description: >-
+        Current colour mode, for static rendering only -- the runtime source of
+        truth is html[data-mode], read and flipped by js/skin.src.js.
+    label:
+      type: string
+      title: Accessible label
+      description: aria-label for the button.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

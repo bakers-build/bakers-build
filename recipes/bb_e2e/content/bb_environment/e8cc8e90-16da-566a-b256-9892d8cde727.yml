@@ -1,0 +1,18 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_environment
+  uuid: e8cc8e90-16da-566a-b256-9892d8cde727
+  default_langcode: en
+  depends:
+    b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
+default:
+  name:
+  - value: API development
+  base_url:
+  - value: https://development.api-contract.test
+  tier:
+  - value: development
+  branch:
+  - value: api-contract-develop
+  project_id:
+  - entity: b76b40df-436c-5d3d-9bf1-5745fa621a7a

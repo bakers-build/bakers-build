@@ -1,0 +1,11 @@
+uuid: c27c0792-c73c-42af-9327-267cc6bfd5d7
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_project.epics
+label: Epics
+description: ''
+targetEntityType: bb_project
+cache: true

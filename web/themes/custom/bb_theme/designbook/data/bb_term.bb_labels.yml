@@ -1,0 +1,18 @@
+- id: '1'
+  name: backend
+  description: Server-side logic, APIs, and data persistence work.
+  weight: 0
+  __designbook:
+    section: bb_ticket
+- id: '2'
+  name: ui
+  description: User interface and front-end presentation work.
+  weight: 1
+  __designbook:
+    section: bb_ticket
+- id: '3'
+  name: bug
+  description: Defect fix restoring expected behavior.
+  weight: 2
+  __designbook:
+    section: bb_ticket

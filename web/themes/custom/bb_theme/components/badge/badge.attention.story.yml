@@ -1,0 +1,6 @@
+component: bb_theme:badge
+name: Attention
+props:
+  label: needs_input
+  tone: attention
+  dot: true

@@ -1,0 +1,37 @@
+# Team time calendar fixture: who may read whose hours in the week of 2026-12-07.
+_meta:
+  version: '1.0'
+  entity_type: bb_track_worklog
+  uuid: 640a0000-0000-4000-8000-000000000002
+  depends:
+    6e52c2ea-3411-5276-b0de-b9a17e20cdb9: user
+    e8a2c6f4-5193-4e17-da65-0c2f4b8d1e53: bb_project
+    613c0000-0000-4000-8000-000000000004: bb_track_account
+default:
+  owner_user_id:
+    -
+      entity: "6e52c2ea-3411-5276-b0de-b9a17e20cdb9"
+  work_date:
+    -
+      value: "2026-12-10"
+  timezone:
+    -
+      value: "Europe/Berlin"
+  duration_seconds:
+    -
+      value: 7200
+  description:
+    -
+      value: "Team member Thu"
+  derivation:
+    -
+      value: "manual"
+  state:
+    -
+      value: "recorded"
+  project_id:
+    -
+      entity: "e8a2c6f4-5193-4e17-da65-0c2f4b8d1e53"
+  account_id:
+    -
+      entity: "613c0000-0000-4000-8000-000000000004"

@@ -1,0 +1,43 @@
+{# Drupal's local-task row. `local_tasks_block` builds primary and secondary;
+   this template prints those children so the renderer applies each task's
+   `#access`, passing each into `bb_theme:tabs`' `tab_items` slot; each
+   remaining item is `menu-local-task.html.twig`, rendering `bb_theme:tab`.
+   Storybook and scenes use the same component through its `items` prop; this
+   presenter never rebuilds that list.
+
+   `secondary` is a distinct row. Drupal puts a second level beneath the first;
+   flattening it into the primary row would misrepresent the hierarchy.
+
+   `[data-tabs]` is the Playwright hook for the row (`ticket-detail.steps.ts`).
+
+   THIS ROW RIDES ALONG INSIDE `island-content`, AND POSITION IS THE WHOLE
+   MECHANISM (BB-396 D8). `local_tasks_block` is placed as a prefix of the
+   `page_content` island, after the heading and before the body. So when a tab is clicked
+   and the client narrows the response to that island, this row is inside the
+   replaced markup and its current entry is right afterwards — without
+   declaring anything of its own. That is why there is no htmx attribute in
+   this template and why adding one would be a defect rather than an
+   improvement: `IslandBoost` is the single author of a declaration, and a
+   second one here would fight the container that already carries it.
+
+   THE RAIL IS THE CONTRAST, and it is a deliberate asymmetry (D3, module fact
+   F6). `island-rail` names the same swap target, `#island-content`, but sits
+   OUTSIDE it, so it is not part of what a swap replaces and its active entry
+   may go stale. Making it ride along would mean rendering the whole menu tree
+   on every navigation — the exact cost islands exist to avoid. These tabs get
+   a correct current entry for free because they are inside the boundary; the
+   rail pays nothing and accepts a stale trail. #}
+{% if primary %}
+  {{ include('bb_theme:tabs', {
+    attributes: attributes,
+    label: 'Sections'|t,
+    tab_items: primary,
+  }, with_context = false) }}
+{% endif %}
+
+{% if secondary %}
+  {{ include('bb_theme:tabs', {
+    label: 'Subsections'|t,
+    tab_items: secondary,
+  }, with_context = false) }}
+{% endif %}

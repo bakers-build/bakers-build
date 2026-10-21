@@ -1,0 +1,24 @@
+# A claim by run 3 of srv01-bakers (owned by cwiedemann), so the conductor and
+# machine detail pages of the default persona list run activities.
+_meta:
+  version: '1.0'
+  entity_type: bb_activity
+  uuid: dbaa0000-0000-4000-8000-000000000003
+  default_langcode: en
+  depends:
+    dba00000-0000-4000-8000-000000000001: bb_ticket
+    dbc00000-0000-4000-8000-000000000001: bb_conductor
+    dbb00000-0000-4000-8000-000000000003: bb_run
+default:
+  ticket_id:
+  - entity: dba00000-0000-4000-8000-000000000001
+  kind:
+  - value: claimed
+  step:
+  - value: coding
+  run_id:
+  - entity: dbb00000-0000-4000-8000-000000000003
+  conductor_id:
+  - entity: dbc00000-0000-4000-8000-000000000001
+  created:
+  - value: 1782834600

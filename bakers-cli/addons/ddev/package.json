@@ -1,0 +1,33 @@
+{
+  "name": "@bakers-build/addon-ddev",
+  "version": "0.1.0",
+  "description": "DDEV-specific service discovery and claiming: HTTP(S)_EXPOSE/VIRTUAL_HOST interpretation over @bakers-build/addon-docker-compose's generic container data, plus effective-host discovery via `ddev utility configyaml`. No CMS-specific policy lives here.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/ddev/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^"
+  },
+  "dependencies": {
+    "@bakers-build/addon-docker-compose": "workspace:^",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

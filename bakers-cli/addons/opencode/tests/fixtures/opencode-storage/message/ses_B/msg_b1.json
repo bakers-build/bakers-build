@@ -1,0 +1,20 @@
+{
+  "id": "msg_b1",
+  "sessionID": "ses_B",
+  "role": "assistant",
+  "time": {
+    "created": 1768650001000,
+    "completed": 1768650002000
+  },
+  "modelID": "big-pickle",
+  "providerID": "opencode",
+  "tokens": {
+    "input": 5,
+    "output": 5,
+    "reasoning": 0,
+    "cache": {
+      "read": 0,
+      "write": 0
+    }
+  }
+}

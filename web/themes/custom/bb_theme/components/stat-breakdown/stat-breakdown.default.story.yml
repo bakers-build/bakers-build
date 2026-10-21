@@ -1,0 +1,29 @@
+component: bb_theme:stat-breakdown
+name: Default
+props:
+  label: Closed tickets per project
+  columns:
+    - key: day
+      label: 24h
+    - key: week
+      label: 7d
+    - key: month
+      label: 30d
+  entries:
+    - label: bakers.build
+      counts:
+        day: 2
+        week: 11
+        month: 41
+    - label: Keytec Base
+      counts:
+        day: 1
+        week: 5
+        month: 17
+    - label: — unattributed
+      counts:
+        day: 0
+        week: 2
+        month: 6
+  empty: No tickets were closed in any project in the last 30 days.
+  source: bb_ticket.project_id

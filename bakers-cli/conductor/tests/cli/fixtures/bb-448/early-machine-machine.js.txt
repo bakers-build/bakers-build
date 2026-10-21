@@ -1,0 +1,13 @@
+// User-global conductor context — gitignored, user-only (chmod 0600), never
+// committed. A plain importable module holding your machine identity +
+// connection, incl. the OAuth client secret. Committed conductor.config.js files
+// import this to compose machine_id (`${user_id}-${machine_id}-${project}`) and
+// read base_url / client_id / client_secret. Created and gap-filled by
+// `bakers conductor init`; existing values are never overwritten.
+export default {
+  machine_id: "historical-host",
+  user_id: "historical-user",
+  base_url: "https://historical.test",
+  client_id: "historical-client",
+  client_secret: "historical-secret",
+};

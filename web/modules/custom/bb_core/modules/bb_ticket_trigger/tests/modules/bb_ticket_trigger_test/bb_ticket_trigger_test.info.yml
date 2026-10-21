@@ -1,0 +1,8 @@
+name: 'bakers.build ticket trigger test'
+type: module
+description: 'Test helper: an event-driven trigger type and a ticket target proving both extension seams, and switches that make ticket saves fail like a transient outage, or the saves of a single trigger fail like a deadlock.'
+package: Testing
+hidden: true
+core_version_requirement: ^11
+dependencies:
+  - bb_ticket_trigger:bb_ticket_trigger

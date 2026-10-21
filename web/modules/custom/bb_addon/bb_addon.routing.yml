@@ -1,0 +1,60 @@
+# A conductor registers the addon definitions it runs.
+bb_addon.register:
+  path: '/%jsonapi%/bakers/addons'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_addon\Resource\AddonsRegisterResource
+  requirements:
+    _permission: 'register bakers conductor'
+
+# The addons of a ticket's conductor, as `bakers ui` reads them.
+bb_addon.ticket:
+  path: '/%jsonapi%/bakers/addons/ticket/{bb_ticket}'
+  methods: ['GET']
+  defaults:
+    _jsonapi_resource: Drupal\bb_addon\Resource\TicketAddonsResource
+  requirements:
+    _entity_access: 'bb_ticket.view'
+  options:
+    parameters:
+      bb_ticket:
+        type: entity:bb_ticket
+        converter: bb_core.paramconverter.entity_uuid
+
+# This person's own earlier messages for a ticket (BB-661). Ticket view
+# access is required by the route; requester selection happens inside the
+# resource, server-side.
+bb_addon.ticket_messages:
+  path: '/%jsonapi%/bakers/addons/ticket/{bb_ticket}/messages'
+  methods: ['GET']
+  defaults:
+    _jsonapi_resource: Drupal\bb_addon\Resource\TicketMessagesResource
+  requirements:
+    _entity_access: 'bb_ticket.view'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_ticket:
+        type: entity:bb_ticket
+        converter: bb_core.paramconverter.entity_uuid
+
+# The ticket's addons card (BB-661): rendered inline in the ticket detail's
+# right column by the `bb_ticket_addons` UI Patterns source; this route is
+# the fragment a tab switch re-fetches (Drupal core's `drupal_htmx`
+# main-content-only wrapper format), never a page a person navigates to
+# directly. Carries island action links, so it is never served from the page
+# cache.
+bb_addon.overlay:
+  path: '/_workspace/{bb_workspace}/ticket/{bb_ticket}/addons/{addon_name}'
+  defaults:
+    _controller: '\Drupal\bb_addon\Controller\TicketAddonsController::overlay'
+    _title: 'Ticket'
+    addon_name: ''
+  requirements:
+    _entity_access: 'bb_ticket.view'
+    _user_is_logged_in: 'TRUE'
+  options:
+    no_cache: 'TRUE'
+    parameters:
+      bb_ticket:
+        type: 'entity:bb_ticket'

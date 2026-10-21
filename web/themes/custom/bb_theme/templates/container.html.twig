@@ -1,0 +1,15 @@
+{# Core's container. Fields core groups in a plain wrapper (mail and username
+   on the account form) keep 12px between each other, like the form's own
+   fields; a wrapper laid out as flex spaces its children itself. A wrapper
+   with no element inside (the account form's language container on a
+   one-language site) is hidden so it adds no empty gap; it stays in the DOM
+   for anything that targets it. #}
+{%
+  set classes = [
+    has_parent ? 'js-form-wrapper',
+    has_parent ? 'form-wrapper',
+    has_parent ? '[&:not(.flex)>.form-item:not(:last-child)]:mb-3',
+    has_parent ? '[&:not(:has(*))]:hidden',
+  ]
+%}
+<div{{ attributes.addClass(classes) }}>{{ children }}</div>

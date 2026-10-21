@@ -1,0 +1,53 @@
+component: bb_theme:sidebar
+name: Default
+props:
+  collapsed: false
+slots:
+  navigation:
+    - type: component
+      component: bb_theme:nav
+      props:
+        items:
+          - title: My work
+            url: /admin/bakers/work
+            icon: ticket
+            in_active_trail: true
+            below: []
+          - title: Projects
+            url: /admin/bakers/project
+            icon: project
+            in_active_trail: false
+            below: []
+          - title: Teams
+            heading: true
+            icon: team
+            open: true
+            action:
+              icon: plus
+              label: New team
+            below:
+              - title: Team A
+                url: /admin/bakers/team/team-a
+                in_active_trail: false
+                mark:
+                  initials: TA
+                  color: running
+              - title: Team B
+                url: /admin/bakers/team/team-b
+                in_active_trail: false
+                mark:
+                  initials: TB
+                  color: lease
+          - title: Settings
+            url: /admin/bakers/settings
+            icon: settings
+            in_active_trail: false
+            below: []
+        expanded: true
+# The foot `actions` slot is deliberately EMPTY. BB-332: the add affordance is owned by
+# the screen that can receive it, and the chrome carries no entity-add action at all. These
+# stories filled it with a "New ticket" button, which the scenes file never did -- the
+# contract check grepped only the scenes, so the drift survived two tickets (BB-341 fact 6).
+# BB-341 D11 reads that rule one surface further in for the sidebar's `Teams` row, which
+# earns a `[+]` because the row IS the list receiving the addition; a control down here
+# speaks for whatever screen happens to be open, which is what the rule forbids.

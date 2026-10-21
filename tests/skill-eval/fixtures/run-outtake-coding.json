@@ -1,0 +1,108 @@
+{
+  "id": "run-outtake-coding",
+  "skill": "run-outtake",
+  "references": [
+    "method-context/references/results.md",
+    "method-context/SKILL.md",
+    "essential-skills/SKILL.md"
+  ],
+  "outtake": true,
+  "input": {
+    "ticket": "EVAL-5: Member cannot invite colleagues",
+    "state": "coding",
+    "outcome": "Member invitation authorization fix is delivered; the coding agent observed both required denial paths.",
+    "revision": "e11ce05000000000000000000000000000000000",
+    "mr": "https://git.example.invalid/team/app/-/merge_requests/5",
+    "checks": [
+      {
+        "id": "member-denied",
+        "ac_ids": [
+          "AC-1"
+        ],
+        "purpose": "functional",
+        "mode": "agent",
+        "actor": "member uid:73",
+        "environment": "https://preview.example.invalid",
+        "command_or_steps": "Projects > Alpha > Members; direct /projects/alpha/invite",
+        "expected": "Invite absent; direct route returns 403",
+        "coverage": "one_off"
+      }
+    ],
+    "results": [
+      {
+        "check_id": "member-denied",
+        "status": "passed",
+        "actual_actor": "member uid:73",
+        "environment": "https://preview.example.invalid",
+        "revision": "e11ce05000000000000000000000000000000000",
+        "observed": "Coding agent inspected Projects > Alpha > Members: Invite absent; direct /projects/alpha/invite returned 403.",
+        "evidence": "https://tickets.example.invalid/EVAL-5#coding-evidence"
+      }
+    ],
+    "manual_review": {
+      "status": "pending",
+      "actor": "member uid:73",
+      "steps": "Open Projects > Alpha > Members; confirm Invite is absent. Open /projects/alpha/invite; expect access denied.",
+      "access": "Issued one-time login URL for member uid:73 in the preview environment; use login_url unchanged.",
+      "role": "member",
+      "account": "uid:73",
+      "environment": "https://preview.example.invalid",
+      "login_url": "https://preview.example.invalid/user/reset/73/1791072000/fixture-token-only/login?destination=/projects/alpha/members",
+      "paths": [
+        "/projects/alpha/members",
+        "/projects/alpha/invite"
+      ]
+    },
+    "next_action": "Reviewer checks the supplied member path and records their observation.",
+    "observations": [
+      "All ticket facts, account identities, issued URL, MR, evidence, revision and application results are synthetic test data. No service or account is provisioned or contacted.",
+      "The coding agent completed the supplied check at the stated revision.",
+      "Human review remains pending; the confirmed plan requires agent verification and has no human acceptance gate."
+    ],
+    "gate": "GREEN",
+    "acceptance_criteria": [
+      {
+        "id": "AC-1",
+        "criterion": "As a project member, I want invitation controls hidden and direct invitation access denied, so that only authorized roles can invite colleagues.",
+        "result": "PASS",
+        "evidence": "https://tickets.example.invalid/EVAL-5#coding-evidence"
+      }
+    ],
+    "scope": {
+      "spec": "spec-example",
+      "plan": "plan-example",
+      "test": "test-example"
+    },
+    "evidence": "https://tickets.example.invalid/EVAL-5#coding-evidence",
+    "artifacts": [
+      {
+        "label": "Merge request",
+        "url_or_command": "https://git.example.invalid/team/app/-/merge_requests/5"
+      },
+      {
+        "label": "Coding evidence",
+        "url_or_command": "https://tickets.example.invalid/EVAL-5#coding-evidence"
+      }
+    ]
+  },
+  "rubric": [
+    {
+      "id": "faithful-results",
+      "criterion": "Reports the supplied completed agent verification, member uid:73, absent Invite control and direct-route 403 accurately; no invented automated check, run, write, role or human observation."
+    },
+    {
+      "id": "review-executable",
+      "criterion": "Manual review preserves the member uid:73 role and preview environment, issued login URL, MR, coding evidence and both review paths with expected absent Invite and access-denied observations."
+    },
+    {
+      "id": "pending-is-not-failure",
+      "criterion": "Human review stays pending. The coding result must not acquire a Not OK verdict, a failed AC or a prerequisite for entering review merely because no human observation exists. No human acceptance gate is supplied."
+    },
+    {
+      "id": "one-action",
+      "criterion": "Ends with one concrete next action consistent with checking the member paths and recording the observation, not a second independent decision or invented approval/transition."
+    }
+  ],
+  "synthetic": true,
+  "profile": "run-outtake-coding"
+}

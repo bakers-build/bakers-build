@@ -1,0 +1,13 @@
+{# One local task, rendered by `bb_theme:tab`, which owns its look. Printed
+   by `{{ primary }}` / `{{ secondary }}` after the renderer has applied
+   `#access`. The link render element is passed whole, so localized options
+   and URL cacheability stay on it; aria-current comes from `is_active` alone.
+   Core sets `set_active_class`, which emits `data-drupal-link-system-path`
+   for `active-link.js`; that script compares against `drupalSettings.path`,
+   which an island swap leaves on the previous route, so it would mark the
+   previous tab current as well. Switching it off keeps one current marker. #}
+{{ include('bb_theme:tab', {
+  attributes: attributes,
+  active: is_active|default(false),
+  link: link|merge({'#options': link['#options']|default({})|merge({'set_active_class': false})}),
+}, with_context = false) }}

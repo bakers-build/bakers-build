@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 3b72a85c-4455-4c86-b207-bdcc7de4fdc6
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: en
+  name:
+    -
+      value: cw
+  mail:
+    -
+      value: christian.wiedemann@keytec.de
+  pass:
+    -
+      value: '$2y$12$b0xw1IuFBEUZN9u792/xRu2N2i.al5qD4WhkZz8gdTlkwpuv2uLoe'
+      pre_hashed: true
+      existing: null
+  timezone:
+    -
+      value: Europe/Berlin
+  status:
+    -
+      value: 1
+  access:
+    -
+      value: 0
+  login:
+    -
+      value: 0

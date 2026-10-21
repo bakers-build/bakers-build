@@ -1,0 +1,26 @@
+# Listing-search fixture: matching Alpha text in another workspace. A Title
+# search on the default workspace must not show this row.
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: 571a0000-0000-4000-8000-0000000000b3
+  default_langcode: en
+  depends:
+    571a0000-0000-4000-8000-0000000000a3: bb_group
+    02043966-170c-5ae3-8d9e-5ef816ff74f4: bb_team
+default:
+  group_id:
+    -
+      entity: "571a0000-0000-4000-8000-0000000000a3"
+  name:
+    -
+      value: "Alpha Other"
+  key:
+    -
+      value: "ALOT"
+  next_number:
+    -
+      value: 1
+  teams:
+    -
+      entity: "02043966-170c-5ae3-8d9e-5ef816ff74f4"

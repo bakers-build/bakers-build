@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bakers.build Design System — Komponenten (Tailwind · light)</title>
+
+<!-- Inter-Hausschrift (sans + mono), selbst-gehostet via Fontsource-CDN aus dem Designsystem. -->
+<link rel="stylesheet" href="tokens/typography.css">
+
+<!-- Tailwind Play CDN: erzeugt Utilities zur Laufzeit. Für den Prototyp/Referenz ok;
+     in Drupal wird derselbe Utility-Satz per Build (CLI/PostCSS) in eine Gin-Library kompiliert. -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          canvas: '#F6F6F2',
+          gin: {
+            app:'#FFFFFF', layer:'#FFFFFF', layer2:'#FAFAF7', layer3:'#F1F0EA',
+            header:'#FFFFFF', line:'#D6D3CA', hair:'#E9E7E0',
+            text:'#14171A', light:'#5B6169', faint:'#6B7078', primary:'#494FE5',
+            strong: '#000000',
+          },
+          bakers: {
+            unassigned:'#FF4E42', attention:'#FFC024', running:'#4BB9AE',
+            lease:'#8197F8', offline:'#707888',
+            'unassigned-ink':'#A5301F', 'attention-ink':'#7A5600',
+            'running-ink':'#1F6B63', 'lease-ink':'#3B4BA8',
+          },
+        },
+        fontFamily: {
+          sans: ['"Inter"','system-ui','-apple-system','"Segoe UI"','Roboto','"Helvetica Neue"','Arial','sans-serif'],
+          mono: ['"Inter"','ui-monospace','"SF Mono"','Menlo','Consolas','monospace'],
+        },
+        borderRadius: { gin:'4px', 'gin-s':'4px', 'gin-xs':'4px' },
+        keyframes: {
+          statuspulse: { '0%':{ boxShadow:'0 0 0 0 currentColor' }, '70%,100%':{ boxShadow:'0 0 0 6px transparent' } },
+          ring: { from:{ strokeDashoffset:'50.27' }, to:{ strokeDashoffset:'0' } },
+        },
+        animation: {
+          statuspulse: 'statuspulse 2.4s ease-out infinite',
+          ring: 'ring 15s linear infinite',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html,body { margin:0; }
+  body { background:#F6F6F2; }
+  /* nur was Utilities nicht ausdrücken: dünne Scrollbar für Board-Demos */
+  .thin::-webkit-scrollbar { height:8px; }
+  .thin::-webkit-scrollbar-thumb { background:#F1F0EA; border-radius:8px; }
+</style>
+</head>
+
+<body class="font-sans text-gin-text text-[13px] leading-[1.45] antialiased px-[22px] pt-7 pb-16">
+<div class="max-w-[1460px] mx-auto">
+
+  <!-- ============================ LEAD ============================ -->
+  <header class="mb-8">
+    <p class="text-[11px] font-bold tracking-[.14em] uppercase text-bakers-running-ink mb-2">bakers.build · Foundation · Komponenten-Bibliothek</p>
+    <h1 class="text-[26px] font-bold tracking-[-.01em] text-gin-text mb-2.5">bakers.build Design System</h1>
+    <p class="text-[14px] text-gin-light max-w-[82ch] mb-3">
+      Die eine Quelle für alle bakers.build-Screens, gebaut mit <b class="text-gin-text font-semibold">Tailwind</b>: neutrale Chrome-Töne, Typo und Radien liegen als Theme-Tokens (<code class="font-mono text-[12px] bg-gin-layer3 text-gin-text px-1.5 py-px rounded">gin.*</code>), bakers.build bringt <b class="text-gin-text font-semibold">nur vier Zustandsfarben</b> aus dem keytec-Palette ein (<code class="font-mono text-[12px] bg-gin-layer3 text-gin-text px-1.5 py-px rounded">bakers.*</code>). Jede Komponente unten ist ein Live-Baustein — Dashboard, Ticket und Login setzen sich ausschließlich hieraus zusammen.
+    </p>
+    <div class="flex flex-wrap items-center gap-2.5">
+      <span class="inline-flex items-center gap-2 h-7 px-3 rounded-gin-s bg-gin-layer2 border border-gin-line text-[12px] text-gin-light"><span class="w-1.5 h-1.5 rounded-full bg-bakers-running"></span>Tailwind-Config = Theme-Tokens</span>
+      <span class="inline-flex items-center gap-2 h-7 px-3 rounded-gin-s bg-gin-layer2 border border-gin-line text-[12px] text-gin-light">Gin-nativ · hell</span>
+      <span class="inline-flex items-center gap-2 h-7 px-3 rounded-gin-s bg-gin-layer2 border border-gin-line text-[12px] text-gin-light font-mono">keine Emoji · SVG-Ornamente</span>
+    </div>
+  </header>
+
+  <!-- inhalt / anker -->
+  <nav class="flex flex-wrap gap-2 mb-8 text-[12px]" aria-label="Inhalt">
+    <a href="#tokens" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Tokens</a>
+    <a href="#primitives" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Primitive</a>
+    <a href="#buttons" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Buttons</a>
+    <a href="#chrome" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Header &amp; Nav</a>
+    <a href="#filters" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Filterleiste</a>
+    <a href="#sections" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Sektion &amp; Tabellen</a>
+    <a href="#board" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Board</a>
+    <a href="#edge" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Leer-Zustände</a>
+    <a href="#brand" class="px-3 py-1.5 rounded-gin-s bg-gin-layer border border-gin-hair text-gin-light hover:text-gin-text hover:border-gin-line no-underline">Marke</a>
+  </nav>
+
+  <!-- ============================ 1 · FARBEN ============================ -->
+  <h2 id="tokens" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">1 · Farben — Gin neutral</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px]" style="background:#F6F6F2"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">Canvas</div><div class="font-mono text-[11px] text-gin-faint">#F6F6F2</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">canvas</span></div></div>
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px] bg-gin-app"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">App</div><div class="font-mono text-[11px] text-gin-faint">#FFFFFF</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">gin.app</span></div></div>
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px] bg-gin-layer"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">Layer</div><div class="font-mono text-[11px] text-gin-faint">#FFFFFF</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">gin.layer</span></div></div>
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px] bg-gin-layer2"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">Layer 2</div><div class="font-mono text-[11px] text-gin-faint">#FAFAF7</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">gin.layer2</span></div></div>
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px] bg-gin-layer3"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">Layer 3</div><div class="font-mono text-[11px] text-gin-faint">#F1F0EA</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">gin.layer3</span></div></div>
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px] bg-gin-line"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">Line</div><div class="font-mono text-[11px] text-gin-faint">#D6D3CA</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">gin.line</span></div></div>
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px] bg-gin-primary"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">Primary</div><div class="font-mono text-[11px] text-gin-faint">#494FE5</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">gin.primary</span></div></div>
+      <div class="border border-gin-hair rounded-gin-s overflow-hidden"><div class="h-[58px] bg-gin-text"></div><div class="px-2.5 py-2 bg-gin-app"><div class="text-[12px] font-semibold">Text</div><div class="font-mono text-[11px] text-gin-faint">#14171A</div><span class="font-mono text-[10.5px] text-gin-light block mt-0.5">gin.text</span></div></div>
+    </div>
+  </div>
+
+  <h2 class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">2 · Zustandsfarben — keytec (das einzige Farbsignal von bakers.build)</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5">
+    <div class="flex flex-wrap gap-x-3.5 gap-y-2.5">
+      <div class="flex-1 min-w-[200px] flex items-center gap-3 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s"><span class="w-[30px] h-[30px] rounded-lg flex-none bg-bakers-unassigned"></span><div><div class="text-[12.5px] font-bold text-gin-text">Swimsuit</div><div class="text-[11px] text-gin-faint">needs_input · unassigned — kritisch</div><div class="font-mono text-[10.5px] text-gin-faint">#FF4E42 · bakers.unassigned</div></div></div>
+      <div class="flex-1 min-w-[200px] flex items-center gap-3 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s"><span class="w-[30px] h-[30px] rounded-lg flex-none bg-bakers-attention"></span><div><div class="text-[12.5px] font-bold text-gin-text">Sun</div><div class="text-[11px] text-gin-faint">needs_input / attention / stale</div><div class="font-mono text-[10.5px] text-gin-faint">#FFC024 · bakers.attention</div></div></div>
+      <div class="flex-1 min-w-[200px] flex items-center gap-3 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s"><span class="w-[30px] h-[30px] rounded-lg flex-none bg-bakers-running"></span><div><div class="text-[12.5px] font-bold text-gin-text">Teal</div><div class="text-[11px] text-gin-faint">running / online — gesund aktiv</div><div class="font-mono text-[10.5px] text-gin-faint">#4BB9AE · bakers.running</div></div></div>
+      <div class="flex-1 min-w-[200px] flex items-center gap-3 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s"><span class="w-[30px] h-[30px] rounded-lg flex-none bg-bakers-lease"></span><div><div class="text-[12.5px] font-bold text-gin-text">Ocean</div><div class="text-[11px] text-gin-faint">aktive Lease / Claim-Besitz (neutral)</div><div class="font-mono text-[10.5px] text-gin-faint">#8197F8 · bakers.lease</div></div></div>
+      <div class="flex-1 min-w-[200px] flex items-center gap-3 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s"><span class="w-[30px] h-[30px] rounded-lg flex-none bg-bakers-offline"></span><div><div class="text-[12.5px] font-bold text-gin-text">Grau</div><div class="text-[11px] text-gin-faint">kein Run / offline / released</div><div class="font-mono text-[10.5px] text-gin-faint">#707888 · bakers.offline</div></div></div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mt-2.5">
+      <div class="px-3.5 py-3 rounded-gin-s text-[12px] leading-relaxed bg-bakers-running/[.14] border border-bakers-running/30 text-gin-light"><b class="text-bakers-running-ink">DO</b> · Farbe nur für Zustand — Akzentkante, Dot, Pille. Flächen als Tönung via Opacity-Modifier <code class="font-mono text-[11px] bg-gin-layer3 text-gin-text px-1 rounded">bg-bakers-running/[.14]</code>.</div>
+      <div class="px-3.5 py-3 rounded-gin-s text-[12px] leading-relaxed bg-bakers-unassigned/[.14] border border-bakers-unassigned/[.28] text-gin-light"><b class="text-bakers-unassigned-ink">DON'T</b> · keine Emoji, keine Zustandsfarbe als Dekor oder für neutrale Chrome.</div>
+    </div>
+  </div>
+
+  <h2 class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">3 · Typografie</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5">
+    <div class="flex items-baseline gap-4 py-2.5 border-b border-gin-hair"><span class="w-[130px] flex-none font-mono text-[11px] text-gin-faint">Doc H1 · 26/700</span><span class="text-[26px] font-bold text-gin-text tracking-[-.01em]">Workflow-State-Machine</span></div>
+    <div class="flex items-baseline gap-4 py-2.5 border-b border-gin-hair"><span class="w-[130px] flex-none font-mono text-[11px] text-gin-faint">Title · 18/700</span><span class="text-[18px] font-bold">Dashboard</span></div>
+    <div class="flex items-baseline gap-4 py-2.5 border-b border-gin-hair"><span class="w-[130px] flex-none font-mono text-[11px] text-gin-faint">Section · 11.5/700</span><span class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-light">Aktive Tickets</span></div>
+    <div class="flex items-baseline gap-4 py-2.5 border-b border-gin-hair"><span class="w-[130px] flex-none font-mono text-[11px] text-gin-faint">Body · 13/400</span><span class="text-[13px] text-gin-light">Read-only Monitoring, eine Ebene, querystring-getrieben.</span></div>
+    <div class="flex items-baseline gap-4 py-2.5 border-b border-gin-hair"><span class="w-[130px] flex-none font-mono text-[11px] text-gin-faint">Mono · 12.5</span><span class="font-mono text-[12.5px] text-gin-text">srv01-bakers · run-7f3a · GL-138</span></div>
+    <div class="flex items-baseline gap-4 py-2.5"><span class="w-[130px] flex-none font-mono text-[11px] text-gin-faint">Faint · 11</span><span class="text-[11px] text-gin-faint">aktualisiert vor 4 s</span></div>
+    <p class="text-[11px] text-gin-faint mt-3.5">Sans: <code class="font-mono bg-gin-layer3 text-gin-text px-1 rounded">font-sans</code> (Inter, selbst-gehostet) · Mono: <code class="font-mono bg-gin-layer3 text-gin-text px-1 rounded">font-mono</code> für IDs, Nodes, Zeiten, Querystrings.</p>
+  </div>
+
+  <h2 class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">4 · Radien · Spacing · Density</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <dl class="grid grid-cols-[160px_1fr] gap-x-3.5 gap-y-2 items-center">
+      <dt class="font-mono text-[11.5px] text-gin-faint">rounded-gin</dt><dd class="m-0 text-[12.5px] flex items-center gap-2.5"><span class="inline-block w-10 h-[26px] bg-gin-layer3 border border-gin-line rounded-gin"></span>10px</dd>
+      <dt class="font-mono text-[11.5px] text-gin-faint">rounded-gin-s</dt><dd class="m-0 text-[12.5px] flex items-center gap-2.5"><span class="inline-block w-10 h-[26px] bg-gin-layer3 border border-gin-line rounded-gin-s"></span>7px</dd>
+      <dt class="font-mono text-[11.5px] text-gin-faint">rounded-gin-xs</dt><dd class="m-0 text-[12.5px] flex items-center gap-2.5"><span class="inline-block w-10 h-[26px] bg-gin-layer3 border border-gin-line rounded-gin-xs"></span>5px</dd>
+    </dl>
+    <dl class="grid grid-cols-[160px_1fr] gap-x-3.5 gap-y-2">
+      <dt class="font-mono text-[11.5px] text-gin-faint">h-[34px]</dt><dd class="m-0 text-[12.5px]">Tabellenzeile (kompakt)</dd>
+      <dt class="font-mono text-[11.5px] text-gin-faint">p-3.5 / p-4</dt><dd class="m-0 text-[12.5px]">Sektionsinnenabstand 14–16px</dd>
+      <dt class="font-mono text-[11.5px] text-gin-faint">gap-3.5</dt><dd class="m-0 text-[12.5px]">Abstand zwischen Fragmenten 14px</dd>
+      <dt class="font-mono text-[11.5px] text-gin-faint">Density</dt><dd class="m-0 text-[12.5px]">kompakt · Laptop-Halbbild</dd>
+    </dl>
+  </div>
+
+  <!-- ============================ 5 · PRIMITIVE ============================ -->
+  <h2 id="primitives" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">5 · Status-Primitive</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5 flex flex-col gap-3.5">
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <span class="w-full font-mono text-[11px] text-gin-faint">Dots — running pulst (motion-safe), stale/offline sind Ringe</span>
+      <span class="w-2 h-2 rounded-full bg-bakers-running text-bakers-running-ink animate-statuspulse motion-reduce:animate-none"></span>
+      <span class="w-2 h-2 rounded-full bg-bakers-attention"></span>
+      <span class="w-2 h-2 rounded-full bg-bakers-unassigned"></span>
+      <span class="w-2 h-2 rounded-full bg-bakers-running"></span>
+      <span class="w-2 h-2 rounded-full border-2 border-bakers-attention"></span>
+      <span class="w-2 h-2 rounded-full border-2 border-bakers-offline"></span>
+    </div>
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <span class="w-full font-mono text-[11px] text-gin-faint">Pillen (Status)</span>
+      <span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-md text-[11px] font-semibold bg-bakers-running/[.14] text-bakers-running-ink"><span class="w-2 h-2 rounded-full bg-bakers-running animate-statuspulse motion-reduce:animate-none"></span>running</span>
+      <span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-md text-[11px] font-semibold bg-bakers-attention/[.13] text-bakers-attention-ink"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 17h.01M12 13a2.5 2.5 0 1 0-2.5-3"/></svg>needs_input</span>
+      <span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-md text-[11px] font-semibold bg-bakers-attention/[.13] text-bakers-attention-ink"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>attention</span>
+      <span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-md text-[11px] font-semibold bg-bakers-unassigned/[.14] text-bakers-unassigned-ink"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>needs_input</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <span class="w-full font-mono text-[11px] text-gin-faint">Lease-Badge (Claim) · „mine" mit Outline</span>
+      <span class="inline-flex items-center gap-1.5 h-[19px] pl-1.5 pr-[7px] rounded-md bg-bakers-lease/[.15] text-bakers-lease-ink text-[11px] font-semibold font-mono"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv02-bakers</span>
+      <span class="inline-flex items-center gap-1.5 h-[19px] pl-1.5 pr-[7px] rounded-md bg-bakers-lease/[.15] text-bakers-lease-ink text-[11px] font-semibold font-mono outline outline-1 outline-bakers-lease/45"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01-bakers</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <span class="w-full font-mono text-[11px] text-gin-faint">Avatar · Prio · Tags</span>
+      <span class="w-[22px] h-[22px] rounded-full grid place-items-center text-[10px] font-bold text-[#06120f] bg-bakers-running">MK</span>
+      <span class="w-[22px] h-[22px] rounded-full grid place-items-center text-[10px] font-bold text-[#06120f] bg-bakers-lease">JD</span>
+      <span class="text-[10px] font-extrabold tracking-[.04em] px-[7px] py-0.5 rounded-[5px] text-bakers-unassigned-ink bg-bakers-unassigned/[.14]">P1</span>
+      <span class="text-[10px] font-extrabold tracking-[.04em] px-[7px] py-0.5 rounded-[5px] text-gin-light bg-gin-layer3">P2</span>
+      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gin-layer3 text-gin-light">refactor</span>
+      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full font-mono bg-gin-primary/[.16] text-gin-primary">cap:drupal</span>
+    </div>
+  </div>
+
+  <!-- ============================ 6 · BUTTONS ============================ -->
+  <h2 id="buttons" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">6 · Buttons &amp; Links</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5">
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <a href="#" class="inline-flex items-center gap-1.5 h-[26px] px-[11px] rounded-gin-xs text-[12px] font-semibold no-underline bg-gin-primary border border-gin-primary text-white hover:brightness-110"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Primär</a>
+      <a href="#" class="inline-flex items-center gap-1.5 h-[26px] px-[11px] rounded-gin-xs text-[12px] font-semibold no-underline bg-gin-layer2 border border-gin-line text-gin-text hover:bg-gin-layer3 hover:border-[#BDB8AA]">Standard</a>
+      <a href="#" class="inline-flex items-center gap-1.5 h-[22px] px-2 rounded-gin-xs text-[11px] font-semibold no-underline bg-gin-layer2 border border-gin-line text-gin-text hover:bg-gin-layer3 hover:border-[#BDB8AA]">XS / Ticket</a>
+      <a href="#" class="inline-flex items-center gap-1.5 h-[26px] px-[11px] rounded-gin-xs text-[12px] font-semibold no-underline bg-bakers-unassigned border border-bakers-unassigned text-[#2a0b08] hover:brightness-110"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>CTA · Zuweisen</a>
+      <span class="w-full font-mono text-[11px] text-gin-faint mt-1">CTA (swimsuit) ausschließlich für die kritische Aktion „unassigned zuweisen".</span>
+    </div>
+  </div>
+
+  <!-- ============================ 7 · HEADER & NAV ============================ -->
+  <h2 id="chrome" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">7 · App-Header &amp; Navigation <span class="normal-case tracking-normal font-medium text-gin-faint">— Produkt-Chrome, ersetzt die Gin-Backend-Rail</span></h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden">
+    <header class="flex items-stretch gap-1 h-14 px-4 bg-gin-header border-b-2 border-gin-strong">
+      <div class="flex items-center gap-[11px] pr-2.5">
+        <div class="w-9 h-9 rounded-[9px] grid place-items-center text-[#E8EAEF] border border-[#2c333f]" style="background:linear-gradient(155deg,#1f2530,#15171c)">
+          <svg width="24" height="27" viewBox="0 0 64 74" fill="none" class="overflow-visible" aria-label="bakers.build">
+            <line x1="32" y1="7" x2="32" y2="16" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+            <line x1="17" y1="16" x2="47" y2="16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            <line x1="17" y1="16" x2="17" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".5"/><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/>
+            <line x1="47" y1="16" x2="47" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+            <line x1="40" y1="24" x2="54" y2="24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            <line x1="40" y1="24" x2="40" y2="31" stroke="currentColor" stroke-width="1.4" opacity=".5"/><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/>
+            <line x1="54" y1="24" x2="54" y2="30" stroke="currentColor" stroke-width="1.4" opacity=".5"/><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/>
+          </svg>
+        </div>
+        <div class="flex flex-col leading-[1.02]"><span class="text-[15px] font-extrabold tracking-[.05em] text-gin-text">bakers.build</span><span class="text-[9px] font-bold tracking-[.17em] uppercase text-gin-faint">Orchestrierung</span></div>
+      </div>
+      <nav class="flex items-stretch" aria-label="Hauptnavigation">
+        <a href="#" class="relative inline-flex items-center gap-2 px-[15px] text-[13px] font-semibold no-underline text-gin-text border-b-2 border-gin-primary">
+          <svg class="w-4 h-4 text-gin-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          Dashboard <span class="min-w-[17px] h-[17px] px-[5px] rounded-full bg-bakers-unassigned text-[#2a0b08] text-[10px] font-extrabold inline-grid place-items-center">2</span></a>
+        <a href="#" class="relative inline-flex items-center gap-2 px-[15px] text-[13px] font-semibold no-underline text-gin-light border-b-2 border-transparent hover:text-gin-text hover:bg-black/[.04]">
+          <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="5" height="14" rx="1"/></svg>Board</a>
+        <a href="#" class="relative inline-flex items-center gap-2 px-[15px] text-[13px] font-semibold no-underline text-gin-light border-b-2 border-transparent hover:text-gin-text hover:bg-black/[.04]">
+          <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>Nodes</a>
+        <a href="#" class="relative inline-flex items-center gap-2 px-[15px] text-[13px] font-semibold no-underline text-gin-light border-b-2 border-transparent hover:text-gin-text hover:bg-black/[.04]">
+          <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>Abrechnung</a>
+      </nav>
+      <span class="flex-1"></span>
+      <div class="flex items-center gap-2.5">
+        <div class="inline-flex items-center gap-2 h-8 pl-2 pr-3 bg-gin-layer2 border border-gin-line rounded-gin-s text-[12px] text-gin-light whitespace-nowrap">
+          <svg class="w-[18px] h-[18px] -rotate-90" viewBox="0 0 20 20" fill="none" stroke-width="2.5"><circle class="stroke-gin-line" cx="10" cy="10" r="8"/><circle class="stroke-bakers-running [stroke-linecap:round] [stroke-dasharray:50.27] animate-ring motion-reduce:animate-none" cx="10" cy="10" r="8"/></svg>
+          auto <b class="text-gin-text font-semibold">15 s</b>
+        </div>
+        <span class="inline-flex items-center gap-2.5 h-[34px] pl-[5px] pr-[9px] bg-gin-layer2 border border-gin-line rounded-full text-[12.5px] text-gin-text">
+          <span class="w-6 h-6 rounded-full grid place-items-center text-[10px] font-bold text-[#06120f] bg-bakers-running">MK</span>
+          <span class="font-semibold">mk</span>
+          <svg class="w-[13px] h-[13px] text-gin-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+      </div>
+    </header>
+    <div class="flex items-center gap-3 px-5 py-2 bg-gin-app border-t border-gin-hair">
+      <div class="text-[11.5px] text-gin-faint"><a href="#" class="text-gin-faint no-underline hover:text-gin-light">Dashboard</a> <b class="text-gin-light font-normal">›</b> <a href="#" class="text-gin-faint no-underline hover:text-gin-light">Board</a> <b class="text-gin-light font-normal">›</b> <span class="text-gin-text font-mono font-semibold">GL-138</span></div>
+      <span class="ml-auto font-mono text-[11px] text-gin-faint">Breadcrumb-Sub-Bar (Detailseiten)</span>
+    </div>
+  </div>
+
+  <!-- ============================ 8 · FILTERLEISTE ============================ -->
+  <h2 id="filters" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">8 · Filterleiste <span class="normal-case tracking-normal font-medium text-gin-faint">— querystring-getrieben, wirkt auf alle Sektionen</span></h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden">
+    <div class="flex items-center gap-2.5 flex-wrap px-5 py-2.5 bg-gin-app border-b border-gin-hair">
+      <span class="text-[10.5px] font-bold tracking-[.1em] uppercase text-gin-faint">Filter</span>
+      <button type="button" class="inline-flex items-center gap-2 h-[30px] pl-[11px] pr-[9px] bg-gin-layer2 border border-gin-line rounded-gin-s text-[12px] font-semibold text-gin-text hover:border-[#BDB8AA] whitespace-nowrap"><span class="text-gin-faint font-normal">Projekte</span> alle <svg class="w-[13px] h-[13px] text-gin-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button type="button" class="inline-flex items-center gap-2 h-[30px] pl-[11px] pr-[9px] bg-gin-layer2 border border-gin-primary rounded-gin-s text-[12px] font-semibold text-gin-text whitespace-nowrap"><span class="text-gin-faint font-normal">Conductors</span> <span class="text-[10.5px] font-bold text-gin-primary bg-gin-primary/[.16] rounded-full px-1.5">2</span> <svg class="w-[13px] h-[13px] text-gin-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button type="button" class="inline-flex items-center gap-2 h-[30px] px-[13px] rounded-gin-s bg-gin-layer2 border border-bakers-lease text-[12px] font-bold text-gin-text whitespace-nowrap"><span class="w-7 h-4 rounded-full bg-bakers-lease relative"><span class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-[#0d1330] translate-x-3"></span></span>Meine</button>
+      <span class="flex-1"></span>
+      <span class="font-mono text-[11px] text-gin-faint"><b class="text-gin-light font-normal">?</b>projects=alle&amp;conductors=srv01-bakers,cw-laptop-bakers&amp;mine=1&amp;wf=feature</span>
+    </div>
+    <!-- offener Dropdown (Multiselect) als eigenständige Komponente -->
+    <div class="p-5 flex items-start gap-5 flex-wrap">
+      <div class="w-[220px] bg-gin-layer2 border border-gin-line rounded-gin-s p-1.5 shadow-[0_4px_12px_rgba(20,23,26,.10)]">
+        <label class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-gin-xs text-[12.5px] text-gin-text hover:bg-gin-layer3 cursor-pointer"><span class="w-[15px] h-[15px] rounded bg-gin-primary border border-gin-primary grid place-items-center flex-none"><svg class="w-2.5 h-2.5 text-[#06120f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span><span class="font-mono text-[12px]">srv01-bakers</span><span class="ml-auto text-[11px] text-gin-faint">●</span></label>
+        <label class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-gin-xs text-[12.5px] text-gin-text hover:bg-gin-layer3 cursor-pointer"><span class="w-[15px] h-[15px] rounded border border-gin-line grid place-items-center flex-none"></span><span class="font-mono text-[12px]">srv02-bakers</span><span class="ml-auto text-[11px] text-bakers-attention-ink">stale</span></label>
+        <label class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-gin-xs text-[12.5px] text-gin-text hover:bg-gin-layer3 cursor-pointer"><span class="w-[15px] h-[15px] rounded bg-gin-primary border border-gin-primary grid place-items-center flex-none"><svg class="w-2.5 h-2.5 text-[#06120f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span><span class="font-mono text-[12px]">cw-laptop-bakers</span><span class="ml-auto text-[11px] text-gin-faint">●</span></label>
+      </div>
+      <p class="flex-1 min-w-[220px] text-[12px] text-gin-light m-0">Multiselect-Dropdown + „Meine"-Toggle. Button-Label wird zu <code class="font-mono text-[11px] bg-gin-layer3 text-gin-text px-1 rounded">alle</code> / Einzelwert / Zähler-Badge. Der aktive Filterzustand wird in den Querystring geschrieben; jedes htmx-Fragment liest dieselben Parameter (<code class="font-mono text-[11px] bg-gin-layer3 text-gin-text px-1 rounded">hx-include="#filters"</code>).</p>
+    </div>
+  </div>
+
+  <!-- ============================ 9 · SEKTION & TABELLEN ============================ -->
+  <h2 id="sections" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">9 · Sektionsschale &amp; Tabellen</h2>
+
+  <p class="font-mono text-[11px] text-gin-faint mb-2">Sektionsschale = ein htmx-Fragment (<code class="bg-gin-layer3 text-gin-text px-1 rounded">id="frag-*"</code> · <code class="bg-gin-layer3 text-gin-text px-1 rounded">data-screen-label</code>)</p>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden mb-3.5">
+    <div class="flex items-center gap-2.5 px-3.5 py-2.5 bg-gin-layer2 border-b border-gin-hair">
+      <h3 class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-light m-0">Aktive Tickets</h3>
+      <span class="text-[11px] font-bold rounded-full px-2 py-px bg-bakers-unassigned/[.14] text-bakers-unassigned-ink">7</span>
+      <span class="flex-1"></span>
+      <span class="font-mono text-[11px] text-gin-faint">aktualisiert vor 4 s</span>
+    </div>
+    <!-- Aktive-Tickets-Tabelle: Zeile mit Zustands-Akzentkante + Status-Pille -->
+    <div class="p-3.5 pt-1 overflow-x-auto thin">
+      <table class="w-full border-collapse text-[12.5px]">
+        <thead>
+          <tr class="text-left text-[10.5px] font-bold tracking-[.07em] uppercase text-gin-faint [&amp;>th]:pb-[7px] [&amp;>th]:px-2.5 [&amp;>th]:border-b [&amp;>th]:border-gin-hair [&amp;>th]:whitespace-nowrap">
+            <th class="pl-3.5">Ticket</th><th>Titel</th><th>Projekt</th><th>State</th><th>Claim</th><th>Status</th><th class="text-right">seit</th><th>Assignee</th><th></th>
+          </tr>
+        </thead>
+        <tbody class="[&amp;>tr]:border-b [&amp;>tr]:border-gin-hair last:[&amp;>tr]:border-0 [&amp;_td]:px-2.5 [&amp;_td]:h-[34px] [&amp;_td]:align-middle [&amp;_td]:whitespace-nowrap">
+          <!-- 1 · needs_input + unassigned = kritisch -->
+          <tr class="bg-bakers-unassigned/[.14] hover:bg-bakers-unassigned/[.18]">
+            <td class="relative pl-3.5"><span class="absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded bg-bakers-unassigned"></span><span class="font-mono font-semibold">GL-150</span></td>
+            <td class="text-gin-text max-w-[300px] truncate">API-Key fehlt im Secrets-Store</td>
+            <td><span class="font-mono text-[11px] text-gin-light">bakers</span></td>
+            <td><span class="text-[11.5px] text-gin-light">coding</span></td>
+            <td><span class="inline-flex items-center gap-1.5 h-[19px] pl-1.5 pr-[7px] rounded-md bg-bakers-lease/[.15] text-bakers-lease-ink text-[11px] font-semibold font-mono"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop-bakers</span></td>
+            <td><span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-md text-[11px] font-semibold bg-bakers-unassigned/[.14] text-bakers-unassigned-ink"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>needs_input</span></td>
+            <td class="text-right font-mono text-gin-faint">3 h</td>
+            <td><span class="inline-flex items-center gap-1.5 text-bakers-unassigned-ink font-bold"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>NIEMAND</span></td>
+            <td class="text-right"><a href="#" class="inline-flex items-center gap-1.5 h-[22px] px-2 rounded-gin-xs text-[11px] font-semibold no-underline bg-bakers-unassigned border border-bakers-unassigned text-[#2a0b08] hover:brightness-110"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Zuweisen</a></td>
+          </tr>
+          <!-- 2 · attention -->
+          <tr class="hover:bg-black/[.03]">
+            <td class="relative pl-3.5"><span class="absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded bg-bakers-attention"></span><span class="font-mono font-semibold">GL-139</span></td>
+            <td class="text-gin-text max-w-[300px] truncate">JSON:API write-back Konfliktauflösung</td>
+            <td><span class="font-mono text-[11px] text-gin-light">bakers</span></td>
+            <td><span class="text-[11.5px] text-gin-light">coding</span></td>
+            <td><span class="inline-flex items-center gap-1.5 h-[19px] pl-1.5 pr-[7px] rounded-md bg-bakers-lease/[.15] text-bakers-lease-ink text-[11px] font-semibold font-mono"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop-bakers</span></td>
+            <td><span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-md text-[11px] font-semibold bg-bakers-attention/[.13] text-bakers-attention-ink"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>attention</span></td>
+            <td class="text-right font-mono text-gin-faint">35 min</td>
+            <td><span class="inline-flex items-center gap-1.5 text-gin-light"><span class="w-[17px] h-[17px] rounded-full grid place-items-center text-[9px] font-bold text-[#06120f] bg-bakers-running">CW</span>cw</span></td>
+            <td class="text-right"><a href="#" class="inline-flex items-center h-[22px] px-2 rounded-gin-xs text-[11px] font-semibold no-underline bg-gin-layer2 border border-gin-line text-gin-text hover:bg-gin-layer3">Ticket</a></td>
+          </tr>
+          <!-- 3 · running (mine) -->
+          <tr class="hover:bg-black/[.03]">
+            <td class="relative pl-3.5"><span class="absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded bg-bakers-running"></span><span class="font-mono font-semibold">GL-138</span></td>
+            <td class="text-gin-text max-w-[300px] truncate">Workflow-State-Machine refactoren</td>
+            <td><span class="font-mono text-[11px] text-gin-light">bakers</span></td>
+            <td><span class="text-[11.5px] text-gin-light">coding</span></td>
+            <td><span class="inline-flex items-center gap-1.5 h-[19px] pl-1.5 pr-[7px] rounded-md bg-bakers-lease/[.15] text-bakers-lease-ink text-[11px] font-semibold font-mono outline outline-1 outline-bakers-lease/45"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01-bakers</span></td>
+            <td><span class="inline-flex items-center gap-1.5 h-5 px-2 rounded-md text-[11px] font-semibold bg-bakers-running/[.14] text-bakers-running-ink"><span class="w-2 h-2 rounded-full bg-bakers-running animate-statuspulse motion-reduce:animate-none"></span>running</span></td>
+            <td class="text-right font-mono text-gin-faint">12 min</td>
+            <td><span class="inline-flex items-center gap-1.5 text-gin-light"><span class="w-[17px] h-[17px] rounded-full grid place-items-center text-[9px] font-bold text-[#06120f] bg-bakers-running">MK</span>mk</span></td>
+            <td class="text-right"><a href="#" class="inline-flex items-center h-[22px] px-2 rounded-gin-xs text-[11px] font-semibold no-underline bg-gin-layer2 border border-gin-line text-gin-text hover:bg-gin-layer3">Ticket</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+    <!-- Nodes-Tabelle (Ampel) -->
+    <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden">
+      <div class="flex items-center gap-2.5 px-3.5 py-2.5 bg-gin-layer2 border-b border-gin-hair"><h3 class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-light m-0">Nodes</h3><span class="text-[11px] font-bold rounded-full px-2 py-px bg-gin-layer3 text-gin-faint">3</span><span class="flex-1"></span><span class="font-mono text-[11px] text-gin-faint">Ampel: last_seen &lt; 600 s</span></div>
+      <div class="p-3.5 pt-1">
+        <table class="w-full border-collapse text-[12.5px]">
+          <thead><tr class="text-left text-[10.5px] font-bold tracking-[.07em] uppercase text-gin-faint [&amp;>th]:pb-[7px] [&amp;>th]:px-2.5 [&amp;>th]:border-b [&amp;>th]:border-gin-hair"><th>machine_id</th><th>Status</th><th class="text-right">load</th><th class="text-right">last_seen</th></tr></thead>
+          <tbody class="[&amp;>tr]:border-b [&amp;>tr]:border-gin-hair last:[&amp;>tr]:border-0 [&amp;_td]:px-2.5 [&amp;_td]:h-[34px]">
+            <tr><td class="font-mono">srv01-bakers</td><td><span class="inline-flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-bakers-running"></span>online</span></td><td class="text-right font-mono">2 / 8</td><td class="text-right font-mono text-gin-light">vor 12 s</td></tr>
+            <tr><td class="font-mono">cw-laptop-bakers</td><td><span class="inline-flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-bakers-running"></span>online</span></td><td class="text-right font-mono">2 / 2</td><td class="text-right font-mono text-gin-light">vor 31 s</td></tr>
+            <tr><td class="font-mono">srv02-bakers</td><td><span class="inline-flex items-center gap-2"><span class="w-2 h-2 rounded-full border-2 border-bakers-attention"></span><span class="text-bakers-attention-ink">stale</span></span></td><td class="text-right font-mono">1 / 4</td><td class="text-right font-mono text-bakers-attention-ink">vor 14 min</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Billing-Roll-up -->
+    <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden">
+      <div class="flex items-center gap-2.5 px-3.5 py-2.5 bg-gin-layer2 border-b border-gin-hair"><h3 class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-light m-0">Billing</h3><span class="flex-1"></span><span class="inline-flex items-center gap-1.5 h-6 px-2.5 bg-gin-app border border-gin-line rounded-gin-xs text-[11px] text-gin-light">diese Woche <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></span></div>
+      <div class="p-3.5 pt-1">
+        <table class="w-full border-collapse text-[12.5px]">
+          <thead><tr class="text-left text-[10.5px] font-bold tracking-[.07em] uppercase text-gin-faint [&amp;>th]:pb-[7px] [&amp;>th]:px-2.5 [&amp;>th]:border-b [&amp;>th]:border-gin-hair"><th>Kunde / Projekt</th><th class="text-right">Zeit</th><th class="text-right">Tokens</th><th></th></tr></thead>
+          <tbody class="[&amp;>tr]:border-b [&amp;>tr]:border-gin-hair last:[&amp;>tr]:border-0 [&amp;_td]:px-2.5 [&amp;_td]:h-[34px]">
+            <tr class="font-semibold"><td>keytec</td><td class="text-right font-mono">42,5 h</td><td class="text-right font-mono">1,2M</td><td class="w-[78px]"><span class="block h-[5px] rounded bg-gin-layer3 overflow-hidden"><i class="block h-full bg-bakers-lease rounded" style="width:100%"></i></span></td></tr>
+            <tr><td class="pl-6 text-gin-light relative before:content-['└'] before:absolute before:left-2.5 before:text-gin-faint">bakers</td><td class="text-right font-mono">38,0 h</td><td class="text-right font-mono">1,1M</td><td><span class="block h-[5px] rounded bg-gin-layer3 overflow-hidden"><i class="block h-full bg-bakers-lease rounded" style="width:89%"></i></span></td></tr>
+            <tr><td class="pl-6 text-gin-light relative before:content-['└'] before:absolute before:left-2.5 before:text-gin-faint">intern</td><td class="text-right font-mono">4,5 h</td><td class="text-right font-mono">0,1M</td><td><span class="block h-[5px] rounded bg-gin-layer3 overflow-hidden"><i class="block h-full bg-bakers-lease rounded" style="width:11%"></i></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ 10 · BOARD ============================ -->
+  <h2 id="board" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">10 · Board — Spalte &amp; Karte</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5">
+    <p class="font-mono text-[11px] text-gin-faint mb-3">Board-Karte <code class="bg-gin-layer3 text-gin-text px-1 rounded">.tk</code> — Akzentkante links = Zustand · Lease-Badge + Dot/Avatar im Fuß</p>
+    <div class="flex gap-2.5 overflow-x-auto thin pb-1">
+      <!-- Spalte: coding -->
+      <div class="bg-gin-app border border-gin-hair rounded-gin-s flex flex-col min-h-[150px] flex-1 min-w-[160px]">
+        <div class="flex items-center gap-[7px] px-2.5 py-2 border-b border-gin-hair"><span class="w-1.5 h-1.5 rounded-full bg-bakers-running"></span><span class="text-[11px] font-bold tracking-[.05em] uppercase text-gin-light">coding</span><span class="ml-auto text-[10.5px] font-bold text-gin-faint bg-gin-layer3 rounded-full px-[7px]">3</span></div>
+        <div class="p-2 flex flex-col gap-[7px] flex-1">
+          <article class="relative bg-gin-layer2 border border-gin-hair rounded-gin-xs pl-3 pr-[9px] py-2 before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:rounded-l-gin-xs before:bg-bakers-running">
+            <div class="flex items-center gap-1.5 mb-1"><span class="font-mono font-semibold text-[11.5px] text-gin-text">GL-138</span><span class="flex-1"></span><span class="text-[9px] font-extrabold px-[5px] rounded text-gin-light bg-gin-layer3">P2</span></div>
+            <p class="text-[12px] text-gin-text leading-[1.32] m-0 mb-[7px] line-clamp-2">Workflow-State-Machine refactoren</p>
+            <div class="flex items-center gap-1.5"><span class="inline-flex items-center gap-1.5 h-[19px] pl-1.5 pr-[7px] rounded-md bg-bakers-lease/[.15] text-bakers-lease-ink text-[11px] font-semibold font-mono outline outline-1 outline-bakers-lease/45"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01</span><span class="flex-1"></span><span class="w-2 h-2 rounded-full bg-bakers-running animate-statuspulse motion-reduce:animate-none"></span></div>
+          </article>
+          <article class="relative bg-gin-layer2 border border-gin-hair rounded-gin-xs pl-3 pr-[9px] py-2 before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:rounded-l-gin-xs before:bg-bakers-attention">
+            <div class="flex items-center gap-1.5 mb-1"><span class="font-mono font-semibold text-[11.5px] text-gin-text">GL-139</span><span class="flex-1"></span></div>
+            <p class="text-[12px] text-gin-text leading-[1.32] m-0 mb-[7px] line-clamp-2">JSON:API write-back Konfliktauflösung</p>
+            <div class="flex items-center gap-1.5"><span class="inline-flex items-center gap-1.5 h-[19px] pl-1.5 pr-[7px] rounded-md bg-bakers-lease/[.15] text-bakers-lease-ink text-[11px] font-semibold font-mono"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop</span><span class="flex-1"></span><svg class="w-[13px] h-[13px] text-bakers-attention-ink" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></div>
+          </article>
+          <article class="relative bg-bakers-unassigned/[.14] border border-bakers-unassigned/[.28] rounded-gin-xs pl-3 pr-[9px] py-2 before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:rounded-l-gin-xs before:bg-bakers-unassigned">
+            <div class="flex items-center gap-1.5 mb-1"><span class="font-mono font-semibold text-[11.5px] text-gin-text">GL-150</span><span class="flex-1"></span><span class="text-[9px] font-extrabold px-[5px] rounded text-bakers-unassigned-ink bg-bakers-unassigned/[.14]">P1</span></div>
+            <p class="text-[12px] text-gin-text leading-[1.32] m-0 mb-[7px] line-clamp-2">API-Key fehlt im Secrets-Store</p>
+            <div class="flex items-center gap-1.5"><span class="inline-flex items-center gap-1.5 text-[10.5px] text-bakers-unassigned-ink font-bold"><svg class="w-[11px] h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>unassigned</span></div>
+          </article>
+        </div>
+      </div>
+      <!-- Spalte: human_input -->
+      <div class="bg-gin-app border border-gin-hair rounded-gin-s flex flex-col min-h-[150px] flex-1 min-w-[160px]">
+        <div class="flex items-center gap-[7px] px-2.5 py-2 border-b border-gin-hair"><span class="w-1.5 h-1.5 rounded-full bg-bakers-attention"></span><span class="text-[11px] font-bold tracking-[.05em] uppercase text-gin-light">human_input</span><span class="ml-auto text-[10.5px] font-bold text-gin-faint bg-gin-layer3 rounded-full px-[7px]">1</span></div>
+        <div class="p-2 flex flex-col gap-[7px] flex-1">
+          <article class="relative bg-gin-layer2 border border-gin-hair rounded-gin-xs pl-3 pr-[9px] py-2 before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:rounded-l-gin-xs before:bg-bakers-attention">
+            <div class="flex items-center gap-1.5 mb-1"><span class="font-mono font-semibold text-[11.5px] text-gin-text">GL-142</span><span class="flex-1"></span></div>
+            <p class="text-[12px] text-gin-text leading-[1.32] m-0 mb-[7px] line-clamp-2">Deploy-Freigabe Prod?</p>
+            <div class="flex items-center gap-1.5"><span class="w-4 h-4 rounded-full grid place-items-center text-[8px] font-bold text-[#06120f] bg-bakers-running">CW</span><span class="flex-1"></span><span class="inline-flex items-center h-[18px] px-2 rounded-md text-[11px] font-semibold bg-bakers-attention/[.13] text-bakers-attention-ink">needs_input</span></div>
+          </article>
+        </div>
+      </div>
+      <!-- Spalte: review (leer) -->
+      <div class="bg-gin-app border border-gin-hair rounded-gin-s flex flex-col min-h-[150px] flex-1 min-w-[160px]">
+        <div class="flex items-center gap-[7px] px-2.5 py-2 border-b border-gin-hair"><span class="text-[11px] font-bold tracking-[.05em] uppercase text-gin-light">review</span><span class="ml-auto text-[10.5px] font-bold text-gin-faint bg-gin-layer3 rounded-full px-[7px]">0</span></div>
+        <div class="flex-1 grid place-items-center text-[11px] text-gin-faint p-3.5"><span class="opacity-60">nichts in review</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ 11 · LEER-ZUSTÄNDE ============================ -->
+  <h2 id="edge" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">11 · Leer- &amp; Edge-Zustände</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+    <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden">
+      <div class="text-[11px] font-bold tracking-[.06em] uppercase text-gin-light px-3.5 pt-[11px]">Leere Spalte</div>
+      <p class="text-[11.5px] text-gin-faint px-3.5 pt-1 pb-3">Nur ein dezenter Hinweis, Mindesthöhe bleibt.</p>
+      <div class="px-3.5 pb-3.5"><div class="bg-gin-app border border-gin-hair rounded-gin-s min-h-[110px] flex flex-col"><div class="flex items-center gap-[7px] px-2.5 py-2 border-b border-gin-hair"><span class="text-[11px] font-bold uppercase text-gin-light">review</span><span class="ml-auto text-[10.5px] font-bold text-gin-faint bg-gin-layer3 rounded-full px-[7px]">0</span></div><div class="flex-1 grid place-items-center text-[11px] text-gin-faint p-3.5"><span class="opacity-60">nichts in review</span></div></div></div>
+    </div>
+    <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden">
+      <div class="text-[11px] font-bold tracking-[.06em] uppercase text-gin-light px-3.5 pt-[11px]">Alles grün</div>
+      <p class="text-[11.5px] text-gin-faint px-3.5 pt-1 pb-3">Kollabiert zur Bestätigungszeile, statt zu verschwinden.</p>
+      <div class="px-3.5 pb-3.5"><div class="flex items-center gap-2.5 p-3.5 bg-gin-layer2 border border-gin-hair rounded-gin-s text-gin-light text-[12.5px]"><span class="w-6 h-6 rounded-full grid place-items-center flex-none bg-bakers-running/[.14] text-bakers-running-ink"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>Nichts wartet auf einen Menschen.</div></div>
+    </div>
+    <div class="bg-gin-layer border border-gin-hair rounded-gin overflow-hidden">
+      <div class="text-[11px] font-bold tracking-[.06em] uppercase text-gin-light px-3.5 pt-[11px]">50+ in einer Spalte</div>
+      <p class="text-[11.5px] text-gin-faint px-3.5 pt-1 pb-3">Cap bei N, Rest als Zähler-Link. Kein Spalten-Scroll.</p>
+      <div class="px-3.5 pb-3.5"><div class="bg-gin-app border border-gin-hair rounded-gin-s min-h-[110px] flex flex-col"><div class="flex items-center gap-[7px] px-2.5 py-2 border-b border-gin-hair"><span class="text-[11px] font-bold uppercase text-gin-light">done</span><span class="ml-auto text-[10.5px] font-bold text-gin-faint bg-gin-layer3 rounded-full px-[7px]">63</span></div><div class="p-2 flex flex-col gap-[7px]"><article class="bg-gin-layer2 border border-gin-hair rounded-gin-xs px-2.5 py-2"><span class="font-mono font-semibold text-[11.5px]">GL-204</span><p class="text-[12px] text-gin-text m-0 mt-0.5">Letztes erledigtes Ticket</p></article><a href="#" class="text-[11px] text-gin-primary text-center py-1.5 border border-dashed border-gin-line rounded-gin-xs no-underline">+ 61 weitere →</a></div></div></div>
+    </div>
+  </div>
+
+  <!-- ============================ 12 · MARKE ============================ -->
+  <h2 id="brand" class="scroll-mt-6 text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">12 · Marke</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5 flex items-center gap-6 flex-wrap">
+    <svg width="74" height="86" viewBox="0 0 64 74" fill="none" class="text-gin-text" aria-label="bakers.build">
+      <path d="M32 4 a3 3 0 1 0 .01 0 Z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+      <line x1="32" y1="7" x2="32" y2="16" stroke="currentColor" stroke-width="1.4" opacity=".55"/>
+      <line x1="17" y1="16" x2="47" y2="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="17" y1="16" x2="17" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".55"/><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/>
+      <line x1="47" y1="16" x2="47" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".55"/>
+      <line x1="40" y1="24" x2="54" y2="24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="40" y1="24" x2="40" y2="31" stroke="currentColor" stroke-width="1.4" opacity=".55"/><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/>
+      <line x1="54" y1="24" x2="54" y2="30" stroke="currentColor" stroke-width="1.4" opacity=".55"/><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/>
+    </svg>
+    <div>
+      <div class="text-[34px] font-extrabold tracking-[.12em] text-gin-text leading-none">G<span class="text-bakers-running-ink">AI</span>A</div>
+      <p class="text-[11px] text-gin-faint mt-2.5 max-w-[46ch]">Das Marionetten-Mobile: Conductor (Aufhängung) + balancierte Agent-Spielfiguren in den Zustandsfarben. Volldetails siehe <code class="font-mono bg-gin-layer3 text-gin-text px-1 rounded">bakers.build Logo.html</code>.</p>
+    </div>
+  </div>
+
+  <!-- ============================ SCREENS ============================ -->
+  <h2 class="text-[11.5px] font-bold tracking-[.1em] uppercase text-gin-faint mt-8 mb-3">Screens (bauen aus diesem System)</h2>
+  <div class="bg-gin-layer border border-gin-hair rounded-gin p-5">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2.5">
+      <a href="bakers.build Dashboard.html" class="flex items-center gap-2.5 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s no-underline text-gin-text hover:border-gin-line"><span class="w-[30px] h-[30px] rounded-lg grid place-items-center flex-none bg-gin-primary/[.16] text-gin-primary"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="11" height="6" rx="1"/><rect x="17" y="14" width="4" height="6" rx="1"/></svg></span><div><div class="text-[13px] font-semibold">Dashboard</div><div class="font-mono text-[10.5px] text-gin-faint">bakers.build Dashboard.html</div></div></a>
+      <a href="bakers.build Ticket.html" class="flex items-center gap-2.5 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s no-underline text-gin-text hover:border-gin-line"><span class="w-[30px] h-[30px] rounded-lg grid place-items-center flex-none bg-gin-primary/[.16] text-gin-primary"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><div><div class="text-[13px] font-semibold">Ticket</div><div class="font-mono text-[10.5px] text-gin-faint">bakers.build Ticket.html</div></div></a>
+      <a href="bakers.build Login.html" class="flex items-center gap-2.5 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s no-underline text-gin-text hover:border-gin-line"><span class="w-[30px] h-[30px] rounded-lg grid place-items-center flex-none bg-gin-primary/[.16] text-gin-primary"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><div><div class="text-[13px] font-semibold">Login</div><div class="font-mono text-[10.5px] text-gin-faint">bakers.build Login.html</div></div></a>
+      <a href="bakers.build Logo.html" class="flex items-center gap-2.5 px-3.5 py-3 bg-gin-app border border-gin-hair rounded-gin-s no-underline text-gin-text hover:border-gin-line"><span class="w-[30px] h-[30px] rounded-lg grid place-items-center flex-none bg-gin-primary/[.16] text-gin-primary"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M6 8h12M9 8l-2 6M15 8l2 6"/><circle cx="7" cy="17" r="3"/><circle cx="17" cy="17" r="3"/></svg></span><div><div class="text-[13px] font-semibold">Logo</div><div class="font-mono text-[10.5px] text-gin-faint">bakers.build Logo.html</div></div></a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

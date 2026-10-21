@@ -1,0 +1,20 @@
+{#
+/**
+ * @file
+ * Login form presenter.
+ *
+ * `data-hx-boost="false"` BECAUSE ESTABLISHING A SESSION HAS TO BE A FULL
+ * DOCUMENT POST, so the authenticated shell and its session assets replace the
+ * anonymous login page instead of being swapped into it. A boosted submit
+ * would leave the anonymous document standing around a signed-in session.
+ * Spacing, the action row and the focus ring belong to `bb_theme:gate_form`,
+ * shared with every other gate form.
+ */
+#}
+{% if element.mail['#errors'] %}
+  {% set attributes = attributes.setAttribute('aria-describedby', 'messages-error') %}
+{% endif %}
+{{ include('bb_theme:gate_form', {
+  attributes: attributes.setAttribute('aria-label', 'Log in'|t).setAttribute('data-hx-boost', 'false'),
+  content: children,
+}, with_context = false) }}

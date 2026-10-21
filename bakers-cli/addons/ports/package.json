@@ -1,0 +1,39 @@
+{
+  "name": "@bakers-build/addon-ports",
+  "version": "0.1.0",
+  "description": "bakers.build ports command plugin: discover a ticket worktree's running services (DDEV, Designbook, ad-hoc listeners) and bring shareable tunnels up and down. The command half of BB-475; usable without the cockpit half.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js",
+    "./core": "./dist/src/core.js",
+    "./transport": "./dist/src/transport-contract.js",
+    "./node": "./dist/src/deps-node.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/ports/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "dependencies": {
+    "@bakers-build/addon-ddev": "workspace:^",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

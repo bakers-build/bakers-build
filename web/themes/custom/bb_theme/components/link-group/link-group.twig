@@ -1,0 +1,92 @@
+{# Labelled group of link rows. Dispatches each link on its `kind`: the report
+   row for `report`, the plain row otherwise — the seam a later kind renderer
+   plugs into with one new branch in the dispatch below (D6). Both rows were
+   components of their own until D7 folded them in here: `link-group` was their
+   only caller, so the boundary bought nothing and cost two directories, two
+   contracts and three stories that could drift from the group that dispatches
+   them. The `rows` slot is a composition escape hatch and WINS over the `links`
+   prop when filled. Renders nothing when it has neither, because a group with a
+   promising label and no rows is worse than an absent one.
+
+   EMPTINESS IS TESTED WITH `is not empty`, NOT WITH BARE TRUTHINESS. A group
+   whose kinds match no link is handed `links: []` by the mapping, and the two
+   engines that render this template disagree about that value: PHP Twig reads
+   an empty array as false, while the Storybook renderer is JavaScript, where
+   `[]` is truthy. Written `{% if links %}` the guard therefore held in Drupal
+   and silently failed on the review surface — three groups printed their
+   headings with nothing under them, which is exactly the "promising label and
+   no rows" this component exists to avoid (C3, D4).
+
+   THE ROWS BUILD THEIR ATTRIBUTES WITH A BARE `create_attribute()`, not with
+   `attributes ?: create_attribute()`. As components they were included with
+   `with_context = false` and only the link's own props, so `attributes` was
+   never defined inside them and the fallback always won. Inlined, `attributes`
+   IS in scope — it is the group's — and `attributes ?:` would stamp the whole
+   group's attributes onto every single row.
+
+   THE PASSED-COUNT GUARD GAINED `is defined`, and that is not cosmetic. As a
+   component the report row wrote `{% if passed is not null %}`, which is the
+   right test there: an omitted prop is an UNDEFINED VARIABLE, and an undefined
+   variable is null. Inlined, the same value is a MISSING HASH KEY (`link.passed`
+   on a link that carries no count), and the Storybook renderer's Twig — which is
+   JavaScript — reads that as `undefined`, which `is not null` reports as TRUE.
+   Copied across unchanged, the guard therefore emitted a stray `<span> passed
+   </span>` for every countless report link. `is defined` restores the component
+   behaviour exactly; the rendered markup of both kinds is byte-identical to the
+   two components' across every kind, every count and both slot paths. #}
+{% set icon_map = {
+  mr: 'merge-request',
+  branch: 'branch',
+  ci: 'pipeline',
+  report: 'report',
+  ddev: 'play',
+  design: 'palette',
+  doc: 'link'
+} %}
+{% if rows or links is not empty %}
+  <div{{ (attributes ?: create_attribute()).addClass(['link-group', 'flex', 'flex-col', 'gap-[5px]']) }}>
+    {% if label %}
+      <div class="link-group__label text-eyebrow font-semibold text-text-faint uppercase tracking-[0.04em]">{{ label }}</div>
+    {% endif %}
+    <div class="link-group__rows flex flex-col gap-[3px]">
+      {% block rows %}
+        {% if rows %}
+          {{ rows }}
+        {% else %}
+          {% for link in links %}
+            {% if (link.kind|default('doc')) == 'report' %}
+              {# The report row: the plain row plus its pass/fail counts and
+                 duration. It renders only its own props and fetches nothing —
+                 a real artifact reader is a follow-up backend ticket (D6),
+                 because the GitLab credentials it would need live on the
+                 conductor's machine rather than on the control plane. The icon
+                 comes from the sprite through the icon component, same as the
+                 plain row — never an inlined SVG path. #}
+              <div{{ create_attribute().addClass(['link-report-row', 'flex', 'items-center', 'gap-[6px]', 'min-w-0']) }}>
+                {{ include('bb_theme:icon', { name: icon_map[link.kind]|default('link'), size: 'sm' }, with_context = false) }}
+                {% set new_tab = link.target|default('_blank') != '_self' %}
+                <a class="link-report-row__title min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text no-underline hover:underline" href="{{ link.url }}"{% if new_tab %} target="_blank" rel="noreferrer noopener"{% endif %}>{{ link.title|default(link.url) }}{% if new_tab %}<span class="sr-only"> (opens in a new tab)</span>{% endif %}</a>
+                <span class="flex-1"></span>
+                <span class="link-report-row__counts flex items-center gap-[8px] shrink-0">
+                  {% if link.passed is defined and link.passed is not null %}<span class="text-caption font-mono tabular-nums text-state-running">{{ link.passed }} passed</span>{% endif %}
+                  {% if link.failed %}<span class="text-caption font-mono tabular-nums text-state-attention">{{ link.failed }} failed</span>{% endif %}
+                  {% if link.duration %}<span class="text-caption font-mono tabular-nums text-text-faint">{{ link.duration }}</span>{% endif %}
+                </span>
+              </div>
+            {% else %}
+              {# One typed link: a kind icon (from the sprite, via the icon
+                 component — never an inlined SVG path) plus an external anchor.
+                 Unknown kind falls back to the doc icon (link symbol). Long
+                 titles truncate rather than wrap or push the row wider. #}
+              <div{{ create_attribute().addClass(['link-row', 'flex', 'items-center', 'gap-[6px]', 'min-w-0']) }}>
+                {{ include('bb_theme:icon', { name: icon_map[link.kind]|default('link'), size: 'sm' }, with_context = false) }}
+                {% set new_tab = link.target|default('_blank') != '_self' %}
+                <a class="link-row__title min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text no-underline hover:underline" href="{{ link.url }}"{% if new_tab %} target="_blank" rel="noreferrer noopener"{% endif %}>{{ link.title|default(link.url) }}{% if new_tab %}<span class="sr-only"> (opens in a new tab)</span>{% endif %}</a>
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endblock %}
+    </div>
+  </div>
+{% endif %}

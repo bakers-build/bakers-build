@@ -1,0 +1,1326 @@
+uuid: e5eba0f2-06db-4d5f-8791-72262e7de6ac
+langcode: en
+status: true
+dependencies:
+  config:
+    - search_api.index.bb_runs
+  module:
+    - better_exposed_filters
+    - facets_exposed_filters
+    - bb_core
+    - search_api
+    - user
+    - views_filters_summary
+_core:
+  default_config_hash: Czfjr1J9i4J4Nqz-l09WIMbfvngh9Rl2h26OK-ILUlk
+id: runs
+label: Runs
+module: views
+description: ''
+tag: ''
+base_table: search_api_index_bb_runs
+base_field: search_api_id
+display:
+  default:
+    id: default
+    display_title: Default
+    display_plugin: default
+    position: 0
+    display_options:
+      title: Runs
+      fields:
+        identifier:
+          id: identifier
+          table: search_api_index_bb_runs
+          field: identifier
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: bb_ticket_identifier_cell
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+            delta_limit: 0
+            delta_offset: 0
+            delta_reversed: false
+            delta_first_last: false
+        state:
+          id: state
+          table: search_api_index_bb_runs
+          field: state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: bb_ticket_state_cell
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+            delta_limit: 0
+            delta_offset: 0
+            delta_reversed: false
+            delta_first_last: false
+        state_at_start:
+          id: state_at_start
+          table: search_api_index_bb_runs
+          field: state_at_start
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: From
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+            delta_limit: 0
+            delta_offset: 0
+            delta_reversed: false
+            delta_first_last: false
+        conductor_id:
+          id: conductor_id
+          table: search_api_index_bb_runs
+          field: conductor_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: bb_ticket_conductor_cell
+          settings: {  }
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api_entity
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+            delta_limit: 0
+            delta_offset: 0
+            delta_reversed: false
+            delta_first_last: false
+            display_methods: {  }
+        agent:
+          id: agent
+          table: search_api_index_bb_runs
+          field: agent
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+            delta_limit: 0
+            delta_offset: 0
+            delta_reversed: false
+            delta_first_last: false
+        started_at:
+          id: started_at
+          table: search_api_index_bb_runs
+          field: started_at
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: Started
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: timestamp
+          settings:
+            date_format: custom
+            custom_date_format: 'Y-m-d H:i'
+            timezone: ''
+            tooltip:
+              date_format: ''
+              custom_date_format: ''
+            time_diff:
+              enabled: false
+              future_format: '@interval hence'
+              past_format: '@interval ago'
+              granularity: 2
+              refresh: 60
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api_date
+          fallback_options:
+            date_format: small
+            custom_date_format: ''
+            timezone: ''
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+            delta_limit: 0
+            delta_offset: 0
+            delta_reversed: false
+            delta_first_last: false
+        duration_s:
+          id: duration_s
+          table: search_api_index_bb_runs
+          field: duration_s
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: Took
+          exclude: false
+          alter:
+            alter_text: true
+            text: '{{ duration_s }} s'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: '0'
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: number_integer
+          settings:
+            thousand_separator: ''
+            prefix_suffix: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+            delta_limit: 0
+            delta_offset: 0
+            delta_reversed: false
+            delta_first_last: false
+      pager:
+        type: full
+        options:
+          offset: 0
+          pagination_heading_level: h4
+          items_per_page: 10
+          total_pages: null
+          id: 0
+          tags:
+            next: ››
+            previous: ‹‹
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
+      exposed_form:
+        type: bef
+        options:
+          submit_button: Apply
+          reset_button: false
+          reset_button_label: Reset
+          exposed_sorts_label: 'Sort by'
+          expose_sort_order: true
+          sort_asc_label: Asc
+          sort_desc_label: Desc
+          text_input_required: 'Select any filter and click on Apply to see results'
+          text_input_required_format: bb_rich
+          bef:
+            general:
+              autosubmit: true
+              auto_submit_sort_only: false
+              autosubmit_breakpoint: ''
+              autosubmit_exclude_textfield: false
+              autosubmit_textfield_delay: 500
+              autosubmit_textfield_minimum_length: 3
+              autosubmit_hide: true
+              input_required: false
+              allow_secondary: false
+              secondary_label: 'Advanced options'
+              secondary_open: false
+              reset_button_always_show: false
+            sort:
+              plugin_id: default
+              advanced:
+                combine: true
+                combine_rewrite: |-
+                  Started Desc|Started, newest first
+                  Started Asc|Started, oldest first
+                  Duration Asc|Duration, shortest first
+                  Duration Desc|Duration, longest first
+                combine_param: sort_bef_combine
+                reset: false
+                reset_label: ''
+                collapsible: false
+                collapsible_label: 'Sort options'
+                is_secondary: false
+            filter:
+              facets_state:
+                plugin_id: bb_option_picker
+                clear_label: 'Any state'
+                icon: ''
+                searchable: false
+              facets_conductor_id:
+                plugin_id: bb_option_picker
+                clear_label: 'Any conductor'
+                icon: ''
+                searchable: true
+              facets_agent:
+                plugin_id: bb_option_picker
+                clear_label: 'Any agent'
+                icon: ''
+                searchable: false
+      access:
+        type: perm
+        options:
+          perm: 'view bb_run'
+      cache:
+        type: search_api_none
+        options: {  }
+      empty:
+        bb_contextual_empty:
+          id: bb_contextual_empty
+          table: views
+          field: bb_contextual_empty
+          relationship: none
+          group_type: group
+          admin_label: 'No results text'
+          plugin_id: bb_contextual_empty
+          empty: true
+          content: 'No runs yet.'
+          tokenize: false
+      sorts:
+        started_at:
+          id: started_at
+          table: search_api_index_bb_runs
+          field: started_at
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api
+          order: DESC
+          expose:
+            label: Started
+            field_identifier: started_at
+          exposed: true
+        duration_s:
+          id: duration_s
+          table: search_api_index_bb_runs
+          field: duration_s
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api
+          order: ASC
+          expose:
+            label: Duration
+            field_identifier: duration_s
+          exposed: true
+        bb_tie_breaker:
+          id: bb_tie_breaker
+          table: search_api_index_bb_runs
+          field: bb_tie_breaker
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_tie_breaker
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: bb_tie_breaker
+          exposed: false
+      arguments: {  }
+      filters:
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_bb_runs
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_fulltext
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: title
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Ticket title'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - ticket_title
+        bb_closed_rows:
+          id: bb_closed_rows
+          table: search_api_index_bb_runs
+          field: bb_closed_rows
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_closed_rows
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: 'Closed rows'
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: closed
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+        facets_state:
+          id: facets_state
+          table: search_api_index_bb_runs
+          field: facets_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: State
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: state
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_run_state_label:
+                processor_id: bb_run_state_label
+                weights:
+                  build: 5
+                settings: {  }
+        facets_conductor_id:
+          id: facets_conductor_id
+          table: search_api_index_bb_runs
+          field: facets_conductor_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Conductor
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: conductor
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              translate_entity:
+                processor_id: translate_entity
+                weights:
+                  build: 5
+                settings:
+                  skip_access_check: false
+        facets_agent:
+          id: facets_agent
+          table: search_api_index_bb_runs
+          field: facets_agent
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Agent
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: agent
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs: {  }
+      style:
+        type: bb_list
+        options:
+          grouping: {  }
+          uses_fields: false
+          pattern:
+            headline:
+              - identifier
+              - state
+              - state_at_start
+            meta:
+              - conductor_id
+              - agent
+              - started_at
+            right:
+              - duration_s
+      query:
+        type: search_api_query
+        options:
+          bypass_access: false
+          skip_access: false
+          preserve_facet_query_args: false
+          query_tags: {  }
+      relationships: {  }
+      header:
+        views_filters_summary:
+          id: views_filters_summary
+          table: views
+          field: views_filters_summary
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: views_filters_summary
+          empty: true
+          filters: {  }
+          show_labels: true
+          show_remove_link: true
+          show_reset_link: false
+          group_values: true
+          content: '@exposed_filter_summary'
+          filters_reset_link_title: Reset
+          filters_summary_separator: ', '
+          filters_summary_prefix: ''
+          filters_result_label:
+            plural: results
+            singular: result
+      footer: {  }
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'url.query_args:sort_by'
+        - 'url.query_args:sort_order'
+        - user.permissions
+      tags:
+        - 'config:search_api.index.bb_runs'
+        - 'search_api_list:bb_runs'
+  project_runs:
+    id: project_runs
+    display_title: 'Project runs'
+    display_plugin: page
+    position: 1
+    display_options:
+      title: 'Project runs'
+      arguments:
+        'null':
+          id: 'null'
+          table: views
+          field: 'null'
+          relationship: none
+          group_type: group
+          admin_label: 'Workspace route segment'
+          plugin_id: 'null'
+          default_action: 'not found'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: false
+          validate:
+            type: none
+            fail: 'not found'
+          validate_options: {  }
+          must_not_be: false
+        project_id:
+          id: project_id
+          table: search_api_index_bb_runs
+          field: project_id
+          relationship: none
+          group_type: group
+          admin_label: 'Project runs'
+          plugin_id: entity_target_id
+          default_action: 'access denied'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: true
+          validate:
+            type: bb_project_reference
+            fail: 'not found'
+          validate_options:
+            bundles: {  }
+            access: true
+            operation: view
+            multiple: 0
+          break_phrase: false
+          not: false
+      defaults:
+        title: false
+        arguments: false
+      display_extenders:
+        display_builder:
+          profile: default
+          sources:
+            -
+              source_id: component
+              source:
+                component:
+                  component_id: 'bb_theme:canvas'
+                  variant_id: null
+                  props: {  }
+                  slots:
+                    filters:
+                      sources:
+                        -
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:filters'
+                              variant_id: null
+                              props:
+                                title:
+                                  source_id: textfield
+                                  source:
+                                    value: Filters
+                                label:
+                                  source_id: textfield
+                                  source:
+                                    value: 'Run facets'
+                              slots:
+                                controls:
+                                  sources:
+                                    -
+                                      source_id: view_exposed
+                                      source: {  }
+                                      node_id: project_runs_exposed
+                          node_id: project_runs_filters
+                    main:
+                      sources:
+                        -
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:filters'
+                              variant_id: null
+                              props:
+                                layout:
+                                  source_id: select
+                                  source:
+                                    value: bar
+                                label:
+                                  source_id: textfield
+                                  source:
+                                    value: 'Search and sort'
+                              slots:
+                                controls:
+                                  sources:
+                                    -
+                                      source_id: bb_view_search
+                                      source: {  }
+                                      node_id: runs_project_runs_search
+                          node_id: runs_project_runs_toolbar
+                        -
+                          source_id: view_header
+                          source: {  }
+                          node_id: project_runs_summary
+                        -
+                          source_id: view_rows
+                          source: {  }
+                          node_id: project_runs_rows
+                        -
+                          source_id: view_pager
+                          source: {  }
+                          node_id: project_runs_pager
+              node_id: project_runs_canvas
+      path: _workspace/%bb_workspace/project/%bb_project/runs
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'url.query_args:sort_by'
+        - 'url.query_args:sort_order'
+        - user.permissions
+      tags:
+        - 'config:search_api.index.bb_runs'
+        - 'search_api_list:bb_runs'
+  team_runs:
+    id: team_runs
+    display_title: 'Team runs'
+    display_plugin: page
+    position: 2
+    display_options:
+      title: 'Team runs'
+      arguments:
+        'null':
+          id: 'null'
+          table: views
+          field: 'null'
+          relationship: none
+          group_type: group
+          admin_label: 'Workspace route segment'
+          plugin_id: 'null'
+          default_action: 'not found'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: false
+          validate:
+            type: none
+            fail: 'not found'
+          validate_options: {  }
+          must_not_be: false
+        project_team_ids:
+          id: project_team_ids
+          table: search_api_index_bb_runs
+          field: project_team_ids
+          relationship: none
+          group_type: group
+          admin_label: 'Team runs'
+          plugin_id: entity_target_id
+          default_action: 'access denied'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: true
+          validate:
+            type: 'entity:bb_team'
+            fail: 'not found'
+          validate_options:
+            bundles: {  }
+            access: true
+            operation: view
+            multiple: 0
+          break_phrase: false
+          not: false
+      defaults:
+        title: false
+        arguments: false
+      display_extenders:
+        display_builder:
+          profile: default
+          sources:
+            -
+              source_id: component
+              source:
+                component:
+                  component_id: 'bb_theme:canvas'
+                  variant_id: null
+                  props: {  }
+                  slots:
+                    filters:
+                      sources:
+                        -
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:filters'
+                              variant_id: null
+                              props:
+                                title:
+                                  source_id: textfield
+                                  source:
+                                    value: Filters
+                                label:
+                                  source_id: textfield
+                                  source:
+                                    value: 'Run facets'
+                              slots:
+                                controls:
+                                  sources:
+                                    -
+                                      source_id: view_exposed
+                                      source: {  }
+                                      node_id: team_runs_exposed
+                          node_id: team_runs_filters
+                    main:
+                      sources:
+                        -
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:filters'
+                              variant_id: null
+                              props:
+                                layout:
+                                  source_id: select
+                                  source:
+                                    value: bar
+                                label:
+                                  source_id: textfield
+                                  source:
+                                    value: 'Search and sort'
+                              slots:
+                                controls:
+                                  sources:
+                                    -
+                                      source_id: bb_view_search
+                                      source: {  }
+                                      node_id: runs_team_runs_search
+                          node_id: runs_team_runs_toolbar
+                        -
+                          source_id: view_header
+                          source: {  }
+                          node_id: team_runs_summary
+                        -
+                          source_id: view_rows
+                          source: {  }
+                          node_id: team_runs_rows
+                        -
+                          source_id: view_pager
+                          source: {  }
+                          node_id: team_runs_pager
+              node_id: team_runs_canvas
+      path: _workspace/%bb_workspace/team/%bb_team/runs
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'url.query_args:sort_by'
+        - 'url.query_args:sort_order'
+        - user.permissions
+      tags:
+        - 'config:search_api.index.bb_runs'
+        - 'search_api_list:bb_runs'

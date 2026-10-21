@@ -1,0 +1,8 @@
+#!/bin/bash
+## Description: Run the functional contracts as Playwright BDD scenarios against the recipe-test site. Install tests/playwright dependencies and Chromium first.
+## Usage: bakers-test-functional
+## Example: ddev bakers-test-functional
+
+set -euo pipefail
+cd /var/www/html/tests/playwright
+npm test -- --grep @functional

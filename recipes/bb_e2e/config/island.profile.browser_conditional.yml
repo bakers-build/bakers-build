@@ -1,0 +1,54 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - island.app.bakers
+  module:
+    - bb_core
+  theme:
+    - bb_theme
+  enforced:
+    config:
+      - island.app.bakers
+      - system.menu.browser-test
+    module:
+      - bb_browser_test
+id: browser_conditional
+label: 'Browser conditional placement profile'
+app: bakers
+layout: 'bb_theme:shell'
+layout_settings: { }
+placements:
+  conditional:
+    plugin_id: menu
+    slot: sidebar
+    weight: 0
+    enabled: true
+    configuration:
+      menu_name: browser-test
+      depth: 1
+      expanded: true
+    events: []
+    condition_operator: and
+    conditions:
+      route_name:
+        id: route_name
+        negate: false
+        route_names:
+          - bb_browser_test.conditional_first
+  content:
+    plugin_id: page_content
+    slot: content
+    weight: 0
+    enabled: true
+    configuration: { }
+    events: []
+weight: -100
+condition_operator: and
+conditions:
+  route_name:
+    id: route_name
+    negate: false
+    route_names:
+      - bb_browser_test.conditional_first
+      - bb_browser_test.conditional_second

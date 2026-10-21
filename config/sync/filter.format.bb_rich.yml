@@ -1,0 +1,29 @@
+uuid: 545ca38f-e46a-405f-8760-d546ab3a7835
+langcode: en
+status: true
+dependencies:
+  module:
+    - markdown_easy
+_core:
+  default_config_hash: tRt2-fK5Ll4mEk6HMIsviPSz3Rg7F95sWKPi50IAqtA
+name: 'bakers.build Rich'
+format: bb_rich
+weight: 0
+filters:
+  filter_html:
+    id: filter_html
+    provider: filter
+    status: true
+    weight: 10
+    settings:
+      allowed_html: '<br> <p> <strong> <em> <ul> <ol> <li> <a href hreflang title> <code> <pre> <h1 id> <h2 id> <h3 id> <h4 id> <blockquote> <hr> <table> <thead> <tbody> <tr> <th> <td>'
+      filter_html_help: false
+      filter_html_nofollow: false
+  markdown_easy:
+    id: markdown_easy
+    provider: markdown_easy
+    status: true
+    weight: 0
+    settings:
+      flavor: github
+      tips: ''

@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for bb_core.
+ */
+
+declare(strict_types=1);
+
+use Drupal\bb_core\Install\DefaultWorkspace;
+
+/**
+ * Creates the default workspace every product URL is scoped to.
+ *
+ * Product URLs resolve only below a workspace slug, and no install path
+ * guaranteed one existed. hook_install() is shared by all install paths; its
+ * guard keeps it idempotent and a recipe-supplied workspace of the same uuid
+ * intact.
+ */
+function bb_core_install(): void {
+  DefaultWorkspace::ensure();
+}
+

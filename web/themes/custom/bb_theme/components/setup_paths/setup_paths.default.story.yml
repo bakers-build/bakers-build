@@ -1,0 +1,54 @@
+component: bb_theme:setup_paths
+name: Default
+props:
+  selected: claude
+  filter_label: Agent
+  items:
+    - label: Claude Code
+      value: claude
+    - label: Codex
+      value: codex
+slots:
+  intro:
+    - type: component
+      component: bb_theme:text
+      props:
+        text: 'Install the bakers.build plugin first:'
+        size: caption
+        tone: light
+  panel_a:
+    - type: component
+      component: bb_theme:text
+      props:
+        text: 'Inside Claude Code, each as its own command:'
+        size: caption
+        tone: light
+    - type: component
+      component: bb_theme:setup_command
+      props:
+        command: /plugin install bakers@bakers
+        label: Copy the plugin install command
+  panel_b:
+    - type: component
+      component: bb_theme:text
+      props:
+        text: 'With the Codex CLI, each as its own command:'
+        size: caption
+        tone: light
+    - type: component
+      component: bb_theme:setup_command
+      props:
+        command: codex plugin add bakers@bakers
+        label: Copy the Codex plugin install command
+  after:
+    - type: component
+      component: bb_theme:text
+      props:
+        text: 'Then paste this into your agent:'
+        size: caption
+        tone: light
+    - type: component
+      component: bb_theme:setup_command
+      props:
+        command: Use `bakers:init` to guide me through installing and setting up bakers.build.
+        label: Copy the skill wizard prompt

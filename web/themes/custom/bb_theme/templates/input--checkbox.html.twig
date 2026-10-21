@@ -1,0 +1,9 @@
+{#
+/**
+ * @file
+ * Keep checkbox inputs at their native rendering — the text-input SDC classes
+ * from input.html.twig would distort them. (Theme-wide safety; the auth forms
+ * have no checkboxes.)
+ */
+#}
+<input{{ attributes }} />{{ children }}

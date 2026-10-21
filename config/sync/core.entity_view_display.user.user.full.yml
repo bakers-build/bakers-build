@@ -1,0 +1,83 @@
+uuid: 0bf4e7e5-d005-4237-a996-f6fe9176a018
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.user.full
+    - field.field.user.user.field_developer_title
+    - field.field.user.user.field_full_name
+    - field.field.user.user.field_bb_background
+    - field.field.user.user.field_onboarding_completed
+    - field.field.user.user.user_picture
+  module:
+    - display_builder
+    - user
+  enforced:
+    config:
+      - image.style.avatar
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:zone'
+            variant_id: null
+            props:
+              inset:
+                source_id: select
+                source:
+                  value: md
+            slots:
+              content:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:person'
+                        variant_id:
+                          source_id: select
+                          source:
+                            value: profile
+                        props:
+                          size:
+                            source_id: select
+                            source:
+                              value: md
+                          display_name:
+                            source_id: bb_user_person_props
+                            source: {  }
+                          initials:
+                            source_id: bb_user_person_props
+                            source: {  }
+                          color:
+                            source_id: bb_user_person_props
+                            source: {  }
+                          picture:
+                            source_id: bb_user_person_props
+                            source: {  }
+                          subtitle:
+                            source_id: 'field_property:user:field_developer_title:value'
+                            source: {  }
+                        slots: {  }
+                    node_id: user_full_person
+        node_id: user_full_zone
+_core:
+  default_config_hash: NCwmFr9y8Shee67c-F08wkuvR02o78vxh1N_aOHvquY
+id: user.user.full
+targetEntityType: user
+bundle: user
+mode: full
+content: {  }
+hidden:
+  field_developer_title: true
+  field_full_name: true
+  field_bb_background: true
+  field_onboarding_completed: true
+  member_for: true
+  search_api_excerpt: true
+  user_picture: true
+

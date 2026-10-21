@@ -1,0 +1,17 @@
+uuid: 774ff129-8f39-48e6-820e-522de96a3448
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_figure.project_overview
+  - bb_core.bb_figure.team_user_overview
+  - bb_core.bb_figure.user_overview
+_core:
+  default_config_hash: XbSphNwxj0p3bb7H-ZZxO1fJihRkPVtrnwPdeNT2pbc
+id: overview
+label: Overview
+weight: 0
+figures:
+- project_overview
+- user_overview
+- team_user_overview

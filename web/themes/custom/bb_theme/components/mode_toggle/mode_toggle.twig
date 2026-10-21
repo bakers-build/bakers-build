@@ -1,0 +1,38 @@
+{# The native popover owns dismissal, Escape and focus return. Skin state lives on html. #}
+<div{{ (attributes ?: create_attribute()).addClass(['inline-flex', 'shrink-0']) }}
+  x-data="{ theme: 'bakers', mode: '{{ mode|default('light') == 'dark' ? 'dark' : 'light' }}' }"
+  x-init="theme = document.documentElement.getAttribute('data-skin') || 'bakers'; mode = document.documentElement.getAttribute('data-mode') || 'light'"
+  @bakers-appearance.window="theme = $event.detail.theme; mode = $event.detail.mode"
+  x-id="['appearance']">
+  <button type="button" data-mode-toggle
+    :popovertarget="$id('appearance')"
+    :aria-controls="$id('appearance')"
+    aria-label="{{ label|default('Choose theme') }}"
+    class="inline-grid place-items-center w-7 h-7 shrink-0 rounded-full bg-transparent border-0 text-text-faint cursor-pointer transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">
+    {{ include('bb_theme:icon', { name: 'palette', size: 'md' }, with_context = false) }}
+  </button>
+  <div popover="auto" x-ref="panel" :id="$id('appearance')" aria-label="Appearance"
+    class="fixed inset-auto left-4 bottom-12 m-0 max-w-full p-4 rounded-md border border-control-border bg-surface text-text font-sans">
+    <div class="flex flex-col gap-4">
+      <label class="flex flex-col gap-2 text-caption font-medium">
+        <span>Theme</span>
+        <select aria-label="Theme" :value="theme" @change="theme = window.bakersSetTheme($event.target.value)"
+          class="w-full h-control px-2 rounded-sm border border-control-border bg-input text-text text-body focus-visible:outline-2 focus-visible:outline-focus-ring">
+          <option value="bakers">bakers.build · System font</option>
+          <option value="harbor">Harbor · Source Sans 3</option>
+          <option value="grove">Grove · IBM Plex Sans</option>
+          <option value="ember">Ember · Public Sans</option>
+          <option value="iris">Iris · Atkinson Hyperlegible Next</option>
+        </select>
+      </label>
+      <label class="flex flex-col gap-2 text-caption font-medium">
+        <span>Appearance</span>
+        <select aria-label="Appearance" :value="mode" @change="mode = window.bakersSetMode($event.target.value)"
+          class="w-full h-control px-2 rounded-sm border border-control-border bg-input text-text text-body focus-visible:outline-2 focus-visible:outline-focus-ring">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</div>

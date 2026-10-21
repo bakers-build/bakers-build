@@ -1,0 +1,21 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_conductor.full
+ *
+ * Authored for BB-619 from the bb_conductor `full` entity mapping.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_core"
+    ]
+  },
+  "id": "bb_conductor.full",
+  "label": "Full",
+  "description": "",
+  "targetEntityType": "bb_conductor",
+  "cache": true
+}
+)

@@ -1,0 +1,104 @@
+component: bb_theme:shell
+name: Cozy / Light
+# BB-504 task 14: one of the four layout x mode combinations the design
+# review needs side by side. `parameters.bakersTheme` is read by the
+# `withThemeAttributes` decorator in `.storybook/preview.js`, which sets
+# `data-layout` / `data-mode` on `<html>` before the story paints -- the
+# same two attributes `design-tokens.yml` (`themes.cozy`, `themes.dark`)
+# and the shipped `[data-layout=...]` / `[data-mode=...]` CSS select on.
+# Variant suffix is underscore-joined on purpose: a hyphen here produces a
+# runtime SyntaxError in the browser while the file-level check stays green
+# (documented incident, bakers-story-variant-hyphen-breaks-rendering).
+parameters:
+  bakersTheme:
+    layout: cozy
+    mode: light
+slots:
+  sidebar:
+    - type: component
+      component: bb_theme:sidebar
+      props:
+        collapsed: false
+      slots:
+        workspace:
+          - type: component
+            component: bb_theme:account_switcher
+            props:
+              workspace_label: keytec
+              workspace_initials: KT
+              workspace_color: running
+              multiple: true
+              collapsed: false
+        navigation:
+          - type: component
+            component: bb_theme:nav
+            props:
+              items:
+                - title: My work
+                  url: /admin/bakers/work
+                  icon: ticket
+                  in_active_trail: true
+                  below: []
+                - title: Projects
+                  url: /admin/bakers/project
+                  icon: project
+                  in_active_trail: false
+                  below: []
+                - title: Teams
+                  heading: true
+                  icon: team
+                  open: true
+                  action:
+                    icon: plus
+                    label: New team
+                  below:
+                    - title: Team A
+                      url: /admin/bakers/team/team-a
+                      in_active_trail: false
+                      mark:
+                        initials: TA
+                        color: running
+                    - title: Team B
+                      url: /admin/bakers/team/team-b
+                      in_active_trail: false
+                      mark:
+                        initials: TB
+                        color: lease
+                - title: Settings
+                  url: /admin/bakers/settings
+                  icon: settings
+                  in_active_trail: false
+                  below: []
+              expanded: true
+        actions:
+          - type: component
+            component: bb_theme:person
+            props:
+              variant: compact
+              display_name: cw
+              initials: CW
+              color: lease
+              size: md
+          - type: component
+            component: bb_theme:mode_toggle
+            props:
+              mode: light
+              label: Choose theme
+  content:
+    - type: element
+      tag: div
+      value: Content slot — every screen scene inherits this shell and fills exactly this one region, with a single canvas.
+      attributes:
+        class: p-[24px] text-text
+  footer:
+    - type: component
+      component: bb_theme:status_bar
+      slots:
+        refresh:
+          - type: component
+            component: bb_theme:badge
+            props:
+              label: Auto-refresh on
+              tone: running
+              dot: true
+              suffix: updated 4s ago

@@ -1,0 +1,138 @@
+# THE WRAPPING PROPERTY ROW, on its own. Six pills is past the width of a create
+# dialog, so this is the scene that shows the row WRAPPING rather than stacking
+# into a column of controls or scrolling out of the surface — the rule the row
+# exists for.
+#
+# Half of them are deliberately UNSET. Grammar 4: a pill shows the field name
+# when nothing is set and the value when something is, and never a bare dash — so
+# an empty row is still readable, which is what pays for dropping the labels.
+#
+# IT RENDERS BARE, and the consequence is on the record rather than overlooked:
+# the wrapping is a function of the container's width — dialog.twig states the
+# dependency in that direction, "the width is 720px because the pill row is what
+# sets it… the peer pills need about 700px to stay on ONE row" — so on Storybook's
+# unconstrained canvas these six pills sit on ONE row and this story shows the
+# row, not the wrap. That is a deliberate choice of the bare component over a
+# hull or a width constraint. DO NOT "fix" it by wrapping the story in a dialog,
+# adding a decorator, a parameter or a viewport; the wrap is demonstrated by the
+# real create surface, in the `ticket-create` scene.
+component: bb_theme:form
+name: Pills
+# THE OTHER THREE REGIONS ARE OMITTED RATHER THAN STATED EMPTY, which is what
+# changed here when they became SLOTS (BB-420 Task 20). The precaution the old
+# `lead: null` / `lines: []` / `actions: []` props were: the addon's
+# `renderWrapperStories` spreads json-schema-faker's args UNDER a story's props
+# even where `useBasicArgsForStories` is false, and an earlier attempt rendered a
+# generated lead pill reading "88rLS · CEizpjEeyV" and still exited 0. A slot is
+# not a prop and json-schema-faker has nothing to generate for one — there is no
+# type to invent content from — so an unstated slot renders nothing. The path was
+# only ever reachable through a `library_wrapper` story, and this one has none.
+#
+# No lead: this story is the peer row alone. Grammar 3a's "at most one" is the
+# Default story's subject, not this one's. No text lines either — the row is what
+# this shows. And no action row: `actions` is empty in every scene, because the
+# create surface is a dialog and its bordered footer is where finishing lives.
+slots:
+  pills:
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: parent
+        label: Parent
+        icon: ticket
+        picker_id: pills-parent
+        clearable: true
+        clear_label: No parent
+        options:
+          - value: '1'
+            label: BB-142 Add designbook entity view-mode
+            selected: false
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: conductor
+        label: Conductor
+        icon: conductor
+        picker_id: pills-conductor
+        value_label: cw-framework
+        values:
+          - cw-framework
+        clearable: true
+        clear_label: No conductor
+        options:
+          - value: cw-framework
+            label: cw-framework
+            selected: true
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: labels
+        label: Labels
+        icon: tag
+        picker_id: pills-labels
+        multiple: true
+        value_labels:
+          - backend
+          - ui
+          - release
+        values:
+          - '1'
+          - '2'
+          - '3'
+        clearable: true
+        clear_label: No labels
+        options:
+          - value: '1'
+            label: backend
+            selected: true
+          - value: '2'
+            label: ui
+            selected: true
+          - value: '3'
+            label: release
+            selected: true
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: priority
+        label: Priority
+        icon: alert-triangle
+        picker_id: pills-priority
+        clearable: true
+        clear_label: No priority
+        options:
+          - value: high
+            label: High
+            selected: false
+          - value: normal
+            label: Normal
+            selected: false
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: assignee
+        label: Assignee
+        icon: user
+        picker_id: pills-assignee
+        value_label: Christian Wiedemann
+        values:
+          - '5'
+        clearable: true
+        clear_label: Nobody
+        options:
+          - value: '5'
+            label: Christian Wiedemann
+            selected: true
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: due
+        label: Due
+        icon: run
+        picker_id: pills-due
+        clearable: true
+        clear_label: No date
+        options:
+          - value: week
+            label: End of this week
+            selected: false

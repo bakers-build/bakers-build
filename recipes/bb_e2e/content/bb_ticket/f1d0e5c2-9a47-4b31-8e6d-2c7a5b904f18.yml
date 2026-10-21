@@ -1,0 +1,23 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket
+  uuid: f1d0e5c2-9a47-4b31-8e6d-2c7a5b904f18
+  depends:
+    dbc70000-0000-4000-8000-000000000002: bb_team
+    262258a2-080f-4ab9-af1b-9028cef388da: bb_project
+default:
+  project_id:
+    -
+      entity: 262258a2-080f-4ab9-af1b-9028cef388da
+  identifier:
+    -
+      value: GL-E2E-DERIVE
+  number:
+    -
+      value: 4
+  workflow:
+    -
+      value: bb_bug
+  title:
+    -
+      value: 'assignee derivation E2E ticket'

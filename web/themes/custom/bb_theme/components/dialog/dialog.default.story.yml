@@ -1,0 +1,35 @@
+component: bb_theme:dialog
+name: Default
+props:
+  open: true
+  title: New ticket
+  id: bakers-dialog-demo
+  dismissible: true
+slots:
+  message:
+    - type: component
+      component: bb_theme:message
+      props:
+        status: error
+      slots:
+        body:
+          - type: element
+            value: The title is required.
+  body:
+    - type: element
+      tag: p
+      value: The hull only. A create form, an edit form or the prose of a confirmation goes here — see designbook/design-system/action-pattern.md.
+      attributes:
+        class: m-0 text-body text-text-light
+  actions:
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: ghost
+        label: Cancel
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: primary
+        label: Create ticket
+        type: submit

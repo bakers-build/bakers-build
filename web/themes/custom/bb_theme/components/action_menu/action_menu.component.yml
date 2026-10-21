@@ -1,0 +1,69 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Action Menu
+status: stable
+group: Action
+description: >-
+  A row action menu: a more-horizontal trigger that discloses a role="menu"
+  panel of menu_item links. Built on native <details>/<summary>, so it opens and
+  every action stays reachable without JavaScript; Alpine only closes it on an
+  outside click or Escape. Use it when a list row carries several actions. An
+  item's optional attributes are merged onto its link, so an action can open in
+  the dialog.
+provider: bb_theme
+props:
+  type: object
+  required:
+    - label
+    - items
+  properties:
+    label:
+      type: string
+      title: Label
+      description: >-
+        Accessible name of the trigger, naming the row, e.g. "Actions for
+        service-ci-1a2b3c4d".
+    items:
+      type: array
+      title: Items
+      description: The actions, in order; each is one menu_item link.
+      items:
+        type: object
+        required:
+          - label
+          - url
+        properties:
+          label:
+            type: string
+            title: Label
+          url:
+            type: string
+            title: URL
+          attributes:
+            type: object
+            title: Attributes
+            description: >-
+              Optional extra link attributes for this item, passed to menu_item,
+              for behavior wiring such as the htmx attributes that open the
+              action's dialog or confirmation in the overlay. Not a styling
+              channel: no class or style. The menu keeps href and role.
+    align:
+      type: string
+      title: Align
+      enum:
+        - start
+        - end
+      default: end
+      description: >-
+        Which edge of the trigger the panel lines up with: end for a menu at the
+        end of a row (it opens toward the row), start for one at the start.
+    open:
+      type: boolean
+      title: Open
+      description: >-
+        Render the panel disclosed (stories; a no-JS reader toggles it
+        natively).
+      default: false
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,25 @@
+component: bb_theme:tabs
+name: Default
+props:
+  label: Project sections
+  items:
+    - label: Overview
+      url: >-
+        /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+      active: true
+    - label: Board
+      url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+      active: false
+    - label: Stats
+      url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+      active: false
+    - label: Tickets
+      url: /?path=/story/designbook-sections-my-work-scenes--ticket-list
+      active: false
+    - label: Runs
+      url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+      active: false
+    - label: Settings
+      url: >-
+        /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+      active: false

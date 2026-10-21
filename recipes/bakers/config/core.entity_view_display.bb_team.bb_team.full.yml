@@ -1,0 +1,126 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_team.full
+  module:
+    - display_builder
+    - bb_core
+  enforced:
+    module:
+      - og
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:canvas'
+            variant_id: null
+            props: {  }
+            slots:
+              main:
+                sources:
+                  -
+                    source_id: bb_entity_detail_activities
+                    source:
+                      context_mapping:
+                        entity: entity
+                    node_id: team_activities
+              inspector:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:inspector'
+                        variant_id: null
+                        props:
+                          surface:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          rows:
+                            sources:
+                              -
+                                source_id: component
+                                source:
+                                  component:
+                                    component_id: 'bb_theme:zone'
+                                    variant_id: null
+                                    props:
+                                      inset:
+                                        source_id: select
+                                        source:
+                                          value: none
+                                      gap:
+                                        source_id: select
+                                        source:
+                                          value: sm
+                                    slots:
+                                      heading:
+                                        sources:
+                                          -
+                                            source_id: token
+                                            source:
+                                              value: Identity
+                                            node_id: team_identity_heading
+                                      content:
+                                        sources:
+                                          -
+                                            source_id: entity_form
+                                            source:
+                                              operation: identity
+                                              context_mapping:
+                                                entity: entity
+                                            node_id: team_identity_form
+                                node_id: team_identity
+                              -
+                                source_id: component
+                                source:
+                                  component:
+                                    component_id: 'bb_theme:zone'
+                                    variant_id: null
+                                    props:
+                                      inset:
+                                        source_id: select
+                                        source:
+                                          value: none
+                                      gap:
+                                        source_id: select
+                                        source:
+                                          value: sm
+                                    slots:
+                                      heading:
+                                        sources:
+                                          -
+                                            source_id: token
+                                            source:
+                                              value: Projects
+                                            node_id: team_projects_heading
+                                      content:
+                                        sources:
+                                          -
+                                            source_id: 'field_formatter:bb_team:bb_team:projects'
+                                            source:
+                                              type: entity_reference_label
+                                              settings:
+                                                link: true
+                                              third_party_settings: {  }
+                                            node_id: team_projects_value
+                                node_id: team_projects
+                    node_id: team_inspector
+        node_id: team_canvas
+id: bb_team.bb_team.full
+targetEntityType: bb_team
+bundle: bb_team
+mode: full
+content: {  }
+hidden:
+  og_group: true
+  projects: true
+  search_api_excerpt: true
+

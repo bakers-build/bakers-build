@@ -1,0 +1,18 @@
+component: bb_theme:badge
+name: Claim
+# THE ABSORBED CLAIM BADGE, WHOLE. The lock glyph is `icon`, the holding machine
+# id is the label, the indigo tint is `tone: lease` and the mono face is `mono` —
+# and this story exists to hold all four together, because the first absorption
+# pass kept only the first and read as a neutral pill for a state that has its own
+# colour in the token layer.
+#
+# THIS IS SOMEBODY ELSE'S LEASE. No outline, so the reader is looking at a hold
+# they do not own and cannot release. The `mine` story beside it is the same badge
+# with the one boolean flipped, which is the only way the distinction is visible
+# at all — two stories, because a single one would show one answer to a question
+# with two.
+props:
+  label: srv02-bakers
+  tone: lease
+  mono: true
+  icon: lock

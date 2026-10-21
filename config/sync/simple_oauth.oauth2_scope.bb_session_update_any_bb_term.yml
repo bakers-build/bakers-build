@@ -1,0 +1,16 @@
+uuid: 754b338d-8256-4747-aee8-4005ee931583
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_update_any_bb_term
+name: 'bb:session:update_any_bb_term'
+description: 'bakers.build session ceiling — update any bb_term'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'update any bb_term'

@@ -1,0 +1,74 @@
+/*
+ * sync-to generator — core.entity_view_display.bb_comment.bb_comment.teaser
+ *
+ * ONE COMMENT AS A COMPACT EMBEDDED ROW — ticket handoffs and the run latest
+ * summary. `full` is the canonical page body; this mode must not grow sibling
+ * navigation or a nested shell.
+ *
+ * IT NAMES THE SAME COMPONENTS AS THE ENTITY MAPPING, and that is a checked
+ * statement rather than a convention: `data-display-components.sh` check B7
+ * reads the addresses out of `entity-mapping/bb_comment.bb_comment.teaser.jsonata`
+ * and out of this whole file — comments included, in BOTH address forms —
+ * and fails when the two sets differ. The mapping composes the row from
+ * exactly `event` and `link-group`, so this generator names exactly those
+ * two. No third address may be written down here, not even in prose.
+ *
+ * Timestamp uses Drupal date format `normal`. The shipped YAML is the saved
+ * form: `bb_comment_teaser` emits the event plus the canonical link.
+ * See README.md.
+ */
+(
+{
+  "uuid": "7a3a2f51-3d77-4a37-862c-3f0850d02818",
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "core.entity_view_mode.bb_comment.teaser"
+    ],
+    "module": [
+      "display_builder",
+      "bb_core"
+    ]
+  },
+  "third_party_settings": {
+    "display_builder": {
+      "profile": "default",
+      "sources": [
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:event",
+              "variant_id": null,
+              "props": {},
+              "slots": {},
+              "third_party_settings": ""
+            }
+          },
+          "node_id": "event_component"
+        },
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:link-group",
+              "variant_id": null,
+              "props": {},
+              "slots": {},
+              "third_party_settings": ""
+            }
+          },
+          "node_id": "link_group_component"
+        }
+      ]
+    }
+  },
+  "id": "bb_comment.bb_comment.teaser",
+  "targetEntityType": "bb_comment",
+  "bundle": "bb_comment",
+  "mode": "teaser",
+  "content": {},
+  "hidden": {}
+}
+)

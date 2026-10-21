@@ -1,0 +1,45 @@
+#ddev-generated
+# Example git provider configuration.
+
+# To use this configuration,
+
+# 1. Create a git repository that contains a database dump (db.sql.gz) and a files tarball. It can be private or public, but for most people they will be private.
+# 2. Configure access to the repository so that it can be accessed from where you need it. For example, on a regular local dev environment, you'll need to be able to access github via https or ssh.
+# 3. Update the environment_variables below to point to the git repository that contains your database dump and files.
+
+environment_variables:
+  project_url: https://github.com/ddev/ddev-pull-git-test-repo
+  branch: main
+  checkout_dir: ~/tmp/ddev-pull-git-test-repo
+
+
+auth_command:
+  service: host
+  # This actually doesn't auth, but rather just checks out the repository
+  command: |
+    set -eu -o pipefail
+    if [ ! -d ${checkout_dir}/.git ] ; then
+        git clone -q ${project_url} --branch=${branch} ${checkout_dir}
+    else
+        cd ${checkout_dir}
+        git reset --hard -q && git fetch && git checkout -q origin/${branch}
+    fi
+
+db_import_command:
+  service: host
+  command: |
+    set -eu -o pipefail
+    # set -x
+    # Import directly rather than via `ddev import-db`, which fires pre/post-import-db
+    # hooks itself and would run them twice alongside this command's own hooks.
+    gzip -dc ${checkout_dir}/db.sql.gz | ddev mysql db
+
+files_import_command:
+  service: host
+  command: |
+    set -eu -o pipefail
+    # set -x
+    # Import directly rather than via `ddev import-files`, for the same reason as
+    # db_import_command above.
+    mkdir -p web/sites/default/files
+    cp -r ${checkout_dir}/files/. web/sites/default/files/

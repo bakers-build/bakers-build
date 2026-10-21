@@ -1,0 +1,29 @@
+{
+  "name": "@bakers-build/addon-auth-basic",
+  "version": "0.0.1",
+  "description": "bakers.build connection addon: inline HTTP Basic auth from a base64 user:pass token.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

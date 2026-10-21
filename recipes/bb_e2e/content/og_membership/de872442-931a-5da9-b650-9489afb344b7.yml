@@ -1,0 +1,38 @@
+# Explicit tenancy/rank precondition for API contract scenarios.
+#
+# BB-462 D9: the workspace `app` role is gone — a conductor's OAuth
+# identity now sees exactly what its owning user sees, and this fixture's
+# account is that owning user. `lead` (the workspace admin tier) is kept
+# here, unlike the sibling `…/a5ed7878` fixture (api-app) F12 narrowed to
+# `contributor`: this account carries NO team membership fixture, and
+# `registration.feature`'s "api-machine-app registration returns 201"
+# scenario reads `project.home` through the `/jsonapi/bb_project`
+# collection filter before registering a conductor on it — a query only
+# `lead`'s workspace-wide see-all reach (or team membership, which this
+# account has none of) can open. The write permissions the scenario also
+# exercises (`register bakers conductor`) come from the account's OAuth
+# scope, not from this rank; the rank is here solely for the READ.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: de872442-931a-5da9-b650-9489afb344b7
+  default_langcode: en
+  bundle: default
+  depends:
+    6fb6743d-6419-561b-a8d5-ba7a8b4f10b9: user
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  state:
+  - value: active
+  uid:
+  - entity: 6fb6743d-6419-561b-a8d5-ba7a8b4f10b9
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-lead

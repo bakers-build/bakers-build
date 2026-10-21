@@ -1,0 +1,85 @@
+uuid: dd0248d3-16d9-4287-9168-112b9831fef0
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_ticket.settings
+  module:
+    - bb_core
+    - text
+id: bb_ticket.bb_ticket.settings
+targetEntityType: bb_ticket
+bundle: bb_ticket
+mode: settings
+content:
+  blocked_by:
+    type: entity_reference_autocomplete
+    weight: 3
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  description:
+    type: text_textarea
+    weight: 1
+    region: content
+    settings:
+      rows: 8
+      placeholder: ''
+    third_party_settings: {  }
+  env_vars:
+    type: string_textarea
+    weight: 12
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+  parent_id:
+    type: entity_reference_autocomplete
+    weight: 2
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  title:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: 'Ticket title'
+    third_party_settings: {  }
+hidden:
+  assignee_user_id: true
+  cleaned_up: true
+  cleaned_up_date: true
+  closed: true
+  closed_date: true
+  conductor_id: true
+  created: true
+  environments: true
+  frozen: true
+  frozen_at: true
+  identifier: true
+  labels: true
+  links: true
+  metrics: true
+  origin: true
+  owner_user_id: true
+  priority: true
+  project_id: true
+  referenced_tickets: true
+  reviewers: true
+  stall_reason: true
+  state: true
+  time_estimate: true
+  time_spent: true
+  workflow: true
+

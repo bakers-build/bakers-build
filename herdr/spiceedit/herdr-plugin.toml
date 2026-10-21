@@ -1,0 +1,43 @@
+# herdr-plugin.toml — manifest for the spiceedit herdr plugin.
+#
+# BB-58: the review run-session's click-to-edit surface. In review the diff
+# surface is hunk (BB-55) — opt-in, agent-driven, in the human's interactive pane,
+# not an executor-forced pane; when the human activates a changed file in that hunk
+# pane, a spiceedit OVERLAY opens editable on that file.
+#
+# herdr opens an overlay ONLY via `herdr plugin pane open --plugin … --entrypoint …
+# --placement overlay` — there is no generic "run an arbitrary command in an overlay"
+# (verified live on herdr 0.7.1). So spiceedit is exposed here as a herdr plugin with
+# an `edit` overlay entrypoint; the invoker passes the file path via
+# `--env SPICEEDIT_FILE=<path>` and the launcher execs `spiceedit "$FILE"`.
+#
+# spiceedit is a single static Go TUI binary (`spiceedit <path>`), installed
+# host-global by the conductor bootstrap. Absent spiceedit degrades gracefully
+# (message, no crash) so a review run never wedges on a missing tool.
+
+id = "spiceedit"
+name = "spiceedit"
+version = "0.1.0"
+description = "Open a changed file editable in a floating spiceedit TUI overlay (bakers.build review click-to-edit)."
+min_herdr_version = "0.7.0"
+platforms = ["linux", "macos"]
+
+# The overlay pane entrypoint. Opened on demand via:
+#   herdr plugin pane open --plugin spiceedit --entrypoint edit --placement overlay \
+#     --env SPICEEDIT_FILE="<path>" --focus
+# The launcher resolves the target path (SPICEEDIT_FILE) and execs `spiceedit "$FILE"`,
+# degrading gracefully when spiceedit or the path is absent.
+[[panes]]
+id = "edit"
+title = "Edit"
+placement = "overlay"
+command = ["sh", "scripts/edit.sh"]
+
+# Convenience action (bind to a herdr keybinding) — the documented fallback for the
+# hunk file-activate hook (see conductor/README.md § review). It opens the `edit`
+# overlay for the file named in $SPICEEDIT_FILE.
+[[actions]]
+id = "open-overlay"
+title = "Open file in spiceedit (overlay)"
+description = "Open the file named in $SPICEEDIT_FILE editable in a floating spiceedit overlay."
+command = ["sh", "scripts/open-overlay.sh"]

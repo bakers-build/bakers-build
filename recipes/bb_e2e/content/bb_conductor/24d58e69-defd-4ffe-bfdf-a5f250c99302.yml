@@ -1,0 +1,35 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: 24d58e69-defd-4ffe-bfdf-a5f250c99302
+  depends:
+    dbm00000-0000-4000-8000-000000000001: bb_machine
+    dbf00000-0000-4000-8000-000000000001: bb_project
+default:
+  # BB-197 AC-4 fixture: a conductor with no states and never seen, so the
+  # conductor view's legible empty state (nie) is covered by the e2e suite
+  # without any ad-hoc drush seeding.
+  #
+  # It used to have no owner either, and that is no longer expressible. Since
+  # BB-305 bb_conductor implements EntityOwnerInterface, and core's content
+  # importer assigns the importing account to any owner-less entity it creates
+  # ("Ensure that the entity is not owned by the anonymous user",
+  # Drupal\Core\DefaultContent\Importer). Writing `owner_user_id: 0` here would
+  # not help: the importer's guard is `empty($entity->getOwnerId())`, and
+  # empty(0) is TRUE, so an explicit anonymous owner is overwritten just the
+  # same. The User column therefore has no empty case left to assert.
+  conductor_id:
+    -
+      value: "orphan-node"
+  label:
+    -
+      value: "orphan-node"
+  status:
+    -
+      value: "offline"
+  machine:
+    -
+      entity: "dbm00000-0000-4000-8000-000000000001"
+  project_id:
+    -
+      entity: "dbf00000-0000-4000-8000-000000000001"

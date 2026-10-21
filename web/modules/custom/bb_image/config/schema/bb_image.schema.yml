@@ -1,0 +1,4 @@
+# The square crop widget keeps core's image widget settings.
+field.widget.settings.bb_square_image:
+  type: field.widget.settings.image_image
+  label: 'Image with square crop widget settings'

@@ -1,0 +1,16 @@
+services:
+  bb_browser_test.cookie_theme_negotiator:
+    class: Drupal\bb_browser_test\Theme\CookieThemeNegotiator
+    arguments: ['@request_stack', '@theme_handler']
+    tags:
+      - { name: theme_negotiator, priority: 1000 }
+  bb_browser_test.app_provider:
+    class: Drupal\bb_browser_test\BrowserAppProvider
+    arguments: ['@current_user', '@request_stack']
+    tags:
+      - { name: island.app_provider }
+  bb_browser_test.import_middleware:
+    class: Drupal\bb_browser_test\ImportMiddleware
+    arguments: ['@config.factory']
+    tags:
+      - { name: http_client_middleware }

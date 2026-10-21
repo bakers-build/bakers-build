@@ -1,0 +1,5 @@
+name: bakers.build track test
+type: module
+description: 'Forces Worklog save failures for Kernel tests.'
+package: Testing
+core_version_requirement: ^11

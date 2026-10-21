@@ -1,0 +1,246 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - island.app.bakers
+    - system.menu.bakers-rail
+  enforced:
+    config:
+      - island.app.bakers
+  module:
+    - bb_api_key
+    - bb_core
+    - bb_ticket_trigger
+    - bb_track
+    - island_ui_patterns
+    - system
+    - ui_patterns
+  theme:
+    - bb_theme
+id: bb_shell
+label: 'bakers.build application shell'
+app: bakers
+layout: 'bb_theme:shell'
+layout_settings: {  }
+placements:
+  # `nav`'s items come from the `bb_menu` source (the ui_patterns menu
+  # source shaped for nav, see `BbMenuSource`) over the `bakers-rail` menu. The account side
+  # is a separate profile, `bb_shell_account`, which matches account-area
+  # routes through its `bb_user_area_route` condition and is weighted
+  # ahead of this one. `nav`
+  # fills the rail's own `navigation` slot,
+  # `account_switcher` fills its `workspace` slot from the ambient workspace
+  # (`bb_workspace_switcher`) and lists every workspace the account may enter
+  # (`bb_workspace_switcher_panel`). `multiple` is true when that list has
+  # more than one row, so a single-workspace account still renders as a plain
+  # label. The rail's `actions` foot carries the signed-in account (linked to
+  # its profile) beside the colour-mode toggle. `boost` and `target_placement`
+  # are unchanged: they describe the placement's own island behaviour, not
+  # which component fills it.
+  shell_rail:
+    plugin_id: ui_patterns_component
+    events:
+      - bakers.team.created
+    slot: sidebar
+    weight: 0
+    enabled: true
+    configuration:
+      component:
+        component_id: 'bb_theme:sidebar'
+        variant_id: null
+        props:
+          label:
+            source_id: textfield
+            source:
+              value: 'Workspace navigation'
+        slots:
+          workspace:
+            sources:
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:account_switcher'
+                    variant_id: null
+                    props:
+                      multiple:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_label:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_initials:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_color:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_picture:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                    slots:
+                      workspace_panel:
+                        sources:
+                          - source_id: bb_workspace_switcher_panel
+                            source: {  }
+          navigation:
+            sources:
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:nav'
+                    variant_id: null
+                    props:
+                      label:
+                        source_id: textfield
+                        source:
+                          value: Primary
+                      variant:
+                        source_id: textfield
+                        source:
+                          value: main
+                      items:
+                        source_id: bb_menu
+                        source:
+                          menu: bakers-rail
+                    slots: {  }
+          actions:
+            sources:
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:person'
+                    variant_id: null
+                    props:
+                      variant:
+                        source_id: textfield
+                        source:
+                          value: compact
+                      display_name:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      initials:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      color:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      picture:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      url:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      size:
+                        source_id: textfield
+                        source:
+                          value: md
+                    slots: {  }
+                _weight: '0'
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:mode_toggle'
+                    variant_id: null
+                    props:
+                      label:
+                        source_id: textfield
+                        source:
+                          value: 'Choose theme'
+                    slots: {  }
+                _weight: '1'
+      boost: true
+      target_placement: shell_content_island
+      also_placements:
+        - shell_page_header
+    data: {  }
+  shell_page_header:
+    plugin_id: ui_patterns_component
+    events:
+      - bakers.entity.renamed
+    slot: content
+    weight: 1
+    enabled: true
+    configuration:
+      component:
+        component_id: 'bb_theme:page_header'
+        variant_id: null
+        props:
+          title:
+            source_id: bb_page_title
+            source: {  }
+          description:
+            source_id: bb_page_header_description
+            source: {  }
+        slots:
+          leading:
+            sources:
+              - source_id: bb_entity_page_header_mark
+                source: {  }
+          breadcrumb:
+            sources:
+              - source_id: bb_run_breadcrumb
+                source: {  }
+              - source_id: bb_comment_breadcrumb
+                source: {  }
+          tabs:
+            sources:
+              - source_id: block
+                source:
+                  plugin_id: local_tasks_block
+          actions:
+            sources:
+              - source_id: bb_ticket_create_action
+                source: {  }
+              - source_id: bb_project_create_action
+                source: {  }
+              - source_id: bb_ticket_template_create_action
+                source: {  }
+              - source_id: bb_ticket_trigger_create_action
+                source: {  }
+              - source_id: bb_group_create_action
+                source: {  }
+              - source_id: bb_worklog_create_action
+                source: {  }
+              - source_id: bb_track_billing_account_create_action
+                source: {  }
+              - source_id: bb_service_account_create_action
+                source: {  }
+      boost: true
+      target_placement: shell_content_island
+    data: {  }
+  shell_content_island:
+    plugin_id: page_content
+    slot: content
+    weight: 2
+    enabled: true
+    configuration:
+      also_placements:
+        - shell_page_header
+      content_source_id: shell_main
+    data: {  }
+  shell_status_bar:
+    plugin_id: ui_patterns_component
+    slot: footer
+    weight: 3
+    enabled: true
+    configuration:
+      component:
+        component_id: 'bb_theme:status_bar'
+        variant_id: null
+        props: {  }
+        slots: {  }
+    data: {  }
+weight: -10
+# `/user/*` is account settings. The account-area routes match
+# `bb_shell_account` first (lower weight); gate wins on `/user/login`,
+# `/user/register`, `/user/check-mail` and `/user/reset/*` because it is
+# selected first at the same weight.
+condition_operator: and
+conditions:
+  request_path:
+    id: request_path
+    negate: false
+    pages: |-
+      /_workspace/*
+      /user/*
+      /time/submission/*

@@ -1,0 +1,62 @@
+# The form-wired cell options: a `picker` cell with a `name` renders real radio
+# inputs of that name (the second row is `clearable`), and an `action` cell
+# with `href` and `hx` renders an anchor with the create-trigger htmx
+# attributes. `variant: ''` keeps the `collapsed` variant from hiding the rows.
+component: bb_theme:table
+name: Wired
+props:
+  variant: ''
+  columns:
+    - key: member
+      label: Member
+    - key: role
+      label: Role
+    - key: remove
+      label: ''
+  rows:
+    - cells:
+        member: { kind: person, display_name: Christian Wiedemann, initials: CW, color: running, mail: cw@example.org }
+        role:
+          kind: picker
+          label: Role
+          name: 'members[1][role]'
+          picker_id: member-1-role
+          value_labels: [Maintainer]
+          options:
+            - { value: maintainer, label: Maintainer, selected: true }
+            - { value: member, label: Member, selected: false }
+        remove:
+          kind: action
+          label: Remove Christian Wiedemann from this team
+          icon: x-circle
+          icon_only: true
+          href: /_workspace/1/team/1/members/1/remove
+          hx:
+            get: /_workspace/1/team/1/members/1/remove?_wrapper_format=island_dialog
+            target: '#bakers-overlay'
+            select: dialog
+            swap: innerHTML
+    - cells:
+        member: { kind: person, display_name: Sven Gruber, initials: SG, color: unassigned, mail: sg@example.org }
+        role:
+          kind: picker
+          label: Role
+          name: 'members[2][role]'
+          picker_id: member-2-role
+          clearable: true
+          clear_label: No role
+          value_labels: [Member]
+          options:
+            - { value: maintainer, label: Maintainer, selected: false }
+            - { value: member, label: Member, selected: true }
+        remove:
+          kind: action
+          label: Remove Sven Gruber from this team
+          icon: x-circle
+          icon_only: true
+          href: /_workspace/1/team/1/members/2/remove
+          hx:
+            get: /_workspace/1/team/1/members/2/remove?_wrapper_format=island_dialog
+            target: '#bakers-overlay'
+            select: dialog
+            swap: innerHTML

@@ -1,0 +1,6 @@
+component: bb_theme:menu_item
+name: Default
+props:
+  label: keytec
+  url: /keytec/tickets
+  current: true

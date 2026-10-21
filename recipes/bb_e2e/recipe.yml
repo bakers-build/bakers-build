@@ -1,0 +1,37 @@
+name: 'bakers.build E2E Fixtures'
+description: 'bakers.build plus deterministic config and content fixtures for E2E tests. Apply as a second pass: drush recipe after site:install of bakers.'
+type: 'Site'
+recipes:
+  - bakers
+  # bb_seed ships the bb_labels terms (backend / ui / bug) that the
+  # designbook-mirrored tickets reference; apply it before this recipe's own
+  # content so those cross-recipe entity refs resolve.
+  - bb_seed
+install:
+  - consumers
+  - basic_auth
+  - bb_browser_test
+  - stark
+  # A stub OAuth provider for the browser suite (BB-476 AC-12) — e2e world
+  # only, never in recipes/bakers.
+  - bb_login_oauth_test
+config:
+  import:
+    consumers: '*'
+  actions:
+    user.flood:
+      simple_config_update:
+        # The whole browser suite reaches the site from ONE container IP, so the
+        # production ceiling of 50 attempts per hour is a shared budget four parallel
+        # workers exhaust. Lifting it here, in the e2e world only, is what lets the
+        # scenarios stop clearing the flood table globally. `user_limit` is deliberately
+        # untouched: the throttling scenario asserts it, per address.
+        ip_limit: 100000
+    r4032login.settings:
+      simple_config_update:
+        # A permanent property of the e2e world instead of a scenario mutating site
+        # configuration mid-run. Deliberately NOT /admin/config: login.feature's "A true
+        # protected route returns through login" scenario asserts that path DOES redirect
+        # an anonymous visitor into the login form, so the exclusion needs a route no other
+        # scenario claims. /admin/reports/status (access site reports) fills that role.
+        match_noredirect_pages: "/admin/reports/status\n/admin/reports/status/*"

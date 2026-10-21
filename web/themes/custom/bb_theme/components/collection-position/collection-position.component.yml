@@ -1,0 +1,26 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Collection Position
+status: stable
+group: Data Display
+description: 'The BB-312 position-in-collection indicator, which until now existed only in the TUI (`ListScreen.countLabel()`). It states WHERE the rows on screen sit inside the collection — the range `from`–`to` — and, when established, the collection''s `total` size. It mirrors `countLabel()`''s two cases exactly: with a total it reads `21–40 of 60 tickets`; with the total absent or null it degrades to `21–40 of ?`, because `?` is the honest rendering of an unestablished total rather than a zero or a guess. The dash between the two bounds is an EN DASH, not a hyphen. `noun` is rendered after the total in the known-total case only — the plain plural (`tickets`) rather than the TUI''s `ticket(s)` shorthand, because the web label has room to be written properly.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    from:
+      type: integer
+      title: First shown position (1-based)
+    to:
+      type: integer
+      title: Last shown position (1-based)
+    total:
+      type: integer
+      title: Collection size
+      description: When absent or null the label degrades to an honest `?` rather than a zero or a guess.
+    noun:
+      type: string
+      title: Plural noun for the collection
+      description: 'Rendered after the total, e.g. `tickets`. Only shown in the known-total case.'
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

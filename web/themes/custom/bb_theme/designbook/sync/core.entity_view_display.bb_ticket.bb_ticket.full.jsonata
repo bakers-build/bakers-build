@@ -1,0 +1,269 @@
+/*
+ * sync-to generator — core.entity_view_display.bb_ticket.bb_ticket.full
+ *
+ * THE TICKET DETAIL'S BODY, AND ONLY ITS BODY (BB-414 D3). BB-378 split the
+ * screen in two: the scene owns the arrangement, the `full` view mode emits the
+ * three zones of the body. BB-414 D1 hands the arrangement to a controller
+ * rather than to a second page layout, so nothing here may emit the screen's
+ * frame or its heading.
+ *
+ * IT NAMES EXACTLY THE THREE COMPONENTS ITS ENTITY MAPPING NAMES, and that is a
+ * checked statement rather than a convention: `data-display-components.sh` check B7 reads the
+ * addresses out of `entity-mapping/bb_ticket.bb_ticket.full.jsonata` and out
+ * of this whole file — comments included, in BOTH address forms — and fails when
+ * the two sets differ. Adding this generator is what turned that mapping from
+ * B7's generator-less list into a live comparison (BB-414 F11/R5), so no
+ * fourth address may be written down here, not even in prose.
+ *
+ * ------------------------------------------------------------------------------
+ * THE THREE ZONES, in the order the four questions a developer opens this screen
+ * with are answered:
+ *
+ *   About        the description
+ *   Run history  one row per run
+ *   Handoffs     the rest of what the agents wrote, LAST and collapsed
+ *
+ * ------------------------------------------------------------------------------
+ * WHERE THIS DEPARTS FROM D3, AND WHY — measured, not preferred.
+ *
+ * D3 feeds the description to the prose component through
+ * `field_formatter:bb_ticket:bb_ticket:description`. Measured against the
+ * live source registry, that source declares `prop_types: ["slot"]`, and the
+ * prose component's `body` is a PROP (its own schema says so, and says why: a
+ * processed field value is one field's value, not a composition). ui_patterns
+ * offers a source to a prop only when their prop types intersect, and
+ * display_builder DROPS a prop it cannot resolve WITHOUT ERRORING — the zone
+ * would have rendered an empty body and nothing would have said so.
+ *
+ * `field_property:bb_ticket:description:processed` is the same intent in the
+ * shape the prop can take: `prop_types: ["string", "enum"]`, and `processed` is
+ * precisely "already rendered by the text format", which is that prop's stated
+ * contract. The two zones whose content is a SLOT keep D3's field-formatter
+ * sources unchanged, because there the prop types do intersect.
+ *
+ * A slot cannot take `textfield` either (`prop_types: ["string", "identifier"]`),
+ * so the three headings are `token` sources — `prop_types: ["slot", "string",
+ * "url"]` — carrying a literal with no placeholder in it.
+ *
+ * ------------------------------------------------------------------------------
+ * `dependencies` IS THE FIRST-SAVE FORM (BB-414 R2). A second save adds
+ * calculated keys, and the recipe's strict list compares this file against ACTIVE
+ * config on every construction, ignoring only `uuid`, `_core` and an empty
+ * `dependencies` — so a twice-saved form aborts the WHOLE recipe on the second
+ * `ddev init`. The `uuid` is part of the same defence: the `config/sync` copy
+ * carries it, because a file without one never equals active config and `drush
+ * cim` would re-save the entity on every deploy, manufacturing exactly that
+ * second save. The `bb_core/config/optional` copy drops it, which is the one
+ * key `ConfigConfigurator` ignores.
+ */
+(
+{
+  "uuid": "2f6a2f6f-2a37-4e29-9a6b-6b0a3d2b8f41",
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "core.entity_view_mode.bb_ticket.full"
+    ],
+    "module": [
+      "display_builder",
+      "bb_core"
+    ]
+  },
+  "third_party_settings": {
+    "display_builder": {
+      "profile": "default",
+      "sources": [
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:zone",
+              "variant_id": null,
+              "props": {
+                "inset": {
+                  "source_id": "select",
+                  "source": {
+                    "value": "none"
+                  }
+                },
+                "gap": {
+                  "source_id": "select",
+                  "source": {
+                    "value": "sm"
+                  }
+                },
+                "columns": {
+                  "source_id": "select",
+                  "source": {
+                    "value": 1
+                  }
+                }
+              },
+              "slots": {
+                "heading": {
+                  "sources": [
+                    {
+                      "source_id": "token",
+                      "source": {
+                        "value": "About"
+                      },
+                      "node_id": "zone_about_heading"
+                    }
+                  ]
+                },
+                "content": {
+                  "sources": [
+                    {
+                      "source_id": "component",
+                      "source": {
+                        "component": {
+                          "component_id": "bb_theme:rich-text",
+                          "variant_id": null,
+                          "props": {
+                            "body": {
+                              "source_id": "field_property:bb_ticket:description:processed",
+                              "source": {}
+                            },
+                            "size": {
+                              "source_id": "select",
+                              "source": {
+                                "value": "default"
+                              }
+                            },
+                            "label": {
+                              "source_id": "token",
+                              "source": {
+                                "value": "Description"
+                              }
+                            }
+                          },
+                          "slots": {}
+                        }
+                      },
+                      "node_id": "zone_about_body"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "node_id": "zone_about"
+        },
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:zone",
+              "variant_id": null,
+              "props": {
+                "inset": {
+                  "source_id": "select",
+                  "source": {
+                    "value": "none"
+                  }
+                },
+                "gap": {
+                  "source_id": "select",
+                  "source": {
+                    "value": "sm"
+                  }
+                },
+                "columns": {
+                  "source_id": "select",
+                  "source": {
+                    "value": 1
+                  }
+                }
+              },
+              "slots": {
+                "heading": {
+                  "sources": [
+                    {
+                      "source_id": "token",
+                      "source": {
+                        "value": "Run history"
+                      },
+                      "node_id": "zone_runs_heading"
+                    }
+                  ]
+                },
+                "content": {
+                  "sources": [
+                    {
+                      "source_id": "field_formatter:bb_ticket:bb_ticket:runs",
+                      "source": {
+                        "type": "entity_reference_entity_view",
+                        "settings": {
+                          "view_mode": "teaser",
+                          "link": false
+                        },
+                        "third_party_settings": {}
+                      },
+                      "node_id": "zone_runs_list"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "node_id": "zone_runs"
+        },
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:collapsible",
+              "variant_id": null,
+              "props": {
+                "open": {
+                  "source_id": "checkbox",
+                  "source": {
+                    "value": false
+                  }
+                }
+              },
+              "slots": {
+                "label": {
+                  "sources": [
+                    {
+                      "source_id": "token",
+                      "source": {
+                        "value": "Handoffs — what the agents wrote"
+                      },
+                      "node_id": "collapsible_handoffs_label"
+                    }
+                  ]
+                },
+                "content": {
+                  "sources": [
+                    {
+                      "source_id": "field_formatter:bb_ticket:bb_ticket:handoff_comments",
+                      "source": {
+                        "type": "entity_reference_entity_view",
+                        "settings": {
+                          "view_mode": "teaser",
+                          "link": false
+                        },
+                        "third_party_settings": {}
+                      },
+                      "node_id": "collapsible_handoffs_stream"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "node_id": "collapsible_handoffs"
+        }
+      ]
+    }
+  },
+  "id": "bb_ticket.bb_ticket.full",
+  "targetEntityType": "bb_ticket",
+  "bundle": "bb_ticket",
+  "mode": "full",
+  "content": {},
+  "hidden": {}
+}
+)

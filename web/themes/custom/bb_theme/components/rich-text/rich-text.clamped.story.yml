@@ -1,0 +1,20 @@
+# A long body with `clamp: true`: five lines and a `Show more` toggle; without
+# JavaScript the whole body renders.
+component: bb_theme:rich-text
+name: Clamped
+props:
+  clamp: true
+  body: >-
+    <p>We need a <strong>full</strong> view-mode render for
+    <code>bb_ticket</code> so designers can preview ticket detail layouts
+    without hitting live Drupal data. The render has to stay faithful to what
+    Drupal produces, so it is built from the same mapping the site uses rather
+    than from a hand-written fixture.</p><p>Scope includes the state-flow bar,
+    the comment timeline, and reference chips for labels, parent and blockers.
+    Each of those reads a different entity, so the sample data has to cover
+    every reference the full view mode reaches, not only the ticket
+    itself.</p><ul><li>Render the state-flow bar from the workflow
+    states</li><li>Group the comment timeline by type</li><li>Link every related
+    ticket by identifier</li></ul><p>Out of scope: editing from the preview,
+    and any run-history change. Both are tracked separately and must not be
+    pulled in here, because the preview is read-only by design.</p>

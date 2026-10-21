@@ -1,0 +1,20 @@
+component: bb_theme:badge
+name: Claim mine
+# THE READER'S OWN LEASE — the same badge as `Claim` with `mine: true`, and the
+# reason `mine` is a prop rather than a nicety.
+#
+# A lease held by your own session and a lease held by another machine are the
+# same STATE and demand opposite responses: one is yours to release, the other is
+# something to wait for. No tone can carry that, because it is not a state — it is
+# whose. The deleted claim badge answered it with a hairline outline at 45% of the
+# state hue, and that outline is what came back here.
+#
+# The variant suffix is `claim_mine` with an UNDERSCORE. A hyphen in a story
+# variant suffix compiles to an invalid JS export: the story then fails in the
+# browser while every file-level check stays green.
+props:
+  label: cw-laptop-bakers
+  tone: lease
+  mono: true
+  mine: true
+  icon: lock

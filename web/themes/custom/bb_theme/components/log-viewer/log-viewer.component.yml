@@ -1,0 +1,22 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Log Viewer
+status: stable
+group: Data Display
+description: 'A block of machine output rendered as a log rather than as prose: monospace, whitespace preserved, one gutter line number per line, and its own horizontal scroll container so a long line scrolls the log instead of the page. The caption carries the line count, which is what tells a reader whether they are looking at all of it. Generic over its text prop: it knows a caption and a block of text, and nothing about what produced them.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    text:
+      type: string
+      title: Log text
+      description: The raw log. Rendered verbatim with whitespace preserved; never treated as markup.
+    caption:
+      type: string
+      title: Caption
+      description: What this log is, e.g. "Error log". Rendered with the line count beside it.
+  required:
+    - text
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

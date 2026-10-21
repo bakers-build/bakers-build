@@ -1,0 +1,40 @@
+island_test.page:
+  path: '/island-test'
+  defaults:
+    _controller: '\Drupal\island_test\Controller\TestPageController::page'
+    _title: 'Island test'
+  requirements:
+    # Kernel test fixture page: intentionally open.
+    _access: 'TRUE'
+# The destination both link fixtures point at, so a built link resolves to a
+# real route rather than to an unroutable path.
+island_test.other:
+  path: '/island-test-other'
+  defaults:
+    _controller: '\Drupal\island_test\Controller\TestPageController::page'
+  requirements:
+    # Kernel test fixture route: intentionally open.
+    _access: 'TRUE'
+# A controller that throws NotFoundHttpException. This is what decides that the
+# boosted GET answer is built at kernel.view and not at kernel.request: a
+# controller's own 404 never reaches kernel.view, so a boosted click cannot
+# answer 200 where a direct visit answers 404.
+island_test.missing:
+  path: '/island-test-missing'
+  defaults:
+    _controller: '\Drupal\island_test\Controller\TestPageController::missing'
+  requirements:
+    # Kernel test fixture route: intentionally open.
+    _access: 'TRUE'
+# Two CONFIGURATION-MODE islands on one page, built by the `island` ui_patterns
+# source — the shape BB-396's shell page layout produces. It is a route rather
+# than a render array in the test because the property under test is what a
+# BOOSTED GET receives, and only a real request has headers.
+island_test.configured_islands:
+  path: '/island-test-configured'
+  defaults:
+    _controller: '\Drupal\island_test\Controller\ConfiguredIslandPageController::page'
+    _title: 'Configured islands'
+  requirements:
+    # Kernel test fixture route: intentionally open.
+    _access: 'TRUE'

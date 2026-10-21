@@ -1,0 +1,545 @@
+id: component-demos
+title: Component Demos
+description: >-
+  Standalone demonstrations of generic components that are not full screens and
+  not chrome — a component is delivered only if a Designbook scene reaches it
+  (WORKFLOW.md), and a story alone is not a scene. This file is deliberately
+  outside design-system.scenes.yml (every scene of which fills content with the
+  $content placeholder, `layout-components.sh` check A4) and outside the four
+  section files (every scene of which opens with its section's chrome scene,
+  check A3). A component demonstrated here carries neither constraint: it is
+  rendered directly, with no chrome and no canvas, because it is neither a
+  screen nor part of the shell.
+status: planned
+group: Designbook/Sections/Component Demos
+scenes:
+  - name: segmented control
+    group: Action
+    docs: >-
+      A standalone demonstration of bb_theme:segmented_control (BB-490), not
+      a screen and not the shell — this scene exists only to reach the component
+      itself. It renders the component in isolation with three positions and the
+      middle one active, in the same order and with the same URL tokens
+      BbClosedRows::buildExposedForm() renders onto the six operator listings'
+      closed-rows filter (open → only → all).
+
+
+      Generic by construction. The component knows label and items — nothing
+      about tickets, runs, conductors or the word "closed" — so this scene's
+      sample labels (Open / Closed / All) are one caller's choice of words, not
+      a fact the component encodes.
+
+
+      Not a reuse of tabs. tabs is bound to page_header's tabs slot and switches
+      the subject of an entity page; this component filters the list it sits
+      beside and is never placed in that slot. Two components, two meanings, one
+      aria-current contract each.
+    items:
+      - component: bb_theme:segmented_control
+        props:
+          label: Closed rows
+          items:
+            - label: Open
+              url: '?closed=open'
+              active: false
+            - label: Closed
+              url: '?closed=only'
+              active: true
+            - label: All
+              url: '?closed=all'
+              active: false
+  - name: model comparison
+    group: Data Display
+    docs: >-
+      A standalone sample-data demonstration of bb_theme:stat-comparison. Time
+      is the shared X axis and numeric value the shared Y axis; Model A and
+      Model B are distinct encodings on that one plot. The values are
+      illustrative, not live tenant measurements.
+    items:
+      - component: bb_theme:stat-comparison
+        props:
+          chart:
+            state: ready
+            label: Model comparison
+            value_label: Value
+            labels:
+              - '2026-01-01'
+              - '2026-01-02'
+              - '2026-01-04'
+            series:
+              - key: a
+                style: a
+                label: Model A
+                latest_value: '15'
+                values:
+                  - x: '2026-01-01'
+                    'y': 10
+                  - x: '2026-01-02'
+                    'y': 20
+                  - x: '2026-01-04'
+                    'y': 15
+              - key: b
+                style: b
+                label: Model B
+                latest_value: '20'
+                values:
+                  - x: '2026-01-01'
+                    'y': 30
+                  - x: '2026-01-02'
+                    'y': 10
+                  - x: '2026-01-04'
+                    'y': 20
+            rows:
+              - date: '2026-01-01'
+                values:
+                  - '10'
+                  - '30'
+              - date: '2026-01-02'
+                values:
+                  - '20'
+                  - '10'
+              - date: '2026-01-04'
+                values:
+                  - '15'
+                  - '20'
+  - name: six series
+    group: Data Display
+    docs: >-
+      A standalone sample-data demonstration of bb_theme:stat-comparison with
+      six series on shared axes. Each series uses a distinct style (a through f)
+      so colour, dash and marker can be told apart. The values are illustrative,
+      not live tenant measurements.
+    items:
+      - component: bb_theme:stat-comparison
+        props:
+          chart:
+            state: ready
+            label: Six series
+            value_label: Value
+            labels:
+              - '2026-01-01'
+              - '2026-01-02'
+              - '2026-01-04'
+            series:
+              - key: a
+                style: a
+                label: Opus
+                latest_value: '25'
+                values:
+                  - x: '2026-01-01'
+                    'y': 30
+                  - x: '2026-01-02'
+                    'y': 20
+                  - x: '2026-01-04'
+                    'y': 25
+              - key: b
+                style: b
+                label: Grok
+                latest_value: '15'
+                values:
+                  - x: '2026-01-01'
+                    'y': 24
+                  - x: '2026-01-02'
+                    'y': 28
+                  - x: '2026-01-04'
+                    'y': 15
+              - key: c
+                style: c
+                label: Sol
+                latest_value: '22'
+                values:
+                  - x: '2026-01-01'
+                    'y': 18
+                  - x: '2026-01-02'
+                    'y': 10
+                  - x: '2026-01-04'
+                    'y': 22
+              - key: d
+                style: d
+                label: Astra
+                latest_value: '8'
+                values:
+                  - x: '2026-01-01'
+                    'y': 12
+                  - x: '2026-01-02'
+                    'y': 16
+                  - x: '2026-01-04'
+                    'y': 8
+              - key: e
+                style: e
+                label: Luna
+                latest_value: '12'
+                values:
+                  - x: '2026-01-01'
+                    'y': 6
+                  - x: '2026-01-02'
+                    'y': 8
+                  - x: '2026-01-04'
+                    'y': 12
+              - key: f
+                style: f
+                label: Other
+                latest_value: '5'
+                values:
+                  - x: '2026-01-01'
+                    'y': 3
+                  - x: '2026-01-02'
+                    'y': 4
+                  - x: '2026-01-04'
+                    'y': 5
+            rows:
+              - date: '2026-01-01'
+                values:
+                  - '30'
+                  - '24'
+                  - '18'
+                  - '12'
+                  - '6'
+                  - '3'
+              - date: '2026-01-02'
+                values:
+                  - '20'
+                  - '28'
+                  - '10'
+                  - '16'
+                  - '8'
+                  - '4'
+              - date: '2026-01-04'
+                values:
+                  - '25'
+                  - '15'
+                  - '22'
+                  - '8'
+                  - '12'
+                  - '5'
+  - name: autosave toast
+    group: Data Display
+    docs: >-
+      A standalone demonstration of bb_theme:toast, the fixed bottom-right
+      confirmation for a short status such as `Saved`. It is one element with no
+      children, so a script can rewrite its text, role and hidden attribute in
+      place. No product screen renders it today: the Settings forms save on an
+      explicit Save and confirm with Drupal's status message. With an empty
+      message it renders hidden.
+    items:
+      - component: bb_theme:toast
+        props:
+          message: Saved
+  - name: copied overlay
+    group: Data Display
+    docs: >-
+      A standalone demonstration of bb_theme:copied, the absolutely positioned
+      copy confirmation rendered as an opaque button, just below the Copy
+      control. The parent supplies `relative`; this scene names the overlay
+      itself so a story of setup_command is not the only reach. Empty message
+      renders hidden. Distinguishes from toast, which is viewport-fixed.
+    items:
+      - component: bb_theme:copied
+        props:
+          message: Copied
+  - name: setup paths
+    group: Action
+    docs: >-
+      A standalone demonstration of bb_theme:setup_paths, the generic
+      two-position panel switcher. The wrapper owns Alpine `selected` state and
+      the Agent segmented filter; the two panels switch in place by position.
+      A story of setup_command or segmented_control is not this composition.
+    items:
+      - component: bb_theme:setup_paths
+        props:
+          selected: claude
+          filter_label: Agent
+          items:
+            - label: Claude Code
+              value: claude
+            - label: Codex
+              value: codex
+        slots:
+          intro:
+            - component: bb_theme:text
+              props:
+                text: 'Install the bakers.build plugin first:'
+                size: caption
+                tone: light
+          panel_a:
+            - component: bb_theme:setup_command
+              props:
+                command: /plugin install bakers@bakers
+                label: Copy the plugin install command
+          panel_b:
+            - component: bb_theme:setup_command
+              props:
+                command: codex plugin add bakers@bakers
+                label: Copy the Codex plugin install command
+          after:
+            - component: bb_theme:setup_command
+              props:
+                command: >-
+                  Use `bakers:init` to guide me through installing and setting up
+                  bakers.build.
+                label: Copy the skill wizard prompt
+  - name: inline add row
+    group: Layout
+    docs: >-
+      A standalone demonstration of bb_theme:zone with `direction: fill`: the
+      member add/invite control of the workspace and team Members tabs
+      (GroupMembersForm). The field takes the remaining width and the submit
+      keeps its own width on one line, aligned to the bottom edge so it lines up
+      with the input rather than with the label.
+    items:
+      - component: bb_theme:zone
+        props:
+          inset: none
+          direction: fill
+          description: Only people who already belong to this workspace can join the team.
+        slots:
+          heading: Add a member
+          content:
+            - component: bb_theme:zone
+              props:
+                inset: none
+                gap: none
+              slots:
+                content:
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-account
+                    slots:
+                      title: Member
+                  - component: bb_theme:form_input
+                    props:
+                      name: account
+                      id: edit-account
+                      value: ''
+                      placeholder: Search by name
+            - component: bb_theme:button
+              props:
+                variant: primary
+                type: submit
+                label: Add member
+  - name: ticket-inspector (billing)
+    group: Data Display
+    docs: 'THE BILLING ROWS OF THE TICKET INSPECTOR (BB-666), in four states, as a demonstration: the
+      rows live in the inspector of the ticket screen, rendered by the `bb_track_ticket_billing` source.
+      Billing names the account recorded time on this ticket is booked to; Source says where it comes from:
+      `linked` (this ticket links it), `from <identifier>` (the nearest ancestor that links one) or `project
+      default`. Source is its own row because beside the picker the narrow rail would wrap it.
+  
+  
+      AN EDITOR PICKS, A VIEWER READS. A project editor gets a picker of the project''s linkable accounts
+      — active and not the default — plus Inherit, which removes only this ticket''s link, and saves with
+      Save billing account. Everyone else who can view the ticket reads the same rows as text. The default
+      is never offered: it is what Inherit falls back to.'
+    items:
+      - component: bb_theme:zone
+        props:
+          gap: lg
+          columns: 2
+          description: Editors pick an account or Inherit; viewers read the same rows without a picker
+        slots:
+          heading: Billing rows of the ticket inspector
+          content:
+            - component: bb_theme:inspector
+              slots:
+                rows:
+                  - component: bb_theme:list
+                    props:
+                      layout: plain
+                      items:
+                        - cells:
+                            label:
+                              kind: text
+                              value: Labels
+                              emphasis: faint
+                            value:
+                              kind: text
+                              value: backend, ui
+                        - cells:
+                            label:
+                              kind: text
+                              value: Billing
+                              emphasis: faint
+                            value:
+                              kind: picker
+                              label: Billing account
+                              picker_id: meta-billing-7
+                              multiple: false
+                              clearable: true
+                              clear_label: Inherit
+                              open: false
+                              value_labels:
+                                - Kunde X maintenance
+                              options:
+                                - value: '7'
+                                  label: Kunde X maintenance
+                                  description: Time & Material
+                                  selected: true
+                                - value: '9'
+                                  label: Relaunch fixed price
+                                  description: Fixed Price
+                                  selected: false
+                        - cells:
+                            label:
+                              kind: text
+                              value: Source
+                              emphasis: faint
+                            value:
+                              kind: badge
+                              label: linked
+                              tone: neutral
+            - component: bb_theme:inspector
+              slots:
+                rows:
+                  - component: bb_theme:list
+                    props:
+                      layout: plain
+                      items:
+                        - cells:
+                            label:
+                              kind: text
+                              value: Labels
+                              emphasis: faint
+                            value:
+                              kind: text
+                              value: backend, ui
+                        - cells:
+                            label:
+                              kind: text
+                              value: Billing
+                              emphasis: faint
+                            value:
+                              kind: picker
+                              label: Billing account
+                              picker_id: meta-billing-inherit
+                              multiple: false
+                              clearable: true
+                              clear_label: Inherit
+                              open: false
+                              value_labels:
+                                - Relaunch fixed price
+                              options:
+                                - value: '7'
+                                  label: Kunde X maintenance
+                                  description: Time & Material
+                                  selected: false
+                                - value: '9'
+                                  label: Relaunch fixed price
+                                  description: Fixed Price
+                                  selected: false
+                        - cells:
+                            label:
+                              kind: text
+                              value: Source
+                              emphasis: faint
+                            value:
+                              kind: badge
+                              label: from BB-100
+                              tone: neutral
+            - component: bb_theme:inspector
+              slots:
+                rows:
+                  - component: bb_theme:list
+                    props:
+                      layout: plain
+                      items:
+                        - cells:
+                            label:
+                              kind: text
+                              value: Labels
+                              emphasis: faint
+                            value:
+                              kind: text
+                              value: backend, ui
+                        - cells:
+                            label:
+                              kind: text
+                              value: Billing
+                              emphasis: faint
+                            value:
+                              kind: picker
+                              label: Billing account
+                              picker_id: meta-billing-inherit
+                              multiple: false
+                              clearable: true
+                              clear_label: Inherit
+                              open: false
+                              value_labels:
+                                - bakers.build Platform internal
+                              options:
+                                - value: '7'
+                                  label: Kunde X maintenance
+                                  description: Time & Material
+                                  selected: false
+                                - value: '9'
+                                  label: Relaunch fixed price
+                                  description: Fixed Price
+                                  selected: false
+                        - cells:
+                            label:
+                              kind: text
+                              value: Source
+                              emphasis: faint
+                            value:
+                              kind: badge
+                              label: project default
+                              tone: neutral
+            - component: bb_theme:inspector
+              slots:
+                rows:
+                  - component: bb_theme:list
+                    props:
+                      layout: plain
+                      items:
+                        - cells:
+                            label:
+                              kind: text
+                              value: Labels
+                              emphasis: faint
+                            value:
+                              kind: text
+                              value: backend, ui
+                        - cells:
+                            label:
+                              kind: text
+                              value: Billing
+                              emphasis: faint
+                            value:
+                              kind: text
+                              value: bakers.build Platform internal
+                        - cells:
+                            label:
+                              kind: text
+                              value: Source
+                              emphasis: faint
+                            value:
+                              kind: badge
+                              label: project default
+                              tone: neutral
+  - name: "markdown textarea"
+    group: "Form"
+    docs: >-
+      A standalone demonstration of bb_theme:form_rich_text, the Markdown
+      authoring control: a formatting toolbar over a plain textarea. Every
+      bb_rich body field renders through it, through the bb_markdown form
+      element or the bb_markdown text editor; the stored value stays the
+      Markdown source the textarea holds. form_textarea stays the plain box.
+    items:
+      - component: "bb_theme:zone"
+        props:
+          inset: "none"
+          direction: "fill"
+          description: "The authoring control every bb_rich body field renders through: toolbar over a plain textarea; the value stays Markdown source."
+        slots:
+          heading: "Markdown textarea"
+          content:
+            - component: "bb_theme:form_label"
+              props:
+                for: "edit-body-value"
+              slots:
+                title: "Body"
+            - component: "bb_theme:form_rich_text"
+              props:
+                id: "edit-body-value"
+                name: "body[0][value]"
+                rows: 6
+                value: "## Steps to reproduce\n\n- Create a ticket without an assignee\n- Open `bakers ui` and export\n\nThe export **stops** at the first such ticket."

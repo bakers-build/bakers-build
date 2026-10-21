@@ -1,0 +1,24 @@
+# Markdown output fixture: rendered by tests/playwright/features/tickets/markdown-output.feature.
+# Never edited by another test, so its stored source can be compared before and after reading.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket
+  uuid: 61000000-0000-4000-8000-000000000002
+  default_langcode: en
+  depends:
+    ead793be-b1f3-5f56-a716-392b8c878a16: bb_project
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+default:
+  identifier:
+  - value: APIS-2
+  number:
+  - value: 2
+  title:
+  - value: "Markdown output safety"
+  workflow:
+  - value: bb_feature
+  description:
+  - value: "Safe text before.\n\n<script>window.__markdownXss = true;</script>\n\n<img src=\"x\" onerror=\"window.__markdownXss = true\">\n\n[unsafe link](javascript:window.__markdownXss=true)\n\n```html\n<b>literal HTML in code</b>\n```\n"
+    format: bb_rich
+  project_id:
+  - entity: ead793be-b1f3-5f56-a716-392b8c878a16

@@ -1,0 +1,16 @@
+uuid: fafc1676-db0d-4eeb-98ac-a7e11aeee28a
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_view_bb_environment
+name: 'bb:session:view_bb_environment'
+description: 'bakers.build session ceiling — view bb_environment'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'view bb_environment'

@@ -1,0 +1,7 @@
+form_save:
+  js:
+    js/form-save.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.htmx
+    - core/once

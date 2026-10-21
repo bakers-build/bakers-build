@@ -1,0 +1,50 @@
+(
+  /* ONE ACTIVITY, AS ONE `event` WITH A STRUCTURED LEAD — the row a project
+     Activities zone renders. `full` is the only view mode.
+
+     The entity stores kind, states, step and references, not prose; this
+     mapping builds the same subject, statement, facts and links the Drupal
+     source passes. A JSONata mapping cannot join other collections, so the
+     ticket identifier, author, conductor label and run details are computed
+     fields the sample stores. The role follows the stored run reference. */
+  $a := $;
+  $has := function($v) { $exists($v) and $v != "" };
+  $outcome := $has($a.run_outcome) ? $a.run_outcome : "ended";
+  $in := function($s) { $has($s) ? " in " & $s : "" };
+  $about := $join([$replace($a.workflow ? $a.workflow : "", /^bb_/, ""), $a.new_state ? $a.new_state : ""][$ != ""], ", ");
+  $tag := $a.kind = "created" ? "created"
+    : $a.kind = "claimed" ? "started"
+    : $a.kind = "run_ended" ? $outcome
+    : "status";
+  $statement := $a.kind = "created" ? "created" & ($about != "" ? " (" & $about & ")" : "")
+    : $a.kind = "claimed" ? "started work" & $in($a.step)
+    : $a.kind = "run_ended" ? "run " & $outcome & $in($a.step)
+    : $a.previous_state & " → " & $a.new_state;
+  $role := $has($a.run_id) ? "agent" : ($a.kind = "status_changed" ? "human" : undefined);
+  $facts := $append([], [$a.run_harness, $a.conductor_label, $a.run_duration][$has($)]);
+  $links := $append([], [
+    $has($a.comment_id) ? { "title": "Summary", "url": "#summary-" & $a.comment_id },
+    $has($a.run_id) ? { "title": "Run", "url": "#run-" & $a.run_id }
+  ]);
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:event",
+      "props": $merge([
+        {
+          "author_name": $a.author_name,
+          "author_initials": $a.author_initials,
+          "author_color": $a.author_color,
+          "tag": $tag,
+          "timestamp": $a.created,
+          "subject_label": $a.ticket_identifier,
+          "subject_url": "#ticket-" & $a.ticket_id,
+          "statement": $statement
+        },
+        $role ? { "role": $role } : {},
+        $count($facts) > 0 ? { "facts": $facts } : {},
+        $count($links) > 0 ? { "links": $links } : {},
+        $has($a.run_error_line) ? { "detail": $a.run_error_line } : {}
+      ])
+    }
+  ]
+)

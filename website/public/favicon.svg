@@ -1,0 +1,19 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="bakers.build">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1FA97A"/>
+      <stop offset="1" stop-color="#0E7C63"/>
+    </linearGradient>
+  </defs>
+  <!-- mark: orbiting nodes around a control-plane core (conductor motif) -->
+  <rect x="4" y="4" width="112" height="112" rx="26" fill="url(#g)"/>
+  <circle cx="60" cy="60" r="34" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="3"/>
+  <circle cx="60" cy="60" r="10" fill="#FFFFFF"/>
+  <circle cx="60" cy="26" r="7" fill="#FFFFFF"/>
+  <circle cx="94" cy="60" r="7" fill="#FFFFFF"/>
+  <circle cx="60" cy="94" r="7" fill="#FFFFFF"/>
+  <circle cx="26" cy="60" r="7" fill="#FFFFFF" fill-opacity="0.75"/>
+  <!-- wordmark -->
+  <text x="140" y="60" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="58" font-weight="800" letter-spacing="2" fill="#12B886">bakers.build</text>
+  <text x="142" y="92" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="16" font-weight="500" letter-spacing="1" fill="#7A8891">ticket-driven agent orchestrator</text>
+</svg>

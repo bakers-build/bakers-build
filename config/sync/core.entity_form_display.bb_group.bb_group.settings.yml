@@ -1,0 +1,46 @@
+uuid: 5b86710e-c110-4c63-971c-695c12771e71
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_group.settings
+  module:
+    - bb_core
+    - bb_image
+id: bb_group.bb_group.settings
+targetEntityType: bb_group
+bundle: bb_group
+mode: settings
+content:
+  description:
+    type: string_textarea
+    weight: 1
+    region: content
+    settings:
+      rows: 3
+      placeholder: ''
+    third_party_settings: {  }
+  image:
+    type: bb_square_image
+    weight: 2
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: ''
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  billing_profile: true
+  changed: true
+  created: true
+  id: true
+  owner_user_id: true
+  uuid: true
+  workspace_id: true

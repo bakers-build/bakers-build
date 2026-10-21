@@ -1,0 +1,27 @@
+island.plugin.browser_counter:
+  type: mapping
+  label: 'Browser event counter'
+  mapping:
+    label:
+      type: label
+      label: 'Counter label'
+    trigger:
+      type: boolean
+      label: 'Show event control'
+
+bb_browser_test.import:
+  type: config_object
+  label: 'External import responses for the BDD recipe'
+  mapping:
+    responses:
+      type: sequence
+      label: 'Upstream response fixtures'
+      sequence:
+        type: mapping
+        mapping:
+          match:
+            type: string
+            label: 'Request URI fragment'
+          body:
+            type: text
+            label: 'JSON response body'

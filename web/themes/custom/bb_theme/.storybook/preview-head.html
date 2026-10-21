@@ -1,0 +1,111 @@
+<!-- Storybook preview canvas: paints the story root from the theme's own design tokens, so a story
+     is measured on the same surface Drupal renders. No literal fallback on purpose — the tokens
+     always load via css/tokens/index.src.css, so a fallback here could only mask a broken import,
+     and a dark one would mask it on the very surface the light-render criterion is proved against.
+     Storybook-only — does not affect Drupal. -->
+<style>
+  html,
+  body,
+  .sb-show-main,
+  #storybook-root {
+    background-color: var(--color-app);
+    color: var(--color-text);
+  }
+</style>
+
+<!-- The Drupal behaviour shim, so a component's own JavaScript can run in Storybook (BB-333).
+
+     WHY THIS FILE AND NOT preview.js. Every component behaviour in this theme is an IIFE invoked
+     as `})(Drupal, once)` at MODULE SCOPE, so both globals must exist before the module evaluates.
+     preview.js reaches its component JS through `import.meta.glob({ eager: true })`, and Vite emits
+     those as static imports PREPENDED to the top of the file -- above any import written by hand.
+     A shim imported from preview.js would therefore load after the modules that need it and every
+     one of them would throw a ReferenceError. This is a classic inline script in the iframe's
+     `<head>`: it runs before the preview module bundle at all, so the ordering is a property of the
+     document rather than of a bundler's emit order.
+
+     WHAT IT IS NOT. It is not Drupal. It is the smallest surface the theme's own components use --
+     `Drupal.behaviors`, `attach`/`detach`, and `once` -- so a behaviour that reached for anything
+     more (Drupal.ajax, drupalSettings with real content, the string translation backend) would
+     fail loudly in Storybook instead of quietly diverging from the site. Storybook-only; Drupal
+     ships the real implementations. -->
+<script>
+  (function () {
+    window.drupalSettings = window.drupalSettings || {};
+
+    // core/once: return only the elements not yet marked with this id, and mark them.
+    // Same contract as the real one, including the `data-once` attribute it uses.
+    window.once = function once(id, selector, context) {
+      var root = context || document;
+      var nodes =
+        typeof selector === 'string'
+          ? Array.prototype.slice.call(root.querySelectorAll(selector))
+          : [selector];
+      return nodes.filter(function (element) {
+        var applied = (element.getAttribute('data-once') || '').split(' ').filter(Boolean);
+        if (applied.indexOf(id) !== -1) {
+          return false;
+        }
+        applied.push(id);
+        element.setAttribute('data-once', applied.join(' '));
+        return true;
+      });
+    };
+    window.once.remove = function remove(id, selector, context) {
+      var root = context || document;
+      var nodes =
+        typeof selector === 'string'
+          ? Array.prototype.slice.call(root.querySelectorAll(selector))
+          : [selector];
+      return nodes.filter(function (element) {
+        var applied = (element.getAttribute('data-once') || '').split(' ').filter(Boolean);
+        var at = applied.indexOf(id);
+        if (at === -1) {
+          return false;
+        }
+        applied.splice(at, 1);
+        element.setAttribute('data-once', applied.join(' '));
+        return true;
+      });
+    };
+
+    window.Drupal = window.Drupal || { behaviors: {}, locale: {} };
+    window.Drupal.behaviors = window.Drupal.behaviors || {};
+
+    window.Drupal.t = function t(str, args) {
+      return Object.keys(args || {}).reduce(function (carry, key) {
+        return carry.split(key).join(args[key]);
+      }, str);
+    };
+
+    window.Drupal.throwError = function throwError(error) {
+      setTimeout(function () {
+        throw error;
+      }, 0);
+    };
+
+    var run = function (phase, context, settings) {
+      Object.keys(window.Drupal.behaviors).forEach(function (name) {
+        var behavior = window.Drupal.behaviors[name];
+        if (typeof behavior[phase] !== 'function') {
+          return;
+        }
+        // One failing behaviour must not stop the others: in Drupal each is attached
+        // independently, and a story that renders eight components should not go blank
+        // because the ninth threw.
+        try {
+          behavior[phase](context, settings);
+        } catch (error) {
+          window.Drupal.throwError(error);
+        }
+      });
+    };
+
+    window.Drupal.attachBehaviors = function attachBehaviors(context, settings) {
+      run('attach', context || document, settings || window.drupalSettings);
+    };
+    window.Drupal.detachBehaviors = function detachBehaviors(context, settings) {
+      run('detach', context || document, settings || window.drupalSettings);
+    };
+  })();
+</script>

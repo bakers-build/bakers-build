@@ -1,0 +1,69 @@
+island_example.tasks:
+  path: '/island-example/tasks'
+  defaults:
+    _controller: '\Drupal\island_example\Controller\TasksController::page'
+    _title: 'Tasks'
+  requirements:
+    # Demo pages for the test harness: intentionally open.
+    _access: 'TRUE'
+  # The page embeds session-bound CSRF tokens (action links); the internal
+  # page cache must not serve it to other anonymous sessions.
+  options:
+    no_cache: 'TRUE'
+island_example.task:
+  path: '/island-example/tasks/{task_id}'
+  defaults:
+    _controller: '\Drupal\island_example\Controller\TasksController::detail'
+    _title: 'Task'
+  requirements:
+    # Demo pages for the test harness: intentionally open.
+    _access: 'TRUE'
+    task_id: '\d+'
+  options:
+    no_cache: 'TRUE'
+# The linkToPage() surface: content ONLY, no chrome header and no rail. The
+# container a page-container link targets is written by the theme's page
+# template, so a demo page for it must contribute nothing of its own outside
+# the main content (BB-398 D2).
+island_example.page_link:
+  path: '/island-example/page-link'
+  defaults:
+    _controller: '\Drupal\island_example\Controller\TasksController::pageLink'
+    _title: 'Page link'
+  requirements:
+    # Demo pages for the test harness: intentionally open.
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'
+island_example.page_link_target:
+  path: '/island-example/page-link-target'
+  defaults:
+    _controller: '\Drupal\island_example\Controller\TasksController::pageLinkTarget'
+    _title: 'Page link target'
+  requirements:
+    # Demo pages for the test harness: intentionally open.
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'
+island_example.notes:
+  path: '/island-example/notes'
+  defaults:
+    _controller: '\Drupal\island_example\Controller\TasksController::notes'
+    _title: 'Notes'
+  requirements:
+    # Demo pages for the test harness: intentionally open.
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'
+# The page-cache hazard's only observable surface (BB-408 R1). Deliberately
+# WITHOUT the `no_cache` option every other demo route carries: those pages
+# embed session-bound CSRF tokens, and a page the internal page cache never
+# stores cannot demonstrate a poisoning of it. This one renders a constant.
+island_example.cacheable:
+  path: '/island-example/cacheable'
+  defaults:
+    _controller: '\Drupal\island_example\Controller\TasksController::cacheablePage'
+    _title: 'Cacheable island'
+  requirements:
+    # Demo pages for the test harness: intentionally open.
+    _access: 'TRUE'

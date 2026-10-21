@@ -1,0 +1,16 @@
+uuid: 31da728f-8def-418b-9df9-a259c64111ce
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_create_bb_group
+name: 'bb:session:create_bb_group'
+description: 'bakers.build session ceiling — create bb_group'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'create bb_group'

@@ -1,0 +1,273 @@
+<!-- @dsCard group="UI Kit" viewport="1460x820" name="Login" subtitle="Gin-native sign-in" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bakers.build Login — Visuelles Design (light)</title>
+<link rel="stylesheet" href="../../styles.css">
+<style>
+
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-sans);
+  background: #F6F6F2;
+  color: var(--gin-text);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  padding: 28px 22px 60px;
+}
+
+.doc { max-width: 1460px; margin: 0 auto; }
+.doc__lead { margin: 0 0 22px; }
+.doc__kicker {
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--bakers-running-ink); margin: 0 0 8px;
+}
+.doc__h { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 10px; color: var(--gin-text); }
+.doc__sub { font-size: 14px; color: var(--gin-text-light); max-width: 80ch; margin: 0; }
+.doc__sub b { color: var(--gin-text); font-weight: 600; }
+.doc__sub code { font-family: var(--font-mono); font-size: 12px; background:var(--gin-layer-3); color:var(--gin-text); padding:1px 5px; border-radius:4px; }
+
+.frame {
+  position: relative;
+  background:
+    radial-gradient(1100px 520px at 50% -10%, rgba(75,185,174,.10), transparent 60%),
+    radial-gradient(900px 600px at 85% 120%, rgba(129,151,248,.08), transparent 55%),
+    var(--gin-app);
+  border: 1px solid var(--gin-line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(20,23,26,.05), 0 16px 40px -20px rgba(20,23,26,.10);
+  min-height: 660px;
+  display: grid;
+  place-items: center;
+  padding: 56px 22px;
+}
+.frame::before {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background-image:
+    linear-gradient(var(--gin-hair) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gin-hair) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(600px 400px at 50% 38%, #000, transparent 75%);
+          mask-image: radial-gradient(600px 400px at 50% 38%, #000, transparent 75%);
+}
+
+.auth { position: relative; width: 100%; max-width: 384px; }
+
+.brand { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 22px; }
+.brand__logo {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: linear-gradient(155deg, #1f2530, #15171c);
+  border: 1px solid #2c333f;
+  display: grid; place-items: center; color: #E8EAEF;
+  box-shadow: 0 6px 16px -8px rgba(20,23,26,.25);
+}
+.brand__logo svg { overflow: visible; }
+.brand__logo .beam, .brand__logo .arm2 { transform-box: view-box; }
+.brand__logo .beam { transform-origin: 32px 16px; animation: sway1 6.5s ease-in-out infinite; }
+.brand__logo .arm2 { transform-origin: 47px 24px; animation: sway2 5s ease-in-out infinite; }
+@keyframes sway1 { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(4deg); } }
+@keyframes sway2 { 0%,100% { transform: rotate(5deg); } 50% { transform: rotate(-7deg); } }
+@media (prefers-reduced-motion: reduce) { .brand__logo .beam, .brand__logo .arm2 { animation: none; } }
+.brand__name { font-size: 18px; font-weight: 700; letter-spacing: .14em; color: var(--gin-text); text-transform: uppercase; }
+.brand__name span { color: var(--bakers-running-ink); }
+.brand__tag { font-size: 12px; color: var(--gin-text-faint); margin-top: -6px; }
+
+.card {
+  background: var(--gin-layer);
+  border: 1px solid var(--gin-line);
+  border-radius: var(--radius);
+  padding: 22px 22px 20px;
+  box-shadow: 0 1px 3px rgba(20,23,26,.06), 0 6px 16px -10px rgba(20,23,26,.10);
+}
+.card__h { font-size: 15px; font-weight: 700; color: var(--gin-text); margin: 0 0 3px; text-align: center; }
+.card__sub { font-size: 12px; color: var(--gin-text-faint); margin: 0 0 18px; text-align: center; }
+
+.sso {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; height: 40px; border-radius: var(--radius-s);
+  background: var(--gin-primary); border: 1px solid var(--gin-primary); color: var(--text-inverse);
+  font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.sso:hover { filter: brightness(1.06); }
+.sso svg { width: 16px; height: 16px; }
+
+.div { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+.div::before, .div::after { content:""; flex:1; height:1px; background: var(--gin-hair); }
+.div span { font-size: 10.5px; font-weight: 700; letter-spacing:.1em; text-transform: uppercase; color: var(--gin-text-faint); }
+
+.field { margin-bottom: 13px; }
+.field__l { display: block; font-size: 11px; font-weight: 600; letter-spacing:.03em; text-transform: uppercase; color: var(--gin-text-faint); margin-bottom: 6px; }
+.field__in {
+  width: 100%; height: 38px; padding: 0 11px;
+  background: var(--gin-app); border: 1px solid var(--gin-line); border-radius: var(--radius-s);
+  color: var(--gin-text); font-family: inherit; font-size: 13px;
+}
+.field__in::placeholder { color: var(--gin-text-faint); }
+.field__in:focus { outline: none; border-color: var(--gin-primary); box-shadow: 0 0 0 3px var(--gin-primary-soft); }
+.field__wrap { position: relative; }
+.field__icon {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--gin-text-faint); display: grid; place-items: center; cursor: default;
+}
+.field__icon svg { width: 15px; height: 15px; }
+
+.row { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 16px; }
+.remember { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gin-text-light); cursor: pointer; user-select: none; }
+.remember input { display: none; }
+.remember .box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--gin-line); display: grid; place-items: center; flex: none; }
+.remember .box svg { width: 11px; height: 11px; color: var(--text-inverse); opacity: 0; }
+.remember input:checked + .box { background: var(--gin-primary); border-color: var(--gin-primary); }
+.remember input:checked + .box svg { opacity: 1; }
+.link { font-size: 12px; color: var(--gin-primary); text-decoration: none; }
+.link:hover { text-decoration: underline; }
+
+.submit {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 40px; border-radius: var(--radius-s);
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line); color: var(--gin-text);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.submit:hover { background: var(--gin-layer-3); border-color: #BDB8AA; }
+
+.note-bar {
+  display: flex; align-items: center; gap: 9px;
+  margin-bottom: 16px; padding: 9px 11px;
+  background: var(--bakers-running-soft); border: 1px solid rgba(75,185,174,.32); border-radius: var(--radius-s);
+  font-size: 12px; color: var(--gin-text-light);
+}
+.note-bar svg { width: 15px; height: 15px; color: var(--bakers-running-ink); flex: none; }
+
+.auth__foot { text-align: center; margin-top: 18px; font-size: 11px; color: var(--gin-text-faint); }
+.auth__foot .mono { font-family: var(--font-mono); }
+.auth__foot a { color: var(--gin-text-faint); text-decoration: none; }
+.auth__foot a:hover { color: var(--gin-text-light); }
+
+.notes { margin-top: 30px; }
+.notes h3 { font-size: 13px; font-weight: 700; letter-spacing:.04em; color: var(--gin-text); margin: 0 0 14px; padding-bottom: 9px; border-bottom: 1px solid var(--gin-hair); }
+.ncols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 20px; }
+.note { background: var(--gin-layer-2); border: 1px solid var(--gin-hair); border-radius: var(--radius); padding: 14px 16px; }
+.note h4 { font-size: 12px; font-weight: 700; color: var(--bakers-running-ink); margin: 0 0 8px; letter-spacing:.03em; }
+.note p { font-size: 12px; color: var(--gin-text-light); margin: 0 0 8px; }
+.note p:last-child { margin-bottom: 0; }
+.note code { font-family: var(--font-mono); font-size: 11px; background: var(--gin-layer-3); color: var(--gin-text); padding: 1px 5px; border-radius: 4px; }
+
+@media (max-width: 1080px) { .ncols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <header class="doc__lead">
+    <p class="doc__kicker">bakers.build · Phase 6 · Visuelles Design</p>
+    <h1 class="doc__h">bakers.build Login <span style="color:var(--gin-text-faint);font-weight:500;font-size:18px;">/user/login</span></h1>
+    <p class="doc__sub">Pre-App-Screen vor der Gin-Shell — <b>keine Rail, keine Top-Bar, kein Poll</b>. Zentrierte Auth-Karte auf dem Gin-App-Hintergrund, gleiche Tokens und dieselbe Brand-Mark wie Dashboard/Ticket. Zwei Wege: <b>keytec-SSO</b> (OAuth2, primär — der Produktionspfad für Operator und Agent-Identitäten) und klassisches <b>Drupal-User/Passwort</b> (sekundär, Fallback). Read-only-Mockup im bakers.build-Theme, <code>KEIN Produktionscode</code>.</p>
+  </header>
+
+  <div class="frame">
+    <div class="auth">
+
+      <div class="brand">
+        <div class="brand__logo">
+          <svg width="40" height="46" viewBox="0 0 64 74" fill="none" aria-label="bakers.build">
+            <path d="M32 4 a3 3 0 1 0 .01 0 Z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <line x1="32" y1="7" x2="32" y2="16" stroke="currentColor" stroke-width="1.4" opacity=".55"/>
+            <g class="beam">
+              <line x1="17" y1="16" x2="47" y2="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="17" y1="16" x2="17" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".55"/><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/>
+              <line x1="47" y1="16" x2="47" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".55"/>
+              <g class="arm2">
+                <line x1="40" y1="24" x2="54" y2="24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                <line x1="40" y1="24" x2="40" y2="31" stroke="currentColor" stroke-width="1.4" opacity=".55"/><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/>
+                <line x1="54" y1="24" x2="54" y2="30" stroke="currentColor" stroke-width="1.4" opacity=".55"/><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="brand__name">G<span>AI</span>A</div>
+        <div class="brand__tag">Generative Agent Infrastructure Automation</div>
+      </div>
+
+      <form class="card" onsubmit="return false;">
+        <h2 class="card__h">Anmelden</h2>
+        <p class="card__sub">Verwaltungszugang · bakers.build-Conductor &amp; Dashboard</p>
+
+        <div class="note-bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          Sitzung abgelaufen — bitte erneut anmelden.
+        </div>
+
+        <a class="sso" href="#" role="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Mit keytec-SSO anmelden
+        </a>
+
+        <div class="div"><span>oder</span></div>
+
+        <div class="field">
+          <label class="field__l" for="u">Benutzername</label>
+          <div class="field__wrap">
+            <input class="field__in" id="u" type="text" autocomplete="username" placeholder="z. B. mk">
+            <span class="field__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__l" for="p">Passwort</label>
+          <div class="field__wrap">
+            <input class="field__in" id="p" type="password" autocomplete="current-password" placeholder="••••••••••">
+            <span class="field__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="remember">
+            <input type="checkbox">
+            <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span>
+            Angemeldet bleiben
+          </label>
+          <a class="link" href="#">Passwort vergessen?</a>
+        </div>
+
+        <button class="submit" type="submit">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Anmelden
+        </button>
+      </form>
+
+      <div class="auth__foot">
+        bakers.build <span class="mono">v6 · Phase 6</span> · <a href="#">Status</a> · <a href="#">Hilfe</a>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>Designnotizen</h3>
+    <div class="ncols">
+      <div class="note">
+        <h4>Pre-App, kein App-Chrome</h4>
+        <p>Vor dem Login gibt es keine Gin-Rail/Top-Bar und keinen 15-s-Poll. Nur die zentrierte Karte auf dem Gin-App-Hintergrund — gleiche Tokens, gleiche Brand-Mark (Teal-Verlauf-„G"), damit der Übergang in die App nahtlos wirkt.</p>
+      </div>
+      <div class="note">
+        <h4>SSO primär, User/Pass sekundär</h4>
+        <p><b>keytec-SSO</b> (OAuth2) ist der Produktionspfad und trägt daher die Primärfarbe. Das klassische Drupal-<code>/user/login</code> steht als Fallback darunter — visuell zurückgenommen (neutrale Submit-Fläche).</p>
+      </div>
+      <div class="note">
+        <h4>Statusgrund inline</h4>
+        <p>Gründe wie <code>Sitzung abgelaufen</code> erscheinen als dezente Note-Bar über den Optionen (Teal, nicht alarmierend) — kein Drupal-Default-Messages-Block. Bei Fehlern wechselt die Bar auf die Attention/Alert-Farben des Systems.</p>
+      </div>
+      <div class="note">
+        <h4>Konsistente Primitive</h4>
+        <p>Input-Fokus nutzt <code>--gin-primary</code> + weichen Ring, Checkbox = die Dashboard-Filter-Checkbox, Radien/Borders/Typo aus den geteilten Tokens. Kein einziger Login-spezifischer Sonderwert.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

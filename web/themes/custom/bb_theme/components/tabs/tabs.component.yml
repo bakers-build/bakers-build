@@ -1,0 +1,54 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Tabs
+status: stable
+group: Navigation
+description: >-
+  Horizontal entity tabs, rendered inside `page_header`'s `tabs` slot (IA D12,
+  BB-378 D7). Switches the subject of the page inside one entity place — not
+  app-level navigation (that is the rail). Each item is a `tab`, a lightweight
+  destination link; exactly one is active and carries a thin underline. The row
+  wraps on narrow viewports. Used on project, team, group, user (View/Edit), My
+  work and settings rows.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Accessible name
+      description: aria-label for the tab list (e.g. Project sections).
+    items:
+      type: array
+      title: Tabs
+      description: >-
+        Ordered tabs, each rendered as `tab`. One item should set active true.
+        Not used when `tab_items` is given.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Label
+            description: >-
+              Tab text. Named label (not title) so sample data cannot be
+              mistaken for rail navigation titles.
+          url:
+            type: string
+            title: URL
+          active:
+            type: boolean
+            title: Active
+            description: Selected tab; rendered as aria-current=page.
+        required:
+          - label
+          - url
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true
+slots:
+  tab_items:
+    title: Tab items
+    description: >-
+      Already rendered `tab` entries (Drupal's local-task primary or secondary
+      row), printed whole instead of `items`.

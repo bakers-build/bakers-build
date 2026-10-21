@@ -1,0 +1,5 @@
+component: bb_theme:badge
+name: Default
+props:
+  label: coding
+  tone: neutral

@@ -1,0 +1,8 @@
+component: bb_theme:form_label
+name: Default
+props:
+  for: edit-name
+slots:
+  title:
+    - type: element
+      value: Username

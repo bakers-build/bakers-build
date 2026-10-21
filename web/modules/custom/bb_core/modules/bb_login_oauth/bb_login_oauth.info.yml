@@ -1,0 +1,8 @@
+name: bakers.build Login OAuth
+type: module
+description: 'Social sign-in for bakers.build: gates provider e-mail matching on a provider-asserted verified address, and creates accounts through the same source the e-mail entry uses.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_login
+  - social_auth_google:social_auth_google

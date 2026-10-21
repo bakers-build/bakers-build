@@ -1,0 +1,34 @@
+{# The trailing column of editable properties — what Xcode, Figma, Unity and
+   SwiftUI all call the inspector. It fills `canvas.inspector`, renders as
+   <aside> — the ARIA landmark for a page's secondary information — and stays
+   fixed with `position: sticky; top: 0; align-self: start` while the main
+   region beside it scrolls past.
+
+   Deliberately NOT a scroll container: an `overflow-y: auto` here would make
+   this element a scrolling ancestor of the inline-edit pickers, and an
+   absolutely positioned picker panel cannot escape a scrolling ancestor.
+
+   With `surface` the rail is one panel whose direct `rows` children are
+   blocks, separated by one divider; the footer is the last block.
+
+   `w-full` fills `canvas.inspector` even when that region is a flex column
+   and this aside also carries `self-start` (which would otherwise shrink a
+   short panel to its content). #}
+{%- set rows_content %}{% block rows %}{% if rows %}{{ rows }}{% endif %}{% endblock %}{% endset %}
+{%- set footer_content %}{% block footer %}{% if footer %}{{ footer }}{% endif %}{% endblock %}{% endset %}
+{%- if surface|default(false) %}
+<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'shrink-0', 'p-4', 'bg-surface', 'border', 'border-border-2', 'rounded-sm']) }}>
+  <div class="flex flex-col divide-y divide-border-2 *:py-4 *:first:pt-0 *:last:pb-0">{{ rows_content }}</div>
+  {%- if footer_content|trim is not empty %}
+  <div class="flex flex-col items-start gap-2 mt-4 pt-4 border-t border-border-2">{{ footer_content }}</div>
+  {%- endif %}
+</aside>
+{%- else %}
+<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'gap-1', 'shrink-0']) }}>
+  {{ rows_content }}
+  {#- The intervention footer, after a divider; absent when empty. #}
+  {%- if footer_content|trim is not empty %}
+  <div class="flex flex-col items-start gap-2 mt-2 pt-3 border-t border-border-2">{{ footer_content }}</div>
+  {%- endif %}
+</aside>
+{%- endif %}

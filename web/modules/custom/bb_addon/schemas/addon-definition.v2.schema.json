@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://app.bakers.build/schemas/addon-definition.v2.schema.json",
+  "title": "AddonDefinition (contract 2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "version", "contract", "messages"],
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" },
+    "contract": { "const": 2 },
+    "label": { "type": "string" },
+    "icon": {
+      "type": "string",
+      "maxLength": 8192,
+      "pattern": "^\\s*(<\\?xml[^>]*\\?>\\s*)?<svg(\\s|>)",
+      "description": "Inline SVG markup. Rendered only as an image, never inlined into the page."
+    },
+    "messages": {
+      "type": "object",
+      "description": "Each entry is a message-definition.v2 (bb_inbox/schemas), validated by bb_inbox.message_contract_validator.",
+      "additionalProperties": { "type": "object" }
+    }
+  }
+}

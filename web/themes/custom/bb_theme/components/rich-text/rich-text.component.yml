@@ -1,0 +1,81 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Rich Text
+status: stable
+group: Data Display
+description: >-
+  The typographic treatment of an already-rendered bb_rich body, and nothing
+  else: the single owner of how Markdown OUTPUT looks in this theme. Ticket
+  descriptions and every comment body (through `event`) render through it, and
+  it is the only component carrying a prose declaration list (asserted by the
+  data-display contract, B9). The bb_rich format is GitHub-flavoured Markdown
+  that strips raw HTML and keeps p, br, strong, em, h1-h4, ul, ol, li, a,
+  blockquote, hr, code, pre and table/thead/tbody/tr/th/td; each of those is
+  styled here with semantic tokens: a heading hierarchy, list markers,
+  underlined links with a focus ring, quiet quotes and dividers, inline and
+  block code without a doubled inset, and tables with a distinct header surface,
+  cell padding and row separators. A body containing a TABLE is never
+  line-clamped and becomes a keyboard-focusable, named horizontal scroll region,
+  so a wide table scrolls inside the component instead of widening the page
+  while its native table semantics stay intact. The region's accessible name is
+  the optional `label` prop (default "Formatted content") so callers can tie it
+  to the content context. `body` is a PROP and not a slot, because a processed
+  field value is one field's value rather than composed structure, and it is
+  printed WITHOUT `|raw`: Drupal's autoescape passes the filter's Markup object
+  through and escapes a plain string. Markdown is never parsed here; detecting a
+  table only reads the processed string.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    body:
+      type: string
+      title: The processed value of one rich-text field
+      description: >-
+        Already rendered by the text format — never a raw source string, and
+        never markup a caller assembled. What reaches this prop is what the
+        field formatter produced, which is why it is safe to be a prop at all:
+        it is one value of one field, not a composition. IT IS NOT `required`,
+        AND THAT IS FORCED RATHER THAN LENIENT (BB-414). ui_patterns removes
+        every empty prop value before SDC validates the component —
+        `ComponentElementBuilder::isPropValueEmpty()` returns TRUE for any falsy
+        value and drops the key from `#props` — so a required prop bound to a
+        Drupal field can never be satisfied once the field is empty, and SDC
+        then refuses the ENTIRE render from inside Twig: a ticket with no
+        description answered 500 for the whole screen, not for the About zone.
+        With the requirement gone the template renders nothing at all for an
+        empty body, and the calling `zone` drops itself when its content comes
+        back empty. Measured: `/bakers/ticket/GL-E2E-DROPSH` 500 → 200.
+    size:
+      type: string
+      enum:
+        - default
+        - compact
+      title: Density
+      description: >-
+        `default` is the rhythm of a body that is the subject of its region.
+        `compact` tightens the space between blocks and the table cell padding,
+        for a body that is one item of a listing; typography, colours and
+        semantics are identical in both.
+    clamp:
+      type: boolean
+      title: Clamp a long body
+      description: >-
+        Default false. When true and Alpine runs, a prose body is clamped to
+        five lines and a `Show more` / `Show less` toggle appears only if it
+        overflows; without JavaScript the full text shows. A body containing a
+        table ignores clamp and always renders in full, scrolling horizontally
+        inside the component when it is wider than the region. In clamp mode
+        `attributes` go on a wrapper around body and toggle.
+    label:
+      type: string
+      title: Accessible name of the table scroll region
+      description: >-
+        Used as `aria-label` when the body contains a table and the root is a
+        keyboard-focusable region. Callers pass a name tied to the content
+        context (About uses "Description"; a comment uses "spec by …"). When
+        omitted or blank the component default is "Formatted content". Unused
+        for prose-only bodies, which are not regions.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

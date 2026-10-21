@@ -1,0 +1,60 @@
+// Canonical bakers.build conductor engine configuration — committed.
+// Host identity comes from machine.config.js; the optional local override
+// composes this project's conductor identity. Connections belong to bakers.config.js.
+//
+// IMPORT-FREE (BB-78): the plugin slots are `{ plugin, with }` descriptors
+// naming the REAL published package, not `import`ed constructors.
+// loadConductorConfig resolves each name ESLint-style (config dir → cwd →
+// conductor install). Every addon package default-exports its single factory, so
+// no slot needs an `export:` — EXCEPT the merged herdr workspace
+// (`@bakers-build/addon-herdr` default-exports the executor, so the workspace names
+// `export: 'herdrWorkspace'` — BB-139). BB-224 replaced the old
+// `{ plugin: '@bakers-build/bakers/plugins', export: 'drupalRemote' }` host-barrel
+// descriptor with the real addon package `@bakers-build/addon-remote-drupal`.
+
+// The user-global machine context: host identity and capacity, shared
+// by every project on this machine. Never committed.
+async function loadMachine() {
+  try {
+    return (await import(`${process.env.HOME}/.bakers/machine.config.js`)).default ?? {};
+  } catch {}
+  return {};
+}
+
+// OPTIONAL per-project override — create conductor.config.local.js beside this
+// file to override project values (conductor_id, model, …).
+async function loadLocal() {
+  try { return (await import('./conductor.config.local.js')).default ?? {}; } catch {}
+  return {};
+}
+
+const machine = await loadMachine();
+const local = await loadLocal();
+const project = local.project ?? "historical-project";
+const composedConductorId =
+  machine.user_id && machine.machine_id
+    ? `${machine.user_id}-${machine.machine_id}-${project}`
+    : undefined;
+
+export default {
+  project,
+  // Registration key (BB-353 renamed from machine_id). Host capacity lives on
+  // machine.config.js as max_parallel — do not set max_parallel here.
+  conductor_id: local.conductor_id ?? composedConductorId,
+  states: ['spec', 'diagnose', 'coding', 'review'],
+  // Lifecycle hooks are executor-owned (BB-84): they live at the config top
+  // level — NOT on a plugin descriptor's `with.hooks`.
+  hooks: { after_create: 'ddev init-worktree', after_done: 'ddev delete -Oy' },
+  remote: { plugin: '@bakers-build/addon-remote-drupal' },
+  executor: { plugin: '@bakers-build/addon-herdr' },
+  agent: {
+    plugin: '@bakers-build/addon-claude',
+    with: { model: local.model ?? 'claude-opus-4-8' },
+  },
+  // BB-139: the herdr workspace ships in @bakers-build/addon-herdr, which
+  // default-exports the EXECUTOR — so the workspace slot names export: 'herdrWorkspace'.
+  workspace: {
+    plugin: '@bakers-build/addon-herdr',
+    export: 'herdrWorkspace',
+  },
+};

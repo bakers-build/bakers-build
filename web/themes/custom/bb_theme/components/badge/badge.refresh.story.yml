@@ -1,0 +1,9 @@
+component: bb_theme:badge
+name: Refresh
+# THE ABSORBED REFRESH INDICATOR: its relative time is the `suffix`. That is the
+# whole of what made it a component — a badge whose label is qualified by a time.
+props:
+  label: Auto-refresh on
+  tone: running
+  dot: true
+  suffix: updated 4s ago

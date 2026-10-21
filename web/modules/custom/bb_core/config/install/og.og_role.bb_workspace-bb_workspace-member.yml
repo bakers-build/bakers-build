@@ -1,0 +1,23 @@
+# bakers.build workspace OG role: member. Must stay empty.
+#
+# OgMembership::getRoles() prepends this implicit role to every membership and
+# OG ranks are additive, so any right here would reach every member, guests
+# included. Every tier is an explicitly stored role; a membership without one
+# grants nothing. The name `member` is required: OG derives the role type
+# from it.
+#
+# Shipped in its saved form, key for key.
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_workspace-bb_workspace-member
+label: 'Member'
+weight: 1
+group_id: null
+group_type: bb_workspace
+group_bundle: bb_workspace
+is_admin: false
+permissions: {  }
+role_type: required

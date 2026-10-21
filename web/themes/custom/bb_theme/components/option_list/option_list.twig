@@ -1,0 +1,206 @@
+{# The shared checkable option list: ONE panel markup with two consumers — the
+   property pills inside a dialog, and the inline edit control on a detail screen.
+   Keeping it one component is what makes the dialog pattern and the inline
+   pattern one agreed pattern rather than two that happen to look alike.
+
+   IT SELECTS WHEN IT IS GIVEN A NAME, and is presentational when it is not.
+   Without `input_name` the rows are exactly what they always were: `role="option"`
+   with `aria-selected`, a marker box, and nothing a pointer or a keyboard can
+   actually pick — which is what every caller before the facets needed, because
+   only `option_picker` knew whether a pick writes immediately (inline) or when
+   the form does (field), so the hidden inputs lived there. WITH `input_name`
+   every row carries a real `<input>` of that name inside a `<label>`, at the
+   position the marker box already occupies, checked from the same `selected`
+   data. That control is the whole difference between displaying a selection and
+   making one, and it is what makes a facet operable WITH JAVASCRIPT DISABLED —
+   the same standard the panel's native `<details>` is held to.
+
+   IT SUBMITS WHEN IT IS GIVEN `submit_name`, which is the third mode and the one
+   that makes `option_picker`'s `inline` contract honest rather than worked
+   around. That contract says the inline variant emits NO hidden inputs, "because
+   the pick is the write" — so for an inline picker a value-carrying input is the
+   wrong shape entirely: there is no later submit to carry it to. With
+   `submit_name` each option row IS a named submit trigger of the enclosing form,
+   `<button type="submit" name="{{ submit_name }}" value="{{ option.value }}">`,
+   so picking a value and submitting it are one act. On the server the pair
+   `name=value` is what identifies which row was pressed, which is the same
+   mechanism a form's ordinary buttons use — several controls sharing one name,
+   distinguished by value — so nothing new has to be invented to read it back.
+   It also keeps the standard the rest of this panel is held to: a real submit
+   button works with JavaScript disabled.
+
+   THE THREE MODES ARE EXCLUSIVE AND `submit_name` WINS, because a row cannot be
+   both a value to carry and a submission of that value; a caller that sets both
+   has stated two intentions and the write-now one is the narrower.
+
+   `formnovalidate` IS ON EVERY SUBMIT ROW, and it is a property of "the pick is
+   the write" rather than a host's quirk. This control submits ONE field's value,
+   and it sits in a form that may hold another field with a constraint of its own
+   — a required person picker, say. The browser refuses to submit a form whose
+   required field is empty, and it refuses BEFORE any script sees the event, so
+   without this attribute an unrelated empty field silently disables every row
+   here. The constraint itself is not weakened; only the pre-emption is dropped,
+   and the field that owns the constraint still enforces it on its own submit.
+
+   THE CLEAR ROW AND THE CREATE ROW ARE UNCHANGED BY THIS MODE, and both for
+   reasons already written above: clearing is an ADDRESS and carries no control of
+   any kind, and creating is an action that is already a real button. So the row
+   order is the same in all three modes — clear first, options, create last.
+
+   `multiple` marks the listbox multi-selectable. It paints nothing extra: in
+   every mode an unselected row shows no marker at all and a selected row shows
+   only the checkmark, while the marker keeps its fixed 16px space so labels
+   never shift when the selection changes. `input_type` follows
+   the same fact from the other side: `checkbox` for a field that holds several
+   values, `radio` for one — so `multiple` is the ARIA half and `input_type` the
+   form half of one statement about the FIELD.
+
+   CLEARING IS A ROW OF THIS LIST, not a button above it and not a native
+   `<option>` (action-pattern.md, rule 5). It is the first row, it carries the
+   same marker machinery as every other row, and it shows the checkmark when
+   nothing else is selected — so "no conductor" reads as a value the operator has
+   chosen rather than as an absence they have to produce. That is why `clearable`
+   lives here rather than on the picker: the row belongs to the listbox, so a
+   clear control the picker owned would sit outside the listbox where no
+   `role="option"` can reach it.
+
+   IT IS THE ONE ROW THAT IS NOT A FORM CONTROL, and the previous line of this
+   comment said the opposite — "it gets a control like every other row, carrying
+   the EMPTY value: clearing is a value the operator picks." That was wrong, and
+   wrong in a way that broke the screen it was written for. An empty value in a
+   GET query is not the absence of a constraint: a search backend reads it as a
+   constraint that nothing satisfies. Measured on the facet panel this list
+   renders, `?state[]=coding` returned 5 rows and `?state[]=coding&group=` — the
+   same query plus one clear row's own submission — returned 0. Because
+   `clear_selected` is derived, EVERY facet with nothing chosen submitted one, on
+   every submit.
+
+   SO CLEARING IS AN ADDRESS, NOT A VALUE. Given `clear_url` the row is a LINK to
+   the list without this field's constraint, which is the same affordance the
+   `active-filters` chip's × already is and, deliberately, the same address —
+   computed once by the caller so a chip and a row cannot disagree about what
+   removal means. A link also keeps the standard the rest of this panel is held
+   to: it works with JavaScript disabled, where a control unchecked by script
+   would not. Without `clear_url` the row is the presentational marker it always
+   was, which is the right reading when nothing is chosen and clearing is a
+   no-op. The multi-value case loses nothing either way: every other row IS a
+   real checkbox, so unchecking is native.
+
+   `clear_selected` is DERIVED — nothing is selected iff no row says it is — so a
+   scene cannot state a selection and a contradicting clear marker at the same
+   time. It is computed with `column` + `in` rather than a loop, because a
+   `{% set %}` inside a `{% for %}` does not survive the loop's scope. The three
+   control settings below are computed for the same reason: they are facts about
+   the LIST, not about a row, so they are established once, above the loop. #}
+{% set clear = clear_label|default('— none —') %}
+{% set clear_selected = true not in options|default([])|column('selected') %}
+{% set trigger = submit_name is not empty %}
+{% set control = not trigger and input_name is not empty %}
+{% set control_type = input_type|default(multiple ? 'checkbox' : 'radio') %}
+{% set control_name = input_name ~ (control_type == 'checkbox' ? '[]' : '') %}
+{#- With `clear_control` the clear row of a single-value list is a radio
+    posting "", so an entity form can empty the field. Opt-in, because for a
+    facet an empty value matches nothing; a `clear_url` wins. #}
+{% set clear_input = clear_control|default(false) and control and control_type == 'radio' and clear_url is empty %}
+<ul{{ (attributes ?: create_attribute()).addClass([
+    'option-list', 'm-0', 'p-0', 'list-none', 'flex', 'flex-col',
+  ]) }}
+  role="listbox"
+  {%- if multiple %} aria-multiselectable="true"{% endif %}
+  {%- if name %} data-option-list="{{ name }}"{% endif %}>
+  {%- if clearable %}
+  <li class="option-list__option option-list__option--clear flex items-center gap-[8px] px-[8px] py-[6px] rounded-xs cursor-pointer text-caption text-text-faint hover:bg-surface-3 hover:text-text"
+    role="option"
+    aria-selected="{{ clear_selected ? 'true' : 'false' }}"
+    data-option-list-clear
+    data-value="">
+    {%- if clear_url is not empty %}<a class="option-list__clear flex items-center gap-[8px] w-full text-inherit no-underline" href="{{ clear_url }}">{% endif %}
+    {%- if clear_input %}<label class="option-list__control flex items-center gap-2 w-full cursor-pointer">{% endif %}
+    <span class="option-list__text flex flex-col min-w-0 flex-1">
+      <span class="option-list__label truncate">{{ clear }}</span>
+    </span>
+    {%- if clear_input %}
+    <input type="radio" name="{{ control_name }}" value=""
+      class="option-list__input sr-only peer"{% if clear_selected %} checked{% endif %} />
+    {%- endif %}
+    {#- The clear row is not a form control, so it has no `peer`; its marker
+        carries the checkmark only while nothing else is selected and is
+        otherwise empty space. It paints no box in any mode, like every other
+        row, and keeps its fixed 16px space so the label never shifts. #}
+    {%- if clear_input %}
+    <span class="option-list__marker inline-grid place-items-center w-4 h-4 shrink-0 mt-px text-primary [&>svg]:[visibility:hidden] peer-checked:[&>svg]:[visibility:visible]">
+      {{- include('bb_theme:icon', { name: 'check', size: 'sm' }, with_context = false) -}}
+    </span>
+    </label>
+    {%- else %}
+    <span class="option-list__marker inline-grid place-items-center w-[16px] h-[16px] shrink-0 mt-[1px] text-primary">
+      {%- if clear_selected %}{{ include('bb_theme:icon', { name: 'check', size: 'sm' }, with_context = false) }}{% endif %}
+    </span>
+    {%- endif %}
+    {%- if clear_url is not empty %}</a>{% endif %}
+  </li>
+  {%- endif %}
+  {%- for option in options|default([]) %}
+  <li class="option-list__option flex items-center gap-[8px] px-[8px] py-[6px] rounded-xs cursor-pointer text-caption text-text hover:bg-surface-3 aria-selected:text-text"
+    role="option"
+    aria-selected="{{ option.selected ? 'true' : 'false' }}"
+    data-value="{{ option.value }}">
+    {%- if trigger %}<button type="submit" name="{{ submit_name }}" value="{{ option.value }}" formnovalidate
+      class="option-list__submit flex items-center gap-[8px] w-full p-0 bg-transparent border-0 font-inherit text-caption text-inherit text-left cursor-pointer">{% endif %}
+    {%- if control %}<label class="option-list__control flex items-center gap-[8px] w-full cursor-pointer">{% endif %}
+    <span class="option-list__text flex flex-col min-w-0 flex-1">
+      <span class="option-list__label truncate">{{ option.label }}</span>
+      {%- if option.description %}<span class="option-list__description text-eyebrow text-text-faint">{{ option.description }}</span>{% endif %}
+    </span>
+    {%- if control %}
+    <input type="{{ control_type }}" name="{{ control_name }}" value="{{ option.value }}"
+      class="option-list__input sr-only peer"{% if option.selected %} checked{% endif %} />
+    {%- endif %}
+    {#- A real input already owns the checked state (see the docblock above); in
+        control mode the marker is rendered FROM it with `peer-checked:` on the
+        marker itself — a sibling of `.option-list__input`, which is what the
+        `~` combinator `peer-checked:` compiles to needs — and never toggled by
+        script, so glyph and control can never disagree.
+
+        An unselected row shows no marker at all and a selected row shows only
+        the checkmark. Only the child SVG is hidden, so the marker box itself
+        keeps reserving its fixed space and labels never shift. ARBITRARY-PROPERTY
+        `[&>svg]:[visibility:hidden]`, NOT THE `invisible` UTILITY, and that
+        is a measured fix rather than a style choice: Drupal core's own
+        `system.base.css` ships an UNLAYERED `.invisible{visibility:hidden}`,
+        and unlayered CSS always wins over Tailwind's `@layer utilities`
+        regardless of specificity — `invisible`/`peer-checked:visible`
+        compiled correctly but never actually toggled anything on screen. The
+        arbitrary form generates a class Tailwind owns outright, with no core
+        name to collide with, and still reserves the box's own layout space
+        either way, matching the presentational marker's static sizing. #}
+    {%- set marker_mods = control ? ' [&>svg]:[visibility:hidden] peer-checked:[&>svg]:[visibility:visible]' : '' %}
+    <span class="option-list__marker inline-grid place-items-center w-[16px] h-[16px] shrink-0 mt-[1px] text-primary{{ marker_mods }}">
+      {%- if control or option.selected %}{{ include('bb_theme:icon', { name: 'check', size: 'sm' }, with_context = false) }}{% endif %}
+    </span>
+    {%- if control %}</label>{% endif %}
+    {%- if trigger %}</button>{% endif %}
+  </li>
+  {%- endfor %}
+  {#- CREATING is the mirror image of clearing, and the positions say which is which: the clear row is
+      FIRST because it is a value the operator can pick, the create row is LAST because it is an
+      action. That difference is also why this row is NOT a `role="option"` carrying `aria-selected`
+      — a listbox option stands for a value, and announcing an action as a selectable value
+      misdescribes it. It is a real <button> in a presentational row instead, which keeps the
+      listbox's option set honest while leaving the row exactly where Linear puts it.
+
+      Half of this is real and half is a boundary, deliberately. The affordance is rendered and
+      reachable; it CREATES NOTHING YET, because nothing in this change posts. The write belongs to
+      the ticket that gives these pickers an endpoint. The label below is the no-JavaScript form — a
+      plain invitation — and the handler rewrites it to reflect the typed query. #}
+  {%- if creatable %}
+  <li class="option-list__create-row mt-[4px] pt-[4px] border-t border-border-2" role="presentation">
+    <button type="button"
+      class="option-list__create flex w-full items-center gap-[8px] px-[8px] py-[6px] rounded-xs bg-transparent border-0 text-caption text-primary text-left cursor-pointer hover:bg-surface-3"
+      data-option-list-create
+      data-create-noun="{{ create_label|default('item') }}">
+      <span class="option-list__create-label truncate">+ New {{ create_label|default('item') }}</span>
+    </button>
+  </li>
+  {%- endif %}
+</ul>

@@ -1,0 +1,110 @@
+/*
+ * sync-to generator — core.entity_view_display.bb_run.bb_run.teaser
+ *
+ * ONE RUN AS ONE ROW — the item of the Run history zone in the ticket detail's
+ * body. BB-336 made `teaser` the row and `full` the run detail overlay, and
+ * BB-414 ships the row because `core.entity_view_display.bb_ticket.bb_ticket.full`
+ * renders the ticket's `runs` reference in this mode.
+ *
+ * IT NAMES THE SAME COMPONENT AS ITS ENTITY MAPPING, and that is a checked
+ * statement rather than a convention: `data-display-components.sh` check B7 reads the addresses out
+ * of `entity-mapping/bb_run.bb_run.teaser.jsonata` and out of this whole file
+ * — comments included, in BOTH address forms — and fails when the two sets
+ * differ. The mapping composes the row from exactly one container, so this
+ * generator names exactly that one.
+ *
+ * ------------------------------------------------------------------------------
+ * `items` IS BOUND TO A SOURCE THIS PROJECT SHIPS, and the previous revision of
+ * this header — which declared the row's cells inexpressible and bound nothing —
+ * was right about the registry and wrong about the conclusion. Both halves are
+ * kept, because the measurement is what makes the binding legible.
+ *
+ * The container owns its items. Its one content-bearing prop is `items`: an
+ * ARRAY of items whose `cells` are keyed maps over eight declared kinds.
+ * display_builder's prop bindings are `{source_id, source}` pairs, and
+ * `SourcePluginManager::filterDefinitionsByPropType()` offers a source only when
+ * the source declares the prop's PropType. ui_patterns' compatibility checker
+ * guesses `items` as the `unknown` PropType — it does not descend into an array
+ * item's object `properties` — and NO contrib source declares `unknown`: zero of
+ * the 819 definitions on a provisioned site, measured rather than assumed. The
+ * consequence was not a prop that got dropped but a prop that could not be
+ * addressed, and `list.twig`'s `{% if items is not empty %}` rendered NOTHING —
+ * three runs, three components of 91 bytes, all of them SDC comments.
+ *
+ * What was missing was a source, and a source is code this project can ship.
+ * `bb_core`'s `BbRunRowSource` (plugin id `bb_run_row`) declares
+ * `prop_types: ['unknown']` and a required `entity:bb_run` context, and
+ * returns the ONE item this run is — the same shape, cell for cell, that
+ * `entity-mapping/bb_run.bb_run.teaser.jsonata` composes, glyph map
+ * included. So the row is DATA built in PHP, exactly as the inspector's rail is
+ * (`Drupal\bb_core\Ticket\TicketInspectorRows` states the rule: `items` is a
+ * prop, props carry scalar data only, a cell is data). The difference is only
+ * who holds it — a screen's rail belongs to a controller, a run's row belongs to
+ * the run's own view mode, and a view mode reaches PHP through a source.
+ *
+ * WHAT STAYS TRUE: no CONTRIB source can express this, so the binding names a
+ * bakers plugin and the `dependencies.module` list is unchanged — `bb_core` was
+ * already there. The source's own kernel test pins the `unknown` guess, so a
+ * ui_patterns release that starts guessing a real PropType for an array of
+ * objects is a red test rather than a silently empty zone.
+ *
+ * ------------------------------------------------------------------------------
+ * `dependencies` IS THE FIRST-SAVE FORM and the `uuid` is pinned — BB-414 R2,
+ * for the reason the page-layout generator writes out in full: the recipe's
+ * strict list compares this file against ACTIVE config on every construction,
+ * ignoring only `uuid`, `_core` and an empty `dependencies`, so a twice-saved
+ * form aborts the whole recipe on the second `ddev init`, and a `config/sync`
+ * copy without a `uuid` makes `drush cim` manufacture exactly that second save.
+ */
+(
+{
+  "uuid": "0b7d5a91-6c3e-4f18-8b52-9e4a1c7d20f3",
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "core.entity_view_mode.bb_run.teaser"
+    ],
+    "module": [
+      "display_builder",
+      "bb_core"
+    ]
+  },
+  "third_party_settings": {
+    "display_builder": {
+      "profile": "default",
+      "sources": [
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:list",
+              "variant_id": null,
+              "props": {
+                "layout": {
+                  "source_id": "select",
+                  "source": {
+                    "value": "lines"
+                  }
+                },
+                "items": {
+                  "source_id": "bb_run_row",
+                  "source": {}
+                }
+              },
+              "slots": {}
+            }
+          },
+          "node_id": "run_teaser_list"
+        }
+      ]
+    }
+  },
+  "id": "bb_run.bb_run.teaser",
+  "targetEntityType": "bb_run",
+  "bundle": "bb_run",
+  "mode": "teaser",
+  "content": {},
+  "hidden": {}
+}
+)

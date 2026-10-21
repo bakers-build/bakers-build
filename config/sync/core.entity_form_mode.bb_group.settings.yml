@@ -1,0 +1,11 @@
+uuid: 45c1284c-330f-46d4-9f62-c29c5dc13ae9
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_group.settings
+label: Settings
+description: null
+targetEntityType: bb_group
+cache: true

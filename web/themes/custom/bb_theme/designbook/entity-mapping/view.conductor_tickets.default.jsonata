@@ -1,0 +1,27 @@
+(
+  /* Tickets occupying one conductor. The occupancy source supplies explicit
+     numeric ids; this mapping previews the busy conductor's one visible row. */
+  $rows := [
+    { "id": "1", "identifier": "BB-1", "title": "Conductor product View" }
+  ];
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "pattern": {
+          "headline": ["identifier", "title"]
+        },
+        "items": [$map($rows, function ($t) {
+          {
+            "url": "/bakers/ticket/" & $lowercase($t.identifier),
+            "cells": {
+              "identifier": { "kind": "link", "value": $t.identifier, "url": "/bakers/ticket/" & $lowercase($t.identifier) },
+              "title": { "kind": "link", "value": $t.title, "url": "/bakers/ticket/" & $lowercase($t.identifier) }
+            }
+          }
+        })]
+      }
+    }
+  ]
+)

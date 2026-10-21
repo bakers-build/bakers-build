@@ -1,0 +1,11 @@
+bb_login_oauth_test.stub:
+  path: '/user/login/stub'
+  defaults:
+    _controller: '\Drupal\bb_login_oauth_test\Controller\StubProviderController::callback'
+  requirements:
+    # Open by design: this route exists ONLY in the e2e recipe (bb_e2e),
+    # never in recipes/bakers, and stands in for an anonymous provider callback
+    # — the real /user/login/google/callback is equally unauthenticated.
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'

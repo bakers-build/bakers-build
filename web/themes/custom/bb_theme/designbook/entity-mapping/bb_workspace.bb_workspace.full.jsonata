@@ -1,0 +1,54 @@
+(
+  /* The full view mode is the SETTINGS SCREEN'S BODY — and a workspace has none.
+
+     A VIEW MODE EMITS NO LAYOUT (BB-378, `designbook/design-system/layout.md` §2). It displays an
+     entity; the SCREEN arranges one. So this mapping no longer emits a `page_header`: the settings
+     screen owns the canvas and owns the `page_header` that carries the screen's single <h1>, the
+     inline-editable name inside it and the composed billing sub-line beneath it. That is the same
+     rule `bb_ticket.bb_ticket.full.jsonata` and `bb_team.bb_team.full.jsonata` follow, and
+     applying it here is what makes the three agree.
+
+     AND THAT LEAVES THIS VIEW MODE EMPTY, WHICH IS A FACT ABOUT THE ENTITY RATHER THAN AN OMISSION.
+     A workspace has five fields, and after the rule none of them is body:
+
+       name              the screen's heading — and, because `name` is reversible, the heading IS the
+                         field: `action-pattern.md` › *Inline edit* puts a `bb_theme:form_input`
+                         (BB-420 Task 31 retired `text_line`) in the `page_header`'s heading slot
+                         and the commit IS the write. No save button, no
+                         per-field dirty state, no confirmation, and therefore no edit route and no
+                         edit dialog for a workspace — `project-create` stays the only dialog in this
+                         tree.
+       billing_profile   the screen's sub-line, composed. `billing_profile` is an untyped object at
+                         the TENANT level, and its meaning there is the CONTRACT or SUBSCRIPTION this
+                         tenant is served under — deliberately the same field name as
+                         `bb_group.billing_profile`, which means the customer's cost centre one
+                         level down. Composing contract · subscription · seats · renewal into one line
+                         is what makes the difference between the two levels visible on the screen
+                         instead of only in the model.
+       created, changed  NOT rendered: machine-owned timestamps with no control beside them, and
+                         `changed` in particular is a fact that is stale the moment it paints — the
+                         screen would be reporting its own last save.
+       owner_user_id     NOT rendered here. The workspace has no members surface (membership lives on
+                         teams and projects), so the owner has no row to be one of on this screen.
+
+     So this mapping emits an empty body, and the settings screen places NO workspace node: a node
+     that renders nothing is worse than no node, because the next reader cannot tell whether the
+     screen forgot the content or the entity has none. The file stays, and says so, precisely so that
+     nobody re-adds the header here — which is where it was, and which is the drift BB-378 came back
+     to fix.
+
+     WHAT WOULD PUT CONTENT BACK. A field on the workspace that is neither its name nor its billing
+     line — the owner as a row, a locale, a retention setting — becomes a `zone` here, and the
+     settings screen then places this view mode in `canvas.main` beneath its `page_header`, exactly as
+     the ticket detail and the team screen do. Until then there is nothing to display.
+
+     Note what does NOT belong here: the Labels field group on the settings screen is
+     `bb_term.bb_labels`, a second entity administered on the same surface, not a field of the
+     workspace. It stays a sibling in `canvas.main`.
+
+     THE WORKSPACE ENTITY DOES NOT EXIST IN CODE. No `BbWorkspace.php` exists at any ref of this
+     repository — it is owned by BB-316 on a branch that is not on develop — and the screen renders
+     anyway, from `data-model.yml` and `designbook/data/` alone. That is the designbook working as
+     intended: design leads the backend. */
+  []
+)

@@ -1,0 +1,5 @@
+@theme static {
+  --radius-xs: var(--radius-5);
+  --radius-sm: var(--radius-7);
+  --radius-md: var(--radius-10);
+}

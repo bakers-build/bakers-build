@@ -1,0 +1,25 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: State Flow
+status: stable
+group: Data Display
+description: 'Workflow state-flow bar: ordered state pills with the current state highlighted. Shared by ticket_detail and run_row — states come from the entity''s state_machine workflow (bb_core.workflows.yml), never a hard-coded list.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    states:
+      type: array
+      title: Ordered workflow state ids
+      items:
+        type: string
+    current:
+      type: string
+      title: The currently-active state id (highlighted)
+    label:
+      type: string
+      title: aria-label for the nav
+  required:
+    - states
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

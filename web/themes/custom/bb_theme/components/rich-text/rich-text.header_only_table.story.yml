@@ -1,0 +1,6 @@
+component: bb_theme:rich-text
+name: Header-only table
+props:
+  body: >-
+    <table><thead><tr><th>Only</th><th>Header</th><th>Row</th></tr></thead></table><p>A
+    table may consist of its header row alone.</p>

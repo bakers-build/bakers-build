@@ -1,0 +1,62 @@
+{#
+/**
+ * @file
+ * Mini pager for bb_theme (the active theme on the bakers routes).
+ *
+ * Views' "Mini" pager — previous/current/next only, no page-number list or
+ * ellipses — is the one actually rendered on the contextual (per-project,
+ * per-team) ticket lists; `pager.html.twig` in this same directory themes the
+ * *full* pager used elsewhere, and until this file existed the mini variant
+ * fell through to `core/themes/stable9/templates/views/views-mini-pager.html.twig`
+ * unstyled: three bare `<li>` blocks with no explicit height or line-height,
+ * sized purely by the browser's default text metrics for whatever font
+ * actually loads. BB-504 chased a click-interception failure
+ * (`contextual-tickets.feature.spec.js` — the "Next page" link's `<li>`
+ * reporting itself intercepted) through `pager.html.twig` for three rounds
+ * without success, because that template never runs on this view; the "Page
+ * N" text node and the adjacent "Next page" `<li>` sit edge-to-edge with zero
+ * gap, so a font stack with slightly taller default metrics — exactly the
+ * kind of difference between a CI runner's installed fonts and a developer's
+ * machine — grows the text `<li>` by a pixel or two and overlaps the next
+ * one. Same fixed `h-7`/`min-w-7` hit areas as the full pager close that gap
+ * outright rather than depending on any font's line-height.
+ *
+ * Available variables: heading_id, pagination_heading_level, items
+ * (previous/current/next), each link item shaped {href,attributes,text}.
+ *
+ * @see \Drupal\views\Plugin\views\pager\Mini
+ * @see template_preprocess_views_mini_pager()
+ */
+#}
+{% set link = 'inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-xs border border-border-2 bg-surface-2 text-eyebrow font-semibold text-text no-underline hover:bg-surface hover:border-border' %}
+{% set current = 'inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-xs text-eyebrow font-semibold text-text-faint' %}
+{% if items.previous or items.next %}
+  <nav class="bakers-pager pager flex w-full justify-center items-center gap-1 mt-3" role="navigation" aria-labelledby="{{ heading_id }}">
+    <{{ pagination_heading_level }} id="{{ heading_id }}" class="sr-only">{{ 'Pagination'|t }}</{{ pagination_heading_level }}>
+    <ul class="pager__items js-pager__items flex flex-wrap items-center gap-1 m-0 p-0 list-none">
+      {% if items.previous %}
+        <li class="pager__item shrink-0 pager__item--previous">
+          <a href="{{ items.previous.href }}" class="{{ link }}" title="{{ 'Go to previous page'|t }}" rel="prev"{{ items.previous.attributes|without('href', 'title', 'rel') }}>
+            <span class="sr-only">{{ 'Previous page'|t }}</span>
+            <span aria-hidden="true">{{ items.previous.text|default('‹‹'|t) }}</span>
+          </a>
+        </li>
+      {% endif %}
+      {% if items.current %}
+        <li class="pager__item shrink-0 {{ current }}">
+          {% trans %}
+            Page {{ items.current }}
+          {% endtrans %}
+        </li>
+      {% endif %}
+      {% if items.next %}
+        <li class="pager__item shrink-0 pager__item--next">
+          <a href="{{ items.next.href }}" class="{{ link }}" title="{{ 'Go to next page'|t }}" rel="next"{{ items.next.attributes|without('href', 'title', 'rel') }}>
+            <span class="sr-only">{{ 'Next page'|t }}</span>
+            <span aria-hidden="true">{{ items.next.text|default('››'|t) }}</span>
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

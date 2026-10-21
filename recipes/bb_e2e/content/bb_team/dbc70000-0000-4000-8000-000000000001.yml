@@ -1,0 +1,46 @@
+# The crew that makes AC4's `by_team` observable (BB-391).
+#
+# Before this fixture existed, no recipe declared a `bb_team` at all, so every
+# provisioned world showed an empty Teams tab and `by_team` came back `[]` from
+# /jsonapi/bakers/statistics — the surface BB-391 shipped could be demonstrated
+# only from a hand-seeded local site.
+#
+# `by_team` is expanded in PHP from the per-ASSIGNEE counts
+# (TeamStatistics::byTeamFromUserCounts()), so a team only produces a row when one
+# of its members is an assignee of a counted row. `bakers-e2e-agent` owns a seeded
+# `bb_run`, which is why it is this crew's member (…0006) rather than the other
+# one's.
+#
+# The workspace named here is BbWorkspace::DEFAULT_UUID — the one
+# bb_core_install() creates on every install path (BB-350). It is
+# deliberately NOT shipped as recipe content: `system.site.front` points at its
+# slug, so a second e2e workspace would split the world into the one the fixtures
+# live in and the one the front page opens. Naming any other workspace here would
+# also fail validation: `workspace_id` carries the `BbWorkspaceScope`
+# constraint (BB-351 D6), the same one gating `bb_group.workspace_id`.
+#
+# `owner_user_id` is set EXPLICITLY and that is not cosmetic. Core marks the
+# column of an entity type's `owner` key NOT NULL, and `og.settings` carries
+# `auto_add_group_owner_membership: true` — so the owner receives an
+# og_membership on this team automatically, at insert. A fixture under
+# content/og_membership/ naming the SAME pair would then abort the whole import
+# with "The user cwiedemann is already a member in this group"; that is why the
+# membership fixtures below cover the other members only.
+_meta:
+  version: '1.0'
+  entity_type: bb_team
+  uuid: dbc70000-0000-4000-8000-000000000001
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  name:
+    -
+      value: "Platform Crew"
+  workspace_id:
+    -
+      entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

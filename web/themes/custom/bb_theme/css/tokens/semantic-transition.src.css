@@ -1,0 +1,4 @@
+@theme static {
+  --transition-duration-fast: 120ms;
+  --transition-duration-base: 200ms;
+}

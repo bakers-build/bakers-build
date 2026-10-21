@@ -1,0 +1,5 @@
+name: Island
+type: module
+description: 'HTMX integration for Drupal core: islands (partial page updates via attribute plugins) and wrapped routes (a route''s main content rendered into a named hull).'
+package: Web services
+core_version_requirement: ^11.3

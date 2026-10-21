@@ -1,0 +1,49 @@
+(
+  /* THE RUNS LISTING, AS A VIEW THAT RENDERS ONE LIST ROW PER RUN (BB-592). The mapping emits ONE
+     `list` node whose `pattern` is the `bb_list` Views style's own pattern for `views.view.runs` —
+     headline: ticket identifier (it links to the TICKET, because a run has no detail surface), run
+     state, starting state labelled "From"; meta: conductor, agent, start time labelled "Started";
+     right: duration labelled "Took" with an explicit `s` unit. An absent duration in the right column
+     is a faint em-dash, while a ZERO duration is a value and reads "0 s". Absent meta facts are
+     omitted. A view address takes no record, so the rows are written out here. */
+  $dash := { "kind": "text", "value": "—", "emphasis": "faint" };
+  $conductor_names := { "1": "cw-framework", "2": "mvd-thinkpad" };
+  $rows := [
+    { "id": "1", "identifier": "BB-142", "ticket_id": "1", "state": "running", "state_at_start": "coding", "conductor_id": "1", "agent": "opus", "started_at": "2026-06-30T16:45:00+00:00", "duration_s": 142 },
+    { "id": "2", "identifier": "BB-118", "ticket_id": "4", "state": "done", "state_at_start": "spec", "conductor_id": "2", "agent": "sonnet", "started_at": "2026-06-10T09:15:00+00:00", "duration_s": 88 },
+    { "id": "3", "identifier": "BB-105", "ticket_id": "5", "state": "failed", "state_at_start": "review", "started_at": "2026-06-08T11:02:00+00:00", "duration_s": 0 }
+  ];
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "pattern": {
+          "headline": ["identifier", "state", "state_at_start"],
+          "meta": ["conductor_id", "agent", "started_at"],
+          "right": ["duration_s"],
+          "captions": { "state_at_start": "From", "started_at": "Started", "duration_s": "Took" }
+        },
+        "items": [$map($rows, function ($r) {
+          (
+            $conductor := $lookup($conductor_names, $r.conductor_id);
+            {
+              "accent": $r.state = "running" ? "running" : "idle",
+              "cells": $merge([
+                {
+                  "identifier": { "kind": "link", "value": $r.identifier, "url": "/admin/bakers/ticket/" & $r.ticket_id, "mono": true },
+                  "state": { "kind": "badge", "label": $r.state, "tone": $r.state = "running" ? "running" : "neutral", "dot": true },
+                  "duration_s": $exists($r.duration_s) ? { "kind": "text", "value": $string($r.duration_s) & " s", "emphasis": "strong" } : $dash
+                },
+                $r.state_at_start ? { "state_at_start": { "kind": "mono", "value": $r.state_at_start } } : {},
+                $conductor ? { "conductor_id": { "kind": "badge", "label": $conductor, "tone": "lease", "mono": true, "icon": "lock" } } : {},
+                $r.agent ? { "agent": { "kind": "text", "value": $r.agent } } : {},
+                $r.started_at ? { "started_at": { "kind": "text", "value": $substringBefore($r.started_at, "T") } } : {}
+              ])
+            }
+          )
+        })]
+      }
+    }
+  ]
+)

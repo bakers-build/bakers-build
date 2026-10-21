@@ -1,0 +1,22 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Canvas
+status: stable
+group: Layout
+description: 'The work surface of the app — the ONE layout component a screen puts into the shell''s `content` slot, and the only place the relation between a screen''s header, its filters, its main region and its inspector is written down. Renamed and generalised from `detail_layout` (BB-378 D9/D12): it is no longer the detail view''s layout but every screen''s. `header` spans the full width; below it a grid places `filters` on the leading edge (236px, sticky), `main` (`minmax(0,1fr)`) and `inspector` (320px), collapsing to a single column below `lg`. Each aside drops out of the grid template entirely when its slot is empty, so a screen that fills only `main` renders one column with no empty gutter — exactly as `detail_layout` already did. It is NOT a scroll container (`items-start`, and no clipping declaration anywhere): a scrolling ancestor here would take the sticky `inspector` and the sticky `filters` their stick and would clip every absolutely positioned picker panel a `meta_row` or a facet control opens (D6, D12, BB-332 R9). THE DEFAULT STORY IS DELIBERATELY THE TWO-REGION CASE — a header, a main region and an inspector, with no `filters` aside — so the reference render is the one that shows the 236px track dropping out of the grid template rather than rendering an empty gutter; `with_filters` is the three-region render.'
+provider: bb_theme
+slots:
+  header:
+    title: Header
+    description: Full-width region above the grid — normally a `page_header`, which owns the screen's single `<h1>` and, on an entity place, its tabs.
+  filters:
+    title: Filters
+    description: 'Leading 236px aside, sticky and absent when unfilled — normally a `filters` component. It is a region of the canvas rather than a layout of its own, so a list screen and a detail screen share one grid (D8). BEING STICKY MAKES IT A STACKING CONTEXT, which is why it also carries a `z-index` above the content grid (`lg:z-40`, below `dialog`''s 50): without one, `main`''s positioned table cells paint over every panel a facet control in this aside opens, and the panel becomes unclickable while staying reachable by keyboard (BB-413 R8). The cure is the `z-index` rather than dropping the stick or clipping the aside — a facet opened low in a long list must be able to open past this aside''s own bottom edge.'
+  main:
+    title: Main
+    description: 'The main region — `minmax(0,1fr)`, so it can shrink beside its asides instead of forcing the grid wider. It carries the screen''s route-bearing content: the entity, the view''s rows, the board. It is a vertical stack with a `space-5` gap, so the region owns the rhythm between its children; a single child stretches to the full width.'
+  inspector:
+    title: Inspector
+    description: 'Trailing 320px column, sticky and absent when unfilled — normally an `inspector` of `meta_row` properties. Named for its canonical filler, as `header` is for `page_header`. The `sticky` sits on the grid ITEM, as `filters`'' does, so its containing block is the full-height grid area rather than a cell `self-start` has shrunk to its content (BB-414). WHEN A STORY COMPOSES THIS SLOT, the inspector''s rail is ONE `list` node: a container owns its items, so two properties are two ITEMS of one list rather than two entry components. That is a fact about `list` and `inspector`, not about this component — `canvas` is unchanged by it; only what a story composes into the slot is.'
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

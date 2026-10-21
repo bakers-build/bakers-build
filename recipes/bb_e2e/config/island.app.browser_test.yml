@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - bb_browser_test
+id: browser_test
+label: 'Browser fixture app'
+provider: browser_test
+default_profile: ''

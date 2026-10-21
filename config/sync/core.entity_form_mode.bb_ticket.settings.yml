@@ -1,0 +1,12 @@
+uuid: f856df6d-8a00-4f4d-8ac1-0a544eac5148
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_ticket.settings
+label: Settings
+description: null
+targetEntityType: bb_ticket
+cache: true
+

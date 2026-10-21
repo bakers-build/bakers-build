@@ -1,0 +1,134 @@
+# Komodo Resource Sync — one Stack per fixed branch for bakers.
+# Komodo scans this file (Resource Sync) and creates/updates the stacks by diff.
+# Compose comes from this repo at each stack's branch; images are pulled per branch
+# (:<branch>); secrets are Komodo Variables referenced as [[NAME]].
+#
+# Environment: develop -> dev2 (Traefik ingress); prod -> Local/coder.keytec.de
+# (caddy-docker-proxy ingress). Each stack layers one ingress overlay on the shared
+# ingress-agnostic docker-compose.yml via file_paths (traefik vs caddy).
+
+[[stack]]
+name = "bakers-develop"
+[stack.config]
+server           = "dev2"
+git_provider     = "git.key-tec.de"
+git_account      = "keyki"
+repo             = "bakers-build/bakers-build"
+branch           = "develop"
+run_directory    = "."
+file_paths       = ["docker-compose.yml", "docker-compose.traefik.yml"]
+auto_pull        = true
+registry_provider = "git.key-tec.de:5050"
+registry_account = "gitlab+deploy-token-27"
+webhook_enabled  = false
+poll_for_updates = false
+extra_args       = ["--wait"]
+ignore_services  = ["init-perms", "deploy"]
+environment = """
+DOMAIN=bakers-develop.dev2.keytec.de
+STACK_NAME=bakers-develop
+DB_NAME=bakers
+DB_USER=bakers
+DB_PASSWORD=[[BB_DEVELOP_DB_PASSWORD]]
+DB_ROOT_PASSWORD=[[BB_DEVELOP_DB_ROOT_PW]]
+DRUPAL_HASH_SALT=[[BB_DEVELOP_HASH_SALT]]
+REGISTRY_IMAGE_PHP=git.key-tec.de:5050/bakers-build/bakers-build/php:develop
+REGISTRY_IMAGE_NGINX=git.key-tec.de:5050/bakers-build/bakers-build/nginx:develop
+REGISTRY_IMAGE_MCP=git.key-tec.de:5050/bakers-build/bakers-build/mcp:develop
+# Auto-deploy runs UPDATE only (drush deploy); it never installs. The first install of
+# a fresh environment is a deliberate, profile-gated action, run once on the host:
+#   docker compose --profile install run --rm install
+# DEPLOY_CONTENT_RECIPE is read only by that install service (seeds team users etc.).
+DEPLOY_CONTENT_RECIPE=/var/www/html/recipes/bb_keytec
+BB_CONSUMER_SECRET_CW=[[BB_DEVELOP_CONSUMER_SECRET_CW]]
+BB_CONSUMER_SECRET_PK=[[BB_DEVELOP_CONSUMER_SECRET_PK]]
+BB_CONSUMER_SECRET_RS=[[BB_DEVELOP_CONSUMER_SECRET_RS]]
+BB_CONSUMER_SECRET_PM=[[BB_DEVELOP_CONSUMER_SECRET_PM]]
+BB_CONSUMER_SECRET_DS=[[BB_DEVELOP_CONSUMER_SECRET_DS]]
+BB_CONSUMER_SECRET_MZ=[[BB_DEVELOP_CONSUMER_SECRET_MZ]]
+BB_CONSUMER_SECRET_TM=[[BB_DEVELOP_CONSUMER_SECRET_TM]]
+BB_CONSUMER_SECRET_PG=[[BB_DEVELOP_CONSUMER_SECRET_PG]]
+BB_CONSUMER_SECRET_MS=[[BB_DEVELOP_CONSUMER_SECRET_MS]]
+BB_GITLAB_TOKEN_KEYTEC=[[BB_DEVELOP_GITLAB_TOKEN]]
+# OAuth / social sign-in (BB-476): Google client credentials. Empty in
+# config/sync — this is the only place they reach the site.
+BB_OAUTH_GOOGLE_CLIENT_ID=[[BB_DEVELOP_OAUTH_GOOGLE_CLIENT_ID]]
+BB_OAUTH_GOOGLE_CLIENT_SECRET=[[BB_DEVELOP_OAUTH_GOOGLE_CLIENT_SECRET]]
+# BB_DEVELOP_MAIL_SMTP_DSN/_MAIL_FROM_ADDRESS/_MAIL_FROM_NAME must be set to the REAL
+# git.key-tec.de SMTP values in Komodo (provision-secrets would fill hex-random, which
+# breaks outbound mail just like a random GitLab token breaks the import connector).
+# Source fields on git.key-tec.de's Omnibus config: gitlab_rails['smtp_address'],
+# smtp_port, smtp_user_name, smtp_password, smtp_enable_starttls_auto/smtp_tls (DSN);
+# gitlab_email_from (from-address); gitlab_email_display_name (from-name).
+MAIL_SMTP_DSN=[[BB_DEVELOP_MAIL_SMTP_DSN]]
+MAIL_FROM_ADDRESS=[[BB_DEVELOP_MAIL_FROM_ADDRESS]]
+MAIL_FROM_NAME=[[BB_DEVELOP_MAIL_FROM_NAME]]
+"""
+
+# Production. branch main -> stack bakers-prod on the Komodo control host
+# (server "Local" = coder.keytec.de). Caddy ingress overlay + caddy_net.
+# Domain app.bakers.build (TLS via the host's *.keytec.de DNS-01 wildcard).
+# NOTE: BB_PROD_GITLAB_TOKEN must be set to a REAL GitLab API token in Komodo
+# (provision-secrets fills the others with hex-random, which is fine — but a
+# random GitLab token would break the keytec_gitlab import connector).
+[[stack]]
+name = "bakers-prod"
+[stack.config]
+server           = "Local"
+git_provider     = "git.key-tec.de"
+git_account      = "keyki"
+repo             = "bakers-build/bakers-build"
+branch           = "main"
+run_directory    = "."
+file_paths       = ["docker-compose.yml", "docker-compose.caddy.yml"]
+auto_pull        = true
+registry_provider = "git.key-tec.de:5050"
+registry_account = "gitlab+deploy-token-27"
+webhook_enabled  = false
+poll_for_updates = false
+extra_args       = ["--wait"]
+ignore_services  = ["init-perms", "deploy"]
+environment = """
+DOMAIN=app.bakers.build
+STACK_NAME=bakers-prod
+DB_NAME=bakers
+DB_USER=bakers
+DB_PASSWORD=[[BB_PROD_DB_PASSWORD]]
+DB_ROOT_PASSWORD=[[BB_PROD_DB_ROOT_PW]]
+DRUPAL_HASH_SALT=[[BB_PROD_HASH_SALT]]
+REGISTRY_IMAGE_PHP=git.key-tec.de:5050/bakers-build/bakers-build/php:main
+REGISTRY_IMAGE_NGINX=git.key-tec.de:5050/bakers-build/bakers-build/nginx:main
+REGISTRY_IMAGE_MCP=git.key-tec.de:5050/bakers-build/bakers-build/mcp:main
+# Auto-deploy runs UPDATE only (drush deploy); it never installs — a bootstrap
+# false-negative can no longer wipe prod. The first install of this environment is a
+# deliberate, profile-gated action, run once on the prod host:
+#   docker compose --profile install run --rm install
+# Prod installs from config/sync only (CIM model): site:install --existing-config, NO
+# content recipe (DEPLOY_CONTENT_RECIPE unset). bb_keytec (-> bb_seed -> bakers)
+# re-imports config already in config/sync (e.g. gin.settings) and aborts on mismatch on a
+# fresh --existing-config install. Keytec CONFIG (roles, keytec_gitlab connector, oauth
+# scope) is in config/sync; only the team-user CONTENT is recipe-only and seeded separately.
+BB_CONSUMER_SECRET_CW=[[BB_PROD_CONSUMER_SECRET_CW]]
+BB_CONSUMER_SECRET_PK=[[BB_PROD_CONSUMER_SECRET_PK]]
+BB_CONSUMER_SECRET_RS=[[BB_PROD_CONSUMER_SECRET_RS]]
+BB_CONSUMER_SECRET_PM=[[BB_PROD_CONSUMER_SECRET_PM]]
+BB_CONSUMER_SECRET_DS=[[BB_PROD_CONSUMER_SECRET_DS]]
+BB_CONSUMER_SECRET_MZ=[[BB_PROD_CONSUMER_SECRET_MZ]]
+BB_CONSUMER_SECRET_TM=[[BB_PROD_CONSUMER_SECRET_TM]]
+BB_CONSUMER_SECRET_PG=[[BB_PROD_CONSUMER_SECRET_PG]]
+BB_CONSUMER_SECRET_MS=[[BB_PROD_CONSUMER_SECRET_MS]]
+BB_GITLAB_TOKEN_KEYTEC=[[BB_PROD_GITLAB_TOKEN]]
+# OAuth / social sign-in (BB-476): Google client credentials, prod's own
+# registration — the redirect URI is host-bound (BB-476 D9).
+BB_OAUTH_GOOGLE_CLIENT_ID=[[BB_PROD_OAUTH_GOOGLE_CLIENT_ID]]
+BB_OAUTH_GOOGLE_CLIENT_SECRET=[[BB_PROD_OAUTH_GOOGLE_CLIENT_SECRET]]
+# BB_PROD_MAIL_SMTP_DSN/_MAIL_FROM_ADDRESS/_MAIL_FROM_NAME must be set to the REAL
+# git.key-tec.de SMTP values in Komodo (provision-secrets would fill hex-random, which
+# breaks outbound mail just like a random GitLab token breaks the import connector).
+# Source fields on git.key-tec.de's Omnibus config: gitlab_rails['smtp_address'],
+# smtp_port, smtp_user_name, smtp_password, smtp_enable_starttls_auto/smtp_tls (DSN);
+# gitlab_email_from (from-address); gitlab_email_display_name (from-name).
+MAIL_SMTP_DSN=[[BB_PROD_MAIL_SMTP_DSN]]
+MAIL_FROM_ADDRESS=[[BB_PROD_MAIL_FROM_ADDRESS]]
+MAIL_FROM_NAME=[[BB_PROD_MAIL_FROM_NAME]]
+"""

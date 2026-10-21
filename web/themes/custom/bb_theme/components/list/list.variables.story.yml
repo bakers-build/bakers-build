@@ -1,0 +1,31 @@
+# THE MASKED CELL, on the surface it comes from: a read-only list of an environment's effective
+# variables — a key, a value that must not be printed, and a provenance badge.
+#
+# It is here because `masked` is the seventh cell kind and it needs a real surface rather than a
+# demonstration. The component that used to render this list is a `list` after this change, and the
+# masking that was its whole reason for existing is a CELL PROPERTY: a value is hidden or it is not,
+# which is a property of one value and never of a container. That is why no eighth component carries
+# it and why the kind was added deliberately instead of a slot being reopened.
+#
+# THE VALUE IS NORMALLY NOT PASSED AT ALL. Masking upstream — in the formatter that reads the field —
+# is what makes the hidden case safe: there is nothing sensitive in the render context to leak. So the
+# first two items carry NO `value`, and the dots stand for a value this template never saw. The last
+# item is the revealed case, which is the only one that needs a value, and it exists so the two states
+# are visibly one cell kind and not two.
+component: bb_theme:list
+name: Variables
+props:
+  layout: lines
+  items:
+    - cells:
+        key: { kind: mono, value: BB_API_TOKEN }
+        value: { kind: masked }
+        origin: { kind: badge, label: own, tone: neutral }
+    - cells:
+        key: { kind: mono, value: DATABASE_URL }
+        value: { kind: masked }
+        origin: { kind: badge, label: inherited, tone: idle }
+    - cells:
+        key: { kind: mono, value: BB_BASE_URL }
+        value: { kind: masked, value: 'https://bakers.example.org', revealed: true }
+        origin: { kind: badge, label: own, tone: neutral }

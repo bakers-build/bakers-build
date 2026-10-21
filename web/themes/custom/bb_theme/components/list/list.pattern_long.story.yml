@@ -1,0 +1,52 @@
+component: bb_theme:list
+name: Pattern long identity
+props:
+  layout: lines
+  pattern:
+    headline:
+      - name
+      - key
+    meta:
+      - name_1
+    right:
+      - name_2
+    captions:
+      name_2: Owner
+  items:
+    - cells:
+        name:
+          kind: link
+          value: >-
+            bakers.build Platform —
+            bakerscontrolplaneconductorswebuirecipesandeverythingthatinstallsthem
+          url: '#project-bakers-platform'
+        key:
+          kind: badge
+          label: bakers.buildPLATFO
+          tone: neutral
+          mono: true
+        name_1:
+          kind: text
+          value: keytec
+        name_2:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: unassigned
+    - cells:
+        name:
+          kind: link
+          value: bakers.build Designbook
+          url: '#project-bakers-designbook'
+        key:
+          kind: badge
+          label: GDB
+          tone: neutral
+          mono: true
+        name_1:
+          kind: text
+          value: keytec
+        name_2:
+          kind: link
+          value: Maximilianalexandervonhohenzollernsigmaringen
+          url: '#user-maximilian'

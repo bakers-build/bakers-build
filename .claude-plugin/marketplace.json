@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "bakers",
+  "description": "bakers.build — independently addressable capabilities composed by each project's WORKFLOW.md.",
+  "owner": { "name": "keytec", "url": "https://git.key-tec.de/bakers-build/bakers-build" },
+  "plugins": [
+    {
+      "name": "bakers",
+      "source": "./.claude/skills/bakers-build",
+      "description": "Named bakers.build skills for ticket outcomes, deployment, setup, upgrades, origin updates, and entity creation; projects own composition.",
+      "category": "development"
+    }
+  ]
+}

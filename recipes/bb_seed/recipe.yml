@@ -1,0 +1,34 @@
+name: 'bakers.build Seed'
+description: 'Applies bakers, then imports bb_term seed content (capability tags). Apply as a second pass after the bb_term bundles exist.'
+type: 'Site'
+recipes:
+  - bakers
+# RETIRED (BB-389) — the `config: import: bb_dashboard:` block.
+#
+# It imported the seven entity view modes and six entity view displays that
+# bb_dashboard shipped (bb_ticket board_card/full/teaser, bb_run full,
+# bb_comment full, bb_project full, bb_term full, and the matching
+# displays). They were imported HERE rather than in the `bakers` recipe because
+# the displays' display_builder sample generation needs the `bb_labels`
+# vocabulary bundle, which the `bakers` recipe's own `config/` creates only after
+# its `config.import` runs — so this recipe applied `bakers` first and imported
+# them afterwards.
+#
+# The whole block goes because bb_dashboard leaves the installed set and
+# `config.import` is keyed on the provider module: naming an extension that is
+# not installed aborts the recipe rather than degrading. Note the shape of the
+# loss — those displays are what bound the SDCs `bb_theme:ticket-row`,
+# `bb_theme:comment_event`, `bb_theme:board-card`, `bb_theme:badge` and
+# `bb_theme:form_label` to Drupal entities, so after this recipe no Drupal render
+# path reaches them; Storybook is the only surface left that renders them.
+# BB-396 DELETED the module and those files with it, having first moved out
+# everything that was not presentation. What is written below about re-adding
+# the block is therefore historical: there is no longer a source to import from,
+# and a screen that needs a view mode gets it from `designbook:sync-to`.
+# (Formerly, while the module still existed: the files sat untouched in
+# `bb_dashboard/config/{install,optional}`, and re-adding the block below was
+# all it took to bind them again. Neither half of that is true now.)
+#
+# What this recipe still does: apply `bakers`, then install its own
+# `content/bb_term/**` seed (the capability tags and labels), which is picked
+# up from the content directory and needs no config action.

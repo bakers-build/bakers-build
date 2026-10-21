@@ -1,0 +1,13 @@
+bb_activity.notifications:
+  path: '/user/{user}/notifications'
+  defaults:
+    _entity_form: 'bb_notification_setting.default'
+    _title: 'Notifications'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\bb_activity\Access\NotificationSettingAccess::route'
+  options:
+    _bb_user_area: TRUE
+    parameters:
+      user:
+        type: 'entity:user'

@@ -1,0 +1,74 @@
+{# The controls that narrow a list, and nothing else. It fills `canvas.filters`
+   (D8/D15): the two-column relation between the controls and the results is the
+   canvas's, so this component owns no layout, no results region and no summary.
+   The human asked for Linear's model — narrowing is done in an aside and what
+   has been chosen is stated separately, above the rows — rather than for one row
+   of pills doing both jobs at once (C22).
+
+   NOTHING HERE SAYS "FACET". The aside is where a list is narrowed; whether that
+   narrowing is a facet, an exposed filter or a saved view is a wiring question
+   this ticket deliberately leaves open, and the vocabulary should not pre-empt
+   it (D8).
+
+   THE PANEL COLLAPSES BY COMPOSING `bb_theme:collapsible` rather than by
+   carrying a second collapse of its own. That component is a native
+   <details>/<summary> for a measured reason this panel shares exactly: Storybook
+   never calls Drupal.attachBehaviors, so a scripted collapse would be a dead
+   control on the surface the human reviews on — a click that answers with
+   nothing is worse than no affordance at all. Composing it means there is ONE
+   collapse mechanism in this theme, and the `Filters` heading IS the <summary>.
+   The heading uses the existing body typography inside the summary.
+
+   `collapsed` rather than `open`, because the panel's resting state is EXPANDED:
+   a filter panel nobody can see is not a filter panel. The prop names the
+   deviation from that resting state, the way `sidebar`'s does. It is passed
+   through as `open: not collapsed`, so an absent prop leaves the panel open.
+   What it no longer does is give the region its width back: the 192px track
+   belongs to `canvas` now, which is the price of the aside not owning a layout.
+
+   The heading is what the collapse is operated by, so a caller that omits
+   `title` gets a chevron-only toggle.
+
+   Spacing is the token scale (D16). Nothing here fetches, posts or persists a
+   view.
+
+   `layout: bar` IS THE SEARCH TOOLBAR above the rows (BB-592): not an aside,
+   no heading and no collapse, the same surface as the panel, and its controls in
+   ONE row — the first (the search) grows and wraps onto its own line before it
+   would overflow, the later ones (the sort) keep their own width capped at the
+   row. Its fields live OUTSIDE the exposed <form> (bound by the HTML `form`
+   attribute), so BEF's autosubmit, which watches only the form's own elements,
+   never sees them; the bar submits their form itself: a select on `change`, a
+   text field 500ms after the last keystroke, and never the same value twice, so
+   an Enter (which already submits natively) is not followed by a second request.
+   `panel` is the default and the aside it always was, now filled with `bg-app`
+   so it reads as a surface on the `bg-surface` main area. #}
+{% set filters_controls %}{% block controls %}{{ controls }}{% endblock %}{% endset %}
+{% if layout|default('panel') == 'bar' %}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'flex', 'flex-row', 'flex-wrap', 'items-end', 'gap-3', 'p-3', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
+    '*:first:flex-1', '*:first:basis-40', '*:first:min-w-0', '*:not-first:shrink-0', '*:not-first:max-w-full',
+  ]) }} role="search"
+  {%- if label %} aria-label="{{ label }}"{% endif %}
+  x-data="{ send(field) { if (field.form && field.dataset.sent !== field.value) { field.dataset.sent = field.value; field.form.requestSubmit(); } } }"
+  @change="['search', 'text'].includes($event.target.type) || send($event.target)"
+  @input.debounce.500ms="['search', 'text'].includes($event.target.type) && send($event.target)"
+  @keydown.enter="['search', 'text'].includes($event.target.type) && ($event.target.dataset.sent = $event.target.value)">
+  {{- filters_controls -}}
+</div>
+{% else %}
+<aside{{ (attributes ?: create_attribute()).addClass([
+    'p-3', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
+  ]) }}
+  {%- if label %} aria-label="{{ label }}"{% endif %}>
+  {% embed 'bb_theme:collapsible' with {
+    open: not collapsed,
+    attributes: create_attribute(),
+  } %}
+    {% block label %}<span class="text-body font-semibold text-title">{{ title }}</span>{% endblock %}
+    {% block content %}
+      <div class="flex flex-col items-stretch gap-4">{{ filters_controls }}</div>
+    {% endblock %}
+  {% endembed %}
+</aside>
+{% endif %}

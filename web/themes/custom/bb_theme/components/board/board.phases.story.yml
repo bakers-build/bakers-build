@@ -1,0 +1,111 @@
+# A COLUMN IS A PHASE, NOT A STATE.
+#
+# The four columns are fixed: Intake, Prepare, Work, Accept. Every active state of every
+# ticket-group workflow maps into exactly one of them, so the column set never changes and the
+# workflow filter reduces cards like any other filter instead of swapping the board's structure.
+# That is why a deployment card and a feature card stand side by side here.
+#
+# The column carries the phase; the CARD carries its exact state as the LABEL of a dotted badge, so
+# `spec`, `diagnose` and `pre_deployment` are all legible in the same Prepare column. The accent edge
+# and the badge's dot keep encoding the derived status — "is this moving?" — so neither dimension is
+# conveyed by colour alone.
+#
+# THE COLUMNS ARE DATA. There is no column component to compose, and the cards are data too: each is
+# `board-card`'s own props plus the three values its footer line is composed from — the lease, the
+# state and the assignee. The footer's ORDER is the card's contract's and the board applies it, which
+# is what this story used to spell out by hand for every card, spacer included.
+#
+# THE STATE BADGE'S TONE IS NOT WRITTEN HERE, because it is a function of `status` and this story used
+# to state both. `idle` reads as `neutral`: the badge tints only where the token layer has a tint/ink
+# PAIR, so an unknown status is quiet rather than given a colour of its own.
+#
+# Terminal states (done, cancelled) render in no column: a board is the view of work in flight.
+component: bb_theme:board
+name: Phases
+props:
+  columns:
+    # Intake — qualification, for every workflow that has it. Rendered empty on purpose: the board
+    # needs one column that shows its `empty` slot, and an untriaged backlog is the honest case.
+    - name: Intake
+      count: 0
+    # Prepare — spec (feature/chore), diagnose (bug), pre_deployment (deployment). Three different
+    # states, three different workflows, one phase.
+    - name: Prepare
+      count: 3
+      dot: running
+      cards:
+        - identifier: BB-412
+          title: Design the ticket list screen
+          status: idle
+          priority: p2
+          type: bb_feature
+          state: spec
+          assignee_initials: CW
+          assignee_color: running
+        - identifier: BB-407
+          title: Lease renewal drops the claim under load
+          status: running
+          priority: p1
+          type: bb_bug
+          state: diagnose
+          lease: srv01
+          assignee_initials: MR
+          assignee_color: attention
+        # No lease is held, so no claim badge is rendered at all — an empty badge would claim a
+        # machine owns the ticket. Nobody is assigned either, so no avatar.
+        - identifier: BB-418
+          title: Release 2.4 to production
+          status: wait
+          priority: p1
+          type: bb_deployment
+          state: pre_deployment
+    # Work — coding (feature/chore/bug), verifying (verification).
+    - name: Work
+      count: 2
+      dot: running
+      cards:
+        - identifier: BB-401
+          title: Design the Board screen
+          status: running
+          priority: p2
+          type: bb_feature
+          state: coding
+          lease: srv02
+          assignee_initials: CW
+          assignee_color: running
+        - identifier: BB-395
+          title: Verify the import connector against the staging data
+          status: attention
+          priority: p3
+          type: bb_verification
+          state: verifying
+          lease: srv03
+    # Accept — review (feature/chore/bug), post_deployment (deployment), summary (verification).
+    - name: Accept
+      count: 2
+      cards:
+        # needs_input has no tone of its own; the theme renders it as the amber attention pill, so the
+        # board follows that house mapping rather than inventing a tint.
+        - identifier: BB-388
+          title: Agree the add and edit action pattern
+          status: needs_input
+          priority: p2
+          type: bb_feature
+          state: review
+          assignee_initials: MR
+          assignee_color: attention
+        - identifier: BB-377
+          title: Release 2.3 to production
+          status: idle
+          priority: p3
+          type: bb_deployment
+          state: post_deployment
+          assignee_initials: CW
+          assignee_color: running
+slots:
+  empty:
+    - type: element
+      tag: span
+      value: nothing waiting
+      attributes:
+        class: opacity-60

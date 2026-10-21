@@ -1,0 +1,8 @@
+component: bb_theme:rich-text
+name: Compact
+props:
+  size: compact
+  body: >-
+    <h3>Summary</h3><p>Two paragraphs, a list and a small table at compact
+    density.</p><ul><li>Tighter rhythm</li><li>Same
+    semantics</li></ul><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>Build</td><td>Passed</td></tr><tr><td>Browser</td><td>Passed</td></tr></tbody></table><p>Done.</p>

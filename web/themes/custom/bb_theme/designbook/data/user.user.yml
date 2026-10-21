@@ -1,0 +1,96 @@
+- id: '1'
+  name: cw
+  mail: christian.wiedemann@keytec.example
+  status: true
+  roles: []
+  created: '2026-01-05T08:00:00+00:00'
+  access: '2026-06-30T09:10:00+00:00'
+  login: '2026-06-30T07:55:00+00:00'
+  timezone: Europe/Berlin
+  display_name: Christian Wiedemann
+  initials: CW
+  field_full_name: Christian Wiedemann
+  field_developer_title: Product Lead
+  field_bb_background: Drupal, Linear, or something else entirely.
+  __designbook:
+    section: bb_ticket
+- id: '2'
+  name: sg
+  mail: sven.gruber@keytec.example
+  status: true
+  roles: []
+  created: '2026-01-08T09:30:00+00:00'
+  access: '2026-06-29T18:00:00+00:00'
+  login: '2026-06-29T08:20:00+00:00'
+  timezone: Europe/Berlin
+  display_name: Sven Gruber
+  initials: SG
+  __designbook:
+    section: bb_ticket
+- id: '3'
+  name: mvd
+  mail: m.vandijk@northwind.example
+  status: true
+  roles: []
+  created: '2026-02-20T11:00:00+00:00'
+  access: '2026-06-27T10:00:00+00:00'
+  login: '2026-06-27T09:00:00+00:00'
+  timezone: Europe/Amsterdam
+  display_name: Marieke van Dijk
+  initials: MD
+  __designbook:
+    section: settings
+- id: '4'
+  name: bb_agent
+  mail: null
+  status: true
+  roles:
+    - bb_agent
+  created: '2026-02-20T11:05:00+00:00'
+  access: '2026-06-27T09:59:00+00:00'
+  login: null
+  timezone: UTC
+  display_name: bakers.build agent
+  initials: GA
+  __designbook:
+    section: settings
+- id: '5'
+  name: lf
+  mail: lena.fischer@keytec.example
+  status: true
+  roles: []
+  created: '2026-03-02T08:15:00+00:00'
+  access: '2026-06-30T08:40:00+00:00'
+  login: '2026-06-30T08:00:00+00:00'
+  timezone: Europe/Berlin
+  display_name: Lena Fischer
+  initials: LF
+  __designbook:
+    section: settings
+- id: '6'
+  name: tb
+  mail: tom.beckett@partner.example
+  status: true
+  roles: []
+  created: '2026-04-14T10:00:00+00:00'
+  access: '2026-06-24T13:05:00+00:00'
+  login: '2026-06-24T13:00:00+00:00'
+  timezone: Europe/London
+  display_name: Tom Beckett
+  initials: TB
+  __designbook:
+    section: settings
+- id: '7'
+  name: keytec_deploy
+  mail: null
+  status: true
+  roles:
+    - bb_agent
+  created: '2026-03-02T08:20:00+00:00'
+  access: '2026-06-30T09:00:00+00:00'
+  login: null
+  timezone: UTC
+  display_name: keytec deploy bot
+  initials: KD
+  __designbook:
+    section: settings

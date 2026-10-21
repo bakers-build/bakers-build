@@ -1,0 +1,30 @@
+{
+  "effortLevel": "medium",
+  "autoMemoryEnabled": false,
+  "enabledPlugins": {
+    "bakers@bakers": true
+  },
+  "permissions": {
+    "deny": [
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "ScheduleWakeup",
+      "RemoteTrigger",
+      "SendMessage",
+      "EnterWorktree",
+      "ExitWorktree",
+      "ReportFindings",
+      "Workflow",
+      "WebSearch",
+      "Artifact",
+      "ArtifactComments",
+      "ArtifactData",
+      "DesignSync",
+      "SendFeedback",
+      "ShareOnboardingGuide",
+      "PushNotification",
+      "mcp__claude-in-chrome"
+    ]
+  }
+}

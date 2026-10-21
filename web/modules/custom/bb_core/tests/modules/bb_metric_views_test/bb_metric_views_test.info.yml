@@ -1,0 +1,8 @@
+name: 'bakers.build metric views test'
+type: module
+description: 'Test helper: attaches EntityViewsData to bb_ticket (mirrors bb_dashboard) so bb_metric Views handlers can be tested without the dashboard contrib stack.'
+package: Testing
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core
+  - drupal:views

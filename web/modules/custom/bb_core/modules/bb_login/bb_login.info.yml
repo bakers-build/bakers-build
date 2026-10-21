@@ -1,0 +1,8 @@
+name: bakers.build Login
+type: module
+description: 'bakers.build auth experience: passwordless login by e-mail address — one form for sign-up and sign-in, a mailed one-time login link, and a session that lands on the product landing route.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core
+  - drupal:user

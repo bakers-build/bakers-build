@@ -1,0 +1,11 @@
+/* Elevation — flat by default (no shadow on cards/rows, same as dark mode).
+   Two deliberate exceptions, both brand-accent moments:
+   - a hard offset shadow on the primary CTA button (keytec's signature move,
+     scaled down from the brand's 6px/6px to 4px/4px so it doesn't overpower
+     a dense UI), collapsing on hover/press;
+   - a soft shadow on floating elements (the filter dropdown panel). */
+:root {
+  --shadow-cta:       4px 4px 0 0 #000000;
+  --shadow-cta-hover: 2px 2px 0 0 #000000;
+  --shadow-dropdown:  0 4px 12px rgba(20,23,26,.10);
+}

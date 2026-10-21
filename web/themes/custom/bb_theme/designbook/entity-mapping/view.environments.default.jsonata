@@ -1,0 +1,61 @@
+(
+  /* THE ENVIRONMENTS LISTING, AS A VIEW THAT OWNS ITS TABLE. It replaces
+     `bb_environment.bb_environment.teaser` and the `environment-row` that view mode existed to
+     feed.
+
+     A LISTING, never an entity screen: an environment has no page of its own, it is read as one line
+     of the project it belongs to — which is where a deployment ticket stamps it and a verification
+     ticket verifies against it.
+
+     FOUR COLUMNS AND NO MORE, because those are the four the section brief names and the four a
+     reader comes for: the name, the tier, the URL to open, and the branch it deploys from.
+     `project_id` is not a column — the block already belongs to one project, and repeating it in
+     every row would say the same thing twice per row.
+
+     WHY THE ROWS ARE WRITTEN OUT HERE. A view address carries no record — there is no
+     `content.view.environments` sample pool to derive from the address — so the expression is
+     evaluated against an EMPTY context and enumerates its own rows, which is what the toolchain
+     means by a self-contained View. The rows below MIRROR
+     `designbook/data/bb_environment.bb_environment.yml` and must be kept in step with it by hand.
+
+     WHICH RECORDS. The two of project 1, which is the project whose settings screen holds this
+     block. The third record is project 2's staging environment and is the view's filtered-out
+     remainder — an environments listing is always the environments OF something. */
+  $dash := { "kind": "text", "value": "—", "emphasis": "faint" };
+  $rows := [
+    { "id": "1", "name": "production", "tier": "production", "base_url": "https://bakers.example.com", "branch": "main" },
+    { "id": "2", "name": "develop", "tier": "development", "base_url": "https://bakers-develop.example.com", "branch": "develop" }
+  ];
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:table",
+      "props": {
+        "columns": [
+          { "key": "name", "label": "Environment", "sort": "asc", "url": "?order=Environment&sort=desc" },
+          { "key": "tier", "label": "Tier", "sort": "none" },
+          { "key": "base_url", "label": "Base URL", "sort": "none" },
+          { "key": "branch", "label": "Branch", "sort": "none" }
+        ],
+        "rows": [$map($rows, function ($e) {
+          {
+            /* NO ROW LINK. An environment has no detail surface to point at, so there is nothing to
+               carry as a row target; the one reachable thing on the row is the base URL, and it is a
+               link cell in a column of its own. */
+            "cells": {
+              /* THE NAME IS THE ROW'S SUBJECT, so it is `strong` — the emphasis the deleted row drew
+                 with `font-semibold`, now one of the three the cell contract carries. */
+              "name": { "kind": "text", "value": $e.name, "emphasis": "strong" },
+              "tier": $e.tier ? { "kind": "badge", "label": $e.tier, "tone": "neutral" } : $dash,
+              /* THE TWO THINGS A READER COMES HERE FOR are the URL and the branch: a deployment
+                 ticket stamps this environment and a verification ticket verifies against it. The URL
+                 is reachable and the branch is a machine name, so one is a link and the other is
+                 mono. */
+              "base_url": $e.base_url ? { "kind": "link", "value": $e.base_url, "url": $e.base_url } : $dash,
+              "branch": $e.branch ? { "kind": "mono", "value": $e.branch } : $dash
+            }
+          }
+        })]
+      }
+    }
+  ]
+)

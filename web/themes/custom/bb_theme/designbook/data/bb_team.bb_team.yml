@@ -1,0 +1,27 @@
+- id: '1'
+  created: '2026-01-06T09:00:00+00:00'
+  changed: '2026-01-06T09:00:00+00:00'
+  name: Platform crew
+  workspace_id: '1'
+  owner_user_id: '1'
+  __designbook:
+    section: settings
+- id: '2'
+  created: '2026-02-21T09:00:00+00:00'
+  changed: '2026-02-21T09:00:00+00:00'
+  name: Commerce crew
+  workspace_id: '2'
+  owner_user_id: '3'
+  __designbook:
+    section: settings
+# BB-338 appended id 3, in workspace 1, so team 1 can be assigned to two
+# projects AND project 1 can carry two teams — the n:m relation demonstrated from
+# both sides rather than a 1:1 the field type merely permits (C5).
+- id: '3'
+  created: '2026-03-05T09:00:00+00:00'
+  changed: '2026-03-05T09:00:00+00:00'
+  name: Design crew
+  workspace_id: '1'
+  owner_user_id: '5'
+  __designbook:
+    section: settings

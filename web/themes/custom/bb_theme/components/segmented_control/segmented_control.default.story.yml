@@ -1,0 +1,14 @@
+component: bb_theme:segmented_control
+name: Default
+props:
+  label: Closed rows
+  items:
+    - label: Open
+      url: '?'
+      active: false
+    - label: Closed
+      url: '?closed=only'
+      active: true
+    - label: All
+      url: '?closed=all'
+      active: false

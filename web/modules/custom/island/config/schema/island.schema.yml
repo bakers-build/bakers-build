@@ -1,0 +1,160 @@
+# The `island` ui_patterns source. `type: ignore` like display_builder's own
+# source schemas: its settings are a free-form tree of nested sources.
+ui_patterns_source.island:
+  type: ignore
+  label: 'Source: Island'
+island.app.*:
+  type: config_entity
+  label: 'Island app'
+  mapping:
+    id:
+      type: string
+      label: 'Machine name'
+    label:
+      type: label
+      label: 'Label'
+    status:
+      type: boolean
+      label: 'Enabled'
+    provider:
+      type: string
+      label: 'Provider'
+    default_profile:
+      type: string
+      label: 'Default profile'
+
+island.profile.*:
+  type: config_entity
+  label: 'Island profile'
+  mapping:
+    id:
+      type: string
+      label: 'Machine name'
+    label:
+      type: label
+      label: 'Label'
+    status:
+      type: boolean
+      label: 'Enabled'
+    app:
+      type: string
+      label: 'App'
+    layout:
+      type: string
+      label: 'Layout component'
+    layout_settings:
+      type: ignore
+      label: 'Layout settings'
+    placements:
+      type: sequence
+      label: 'Placements'
+      sequence:
+        type: mapping
+        mapping:
+          plugin_id:
+            type: string
+            label: 'Plugin id'
+          slot:
+            type: string
+            label: 'Slot'
+          weight:
+            type: integer
+            label: 'Weight'
+          enabled:
+            type: boolean
+            label: 'Enabled'
+          events:
+            type: sequence
+            label: 'Refresh events'
+            sequence:
+              type: string
+          configuration:
+            type: island.configuration.[%parent.plugin_id]
+            label: 'Plugin configuration'
+          data:
+            type: ignore
+            label: 'Placement data'
+          condition_operator:
+            requiredKey: false
+            type: island.condition_operator
+          conditions:
+            requiredKey: false
+            type: island.conditions
+    weight:
+      type: integer
+      label: 'Weight'
+    condition_operator:
+      type: island.condition_operator
+    conditions:
+      type: island.conditions
+
+island.conditions:
+  type: sequence
+  label: 'Conditions'
+  sequence:
+    type: condition.plugin.[id]
+
+island.condition_operator:
+  type: string
+  label: 'Condition operator'
+  constraints:
+    Choice:
+      choices: [and, or]
+
+island.settings:
+  type: config_object
+  label: 'Island page settings'
+  mapping:
+    page_app:
+      type: string
+      label: 'Application used for page composition'
+
+island.configuration.*:
+  type: ignore
+  label: 'Custom island configuration'
+
+island.configuration.menu:
+  type: mapping
+  label: 'Menu island configuration'
+  mapping:
+    menu_name:
+      type: string
+      label: 'Menu'
+    depth:
+      type: integer
+      label: 'Maximum depth'
+    expanded:
+      type: boolean
+      label: 'Expand all menu items'
+
+island.configuration.block:
+  type: mapping
+  label: 'Block island configuration'
+  mapping:
+    plugin_id:
+      type: string
+      label: 'Block plugin'
+    configuration:
+      type: block.settings.[%parent.plugin_id]
+      label: 'Block configuration'
+
+island.configuration.page_content:
+  type: mapping
+  label: 'Page Content island configuration'
+  mapping:
+    content_source_id:
+      requiredKey: false
+      type: string
+      label: 'Migrated controller content source identity'
+    also_placements:
+      requiredKey: false
+      type: sequence
+      label: 'Also placements'
+      sequence:
+        type: string
+    prefix_blocks:
+      requiredKey: false
+      type: sequence
+      label: 'Blocks before page content'
+      sequence:
+        type: island.configuration.block

@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://app.bakers.build/schemas/message-definition.v2.schema.json",
+  "title": "MessageDefinition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["label"],
+  "properties": {
+    "label": { "type": "string", "minLength": 1 },
+    "access": { "enum": ["view", "update"] },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "properties"],
+      "properties": {
+        "type": { "const": "object" },
+        "required": { "type": "array", "items": { "type": "string" } },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type"],
+            "properties": {
+              "type": { "enum": ["string", "integer", "number", "boolean"] },
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "default": {},
+              "enum": { "type": "array" },
+              "minimum": { "type": "number" },
+              "maximum": { "type": "number" },
+              "minLength": { "type": "integer" },
+              "maxLength": { "type": "integer" },
+              "pattern": { "type": "string" },
+              "format": { "enum": ["uri", "multiline"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

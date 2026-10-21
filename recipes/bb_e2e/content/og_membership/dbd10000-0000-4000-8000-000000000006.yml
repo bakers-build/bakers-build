@@ -1,0 +1,49 @@
+# The e2e agent's TEAM membership — the one that makes `by_team` non-empty.
+#
+# `by_team` is not read from a field on the ticket: `bb_ticket` has no
+# `team_id` (BB-321 rejected one), so TeamStatistics::byTeamFromUserCounts()
+# expands the per-ASSIGNEE counts onto every team each assignee belongs to. In
+# the seeded world `bakers-e2e-agent` is the only account that owns a counted row
+# (a `bb_run`), so this is the membership that turns `runs.by_team` from `[]`
+# into a row. Move it to another crew and the observable moves with it.
+#
+# It carries no `roles`, and that is not an omission: `member` is OG's
+# structurally REQUIRED role. OgMembership::preSave() revokes it as implicit and
+# getRoles() re-adds it, so naming it here is rejected outright with "This entity
+# (og_role: bb_team-bb_team-member) cannot be referenced". An active
+# membership carrying no roles IS a member.
+#
+# A team grants no OG permission and no project ticket access (BB-321): this
+# fixture adds reporting reach, never capability. The agent reaches the team ROW
+# through its workspace `app` rank, which `bb_core_bb_conductor_insert()`
+# writes for the owner of the seeded conductors — see
+# WorkspaceReadScopeSubscriber::rules()['bb_team'], which scopes teams by
+# `workspace_id`, not by team membership.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000006
+  bundle: default
+  default_langcode: en
+  depends:
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_team
+  entity_bundle:
+    -
+      value: bb_team
+  entity_id:
+    -
+      value: dbc70000-0000-4000-8000-000000000001
+  uid:
+    -
+      entity: "25d160a3-a2cd-4ebf-acce-5273c92bf1bb"
+  state:
+    -
+      value: active

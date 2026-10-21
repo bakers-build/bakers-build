@@ -1,0 +1,8 @@
+name: bakers.build browser fixtures
+type: module
+description: 'Recipe-test fixtures for public Island Profile browser regressions.'
+package: Testing
+core_version_requirement: ^11.3
+hidden: true
+dependencies:
+  - island:island

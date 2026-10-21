@@ -1,0 +1,21 @@
+# Public credentials for a limited administration actor.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: dccc2caf-a22c-566d-ab20-6657142a228f
+  default_langcode: en
+default:
+  name:
+  - value: api-manager
+  mail:
+  - value: api-manager@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  roles:
+  - target_id: api_manager
+  field_onboarding_completed:
+    -
+      value: true

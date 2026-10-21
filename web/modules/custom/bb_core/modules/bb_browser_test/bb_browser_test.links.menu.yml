@@ -1,0 +1,18 @@
+bb_browser_test.menu_first:
+  title: 'First menu page'
+  route_name: bb_browser_test.menu_first
+  menu_name: browser-test
+  weight: 0
+
+bb_browser_test.menu_second:
+  title: 'Second menu page'
+  route_name: bb_browser_test.menu_second
+  menu_name: browser-test
+  weight: 1
+
+bb_browser_test.menu_nested:
+  title: 'Nested menu entry'
+  route_name: bb_browser_test.menu_second
+  menu_name: browser-test
+  parent: bb_browser_test.menu_first
+  weight: 0

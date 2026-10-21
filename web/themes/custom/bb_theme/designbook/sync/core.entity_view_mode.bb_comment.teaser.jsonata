@@ -1,0 +1,35 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_comment.teaser
+ *
+ * Input ($) is the resolve-filter `unit`:
+ *   { config_name, entity_type: "bb_comment", bundle: "bb_comment" }
+ *
+ * Emits the `teaser` view-mode DEFINITION for the bb_comment custom content
+ * entity. Shape mirrors the sibling `core.entity_view_mode.bb_comment.full`
+ * generator beside it (same targetEntityType, bb_core module dependency,
+ * cache: true).
+ *
+ * WHY A `teaser` MODE EXISTS AT ALL. BB-657 splits the comment in two:
+ * `teaser` is the compact embedded row inside a ticket handoff and the run
+ * latest-summary, `full` is the body of the comment canonical page. One view
+ * mode cannot be both the item of a listing and the body of a detail page.
+ *
+ * The `uuid` is pinned so a re-emission is byte-stable against the shipped
+ * file: a `config/sync` copy without one never equals active config, and
+ * `drush cim` then re-saves the entity on every deploy — manufacturing the
+ * second save the recipe's strict list rejects (BB-414 R1/R2).
+ */
+(
+  $et := entity_type;
+  {
+    "uuid": "ac877fe4-9132-4aeb-82b3-faef3fe7f702",
+    "langcode": "en",
+    "status": true,
+    "dependencies": { "module": ["bb_core"] },
+    "id": $et & ".teaser",
+    "label": "Teaser",
+    "description": "",
+    "targetEntityType": $et,
+    "cache": true
+  }
+)

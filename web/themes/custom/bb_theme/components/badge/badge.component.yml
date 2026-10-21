@@ -1,0 +1,147 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Badge
+status: stable
+group: Data Display
+description: >-
+  ONE badge. A short piece of labelled data — a state name, a count, a taxonomy
+  label, a priority, a lease holder, a refresh state — rendered as one span
+  tinted by `tone`. It absorbed four components that were each a badge with one
+  detail added: `status-pill` (a dot before the label), `claim-badge` (a lock
+  glyph and a mono machine id), `refresh_indicator` (a relative time after the
+  label) and `status-dot` (the dot alone, with no props and no story of its
+  own). Those four details are now `dot`, `icon` and `suffix`, which is why
+  there is one tint table in the theme instead of four copies that agreed by
+  hand. The four old variants (`state`, `token`, `label`, `priority`) and the
+  `priority` prop collapsed into `tone`: they encoded a colour and a weight,
+  never a different kind of thing, and a priority is now simply `{ label: P2,
+  tone: neutral }`.
+
+
+  `mono` AND `mine` ARE A DELIBERATE, HUMAN-APPROVED DEPARTURE from the
+  one-badge contract's `label` + `tone` + optional dot (human, 2026-08-22). The
+  first absorption pass mapped the lease badge onto `tone: neutral` + `icon:
+  lock` and lost three things it carried, and two of them are not decoration.
+  The indigo tint came back as `tone: lease`, which the token layer already had
+  a tint/ink pair for and no tone reached. `mono` came back because a lease is
+  held by a MACHINE ID, and a machine id set in the body face is a machine id a
+  reader mistakes for prose. `mine` came back because the outline answered a
+  question no tone can answer: not what state this badge is in, but WHOSE lease
+  it is — your own session's hold on a thing versus somebody else's, which is
+  the difference between "wait" and "act". A boolean that changes the answer to
+  a question is data, and dropping it to keep the prop list short would have
+  made the badge shorter and the screen less true.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: >-
+        The badge's text. Required — a badge that says nothing is a decoration,
+        and a screen reader gets nothing from it.
+    tone:
+      type: string
+      enum:
+        - running
+        - attention
+        - wait
+        - critical
+        - lease
+        - idle
+        - stale
+        - offline
+        - neutral
+      title: Tone
+      description: >-
+        The colour vocabulary, and the only one.
+        `running`/`attention`/`wait`/`critical`/`lease` are the five tones that
+        reach a tint/ink token pair; `stale` and `offline` are hollow-ring dots
+        with no tint pair of their own, and `idle` has no token at all — all
+        three therefore read on the quiet surface. Default `neutral`.
+
+
+        `critical` and `wait` share the red pair on purpose and are still two
+        tones, because they are two statements. `wait` says nobody is acting on
+        this; `critical` says this one is first. The absorbed `priority` variant
+        rendered P1 through that red pair, and after the absorption P1 borrowed
+        `wait` — visually right and semantically false, since a P1 somebody is
+        actively working is not waiting for anybody. `critical` is the name for
+        the red that ranks rather than the red that stalls, and it maps onto the
+        pair that already exists rather than asking the token layer for a colour
+        nobody chose.
+
+
+        `lease` is the indigo pair
+        `--color-state-lease-tint`/`--color-state-lease-ink`, which the token
+        layer has always carried and which no tone reached until the claim badge
+        was folded in here.
+      default: neutral
+    dot:
+      type: boolean
+      title: Leading dot
+      description: >-
+        Draws the tone as a dot before the label. The dot is `aria-hidden`,
+        because the label beside it already says what the colour means — which
+        is what the old bare dot could not do.
+      default: false
+    icon:
+      type: string
+      title: Icon name
+      description: >-
+        An icon from the `bakers` sprite, drawn before the label — `lock` for a
+        held lease. Decorative: the label carries the meaning.
+    mono:
+      type: boolean
+      title: Monospaced
+      description: >-
+        Sets the whole badge in the mono face, for a label that is a MACHINE
+        NAME rather than a word — a machine id holding a lease, a branch, a key.
+        It is not a style knob: the face is what tells a reader that the string
+        is to be matched character by character rather than read, which is the
+        one thing the absorbed claim badge carried that neither `tone` nor
+        `icon` could say.
+      default: false
+    mine:
+      type: boolean
+      title: Held by the reader
+      description: >-
+        Draws a thin outline in the tone's own colour, for a badge that names
+        something belonging to the READER rather than to somebody else. It
+        exists for exactly one question the absorbed claim badge answered and no
+        tone can: whose lease this is. Your own session's hold and another
+        machine's hold are the same state and demand opposite responses, so the
+        difference is data and not decoration. Pair it with `tone: lease`; on
+        any other tone the outline states nothing.
+      default: false
+    suffix:
+      type: string
+      title: Suffix
+      description: >-
+        A quiet trailing value the label qualifies — a relative time, a count.
+        Rendered in mono at the smallest step so it reads as an annotation of
+        the label rather than a second label.
+    list_item:
+      type: boolean
+      title: Is a list item
+      description: >-
+        Emits `role="listitem"`. It is a prop and not a guess because a badge
+        cannot know whether it is a direct child of a `role="list"` container,
+        and `role="list"`/`role="listitem"` must be direct parent and child or a
+        browser drops both. The caller that sets `bb_theme:zone`'s `list:
+        true` around a set of badges sets this too. IT HAS NO CONSUMING SURFACE
+        LEFT: the labels surface used to be the one, and it is a `list` node now
+        — a real `<ul>` of `<li>`, with the badges as cells — so nothing in the
+        theme pairs this prop with a `role="list"` container any more. It is
+        still set by the label mapping, which renders one label standalone and
+        cannot know its container, and it still has a story of its own; removing
+        it is therefore a change to those two as well and belongs to whoever
+        retires them. This is the prop that exists only until a container owns
+        its own items, and the container now does.
+      default: false
+  required:
+    - label
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,40 @@
+# The monthly Drupal update example for the ticket-trigger scenarios, apart
+# from the BB-684 fixtures so tickets its trigger creates never meet theirs.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket_template
+  uuid: 685a0000-0000-4000-8000-000000000003
+  default_langcode: en
+  depends:
+    684a0000-0000-4000-8000-000000000003: bb_project
+    dbe50000-0000-4000-8000-000000000001: user
+    db1a0000-0000-4000-8000-000000000010: bb_term
+default:
+  name:
+    -
+      value: "Monthly Drupal update"
+  enabled:
+    -
+      value: true
+  title_pattern:
+    -
+      value: "Drupal update {{month}}"
+  description:
+    -
+      value: "Update Drupal core and contrib for this month."
+      format: bb_rich
+  workflow:
+    -
+      value: "bb_chore"
+  target_state:
+    -
+      value: "qualification"
+  labels:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000010"
+  project_id:
+    -
+      entity: "684a0000-0000-4000-8000-000000000003"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

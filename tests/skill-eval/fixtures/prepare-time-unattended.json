@@ -1,0 +1,265 @@
+{
+  "synthetic": true,
+  "profile": "artifact",
+  "skill": "prepare-time",
+  "references": [
+    "prepare-time/references/daily-evidence.md"
+  ],
+  "id": "prepare-time-unattended",
+  "input": {
+    "request": "Prepare the entire requested range, then show each independent failure/history variant using only supplied observations. No real writes are available.",
+    "employee": "employee-elm",
+    "authentication": "verified as employee-elm",
+    "origin": "https://time.example.invalid",
+    "timezone": "Europe/Berlin",
+    "range": [
+      "2026-10-12",
+      "2026-10-18"
+    ],
+    "mode": "autonomous",
+    "answer_channel": false,
+    "work_schedule": {
+      "day_0": 32400,
+      "day_1": 32400,
+      "day_2": 32400,
+      "day_3": 32400,
+      "day_4": 32400,
+      "day_5": 0,
+      "day_6": 0
+    },
+    "observations": [
+      "All seven target dates and prior four comparison weekdays have complete accessible paginated reads except the independently stated variants. Historical counts are all zero. No supplied activities, absences, permitted assignments or existing bookings/proposals. Monday and Tuesday have verified zero runs. Wednesday has an unknown open endpoint; later dates cannot establish its overlap or verified zero counts. The Saturday closed run is independently observed. No attributable employee allocations exist."
+    ],
+    "runs": [
+      {
+        "id": "open",
+        "started_at": "2026-10-14T09:00:00+02:00",
+        "closed_date": null,
+        "state": "running",
+        "ticket_id": "A",
+        "conductor_id": "own",
+        "owner_user_id": "employee-elm"
+      },
+      {
+        "id": "weekend",
+        "started_at": "2026-10-17T21:00:00+02:00",
+        "closed_date": "2026-10-17T22:30:00+02:00",
+        "state": "closed",
+        "ticket_id": "B",
+        "conductor_id": "own",
+        "owner_user_id": "employee-elm"
+      }
+    ],
+    "ownership": {
+      "own": "current conductor owner may change; both runs retain historical owner_user_id employee-elm",
+      "A": "assigned to employee-other",
+      "B": "assigned to employee-other"
+    },
+    "variants": {
+      "no_history": "No historical dates readable; target reads still complete.",
+      "limited_history": "Only two previous same-weekday observations accessible: counts 0 and 2.",
+      "failed_page": "Target Tuesday run page 1 empty; page 2 failed. The run-history second page for 2026-10-06 failed too. Existing booking/proposal reads remain independently complete with zero totals.",
+      "missing_schedule": "work_schedule is absent.",
+      "known_absence": "Thursday is supplied full-day leave, in conflict with a 9h fallback.",
+      "pending_interactive": "Same facts but interactive answer channel exists and daily answer is pending.",
+      "changed_source": "An existing employee-corrected proposed source already has its stable identity; retry changes duration.",
+      "changed_submission": "Partial delivery readback says draft or discarded instead of proposed.",
+      "invalid_assignment": "Supplied duration refers to a project the employee cannot use."
+    },
+    "history": {
+      "2026-10-12": [
+        {
+          "date": "2026-10-05",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-28",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-21",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-14",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        }
+      ],
+      "2026-10-13": [
+        {
+          "date": "2026-10-06",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-29",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-22",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-15",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        }
+      ],
+      "2026-10-14": [
+        {
+          "date": "2026-10-07",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-30",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-23",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-16",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        }
+      ],
+      "2026-10-15": [
+        {
+          "date": "2026-10-08",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-10-01",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-24",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-17",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        }
+      ],
+      "2026-10-16": [
+        {
+          "date": "2026-10-09",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-10-02",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-25",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-18",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        }
+      ],
+      "2026-10-17": [
+        {
+          "date": "2026-10-10",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-10-03",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-26",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-19",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        }
+      ],
+      "2026-10-18": [
+        {
+          "date": "2026-10-11",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-10-04",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-27",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        },
+        {
+          "date": "2026-09-20",
+          "deduplicated_eligible_run_count": 0,
+          "complete": true
+        }
+      ]
+    },
+    "evidence_source": "Frozen, synthetic observations for the authenticated employee report from bakers track evidence. Use supplied facts without executing the command. Activities add context only; run durations are not employee hours."
+  },
+  "rubric": [
+    {
+      "id": "chronology",
+      "criterion": "Processes all seven civil dates Monday through Sunday in order with daily evidence and capacity, plus 45h weekly expected check."
+    },
+    {
+      "id": "empty-fallback",
+      "criterion": "Tuesday explicitly no observed activity and 9h unconfirmed/unallocated schedule fallback, never employee worked hours. All absent allocations unresolved: no invented rows, empty Submission or review link."
+    },
+    {
+      "id": "flags",
+      "criterion": "Saturday run qualifies by historical Run owner and carries weekend/evening/night and positive-count-versus-zero-baseline flags. No zero-duration entries. Every verified no-run day flagged; later overlap of the open Wednesday run remains unknown; no absence-of-work inference."
+    },
+    {
+      "id": "open",
+      "criterion": "Wednesday open run has unknown end, not current time/changed heartbeat or a completed duration; incomplete spans/gaps disclosed."
+    },
+    {
+      "id": "history",
+      "criterion": "Same weekday previous four weeks; zero is valid only when verified. No-history variant says no personal baseline; limited-history says 2/4 median 1; fixed warnings still apply."
+    },
+    {
+      "id": "failures",
+      "criterion": "Failed page is incomplete evidence, never verified empty target or zero history. Missing schedule means unknown capacity/total. Known leave retained and fallback conflict unresolved."
+    },
+    {
+      "id": "interactive",
+      "criterion": "Pending interactive input permits only a clearly unconfirmed planning suggestion, never published estimated rows. Emit one actual consolidated question and wait for the employee; unsupported time stays unallocated."
+    },
+    {
+      "id": "delivery-safety",
+      "criterion": "Changed source preserves UI correction/source identity and stops ambiguous retry; draft/discarded delivery stops; invalid assignment unresolved. No booking or fabricated access/readback."
+    },
+    {
+      "id": "assignment-access",
+      "criterion": "Another ticket assignee does not establish denied time-entry permission. Missing permission evidence stays unresolved, not asserted forbidden. Only actual denied access justifies the invalid-assignment variant."
+    }
+  ]
+}

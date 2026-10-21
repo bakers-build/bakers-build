@@ -1,0 +1,43 @@
+# The human workspace lead (BB-318 D10; renamed from `admin` by BB-359 D12).
+#
+# `cwiedemann` holds the `lead` rank, which is the fixture the workspace see-all
+# rule is observable against end to end rather than only in kernel tests:
+# the account holds no bb_project membership at all and still reaches every
+# project of the workspace (D4, D11).
+#
+# The workspace named here is BbWorkspace::DEFAULT_UUID — the one
+# bb_core_install() creates on every install path (BB-350). It is
+# deliberately NOT shipped as recipe content: `system.site.front` points at
+# its slug, so a second e2e workspace would split the world into the one the
+# fixtures live in and the one the front page opens.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000002
+  bundle: default
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_workspace
+  entity_bundle:
+    -
+      value: bb_workspace
+  entity_id:
+    -
+      value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
+  uid:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  roles:
+    -
+      target_id: bb_workspace-bb_workspace-lead
+  state:
+    -
+      value: active

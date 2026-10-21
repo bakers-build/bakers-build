@@ -1,0 +1,44 @@
+/* Light neutral chrome — "keytec × GitLab hybrid".
+   In Drupal these mirror Gin's own tokens so Light/Dark & accent flow through. */
+:root {
+  /* base surfaces (canvas -> most-raised) */
+  --gin-canvas:   #F6F6F2; /* page behind the app frame */
+  --gin-app:      #FFFFFF; /* app background */
+  --gin-layer:    #FFFFFF; /* card / section surface */
+  --gin-layer-2:  #FAFAF7; /* section header / raised */
+  --gin-layer-3:  #F1F0EA; /* hover / chip / column head */
+  --gin-header:   #FFFFFF; /* top app-bar */
+
+  /* lines — two-tier hierarchy kept: -line is more visible (buttons, chips,
+     badges), -hair is a soft divider (table rows, board card borders) */
+  --gin-line:     #D6D3CA; /* default border */
+  --gin-hair:     #E9E7E0; /* soft hairline border */
+
+  /* text */
+  --gin-text:       #14171A; /* primary ink */
+  --gin-text-light: #5B6169; /* secondary */
+  --gin-text-faint: #6B7078; /* tertiary / labels — verified >=4.5:1 on white */
+
+  /* accent (keytec ocean — links, active nav, focus) */
+  --gin-primary:      #494FE5;
+  --gin-primary-soft: rgba(73,79,229,.12);
+
+  /* brand-accent line, used sparingly (header rule, primary CTA, alert cards) */
+  --border-strong: #000000;
+
+  /* text-on-saturated-accent, for buttons whose background is --gin-primary */
+  --text-inverse: #FFFFFF;
+
+  /* ---- semantic aliases ---- */
+  --surface-page:   var(--gin-canvas);
+  --surface-app:    var(--gin-app);
+  --surface-card:   var(--gin-layer);
+  --surface-raised: var(--gin-layer-2);
+  --surface-hover:  var(--gin-layer-3);
+  --border:         var(--gin-line);
+  --border-soft:    var(--gin-hair);
+  --text:           var(--gin-text);
+  --text-2:         var(--gin-text-light);
+  --text-3:         var(--gin-text-faint);
+  --link:           var(--gin-primary);
+}

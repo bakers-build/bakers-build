@@ -1,0 +1,92 @@
+{# ONE PROPERTY PILL — grammar 3's peer property, and with `prominent` set,
+   grammar 3a's lead. Lifted out of `form`'s own `pill()` macro unchanged.
+
+   WHY IT IS ITS OWN COMPONENT NOW. `form` composes its regions from RENDERED
+   content: a field widget renders itself and the surface places it. A macro is
+   not addressable from outside the file that declares it, and both a widget and
+   a scene have to be able to render exactly this pill, so the macro became a
+   component. Nothing about the markup moved.
+
+   THE PANEL IS COMPOSED HERE FROM PLAIN OPTION DATA and never handed in as
+   rendered content, which is what lets a caller state a pill as a handful of
+   strings and a list of `{value, label, selected}`.
+
+   THE FIELD LIST IS THE UNION OF TWO CONTRACTS, and this is the one place that
+   union is spelled. `clearable`, `clear_label`, `creatable` and `create_label`
+   belong to `option_list`, because a clear row and a create row ARE rows of the
+   listbox; `icon`, the value labels and the search box sit on the trigger and
+   belong to `option_picker`. Each field goes to whichever of the two owns it,
+   which is the same rule the picker cell in `table.twig` follows — and it is why
+   a caller never has to know the split.
+
+   AN OMITTED PROP IS DROPPED, NOT PASSED AS NULL, and that is a rendering
+   requirement rather than tidiness. Neither `clear_label` nor `create_label` is
+   required by `option_list.component.yml`, but both are declared `type: string`,
+   and SDC's prop validation rejects an explicit NULL for a typed property where
+   it accepts an absent key — measured as
+   `[bb_theme:option_list/clear_label] NULL value found, but a string ... is
+   required` the first time this surface was rendered anywhere validation is
+   enabled. Validation is OFF on a stock site and ON under `KernelTestBase`, so
+   the macro this replaces carried the same defect and never showed it; the rule
+   used to live in a private method of `BbTicketCreateForm`, which filtered
+   NULLs out by hand, and it belongs here now with the split it is part of.
+   `|filter` and not a hand-written key list, so a prop added later is covered by
+   the same line.
+
+   THE ACCESSIBLE NAME IS LEFT TO `option_picker` when the caller passes none.
+   That component already derives the state-carrying sentence from the field name
+   and the value, so deriving it a second time here would be a second spelling of
+   one name that could disagree with the first. A caller passes `aria_label` where
+   the derived sentence would not agree in number — "no labels ARE set" against
+   "no conductor IS set" — which is a property of English and not of the grammar.
+
+   `attributes` IS FORWARDED RATHER THAN WRAPPED. This component adds no node of
+   its own: a pill is the picker, and a wrapper here would sit between the lead
+   row or the property row and the flex child it lays out. The single root this
+   component has is `option_picker`'s, so the caller's attributes go there. #}
+{%- set panel_props = {
+  multiple: multiple|default(false),
+  options: options|default([]),
+  clearable: clearable|default(false),
+  clear_label: clear_label,
+  creatable: creatable|default(false),
+  create_label: create_label,
+}|filter(value => value is not null) -%}
+{%- set panel %}
+  {{- include('bb_theme:option_list', panel_props, with_context = false) -}}
+{% endset -%}
+{%- set picker_props = {
+  variant: 'field',
+  label: label,
+  name: name,
+  id: picker_id,
+  prominent: prominent|default(false),
+  icon: icon,
+  multiple: multiple|default(false),
+  searchable: searchable|default(false),
+  selected_chips: selected_chips|default(false),
+  selected: selected|default([]),
+  search_placeholder: search_placeholder,
+  search_label: search_label,
+  search_url: search_url,
+  aria_label: aria_label,
+  value_label: value_label,
+  value_labels: value_labels,
+  values: values|default([]),
+  open: open|default(false),
+}|filter(value => value is not null) -%}
+{{ include('bb_theme:option_picker', picker_props|merge({
+  options: panel,
+  attributes: attributes ?: create_attribute(),
+}), with_context = false) }}
+{#- WITHOUT JAVASCRIPT the panel never opens, so `fallback` adds the same rows as real form controls
+    under the field's own name. They follow the picker's hidden inputs in the document, so a choice
+    made here is the value the form submits. #}
+{%- if fallback and name %}
+<noscript>
+  {{- include('bb_theme:option_list', panel_props|merge({
+    input_name: name,
+    input_type: multiple|default(false) ? 'checkbox' : 'radio',
+  }), with_context = false) -}}
+</noscript>
+{%- endif %}

@@ -1,0 +1,33 @@
+{
+  "name": "@bakers-build/addon-workspace",
+  "version": "0.0.1",
+  "description": "bakers.build connection addon: fills the ambient workspace (bb_workspace) into a create payload transparently, via dropsh's alterRequest hook.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/workspace/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^"
+  },
+  "dependencies": {
+    "dropsh": "^0.7.5"
+  },
+  "devDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

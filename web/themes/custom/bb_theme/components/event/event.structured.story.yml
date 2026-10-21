@@ -1,0 +1,19 @@
+component: bb_theme:event
+name: Structured
+props:
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  role: agent
+  tag: failed
+  timestamp: 2 min ago
+  subject_label: BB-650
+  subject_url: '#subject'
+  statement: run failed in coding
+  facts:
+    - cw-framework
+    - 40 min
+  links:
+    - title: Run
+      url: '#run'
+  detail: 'Error: ddev phpunit exited with status 2'

@@ -1,0 +1,42 @@
+component: bb_theme:filters
+name: Collapsed
+# `collapsed: true` renders the native <details> without its `open` attribute, so
+# the collapsed state is verifiable on a surface that runs no JavaScript.
+props:
+  title: Filters
+  collapsed: true
+  label: Ticket filters
+slots:
+  controls:
+    - type: component
+      component: bb_theme:option_picker
+      props:
+        variant: field
+        name: state
+        label: State
+        icon: board
+        aria_label: Filter by state. Currently coding and review.
+        id: story-filter-collapsed-state
+        open: false
+        multiple: true
+        value_labels:
+          - coding
+          - review
+      slots:
+        options:
+          - type: component
+            component: bb_theme:option_list
+            props:
+              multiple: true
+              clearable: true
+              clear_label: Any state
+              options:
+                - value: coding
+                  label: coding
+                  selected: true
+                - value: review
+                  label: review
+                  selected: true
+                - value: done
+                  label: done
+                  selected: false

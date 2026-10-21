@@ -1,0 +1,36 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_run
+  uuid: 7c8e5a41-2b3d-4c9e-9f6a-1d0b8e4a5c92
+  depends:
+    841c33c3-6186-4968-8921-be29a91149e3: bb_ticket
+    9b96cdea-a605-43a8-bd3f-3cdf72c5127f: bb_conductor
+default:
+  ticket_id:
+    -
+      entity: 841c33c3-6186-4968-8921-be29a91149e3
+  conductor_id:
+    -
+      entity: 9b96cdea-a605-43a8-bd3f-3cdf72c5127f
+  state:
+    -
+      value: done
+  state_at_start:
+    -
+      value: coding
+  started_at:
+    -
+      value: 1797000000
+  agent:
+    -
+      value: opus
+  duration_s:
+    -
+      value: 231
+  # `closed` is left at its base-field default (FALSE): BB-311 established
+  # a terminal run state and `closed` are independent facts, and BB-490's
+  # new default closed-rows filter would otherwise hide this run before the
+  # `run-list.feature` "Choosing two facets in turn" scenario ever picks the
+  # "Done" state facet — that scenario tests facet-chip/URL mechanics, not
+  # closed-row visibility, so a closed done run here is not the well-formed
+  # fixture the scenario needs.

@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 2f5d3f0c-d521-4c13-8d15-d745b4bf2750
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: en
+  name:
+    -
+      value: pk
+  mail:
+    -
+      value: patrick.konstantin@keytec.de
+  pass:
+    -
+      value: '$2y$12$b0xw1IuFBEUZN9u792/xRu2N2i.al5qD4WhkZz8gdTlkwpuv2uLoe'
+      pre_hashed: true
+      existing: null
+  timezone:
+    -
+      value: Europe/Berlin
+  status:
+    -
+      value: 1
+  access:
+    -
+      value: 0
+  login:
+    -
+      value: 0

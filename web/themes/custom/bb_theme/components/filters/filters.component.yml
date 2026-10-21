@@ -1,0 +1,89 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Filters
+status: stable
+group: Layout
+description: >-
+  The controls that narrow a list, and nothing else — Polaris's word for exactly
+  this (BB-378 D9/D15, renamed and narrowed from `facet_sidebar`). It fills
+  `canvas.filters`. What it LOST in the rename is the point of the rename: the
+  two-column relation between the controls and the results is the canvas's
+  region model now (D8), so this component owns no layout, no `results` slot and
+  no `summary` slot — the statement of what has been chosen is an
+  `active-filters` in `canvas.main`, directly above the rows it describes, which
+  is where `facet_sidebar` already rendered it. Nothing here says "facet"
+  either: the aside is where a list is narrowed, and whether that narrowing is a
+  facet, an exposed filter or a saved view stays open (F11). THE PANEL COLLAPSES
+  by composing `bb_theme:collapsible` rather than by carrying a second
+  collapse of its own, and the reason that component is native carries over word
+  for word: Storybook never calls `Drupal.attachBehaviors`, so a scripted
+  collapse would be a dead control on the surface this screen is reviewed on,
+  and a click that answers with nothing is worse than no affordance at all.
+  Composing it keeps ONE collapse mechanism in the theme, and the `Filters`
+  heading becomes the real `<summary>`; the heading keeps its eyebrow treatment
+  because the label is a span of its own whose font size and colour win over the
+  summary's. WHAT THIS IS NOT: nothing here fetches, posts or persists anything.
+  Search API, the facets module, and Linear's saved views — a filter set kept as
+  a custom view in the aside, favouritable and settable as the default page,
+  scoped to a workspace or a team — are all wiring, and wiring is out of scope
+  for the whole 327 tree. Ad-hoc filter state lives in the URL in that model,
+  which is likewise a wiring decision; the shape is agreed here so the ticket
+  that adds the query has nothing to restructure.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    title:
+      type: string
+      title: Aside heading
+      description: >-
+        Small heading above the controls, e.g. `Filters`. Rendered as an
+        eyebrow, and it IS the `<summary>` the collapse is operated by — omit it
+        and the panel gets a chevron-only toggle.
+    label:
+      type: string
+      title: Accessible name
+      description: >-
+        The region's own accessible name — the aside's in `panel`, the search
+        landmark's in `bar` — since a heading alone does not name it for a
+        screen reader.
+    collapsed:
+      type: boolean
+      title: Filter panel collapsed
+      default: false
+      description: >-
+        Whether the filter panel starts collapsed. Named for the deviation
+        rather than for the state — `collapsed` and not `open` — because the
+        panel's resting state is EXPANDED: a filter panel nobody can see is not
+        a filter panel, so an absent prop must leave the controls visible.
+        `sidebar` names its own collapse the same way. It is passed through to
+        the composed `collapsible` as `open: not collapsed`. What it no longer
+        does is hand the width back to the results: the 236px track belongs to
+        `canvas` now, which is the price of this component not owning a layout.
+    layout:
+      type: string
+      enum:
+        - panel
+        - bar
+      default: panel
+      title: Layout
+      description: >-
+        `panel` (default) is the collapsible aside of facet controls, filled
+        with `bg-app` so it reads as a surface. `bar` is the search toolbar
+        directly above the rows: a `role="search"` region with the same surface,
+        no heading and no collapse, whose controls form one wrapping row — the
+        first control grows, later ones keep their own width — and which submits
+        its fields' form itself (a select on change, a text field 500ms after
+        typing), because those fields sit outside the exposed `<form>`. `title`
+        and `collapsed` apply to `panel` only.
+slots:
+  controls:
+    title: Controls
+    description: >-
+      The narrowing controls, one per field, stacked in the aside. Normally
+      `option_picker` components — the same pill grammar the dialogs use, so a
+      filter reads and announces itself exactly like a property. Renamed from
+      `facets` with the vocabulary (D8).
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

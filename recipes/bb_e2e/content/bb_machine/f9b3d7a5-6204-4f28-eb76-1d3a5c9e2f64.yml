@@ -1,0 +1,18 @@
+# Dedicated host for owner budget edits. Not used by claim or listing fixtures.
+_meta:
+  version: '1.0'
+  entity_type: bb_machine
+  uuid: f9b3d7a5-6204-4f28-eb76-1d3a5c9e2f64
+  depends:
+    db58173e-ed5d-50cf-af02-2943a2803c36: user
+default:
+  name:
+  - value: API edit host
+  host_key:
+  - value: api-edit-host
+  max_parallel:
+  - value: 4
+  current_load:
+  - value: 0
+  owner_user_id:
+  - entity: db58173e-ed5d-50cf-af02-2943a2803c36

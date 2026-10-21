@@ -1,0 +1,38 @@
+services:
+  # Finds or creates the account behind an address and mails it a one-time
+  # login link. Both branches answer identically to the caller.
+  bb_login.email_login:
+    class: Drupal\bb_login\EmailLogin
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@logger.channel.bb_login'
+      - '@bb_login.login_code'
+      - '@bb_login.pending_signup'
+      - '@plugin.manager.mail'
+      - '@language_manager'
+      - '@config.factory'
+  # The six-digit code that rides along with the login link, so a prefetched
+  # link is a nuisance rather than a lockout.
+  bb_login.login_code:
+    class: Drupal\bb_login\LoginCode
+    arguments: ['@keyvalue.expirable']
+  # The pending sign-up an unredeemed mail stands for: an address under a
+  # hashed nonce, expiring with the link. Cron's key-value garbage collection
+  # is the reaper, so nothing here sweeps.
+  bb_login.pending_signup:
+    class: Drupal\bb_login\PendingSignup
+    arguments: ['@keyvalue.expirable']
+  # Its own channel rather than `logger.factory`'s `user`: an account created
+  # by the login form and an account created by an administrator are different
+  # events, and an operator reading the log needs to tell them apart.
+  logger.channel.bb_login:
+    parent: logger.channel_base
+    arguments: ['bb_login']
+  # Mounts the login form on `user.login` (registration is off, so
+  # `user.register` is left to core) and repoints `user.reset.login` at the
+  # landing subclass.
+  bb_login.route_subscriber:
+    class: Drupal\bb_login\Routing\BbLoginRouteSubscriber
+    tags:
+      - { name: event_subscriber }

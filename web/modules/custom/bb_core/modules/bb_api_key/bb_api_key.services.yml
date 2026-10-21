@@ -1,0 +1,66 @@
+services:
+  bb_api_key.manager:
+    class: Drupal\bb_api_key\ApiKeyManager
+    arguments:
+      - '@entity_type.manager'
+      - '@datetime.time'
+  Drupal\bb_api_key\ApiKeyManager: '@bb_api_key.manager'
+  bb_api_key.access:
+    class: Drupal\bb_api_key\Access\ApiKeyAccess
+    arguments:
+      - '@bb_api_key.manager'
+      - '@bb_api_key.service_account_manager'
+      - '@bb_api_key.service_account_access'
+  Drupal\bb_api_key\Access\ApiKeyAccess: '@bb_api_key.access'
+  bb_api_key.oauth.client_repository:
+    class: Drupal\bb_api_key\OAuth\ApiKeyClientRepository
+    decorates: simple_oauth.repositories.client
+    arguments:
+      - '@.inner'
+      - '@entity_type.manager'
+      - '@bb_api_key.manager'
+      - '@datetime.time'
+  bb_api_key.authentication.simple_oauth:
+    class: Drupal\bb_api_key\Authentication\ApiKeyAuthenticationProvider
+    decorates: simple_oauth.authentication.simple_oauth
+    arguments:
+      - '@.inner'
+      - '@bb_api_key.manager'
+  bb_api_key.route_subscriber:
+    class: Drupal\bb_api_key\Routing\ApiKeyRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_api_key.no_store_subscriber:
+    class: Drupal\bb_api_key\EventSubscriber\ApiKeyNoStoreSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_api_key.service_account_manager:
+    class: Drupal\bb_api_key\ServiceAccountManager
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@lock'
+      - '@session_manager'
+      - '@bb_api_key.manager'
+      - '@bb_core.membership_writer'
+      - '@account_switcher'
+  Drupal\bb_api_key\ServiceAccountManager: '@bb_api_key.service_account_manager'
+  bb_api_key.service_account_access:
+    class: Drupal\bb_api_key\Access\ServiceAccountAccess
+    arguments:
+      - '@bb_api_key.service_account_manager'
+      - '@bb_api_key.manager'
+  Drupal\bb_api_key\Access\ServiceAccountAccess: '@bb_api_key.service_account_access'
+  bb_api_key.authentication.service_account_cookie:
+    class: Drupal\bb_api_key\Authentication\ServiceAccountCookieProvider
+    decorates: user.authentication.cookie
+    arguments:
+      - '@.inner'
+      - '@entity_type.manager'
+      - '@bb_api_key.service_account_manager'
+  bb_api_key.service_account_user_auth:
+    class: Drupal\bb_api_key\Authentication\ServiceAccountUserAuthentication
+    decorates: user.auth
+    arguments:
+      - '@.inner'
+      - '@bb_api_key.service_account_manager'

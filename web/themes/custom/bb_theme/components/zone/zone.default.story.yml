@@ -1,0 +1,35 @@
+component: bb_theme:zone
+name: Default
+props:
+  inset: md
+  gap: md
+  direction: column
+  columns: 1
+slots:
+  heading:
+    - type: element
+      tag: span
+      value: Run history
+  actions:
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: ghost
+        icon_only: true
+        label: New run
+      slots:
+        icon:
+          - type: component
+            component: bb_theme:icon
+            props:
+              name: plus
+              size: sm
+  content:
+    - type: element
+      tag: p
+      value: >-
+        Each direct child of the content slot is a cell. The inset and the gap
+        are token values, and the heading is the zone's own h2 — the screen's h1
+        belongs to page_header.
+      attributes:
+        class: text-text-light text-[13px]

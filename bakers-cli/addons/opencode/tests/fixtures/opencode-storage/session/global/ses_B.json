@@ -1,0 +1,17 @@
+{
+  "id": "ses_B",
+  "slug": "calm-lynx",
+  "version": "1.1.19",
+  "projectID": "global",
+  "directory": "/tmp/bakers-wt-opencode-B",
+  "title": "unrelated older session",
+  "time": {
+    "created": 1768650000000,
+    "updated": 1768650005000
+  },
+  "summary": {
+    "additions": 0,
+    "deletions": 0,
+    "files": 0
+  }
+}

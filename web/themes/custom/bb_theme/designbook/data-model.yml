@@ -1,0 +1,1873 @@
+content:
+  bb_project:
+    bb_project:
+      title: bakers.build project
+      purpose: >-
+        The work unit: key, next_number, repository, environments. BB-462 D7
+        REVERSES what this field used to say: the project carries NO membership
+        or role of its own any more — it is deregistered from og.settings
+        entirely, and its three roles (non-member, member, lead) are deleted
+        from both config paths. Visibility now comes from bb_project.teams
+        (D4): a project is visible to the members of a team it names, or to a
+        workspace admin. The two levels that grant rights are the workspace
+        (create/edit/delete rights, via
+        bb_workspace-bb_workspace-{contributor,lead}) and, per-project, its
+        teams (visibility only — a team carries no rights of its own, BB-462
+        D3). A screen must not offer a permission control on the project.
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        group_id:
+          type: reference
+          title: Group
+          required: true
+          multiple: false
+          reference: bb_group
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        description:
+          type: string
+          title: Description
+          description: >-
+            Optional plain text, one or two sentences, at most 280 characters;
+            rendered beneath the listing row's meta line and absent when empty.
+          required: false
+          multiple: false
+        image:
+          type: image
+          title: Image
+          description: >-
+            Optional single image (png, gif, jpg, webp; 2 MB), stored privately
+            under project-images, shown uncropped as the listing row's leading
+            avatar; initials when absent.
+          required: false
+          multiple: false
+        repository:
+          type: object
+          title: Repository
+          description: >-
+            The project repository (URL, default branch, branch naming
+            convention). Single-valued: a project has at most one repository.
+          required: false
+          multiple: false
+          settings:
+            properties:
+              url: string
+              default_branch: string
+              branch_convention: string
+        coder_config:
+          type: object
+          title: Coder config
+          required: false
+          multiple: false
+        env_vars:
+          type: text
+          title: Environment variables
+          description: >-
+            Project defaults supplied to hooks and the agent on every run, as
+            .env-style KEY=value lines. A parent ticket and the ticket itself
+            override a key set here. Readable by anyone who can view this
+            project.
+          required: false
+          multiple: false
+        teams:
+          type: reference
+          title: Teams
+          description: >-
+            The teams this project belongs to. A project belongs to AT LEAST ONE
+            team, so the field is required and multi-valued. The assignment is
+            STRUCTURE and confers no rights: it makes the team the project's
+            structural parent, and team membership is not a source of ticket
+            visibility. Visibility stays at direct project membership or
+            workspace see-all (BB-419, which deliberately left
+            BbWorkspaceReadScope untouched).
+          required: true
+          multiple: true
+          reference: bb_team
+        key:
+          type: string
+          title: Key
+          description: Ticket identifier prefix, e.g. "bakers.build" in BB-328.
+          required: false
+          multiple: false
+        next_number:
+          type: integer
+          title: Next number
+          description: >-
+            Next per-project ticket number; floors to max(number)+1 on
+            allocation.
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+        environments:
+          type: reference
+          title: Environments
+          description: Managed environments belonging to this project.
+          required: false
+          multiple: true
+          reference: bb_environment
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_comment:
+    bb_comment:
+      title: bakers.build comment
+      view_modes:
+        full:
+          template: field-map
+        teaser:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        ticket_id:
+          type: reference
+          title: Ticket
+          required: true
+          multiple: false
+          reference: bb_ticket
+        author:
+          type: reference
+          title: Author
+          required: true
+          multiple: false
+          reference: user
+        body:
+          type: text
+          title: Body
+          required: true
+          multiple: false
+        type:
+          type: string
+          title: Type
+          description: >-
+            Free text, not an enum (BB-227). Values in use include comment,
+            qualification, spec, test and acceptance, so a screen must render an
+            unknown value rather than assume a closed set.
+          required: true
+          multiple: false
+        author_name:
+          type: string
+          title: Author name
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        author_initials:
+          type: string
+          title: Author initials
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        author_color:
+          type: string
+          title: Author colour
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+    review:
+      title: bakers.build review comment
+      purpose: >-
+        A private review of a ticket. Drafts stay with the assigned author;
+        submitted reviews wait for the current assignee; accepted reviews
+        publish into the ordinary comment timeline. Rejected reviews stay
+        unpublished. The Boolean published flag is server-owned.
+      view_modes:
+        full:
+          template: field-map
+        teaser:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        ticket_id:
+          type: reference
+          title: Ticket
+          required: true
+          multiple: false
+          reference: bb_ticket
+        author:
+          type: reference
+          title: Author
+          required: true
+          multiple: false
+          reference: user
+        body:
+          type: text
+          title: Body
+          required: true
+          multiple: false
+        type:
+          type: string
+          title: Type
+          required: true
+          multiple: false
+        status:
+          type: boolean
+          title: Published
+          required: false
+          multiple: false
+        review_state:
+          type: string
+          title: Review state
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              draft: Draft
+              submitted: Submitted
+              accepted: Accepted
+              rejected: Rejected
+        submitted_at:
+          type: datetime
+          title: Submitted at
+          required: false
+          multiple: false
+        decided_at:
+          type: datetime
+          title: Decided at
+          required: false
+          multiple: false
+        decided_by:
+          type: reference
+          title: Decided by
+          required: false
+          multiple: false
+          reference: user
+        author_name:
+          type: string
+          title: Author name
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        author_initials:
+          type: string
+          title: Author initials
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        author_color:
+          type: string
+          title: Author colour
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_activity:
+    bb_activity:
+      title: bakers.build activity
+      purpose: >-
+        One persisted ticket event per row: `created` when a ticket is created,
+        `status_changed` per state change (with the step's summary comment, and
+        with the run it closed and that run's conductor when an agent did the
+        work), `claimed` only for the first run outside qualification, and
+        `run_ended` when a run ends failed, expired or cancelled without moving
+        the ticket. Writes come only from the bb_activity kinds, called where
+        the change happens. Each row is
+        this bundle's `full` view mode (`bb_theme:event` with a structured
+        lead); there is no second activity view mode.
+      view_modes:
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        ticket_id:
+          type: reference
+          title: Ticket
+          required: true
+          multiple: false
+          reference: bb_ticket
+        kind:
+          type: string
+          title: Kind
+          description: >-
+            `created`, `status_changed`, `claimed` or `run_ended`. Tags:
+            created, status, started (claimed) and the run outcome for
+            run_ended.
+          required: true
+          multiple: false
+          settings:
+            allowed_values:
+              - created
+              - status_changed
+              - claimed
+              - run_ended
+        actor:
+          type: reference
+          title: Actor
+          required: false
+          multiple: false
+          reference: user
+        workflow:
+          type: string
+          title: Workflow
+          required: false
+          multiple: false
+        previous_state:
+          type: string
+          title: Previous state
+          required: false
+          multiple: false
+        new_state:
+          type: string
+          title: New state
+          required: false
+          multiple: false
+        step:
+          type: string
+          title: Step
+          description: >-
+            The run's state_at_start for claimed and run_ended rows. Unused for
+            created and status rows.
+          required: false
+          multiple: false
+        run_id:
+          type: reference
+          title: Run
+          required: false
+          multiple: false
+          reference: bb_run
+          description: >-
+            The run a claimed or run_ended row reports, or the run a status
+            change closed. Empty for created rows and human status changes; its
+            presence makes the row an agent row.
+        conductor_id:
+          type: reference
+          title: Conductor
+          required: false
+          multiple: false
+          reference: bb_conductor
+          description: The conductor of the referenced run.
+        comment_id:
+          type: reference
+          title: Summary comment
+          description: >-
+            The ticket's summary comment published since the ticket entered the
+            state a status row leaves. Empty when none.
+          required: false
+          multiple: false
+          reference: bb_comment
+        claim_key:
+          type: string
+          title: Claim key
+          required: false
+          multiple: false
+          description: >-
+            The claimed run's UUID; unique, guards a second claimed row for the
+            same run. NULL on other kinds.
+        ticket_identifier:
+          type: string
+          title: Ticket identifier
+          description: >-
+            Computed from ticket_id.identifier so the event body can name the
+            ticket without the mapping joining collections.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        author_name:
+          type: string
+          title: Author name
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+          description: >-
+            The run's model (else harness, else agent) on rows with a viewable
+            run; otherwise the actor's display name.
+        author_initials:
+          type: string
+          title: Author initials
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        author_color:
+          type: string
+          title: Author colour
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_label:
+          type: string
+          title: Conductor label
+          description: Computed from conductor_id.label.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_harness:
+          type: string
+          title: Run harness
+          description: Computed from run_id.harness; shown beside the model on agent rows.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_duration:
+          type: string
+          title: Run duration
+          description: >-
+            Computed from run_id duration_s (or started_at to the row time),
+            formatted.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_outcome:
+          type: string
+          title: Run outcome
+          description: >-
+            Computed from run_id.state on run_ended rows: failed, expired or
+            cancelled.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_error_line:
+          type: string
+          title: Run error line
+          description: Computed first non-empty line of a failed run's error log.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+        changed: Activity rows are immutable; nothing writes a changed stamp.
+  bb_conductor:
+    bb_conductor:
+      title: bakers.build conductor
+      view_modes:
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        machine_id:
+          type: string
+          title: Machine ID
+          required: true
+          multiple: false
+        label:
+          type: string
+          title: Label
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+        status:
+          type: string
+          title: Status
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              online: Online
+              offline: Offline
+        project_id:
+          type: reference
+          title: Project
+          required: true
+          multiple: false
+          reference: bb_project
+        states:
+          type: string
+          title: States
+          description: The claimable ticket states this conductor picks up.
+          required: false
+          multiple: true
+          settings:
+            allowed_values:
+              - qualification
+              - spec
+              - diagnose
+              - coding
+              - review
+              - pre_deployment
+              - post_deployment
+              - verifying
+              - summary
+        workspace_root:
+          type: string
+          title: Workspace root
+          required: false
+          multiple: false
+        active:
+          type: boolean
+          title: Active
+          description: >-
+            Whether the conductor may be assigned and claim work; separate from
+            online/offline status.
+          required: false
+          multiple: false
+        max_parallel:
+          type: integer
+          title: Max parallel
+          required: false
+          multiple: false
+        current_load:
+          type: integer
+          title: Current load
+          required: false
+          multiple: false
+        last_seen:
+          type: datetime
+          title: Last seen
+          required: false
+          multiple: false
+        lease_expires_at:
+          type: datetime
+          title: Lease expires at
+          required: false
+          multiple: false
+        conductor_name:
+          type: string
+          title: Conductor name
+          description: The config-file stem `--conductor <name>` selects.
+          required: false
+          multiple: false
+        last_pid:
+          type: integer
+          title: Last PID
+          description: >-
+            Reported by the serve loop that owns the process; used by a verified
+            stop.
+          required: false
+          multiple: false
+        node_status:
+          type: string
+          title: Node status
+          description: running | stale | offline — the shared liveness vocabulary.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        node_states_label:
+          type: string
+          title: Claimed states
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        node_load_label:
+          type: string
+          title: Load
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        last_seen_label:
+          type: string
+          title: Last seen
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_group:
+    bb_group:
+      title: bakers.build group
+      purpose: >-
+        The customer. Bundles projects and carries the cost centre for
+        re-invoicing. Carries NO permissions and is NOT an OG group —
+        og.settings registers only bb_workspace and bb_team since BB-462
+        D7 deregisters bb_project — it is not a rights level, so no screen may
+        offer a permission control on it.
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        description:
+          type: string
+          title: Description
+          description: >-
+            Optional plain text, one or two sentences, at most 280 characters;
+            rendered beneath the listing row's meta line and absent when empty.
+          required: false
+          multiple: false
+        image:
+          type: image
+          title: Image
+          description: >-
+            Optional single image (png, gif, jpg, webp; 2 MB), stored privately
+            under group-images, shown uncropped as the listing row's leading
+            avatar; initials when absent.
+          required: false
+          multiple: false
+        billing_profile:
+          type: object
+          title: Billing profile
+          description: >-
+            The customer COST CENTRE for re-invoicing. Same field type and name
+            as bb_workspace.billing_profile, deliberately, and a different
+            meaning: contract or subscription at the top, customer cost centre
+            below. Both exist; neither replaces the other.
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+        workspace_id:
+          type: reference
+          title: Workspace
+          description: >-
+            The tenant this customer belongs to. Built by BB-316; on
+            feat/bb-315-multi-workspace, not yet on develop.
+          required: false
+          multiple: false
+          reference: bb_workspace
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_ticket:
+    bb_ticket:
+      title: bakers.build ticket
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        project_id:
+          type: reference
+          title: Project
+          required: false
+          multiple: false
+          reference: bb_project
+        identifier:
+          type: string
+          title: Identifier
+          required: true
+          multiple: false
+        workflow:
+          type: string
+          title: Workflow
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              - bb_feature
+              - bb_bug
+              - bb_chore
+              - bb_deployment
+              - bb_verification
+        title:
+          type: string
+          title: Title
+          required: true
+          multiple: false
+        description:
+          type: text
+          title: Description
+          required: false
+          multiple: false
+        state:
+          type: string
+          title: State
+          description: >-
+            One of the ticket's workflow states; which subset applies is decided
+            by `workflow`. `human_input` is not a state.
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              - qualification
+              - spec
+              - diagnose
+              - coding
+              - review
+              - pre_deployment
+              - post_deployment
+              - verifying
+              - summary
+              - done
+              - cancelled
+        labels:
+          type: reference
+          title: Labels
+          required: false
+          multiple: true
+          reference: bb_term
+        assignee_user_id:
+          type: reference
+          title: Assignee user
+          required: false
+          multiple: false
+          reference: user
+        reviewers:
+          type: reference
+          title: Reviewers
+          required: false
+          multiple: true
+          reference: user
+        priority:
+          type: integer
+          title: Priority
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              '1': High
+              '2': Medium
+              '3': Low
+        parent_id:
+          type: reference
+          title: Parent ticket
+          required: false
+          multiple: false
+          reference: bb_ticket
+        blocked_by:
+          type: reference
+          title: Blocked by
+          required: false
+          multiple: true
+          reference: bb_ticket
+        origin:
+          type: string
+          title: Origin URL
+          required: false
+          multiple: false
+        links:
+          type: link
+          title: Links
+          description: Typed links (uri, title, options.bakers.kind); kind is server-derived.
+          required: false
+          multiple: true
+        comments:
+          type: reference
+          title: Comments
+          required: false
+          multiple: true
+          reference: bb_comment
+          computed: true
+          readonly: true
+        pending_reviews:
+          type: reference
+          title: Pending reviews
+          description: >-
+            Submitted reviews awaiting a decision by the current assignee
+            (computed; never writable). Private; not part of the ordinary
+            comment timeline.
+          required: false
+          multiple: true
+          reference: bb_comment
+          computed: true
+          readonly: true
+        branch_name:
+          type: string
+          title: Branch name
+          required: false
+          multiple: false
+        closed:
+          type: boolean
+          title: Closed
+          required: false
+          multiple: false
+        frozen:
+          type: boolean
+          title: Frozen
+          description: >-
+            Operator hold. A frozen ticket is not claimable; an active run is
+            left running.
+          required: false
+          multiple: false
+        frozen_at:
+          type: datetime
+          title: Frozen at
+          description: When the operator hold started. Server-stamped, cleared on unfreeze.
+          required: false
+          multiple: false
+          readonly: true
+        closed_date:
+          type: datetime
+          title: Closed date
+          required: false
+          multiple: false
+        number:
+          type: integer
+          title: Number
+          description: Per-project running number, allocated once on first save and frozen.
+          required: false
+          multiple: false
+          readonly: true
+        conductor_id:
+          type: reference
+          title: Conductor
+          description: Assigning a conductor is what starts a run.
+          required: false
+          multiple: false
+          reference: bb_conductor
+        time_estimate:
+          type: integer
+          title: Estimated time
+          description: >-
+            Estimated effort in SECONDS, proposed at qualification, confirmed by
+            a human.
+          required: false
+          multiple: false
+        time_spent:
+          type: integer
+          title: Spent time
+          description: >-
+            Accounted effort in SECONDS, proposed at review, confirmed by a
+            human.
+          required: false
+          multiple: false
+        referenced_tickets:
+          type: reference
+          title: Referenced tickets
+          description: Tickets carried by this deployment (the release batch).
+          required: false
+          multiple: true
+          reference: bb_ticket
+        environments:
+          type: reference
+          title: Environments
+          description: The managed environments this ticket concerns.
+          required: false
+          multiple: true
+          reference: bb_environment
+        env_vars:
+          type: text
+          title: Environment variables
+          description: >-
+            .env-style KEY=value lines. Inherited by sub-tickets. Readable by
+            anyone who can view this ticket.
+          required: false
+          multiple: false
+        metrics:
+          type: object
+          title: Metrics
+          description: Named success metrics for this ticket.
+          required: false
+          multiple: true
+          settings:
+            properties:
+              name: string
+              value: string
+              unit: string
+              recorded: datetime
+        cleaned_up:
+          type: boolean
+          title: Cleaned up
+          description: The herdr worktree has been torn down. Distinct from `closed`.
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+        base_branch:
+          type: string
+          title: Base branch
+          description: >-
+            Parent's branch, else the first project repo default_branch, else
+            "main".
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        effective_env_vars:
+          type: text
+          title: Effective environment variables
+          description: env_vars resolved along the parent chain (child wins).
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        sub_tickets:
+          type: reference
+          title: Sub-tickets
+          description: Reverse reference; parent_id is the source of truth.
+          required: false
+          multiple: true
+          reference: bb_ticket
+          computed: true
+          readonly: true
+        runs:
+          type: reference
+          title: Runs
+          description: Reverse reference; bb_run.ticket_id is the source of truth.
+          required: false
+          multiple: true
+          reference: bb_run
+          computed: true
+          readonly: true
+        derived_status:
+          type: string
+          title: Derived status
+          description: idle | running | … — derived from the ticket's active runs.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        stall_reason:
+          type: string
+          title: Stall reason
+          description: >-
+            Why this ticket is standing still: frozen, blocked, no conductor, or
+            failing. Empty for a moving or closed ticket.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        claim_machine:
+          type: string
+          title: Claim machine
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        since_label:
+          type: string
+          title: Since
+          description: Humanised age of the current state, e.g. "3 minutes".
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        assignee_initials:
+          type: string
+          title: Assignee initials
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        assignee_name:
+          type: string
+          title: Assignee name
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        assignee_color:
+          type: string
+          title: Assignee colour
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        state_flow:
+          type: string
+          title: State flow
+          description: Comma-separated states of the ticket's workflow, in order.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        edit_url:
+          type: url
+          title: Edit URL
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: >-
+          Entity key, not a modelled field; sample data carries it as the record
+          key.
+        uuid: Entity key; the designbook model addresses records by `id`.
+  bb_term:
+    bb_labels:
+      title: bakers.build term
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        description:
+          type: string
+          title: Description
+          description: >-
+            A plain string_long with no text format, so a screen must not offer
+            rich-text rendering for it.
+          required: false
+          multiple: false
+        weight:
+          type: integer
+          title: Weight
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+        vid: >-
+          The bundle key. The vocabulary IS the bb_term bundle; no screen
+          renders it as an object of its own, and the file name
+          data/bb_term.<bundle>.yml already carries it.
+        langcode: >-
+          Entity key; bakers.build terms are single-language and no screen renders a
+          language.
+        created: >-
+          bb_term extends ContentEntityBase directly and has no
+          created/changed timestamps.
+        changed: >-
+          bb_term extends ContentEntityBase directly and has no
+          created/changed timestamps.
+  bb_run:
+    bb_run:
+      title: bakers.build run
+      view_modes:
+        full:
+          template: field-map
+        overlay:
+          template: field-map
+        teaser:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        ticket_id:
+          type: reference
+          title: Ticket
+          required: false
+          multiple: false
+          reference: bb_ticket
+        conductor_id:
+          type: reference
+          title: Conductor
+          required: false
+          multiple: false
+          reference: bb_conductor
+        state:
+          type: string
+          title: Run state
+          required: true
+          multiple: false
+          settings:
+            allowed_values:
+              - claimed
+              - running
+              - done
+              - expired
+              - failed
+        claim_expires_at:
+          type: datetime
+          title: Claim expires at
+          required: false
+          multiple: false
+        state_at_start:
+          type: string
+          title: Ticket state at start
+          required: false
+          multiple: false
+        started_at:
+          type: datetime
+          title: Started at
+          required: false
+          multiple: false
+        heartbeat:
+          type: datetime
+          title: Heartbeat
+          required: false
+          multiple: false
+        worktree_path:
+          type: string
+          title: Worktree path
+          required: false
+          multiple: false
+        log:
+          type: text
+          title: Log
+          required: false
+          multiple: false
+        closed:
+          type: boolean
+          title: Closed
+          required: false
+          multiple: false
+        closed_date:
+          type: datetime
+          title: Closed date
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          description: >-
+            The run's owning account — comes from the conductor, never the
+            session.
+          required: false
+          multiple: false
+          reference: user
+        agent:
+          type: string
+          title: Agent
+          required: false
+          multiple: false
+        error_log:
+          type: text
+          title: Error log
+          description: Cause of a terminal dispatch/setup failure (state `failed`).
+          required: false
+          multiple: false
+        tokens:
+          type: integer
+          title: Tokens
+          description: >-
+            First of the six per-run footprint fields (BB-132), written by the
+            run-owning conductor at close. Not the ticket's `time_spent`.
+          required: false
+          multiple: false
+        duration_s:
+          type: integer
+          title: Duration in seconds
+          required: false
+          multiple: false
+        agent_turns:
+          type: integer
+          title: Agent turns
+          required: false
+          multiple: false
+        tool_calls:
+          type: integer
+          title: Tool calls
+          required: false
+          multiple: false
+        user_prompts:
+          type: integer
+          title: User prompts
+          required: false
+          multiple: false
+        user_prompt_words:
+          type: integer
+          title: User prompt words
+          required: false
+          multiple: false
+        state_flow:
+          type: string
+          title: State flow
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        duration:
+          type: string
+          title: Duration
+          description: Humanised closed_date − started_at, e.g. "1m 12s".
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_environment:
+    bb_environment:
+      title: bakers.build environment
+      purpose: >-
+        A managed deployment target of a project — the thing a deployment ticket
+        stamps and a verification ticket verifies against.
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        project_id:
+          type: reference
+          title: Project
+          required: true
+          multiple: false
+          reference: bb_project
+        base_url:
+          type: url
+          title: Base URL
+          required: false
+          multiple: false
+        tier:
+          type: string
+          title: Tier
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              production: Production
+              staging: Staging
+              development: Development
+              other: Other
+        branch:
+          type: string
+          title: Branch
+          description: The git branch this environment deploys from.
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  user:
+    user:
+      title: User
+      purpose: >-
+        A person or app account. Modelled as the entity type `user` with its
+        single bundle, because that is what every reference in this model
+        targets.
+      view_modes:
+        full:
+          template: field-map
+        compact:
+          template: field-map
+          label: Compact
+      form_modes:
+        default:
+          template: field-map
+      fields:
+        user_picture:
+          type: image
+          title: Profile picture
+          description: >-
+            Core image field; also switches on social_auth's own avatar download
+            at login (BB-507 D3).
+          required: false
+          multiple: false
+        field_full_name:
+          type: string
+          title: Full name
+          description: Additive (BB-507 D4) — does not replace or derive display_name.
+          required: false
+          multiple: false
+        field_developer_title:
+          type: string
+          title: Position
+          description: Free text (BB-507 D2), no vocabulary. Product label Position.
+          required: false
+          multiple: false
+        field_bb_background:
+          type: text
+          title: What should bakers.build know about your background?
+          description: Optional long text handed to AI assistants as context.
+          required: false
+          multiple: false
+        name:
+          type: string
+          title: Username
+          required: true
+          multiple: false
+        mail:
+          type: string
+          title: Email
+          required: false
+          multiple: false
+        status:
+          type: boolean
+          title: Active
+          required: false
+          multiple: false
+        roles:
+          type: string
+          title: Roles
+          description: Machine names, e.g. bb_session.
+          required: false
+          multiple: true
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        access:
+          type: datetime
+          title: Last access
+          required: false
+          multiple: false
+        login:
+          type: datetime
+          title: Last login
+          required: false
+          multiple: false
+        timezone:
+          type: string
+          title: Timezone
+          required: false
+          multiple: false
+        display_name:
+          type: string
+          title: Display name
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        initials:
+          type: string
+          title: Initials
+          description: >-
+            Design-only. Not a Drupal field: the ticket and comment entities
+            expose assignee_initials / author_initials instead. Present so an
+            avatar component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+        pass: >-
+          Authentication internal; no bakers.build screen renders or edits a password
+          hash.
+        init: Authentication internal (initial email); never rendered.
+        preferred_langcode: Localisation internal; bakers.build is English-only.
+        preferred_admin_langcode: Localisation internal; bakers.build is English-only.
+        default_langcode: Entity key for translations; bakers.build users are single-language.
+        changed: >-
+          Drupal's user entity has no `changed` field; `access` and `login`
+          carry recency.
+  bb_workspace:
+    bb_workspace:
+      title: bakers.build workspace
+      purpose: >-
+        The tenancy root: the object that says this data belongs to operator X
+        and not operator Y. It holds all people and decides WHICH RIGHTS an
+        account holds — BB-462 makes the workspace the ONLY level that carries
+        rights: admin/contributor/guest (D2). Visibility of a project is a
+        separate, per-team question (D4) that carries no rights of its own. Is
+        an OG group (registered in og.settings) with the roles non-member,
+        member, contributor, lead (labelled "Admin") and guest — five, not six:
+        `owner`/`admin` were already consolidated into `lead` by BB-359 D12,
+        and the machine principal `app` is GONE (BB-462 D9, its rank is
+        answered entirely from OAuth scope now). Built by BB-316; the role set
+        is BB-462's.
+      view_modes:
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        description:
+          type: string
+          title: Description
+          description: >-
+            Optional plain text, one or two sentences, at most 280 characters;
+            shown under the workspace's name in the switcher panel and on the
+            join screen, absent when empty.
+          required: false
+          multiple: false
+        image:
+          type: image
+          title: Image
+          description: >-
+            Optional single image (png, gif, jpg, webp; 2 MB), stored privately
+            and shown uncropped as the workspace's mark in the switcher and on
+            the join screen; initials when absent.
+          required: false
+          multiple: false
+        billing_profile:
+          type: object
+          title: Billing profile
+          description: >-
+            The CONTRACT or SUBSCRIPTION this tenant is served under. Same field
+            type and name as bb_group.billing_profile, deliberately, and a
+            different meaning: contract or subscription at the top, customer
+            cost centre below. There is no `contract` field and there will not
+            be one — the billing profile IS the contract level.
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_team:
+    bb_team:
+      title: bakers.build team
+      purpose: >-
+        The stable crew, cutting across customer projects, and since BB-419
+        also their structural parent: a project is assigned to teams n:m through
+        bb_project.teams and belongs to at least one. BB-462 D4 REVERSES
+        what this field used to say: the assignment now DECIDES VISIBILITY — an
+        account sees exactly the projects of the teams it belongs to (or every
+        project, if it holds the workspace admin tier) — while still granting no
+        RIGHTS of its own; a team answers "what do you see", the workspace alone
+        answers "what may you do" (D2/D3). Is an OG group (registered in
+        og.settings) with the roles non-member, member, lead (BB-456 D9,
+        team-scoped statistics visibility) and owner (BB-462 D3, manages the
+        team itself — who may join it and its own settings). The implicit member
+        rank stays empty by design: team membership is a visibility fact, not a
+        rights tier.
+      view_modes:
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        workspace_id:
+          type: reference
+          title: Workspace
+          required: true
+          multiple: false
+          reference: bb_workspace
+        projects:
+          type: reference
+          title: Projects
+          description: >-
+            The projects assigned to this team. Derived from bb_project.teams
+            and never stored here, so the two directions cannot disagree.
+          required: false
+          multiple: true
+          reference: bb_project
+          computed: true
+          readonly: true
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+  og_membership:
+    default:
+      title: OG membership
+      purpose: >-
+        Membership is ONE mechanism, modelled once: a user x group row reused by
+        workspace and team rather than re-invented per level. This is NOT a bakers.build
+        invention — it is contrib Organic Groups' own og_membership entity,
+        whose only bundle is `default` (og.og_membership_type.default). BB-462
+        D7 REVERSES what this field used to say: og.settings now registers only
+        bb_workspace and bb_team as OG groups — bb_project is deregistered
+        entirely, and every membership row anchored on a project is deleted by
+        that ticket's migration. BB-318 bridges the remaining rows into bakers.build's
+        query access. A screen reads membership here, never from a field on the
+        group.
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        type:
+          type: string
+          title: Membership type
+          description: >-
+            OG's bundle key — in code an entity reference to the
+            og_membership_type config entity. Modelled as its value set rather
+            than as a reference because bakers.build ships exactly one instance,
+            og.og_membership_type.default, and no screen renders or chooses it.
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              - default
+        uid:
+          type: reference
+          title: User
+          description: The member. OG's own field name — not `user_id`.
+          required: true
+          multiple: false
+          reference: user
+        entity_type:
+          type: string
+          title: Group entity type
+          description: >-
+            Which level this membership is in. A workspace or project membership
+            grants rights; a team membership does not, because the team carries
+            no permissions.
+          required: false
+          multiple: false
+          settings:
+            allowed_values:
+              - bb_workspace
+              - bb_project
+              - bb_team
+        entity_bundle:
+          type: string
+          title: Group bundle
+          description: >-
+            Bundle of the group entity. Each of the three types has one bundle
+            of its own name.
+          required: false
+          multiple: false
+        entity_id:
+          type: string
+          title: Group entity ID
+          description: >-
+            Id of the group named by entity_type. A plain STRING in OG, not a
+            reference, because the target entity type varies per row — so no
+            screen can rely on an entity-reference widget here.
+          required: false
+          multiple: false
+        state:
+          type: string
+          title: State
+          description: >-
+            Defaults to active. Only an active membership grants what its roles
+            carry.
+          required: true
+          multiple: false
+          settings:
+            allowed_values:
+              - active
+              - pending
+              - blocked
+        roles:
+          type: reference
+          title: Roles
+          description: >-
+            MULTI-VALUE (OG sets cardinality unlimited) and a reference to
+            og_role config objects by their full id, e.g.
+            bb_workspace-bb_workspace-lead. The `member` role is never
+            stored: OgMembership::preSave() revokes it and getRoles() prepends
+            it on read, so a row that looks role-less is still a member.
+          required: false
+          multiple: true
+          reference: og_role
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+        language: >-
+          Entity key; bakers.build memberships are single-language and no screen renders
+          a language.
+  bb_addon:
+    bb_addon:
+      title: bakers.build addon
+      purpose: >-
+        An addon definition at one version (name@version), registered by the
+        conductors that run it. Entity access is admin-only; workspace leads see
+        the addons in the workspace Settings › Addons tab, one row per name at
+        its newest version with all its versions and the conductors of the
+        current workspace that run each version. The definition is immutable
+        once registered and may carry an inline SVG icon. Read-only on every
+        screen.
+      fields:
+        name:
+          type: string
+          title: Name
+          description: >-
+            Machine name of the addon, e.g. ports. Together with version it
+            forms the name@version key.
+          required: true
+          multiple: false
+        version:
+          type: string
+          title: Version
+          description: Semantic version string, e.g. 1.2.3.
+          required: true
+          multiple: false
+        contract:
+          type: integer
+          title: Contract
+          description: >-
+            Version of the addon definition contract the addon implements, e.g.
+            1.
+          required: true
+          multiple: false
+        definition:
+          type: text
+          title: Definition
+          description: >-
+            Immutable JSON addon definition: label, views, actions and an
+            optional inline SVG icon. The Settings › Addons tab shows only its
+            label and icon.
+          required: true
+          multiple: false
+        conductors:
+          type: reference
+          title: Conductors
+          description: Conductors that registered (run) this addon version.
+          required: false
+          multiple: true
+          reference: bb_conductor
+          settings:
+            target_type: bb_conductor
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+config:
+  image_style:
+    avatar:
+      aspect_ratio: '1:1'
+  omitted:
+    bb_core.bb_vocabulary: >-
+      The vocabulary IS the bb_term bundle; no screen renders it as an object
+      of its own.
+  og.og_role:
+    title: OG role
+    entity_type: og_role
+    purpose: >-
+      The role vocabulary of the OG groups — what a Settings screen assigns a
+      person on a workspace or a team. Contrib Organic Groups' own config
+      entity. AS-IS, MEASURED IN config/sync AT BB-462: NINE objects, not ten
+      — bb_project carries no role at all any more (D7 deregisters it as an OG
+      group entirely). Five for bb_workspace (non-member, member, contributor,
+      lead, guest) and four for bb_team (non-member, member, lead, owner).
+      `app` is GONE (D9: a conductor's OAuth identity is bound to its owning
+      user, so it sees exactly what that user's own rank sees — no separate
+      machine rank exists to list here). `owner` is NEW (D3): governs the team
+      itself, who may join it and its own settings. The key is the Drupal
+      config-name PREFIX, so this is one entry per config entity TYPE; the
+      instances live in sample data. Three facts a screen must not get wrong.
+      First, `permissions` is NOT an empty list on every role:
+      bb_workspace-lead and -contributor carry real permission strings
+      (create/edit/delete rights), bb_workspace-guest carries read-only, and
+      bb_team-owner carries `manage members`/`update group`. It IS empty on
+      exactly four: the three non-member roles and bb_team-bb_team-member —
+      the implicit member rank is deliberately emptied everywhere (D1: OG ranks
+      are additive and cannot be narrowed, so any right left on an implicit rank
+      is inherited by every membership including guests). Second, `is_admin` is
+      FALSE on all nine. Third, "a workspace admin sees every project of their
+      workspace" (D4) is a VISIBILITY rule computed from the rank id, never an
+      OG admin flag or a project-level role — there is no project-level role
+      left to read at all. TARGET: product roles are OG ranks only; team
+      ownership is the one new rank this ticket adds.
+    fields:
+      id:
+        type: string
+        title: Machine name
+        description: >-
+          Composed as <group_type>-<group_bundle>-<role name>, e.g.
+          bb_workspace-bb_workspace-lead. This full id is what
+          og_membership.roles references.
+        required: true
+        multiple: false
+      label:
+        type: string
+        title: Label
+        description: The human name a Settings screen shows, e.g. "Administrator".
+        required: true
+        multiple: false
+      weight:
+        type: integer
+        title: Weight
+        description: >-
+          Display order within a group type; 0 for non-member, rising to 5 for
+          the workspace app role.
+        required: false
+        multiple: false
+      is_admin:
+        type: boolean
+        title: Is admin
+        description: >-
+          FALSE on every shipped role — measured in config/sync at BB-435
+          across all ten og.og_role objects, and the role it used to name does
+          not exist. Read the role id, never this flag. See the purpose above.
+        required: false
+        multiple: false
+      permissions:
+        type: string
+        title: Permissions
+        description: >-
+          OG permission strings. Empty in exactly four of the ten shipped roles
+          — the three non-member roles and bb_team-bb_team-member — see the
+          purpose above before designing anything that edits this.
+        required: false
+        multiple: true
+      group_type:
+        type: string
+        title: Group entity type
+        required: true
+        multiple: false
+        settings:
+          allowed_values:
+            - bb_workspace
+            - bb_project
+            - bb_team
+      group_bundle:
+        type: string
+        title: Group bundle
+        required: true
+        multiple: false
+      role_type:
+        type: string
+        title: Role type
+        description: >-
+          `required` for the two roles OG creates for every group (non-member,
+          member); `standard` for the roles bakers.build adds. A screen must not offer
+          to delete a required role.
+        required: true
+        multiple: false
+        settings:
+          allowed_values:
+            - required
+            - standard
+    omitted:
+      uuid: >-
+        Config entities carry a uuid that is not part of the modelled key set
+        and is never rendered.
+      group_id: >-
+        Null in all ten shipped roles. OG sets it only for a role scoped to one
+        single group instance, which bakers.build ships none of, so no screen renders
+        it.

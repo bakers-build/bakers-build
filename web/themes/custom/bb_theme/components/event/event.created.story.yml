@@ -1,0 +1,11 @@
+component: bb_theme:event
+name: Created
+props:
+  author_name: cw
+  author_initials: CW
+  author_color: lease
+  subject_label: BB-650
+  subject_url: '#subject'
+  tag: created
+  timestamp: 3 h ago
+  statement: created (feature, qualification)

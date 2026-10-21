@@ -1,0 +1,21 @@
+# Public test credentials; this account exists only in recipe-test worlds.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 787b9031-219e-520d-bad3-8c0b4b9aa790
+  default_langcode: en
+default:
+  name:
+  - value: api-operator
+  mail:
+  - value: api-operator@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  roles:
+  - target_id: api_operator
+  field_onboarding_completed:
+    -
+      value: true

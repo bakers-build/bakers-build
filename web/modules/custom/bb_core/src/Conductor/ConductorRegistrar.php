@@ -1,0 +1,311 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Drupal\bb_core\Conductor;
+
+use Drupal\Core\Lock\LockBackendInterface;
+use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\bb_core\Entity\BbConductorInterface;
+use Drupal\bb_core\Entity\BbMachineInterface;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+
+/**
+ * Upserts a conductor registration on heartbeat — server-side self-heal.
+ *
+ * A heartbeat is authoritative: it (re)creates the owner's conductor by
+ * conductor_id if it is missing (healed after a delete/wipe), refreshes its
+ * lease timestamps and load, links it to a bb_machine host row, and brings
+ * it online. Concurrent-run capacity is written on the machine only.
+ * Legacy payload key machine_id is accepted as an alias
+ * for conductor_id during cutover.
+ */
+final class ConductorRegistrar {
+
+  private const DEFAULT_LEASE_SECONDS = 300;
+
+  /**
+   * Resolves project / host / workspace from heartbeat attributes.
+   */
+  private readonly HeartbeatRegistrationResolver $registration;
+
+  public function __construct(
+    private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly TimeInterface $time,
+    private readonly LockBackendInterface $lock,
+  ) {
+    $this->registration = new HeartbeatRegistrationResolver($entityTypeManager);
+  }
+
+  /**
+   * Records a heartbeat, creating the conductor (and machine) if needed.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The authenticated conductor owner.
+   * @param array<string, mixed> $attrs
+   *   Registration attributes: conductor_id (or legacy machine_id), host_key,
+   *   project, states, label, workspace_root, max_parallel, current_load,
+   *   lease_seconds, last_pid, conductor_name.
+   *
+   * @return \Drupal\bb_core\Entity\BbConductorInterface
+   *   The upserted conductor.
+   */
+  public function heartbeat(AccountInterface $owner, array $attrs): BbConductorInterface {
+    $conductorId = $this->registration->conductorId($attrs);
+    $hostKey = $this->registration->hostKey($attrs, $conductorId);
+    $projectId = $this->registration->projectId($attrs);
+    // Workspace resolution still belongs to the conductor (project chain).
+    // Machines are account-owned and carry no workspace edge.
+    $this->registration->workspaceId($attrs, $projectId);
+    // One registration per identity at a time: between this read and the
+    // save below, a concurrent first registration from another host could
+    // otherwise bind the identity to its own machine. A short overlap (poll
+    // during a tick) waits once before it is refused.
+    $lock_name = 'bb_conductor_register:' . $owner->id() . ':' . $conductorId;
+    if (!$this->lock->acquire($lock_name)
+      && ($this->lock->wait($lock_name, 5) || !$this->lock->acquire($lock_name))) {
+      throw new ConflictHttpException(sprintf('Conductor "%s" is being registered concurrently; retry.', $conductorId));
+    }
+    try {
+      return $this->register($owner, $conductorId, $hostKey, $projectId, $attrs);
+    }
+    finally {
+      $this->lock->release($lock_name);
+    }
+  }
+
+  /**
+   * Upserts the conductor and its machine while holding the identity lock.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The authenticated conductor owner.
+   * @param string $conductorId
+   *   Registration key.
+   * @param string $hostKey
+   *   The registering host.
+   * @param int $projectId
+   *   Project entity id.
+   * @param array<string, mixed> $attrs
+   *   Registration attributes.
+   */
+  private function register(AccountInterface $owner, string $conductorId, string $hostKey, int $projectId, array $attrs): BbConductorInterface {
+    $existing = $this->load($owner, $conductorId);
+    // Another machine means another conductor. Refuse before any write so
+    // the established binding, its history and the loads stay untouched.
+    $bound = $existing?->getMachine();
+    if ($bound !== NULL && (string) $bound->get('host_key')->value !== $hostKey) {
+      throw new UnprocessableEntityHttpException(sprintf(
+        'Conductor "%s" is bound to another machine; register this machine with another conductor id.',
+        $conductorId,
+      ));
+    }
+    $machine = $this->loadOrCreateMachine($owner, $hostKey, $attrs);
+    $machine->save();
+
+    $conductor = $existing ?? $this->create($owner, $conductorId, $projectId, $attrs);
+
+    $now = $this->time->getRequestTime();
+    $lease = isset($attrs['lease_seconds']) && is_numeric($attrs['lease_seconds'])
+      ? (int) $attrs['lease_seconds']
+      : self::DEFAULT_LEASE_SECONDS;
+
+    $conductor->set('last_seen', $now);
+    $conductor->set('lease_expires_at', $now + $lease);
+    // Telemetry only — capacity SoT is bb_machine. A registration that
+    // omits current_load must not overwrite a live process's reported load;
+    // an explicit zero still clears it. New rows start at zero.
+    if (array_key_exists('current_load', $attrs) && is_numeric($attrs['current_load'])) {
+      $conductor->set('reported_load', (int) $attrs['current_load']);
+    }
+    elseif ($conductor->isNew()) {
+      $conductor->set('reported_load', 0);
+    }
+    $conductor->set('machine', $machine->id());
+    foreach ($this->refreshableValues($attrs) as $field => $value) {
+      $conductor->set($field, $value);
+    }
+    $conductor->setStatus('online');
+    $conductor->save();
+
+    $this->recomputeMachineLoad($machine);
+    return $conductor;
+  }
+
+  /**
+   * Marks a conductor offline and recomputes its host aggregate.
+   *
+   * Does not create a conductor. Repeating the call keeps the row offline
+   * with a zero load and a lease that expires at the current request time.
+   */
+  public function offline(BbConductorInterface $conductor): BbConductorInterface {
+    $conductor->setStatus('offline');
+    $conductor->set('lease_expires_at', $this->time->getRequestTime());
+    $conductor->set('reported_load', 0);
+    $conductor->save();
+    $machine = $conductor->getMachine();
+    if ($machine instanceof BbMachineInterface) {
+      $this->recomputeMachineLoad($machine);
+    }
+    return $conductor;
+  }
+
+  /**
+   * Loads the owner's conductor by conductor_id, or NULL when none exists.
+   */
+  private function load(AccountInterface $owner, string $conductorId): ?BbConductorInterface {
+    $storage = $this->entityTypeManager->getStorage('bb_conductor');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('owner_user_id', $owner->id())
+      ->condition('conductor_id', $conductorId)
+      ->range(0, 1)
+      ->execute();
+    if ($ids === []) {
+      return NULL;
+    }
+    $conductor = $storage->load(reset($ids));
+    return $conductor instanceof BbConductorInterface ? $conductor : NULL;
+  }
+
+  /**
+   * Creates (heals) a conductor from the heartbeat's registration attributes.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The conductor owner.
+   * @param string $conductorId
+   *   Registration key.
+   * @param int $projectId
+   *   Project entity id.
+   * @param array<string, mixed> $attrs
+   *   Registration attributes.
+   */
+  private function create(AccountInterface $owner, string $conductorId, int $projectId, array $attrs): BbConductorInterface {
+    $values = [
+      'conductor_id' => $conductorId,
+      'owner_user_id' => $owner->id(),
+      'project_id' => $projectId,
+      'status' => 'online',
+    ] + $this->optionalConductorValues($attrs);
+    $conductor = $this->entityTypeManager->getStorage('bb_conductor')->create($values);
+    if (!$conductor instanceof BbConductorInterface) {
+      throw new UnprocessableEntityHttpException('Could not create conductor.');
+    }
+    return $conductor;
+  }
+
+  /**
+   * Loads or creates the owner's machine for a host_key.
+   *
+   * The budget (`max_parallel`) is set only when the row is first created —
+   * from the registering conductor's config, or 1 as a last resort — and is
+   * never rewritten by a later heartbeat, so two conductors on one host with
+   * different `max_parallel` cannot flip the budget; it changes only through
+   * the machine admin form.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The machine owner.
+   * @param string $hostKey
+   *   The MachineContext host stem.
+   * @param array<string, mixed> $attrs
+   *   Registration attributes, read for `max_parallel` at creation only.
+   */
+  private function loadOrCreateMachine(AccountInterface $owner, string $hostKey, array $attrs): BbMachineInterface {
+    $storage = $this->entityTypeManager->getStorage('bb_machine');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('owner_user_id', $owner->id())
+      ->condition('host_key', $hostKey)
+      ->range(0, 1)
+      ->execute();
+    if ($ids !== []) {
+      $machine = $storage->load(reset($ids));
+      if ($machine instanceof BbMachineInterface) {
+        return $machine;
+      }
+    }
+    $max_parallel = isset($attrs['max_parallel']) && is_numeric($attrs['max_parallel'])
+      ? (int) $attrs['max_parallel']
+      : 1;
+    $machine = $storage->create([
+      'name' => $hostKey,
+      'host_key' => $hostKey,
+      'owner_user_id' => $owner->id(),
+      'max_parallel' => $max_parallel,
+      'current_load' => 0,
+    ]);
+    if (!$machine instanceof BbMachineInterface) {
+      throw new UnprocessableEntityHttpException('Could not create machine.');
+    }
+    return $machine;
+  }
+
+  /**
+   * Sums reported_load of online conductors on this machine into current_load.
+   */
+  private function recomputeMachineLoad(BbMachineInterface $machine): void {
+    $storage = $this->entityTypeManager->getStorage('bb_conductor');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('machine', $machine->id())
+      ->condition('status', 'online')
+      ->execute();
+    $sum = 0;
+    foreach ($storage->loadMultiple($ids) as $conductor) {
+      if ($conductor instanceof BbConductorInterface) {
+        $sum += (int) $conductor->get('reported_load')->value;
+      }
+    }
+    $machine->setCurrentLoad($sum);
+    $machine->save();
+  }
+
+  /**
+   * Extracts optional create-time conductor attributes (no capacity fields).
+   *
+   * @param array<string, mixed> $attrs
+   *   Registration attributes.
+   *
+   * @return array<string, mixed>
+   *   Values safe to pass to entity create.
+   */
+  private function optionalConductorValues(array $attrs): array {
+    $values = [];
+    if (isset($attrs['label']) && is_string($attrs['label'])) {
+      $values['label'] = $attrs['label'];
+    }
+    if (isset($attrs['workspace_root']) && is_string($attrs['workspace_root'])) {
+      $values['workspace_root'] = $attrs['workspace_root'];
+    }
+    if (isset($attrs['states']) && is_array($attrs['states'])) {
+      $values['states'] = array_values(array_filter($attrs['states'], 'is_string'));
+    }
+    return $values + $this->refreshableValues($attrs);
+  }
+
+  /**
+   * Extracts attributes a heartbeat refreshes on an existing conductor.
+   *
+   * @param array<string, mixed> $attrs
+   *   Registration attributes.
+   *
+   * @return array<string, mixed>
+   *   Values applied on every heartbeat.
+   */
+  private function refreshableValues(array $attrs): array {
+    $values = [];
+    if (isset($attrs['workspace_root']) && is_string($attrs['workspace_root'])) {
+      $values['workspace_root'] = $attrs['workspace_root'];
+    }
+    if (isset($attrs['last_pid']) && is_numeric($attrs['last_pid'])) {
+      $values['last_pid'] = (int) $attrs['last_pid'];
+    }
+    if (isset($attrs['conductor_name']) && is_string($attrs['conductor_name'])) {
+      $values['conductor_name'] = $attrs['conductor_name'];
+    }
+    return $values;
+  }
+
+}

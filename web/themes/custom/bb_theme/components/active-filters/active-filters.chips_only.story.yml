@@ -1,0 +1,14 @@
+component: bb_theme:active-filters
+name: Chips only
+variant: chips_only
+props:
+  facets:
+    - field: State
+      values:
+        - Coding
+        - Review
+      remove_url: '?priority[]=2'
+    - field: Priority
+      values:
+        - Medium
+      remove_url: '?state[]=coding&state[]=review'

@@ -1,0 +1,24 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Message
+status: stable
+group: Data Display
+description: 'Inline status note-bar for a single Drupal message region: a tinted, bordered box with a status icon and the message body. status = teal, warning = amber, error = red. Presents Drupal status_messages inside the bakers.build auth card and elsewhere.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    status:
+      type: string
+      enum:
+        - status
+        - warning
+        - error
+      title: Status
+      description: Tint, border and icon. status = teal, warning = amber, error = red.
+slots:
+  body:
+    title: Body
+    description: The message text / rendered Drupal messages for this status region.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

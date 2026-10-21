@@ -1,0 +1,19 @@
+{# Absolutely positioned copy confirmation ("Copied"). The parent supplies
+   `relative` and is the Copy button's box. The overlay sits just below that
+   control (`top-full` plus a 4px shift), left-aligned so extra width grows
+   away from the command, opaque (Copy's `disabled:opacity-60` would show the
+   control through it). Alpine may rewrite the label in place. An empty
+   message renders hidden. Distinguishes from `toast`, which is viewport-fixed
+   for a page-level "Saved". #}
+{% set copied_attributes = (attributes ?: create_attribute()).addClass([
+    'absolute', 'left-0', 'top-full', 'translate-y-1', 'z-10', 'pointer-events-none',
+  ]).setAttribute('role', 'status').setAttribute('aria-live', 'polite').setAttribute('tabindex', '-1') %}
+{% if not message %}
+  {% set copied_attributes = copied_attributes.setAttribute('hidden', 'hidden') %}
+{% endif %}
+{{ include('bb_theme:button', {
+  label: message,
+  type: 'button',
+  variant: 'primary',
+  attributes: copied_attributes,
+}, with_context = false) }}

@@ -1,0 +1,45 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_workspace.settings
+  module:
+    - bb_core
+    - bb_image
+id: bb_workspace.bb_workspace.settings
+targetEntityType: bb_workspace
+bundle: bb_workspace
+mode: settings
+content:
+  description:
+    type: string_textarea
+    weight: 1
+    region: content
+    settings:
+      rows: 3
+      placeholder: ''
+    third_party_settings: {  }
+  image:
+    type: bb_square_image
+    weight: 2
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: ''
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  billing_profile: true
+  changed: true
+  created: true
+  id: true
+  owner_user_id: true
+  slug: true
+  uuid: true

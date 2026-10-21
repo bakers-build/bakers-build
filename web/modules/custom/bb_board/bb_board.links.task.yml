@@ -1,0 +1,5 @@
+view.project_board.project_board:
+  title: 'Board'
+  route_name: view.project_board.project_board
+  base_route: entity.bb_project.canonical
+  weight: 1

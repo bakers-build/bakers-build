@@ -1,0 +1,29 @@
+# The JOINABLE workspaces list on the workspace overview, `layout: cards` — and the one case a `link`
+# cell has to leave the island's boosted navigation.
+#
+# A person who has been invited to a workspace sees it here as a row: the workspace name as a `link`,
+# its slug as a `mono` face, and a `join` affordance. The join affordance is ALSO a `link` — spec
+# BB-430 r3 R1 chose a link over an `action` cell because the `action` kind renders an inert
+# `<button type="button">` (no `href`, hard-coded type), and joining has to work without JavaScript.
+#
+# THE JOIN LINK CARRIES `full_load`, AND THAT IS THE POINT OF THIS STORY. It points at the join
+# CONFIRM form (`/home/join/{invite}`), and the overview is rendered inside the gate island, which
+# boosts its links with htmx. A boosted navigation to a form page arrives as an island FRAGMENT, and a
+# fragment does not run the response pipeline that replaces a form's `#action` placeholder — so the
+# confirm form would render with an unreplaced `form_action_p_…` action and post to a 404. `full_load`
+# emits `data-hx-boost="false"` on the anchor, so the confirm screen is a whole document where the
+# placeholder is replaced. The workspace `link` in the same row keeps the boost, because it points at
+# another rendered surface rather than a form.
+component: bb_theme:list
+name: Joinable
+props:
+  layout: cards
+  items:
+    - cells:
+        workspace: { kind: link, value: Ärzte & Söhne GmbH, url: '#' }
+        slug: { kind: mono, value: aerzte-soehne-gmbh }
+        join: { kind: link, value: Join Ärzte & Söhne GmbH, url: '#', full_load: true }
+    - cells:
+        workspace: { kind: link, value: Northwind Traders, url: '#' }
+        slug: { kind: mono, value: northwind-traders }
+        join: { kind: link, value: Join Northwind Traders, url: '#', full_load: true }

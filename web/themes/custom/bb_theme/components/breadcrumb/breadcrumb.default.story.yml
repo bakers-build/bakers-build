@@ -1,0 +1,9 @@
+component: bb_theme:breadcrumb
+name: Default
+props:
+  items:
+    - label: Workspace
+      url: /workspace
+    - label: Ticket
+      url: /ticket
+    - label: 'Run #3'

@@ -1,0 +1,274 @@
+import { readdir, readFile, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  type AgentFootprint,
+  type AgentPlugin,
+  type AgentRunIdentity,
+  type BbAgent,
+  type KnownOptionSpec,
+  resolveAgentCliOptions,
+  validateOptionalBoolean,
+} from '@bakers-build/conductor/contract';
+import { shellQuote } from '@bakers-build/core';
+import { parseClaudeTranscript } from './footprint.js';
+
+export { parseClaudeTranscript } from './footprint.js';
+
+/** src/index.ts and dist/src/index.js both sit two levels below the package root. */
+const MEASURE_WRAPPER = fileURLToPath(
+  new URL(
+    import.meta.url.includes('/dist/')
+      ? '../../measure/claude-measure.mjs'
+      : '../measure/claude-measure.mjs',
+    import.meta.url,
+  ),
+);
+
+const MEASURE_FLAGS: readonly string[] = [
+  '--setting-sources',
+  'project,local',
+  '--settings',
+  '.bakers/claude-measure.settings.json',
+  '--strict-mcp-config',
+  '--mcp-config',
+  '{"mcpServers":{}}',
+];
+
+/**
+ * Encode an absolute cwd the way Claude Code names its per-project transcript
+ * directory under `~/.claude/projects/`: every non-alphanumeric char → `-`.
+ */
+export function encodeClaudeProjectDir(cwd: string): string {
+  return cwd.replace(/[^a-zA-Z0-9]/g, '-');
+}
+
+export interface ClaudeAgentOptions {
+  model?: string;
+  effort?: string;
+  args?: string[];
+  skip_permissions?: boolean;
+  /**
+   * When true, the launch runs through `measure/claude-measure.mjs`, which
+   * starts the logging proxy for the lifetime of this Claude process and
+   * applies the state-group settings shipped with the addon.
+   */
+  measure?: boolean;
+}
+
+const CLAUDE_RESERVED = [
+  '--session-id',
+  '--dangerously-skip-permissions',
+  '--allow-dangerously-skip-permissions',
+  '--permission-mode',
+] as const;
+
+const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
+  { kind: 'model', flags: ['--model'] },
+  { kind: 'effort', flags: ['--effort'] },
+];
+
+export class ClaudeAgent implements BbAgent {
+  readonly id = 'claude';
+  private readonly args: string[];
+  private readonly model: string | undefined;
+  private readonly effort: string | undefined;
+  private readonly skipPermissions: boolean;
+  private readonly measure: boolean;
+  private readonly overrides: { model: boolean; effort: boolean };
+
+  constructor(
+    options: ClaudeAgentOptions = {},
+    private readonly home: string = homedir(),
+  ) {
+    const cli = resolveAgentCliOptions(options, CLAUDE_RESERVED, CLAUDE_KNOWN);
+    this.args = cli.args;
+    this.model = cli.model;
+    this.effort = cli.effort;
+    this.overrides = cli.overrides;
+    this.skipPermissions =
+      validateOptionalBoolean(options.skip_permissions, 'skip_permissions') ??
+      true;
+    this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
+  }
+
+  launchCommand(prompt: string, run?: AgentRunIdentity): string {
+    if (prompt === '') {
+      return 'claude';
+    }
+    const parts = this.measure
+      ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
+      : ['claude', shellQuote(prompt)];
+    if (this.model !== undefined && !this.overrides.model) {
+      parts.push('--model', shellQuote(this.model));
+    }
+    if (this.effort !== undefined && !this.overrides.effort) {
+      parts.push('--effort', shellQuote(this.effort));
+    }
+    if (this.skipPermissions) {
+      parts.push('--dangerously-skip-permissions');
+    }
+    // Pin the transcript's own session id to the run's UUID (BB-473), so
+    // `getRunLog` can read that ONE file directly instead of scanning the
+    // worktree-keyed directory by mtime — the scan is what let a
+    // resumed/re-dispatched/reused worktree finalise a foreign transcript.
+    if (run?.sessionId) {
+      parts.push('--session-id', run.sessionId);
+    }
+    parts.push(...this.args.map(shellQuote));
+    if (this.measure) {
+      parts.push(...MEASURE_FLAGS.map(shellQuote));
+    }
+    return parts.join(' ');
+  }
+
+  /**
+   * `claude --session-id <uuid>` refuses to start when that session already
+   * exists (BB-473 review round 2), so the conductor checks this before
+   * pinning the run's own UUID — a re-dispatch of the same run would
+   * otherwise mint the very id its first attempt already wrote and fail to
+   * launch at all, silently (`claude` exits 0 on that error).
+   */
+  async sessionExists(
+    worktreePath: string,
+    sessionId: string,
+  ): Promise<boolean> {
+    const dir = join(
+      this.home,
+      '.claude',
+      'projects',
+      encodeClaudeProjectDir(worktreePath),
+    );
+    try {
+      await stat(join(dir, `${sessionId}.jsonl`));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getRunLog(
+    worktreePath: string,
+    run?: AgentRunIdentity,
+  ): Promise<string> {
+    const dir = join(
+      this.home,
+      '.claude',
+      'projects',
+      encodeClaudeProjectDir(worktreePath),
+    );
+    const startedAtMs =
+      run?.startedAt !== undefined ? new Date(run.startedAt).getTime() : null;
+    // BB-473: when the run's own session id is known (pinned at launch via
+    // `--session-id`), read that file directly — no directory scan, so a
+    // foreign transcript (resumed run, re-dispatch, reused worktree) can
+    // never be selected. AC-5: when the pinned file is missing (a run
+    // dispatched before this change, or the agent never wrote it), fall
+    // through to the scan below — bounded by `run.startedAt` where known —
+    // instead of returning '' and turning a wrong log into no log at all.
+    //
+    // Round 4 (review round 3, Critical 1): the pinned file can also be
+    // *stale* rather than missing — a re-dispatch omits `--session-id` (see
+    // `sessionExists`) precisely because attempt 1's file already owns this
+    // name, so a direct read here would silently keep returning attempt 1's
+    // transcript forever. `startedAt` is re-stamped by the conductor on
+    // every dispatch (`markRunning`), so a pinned file older than this
+    // attempt's own start can only be a leftover from a prior attempt —
+    // reject it and fall through to the scan, which is bounded by the same
+    // timestamp and will find the fresh, unpinned file this attempt wrote.
+    // BB-473 review round 4 (Critical 2): when the run's deterministic
+    // attempt family is known, select the HIGHEST-numbered attempt whose
+    // file actually exists — an IDENTITY, not the `startedAt` window below,
+    // which a sibling session newer than the bound could still beat. Each
+    // family member names a distinct attempt, so no staleness check is
+    // needed: whichever member exists IS that attempt's own transcript.
+    if (run?.attemptFamily?.length) {
+      for (let i = run.attemptFamily.length - 1; i >= 0; i--) {
+        try {
+          return await readFile(
+            join(dir, `${run.attemptFamily[i]}.jsonl`),
+            'utf8',
+          );
+        } catch {
+          // try the next, lower-numbered attempt.
+        }
+      }
+      // AC-5: none of the family's files exist yet — a run dispatched before
+      // this change, or the agent never wrote its pinned file — so fall
+      // through to the scan below instead of returning ''.
+    } else if (run?.sessionId) {
+      try {
+        const path = join(dir, `${run.sessionId}.jsonl`);
+        const isStale =
+          startedAtMs !== null &&
+          Number.isFinite(startedAtMs) &&
+          (await stat(path)).mtimeMs < startedAtMs;
+        if (!isStale) {
+          return await readFile(path, 'utf8');
+        }
+      } catch {
+        // fall through to the scan.
+      }
+    }
+    let entries: string[];
+    try {
+      entries = await readdir(dir);
+    } catch {
+      return '';
+    }
+    let latest: { path: string; mtimeMs: number } | null = null;
+    for (const name of entries) {
+      if (!name.endsWith('.jsonl')) {
+        continue;
+      }
+      const full = join(dir, name);
+      try {
+        const s = await stat(full);
+        if (
+          startedAtMs !== null &&
+          Number.isFinite(startedAtMs) &&
+          s.mtimeMs < startedAtMs
+        ) {
+          continue;
+        }
+        if (!latest || s.mtimeMs > latest.mtimeMs) {
+          latest = { path: full, mtimeMs: s.mtimeMs };
+        }
+      } catch {
+        // entry vanished between readdir and stat — skip.
+      }
+    }
+    if (!latest) {
+      return '';
+    }
+    try {
+      return await readFile(latest.path, 'utf8');
+    } catch {
+      return '';
+    }
+  }
+
+  parseFootprint(log: string): AgentFootprint {
+    return parseClaudeTranscript(log);
+  }
+}
+
+/** Config-facing factory: `claudeAgent({ model: 'claude-opus-4-8' })`. */
+export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
+  const agent = new ClaudeAgent(options);
+  return {
+    kind: 'agent',
+    id: 'claude',
+    requiredModules: [],
+    async createAgent() {
+      return agent;
+    },
+  };
+}
+
+// Default export: this module also exports the `ClaudeAgent` class, so the
+// config resolver's auto-pick (no `export:`) sees 2 function exports and
+// would otherwise throw "specify export" — see conductor/src/config.ts
+// `loadNamedPlugin`. The default export makes the factory win.
+export default claudeAgent;

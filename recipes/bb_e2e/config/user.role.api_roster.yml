@@ -1,0 +1,12 @@
+# Test-only capability fixture; saved-form dependencies keep recipe application repeatable.
+langcode: en
+status: true
+dependencies:
+  module:
+  - bb_core
+id: api_roster
+label: api_roster
+weight: 0
+is_admin: false
+permissions:
+- view bakers memberships

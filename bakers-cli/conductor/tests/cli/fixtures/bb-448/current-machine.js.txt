@@ -1,0 +1,8 @@
+// @bakers-schema-version 1
+// Local host identity and capacity. Server credentials belong to bakers.config.js.
+export default {
+ schema_version: 1,
+ machine_id: "historical-host",
+ user_id: "historical-user",
+ max_parallel: 3,
+};

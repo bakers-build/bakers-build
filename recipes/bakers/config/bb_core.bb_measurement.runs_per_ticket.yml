@@ -1,0 +1,18 @@
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_measurement.closed_tickets
+  - bb_core.bb_measurement.runs
+id: runs_per_ticket
+label: Runs per closed ticket
+value_type: decimal
+unit: runs_per_ticket
+source: {}
+operation:
+  type: divide
+  numerator: runs
+  denominator: closed_tickets
+predicates: {}
+bindings: {}
+dimensions: {}

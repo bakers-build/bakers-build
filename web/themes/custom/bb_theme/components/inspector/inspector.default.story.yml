@@ -1,0 +1,54 @@
+component: bb_theme:inspector
+name: Default
+slots:
+  rows:
+    - type: component
+      component: bb_theme:list
+      props:
+        layout: lines
+        items:
+          - cells:
+              label:
+                kind: text
+                value: Assignee
+                emphasis: faint
+              value:
+                kind: text
+                value: bakers-agent
+          - cells:
+              label:
+                kind: text
+                value: Conductor
+                emphasis: faint
+              value:
+                kind: text
+                value: cw-framework
+          - cells:
+              label:
+                kind: text
+                value: Priority
+                emphasis: faint
+              value:
+                kind: text
+                value: P2
+          - cells:
+              label:
+                kind: text
+                value: Branch
+                emphasis: faint
+              value:
+                kind: mono
+                value: feat/bb-335-design-the-ticke
+  footer:
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: danger
+        label: Cancel ticket
+        type: button
+    - type: component
+      component: bb_theme:text
+      props:
+        text: More settings
+        size: caption
+        href: /_workspace/1/ticket/1/edit

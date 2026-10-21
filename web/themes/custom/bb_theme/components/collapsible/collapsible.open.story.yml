@@ -1,0 +1,12 @@
+component: bb_theme:collapsible
+name: Open
+props:
+  open: true
+slots:
+  label: Handoffs (3)
+  content:
+    - type: element
+      tag: p
+      value: Open — this content is visible because the `open` prop is true.
+      attributes:
+        class: text-text-light text-[13px]

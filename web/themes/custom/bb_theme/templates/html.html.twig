@@ -1,0 +1,45 @@
+{#
+/**
+ * @file
+ * bakers.build theme html structure.
+ *
+ * The theme's own design tokens style the document (css/tokens/*.src.css, via
+ * css/app.src.css), so nothing has to be added to <html> for the palette to
+ * apply. This override used to set a theme class here to pull in an admin
+ * theme's palette; that coupling is gone.
+ *
+ * @see \Drupal\Core\Theme\ThemePreprocess::preprocessHtml()
+ */
+#}
+<!DOCTYPE html>
+<html{{ html_attributes }}>
+  <head>
+    <head-placeholder token="{{ placeholder_token }}">
+    <title>{{ head_title|safe_join(' | ') }}</title>
+    <css-placeholder token="{{ placeholder_token }}">
+    <js-placeholder token="{{ placeholder_token }}">
+    {# Apply stored rail collapse before first paint. Alpine persist on the
+       aside cannot: IslandBoost OOB-swaps that island on every rail click. #}
+    <script>
+      try {
+        var v = localStorage.getItem('_x_bakers.sidebar') || localStorage.getItem('bakers.sidebar');
+        if (v === 'false' || v === '"false"') {
+          document.documentElement.setAttribute('data-sidebar-collapsed', '');
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body{{ attributes }}>
+    {#
+      Keyboard navigation/accessibility link to main content section in
+      page.html.twig.
+    #}
+    <a href="#main-content" class="visually-hidden focusable">
+      {{ 'Skip to main content'|t }}
+    </a>
+    {{ page_top }}
+    {{ page }}
+    {{ page_bottom }}
+    <js-bottom-placeholder token="{{ placeholder_token }}">
+  </body>
+</html>

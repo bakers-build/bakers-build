@@ -1,0 +1,161 @@
+<!-- @dsCard group="Exploration" viewport="1500x760" name="Visual Direction — 3 Varianten" subtitle="Light, keytec x GitLab — Ecken/Kanten/Schatten Vergleich" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bakers.build — Visual Direction Exploration</title>
+<style>
+  :root{
+    --swimsuit:#FF4E42; --sun:#FFC024; --teal:#4BB9AE; --ocean:#494FE5; --cloud:#8197F8; --shell:#FAFAED;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    font-family:"Satoshi","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:#eef0f2; color:#111; padding:26px; font-size:13px;
+  }
+  h1{font-size:20px;margin:0 0 4px;}
+  .lead{color:#555; font-size:13px; margin:0 0 22px; max-width:80ch;}
+  .row{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; align-items:start;}
+  .col{display:flex; flex-direction:column; gap:10px;}
+  .col__label{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#666;}
+  .col__desc{font-size:11.5px; color:#777; margin:-4px 0 4px; line-height:1.4;}
+
+  /* ============ shared sample-app scaffolding ============ */
+  .app{border:1px solid #d8d8d8; overflow:hidden;}
+  .bar{display:flex; align-items:center; gap:10px; padding:10px 14px; font-weight:700;}
+  .bar .badge{margin-left:auto; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px;}
+  .body{padding:14px;}
+  table{width:100%; border-collapse:collapse; font-size:12px; margin-bottom:12px;}
+  th{text-align:left; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#888; padding:0 8px 6px;}
+  td{padding:8px; vertical-align:middle;}
+  .tid{font-family:ui-monospace,"SF Mono",Menlo,monospace; font-weight:700;}
+  .pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; padding:2px 8px;}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+  .ava{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:8px;font-weight:800;color:#fff;background:var(--teal);}
+  .btn{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:7px 14px; cursor:default; border:0;}
+
+  /* ============ VARIANT A — keytec-forte ============ */
+  .v-a .app{ background:var(--shell); border:2px solid #000; }
+  .v-a .bar{ background:#fff; border-bottom:2px solid #000; }
+  .v-a .bar .badge{ background:var(--swimsuit); color:#fff; border-radius:0; border:1px solid #000; }
+  .v-a table tr{ border-bottom:2px solid #000; }
+  .v-a table tr:last-child{ border-bottom:0; }
+  .v-a .pill{ border-radius:0; border:1.5px solid #000; }
+  .v-a .pill--wait{ background:var(--swimsuit); color:#fff; }
+  .v-a .pill--attn{ background:var(--sun); color:#000; }
+  .v-a .pill--run{ background:var(--teal); color:#000; }
+  .v-a .ava{ border-radius:0; border:1.5px solid #000; }
+  .v-a .btn{ background:var(--swimsuit); color:#fff; border:2px solid #000; border-radius:0; box-shadow:6px 6px 0 0 #000; }
+  .v-a .card{ background:#fff; border:2px solid #000; padding:14px; }
+  .v-a .rowlead{ box-shadow: inset 4px 0 0 0 var(--swimsuit); }
+
+  /* ============ VARIANT B — GitLab-clean ============ */
+  .v-b .app{ background:#fff; border:1px solid #dcdcde; border-radius:8px; }
+  .v-b .bar{ background:#fafafa; border-bottom:1px solid #dcdcde; }
+  .v-b .bar .badge{ background:#fdeceb; color:#c91c00; border-radius:20px; }
+  .v-b table tr{ border-bottom:1px solid #ececec; }
+  .v-b table tr:last-child{ border-bottom:0; }
+  .v-b .pill{ border-radius:20px; }
+  .v-b .pill--wait{ background:#fdeceb; color:#c91c00; }
+  .v-b .pill--attn{ background:#fff4dc; color:#946200; }
+  .v-b .pill--run{ background:#e9f7f5; color:#227a70; }
+  .v-b .ava{ border-radius:50%; }
+  .v-b .btn{ background:var(--ocean); color:#fff; border:0; border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,.15); }
+  .v-b .card{ background:#fff; border:1px solid #dcdcde; border-radius:8px; padding:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .v-b .rowlead{ box-shadow: inset 3px 0 0 0 var(--swimsuit); }
+
+  /* ============ VARIANT C — hybrid (empfohlen) ============ */
+  .v-c .app{ background:#fff; border:1px solid #d3d3ce; border-radius:4px; }
+  .v-c .bar{ background:#fff; border-bottom:2px solid #000; }
+  .v-c .bar .badge{ background:var(--swimsuit); color:#fff; border-radius:3px; }
+  .v-c table tr{ border-bottom:1px solid #e7e5df; }
+  .v-c table tr:last-child{ border-bottom:0; }
+  .v-c .pill{ border-radius:3px; }
+  .v-c .pill--wait{ background:#ffe4e1; color:#a5301f; }
+  .v-c .pill--attn{ background:#fff2cf; color:#7a5600; }
+  .v-c .pill--run{ background:#dff3f1; color:#1f6b63; }
+  .v-c .ava{ border-radius:50%; }
+  .v-c .btn{ background:var(--swimsuit); color:#fff; border:2px solid #000; border-radius:2px; box-shadow:4px 4px 0 0 #000; }
+  .v-c .card{ background:var(--shell); border:1px solid #000; border-radius:2px; padding:14px; }
+  .v-c .rowlead{ box-shadow: inset 3px 0 0 0 var(--swimsuit); }
+
+  .sample-card h4{ margin:0 0 6px; font-size:13px; }
+  .sample-card p{ margin:0; font-size:11.5px; color:#666; }
+</style>
+</head>
+<body>
+
+<h1>bakers.build — Visual Direction Exploration</h1>
+<p class="lead">Drei Auspr&auml;gungen zwischen <b>keytec</b> (2px schwarz, scharfe Ecken, harter Offset-Schatten, Marken-Ton) und <b>GitLab</b> (helles, ruhiges SaaS-Admin: 1px Grau, Radius, weiche Schatten). Identische Komponenten &mdash; Header-Leiste, Tickets-Tabelle (Zeile 1 = kritisch/needs_input), Status-Pillen, Avatar, prim&auml;rer Button, Karte &mdash; damit direkt vergleichbar ist, wie dicht/laut es bei &gt;30 Tabellenzeilen wirken w&uuml;rde.</p>
+
+<div class="row">
+
+  <!-- ============ A ============ -->
+  <div class="col v-a">
+    <div class="col__label">A &middot; keytec-forte</div>
+    <div class="col__desc">Marke maximal sichtbar: 2px schwarze Kanten &uuml;berall, 0 Radius, harter 6/6-Schatten am Button. Sehr eigenst&auml;ndig, aber bei vielen Zeilen/Karten schnell laut.</div>
+    <div class="app">
+      <div class="bar">bakers.build <span class="badge">2 offen</span></div>
+      <div class="body">
+        <table>
+          <thead><tr><th>Ticket</th><th>Titel</th><th>Status</th><th>Assignee</th></tr></thead>
+          <tbody>
+            <tr class="rowlead"><td class="tid">GL-150</td><td>API-Key fehlt im Secrets-Store</td><td><span class="pill pill--wait"><span class="dot" style="background:#fff"></span>needs_input</span></td><td><span class="ava">CW</span></td></tr>
+            <tr><td class="tid">GL-138</td><td>Workflow-State-Machine refactoren</td><td><span class="pill pill--run"><span class="dot" style="background:#000"></span>running</span></td><td><span class="ava">MK</span></td></tr>
+            <tr><td class="tid">GL-142</td><td>Deploy-Freigabe Prod?</td><td><span class="pill pill--attn"><span class="dot" style="background:#000"></span>attention</span></td><td><span class="ava">CW</span></td></tr>
+          </tbody>
+        </table>
+        <button class="btn">Zuweisen</button>
+      </div>
+    </div>
+    <div class="card sample-card"><h4>Projekt-Karte</h4><p>2px schwarzer Rahmen, scharfe Ecke, Shell-Cream-Hintergrund.</p></div>
+  </div>
+
+  <!-- ============ B ============ -->
+  <div class="col v-b">
+    <div class="col__label">B &middot; GitLab-clean</div>
+    <div class="col__desc">Marke zur&uuml;ckhaltend: 1px Grau, Radius, weiche Schatten nur bei Elevation. Sehr ruhig/skalierbar, aber wenig Wiedererkennung als bakers.build/keytec.</div>
+    <div class="app">
+      <div class="bar">bakers.build <span class="badge">2 offen</span></div>
+      <div class="body">
+        <table>
+          <thead><tr><th>Ticket</th><th>Titel</th><th>Status</th><th>Assignee</th></tr></thead>
+          <tbody>
+            <tr class="rowlead"><td class="tid">GL-150</td><td>API-Key fehlt im Secrets-Store</td><td><span class="pill pill--wait"><span class="dot" style="background:#c91c00"></span>needs_input</span></td><td><span class="ava">CW</span></td></tr>
+            <tr><td class="tid">GL-138</td><td>Workflow-State-Machine refactoren</td><td><span class="pill pill--run"><span class="dot" style="background:#227a70"></span>running</span></td><td><span class="ava">MK</span></td></tr>
+            <tr><td class="tid">GL-142</td><td>Deploy-Freigabe Prod?</td><td><span class="pill pill--attn"><span class="dot" style="background:#946200"></span>attention</span></td><td><span class="ava">CW</span></td></tr>
+          </tbody>
+        </table>
+        <button class="btn">Zuweisen</button>
+      </div>
+    </div>
+    <div class="card sample-card"><h4>Projekt-Karte</h4><p>1px grauer Rahmen, Radius 8px, dezenter Schatten.</p></div>
+  </div>
+
+  <!-- ============ C ============ -->
+  <div class="col v-c">
+    <div class="col__label">C &middot; Hybrid (empfohlen)</div>
+    <div class="col__desc">Marke an wenigen Stellen kr&auml;ftig (Header-Regel, prim&auml;rer CTA-Button, Alert-Karte), Datendichte (Tabellenzeilen, Pillen) bleibt ruhig/hell wie GitLab. Zustandsfarben weiterhin doppelt kodiert (Kante + Pille).</div>
+    <div class="app">
+      <div class="bar">bakers.build <span class="badge">2 offen</span></div>
+      <div class="body">
+        <table>
+          <thead><tr><th>Ticket</th><th>Titel</th><th>Status</th><th>Assignee</th></tr></thead>
+          <tbody>
+            <tr class="rowlead"><td class="tid">GL-150</td><td>API-Key fehlt im Secrets-Store</td><td><span class="pill pill--wait"><span class="dot" style="background:#a5301f"></span>needs_input</span></td><td><span class="ava">CW</span></td></tr>
+            <tr><td class="tid">GL-138</td><td>Workflow-State-Machine refactoren</td><td><span class="pill pill--run"><span class="dot" style="background:#1f6b63"></span>running</span></td><td><span class="ava">MK</span></td></tr>
+            <tr><td class="tid">GL-142</td><td>Deploy-Freigabe Prod?</td><td><span class="pill pill--attn"><span class="dot" style="background:#7a5600"></span>attention</span></td><td><span class="ava">CW</span></td></tr>
+          </tbody>
+        </table>
+        <button class="btn">Zuweisen</button>
+      </div>
+    </div>
+    <div class="card sample-card"><h4>Projekt-Karte</h4><p>1px schwarzer Rahmen, kleiner Radius, Shell-Cream nur f&uuml;r Alert-Karten, sonst wei&szlig;.</p></div>
+  </div>
+
+</div>
+
+</body>
+</html>

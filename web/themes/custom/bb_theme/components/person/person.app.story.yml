@@ -1,0 +1,9 @@
+component: bb_theme:person
+name: App account
+props:
+  display_name: bakers.build agent
+  initials: GA
+  color: running
+  size: md
+# No `mail`. An app account has none, and the line is then ABSENT rather than a
+# dash — a dash where an address belongs reads as a value somebody forgot.

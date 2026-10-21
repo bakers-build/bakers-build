@@ -1,0 +1,17 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: cd3e97e2-e743-535b-bb6d-84c5c661beee
+  default_langcode: en
+default:
+  name:
+  - value: create-revocable
+  mail:
+  - value: create-revocable@example.com
+  status:
+  - value: true
+  preferred_langcode:
+  - value: en
+  field_onboarding_completed:
+    -
+      value: true

@@ -1,0 +1,33 @@
+{# A native single or multiple <select>, styled like form_input. Like that
+   component it carries no label — the wrapping form_label/form_element owns it —
+   and it passes the real Drupal `attributes` (name, id, data-*, #states …)
+   straight through, adding only its own styling classes.
+
+   `options` IS DRUPAL'S OWN SHAPE, the list `form_select_options()` hands
+   `select.html.twig`: each entry is `{ value, label, selected }`, or an
+   `{ type: 'optgroup', label, options }` group of such entries, so the
+   presenter forwards it unchanged.
+
+   `max-w-full` + `min-w-0` are the point: a native select sizes itself to its
+   longest option, and in a narrow column that pushed the document sideways. #}
+<select{{ (attributes ?: create_attribute()).addClass([
+    'w-full', 'min-w-0', 'max-w-full', 'h-[38px]', 'px-[11px]', 'bg-app', 'border', 'border-control-border',
+    'rounded-sm', 'text-text', 'text-body', 'truncate', 'focus:outline-none', 'focus:border-primary',
+  ]) }}
+  {%- if id %} id="{{ id }}"{% endif %}
+  {%- if name %} name="{{ name }}"{% endif %}
+  {%- if multiple %} multiple{% endif %}
+  {%- if required %} required{% endif %}
+  {%- if disabled %} disabled{% endif %}>
+  {%- for option in options|default([]) %}
+    {%- if option.type|default('option') == 'optgroup' %}
+      <optgroup label="{{ option.label }}">
+        {%- for child in option.options|default([]) %}
+          <option value="{{ child.value }}"{% if child.selected|default(false) %} selected{% endif %}>{{ child.label }}</option>
+        {%- endfor %}
+      </optgroup>
+    {%- else %}
+      <option value="{{ option.value }}"{% if option.selected|default(false) %} selected{% endif %}>{{ option.label }}</option>
+    {%- endif %}
+  {%- endfor %}
+</select>

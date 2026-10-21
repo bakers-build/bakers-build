@@ -1,0 +1,51 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Stat Tile
+status: stable
+group: Data Display
+description: 'One figure, named and attributed: a value, what it counts, and the source it is read from. The source is a required prop rather than an optional footnote because BB-333 D11 makes every figure on a dashboard name the entity and field behind it — a number whose provenance is invisible is a number nobody can check, and one of the five figures these dashboards want has no source at all yet, which only shows if every tile is asked the question. The tile knows no scope and no screen: it never resolves a query, never formats a count and never decides which window it is showing, so the same component carries a per-state count, a 24-hour total and a per-person capacity figure without a branch.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    value:
+      type: string
+      title: Value
+      description: The figure itself, already formatted by the caller. A string rather than a number so a tile can read "3" or "—" or "1.4k" without the component owning a number format.
+    label:
+      type: string
+      title: Label
+      description: What the value counts. The tile's accessible name is built from label and value together.
+    source:
+      type: string
+      title: Source
+      description: 'Where the figure is read from — an `entity_type.field`, an endpoint, or the file whose flag decides the set. Rendered as the tile''s faint footnote (BB-333 D11/C3).'
+    window:
+      type: string
+      title: Window
+      description: The period the figure covers, where it has one (`last 24 h`, `rolling 30 d`). A tile that counts a present state carries none.
+    tone:
+      type: string
+      enum:
+        - neutral
+        - running
+        - attention
+      title: Tone
+      description: 'Optional accent on the value. Never the only carrier of meaning: the label and the value say the same thing in text, so the tile stays readable in greyscale (BB-333 C2).'
+    size:
+      type: string
+      enum:
+        - default
+        - compact
+      title: Size
+      description: >-
+        `default` is the dashboard tile. `compact` is the same figure at the
+        density of an inspector row — smaller type and padding — for a count
+        that sits beside a description rather than filling a dashboard band.
+      default: default
+  required:
+    - value
+    - label
+    - source
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

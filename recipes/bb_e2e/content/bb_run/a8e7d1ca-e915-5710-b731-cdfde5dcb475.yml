@@ -1,0 +1,20 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_run
+  uuid: a8e7d1ca-e915-5710-b731-cdfde5dcb475
+  default_langcode: en
+  depends:
+    b7570457-8a8d-59c4-9293-1860532719ec: bb_ticket
+    aac002e6-422c-55c1-8756-2991dd6fe854: bb_conductor
+    afa9b1da-0df1-51d0-8156-52d2d90c2b85: user
+default:
+  ticket_id:
+  - entity: b7570457-8a8d-59c4-9293-1860532719ec
+  conductor_id:
+  - entity: aac002e6-422c-55c1-8756-2991dd6fe854
+  owner_user_id:
+  - entity: afa9b1da-0df1-51d0-8156-52d2d90c2b85
+  state:
+  - value: claimed
+  closed:
+  - value: false

@@ -1,0 +1,19 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: edc03624-629b-5606-b650-0a1dbf8ea9ad
+  default_langcode: en
+  depends:
+    06a25181-cab6-56b7-933b-11263c27ff0f: bb_group
+    02043966-170c-5ae3-8d9e-5ef816ff74f4: bb_team
+default:
+  name:
+  - value: API other
+  key:
+  - value: APIO
+  group_id:
+  - entity: 06a25181-cab6-56b7-933b-11263c27ff0f
+  teams:
+  - entity: 02043966-170c-5ae3-8d9e-5ef816ff74f4
+  next_number:
+  - value: 2

@@ -1,0 +1,19 @@
+@theme static {
+  --spacing-shell-offset: var(--drupal-displace-offset-top, 0px);
+  --spacing-shell-height: calc(100dvh - var(--drupal-displace-offset-top, 0px));
+  --spacing-row: 34px;
+  --spacing-control: 28px;
+  --spacing-brand-compact-braid-width: 24px;
+  --spacing-brand-compact-braid-height: 38.4px;
+  --spacing-brand-compact-wordmark-width: 96px;
+  --spacing-brand-compact-gap: 8px;
+  --spacing-zone-sm: var(--spacing-space-3);
+  --spacing-zone-md: var(--spacing-space-5);
+  --spacing-zone-lg: var(--spacing-space-6);
+  --spacing-empty-state-icon: 64px;
+  --spacing-empty-state-compact-icon: 24px;
+}
+[data-layout="cozy"] {
+    --spacing-row: 40px;
+    --spacing-control: 36px;
+}

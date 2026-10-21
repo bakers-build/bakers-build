@@ -1,0 +1,36 @@
+uuid: b3cbb9da-9ef1-475f-9472-bb6965bf4521
+langcode: en
+status: true
+dependencies: {}
+_core:
+  default_config_hash: o95SL83QVpbiS0P4yO1R-n8A0WIQWL8yrKi_7RC2KIo
+id: runs
+label: Runs
+value_type: integer
+unit: runs
+source:
+  entity_type: bb_run
+  time_field: created
+operation:
+  type: count
+predicates: {}
+bindings:
+  project:
+    field: ticket_id.entity.project_id
+    resolver: entity_id
+  user:
+    field: ticket_id.entity.assignee_user_id
+    resolver: entity_id
+  team:
+    field: ticket_id.entity.project_id
+    resolver: team_projects
+  workspace:
+    field: ticket_id.entity.project_id
+    resolver: workspace_projects
+dimensions:
+  project:
+    field: ticket_id.entity.project_id
+    entity_type: bb_project
+  user:
+    field: ticket_id.entity.assignee_user_id
+    entity_type: user

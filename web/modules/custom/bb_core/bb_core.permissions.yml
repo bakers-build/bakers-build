@@ -1,0 +1,65 @@
+administer bakers:
+  title: 'Administer bakers.build'
+  restrict access: true
+write bakers via session scope:
+  title: 'Write bakers.build tickets within the active session scope'
+  description: 'Agent and human-assist sessions: update the claimed ticket and its sub-tickets, create sub-tickets, log footprints.'
+  restrict access: true
+register bakers conductor:
+  title: 'Register and heartbeat own bakers.build conductor nodes'
+  description: 'Create conductor registrations owned by the account; update own registrations; renew and release own runs.'
+  restrict access: true
+claim bakers tickets:
+  title: 'Claim dispatchable bakers.build tickets'
+  restrict access: true
+view bakers memberships:
+  title: 'View bakers.build memberships'
+  description: 'Read og_membership rows: who belongs to a workspace, project or team, with the rank and the state each membership carries. Named as a bakers.build capability rather than as `view og_membership` because og_membership is a contrib entity type and this is bakers.build''s own grant, not OG''s. It discloses the roster — display names, ranks and membership states — of the workspaces the account belongs to, of the projects in its read scope, and of the teams inside those workspaces, plus its own membership rows anywhere. Nothing outside them: the permission decides that the operation exists, the read scope decides which rows it reaches.'
+  restrict access: true
+view bb_project:
+  title: 'View bakers.build projects'
+  restrict access: true
+create bb_project:
+  title: 'Create bakers.build projects'
+  restrict access: true
+edit bb_project:
+  title: 'Edit bakers.build projects'
+  restrict access: true
+delete bb_project:
+  title: 'Delete bakers.build projects'
+  restrict access: true
+
+use bb_ticket_template:
+  title: 'Instantiate bakers.build ticket templates'
+  description: 'Create a bb_ticket from an enabled bb_ticket_template. Normal bb_ticket create access and the template''s own project scope still apply.'
+  restrict access: true
+
+# BB-658: the generic `entity` module handlers (EntityAccessControlHandler,
+# QueryAccessHandler) already recognise a "<op> <bundle> <entity_type>"
+# permission string for any content entity, regardless of whether the entity
+# type's permission_provider is configured for bundle granularity — see
+# \Drupal\entity\EntityAccessControlHandler::checkEntityOwnerPermissions()
+# and \Drupal\entity\QueryAccess\QueryAccessHandlerBase::buildEntityConditions().
+# bb_term itself stays entity_type granularity (its two vocabularies,
+# bb_labels and bb_capability_tags, share "view bb_term" for every
+# ordinary bakers.build role), but the BB-658 MCP connector scope must grant search
+# on bb_labels terms only, never bb_capability_tags. This permission is
+# declared purely so simple_oauth's Permission scope-granularity plugin
+# accepts it (it validates against the permission handler's registry) and so
+# it is assignable on /admin/people/permissions; no new access-control code
+# is needed; the generic handlers already honour it.
+view bb_labels bb_term:
+  title: 'bakers.build labels: View bakers.build terms'
+  description: 'Search/view bb_term entities in the bb_labels vocabulary only — not bb_capability_tags.'
+  restrict access: true
+
+# The product UI gate: "may see the bakers.build product UI". The legacy name is kept
+# because the og_role files granting it are on the recipe strict list, so a
+# rename is a migration.
+access bakers dashboard:
+  title: 'Access the bakers.build product UI'
+  description: 'View the bakers.build application shell and the screens that render inside it.'
+
+# One `view bakers figure <id>` per configured composite figure.
+permission_callbacks:
+  - \Drupal\bb_core\FigurePermissions::permissions

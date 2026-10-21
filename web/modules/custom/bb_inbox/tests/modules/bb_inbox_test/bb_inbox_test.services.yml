@@ -1,0 +1,5 @@
+services:
+  bb_inbox_test.echo_handler:
+    class: Drupal\bb_inbox_test\EchoHandler
+    tags:
+      - { name: event_subscriber }

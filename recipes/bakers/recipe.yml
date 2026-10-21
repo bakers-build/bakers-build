@@ -1,0 +1,974 @@
+name: 'bakers.build'
+description: 'bakers.build control-plane: base + bakers modules + OAuth.'
+type: 'Site'
+recipes:
+  - bb_base
+install:
+  - jsonapi
+  # jsonapi_schema serves the authoritative JSON Schema for every JSON:API
+  # resource (…/resource/schema) — the conductor's dropsh client fetches it to
+  # validate writes client-side. It replaces the dead schemata/schemata_json_schema
+  # contrib path (HTTP 500 on D11/PHP 8.4) and ships NO dedicated permission:
+  # schema access is gated by the resource's own JSON:API access, so the roles
+  # no longer carry an 'access schemata data models' grant.
+  - jsonapi_schema
+  # Serves bb_core's `_jsonapi_resource` routes (claim, claim-next, heartbeat,
+  # statistics). Named here as well as in `config/sync/core.extension.yml` for
+  # the same reason as Search API below: neither store is the other's source.
+  - jsonapi_resources
+  # Organic Groups. Enabled BEFORE bb_core, because bb_core declares it as
+  # a dependency and ships the og.og_role.* config that the recipe imports by
+  # name below (BB-316 D2/D3).
+  - og
+  # The navigation rail and the account area are Drupal menus (`bakers-rail`,
+  # `bakers-account`). `menu_ui` and `menu_link_content` provide the standard
+  # menu administration; the shipped state is config.
+  - menu_link_content
+  - menu_ui
+  # Core's Editor API, BEFORE bb_core, which depends on it: the bb_markdown
+  # text editor (the Markdown toolbar) is bound to bb_rich by
+  # editor.editor.bb_rich, imported by name below.
+  - editor
+  - bb_core
+  - bb_track
+  # Ticket activities and their opt-in mails; an account's mail settings row
+  # is written only when it saves its notifications page.
+  - bb_activity
+  - bb_connector
+  # The island link layer (BB-398). Path-based custom code, not a composer
+  # package, so nothing enables it implicitly — and every hook it ships is
+  # silently inert while it is uninstalled.
+  - island
+  # Optional UI Patterns integration for migrated bakers.build shell components. The
+  # base Island App/Profile model remains usable without this module.
+  - island_ui_patterns
+  # Addon messages through the conductor inbox (contract 2): the transport,
+  # then the addon definitions and the ticket's inline addons card that sit
+  # on it.
+  - bb_inbox
+  - bb_addon
+  - better_exposed_filters
+  # Swaps the 'string'/'combine'/'search_api_text'/'search_api_fulltext' Views
+  # filter handler CLASS for every view (hook_views_plugins_filter_alter), not
+  # only for a view that names this module — so it stays installed as long as
+  # any shipped view has such an exposed filter. `views.view.bb_tickets`,
+  # `views.view.runs`, `views.view.bb_runs`, `views.view.projects`,
+  # `views.view.conductors`, `views.view.machines`, `views.view.groups`,
+  # `views.view.files` and `views.view.user_admin_people` all do (BB-683:
+  # confirmed by plugin ID, not a module-name text match — removing this
+  # silently drops autocomplete from every one of those exposed filters).
+  - views_autocomplete_filters
+  # Search API and Facets (BB-413 D1). Facets 3 supports Search API only, so
+  # the index is a prerequisite rather than a choice, and `facets_exposed_filters`
+  # is what turns a facet into a Views filter criterion instead of a block —
+  # which is the whole reason the seven facets of the ticket list are ordinary
+  # exposed filters carried by one boosted GET.
+  #
+  # They are named here as well as in `config/sync/core.extension.yml` because
+  # neither store is the other's source: the recipe path installs what this list
+  # says and the CIM path installs what core.extension says, and a module in one
+  # only is absent from the other world.
+  - search_api
+  - search_api_db
+  - facets
+  - facets_exposed_filters
+  # The chosen-facet chips above the ticket rows (BB-413, decided 2026-09-04).
+  # Upstream's own guidance — `project.pages.drupalcode.org/facets/exposed_filters/`
+  # — states that Views Filters Summary *"replaces the 'facets_summary' module,
+  # and even allows non-facet filters in the summary"*, so this is the documented
+  # companion of `facets_exposed_filters` and `facets_summary` is the superseded
+  # one. It ships a Views AREA handler (and, contrary to the plan, no Block
+  # plugin at all in 3.4.0), which `views.view.tickets` names in the default
+  # display's `header`; `bb_theme/templates/views-filters-summary.html.twig`
+  # restyles its output as `bb_theme:active-filters`, so bakers contributes no
+  # PHP to the strip.
+  #
+  # It adds NO config object of its own — only the
+  # `views.area.views_filters_summary` schema — so nothing new joins this
+  # recipe's strict list on its account. `views.view.tickets`, which is already
+  # on that list, now names it as a dependency and states its area options.
+  - views_filters_summary
+  # The ticket list's canvas (BB-413, 2026-09-04). `display_builder_views` is
+  # a Views DISPLAY EXTENDER carrying a ui_patterns sources tree, and it is what
+  # lets `views.view.tickets` compose `bb_theme:canvas` around its own exposed
+  # form, header and rows — the human's instruction, "use a view route and have
+  # the canvas rendered inside the view; that should all work through the display
+  # builder". Without it the extender's options sit unread in the view's config
+  # and the screen renders as a bare Views table with no aside at all: no error,
+  # no log line, just a screen missing its filters.
+  #
+  # IT ALSO OWNS A LINE OF `views.settings`, and that is the half a reader will
+  # not expect. `display_builder_views_install()` appends `display_builder` to
+  # `views.settings` › `display_extenders`, because Views consults that list
+  # before it instantiates any extender. So the module being installed is not
+  # enough on the CIM path: `config/sync/views.settings.yml` states the same
+  # entry, and an import that reset it to `{}` would switch the canvas off while
+  # leaving the module enabled.
+  - display_builder_views
+  # The project Board (BB-643): its Views plugins, parent focus and facet
+  # control panel live in their own module. After the Search API and Facets
+  # modules above, because its view uses both.
+  - bb_board
+  # BB-389 removed `bb_dashboard` from this list and BB-396 deleted the
+  # module outright. The intervening state — code kept so `drush cim` could run
+  # the uninstall path — has served its purpose; `core.extension.yml` has not
+  # listed the module since BB-389, so every environment has already
+  # uninstalled it. `better_exposed_filters` and `views_autocomplete_filters`
+  # (see its own comment above) stay installed for other exposed filters;
+  # `formblock` is retired by BB-683 (no remaining block consumer; see
+  # bb_core_post_update_reduce_backend_surface()).
+  - bb_theme
+  - ui_icons
+  - formdazzle
+  - bb_login
+  - simple_oauth
+  # Self-service pipeline API keys in the user area.
+  - bb_api_key
+  # Time-scheduled (and further) triggers on ticket templates. Pulls in the
+  # contrib Plugin module for its plugin field.
+  - bb_ticket_trigger
+  # BB-658 — lets a keytec member connect their own claude.ai account via a
+  # fixed public OAuth client (Authorization Code + S256 PKCE, no dynamic
+  # client registration). `simple_oauth_21` is the umbrella module both
+  # submodules below depend on; `simple_oauth_server_metadata` supplies RFC
+  # 8414 `/.well-known/oauth-authorization-server` and RFC 9728
+  # `/.well-known/oauth-protected-resource` discovery with no controller code
+  # of ours, and `simple_oauth_pkce` enforces PKCE on the authorization_code
+  # grant. `simple_oauth_client_registration` (dynamic client registration) is
+  # deliberately NOT enabled — the user chose a fixed public client instead.
+  - simple_oauth_21
+  - simple_oauth_server_metadata
+  - simple_oauth_pkce
+  # BB-550 — RFC 8628 device authorization grant. Carries no config entity,
+  # so it needs no `config: import:` entry on the recipe strict list.
+  - bb_oauth_device
+  - r4032login
+  # OAuth / social sign-in (BB-476). Client to Google, decorated by
+  # bb_login_oauth (Task 4/5) to gate e-mail matching on a verified address.
+  - social_api
+  - social_auth
+  - social_auth_google
+  # THE SECURITY GATE ITSELF. Without this module enabled, social_auth's own
+  # undecorated `user_authenticator` runs unmodified — matching a provider
+  # e-mail onto any existing account with no verification check at all. This
+  # module must never be listed only as a dependency of something else.
+  - bb_login_oauth
+  # The engine that renders the ticket detail's BODY (BB-414, revising D4).
+  # It is named EXPLICITLY because nothing else here reaches it: no module in
+  # this list depends on it, and a module that is never named and never
+  # depended upon is never enabled on the recipe path — it existed only on the
+  # CIM path, where `config/sync/core.extension.yml` has listed it all along.
+  # The symptom of the gap was not an error: the three `full`/`teaser` displays
+  # would be created with their `third_party_settings.display_builder` inert,
+  # and `/{workspace}/ticket/{id}` would render the parent build — raw
+  # configurable fields — instead of the three zones.
+  #
+  # It pulls in four modules by dependency and that is deliberate rather than
+  # incidental: `field_ui`, `display_builder`, `ui_patterns_field` and
+  # `ui_patterns_field_formatters`. The last two are what make the displays'
+  # `field_property:` and `field_formatter:` sources resolvable at all, so
+  # naming this one module is what makes the body render; naming
+  # `display_builder` alone would not.
+  - display_builder_entity_view
+  # One square crop per image file, chosen where the image is uploaded and
+  # applied by the `avatar` image style. `bb_image` depends on `crop`; both
+  # are named because `config/sync/core.extension.yml` names both too.
+  - crop
+  - bb_image
+  # Standalone Island Profiles provide the application shell and gate.
+config:
+  # PRECONDITION for every name below, and the reason BB-403 broke
+  # `ddev init`: `config: import:` is NOT the free, always-idempotent tool the
+  # comments here used to imply. Each name lands in the recipe's STRICT list,
+  # and ConfigConfigurator compares the extension's `config/install` FILE
+  # against the ACTIVE config every time the recipe is constructed — ignoring
+  # only `uuid`, `_core` and an empty `dependencies`. Any other key the entity
+  # adds on save (defaults from its config schema, values normalised by
+  # preSave(), calculated dependencies) is a mismatch, and a mismatch throws
+  # RecipePreExistingConfigException and aborts the WHOLE recipe.
+  #
+  # That never fires on a virgin site — the config is not in active storage yet
+  # — so it looks fine and detonates on the SECOND application: `bb_e2e`,
+  # `bb_seed` and `bb_keytec_config` all depend on this recipe, so every
+  # `ddev init` constructs it again against a site that already has the config.
+  #
+  # A name may therefore be listed here only if the extension's source file is
+  # the SAVED form, key for key. That is achievable for config whose schema we
+  # own (see the OG roles below, which state `weight`, `group_id: null` and
+  # sorted `permissions` for exactly this reason) and a standing trap for
+  # contrib-owned schema, where the next release can add a key and re-break the
+  # install with no code change of ours.
+  import:
+    # Create bb_core/config/install/filter.format.bb_rich.yml reliably.
+    # config/install is not applied reliably at recipe-install time (unmet module
+    # deps at enable → silently skipped). config.import is idempotent (including
+    # repeated application through bb_seed/bb_keytec).
+    bb_core:
+      - filter.format.bb_rich
+      # Binds bb_rich to the bb_markdown text editor; imported by name for
+      # the same reason as the format above. Shipped in config/optional, so a
+      # bb_core install without editor (kernel tests) skips it. The file is
+      # the saved form, key for key (editor.editor.* is FullyValidatable).
+      - editor.editor.bb_rich
+      # bakers.build settings (lease + failed-run retry policy, BB-149). config/install
+      # is not applied reliably at recipe-install time (unmet module deps at
+      # enable → silently skipped), so import it by name here — idempotent.
+      - bb_core.settings
+      # The workspace's OG roles (BB-316 D2/D3, vocabulary BB-359 D12,
+      # BB-462 D1/D2). They are shipped from bb_core/config/install rather
+      # than duplicated under this recipe's config/, because OgRole::preSave()
+      # normalises `weight` and sorts `permissions` — a second hand-written
+      # copy would drift from the saved form on first save and abort exactly
+      # this import.
+      #
+      # Each id is named literally, so this list has to move with a rename: an
+      # id that no longer exists fails the whole recipe. BB-359 collapsed
+      # `owner` + `admin` into `lead`. `app`, the machine principal, is GONE
+      # (BB-462 D9): a conductor's OAuth identity is bound to its owning
+      # user's account and sees what that user sees through the user's own
+      # rank, so there is no separate machine rank to import any more.
+      - og.og_role.bb_workspace-bb_workspace-non-member
+      - og.og_role.bb_workspace-bb_workspace-member
+      - og.og_role.bb_workspace-bb_workspace-contributor
+      - og.og_role.bb_workspace-bb_workspace-lead
+      - og.og_role.bb_workspace-bb_workspace-guest
+      # The project's three OG roles (BB-317 D2/D3) are GONE (BB-462 D7):
+      # a project carries no roles and no membership of its own any more, so
+      # `og.og_role.bb_project-bb_project-{non-member,member,lead}` are
+      # deleted from both config paths and from this list together with the
+      # `og.settings` deregistration above — a name left on this list whose
+      # file no longer exists aborts the whole recipe.
+      # The workspace `app` rank (BB-462 D9) is GONE for the same reason: a
+      # conductor's OAuth identity is bound to its owning user's account and
+      # sees what that user sees through the user's own rank, so there is no
+      # separate machine rank to import any more.
+      # The team's roles: non-member + member (BB-321 D2, BB-462 D3) stay
+      # empty by design — a team is visibility, not a rights tier. `lead`
+      # carries the team breakdowns and personal statistics of team members; `owner`
+      # (BB-462) governs the team itself: who may join it, and its own
+      # settings. Both are distinct roles that coexist. Same install/import
+      # mechanism as workspace and project.
+      - og.og_role.bb_team-bb_team-non-member
+      - og.og_role.bb_team-bb_team-member
+      - og.og_role.bb_team-bb_team-lead
+      - og.og_role.bb_team-bb_team-owner
+      # The create-ticket dialog's own form mode and form display (BB-420
+      # Task 17). Named here because the ids start with `core.`, so enabling
+      # `bb_core` never creates them — `RecipeRunner::installModule()` puts
+      # the config installer in syncing mode and it reads only `bb_core.*`
+      # out of the module's own storage.
+      #
+      # Both files are the SAVED form, exported from the entities rather than
+      # authored, because these names join the recipe's STRICT list and are
+      # compared file-against-active on every construction. The display in
+      # particular states its whole 37-name `hidden:` map, which is not
+      # decoration: a form display shows every displayable field it is not
+      # told to hide, so that map is where AC2 — no server-owned field reaches
+      # this dialog — is actually enforced.
+      - core.entity_form_mode.bb_ticket.create
+      - core.entity_form_display.bb_ticket.bb_ticket.create
+      # The create-PROJECT dialog's pair (BB-421 Task 4), here for exactly
+      # the reasons the two names above are: the ids start with `core.`, so
+      # enabling `bb_core` never creates them, and an entry missing from
+      # `config/sync` would be DELETED on the CIM path — so both files need
+      # both homes and both names need to be here.
+      #
+      # Both are the SAVED form too, exported rather than authored. The
+      # display's `hidden:` map is where spec D4's "next_number is never sent
+      # by the client" is actually enforced: a form display shows every
+      # displayable field it is not told to hide, so that map is the
+      # enforcement and not documentation of it. `next_number` is hidden rather
+      # than absent — hiding a base field computes no dependency
+      # (`EntityDisplayBase::calculateDependencies()` only depends on
+      # `field_config` entities), which is what keeps this display shippable
+      # without pulling in anything that computes `next_number`.
+      #
+      # The project, group and workspace displays below their modes are NOT
+      # here: their image widget is `bb_square_image`, which `bb_core` does
+      # not depend on, so they ship in this recipe's own `config/` and in
+      # `config/sync/**`, and no longer from the module.
+      - core.entity_form_mode.bb_project.settings
+      - core.entity_form_mode.bb_group.create
+      - core.entity_form_mode.bb_group.settings
+      - core.entity_form_mode.bb_team.settings
+      - core.entity_form_display.bb_team.bb_team.settings
+      - core.entity_form_mode.bb_workspace.settings
+      # THE TWO PAGE LAYOUTS ARE NOT ON THIS LIST, AND THAT IS THE POINT.
+      # `display_builder_page_layout.page_layout.bb_shell` was named here
+      # until BB-415, and `…bb_gate` never was. Both now ship in THIS
+      # RECIPE'S OWN `config/`, which is the same strict list a `config:
+      # import:` entry joins — so importing them by name would be a second
+      # route to the same file, and after the move the name no longer resolves
+      # out of `bb_core`'s storage at all.
+      #
+      # The move was not a file rename. The shell's copy used to live in
+      # `bb_core/config/optional/`, which WORKFLOW.md recorded as a standing
+      # exception to fix and not to copy: a page layout is display_builder-owned
+      # config, `bb_core` does not depend on display_builder, and a module may
+      # not ship config whose schema comes from a non-dependency. This ticket
+      # shipped a SECOND layout, and shipping the new one correctly while the
+      # old one kept the wrong placement would have encoded the exception as the
+      # pattern.
+      #
+      # WHAT TRAVELLED WITH THE FILES, because it is still true and is now
+      # stated in their new neighbourhood — `recipes/bakers/config/*.yml` and
+      # their generators under
+      # `web/themes/custom/bb_theme/designbook/sync/` — rather than here:
+      # each layout states `dependencies.enforced.config:
+      # [display_builder.profile.default]`, and that single line is what stops
+      # the recipe path from dying inside contrib.
+      # `PageLayout::postSave()` dereferences `$this->getProfile()->id()`;
+      # `RecipeConfigInstaller` creates recipe config in
+      # `ConfigDependencyManager::sortAll()` order; and contrib cannot declare
+      # the edge itself, because `calculateDependencies()` adds the profile
+      # dependency only `if ($display_builder && $instance)` and on a first save
+      # the instance does not exist. `enforced` is the one channel that both
+      # survives the recalculation and feeds the graph. Measured before the
+      # line existed: layout at 40, profile at 42 — layout first, hence
+      # "Call to a member function id() on null"; with it, profile 36, layout
+      # 41. It is a true statement rather than a sort hint: a page layout whose
+      # profile has been deleted cannot be saved at all.
+      #
+      # THE ISLAND APP AND PROFILE CONFIG IS NOT ON THIS LIST EITHER, and for
+      # the identical reason BB-423 gave when it arrived: it ships directly in
+      # this recipe's own `config/`, which is the same strict list.
+      # `system.menu.bakers-rail` and `system.menu.bakers-account` need no entry
+      # either: both ship in this recipe's own `config/`. The team rows are
+      # not menu links; `BbMenuSource` adds them under the static Teams
+      # heading per request. Mind the dashed menu ids: core constrains
+      # `system.menu.*` › `id` to `/^[a-z0-9-]+$/`, `drush cim` does not
+      # validate config entities and `RecipeConfigInstaller` does, so an
+      # underscored menu id imports cleanly on one path and aborts the other.
+      # `views.view.projects` USED TO BE NAMED HERE AND IS NOT ANY MORE
+      # (BB-411 → BB-421 D9). It moved into this recipe's own `config/`
+      # directory, which is the SAME strict list and therefore needs no entry —
+      # exactly the move BB-415 made for
+      # `display_builder_page_layout.page_layout.bb_shell`. The line is
+      # replaced by this paragraph rather than deleted silently, because the
+      # reason is a rule and not a preference.
+      #
+      # WHY IT COULD NOT STAY IN `bb_core/config/optional`. BB-421 gave that
+      # display a `display_builder` sources tree, so the file now carries
+      # `display.default.display_options.display_extenders.display_builder` —
+      # a key whose schema (`views.display_extender.display_builder`) is
+      # provided by `display_builder_views`, which `bb_core` does not depend
+      # on and must not. That is precisely the class `WORKFLOW.md` records for
+      # entity view displays: a module may not ship config whose schema comes
+      # from a non-dependency. `ConfigInstaller` sweeps every enabled module's
+      # `config/optional` unconditionally on the plain module-install path, and
+      # this view's dependencies are only `bb_core` and `user`, so the sweep
+      # always reaches it — measured as `SchemaIncompleteException:
+      # display_extenders.display_builder missing schema` in TWENTY-ONE existing
+      # kernel test classes at once, every one of them merely calling
+      # `installConfig(['views'])`. `views.view.tickets` used to sit in the same
+      # directory with the same kind of tree WITHOUT failing — an ACCIDENT that
+      # BB-315 ended: it declared `search_api`, so the sweep skipped it while
+      # search_api was absent; once BB-315 installed search_api the sweep reached
+      # it too, and it moved to its two homes for the same reason (see its own
+      # block below).
+      #
+      # The dependency cannot be declared to close the hole either. A view
+      # recomputes `dependencies.module` in `preSave()` and views does not
+      # collect display EXTENDERS — `getAllPlugins()` asks
+      # `getPlugin('display_extender')`, which answers nothing — so a
+      # hand-written entry is dropped on the next save and the file would stop
+      # matching the active config, aborting the SECOND `ddev init`.
+      #
+      # So the view has the two homes `WORKFLOW.md` prescribes and none in the
+      # module: `config/sync/views.view.projects.yml` for the CIM path, and
+      # `recipes/bakers/config/views.view.projects.yml` for this one.
+      # `bb_core\Unit\ConfigCopyDriftTest` compares them.
+      #
+      # The Groups header also composes theme components and is recipe-owned.
+      # The three VIEW MODES the ticket detail's body renders into (BB-414 D4,
+      # AMENDED — see the split below). They are here for the reason the page
+      # layout above is: the ids start with `core.`, so enabling `bb_core`
+      # never creates them — the recipe path reads only `bb_core.*` out of the
+      # module's storage. Without these lines they exist on the CIM path and are
+      # simply absent after `ddev init`, with nothing erroring.
+      #
+      # `full` and `teaser` are stock mode NAMES, but neither is REGISTERED for a
+      # code-defined custom entity type, so all three definition objects are
+      # genuinely new (BB-414 F1).
+      #
+      # THE THREE DISPLAYS THAT USED TO BE LISTED HERE ARE NOT ANY MORE. D4 put
+      # all six in `bb_core/config/optional`; that half of it is REVISED. The
+      # displays now ship in this recipe's own `config/` —
+      # `recipes/bakers/config/core.entity_view_display.*.yml` — and the reason is
+      # a hazard rather than a preference:
+      #
+      #   A `core.entity_view_display.*` may not ship from a module that does
+      #   not depend on `display_builder`. On the PLAIN module-install path that
+      #   every Kernel and Functional test takes, `ConfigInstaller` sweeps
+      #   `config/optional` and saves a display whose
+      #   `third_party_settings.display_builder` schema no enabled module
+      #   provides: `SchemaIncompleteException`, which is what broke four
+      #   `bb_login` functional tests. `recipes/bb_seed/recipe.yml`
+      #   documents the same hazard from the days when bb_dashboard's displays
+      #   hit it.
+      #
+      # THE REASON GIVEN HERE UNTIL BB-413 WAS WRONG, and it is named rather
+      # than quietly replaced because it cost that ticket an investigation. It
+      # claimed `RecipeRunner::installModule()` calls
+      # `ConfigInstaller::installOptionalConfig()`, so that anything in
+      # `bb_core/config/optional` is created at MODULE-INSTALL time, before
+      # this `config:` block runs. IT DOES NOT. Both optional sweeps in
+      # `installDefaultConfig()` are gated on `!isSyncing()`
+      # (`ConfigInstaller.php:187` and `:203`) and `installModule()` sets syncing
+      # TRUE (`RecipeRunner.php:266`), so on the recipe path a module's
+      # `config/optional` is never swept. Worse for the old story:
+      # `createConfiguration()` skips EVERY config entity while syncing
+      # (`ConfigInstaller.php:402-411`), so a module install on the recipe path
+      # creates no config entity at all — simple config only.
+      #
+      # WHAT ACTUALLY ORDERS THINGS: this recipe creates its whole config set in
+      # ONE call. `RecipeRunner::processConfiguration()` hands the recipe's own
+      # `config/**` AND every name under `config: import:` to
+      # `RecipeConfigInstaller::installRecipeConfig()`, which sorts the lot with
+      # `ConfigDependencyManager::sortAll()` — graph weight, then alphabetically.
+      # There is NO phase boundary inside it, so "created earlier" is only ever
+      # guaranteed by a declared dependency edge.
+      #
+      # THE MODES DO NOT MOVE WITH THEM, for two reasons rather than the three
+      # that used to be given. (1) A view mode carries no
+      # `third_party_settings.display_builder`, so saving one generates no sample
+      # entity — a mode is not part of the problem and moving it would buy
+      # nothing. (2) A mode is harmless on the plain module-install path, where a
+      # DISPLAY is not, per the `SchemaIncompleteException` above. The deleted
+      # third reason claimed the modes are created at module-install time and
+      # therefore "strictly BEFORE" the displays, by PHASE ORDER "rather than by
+      # a dependency edge inside one graph sort". Both halves are false: they are
+      # created in the SAME batch as the displays, and what puts them first is
+      # exactly a dependency edge inside that one sort — each display's own
+      # `dependencies.config: [core.entity_view_mode.…]`.
+      #
+      # SHIPPING IN THE RECIPE'S OWN `config/` IS THE SAME STRICT LIST, not an
+      # escape from it — `ConfigConfigurator` compares every name in the recipe's
+      # storage against ACTIVE config on every construction, ignoring only
+      # `uuid`, `_core` and an empty `dependencies`. So the files there are still
+      # the SAVED form, and for these three displays that is not a formality:
+      # `EntityDisplayBase::preSave()` → `init()` materialises a `content` and a
+      # `hidden` map from the entity's field definitions on the FIRST save, so an
+      # authored file that states `content: {}` and `hidden: {}` never equals
+      # active config. The maps are inert at render time —
+      # `EntityViewDisplayTrait::buildMultiple()` clears the parent build and
+      # renders only the display_builder sources — so shipping them costs the
+      # screen nothing and buys stability.
+      #
+      # THE STANDING COST, named so it is not rediscovered as drift: `content`
+      # and `hidden` enumerate the entity's fields. Adding a base field to
+      # bb_ticket, bb_run or bb_comment changes the saved form and
+      # re-breaks the second `ddev init` with "exists already and does not match
+      # the recipe's configuration". The fix is the same one the migration group
+      # below documents — re-export the saved form into BOTH copies
+      # (`recipes/bakers/config/` and `config/sync/`).
+      #
+      # AND IT IS NOT ONLY OUR BASE FIELDS. `init()` materialises EXTRA fields
+      # too, so a contrib module this recipe newly enables can move all three
+      # saved forms at once with no change to any entity of ours. Measured on
+      # BB-413: `search_api`'s `hook_entity_extra_field_info()` adds a
+      # `search_api_excerpt` display component to every content entity bundle
+      # with `visible: FALSE`, so enabling `search_api` for the ticket index put
+      # `hidden: {search_api_excerpt: true}` into all three displays. That is the
+      # SECOND error that ticket had to fix, and `ConfigCopyDriftTest` now
+      # compares the two copies of all three so the next one is caught by a
+      # Unit test rather than by the second `ddev init`.
+      #
+      # `config/sync/` is UNCHANGED by all of this and still holds all six
+      # objects, each with its `uuid`: that is the CIM path, where a name missing
+      # from the sync store is deleted on import.
+      #
+      # THE SAMPLE-ENTITY EDGE IS NOW DECLARED, and the warning that stood here
+      # was collected on. It said: the order inside the recipe's one config batch
+      # is whatever `ConfigDependencyManager::sortAll()` produces; the displays
+      # declare no edge to `bb_core.bb_vocabulary.bb_labels` — they cannot,
+      # because the vocabulary is a dependency of the SAMPLE entity ui_patterns
+      # builds while saving them, not of the displays; measured over the then
+      # 54-name storage the vocabulary landed at 11 and the display at 16, so it
+      # was a MEASUREMENT and not an invariant, and if a `ddev init` ever aborted
+      # with "Missing entity bundle" for `bb_labels`, `dependencies.enforced`
+      # was the lever.
+      #
+      # It aborted on BB-413, on the FIRST application, because that ticket
+      # added three names to this storage (the two `search_api.*` below and
+      # `views.view.tickets`) and the adjacency moved:
+      # `core.entity_view_display.bb_run.bb_run.teaser` sorted to 3 and the
+      # vocabulary to 6. All three displays therefore now carry
+      #
+      #   dependencies:
+      #     enforced:
+      #       config:
+      #         - bb_core.bb_vocabulary.bb_labels
+      #
+      # in BOTH copies, which turns the adjacency into an invariant — `enforced`
+      # survives `calculateDependencies()` (`ConfigEntityBase.php:385`) and
+      # `ConfigEntityDependency` merges it into the graph
+      # (`ConfigEntityDependency.php:38-42`). All four need it, not just the
+      # ticket display: `bb_run`, `bb_comment` and `bb_activity` each
+      # carry a `ticket_id` reference, so their samples reach
+      # `bb_ticket.labels` one hop later.
+      # `bb_core.bb_vocabulary.bb_capability_tags` is deliberately NOT
+      # enforced — no base field anywhere sets it as a `target_bundles`, so the
+      # generator never asks for it. `RecipeConfigInstallOrderTest` pins both the
+      # order and the edge.
+      - core.entity_view_mode.bb_ticket.full
+      - core.entity_view_mode.bb_run.teaser
+      - core.entity_view_mode.bb_run.full
+      - core.entity_view_mode.bb_run.overlay
+      - core.entity_view_mode.bb_comment.full
+      - core.entity_view_mode.bb_comment.teaser
+      - core.entity_view_mode.bb_team.full
+      # The group detail's Overview body (BB-587); its display ships in
+      # `recipes/bakers/config/`, so it needs no entry here.
+      - core.entity_view_mode.bb_group.full
+      # The conductor detail's Overview body (BB-619); its display ships in
+      # `recipes/bakers/config/`, so it needs no entry here.
+      - core.entity_view_mode.bb_conductor.full
+      # The machine detail's Overview body (BB-619); its display ships in
+      # `recipes/bakers/config/`, so it needs no entry here.
+      - core.entity_view_mode.bb_machine.full
+      # The project detail's Overview body (BB-628); its display ships in
+      # `recipes/bakers/config/`, so it needs no entry here.
+      - core.entity_view_mode.bb_project.full
+      - core.entity_view_mode.bb_project.epics
+      # The ticket list (BB-413 D11). Three objects, and the count is
+      # measured rather than planned: the plan listed eleven, expecting a
+      # `facets.facet.*` and a `facets.facet_source.*` per facet, and a Facets 3
+      # exposed filter creates NO config entity at all — after building all
+      # seven in the Views UI, `facets_facet` and `facets_facet_source` storage
+      # are both empty. A facet lives entirely inside the view, as a
+      # `views.filter.facets_filter` handler with its `facet:` mapping and its
+      # BEF widget settings.
+      #
+      # All three are outside the `bb_core.` prefix, so enabling the module
+      # never creates any of them on the recipe path — the same rule the page
+      # layout and the rail menu above are here for.
+      #
+      # THE SERVER AND THE INDEX ARE CONTRIB-OWNED SCHEMA, which is the standing
+      # cost R3 names: a search_api release that adds a mapping key re-breaks
+      # `ddev init` with no change of ours, because a name on this list is
+      # compared file-against-active on every construction. The fix is always to
+      # re-export the saved form, never to hand-edit the file into agreement.
+      - search_api.server.bb_db
+      - search_api.index.bb_tickets
+      # `views.view.tickets` USED TO BE NAMED HERE AND IS NOT ANY MORE
+      # (BB-315). Like `views.view.projects` above it moved into this recipe's
+      # own `config/` directory — the SAME strict list, so it needs no entry here
+      # — with a twin in `config/sync/` for the CIM path.
+      #
+      # WHY THE MOVE BECAME NECESSARY, and it is the projects rule catching up
+      # with tickets rather than a new one. `page_1` carries a `display_builder`
+      # sources tree (the `/{workspace}/tickets/all` canvas), whose schema
+      # `views.display_extender.display_builder` is provided by
+      # `display_builder_views`, a module `bb_core` does not and must not depend
+      # on. The file survived in `bb_core/config/optional` only by the ACCIDENT
+      # named in the projects block above: it declared `search_api`, so
+      # `ConfigInstaller`'s unconditional optional sweep skipped it wherever
+      # search_api was absent. BB-315 INSTALLED search_api — the accident is
+      # gone, the sweep now reaches it, and the drift it opened against
+      # `config/sync` is exactly what forced the move.
+      #
+      # The view still carries the eight facets (incl. the relation-derived
+      # project team field), the BEF widget settings, core's own `table` style and
+      # the nine field handlers. Four native page displays own distinct paths:
+      # `my_work` at `/{workspace}/tickets`, `page_1` at `/{workspace}/tickets/all`,
+      # `project_tickets` / `team_tickets` at their contextual Tickets tabs — keep
+      # them distinct: Views silently retains an existing route when two page
+      # displays compete for one URL. `bb_core\Unit\ConfigCopyDriftTest` compares
+      # the two homes.
+      # `core.entity_view_mode.bb_team.full` AND
+      # `core.entity_view_display.bb_team.bb_team.full` NOW SHIP (BB-484),
+      # REVERSING WHAT THIS COMMENT USED TO SAY. BB-396 D10 first named them
+      # beside the page layout above; two measurements then showed the display
+      # could not be a strict-list entry and the mapping's design surface could
+      # not be expressed as a plain view display, so both the entries and their
+      # `designbook:sync-to` generators were deleted, and this comment recorded
+      # that as a standing "do not re-add" warning. BB-484 solved both
+      # obstacles rather than leaving them standing, and the mode is listed
+      # under `config: import:` above (`core.entity_view_mode.bb_team.full`);
+      # the display is NOT listed here for the reason every other display on
+      # this file follows — it ships from `recipes/bakers/config/` instead, the
+      # SAME strict list, so a `config: import:` entry would be a second route
+      # to one file.
+      #
+      # R1, THE INSTALL-ORDER DEFECT, FIXED WITHOUT REMOVING THE HAZARD:
+      # `og_group` is the only field on `bb_team` with
+      # `isDisplayConfigurable('view')` TRUE, so `EntityDisplayBase::init()`
+      # injects a component for it and `calculateDependencies()` adds the
+      # `og_group_subscribe` formatter's provider — but ONLY where bb_team is
+      # already registered as an OG group, which this recipe's `og.settings`
+      # action below does not do until AFTER `config:` runs. Left alone that
+      # makes the display's calculated `dependencies.module` a function of
+      # install order: `["bb_core"]` on the recipe path,
+      # `["bb_core", "og"]` on the CIM path, and whichever the file states,
+      # the other world's strict-list comparison mismatches and aborts the
+      # WHOLE recipe — exactly what BB-396 measured (`ddev init
+      # --provider recipe-test` exit 4, "exists already and does not match the
+      # recipe's configuration", strict-list scan `1 MISMATCH`). The fix,
+      # measured rather than reasoned about a second time: the display states
+      #
+      #   dependencies:
+      #     enforced:
+      #       module:
+      #         - og
+      #
+      # (`recipes/bakers/config/core.entity_view_display.bb_team.bb_team.full.yml`,
+      # mirrored in `config/sync/`). An enforced dependency is ADDED to the
+      # calculated set rather than replacing it (`ConfigEntityBase.php:385`),
+      # so both paths save `module: ["bb_core", "og"]` regardless of when
+      # `og_group` becomes registered, and the strict-list scan now reports
+      # 0 mismatches on this key.
+      #
+      # R2, THE DESIGN-SURFACE DEFECT, FIXED BY PINNING `hidden` RATHER THAN
+      # RELYING ON AUTO-DISCOVERY: the entity mapping names a DESIGN surface —
+      # `zone`, `option_list`, `option_picker` — that a display's own field
+      # formatters cannot carry, because `og_group` is the only
+      # view-configurable field on the entity and every other BbTeam base
+      # field configures the `'form'` side only. BB-484's sync generator
+      # solves this the way `bb_ticket.full` and `bb_run.teaser` already
+      # do: the `display_builder` third-party settings carry the zone/picker/
+      # list components as SOURCES, and the display's own `content: {  }` /
+      # `hidden: {og_group: true, projects: true, search_api_excerpt: true}`
+      # pin every base field OUT of the plain field-rendering path so
+      # display_builder owns the rendering instead. Check B7 of
+      # `tests/contract/data-display-components.sh` — a mapping and
+      # its generator must name the same component — is what confirms the two
+      # now agree; it used to fail for exactly this pair and is why the
+      # generator was deleted rather than shipped half-built.
+      #
+      # THE STANDING HAZARD THIS DOES NOT REMOVE (still R2, forward-looking):
+      # `EntityDisplayBase::preSave()` → `init()` MATERIALISES `content` and
+      # `hidden` from the entity's field definitions on every first save. Any
+      # field `bb_team` gains after this revision — a base field of ours, or
+      # an extra field a newly-enabled contrib module adds via
+      # `hook_entity_extra_field_info()` — lands in neither map on the file as
+      # written, and the NEXT `ddev init` recomputes both maps freshly and
+      # diverges from what is checked in, aborting the recipe the same way
+      # search_api's `search_api_excerpt` once did to three other displays.
+      # There is no fix that survives a future field; there is only the
+      # re-export discipline `bb_core\Unit\ConfigCopyDriftTest` enforces —
+      # `core.entity_view_display.bb_team.bb_team.full` is on its
+      # `RECIPE_COPY_CONFIG_NAMES`, so the two copies drifting apart fails a
+      # unit test before it fails `ddev init`.
+      #
+      # WHAT RENDERS THE MODE: core's own canonical route, and nothing of ours.
+      # `DefaultHtmlRouteProvider::getCanonicalRoute()` already puts
+      # `_entity_view: bb_team.full` on `entity.bb_team.canonical`, and
+      # Overview is the default local task — which IS the base route — so the
+      # shipped display is what `/{ws}/team/{id}` draws with no code in
+      # between.
+      #
+      # It went through one intermediate shape worth recording, because that
+      # shape is the thing not to rebuild: `BbTeamRouteProvider` unset
+      # `_entity_view` and put a `BbTeamTabController::overview()` in its
+      # place, whose whole body called the `bb_team` view builder for the
+      # `full` mode — reimplementing by hand the default it had just removed,
+      # to keep a `data-bakers-tab-body` container the browser scenario asserted
+      # on. Review reversed it: the container was the only delta, and
+      # `WORKFLOW.md` does not allow a custom controller to stand in for a
+      # standard view mode. The scenario now addresses the display's own
+      # top-level `zone` component, and asserts the hull's ABSENCE as well.
+      #
+      # `BbTeamRouteProvider` still overrides the canonical route for ONE
+      # thing, and it is not the body: the title. `EntityController::title()`
+      # takes the FIRST entity parameter on the route, and this path carries
+      # two — `{bb_workspace}` is upcast to a real entity and comes before
+      # `{bb_team}` — so core's callback would title every team page with the
+      # workspace's name. `_entity_view` is unaffected: `EntityRouteEnhancer`
+      # resolves the body's subject from the view-mode key, not by position.
+    # RETIRED (BB-389), DELETED (BB-396) — the `bb_dashboard:` import
+    # block and the module behind it.
+    #
+    # It named four Views (`views.view.bb_tickets`, `views.view.bb_runs`,
+    # `views.view.active_tickets`, `views.view.bb_conductors`), imported by
+    # name because `config/install` is not applied reliably at recipe-install
+    # time: the module could enable before better_exposed_filters and
+    # views_autocomplete_filters, leaving the Views' module deps unmet, and such
+    # config is silently skipped.
+    #
+    # BB-389 dropped the block because the module left the installed set, and
+    # `config.import` is keyed on the PROVIDER module: naming an extension that
+    # is not installed aborts the recipe rather than degrading. BB-396 then
+    # deleted the module, having first moved out everything that was not
+    # presentation — the computed entity fields, the Views integration (now
+    # declared by each entity's own `views_data` handler), and the
+    # `access bakers dashboard` permission five OG roles still grant. The four
+    # Views survive only as test fixtures under `bb_core/tests/fixtures/views`.
+    #
+    # The failure mode kept on record: `config.import` names a config by NAME
+    # and aborts the entire recipe when the named file does not exist, so a
+    # leftover entry here breaks `ddev init --provider recipe[-test]` outright
+    # instead of degrading quietly. The same is true of the bb_seed recipe,
+    # which imported this module's view modes and displays and lost its block for
+    # the same reason.
+
+    # The activity row view mode; its display ships in `recipes/bakers/config/`.
+    bb_activity:
+      - core.entity_view_mode.bb_activity.full
+    bb_api_key:
+      # The team "Reporter" rank: lets a team member — human or a
+      # workspace service account — create tickets in that team's projects,
+      # without the workspace administration a Contributor/Lead carries.
+      # Shipped by bb_api_key, not bb_core, because the service-account
+      # feature that needs it lives there; `config.import` is keyed on the
+      # providing module for the same abort-not-degrade reason noted above.
+      - og.og_role.bb_team-bb_team-reporter
+  actions:
+    # A human signing the CLI in through the browser (BB-494,
+    # `authorization_code` + PKCE) hits `simple_oauth`'s own consent screen at
+    # `/oauth/authorize`, gated on the SIGNED-IN ACCOUNT holding this
+    # permission — not on the `bakers-cli` consumer or the `bb_session` scope,
+    # neither of which this gates. Without it the flow 403s with "The 'grant
+    # simple_oauth codes' permission is required," however correctly the
+    # consumer and scope are configured, because that check runs before either
+    # is consulted. Every signed-in human is a legitimate CLI sign-in
+    # candidate, so it belongs on `authenticated` rather than a narrower role
+    # — granting it widens no OTHER surface, since it gates only this one
+    # consent screen. A `grantPermissions` action, not a `config: import:` of
+    # `user.role.authenticated` itself: that file is core's own default
+    # (empty permissions) and a strict-list copy of it would fight core's
+    # future permission additions the way `user.settings` and `user.mail`
+    # already avoid below.
+    #
+    # `change own username`: the onboarding wizard asks every account for a
+    # nickname, so the account edit form has to let it be changed again. Core
+    # hides `name` from an account without this permission.
+    user.role.authenticated:
+      grantPermissions:
+        - 'grant simple_oauth codes'
+        - 'change own username'
+        # Core's file access grants `view` of a PUBLIC file only with this
+        # permission, and an image field validates `view` of a newly
+        # referenced file on Save — without it a profile picture upload is
+        # refused. `config/sync/user.role.authenticated.yml` grants it too.
+        - 'access content'
+    # The account overview on `/user/{user}` renders `user.user.full`, which
+    # Drupal only uses while the `full` mode is enabled. The `user` module
+    # creates the mode disabled from its own config/install at site install,
+    # so a recipe copy with `status: true` would differ from active config on
+    # the strict list and abort the recipe. An `enable` action is idempotent.
+    core.entity_view_mode.user.full:
+      enable: []
+    # Register bb_workspace (BB-316 D2) and bb_team (BB-321 D2) as OG
+    # groups. A settings action rather than a recipe config/ file, because
+    # og.settings is OG's own config and a duplicate would collide with the
+    # module's config/install. OG creates roles only on the imperative
+    # addGroup() path, which is never taken — so the roles are exactly the
+    # nine imported above (5 workspace: non-member/member/contributor/
+    # lead/guest — BB-462 D1/D2; 4 team: non-member/member/lead/owner —
+    # BB-456 D9, BB-462 D3).
+    #
+    # bb_project is deliberately ABSENT (BB-462 D7): a project carries no
+    # roles and no membership of its own any more — visibility comes from
+    # `bb_project.teams` instead, and its three OG roles are deleted, not
+    # shipped, from both config paths and this recipe's strict import list.
+    #
+    # simpleConfigUpdate sets the WHOLE `groups` key, so every entity type has
+    # to be listed here: omitting one would unregister it.
+    og.settings:
+      simpleConfigUpdate:
+        groups:
+          bb_workspace:
+            - bb_workspace
+          bb_team:
+            - bb_team
+    # JSON:API writes for conductor write-back (POST /jsonapi/…).
+    # Without it: HTTP 405 "configured to accept only read operations". Every
+    # bakers.build instance needs this (product-neutral) — it used to be applied only by
+    # bakers-e2e-prepare.
+    jsonapi.settings:
+      simpleConfigUpdate:
+        read_only: false
+    # Default front page. Two literals have stood here before this one and both
+    # failed for the same structural reason: they named a place instead of
+    # naming a question. `/bakers/dashboard` (BB-350 D8) was the default
+    # workspace's dashboard, which BB-396 deleted, leaving the site root a
+    # 404. `/user` replaced it because it is a core route that cannot rot — but
+    # a control plane's front page that lands the operator on their own profile
+    # is a page that works and answers nothing.
+    #
+    # `/home` IS THIS PRODUCT'S OWN ROUTE, `bb_core.home` (BB-415 D1/D2),
+    # and it is the only literal that can be the front page of a MULTI-TENANT
+    # control plane. Every alternative names one tenant: `/bakers/tickets` is the
+    # My work list of the workspace slugged `bakers`, which is the wrong answer
+    # for everybody who is not in it, and it stops being an answer at all the
+    # moment a second workspace exists. `/home` carries no workspace; the
+    # controller behind it resolves the operator's read scope and either
+    # redirects into their own `/{slug}/tickets` — an address that NAMES the
+    # workspace and is bookmarkable — or renders the chooser when no single
+    # answer exists.
+    #
+    # WHY IT CANNOT BE SHADOWED, which is the property `/user` had for free and
+    # this literal has to earn. `home` is on
+    # BbWorkspaceSlugConstraint::RESERVED and ReservedSlugCoverageTest builds
+    # the live route collection to keep it there. Without the reservation a
+    # workspace could claim the segment, BbWorkspacePathProcessor would
+    # rewrite `/` into `/_workspace/home`, that matches no route, and the site
+    # root would 404 with nothing in the log naming the cause.
+    #
+    # 403 handling is unchanged and still carries the anonymous case: the route
+    # requires `_user_is_logged_in`, so anonymous gets a 403, r4032login turns
+    # it into `/user/login?destination=/home`, and after signing in the operator
+    # arrives at the same place `/` would have taken them. Authenticated 403s
+    # stay the plain core 403, so page.403 is intentionally NOT set here.
+    system.site:
+      simpleConfigUpdate:
+        page.front: /home
+        # Mails greet and sign as [site:name]; the install default was
+        # `Drush Site-Install`.
+        name: bakers.build
+    # The product front end is bb_theme (BB-350). The theme is installed
+    # above but was never made the default, so a recipe world booted on `stark`
+    # while config/sync said `bb_theme` — a drift BbThemeNegotiator used to
+    # hide by forcing the theme on four route names by hand. The negotiator is
+    # deleted, so the default theme is now the only mechanism and both install
+    # paths have to state the same one. ShippedConfigDriftTest compares them.
+    system.theme:
+      simpleConfigUpdate:
+        default: bb_theme
+    # Every outgoing mail goes through the shared HTML envelope with a
+    # plain-text alternative. Only the backend is set; `mailer_dsn` stays the
+    # operator's. config/sync/system.mail.yml and settings.komodo.php select
+    # the same plugin, which ShippedConfigDriftTest pins.
+    system.mail:
+      simpleConfigUpdate:
+        interface.default: bb_html_mail
+    # All nine account templates, rewritten for a passwordless product: core's
+    # stock text told recipients to set or enter a password no form will ever
+    # ask for (BB-430 D3, BB-586).
+    #
+    # Each body is a `# ` headline, one warm sentence and at most one
+    # `Label: <url>` button line; no password, no username and no product name
+    # in the body (the subject carries it). Core's tokens and mechanisms stay
+    # where they were — `[user:one-time-login-url]` IS the magic link — so only
+    # the words change.
+    #
+    # `[user:display-name]` is dropped everywhere. For a passwordless account the
+    # display name is the username DERIVED from the address (D2), so greeting
+    # somebody by a name a machine invented for them reads worse than not
+    # greeting them at all. ShippedConfigDriftTest pins both paths to the same
+    # words and fails when any shipped body asks for a password again.
+    #
+    # A settings action rather than `config: import:`, for the same reason
+    # `user.settings` is one: `user.mail` is core-owned, and a name on the
+    # recipe's strict list is compared file-against-active on every
+    # construction, so the next core release that adds a mapping key would
+    # abort `ddev init` with no change of ours.
+    user.mail:
+      simpleConfigUpdate:
+        password_reset:
+          subject: 'Sign in to [site:name]'
+          body: |-
+            # Welcome back
+
+            Good to see you again. One click and you're back in, no password needed.
+
+            Sign in: [user:one-time-login-url]
+
+            Or enter this code on the sign-in page instead. The link works once within a day, the code for 15 minutes.
+
+            [bakers:login-code]
+        register_no_approval_required:
+          subject: 'Welcome to [site:name]'
+          body: |-
+            # Great to have you
+
+            We're excited to have you on board. One click and you're in, no password needed.
+
+            Create account: [bakers:login-url]
+
+            Or enter this code on the sign-in page instead. The link works once within a day, the code for 15 minutes.
+
+            [bakers:login-code]
+        register_admin_created:
+          subject: 'Your [site:name] account is ready'
+          body: |-
+            # Your account is ready
+
+            An administrator set everything up for you. Welcome aboard!
+
+            Sign in: [user:one-time-login-url]
+
+            The link works once within a day.
+        status_activated:
+          subject: 'Your [site:name] account is active'
+          body: |-
+            # You're all set
+
+            Your account is active, and we're happy to have you with us!
+
+            Sign in: [user:one-time-login-url]
+
+            The link works once within a day.
+        register_pending_approval:
+          subject: 'Your [site:name] account is waiting for approval'
+          body: |-
+            # Almost there
+
+            Thanks for signing up, we can't wait to have you on board. An administrator still has to approve your account, and we'll e-mail you as soon as it's ready.
+        cancel_confirm:
+          subject: 'Confirm canceling your [site:name] account'
+          body: |-
+            # Sorry to see you go
+
+            We're sad to see you leave. Confirm below and your account will be canceled. This can't be undone.
+
+            Cancel account: [user:cancel-url]
+
+            Changed your mind? Simply ignore this e-mail. The link expires in one day.
+        status_blocked:
+          subject: 'Your [site:name] account has been blocked'
+          body: |-
+            # Your account is blocked
+
+            We're sorry for the trouble. If you think this is a mistake, please get in touch and we'll sort it out together.
+        status_canceled:
+          subject: 'Your [site:name] account has been canceled'
+          body: |-
+            # Goodbye for now
+
+            Your account is canceled. Thank you for the time you spent with us. You're always welcome back.
+        register_pending_approval_admin:
+          subject: 'New [site:name] account waiting for approval'
+          body: |-
+            # Someone wants to join
+
+            Good news: [user:mail] signed up and is waiting for your approval.
+
+            Review account: [user:edit-url]
+    # Public registration is OFF (BB-430 r8). There is one door — the
+    # passwordless login form on `user.login` — and an unknown address is signed
+    # up implicitly through it (`EmailLogin` creates the account programmatically
+    # and does NOT consult this setting). So `/user/register` is not a public
+    # surface: `register: admin_only` makes it a plain 403 for anonymous
+    # visitors, and that is now the honest value rather than the contradiction
+    # r1's D2 called it — there is no public register form for `visitors` to
+    # open.
+    #
+    # SET EXPLICITLY ON THE RECIPE PATH because core's default is `visitors`:
+    # without this action the recipe world would run open registration. Both
+    # install paths therefore agree on `admin_only` (config/sync carries it too).
+    #
+    # `verify_mail` stays `true` and is deliberately NOT restated here: it is
+    # what makes core omit a password field from every account form, and it is
+    # already `true` on both paths.
+    #
+    # A settings action rather than `config: import:` — `user.settings` is
+    # core-owned, and a name on the recipe's strict list is compared
+    # file-against-active on every construction, so the next core release that
+    # adds a mapping key would abort `ddev init` with no change of ours.
+    user.settings:
+      simpleConfigUpdate:
+        register: admin_only
+    # r4032login: redirect anonymous 403s to the login form, preserving the
+    # destination; leave authenticated 403s and API routes untouched. Uses a
+    # settings action (not a full config/ file) to avoid colliding with the
+    # module's own config/install default at recipe-install time.
+    r4032login.settings:
+      simpleConfigUpdate:
+        user_login_path: /user/login
+        default_redirect_code: 302
+        redirect_to_destination: true
+        redirect_authenticated_users_to: ''
+        display_denied_message: false
+        match_noredirect_pages: "/jsonapi\n/jsonapi/*\n/oauth/*"

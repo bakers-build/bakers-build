@@ -1,0 +1,18 @@
+{# Entity operations (the `operations` element) as the row's action menu.
+   Each link keeps its URL with query and its own attributes, so an operation
+   wired to a dialog (htmx or core's use-ajax) still opens there. The trigger
+   takes the row's name from the element's aria-label when one is set. #}
+{% set items = [] %}
+{% for item in links %}
+  {% if item.link['#url'] is defined %}
+    {% set url = item.link['#url'] %}
+    {% set items = items|merge([{
+      label: item.link['#title'] ~ '',
+      url: url.toString(),
+      attributes: url.getOption('attributes')|default({}),
+    }]) %}
+  {% endif %}
+{% endfor %}
+{% if items %}
+  {{ include('bb_theme:action_menu', { label: attributes['aria-label'] ? attributes['aria-label'] ~ '' : 'Actions'|t, items: items }, with_context = false) }}
+{% endif %}

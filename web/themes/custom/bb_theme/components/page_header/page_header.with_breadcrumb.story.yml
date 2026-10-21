@@ -1,0 +1,15 @@
+component: bb_theme:page_header
+name: With breadcrumb
+props:
+  title: 'Run #3'
+slots:
+  breadcrumb:
+    - type: component
+      component: bb_theme:breadcrumb
+      props:
+        items:
+          - label: Workspace
+            url: /workspace
+          - label: Ticket
+            url: /ticket
+          - label: 'Run #3'

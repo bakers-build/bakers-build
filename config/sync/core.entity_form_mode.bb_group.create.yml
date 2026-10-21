@@ -1,0 +1,11 @@
+uuid: 8e58157d-d9a5-5139-915a-0bcc2cbb1cb6
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_group.create
+label: 'Create dialog'
+description: null
+targetEntityType: bb_group
+cache: true

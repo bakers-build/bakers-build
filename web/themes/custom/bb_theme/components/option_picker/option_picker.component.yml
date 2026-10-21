@@ -1,0 +1,214 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Option Picker
+status: stable
+group: Action
+description: >-
+  A trigger plus an option_list popover, in three variants over ONE component.
+  facet is a labeled, full-width list filter. field is the PROPERTY PILL of an
+  add or edit surface — a small rounded chip of icon plus text in the
+  property_row beneath the text lines — which carries hidden inputs and writes
+  when the form does; inline makes the displayed value itself the trigger and
+  writes on pick, because for a reversible field the pick IS the write. They are
+  one component deliberately: the dialog pattern and the inline pattern have to
+  be one agreed pattern rather than two that happen to look alike. The pill
+  renders BOTH the field name and the value once one is set — "Conductor ·
+  cw-framework" — and the field name alone when nothing is: it used to swap one
+  string for the other, and a bare value cannot be told apart from the field's
+  own name, so a pill reading "backend, ui" could as easily have been a field
+  called that. The inline variant does not repeat the field name, because it
+  sits in a labelled meta_row and the same word twice on one line reads as two
+  fields. SEVERAL selected values render as the first value plus a +N count,
+  which is what fits a 28px pill without wrapping the row it sits in; the panel
+  is left to option_list, which already owns multi-select properly, so nothing
+  of it is duplicated here. An OVER-LONG value is bounded and truncated so one
+  long term cannot stretch a pill row off the surface, and its full text stays
+  reachable in the title attribute and in the state-carrying aria-label, while
+  the panel may grow with its content up to a ceiling so a long term is legible
+  where it is actually chosen. Each of those three is a second-iteration change
+  (C17, C18, C19), made after the human read the rendered screens; this is the
+  one pre-existing component the no-modification boundary was lifted for. The
+  control carries a state-carrying aria-label in both variants, because the
+  surface has no visible labels and the accessible name is therefore the only
+  name the control has. role=combobox plus aria-haspopup=listbox say what the
+  pill is; the focus management and aria-activedescendant that a combobox owes
+  its user belong to the ticket that makes these dialogs interactive (spec D14).
+  Clearing is NOT here — it is the first row of the option_list in the panel.
+  searchable renders a search input at the top of the panel and the handler
+  really filters the rows that are rendered; where the candidates come from is
+  still a boundary, and belongs to whichever ticket gives that field real
+  candidates. The open state is aria-expanded on the trigger plus hidden on the
+  panel, both rendered from the open prop, so the states are readable with
+  JavaScript disabled. Which fields may be inline-edited at all is decided in
+  designbook/design-system/action-pattern.md.
+provider: bb_theme
+libraryOverrides:
+  dependencies:
+    - core/drupal
+    - core/once
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Field name
+      description: >-
+        The field's own name. Shown ON the pill both when nothing is set and
+        beside the value when something is, and used to derive the accessible
+        name when aria_label is not given — so a pill can never be read as a
+        value nor come out nameless. The inline variant omits it visibly,
+        because its row already carries it.
+    value_label:
+      type: string
+      title: Current value label
+      description: >-
+        The displayed value, for a field that holds ONE. Rendered beside the
+        field name on a pill, and it IS the trigger on the inline variant. For
+        several values use value_labels instead — a pre-joined string still
+        renders, as one long value with no count.
+    value_labels:
+      type: array
+      title: Current value labels
+      description: >-
+        The selected values as a list, which is what a multi-value field passes.
+        Rendered as the first value plus a `+N` count, so the pill states how
+        many are set instead of hiding it: `multiple` used to be visible only as
+        the `[]` on a submitted input name. The full list still reaches the
+        operator through the title attribute and the accessible name.
+      items:
+        type: string
+    aria_label:
+      type: string
+      title: Accessible name
+      description: >-
+        The state-carrying accessible name, in the form "Change conductor.
+        Currently no conductor is set." Rendered for both variants, because with
+        no visible label this is the only name the control has. Derived from
+        label and value_label when omitted, so it is never empty.
+    icon:
+      type: string
+      title: Leading icon
+      description: >-
+        Sprite symbol drawn before the text. A pill is icon plus text; the icon
+        is what makes a row of pills scannable at a glance.
+    prominent:
+      type: boolean
+      title: Prominent
+      description: >-
+        Render this pill visually heavier, for a property that is not a peer of
+        the others in its row. Use it for at most one pill — on the create
+        dialog that is workflow, which decides the ticket's whole state flow and
+        cannot be changed cheaply afterwards. Ignored by the inline variant.
+    open:
+      type: boolean
+      title: Panel open
+      description: >-
+        Drives aria-expanded on the trigger and hidden on the panel. The
+        disclosure handler flips the same two attributes at runtime.
+    multiple:
+      type: boolean
+      title: Multiple
+      description: >-
+        The field holds several values at once. Two things follow, and until the
+        second iteration only the first existed: the hidden inputs submit under
+        `name[]` rather than `name`, AND the trigger renders the selection as
+        the first of value_labels plus a `+N` count instead of pretending there
+        is one value. The panel's side of multi-select belongs to option_list
+        (aria-multiselectable, a marker box per row) and is deliberately not
+        duplicated here.
+    searchable:
+      type: boolean
+      title: Searchable
+      description: >-
+        Render a search input at the top of the panel. The disclosure handler
+        filters the rendered rows on input, hiding non-matching ones with the
+        hidden attribute. It does not FETCH candidates — that half is still a
+        boundary.
+    selected_chips:
+      type: boolean
+      title: Selected chips
+      description: >-
+        Opt-in. Render each selected value as its own removable chip beside the
+        trigger, identified by value rather than by label index, so two accounts
+        that share a display name can be removed independently. Other pickers
+        keep the first-value-plus-count trigger. A chip's remove control is a
+        type=button and does not submit the enclosing form.
+    selected:
+      type: array
+      title: Selected identities
+      description: >-
+        The currently selected values as `{value, label}` rows. Used when
+        selected_chips is on so a removal names the account it will drop.
+      items:
+        type: object
+        properties:
+          value:
+            type: string
+          label:
+            type: string
+    search_url:
+      type: string
+      title: Server search URL
+      description: >-
+        With searchable set, the search box fetches option_list rows for the
+        typed text from this URL (as the `q` parameter) and swaps them into the
+        panel instead of filtering the rendered rows, so candidates beyond the
+        first rendered page are found. Unset keeps the local filter.
+    search_label:
+      type: string
+      description: >-
+        Accessible name of the search box. Defaults to the placeholder, because
+        a placeholder is not a reliable accessible name on its own and this
+        control must have one.
+      title: Search field accessible name
+    search_placeholder:
+      type: string
+      title: Search placeholder
+    name:
+      type: string
+      title: Field name
+      description: The name the hidden inputs of the field variant submit under.
+    values:
+      type: array
+      title: Selected values
+      description: >-
+        The values the field variant submits as hidden inputs. The inline
+        variant emits none, because the pick is the write.
+      items:
+        type: string
+    id:
+      type: string
+      title: Id
+      description: Base id; the panel derives its id from it unless panel_id is given.
+    panel_id:
+      type: string
+      title: Panel id
+      description: >-
+        Explicit id for the panel, which the trigger points its aria-controls
+        at.
+slots:
+  options:
+    title: Options
+    description: The panel's option rows — normally an option_list component.
+variants:
+  facet:
+    title: Facet
+    description: >-
+      A labeled full-width filter using the existing option list and form
+      submission behavior.
+  field:
+    title: Field
+    description: >-
+      The property pill of an add or edit surface — a rounded outline chip of
+      icon plus text in the property_row, carrying hidden inputs; the value is
+      written when the form is submitted.
+  inline:
+    title: Inline
+    description: >-
+      The displayed value is the trigger and there are no hidden inputs, because
+      the pick is the write. It carries a persistent edit affordance at rest — a
+      control border and a trailing chevron — so a property reads as editable
+      without hovering. Only reversible fields may use it.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,47 @@
+# bakers-e2e-agent's DEFAULT workspace membership — new, not a BB-462 role fix.
+#
+# `bakers-e2e-project` deliberately sits on "Design Crew"
+# (dbc70000-…-000000000002), NOT the "Platform Crew" team this agent already
+# belongs to (…/dbd10000-…0006) — that project's own fixture states why: "ONE
+# crew, and deliberately the OTHER one… giving the two fixtures different
+# crews is what makes a team's computed project list distinguishable from
+# 'every project'". Before BB-462, the agent reached this project anyway
+# through the workspace `app` rank, which `bb_core_bb_conductor_insert()`
+# granted automatically to every conductor's owning user. D9 removes that
+# mechanism entirely (the function it called is retained only for deploy-hook
+# history and is now a documented no-op) without shipping a replacement
+# fixture — this is that replacement. `bakers-cli/conductor/tests/integration/`
+# (writeback.test.ts, conductor.test.ts, workspace-isolation.test.ts) all
+# authenticate as this agent via HTTP Basic Auth (never OAuth), so the
+# `BbRankCapability::machineScopeAnswer()` branch that answers a PURE
+# client_credentials identity from its OAuth scope does not apply here at
+# all — this agent needs an ordinary OG rank exactly like any other
+# delegated human account. `lead` (workspace admin), not `contributor`: D4's
+# "workspace admin sees every project of their workspace without joining any
+# team" is precisely the reach this fixture restores, and only `lead` carries
+# it — `contributor` would still need Design Crew membership, defeating the
+# project fixture's whole "different crews" point.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 91f870cb-0551-50b6-a87e-136b972ea46c
+  default_langcode: en
+  bundle: default
+  depends:
+    25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
+  state:
+  - value: active
+  uid:
+  - entity: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-lead

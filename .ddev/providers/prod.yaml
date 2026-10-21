@@ -1,0 +1,47 @@
+# bakers PROD database provider — pull the live prod DB for local update testing.
+#
+# prod is a Komodo-managed docker-compose stack (bakers-prod-*) on the Komodo
+# control host coder.keytec.de. There is
+# no Acquia/Pantheon/Platform API to pull from, so this provider SSHes to that
+# host and runs `mariadb-dump` INSIDE the running php container — which already
+# holds the DB credentials as $DB_PASSWORD and can reach the `db` service.
+#
+# `service: host` runs the pull on the HOST, not the web container, so it uses
+# the host's ~/.ssh/id_rsa_keytec (the keytec key). The web container has no
+# access to that key. The remote dump script is fed to `docker exec -i sh -s`
+# over a quoted heredoc, so nothing is expanded until it runs in the container.
+#
+# STRUCTURE-TABLES: cache_* and bb_run are dumped as SCHEMA ONLY (--no-data).
+# cache is throwaway; bb_run is 4.6 GB of run transcripts that NO update hook
+# touches (the only bb_run-writing hook, backfill_entity_owners, predates and
+# has long run on prod). Keeping their CREATE TABLE preserves schema parity for
+# entity-updates while cutting the dump from ~7.4 GB to ~150 MB. If you ever need
+# a hook that DOES rewrite bb_run rows tested against real volume, drop it from
+# SKIP below.
+#
+# DDEV auto-imports .ddev/.downloads/db.sql.gz afterwards.
+# Usage:  ddev pull prod -y --skip-files   (DB-only; no files_pull_command)
+
+environment_variables:
+  prod_host: coder.keytec.de
+  prod_php_container: bakers-prod-php-1
+
+db_pull_command:
+  service: host
+  command: |
+    set -eu -o pipefail
+    mkdir -p .ddev/.downloads
+    ssh -i ~/.ssh/id_rsa_keytec -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new \
+      root@${prod_host} "docker exec -i ${prod_php_container} sh -s" <<'REMOTE' | gzip > .ddev/.downloads/db.sql.gz
+    set -eu
+    export MYSQL_PWD="$DB_PASSWORD"
+    # DATA to skip: every cache_* table plus bb_run. Structure is still dumped.
+    SKIP=$(mariadb -u bakers -h db -N bakers -e "SHOW TABLES LIKE 'cache%'")
+    SKIP="$SKIP bb_run"
+    IGN=""
+    for t in $SKIP; do IGN="$IGN --ignore-table=bakers.$t"; done
+    # Pass 1: schema of EVERY table (incl. the skipped ones).
+    mariadb-dump -u bakers -h db --no-tablespaces --single-transaction --no-data bakers
+    # Pass 2: data of every table EXCEPT the skipped ones.
+    mariadb-dump -u bakers -h db --no-tablespaces --single-transaction --no-create-info $IGN bakers
+    REMOTE

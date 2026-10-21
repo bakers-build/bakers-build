@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Test hooks for forcing Worklog save failures.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_entity_presave().
+ */
+function bb_track_test_entity_presave(EntityInterface $entity): void {
+  if ($entity->getEntityTypeId() !== 'bb_track_worklog') {
+    return;
+  }
+  if (\Drupal::state()->get('bb_track_test.fail_save')) {
+    throw new \RuntimeException('Forced save failure.');
+  }
+}

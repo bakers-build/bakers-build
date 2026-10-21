@@ -1,0 +1,23 @@
+services:
+  bb_login_oauth.user_authenticator:
+    class: Drupal\bb_login_oauth\VerifiedEmailAuthenticator
+    decorates: social_auth.user_authenticator
+    arguments:
+      - '@current_user'
+      - '@messenger'
+      - '@logger.factory'
+      - '@social_auth.user_manager'
+      - '@social_auth.data_handler'
+      - '@config.factory'
+      - '@router.route_provider'
+      - '@event_dispatcher'
+      - '@bb_login.email_login'
+      - '@logger.channel.bb_login_oauth'
+      - '@request_stack'
+  logger.channel.bb_login_oauth:
+    parent: logger.channel_base
+    arguments: ['bb_login_oauth']
+  bb_login_oauth.identity_link:
+    class: Drupal\bb_login_oauth\IdentityLink
+    arguments:
+      - '@entity_type.manager'

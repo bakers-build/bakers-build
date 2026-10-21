@@ -1,0 +1,54 @@
+packages:
+  # BB-215 Storybook-faithful topology: core kernel + support libs + all addons.
+  - 'core'
+  - 'host'
+  - 'conductor'
+  - 'message'
+  - 'ui'
+  - 'addons/*'
+allowBuilds:
+  # BB-326: `bun` ships a placeholder `bin/bun.exe`; its postinstall
+  # (`node install.js`) is what puts the real executable there, copied from the
+  # `@oven/bun-*` optional dep that matches this platform. Without the build the
+  # renderer's runtime resolves to a text file.
+  bun: true
+  esbuild: true
+# Skip the automatic pre-run-script deps check — it re-verifies the lockfile
+# against the supply-chain policy and ignores minimumReleaseAgeExclude, so a
+# freshly published (excluded) dropsh release wrongly blocks `pnpm run` scripts.
+verifyDepsBeforeRun: false
+minimumReleaseAgeExclude:
+  # These are first-party companion packages released and consumed together.
+  # Keep the broad exclusions before historical version pins because pnpm's
+  # lockfile verifier does not widen a package after seeing an exact version.
+  - '@dropsh/plugin-jsonapi-schema'
+  - '@dropsh/plugin-markdown'
+  - '@dropsh/plugin-oauth2'
+  - dropsh
+  - dropsh@0.2.0
+  - dropsh@0.2.1
+  - '@dropsh/plugin-oauth2@0.2.1'
+  - '@dropsh/plugin-oauth2@0.3.1'
+  - dropsh@0.3.1
+  - '@dropsh/plugin-oauth2@0.3.3'
+  - dropsh@0.3.3
+  - '@dropsh/plugin-oauth2@0.4.1'
+  - dropsh@0.4.1
+  - '@dropsh/plugin-jsonapi-schema@0.5.1'
+  - dropsh@0.5.1
+  - '@dropsh/plugin-jsonapi-schema@0.5.7'
+  - '@dropsh/plugin-markdown@0.5.7'
+  - '@dropsh/plugin-oauth2@0.5.7'
+  - dropsh@0.5.7
+  # BB-351: dropsh 0.6.0 ships the `alterRequest` seam @bakers-build/addon-workspace
+  # consumes. A caret on a 0.x version pins the MINOR, so `^0.5.8` does NOT
+  # match 0.6.0 — without the bump the hook simply does not exist at runtime.
+  - '@dropsh/plugin-jsonapi-schema@0.6.0'
+  - '@dropsh/plugin-markdown@0.6.0'
+  - '@dropsh/plugin-oauth2@0.6.0'
+  - dropsh@0.6.0
+  - '@dropsh/plugin-jsonapi-schema@0.7.1'
+  - '@dropsh/plugin-markdown@0.7.1'
+  - '@dropsh/plugin-oauth2@0.7.1'
+  - dropsh@0.7.1
+  - dropsh@0.7.2

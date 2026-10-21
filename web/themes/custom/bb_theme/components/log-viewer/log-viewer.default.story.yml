@@ -1,0 +1,7 @@
+component: bb_theme:log-viewer
+name: Default
+props:
+  caption: Error log
+  text: |
+    Dispatch failed: the branch workspace already held an open tab from a
+    previous run and could not be reused.

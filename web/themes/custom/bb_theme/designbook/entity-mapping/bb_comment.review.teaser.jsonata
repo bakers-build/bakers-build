@@ -1,0 +1,33 @@
+(
+  /* Compact embedded review: the same event plus canonical link as the
+     bb_comment teaser. Only accepted reviews reach ticket handoffs, where
+     this mode is embedded; the review state shows in the sidebar Reviews
+     block, not here. */
+  $c := $;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:event",
+      "props": {
+        "author_name": $c.author_name,
+        "author_initials": $c.author_initials,
+        "author_color": $c.author_color,
+        "tag": $c.type != "comment" ? $c.type,
+        "timestamp": $c.created,
+        "body": $c.body
+      }
+    },
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:link-group",
+      "props": {
+        "label": "Comment",
+        "links": [
+          {
+            "url": "/comment/" & $c.id,
+            "title": "Open " & $c.type & " comment",
+            "target": "_self"
+          }
+        ]
+      }
+    }
+  ]
+)

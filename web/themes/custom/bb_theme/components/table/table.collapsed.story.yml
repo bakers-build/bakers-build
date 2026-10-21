@@ -1,0 +1,9 @@
+component: bb_theme:table
+name: Collapsed
+variant: collapsed
+slots:
+  empty:
+    - type: element
+      tag: span
+      value: Nothing is waiting for a human — every run is running.
+      attributes: {}

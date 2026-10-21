@@ -1,0 +1,25 @@
+# Ordinary workspace membership: contributor, not lead.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: b5d9f3c1-2e60-4b84-ad32-7f9c1e5a8b20
+  default_langcode: en
+  bundle: default
+  depends:
+    a4c8e2b0-1d5f-4a73-9c21-6e8b0d4f7a19: user
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  state:
+  - value: active
+  uid:
+  - entity: a4c8e2b0-1d5f-4a73-9c21-6e8b0d4f7a19
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-contributor

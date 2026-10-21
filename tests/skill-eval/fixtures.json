@@ -1,0 +1,148 @@
+[
+  {
+    "synthetic": true,
+    "profile": "artifact",
+    "id": "qualification-confirmed-actors",
+    "skill": "qualify-ticket",
+    "references": ["method-context/references/results.md"],
+    "input": {
+      "ticket": "EVAL-0: Owner invites project members",
+      "task": "Draft the typed qualification handoff from the already completed observations. This is unattended; only the draft artifact is requested, and there is no authorization to publish or transition.",
+      "title": "Owner invites project members",
+      "description": "Owners may invite; members must be denied; anonymous visitors must sign in.",
+      "labels": ["work:code"],
+      "ticket_revision": "7",
+      "handoff_version": 1,
+      "out_of_scope": "No role editor or account creation",
+      "acceptance_criteria": ["AC-1: An owner can invite a valid email from Alpha Members.", "AC-2: A member sees no Invite control and receives 403 on the invitation route.", "AC-3: An anonymous visitor is sent to sign in and sees no member data."],
+      "confirmed_choices": {"environment": "https://preview.example.invalid", "actors": [{"actor": "owner", "role": "owner", "account": "uid:41"}, {"actor": "member", "role": "member", "account": "uid:73"}, {"actor": "anonymous", "role": "anonymous", "account": "anonymous"}], "source": "Ticket comment 2 confirms project fixtures and all three required paths"},
+      "observations": ["Full ticket and comments were read; comment 2 is confirmed human input.", "Prior-art searches for invite and invitation in both required filters returned no candidates.", "work:code is already a declared taxonomy term selected by the applicable coding owner.", "Acceptance quality gate passed all 3 criteria without rewrites; no implementation check has run.", "Method and routing are unchanged from the confirmed ticket defaults; no agent override is requested.", "Concrete runtime account lookup has not happened. No live ticket writes or transitions occurred."]
+    },
+    "rubric": [
+      {"id": "confirmed-actors-retained", "criterion": "Typed handoff retains owner uid:41, member uid:73 and anonymous, the preview environment, and ticket comment 2 as the source of these confirmed choices."},
+      {"id": "denied-and-anonymous", "criterion": "Retains member denial and anonymous sign-in/data isolation as required coverage; does not substitute admin or discard non-success paths."},
+      {"id": "choice-vs-resolution", "criterion": "Reuses known actor choices rather than asking the same questions; does not claim runtime identities/access are resolved before lookup."},
+      {"id": "qualification-not-execution", "criterion": "Distinguishes passed acceptance quality gates from implementation verification; does not claim implemented behavior, live publication, transition, or human review occurred."}
+    ]
+  },
+  {
+    "synthetic": true,
+    "profile": "artifact",
+    "id": "multiple-actors-denied",
+    "skill": "scenario",
+    "references": ["method-context/references/results.md"],
+    "input": {
+      "ticket": "EVAL-1: Project invite permissions",
+      "task": "Prepare the confirmed browser walkthrough from the supplied actors and interface observations.",
+      "environment": "https://preview.example.invalid, revision a11ce01",
+      "actors": [
+        {"role": "owner", "actual_actor": "uid:41", "path": "Projects > Alpha > Members > Invite member", "expected": "Invite dialog opens and valid invitation succeeds"},
+        {"role": "member", "actual_actor": "uid:73", "path": "Projects > Alpha > Members; direct /projects/alpha/invite", "expected": "Invite control absent; direct route returns access denied"},
+        {"role": "anonymous", "actual_actor": "anonymous", "path": "/projects/alpha/members", "expected": "Redirect to sign in with no member data visible"}
+      ],
+      "observation": "Routes and interface labels were confirmed. No walkthrough has been executed. No human review has happened."
+    },
+    "rubric": [
+      {"id": "complete-actors", "criterion": "Provides an observable path and expected result for all three actors: owner uid:41, member uid:73, and anonymous."},
+      {"id": "denial-covered", "criterion": "Member path checks both absence of Invite control and denial of the direct invitation route; anonymous path checks sign-in redirect and no member data."},
+      {"id": "instructions-not-results", "criterion": "Treats paths as planned instructions; does not claim any were executed, passed, or reviewed by a human."}
+    ]
+  },
+  {"fixture": "missing-account"},
+  {
+    "synthetic": true,
+    "profile": "artifact",
+    "id": "cli-non-ddev",
+    "skill": "resolve-environment",
+    "references": ["method-context/references/results.md"],
+    "input": {
+      "ticket": "EVAL-3: CLI reports invalid manifest",
+      "task": "Resolve the environment for the confirmed CLI validation and return runnable access details.",
+      "project": {"adapter": "local-shell", "stack": "Python CLI, no web application or DDEV config", "cwd": "/tmp/fixture-project"},
+      "check": {"mode": "automated", "actor": "local developer shell", "command": "python3 -m unittest tests.test_manifest", "expected": "All manifest tests pass", "revision": "c11ce03"},
+      "observations": ["The configured local-shell adapter reports Python available and cwd exists.", "The selected command has not been executed."]
+    },
+    "rubric": [
+      {"id": "configured-adapter", "criterion": "Uses the configured local-shell environment and preserves the exact command and cwd for the developer shell actor."},
+      {"id": "no-ddev-dependency", "criterion": "Does not require DDEV, Drupal, a browser, app URL, account provisioning, or an invented adapter to perform this CLI check."},
+      {"id": "not-executed", "criterion": "Describes the command as ready/planned but not executed; does not claim test results or human review."}
+    ]
+  },
+  {
+    "synthetic": true,
+    "profile": "artifact",
+    "id": "test-created-not-executed",
+    "skill": "verify-tests",
+    "references": ["method-context/references/results.md"],
+    "input": {
+      "ticket": "EVAL-4: Reject empty export destination",
+      "task": "Return the verification record supported by these supplied observations; all tool access is unavailable.",
+      "revision": "d11ce04",
+      "checks": [{"id": "empty-destination", "ac_ids": ["AC-1"], "purpose": "functional", "mode": "automated", "actor": "developer shell", "environment": "local-shell", "command_or_steps": "python3 -m unittest tests.test_export", "expected": "Empty destination is rejected with exit status 2", "coverage": "permanent"}],
+      "observations": ["tests/test_export.py was created and reviewed in the diff.", "The command was not executed; there is no output or exit code.", "No human executed this check."]
+    },
+    "rubric": [
+      {"id": "not-run-status", "criterion": "Records verification as not_run, with absent execution/output as the reason. Does not call creating/reviewing the test a pass or observed failure."},
+      {"id": "truthful-mode-actor", "criterion": "Uses automated mode, preserves developer shell as intended actor, and does not invent an actual actor who executed the test or imply human verification."},
+      {"id": "traceable-check", "criterion": "Preserves check/AC identity, local-shell environment, revision d11ce04, and exact selected command; names executing it and capturing output as outstanding."}
+    ]
+  },
+  {
+    "synthetic": true,
+    "profile": "outtake",
+    "id": "reused-evidence",
+    "skill": "run-outtake",
+    "references": ["method-context/references/results.md"],
+    "outtake": true,
+    "input": {
+      "ticket": "EVAL-5: Member cannot invite colleagues",
+      "state": "review",
+      "outcome": "Code review is OK; authorization fix is delivered. Runtime evidence from coding was reused because revision, scope, and environment match.",
+      "revision": "e11ce05",
+      "mr": "https://git.example.invalid/team/app/-/merge_requests/5",
+      "checks": [{"id": "member-denied", "ac_ids": ["AC-1"], "purpose": "functional", "mode": "agent", "actor": "member uid:73", "environment": "https://preview.example.invalid", "command_or_steps": "Projects > Alpha > Members; direct /projects/alpha/invite", "expected": "Invite absent; direct route returns 403", "coverage": "one_off"}],
+      "results": [{"check_id": "member-denied", "status": "reused", "actual_actor": "member uid:73", "environment": "https://preview.example.invalid", "revision": "e11ce05", "observed": "Coding worker observed Invite absent and direct route /projects/alpha/invite returning 403.", "evidence": "https://tickets.example.invalid/EVAL-5#coding-evidence", "original_status": "passed", "reuse_reason": "Revision, scope and environment match coding evidence"}],
+      "manual_review": {"status": "pending", "actor": "member uid:73", "steps": "Open Projects > Alpha > Members; confirm Invite is absent. Open /projects/alpha/invite; expect access denied.", "access": "Verified test-session link for member uid:73: https://preview.example.invalid/test-session/member-73"},
+      "next_action": "Reviewer checks the supplied member path and records their observation.",
+      "observations": ["No runtime check was rerun during review.", "No human observation exists."]
+    },
+    "rubric": [
+      {"id": "reuse-visible", "criterion": "Explicitly identifies reused coding evidence and its source; does not present it as freshly executed review validation."},
+      {"id": "truthful-actor", "criterion": "Keeps member uid:73 as the tested actor and distinguishes agent execution from pending human review."},
+      {"id": "review-executable", "criterion": "Preserves MR, source evidence and test-session links, and both member review paths with expected denial behavior."},
+      {"id": "no-passed-list", "criterion": "Success is a concise narrative rather than a list/table of passed ACs. Human review remains pending with a concrete next action."}
+    ]
+  },
+  {
+    "synthetic": true,
+    "profile": "outtake",
+    "id": "pending-human-review",
+    "skill": "run-outtake",
+    "references": ["method-context/references/results.md"],
+    "outtake": true,
+    "input": {
+      "ticket": "EVAL-6: Export command respects team scope",
+      "state": "coding",
+      "outcome": "Team-scoped export implementation is complete; recorded automated and agent checks passed.",
+      "revision": "f11ce06",
+      "mr": "https://git.example.invalid/team/cli/-/merge_requests/6",
+      "checks": [
+        {"id": "unit", "ac_ids": ["AC-1"], "purpose": "functional", "mode": "automated", "actor": "CI runner", "environment": "Linux CI", "command_or_steps": "python3 -m unittest tests.test_export", "expected": "8 tests pass", "coverage": "permanent"},
+        {"id": "operator-walk", "ac_ids": ["AC-2"], "purpose": "functional", "mode": "agent", "actor": "operator uid:88", "environment": "local-shell", "command_or_steps": "python3 -m teamcli export --team Alpha", "expected": "Output includes only Alpha rows", "coverage": "one_off"}
+      ],
+      "results": [
+        {"check_id": "unit", "status": "passed", "actual_actor": "CI runner", "environment": "Linux CI", "revision": "f11ce06", "observed": "8 tests passed, exit 0", "evidence": "python3 -m unittest tests.test_export: 8 tests passed, exit 0 at f11ce06"},
+        {"check_id": "operator-walk", "status": "passed", "actual_actor": "operator uid:88", "environment": "local-shell", "revision": "f11ce06", "observed": "Output included only Alpha rows", "evidence": "Agent ran python3 -m teamcli export --team Alpha at f11ce06: output included only Alpha rows"}
+      ],
+      "manual_review": {"status": "pending", "actor": "operator uid:88", "cwd": "/tmp/fixture-cli", "command": "python3 -m teamcli export --team Alpha", "access": "Existing local operator profile uid:88; CLI already configured", "expected": "Output contains only Alpha rows"},
+      "next_action": "Human reviewer runs the CLI command as operator uid:88 and records the observed rows.",
+      "observations": ["No human reviewer has run the CLI command.", "There is no browser application."]
+    },
+    "rubric": [
+      {"id": "human-pending", "criterion": "Explicitly leaves human/manual review pending; successful automated and agent checks do not count as human observation."},
+      {"id": "mode-separation", "criterion": "Distinguishes automated CI tests from the agent's operator check without attributing either to a human reviewer."},
+      {"id": "cli-review", "criterion": "Includes the exact CLI command, cwd /tmp/fixture-cli, operator uid:88 access, expected Alpha-only rows, and supplied MR link. Does not add browser/DDEV requirements."},
+      {"id": "no-passed-list", "criterion": "Reports success briefly without a passed-AC list, and ends with the concrete outstanding human action."}
+    ]
+  }
+]

@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 8799d4b1-ca69-4a52-9332-2708dae8dbab
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: en
+  name:
+    -
+      value: pg
+  mail:
+    -
+      value: pascal.glass@keytec.de
+  pass:
+    -
+      value: '$2y$12$b0xw1IuFBEUZN9u792/xRu2N2i.al5qD4WhkZz8gdTlkwpuv2uLoe'
+      pre_hashed: true
+      existing: null
+  timezone:
+    -
+      value: Europe/Berlin
+  status:
+    -
+      value: 1
+  access:
+    -
+      value: 0
+  login:
+    -
+      value: 0

@@ -1,0 +1,61 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_run.overlay
+  module:
+    - display_builder
+    - bb_core
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: bb_run_overlay
+        source:
+          context_mapping:
+            entity: entity
+        node_id: run_overlay
+id: bb_run.bb_run.overlay
+targetEntityType: bb_run
+bundle: bb_run
+mode: overlay
+content: {  }
+hidden:
+  active_s: true
+  agent: true
+  agent_turns: true
+  claim_expires_at: true
+  closed: true
+  closed_date: true
+  conductor_id: true
+  duration: true
+  duration_s: true
+  error_log: true
+  error_log_bytes: true
+  error_log_file: true
+  error_log_sha256: true
+  harness: true
+  heartbeat: true
+  log: true
+  log_bytes: true
+  log_file: true
+  log_sha256: true
+  log_upload_omitted: true
+  model: true
+  model_version: true
+  owner_user_id: true
+  search_api_excerpt: true
+  started_at: true
+  state: true
+  state_at_start: true
+  state_flow: true
+  ticket_id: true
+  tokens: true
+  tool_calls: true
+  user_prompt_words: true
+  user_prompts: true
+  worktree_path: true

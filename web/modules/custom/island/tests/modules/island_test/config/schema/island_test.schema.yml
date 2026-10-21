@@ -1,0 +1,13 @@
+# The island post update converts legacy route names into bb_core's
+# route_name condition. Mirrors bb_core's schema so island tests can save the
+# result without enabling bb_core.
+condition.plugin.route_name:
+  type: condition.plugin
+  label: 'Route name condition'
+  mapping:
+    route_names:
+      type: sequence
+      label: 'Route names'
+      sequence:
+        type: string
+        label: 'Route name'

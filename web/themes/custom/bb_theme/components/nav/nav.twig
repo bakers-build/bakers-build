@@ -1,0 +1,183 @@
+{# Primary navigation rendered from an `items` array through a recursive macro —
+   entries are never hardcoded, so the same template serves any menu tree.
+
+   Three kinds of row, one macro:
+
+     * a LINK row — icon (or `mark`) plus label, with a chevron button beside it
+       when it has children;
+     * a GROUP HEADING (`heading: true`) — one disclosure button spanning the
+       whole row, no `href` and no `aria-current`, because a heading has no
+       destination. Its children are NOT indented: what distinguishes a team row
+       from a top-level entry is its mark, not its inset;
+     * either of those carrying at most one `action` (the create affordance) and
+       at most one `menu` (the dot menu). Both are single objects rather than
+       arrays: the dot menu IS the overflow, so a 28px row has no use for an
+       unbounded control strip.
+
+   Every open/closed state is an accessible attribute and nothing else. A
+   disclosure trigger carries `aria-expanded` and an `aria-controls` pointing at
+   its panel; the panel carries that very same id and starts `hidden` while
+   closed. Alpine only binds those attributes — no CSS class carries state, in
+   either direction.
+
+   Each row is its own Alpine scope with two independent properties: `open` for
+   the sub-navigation panel and `menuOpen` for the dot menu. A nested row's
+   scope shadows its parent's, so rows toggle independently, which is what the
+   deleted nav.js achieved by wiring each trigger to the panel its own
+   `aria-controls` named.
+
+   The chevron is rendered TWICE with each copy bound to `hidden`, because an
+   `include`d component cannot be bound from outside. The server still emits
+   exactly one visible chevron with JavaScript disabled, which is what the
+   single `is_open ? 'chevron-down' : 'chevron-right'` include used to do.
+
+   `is_open` is resolved per entry: an explicit `open` wins, otherwise the coarse
+   `expanded` prop and the active trail decide, exactly as before. That is what
+   makes "Workspace and Teams open, Settings closed" expressible in one tree.
+
+   Collapsed, the rail keeps every surface it reaches when expanded: link rows
+   stay as their icons, a group heading that carries an icon stays as that icon,
+   and team rows stay as their marks. What goes is what a 56px rail cannot
+   honour — labels, a heading without an icon, and any control whose target is a
+   hidden list. Each of those carries `data-collapse-hidden`, which is the
+   sidebar's generic contract, so the rail never needs to know what this
+   component is made of. #}
+{% import _self as nav %}
+{% set nav_id = id|default('bakers-navigation') %}
+{% set disclose = expanded|default(variant == 'settings_open') %}
+<nav{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'flex-1', 'text-body']) }}
+  id="{{ nav_id }}"
+  data-navigation
+  aria-label="{{ label|default('Primary') }}">
+  <ul class="list-none p-0 flex flex-col flex-1 gap-1">
+    {% for item in items|default([]) %}
+      {{ nav.entry(item, nav_id ~ '-' ~ loop.index, collapsed|default(false), disclose) }}
+    {% endfor %}
+  </ul>
+</nav>
+
+{% macro entry(item, key, collapsed, disclose) %}
+  {% import _self as nav %}
+  {% set children = item.below|default([]) %}
+  {% set panel_id = key ~ '-panel' %}
+  {% set menu_id = key ~ '-menu' %}
+  {% set is_heading = item.heading|default(false) %}
+  {% set heading_keeps_icon = is_heading and item.icon %}
+  {% set is_open = item.open is defined and item.open is not null
+    ? item.open
+    : (disclose or item.in_active_trail|default(false)) %}
+  {% set menu_open = item.menu.open|default(false) %}
+  <li class="list-none{{ item.at_end|default(false) ? ' flex flex-col flex-1 justify-end' : '' }}"
+    x-data="{ open: {{ is_open ? 'true' : 'false' }}, menuOpen: {{ menu_open ? 'true' : 'false' }} }">
+    <div class="flex items-center gap-1"
+      {%- if is_heading and not heading_keeps_icon %} data-collapse-hidden{% if collapsed %} hidden{% endif %}{% endif %}>
+      {% if is_heading %}
+        <button type="button"
+          class="flex items-center gap-1 flex-1 min-w-0 h-10 px-3 rounded-sm bg-transparent border-0 text-text-faint cursor-pointer text-caption font-semibold transition-colors duration-fast hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring{{ heading_keeps_icon ? ' group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0' : '' }}"
+          data-navigation-toggle
+          aria-label="{{ item.title }}"
+          aria-controls="{{ panel_id }}"
+          aria-expanded="{{ is_open ? 'true' : 'false' }}"
+          @click="open = !open"
+          :aria-expanded="open ? 'true' : 'false'">
+          <span class="inline-flex" data-collapse-hidden{% if collapsed %} hidden{% endif %}>
+            <span {% if not is_open %}hidden{% endif %} :hidden="!open">
+              {{- include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) -}}
+            </span>
+            <span {% if is_open %}hidden{% endif %} :hidden="open">
+              {{- include('bb_theme:icon', { name: 'chevron-right', size: 'sm' }, with_context = false) -}}
+            </span>
+          </span>
+          {%- if item.icon %}
+            {{- include('bb_theme:icon', { name: item.icon, size: 'md' }, with_context = false) -}}
+          {%- endif %}
+          <span class="truncate" data-collapse-hidden{% if collapsed %} hidden{% endif %}>{{ item.title }}</span>
+        </button>
+      {% else %}
+        <a href="{{ item.url }}" aria-label="{{ item.title }}" title="{{ item.title }}"
+          class="flex items-center gap-3 flex-1 min-w-0 h-10 px-3 rounded-sm no-underline transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0 {{ item.in_active_trail|default(false) ? 'bg-primary/10 text-primary font-semibold' : 'text-text-light hover:bg-surface hover:text-text' }}"
+          {%- if item.full_page|default(false) %} data-hx-boost="false"{% endif %}
+          {%- if item.in_active_trail|default(false) %} aria-current="page"{% endif %}>
+          {%- if item.mark %}
+            {{- include('bb_theme:person', { variant: 'compact', initials: item.mark.initials, color: item.mark.color, size: 'sm' }, with_context = false) -}}
+          {%- elseif item.icon %}
+            {{- include('bb_theme:icon', { name: item.icon, size: 'md' }, with_context = false) -}}
+          {%- endif %}
+          <span class="truncate" data-collapse-hidden{% if collapsed %} hidden{% endif %}>{{ item.title }}</span>
+        </a>
+      {% endif %}
+      {% if item.action %}
+        <span class="shrink-0"
+          data-collapse-hidden{% if collapsed %} hidden{% endif %}>
+          {{- include('bb_theme:button', {
+            variant: 'ghost',
+            icon_only: true,
+            type: 'button',
+            href: item.action.href|default(''),
+            attributes: item.action.attributes|default(create_attribute()),
+            label: item.action.label|default('Add'),
+            icon: include('bb_theme:icon', { name: item.action.icon|default('plus'), size: 'sm' }, with_context = false),
+          }, with_context = false) -}}
+        </span>
+      {% endif %}
+      {% if item.menu %}
+        <div class="relative shrink-0"
+          data-collapse-hidden{% if collapsed %} hidden{% endif %}>
+          <button type="button"
+            class="inline-grid place-items-center w-6 h-6 rounded-xs bg-transparent border-0 text-text-faint cursor-pointer transition-colors duration-fast hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            data-navigation-menu-toggle
+            aria-haspopup="menu"
+            aria-controls="{{ menu_id }}"
+            aria-expanded="{{ menu_open ? 'true' : 'false' }}"
+            aria-label="{{ item.menu.label|default(item.title ~ ' actions') }}"
+            @click="menuOpen = !menuOpen"
+            :aria-expanded="menuOpen ? 'true' : 'false'">
+            {{ include('bb_theme:icon', { name: 'more-horizontal', size: 'sm' }, with_context = false) }}
+          </button>
+          <ul class="absolute right-0 top-full z-10 min-w-40 list-none p-1 rounded-sm bg-surface-2 border border-border text-caption"
+            id="{{ menu_id }}"
+            role="menu"
+            :hidden="!menuOpen"
+            {%- if not menu_open %} hidden{% endif %}>
+            {% for menu_item in item.menu.items|default([]) %}
+              <li class="list-none" role="none">
+                <a href="{{ menu_item.url }}"
+                  role="menuitem"
+                  class="block px-2 py-1 rounded-xs no-underline text-text-light transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ menu_item.label }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if children|length and not is_heading %}
+        <button type="button"
+          class="inline-grid place-items-center w-6 h-6 shrink-0 rounded-xs bg-transparent border-0 text-text-faint cursor-pointer transition-colors duration-fast hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          data-navigation-toggle
+          data-collapse-hidden
+          aria-controls="{{ panel_id }}"
+          aria-expanded="{{ is_open ? 'true' : 'false' }}"
+          aria-label="{{ item.title }} sub-navigation"
+          @click="open = !open"
+          :aria-expanded="open ? 'true' : 'false'"
+          {%- if collapsed %} hidden{% endif %}>
+          <span {% if not is_open %}hidden{% endif %} :hidden="!open">
+            {{- include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) -}}
+          </span>
+          <span {% if is_open %}hidden{% endif %} :hidden="open">
+            {{- include('bb_theme:icon', { name: 'chevron-right', size: 'sm' }, with_context = false) -}}
+          </span>
+        </button>
+      {% endif %}
+    </div>
+    {% if children|length %}
+      <ul class="list-none p-0 pt-1 {{ is_heading ? '' : 'pl-6 group-[.is-collapsed]:hidden' }} flex flex-col gap-1"
+        id="{{ panel_id }}"
+        :hidden="!open"
+        {%- if not is_open %} hidden{% endif %}>
+        {% for child in children %}
+          {{ nav.entry(child, panel_id ~ '-' ~ loop.index, collapsed, disclose) }}
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </li>
+{% endmacro %}

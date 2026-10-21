@@ -1,0 +1,26 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_team.full
+ *
+ * Emitted by the designbook `sync-to` workflow (bb-8a9979fd), re-authored
+ * for BB-484. The mode is stable in isolation — BB-396 already measured
+ * `0 mismatch`, `module: ["bb_core"]` for it alone — and is ordered before
+ * the display it names by the display's own `dependencies.config:
+ * [core.entity_view_mode.bb_team.full]`, not by phase order (a recipe has
+ * none inside a single `installRecipeConfig()` batch).
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_core"
+    ]
+  },
+  "id": "bb_team.full",
+  "label": "Full",
+  "description": "",
+  "targetEntityType": "bb_team",
+  "cache": true
+}
+)

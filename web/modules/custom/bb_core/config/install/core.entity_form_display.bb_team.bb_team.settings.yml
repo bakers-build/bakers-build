@@ -1,0 +1,28 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_team.settings
+  module:
+    - bb_core
+id: bb_team.bb_team.settings
+targetEntityType: bb_team
+bundle: bb_team
+mode: settings
+content:
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  changed: true
+  created: true
+  id: true
+  owner_user_id: true
+  projects: true
+  uuid: true
+  workspace_id: true

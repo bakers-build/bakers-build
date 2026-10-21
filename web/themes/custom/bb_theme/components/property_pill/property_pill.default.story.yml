@@ -1,0 +1,20 @@
+component: bb_theme:property_pill
+name: Default
+props:
+  name: conductor_id
+  label: Conductor
+  icon: conductor
+  picker_id: story-property-pill-conductor
+  aria_label: Change conductor. Currently cw-framework.
+  value_label: cw-framework
+  values:
+    - cw-framework
+  clearable: true
+  clear_label: No conductor
+  options:
+    - value: cw-framework
+      label: cw-framework
+      selected: true
+    - value: mvd-thinkpad
+      label: mvd-thinkpad
+      selected: false

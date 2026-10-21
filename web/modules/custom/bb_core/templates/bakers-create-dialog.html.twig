@@ -1,0 +1,9 @@
+{# Render each Drupal widget once, in its configured presenter region. #}
+{{ include('bb_theme:form', {
+  lead_label: lead_label ?: '',
+  lead: regions.lead,
+  lines: regions.lines,
+  pills: regions.pills,
+  actions: form.actions ?? null,
+}, with_context = false) }}
+{{ form|without(placed) }}

@@ -1,0 +1,11 @@
+uuid: ac877fe4-9132-4aeb-82b3-faef3fe7f702
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_comment.teaser
+label: Teaser
+description: ''
+targetEntityType: bb_comment
+cache: true

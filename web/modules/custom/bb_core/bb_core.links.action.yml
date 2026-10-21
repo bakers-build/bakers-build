@@ -1,0 +1,23 @@
+entity.bb_environment.add_for_project:
+  route_name: entity.bb_environment.add_for_project
+  title: 'Add environment'
+  appears_on:
+    - entity.bb_project.canonical
+
+entity.bb_measurement.add_form:
+  route_name: entity.bb_measurement.add_form
+  title: 'Add measurement'
+  appears_on:
+    - entity.bb_measurement.collection
+
+entity.bb_figure.add_form:
+  route_name: entity.bb_figure.add_form
+  title: 'Add figure'
+  appears_on:
+    - entity.bb_figure.collection
+
+entity.bb_figure_group.add_form:
+  route_name: entity.bb_figure_group.add_form
+  title: 'Add figure group'
+  appears_on:
+    - entity.bb_figure_group.collection

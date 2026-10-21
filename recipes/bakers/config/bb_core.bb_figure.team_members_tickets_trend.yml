@@ -1,0 +1,37 @@
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_measurement.closed_tickets
+id: team_members_tickets_trend
+label: Closed tickets by member over time
+description: "Closed tickets by team member, per day or month bucket. Date basis: ticket closed_date. Attribution basis: the ticket's current assignee."
+weight: 2
+widget: line
+measurements:
+- closed_tickets
+categories:
+  type: days
+series:
+  dimension: user
+  limit: 5
+filters:
+  period:
+    label: Period
+    default: '7'
+    options:
+    - value: '7'
+      label: 7 days
+    - value: '30'
+      label: 30 days
+    - value: '365'
+      label: 1 year
+context_shape:
+- team
+conditions:
+  team:
+    id: bb_route_context
+    entity_type: bb_team
+    negate: false
+    context_mapping:
+      entity: team

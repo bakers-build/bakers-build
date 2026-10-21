@@ -1,0 +1,21 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_activity.full
+ *
+ * The only view mode: the Overview activity row. There is no detail surface.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_activity"
+    ]
+  },
+  "id": "bb_activity.full",
+  "label": "Full",
+  "description": "",
+  "targetEntityType": "bb_activity",
+  "cache": true
+}
+)

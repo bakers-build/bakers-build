@@ -1,0 +1,109 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Property pill
+status: stable
+group: Form
+description: 'One property pill of an add or edit surface — grammar 3''s peer property, and with prominent set, grammar 3a''s lead. It is the union of option_picker''s contract and option_list''s, and it exists so that union is spelled once: clearable, clear_label, creatable and create_label belong to option_list, because a clear row and a create row ARE rows of the listbox, while icon and the value labels sit on the trigger and belong to option_picker. Each field goes to whichever of the two owns it. It was a macro inside form until form began composing its regions from RENDERED content; a macro is not addressable from outside its own file, and both a field widget and a scene have to be able to render exactly this. The panel is composed here from PLAIN OPTION DATA and never handed in as rendered content, which is what lets a caller state a pill as a handful of strings and a list of value/label/selected rows. The accessible name is left to option_picker to derive from the field name and the value when the caller passes none, so it is never empty and never spelled twice; pass aria_label where the derived sentence would not agree in number.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    name:
+      type: string
+      title: Submitted field name
+    label:
+      type: string
+      title: Field name shown on the pill
+      description: Not optional in practice. It is what the pill shows while nothing is set, and it is what keeps an unset pill from rendering a bare dash.
+    value_label:
+      type: string
+      title: Current value
+    value_labels:
+      type: array
+      title: Current values
+      items:
+        type: string
+    aria_label:
+      type: string
+      title: Accessible name
+      description: The state-carrying accessible name. Left to option_picker to derive from the field name and the value when omitted, so it is never empty — pass it where the derived sentence would not agree in number.
+    icon:
+      type: string
+      title: Leading sprite symbol
+    picker_id:
+      type: string
+      title: Id of the pill and its panel
+    prominent:
+      type: boolean
+      title: The lead of its surface
+      description: Renders heavier. Set by the one property that is not a peer of the others; the surface's own lead row is what places it, and the at-most-one rule is enforced where the regions are read.
+    open:
+      type: boolean
+      title: Panel open
+    multiple:
+      type: boolean
+      title: Holds several values
+    searchable:
+      type: boolean
+      title: Render the panel search box
+    selected_chips:
+      type: boolean
+      title: Render each selected value as a removable chip
+    selected:
+      type: array
+      title: Selected identities
+      items:
+        type: object
+        properties:
+          value:
+            type: string
+          label:
+            type: string
+    search_placeholder:
+      type: string
+      title: Search placeholder
+    search_url:
+      type: string
+      title: Server search URL
+      description: Forwarded to option_picker; the search box fetches the rows for the typed text from it.
+    fallback:
+      type: boolean
+      title: Render a no-JavaScript fallback list
+      description: Adds the rows as radios (checkboxes when multiple) under the field's name inside noscript, so the field can be set without JavaScript.
+    search_label:
+      type: string
+      title: Search box accessible name
+    values:
+      type: array
+      title: Values submitted as hidden inputs
+      items:
+        type: string
+    clearable:
+      type: boolean
+      title: Panel carries a clear row first
+    clear_label:
+      type: string
+      title: Label of the clear row
+    creatable:
+      type: boolean
+      title: Panel carries a create row last
+    create_label:
+      type: string
+      title: Noun the create row names
+    options:
+      type: array
+      title: The panel's rows
+      description: Plain option data, handed to option_list. Rendered content never reaches this component — the panel is composed here from these values.
+      items:
+        type: object
+        properties:
+          value:
+            type: string
+          label:
+            type: string
+          description:
+            type: string
+          selected:
+            type: boolean
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

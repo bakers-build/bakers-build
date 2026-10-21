@@ -1,0 +1,9 @@
+component: bb_theme:badge
+name: List item
+# A badge that is a direct child of a `role="list"` container — the labels
+# surface. `role="listitem"` is a prop rather than a guess: the roles must be
+# direct parent and child or a browser drops both.
+props:
+  label: frontend
+  tone: neutral
+  list_item: true

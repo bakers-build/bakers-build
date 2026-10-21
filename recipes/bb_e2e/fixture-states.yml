@@ -1,0 +1,62 @@
+# State-machine states for the designbook-mirrored bb_e2e fixtures.
+# default_content cannot seed state_machine `state` (it bypasses
+# StateItem::setValue, so validation rejects the null->X transition).
+# bakers-init-test applies these AFTER the recipe import via Entity::set().
+bb_ticket:
+  # Markdown output fixtures (features/tickets/markdown-output.feature): any
+  # state renders the detail screen. `spec` is claimable, but no conductor is
+  # assigned to these tickets, so nothing is dispatched for them.
+  APIS-1: spec
+  APIS-2: spec
+  APIS-3: spec
+  BB-142: coding
+  BB-100: spec
+  BB-110: spec
+  BB-118: spec
+  BB-105: review
+  BB-90: done
+  # Core default-content cannot initialize state_machine state for period fixtures.
+  # The two recipe-owned period rows are closed features and must therefore
+  # receive their valid terminal state after import.
+  G513F-1: done
+  G513F-2: done
+  BB-145: coding
+  BB-146: review
+  # Extra active feature tickets so the Aktive Tickets list exceeds one page
+  # (>10 active) and the themed pager renders. They share the Coding column.
+  BB-150: coding
+  BB-151: coding
+  BB-152: coding
+  # The fourth one, added by BB-490. Hiding closed rows by default took the
+  # bakers.build Platform project from eleven listed tickets to ten OPEN ones —
+  # exactly items_per_page — so the pager stopped rendering at all and
+  # contextual-tickets lost the "Next page" link it clicks. It does NOT share
+  # the Coding column with its three siblings: `qualification` is the state
+  # the note above already identifies as the one no count asserts, and an
+  # unqualified ticket with neither conductor nor assignee is what it is.
+  BB-153: qualification
+  # The three bug E2E fixtures (bb_bug) — without an explicit state
+  # default_content leaves `state` NULL, so they render in no board column at
+  # all (invisible on the dashboard bug tab). Seed the bug entry state so they
+  # populate the bug Diagnose column deterministically. The conductor/dropsh
+  # suites reset their own fixture states, so this initial value is safe.
+  GL-E2E-WFI: diagnose
+  GL-E2E-DROPSH: diagnose
+  GL-E2E-CONDUCTOR: diagnose
+  # BB-263's derivation subject. It needs a state for two reasons: the
+  # ticket_detail SDC declares `state` a REQUIRED prop, so a NULL-state ticket
+  # 500s on its own detail page; and the four board counts board.feature pins
+  # (Spec 3 / Coding 5 / Review 2 / Diagnose 3) must not move. `qualification`
+  # is the only non-terminal state no count asserts — and it is what an
+  # unqualified bug ticket with neither conductor nor assignee actually is.
+  GL-E2E-DERIVE: qualification
+  TIME-1: spec
+# Recipe-test refreshes these relative dates after it applies the terminal
+# states above. Values are whole, non-negative days before installation time.
+bb_ticket_closed_date_days_ago:
+  G513F-1: 1
+  G513F-2: 14
+bb_run:
+  dbb00000-0000-4000-8000-000000000001: done
+  dbb00000-0000-4000-8000-000000000002: done
+  dbb00000-0000-4000-8000-000000000003: running

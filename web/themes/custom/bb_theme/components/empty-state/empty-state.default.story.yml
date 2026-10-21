@@ -1,0 +1,7 @@
+# Free-standing: a whole statistics block with nothing to show. The message names WHAT is absent and
+# over WHAT period, because an empty figure and a broken figure look identical on a dashboard.
+component: bb_theme:empty-state
+name: Default
+props:
+  icon: info-circle
+  message: No tickets were closed and no runs were started in any window of the last 30 days.

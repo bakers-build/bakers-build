@@ -1,0 +1,31 @@
+{#
+/**
+ * @file
+ * The island module's default dialog hull.
+ *
+ * Bare and functional. `message` renders above `body`, `actions` below it
+ * (a wrapped form's lifted submit row; dropping it leaves no way to send).
+ * `open` is required: a <dialog> without it does not render. The close control
+ * works through `js/island.dialog.js`, this component's library dependency.
+ * The slot contract is documented, not enforced; see the component metadata.
+ */
+#}
+{% set actions_content %}{% block actions %}{{ actions }}{% endblock %}{% endset %}
+{#- `data-dialog` IS THE BEHAVIOUR'S HOOK and not decoration: it is what
+    `js/island.dialog.js` treats as a dialog. Unconditional, because a hull
+    that is closable only when it renders a button would leave Escape with
+    nothing to resolve. #}
+<dialog class="island-dialog" data-dialog{% if open %} open{% endif %}>
+  <h2 class="island-dialog__title">{{ title }}</h2>
+  {%- if dismissible %}
+    {#- A real button rather than a link: it closes rather than navigates in
+        its own right, and where it returns TO is read off
+        `[data-dialog-cancel]` at click time. #}
+    <button type="button" class="island-dialog__close" data-dialog-close>{{ 'Close'|t }}</button>
+  {% endif %}
+  <div class="island-dialog__message">{% block message %}{{ message }}{% endblock %}</div>
+  <div class="island-dialog__body">{% block body %}{{ body }}{% endblock %}</div>
+  {%- if actions_content|trim is not empty %}
+    <div class="island-dialog__actions">{{ actions_content }}</div>
+  {% endif %}
+</dialog>

@@ -1,0 +1,21 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_machine.full
+ *
+ * Authored for BB-619 from the bb_machine `full` entity mapping.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_core"
+    ]
+  },
+  "id": "bb_machine.full",
+  "label": "Full",
+  "description": "",
+  "targetEntityType": "bb_machine",
+  "cache": true
+}
+)

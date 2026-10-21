@@ -1,0 +1,45 @@
+component: bb_theme:option_picker
+name: Selected chips
+variant: inline
+props:
+  variant: inline
+  label: Reviewers
+  icon: user
+  searchable: true
+  selected_chips: true
+  multiple: true
+  name: reviewers
+  id: reviewers-chips
+  clearable: true
+  clear_label: No reviewers
+  value_labels:
+    - Ada Lovelace
+    - Alan Mathison Turing
+  selected:
+    - value: '4'
+      label: Ada Lovelace
+    - value: '5'
+      label: Alan Mathison Turing
+  values:
+    - '4'
+    - '5'
+  aria_label: Change reviewers. Currently Ada Lovelace, Alan Mathison Turing.
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: reviewers
+        multiple: true
+        clearable: true
+        clear_label: No reviewers
+        options:
+          - value: '4'
+            label: Ada Lovelace
+            selected: true
+          - value: '5'
+            label: Alan Mathison Turing
+            selected: true
+          - value: '1'
+            label: Christian Wiedemann
+            selected: false

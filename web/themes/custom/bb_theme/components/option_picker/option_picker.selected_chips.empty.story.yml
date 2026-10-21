@@ -1,0 +1,37 @@
+component: bb_theme:option_picker
+name: Selected chips empty
+variant: inline
+props:
+  variant: inline
+  label: Reviewers
+  icon: user
+  searchable: true
+  selected_chips: true
+  multiple: true
+  name: reviewers
+  id: reviewers-chips-empty
+  clearable: true
+  clear_label: No reviewers
+  value_labels: []
+  selected: []
+  values: []
+  aria_label: Change reviewers. Nothing is set.
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: reviewers
+        multiple: true
+        clearable: true
+        clear_label: No reviewers
+        options:
+          - value: '4'
+            label: Ada Lovelace
+            selected: false
+          - value: '5'
+            label: Alan Mathison Turing
+            selected: false
+          - value: '1'
+            label: Christian Wiedemann
+            selected: false

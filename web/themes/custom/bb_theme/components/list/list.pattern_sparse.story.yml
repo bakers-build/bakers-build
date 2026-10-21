@@ -1,0 +1,90 @@
+component: bb_theme:list
+name: Pattern sparse
+props:
+  layout: lines
+  pattern:
+    headline:
+      - identifier
+      - state
+      - state_at_start
+    meta:
+      - conductor_id
+      - agent
+      - started_at
+    right:
+      - duration_s
+    captions:
+      state_at_start: From
+      started_at: Started
+      duration_s: Took
+  items:
+    - accent: running
+      cells:
+        identifier:
+          kind: link
+          value: BB-592
+          url: '#'
+          mono: true
+        state:
+          kind: badge
+          label: running
+          tone: running
+          dot: true
+        state_at_start:
+          kind: mono
+          value: coding
+        conductor_id:
+          kind: text
+          value: cw-framework
+        agent:
+          kind: text
+          value: claude
+        started_at:
+          kind: text
+          value: 2026-10-01 22:46
+        duration_s:
+          kind: text
+          value: 42 s
+          emphasis: strong
+    - cells:
+        identifier:
+          kind: link
+          value: BB-585
+          url: '#'
+          mono: true
+        state:
+          kind: badge
+          label: failed
+          tone: attention
+          dot: true
+        state_at_start:
+          kind: mono
+          value: review
+        started_at:
+          kind: text
+          value: 2026-10-01 09:12
+        duration_s:
+          kind: text
+          value: 0 s
+          emphasis: strong
+    - cells:
+        identifier:
+          kind: link
+          value: GDB-41
+          url: '#'
+          mono: true
+        state:
+          kind: badge
+          label: queued
+          tone: neutral
+          dot: true
+        state_at_start:
+          kind: mono
+          value: spec
+        started_at:
+          kind: text
+          value: 2026-10-01 08:00
+        duration_s:
+          kind: text
+          value: —
+          emphasis: faint

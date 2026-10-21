@@ -1,0 +1,1762 @@
+id: settings
+group: Designbook/Sections/Settings
+title: Settings
+description: >
+  **Product place: Settings** — rail leaf **Settings**. One settings screen
+  administers the
+
+  current workspace entity (name, billing) and the workspace **Labels**
+  vocabulary. These are
+
+  two entities on one settings surface, not separate rail destinations and not
+  separate product
+
+  sections named “workspace” or “labels”.
+
+
+  **Rail:** My work · Projects · Teams · Settings.
+
+
+  **Screens**
+
+
+  - `settings` — workspace fields + Labels field group (no members: a workspace
+  has no members).
+
+  - `team-detail-overview` / `team` — team detail (rail Teams › row): entity
+  tabs (IA D12.3,
+    BB-454) Overview · Stats · Tickets · Runs · Members. `team-detail-overview` is the
+    canonical/default face — Projects relation only (BB-484); `team` is the Members face
+    (BB-435), where add member lives. No board, no Settings.
+
+  Sibling sections: `tickets` (My work), `projects`.
+
+
+  **Workspace and team both grant permissions.** BB-456 D9 gave the team its
+  first standard role,
+
+  `lead`, so a team membership now carries permissions exactly as a workspace or
+  project one does.
+
+  Membership lives on teams and projects, not on the workspace settings surface.
+
+
+  **Layout.** Every scene here inherits the one shell (`scene:
+  "design-system:shell"`) and fills its
+
+  `content` with exactly one `canvas`; headings, regions and spacing follow
+
+  `designbook/design-system/layout.md`, which is the rule document for the
+  layout layer.
+status: in-progress
+order: 3
+user_flows: >
+  - Open Settings from the rail: rename workspace, inspect billing, manage
+  Labels.
+
+  - Click a team under Teams: team detail (overview, stats, tickets, runs,
+  roster).
+
+  - From team, open a Project when work must be distributed on a board.
+ui_requirements: >
+  **Entities read**
+
+
+  - `bb_workspace.bb_workspace` — `full` view mode, and it is **empty**.
+  `name` is the settings
+    screen's heading (edited in place) and `billing_profile` its sub-line, and a `full` view mode
+    emits no header (BB-378 — `designbook/design-system/layout.md` §2); `created`, `changed` and
+    `owner_user_id` are deliberately not on screen. So the screen authors its own `page_header` and
+    places no workspace node. The mapping file says why, so nobody puts the header back.
+  - `bb_term.bb_labels` — Labels field group on the settings screen. One
+  vocabulary since
+    `bb_capability_tags` was retired.
+  - `bb_team.bb_team` — the Overview tab's **body**, `full` view mode: the
+  Projects relation
+    only (BB-484 dropped the Members zone from this mapping — BB-435 already delivers
+    membership as the Members tab's own body, and a second copy here would duplicate that
+    delivered face). Its `name`, `workspace_id` and `owner_user_id` are the screen's heading and
+    sub-line and are therefore authored in the scene's `page_header`, not emitted here — a `full`
+    view mode emits no header (BB-378).
+  - `og_membership.default` — team (and project) member items only, `teaser`. A
+  **workspace has no
+    members** on the settings surface.
+  - `user.user` — every person on team/project member rows, `compact`. Reads
+  `display_name`,
+    `initials`, `mail`, `status`.
+
+  **Filters**: none — each screen scopes to the object it administers, and the
+  workspace comes from
+
+  the shell switcher rather than from a control here.
+
+
+  **Not a filter**: the workspace, for the same reason it is not one anywhere
+  else (BB-327).
+
+
+  **A MEMBER LIST IS A LIST, NOT A TABLE.** The **team** screen and the
+  **project** screen both
+
+  render members as items of a `list` — the entry component that used to carry
+  that argument is gone,
+
+  and the argument is now the container's own: a listing without columns, which
+  is what "not a table"
+
+  means. BB-435 extended the rule to the project rather than letting the
+  project contradict it: the
+
+  same object was rendered as a `list` here and as a fully presented
+  `bb_theme:table` there, which
+
+  is a stronger disagreement than an unstyled core table would have been,
+  because one global
+
+  `views-view-table.html.twig` binds every table view and there was no per-view
+  seam to differ at.
+
+  The project's members live on their own **Members** face; the **settings**
+  screen still has no
+
+  members block. `board-card` keeps its pattern; the
+
+  tickets, projects, groups and environments listings stay TABLES —
+  `view.tickets`, `view.projects`,
+
+  `view.groups` and `view.environments`, each a View that owns its table — where
+  values are compared
+
+  down a column. Members are deliberately not in that list and are not the table
+  presenter's to
+
+  claim: after BB-435 the member list is not a view at all. (`node-row` was in
+  that first list
+
+  until BB-378 deleted it — reachable from no Designbook scene.)
+
+
+  **The workspace name is edited INLINE.** `name` is reversible, so by
+
+  `designbook/design-system/action-pattern.md` › *Inline edit* the commit IS the
+  write: no save
+
+  button, no per-field dirty state, no confirmation. The only dialog in these
+  organisation sections
+
+  is `project-create`.
+
+
+  **Team member remove is single-step and names the effect.**
+  `action-pattern.md` confirms an
+
+  action exactly when it **ends or discards the ticket**; removing a team
+  membership does neither,
+
+  so there is no confirmation. The control **names the effect** (from the
+  membership mapping): since
+
+  BB-456 D9 a team membership carries permissions, so removing one revokes
+  their access — the same
+
+  sentence the project already uses. Workspace settings has no members block at
+  all.
+
+
+  **The n:m project assignment lives on `bb_project.teams`** and is edited
+  from the team screen
+
+  and the projects section — one field, two ends.
+
+
+  **Neither object exists in code as this designbook renders it.** Screens
+  render from
+
+  `data-model.yml` and `designbook/data/` alone.
+
+
+  **The Drupal binding for list items is a Views `ui_patterns` row**, not an
+  entity view display.
+
+  `teaser` is the designbook-internal name for Storybook. This section generates
+  neither view nor
+
+  display — no `sync-to`, no `config/sync` touch.
+
+
+  **Nothing posts** and nothing opens on click: Storybook never calls
+  `Drupal.attachBehaviors`.
+
+
+  **Sample records are selected by pinned id** (`select: "$[id='1']"`), never by
+  tag.
+scenes:
+  - name: settings
+    group: Screens
+    section: settings
+    docs: >-
+      SETTINGS for the current workspace: the workspace entity (name, billing)
+      and the Labels vocabulary on one rail destination named Settings. Not a
+      “workspace section” and not a separate labels page in the product rail.
+
+      NO MEMBERS HERE. A workspace has no members surface — membership is on
+      teams and projects. The former members list on this screen is removed.
+
+      THE NAME IS EDITED IN PLACE. Reversible field: `action-pattern.md` ›
+      *Inline edit* — commit IS the write. Heading uses `bb_theme:form_input`
+      (BB-420 Task 31 retired `text_line`; every editable field is now a real
+      form element). No edit route, no edit dialog. `project-create` remains the
+      only dialog in these sections.
+
+      BILLING PROFILE is composed into one line (contract/subscription at tenant
+      level). `created`/`changed` are not rendered.
+
+      LABELS are a field group on this same settings screen: a list of pills
+      (`badge` label variant) as a WRAPPING ROW rather than a grid column —
+      which is what `zone`'s `direction: row` is for, and what `section`'s
+      `justify_items: start` was working around before BB-378. Optional “New
+      label” affordance is present; term description/weight have no surface yet.
+      `bb_capability_tags` is retired by decision.
+
+      THE SHELL IS INHERITED, NOT RETYPED (BB-378 D1): this scene starts with
+      `scene: "design-system:shell"` and fills its `content` with exactly one
+      `canvas` (D2). The SCREEN owns the chrome: a `page_header` in
+      `canvas.header` carries the single `<h1>` — which here is the workspace's
+      name as an inline-editable `bb_theme:form_input` — and the composed
+      billing line beneath it. The `bb_workspace` `full` view mode emits
+      neither, because a view mode emits no layout (layout.md §2); with name and
+      billing accounted for as heading and sub-line, and
+      `created`/`changed`/`owner_user_id` deliberately off screen, that view
+      mode has no body left and no workspace node is placed. Labels is a `zone`
+      heading, one level below the `<h1>`, and its sub-line is `zone`'s
+      `description` prop.
+
+      THE RAIL SHOWS THE SHELL'S OWN STATE, not this screen's active trail. That
+      is the price of declaring the shell once (D1) and it is paid deliberately:
+      an inherited shell renders one rail state for every screen, and buying a
+      per-screen trail back would mean passing the whole navigation tree through
+      `with:` on all twenty scenes — which is the four-copy duplication D1
+      exists to remove. In Drupal the trail comes from the route, so the loss is
+      a Storybook-only cosmetic. Workspace switches only in the shell chrome.
+      Workspace overview links to /home from this settings screen; it is not a
+      rail menu item.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: keytec
+                      description: agency contract · annual · 25 seats · renews 2027-01-05
+                    slots:
+                      heading:
+                        component: bb_theme:form_input
+                        props:
+                          type: text
+                          name: name
+                          id: workspace-name
+                          placeholder: What is this workspace called
+                          value: keytec
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      direction: row
+                      gap: sm
+                      description: >-
+                        Workspace labels a ticket can carry. A pill shows a
+                        term's name; description and weight have no surface here
+                        yet.
+                    slots:
+                      heading: Labels
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: New label
+                          icon_only: true
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: lines
+                            items:
+                              - cells:
+                                  label:
+                                    kind: badge
+                                    label: backend
+                                    tone: neutral
+                              - cells:
+                                  label:
+                                    kind: badge
+                                    label: ui
+                                    tone: neutral
+                              - cells:
+                                  label:
+                                    kind: badge
+                                    label: bug
+                                    tone: neutral
+                  - component: bb_theme:zone
+                    props:
+                      inset: md
+                      direction: row
+                    slots:
+                      content:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Workspace overview
+                            href: /home
+                            attributes:
+                              data-hx-boost: 'false'
+  - name: workspace-members
+    group: Screens
+    section: settings
+    docs: >-
+      THE WORKSPACE MEMBERS FACE: pending invitations and the roster. Inviting
+      is a DIALOG opened by the primary **Invite members** action on the Members
+      zone, not a zone of this face; `action-pattern.md` names the exception and
+      its reason. After a successful invite the dialog closes, the face
+      re-renders and a status `message` reports who was invited and who was
+      skipped (already a member, already invited). The pending list names each
+      invitation's role and team; Revoke stays the item's one control.
+
+      BOTH LISTS ARE `layout: cards` with `spacing: comfortable`, and each item
+      is a patterned row (BB-638) — `headline: [person]`, `meta: [joined,
+      team]`, `right: [state, role, transfer, remove]` — so the person and the
+      joined date sit on the left and the role or state, transfer and remove are
+      right-aligned, as GroupMembersForm::listZone() renders it.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Members
+                      description: keytec · who belongs to this workspace and in which role
+                main:
+                  - component: bb_theme:message
+                    props:
+                      status: status
+                    slots:
+                      body: >-
+                        Invited 2 people. Skipped: sven.gruber@keytec.example
+                        (already a member).
+                  - component: bb_theme:zone
+                    slots:
+                      heading: Pending invitations
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - person
+                              meta:
+                                - joined
+                                - team
+                              right:
+                                - state
+                                - role
+                                - transfer
+                                - remove
+                            items:
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: lena.fischer@keytec.example
+                                    emphasis: strong
+                                  role:
+                                    kind: badge
+                                    label: Contributor
+                                    tone: neutral
+                                  team:
+                                    kind: text
+                                    value: Platform crew
+                                  state:
+                                    kind: badge
+                                    label: Invited
+                                    tone: wait
+                                  joined:
+                                    kind: mono
+                                    value: invited 2026-10-02
+                                  remove:
+                                    kind: rendered
+                                    markup: Revoke
+                                    label: >-
+                                      Revoke invitation for
+                                      lena.fischer@keytec.example
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: m.vandijk@northwind.example
+                                    emphasis: strong
+                                  role:
+                                    kind: badge
+                                    label: Member
+                                    tone: neutral
+                                  team:
+                                    kind: text
+                                    value: No team
+                                  state:
+                                    kind: badge
+                                    label: Expired
+                                    tone: critical
+                                  joined:
+                                    kind: mono
+                                    value: invited 2026-09-18
+                                  remove:
+                                    kind: rendered
+                                    markup: Revoke
+                                    label: >-
+                                      Revoke invitation for
+                                      m.vandijk@northwind.example
+                  - component: bb_theme:zone
+                    slots:
+                      heading: Members
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Invite members
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--workspace-invite
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - person
+                              meta:
+                                - joined
+                                - team
+                              right:
+                                - state
+                                - role
+                                - transfer
+                                - remove
+                            items:
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    mail: christian.wiedemann@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Admin
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-06
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    mail: sven.gruber@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Member
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-06
+                                  remove:
+                                    kind: rendered
+                                    markup: Remove
+                                    label: >-
+                                      Remove Sven Gruber from the workspace.
+                                      Revokes their access.
+  - name: workspace-invite
+    group: Screens
+    section: settings
+    docs: >-
+      THE INVITE DIALOG over the Members face (`settings › workspace-members`),
+      in the shell's overlay like the create dialogs. The `form` grammar places
+      the e-mail TEXTAREA as the one line, taking several addresses (one per
+      line, or separated by commas), and below it the two property pills:
+      Workspace role (opens on Contributor; every role explains what it grants)
+      and Team (opens on the workspace's first team; `No team` clears it).
+      Cancel, Escape and the close control leave the face as it was. A malformed
+      entry keeps the dialog open with the text intact and names the entry.
+      Storybook runs no Drupal behaviour, so nothing posts or closes here.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: Invite members
+                label: Invite members
+                dismissible: true
+              slots:
+                body:
+                  - component: bb_theme:form
+                    slots:
+                      lines:
+                        - component: bb_theme:form_textarea
+                          props:
+                            name: emails
+                            id: edit-emails
+                            rows: 4
+                            placeholder: >-
+                              Email addresses, one per line or separated by
+                              commas
+                            value: |-
+                              lena.fischer@keytec.example
+                              m.vandijk@northwind.example
+                      pills:
+                        - component: bb_theme:property_pill
+                          props:
+                            name: workspace_role
+                            label: Workspace role
+                            icon: user
+                            picker_id: edit-workspace-role
+                            value_label: Contributor
+                            values:
+                              - bb_workspace-bb_workspace-contributor
+                            open: false
+                            multiple: false
+                            options:
+                              - value: bb_workspace-bb_workspace-member
+                                label: Member
+                                description: >-
+                                  Belongs to the workspace; no rights of its
+                                  own.
+                                selected: false
+                              - value: bb_workspace-bb_workspace-guest
+                                label: Guest
+                                description: Reads the projects of their team.
+                                selected: false
+                              - value: bb_workspace-bb_workspace-contributor
+                                label: Contributor
+                                description: Works on tickets in their team's projects.
+                                selected: true
+                              - value: bb_workspace-bb_workspace-lead
+                                label: Admin
+                                description: Manages members and sees every project.
+                                selected: false
+                            aria_label: Change workspace role. Currently Contributor.
+                        - component: bb_theme:property_pill
+                          props:
+                            name: team_id
+                            label: Team
+                            icon: team
+                            picker_id: edit-team-id
+                            value_label: Design crew
+                            values:
+                              - '3'
+                            open: false
+                            multiple: false
+                            options:
+                              - value: '3'
+                                label: Design crew
+                                selected: true
+                              - value: '1'
+                                label: Platform crew
+                                selected: false
+                            aria_label: Change team. Currently Design crew.
+                            clearable: true
+                            clear_label: No team
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Invite
+                      type: submit
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Members
+                      description: keytec · who belongs to this workspace and in which role
+                main:
+                  - component: bb_theme:zone
+                    slots:
+                      heading: Pending invitations
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - person
+                              meta:
+                                - joined
+                                - team
+                              right:
+                                - state
+                                - role
+                                - transfer
+                                - remove
+                            items:
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: lena.fischer@keytec.example
+                                    emphasis: strong
+                                  role:
+                                    kind: badge
+                                    label: Contributor
+                                    tone: neutral
+                                  team:
+                                    kind: text
+                                    value: Platform crew
+                                  state:
+                                    kind: badge
+                                    label: Invited
+                                    tone: wait
+                                  joined:
+                                    kind: mono
+                                    value: invited 2026-10-02
+                                  remove:
+                                    kind: rendered
+                                    markup: Revoke
+                                    label: >-
+                                      Revoke invitation for
+                                      lena.fischer@keytec.example
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: m.vandijk@northwind.example
+                                    emphasis: strong
+                                  role:
+                                    kind: badge
+                                    label: Member
+                                    tone: neutral
+                                  team:
+                                    kind: text
+                                    value: No team
+                                  state:
+                                    kind: badge
+                                    label: Expired
+                                    tone: critical
+                                  joined:
+                                    kind: mono
+                                    value: invited 2026-09-18
+                                  remove:
+                                    kind: rendered
+                                    markup: Revoke
+                                    label: >-
+                                      Revoke invitation for
+                                      m.vandijk@northwind.example
+                  - component: bb_theme:zone
+                    slots:
+                      heading: Members
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Invite members
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--workspace-invite
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - person
+                              meta:
+                                - joined
+                                - team
+                              right:
+                                - state
+                                - role
+                                - transfer
+                                - remove
+                            items:
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    mail: christian.wiedemann@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Admin
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-06
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    mail: sven.gruber@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Member
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-06
+                                  remove:
+                                    kind: rendered
+                                    markup: Remove
+                                    label: >-
+                                      Remove Sven Gruber from the workspace.
+                                      Revokes their access.
+  - name: team
+    group: Screens
+    section: settings
+    docs: >-
+      ONE TEAM, reached by clicking it in the rail. This is what that row's url
+      promises, and it is the other half of BB-341's pending question: there
+      is NO teams list here, because the rail is already one. `team-row` was
+      therefore never created — without a table it would have no consumer, and a
+      component with no consumer is a contract nobody checks.
+
+      > **Scope change 2026-09-13 (BB-454), recorded under
+      `@bakers-build/scope-change` > as a refinement of this ticket's own qualification
+      handoff, which listed > scene changes as out of scope.** `Load`/`Delivery`
+      are retired in favour > of `Overview` (the master-data face, inline-edit
+      follow-up) and the > broader `Stats`; `Tickets` joins as its own tab
+      (BB-428, never > reflected here before). Tab structure and naming only —
+      no new > component, design token or entity mapping.
+
+      THIS IS AN ENTITY PLACE, SO THE SCREEN OWNS THE CHROME (BB-378 D7/D19).
+      `page_header` carries the team's name, its sub-line and the five faces IA
+      D12.3 decided — Overview · Stats · Tickets · Runs · Members — in its
+      `tabs` slot; the tab row is not a component of its own. The header is a
+      SCREEN-level `page_header` rather than the `bb_team.bb_team.full` view
+      mode, and that is the same rule the ticket detail follows: a view mode
+      DISPLAYS an entity, a screen ARRANGES one, and the tabs are a screen-level
+      fact — which face of the entity you are looking at — that no single-record
+      mapping can know. D5 gives the screen exactly one `<h1>`, so there is
+      exactly one `page_header` here and every block below it is a `zone`
+      heading.
+
+      AND THE BODY IS NEITHER A VIEW NOR A VIEW MODE (BB-435). It WAS a view:
+      `canvas.main` held exactly one node, `view.bb_group_members`, derived
+      from og's `og_members_overview` so that an og release could not collide
+      with it. That is retired, and the reason is what the members surface has
+      to be rather than a preference. Two of the four cells are interactive —
+      the role and the remove control — so they have to be form controls, and a
+      Views field smuggling a control into a table cell is what forced the one
+      global `views-view-table.html.twig` to carry a thirty-line rule about what
+      counts as content when a cell holds no text node: a naive `|striptags`
+      drew an em-dash OVER the only affordance the row had, and four browser
+      scenarios failed on it. The body is now ONE FORM that renders its own
+      items, and it needs none of that.
+
+      THE ROSTER IS A PATTERNED ROW (BB-638): `layout: cards` with `spacing:
+      comfortable` and the pattern `headline: [person]`, `meta: [joined, team]`,
+      `right: [state, role, transfer, remove]` — the person and the joined date
+      on the left, the role, transfer and remove right-aligned.
+
+      A view mode is still not the answer either, and for the original reason:
+      membership is an `og_membership` entity, so this body is a query over a
+      DIFFERENT entity type than the screen addresses.
+      `bb_team.bb_team.full` stays the entity's own body and is separate
+      work.
+
+      THIS FACE AND THE PROJECT'S MEMBERS FACE ARE ONE SURFACE, which BB-419
+      established and this ticket keeps. The view it replaced already took the
+      group as (entity_type, entity_id) rather than as a team, and the form does
+      the same: the group comes from the host of the face being rendered, so
+      nothing in the surface names an entity type. The only differences are the
+      ones the visible labels require — the noun in the remove sentence, and
+      whether an item carries a role at all.
+
+      What does not change is the other half of the rule: a screen ARRANGES. The
+      title and sub-line stay here, because they are the screen's header.
+
+      THE TAB BODIES USED TO BE FOLLOW-UPS' TO FILL; OVERVIEW NO LONGER IS
+      (BB-484). Overview is the face the canonical address shows. BB-454
+      follows IA D12.3 literally: the five tabs are five Drupal local tasks
+      (three controller-backed, two native Views pages), and Overview is the
+      DEFAULT task — a default task is not a route of its own, it IS the base
+      route, so `/{workspace}/team/{id}` renders Overview.
+
+      That reverses what this scene used to say. Members was named the active
+      face here so the surface would show something while Overview's body was
+      still undesigned; BB-484 designs that body, in the sibling scene
+      `team-detail-overview` below, so the canonical address no longer renders
+      an EMPTY body. Overview's body is the `bb_team.bb_team` `full` view
+      mode: just the Projects relation now (see that scene's own docs for why
+      Members is not repeated there). Stats stays empty for the reason this
+      scene used to give Overview — it is a BB-454 follow-up's to fill;
+      Tickets and Runs are native Views pages with no Designbook body of their
+      own.
+
+      Members is the one face THIS scene shows content for: its zone plus the
+      Projects relation, one click away, and the face the live behaviour is
+      proved on. This ticket ships the chrome and what already existed as its
+      body — it invents no statistics it has no data for.
+
+      THE MEMBER LIST NOW SHOWS A ROLE, THE SAME ARM THE PROJECT TAKES. BB-456
+      D9 gives the team its first `role_type: standard` role,
+      `og.og_role.bb_team-bb_team-lead`, so a team membership carries
+      permissions exactly as a workspace or project one does — it is an OG group
+      so that membership has one mechanism system-wide, and it is no longer the
+      exception to what the other two levels grant. So the items carry a role
+      control, the pick IS the write, exactly as the project's own items do. The
+      decision is enforced in the entity mapping, which reads the role
+      vocabulary rather than branching on `entity_type`, so a scene cannot put
+      the wrong arm back.
+
+      Both the team header and the members block SAY what the team grants. That
+      is deliberate redundancy: the presence of a control is not itself a
+      statement, and this is the surface where somebody would come looking for
+      rights.
+
+      THE RAIL SHOWS THE SHELL'S OWN STATE rather than this team's row in the
+      trail — the accepted cost of declaring the shell once (D1). That used to
+      be recorded here as a Storybook-only cost, on the grounds that in Drupal
+      the trail comes from the route. BB-396 sharpens it: on a DIRECT visit
+      the route still supplies the trail, but after a boosted navigation the
+      rail is outside the replaced markup and its active entry is stale in
+      Drupal too (D3, module fact F6). The cost is real on both surfaces, and
+      the alternative is re-rendering the whole menu tree on every click.
+
+      THIS SCREEN IS RENDERED INSIDE THE `island-content` BOUNDARY, and naming
+      it is all this scene does about it (BB-396 D15). Everything the scene
+      puts in the shell's `content` slot — the `canvas`, its `page_header` with
+      the four tabs, and the members `zone` — sits inside `island-content`,
+      which by D1 is the page's ONE swap target and is addressed by that DOM id
+      rather than by a class or a `closest` selector. The tab row rides along
+      with it: `local_tasks_block` is placed inside the same island in the
+      shipped page layout, so its current entry is right after a tab click
+      without declaring anything of its own (D8). The rail, outside the
+      boundary, is the paragraph above.
+
+      STORYBOOK CANNOT RENDER AN ISLAND AND DOES NOT SIMULATE ONE. An island is
+      a render array `IslandWrapper` contributes at request time, and this scene
+      renders Twig/SDC only, so there is no container, no boost, no fragment
+      request and no swap here — the four tabs are plain links to this same
+      story and `active` is a prop. Pretending otherwise would make the design
+      claim behaviour the design cannot own; the boundary is DOCUMENTED and the
+      simulation is FORBIDDEN. The live behaviour is proved on the Members face
+      by the BDD suite, not here.
+
+      AND THE BOUNDARY RUNS IN CONFIGURATION MODE — a declared deviation kept on
+      purpose, so the scene describes what the surface actually does rather than
+      the idealised fragment story. `island-content` declares an EMPTY swap
+      target, which is `IslandBoost::to(NULL)`, "the container itself": it is
+      already the main fragment and cannot ride along with itself. Because it
+      resolves to no island plugin, the server never re-renders it alone — a
+      boosted tab click is answered with the ORDINARY WHOLE PAGE and the client
+      narrows it to this boundary with `hx-select`. That is enough for a
+      container that only RENDERS, which is all four faces of a team do; a
+      container that MUTATES would need a plugin instead.
+
+      ALL THREE MEMBERSHIP STATES ARE VISIBLE — active, pending, blocked — which
+      is why the sample world gained a blocked membership on this team. Only an
+      active membership grants what its roles carry, so the state is the thing a
+      reader of this screen can act on.
+
+      THE MEMBERS ARE A LIST, not a table — same organisation rule as project
+      members. `ticket-row` and `board-card` are untouched by that change: it is
+      scoped to the organisation surfaces, where the values are not compared
+      down a column. (`node-row` was named here too, until BB-378 deleted it.)
+
+      THE PROJECTS ARE THE n:m RELATION FROM THE TEAM SIDE, as one inline
+      picker. It reads `bb_project.teams`, the same field the `projects`
+      section's screen edits from its rows — one field, two ends — which is why
+      the assignment can never disagree between the two screens. Team 1 is
+      assigned to both projects of this workspace, so the relation is many on
+      this side as well.
+
+      Nothing posts. The picker is closed here; the open state is on project
+      detail (`project-detail-teams-open` in the projects section).
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Platform crew
+                      description: >-
+                        keytec · owned by Christian Wiedemann · lead role grants
+                        access
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Team sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-detail-overview
+                              active: false
+                            - label: Stats
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                            - label: Tickets
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Runs
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--run-detail
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: true
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      description: >-
+                        Who is on this team, since when, and in which role. A
+                        team now carries a role, the same as a project: removing
+                        a lead or member revokes their access.
+                    slots:
+                      content:
+                        - component: bb_theme:form
+                          slots:
+                            pills:
+                              - component: bb_theme:property_pill
+                                props:
+                                  name: account
+                                  label: Person
+                                  icon: user
+                                  picker_id: team-add-member
+                                  prominent: false
+                                  multiple: false
+                                  open: false
+                                  searchable: true
+                                  search_placeholder: Search by name
+                                  search_label: Search by name
+                                  aria_label: Choose the person to add to Platform Crew.
+                                  value_label: ''
+                                  value_labels: []
+                                  values: []
+                                  clearable: false
+                                  clear_label: ''
+                                  creatable: false
+                                  create_label: ''
+                                  options:
+                                    - value: '5'
+                                      label: Lena Fischer
+                                      description: lena.fischer@keytec.example
+                                      selected: false
+                                    - value: '3'
+                                      label: Marieke van Dijk
+                                      description: m.vandijk@northwind.example
+                                      selected: false
+                            actions:
+                              - component: bb_theme:button
+                                props:
+                                  variant: primary
+                                  type: submit
+                                  label: Add member
+                                  disabled: false
+                                  icon_only: false
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - person
+                              meta:
+                                - joined
+                                - team
+                              right:
+                                - state
+                                - role
+                                - transfer
+                                - remove
+                            items:
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    mail: christian.wiedemann@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Lead
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-06
+                                  remove:
+                                    kind: rendered
+                                    markup: Remove
+                                    label: >-
+                                      Remove Christian Wiedemann from the team.
+                                      Revokes their access.
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    mail: sven.gruber@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Member
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-06
+                                  remove:
+                                    kind: rendered
+                                    markup: Remove
+                                    label: >-
+                                      Remove Sven Gruber from the team. Revokes
+                                      their access.
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Tom Beckett
+                                    initials: TB
+                                    color: offline
+                                    mail: tom.beckett@partner.example
+                                  role:
+                                    kind: rendered
+                                    markup: Member
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-04-14
+                                  remove:
+                                    kind: rendered
+                                    markup: Remove
+                                    label: >-
+                                      Remove Tom Beckett from the team. Revokes
+                                      their access.
+  - name: team-detail-overview
+    group: Screens
+    section: settings
+    docs: >-
+      ONE TEAM's OVERVIEW, the canonical/default face of the team screen
+      (BB-484). Reached by clicking the team in the rail —
+      `/{workspace}/team/{id}` is Overview because a default local task IS the
+      base route, not a route of its own (IA D12.3, BB-454).
+
+      THIS IS AN ENTITY PLACE, SO THE SCREEN OWNS THE CHROME (BB-378 D7/D19),
+      exactly as the sibling `team` (Members) scene does. `page_header` carries
+      the team's name, its sub-line and the same five tabs — Overview · Stats ·
+      Tickets · Runs · Members — in its `tabs` slot, with `Overview` `active:
+      true` here. The header is a SCREEN-level `page_header` rather than the
+      `bb_team.bb_team.full` view mode: a view mode DISPLAYS an entity, a
+      screen ARRANGES one, and the tabs are a screen-level fact no single-record
+      mapping can know.
+
+      AND THE BODY IS THE ENTITY'S OWN VIEW MODE, unlike the Members face.
+      Overview addresses the SAME entity type the screen is about —
+      `bb_team.bb_team` — so, unlike Members' `og_membership` query, a view
+      mode is exactly the right shape here: `canvas.main` places one
+      `bb_team.bb_team` `full` entity node, selected on this team's id.
+
+      OVERVIEW IS NOW FILLED, NOT EMPTY. The `team` scene's docs used to say the
+      canonical address rendered an empty body because Overview's body had not
+      been designed; BB-484 designs it, in this scene. The body renders the
+      team's Projects relation — the n:m assignment from the team side, reading
+      `bb_project.teams` — as one coherent zone inside the D12.3 tab set. That
+      is the entire body this round: no roster here. BB-435 already delivers
+      membership as the Members tab's own body (a form over a different entity
+      type, `og_membership`), and a second copy on Overview would duplicate that
+      delivered face the moment one of the two disagreed — so the entity mapping
+      carries no Members zone any more, and this scene places no membership
+      content either. No inline rename this round either: `name` stays a plain
+      heading here, the reversible edit affordance is out of this pass's scope.
+
+      THE RAIL SHOWS THE SHELL'S OWN STATE, and THIS SCREEN RENDERS INSIDE THE
+      `island-content` BOUNDARY, and STORYBOOK CANNOT RENDER AN ISLAND — all for
+      the same reasons the `team` scene's docs give in full; this scene does not
+      repeat that argument, only its conclusion: the four tabs are plain links
+      to their own stories and `active` is a prop, nothing here simulates a
+      boosted swap.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Platform crew
+                      description: >-
+                        keytec · owned by Christian Wiedemann · lead role grants
+                        access
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Team sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-detail-overview
+                              active: true
+                            - label: Stats
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                            - label: Tickets
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Runs
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--run-detail
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                main:
+                  - entity: bb_team.bb_team
+                    view_mode: full
+                    select: $[id='1']
+  - name: team-time
+    group: Screens
+    section: settings
+    docs: >-
+      The time calendar (BB-640): a week strip with each day's total and the
+      week total, then the day rows (Day) or a read-only week grid (Week).
+      Totals come from the authorized dataset, not from one page. TEAM > TIME,
+      Day mode: the team's active members with person and description. Team
+      leads only; no Open on other people's entries.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Time
+                      description: Recorded hours of API home members
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Team sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-detail-overview
+                              active: false
+                            - label: Stats
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                            - label: Tickets
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Time
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-time
+                              active: true
+                            - label: Runs
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--run-detail
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                filters:
+                  - component: bb_theme:filters
+                    props:
+                      title: Filters
+                      label: Time filters
+                    slots:
+                      controls:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day'
+                                active: true
+                              - label: Week
+                                url: '?mode=week'
+                                active: false
+                        - component: bb_theme:option_picker
+                          props:
+                            label: Project
+                            name: project
+                            id: time-project
+                            icon: project
+                            open: false
+                            value_label: ''
+                            values: []
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: keytec · Time capture
+                                    label: keytec · Time capture
+                                    selected: false
+                                  - value: keytec · Time capture two
+                                    label: keytec · Time capture two
+                                    selected: false
+                                  - value: API home · API home
+                                    label: API home · API home
+                                    selected: false
+                        - component: bb_theme:option_picker
+                          props:
+                            label: Person
+                            name: person
+                            id: time-person
+                            icon: user
+                            open: false
+                            value_label: ''
+                            values: []
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: api-crew-mate
+                                    label: api-crew-mate
+                                    selected: false
+                                  - value: api-edit-team-lead
+                                    label: api-edit-team-lead
+                                    selected: false
+                                  - value: api-lead
+                                    label: api-lead
+                                    selected: false
+                                  - value: api-member
+                                    label: api-member
+                                    selected: false
+                main:
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-12-07
+                      days:
+                        - weekday: Mon
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-07'
+                          active: false
+                          aria_label: Mon 2026-12-07, 0:00
+                        - weekday: Tue
+                          date: '08'
+                          total: '2:45'
+                          url: '?mode=day&date=2026-12-08'
+                          active: true
+                          aria_label: Tue 2026-12-08, 2:45
+                        - weekday: Wed
+                          date: '09'
+                          total: '1:00'
+                          url: '?mode=day&date=2026-12-09'
+                          active: false
+                          aria_label: Wed 2026-12-09, 1:00
+                        - weekday: Thu
+                          date: '10'
+                          total: '2:00'
+                          url: '?mode=day&date=2026-12-10'
+                          active: false
+                          aria_label: Thu 2026-12-10, 2:00
+                        - weekday: Fri
+                          date: '11'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-11'
+                          active: false
+                          aria_label: Fri 2026-12-11, 0:00
+                        - weekday: Sat
+                          date: '12'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-12'
+                          active: false
+                          aria_label: Sat 2026-12-12, 0:00
+                        - weekday: Sun
+                          date: '13'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-13'
+                          active: false
+                          aria_label: Sun 2026-12-13, 0:00
+                      total_label: Week total
+                      total: '5:45'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 2:45'
+                  - component: bb_theme:list
+                    props:
+                      items:
+                        - cells:
+                            project:
+                              kind: link
+                              value: API home · API home
+                              url: '#'
+                            description:
+                              kind: text
+                              value: Team member Tue
+                            duration:
+                              kind: text
+                              value: '1:30'
+                            person:
+                              kind: text
+                              value: api-member
+                              emphasis: faint
+                        - cells:
+                            project:
+                              kind: link
+                              value: API home · API home
+                              url: '#'
+                            description:
+                              kind: text
+                              value: Workspace lead Tue
+                            duration:
+                              kind: text
+                              value: '0:45'
+                            person:
+                              kind: text
+                              value: api-lead
+                              emphasis: faint
+                        - cells:
+                            project:
+                              kind: link
+                              value: API home · API home
+                              url: '#'
+                            description:
+                              kind: text
+                              value: Crew mate home
+                            duration:
+                              kind: text
+                              value: '0:30'
+                            person:
+                              kind: text
+                              value: api-crew-mate
+                              emphasis: faint
+                      pattern:
+                        headline:
+                          - project
+                          - ticket
+                        meta:
+                          - person
+                        description:
+                          - description
+                        right:
+                          - duration
+                          - open
+  - name: team-time-week
+    group: Screens
+    section: settings
+    docs: >-
+      The time calendar (BB-640): a week strip with each day's total and the
+      week total, then the day rows (Day) or a read-only week grid (Week).
+      Totals come from the authorized dataset, not from one page. TEAM > TIME,
+      Week mode: one grid row per person.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Time
+                      description: Recorded hours of API home members
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Team sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-detail-overview
+                              active: false
+                            - label: Stats
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                            - label: Tickets
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Time
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-time
+                              active: true
+                            - label: Runs
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--run-detail
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                filters:
+                  - component: bb_theme:filters
+                    props:
+                      title: Filters
+                      label: Time filters
+                    slots:
+                      controls:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day'
+                                active: false
+                              - label: Week
+                                url: '?mode=week'
+                                active: true
+                        - component: bb_theme:option_picker
+                          props:
+                            label: Project
+                            name: project
+                            id: time-project
+                            icon: project
+                            open: false
+                            value_label: ''
+                            values: []
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: keytec · Time capture
+                                    label: keytec · Time capture
+                                    selected: false
+                                  - value: keytec · Time capture two
+                                    label: keytec · Time capture two
+                                    selected: false
+                                  - value: API home · API home
+                                    label: API home · API home
+                                    selected: false
+                        - component: bb_theme:option_picker
+                          props:
+                            label: Person
+                            name: person
+                            id: time-person
+                            icon: user
+                            open: false
+                            value_label: ''
+                            values: []
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: api-crew-mate
+                                    label: api-crew-mate
+                                    selected: false
+                                  - value: api-edit-team-lead
+                                    label: api-edit-team-lead
+                                    selected: false
+                                  - value: api-lead
+                                    label: api-lead
+                                    selected: false
+                                  - value: api-member
+                                    label: api-member
+                                    selected: false
+                main:
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-12-07
+                      days:
+                        - weekday: Mon
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-07'
+                          active: false
+                          aria_label: Mon 2026-12-07, 0:00
+                        - weekday: Tue
+                          date: '08'
+                          total: '2:45'
+                          url: '?mode=day&date=2026-12-08'
+                          active: false
+                          aria_label: Tue 2026-12-08, 2:45
+                        - weekday: Wed
+                          date: '09'
+                          total: '1:00'
+                          url: '?mode=day&date=2026-12-09'
+                          active: false
+                          aria_label: Wed 2026-12-09, 1:00
+                        - weekday: Thu
+                          date: '10'
+                          total: '2:00'
+                          url: '?mode=day&date=2026-12-10'
+                          active: false
+                          aria_label: Thu 2026-12-10, 2:00
+                        - weekday: Fri
+                          date: '11'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-11'
+                          active: false
+                          aria_label: Fri 2026-12-11, 0:00
+                        - weekday: Sat
+                          date: '12'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-12'
+                          active: false
+                          aria_label: Sat 2026-12-12, 0:00
+                        - weekday: Sun
+                          date: '13'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-13'
+                          active: false
+                          aria_label: Sun 2026-12-13, 0:00
+                      total_label: Week total
+                      total: '5:45'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 5:45'
+                  - component: bb_theme:table
+                    props:
+                      columns:
+                        - key: label
+                          label: Person
+                          row_header: true
+                        - key: '2026-12-07'
+                          label: Mon 07
+                          num: true
+                        - key: '2026-12-08'
+                          label: Tue 08
+                          num: true
+                        - key: '2026-12-09'
+                          label: Wed 09
+                          num: true
+                        - key: '2026-12-10'
+                          label: Thu 10
+                          num: true
+                        - key: '2026-12-11'
+                          label: Fri 11
+                          num: true
+                        - key: '2026-12-12'
+                          label: Sat 12
+                          num: true
+                        - key: '2026-12-13'
+                          label: Sun 13
+                          num: true
+                        - key: total
+                          label: Total
+                          num: true
+                      rows:
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-crew-mate
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: link
+                              value: '0:30'
+                              url: '?mode=day&date=2026-12-08'
+                            '2026-12-09':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-10':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '0:30'
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-edit-team-lead
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-09':
+                              kind: link
+                              value: '1:00'
+                              url: '?mode=day&date=2026-12-09'
+                            '2026-12-10':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '1:00'
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-lead
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: link
+                              value: '0:45'
+                              url: '?mode=day&date=2026-12-08'
+                            '2026-12-09':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-10':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '0:45'
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-member
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: link
+                              value: '1:30'
+                              url: '?mode=day&date=2026-12-08'
+                            '2026-12-09':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-10':
+                              kind: link
+                              value: '2:00'
+                              url: '?mode=day&date=2026-12-10'
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '3:30'
+                        - cells:
+                            label:
+                              kind: text
+                              value: Total
+                            '2026-12-07':
+                              kind: text
+                              value: '0:00'
+                            '2026-12-08':
+                              kind: text
+                              value: '2:45'
+                            '2026-12-09':
+                              kind: text
+                              value: '1:00'
+                            '2026-12-10':
+                              kind: text
+                              value: '2:00'
+                            '2026-12-11':
+                              kind: text
+                              value: '0:00'
+                            '2026-12-12':
+                              kind: text
+                              value: '0:00'
+                            '2026-12-13':
+                              kind: text
+                              value: '0:00'
+                            total:
+                              kind: text
+                              value: '5:45'

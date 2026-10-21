@@ -1,0 +1,20 @@
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 59d5d39f-a8e4-54a6-a1c9-7f3d7920010f
+  default_langcode: en
+  bundle: default
+  depends:
+    445bc635-cc04-5de3-bf29-1c5f88adae29: user
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  state:
+  - value: active
+  uid:
+  - entity: 445bc635-cc04-5de3-bf29-1c5f88adae29

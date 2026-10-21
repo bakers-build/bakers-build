@@ -1,0 +1,30 @@
+component: bb_theme:gate_form
+name: Default
+slots:
+  content:
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: none
+      slots:
+        content:
+          - type: component
+            component: bb_theme:form_label
+            props:
+              for: edit-name
+            slots:
+              title: Workspace name
+          - type: component
+            component: bb_theme:form_input
+            props:
+              name: name
+              id: edit-name
+              value: ''
+              required: true
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: primary
+        type: submit
+        label: Create workspace

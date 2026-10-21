@@ -1,8 +1,0 @@
-{
-  "name": "gaia",
-  "description": "Composable GAIA capabilities for ticket work, deployment, setup, upgrades, origin updates, and entity creation.",
-  "version": "0.40.1",
-  "author": { "name": "keytec", "url": "https://git.key-tec.de/keytec/gaia" },
-  "license": "MIT",
-  "skills": "./skills"
-}

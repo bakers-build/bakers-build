@@ -1,0 +1,7 @@
+name: 'bakers.build scope identity test'
+type: module
+description: 'Test helper: reproduces how an OAuth2 client_credentials token carries a machine identity''s permissions — overwriting the calculated set, granting no role — so the rank fence can be exercised without simple_oauth, a keypair and a live token mint.'
+package: Testing
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core

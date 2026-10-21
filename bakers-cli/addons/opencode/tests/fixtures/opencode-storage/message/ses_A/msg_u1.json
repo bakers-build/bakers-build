@@ -1,0 +1,13 @@
+{
+  "id": "msg_u1",
+  "sessionID": "ses_A",
+  "role": "user",
+  "time": {
+    "created": 1768658021000
+  },
+  "agent": "build",
+  "model": {
+    "providerID": "opencode",
+    "modelID": "big-pickle"
+  }
+}

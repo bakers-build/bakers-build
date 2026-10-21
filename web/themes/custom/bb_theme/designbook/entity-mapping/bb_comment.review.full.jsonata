@@ -1,0 +1,20 @@
+(
+  /* Review canonical body, the same event as the comment full mode. The
+     shipped review full display copies the comment canonical page, so the
+     review state lives in the sidebar Reviews block, not here. Author
+     identity is the computed author_* fields. */
+  $c := $;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:event",
+      "props": {
+        "author_name": $c.author_name,
+        "author_initials": $c.author_initials,
+        "author_color": $c.author_color,
+        "tag": $c.type,
+        "timestamp": $c.created,
+        "body": $c.body
+      }
+    }
+  ]
+)

@@ -1,0 +1,30 @@
+{
+  "name": "@bakers-build/addon-fake",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Deterministic bakers.build conductor fixture addon: fake remote + workspace + executor for tests and E2E. Workspace-only test fixture — `private: true` keeps it out of the discovered publish set (scripts/prepare-publish.mjs).",
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^",
+    "typescript": "^5.9.0"
+  }
+}

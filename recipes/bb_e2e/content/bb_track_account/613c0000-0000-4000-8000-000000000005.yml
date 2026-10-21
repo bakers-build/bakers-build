@@ -1,0 +1,17 @@
+# Project-level billing-account default for the API other fixture project.
+_meta:
+  version: '1.0'
+  entity_type: bb_track_account
+  uuid: 613c0000-0000-4000-8000-000000000005
+  depends:
+    edc03624-629b-5606-b650-0a1dbf8ea9ad: bb_project
+default:
+  name:
+    -
+      value: "API other billing"
+  project_id:
+    -
+      entity: "edc03624-629b-5606-b650-0a1dbf8ea9ad"
+  is_default:
+    -
+      value: true

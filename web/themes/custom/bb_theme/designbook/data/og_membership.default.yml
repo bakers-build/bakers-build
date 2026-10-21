@@ -1,0 +1,212 @@
+# One membership mechanism for two levels: workspace and team. BB-462 D7
+# deregisters bb_project as an OG group entirely — there is no third arm
+# any more, and every membership row that used to anchor on a project is
+# GONE (deleted by the migration), not converted. Note what is NOT here: the
+# `member` role. OgMembership::preSave() revokes it and getRoles() prepends it
+# on read, so it is never stored — an active membership with an empty `roles`
+# IS a member, and under BB-462 D1 that now means the account holds NO
+# right at all (the implicit rank is emptied). `contributor`, `lead` (labelled
+# "Admin") and `guest` are the three EXPLICIT workspace tiers a membership can
+# hold; `owner` is the one team-level tier (BB-462 D3).
+- id: '1'
+  created: '2026-01-05T08:00:00+00:00'
+  changed: '2026-01-05T08:00:00+00:00'
+  type: default
+  uid: '1'
+  entity_type: bb_workspace
+  entity_bundle: bb_workspace
+  entity_id: '1'
+  state: active
+  roles:
+    - bb_workspace-bb_workspace-lead
+  __designbook:
+    section: settings
+- id: '2'
+  created: '2026-01-08T09:30:00+00:00'
+  changed: '2026-01-08T09:30:00+00:00'
+  type: default
+  uid: '2'
+  entity_type: bb_workspace
+  entity_bundle: bb_workspace
+  entity_id: '1'
+  state: active
+  # An EMPTY roles array is the implicit `member` rank, and BB-462 D1 empties
+  # it of every right — OG ranks are additive and cannot be narrowed, so any
+  # right left here would be inherited by every membership including guests.
+  # This account therefore holds nothing on this workspace; contrast with
+  # uid 8 below (id '19'), the explicit `contributor` this ticket adds.
+  roles: []
+  __designbook:
+    section: settings
+- id: '3'
+  created: '2026-02-20T11:00:00+00:00'
+  changed: '2026-02-20T11:00:00+00:00'
+  type: default
+  uid: '3'
+  entity_type: bb_workspace
+  entity_bundle: bb_workspace
+  entity_id: '2'
+  state: active
+  roles:
+    - bb_workspace-bb_workspace-lead
+  __designbook:
+    section: settings
+- id: '4'
+  created: '2026-02-20T11:05:00+00:00'
+  changed: '2026-02-20T11:05:00+00:00'
+  type: default
+  uid: '4'
+  entity_type: bb_workspace
+  entity_bundle: bb_workspace
+  entity_id: '2'
+  state: active
+  # This row used to carry `bb_workspace-bb_workspace-app`, the machine
+  # principal — GONE (BB-462 D9): a conductor's OAuth identity is bound to
+  # its owning user's account, so it sees exactly what that user's own rank
+  # sees, and there is no separate rank left to demonstrate here. Given the
+  # explicit `contributor` tier instead, which no other row in the original
+  # set demonstrated.
+  roles:
+    - bb_workspace-bb_workspace-contributor
+  __designbook:
+    section: settings
+- id: '9'
+  created: '2026-01-06T09:05:00+00:00'
+  changed: '2026-01-06T09:05:00+00:00'
+  type: default
+  uid: '1'
+  entity_type: bb_team
+  entity_bundle: bb_team
+  entity_id: '1'
+  state: active
+  # BB-462 D4: team membership now decides PROJECT VISIBILITY — this account
+  # sees every project team 1 names (`bb_project.teams`) — while still
+  # granting no RIGHTS of its own; team `member` stays empty by design (D3).
+  roles: []
+  __designbook:
+    section: settings
+- id: '10'
+  created: '2026-01-06T09:06:00+00:00'
+  changed: '2026-01-06T09:06:00+00:00'
+  type: default
+  uid: '2'
+  entity_type: bb_team
+  entity_bundle: bb_team
+  entity_id: '1'
+  state: pending
+  roles: []
+  __designbook:
+    section: settings
+- id: '11'
+  created: '2026-02-21T09:34:00+00:00'
+  changed: '2026-02-21T09:34:00+00:00'
+  type: default
+  uid: '3'
+  entity_type: bb_team
+  entity_bundle: bb_team
+  entity_id: '2'
+  state: active
+  roles: []
+  __designbook:
+    section: settings
+- id: '12'
+  created: '2026-02-21T09:35:00+00:00'
+  changed: '2026-06-01T10:00:00+00:00'
+  type: default
+  uid: '4'
+  entity_type: bb_team
+  entity_bundle: bb_team
+  entity_id: '2'
+  state: blocked
+  roles: []
+  __designbook:
+    section: settings
+# BB-338 appended ids 13..18. Every one is an APPEND with a fresh id: no
+# existing record is reordered, renumbered or re-tagged, so no pinned id a scene
+# selects can move.
+#
+# 13..15 complete workspace 1's role set. BB-462 replaces the vocabulary
+# once more: the shipped set a membership can hold is `contributor`, `lead`
+# ("Admin") and `guest`, plus `non-member`, which no stored membership can
+# carry, and the implicit `member` — an empty `roles` array — which BB-462
+# D1 empties of every right. uid 1 is the lead, uid 2 is a bare (rightless)
+# member, uid 13 is also bare, uid 14 is the guest, and id '4' above now
+# demonstrates the explicit contributor tier — so the whole vocabulary is
+# still visible on this one workspace.
+- id: '13'
+  created: '2026-03-02T08:30:00+00:00'
+  changed: '2026-03-02T08:30:00+00:00'
+  type: default
+  uid: '5'
+  entity_type: bb_workspace
+  entity_bundle: bb_workspace
+  entity_id: '1'
+  state: active
+  roles: []
+  __designbook:
+    section: settings
+- id: '14'
+  created: '2026-04-14T10:10:00+00:00'
+  changed: '2026-04-14T10:10:00+00:00'
+  type: default
+  uid: '6'
+  entity_type: bb_workspace
+  entity_bundle: bb_workspace
+  entity_id: '1'
+  state: active
+  roles:
+    - bb_workspace-bb_workspace-guest
+  __designbook:
+    section: settings
+# 15 USED TO carry `bb_workspace-bb_workspace-app`, the removed machine
+# principal (BB-462 D9). Left as a bare (rightless) member rather than
+# repurposed for a tier already demonstrated elsewhere (uid 4 is the
+# contributor, uid 1/3 are leads) — a second contributor row would prove
+# nothing new, and this account's OWN identity (a conductor's owning user) is
+# exactly what D9 says decides its reach now, not a rank of its own.
+- id: '15'
+  created: '2026-03-02T08:35:00+00:00'
+  changed: '2026-03-02T08:35:00+00:00'
+  type: default
+  uid: '7'
+  entity_type: bb_workspace
+  entity_bundle: bb_workspace
+  entity_id: '1'
+  state: active
+  roles: []
+  __designbook:
+    section: settings
+# 16, 17 and 5-8 USED TO be bb_project memberships (uid 1/5 on project 3,
+# uid 1/2 on project 1, uid 3/4 on project 2). BB-462 D7 deregisters
+# bb_project as an OG group entirely and deletes every membership row
+# anchored on one — there is nothing to convert them TO on the project
+# itself. Project visibility is now read off `bb_project.teams` alone (D4):
+# project 1 and 3 both name team 1, and uid 1/2 already hold that team's
+# membership (ids 9, 10) — nothing was lost. uid 5, project 3's second
+# member, held NO team 1 membership until now; id '19' below is what gives it
+# one, so `bb_project.bb_project.yml`'s project-3 fixture keeps a real
+# access story rather than a silently empty one.
+- id: '18'
+  created: '2026-04-14T10:20:00+00:00'
+  changed: '2026-06-02T09:00:00+00:00'
+  type: default
+  uid: '6'
+  entity_type: bb_team
+  entity_bundle: bb_team
+  entity_id: '1'
+  state: blocked
+  roles: []
+  __designbook:
+    section: settings
+- id: '19'
+  created: '2026-03-10T09:02:00+00:00'
+  changed: '2026-03-10T09:02:00+00:00'
+  type: default
+  uid: '5'
+  entity_type: bb_team
+  entity_bundle: bb_team
+  entity_id: '1'
+  state: active
+  roles: []
+  __designbook:
+    section: settings

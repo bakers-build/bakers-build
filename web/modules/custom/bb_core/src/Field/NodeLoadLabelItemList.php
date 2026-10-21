@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Drupal\bb_core\Field;
+
+use Drupal\Core\Field\FieldItemList;
+use Drupal\Core\TypedData\ComputedItemListTrait;
+use Drupal\bb_core\Entity\BbConductorInterface;
+
+/**
+ * Computes the load label (current/max) for a conductor node.
+ */
+final class NodeLoadLabelItemList extends FieldItemList {
+
+  use ComputedItemListTrait;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function computeValue(): void {
+    $conductor = $this->getEntity();
+    if (!$conductor instanceof BbConductorInterface) {
+      return;
+    }
+    $value = \Drupal::service('bb_core.conductor_deriver')
+      ->nodeLoadLabel($conductor);
+    $this->list[0] = $this->createItem(0, $value);
+  }
+
+}

@@ -1,0 +1,13 @@
+component: bb_theme:status_bar
+name: Default
+props:
+  label: bakers.build
+slots:
+  refresh:
+    - type: component
+      component: bb_theme:badge
+      props:
+        label: Auto-refresh on
+        tone: running
+        dot: true
+        suffix: updated 4s ago

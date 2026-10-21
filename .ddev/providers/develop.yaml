@@ -1,0 +1,62 @@
+# RAW (unsanitized) DB pull from the deployed `develop` environment — a fetch-only ddev-pull
+# provider. Dumps the running site to a gzipped SQL file under .ddev/.downloads; `ddev pull`
+# then imports it natively (no --skip-import, this provider never touches the local DB itself).
+#
+#   ddev auth ssh          # once per session: the dump runs IN the web container, which SSHes out
+#   ddev pull develop      # dump -> .ddev/.downloads/db.sql.gz -> imported into the local DB
+#   ddev pull develop --skip-import   # fetch only, keep the local DB
+#
+# WHY THIS EXISTS BESIDE THE SHIPPED `drush` PROVIDER. That one pulls from a **drush site alias**
+# (`providers.drush.alias` in `.keytec-ai.yml`), and bakers.build has none: the develop site is a
+# Komodo-managed compose stack on dev2, reachable only as `docker exec` inside that host. So the
+# source here is a host + a container name rather than an alias, and the dump is streamed through
+# SSH. Everything else — the download path, the artifact name, letting DDEV do the import — is
+# deliberately identical to `drush.yaml`, because `ddev pull` only imports what it finds at
+# `.ddev/.downloads/db.sql.gz`.
+#
+# `--extra-dump=--skip-ssl` IS LOAD-BEARING, and it is the whole reason a naive dump returns an
+# empty file. The deployed `wodby/mariadb` server runs without TLS while a modern MariaDB client
+# defaults to requiring it, so `mariadb-dump` exits with
+# `Got error: 2026: "TLS/SSL error: SSL is required, but the server does not support it"` — on
+# stderr, while stdout stays empty. Piped into `gzip` that produces a valid 20-byte archive of
+# nothing, and `ddev pull` imports it happily. `komodo/client-no-ssl.cnf` solves the same problem
+# for the deploy container, but it is not mounted into `bakers-develop-php-1`, so the flag is passed
+# per call instead.
+#
+# Cache and transient tables are dumped STRUCTURE-ONLY (drush fnmatch-expands the globs on the
+# source): pure throwaway data, and `cache_*` is most of the row count on a site that has been up
+# for weeks.
+#
+# TRUST BOUNDARY: this is raw data from a shared environment, pulled straight into your local DB,
+# and `ddev pull` KEEPS the dump in `.ddev/.downloads` as a cache. `.ddev/.downloads` is
+# gitignored by DDEV; delete the artifact by hand when you are done with it.
+#
+# AFTER THE PULL THE DB IS OLDER THAN YOUR CODE. develop's schema is develop's; a feature branch
+# that adds fields or entity types has to bring the database up to its own code before the site
+# is usable:
+#
+#   ddev drush updatedb -y          # hook_update_N + post_update hooks
+#   ddev drush entity:updates -y    # field-storage definitions code declares but the DB lacks
+#   ddev drush cr
+#
+# That ordering is the deploy's own (`drush deploy`: cim / updatedb / entity-updates), and it is
+# the moment a missing update hook shows up as a broken site rather than as a passing test.
+environment_variables:
+  host: root@128.140.11.57
+  container: bakers-develop-php-1
+
+db_pull_command:
+  command: |
+    set -eu -o pipefail
+    DL="${DDEV_APPROOT:-/var/www/html}/.ddev/.downloads"
+    mkdir -p "${DL}"
+    # Stream to a .part and rename only on success: `pipefail` aborts before the rename if the
+    # remote dump fails, so a failed pull never leaves a plausible-looking artifact for DDEV to
+    # import. The host dispatcher may treat the presence of db.sql.gz as proof of delivery.
+    ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes "${host}" \
+      "docker exec ${container} sh -lc 'cd /var/www/html && ./vendor/bin/drush sql:dump \
+         --extra-dump=--skip-ssl \
+         --structure-tables-list=cache,cache_*,cachetags,batch,flood,key_value_expire,queue,semaphore,sessions,watchdog'" \
+      | gzip -c > "${DL}/db.sql.gz.part"
+    mv -f "${DL}/db.sql.gz.part" "${DL}/db.sql.gz"
+    echo "delivered ${container}@${host} dump -> .ddev/.downloads/db.sql.gz"

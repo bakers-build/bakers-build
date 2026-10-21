@@ -1,0 +1,67 @@
+# THE `rendered` CELL, in the shape BB-435 gives the members list.
+#
+# WHY THIS STORY EXISTS AT ALL. `rendered` is `table`'s ninth cell kind and the shared `cell()` macro
+# has always rendered it, but no story anywhere in this theme exercised it and `list`'s own schema
+# omitted it — so a `rendered` cell handed to `list` was an invalid prop, and nothing said so until a
+# caller tried. This story is the first subject the kind has ever had, and it is the members list
+# because that is the surface that asked for it: BOTH interactive cells — the role control and the
+# remove control — are form elements another layer already turned into markup, addressed by their
+# key, each emitting exactly one cell. The remove control here used to stay `action`, this story's
+# own kind before BB-435; corrected to `rendered` once a review caught it disagreeing with
+# `MemberItemBuilder`, which emits `rendered` for both.
+#
+# WHAT THIS STORY CAN PROVE, AND WHAT IT CANNOT. It proves the shape: that `list` accepts the kind,
+# that the value lands in the cell its key names, and that the item still carries its other three
+# cells in order. It does NOT prove the escaping half of the kind's contract, and the reason is the
+# medium rather than an omission. The contract is that `markup` must be a `MarkupInterface` object,
+# which Twig prints unescaped and exactly once, and that a plain string in the same field is escaped
+# — a measured difference that is what makes the object mandatory. Storybook has no `MarkupInterface`:
+# a story prop is a YAML string, so the value below is the ESCAPED case by construction, and it is
+# deliberately tag-free so the story reads as a members list rather than as visible tag soup. The
+# unescaped half is a Drupal property and is asserted where the object exists, in the Kernel test that
+# reads the rendered members surface.
+#
+# NO OPTION ROWS HERE EITHER, for the same reason. Storybook never calls `Drupal.attachBehaviors`, so
+# no picker opens in a build; the role control's own panel and its submit rows are `option_picker` and
+# `option_list`'s stories, and the browser suite is what observes a pick becoming a write.
+#
+# THE THIRD ITEM IS THE STATE ARM, which a group type takes only where it ships no assignable role at
+# all — no shipped group type is in that position any more since BB-456 D9 gave `bb_team` its own
+# standard role, but the arm itself stays live: a type shipping no standard role carries no role cell
+# of any kind — not a `rendered` one, not an empty one, and not a disabled one — and carries its
+# membership state instead. Which arm an item is stays the mapping's decision; the container renders
+# the cells it is handed.
+component: bb_theme:list
+name: Rendered
+props:
+  layout: cards
+  items:
+    - cells:
+        person:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: running
+          mail: christian.wiedemann@keytec.de
+        role: { kind: rendered, markup: 'Lead' }
+        joined: { kind: mono, value: joined 2026-03-04 }
+        remove: { kind: rendered, markup: 'Remove' }
+    - cells:
+        person:
+          kind: person
+          display_name: Sven Gruber
+          initials: SG
+          color: attention
+          mail: sven.gruber@keytec.example
+        role: { kind: rendered, markup: 'Member' }
+        joined: { kind: mono, value: joined 2026-05-19 }
+        remove: { kind: rendered, markup: 'Remove' }
+    - cells:
+        person:
+          kind: person
+          display_name: bakers.build agent
+          initials: GA
+          color: offline
+        state: { kind: badge, label: active, tone: neutral }
+        joined: { kind: mono, value: joined 2026-01-08 }
+        remove: { kind: rendered, markup: 'Remove' }

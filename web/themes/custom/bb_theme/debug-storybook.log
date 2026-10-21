@@ -1,0 +1,35 @@
+[15:56:57.432] [INFO] storybook v10.6.0
+[15:56:58.059] [ERROR] [38;2;241;97;97mSB_CORE-SERVER_0007 (MainFileEvaluationError): Storybook couldn't evaluate your .storybook/main.js file.
+
+Original error:
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@tailwindcss/vite' imported from /.storybook/main.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:266:9)
+    at packageResolve (node:internal/modules/esm/resolve:767:81)
+    at moduleResolve (node:internal/modules/esm/resolve:853:18)
+    at defaultResolve (node:internal/modules/esm/resolve:983:11)
+    at nextResolve (node:internal/modules/esm/hooks:748:28)
+    at Hooks.resolve (node:internal/modules/esm/hooks:240:30)
+    at handleMessage (node:internal/modules/esm/worker:199:24)
+    at checkForMessages (node:internal/modules/esm/worker:141:28)
+    at process.<anonymous> (node:internal/modules/esm/worker:160:5)
+    at process.emit (node:events:519:28)[39m
+    at loadMainConfig (file:///home/cw/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/_node-chunks/chunk-IQHYYTFR.js:14306:11)
+    at async buildDevStandalone (file:///home/cw/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/core-server/index.js:9240:16)
+    at async withTelemetry (file:///home/cw/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/_node-chunks/chunk-FTP3QZ7O.js:142:12)
+    at async dev (file:///home/cw/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/bin/core.js:4906:3)
+    at async _Command.<anonymous> (file:///home/cw/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/bin/core.js:5014:3)
+[15:56:58.062] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.
+[15:56:58.077] [WARN]   Failed to load preset: "/home/cw/projects/bakers/.bakers-worktrees/feat/bb-547-impeccable-backe/web/themes/custom/bb_theme/.storybook/main.js"
+[15:56:58.078] [ERROR] Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@tailwindcss/vite' imported from ./.storybook/main.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:266:9)
+    at packageResolve (node:internal/modules/esm/resolve:767:81)
+    at moduleResolve (node:internal/modules/esm/resolve:853:18)
+    at defaultResolve (node:internal/modules/esm/resolve:983:11)
+    at nextResolve (node:internal/modules/esm/hooks:748:28)
+    at Hooks.resolve (node:internal/modules/esm/hooks:240:30)
+    at handleMessage (node:internal/modules/esm/worker:199:24)
+    at checkForMessages (node:internal/modules/esm/worker:141:28)
+    at process.<anonymous> (node:internal/modules/esm/worker:160:5)
+    at process.emit (node:events:519:28)
+[15:56:58.080] [INFO] Storybook collects completely anonymous usage telemetry. We use it to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt out, at https://storybook.js.org/telemetry

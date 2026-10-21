@@ -1,0 +1,55 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Segmented Control
+status: stable
+group: Action
+description: >-
+  A horizontal group of mutually exclusive positions. List filters are links,
+  exactly one active and marked aria-current="page". In-page filters pass
+  items[].value plus `state` (an ancestor Alpine key) and render buttons with
+  aria-pressed. It is not page navigation and not an entity tab — that is
+  `tabs`, bound to `page_header`'s `tabs` slot, which switches the subject of an
+  entity page.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Accessible name
+      description: aria-label for the segmented control group (e.g. Closed rows).
+    state:
+      type: string
+      title: Alpine state key
+      description: >-
+        Ancestor Alpine data key for in-page buttons. When set, items with
+        `value` render as buttons that assign this key.
+    items:
+      type: array
+      title: Positions
+      description: >-
+        Ordered mutually exclusive positions. Link filters set url and exactly
+        one active true. In-page filters set value and the sibling `state` prop.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Label
+            description: Position text.
+          url:
+            type: string
+            title: URL
+          value:
+            type: string
+            title: Value
+            description: In-page filter value assigned to `state` on click.
+          active:
+            type: boolean
+            title: Active
+            description: Selected link position; rendered as aria-current=page.
+        required:
+          - label
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

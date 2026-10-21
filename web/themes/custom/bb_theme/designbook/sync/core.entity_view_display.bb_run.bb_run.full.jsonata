@@ -1,0 +1,69 @@
+/*
+ * sync-to generator — core.entity_view_display.bb_run.bb_run.full
+ *
+ * THE RUN CANONICAL PAGE'S BODY, AND ONLY ITS BODY. A view mode emits no
+ * layout: the run-canonical scene owns the canvas, the page_header and the
+ * inspector. What is left here is the two zones of the left column.
+ *
+ * IT NAMES THE SAME COMPONENTS AS THE ENTITY MAPPING, and that is a checked
+ * statement rather than a convention: `data-display-components.sh` check B7
+ * reads the addresses out of `entity-mapping/bb_run.bb_run.full.jsonata`
+ * and out of this whole file — comments included, in BOTH address forms —
+ * and fails when the two sets differ. The mapping composes the body from
+ * exactly `zone` and `empty-state`, so this generator names exactly those
+ * two. No fourth address may be written down here, not even in prose.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "core.entity_view_mode.bb_run.full"
+    ],
+    "module": [
+      "display_builder",
+      "bb_core"
+    ]
+  },
+  "third_party_settings": {
+    "display_builder": {
+      "profile": "default",
+      "sources": [
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:empty-state",
+              "variant_id": null,
+              "props": {},
+              "slots": {},
+              "third_party_settings": ""
+            }
+          },
+          "node_id": "empty_state_component"
+        },
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:zone",
+              "variant_id": null,
+              "props": {},
+              "slots": {},
+              "third_party_settings": ""
+            }
+          },
+          "node_id": "zone_component"
+        }
+      ]
+    }
+  },
+  "id": "bb_run.bb_run.full",
+  "targetEntityType": "bb_run",
+  "bundle": "bb_run",
+  "mode": "full",
+  "content": {},
+  "hidden": {}
+}
+)

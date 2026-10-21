@@ -1,0 +1,52 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - island.app.browser_test
+  module:
+    - bb_browser_test
+  theme:
+    - bb_theme
+  enforced:
+    config:
+      - island.app.browser_test
+    module:
+      - bb_browser_test
+id: browser_test
+label: 'Browser repeated profile'
+app: browser_test
+layout: 'bb_theme:gate'
+layout_settings: { }
+placements:
+  trigger:
+    plugin_id: browser_counter
+    slot: content
+    weight: 0
+    enabled: true
+    configuration:
+      label: Trigger
+      trigger: true
+    events: []
+  alpha:
+    plugin_id: browser_counter
+    slot: content
+    weight: 1
+    enabled: true
+    configuration:
+      label: Alpha
+      trigger: false
+    events:
+      - counter.changed
+  beta:
+    plugin_id: browser_counter
+    slot: content
+    weight: 2
+    enabled: true
+    configuration:
+      label: Beta
+      trigger: false
+    events:
+      - counter.other
+weight: 0
+condition_operator: and
+conditions: { }

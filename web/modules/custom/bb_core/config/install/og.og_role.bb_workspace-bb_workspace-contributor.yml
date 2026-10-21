@@ -1,0 +1,52 @@
+# bakers.build workspace OG role: contributor, the base creation tier.
+#
+# OG ranks are additive and the implicit `member` role is empty, so every
+# right a working human needs is stated here, including `create bb_project`
+# and `create bb_group`. `claim bakers tickets` and `register bakers conductor`
+# let a conductor's owning user run it through their own rank. Creating a
+# project additionally requires this role within a team the project is placed
+# into; that fence lives in the group-scope constraint.
+#
+# Shipped in its saved form, key for key.
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_workspace-bb_workspace-contributor
+label: 'Contributor'
+weight: 1
+group_id: null
+group_type: bb_workspace
+group_bundle: bb_workspace
+is_admin: false
+permissions:
+  - 'access bakers dashboard'
+  - 'claim bakers tickets'
+  - 'create bb_comment'
+  - 'create bb_group'
+  - 'create bb_project'
+  - 'create bb_term'
+  - 'create bb_ticket'
+  - 'record own worklog'
+  - 'register bakers conductor'
+  - 'update any bb_term'
+  - 'update any bb_ticket'
+  - 'update own bb_machine'
+  - 'use bb_ticket_template'
+  - 'use text format bb_rich'
+  - 'view bakers figure project_overview'
+  - 'view bb_comment'
+  - 'view bb_conductor'
+  - 'view bb_environment'
+  - 'view bb_group'
+  - 'view bb_labels bb_term'
+  - 'view bb_machine'
+  - 'view bb_project'
+  - 'view bb_run'
+  - 'view bb_team'
+  - 'view bb_term'
+  - 'view bb_ticket'
+  - 'view bb_ticket_template'
+  - 'view bb_workspace'
+role_type: standard

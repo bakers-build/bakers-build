@@ -1,0 +1,44 @@
+# cwiedemann's SECOND team membership — the dual-membership case (BB-321 D6).
+#
+# `cwiedemann` owns Platform Crew (…0001) and is therefore already an active
+# member of it through `og.settings`' `auto_add_group_owner_membership`. This
+# fixture adds Design Crew on top, so one account is an active member of two
+# crews at once.
+#
+# That is the only shape in which `by_team`'s documented non-invariant is
+# observable: TeamStatistics expands the per-assignee counts onto EVERY team the
+# assignee belongs to, so a dual member is counted twice and the breakdown can
+# exceed the total. TeamStatistics' class docblock states the rule; without this
+# fixture the seeded world could not exhibit it, and a reader would reasonably
+# assume the breakdown sums.
+#
+# No `roles` key — `member` is OG's REQUIRED role and naming it is rejected. See
+# …0006.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000008
+  bundle: default
+  default_langcode: en
+  depends:
+    dbc70000-0000-4000-8000-000000000002: bb_team
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_team
+  entity_bundle:
+    -
+      value: bb_team
+  entity_id:
+    -
+      value: dbc70000-0000-4000-8000-000000000002
+  uid:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  state:
+    -
+      value: active

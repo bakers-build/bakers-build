@@ -1,0 +1,36 @@
+{# A QUIET ASIDE at the control it belongs to (action-pattern.md: a single-step
+   action's side effect is NAMED, not confirmed).
+
+   WHAT THE NOTE IS ABOUT IS NOT HERE. It was built for one sentence — the
+   server-side consequence of a field — and named after it, which made every
+   other quiet aside in the theme look like it needed a component of its own.
+   The sentence is a slot; whose consequence it is, is the caller's.
+
+   WHY THIS IS NOT `message` WITH `status: status`. That is what the create and
+   edit dialogs used, and the human read it as what it looks like: a teal bar
+   with a status icon, i.e. a success message for something that has not
+   happened yet. `message` only offers status|warning|error — a note about what
+   WILL happen is none of the three, and `warning` would be worse, announcing a
+   deliberate reversible choice as a problem.
+
+   THE TONE COLOURS ONE HAIRLINE AND NOTHING ELSE, which is what stops a tone
+   from turning this back into `message` by increments. There is exactly one
+   styled edge here, so `attention` can mark a note a reader must not skim past
+   without any of it announcing a state — and `neutral`, the default, is the
+   whole of what this rendered before the tone existed. Still no icon, no tint
+   and no background, at any tone. #}
+{% set tone_map = {
+  'neutral': 'border-border',
+  'attention': 'border-state-attention'
+} %}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'note',
+    'border-l', tone_map[tone|default('neutral')]|default('border-border'),
+    'pl-[10px]', 'py-[2px]',
+    'text-caption', 'leading-normal', 'text-text-light',
+  ]) }}>
+  {%- if lead %}<span class="note__lead font-semibold text-text">{{ lead }}</span>
+  <span class="note__separator text-text-faint" aria-hidden="true">·</span>
+  {% endif -%}
+  <span class="note__body">{% block body %}{% if body %}{{ body }}{% endif %}{% endblock %}</span>
+</div>

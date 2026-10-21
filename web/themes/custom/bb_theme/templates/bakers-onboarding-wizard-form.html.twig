@@ -1,0 +1,41 @@
+{#
+/**
+ * @file
+ * Onboarding wizard presenter: the form composes the chrome it lives in.
+ *
+ * IT COMPOSES COMPONENTS AND NOTHING ELSE. There is no markup here — no
+ * wrapper, no utility class, no hand-written grid: `bb_theme:onboarding`
+ * owns the centred one-column frame, and
+ * `bb_theme:brand` is the mark. This template only says which parts of the
+ * form go where.
+ *
+ * THE COPY TRAVELS WITH THE STEP because it is the form's. `#bb_copy` is
+ * built per step by `BbOnboardingWizardForm` and handed to the chrome as
+ * props — scalars, so the chrome renders the heading and the sentence in the
+ * one treatment it has for them. One HTMX swap therefore replaces the
+ * explanation and the fields together. Taking the copy from the Island Profile
+ * instead would pin one heading to both steps: its layout settings are static
+ * config.
+ *
+ * PRINTING THE ELEMENTS, NOT REBUILDING THEM, is `bakers-login-form.html.twig`'s
+ * rule and holds here for the same reason: `form-element-label.html.twig` and
+ * `input.html.twig` already render through `bb_theme:form_label` and
+ * `bb_theme:form_input`, so core's own `for`/`id` pair stays the single
+ * source for that binding.
+ *
+ * THERE IS NO `form--bakers-onboarding-wizard-form.html.twig` BESIDE THIS ONE.
+ * The wrapper this hook's form used to carry was `<form{{ attributes }}>` with
+ * `{{ children }}` inside it — character for character what core's own
+ * `form.html.twig` already renders — so it said nothing and is deleted.
+ *
+ * @see web/themes/custom/bb_theme/components/onboarding/onboarding.twig
+ * @see web/modules/custom/bb_core/src/Form/BbOnboardingWizardForm.php
+ */
+#}
+{% set card %}{{ form|without('#bb_copy') }}{% endset %}
+{{ include('bb_theme:onboarding', {
+  title: form['#bb_copy'].title,
+  description: form['#bb_copy'].description,
+  mark: include('bb_theme:brand', {}, with_context = false),
+  content: card,
+}, with_context = false) }}

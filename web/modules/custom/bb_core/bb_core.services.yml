@@ -1,0 +1,430 @@
+services:
+  bb_core.error_page_route_subscriber:
+    class: Drupal\bb_core\Routing\BbErrorPageRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  Drupal\bb_core\Navigation\AccountWorkspaceContext:
+    arguments: ['@current_route_match', '@request_stack', '@current_user', '@entity.repository', '@bb_core.workspace_read_scope']
+  bb_core.route_context:
+    class: Drupal\bb_core\ContextProvider\BbRouteContextProvider
+    arguments: ['@current_route_match', '@Drupal\bb_core\Navigation\AccountWorkspaceContext']
+    tags:
+      - { name: context_provider }
+  cache_context.bb_workspace:
+    class: Drupal\bb_core\Cache\Context\BbWorkspaceCacheContext
+    arguments: ['@Drupal\bb_core\Navigation\AccountWorkspaceContext']
+    tags:
+      - { name: cache.context }
+  bb_core.jsonapi_schema_route_subscriber:
+    class: Drupal\bb_core\Routing\JsonApiSchemaRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_core.entity_detail_card_route_subscriber:
+    class: Drupal\bb_core\Routing\EntityDetailCardRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_core.workspace_route_subscriber:
+    class: Drupal\bb_core\Routing\BbWorkspaceRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_core.entity_form_surface_subscriber:
+    class: Drupal\bb_core\EventSubscriber\EntityFormSurfaceSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_core.paramconverter.entity_uuid:
+    class: Drupal\bb_core\ParamConverter\BbEntityUuidConverter
+    arguments: ['@entity_type.manager', '@entity.repository']
+    tags:
+      - { name: paramconverter, priority: 10 }
+  bb_core.paramconverter.workspace_slug:
+    class: Drupal\bb_core\ParamConverter\BbWorkspaceSlugConverter
+    arguments: ['@entity_type.manager']
+    tags:
+      - { name: paramconverter, priority: 10 }
+  bb_core.paramconverter.ticket_identifier:
+    class: Drupal\bb_core\ParamConverter\BbTicketIdentifierConverter
+    arguments: ['@entity_type.manager', '@entity.repository']
+    tags:
+      - { name: paramconverter, priority: 10 }
+  bb_core.paramconverter.project_key:
+    class: Drupal\bb_core\ParamConverter\BbProjectKeyConverter
+    arguments: ['@entity_type.manager', '@entity.repository']
+    tags:
+      - { name: paramconverter, priority: 10 }
+  bb_core.workspace_path_processor:
+    class: Drupal\bb_core\PathProcessor\BbWorkspacePathProcessor
+    arguments: ['@entity_type.manager', '@cache.default']
+    tags:
+      # Inbound 150: below path_processor_front (200), above path_alias (100).
+      # Outbound 250: prefix stripped after the alias lookup.
+      - { name: path_processor_inbound, priority: 150 }
+      - { name: path_processor_outbound, priority: 250 }
+  bb_core.workspace_route_processor:
+    class: Drupal\bb_core\RouteProcessor\BbWorkspaceRouteProcessor
+    arguments: ['@current_route_match']
+    tags:
+      - { name: route_processor_outbound }
+  bb_core.workspace_not_found_subscriber:
+    class: Drupal\bb_core\EventSubscriber\BbWorkspaceNotFoundSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_core.workspace_access_check:
+    class: Drupal\bb_core\Access\BbWorkspaceAccessCheck
+    arguments: ['@bb_core.workspace_resolver', '@bb_core.workspace_read_scope']
+    tags:
+      - { name: access_check, applies_to: _bb_workspace_match }
+  bb_core.machine_owner_access:
+    class: Drupal\bb_core\Access\BbMachineOwnerAccessCheck
+    tags:
+      - { name: access_check, applies_to: _bb_machine_owner_match }
+  bb_core.run_parentage_access:
+    class: Drupal\bb_core\Access\BbRunParentageAccessCheck
+    tags:
+      - { name: access_check, applies_to: _bb_run_parentage_match }
+  bb_core.workspace_create_access:
+    class: Drupal\bb_core\Access\BbWorkspaceCreateAccess
+    arguments: ['@entity_type.manager', '@bb_core.rank_capability', '%security.enable_super_user%']
+    tags:
+      - { name: access_check, applies_to: _bb_workspace_create }
+  bb_core.workspace_permission_access:
+    class: Drupal\bb_core\Access\BbWorkspacePermissionAccess
+    arguments: ['@bb_core.rank_capability', '%security.enable_super_user%']
+    tags:
+      - { name: access_check, applies_to: _bb_workspace_permission }
+  logger.channel.bb_core:
+    parent: logger.channel_base
+    arguments: ['bb_core']
+  bb_core.failed_run_circuit_breaker:
+    class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
+    arguments: ['@entity_type.manager', '@datetime.time', '@config.factory']
+  bb_core.ticket_stall_reason:
+    class: Drupal\bb_core\Claim\TicketStallReason
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker']
+  Drupal\bb_core\Claim\TicketStallReason:
+    alias: bb_core.ticket_stall_reason
+  bb_core.ticket_claim:
+    class: Drupal\bb_core\Claim\TicketClaimService
+    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@config.factory', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher']
+  bb_core.conductor_deactivation_reassigner:
+    class: Drupal\bb_core\Conductor\ConductorDeactivationReassigner
+    arguments: ['@entity_type.manager', '@logger.channel.bb_core', '@datetime.time']
+  Drupal\bb_core\Conductor\ConductorDeactivationReassigner:
+    alias: bb_core.conductor_deactivation_reassigner
+  bb_core.ticket_transition_subscriber:
+    class: Drupal\bb_core\EventSubscriber\TicketTransitionSubscriber
+    arguments: ['@bb_core.ticket_claim']
+    tags:
+      - { name: event_subscriber }
+  bb_core.has_children_filter_subscriber:
+    class: Drupal\bb_core\EventSubscriber\HasChildrenFilterSubscriber
+    arguments: ['@database']
+    tags:
+      - { name: event_subscriber }
+  bb_core.ticket_search_filter_subscriber:
+    class: Drupal\bb_core\EventSubscriber\TicketSearchFilterSubscriber
+    arguments: ['@bb_core.ticket_search_resolver', '@entity.repository']
+    tags:
+      - { name: event_subscriber }
+  bb_core.run_log_compression_subscriber:
+    class: Drupal\bb_core\EventSubscriber\RunLogCompressionSubscriber
+    tags:
+      - { name: event_subscriber }
+  Drupal\bb_core\Claim\TicketClaimService:
+    alias: bb_core.ticket_claim
+  bb_core.write_scope:
+    class: Drupal\bb_core\Access\BbWriteScope
+    arguments: ['@entity_type.manager']
+  Drupal\bb_core\Access\BbWriteScope:
+    alias: bb_core.write_scope
+  # og_membership is itself scope-narrowed and the scope is resolved from it;
+  # the guard stops that recursion.
+  bb_core.membership_resolution_guard:
+    class: Drupal\bb_core\Access\MembershipResolutionGuard
+  # Every og argument is optional (`@?og.…`) so the container compiles on a
+  # site where og is not yet enabled; consumers fail closed on NULL.
+  # Finds the invitations addressed to a signing-in account's own address.
+  # Memoised per request, like the read scope.
+  bb_core.invite_matcher:
+    class: Drupal\bb_core\Workspace\InviteMatcher
+    arguments: ['@entity_type.manager']
+  # The workspace Members add path: an invitation, plus its mail.
+  bb_core.workspace_invite:
+    class: Drupal\bb_core\Members\WorkspaceInvite
+    arguments:
+      - '@entity_type.manager'
+      - '@string_translation'
+      - '@plugin.manager.mail'
+      - '@datetime.time'
+      - '@logger.channel.bb_core'
+      - '@language_manager'
+      - '@current_user'
+  # Applies an invitation's workspace role and team on joining.
+  bb_core.invite_acceptance:
+    class: Drupal\bb_core\Members\InviteAcceptance
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@bb_core.workspace_provisioner'
+      - '@string_translation'
+  # Moves a group's ownership between its own active members.
+  bb_core.ownership_transfer:
+    class: Drupal\bb_core\Members\OwnershipTransfer
+    arguments: ['@entity_type.manager']
+  # The `og_membership` add/remove/role-write path.
+  bb_core.membership_writer:
+    class: Drupal\bb_core\Members\MembershipWriter
+    arguments: ['@entity_type.manager']
+  # Derives a workspace slug from a typed name.
+  bb_core.workspace_slug_deriver:
+    class: Drupal\bb_core\Workspace\WorkspaceSlugDeriver
+    arguments: ['@entity_type.manager', '@transliteration']
+  # Creates workspace + first team + both memberships in ONE transaction, or
+  # leaves none of them.
+  bb_core.workspace_provisioner:
+    class: Drupal\bb_core\Workspace\WorkspaceProvisioner
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@bb_core.workspace_slug_deriver'
+      - '@logger.channel.bb_core'
+  # Where "Next"/"Skip" send an account after the onboarding
+  # profile screen — the invite step for a lead, My work for everyone else.
+  bb_core.onboarding_destination:
+    class: Drupal\bb_core\Onboarding\OnboardingDestination
+    arguments: ['@entity_type.manager']
+  bb_core.onboarding_guard_subscriber:
+    class: Drupal\bb_core\EventSubscriber\OnboardingGuardSubscriber
+    arguments: ['@current_user', '@bb_core.onboarding_destination']
+    tags:
+      - { name: event_subscriber }
+  bb_core.workspace_read_scope:
+    class: Drupal\bb_core\Access\BbWorkspaceReadScope
+    arguments: ['@?og.membership_manager', '@entity_type.manager', '@bb_core.membership_resolution_guard']
+  Drupal\bb_core\Access\BbWorkspaceReadScopeInterface:
+    alias: bb_core.workspace_read_scope
+  bb_core.ticket_search_resolver:
+    class: Drupal\bb_core\Ticket\TicketSearchResolver
+    arguments: ['@entity_type.manager', '@bb_core.workspace_read_scope', '@current_user']
+  # workspace_resolver answers "which workspace does this row belong to" by
+  # walking a declared reference chain; active_workspace answers "which
+  # workspace am I standing in" from the URL. Neither depends on the account.
+  bb_core.workspace_resolver:
+    class: Drupal\bb_core\Access\WorkspaceResolver
+    arguments: ['@entity_type.manager']
+  Drupal\bb_core\Access\WorkspaceResolverInterface:
+    alias: bb_core.workspace_resolver
+  bb_core.rank_capability:
+    class: Drupal\bb_core\Access\BbRankCapability
+    # The last argument is optional for the same reason as `@?og.access`:
+    # simple_oauth is not a bb_core dependency.
+    arguments: ['@?og.membership_manager', '@?og.access', '@entity_type.manager', '@logger.channel.bb_core', '@bb_core.membership_resolution_guard', '@?simple_oauth.oauth2_scope.provider', '%security.enable_super_user%']
+  Drupal\bb_core\Access\BbRankCapabilityInterface:
+    alias: bb_core.rank_capability
+  # Rank permissions join the account's effective permission set through
+  # core's Access Policy API.
+  bb_core.rank_access_policy:
+    class: Drupal\bb_core\Access\BbRankAccessPolicy
+    arguments: ['@bb_core.rank_capability']
+    tags:
+      - { name: access_policy }
+  # Fences those rank permissions back to the group that granted them, so a
+  # rank in one tenant reaches nothing in another.
+  bb_core.rank_entity_fence:
+    class: Drupal\bb_core\Access\BbRankEntityFence
+    arguments: ['@entity_type.manager', '@bb_core.rank_capability']
+  bb_core.active_workspace:
+    class: Drupal\bb_core\Access\BbActiveWorkspace
+    arguments: ['@current_route_match']
+  Drupal\bb_core\Access\BbActiveWorkspaceInterface:
+    alias: bb_core.active_workspace
+  bb_core.og_membership_import_subscriber:
+    class: Drupal\bb_core\EventSubscriber\OgMembershipImportSubscriber
+    arguments: ['@entity.repository', '@entity_type.bundle.info', '@typed_data_manager']
+    tags:
+      - { name: event_subscriber }
+  bb_core.workspace_read_scope_subscriber:
+    class: Drupal\bb_core\EventSubscriber\WorkspaceReadScopeSubscriber
+    arguments: ['@bb_core.workspace_read_scope', '@entity_type.manager', '@bb_core.membership_resolution_guard', '@bb_core.rank_capability']
+    tags:
+      - { name: event_subscriber }
+  bb_core.mcp_resource_metadata_subscriber:
+    class: Drupal\bb_core\EventSubscriber\McpResourceMetadataSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_core.conductor_reaper:
+    class: Drupal\bb_core\Conductor\ConductorReaper
+    arguments: ['@entity_type.manager', '@datetime.time', '@logger.channel.bb_core']
+  Drupal\bb_core\Conductor\ConductorReaper:
+    alias: bb_core.conductor_reaper
+  bb_core.conductor_registrar:
+    class: Drupal\bb_core\Conductor\ConductorRegistrar
+    arguments: ['@entity_type.manager', '@datetime.time', '@lock']
+  Drupal\bb_core\Conductor\ConductorRegistrar:
+    alias: bb_core.conductor_registrar
+  bb_core.measurement_context_binding_resolver:
+    class: Drupal\bb_core\Statistics\Measurement\ContextBindingResolver
+    arguments: ['@entity_type.manager']
+
+  bb_core.measurement_query:
+    class: Drupal\bb_core\Statistics\Measurement\MeasurementQuery
+    arguments: ['@entity_type.manager', '@bb_core.measurement_context_binding_resolver']
+
+  bb_core.measurement_evaluator:
+    class: Drupal\bb_core\Statistics\Measurement\MeasurementEvaluator
+    arguments: ['@entity_type.manager', '@bb_core.measurement_query']
+
+  Drupal\bb_core\Statistics\Measurement\MeasurementEvaluatorInterface:
+    alias: bb_core.measurement_evaluator
+
+  bb_core.figure_context_repository:
+    class: Drupal\bb_core\Statistics\Context\FigureContextRepository
+
+  bb_core.figure_request_context_resolver:
+    class: Drupal\bb_core\Statistics\Context\FigureRequestContextResolver
+    arguments: ['@entity.repository']
+
+  bb_core.figure_disclosure:
+    class: Drupal\bb_core\Access\FigureDisclosure
+    arguments:
+      - '@bb_core.rank_capability'
+      - '@?og.membership_manager'
+      - '@bb_core.rank_entity_fence'
+      - '@bb_core.figure_context_repository'
+      - '@context.handler'
+
+  bb_core.figure_discovery:
+    class: Drupal\bb_core\Statistics\FigureDiscovery
+    arguments: ['@entity_type.manager', '@bb_core.figure_disclosure']
+
+  bb_core.figure_filter_resolver:
+    class: Drupal\bb_core\Statistics\Figure\FigureFilterResolver
+
+  bb_core.figure_evaluator:
+    class: Drupal\bb_core\Statistics\Figure\FigureEvaluator
+    arguments:
+      - '@entity_type.manager'
+      - '@bb_core.measurement_evaluator'
+      - '@bb_core.figure_filter_resolver'
+
+  bb_core.figure_collection:
+    class: Drupal\bb_core\Statistics\Figure\FigureCollection
+    arguments:
+      - '@entity_type.manager'
+      - '@bb_core.figure_discovery'
+      - '@bb_core.figure_evaluator'
+
+  bb_core.figure_renderer:
+    class: Drupal\bb_core\Statistics\FigureRenderer
+    arguments: ['@bb_core.figure_collection', '@datetime.time', '@request_stack']
+
+  # Derivers behind the computed fields on bb_ticket, bb_comment, bb_run
+  # and bb_conductor. They are JSON:API surface read by bakers-cli.
+  bb_core.ticket_run_deriver:
+    class: Drupal\bb_core\Derive\TicketRunDeriver
+    arguments: ['@entity_type.manager', '@datetime.time', '@date.formatter']
+  Drupal\bb_core\Derive\TicketRunDeriver:
+    alias: bb_core.ticket_run_deriver
+  # Request-cached counts of referencing entities (a project's tickets, a
+  # group's projects), shared by every listing that shows them.
+  bb_core.reference_counter:
+    class: Drupal\bb_core\Reference\ReferenceCounter
+    arguments: ['@entity_type.manager', '@current_user']
+  Drupal\bb_core\Reference\ReferenceCounter:
+    alias: bb_core.reference_counter
+  bb_core.conductor_deriver:
+    class: Drupal\bb_core\Derive\ConductorDeriver
+    arguments: ['@datetime.time', '@date.formatter']
+  Drupal\bb_core\Derive\ConductorDeriver:
+    alias: bb_core.conductor_deriver
+  bb_core.project_overview_tickets:
+    class: Drupal\bb_core\Ticket\ProjectOverviewTickets
+    arguments: ['@entity_type.manager']
+  Drupal\bb_core\Ticket\ProjectOverviewTickets:
+    alias: bb_core.project_overview_tickets
+
+  # The team screen's island host: makes the Members island addressable so it
+  # can re-render itself after a member is added.
+  bb_core.team_island_host:
+    class: Drupal\bb_core\Island\BbTeamIslandHost
+    arguments: ['@current_route_match']
+    tags:
+      - { name: island.context_provider }
+
+  # The workspace's Members island host: where `admin`/`contributor`/`guest`
+  # ranks are assigned.
+  bb_core.workspace_island_host:
+    class: Drupal\bb_core\Island\BbWorkspaceIslandHost
+    arguments: ['@current_route_match']
+    tags:
+      - { name: island.context_provider }
+
+  # Read-only formatting for the ticket-detail inspector.
+  bb_core.ticket_inspector_rows:
+    class: Drupal\bb_core\Ticket\TicketInspectorRows
+  Drupal\bb_core\Ticket\TicketInspectorRows:
+    alias: bb_core.ticket_inspector_rows
+
+  # Product date display: `normal` absolute format and relative ago/hence.
+  bb_core.date:
+    class: Drupal\bb_core\Time\BbDate
+    arguments: ['@date.formatter', '@datetime.time']
+  Drupal\bb_core\Time\BbDate:
+    alias: bb_core.date
+
+  # Read-only formatting for the canonical run inspector.
+  bb_core.run_inspector_rows:
+    class: Drupal\bb_core\Run\BbRunInspectorRows
+    arguments: ['@bb_core.date']
+  Drupal\bb_core\Run\BbRunInspectorRows:
+    alias: bb_core.run_inspector_rows
+
+  # Read-only formatting for the ticket template detail inspector.
+  bb_core.ticket_template_inspector_rows:
+    class: Drupal\bb_core\TicketTemplate\TicketTemplateInspectorRows
+  Drupal\bb_core\TicketTemplate\TicketTemplateInspectorRows:
+    alias: bb_core.ticket_template_inspector_rows
+
+  # Read-only formatting for the project Overview inspector.
+  bb_core.project_inspector_rows:
+    class: Drupal\bb_core\Project\ProjectInspectorRows
+  Drupal\bb_core\Project\ProjectInspectorRows:
+    alias: bb_core.project_inspector_rows
+
+  # The access-checked candidate read for an entity-reference field's picker,
+  # shared by create surfaces and inspectors.
+  bb_core.reference_options:
+    class: Drupal\bb_core\Reference\ReferenceOptions
+    arguments: ['@plugin.manager.entity_reference_selection']
+
+  # The shell's dialog is island's `island_dialog` wrapper format; bb_theme
+  # overrides `island:dialog` via SDC `replaces`, so no service is needed here.
+
+  Drupal\bb_core\RunLog\RunLogStore:
+    autowire: true
+
+  Drupal\bb_core\Workflow\ReviewInvariantChecker:
+    arguments: ['@current_user']
+  Drupal\bb_core\Workflow\ReviewTransitionHandler:
+    arguments:
+      - '@current_user'
+      - '@datetime.time'
+      - '@Drupal\bb_core\Workflow\ReviewInvariantChecker'
+      - '@database'
+  Drupal\bb_core\Access\ReviewCommentFormAccess:
+    autowire: true
+  Drupal\bb_core\Workflow\ReviewCommentGuard:
+    arguments:
+      - '@current_user'
+      - '@Drupal\bb_core\Workflow\ReviewTransitionHandler'
+    tags:
+      - { name: state_machine.guard, group: bb_comment }
+
+  bb_core.ticket_template_instantiator:
+    class: Drupal\bb_core\TicketTemplate\TicketTemplateInstantiator
+    arguments:
+      - '@entity_type.manager'
+      - '@entity.repository'
+      - '@database'
+      - '@datetime.time'
+      - '@account_switcher'
+      - '@bb_core.workspace_resolver'

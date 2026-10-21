@@ -1,0 +1,2375 @@
+id: user
+group: Designbook/Sections/User
+title: User
+description: >
+  **Product place: account.** `/user/{user}` is the read route
+  (`user.user.full`); `/user/{user}/edit` is the account form
+  (`user.user.default`). Reached from the shell person mark, which swaps the
+  rail to Account, Conductors and Machines. Onboarding uses its own form and
+  chrome.
+status: in-progress
+order: 16
+scenes:
+  - name: account-overview
+    group: User
+    section: user
+    docs: >-
+      The account's read-only identity and View/Edit tabs. The left rail keeps
+      Account, Conductors and Machines at the top, with Workspaces (/home)
+      directly above Log out at the bottom. No body action duplicates. Drupal
+      preserves a validated workspace origin through View/Edit, validation and
+      Save.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Christian Wiedemann
+                      description: Account
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Account
+                          items:
+                            - label: View
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-overview
+                              active: true
+                            - label: Edit
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-edit
+                              active: false
+                main:
+                  - entity: user.user
+                    view_mode: full
+                    select: $[id='1']
+  - name: account-edit
+    group: User
+    section: user
+    docs: >-
+      THE ACCOUNT FORM on `/user/{user}/edit`, inside the app shell, under
+      core's View and Edit tasks (`entity.user.edit_form`, form mode `default`),
+      in the display's own order: developer title, full name, username and
+      email, picture, the AI-use notice and prior knowledge, on one Save. Labels
+      are the ones the live form renders. The picture is core's image widget;
+      the completion flag is the only hidden field. Language and timezone are on
+      the form too and left out of this preview; the social sign-in widget is
+      hidden. The shared account rail anchors Workspaces (/home) directly above
+      Log out at the bottom.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Christian Wiedemann
+                      description: Account
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Account
+                          items:
+                            - label: View
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-overview
+                              active: false
+                            - label: Edit
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-edit
+                              active: true
+                main:
+                  - component: bb_theme:zone
+                    slots:
+                      content:
+                        - component: bb_theme:form
+                          slots:
+                            lines:
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-field-developer-title
+                                slots:
+                                  title: Developer title
+                              - component: bb_theme:form_input
+                                props:
+                                  name: field_developer_title
+                                  id: edit-field-developer-title
+                                  value: Product Lead
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-field-full-name
+                                slots:
+                                  title: Full name
+                              - component: bb_theme:form_input
+                                props:
+                                  name: field_full_name
+                                  id: edit-field-full-name
+                                  value: Christian Wiedemann
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-name
+                                slots:
+                                  title: Username
+                              - component: bb_theme:form_input
+                                props:
+                                  name: name
+                                  id: edit-name
+                                  value: cw
+                                  required: true
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-mail
+                                slots:
+                                  title: Email address
+                              - component: bb_theme:form_input
+                                props:
+                                  type: email
+                                  name: mail
+                                  id: edit-mail
+                                  value: christian.wiedemann@keytec.example
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-user-picture
+                                slots:
+                                  title: Profile picture
+                              - component: bb_theme:form_input
+                                props:
+                                  type: file
+                                  name: files[user_picture_0]
+                                  id: edit-user-picture
+                              - component: bb_theme:note
+                                props:
+                                  tone: attention
+                                slots:
+                                  body: >-
+                                    bakers.build passes these details as context to the
+                                    AI assistants it uses, so that explanations
+                                    and support match your background and your
+                                    goals. You can change or delete them later.
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-field-bakers-background
+                                slots:
+                                  title: What should bakers.build know about your background?
+                              - component: bb_theme:form_textarea
+                                props:
+                                  name: field_bb_background
+                                  id: edit-field-bakers-background
+                                  rows: 3
+                                  value: Drupal, Linear, or something else entirely.
+                            actions:
+                              - component: bb_theme:button
+                                props:
+                                  variant: primary
+                                  type: submit
+                                  label: Save
+  - name: personal-time
+    group: User
+    section: user
+    docs: >-
+      The time calendar (BB-640): a week strip with each day's total and the
+      week total, then the day rows (Day) or a read-only week grid (Week).
+      Totals come from the authorized dataset, not from one page. ACCOUNT >
+      TIME: the owner's hours in every workspace, including an entry whose
+      project was deleted (Unresolved project). Owner only.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                filters:
+                  - component: bb_theme:filters
+                    props:
+                      title: Filters
+                      label: Time filters
+                    slots:
+                      controls:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day'
+                                active: true
+                              - label: Week
+                                url: '?mode=week'
+                                active: false
+                        - component: bb_theme:option_picker
+                          props:
+                            label: Project
+                            name: project
+                            id: time-project
+                            icon: project
+                            open: false
+                            value_label: ''
+                            values: []
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: keytec · Time capture
+                                    label: keytec · Time capture
+                                    selected: false
+                                  - value: keytec · Time capture two
+                                    label: keytec · Time capture two
+                                    selected: false
+                                  - value: API home · API home
+                                    label: API home · API home
+                                    selected: false
+                main:
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-12-07
+                      days:
+                        - weekday: Mon
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-07'
+                          active: false
+                          aria_label: Mon 2026-12-07, 0:00
+                        - weekday: Tue
+                          date: '08'
+                          total: '3:45'
+                          url: '?mode=day&date=2026-12-08'
+                          active: true
+                          aria_label: Tue 2026-12-08, 3:45
+                        - weekday: Wed
+                          date: '09'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-09'
+                          active: false
+                          aria_label: Wed 2026-12-09, 0:00
+                        - weekday: Thu
+                          date: '10'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-10'
+                          active: false
+                          aria_label: Thu 2026-12-10, 0:00
+                        - weekday: Fri
+                          date: '11'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-11'
+                          active: false
+                          aria_label: Fri 2026-12-11, 0:00
+                        - weekday: Sat
+                          date: '12'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-12'
+                          active: false
+                          aria_label: Sat 2026-12-12, 0:00
+                        - weekday: Sun
+                          date: '13'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-13'
+                          active: false
+                          aria_label: Sun 2026-12-13, 0:00
+                      total_label: Week total
+                      total: '3:45'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 3:45'
+                  - component: bb_theme:list
+                    props:
+                      items:
+                        - cells:
+                            project:
+                              kind: link
+                              value: API home · API home
+                              url: '#'
+                            description:
+                              kind: text
+                              value: Crew mate home
+                            duration:
+                              kind: text
+                              value: '0:30'
+                            open:
+                              kind: link
+                              value: Open
+                              url: '#'
+                        - cells:
+                            project:
+                              kind: link
+                              value: API other · API other
+                              url: '#'
+                            description:
+                              kind: text
+                              value: Crew mate other
+                            duration:
+                              kind: text
+                              value: '3:00'
+                            open:
+                              kind: link
+                              value: Open
+                              url: '#'
+                        - cells:
+                            project:
+                              kind: text
+                              value: Unresolved project
+                            description:
+                              kind: text
+                              value: Personal deleted project hour
+                            duration:
+                              kind: text
+                              value: '0:15'
+                            open:
+                              kind: link
+                              value: Open
+                              url: '#'
+                      pattern:
+                        headline:
+                          - project
+                          - ticket
+                        meta:
+                          - person
+                        description:
+                          - description
+                        right:
+                          - duration
+                          - open
+  - name: personal-time-week
+    group: User
+    section: user
+    docs: >-
+      THE EDITABLE WEEK (BB-642, decision D3): the employee's own week is the
+      timesheet — days as columns, one row per project/ticket, one h:mm input
+      per day. A cell with one entry carries a Details link to the shared Record
+      time form; a cell with several entries is locked and links to that day
+      (D10). An AI proposal shows its cells marked Proposed, its own
+      not-yet-recorded line and the proposal bar with Discard; Save week books
+      everything all or nothing (D6). Team and project calendars keep the
+      read-only grid.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-08-03
+                      days:
+                        - weekday: Mon
+                          date: '03'
+                          total: '2:15'
+                          url: '?mode=day&date=2026-08-03'
+                          active: false
+                          aria_label: Mon 2026-08-03, 2:15
+                        - weekday: Tue
+                          date: '04'
+                          total: '2:15'
+                          url: '?mode=day&date=2026-08-04'
+                          active: false
+                          aria_label: Tue 2026-08-04, 2:15
+                        - weekday: Wed
+                          date: '05'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-05'
+                          active: false
+                          aria_label: Wed 2026-08-05, 0:00
+                        - weekday: Thu
+                          date: '06'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-06'
+                          active: false
+                          aria_label: Thu 2026-08-06, 0:00
+                        - weekday: Fri
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-07'
+                          active: false
+                          aria_label: Fri 2026-08-07, 0:00
+                        - weekday: Sat
+                          date: '08'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-08'
+                          active: false
+                          aria_label: Sat 2026-08-08, 0:00
+                        - weekday: Sun
+                          date: '09'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-09'
+                          active: false
+                          aria_label: Sun 2026-08-09, 0:00
+                      total_label: Week total
+                      total: '4:30'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 4:30'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Proposed — not yet recorded: 2:00'
+                      tone: faint
+                  - component: bb_theme:message
+                    props:
+                      status: status
+                    slots:
+                      body: >-
+                        AI proposal · 1 entry · 2:00 — review and Save week to
+                        record it
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Discard proposal
+                      type: submit
+                  - component: bb_theme:table
+                    props:
+                      variant: ''
+                      columns:
+                        - key: label
+                          label: Project
+                          row_header: true
+                        - key: '2026-08-03'
+                          label: Mon 03
+                          num: true
+                        - key: '2026-08-04'
+                          label: Tue 04
+                          num: true
+                        - key: '2026-08-05'
+                          label: Wed 05
+                          num: true
+                        - key: '2026-08-06'
+                          label: Thu 06
+                          num: true
+                        - key: '2026-08-07'
+                          label: Fri 07
+                          num: true
+                        - key: '2026-08-08'
+                          label: Sat 08
+                          num: true
+                        - key: '2026-08-09'
+                          label: Sun 09
+                          num: true
+                        - key: total
+                          label: Total
+                          num: true
+                      rows:
+                        - cells:
+                            label:
+                              kind: text
+                              value: >-
+                                keytec · Time capture · TIME-12 Review the week
+                                grid
+                            '2026-08-03':
+                              kind: input
+                              name: cells[2026-08-03:1:12][duration]
+                              value: '1:30'
+                              label: >-
+                                Mon 03 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              url: /time/a1/edit
+                              url_label: Details
+                              hidden:
+                                cells[2026-08-03:1:12][entry]: '41'
+                                cells[2026-08-03:1:12][version]: v41
+                              stored: 5400
+                              sums:
+                                - row:1:12
+                              hx:
+                                get: /time/a1/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-04':
+                              kind: input
+                              name: cells[2026-08-04:1:12][duration]
+                              value: ''
+                              label: >-
+                                Tue 04 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-04
+                                - proposed:total
+                            '2026-08-05':
+                              kind: input
+                              name: cells[2026-08-05:1:12][duration]
+                              value: '2:00'
+                              label: >-
+                                Wed 05 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              hint: Proposed
+                              url: /time/a2/edit
+                              url_label: Details
+                              stored: 7200
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-05
+                                - proposed:total
+                              hx:
+                                get: /time/a2/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-06':
+                              kind: input
+                              name: cells[2026-08-06:1:12][duration]
+                              value: ''
+                              label: >-
+                                Thu 06 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-06
+                                - proposed:total
+                            '2026-08-07':
+                              kind: input
+                              name: cells[2026-08-07:1:12][duration]
+                              value: ''
+                              label: >-
+                                Fri 07 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-07
+                                - proposed:total
+                            '2026-08-08':
+                              kind: input
+                              name: cells[2026-08-08:1:12][duration]
+                              value: ''
+                              label: >-
+                                Sat 08 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-08
+                                - proposed:total
+                            '2026-08-09':
+                              kind: input
+                              name: cells[2026-08-09:1:12][duration]
+                              value: ''
+                              label: >-
+                                Sun 09 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-09
+                                - proposed:total
+                            total:
+                              kind: text
+                              value: '3:30'
+                              sum: row:1:12
+                              seconds: 12600
+                        - cells:
+                            label:
+                              kind: text
+                              value: keytec · Time capture
+                            '2026-08-03':
+                              kind: input
+                              name: cells[2026-08-03:1:0][duration]
+                              value: '0:45'
+                              label: Mon 03 · keytec · Time capture
+                              url: /time/a3/edit
+                              url_label: Details
+                              stored: 2700
+                              sums:
+                                - row:1:0
+                              hx:
+                                get: /time/a3/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-04':
+                              kind: link
+                              value: 2:15 · 2 entries
+                              url: '?mode=day&date=2026-08-04&project=1'
+                            '2026-08-05':
+                              kind: input
+                              name: cells[2026-08-05:1:0][duration]
+                              value: ''
+                              label: Wed 05 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                                - proposed:2026-08-05
+                                - proposed:total
+                            '2026-08-06':
+                              kind: input
+                              name: cells[2026-08-06:1:0][duration]
+                              value: ''
+                              label: Thu 06 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                                - proposed:2026-08-06
+                                - proposed:total
+                            '2026-08-07':
+                              kind: input
+                              name: cells[2026-08-07:1:0][duration]
+                              value: ''
+                              label: Fri 07 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                                - proposed:2026-08-07
+                                - proposed:total
+                            '2026-08-08':
+                              kind: input
+                              name: cells[2026-08-08:1:0][duration]
+                              value: ''
+                              label: Sat 08 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                                - proposed:2026-08-08
+                                - proposed:total
+                            '2026-08-09':
+                              kind: input
+                              name: cells[2026-08-09:1:0][duration]
+                              value: ''
+                              label: Sun 09 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                                - proposed:2026-08-09
+                                - proposed:total
+                            total:
+                              kind: text
+                              value: '3:00'
+                              sum: row:1:0
+                              seconds: 10800
+                        - cells:
+                            label:
+                              kind: text
+                              value: Recorded
+                              emphasis: strong
+                            '2026-08-03':
+                              kind: text
+                              value: '2:15'
+                              emphasis: strong
+                            '2026-08-04':
+                              kind: text
+                              value: '2:15'
+                              emphasis: strong
+                            '2026-08-05':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-06':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-07':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-08':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-09':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            total:
+                              kind: text
+                              value: '4:30'
+                              emphasis: strong
+                        - cells:
+                            label:
+                              kind: text
+                              value: Proposed — not yet recorded
+                              emphasis: faint
+                            '2026-08-03':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-03
+                              seconds: 0
+                            '2026-08-04':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-04
+                              seconds: 0
+                            '2026-08-05':
+                              kind: text
+                              value: '2:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-05
+                              seconds: 7200
+                            '2026-08-06':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-06
+                              seconds: 0
+                            '2026-08-07':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-07
+                              seconds: 0
+                            '2026-08-08':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-08
+                              seconds: 0
+                            '2026-08-09':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-09
+                              seconds: 0
+                            total:
+                              kind: text
+                              value: '2:00'
+                              emphasis: faint
+                              sum: proposed:total
+                              seconds: 7200
+                      live_sums: true
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Add row
+                      href: >-
+                        /time/week/row?destination=/workspace/time%3Fmode=week%26date=2026-08-03
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Save week
+                      type: submit
+  - name: personal-time-week-errors
+    group: User
+    section: user
+    docs: >-
+      A REFUSED WEEK SAVE: nothing was written. Every typed value stays in its
+      cell, each invalid cell names its own error under the input (tied with
+      aria-describedby) and focus moves to the first one; the message bar says
+      the week was not saved.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:message
+                    props:
+                      status: error
+                    slots:
+                      body: >-
+                        The week was not saved. Correct the marked cells;
+                        nothing was changed.
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-08-03
+                      days:
+                        - weekday: Mon
+                          date: '03'
+                          total: '2:15'
+                          url: '?mode=day&date=2026-08-03'
+                          active: false
+                          aria_label: Mon 2026-08-03, 2:15
+                        - weekday: Tue
+                          date: '04'
+                          total: '2:15'
+                          url: '?mode=day&date=2026-08-04'
+                          active: false
+                          aria_label: Tue 2026-08-04, 2:15
+                        - weekday: Wed
+                          date: '05'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-05'
+                          active: false
+                          aria_label: Wed 2026-08-05, 0:00
+                        - weekday: Thu
+                          date: '06'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-06'
+                          active: false
+                          aria_label: Thu 2026-08-06, 0:00
+                        - weekday: Fri
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-07'
+                          active: false
+                          aria_label: Fri 2026-08-07, 0:00
+                        - weekday: Sat
+                          date: '08'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-08'
+                          active: false
+                          aria_label: Sat 2026-08-08, 0:00
+                        - weekday: Sun
+                          date: '09'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-09'
+                          active: false
+                          aria_label: Sun 2026-08-09, 0:00
+                      total_label: Week total
+                      total: '4:30'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 4:30'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Proposed — not yet recorded: 2:00'
+                      tone: faint
+                  - component: bb_theme:table
+                    props:
+                      variant: ''
+                      columns:
+                        - key: label
+                          label: Project
+                          row_header: true
+                        - key: '2026-08-03'
+                          label: Mon 03
+                          num: true
+                        - key: '2026-08-04'
+                          label: Tue 04
+                          num: true
+                        - key: '2026-08-05'
+                          label: Wed 05
+                          num: true
+                        - key: '2026-08-06'
+                          label: Thu 06
+                          num: true
+                        - key: '2026-08-07'
+                          label: Fri 07
+                          num: true
+                        - key: '2026-08-08'
+                          label: Sat 08
+                          num: true
+                        - key: '2026-08-09'
+                          label: Sun 09
+                          num: true
+                        - key: total
+                          label: Total
+                          num: true
+                      rows:
+                        - cells:
+                            label:
+                              kind: text
+                              value: >-
+                                keytec · Time capture · TIME-12 Review the week
+                                grid
+                            '2026-08-03':
+                              kind: input
+                              name: cells[2026-08-03:1:12][duration]
+                              value: '1:30'
+                              label: >-
+                                Mon 03 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              url: /time/a1/edit
+                              url_label: Details
+                              hidden:
+                                cells[2026-08-03:1:12][entry]: '41'
+                                cells[2026-08-03:1:12][version]: v41
+                              stored: 5400
+                              sums:
+                                - row:1:12
+                              hx:
+                                get: /time/a1/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-04':
+                              kind: input
+                              name: cells[2026-08-04:1:12][duration]
+                              value: ''
+                              label: >-
+                                Tue 04 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                            '2026-08-05':
+                              kind: input
+                              name: cells[2026-08-05:1:12][duration]
+                              value: '2:00'
+                              label: >-
+                                Wed 05 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              hint: Proposed
+                              url: /time/a2/edit
+                              url_label: Details
+                              stored: 7200
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-05
+                                - proposed:total
+                              hx:
+                                get: /time/a2/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-06':
+                              kind: input
+                              name: cells[2026-08-06:1:12][duration]
+                              value: '25:61'
+                              label: >-
+                                Thu 06 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              error: Duration must be bounded whole minutes.
+                              autofocus: true
+                              stored: 0
+                              sums:
+                                - row:1:12
+                            '2026-08-07':
+                              kind: input
+                              name: cells[2026-08-07:1:12][duration]
+                              value: ''
+                              label: >-
+                                Fri 07 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                            '2026-08-08':
+                              kind: input
+                              name: cells[2026-08-08:1:12][duration]
+                              value: ''
+                              label: >-
+                                Sat 08 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                            '2026-08-09':
+                              kind: input
+                              name: cells[2026-08-09:1:12][duration]
+                              value: ''
+                              label: >-
+                                Sun 09 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                            total:
+                              kind: text
+                              value: '3:30'
+                              sum: row:1:12
+                              seconds: 12600
+                        - cells:
+                            label:
+                              kind: text
+                              value: keytec · Time capture
+                            '2026-08-03':
+                              kind: input
+                              name: cells[2026-08-03:1:0][duration]
+                              value: '0:45'
+                              label: Mon 03 · keytec · Time capture
+                              url: /time/a3/edit
+                              url_label: Details
+                              stored: 2700
+                              sums:
+                                - row:1:0
+                              hx:
+                                get: /time/a3/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-04':
+                              kind: link
+                              value: 2:15 · 2 entries
+                              url: '?mode=day&date=2026-08-04&project=1'
+                            '2026-08-05':
+                              kind: input
+                              name: cells[2026-08-05:1:0][duration]
+                              value: abc
+                              label: Wed 05 · keytec · Time capture
+                              error: Duration must be bounded whole minutes.
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-06':
+                              kind: input
+                              name: cells[2026-08-06:1:0][duration]
+                              value: ''
+                              label: Thu 06 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-07':
+                              kind: input
+                              name: cells[2026-08-07:1:0][duration]
+                              value: ''
+                              label: Fri 07 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-08':
+                              kind: input
+                              name: cells[2026-08-08:1:0][duration]
+                              value: ''
+                              label: Sat 08 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-09':
+                              kind: input
+                              name: cells[2026-08-09:1:0][duration]
+                              value: ''
+                              label: Sun 09 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            total:
+                              kind: text
+                              value: '3:00'
+                              sum: row:1:0
+                              seconds: 10800
+                        - cells:
+                            label:
+                              kind: text
+                              value: Recorded
+                              emphasis: strong
+                            '2026-08-03':
+                              kind: text
+                              value: '2:15'
+                              emphasis: strong
+                            '2026-08-04':
+                              kind: text
+                              value: '2:15'
+                              emphasis: strong
+                            '2026-08-05':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-06':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-07':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-08':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-09':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            total:
+                              kind: text
+                              value: '4:30'
+                              emphasis: strong
+                        - cells:
+                            label:
+                              kind: text
+                              value: Proposed — not yet recorded
+                              emphasis: faint
+                            '2026-08-03':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-03
+                              seconds: 0
+                            '2026-08-04':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-04
+                              seconds: 0
+                            '2026-08-05':
+                              kind: text
+                              value: '2:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-05
+                              seconds: 7200
+                            '2026-08-06':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-06
+                              seconds: 0
+                            '2026-08-07':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-07
+                              seconds: 0
+                            '2026-08-08':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-08
+                              seconds: 0
+                            '2026-08-09':
+                              kind: text
+                              value: '0:00'
+                              emphasis: faint
+                              sum: proposed:2026-08-09
+                              seconds: 0
+                            total:
+                              kind: text
+                              value: '2:00'
+                              emphasis: faint
+                              sum: proposed:total
+                              seconds: 7200
+                      live_sums: true
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Add row
+                      href: >-
+                        /time/week/row?destination=/workspace/time%3Fmode=week%26date=2026-08-03
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Save week
+                      type: submit
+  - name: personal-time-week-empty
+    group: User
+    section: user
+    docs: >-
+      AN EMPTY WEEK: the empty state, and below it the grid with the row the
+      employee added through the Project and Ticket pills (Add row), ready to
+      type hours into.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-08-03
+                      days:
+                        - weekday: Mon
+                          date: '03'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-03'
+                          active: false
+                          aria_label: Mon 2026-08-03, 0:00
+                        - weekday: Tue
+                          date: '04'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-04'
+                          active: false
+                          aria_label: Tue 2026-08-04, 0:00
+                        - weekday: Wed
+                          date: '05'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-05'
+                          active: false
+                          aria_label: Wed 2026-08-05, 0:00
+                        - weekday: Thu
+                          date: '06'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-06'
+                          active: false
+                          aria_label: Thu 2026-08-06, 0:00
+                        - weekday: Fri
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-07'
+                          active: false
+                          aria_label: Fri 2026-08-07, 0:00
+                        - weekday: Sat
+                          date: '08'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-08'
+                          active: false
+                          aria_label: Sat 2026-08-08, 0:00
+                        - weekday: Sun
+                          date: '09'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-09'
+                          active: false
+                          aria_label: Sun 2026-08-09, 0:00
+                      total_label: Week total
+                      total: '0:00'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 0:00'
+                  - component: bb_theme:empty-state
+                    props:
+                      message: No time entries for this period.
+                      icon: clock
+                      compact: true
+                  - component: bb_theme:table
+                    props:
+                      variant: ''
+                      columns:
+                        - key: label
+                          label: Project
+                          row_header: true
+                        - key: '2026-08-03'
+                          label: Mon 03
+                          num: true
+                        - key: '2026-08-04'
+                          label: Tue 04
+                          num: true
+                        - key: '2026-08-05'
+                          label: Wed 05
+                          num: true
+                        - key: '2026-08-06'
+                          label: Thu 06
+                          num: true
+                        - key: '2026-08-07'
+                          label: Fri 07
+                          num: true
+                        - key: '2026-08-08'
+                          label: Sat 08
+                          num: true
+                        - key: '2026-08-09'
+                          label: Sun 09
+                          num: true
+                        - key: total
+                          label: Total
+                          num: true
+                      rows:
+                        - cells:
+                            label:
+                              kind: text
+                              value: keytec · Time capture
+                            '2026-08-03':
+                              kind: input
+                              name: cells[2026-08-03:1:0][duration]
+                              value: ''
+                              label: Mon 03 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-04':
+                              kind: input
+                              name: cells[2026-08-04:1:0][duration]
+                              value: ''
+                              label: Tue 04 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-05':
+                              kind: input
+                              name: cells[2026-08-05:1:0][duration]
+                              value: ''
+                              label: Wed 05 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-06':
+                              kind: input
+                              name: cells[2026-08-06:1:0][duration]
+                              value: ''
+                              label: Thu 06 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-07':
+                              kind: input
+                              name: cells[2026-08-07:1:0][duration]
+                              value: ''
+                              label: Fri 07 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-08':
+                              kind: input
+                              name: cells[2026-08-08:1:0][duration]
+                              value: ''
+                              label: Sat 08 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            '2026-08-09':
+                              kind: input
+                              name: cells[2026-08-09:1:0][duration]
+                              value: ''
+                              label: Sun 09 · keytec · Time capture
+                              stored: 0
+                              sums:
+                                - row:1:0
+                            total:
+                              kind: text
+                              value: '0:00'
+                              sum: row:1:0
+                              seconds: 0
+                        - cells:
+                            label:
+                              kind: text
+                              value: Recorded
+                              emphasis: strong
+                            '2026-08-03':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-04':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-05':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-06':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-07':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-08':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-09':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            total:
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                      live_sums: true
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Add row
+                      href: >-
+                        /time/week/row?destination=/workspace/time%3Fmode=week%26date=2026-08-03
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Save week
+                      type: submit
+  - name: personal-time-week-submission
+    group: User
+    section: user
+    docs: >-
+      A SAVED PROPOSAL opened through its review link (?submission=…): every
+      proposed cell is recorded, the proposal became a draft submission, and the
+      bar offers Submit. The grid shows only that submission's rows.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-08-03
+                      days:
+                        - weekday: Mon
+                          date: '03'
+                          total: '1:30'
+                          url: '?mode=day&date=2026-08-03'
+                          active: false
+                          aria_label: Mon 2026-08-03, 1:30
+                        - weekday: Tue
+                          date: '04'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-04'
+                          active: false
+                          aria_label: Tue 2026-08-04, 0:00
+                        - weekday: Wed
+                          date: '05'
+                          total: '2:00'
+                          url: '?mode=day&date=2026-08-05'
+                          active: false
+                          aria_label: Wed 2026-08-05, 2:00
+                        - weekday: Thu
+                          date: '06'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-06'
+                          active: false
+                          aria_label: Thu 2026-08-06, 0:00
+                        - weekday: Fri
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-07'
+                          active: false
+                          aria_label: Fri 2026-08-07, 0:00
+                        - weekday: Sat
+                          date: '08'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-08'
+                          active: false
+                          aria_label: Sat 2026-08-08, 0:00
+                        - weekday: Sun
+                          date: '09'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-08-09'
+                          active: false
+                          aria_label: Sun 2026-08-09, 0:00
+                      total_label: Week total
+                      total: '4:30'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 3:30'
+                  - component: bb_theme:message
+                    props:
+                      status: status
+                    slots:
+                      body: Submission of this week
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Submit
+                      type: submit
+                  - component: bb_theme:table
+                    props:
+                      variant: ''
+                      columns:
+                        - key: label
+                          label: Project
+                          row_header: true
+                        - key: '2026-08-03'
+                          label: Mon 03
+                          num: true
+                        - key: '2026-08-04'
+                          label: Tue 04
+                          num: true
+                        - key: '2026-08-05'
+                          label: Wed 05
+                          num: true
+                        - key: '2026-08-06'
+                          label: Thu 06
+                          num: true
+                        - key: '2026-08-07'
+                          label: Fri 07
+                          num: true
+                        - key: '2026-08-08'
+                          label: Sat 08
+                          num: true
+                        - key: '2026-08-09'
+                          label: Sun 09
+                          num: true
+                        - key: total
+                          label: Total
+                          num: true
+                      rows:
+                        - cells:
+                            label:
+                              kind: text
+                              value: >-
+                                keytec · Time capture · TIME-12 Review the week
+                                grid
+                            '2026-08-03':
+                              kind: input
+                              name: cells[2026-08-03:1:12][duration]
+                              value: '1:30'
+                              label: >-
+                                Mon 03 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              url: /time/a1/edit
+                              url_label: Details
+                              stored: 5400
+                              sums:
+                                - row:1:12
+                              hx:
+                                get: /time/a1/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-05':
+                              kind: input
+                              name: cells[2026-08-05:1:12][duration]
+                              value: '2:00'
+                              label: >-
+                                Wed 05 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              url: /time/a2/edit
+                              url_label: Details
+                              stored: 7200
+                              sums:
+                                - row:1:12
+                              hx:
+                                get: /time/a2/edit?_wrapper_format=island_dialog
+                                target: '#bakers-overlay'
+                                select: dialog:not(dialog dialog)
+                                swap: innerHTML
+                            '2026-08-04':
+                              kind: input
+                              name: cells[2026-08-04:1:12][duration]
+                              value: ''
+                              label: >-
+                                Tue 04 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-04
+                                - proposed:total
+                            '2026-08-06':
+                              kind: input
+                              name: cells[2026-08-06:1:12][duration]
+                              value: ''
+                              label: >-
+                                Thu 06 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-06
+                                - proposed:total
+                            '2026-08-07':
+                              kind: input
+                              name: cells[2026-08-07:1:12][duration]
+                              value: ''
+                              label: >-
+                                Fri 07 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-07
+                                - proposed:total
+                            '2026-08-08':
+                              kind: input
+                              name: cells[2026-08-08:1:12][duration]
+                              value: ''
+                              label: >-
+                                Sat 08 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-08
+                                - proposed:total
+                            '2026-08-09':
+                              kind: input
+                              name: cells[2026-08-09:1:12][duration]
+                              value: ''
+                              label: >-
+                                Sun 09 · keytec · Time capture · TIME-12 Review
+                                the week grid
+                              stored: 0
+                              sums:
+                                - row:1:12
+                                - proposed:2026-08-09
+                                - proposed:total
+                            total:
+                              kind: text
+                              value: '3:30'
+                              sum: row:1:12
+                              seconds: 12600
+                        - cells:
+                            label:
+                              kind: text
+                              value: Recorded
+                              emphasis: strong
+                            '2026-08-03':
+                              kind: text
+                              value: '1:30'
+                              emphasis: strong
+                            '2026-08-04':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-05':
+                              kind: text
+                              value: '2:00'
+                              emphasis: strong
+                            '2026-08-06':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-07':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-08':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            '2026-08-09':
+                              kind: text
+                              value: '0:00'
+                              emphasis: strong
+                            total:
+                              kind: text
+                              value: '3:30'
+                              emphasis: strong
+                      live_sums: true
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Add row
+                      href: >-
+                        /time/week/row?destination=/workspace/time%3Fmode=week%26date=2026-08-03
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Save week
+                      type: submit
+  - name: record-time-create
+    group: User
+    section: user
+    docs: >-
+      RECORD TIME, CREATE: the one shared form, opened in the dialog over the
+      calling calendar (full page without JavaScript). It asks in the reader's
+      order: project, ticket, date, duration, description. The calling context
+      prefilled date and project; a suggestion the employee may not use is
+      dropped with a notice. The ticket pill searches the project's tickets on
+      the server. Billing account is asked only when there is more than one; a
+      single one is set silently.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: Record time
+                label: Record time
+                dismissible: true
+              slots:
+                body:
+                  - component: bb_theme:message
+                    props:
+                      status: warning
+                    slots:
+                      body: The suggested ticket is not available.
+                  - component: bb_theme:property_pill
+                    props:
+                      name: project
+                      label: Project
+                      icon: project
+                      picker_id: edit-project
+                      values:
+                        - '1'
+                      open: false
+                      multiple: false
+                      searchable: true
+                      fallback: true
+                      options:
+                        - value: '1'
+                          label: keytec · Time capture
+                          selected: true
+                        - value: '2'
+                          label: keytec · Website
+                          selected: false
+                      value_label: keytec · Time capture
+                  - component: bb_theme:property_pill
+                    props:
+                      name: ticket
+                      label: Ticket
+                      icon: ticket
+                      picker_id: edit-ticket
+                      values: []
+                      open: true
+                      multiple: false
+                      searchable: true
+                      fallback: true
+                      options:
+                        - value: '12'
+                          label: TIME-12 Review the week grid
+                          selected: false
+                        - value: '13'
+                          label: TIME-13 Proposal handoff
+                          selected: false
+                      search_url: /time/options/ticket?project=1
+                      search_placeholder: Search tickets
+                      search_label: Search tickets
+                      clearable: true
+                      clear_label: No ticket
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-work-date
+                    slots:
+                      title: Date
+                  - component: bb_theme:form_input
+                    props:
+                      type: date
+                      id: edit-work-date
+                      name: work_date
+                      value: '2026-08-04'
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-duration
+                    slots:
+                      title: Duration (hours:minutes)
+                  - component: bb_theme:form_input
+                    props:
+                      type: text
+                      id: edit-duration
+                      name: duration
+                      value: ''
+                  - component: bb_theme:text
+                    props:
+                      text: 'Hours and minutes as H:MM. Examples: 0:30, 1:15.'
+                      tone: faint
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-description
+                    slots:
+                      title: Description
+                  - component: bb_theme:form_textarea
+                    props:
+                      id: edit-description
+                      name: description
+                      rows: 3
+                      value: ''
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Save
+                      type: submit
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                main:
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 4:30'
+  - name: record-time-edit
+    group: User
+    section: user
+    docs: >-
+      RECORD TIME, EDIT (from a week cell's Details icon, in the dialog): the
+      context the cell already fixes leads read-only — day, customer, project
+      and ticket — with a Proposed or Recorded badge. Change opens date, project
+      and ticket; it opens by itself when one of them is refused. Duration and
+      description are the fields; Delete stands apart as a danger action. Save
+      and Cancel return to the week.
+    items:
+      - scene: design-system:account-shell
+        with:
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                main:
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 4:30'
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: Record time
+                label: Record time
+                dismissible: true
+              slots:
+                body:
+                  - component: bb_theme:text
+                    props:
+                      text: >-
+                        Tue 04 Aug · keytec · Time capture / TIME-12 Review the
+                        week grid
+                      as: p
+                      size: body
+                  - component: bb_theme:badge
+                    props:
+                      label: Proposed
+                      tone: attention
+                  - component: bb_theme:collapsible
+                    props:
+                      open: false
+                    slots:
+                      label: Change date, project or ticket
+                      content:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-work-date
+                          slots:
+                            title: Date
+                        - component: bb_theme:form_input
+                          props:
+                            type: date
+                            id: edit-work-date
+                            name: work_date
+                            value: '2026-08-04'
+                        - component: bb_theme:property_pill
+                          props:
+                            name: project
+                            label: Project
+                            icon: project
+                            picker_id: edit-project
+                            values:
+                              - '1'
+                            open: false
+                            multiple: false
+                            searchable: true
+                            fallback: true
+                            options:
+                              - value: '1'
+                                label: keytec · Time capture
+                                selected: true
+                              - value: '2'
+                                label: keytec · Website
+                                selected: false
+                            value_label: keytec · Time capture
+                        - component: bb_theme:property_pill
+                          props:
+                            name: ticket
+                            label: Ticket
+                            icon: ticket
+                            picker_id: edit-ticket
+                            values:
+                              - '12'
+                            open: false
+                            multiple: false
+                            searchable: true
+                            fallback: true
+                            options:
+                              - value: '12'
+                                label: TIME-12 Review the week grid
+                                selected: true
+                              - value: '13'
+                                label: TIME-13 Proposal handoff
+                                selected: false
+                            value_label: TIME-12 Review the week grid
+                            search_url: /time/options/ticket?project=1
+                            search_placeholder: Search tickets
+                            search_label: Search tickets
+                            clearable: true
+                            clear_label: No ticket
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-duration
+                    slots:
+                      title: Duration (hours:minutes)
+                  - component: bb_theme:form_input
+                    props:
+                      type: text
+                      id: edit-duration
+                      name: duration
+                      value: '1:30'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Hours and minutes as H:MM. Examples: 0:30, 1:15.'
+                      tone: faint
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-description
+                    slots:
+                      title: Description
+                  - component: bb_theme:form_textarea
+                    props:
+                      id: edit-description
+                      name: description
+                      rows: 3
+                      value: Reviewed the week grid
+                  - component: bb_theme:button
+                    props:
+                      variant: danger
+                      label: Delete
+                      href: /time/0f0f/delete
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Save
+                      type: submit
+  - name: record-time-error
+    group: User
+    section: user
+    docs: >-
+      RECORD TIME, REFUSED: field errors next to the field, the typed values
+      kept, and the project change explained — the ticket of the previous
+      project was cleared.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: Record time
+                label: Record time
+                dismissible: true
+              slots:
+                body:
+                  - component: bb_theme:message
+                    props:
+                      status: error
+                    slots:
+                      body: >-
+                        Enter duration as hours:minutes, for example 0:30 or
+                        1:15. Ticket cleared: it does not belong to Website.
+                  - component: bb_theme:property_pill
+                    props:
+                      name: project
+                      label: Project
+                      icon: project
+                      picker_id: edit-project
+                      values:
+                        - '2'
+                      open: false
+                      multiple: false
+                      searchable: true
+                      fallback: true
+                      options:
+                        - value: '1'
+                          label: keytec · Time capture
+                          selected: false
+                        - value: '2'
+                          label: keytec · Website
+                          selected: true
+                      value_label: keytec · Website
+                  - component: bb_theme:property_pill
+                    props:
+                      name: ticket
+                      label: Ticket
+                      icon: ticket
+                      picker_id: edit-ticket
+                      values: []
+                      open: false
+                      multiple: false
+                      searchable: true
+                      fallback: true
+                      options:
+                        - value: '12'
+                          label: TIME-12 Review the week grid
+                          selected: false
+                        - value: '13'
+                          label: TIME-13 Proposal handoff
+                          selected: false
+                      search_url: /time/options/ticket?project=2
+                      search_placeholder: Search tickets
+                      search_label: Search tickets
+                      clearable: true
+                      clear_label: No ticket
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-work-date
+                    slots:
+                      title: Date
+                  - component: bb_theme:form_input
+                    props:
+                      type: date
+                      id: edit-work-date
+                      name: work_date
+                      value: '2026-08-04'
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-duration
+                    slots:
+                      title: Duration (hours:minutes)
+                  - component: bb_theme:form_input
+                    props:
+                      type: text
+                      id: edit-duration
+                      name: duration
+                      value: abc
+                  - component: bb_theme:text
+                    props:
+                      text: 'Hours and minutes as H:MM. Examples: 0:30, 1:15.'
+                      tone: faint
+                  - component: bb_theme:text
+                    props:
+                      text: >-
+                        Enter duration as hours:minutes, for example 0:30 or
+                        1:15.
+                  - component: bb_theme:form_label
+                    props:
+                      for: edit-description
+                    slots:
+                      title: Description
+                  - component: bb_theme:form_textarea
+                    props:
+                      id: edit-description
+                      name: description
+                      rows: 3
+                      value: Reviewed the week grid
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Save
+                      type: submit
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: My time
+                      description: Your recorded hours in all workspaces
+                main:
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 4:30'
+  - name: api-keys-list
+    group: User
+    section: user
+    docs: >-
+      BB-668 design preview, no backend. `/user/{user}/api-keys`: the
+      owner-only listing of self-service pipeline credentials (Name, Client
+      ID, Created, Expires, Status, Revoke). Reuses `list` and `badge`
+      exactly as `personal-time` reuses them for the week's entries; no new
+      component was needed.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: API keys
+                      description: >-
+                        Credentials your own GitLab pipelines use to act as
+                        you. Dates are UTC.
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Create API key
+                          href: >-
+                            /?path=/story/designbook-sections-user-scenes--api-keys-create
+                main:
+                  - component: bb_theme:list
+                    props:
+                      items:
+                        - cells:
+                            name:
+                              kind: text
+                              value: Pipeline deploy
+                            client_id:
+                              kind: text
+                              value: bakers-key-7f3a9c2e
+                            created:
+                              kind: text
+                              value: '2026-09-01'
+                            expires:
+                              kind: text
+                              value: '2026-12-01'
+                            status:
+                              kind: component
+                              component: bb_theme:badge
+                              props:
+                                label: Active
+                                tone: running
+                            revoke:
+                              kind: link
+                              value: Revoke
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--api-keys-list
+                        - cells:
+                            name:
+                              kind: text
+                              value: Nightly report
+                            client_id:
+                              kind: text
+                              value: bakers-key-1b8e4f10
+                            created:
+                              kind: text
+                              value: '2026-01-15'
+                            expires:
+                              kind: text
+                              value: '2026-04-15'
+                            status:
+                              kind: component
+                              component: bb_theme:badge
+                              props:
+                                label: Expired
+                                tone: critical
+                            revoke:
+                              kind: link
+                              value: Revoke
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--api-keys-list
+  - name: api-keys-list-empty
+    group: User
+    section: user
+    docs: >-
+      BB-668 design preview, no backend. The same listing before any key
+      exists, pointing straight at Create.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: API keys
+                      description: >-
+                        Credentials your own GitLab pipelines use to act as
+                        you. Dates are UTC.
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Create API key
+                          href: >-
+                            /?path=/story/designbook-sections-user-scenes--api-keys-create
+                main:
+                  - component: bb_theme:empty-state
+                    props:
+                      message: >-
+                        You have not created an API key yet. Create one to let
+                        a GitLab pipeline act as you.
+                      icon: key
+  - name: api-keys-create
+    group: User
+    section: user
+    docs: >-
+      BB-668 design preview, no backend. `/user/{user}/api-keys/add`: Name
+      and a required Expiry date. Default +90 days, allowed tomorrow through
+      +365 days, UTC end of day. Reuses `form`/`form_input`/`form_label`/`note`
+      exactly as `account-edit` does; no new component was needed.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Create API key
+                      description: Dates are UTC.
+                main:
+                  - component: bb_theme:form
+                    slots:
+                      lines:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-api-key-name
+                          slots:
+                            title: Name
+                        - component: bb_theme:form_input
+                          props:
+                            name: label
+                            id: edit-api-key-name
+                            placeholder: Pipeline deploy
+                            required: true
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-api-key-expires
+                          slots:
+                            title: Expiry date
+                        - component: bb_theme:form_input
+                          props:
+                            type: date
+                            name: expires
+                            id: edit-api-key-expires
+                            value: '2027-01-11'
+                            required: true
+                        - component: bb_theme:note
+                          props:
+                            tone: neutral
+                          slots:
+                            body: >-
+                              UTC date. Default is 90 days from today; the
+                              earliest is tomorrow, the latest is 365 days
+                              from today.
+                      actions:
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: Cancel
+                        - component: bb_theme:button
+                          props:
+                            variant: primary
+                            label: Create API key
+                            type: submit
+  - name: api-keys-created
+    group: User
+    section: user
+    docs: >-
+      BB-668 design preview, no backend. The one-time reveal shown
+      immediately after a successful create POST, never again after reload
+      or on the list. Reuses `setup_command`'s copy-button pattern for the
+      Client ID, Secret and the GitLab CI snippet; no new component was
+      needed.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: API key created
+                      description: >-
+                        Save the secret now. It is shown once and cannot be
+                        shown again; losing it means revoking this key and
+                        creating a new one.
+                main:
+                  - component: bb_theme:note
+                    props:
+                      lead: Shown once
+                      tone: attention
+                    slots:
+                      body: >-
+                        This is the only time the secret is displayed.
+                        Reloading or revisiting this page will not show it
+                        again.
+                  - component: bb_theme:form_label
+                    props:
+                      for: created-client-id
+                    slots:
+                      title: Client ID
+                  - component: bb_theme:setup_command
+                    props:
+                      command: bakers-key-7f3a9c2e
+                      label: Copy client ID
+                  - component: bb_theme:form_label
+                    props:
+                      for: created-secret
+                    slots:
+                      title: Secret
+                  - component: bb_theme:setup_command
+                    props:
+                      command: >-
+                        3f9a1c7e2b8d4650a9c3e7f1b2d8406c9e1a7f3c5b8d2460
+                      label: Copy secret
+                  - component: bb_theme:text
+                    props:
+                      text: >-
+                        Store the secret in GitLab's masked CI/CD variable
+                        BB_CONSUMER_SECRET, then use the client ID in your
+                        pipeline's before_script.
+                  - component: bb_theme:form_label
+                    props:
+                      for: created-snippet
+                    slots:
+                      title: GitLab CI snippet
+                  - component: bb_theme:setup_command
+                    props:
+                      command: >-
+                        before_script: - bakers config init --scope connection
+                        --auth-type client_credentials --client-id
+                        bakers-key-7f3a9c2e --secret-env BB_CONSUMER_SECRET
+                      label: Copy GitLab CI snippet

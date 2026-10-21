@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_run
+  uuid: 6528ea24-b3ce-4df7-ae28-905073558e05
+  depends:
+    bfe8c2d8-b945-4007-9510-4fa666d0db2d: bb_ticket
+    9b96cdea-a605-43a8-bd3f-3cdf72c5127f: bb_conductor
+default:
+  ticket_id:
+    -
+      entity: bfe8c2d8-b945-4007-9510-4fa666d0db2d
+  conductor_id:
+    -
+      entity: 9b96cdea-a605-43a8-bd3f-3cdf72c5127f
+  state:
+    -
+      value: running
+  state_at_start:
+    -
+      value: coding
+  started_at:
+    -
+      value: 1781200000
+  agent:
+    -
+      value: sonnet
+  duration_s:
+    -
+      value: 88
+  claim_expires_at:
+    -
+      value: 1781282180

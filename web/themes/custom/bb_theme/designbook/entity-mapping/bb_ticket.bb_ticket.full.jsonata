@@ -1,0 +1,111 @@
+(
+  /* The full view mode is the TICKET DETAIL'S BODY — and only its body.
+
+     A VIEW MODE EMITS NO LAYOUT (BB-378). It displays an entity; the SCREEN arranges one. So this
+     mapping no longer emits a `canvas` and no longer decides which of its regions exist: the ticket
+     detail scene owns the canvas, owns the `page_header` that carries the screen's single <h1>, and
+     fills `canvas.header` with the status band and `canvas.inspector` with the meta rail itself. What
+     is left here is what a view mode is for — the zones of the body, in the order the four questions
+     a developer opens this screen with are answered:
+
+       About          the description — what is this about
+       Run history    what was done, one run per row
+       Handoffs       the rest of what the agents wrote, LAST and collapsed
+
+     The band and the rail moved UP rather than away: their content is unchanged, it is composed in
+     `sections/tickets/tickets.section.scenes.yml` from the same sample records this mapping reads.
+     The reason is the one D2 protects — a screen's title, and the regions a screen is made of,
+     cannot come from a view mode, or a list screen could only get its <h1> from one.
+
+     `ticket_detail` itself is untouched and still in the tree; it stays what bb_dashboard renders
+     until the ticket that repoints the Drupal routes runs sync-to. This mapping being ahead of
+     core.entity_view_display is intended and recorded as R3, not drift. */
+  $t := $;
+
+  /* Facts the ticket record cannot carry, pinned per record.
+
+     `comments` holds IDs and no types, so the composition cannot ask the record which of them is
+     the summary or how many are handoffs; `runs` and `sub_tickets` are computed reverse references
+     the sample data does not materialise. A JSONata mapping is evaluated against ONE record and
+     cannot join across the sample collections, so these are pinned here — the same idiom the
+     previous revision used with its $showcase flag, and the one R9 accepts: a pinned id turns a
+     sample-data change into a visible diff rather than a silent reshuffle. Re-tagging the sample
+     data is the section contract's own follow-up ticket. */
+  $facts := {
+    "1": {
+      "runs": 5,
+      "summaries": 1,
+      "handoffs": 2,
+      "handoff_types": "spec, comment",
+      "sub_tickets": "BB-145, BB-146"
+    },
+    "9": {
+      "runs": 1,
+      "summaries": 1,
+      "handoffs": 3,
+      "handoff_types": "spec, test, review"
+    }
+  };
+  $f := $lookup($facts, $t.id);
+
+  [
+    /* Every body block is a `zone`, which is what superseded `section` (D14). `inset: "none"`
+       because the canvas region already sets the distance to the screen edge — outer spacing
+       belongs to the wrapper, inner padding to the element (D3). `header_style` is gone with
+       `section`: a zone heading has ONE style, so two adjacent zones cannot disagree. */
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      /* THE DESCRIPTION GETS A TREATMENT. It used to be handed to the zone's `content` slot
+         as a bare HTML string, which rendered the same field type in a different face from
+         the one the discussion timeline gives it — the same body, two looks, nobody's
+         decision. `rich-text` owns that treatment, so the slot now holds a COMPONENT NODE
+         rather than markup, which is what a mapping output is supposed to be. */
+      "slots": {
+        "heading": "About",
+        "content": {
+          "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:rich-text",
+          "props": { "body": $t.description, "label": "Description" }
+        }
+      }
+    },
+    $f.runs > 0 ? {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      "slots": {
+        "heading": "Run history",
+        "content": [$map([0..($f.runs - 1)], function($i) {
+          {
+            /* `teaser` is the ROW since BB-336; `full` is now the run detail overlay.
+               A wrong view_mode here renders an EMPTY component rather than raising, so this
+               is verified by looking at the screen and not by a file check.
+               The comment sits ABOVE the entity line on purpose: the contract check reads the
+               view mode as a two-line window from `"entity"`, because a bare grep would hit
+               the two bb_comment nodes in this same file. */
+            "entity": "bb_run.bb_run",
+            "view_mode": "teaser",
+            "select": "$[ticket_id='" & $t.id & "'][" & $string($i) & "]"
+          }
+        })]
+      }
+    } : undefined,
+    /* The handoffs are LAST and closed. What the agent writes is archive once the band
+       carries the latest summary, and the label names what is inside so a closed collapsible
+       is still informative. Native <details> deliberately: Storybook never calls
+       Drupal.attachBehaviors, so a scripted accordion would be a dead control here. */
+    $f.handoffs > 0 ? {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:collapsible",
+      "props": { "open": false },
+      "slots": {
+        "label": ($f.handoffs = 1 ? "1 handoff — " : $string($f.handoffs) & " handoffs — ") & $f.handoff_types,
+        "content": [$map([0..($f.handoffs - 1)], function($i) {
+          {
+            "entity": "bb_comment.bb_comment",
+            "view_mode": "teaser",
+            "select": "$[ticket_id='" & $t.id & "' and type != 'summary'][" & $string($i) & "]"
+          }
+        })]
+      }
+    } : undefined
+  ]
+)

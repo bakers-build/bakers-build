@@ -1,0 +1,15 @@
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_update_any_bb_ticket
+name: 'bb:session:update_any_bb_ticket'
+description: 'bakers.build session ceiling — update any bb_ticket'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'update any bb_ticket'

@@ -1,0 +1,78 @@
+component: bb_theme:list
+name: Cards comfortable
+props:
+  layout: cards
+  spacing: comfortable
+  items:
+    - cells:
+        person:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: running
+          mail: christian.wiedemann@keytec.de
+        role:
+          kind: picker
+          label: Role
+          picker_id: member-role-comfortable-1
+          value_labels:
+            - Lead
+          options:
+            - value: lead
+              label: Lead
+              selected: true
+            - value: member
+              label: Member
+        joined:
+          kind: text
+          value: joined 2026-03-04
+          emphasis: faint
+        remove:
+          kind: action
+          icon: x-circle
+          icon_only: true
+          variant: ghost
+          label: Remove Christian Wiedemann from the project. Revokes their access.
+    - cells:
+        person:
+          kind: person
+          display_name: Marco Klein
+          initials: MK
+          color: attention
+          mail: marco.klein@example.org
+        role:
+          kind: picker
+          label: Role
+          picker_id: member-role-comfortable-2
+          value_labels:
+            - Member
+          options:
+            - value: lead
+              label: Lead
+            - value: member
+              label: Member
+              selected: true
+        joined:
+          kind: text
+          value: joined 2026-05-19
+          emphasis: faint
+        remove:
+          kind: action
+          icon: x-circle
+          icon_only: true
+          variant: ghost
+          label: Remove Marco Klein from the project. Revokes their access.
+    - cells:
+        person:
+          kind: person
+          display_name: bb_agent
+          initials: GA
+          color: offline
+        state:
+          kind: badge
+          label: active
+          tone: neutral
+        joined:
+          kind: text
+          value: joined 2026-01-08
+          emphasis: faint

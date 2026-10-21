@@ -1,0 +1,16 @@
+# Test-only capability fixture; saved-form dependencies keep recipe application repeatable.
+langcode: en
+status: true
+dependencies:
+  config:
+  - filter.format.bb_rich
+  module:
+  - filter
+  - bb_core
+id: api_machine
+label: api_machine
+weight: 0
+is_admin: false
+permissions:
+- register bakers conductor
+- use text format bb_rich

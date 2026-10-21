@@ -1,0 +1,14 @@
+name: bakers.build Work tracking
+type: module
+description: 'Work tracking: worklogs, submissions and billing accounts.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - drupal:datetime
+  - drupal:jsonapi
+  - drupal:options
+  - drupal:views
+  - entity:entity
+  - bb_core:bb_core
+  - island:island
+  - ui_patterns:ui_patterns

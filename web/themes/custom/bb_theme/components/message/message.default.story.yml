@@ -1,0 +1,9 @@
+component: bb_theme:message
+name: Default
+props:
+  status: error
+slots:
+  body:
+    - type: element
+      tag: span
+      value: Unrecognized username or password.

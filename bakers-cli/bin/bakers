@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+// BB-201: the dev launcher runs the meta-package plugin HOST (the `bakers`
+// entrypoint moved out of the conductor into @bakers-build/bakers). The host
+// dynamically mounts the ui/conductor/dropsh command plugins.
+import('../host/dist/src/host.js').then((m) => m.main(process.argv));

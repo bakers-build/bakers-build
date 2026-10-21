@@ -1,0 +1,58 @@
+_meta:
+  version: '1.0'
+  entity_type: consumer
+  uuid: d1fe7064-42b0-48f1-8638-671a88498e44
+  default_langcode: en
+  depends:
+    25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
+default:
+  owner_id:
+    -
+      target_id: 0
+  client_id:
+    -
+      value: bakers-agent-e2e
+  label:
+    -
+      value: 'bakers.build E2E agent'
+  third_party:
+    -
+      value: true
+  is_default:
+    -
+      value: false
+  status:
+    -
+      value: true
+  secret:
+    -
+      value: $2y$12$b0dyvHzq1JDUZDz.JiFaEuLGaC5cAAvVFqotIIrPHBy41LjRlV1h.
+      pre_hashed: true
+      existing: null
+  grant_types:
+    -
+      value: client_credentials
+  confidential:
+    -
+      value: true
+  scopes:
+    -
+      scope_id: bb_session
+  access_token_expiration:
+    -
+      value: 300
+  refresh_token_expiration:
+    -
+      value: 1209600
+  user_id:
+    -
+      entity: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb
+  pkce:
+    -
+      value: false
+  automatic_authorization:
+    -
+      value: false
+  remember_approval:
+    -
+      value: true

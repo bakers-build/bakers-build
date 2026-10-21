@@ -1,0 +1,31 @@
+# The board at its smallest: three columns as DATA, and the third one empty.
+#
+# There is no column component to compose any more — a column is a name, a count, an optional header
+# tone and a list of cards, and the board iterates them. The `empty` slot is the board's, not the
+# column's, and it is what the cardless column shows.
+component: bb_theme:board
+name: Default
+props:
+  columns:
+    - name: todo
+      count: 1
+      cards:
+        - identifier: GL-143
+          title: Implement the lease renewal backoff
+    - name: coding
+      count: 1
+      dot: running
+      cards:
+        - identifier: GL-138
+          title: Refactor the workflow state machine
+          status: running
+          state: coding
+    - name: cancelled
+      count: 0
+slots:
+  empty:
+    - type: element
+      tag: span
+      value: nothing discarded
+      attributes:
+        class: opacity-60

@@ -1,0 +1,9 @@
+# Compact density: the same figure beside a description, not a dashboard band.
+component: bb_theme:stat-tile
+name: Compact
+props:
+  value: '3'
+  label: in progress tickets
+  source: bb_ticket (open)
+  tone: neutral
+  size: compact

@@ -1,0 +1,20 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: 7225eac7-2fde-5384-b5f6-05e689afc1e5
+  default_langcode: en
+  depends:
+    b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
+    445bc635-cc04-5de3-bf29-1c5f88adae29: user
+    59d5d39f-a8e4-54a6-a1c9-7f3d7920010f: og_membership
+default:
+  conductor_id:
+  - value: api-pagination-home
+  label:
+  - value: API pagination home
+  project_id:
+  - entity: b76b40df-436c-5d3d-9bf1-5745fa621a7a
+  owner_user_id:
+  - entity: 445bc635-cc04-5de3-bf29-1c5f88adae29
+  status:
+  - value: offline

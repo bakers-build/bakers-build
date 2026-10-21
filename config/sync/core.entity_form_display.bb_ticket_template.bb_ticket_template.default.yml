@@ -1,0 +1,131 @@
+uuid: c3a3b6d1-c4c2-4e46-8d90-e034ddd4b278
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+    - text
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+id: bb_ticket_template.bb_ticket_template.default
+targetEntityType: bb_ticket_template
+bundle: bb_ticket_template
+mode: default
+content:
+  conductor_id:
+    type: bb_picker
+    weight: 8
+    region: content
+    settings:
+      picker_region: pills
+      label: Conductor
+      icon: conductor
+      searchable: false
+      fallback: true
+      clear_label: 'No conductor'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: Set
+      note_prefix: 'Tickets from this template are claimed at the next poll and an agent run starts on '
+      note_suffix: '.'
+    third_party_settings: {  }
+  description:
+    type: text_textarea
+    weight: 3
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+  enabled:
+    type: boolean_checkbox
+    weight: 1
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  labels:
+    type: bb_picker
+    weight: 6
+    region: content
+    settings:
+      picker_region: pills
+      label: Labels
+      icon: tag
+      searchable: false
+      fallback: true
+      clear_label: 'No labels'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  project_id:
+    type: entity_reference_autocomplete
+    weight: 7
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  target_state:
+    type: bb_picker
+    weight: 5
+    region: content
+    settings:
+      picker_region: pills
+      label: 'Target state'
+      icon: status-prepare
+      searchable: false
+      fallback: true
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  title_pattern:
+    type: string_textfield
+    weight: 2
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  workflow:
+    type: bb_picker
+    weight: 4
+    region: content
+    settings:
+      picker_region: pills
+      label: Workflow
+      icon: board
+      searchable: false
+      fallback: true
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: bb_feature
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+hidden:
+  created: true
+  owner_user_id: true

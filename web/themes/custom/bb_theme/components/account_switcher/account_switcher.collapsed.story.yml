@@ -1,0 +1,21 @@
+component: bb_theme:account_switcher
+name: Collapsed
+props:
+  variant: collapsed
+  workspace_label: keytec
+  workspace_initials: KT
+  workspace_color: running
+  multiple: true
+  collapsed: true
+slots:
+  workspace_panel:
+    - type: element
+      tag: span
+      value: keytec
+      attributes:
+        class: block px-[8px] py-[6px] font-bold
+    - type: element
+      tag: span
+      value: Playground
+      attributes:
+        class: block px-[8px] py-[6px]

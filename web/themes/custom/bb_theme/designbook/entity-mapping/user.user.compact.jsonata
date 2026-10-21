@@ -1,0 +1,33 @@
+(
+  /* The `compact` view mode of a user IS the `person` component: the initials mark, the display
+     name, the mail. It
+     existed in `data-model.yml` before this ticket and had no mapping; this is that mapping.
+
+     Why it matters that it is a mapping at all and not just a Twig include: every owner cell on a
+     group, project or team row renders a person, and a person read out of the sample data has to look
+     identical to a person written into a story. One component and one mapping is how that stays true.
+
+     `mail` is passed straight through, INCLUDING when it is null: an app account has none, and
+     `person` renders the line as absent rather than as a dash. `initials` is a design-only computed
+     field — the model says so — present so the initials mark has a prop at all. It is `person`'s only
+     required prop, because a circle with nothing in it identifies nobody.
+
+     The colour is keyed on the user id, for the same reason
+     bb_ticket.bb_ticket.teaser.jsonata keys its people table: a mapping is evaluated against ONE
+     record and cannot look up anything, so a per-person colour has to be pinned somewhere, and pinning
+     it here keeps one person one colour wherever they appear. */
+  $u := $;
+  $colors := { "1": "unassigned", "2": "running", "3": "lease", "4": "running", "5": "attention", "6": "offline", "7": "running" };
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:person",
+      "props": {
+        "display_name": $u.display_name,
+        "initials": $u.initials,
+        "mail": $u.mail,
+        "color": $lookup($colors, $u.id) ? $lookup($colors, $u.id) : "running",
+        "size": "md"
+      }
+    }
+  ]
+)

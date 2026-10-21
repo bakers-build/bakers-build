@@ -1,0 +1,4 @@
+{# Keep Drupal's wrapper and attributes while sharing the Storybook textarea. #}
+<div{{ wrapper_attributes.addClass(['w-full', 'min-w-0']) }}>
+  {{ include('bb_theme:form_textarea', { attributes: attributes, value: value }, with_context = false) }}
+</div>

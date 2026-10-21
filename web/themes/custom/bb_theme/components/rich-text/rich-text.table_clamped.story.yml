@@ -1,0 +1,13 @@
+component: bb_theme:rich-text
+name: Table clamped
+props:
+  clamp: true
+  body: >-
+    <h2>Release
+    checks</h2><table><thead><tr><th>Check</th><th>Result</th><th>Notes</th></tr></thead><tbody><tr><td><strong>Build</strong></td><td>Passed</td><td>See
+    <a
+    href="/home">details</a>.</td></tr><tr><td>Parser</td><td>Pending</td><td>Preserve
+    <code>a|b</code> and Grüße.</td></tr><tr><td>Empty</td><td></td><td>A
+    deliberately empty middle cell.</td></tr></tbody></table><p>Text after the
+    table must remain visible.</p><p>A clamp would have cut the rows above; a
+    table body always renders in full.</p>

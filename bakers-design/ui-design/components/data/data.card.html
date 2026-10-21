@@ -1,0 +1,16 @@
+<!-- @dsCard group="Components" viewport="900x200" name="Data · TicketRow" subtitle="Aktive-Tickets row — urgency sort, unassigned CTA" -->
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body{margin:0;background:var(--gin-app);color:var(--gin-text);font-family:var(--font-sans);padding:18px;}
+  .grp{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;}
+  .cap{width:100%;font-family:var(--font-mono);font-size:10.5px;color:var(--gin-text-faint);margin-top:6px;}
+  .cap:first-child{margin-top:0;}
+</style></head><body>
+<table class="bakers-table" style="min-width:840px;">
+  <thead><tr><th style="padding-left:14px">Ticket</th><th>Titel</th><th>Projekt</th><th>State</th><th>Claim</th><th>Status</th><th class="num">seit</th><th>Assignee</th><th></th></tr></thead>
+  <tbody>
+    <tr class="bakers-row--wait"><td class="bakers-row__lead"><span style="font-family:var(--font-mono);font-weight:600">GL-150</span></td><td style="color:var(--gin-text)">API-Key fehlt im Secrets-Store</td><td style="font-family:var(--font-mono);font-size:11px;color:var(--gin-text-light)">bakers</td><td style="font-size:11.5px;color:var(--gin-text-light)">coding</td><td><span class="bakers-lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop-bakers</span></td><td><span class="bakers-pill bakers-pill--wait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>needs_input</span></td><td class="num" style="color:var(--gin-text-faint);font-family:var(--font-mono)">3 h</td><td style="color:var(--bakers-unassigned-ink);font-weight:700">NIEMAND</td><td style="text-align:right"><a class="bakers-btn bakers-btn--xs bakers-btn--cta" href="#">Zuweisen</a></td></tr>
+    <tr class="bakers-row--running"><td class="bakers-row__lead"><span style="font-family:var(--font-mono);font-weight:600">GL-138</span></td><td style="color:var(--gin-text)">Workflow-State-Machine refactoren</td><td style="font-family:var(--font-mono);font-size:11px;color:var(--gin-text-light)">bakers</td><td style="font-size:11.5px;color:var(--gin-text-light)">coding</td><td><span class="bakers-lease bakers-lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01-bakers</span></td><td><span class="bakers-pill bakers-pill--running"><span class="bakers-dot bakers-dot--running"></span>running</span></td><td class="num" style="color:var(--gin-text-faint);font-family:var(--font-mono)">12 min</td><td><span style="display:inline-flex;align-items:center;gap:6px;color:var(--gin-text-light)"><span class="bakers-ava bakers-ava--sm">MK</span>mk</span></td><td style="text-align:right"><a class="bakers-btn bakers-btn--xs" href="#">Ticket</a></td></tr>
+  </tbody>
+</table></body></html>

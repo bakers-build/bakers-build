@@ -1,0 +1,38 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Breadcrumb
+status: stable
+group: Layout
+description: >-
+  A generic trail of ordered places. Each item is a label plus an optional url:
+  linked crumbs are anchors; the current crumb has no url and carries
+  aria-current=page. Empty items render nothing. Separators are decorative. The
+  component does not know any product entity.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Accessible name
+      description: aria-label for the trail. Defaults to Breadcrumb.
+    items:
+      type: array
+      title: Crumbs
+      description: >-
+        Ordered trail. Each item has a label; url is optional and omitted on the
+        current place.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Label
+          url:
+            type: string
+            title: URL
+        required:
+          - label
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

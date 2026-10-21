@@ -1,0 +1,278 @@
+{# A trigger plus an `option_list` popover, in three variants over ONE component.
+
+   `facet`  — a labeled, full-width filter; selection and submission use the same handlers.
+   `field`  — the PROPERTY PILL of an add or edit surface: a small rounded outline
+              chip of icon + text, sitting in the `property_row` beneath the text
+              lines. It carries hidden inputs and writes when the form does.
+              `prominent` makes ONE pill of a row visually heavier, for a property
+              that is not a peer of the others — on the create dialog that is
+              `workflow`, which decides the ticket's whole state flow and cannot be
+              changed cheaply afterwards, so it leads the row and is marked. Linear
+              does the same for `status`: first in the row, and the only pill that
+              carries its own state colour. It is a PROP rather than a class a scene
+              applies, so prominence is a declared property of the field rather than
+              styling that happens to have been pasted in one place.
+   `inline` — the displayed VALUE is the trigger and there are no hidden inputs,
+              because for a reversible field the pick is the write. Only
+              reversible fields may use it; `state` may not, because a transition
+              is confirmed and a control that writes on pick cannot carry a
+              confirmation (designbook/design-system/action-pattern.md).
+
+   One component, not two: the ticket this implements asked for ONE agreed
+   pattern, and two components that happen to look alike is how that requirement
+   is quietly lost. The two variants are now one grammar at two sizes — a pill in
+   a dialog, the bare value on a detail screen.
+
+   THE PILL CARRIES ITS OWN NAME, twice over, and both are load-bearing because
+   the surface has no visible labels (action-pattern.md, rules 1, 2 and 4):
+
+   - Visibly: the pill shows the FIELD NAME and, once something is set, the VALUE
+     BESIDE IT — "Conductor · cw-framework", not "cw-framework" (C17). The pill
+     used to swap one string for the other, and the human read the result at the
+     second review gate: a bare value cannot be told apart from the field's own
+     name, so a pill reading "backend, ui" could as easily have been a field
+     called that. An unset pill still reads "Conductor" alone, which is the
+     answer to what the control is for.
+     The INLINE variant keeps a border and a trailing chevron at rest, so it
+     reads as editable without a hover.
+     The INLINE variant does NOT repeat the field name: it sits in a labelled
+     `meta_row`, so repeating it there would put the same word twice on one line
+     and make the value look like a second field. The `aria-label` names the
+     field in both variants regardless.
+   - Accessibly: `aria-label` in Linear's state-carrying form — "Change conductor.
+     Currently no conductor is set." It is rendered for BOTH variants, never
+     gated on one, because with the `<label>` gone it is the only name the control
+     has. A caller should pass `aria_label`; when it does not, one is derived from
+     `label` and the selected labels so the name can never come out empty.
+
+   MULTI-SELECT IS RENDERED, NOT ONLY SUBMITTED (C18). `multiple` used to do
+   exactly one thing — append `[]` to the hidden input name — and it was the only
+   prop here with no description, which is the tell that nothing had decided what
+   it should look like. Several values now render as the FIRST value plus a `+N`
+   count, which is what fits in a 28px pill without wrapping the row it sits in.
+   Nothing about the panel changes: `option_list` already owns multi-select
+   properly (`aria-multiselectable`, a marker box per row), so this composes with
+   it and deliberately duplicates none of it.
+
+   AN OVER-LONG VALUE HAS A DEFINED TREATMENT (C19), and truncation is no longer
+   the whole of it. The value is bounded (`max-w-…` plus `truncate`) so one long
+   term cannot stretch a pill row off the surface, and the full text stays
+   reachable two ways: in the `title` attribute, and in the state-carrying
+   `aria-label` — which is not decoration here, it is the control's only name.
+   The panel is allowed to grow with its content up to a ceiling as well, so a
+   long term is legible where it is actually chosen rather than only in a
+   tooltip.
+
+   `role="combobox"` + `aria-haspopup="listbox"` say what the pill IS. The cost is
+   named in the spec (D14): a combobox owes its user focus management,
+   `aria-activedescendant` and Escape. Opening moves focus into the panel, arrows
+   move between rows, Enter or Space picks and Escape closes; focus moves to the
+   rows themselves rather than through `aria-activedescendant`.
+
+   The open state is `aria-expanded` on the trigger plus `hidden` on the panel,
+   both rendered from the `open` prop — accessible attributes, never a CSS class,
+   which is what makes the states readable with JavaScript disabled.
+   `option_picker.src.js` is an Alpine component (`Alpine.data('optionPicker')`) that
+   BINDS exactly those two attributes at runtime and is purely additive; nothing
+   here depends on it. Alpine initialises any subtree inserted into the document
+   by itself, without waiting for an event, which is what makes it survive an
+   htmx swap.
+
+   CLEARING IS NOT HERE. It is the first row of the `option_list` in the panel,
+   which is where a row of a listbox has to live; this component used to own a
+   clear button above the list and no longer does.
+
+   The panel has a FLOOR width rather than hugging its content freely, so it does not jump between
+   sizes from one field to the next; it may grow to a ceiling for long option labels, which is the
+   panel half of C19 — a term the operator cannot read in the list it is chosen from is not made
+   readable by a tooltip on the trigger. The search row sits at the TOP, above the rows, where Linear
+   puts it; and the selected marker sits on the RIGHT of each row (see option_list), so every row's
+   text starts at the same left edge.
+
+   `searchable` is a BOUNDARY, not a feature: it renders the search input the
+   parent field needs and filters nothing. Agreeing the placement now is what
+   keeps the ticket that gives that field real candidates from restructuring the
+   control. Group headers inside the panel are the same kind of boundary — the
+   grammar permits them, and nothing here fakes them. #}
+{% set picker_id = id|default('bakers-option-picker') %}
+{% set panel = panel_id|default(picker_id ~ '__panel') %}
+{% set is_inline = variant|default('field') == 'inline' %}
+{#- The selected labels as a LIST, which is what C18's `+N` counts and what C19 puts in the title.
+    `value_labels` is the multi form; `value_label` stays supported for a single value, so every
+    caller written before this change keeps rendering exactly as it did — a caller that hands over a
+    pre-joined string simply gets one long value instead of a count, which is the old behaviour
+    rather than a broken one. #}
+{% set value_list = value_labels|default(value_label is not empty ? [value_label] : []) %}
+{% set has_value = value_list is not empty %}
+{% set field_name = label|default('') %}
+{% set all_values = value_list|join(', ') %}
+{#- HOW MANY VALUES, counted over the list's KEYS and never with `|length` on the list itself. That is
+    a measured constraint rather than a preference. In the Storybook renderer (Twing in the browser)
+    `|length` on these prop arrays returns the length of their STRING coercion — a two-value field
+    rendered `+12`, because `String(['coding','review'])` is 13 characters long — and `loop.last` is
+    wrong for the same reason: it fires on the FIRST iteration, so a loop-counted version printed no
+    count at all. `|keys`, `|first`, `|join` and plain iteration all behave correctly on the same
+    value, and `|keys|length` measures a list Twig built itself. Verified in the browser renderer on a
+    four-value field: `|keys|length` 4, `|length` 56, `loop.last` on iteration 1. #}
+{% set value_count = has_value ? value_list|keys|length : 0 %}
+{% set first_value = has_value ? value_list|first : '' %}
+{#- The full text, unbounded and untruncated, for the `title` attribute: the value alone on an inline
+    control (the row already names the field) and "Field: value, value" on a pill. When nothing is
+    set the title is the field name, so hovering an empty control still answers what it is for. #}
+{% set trigger_title = has_value
+  ? (is_inline or field_name is empty ? all_values : field_name ~ ': ' ~ all_values)
+  : field_name %}
+{#- The search box needs its OWN accessible name. It is a third text-entry control, and it shipped
+    with nothing but a placeholder until the human read the DOM and found it — the same weak name the
+    text lines are forbidden from relying on. `form_input` is an existing component and cannot be modified
+    (C14), so the name is passed in through `attributes`, which is what that passthrough is for.
+    Derived from the placeholder when a caller gives no `search_label`, so it is never empty. #}
+{% set search_aria = search_label|default(search_placeholder)|default('Search') %}
+{#- Derived from the FULL list, never from the truncated first value: the accessible name is the one
+    place the whole selection has to be available even when the pill shows "backend +2". #}
+{% set trigger_aria = aria_label|default(
+  'Change ' ~ (label|default('value')) ~ '. '
+  ~ (has_value ? 'Currently ' ~ all_values ~ '.' : 'Nothing is set.')
+) %}
+{% set is_facet = variant == 'facet' %}
+{% set use_chips = selected_chips|default(false) %}
+{% set chip_items = selected|default([]) %}
+{#- SERVER SEARCH. With `search_url` the search box stops filtering what was rendered and asks the
+    server instead: htmx GETs the URL with the typed text as `q` and swaps the returned option_list
+    rows into the panel, so a candidate beyond the first rendered page is still found. Without it
+    nothing below changes. `hx-select` and `hx-select-oob` are unset so a dialog form's inherited
+    selectors cannot filter the returned rows away. #}
+{% set search_input_attributes = create_attribute()
+  .setAttribute('data-option-picker-search', true)
+  .setAttribute('data-bef-auto-submit-exclude', true)
+  .setAttribute('x-model', 'query')
+  .setAttribute('@input', 'filter()')
+  .setAttribute('aria-label', search_aria) %}
+{% if search_url %}
+  {% set search_input_attributes = search_input_attributes
+    .setAttribute('name', 'q')
+    .setAttribute('hx-get', search_url)
+    .setAttribute('hx-trigger', 'input changed delay:250ms, search')
+    .setAttribute('hx-target', '#' ~ panel ~ '__rows')
+    .setAttribute('hx-swap', 'innerHTML')
+    .setAttribute('hx-sync', 'this:replace')
+    .setAttribute('hx-select', 'unset')
+    .setAttribute('hx-select-oob', 'unset') %}
+{% endif %}
+{% set pill_classes = ['inline-flex',
+  'items-center', 'gap-1.5', 'h-control', 'px-2.5', 'rounded-full', 'text-left',
+  'whitespace-nowrap', 'cursor-pointer', 'border', 'focus:outline-none', 'focus:border-primary'] %}
+{% set pill_weight = prominent
+  ? ['bg-primary/10', 'border-primary/45', 'text-primary',
+     'text-caption', 'font-bold', 'hover:bg-primary/15']
+  : ['bg-app', 'border-control-border', 'text-text', 'text-caption', 'hover:bg-surface-3'] %}
+{#- C19's bound on the displayed value, written as two LITERAL class strings rather than one
+    interpolated arbitrary value: Tailwind generates a utility only when the candidate appears
+    verbatim in the source it scans, so `max-w-[{{ … }}]` would compile to nothing at all and the
+    bound would silently not exist. The inline control may run wider because it sits alone on a rail
+    row; a pill shares a wrapping row with its peers and may not. #}
+{% set value_bound = is_inline ? 'max-w-60' : 'max-w-40' %}
+{% set trigger_classes = is_inline
+  ? ['inline-flex', 'items-center', 'gap-1.5', 'h-6', 'px-1.5',
+     'bg-app', 'border', 'border-control-border', 'rounded-xs', 'text-body',
+     'text-text', 'text-left', 'cursor-pointer', 'hover:bg-surface-3',
+     'focus:outline-none', 'focus:border-primary']
+  : pill_classes|merge(pill_weight) %}
+<div{{ (attributes ?: create_attribute()).addClass(['relative', use_chips ? 'inline-flex flex-wrap items-center gap-1.5' : (is_facet ? 'block w-full' : 'inline-block')]) }}
+  data-option-picker
+  data-option-picker-label="{{ field_name }}"
+  {%- if use_chips %} data-option-picker-selected-chips{% endif %}
+  {#- Which variant this is, for the disclosure handler: the inline variant
+      never writes a hidden input (see above), and `name` alone cannot say so
+      — `table.twig`'s `kind == 'picker'` cell sets both `variant: 'inline'`
+      AND `name` on the same instance. #}
+  data-option-picker-variant="{{ is_inline ? 'inline' : (is_facet ? 'facet' : 'field') }}"
+  {%- if search_url %} data-option-picker-remote{% endif %}
+  {%- if name %} data-option-picker-name="{{ name }}"{% endif %}
+  x-data="optionPicker()"
+  {#- These four replace the document-level handlers the behaviour used to
+      register once on `body`: one picker owns its own dismissal and its own
+      re-placement, rather than a single listener sweeping every picker. #}
+  @keydown.escape="if (open) { $event.stopPropagation(); dismiss(); }"
+  @click.outside="close()"
+  @resize.window="reposition()"
+  @scroll.window.capture="reposition()">
+  {% if is_facet %}<label for="{{ picker_id }}" class="block pb-1.5 text-caption text-text-light">{{ field_name }}</label>{% endif %}
+  {% set trigger_classes = is_facet ? ['flex', 'items-center', 'gap-2', 'w-full', 'min-h-control', 'px-2', 'py-2', 'rounded-xs', 'border', 'border-control-border', 'bg-app', 'text-body', 'text-text', 'text-left', 'cursor-pointer', 'focus-visible:outline-2', 'focus-visible:outline-focus-ring'] : trigger_classes %}
+  <button type="button"{{ create_attribute().addClass(trigger_classes) }}
+    id="{{ picker_id }}"
+    data-option-picker-trigger
+    x-ref="trigger"
+    @click="toggle()"
+    :aria-expanded="open ? 'true' : 'false'"
+    role="combobox"
+    aria-haspopup="listbox"
+    aria-expanded="{{ open ? 'true' : 'false' }}"
+    aria-controls="{{ panel }}"
+    aria-label="{{ trigger_aria }}"
+    title="{{ trigger_title }}">
+    {%- if icon and not is_facet %}<span data-picker-part="icon" class="shrink-0 {{ prominent ? 'text-primary' : 'text-text-light' }}">{{ include('bb_theme:icon', { name: icon, size: 'sm' }, with_context = false) }}</span>{% endif %}
+    {#- The field name. On a pill it is always rendered — beside the value when one is set (C17), and
+        alone when none is. On the inline variant it is left out, because that control sits in a
+        labelled row and the same word twice on one line reads as two fields. #}
+    {%- if field_name is not empty and not is_inline and not is_facet %}
+    <span data-picker-part="field" class="shrink-0 {{ prominent ? 'text-primary/70' : 'text-text-faint' }}">{{ field_name }}</span>
+    {%- if has_value and not use_chips %}<span data-picker-part="separator" class="shrink-0 text-text-faint" aria-hidden="true">·</span>{% endif %}
+    {%- endif %}
+    {%- if has_value and not use_chips %}
+    <span data-picker-part="value" class="min-w-0 truncate {{ value_bound }}">{{ first_value }}</span>
+    {%- if value_count > 1 %}<span data-picker-part="more" class="shrink-0 text-text-light">+{{ value_count - 1 }}</span>{% endif %}
+    {%- elseif not has_value and (is_inline or is_facet or field_name is empty) %}
+    <span data-picker-part="value" class="min-w-0 truncate text-text-light {{ value_bound }}">{{ is_facet ? 'Any' : (field_name is not empty ? field_name : '—') }}</span>
+    {%- endif %}
+    {% if is_facet %}<span class="flex flex-1 justify-end">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) }}</span>{% endif %}
+    {% if is_inline %}<span data-picker-part="chevron" class="shrink-0 text-text-faint" aria-hidden="true">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) }}</span>{% endif %}
+  </button>
+  {%- if use_chips %}
+  <span data-option-picker-chips class="inline-flex flex-wrap items-center gap-1" {%- if chip_items is empty %} hidden{% endif %}>
+    {%- for item in chip_items %}
+    <span data-option-picker-chip data-value="{{ item.value }}" class="inline-flex items-center gap-1 h-6 max-w-40 px-1.5 rounded-full border border-control-border bg-app text-caption">
+      <span class="min-w-0 truncate" title="{{ item.label }}">{{ item.label }}</span>
+      <button type="button"
+        data-option-picker-chip-remove
+        class="shrink-0 text-text-faint hover:text-text"
+        aria-label="Remove {{ item.label }} from {{ field_name|default('selection') }}">
+        {{ include('bb_theme:icon', { name: 'x-circle', size: 'sm' }, with_context = false) }}
+      </button>
+    </span>
+    {%- endfor %}
+  </span>
+  {%- endif %}
+  {#- Variant alignment is the no-JS default; the behavior fits open menus to the viewport. #}
+  <div id="{{ panel }}"
+    data-picker-part="panel" class="absolute top-full mt-1.5 {{ is_inline ? 'right-0' : 'left-0' }} z-30 w-max min-w-66 max-w-90 max-h-70 overflow-y-auto bg-surface-2 border border-border rounded-sm p-1.5 shadow-shadow-2"
+    data-option-picker-panel
+    x-ref="panel"
+    :hidden="!open"
+    {#- The delegated panel click the behaviour used to register: one listener
+        on the panel, resolving the clicked row with `closest()`. #}
+    @click="$event.target.closest('[role=\'option\']') && pick($event.target.closest('[role=\'option\']'))"
+    @keydown="keydown($event)"
+    {%- if not open %} hidden{% endif %}>
+    {%- if searchable %}
+    <div data-picker-part="search" class="mb-1.5">
+      {{ include('bb_theme:form_input', {
+        type: 'search',
+        placeholder: search_placeholder|default('Search'),
+        attributes: search_input_attributes,
+      }, with_context = false) }}
+    </div>
+    {%- endif %}
+    {%- if search_url %}<div id="{{ panel }}__rows" data-picker-part="rows">{% endif %}
+    {% block options %}{% if options %}{{ options }}{% endif %}{% endblock %}
+    {%- if search_url %}</div>{% endif %}
+  </div>
+  {#- The field variant writes when the FORM does, so the picked values ride along
+      as hidden inputs. The inline variant deliberately emits none: the pick is
+      the write, so there is no form to submit them with. #}
+  {%- if not is_inline and name %}
+    {%- for selected_value in values|default([]) %}
+  <input type="hidden" name="{{ name }}{{ multiple ? '[]' : '' }}" value="{{ selected_value }}" />
+    {%- endfor %}
+  {%- endif %}
+</div>

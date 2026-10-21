@@ -1,0 +1,60 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Link Group
+status: stable
+group: Data Display
+description: 'A labelled group of link rows, rendering each itself and dispatching on its `kind`: the report row for `report`, the plain row for everything else — the seam a later kind renderer plugs into with one new branch in the dispatch (D6). Both rows were components of their own until D7 folded them in: this was their only caller, so the boundary bought nothing and cost two contracts that could drift from the group that dispatches them. It renders only its own props and fetches nothing — a real report-artifact reader needs a fetch, credentials, a cache and a failure path, and the GitLab credentials it would need live on the conductor''s machine rather than on the control plane, so building one is a follow-up backend ticket (D6). The numbers a story shows come from Designbook sample data, never a live read. The `links` prop is the usual path; the `rows` slot is a composition escape hatch, and it WINS over `links` when filled. Renders nothing when it has neither `links` nor a filled `rows` slot — a group with a promising label and no rows is worse than an absent one.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: Small uppercase eyebrow header rendered above the rows.
+    links:
+      type: array
+      title: Links
+      description: 'One row per link, dispatched on `kind`: the report row (title, counts, duration) for `report`, the plain row (icon, title) otherwise. Ignored when the `rows` slot is filled.'
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+            title: URL
+          title:
+            type: string
+            title: Link title
+          kind:
+            type: string
+            title: Link kind
+            enum:
+              - mr
+              - branch
+              - ci
+              - report
+              - ddev
+              - design
+              - doc
+          target:
+            type: string
+            title: Link target
+            description: '_blank (default) opens a new tab. _self stays in this tab for in-app pages.'
+            enum:
+              - _blank
+              - _self
+          passed:
+            type: integer
+            title: Passed count
+          failed:
+            type: integer
+            title: Failed count
+          duration:
+            type: string
+            title: Duration label
+slots:
+  rows:
+    title: Rows
+    description: Composition escape hatch — row markup the caller places itself, for a case the `kind` dispatch does not cover. Wins over the `links` prop when filled.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

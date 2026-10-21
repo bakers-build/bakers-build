@@ -1,0 +1,10 @@
+{
+  "name": "bakers-ui-pty-harness",
+  "private": true,
+  "type": "module",
+  "description": "BB-326 real-PTY screen verifier. Its deps are native (node-pty) and must not enter the pnpm workspace graph; install with plain `npm install` in THIS directory.",
+  "dependencies": {
+    "@xterm/headless": "^5.5.0",
+    "node-pty": "^1.0.0"
+  }
+}

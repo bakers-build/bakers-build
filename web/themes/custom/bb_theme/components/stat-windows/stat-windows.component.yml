@@ -1,0 +1,55 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Stat Windows
+status: stable
+group: Data Display
+description: >-
+  A figure's three trailing totals, side by side: what happened in the last 24
+  hours, the last 7 days and the last 30 days. It knows nothing about what is
+  being counted — the same component carries closed tickets, runs started, or
+  any other trailing count, because the caller resolves both the numbers and the
+  words for them. The three periods are required as a fixed triple rather than
+  an open array, because a figure arriving with two would render a lopsided row
+  instead of failing, and an invalid prop is dropped silently rather than
+  reported.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: The figure's own name, rendered as the block heading.
+    windows:
+      type: array
+      title: Windows
+      minItems: 3
+      maxItems: 3
+      description: The three trailing totals in display order.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Period
+            description: The period this total covers, e.g. "Last 24 hours".
+          value:
+            type: string
+            title: Value
+            description: >-
+              The figure, already formatted by the caller. A string rather than
+              a number so the component owns no number format.
+        required:
+          - label
+          - value
+    source:
+      type: string
+      title: Source
+      description: >-
+        Where the figure is read from, available in a native Data source disclosure.
+  required:
+    - label
+    - windows
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,45 @@
+{#
+   Markdown authoring control: a toolbar over a plain textarea. The toolbar
+   only inserts Markdown syntax, so the submitted value is the textarea text.
+
+   `attributes` land on the TEXTAREA, not the wrapper, as in form_textarea:
+   Drupal's textarea attributes (name, rows, required, aria-invalid, error
+   class) belong to the control. A caller passing `id`/`disabled` as props
+   removes them from `attributes` first.
+
+   `form-rich-text` is a behaviour hook (the bb_markdown editor adapter skips
+   a textarea already inside one), not a styling class. The toolbar is hidden
+   until its custom element is defined, which is the no-JavaScript state.
+   `role="button"` is rendered here: the library's md-* subclasses override
+   connectedCallback without calling the base one that would set it.
+#}
+{% set buttons = [
+  { tag: 'md-header', label: 'Heading', icon: 'heading' },
+  { tag: 'md-bold', label: 'Bold', icon: 'bold' },
+  { tag: 'md-italic', label: 'Italic', icon: 'italic' },
+  { tag: 'md-code', label: 'Code', icon: 'code' },
+  { tag: 'md-link', label: 'Link', icon: 'link' },
+  { tag: 'md-unordered-list', label: 'Bullet list', icon: 'list' },
+  { tag: 'md-ordered-list', label: 'Numbered list', icon: 'list-ordered' },
+] %}
+<div class="form-rich-text flex w-full min-w-0 flex-col bg-app border border-control-border rounded-sm focus-within:border-primary">
+  {%- if not disabled %}
+  <markdown-toolbar for="{{ id }}" role="toolbar" aria-label="Text formatting" class="flex flex-wrap gap-0.5 px-1.5 py-1 border-b border-border-2 [&:not(:defined)]:hidden">
+    {%- for button in buttons %}
+    <{{ button.tag }}{% if button.tag == 'md-header' %} level="2"{% endif %} role="button" aria-label="{{ button.label }}" title="{{ button.label }}" class="inline-flex size-7 items-center justify-center rounded-sm text-text-light cursor-pointer hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+      {{- include('bb_theme:icon', { name: button.icon, size: 'sm' }, with_context = false) -}}
+    </{{ button.tag }}>
+    {%- endfor %}
+  </markdown-toolbar>
+  {%- endif %}
+  <textarea{{ (attributes ?: create_attribute()).addClass([
+      'input', 'w-full', 'px-2.5', 'py-2', 'bg-transparent', 'resize-y',
+      'text-text', 'text-body', 'focus:outline-none',
+    ]) }} id="{{ id }}"
+    {%- if name %} name="{{ name }}"{% endif %}
+    {%- if rows %} rows="{{ rows }}"{% endif %}
+    {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
+    {%- if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}
+    {%- if required %} required{% endif %}
+    {%- if disabled %} disabled{% endif %}>{{- value -}}</textarea>
+</div>

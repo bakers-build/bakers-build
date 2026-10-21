@@ -1,0 +1,111 @@
+{# Generic dialog hull for every add, edit, cancel and confirm surface. It fills
+   the page `overlay` slot and owns only the hull: a title row, then `message`,
+   `body` and `actions`. The confirmation rule these surfaces obey is written in
+   designbook/design-system/action-pattern.md — a confirmation is THIS component
+   with prose in `body` and two actions, not a second component.
+
+   The state is the `<dialog>` element's own `open` attribute, rendered from the
+   `open` prop — the accessible state, never a CSS class. That is what makes the
+   open and closed states readable with JavaScript disabled entirely.
+
+   The head's breadcrumb is a SLOT, not text, because context is a control now
+   (spec D15). Drupal derives "what can be added here" from the route, which is why
+   the first version of this pattern refused to create without a project in scope;
+   Linear instead carries the context IN the dialog — its own create dialog has both
+   a `Set team` button and a `Change project` combobox — pre-filled from wherever you
+   came from and changeable on the spot. So the `bakers.build ›` segment is a picker with the
+   same grammar as a property pill, and the four-step resolution that fills it is
+   written in designbook/design-system/action-pattern.md. It stays out of the `body`
+   deliberately: it is context, not a field, which is what keeps the pill row from
+   growing a fifth pill.
+
+   `message` is rendered ABOVE `body` deliberately: a form-level refusal has to
+   appear where the writer is looking, not below the fields it complains about.
+
+   The hull CENTERS ITSELF, and that positioning belongs here rather than to the
+   page: `shell`'s overlay slot is a plain region at the end of the shell's flex
+   row, so a `<dialog open>` left in normal flow lays out beside the sidebar and
+   pushes the shell's chrome aside. `fixed` plus a centred translate is what
+   makes it read as an overlay — and it is the dialog's own concern, because
+   `shell` must keep working for any other overlay content.
+
+   Runtime modality is STILL not here, and that half is unchanged: `open` renders
+   the element in the normal flow of the top layer's absence, and the real top
+   layer, the focus trap and ::backdrop exist only after showModal(), so there is
+   deliberately no scrim — a painted one would claim a modality this markup does
+   not have.
+
+   Esc AND THE CLOSE BUTTON ARE WIRED, though, and this docblock claimed the
+   opposite for longer than it was true — it said they "belong to the ticket that
+   makes these dialogs interactive" and that the close button "carries a data
+   hook and no handler", which was already false in the commit that added the
+   handler. Both are `island`'s: `island/js/island.dialog.js` closes on a
+   `[data-dialog-close]` click and on Escape, and this component reaches it by
+   declaring `island/dialog` as a library dependency rather than by shipping a
+   script of its own — SDC's `replaces:` swaps the component and not its library,
+   so the dependency has to be stated here. The data hooks this template renders
+   (`data-dialog` on the element, `data-dialog-close` on the button) are that
+   file's documented contract, so they are markup with a reader now.
+
+   What "close" MEANS is deliberately not this component's decision: island
+   returns to whatever `[data-dialog-cancel]` inside the hull points at, which
+   the form in the body renders — in place when that is the current screen. A hull whose content offers no such control
+   simply cannot be closed by the button, and that is the content's business.
+
+   The width is 720px because the pill row is what sets it. The peer pills
+   carrying real values — a parent ticket's title is the long one — need about
+   700px to stay on ONE row, which is what the
+   grammar's rule 3 asks for and what the Linear dialogs it was read off measure;
+   at the first iteration's 560px the row wrapped as soon as a parent ticket's
+   title appeared in it. `max-w-[90vw]` keeps that honest on a narrow viewport,
+   where wrapping is the correct outcome rather than a defect.
+
+   Slot wrappers live OUTSIDE their {% block %} so filling a slot replaces the
+   content and never the wrapper. `message` and `actions` are captured first and
+   tested for content, so an {% embed %} that fills only the block still gets its
+   wrapper (the same idiom `section` uses for its header). #}
+{% set dialog_id = id|default('bakers-dialog') %}
+{% set title_id = dialog_id ~ '__title' %}
+{% set context_content %}{% block context %}{% if context %}{{ context }}{% endif %}{% endblock %}{% endset %}
+{% set message_content %}{% block message %}{% if message %}{{ message }}{% endif %}{% endblock %}{% endset %}
+{% set actions_content %}{% block actions %}{% if actions %}{{ actions }}{% endif %}{% endblock %}{% endset %}
+{# Keep dialog controls above Drupal administration toolbars, including in short viewports. #}
+<dialog{{ (attributes ?: create_attribute()).addClass([
+    'dialog', 'fixed', 'left-1/2', 'top-1/2', '-translate-x-1/2', '-translate-y-1/2', 'z-1000',
+    'w-[720px]', 'max-w-[90vw]', 'max-h-[90vh]', 'overflow-y-auto', 'p-0', 'rounded-md',
+    'border', 'border-border', 'bg-surface', 'text-text', 'shadow-lg',
+  ]) }}
+  id="{{ dialog_id }}"
+  data-dialog
+  {#- The accessible name: `aria-labelledby` points at the visible title, and
+      `label` REPLACES it when the name must differ from what is on screen.
+      They are mutually exclusive on purpose — emitting both would leave
+      `aria-label` dead, because `aria-labelledby` wins the name computation. -#}
+  {%- if label %} aria-label="{{ label }}"{% else %} aria-labelledby="{{ title_id }}"{% endif %}
+  {%- if open %} open{% endif %}>
+  <div class="dialog__head flex items-center gap-[8px] h-[44px] px-[16px] border-b border-border-2">
+    {%- if context_content|trim is not empty %}
+      <div class="dialog__context flex items-center gap-[8px] shrink-0">
+        {{ context_content }}
+        <span class="dialog__separator text-text-faint" aria-hidden="true">&rsaquo;</span>
+      </div>
+    {% endif %}
+    <h2 id="{{ title_id }}" class="dialog__title flex-1 min-w-0 truncate m-0 text-heading font-bold text-title">{{ title }}</h2>
+    {%- if dismissible %}
+      {{ include('bb_theme:button', {
+        label: 'Close dialog',
+        variant: 'ghost',
+        icon_only: true,
+        icon: include('bb_theme:icon', { name: 'x-circle', size: 'sm' }, with_context = false),
+        attributes: create_attribute().setAttribute('data-dialog-close', true),
+      }, with_context = false) }}
+    {% endif %}
+  </div>
+  {%- if message_content|trim is not empty %}
+    <div class="dialog__message px-[16px] pt-[14px] [&_.message]:mb-0">{{ message_content }}</div>
+  {% endif %}
+  <div class="dialog__body flex flex-col gap-4 px-[16px] py-[14px]">{% block body %}{% if body %}{{ body }}{% endif %}{% endblock %}</div>
+  {%- if actions_content|trim is not empty %}
+    <div class="dialog__actions flex items-center justify-end gap-[8px] px-[16px] py-[12px] border-t border-border-2">{{ actions_content }}</div>
+  {% endif %}
+</dialog>

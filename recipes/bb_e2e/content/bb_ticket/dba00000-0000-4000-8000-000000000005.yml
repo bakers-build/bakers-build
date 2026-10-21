@@ -1,0 +1,61 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket
+  uuid: dba00000-0000-4000-8000-000000000005
+  depends:
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbf00000-0000-4000-8000-000000000001: bb_project
+    dbe50000-0000-4000-8000-000000000001: user
+    db1a0000-0000-4000-8000-000000000002: bb_term
+    db1a0000-0000-4000-8000-000000000003: bb_term
+    dba00000-0000-4000-8000-000000000002: bb_ticket
+default:
+  created:
+    -
+      value: 1778834700
+  changed:
+    -
+      value: 1782408000
+  project_id:
+    -
+      entity: "dbf00000-0000-4000-8000-000000000001"
+  identifier:
+    -
+      value: "BB-105"
+  number:
+    -
+      value: 105
+  workflow:
+    -
+      value: "bb_feature"
+  title:
+    -
+      value: "Review comment-event rendering for typed comments"
+  description:
+    -
+      value: "Confirm `spec`, `summary`, and plain `comment` types each render with distinct visual treatment in the timeline."
+      format: "bb_rich"
+  labels:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000002"
+    -
+      entity: "db1a0000-0000-4000-8000-000000000003"
+  assignee_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  priority:
+    -
+      value: 2
+  parent_id:
+    -
+      entity: "dba00000-0000-4000-8000-000000000002"
+  origin:
+    -
+      value: "https://gitlab.example.com/bakers/bakers/-/issues/105"
+  links:
+    -
+      uri: "https://gitlab.example.com/bakers/bakers/-/merge_requests/80"
+      title: ""
+  closed:
+    -
+      value: false

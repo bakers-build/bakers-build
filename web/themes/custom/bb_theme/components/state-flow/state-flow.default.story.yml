@@ -1,0 +1,10 @@
+component: bb_theme:state-flow
+name: Default
+props:
+  states:
+    - spec
+    - coding
+    - review
+    - done
+  current: coding
+  label: Workflow state flow

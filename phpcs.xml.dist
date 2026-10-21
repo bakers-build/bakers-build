@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Keytec Drupal Project">
+  <description>PHP CodeSniffer configuration for Drupal projects.</description>
+  <arg name="extensions" value="php,module,inc,install,test,profile,theme,css,info,txt,md,yml"/>
+  <arg name="colors"/>
+  <arg name="cache" value=".phpcs-cache"/>
+  <arg name="parallel" value="10"/>
+  <file>web/modules/custom</file>
+  <file>web/themes/custom</file>
+  <exclude-pattern>*/node_modules</exclude-pattern>
+  <exclude-pattern>*/vendor</exclude-pattern>
+  <exclude-pattern>*/dist</exclude-pattern>
+  <!-- playwright CLI scratch output (page snapshots), not project code -->
+  <exclude-pattern>*/.playwright-cli/*</exclude-pattern>
+  <!-- designbook generated artifacts (plans, data-model, vision) are design-tool
+       output, not project code — do not lint their prose/line length. -->
+  <exclude-pattern>*/designbook/plans/*</exclude-pattern>
+  <!-- Minified Tailwind output written by the designbook css-generate workflow's
+       compile stage (git-ignored). phpcs cannot process a minified file and
+       reports a warning, which fails the gate on generated output. -->
+  <exclude-pattern>*/css/app.css</exclude-pattern>
+  <!-- Storybook's static build output (git-ignored, but phpcs walks the
+       filesystem, not the git index, so .gitignore has no effect on it).
+       Its minified CSS assets hit the same "cannot process a minified file"
+       warning as the Tailwind build above, and this directory is only
+       produced by this ticket's own gate step (storybook build), so it is
+       always present when the gate runs phpcs next. -->
+  <exclude-pattern>*/storybook-static/*</exclude-pattern>
+  <rule ref="Drupal"/>
+  <rule ref="DrupalPractice"/>
+</ruleset>

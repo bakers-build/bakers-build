@@ -1,0 +1,149 @@
+{# A body region inside a screen — the IA's own word for it. A screen puts one or
+   more of these into `canvas.main`: an optional heading, optional right-aligned
+   actions, and a content container whose direct children are the cells.
+
+   IT SUPERSEDES `section`, WITH THREE CONCERNS DELIBERATELY DROPPED.
+     * ONE `inset` instead of `padding_x` + `padding_y`. On `section` the same
+       word meant two sizes — `sm` was 10px across and 8px down — so a caller
+       who set both to `sm` got an asymmetric box and no way to see why.
+     * `direction: row` instead of `justify_items`. A grid cell BLOCKIFIES its
+       child, so an `inline-flex` pill became a full-width rounded rectangle and
+       a list of labels rendered as a column of them. A wrapping row keeps its
+       children's intrinsic widths by construction, which is the only thing
+       `justify_items: start` was ever used for.
+     * NO `header_style`. A zone heading has one style, so two adjacent zones
+       cannot disagree about what a zone heading looks like.
+
+   A ZONE WITH NOTHING TO SHOW RENDERS NOTHING AT ALL — no <section>, no heading,
+   no empty grid (BB-414). "Something to show" is CONTENT, ACTIONS or a
+   DESCRIPTION; a heading alone is not, because a heading is a label FOR
+   something and a label over nothing is a promise the screen does not keep. The
+   two cases that forced this are both on the ticket detail and both used to
+   render as a heading over an empty box: the About zone on a ticket with no
+   description, and the Run history zone whose rows are all invisible to the
+   reader.
+
+   THE DESCRIPTION COUNTS, and leaving it out was a real defect rather than a
+   nuance (BB-414, second review gate). `description` is a PROP and not a
+   slot, so it is not part of `content_content`, and a zone carrying a heading
+   and a description but no content dropped the description with everything
+   else — prose the reader was meant to read, gone with the empty box it was
+   supposed to explain. It is not a label for something absent the way a heading
+   is; it is a sentence, and a sentence is content. The project and settings
+   screens are the surfaces this is latent for.
+
+   THE PROBE STRIPS TAGS BEFORE IT TESTS, and that is not tidiness. With
+   `twig.config.debug` on — every DDEV site — SDC wraps EVERY component in
+   `<!-- 🥚 Component start/end -->`, so a child component that rendered nothing
+   still arrives here as 91 bytes. A bare `|trim is not empty` would therefore
+   keep the zone in development and drop it in production, which is the one
+   outcome worse than either. `|striptags` removes comments as well as tags, and
+   the allow-list keeps the void elements that ARE content without carrying text,
+   so an icon-only or input-only zone still counts as filled.
+
+   `<drupal-render-placeholder>` IS IN THAT ALLOW-LIST FOR THE SAME REASON AS
+   `<input>`, and its absence was the probe's second defect (BB-414, second
+   review gate). Anything Drupal defers — a #lazy_builder, a form, a block whose
+   render is cached, the messages area — reaches this template as that single
+   placeholder element and NOTHING else: no text, no void element, no attribute
+   a `striptags` survives. So a zone whose only content was a form was measured
+   as empty and dropped, and the placeholder would have been replaced with the
+   real markup a moment later during rendering. Content that has not been built
+   yet is still content.
+
+   ACTIONS COUNT AS CONTENT, deliberately: a zone whose list is empty but which
+   owns an "Add" affordance is the one place a reader can put the first item into
+   it, and hiding that would hide the way out of the empty state.
+
+   THE HEADING IS AN h2. `page_header` owns the screen's only h1 (D5); this is
+   the level below it. A zone with nothing in its heading slot renders no heading
+   element at all rather than an empty one.
+
+   SPACING IS THE TOKEN SCALE (D16). `inset` and `gap` resolve to `space-*` and
+   nothing else — no arbitrary pixel value appears in this template.
+
+   Both the heading and the actions are CAPTURED before they are tested, so a
+   slot filled through a `{% block %}` override still renders its wrapper: a
+   wrapper written inside the block would be replaced wholesale by the fill. #}
+{% set inset_map = {
+  'none': '',
+  'sm': 'p-3',
+  'md': 'p-5',
+  'lg': 'p-6',
+} %}
+{% set gap_map = {
+  'none': 'gap-0',
+  'sm': 'gap-zone-sm',
+  'md': 'gap-zone-md',
+  'lg': 'gap-zone-lg',
+} %}
+{% set col_map = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 md:grid-cols-2',
+  3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+} %}
+{% set gap_class = gap_map[gap|default('md')]|default(gap_map['md']) %}
+{#- `min-w-0` lets a zone placed as a grid or flex cell shrink below its
+    content's intrinsic width instead of overflowing the track. `align:
+    center` centres the heading, the copy and the cells: a short result (a
+    heading, a sentence, one action) standing alone in a card. #}
+{% set centered = align|default('start') == 'center' %}
+{% set zone_classes = ['flex', 'flex-col', 'min-w-0', 'gap-4', (inset_map[inset|default('md')] ?? inset_map['md'])]|merge(centered ? ['items-center', 'text-center'] : []) %}
+{#- `fill` is ONE row for a field and its submit: the first cell takes the
+    remaining width, every later cell keeps its intrinsic width on one line, and
+    all of them sit on the bottom edge so the button lines up with the input
+    rather than with the field's label. It wraps only when the row cannot fit:
+    the first cell's basis is the point below which it would rather move the
+    later cells onto a new line than shrink further, and `max-w-full` keeps a
+    wrapped cell (a select sized to its longest option) inside the row. #}
+{% set content_classes = {
+  'row': ['flex', 'flex-row', 'flex-wrap', 'items-start', gap_class],
+  'fill': ['flex', 'flex-row', 'flex-wrap', 'items-end', gap_class, '*:first:flex-1', '*:first:basis-40', '*:first:min-w-0', '*:not-first:shrink-0', '*:not-first:max-w-full', '*:not-first:whitespace-nowrap'],
+}[direction|default('column')] ?? ['grid', col_map[columns|default(1)]|default('grid-cols-1'), gap_class]|merge(centered ? ['justify-items-center'] : []) %}
+{% set heading_content %}{% block heading %}{{ heading }}{% endblock %}{% endset %}
+{% set actions_content %}{% block actions %}{{ actions }}{% endblock %}{% endset %}
+{#- The content is CAPTURED like the other two, and for one more reason on top of
+    the block-override one: it has to be tested before the wrapper is opened, and
+    a `{% block %}` cannot be read twice. The wrapper stays OUTSIDE the block —
+    the captured value is printed inside the grid below, so a slot filled through
+    an override still gets its container. #}
+{#- `is not empty`, not a truthy test: integer 0 is content (a reported load of
+    0, an occupancy of 0) and `{% if content %}` drops it because Twig casts 0
+    to false. The emptiness test below still hides a zone with nothing to show. #}
+{% set content_content %}{% block content %}{% if content is not empty %}{{ content }}{% endif %}{% endblock %}{% endset %}
+{#- The void elements that are content without being text, plus Drupal's
+    placeholder for content it has not built yet. Everything else — including
+    SDC's debug comments — is stripped before the emptiness test. #}
+{% set visible_tags = '<img><svg><iframe><video><canvas><input><hr><progress><audio><drupal-render-placeholder>' %}
+{% set shows_content = content_content|striptags(visible_tags)|trim is not empty %}
+{% set shows_actions = actions_content|striptags(visible_tags)|trim is not empty %}
+{% if shows_content or shows_actions or description %}
+<section{{ (attributes ?: create_attribute()).addClass(zone_classes) }}>
+  {% if heading_content|trim is not empty or description or actions_content|trim is not empty %}
+    <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+      {#- THE SUB-LINE IS A PROP, NOT MARKUP IN THE HEADING SLOT. Ten block headers
+          in the delivered scenes carry one, and with no prop for it they were
+          written as block-level `<span>`s with inline `style=""` — the only thing
+          that works from a scene file, because scene YAML is outside the CSS
+          build's source paths. Declared here it is styled once, in the same
+          treatment `page_header` gives the screen's sub-line, and it stays out of
+          the heading. No `truncate`: a block sub-line is a sentence and wraps. #}
+      {% if heading_content|trim is not empty or description %}
+        <div class="flex flex-col min-w-0">
+          {% if heading_content|trim is not empty %}
+            <h2 data-zone-heading class="m-0 min-w-0 text-title {{ heading_size|default('section') == 'display' ? 'text-display font-bold' : 'text-section' }}">{{ heading_content }}</h2>
+          {% endif %}
+          {% if description %}
+            <p class="m-0 text-caption text-text-faint">{{ description }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if actions_content|trim is not empty %}
+        <div class="sm:ml-auto flex items-center gap-3 shrink-0">{{ actions_content }}</div>
+      {% endif %}
+    </div>
+  {% endif %}
+  <div class="{{ content_classes|join(' ')|trim }}"{% if list %} role="list"{% endif %}>{{ content_content }}</div>
+</section>
+{% endif %}

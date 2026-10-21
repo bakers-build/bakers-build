@@ -1,0 +1,46 @@
+# THE THREE-COLUMN DELIVERY TABLE — the shape that was the live defect, rendered correctly.
+#
+# The project-detail delivery table declared THREE headers (`Ticket`, `Closed`, `Assignee`) and filled
+# its body with rows that emitted NINE `<td>` each: invalid table markup on a rendered scene, which no
+# gate and no build caught, because the container could not see its own cells. This story is that same
+# surface in the new contract, and it is here to prove the shape is now expressible ONLY as three
+# columns keyed against three cells: the row carries a `cells` map and the `<td>`s come from
+# `columns`, so a nine-cell row cannot be dropped into a three-column table at all.
+#
+# It is the same component and the same `view.tickets` listing as the nine-column story — a different
+# COLUMN SET, not a second table and not a fifth row component. That is what makes the defect
+# unrepeatable rather than merely fixed.
+component: bb_theme:table
+name: Delivery
+props:
+  columns:
+    - key: ticket
+      label: Ticket
+      sort: desc
+      url: '?order=Ticket&sort=asc'
+    - key: closed
+      label: Closed
+      num: true
+    - key: assignee
+      label: Assignee
+  rows:
+    - url: '#'
+      accent: idle
+      cells:
+        ticket: { kind: link, value: BB-378, url: '#', mono: true }
+        closed: { kind: text, value: '2026-08-20', emphasis: faint }
+        assignee:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: running
+    - url: '#'
+      accent: idle
+      cells:
+        ticket: { kind: link, value: BB-341, url: '#', mono: true }
+        closed: { kind: text, value: '2026-08-19', emphasis: faint }
+        assignee:
+          kind: person
+          display_name: Marco Klein
+          initials: MK
+          color: attention

@@ -1,0 +1,71 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Account Switcher
+status: stable
+group: Shell
+description: >-
+  Head-of-rail workspace switcher, the retired workspace_switcher kept under
+  this name because the sidebar addresses it from its `workspace` slot. A
+  disclosure button that opens the workspace list — but only when there is more
+  than one workspace to switch to (`multiple`); with a single workspace it
+  renders as a plain, non-interactive label with no chevron and no panel, the
+  same way the signed-in account never was a switcher. The account is NOT
+  rendered by this component: it sits at the rail foot, in the sidebar's
+  `actions` slot, as a plain `bb_theme:person` avatar. Collapsed this reduces
+  to the mark alone, so the 56px rail keeps it reachable.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    workspace_label:
+      type: string
+      title: Workspace name
+    workspace_initials:
+      type: string
+      title: Workspace mark initials
+    workspace_color:
+      type: string
+      title: Workspace mark colour key
+      enum:
+        - running
+        - attention
+        - unassigned
+        - lease
+        - offline
+    workspace_picture:
+      type: string
+      title: Workspace picture URL
+      description: >-
+        Optional image URL for the current workspace's mark, shown whole
+        (`image_fit: contain`). Empty or absent: the initials circle.
+    multiple:
+      type: boolean
+      title: Multiple workspaces
+      description: >-
+        There is more than one workspace to switch to. Renders the disclosure
+        button and panel; false renders a plain label with no chevron and no
+        panel. Default true.
+      default: true
+    collapsed:
+      type: boolean
+      title: Collapsed
+      description: Show the mark only — the rail is collapsed.
+    id:
+      type: string
+      title: Id
+      description: Base id; the workspace panel derives its id from it.
+  required:
+    - workspace_label
+slots:
+  workspace_panel:
+    title: Workspace panel
+    description: The disclosed workspace list.
+variants:
+  collapsed:
+    title: Collapsed
+    description: >-
+      Icon-only: the workspace mark alone, label and chevron dropped, for the
+      56px rail.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

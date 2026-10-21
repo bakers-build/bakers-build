@@ -1,0 +1,176 @@
+# BB-391 — the ONE scope, and it grants no role.
+#
+# A connection declares one `@dropsh/plugin-oauth2` entry and it requests this
+# scope.
+#
+# WHY A SCOPE AT ALL, measured on a live control plane rather than assumed.
+# `simple_oauth`'s Oauth2AccessPolicy::alterPermissions() rewrites a token
+# account's calculated permissions with `overwrite: TRUE`. For a token whose
+# `auth_user_id` is empty — every `client_credentials` token, and therefore every
+# bakers.build machine identity — the set becomes EXACTLY this scope's permissions.
+# Neither `user_role` nor OG-rank permissions survive that step. So the scope is
+# a CEILING, not a narrowing:
+#
+#   * with no scope and no consumer default, the token does not mint at all:
+#     `invalid_request`, hint `Check the scope parameter`;
+#   * with no scope but a consumer default, that default silently decides
+#     capability, and nothing in any committed artifact records it.
+#
+# Measured symptom before this fix: an account holding `member` and `app` on its
+# workspace reached 2 workspaces, 2 projects and 15 tickets inside Drupal, and
+# 0 / 0 / 0 over its own token, while `view bakers statistics` answered 403 naming
+# the very permission its rank carries.
+#
+# WHY AN UMBRELLA OVER PERMISSIONS, AND NOT A ROLE.
+# `granularity_id: role` would work mechanically, and it is the wrong shape here.
+# BbGroupScopedAccount::hasPermission() asks hasSiteWidePermission() FIRST and
+# returns TRUE unconditionally when a role the ACCOUNT holds grants the
+# permission — "the machine roles arrive through here". A role is therefore a
+# fence bypass waiting for someone to assign it, and `authenticated` is the worst
+# case of all, because every account holds it: putting the ceiling there makes
+# every logged-in user tenant-blind in the web UI too (verified — three `view`
+# permissions on `authenticated` returned all 15 tickets across both projects).
+#
+# An umbrella over per-permission children grants NO role. `TokenAuthUser::
+# getRoles()` intersects token roles with the account's, so the account never
+# holds a role carrying these permissions, hasSiteWidePermission() stays FALSE,
+# and BbRankEntityFence keeps bounding every row to the groups the account's
+# ranks name. The rank decides WHICH ROWS; this scope decides WHICH OPERATIONS
+# exist at all. The bypass is removed rather than guarded.
+#
+# The children are one file per permission, `simple_oauth.oauth2_scope.
+# bb_session_<slug>.yml`, and Oauth2ScopeProvider::getPermissions() returns
+# their union for this umbrella. There are 29 of them, and the set is pinned
+# EXACTLY — not as a lower bound — by SiteWideRoleResidueTest, because a child
+# quietly deleted is a hard 403 on a shipped surface and a child quietly added
+# widens what every machine identity may do. Both install paths ship all 29
+# (WORKFLOW.md), and ConfigCopyDriftTest compares them structurally rather than by
+# permission name alone: a child that drifts in `parent` still names the right
+# permission and grants nothing, because getPermissions() reaches a child through
+# this umbrella and nowhere else.
+#
+# WHAT `status: false` DOES AND DOES NOT DO — measured, because this header used
+# to claim the opposite. Disabling a child, or dropping its
+# `grant_types.client_credentials` entry, does NOT withdraw the permission:
+# getPermissions() unions the children without consulting either flag. With one
+# child set to `status: false` and drupal_flush_all_caches() run, the umbrella
+# still returned all 29 permissions and still carried the disabled child's;
+# DELETING that child returned 27 and dropped it. So WITHDRAWING A CAPABILITY
+# MEANS DELETING THE CHILD, and an operator who disables one instead has changed
+# nothing any caller can observe. The `status` assertions in
+# SiteWideRoleResidueTest stay — they pin the shape both install paths ship, and
+# simple_oauth may begin honouring the flag — but they are a SHAPE guard, never a
+# capability gate.
+#
+# WHAT EACH OPERATION IS HERE FOR. The reads are the CLI's whole surface, so they
+# are listed without argument; the WRITES each answer to a shipped caller, and
+# four of them were missing until BB-391's second round. Because the scope IS
+# the permission set, a missing child is not a rank-narrowed empty list — it is a
+# 403 the caller cannot work around:
+#
+#   * `create bb_project` — the entire purpose of the `create-project` skill
+#     (`.claude/skills/bakers-build/skills/create-project/`).
+#   * `create bb_environment` — `prepare-deployment/SKILL.md` instructs the
+#     agent to "create the environment" before a release.
+#   * `create bb_group` — `scripts/setup-test-project.sh` documents
+#     `bakers dropsh create bb_group …` as a step an agent runs.
+#   * `create bb_team` — the `workspace_id` filler documented in
+#     `.bakers/bakers.config.js` fills a bb_group / bb_team CREATE payload, not
+#     only a read filter.
+#
+# The operator's decision was to widen the ceiling rather than retire those four
+# surfaces, and the reason it is safe is the division of labour above: WIDENING
+# THE CEILING DOES NOT MAKE AN IDENTITY TENANT-BLIND. Every one of these four is a
+# `create` write, and neither reaches rows.
+#
+#   * `create` has no entity to fence at access time — core routes it through
+#     hook_entity_create_access() with no entity — so what bounds it is
+#     BbGroupScopeConstraint on the anchor reference fields
+#     (BbGroupScopeConstraint::ANCHORS). A
+#     machine identity holding `create bb_project` can still only anchor one in
+#     a group its own ranks name; anchoring it elsewhere is a 422 naming
+#     `tenancy`, measured by RankScopedJsonApiTest.
+#   * Conductor assignment uses ordinary ticket update access, including the
+#     field fence on unsaved tickets. It needs no dedicated scope child.
+#
+# So these four change WHICH OPERATIONS EXIST, not WHICH ROWS THEY REACH. The
+# rank is still the only thing that answers the second question.
+#
+# WHY MEMBERSHIP READING BELONGS IN THE CEILING (the 28th child, BB-391 second
+# round). `view bakers memberships` is a READ, so the argument above — "a create
+# reaches no rows" — does not carry it, and it needed its own.
+#
+# Membership is the model's CENTRAL RELATION: every rank comes from an
+# og_membership, so a control plane that cannot read one cannot say who is in a
+# crew, and the `bakers ui` team level's `Overview · Users` tab has nothing to
+# list. OG reserves reading a membership to site-wide `administer organic groups`
+# or an in-group `administer group` / `manage members` grant
+# (OgMembershipAccessControlHandler::checkAccess()), and this umbrella may name
+# NONE of the three: the first is site-wide and would rebuild exactly the
+# tenant-blindness this design avoids, and the other two are `lead` WRITE
+# capabilities that BB-359 D3 reserves to `lead`. Measured symptom BEFORE this
+# child existed: MEMBERS 0 for a crew of three, at HTTP 200, with all five rows in
+# `meta.omitted` — worse than the `—` the client reserves for "uncounted", because
+# a number nobody established looks established. With the child in place and the
+# row bound below, the collection comes back FILTERED (13 of 14 rows on the seeded
+# world, no `meta.omitted` block) and an out-of-scope single row is HTTP 403.
+#
+# The alternative considered and REJECTED was a computed `members` field on
+# `bb_team`. It cannot carry the rank, the membership `state`, or the workspace-
+# and project-level rows, so it would be a second, weaker representation of the
+# relation, drifting from it.
+#
+# HOW THE ROWS STAY BOUNDED, given that a child scope grants unconditionally. Two
+# places, both bakers.build's own and both asking the same resolver, so a filtered list
+# and a single read cannot disagree:
+#
+#   * WorkspaceReadScopeSubscriber adds a `query_access` rule for og_membership,
+#     so a collection read comes back FILTERED — the workspaces the account
+#     belongs to, the projects in its read scope, the teams inside those
+#     workspaces, plus its own rows anywhere. Filtered, not omitted: an empty crew
+#     and an unreadable crew stop looking identical.
+#   * BbOgMembershipAccessControlHandler answers the single-row read with the
+#     same bound, so the collection filter cannot be walked around by asking for a
+#     uuid.
+#
+# The row anchor is the PAIR (`entity_type`, `entity_id`), never `entity_id`
+# alone: it is a plain STRING base field carrying the group's numeric id and every
+# group type has its own sequence, so a flat union would return a foreign team's
+# roster whenever its id matched an in-scope project's.
+#
+# `view` and nothing else. Membership EDITING — `manage members`, and the `uid` /
+# `state` / `roles` field gates — stays OG's and stays out: that is BB-320.
+#
+# Deliberately still excluded are the remaining permissions D3 reserves to `lead`
+# — `manage members`, `update group` and every `delete any …`, none of which any
+# CLI call site issues — and `access bakers dashboard`, which is a web-UI
+# permission a machine identity has no browser for.
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session
+name: 'bb:session'
+description: 'The one bakers.build scope. An umbrella over one child per permission, so it grants no role.'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build machine identity'
+  authorization_code:
+    status: true
+    description: 'Human CLI sign-in via browser'
+  # BB-550 — the key is the RFC 8628 URN league's DeviceCodeGrant reports as
+  # its identifier, not the bb_oauth_device plugin id (`device_code`):
+  # ScopeRepository::finalizeScopes() checks isGrantTypeEnabled() against
+  # league's own getIdentifier(), never the plugin id the consumer stores.
+  'urn:ietf:params:oauth:grant-type:device_code':
+    status: true
+    description: 'Human CLI sign-in without a local browser'
+  # Renewing a CLI sign-in re-finalizes this scope under league's
+  # `refresh_token` grant, so without this entry every refresh is invalid_scope.
+  refresh_token:
+    status: true
+    description: 'Renew a human CLI sign-in'
+umbrella: true
+parent: null
+granularity_id: null
+granularity_configuration: null

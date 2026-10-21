@@ -1,0 +1,53 @@
+component: bb_theme:filters
+name: Bar
+props:
+  layout: bar
+  label: Search tickets
+slots:
+  controls:
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: sm
+      slots:
+        content:
+          - type: component
+            component: bb_theme:form_label
+            props:
+              for: story-search-title
+            slots:
+              title: Title
+          - type: component
+            component: bb_theme:form_input
+            props:
+              type: search
+              id: story-search-title
+              name: title
+              value: ''
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: sm
+      slots:
+        content:
+          - type: component
+            component: bb_theme:form_label
+            props:
+              for: story-sort
+            slots:
+              title: Sort by
+          - type: component
+            component: bb_theme:form_select
+            props:
+              id: story-sort
+              name: sort_bef_combine
+              options:
+                - value: changed_DESC
+                  label: Updated, newest first
+                  selected: true
+                - value: changed_ASC
+                  label: Updated, oldest first
+                - value: priority_ASC
+                  label: Priority, highest first

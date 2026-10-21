@@ -1,0 +1,25 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Test hull
+status: experimental
+description: 'A minimal hull for WrappedRouteRendererTest: a title prop, a message slot above a body slot, an actions slot below it, and a dismissible prop. It is deliberately the SHAPE a dialog-ish component has rather than a copy of one, so the renderer''s contract is tested without a theme — every prop and slot the renderer populates is declared here and printed by the twig, so the renderer cannot quietly stop passing one.'
+props:
+  type: object
+  properties:
+    title:
+      type: string
+      title: Title
+    open:
+      type: boolean
+      title: Open
+    dismissible:
+      type: boolean
+      title: Dismissible
+  required:
+    - title
+slots:
+  message:
+    title: Message
+  body:
+    title: Body
+  actions:
+    title: Actions

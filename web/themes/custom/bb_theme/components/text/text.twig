@@ -1,0 +1,24 @@
+{# One run of plain text in one of the theme's typographic roles. The caller
+   picks the element (`as`) for its document outline and the role (`size`,
+   `tone`) for its look; the two are independent, so an h1 can read at the h3
+   step the gate and onboarding chromes use. With `href` the run is a link in
+   the link colour and `tone` does not apply. An unbroken token wraps inside
+   the run's box rather than overflowing it, and the copy's line breaks are
+   kept, so a multiline plain-text value reads as separate lines. #}
+{% set size_map = { 'body': 'text-body', 'caption': 'text-caption', 'h3': 'text-h3', 'display': 'text-display', 'gate-body': 'text-gate-body' } %}
+{% set tone_map = { 'default': '', 'light': 'text-text-light', 'faint': 'text-text-faint' } %}
+{% set tag = href ? 'a' : (as in ['p', 'span', 'h1', 'h2'] ? as : 'p') %}
+{% set text_classes = [
+  'm-0',
+  'wrap-break-word',
+  'whitespace-pre-line',
+  'min-w-0',
+  'max-w-full',
+  size_map[size|default('body')]|default('text-body'),
+  href ? 'text-link' : tone_map[tone|default('default')]|default(''),
+  align|default('start') == 'center' ? 'text-center' : '',
+  tracking|default('normal') == 'widest' ? 'tracking-widest' : '',
+]|filter(c => c) %}
+{% set text_attributes = (attributes ?: create_attribute()).addClass(text_classes) %}
+{% if href %}{% set text_attributes = text_attributes.setAttribute('href', href) %}{% endif %}
+<{{ tag }}{{ text_attributes }}>{{ text }}</{{ tag }}>

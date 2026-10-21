@@ -1,0 +1,171 @@
+# Every state declares a `phase`: who is on the hook right now. It is data so a
+# new workflow declares its own phases. `TypeWorkflows::phase()` reads it and
+# throws for a missing or unknown phase; there is no default.
+#
+#   prepare    being shaped: qualification, spec, diagnose, pre_deployment,
+#              a claimed but unstarted run
+#   running    executing: coding, verifying, running, post_deployment, summary
+#   review     somebody has to look at it
+#   done       finished (also bb_run `expired`/`failed`: nobody is on the
+#              hook; success versus failure is what `state` says)
+#   cancelled  stopped without finishing
+bb_feature:
+  id: bb_feature
+  group: bb_ticket
+  label: 'bakers.build feature'
+  states:
+    qualification: { label: Qualification, claimable: true, phase: prepare }
+    spec: { label: Spec, claimable: true, phase: prepare }
+    coding: { label: Coding, claimable: true, phase: running }
+    review: { label: Review, claimable: true, phase: review }
+    done: { label: Done, phase: done }
+    cancelled: { label: Cancelled, phase: cancelled }
+  transitions:
+    qualify: { label: Qualify, from: [qualification], to: spec }
+    requalify: { label: Requalify, from: [spec, coding], to: qualification }
+    # A fully specified intake may skip the spec round (qualification ->
+    # coding). Module YAML, read at runtime: no config copy or update hook.
+    to_coding: { label: 'Start coding', from: [spec, review, qualification], to: coding }
+    to_review: { label: 'Request review', from: [coding], to: review }
+    finish: { label: Done, from: [review], to: done }
+    cancel: { label: Cancel, from: [qualification, spec, coding, review], to: cancelled }
+
+bb_bug:
+  id: bb_bug
+  group: bb_ticket
+  label: 'bakers.build bug'
+  states:
+    qualification: { label: Qualification, claimable: true, phase: prepare }
+    diagnose: { label: Diagnose, claimable: true, phase: prepare }
+    coding: { label: Coding, claimable: true, phase: running }
+    review: { label: Review, claimable: true, phase: review }
+    done: { label: Done, phase: done }
+    cancelled: { label: Cancelled, phase: cancelled }
+  transitions:
+    qualify: { label: Qualify, from: [qualification], to: diagnose }
+    requalify: { label: Requalify, from: [diagnose, coding], to: qualification }
+    to_coding: { label: 'Start coding', from: [diagnose, review, qualification], to: coding }
+    # Coding must be able to redo a missing or invalid diagnosis
+    # without dropping an intact qualification handoff back to qualification.
+    to_diagnose: { label: 'Redo diagnosis', from: [coding], to: diagnose }
+    to_review: { label: 'Request review', from: [coding], to: review }
+    # Optional review: finish may leave coding or review.
+    finish: { label: Done, from: [review, coding], to: done }
+    cancel: { label: Cancel, from: [qualification, diagnose, coding, review], to: cancelled }
+
+bb_chore:
+  id: bb_chore
+  group: bb_ticket
+  label: 'bakers.build chore'
+  states:
+    qualification: { label: Qualification, claimable: true, phase: prepare }
+    spec: { label: Spec, claimable: true, phase: prepare }
+    coding: { label: Coding, claimable: true, phase: running }
+    review: { label: Review, claimable: true, phase: review }
+    done: { label: Done, phase: done }
+    cancelled: { label: Cancelled, phase: cancelled }
+  transitions:
+    qualify: { label: Qualify, from: [qualification], to: spec }
+    requalify: { label: Requalify, from: [spec, coding], to: qualification }
+    to_coding: { label: 'Start coding', from: [spec, review, qualification], to: coding }
+    to_review: { label: 'Request review', from: [coding], to: review }
+    # Optional review: finish may leave coding or review.
+    finish: { label: Done, from: [review, coding], to: done }
+    cancel: { label: Cancel, from: [qualification, spec, coding, review], to: cancelled }
+
+bb_epic:
+  id: bb_epic
+  group: bb_ticket
+  label: 'bakers.build epic'
+  states:
+    # No owner skill names bb_epic yet. Claimable states would trip the
+    # conductor circuit breaker; children do the work on their own tickets.
+    qualification: { label: Qualification, claimable: false, phase: prepare }
+    spec: { label: Spec, claimable: false, phase: prepare }
+    active: { label: Active, claimable: false, phase: running }
+    review: { label: Review, claimable: false, phase: review }
+    done: { label: Done, phase: done }
+    cancelled: { label: Cancelled, phase: cancelled }
+  transitions:
+    qualify: { label: Qualify, from: [qualification], to: spec }
+    requalify: { label: Requalify, from: [spec, active], to: qualification }
+    to_active: { label: Activate, from: [spec, review, qualification], to: active }
+    to_review: { label: 'Request review', from: [active], to: review }
+    finish: { label: Done, from: [review], to: done }
+    cancel: { label: Cancel, from: [qualification, spec, active, review], to: cancelled }
+
+bb_deployment:
+  id: bb_deployment
+  group: bb_ticket
+  label: 'bakers.build deployment'
+  states:
+    pre_deployment: { label: 'Pre-deployment', claimable: true, phase: prepare }
+    post_deployment: { label: 'Post-deployment', claimable: true, phase: running }
+    done: { label: Done, phase: done }
+    cancelled: { label: Cancelled, phase: cancelled }
+  transitions:
+    deploy: { label: Deploy, from: [pre_deployment], to: post_deployment }
+    finish: { label: Done, from: [post_deployment], to: done }
+    cancel: { label: Cancel, from: [pre_deployment, post_deployment], to: cancelled }
+
+bb_verification:
+  id: bb_verification
+  group: bb_ticket
+  label: 'bakers.build verification'
+  states:
+    verifying: { label: Verifying, claimable: true, phase: running }
+    summary: { label: Summary, claimable: true, phase: running }
+    done: { label: Done, phase: done }
+    cancelled: { label: Cancelled, phase: cancelled }
+  transitions:
+    to_summary: { label: Summarize, from: [verifying], to: summary }
+    finish: { label: Done, from: [summary], to: done }
+    cancel: { label: Cancel, from: [verifying, summary], to: cancelled }
+
+bb_run:
+  id: bb_run
+  group: bb_run
+  label: 'bakers.build run'
+  states:
+    claimed: { label: Claimed, phase: prepare }
+    running: { label: Running, phase: running }
+    done: { label: Done, phase: done }
+    expired: { label: Expired, phase: done }
+    # Terminal dispatch/setup failure, distinct from `expired`:
+    # `failed` = the conductor's dispatch threw (setup/startRun error) and it
+    # terminalised the run with the cause in `error_log`; `expired` = the lease
+    # merely lapsed on a claimed-but-never-started run. Like `expired`, `failed`
+    # is NOT an active run state, so it stops counting toward conductor capacity
+    # and no longer blocks re-claim of its ticket.
+    failed: { label: Failed, phase: done }
+    cancelled: { label: Cancelled, phase: cancelled }
+  transitions:
+    start: { label: Start, from: [claimed], to: running }
+    finish: { label: Finish, from: [claimed, running], to: done }
+    # Only a claimed-but-never-started run is reaped to `expired`. A `running`
+    # run is genuinely live (agent started); with no lease renewal its lease
+    # says nothing about liveness, so it is never auto-expired.
+    expire: { label: Expire, from: [claimed], to: expired }
+    # A dispatch/setup error terminalises the run to `failed` from either active
+    # state (a throw can happen before or after `start`), carrying the error.
+    fail: { label: Fail, from: [claimed, running], to: failed }
+    # An operator ends a live run from `bakers ui` so the ticket can be claimed
+    # again. `from` is exactly the active pair, because a done,
+    # failed or expired run is over and there is nothing to cancel about it.
+    # `CANCELLABLE_RUN_STATES` in the cockpit's run edit form mirrors this list
+    # by hand — widen both together.
+    cancel: { label: Cancel, from: [claimed, running], to: cancelled }
+
+bb_review:
+  id: bb_review
+  group: bb_comment
+  label: 'bakers.build review'
+  states:
+    draft: { label: Draft, phase: prepare }
+    submitted: { label: Submitted, phase: review }
+    accepted: { label: Accepted, phase: done }
+    rejected: { label: Rejected, phase: cancelled }
+  transitions:
+    submit: { label: Submit, from: [draft], to: submitted }
+    accept: { label: Accept, from: [submitted], to: accepted }
+    reject: { label: Reject, from: [submitted], to: rejected }

@@ -1,0 +1,44 @@
+{
+  "name": "@bakers-build/addon-bakers-ui",
+  "version": "0.0.1",
+  "description": "bakers.build TUI: interactive terminal UI (dashboard, projects, tickets) as a dropsh `tui` renderer plugin.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js",
+    "./ui": "./dist/src/ui.js",
+    "./react-experiment": "./dist/src/react-experiment.js",
+    "./react-experiment/preset": "./dist/src/react-preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --root ../.. addons/bakers-ui/tests",
+    "test:tui": "bun test tests-bun --reporter=junit --reporter-outfile=../../junit-tui.xml",
+    "typecheck": "tsc --noEmit",
+    "generate:width-table": "node scripts/generate-width-table.mjs > src/lib/width-table.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@opentui/core": "0.5.1",
+    "bun": "1.4.0",
+    "drupal-jsonapi-params": "^3.0.1",
+    "zustand": "^5.0.15"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/addon-workspace": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

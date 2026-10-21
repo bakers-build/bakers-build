@@ -1,0 +1,588 @@
+id: debo-design-system
+title: Design System
+description: >-
+  The bakers.build application shell: a collapsible left navigation rail beside a main
+  column that stacks the screen content and the status bar, with the overlay
+  layer for dialogs. BB-332's action-pattern scenes used to sit here too,
+  because the pattern crosses every section; BB-335 moved every TICKET scene
+  of them into `sections/tickets/tickets.section.scenes.yml`, where the surfaces
+  they demonstrate live. The written rule stayed put:
+  `design-system/action-pattern.md` is still the single copy, and it still binds
+  every section. What is left here is the shell itself — including the
+  deliberate absence of an add action in the chrome, which is a fact about the
+  CHROME rather than about any screen. BB-341 then replaced the navigation
+  this shell carries with the decided information architecture; Groups later
+  joined as its own leaf, so the rail order is My work · Groups · Projects ·
+  Settings · Teams. Team row overflow menus and the Team settings dialog were
+  retired: open the team, use the Members tab (IA D12). BB-378 made this file
+  the ONLY place the shell is declared: every screen scene in every section
+  starts with `scene: "design-system:shell"` and fills `content` through
+  `with:`, so the rail and the status bar exist once. BB-503 removed the
+  header/top bar entirely — the shell has no top chrome at all — and moved
+  identity into the rail, where it SPLITS: the workspace switcher (the new
+  `account_switcher`, replacing the retired `workspace_switcher`) at the rail
+  HEAD, and the signed-in account at the rail FOOT as a plain
+  `bb_theme:person` avatar, replacing the retired `user_menu`. The layout
+  rules those screens obey are written in `designbook/design-system/layout.md`.
+status: planned
+order: 0
+group: Designbook/Design System
+scenes:
+  - name: shell
+    group: Shell
+    section: shell
+    docs: >-
+      THE ONE SHELL. This scene is what every screen inherits: a section scene
+      opens with `scene: "design-system:shell"` and fills `content` through
+      `with:`, so the rail and the status bar are declared here and nowhere else
+      (BB-378 D1). Before that they were retyped in all four scene files, and
+      commit a60bb0e7 — "align sections with product IA (four places)" — is the
+      receipt for what that cost.
+
+      Its `content` slot is therefore the `$content` PLACEHOLDER rather than a
+      screen, and its `overlay` carries a second one, `$overlay`. Rendered as
+      its own story neither marker has anything to substitute and both show as
+      literal text: that is the injection point made visible, not a rendering
+      fault. What a screen puts in `content` is exactly one `canvas` (D2); what
+      it puts in `$overlay` is its create or confirm surface, or the empty
+      string when it opens none. Both are written up in
+      `designbook/design-system/layout.md`.
+
+      BB-503 REMOVED THE HEADER ENTIRELY. There is no top bar and no `header`
+      slot: neither `shell.component.yml` nor `shell.twig` declares one. The
+      search affordance and its command palette are retired with it and return
+      in a later ticket with a trigger of their own. Identity splits across the
+      rail: the workspace switcher, `account_switcher`, stays at the rail HEAD,
+      filling the sidebar's `workspace` slot — the same position the retired
+      `workspace_switcher` held. It is a disclosure control only when `multiple`
+      is true — with a single workspace it is a plain label, chevron and panel
+      both dropped, because a switcher with nothing to switch to is not a
+      control. The signed-in account moved to the rail FOOT, filling `actions`,
+      as a plain, non-interactive avatar (`bb_theme:person` compact) — there
+      is nothing to switch about it, so it carries no chevron and no panel
+      either.
+
+      The bakers.build application shell with the sidebar expanded, carrying the
+      information architecture the IA target
+      (docs/specs/ia-home-nav-roles-decisions.md) decided, with Groups as its
+      own leaf: My work, Groups, Projects, Settings (workspace entity + Labels
+      on one screen; no separate Labels rail entry; workspace has no members
+      surface), and Teams (with create affordance and one row per team).
+
+      READ HERE (BB-341 C1/C2/C3, Groups inserted as a sibling leaf).
+      Top-level order: My work, Groups, Projects, then Settings as a leaf, then
+      Teams as a GROUP HEADING (disclosure, no destination). Neither heading nor
+      leaves indent children — a team row sits at rail level and is told apart
+      by its MARK. A team row does not expand further. Teams is open here (shell
+      demo default); Settings is closed by default. Groups and Projects are
+      separate destinations; neither is a child of the other.
+
+      The `[+]` on Teams is not a hole in BB-332's rule but the same rule one
+      surface further in. The chrome carries no entity-add action — there is no
+      top bar and the rail's foot carries only identity — because the chrome
+      cannot know whether the screen under it accepts an addition. The Teams row
+      is not generic chrome: it IS the list of teams, its target is the rows
+      directly beneath it, and it never speaks for the screen under it. The
+      false side of that conditional is this chrome itself: nothing in the rail
+      carries an entity-add action, and the injection point below it is empty,
+      so nothing here promises an addition on behalf of a screen it cannot see.
+      The positive side is a screen that owns its own plus — `ticket-list (add
+      action)` in the tickets section.
+
+      NOT SHOWN, deliberately. Nothing binds to a real team: teams do not exist
+      in code yet, so every row, mark and menu target here is sample data. My
+      work is the home (open tickets assigned to the current user; see
+      docs/specs/ia-home-nav-roles-decisions.md). And no JavaScript runs in
+      Storybook, so every disclosure is a markup observation rather than an
+      interaction — which is exactly why each state is a prop rendered as an
+      attribute.
+
+      ONE ISLAND BOUNDARY CROSSES THIS SHELL, AND STORYBOOK RENDERS NONE OF IT
+      (BB-396 D15, amended BB-503). An island is a render array contributed
+      by `IslandWrapper` at request time, so this scene cannot render one and
+      must not pretend to: what follows names the boundary so a reader of the
+      design knows where it falls, and nothing here simulates a swap, a boost or
+      a fragment request. Storybook has no htmx and gets none.
+
+      WHERE IT FALLS, read off the shipped
+      `display_builder_page_layout.page_layout.bb_shell` and not invented
+      here. The `sidebar` slot below is wrapped by `island-rail`, whose swap
+      target is `#island-content`. The `content` slot — the `$content`
+      placeholder every screen fills — is wrapped by `island-content`, and by D1
+      that is the page's ONE swap target, addressed by its DOM id rather than by
+      a class or a `closest` selector. `header` no longer exists; `footer` and
+      `overlay` stay outside both boundaries: the status bar and any dialog are
+      never replaced.
+
+      SO THE ASYMMETRY IN THIS SCENE'S OWN PROSE IS AN ISLAND FACT (D3, module
+      fact F6). `island-rail` names `#island-content` as its target and does NOT
+      ride along — it sits outside the boundary it points at, so a navigation
+      replaces the content and leaves the rail's active entry as it was. That is
+      the mechanism behind "THE RAIL SHOWS THE SHELL'S OWN STATE" which the
+      screen scenes state from the other side: in Storybook the trail is a prop,
+      in Drupal it is the route, and after a swap it is simply stale. Buying a
+      correct trail would mean re-rendering the whole menu tree on every click.
+
+      AND `island-content` RUNS IN CONFIGURATION MODE, which is a declared
+      deviation the human chose to keep rather than a gap. Its `swap_target` is
+      EMPTY — `IslandBoost::to(NULL)`, "the container itself", because it is
+      already the main fragment and cannot ride along with itself. Configuration
+      mode means the container is built from the page layout and resolves to no
+      island plugin, so the server never re-renders it alone: a boosted
+      navigation is answered with the ORDINARY WHOLE PAGE and the client narrows
+      it to this boundary with `hx-select`. That is enough for a container that
+      only ever RENDERS, and it is not enough for one that mutates — an island
+      that changes content needs a plugin.
+
+      KNOWN DIVERGENCE (BB-503). `island.profile.bb_shell.yml` still places
+      `bb_theme:topbar` in `shell_topbar`; this ticket deliberately leaves
+      that live config untouched, so a `recipe-test` world built from this
+      branch fails to render the shell until the follow-up
+      `designbook-to-config` ticket reconciles it.
+    items:
+      - component: bb_theme:shell
+        slots:
+          sidebar:
+            component: bb_theme:sidebar
+            props:
+              collapsed: false
+              label: Workspace navigation
+            slots:
+              workspace:
+                component: bb_theme:account_switcher
+                props:
+                  workspace_label: keytec
+                  workspace_initials: KT
+                  workspace_color: running
+                  multiple: true
+                  collapsed: false
+                  workspace_picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                slots:
+                  workspace_panel:
+                    - component: bb_theme:menu_item
+                      props:
+                        label: keytec
+                        url: /keytec/tickets
+                        current: true
+                        mark:
+                          initials: KE
+                          color: running
+                          picture: >-
+                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                    - component: bb_theme:menu_item
+                      props:
+                        label: bakers.build
+                        url: /bakers/tickets
+                        current: false
+                        mark:
+                          initials: GA
+                          color: attention
+                          picture: ''
+              navigation:
+                component: bb_theme:nav
+                props:
+                  variant: main
+                  label: Primary
+                  items:
+                    - title: My work
+                      url: /admin/bakers/work
+                      icon: ticket
+                      in_active_trail: true
+                      below: []
+                    - title: Groups
+                      url: /admin/bakers/group
+                      icon: dashboard
+                      in_active_trail: false
+                      below: []
+                    - title: Projects
+                      url: /admin/bakers/project
+                      icon: project
+                      in_active_trail: false
+                      below: []
+                    - title: Settings
+                      url: /admin/bakers/settings
+                      icon: settings
+                      in_active_trail: false
+                      below: []
+                    - title: Teams
+                      heading: true
+                      icon: team
+                      open: true
+                      action:
+                        icon: plus
+                        label: New team
+                      below:
+                        - title: Team A
+                          url: /admin/bakers/team/team-a
+                          in_active_trail: false
+                          mark:
+                            initials: TA
+                            color: running
+                        - title: Team B
+                          url: /admin/bakers/team/team-b
+                          in_active_trail: false
+                          mark:
+                            initials: TB
+                            color: lease
+              actions:
+                - component: bb_theme:person
+                  props:
+                    variant: compact
+                    display_name: cw
+                    initials: CW
+                    color: lease
+                    size: md
+                - component: bb_theme:mode_toggle
+                  props:
+                    mode: light
+                    label: Choose theme
+          content: $content
+          footer:
+            component: bb_theme:status_bar
+            slots:
+              refresh:
+                component: bb_theme:badge
+                props:
+                  label: Auto-refresh on
+                  tone: running
+                  dot: true
+                  suffix: updated 4s ago
+          overlay: $overlay
+  - name: shell collapsed
+    group: Shell
+    section: shell
+    docs: >-
+      The same shell with the sidebar collapsed. Every navigation surface the
+      expanded rail reaches is still reachable: the link rows stay as their
+      icons and the TEAM ROWS STAY AS THEIR MARKS — ticket, dashboard, project,
+      settings, the two team marks. Hiding the teams would have made a surface
+      unreachable in one of the two delivered states, which is the one thing a
+      56px rail must not do.
+
+      What goes is what a 56px rail cannot honour: the labels, the two group
+      heading rows and the Teams create affordance (no per-team overflow menu).
+      A heading is a label with a chevron and has nothing left when the label
+      goes, and a control whose target is a hidden list is a control that lies.
+      Each of them carries `data-collapse-hidden`, the sidebar's own generic
+      contract, so the rail never has to know what the navigation is made of.
+
+      BB-503: there is no top bar to keep unchanged any more. The account
+      switcher at the rail head renders its `collapsed` variant here — the mark
+      alone, label and chevron dropped, the same way the retired workspace
+      switcher reduced to its mark. The signed-in account at the rail foot
+      reduces to its mark the same way. Content, status bar and overlay boundary
+      are unchanged. Its `content` is the same `$content` injection point the
+      expanded shell carries: this is the collapsed state of the ONE shell, not
+      a second one.
+    items:
+      - component: bb_theme:shell
+        slots:
+          sidebar:
+            component: bb_theme:sidebar
+            props:
+              collapsed: true
+              label: Workspace navigation
+            slots:
+              workspace:
+                component: bb_theme:account_switcher
+                props:
+                  variant: collapsed
+                  workspace_label: keytec
+                  workspace_initials: KT
+                  workspace_color: running
+                  multiple: true
+                  collapsed: true
+              navigation:
+                component: bb_theme:nav
+                props:
+                  variant: main
+                  collapsed: true
+                  label: Primary
+                  items:
+                    - title: My work
+                      url: /admin/bakers/work
+                      icon: ticket
+                      in_active_trail: true
+                      below: []
+                    - title: Groups
+                      url: /admin/bakers/group
+                      icon: dashboard
+                      in_active_trail: false
+                      below: []
+                    - title: Projects
+                      url: /admin/bakers/project
+                      icon: project
+                      in_active_trail: false
+                      below: []
+                    - title: Settings
+                      url: /admin/bakers/settings
+                      icon: settings
+                      in_active_trail: false
+                      below: []
+                    - title: Teams
+                      heading: true
+                      icon: team
+                      open: true
+                      action:
+                        icon: plus
+                        label: New team
+                      below:
+                        - title: Team A
+                          url: /admin/bakers/team/team-a
+                          in_active_trail: false
+                          mark:
+                            initials: TA
+                            color: running
+                        - title: Team B
+                          url: /admin/bakers/team/team-b
+                          in_active_trail: false
+                          mark:
+                            initials: TB
+                            color: lease
+              actions:
+                - component: bb_theme:person
+                  props:
+                    variant: compact
+                    initials: CW
+                    color: lease
+                    size: md
+                - component: bb_theme:mode_toggle
+                  props:
+                    mode: light
+                    label: Choose theme
+          content: $content
+          footer:
+            component: bb_theme:status_bar
+            slots:
+              refresh:
+                component: bb_theme:badge
+                props:
+                  label: Auto-refresh on
+                  tone: running
+                  dot: true
+                  suffix: updated 4s ago
+          overlay: $overlay
+  - name: gate
+    group: Shell
+    section: shell
+    docs: >-
+      THE SECOND CHROME, and the peer of the shell above rather than a state of
+      it (BB-415 D6). It frames everything that stands BEFORE the product — a
+      surface that is, by definition, outside every workspace — and its first
+      and only inhabitant is the workspace chooser, in
+      `sections/gate/gate.section.scenes.yml`.
+
+
+      WHY A SCREEN OUTSIDE EVERY WORKSPACE CANNOT USE THE SHELL. The rail is
+      workspace-ambient: its workspace links (`WorkspaceMenuLink`) are denied on
+      a route that carries no workspace, so the shell here would render a
+      navigation whose entries lead nowhere. That reads as a defect rather than
+      as a state, and no amount of prop-setting on the shell fixes it — the
+      absence is in the ROUTE, not in the props.
+
+
+      IT IS DECLARED HERE FOR EXACTLY THE REASON THE SHELL IS. BB-378 made
+      this file the only place a chrome may be declared, so that a screen scene
+      opens with `scene: "design-system:<chrome>"` and fills `content` rather
+      than retyping the frame. Two chromes now means two declarations in one
+      file, not two files.
+
+
+      ITS `content` IS THE `$content` PLACEHOLDER, the same injection point the
+      shell carries, so the substitution mechanism is identical and a reader who
+      knows one knows the other. Rendered as its own story the marker has
+      nothing to substitute and shows as literal text: that is the injection
+      point made visible, not a rendering fault.
+
+
+      NO OVERLAY, NO SEARCH, NO STATUS BAR, and each absence is a decision
+      rather than an omission. Search reaches tickets, runs and conductors — all
+      workspace-scoped, none of them reachable from a page whose whole point is
+      that no workspace has been chosen yet. So when search returns in its own
+      ticket (BB-503 retired the `command_palette` component together with its
+      only trigger), the gate is the one surface that must still not carry it. A
+      status bar reports an auto-refresh over data that is not being shown. And
+      `action-pattern.md` puts every create or confirm surface in the shell's
+      `$overlay`; a gate opens none, because the one action it offers is
+      choosing, and choosing is a navigation.
+
+
+      NO ISLAND BOUNDARY CROSSES IT EITHER, which is the other half of what
+      makes it small. The shell's `island-rail` and `island-content` exist so a
+      navigation can replace the content and leave the rail as it was; a gate
+      has no rail to leave, and every link on it leaves the gate entirely.
+      Storybook renders no island in any case (BB-396 D15) and this scene
+      simulates none.
+
+
+      THE TITLE IS THE PRODUCT NAME AND NOT THE SCREEN'S QUESTION, which is a
+      correction made while the
+
+      chooser was being built rather than a preference. One page layout matches
+      `/home` and therefore
+
+      frames BOTH of the controller's 200 answers — the chooser and the named
+      absence — so a chrome
+
+      titled "Choose a workspace" would have told an operator who belongs to no
+      workspace to choose one.
+
+      The chrome says who is asking; the content says what is being asked. A
+      screen's own sentence
+
+      belongs in `content`, exactly where its data does.
+    items:
+      - component: bb_theme:gate
+        props:
+          title: ''
+        slots:
+          mark:
+            component: bb_theme:brand
+            props:
+              size: compact
+          content: $content
+  - name: onboarding
+    group: Shell
+    section: shell
+    docs: |-
+      THE ONBOARDING WIZARD CHROME. Brand, optional step copy and the form
+      card stack in one centred column. Screens open with
+      `scene: "design-system:onboarding"` and fill `content`, `title` and
+      `description`.
+    items:
+      - component: bb_theme:onboarding
+        props:
+          title: $title
+          description: $description
+        slots:
+          mark:
+            component: bb_theme:brand
+          content: $content
+  - name: team-create-action
+    group: Shell
+    items:
+      - component: bb_theme:shell
+        slots:
+          sidebar:
+            component: bb_theme:sidebar
+            props:
+              collapsed: false
+              label: Workspace navigation
+            slots:
+              navigation:
+                component: bb_theme:nav
+                props:
+                  items:
+                    - title: Teams
+                      heading: true
+                      icon: team
+                      open: true
+                      action:
+                        label: New team
+                        icon: plus
+                        href: /bakers/team/create
+                      below: []
+          content: $content
+  - name: account-shell
+    group: Shell
+    section: shell
+    docs: >-
+      Own-account rail: Account, Conductors and Machines stay at the top.
+      Workspaces (/home) and Log out form a bottom group, in that order, above
+      the footer identity. Both use full-page navigation and remain reachable
+      collapsed or in a short viewport.
+    items:
+      - component: bb_theme:shell
+        slots:
+          sidebar:
+            component: bb_theme:sidebar
+            props:
+              collapsed: false
+              label: Account navigation
+            slots:
+              workspace:
+                component: bb_theme:account_switcher
+                props:
+                  workspace_label: Workspaces
+                  workspace_initials: ''
+                  workspace_color: running
+                  multiple: true
+                  collapsed: false
+                slots:
+                  workspace_panel:
+                    - component: bb_theme:menu_item
+                      props:
+                        label: keytec
+                        url: /keytec/tickets
+                        current: true
+                        mark:
+                          initials: KE
+                          color: running
+                          picture: >-
+                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                    - component: bb_theme:menu_item
+                      props:
+                        label: bakers.build
+                        url: /bakers/tickets
+                        current: false
+                        mark:
+                          initials: GA
+                          color: attention
+                          picture: ''
+              navigation:
+                component: bb_theme:nav
+                props:
+                  variant: main
+                  label: Primary
+                  items:
+                    - title: Account
+                      url: >-
+                        /?path=/story/designbook-sections-user-scenes--account-overview
+                      icon: settings
+                      in_active_trail: true
+                      below: []
+                    - title: Conductors
+                      url: /user/1/conductors
+                      icon: conductor
+                      in_active_trail: false
+                      below: []
+                    - title: Machines
+                      url: /user/1/machines
+                      icon: machine
+                      in_active_trail: false
+                      below: []
+                    - title: Workspaces
+                      url: /home
+                      icon: dashboard
+                      full_page: true
+                      at_end: true
+                    - title: Log out
+                      url: /user/logout/confirm
+                      icon: log-out
+                      in_active_trail: false
+                      below: []
+                      full_page: true
+              actions:
+                - component: bb_theme:person
+                  props:
+                    variant: compact
+                    display_name: cw
+                    initials: CW
+                    color: lease
+                    size: md
+                - component: bb_theme:mode_toggle
+                  props:
+                    mode: light
+                    label: Choose theme
+          content: $content
+          footer:
+            component: bb_theme:status_bar
+            slots:
+              refresh:
+                component: bb_theme:badge
+                props:
+                  label: Auto-refresh on
+                  tone: running
+                  dot: true
+                  suffix: updated 4s ago
+          overlay: $overlay

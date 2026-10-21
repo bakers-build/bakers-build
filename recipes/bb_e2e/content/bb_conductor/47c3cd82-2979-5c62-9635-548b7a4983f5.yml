@@ -1,0 +1,26 @@
+# Isolated one-slot capacity refusal fixture: reported load 0, counted occupancy 1.
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: 47c3cd82-2979-5c62-9635-548b7a4983f5
+  depends:
+    25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
+    262258a2-080f-4ab9-af1b-9028cef388da: bb_project
+    b0d04b55-da86-57d1-afb9-b47856fc6c2c: bb_machine
+default:
+  conductor_id:
+  - value: claim-capacity-offline
+  label:
+  - value: claim-capacity-offline
+  status:
+  - value: offline
+  reported_load:
+  - value: 0
+  states:
+  - value: review
+  owner_user_id:
+  - entity: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb
+  project_id:
+  - entity: 262258a2-080f-4ab9-af1b-9028cef388da
+  machine:
+  - entity: b0d04b55-da86-57d1-afb9-b47856fc6c2c

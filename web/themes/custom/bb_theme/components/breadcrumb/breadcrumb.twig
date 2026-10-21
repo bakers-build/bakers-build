@@ -1,0 +1,33 @@
+{# Generic trail of ordered places. Linked crumbs are anchors; the current
+   crumb has no url and carries aria-current=page. Separators are decorative
+   and never in the accessibility tree. Empty items render nothing.
+
+   EMPTINESS IS TESTED WITH `is not empty`, NOT WITH BARE TRUTHINESS: PHP Twig
+   reads an empty array as false, while the Storybook renderer is JavaScript,
+   where `[]` is truthy. #}
+{% if items is not empty %}
+<nav{{ (attributes ?: create_attribute()).addClass([
+    'block', 'text-caption',
+  ]) }}
+  aria-label="{{ label|default('Breadcrumb') }}"
+  data-breadcrumb>
+  <ol class="m-0 flex list-none flex-wrap items-center gap-x-1.5 p-0" role="list">
+    {%- set shown = false %}
+    {%- for item in items %}
+      {%- if item.label %}
+        <li class="m-0 inline-flex items-center gap-x-1.5 p-0">
+          {%- if shown %}
+            <span class="text-text-faint select-none" aria-hidden="true">›</span>
+          {%- endif %}
+          {%- if item.url %}
+            <a class="text-text-light no-underline hover:text-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ item.url }}">{{ item.label }}</a>
+          {%- else %}
+            <span class="text-text" aria-current="page">{{ item.label }}</span>
+          {%- endif %}
+        </li>
+        {%- set shown = true %}
+      {%- endif %}
+    {%- endfor %}
+  </ol>
+</nav>
+{% endif %}

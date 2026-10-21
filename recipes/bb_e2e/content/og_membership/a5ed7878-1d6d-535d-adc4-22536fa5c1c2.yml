@@ -1,0 +1,39 @@
+# Explicit tenancy/rank precondition for API contract scenarios.
+#
+# BB-462 D9: the workspace `app` role is gone — a conductor's OAuth
+# identity now sees exactly what its owning user sees, and this fixture's
+# account is that owning user. `lead`, NOT narrowed to `contributor`: F12
+# asked whether this over-granted, and a first pass narrowed it, reasoning
+# from the CREATE half of `conductor-assignment.feature` alone — that half
+# does pass on `contributor` via this account's own team membership
+# (…/8aed87e4). The REASSIGN half does not: PATCHing an existing ticket's
+# `conductor_id` is an `update`, which needs `update any bb_ticket`, a
+# permission only the workspace `lead` (admin) tier carries — `contributor`
+# has no update-any right at all. Measured by running the full suite: the
+# narrowed version failed `Reassigning an existing ticket…` for `api-app`
+# with 403. `lead` is therefore justified here, not merely convenient — the
+# same admin-parity `app` always had — and this fixture stays on it.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: a5ed7878-1d6d-535d-adc4-22536fa5c1c2
+  default_langcode: en
+  bundle: default
+  depends:
+    f8b12b48-2ec7-5b06-9578-fdc42070a60d: user
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  state:
+  - value: active
+  uid:
+  - entity: f8b12b48-2ec7-5b06-9578-fdc42070a60d
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-lead

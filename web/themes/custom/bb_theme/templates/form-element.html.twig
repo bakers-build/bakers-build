@@ -1,0 +1,8 @@
+{# Keep core field semantics and description IDs; style help text consistently. #}
+{% if description.content %}
+  {% do description.attributes.addClass([
+    'text-caption', 'text-text-light',
+    description_display == 'before' ? 'pb-1' : 'pt-1',
+  ]) %}
+{% endif %}
+{% include '@stable9/form/form-element.html.twig' %}

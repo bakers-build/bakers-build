@@ -1,0 +1,8 @@
+component: bb_theme:badge
+name: Wait
+# `wait` renders in the `unassigned` token pair — the red of "nobody is acting on
+# this". There is no `state-wait-*` token and none is invented here.
+props:
+  label: needs_input
+  tone: wait
+  dot: true

@@ -1,0 +1,49 @@
+/*
+ * sync-to generator — core.entity_view_display.bb_activity.bb_activity.full
+ *
+ * Authored for BB-628 from `entity-mapping/bb_activity.bb_activity.full.jsonata`.
+ * One `bb_theme:event` row. The live display uses `bb_activity_event` so
+ * the body can join ticket identifier and actor; JSONata cannot.
+ *
+ * THE SHIPPED YAML IS THE SAVED FORM (see README.md).
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "core.entity_view_mode.bb_activity.full"
+    ],
+    "module": [
+      "display_builder",
+      "bb_activity"
+    ],
+    "enforced": {
+      "config": [
+        "bb_core.bb_vocabulary.bb_labels"
+      ]
+    }
+  },
+  "third_party_settings": {
+    "display_builder": {
+      "profile": "default",
+      "sources": [
+        {
+          "source_id": "bb_activity_event",
+          "source": {
+            "context_mapping": { "entity": "entity" }
+          },
+          "node_id": "event_component"
+        }
+      ]
+    }
+  },
+  "id": "bb_activity.bb_activity.full",
+  "targetEntityType": "bb_activity",
+  "bundle": "bb_activity",
+  "mode": "full",
+  "content": {},
+  "hidden": {}
+}
+)

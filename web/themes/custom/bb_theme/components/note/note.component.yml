@@ -1,0 +1,37 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Note
+status: stable
+group: Data Display
+description: 'A quiet aside placed at the control it belongs to — a lead, a sentence, and one hairline rule down the leading edge. Nothing else.
+
+
+  IT RENDERS A NOTE; WHAT THE NOTE IS ABOUT IS THE CALLER''S KNOWLEDGE. It was built for one thing and named after it: the sentence that names a server-side consequence at the field that causes it — "Set: this is claimed at the next poll and an agent run starts on cw-framework." That is the second half of the action-pattern rule (designbook/design-system/action-pattern.md): where a single-step action has a side effect, the side effect is NAMED instead of confirmed. But nothing in the markup knows that. *That* the sentence describes a consequence, and that the consequence is server-side, is what the surface placing it knows; a component that carried the word in its name made every other quiet aside in the theme look like it needed a component of its own.
+
+
+  THIS IS DELIBERATELY NOT `message`, and the distinction is the reason both exist. `message` offers status|warning|error and serves a Drupal message region: `status` is teal with a status icon, so it announces something as though it had already succeeded, and `warning` announces a deliberate, reversible choice as a problem. A note is neither — it is information about what WILL happen, in the future tense, and naming a consequence is only honest if it reads as information rather than as a result.
+
+
+  SO THE TONE COLOURS THE HAIRLINE AND NOTHING ELSE — no tint, no icon, no background, ever. That is what keeps a tone from turning this back into `message` by increments: there is one styled edge to colour, so a tone can distinguish a caution from an ordinary aside without any of it announcing a state. `neutral` is the default and is the whole of today''s rendering; it uses the theme''s own tone words rather than a fourth private vocabulary, and a third value is one entry in one map when a caller has a use for it.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    lead:
+      type: string
+      title: Lead
+      description: 'The short state the note follows from, rendered slightly stronger before the body — e.g. `Set` or `Cleared`. Optional: a note that has no state to lead with renders its body alone.'
+    tone:
+      type: string
+      enum:
+        - neutral
+        - attention
+      title: Tone
+      description: 'Which colour the leading hairline takes, and the ONLY thing a tone may change. `neutral` is the default and means nothing at all, which is what an aside beneath a control should mean. `attention` is for a note a reader must not skim past; it tints the rule and stops there, because an icon or a background here would be a status announcement for something that has not happened.'
+      default: neutral
+slots:
+  body:
+    title: Body
+    description: What will happen, in one plain sentence, in the future tense. It has not happened yet — that is the whole difference between this and a message.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

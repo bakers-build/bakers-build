@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: en
+  name:
+    -
+      value: bakers-e2e-agent
+  pass:
+    -
+      value: $2y$12$741RZ0YPywKlhE2JNw9PPu.WlgGqXW8lTJ6a/0nJoifCo406u8cS.
+      pre_hashed: true
+      existing: null
+  timezone:
+    -
+      value: Europe/Berlin
+  status:
+    -
+      value: true
+  access:
+    -
+      value: 0
+  login:
+    -
+      value: 0
+  field_onboarding_completed:
+    -
+      value: true

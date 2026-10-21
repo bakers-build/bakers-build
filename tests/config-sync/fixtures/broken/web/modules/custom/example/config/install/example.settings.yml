@@ -1,0 +1,7 @@
+# Comments and deliberately different whitespace do not participate.
+uuid: module-source-uuid
+_core: { default_config_hash: module-source-hash }
+nested:
+  required: present
+list:
+  - alpha

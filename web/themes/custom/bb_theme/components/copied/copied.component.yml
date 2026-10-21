@@ -1,0 +1,23 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Copied
+status: stable
+group: Data Display
+description: >-
+  An absolutely positioned copy confirmation such as `Copied`, rendered as the
+  same `button` chrome as Copy, just below that control and opaque. The parent
+  is `relative`. A script can rewrite the label and `hidden` in place, and
+  typically clears the message so the overlay hides again. An empty message
+  renders hidden. Distinguishes from `toast`, which is viewport-fixed for a
+  page-level confirmation.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    message:
+      type: string
+      title: Message
+      description: The confirmation text. Empty renders the overlay hidden.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

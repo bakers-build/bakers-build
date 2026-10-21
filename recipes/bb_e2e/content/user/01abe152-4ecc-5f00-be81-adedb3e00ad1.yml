@@ -1,0 +1,17 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 01abe152-4ecc-5f00-be81-adedb3e00ad1
+  default_langcode: en
+default:
+  name:
+  - value: create-owner
+  mail:
+  - value: create-owner@example.com
+  status:
+  - value: true
+  preferred_langcode:
+  - value: en
+  field_onboarding_completed:
+    -
+      value: true

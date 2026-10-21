@@ -1,0 +1,6 @@
+component: bb_theme:tab
+name: Default
+props:
+  label: Overview
+  url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+  active: true

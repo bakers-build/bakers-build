@@ -1,0 +1,19 @@
+component: bb_theme:onboarding
+name: Default
+props:
+  title: What should we call you?
+  description: >-
+    A name and a picture — and bakers.build feels less like software and more like your
+    team.
+slots:
+  mark:
+    - type: component
+      component: bb_theme:brand
+  content:
+    - type: element
+      value: >-
+        <form><p>Step 1 of 4</p><label>Full name<input value="Ada
+        Lovelace"></label><label>Nickname (username)<input
+        value="ada"></label><label>Profile picture<input
+        type="file"></label><button type="submit">Skip</button><button
+        type="submit">Next</button></form>

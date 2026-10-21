@@ -1,0 +1,16 @@
+uuid: 65be4710-c7a4-4824-8e81-3aa7e2903cc4
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_team-bb_team-reporter
+label: Reporter
+weight: 3
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions:
+  - 'create bb_ticket'
+role_type: standard

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bakers.build Logo — Marken-Mobile (Gin dark)</title>
+<style>
+/* =========================================================================
+   bakers.build Logo — das „Marionetten-Mobile"
+   ------------------------------------------------------------------------
+   Idee: ein hängendes Mobile (Calder-Stil) als Spielzeug. Der oberste
+   Aufhängepunkt = der Conductor; die balancierten Arme verteilen Last an
+   drei hängende Spielfiguren (Agents) in den bakers.build-Zustandsfarben. Sie
+   schwingen gegeneinander, halten aber Balance — das Zusammenspiel.
+   Vektor, ein einziges Markenzeichen, das von 16 px bis Hero skaliert.
+   Tokens identisch zu Dashboard/Ticket/Login. Mockup, KEIN Logo-Export.
+   ========================================================================= */
+
+:root {
+  --gin-bg-app:        #16181d;
+  --gin-bg-layer:      #1e2128;
+  --gin-bg-layer2:     #242830;
+  --gin-bg-layer3:     #2b303a;
+  --gin-border:        #313844;
+  --gin-border-soft:   #272c35;
+  --gin-text:          #e8eaef;
+  --gin-text-light:    #a9b0bd;
+  --gin-text-faint:    #707888;
+  --gin-primary:       #7aa2ff;
+  --gin-radius:        10px;
+  --gin-radius-s:      7px;
+  --gin-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --gin-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --bakers-running:    #4BB9AE;   /* teal */
+  --bakers-lease:      #8197F8;   /* ocean */
+  --bakers-attention:  #FFC024;   /* sun */
+  --bakers-unassigned: #FF4E42;   /* swimsuit */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--gin-font);
+  background: #0d0e11;
+  color: var(--gin-text);
+  font-size: 13px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+  padding: 28px 22px 60px;
+}
+.doc { max-width: 1460px; margin: 0 auto; }
+.doc__lead { margin: 0 0 22px; }
+.doc__kicker { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--bakers-running); margin: 0 0 8px; }
+.doc__h { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 10px; color: #fff; }
+.doc__sub { font-size: 14px; color: var(--gin-text-light); max-width: 80ch; margin: 0; }
+.doc__sub b { color: var(--gin-text); font-weight: 600; }
+.doc__sub code { font-family: var(--gin-mono); font-size: 12px; background:#1d2027; color:#cdd3de; padding:1px 5px; border-radius:4px; }
+
+/* ============ the mark ============ */
+/* Each beam group swings around its own pivot → the toys interplay. */
+.mark { display: block; overflow: visible; }
+.mark .beam, .mark .arm2, .mark .toyA, .mark .toyB, .mark .toyC { transform-box: view-box; }
+.mark .beam { transform-origin: 32px 16px; animation: sway1 6.5s ease-in-out infinite; }
+.mark .arm2 { transform-origin: 47px 24px; animation: sway2 5s ease-in-out infinite; }
+.mark .toyA { transform-origin: 17px 24px; animation: bob 4.2s ease-in-out infinite; }
+.mark .toyB { transform-origin: 40px 34px; animation: bob 4.8s ease-in-out infinite .4s; }
+.mark .toyC { transform-origin: 54px 33px; animation: bob 4.5s ease-in-out infinite .8s; }
+@keyframes sway1 { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(5deg); } }
+@keyframes sway2 { 0%,100% { transform: rotate(6deg); } 50% { transform: rotate(-8deg); } }
+@keyframes bob   { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .mark .beam, .mark .arm2, .mark .toyA, .mark .toyB, .mark .toyC { animation: none; }
+}
+
+.string { stroke: currentColor; stroke-width: 1.4; fill: none; opacity: .55; stroke-linecap: round; }
+.hook   { stroke: currentColor; stroke-width: 1.6; fill: none; }
+.rod    { stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; }
+
+/* ============ hero ============ */
+.hero {
+  display: flex; align-items: center; gap: 40px; flex-wrap: wrap;
+  padding: 46px 44px;
+  background:
+    radial-gradient(620px 380px at 18% -20%, rgba(75,185,174,.14), transparent 60%),
+    radial-gradient(560px 420px at 92% 120%, rgba(129,151,248,.12), transparent 55%),
+    var(--gin-bg-app);
+  border: 1px solid #262a32; border-radius: 16px;
+  box-shadow: 0 30px 80px -30px rgba(0,0,0,.7);
+}
+.hero__mark { color: var(--gin-text); flex: none; }
+.lockup { display: flex; flex-direction: column; gap: 10px; }
+.wordmark { font-size: 56px; font-weight: 800; letter-spacing: .12em; color: #fff; line-height: 1; }
+.wordmark span { color: var(--bakers-running); }
+.tagline { font-size: 13px; letter-spacing: .04em; color: var(--gin-text-light); max-width: 42ch; }
+.tagline b { color: var(--gin-text); font-weight: 600; }
+
+/* ============ variants grid ============ */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+.tile {
+  background: var(--gin-bg-layer); border: 1px solid var(--gin-border-soft); border-radius: var(--gin-radius);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.tile__hd { padding: 9px 13px; background: var(--gin-bg-layer2); border-bottom: 1px solid var(--gin-border-soft);
+  font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gin-text-light); }
+.tile__hd .sub { color: var(--gin-text-faint); font-weight: 500; letter-spacing: 0; text-transform: none; margin-left: 6px; }
+.tile__body { flex: 1; display: grid; place-items: center; padding: 30px 20px; min-height: 150px; }
+.tile__body.light { background: #f4f5f7; color: #111317; }
+.tile__body.tile-app { background: var(--gin-bg-app); }
+
+/* horizontal lockup (small) */
+.lk-h { display: inline-flex; align-items: center; gap: 13px; color: var(--gin-text); }
+.lk-h .wm { font-size: 27px; font-weight: 800; letter-spacing: .1em; color: #fff; line-height: 1; }
+.lk-h .wm span { color: var(--bakers-running); }
+.light .lk-h .wm { color: #111317; }
+.light .lk-h { color: #1a1d23; }
+
+/* stacked lockup */
+.lk-v { display: inline-flex; flex-direction: column; align-items: center; gap: 11px; color: var(--gin-text); }
+.lk-v .wm { font-size: 21px; font-weight: 800; letter-spacing: .16em; color: #fff; line-height: 1; }
+.lk-v .wm span { color: var(--bakers-running); }
+
+/* app tile / rail mark */
+.app-mark {
+  width: 60px; height: 60px; border-radius: 15px;
+  background: linear-gradient(155deg, #1f2530, #15171c);
+  border: 1px solid #2c333f;
+  display: grid; place-items: center; color: var(--gin-text);
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.7);
+}
+
+/* favicon row */
+.fav-row { display: flex; align-items: flex-end; gap: 22px; }
+.fav { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--gin-text-faint); font-size: 10.5px; font-family: var(--gin-mono); }
+.fav .chip { border-radius: 9px; background: linear-gradient(155deg, #1f2530, #15171c); border: 1px solid #2c333f; display: grid; place-items: center; color: var(--gin-text); }
+
+/* palette */
+.pal { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.sw { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; color: var(--gin-text-light); }
+.sw .c { width: 26px; height: 26px; border-radius: 7px; flex: none; border: 1px solid rgba(255,255,255,.08); }
+.sw b { color: var(--gin-text); font-weight: 600; }
+.sw .hex { font-family: var(--gin-mono); color: var(--gin-text-faint); font-size: 11px; }
+
+/* notes */
+.notes { margin-top: 30px; }
+.notes h3 { font-size: 13px; font-weight: 700; letter-spacing:.04em; color: #fff; margin: 0 0 14px; padding-bottom: 9px; border-bottom: 1px solid #23262e; }
+.ncols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 20px; }
+.note { background: #14161b; border: 1px solid #23262e; border-radius: 12px; padding: 14px 16px; }
+.note h4 { font-size: 12px; font-weight: 700; color: var(--bakers-running); margin: 0 0 8px; letter-spacing:.03em; }
+.note p { font-size: 12px; color: var(--gin-text-light); margin: 0 0 8px; }
+.note p:last-child { margin-bottom: 0; }
+.note code { font-family: var(--gin-mono); font-size: 11px; background: #1d2027; color: #cdd3de; padding: 1px 5px; border-radius: 4px; }
+.section-h { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gin-text-faint); margin: 28px 0 12px; }
+
+@media (max-width: 1080px) { .grid, .ncols { grid-template-columns: 1fr; } .wordmark { font-size: 40px; } }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <header class="doc__lead">
+    <p class="doc__kicker">bakers.build · Marke · Visuelles Design</p>
+    <h1 class="doc__h">bakers.build Logo <span style="color:var(--gin-text-faint);font-weight:500;font-size:18px;">das Marionetten-Mobile</span></h1>
+    <p class="doc__sub">Ein hängendes <b>Mobile</b> als Marke: oben der <b>Conductor</b> (Aufhängepunkt), darunter balancierte Arme, an denen drei <b>Agent-Spielfiguren</b> in den bakers.build-Zustandsfarben hängen. Sie schwingen gegeneinander und bleiben doch im Gleichgewicht — das <b>Zusammenspiel</b>. Reiner Vektor mit denselben Tokens wie die Screens, lesbar von <code>16 px</code> bis Hero. Hover/Idle: sanftes Schwingen (respektiert <code>prefers-reduced-motion</code>).</p>
+  </header>
+
+  <!-- ============ HERO LOCKUP ============ -->
+  <div class="hero">
+    <!-- the animated mark, large -->
+    <svg class="mark hero__mark" width="150" height="172" viewBox="0 0 64 74" fill="none" aria-label="bakers.build Mobile">
+      <!-- suspension hook (conductor) -->
+      <path class="hook" d="M32 4 a3 3 0 1 0 .01 0 Z"/>
+      <line class="string" x1="32" y1="7" x2="32" y2="16"/>
+      <!-- main balance beam -->
+      <g class="beam">
+        <line class="rod" x1="17" y1="16" x2="47" y2="16"/>
+        <!-- left toy: teal circle (running) -->
+        <line class="string" x1="17" y1="16" x2="17" y2="24"/>
+        <g class="toyA">
+          <circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/>
+          <circle cx="17" cy="30" r="6.2" fill="none" stroke="#0d0e11" stroke-width="1.1" opacity=".25"/>
+        </g>
+        <!-- right: secondary arm -->
+        <line class="string" x1="47" y1="16" x2="47" y2="24"/>
+        <g class="arm2">
+          <line class="rod" x1="40" y1="24" x2="54" y2="24"/>
+          <!-- ocean triangle (lease) -->
+          <line class="string" x1="40" y1="24" x2="40" y2="31"/>
+          <g class="toyB">
+            <path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/>
+          </g>
+          <!-- sun square (attention) -->
+          <line class="string" x1="54" y1="24" x2="54" y2="30"/>
+          <g class="toyC">
+            <rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+
+    <div class="lockup">
+      <div class="wordmark">G<span>AI</span>A</div>
+      <div class="tagline"><b>Generative Agent Infrastructure Automation.</b> Ein Conductor, viele Agents, in Balance.</div>
+    </div>
+  </div>
+
+  <!-- ============ VARIANTS ============ -->
+  <div class="section-h">Markenvarianten</div>
+  <div class="grid">
+
+    <!-- horizontal lockup -->
+    <div class="tile">
+      <div class="tile__hd">Primärmarke <span class="sub">horizontal</span></div>
+      <div class="tile__body">
+        <div class="lk-h">
+          <svg class="mark" width="48" height="56" viewBox="0 0 64 74" fill="none" aria-hidden="true">
+            <path class="hook" d="M32 4 a3 3 0 1 0 .01 0 Z"/><line class="string" x1="32" y1="7" x2="32" y2="16"/>
+            <g class="beam"><line class="rod" x1="17" y1="16" x2="47" y2="16"/>
+              <line class="string" x1="17" y1="16" x2="17" y2="24"/><g class="toyA"><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/></g>
+              <line class="string" x1="47" y1="16" x2="47" y2="24"/>
+              <g class="arm2"><line class="rod" x1="40" y1="24" x2="54" y2="24"/>
+                <line class="string" x1="40" y1="24" x2="40" y2="31"/><g class="toyB"><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/></g>
+                <line class="string" x1="54" y1="24" x2="54" y2="30"/><g class="toyC"><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/></g>
+              </g></g>
+          </svg>
+          <span class="wm">G<span>AI</span>A</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- stacked -->
+    <div class="tile">
+      <div class="tile__hd">Gestapelt <span class="sub">vertikal</span></div>
+      <div class="tile__body">
+        <div class="lk-v">
+          <svg class="mark" width="52" height="60" viewBox="0 0 64 74" fill="none" aria-hidden="true">
+            <path class="hook" d="M32 4 a3 3 0 1 0 .01 0 Z"/><line class="string" x1="32" y1="7" x2="32" y2="16"/>
+            <g class="beam"><line class="rod" x1="17" y1="16" x2="47" y2="16"/>
+              <line class="string" x1="17" y1="16" x2="17" y2="24"/><g class="toyA"><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/></g>
+              <line class="string" x1="47" y1="16" x2="47" y2="24"/>
+              <g class="arm2"><line class="rod" x1="40" y1="24" x2="54" y2="24"/>
+                <line class="string" x1="40" y1="24" x2="40" y2="31"/><g class="toyB"><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/></g>
+                <line class="string" x1="54" y1="24" x2="54" y2="30"/><g class="toyC"><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/></g>
+              </g></g>
+          </svg>
+          <span class="wm">G<span>AI</span>A</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- app mark / rail -->
+    <div class="tile">
+      <div class="tile__hd">App-Zeichen <span class="sub">Gin-Rail / Tile</span></div>
+      <div class="tile__body tile-app">
+        <div class="app-mark">
+          <svg class="mark" width="38" height="44" viewBox="0 0 64 74" fill="none" aria-hidden="true">
+            <path class="hook" d="M32 4 a3 3 0 1 0 .01 0 Z"/><line class="string" x1="32" y1="7" x2="32" y2="16"/>
+            <g class="beam"><line class="rod" x1="17" y1="16" x2="47" y2="16"/>
+              <line class="string" x1="17" y1="16" x2="17" y2="24"/><g class="toyA"><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/></g>
+              <line class="string" x1="47" y1="16" x2="47" y2="24"/>
+              <g class="arm2"><line class="rod" x1="40" y1="24" x2="54" y2="24"/>
+                <line class="string" x1="40" y1="24" x2="40" y2="31"/><g class="toyB"><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/></g>
+                <line class="string" x1="54" y1="24" x2="54" y2="30"/><g class="toyC"><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/></g>
+              </g></g>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- mono white -->
+    <div class="tile">
+      <div class="tile__hd">Mono <span class="sub">weiß / auf dunkel</span></div>
+      <div class="tile__body" style="color:#fff;background:#0f1115;">
+        <svg class="mark" width="48" height="56" viewBox="0 0 64 74" fill="none" aria-hidden="true">
+          <path class="hook" d="M32 4 a3 3 0 1 0 .01 0 Z"/><line class="string" x1="32" y1="7" x2="32" y2="16"/>
+          <g class="beam"><line class="rod" x1="17" y1="16" x2="47" y2="16"/>
+            <line class="string" x1="17" y1="16" x2="17" y2="24"/><g class="toyA"><circle cx="17" cy="30" r="6.2" fill="currentColor"/></g>
+            <line class="string" x1="47" y1="16" x2="47" y2="24"/>
+            <g class="arm2"><line class="rod" x1="40" y1="24" x2="54" y2="24"/>
+              <line class="string" x1="40" y1="24" x2="40" y2="31"/><g class="toyB"><path d="M40 30 l5.4 9 h-10.8 Z" fill="currentColor"/></g>
+              <line class="string" x1="54" y1="24" x2="54" y2="30"/><g class="toyC"><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="currentColor"/></g>
+            </g></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- mono black on light -->
+    <div class="tile">
+      <div class="tile__hd">Mono <span class="sub">schwarz / auf hell</span></div>
+      <div class="tile__body light">
+        <div class="lk-h">
+          <svg class="mark" width="44" height="51" viewBox="0 0 64 74" fill="none" aria-hidden="true" style="color:#111317">
+            <path class="hook" d="M32 4 a3 3 0 1 0 .01 0 Z"/><line class="string" x1="32" y1="7" x2="32" y2="16"/>
+            <g class="beam"><line class="rod" x1="17" y1="16" x2="47" y2="16"/>
+              <line class="string" x1="17" y1="16" x2="17" y2="24"/><g class="toyA"><circle cx="17" cy="30" r="6.2" fill="currentColor"/></g>
+              <line class="string" x1="47" y1="16" x2="47" y2="24"/>
+              <g class="arm2"><line class="rod" x1="40" y1="24" x2="54" y2="24"/>
+                <line class="string" x1="40" y1="24" x2="40" y2="31"/><g class="toyB"><path d="M40 30 l5.4 9 h-10.8 Z" fill="currentColor"/></g>
+                <line class="string" x1="54" y1="24" x2="54" y2="30"/><g class="toyC"><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="currentColor"/></g>
+              </g></g>
+          </svg>
+          <span class="wm">G<span style="color:#4BB9AE">AI</span>A</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- favicons -->
+    <div class="tile">
+      <div class="tile__hd">Favicon <span class="sub">32 · 16 px</span></div>
+      <div class="tile__body">
+        <div class="fav-row">
+          <div class="fav">
+            <div class="chip" style="width:32px;height:32px;">
+              <svg width="22" height="25" viewBox="0 0 64 74" fill="none" aria-hidden="true" style="color:#e8eaef">
+                <line class="string" x1="32" y1="7" x2="32" y2="16" style="opacity:.5"/>
+                <line class="rod" x1="17" y1="16" x2="47" y2="16"/>
+                <line class="string" x1="17" y1="16" x2="17" y2="24"/><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/>
+                <line class="string" x1="47" y1="16" x2="47" y2="24"/>
+                <line class="rod" x1="40" y1="24" x2="54" y2="24"/>
+                <line class="string" x1="40" y1="24" x2="40" y2="31"/><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/>
+                <line class="string" x1="54" y1="24" x2="54" y2="30"/><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/>
+              </svg>
+            </div>
+            <span>32 px</span>
+          </div>
+          <div class="fav">
+            <div class="chip" style="width:16px;height:16px;">
+              <!-- 16px: vereinfacht — Balken + drei Farbpunkte -->
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="color:#cdd3de">
+                <line x1="5" y1="6" x2="19" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="5"  cy="14" r="3" fill="#4BB9AE"/>
+                <circle cx="12" cy="14" r="3" fill="#8197F8"/>
+                <circle cx="19" cy="14" r="3" fill="#FFC024"/>
+              </svg>
+            </div>
+            <span>16 px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- palette -->
+  <div class="section-h">Spielfiguren-Palette (bakers.build-Zustände)</div>
+  <div class="tile"><div class="tile__body" style="min-height:0;padding:18px 20px;justify-items:start;">
+    <div class="pal">
+      <span class="sw"><span class="c" style="background:#4BB9AE"></span><b>Teal</b> running <span class="hex">#4BB9AE</span></span>
+      <span class="sw"><span class="c" style="background:#8197F8"></span><b>Ocean</b> lease <span class="hex">#8197F8</span></span>
+      <span class="sw"><span class="c" style="background:#FFC024"></span><b>Sun</b> attention <span class="hex">#FFC024</span></span>
+      <span class="sw"><span class="c" style="background:#FF4E42"></span><b>Swimsuit</b> kritisch <span class="hex">#FF4E42</span></span>
+    </div>
+  </div></div>
+
+  <!-- notes -->
+  <div class="notes">
+    <h3>Designnotizen</h3>
+    <div class="ncols">
+      <div class="note">
+        <h4>Die Metapher</h4>
+        <p>Das Mobile ist ein Kinder-Spielzeug <em>und</em> ein Marionetten-System: oben hält der Conductor alles, die Arme verteilen Last, die Figuren schwingen frei — aber das Ganze bleibt in Balance. Genau bakers.builds Modell: ein Orchestrator, viele autonome Agents, im Gleichgewicht.</p>
+      </div>
+      <div class="note">
+        <h4>Bewegung = Zusammenspiel</h4>
+        <p>Jeder Arm und jede Figur schwingt mit eigener Periode (<code>sway1/sway2/bob</code>) um den eigenen Drehpunkt — sie spielen gegeneinander, kollidieren nie. Statisch (Print, Favicon, <code>prefers-reduced-motion</code>) steht es ruhig und liest trotzdem als Mobile.</p>
+      </div>
+      <div class="note">
+        <h4>Farben nur an den Figuren</h4>
+        <p>Aufhängung, Stäbe und Fäden sind neutral (<code>currentColor</code>) — Farbe tragen ausschließlich die drei Spielfiguren, in den bakers.build-Zustandsfarben (Teal · Ocean · Sun). Mono-Variante färbt auch die Figuren neutral.</p>
+      </div>
+      <div class="note">
+        <h4>Skalierung</h4>
+        <p>Vollzeichen ab ~24 px. Für <code>16 px</code> die reduzierte Form: ein Balken + drei Farbpunkte — das Mobile auf seine Essenz eingedampft. Wordmark setzt <code>AI</code> in Teal, wie in Login/Dashboard.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

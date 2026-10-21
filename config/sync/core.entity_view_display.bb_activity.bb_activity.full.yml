@@ -1,0 +1,41 @@
+uuid: b60e34a5-1b8e-4db1-b911-859ba5cc35f3
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_activity.full
+  module:
+    - display_builder
+    - bb_activity
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: bb_activity_event
+        source:
+          context_mapping:
+            entity: entity
+        node_id: event_component
+id: bb_activity.bb_activity.full
+targetEntityType: bb_activity
+bundle: bb_activity
+mode: full
+content: {  }
+hidden:
+  actor: true
+  changed: true
+  claim_key: true
+  conductor_id: true
+  created: true
+  kind: true
+  new_state: true
+  previous_state: true
+  run_id: true
+  search_api_excerpt: true
+  step: true
+  ticket_id: true
+  workflow: true

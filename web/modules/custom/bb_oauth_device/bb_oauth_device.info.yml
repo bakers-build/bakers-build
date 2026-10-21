@@ -1,0 +1,8 @@
+name: bakers.build OAuth Device Flow
+type: module
+description: 'RFC 8628 device authorization grant for simple_oauth, for CLI sign-in without a local browser.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - consumers:consumers
+  - simple_oauth:simple_oauth

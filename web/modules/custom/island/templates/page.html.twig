@@ -1,0 +1,12 @@
+{#
+/**
+ * @file
+ * Pass-through page template for a complete Island Profile layout.
+ *
+ * Selected at runtime by IslandProfilePageVariant, not for ordinary pages.
+ * The profile owns the page structure; html.html.twig still owns the document.
+ */
+#}
+{# Preserve the skip-link target supplied by Drupal's standard page template. #}
+<a id="main-content" tabindex="-1"></a>
+{{ page }}

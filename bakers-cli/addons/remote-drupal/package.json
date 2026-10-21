@@ -1,0 +1,37 @@
+{
+  "name": "@bakers-build/addon-remote-drupal",
+  "version": "0.0.1",
+  "description": "bakers.build conductor remote addon: the Drupal/JSON:API control-plane remote.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/remote-drupal/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^"
+  },
+  "dependencies": {
+    "dropsh": "^0.7.5"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

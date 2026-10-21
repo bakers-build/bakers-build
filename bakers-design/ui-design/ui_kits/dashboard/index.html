@@ -1,0 +1,1384 @@
+<!-- @dsCard group="UI Kit" viewport="1460x900" name="Dashboard" subtitle="Operator overview — active tickets, board, nodes, billing" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bakers.build Dashboard — Visuelles Design (light)</title>
+<link rel="stylesheet" href="../../styles.css">
+<style>
+/* ===== Sektion 1: Aktive Bearbeiter (Operator-Spuren) — nutzt Design-System-Tokens aus styles.css ===== */
+.lanes { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(302px,1fr); grid-template-rows:auto auto auto; column-gap:14px; overflow-x:auto; padding-bottom:6px; }
+.lanes::-webkit-scrollbar { height:8px; }
+.lanes::-webkit-scrollbar-thumb { background:var(--gin-layer-3); border-radius:8px; }
+.lane { position:relative; display:grid; grid-row:1 / span 3; grid-template-rows:subgrid; row-gap:10px; }
+.lane__road { position:absolute; left:50%; top:6px; bottom:6px; width:2px; transform:translateX(-50%); background:linear-gradient(to top, transparent, var(--gin-line) 10%, var(--gin-line) 90%, transparent); z-index:0; }
+.lane__road::before { content:""; position:absolute; left:50%; top:0; transform:translateX(-50%); border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:8px solid var(--bakers-running); }
+.zone { position:relative; z-index:1; display:flex; flex-direction:column; gap:6px; }
+.zone--done { align-self:end; }
+.zone--next { align-self:start; }
+.zone__lbl { display:flex; align-items:center; gap:7px; font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--gin-text-faint); padding:0 2px; }
+.zone__lbl svg { width:12px; height:12px; }
+.zone--done .zone__lbl { color: var(--bakers-running-ink); }
+.past { display:flex; flex-direction:column; gap:6px; opacity:.72; }
+.mini { display:flex; align-items:center; gap:8px; padding:6px 9px; background:var(--gin-layer); border:1px solid var(--gin-hair); border-radius:var(--radius-xs); }
+.mini__id { font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--gin-text-light); flex:none; }
+.mini__t { font-size:11.5px; color:var(--gin-text-light); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mini__sp { flex:1; }
+.mini__mach { font-family:var(--font-mono); font-size:9.5px; color:var(--gin-text-faint); flex:none; }
+.mini__done { color:var(--bakers-running); display:inline-flex; flex:none; }
+.mini__done svg { width:13px; height:13px; }
+.more { font-size:11px; color:var(--gin-text-faint); text-align:center; padding:2px; }
+.kachel { position:relative; z-index:1; background:var(--gin-layer); border:1px solid var(--gin-line); border-radius:var(--radius); box-shadow:0 1px 3px rgba(20,23,26,.06), 0 6px 16px -10px rgba(20,23,26,.10); overflow:hidden; }
+.kachel--stale { border-color:rgba(255,192,36,.4); }
+.kachel__hd { display:flex; align-items:center; gap:11px; padding:11px 13px; background:var(--gin-layer-2); border-bottom:1px solid var(--gin-hair); }
+.kachel__ava { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:#06120f; background:var(--bakers-running); flex:none; position:relative; }
+.kachel__ava .bakers-dot { position:absolute; right:-1px; bottom:-1px; box-shadow:0 0 0 2px var(--gin-layer-2); }
+.kachel__id { display:flex; flex-direction:column; gap:1px; min-width:0; }
+.kachel__name { font-size:14px; font-weight:700; color:var(--gin-text); }
+.kachel__meta { font-size:10.5px; color:var(--gin-text-faint); }
+.kachel__load { margin-left:auto; text-align:right; flex:none; }
+.kachel__loadn { font-family:var(--font-mono); font-size:11px; color:var(--gin-text-light); }
+.kachel__bar { width:64px; height:5px; border-radius:3px; background:var(--gin-layer-3); overflow:hidden; margin-top:4px; }
+.kachel__bar > i { display:block; height:100%; background:var(--bakers-running); border-radius:3px; }
+.kachel__bar--stale > i { background:var(--bakers-attention); }
+.kachel__now { padding:9px; display:flex; flex-direction:column; gap:7px; }
+.kachel__nowlbl { font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gin-text-faint); padding:2px 3px 0; }
+.claim { position:relative; background:var(--gin-layer-2); border:1px solid var(--gin-hair); border-radius:var(--radius-xs); padding:8px 9px 8px 12px; }
+.claim::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:var(--radius-xs) 0 0 var(--radius-xs); }
+.claim--running::before { background:var(--bakers-running); }
+.claim--attention::before { background:var(--bakers-attention); }
+.claim__top { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.claim__id { font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:var(--gin-text); }
+.claim__mach { font-family:var(--font-mono); font-size:9.5px; color:var(--gin-text-faint); background:var(--gin-app); border:1px solid var(--gin-hair); border-radius:20px; padding:1px 6px; }
+.claim__sp { flex:1; }
+.claim__t { font-size:12px; color:var(--gin-text); line-height:1.32; margin:0 0 6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.claim__foot { display:flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:10.5px; color:var(--gin-text-faint); }
+.claim__foot .lease-t { color:var(--gin-text-light); }
+.claim__foot .lease-t.low { color: var(--bakers-attention-ink); }
+.kachel__toggle { display:flex; align-items:center; gap:8px; width:100%; padding:9px 13px; background:transparent; border:none; border-top:1px solid var(--gin-hair); font:600 11.5px/1 var(--font-sans); color:var(--gin-text-light); cursor:pointer; }
+.kachel__toggle:hover { background:var(--gin-layer-2); color:var(--gin-text); }
+.kachel__toggle .sp { flex:1; text-align:left; }
+.kachel__chev { width:14px; height:14px; color:var(--gin-text-faint); transition:transform var(--dur-fast) ease; }
+.kachel.is-expanded .kachel__chev { transform:rotate(180deg); }
+.kachel__fleet { display:none; flex-direction:column; gap:6px; padding:0 9px 10px; }
+.kachel.is-expanded .kachel__fleet { display:flex; }
+.fleetrow { display:flex; align-items:center; gap:9px; padding:7px 9px; background:var(--gin-app); border:1px solid var(--gin-hair); border-radius:var(--radius-xs); }
+.fleetrow__mach { font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:var(--gin-text); }
+.fleetrow__meta { font-size:10px; color:var(--gin-text-faint); }
+.fleetrow__sp { flex:1; }
+.fleetrow__load { font-family:var(--font-mono); font-size:10.5px; color:var(--gin-text-light); }
+.fleetrow__ids { font-family:var(--font-mono); font-size:10px; color:var(--gin-text-faint); }
+.next { display:flex; flex-direction:column; gap:6px; }
+.nextcard { position:relative; display:flex; align-items:center; gap:8px; padding:7px 9px 7px 7px; background:transparent; border:1px dashed var(--gin-line); border-radius:var(--radius-xs); cursor:grab; }
+.nextcard:hover { border-color:var(--gin-text-faint); background:var(--gin-layer); }
+.nextcard.dragging { opacity:.45; cursor:grabbing; border-style:solid; border-color: var(--bakers-lease); }
+.next.dragover { outline:2px dashed var(--bakers-lease); outline-offset:3px; border-radius:var(--radius-xs); }
+.nextcard__grip { display:inline-flex; color:var(--gin-text-faint); flex:none; }
+.nextcard__grip svg { width:11px; height:14px; }
+.nextcard__q { width:16px; height:16px; border-radius:50%; background:var(--gin-layer-3); color:var(--gin-text-faint); display:grid; place-items:center; font-size:9px; font-weight:700; font-family:var(--font-mono); flex:none; }
+.nextcard__id { font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--gin-text-light); flex:none; }
+.nextcard__t { font-size:11.5px; color:var(--gin-text-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nextcard__sp { flex:1; }
+.nextcard__st { font-size:10px; color:var(--gin-text-faint); font-family:var(--font-mono); flex:none; }
+@supports not (grid-template-rows: subgrid) { .lane { display:flex; flex-direction:column; } .zone--done { min-height:150px; justify-content:flex-end; } }
+</style>
+<style>
+/* =========================================================================
+   bakers.build Dashboard — visuelles Design (light, keytec x GitLab hybrid)
+   Alle Tokens/Farben kommen zentral aus styles.css (verlinkt im <head>).
+   EINE Ebene: oben eine Filterleiste (Projekte · Conductors · Meine),
+   ihr Zustand lebt im Querystring und wirkt auf ALLE Sektionen.
+   Primär: „Aktive Tickets" (board-unabhängige Tabelle). Sekundär: das
+   workflow-bestimmte Board (Tab pro Workflow). Dann Nodes + Billing.
+   Dieses Mockup ist kommentiert, KEIN Produktionscode.
+   ========================================================================= */
+
+
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-sans);
+  background: #F6F6F2;
+  color: var(--gin-text);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  padding: 28px 22px 60px;
+}
+
+/* ---------- presentation scaffold ---------- */
+.doc { max-width: 1460px; margin: 0 auto; }
+.doc__lead { margin: 0 0 22px; }
+.doc__kicker {
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--bakers-running-ink); margin: 0 0 8px;
+}
+.doc__h { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 10px; color: var(--gin-text); }
+.doc__sub { font-size: 14px; color: var(--gin-text-light); max-width: 80ch; margin: 0; }
+.doc__sub b { color: var(--gin-text); font-weight: 600; }
+
+.legend {
+  display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center;
+  margin: 16px 0 26px; padding: 12px 16px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-hair); border-radius: var(--radius);
+}
+.legend__t { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gin-text-faint); margin-right: 4px; }
+.lg { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--gin-text-light); }
+.lg__sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.lg b { color: var(--gin-text); font-weight: 600; }
+
+/* ---------- app window ---------- */
+.gin {
+  background: var(--gin-app);
+  border: 1px solid var(--gin-line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(20,23,26,.05), 0 16px 40px -20px rgba(20,23,26,.10);
+}
+.main { min-width: 0; display: flex; flex-direction: column; }
+
+/* ---------- PRODUCT HEADER (Chrome für den normalen User; ersetzt die Gin-Backend-Rail) ---------- */
+.appbar {
+  display: flex; align-items: stretch; gap: 4px;
+  height: 56px; padding: 0 16px;
+  background: var(--gin-header);
+  border-bottom: 2px solid var(--border-strong);
+}
+.brand { display: flex; align-items: center; gap: 11px; padding-right: 10px; }
+.brand__mark {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: linear-gradient(155deg, #1f2530, #15171c); border: 1px solid #2c333f;
+  display: grid; place-items: center; color: #E8EAEF;
+}
+.brand__mark svg { overflow: visible; }
+.brand__txt { display: flex; flex-direction: column; line-height: 1.02; }
+.brand__name { font-size: 15px; font-weight: 800; letter-spacing: .05em; color: var(--gin-text); }
+.brand__sub { font-size: 9px; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; color: var(--gin-text-faint); }
+
+.nav { display: flex; align-items: stretch; }
+.nav a {
+  position: relative; display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 15px; font-size: 13px; font-weight: 600; color: var(--gin-text-light);
+  text-decoration: none; border-bottom: 2px solid transparent;
+}
+.nav a svg { width: 16px; height: 16px; opacity: .8; }
+.nav a:hover { color: var(--gin-text); background: rgba(20,23,26,.04); }
+.nav a.active { color: var(--gin-text); border-bottom-color: var(--gin-primary); }
+.nav a.active svg { opacity: 1; color: var(--gin-primary); }
+.nav__badge {
+  min-width: 17px; height: 17px; padding: 0 5px; border-radius: 20px;
+  background: var(--bakers-unassigned); color: #2a0b08;
+  font-size: 10px; font-weight: 800; display: inline-grid; place-items: center;
+}
+
+.appbar__sp { flex: 1; }
+.appbar__right { display: flex; align-items: center; gap: 10px; }
+
+/* user chip */
+.user {
+  display: inline-flex; align-items: center; gap: 9px; height: 34px; padding: 0 9px 0 5px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line); border-radius: 20px;
+  font-size: 12.5px; color: var(--gin-text); cursor: default;
+}
+.user .ava { width: 24px; height: 24px; font-size: 10px; }
+.user .uname { font-weight: 600; }
+.user svg { width: 13px; height: 13px; color: var(--gin-text-light); }
+
+/* breadcrumb sub-bar (Detailseiten) */
+.crumb { font-size: 11.5px; color: var(--gin-text-faint); }
+.crumb b { color: var(--gin-text-light); font-weight: 500; }
+
+/* auto-refresh chip with ring */
+.refresh {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 12px 0 8px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line);
+  border-radius: var(--radius-s); font-size: 12px; color: var(--gin-text-light); white-space: nowrap;
+}
+.refresh b { color: var(--gin-text); font-weight: 600; }
+.ring { width: 18px; height: 18px; transform: rotate(-90deg); }
+.ring__bg { stroke: var(--gin-line); }
+.ring__fg { stroke: var(--bakers-running); stroke-linecap: round;
+  stroke-dasharray: 50.27; animation: ring 15s linear infinite; }
+@keyframes ring { from { stroke-dashoffset: 50.27; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .ring__fg { animation: none; stroke-dashoffset: 12; } }
+
+/* ---------- FILTER BAR (querystring-backed, wirkt auf alle Sektionen) ---------- */
+.filters {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 20px;
+  background: var(--gin-app);
+  border-bottom: 1px solid var(--gin-hair);
+}
+.filters__lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gin-text-faint); }
+.fdrop { position: relative; }
+.fbtn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 9px 0 11px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line);
+  border-radius: var(--radius-s); font-size: 12px; font-weight: 600; color: var(--gin-text);
+  cursor: pointer; white-space: nowrap;
+}
+.fbtn:hover { border-color: #BDB8AA; }
+.fbtn .cap { color: var(--gin-text-faint); font-weight: 500; }
+.fbtn .cnt { font-size: 10.5px; font-weight: 700; color: var(--gin-primary); background: var(--gin-primary-soft); border-radius: 20px; padding: 0 6px; }
+.fbtn .chev { width: 13px; height: 13px; color: var(--gin-text-light); }
+.fdrop.open .fbtn { border-color: var(--gin-primary); }
+.fpanel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 200px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line);
+  border-radius: var(--radius-s); box-shadow: var(--shadow-dropdown);
+  padding: 6px; display: none;
+}
+.fdrop.open .fpanel { display: block; }
+.fopt {
+  display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: var(--radius-xs);
+  font-size: 12.5px; color: var(--gin-text); cursor: pointer; user-select: none;
+}
+.fopt:hover { background: var(--gin-layer-3); }
+.fopt input { display: none; }
+.fbox { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--gin-line); flex: none; display: grid; place-items: center; }
+.fbox svg { width: 10px; height: 10px; color: #06120f; opacity: 0; }
+.fopt input:checked + .fbox { background: var(--gin-primary); border-color: var(--gin-primary); }
+.fopt input:checked + .fbox svg { opacity: 1; }
+.fopt .meta { margin-left: auto; font-size: 11px; color: var(--gin-text-faint); font-family: var(--font-mono); }
+
+.ftoggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 13px; border-radius: var(--radius-s);
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line);
+  font-size: 12px; font-weight: 700; color: var(--gin-text-light); cursor: pointer; white-space: nowrap;
+}
+.ftoggle .sw { width: 28px; height: 16px; border-radius: 20px; background: var(--gin-layer-3); position: relative; transition: background .12s; flex: none; }
+.ftoggle .sw::after { content:""; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background: var(--gin-text-faint); transition: transform .12s, background .12s; }
+.ftoggle.on { color: var(--gin-text); border-color: var(--bakers-lease); }
+.ftoggle.on .sw { background: var(--bakers-lease); }
+.ftoggle.on .sw::after { transform: translateX(12px); background:#0d1330; }
+
+.filters__sp { flex: 1; }
+.qs { font-size: 11px; color: var(--gin-text-faint); font-family: var(--font-mono); }
+.qs b { color: var(--gin-text-light); font-weight: 500; }
+.freset { font-size: 11.5px; color: var(--gin-primary); text-decoration: none; }
+.freset:hover { text-decoration: underline; }
+
+/* canvas */
+.canvas { padding: 16px 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ---------- generic section shell (= one htmx fragment) ---------- */
+.sec {
+  background: var(--gin-layer);
+  border: 1px solid var(--gin-hair);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+}
+.sec--hero { border-color: var(--gin-line); }
+.sec__hd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: var(--gin-layer-2);
+  border-bottom: 1px solid var(--gin-hair);
+}
+.sec__hd h2 {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gin-text-light); margin: 0;
+}
+.sec__count {
+  font-size: 11px; font-weight: 700; color: var(--gin-text-faint);
+  background: var(--gin-layer-3); border-radius: 20px; padding: 1px 8px;
+}
+.sec__count--alert { background: var(--bakers-unassigned-soft); color: var(--bakers-unassigned-ink); }
+.sec__hd .spacer { flex: 1; }
+.sec__upd { font-size: 11px; color: var(--gin-text-faint); font-family: var(--font-mono); }
+.sec__body { padding: var(--sec-pad); }
+
+.sec[data-refreshing="1"] .sec__body { opacity: .55; transition: opacity .12s ease; }
+
+/* ---------- status primitives ---------- */
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+.dot--running  { background: var(--bakers-running); box-shadow: 0 0 0 0 rgba(75,185,174,.5); animation: pulse 2.4s ease-out infinite; color: var(--bakers-running-ink); }
+.dot--attention{ background: var(--bakers-attention); color: var(--bakers-attention); }
+.dot--wait     { background: var(--bakers-unassigned); }
+.dot--online   { background: var(--bakers-running); }
+.dot--stale    { background: transparent; border: 2px solid var(--bakers-attention); }
+.dot--offline  { background: transparent; border: 2px solid var(--bakers-offline); }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 currentColor; } 70%,100% { box-shadow: 0 0 0 6px transparent; } }
+@media (prefers-reduced-motion: reduce){ .dot--running{ animation:none; } }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 20px; padding: 0 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.pill--running   { background: var(--bakers-running-soft);    color: var(--bakers-running-ink); }
+.pill--attention { background: var(--bakers-attention-soft);  color: var(--bakers-attention-ink); }
+.pill--wait      { background: var(--bakers-unassigned-soft); color: var(--bakers-unassigned-ink); }
+.pill svg { width: 11px; height: 11px; }
+.pill__none { color: var(--gin-text-faint); font-family: var(--font-mono); }
+
+/* lease badge */
+.lease {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 19px; padding: 0 7px 0 6px; border-radius: 6px;
+  background: var(--bakers-lease-soft); color: var(--bakers-lease-ink);
+  font-size: 11px; font-weight: 600; font-family: var(--font-mono); white-space: nowrap;
+}
+.lease svg { width: 11px; height: 11px; }
+.lease--mine { outline: 1px solid rgba(129,151,248,.45); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px;
+  border-radius: var(--radius-xs); font-size: 12px; font-weight: 600;
+  border: 1px solid var(--gin-line); background: var(--gin-layer-2); color: var(--gin-text);
+  text-decoration: none; white-space: nowrap;
+}
+.btn:hover { background: var(--gin-layer-3); border-color: #BDB8AA; }
+.btn svg { width: 12px; height: 12px; color: var(--gin-text-light); }
+.btn--xs { height: 22px; padding: 0 8px; font-size: 11px; }
+.btn--cta { background: var(--bakers-unassigned); border-color: var(--bakers-unassigned); color: #2a0b08; }
+.btn--cta svg { color: #2a0b08; }
+.btn--cta:hover { filter: brightness(1.08); background: var(--bakers-unassigned); }
+
+.mono { font-family: var(--font-mono); }
+.tid { font-family: var(--font-mono); font-weight: 600; font-size: 12.5px; letter-spacing: .01em; }
+.proj-tag { font-size: 11px; color: var(--gin-text-light); font-family: var(--font-mono); }
+.state-tag { font-size: 11.5px; color: var(--gin-text-light); }
+.ava { width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 9px; font-weight: 700; color: #06120f; background: var(--bakers-running); flex: none; }
+.assignee { display: inline-flex; align-items: center; gap: 6px; color: var(--gin-text-light); }
+.none-tag { display: inline-flex; align-items: center; gap: 5px; color: var(--bakers-unassigned-ink); font-weight: 700; }
+.none-tag svg { width:12px; height:12px; }
+.since { color: var(--gin-text-faint); font-family: var(--font-mono); }
+.warn-ic { color: var(--bakers-attention-ink); display: inline-flex; vertical-align: middle; }
+
+/* ============================ AKTIVE TICKETS (primär) ============================ */
+.tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tbl th {
+  text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--gin-text-faint); padding: 0 10px 7px; border-bottom: 1px solid var(--gin-hair); white-space: nowrap;
+}
+.tbl th.num, .tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl td { padding: 0 10px; height: var(--row-h); border-bottom: 1px solid var(--gin-hair); vertical-align: middle; white-space: nowrap; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tbody tr:hover { background: rgba(20,23,26,.03); }
+.tbl .rowlead { position: relative; padding-left: 14px; }
+.tbl .rowlead::before { content:""; position:absolute; left:0; top:7px; bottom:7px; width:3px; border-radius:3px; background:transparent; }
+.tbl tr[data-st="running"]    .rowlead::before { background: var(--bakers-running); }
+.tbl tr[data-st="attention"]  .rowlead::before { background: var(--bakers-attention); }
+.tbl tr[data-st="needs_input"].rowlead::before,
+.tbl tr[data-st="needs_input"] .rowlead::before { background: var(--bakers-attention); }
+.tbl tr[data-st="wait"] .rowlead::before { background: var(--bakers-unassigned); }
+.tbl tr[data-st="wait"] { background: var(--bakers-unassigned-soft); }
+.tbl tr[data-st="wait"]:hover { background: rgba(255,78,66,.18); }
+.tcell-title { color: var(--gin-text); max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+.cell-node { display: inline-flex; align-items: center; gap: 7px; }
+.lease-time { font-family: var(--font-mono); }
+.lease-time.low { color: var(--bakers-attention-ink); }
+.tbl td.actcell { text-align: right; }
+
+/* ============================ BOARD (sekundär, workflow-bestimmt) ============================ */
+.wf-tabs { display: flex; align-items: center; gap: 4px; }
+.wf-tab {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px;
+  border-radius: var(--radius-xs); font-size: 12px; font-weight: 600;
+  color: var(--gin-text-faint); background: transparent; border: 1px solid transparent; cursor: pointer;
+}
+.wf-tab .wct { font-size: 10.5px; font-weight: 700; color: var(--gin-text-faint); background: var(--gin-layer-3); border-radius: 20px; padding: 0 6px; }
+.wf-tab:hover { color: var(--gin-text-light); background: var(--gin-layer-3); }
+.wf-tab.active { color: var(--gin-text); background: var(--gin-app); border-color: var(--gin-line); }
+.wf-tab.active .wct { color: var(--gin-primary); background: var(--gin-primary-soft); }
+
+.boardwrap { display: none; }
+.boardwrap.active { display: block; }
+.board { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.col { background: var(--gin-app); border: 1px solid var(--gin-hair); border-radius: var(--radius-s); display: flex; flex-direction: column; min-height: 150px; flex: 1 0 150px; min-width: 150px; }
+.col--terminal { border-style: dashed; opacity: .9; }
+.col__hd { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-bottom: 1px solid var(--gin-hair); }
+.col__hd .nm { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--gin-text-light); white-space: nowrap; }
+.col__hd .ct { margin-left: auto; font-size: 10.5px; font-weight: 700; color: var(--gin-text-faint); background: var(--gin-layer-3); border-radius: 20px; padding: 0 7px; }
+.col__hd .dot { width: 6px; height: 6px; }
+.col__body { padding: 8px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+
+.tk { position: relative; background: var(--gin-layer-2); border: 1px solid var(--gin-hair); border-radius: var(--radius-xs); padding: 8px 9px 8px 12px; }
+.tk::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius: var(--radius-xs) 0 0 var(--radius-xs); background: transparent; }
+.tk[data-st="running"]::before    { background: var(--bakers-running); }
+.tk[data-st="attention"]::before  { background: var(--bakers-attention); }
+.tk[data-st="needs_input"]::before{ background: var(--bakers-attention); }
+.tk[data-st="wait"]::before       { background: var(--bakers-unassigned); }
+.tk[data-st="wait"] { background: var(--bakers-unassigned-soft); border-color: rgba(255,78,66,.28); }
+.tk__top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.tk__top .tid { font-size: 11.5px; color: var(--gin-text); }
+.tk__top .sp { flex: 1; }
+.prio { font-size: 9px; font-weight: 800; letter-spacing: .04em; padding: 1px 5px; border-radius: 4px; }
+.prio--p1 { color: var(--bakers-unassigned-ink); background: var(--bakers-unassigned-soft); }
+.prio--p2 { color: var(--gin-text-light); background: var(--gin-layer-3); }
+.tk__title { font-size: 12px; color: var(--gin-text); line-height: 1.32; margin: 0 0 7px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tk__foot { display: flex; align-items: center; gap: 6px; }
+.tk__foot .sp { flex: 1; }
+.miniava { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 8px; font-weight: 700; color: #06120f; }
+.col__more { font-size: 11px; color: var(--gin-text-faint); text-align: center; padding: 6px; border: 1px dashed var(--gin-line); border-radius: var(--radius-xs); margin-top: 2px; }
+.col__empty { flex: 1; display: grid; place-items: center; color: var(--gin-text-faint); font-size: 11px; padding: 14px; text-align: center; }
+.col__empty span { opacity: .6; }
+
+/* ============================ NODES + BILLING ============================ */
+.duo { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; }
+.bill-head { display:flex; align-items:center; gap:8px; }
+.range {
+  display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 9px;
+  background: var(--gin-app); border:1px solid var(--gin-line); border-radius: var(--radius-xs);
+  font-size:11px; color: var(--gin-text-light); margin-left:auto; cursor: default;
+}
+.range svg { width:11px; height:11px; }
+.bill .proj td { font-weight: 600; }
+.bill .child td:first-child { padding-left: 24px; color: var(--gin-text-light); font-weight: 500; position: relative; }
+.bill .child td:first-child::before { content:"└"; position:absolute; left:10px; color: var(--gin-text-faint); }
+.bar { height: 5px; border-radius: 3px; background: var(--gin-layer-3); overflow: hidden; min-width: 60px; }
+.bar > i { display:block; height:100%; background: var(--bakers-lease); border-radius:3px; }
+
+/* ============================ edge-state strip ============================ */
+.edges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 26px; }
+.edge { background: var(--gin-layer-2); border: 1px solid var(--gin-hair); border-radius: var(--radius); padding: 0; overflow: hidden; }
+.edge__cap { font-size: 11px; font-weight: 700; letter-spacing:.06em; text-transform: uppercase; color: var(--gin-text-light); padding: 11px 14px 0; }
+.edge__desc { font-size: 11.5px; color: var(--gin-text-faint); padding: 4px 14px 12px; }
+.edge__demo { padding: 0 14px 14px; }
+
+.allgreen { display:flex; align-items:center; gap:10px; padding: 14px; background: var(--gin-layer-2); border:1px solid var(--gin-hair); border-radius: var(--radius-s); color: var(--gin-text-light); font-size:12.5px; }
+.allgreen .check { width:24px;height:24px;border-radius:50%; background: var(--bakers-running-soft); color: var(--bakers-running-ink); display:grid;place-items:center; flex:none; }
+
+/* ============================ notes ============================ */
+.notes { margin-top: 30px; }
+.notes h3 { font-size: 13px; font-weight: 700; letter-spacing:.04em; color: var(--gin-text); margin: 0 0 14px; padding-bottom: 9px; border-bottom: 1px solid var(--gin-hair); }
+.ncols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 20px; }
+.note { background: var(--gin-layer-2); border: 1px solid var(--gin-hair); border-radius: var(--radius); padding: 14px 16px; }
+.note h4 { font-size: 12px; font-weight: 700; color: var(--bakers-running-ink); margin: 0 0 8px; letter-spacing:.03em; }
+.note p { font-size: 12px; color: var(--gin-text-light); margin: 0 0 8px; }
+.note p:last-child { margin-bottom: 0; }
+.note ul { margin: 0; padding-left: 16px; }
+.note li { font-size: 12px; color: var(--gin-text-light); margin-bottom: 5px; }
+.note code, .note pre { font-family: var(--font-mono); font-size: 11px; }
+.note code { background: var(--gin-layer-3); color: var(--gin-text); padding: 1px 5px; border-radius: 4px; }
+.note pre { background: #F6F6F2; border: 1px solid var(--gin-hair); border-radius: 8px; padding: 11px 12px; overflow-x: auto; color: var(--gin-text-light); line-height: 1.55; margin: 8px 0 0; }
+.note pre .k { color: var(--gin-primary); }
+.note pre .s { color: #4BB9AE; }
+.note pre .c { color: var(--gin-text-faint); }
+.note .full { grid-column: 1 / -1; }
+
+@media (max-width: 1080px) {
+  .duo, .ncols, .edges { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- ================= design rationale ================= -->
+  <header class="doc__lead">
+    <p class="doc__kicker">bakers.build · Phase 6 · Visuelles Design</p>
+    <h1 class="doc__h">bakers.build Dashboard <span style="color:var(--gin-text-faint);font-weight:500;font-size:18px;">/admin/bakers/dashboard</span></h1>
+    <p class="doc__sub">Strikt <b>Gin-nativ (dark)</b>; bakers.build bringt <b>nur vier Zustandsfarben</b> aus dem keytec-Palette ein (linke Akzentkante + Statuspunkt/Pille, keine Emoji). <b>Eine Ebene</b>: die Filterleiste oben (Projekte · Conductors · Meine) lebt im Querystring und wirkt auf alle Sektionen — die separate <code style="font-family:var(--font-mono)">/my</code>-Seite entfällt. Primär ist die board-unabhängige Tabelle <b>Aktive Tickets</b>; das Board darunter ist sekundär und <b>workflow-bestimmt</b> (ein Tab pro Workflow). Read-only; einzige Aktionen sind Links auf bestehende Drupal-Edit-Forms.</p>
+  </header>
+
+  <div class="legend">
+    <span class="legend__t">Status</span>
+    <span class="lg"><span class="lg__sw" style="background:#FF4E42"></span><b>needs_input · unassigned</b> — kritisch, Operator muss zuweisen</span>
+    <span class="lg"><span class="lg__sw" style="background:#FFC024"></span><b>needs_input / attention</b> — wartet auf Mensch</span>
+    <span class="lg"><span class="lg__sw" style="background:#4BB9AE"></span><b>running / online</b> — gesund aktiv</span>
+    <span class="lg"><span class="lg__sw" style="background:#8197F8"></span><b>aktive Lease</b> — Claim-Besitz (neutral)</span>
+    <span class="lg"><span class="lg__sw" style="background:#707888"></span><b>kein Run / offline</b></span>
+  </div>
+
+  <!-- ================= app window ================= -->
+  <div class="gin">
+    <div class="main">
+
+      <!-- product header: brand · nav · user (ersetzt die Gin-Backend-Rail; der normale User sieht kein Backend) -->
+      <header class="appbar">
+        <div class="brand">
+          <div class="brand__mark" title="bakers.build">
+            <svg width="24" height="27" viewBox="0 0 64 74" fill="none" aria-label="bakers.build">
+              <line x1="32" y1="7" x2="32" y2="16" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+              <line x1="17" y1="16" x2="47" y2="16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="17" y1="16" x2="17" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".5"/><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/>
+              <line x1="47" y1="16" x2="47" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+              <line x1="40" y1="24" x2="54" y2="24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="40" y1="24" x2="40" y2="31" stroke="currentColor" stroke-width="1.4" opacity=".5"/><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/>
+              <line x1="54" y1="24" x2="54" y2="30" stroke="currentColor" stroke-width="1.4" opacity=".5"/><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/>
+            </svg>
+          </div>
+          <div class="brand__txt"><span class="brand__name">bakers.build</span><span class="brand__sub">Orchestrierung</span></div>
+        </div>
+
+        <nav class="nav" aria-label="Hauptnavigation">
+          <a href="bakers.build Dashboard.html" class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Dashboard <span class="nav__badge" title="2 Tickets warten auf Input">2</span></a>
+          <a href="#frag-board">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="5" height="14" rx="1"/></svg>
+            Board</a>
+          <a href="#frag-nodes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+            Nodes</a>
+          <a href="#frag-billing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+            Abrechnung</a>
+        </nav>
+
+        <span class="appbar__sp"></span>
+
+        <div class="appbar__right">
+          <div class="refresh">
+            <svg class="ring" viewBox="0 0 20 20" fill="none" stroke-width="2.5">
+              <circle class="ring__bg" cx="10" cy="10" r="8"/>
+              <circle class="ring__fg" cx="10" cy="10" r="8"/>
+            </svg>
+            auto <b>15 s</b>
+          </div>
+          <span class="user" title="mk · besitzt srv01-bakers">
+            <span class="ava" style="background:var(--bakers-running)">MK</span>
+            <span class="uname">mk</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </div>
+      </header>
+
+      <!-- ===== FILTER BAR (querystring) ===== -->
+      <div class="filters" id="filters">
+        <span class="filters__lbl">Filter</span>
+
+        <div class="fdrop" data-key="projects">
+          <button class="fbtn" type="button"><span class="cap">Projekte</span> <span class="lbl">alle</span> <span class="cnt" hidden>0</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="fpanel">
+            <label class="fopt"><input type="checkbox" value="bakers" checked><span class="fbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span>bakers<span class="meta">7</span></label>
+            <label class="fopt"><input type="checkbox" value="intern" checked><span class="fbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span>intern<span class="meta">2</span></label>
+            <label class="fopt"><input type="checkbox" value="kunde-x" checked><span class="fbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span>kunde-x<span class="meta">1</span></label>
+          </div>
+        </div>
+
+        <div class="fdrop" data-key="conductors">
+          <button class="fbtn" type="button"><span class="cap">Conductors</span> <span class="lbl">alle</span> <span class="cnt" hidden>0</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="fpanel">
+            <label class="fopt"><input type="checkbox" value="srv01-bakers" checked><span class="fbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span><span class="mono" style="font-size:12px">srv01-bakers</span><span class="meta">●</span></label>
+            <label class="fopt"><input type="checkbox" value="srv02-bakers" checked><span class="fbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span><span class="mono" style="font-size:12px">srv02-bakers</span><span class="meta" style="color: var(--bakers-attention-ink)">stale</span></label>
+            <label class="fopt"><input type="checkbox" value="cw-laptop-bakers" checked><span class="fbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></span><span class="mono" style="font-size:12px">cw-laptop-bakers</span><span class="meta">●</span></label>
+          </div>
+        </div>
+
+        <button class="ftoggle" id="mineToggle" type="button"><span class="sw"></span>Meine</button>
+
+        <span class="filters__sp"></span>
+        <span class="qs" id="qs"><b>?</b>projects=alle&amp;conductors=alle&amp;mine=0&amp;wf=feature</span>
+        <a class="freset" href="#" id="freset">zurücksetzen</a>
+      </div>
+
+      <!-- canvas: each .sec = one htmx fragment -->
+      <div class="canvas">
+
+        <!-- ===== AKTIVE BEARBEITER (Sektion 1, board-unabhängig) ===== -->
+        <section class="sec sec--hero" id="frag-operators" data-screen-label="aktive-bearbeiter">
+          <div class="sec__hd">
+            <h2>Aktive Bearbeiter</h2><span class="sec__count">3</span>
+            <span class="spacer"></span>
+            <span class="sec__upd">Fluss ↑ als nächstes → jetzt → fertig · aktualisiert vor 4 s</span>
+          </div>
+          <div class="sec__body">
+            <div class="lanes">
+
+              <!-- Christian (cw) — 2 Conductoren -->
+              <div class="lane">
+                <div class="lane__road"></div>
+                <div class="zone zone--done">
+                  <span class="zone__lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>zuletzt fertig</span>
+                  <div class="past">
+                    <div class="mini"><span class="mini__id">GL-129</span><span class="mini__t">JSON:API Schema-Validierung</span><span class="mini__sp"></span><span class="mini__mach">cw-laptop</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                    <div class="mini"><span class="mini__id">GL-124</span><span class="mini__t">Terminal-Session Bootstrap</span><span class="mini__sp"></span><span class="mini__mach">cw-desktop</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                    <div class="more">+ 4 heute</div>
+                  </div>
+                </div>
+                <div class="kachel" id="k-cw">
+                  <div class="kachel__hd">
+                    <span class="kachel__ava">CH<span class="bakers-dot bakers-dot--online"></span></span>
+                    <span class="kachel__id"><span class="kachel__name">Christian</span><span class="kachel__meta">2 Conductoren · online</span></span>
+                    <span class="kachel__load"><span class="kachel__loadn">3 / 6</span><span class="kachel__bar"><i style="width:50%"></i></span></span>
+                  </div>
+                  <div class="kachel__now">
+                    <span class="kachel__nowlbl">jetzt in Arbeit (3)</span>
+                    <article class="claim claim--attention">
+                      <div class="claim__top"><span class="claim__id">GL-142</span><span class="claim__mach">cw-laptop</span><span class="claim__sp"></span><span class="bakers-pill bakers-pill--attention"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 17h.01M12 13a2.5 2.5 0 1 0-2.5-3"/></svg>needs_input</span></div>
+                      <p class="claim__t">Deploy-Freigabe Prod?</p>
+                      <div class="claim__foot">human_input · <span class="lease-t low">wartet 22 min</span></div>
+                    </article>
+                    <article class="claim claim--attention">
+                      <div class="claim__top"><span class="claim__id">GL-139</span><span class="claim__mach">cw-laptop</span><span class="claim__sp"></span><span class="bakers-pill bakers-pill--attention"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>attention</span></div>
+                      <p class="claim__t">JSON:API write-back Konfliktauflösung</p>
+                      <div class="claim__foot">coding · <span class="lease-t low">Lease 3:10</span> · seit 35 min</div>
+                    </article>
+                    <article class="claim claim--running">
+                      <div class="claim__top"><span class="claim__id">GL-201</span><span class="claim__mach">cw-desktop</span><span class="claim__sp"></span><span class="bakers-dot bakers-dot--running"></span></div>
+                      <p class="claim__t">Prompt-Template Registry</p>
+                      <div class="claim__foot">coding · <span class="lease-t">Lease 7:40</span> · seit 8 min</div>
+                    </article>
+                  </div>
+                  <button class="kachel__toggle" type="button" aria-expanded="false" data-toggle="k-cw"><span class="sp">Conductoren (2)</span><svg class="kachel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="kachel__fleet">
+                    <div class="fleetrow"><span class="bakers-dot bakers-dot--online"></span><span><span class="fleetrow__mach">cw-laptop-bakers</span> <span class="fleetrow__meta">· last_seen 31 s</span></span><span class="fleetrow__sp"></span><span class="fleetrow__ids">GL-142 · GL-139</span><span class="fleetrow__load">2/2</span></div>
+                    <div class="fleetrow"><span class="bakers-dot bakers-dot--online"></span><span><span class="fleetrow__mach">cw-desktop-bakers</span> <span class="fleetrow__meta">· last_seen 9 s</span></span><span class="fleetrow__sp"></span><span class="fleetrow__ids">GL-201</span><span class="fleetrow__load">1/4</span></div>
+                  </div>
+                </div>
+                <div class="zone zone--next">
+                  <span class="zone__lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg>als nächstes</span>
+                  <div class="next" data-sortable>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">1</span><span class="nextcard__id">GL-161</span><span class="nextcard__t">Lease-Countdown springt</span><span class="nextcard__sp"></span><span class="bakers-prio bakers-prio--p1">P1</span></div>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">2</span><span class="nextcard__id">GL-165</span><span class="nextcard__t">Session-Cleanup Hook</span><span class="nextcard__sp"></span><span class="bakers-prio bakers-prio--p2">P2</span></div>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">3</span><span class="nextcard__id">GL-168</span><span class="nextcard__t">Prompt-Doku ergänzen</span><span class="nextcard__sp"></span><span class="nextcard__st">todo</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Miriam (mk) — 2 Conductoren -->
+              <div class="lane">
+                <div class="lane__road"></div>
+                <div class="zone zone--done">
+                  <span class="zone__lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>zuletzt fertig</span>
+                  <div class="past">
+                    <div class="mini"><span class="mini__id">GL-137</span><span class="mini__t">Conductor-Bootstrap Skript</span><span class="mini__sp"></span><span class="mini__mach">srv01</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                    <div class="mini"><span class="mini__id">GL-133</span><span class="mini__t">Heartbeat-Endpoint Tests</span><span class="mini__sp"></span><span class="mini__mach">srv01</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                    <div class="mini"><span class="mini__id">GL-130</span><span class="mini__t">Retry-Backoff Grundgerüst</span><span class="mini__sp"></span><span class="mini__mach">mk-laptop</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                    <div class="mini"><span class="mini__id">GL-128</span><span class="mini__t">Lease-Tabelle Migration</span><span class="mini__sp"></span><span class="mini__mach">srv01</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                    <div class="mini"><span class="mini__id">GL-126</span><span class="mini__t">Registry Cron Skelett</span><span class="mini__sp"></span><span class="mini__mach">mk-laptop</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                    <div class="more">+ 5 weitere heute</div>
+                  </div>
+                </div>
+                <div class="kachel" id="k-mk">
+                  <div class="kachel__hd">
+                    <span class="kachel__ava">MK<span class="bakers-dot bakers-dot--online"></span></span>
+                    <span class="kachel__id"><span class="kachel__name">Miriam</span><span class="kachel__meta">2 Conductoren · online</span></span>
+                    <span class="kachel__load"><span class="kachel__loadn">2 / 12</span><span class="kachel__bar"><i style="width:17%"></i></span></span>
+                  </div>
+                  <div class="kachel__now">
+                    <span class="kachel__nowlbl">jetzt in Arbeit (2)</span>
+                    <article class="claim claim--running">
+                      <div class="claim__top"><span class="claim__id">GL-138</span><span class="claim__mach">srv01</span><span class="claim__sp"></span><span class="bakers-dot bakers-dot--running"></span></div>
+                      <p class="claim__t">Workflow-State-Machine refactoren</p>
+                      <div class="claim__foot">coding · <span class="lease-t">Lease 4:32</span> · seit 12 min</div>
+                    </article>
+                    <article class="claim claim--running">
+                      <div class="claim__top"><span class="claim__id">GL-141</span><span class="claim__mach">srv01</span><span class="claim__sp"></span><span class="bakers-dot bakers-dot--running"></span></div>
+                      <p class="claim__t">Run-Lease Heartbeat Endpoint</p>
+                      <div class="claim__foot">review · <span class="lease-t">Lease 9:58</span> · seit 3 min</div>
+                    </article>
+                  </div>
+                  <button class="kachel__toggle" type="button" aria-expanded="false" data-toggle="k-mk"><span class="sp">Conductoren (2)</span><svg class="kachel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="kachel__fleet">
+                    <div class="fleetrow"><span class="bakers-dot bakers-dot--online"></span><span><span class="fleetrow__mach">srv01-bakers</span> <span class="fleetrow__meta">· last_seen 12 s</span></span><span class="fleetrow__sp"></span><span class="fleetrow__ids">GL-138 · GL-141</span><span class="fleetrow__load">2/8</span></div>
+                    <div class="fleetrow"><span class="bakers-dot bakers-dot--online"></span><span><span class="fleetrow__mach">mk-laptop-bakers</span> <span class="fleetrow__meta">· last_seen 44 s</span></span><span class="fleetrow__sp"></span><span class="fleetrow__ids">—</span><span class="fleetrow__load">0/4</span></div>
+                  </div>
+                </div>
+                <div class="zone zone--next">
+                  <span class="zone__lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg>als nächstes</span>
+                  <div class="next" data-sortable>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">1</span><span class="nextcard__id">GL-143</span><span class="nextcard__t">Lease-Renewal-Backoff</span><span class="nextcard__sp"></span><span class="bakers-prio bakers-prio--p1">P1</span></div>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">2</span><span class="nextcard__id">GL-144</span><span class="nextcard__t">Billing Token-Aggregation</span><span class="nextcard__sp"></span><span class="bakers-prio bakers-prio--p2">P2</span></div>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">3</span><span class="nextcard__id">GL-147</span><span class="nextcard__t">Registry stale-cleanup Cron</span><span class="nextcard__sp"></span><span class="bakers-prio bakers-prio--p2">P2</span></div>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">4</span><span class="nextcard__id">GL-148</span><span class="nextcard__t">JSON:API Rate-Limit Doku</span><span class="nextcard__sp"></span><span class="nextcard__st">todo</span></div>
+                    <div class="nextcard" draggable="true"><span class="nextcard__grip"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><span class="nextcard__q">5</span><span class="nextcard__id">GL-152</span><span class="nextcard__t">Bootstrap Doku ergänzen</span><span class="nextcard__sp"></span><span class="nextcard__st">todo</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stefan (sv) — 1 Conductor, stale -->
+              <div class="lane">
+                <div class="lane__road"></div>
+                <div class="zone zone--done">
+                  <span class="zone__lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>zuletzt fertig</span>
+                  <div class="past">
+                    <div class="mini"><span class="mini__id">GL-155</span><span class="mini__t">Race bei Doppel-Claim</span><span class="mini__sp"></span><span class="mini__mach">srv02</span><span class="mini__done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div>
+                  </div>
+                </div>
+                <div class="kachel kachel--stale" id="k-sv">
+                  <div class="kachel__hd">
+                    <span class="kachel__ava" style="background:var(--bakers-attention)">SV<span class="bakers-dot bakers-dot--stale"></span></span>
+                    <span class="kachel__id"><span class="kachel__name">Stefan</span><span class="kachel__meta" style="color: var(--bakers-attention-ink)">1 Conductor · stale</span></span>
+                    <span class="kachel__load"><span class="kachel__loadn">1 / 4</span><span class="kachel__bar kachel__bar--stale"><i style="width:25%"></i></span></span>
+                  </div>
+                  <div class="kachel__now">
+                    <span class="kachel__nowlbl">geclaimt, aber kein Heartbeat</span>
+                    <article class="claim claim--attention">
+                      <div class="claim__top"><span class="claim__id">GL-160</span><span class="claim__mach">srv02</span><span class="claim__sp"></span><span class="bakers-dot bakers-dot--stale"></span></div>
+                      <p class="claim__t">Conductor-Registry: stale wird nicht aufgeräumt</p>
+                      <div class="claim__foot" style="color: var(--bakers-attention-ink)">Lease läuft ab in 1:04 — Reclaim droht</div>
+                    </article>
+                  </div>
+                  <button class="kachel__toggle" type="button" aria-expanded="false" data-toggle="k-sv"><span class="sp">Conductoren (1)</span><svg class="kachel__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="kachel__fleet">
+                    <div class="fleetrow"><span class="bakers-dot bakers-dot--stale"></span><span><span class="fleetrow__mach">srv02-bakers</span> <span class="fleetrow__meta" style="color: var(--bakers-attention-ink)">· last_seen 14 min</span></span><span class="fleetrow__sp"></span><span class="fleetrow__ids">GL-160</span><span class="fleetrow__load">1/4</span></div>
+                  </div>
+                </div>
+                <div class="zone zone--next">
+                  <span class="zone__lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M6 13l6 6 6-6"/></svg>als nächstes</span>
+                  <div class="next" data-sortable>
+                    <div class="nextcard" style="opacity:.5;cursor:default" draggable="false"><span class="nextcard__q">—</span><span class="nextcard__t">pausiert bis Node wieder online</span></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== AKTIVE TICKETS (primär, board-unabhängig) ===== -->
+        <section class="sec sec--hero" id="frag-active" data-screen-label="aktive-tickets">
+          <div class="sec__hd">
+            <h2>Aktive Tickets</h2><span class="sec__count sec__count--alert" id="activeCount">7</span>
+            <span class="spacer"></span>
+            <span class="sec__upd">States ohne backlog · done · cancelled · aktualisiert vor 4 s</span>
+          </div>
+          <div class="sec__body" style="padding-top:4px; overflow-x:auto;">
+            <table class="tbl" id="activeTbl">
+              <thead><tr>
+                <th class="rowlead" style="padding-left:14px">Ticket</th>
+                <th>Titel</th><th>Projekt</th><th>State</th><th>Claim</th>
+                <th>Status</th><th class="num">seit</th><th>Assignee</th><th></th>
+              </tr></thead>
+              <tbody>
+                <!-- 1 · needs_input + unassigned = kritisch (rot, ganz oben) -->
+                <tr data-st="wait" data-project="bakers" data-claim="cw-laptop-bakers" data-mine="0">
+                  <td class="rowlead"><span class="tid">GL-150</span></td>
+                  <td><span class="tcell-title">API-Key fehlt im Secrets-Store</span></td>
+                  <td><span class="proj-tag">bakers</span></td>
+                  <td><span class="state-tag">coding</span></td>
+                  <td><span class="lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop-bakers</span></td>
+                  <td><span class="pill pill--wait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>needs_input</span></td>
+                  <td class="num since">3 h</td>
+                  <td><span class="none-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>NIEMAND</span></td>
+                  <td class="actcell"><a class="btn btn--xs btn--cta" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Zuweisen</a></td>
+                </tr>
+                <!-- 2 · needs_input (zugewiesen) -->
+                <tr data-st="needs_input" data-project="bakers" data-claim="cw-laptop-bakers" data-mine="0">
+                  <td class="rowlead"><span class="tid">GL-142</span></td>
+                  <td><span class="tcell-title">Deploy-Freigabe Prod?</span></td>
+                  <td><span class="proj-tag">bakers</span></td>
+                  <td><span class="state-tag">human_input</span></td>
+                  <td><span class="lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop-bakers</span></td>
+                  <td><span class="pill pill--attention"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 17h.01M12 13a2.5 2.5 0 1 0-2.5-3"/></svg>needs_input</span></td>
+                  <td class="num since">22 min</td>
+                  <td><span class="assignee"><span class="ava">CW</span>cw</span></td>
+                  <td class="actcell"><a class="btn btn--xs" href="#">Ticket</a></td>
+                </tr>
+                <!-- 3 · attention (Agent wartet im Terminal) -->
+                <tr data-st="attention" data-project="bakers" data-claim="cw-laptop-bakers" data-mine="0">
+                  <td class="rowlead"><span class="tid">GL-139</span></td>
+                  <td><span class="tcell-title">JSON:API write-back Konfliktauflösung</span></td>
+                  <td><span class="proj-tag">bakers</span></td>
+                  <td><span class="state-tag">coding</span></td>
+                  <td><span class="lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop-bakers</span></td>
+                  <td><span class="pill pill--attention"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>attention</span></td>
+                  <td class="num since">35 min</td>
+                  <td><span class="assignee"><span class="ava">CW</span>cw</span></td>
+                  <td class="actcell"><a class="btn btn--xs" href="#">Ticket</a></td>
+                </tr>
+                <!-- 4 · running (gehört mir: srv01-bakers) -->
+                <tr data-st="running" data-project="bakers" data-claim="srv01-bakers" data-mine="1">
+                  <td class="rowlead"><span class="tid">GL-138</span></td>
+                  <td><span class="tcell-title">Workflow-State-Machine refactoren</span></td>
+                  <td><span class="proj-tag">bakers</span></td>
+                  <td><span class="state-tag">coding</span></td>
+                  <td><span class="lease lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01-bakers</span></td>
+                  <td><span class="pill pill--running"><span class="dot dot--running"></span>running</span></td>
+                  <td class="num since">12 min</td>
+                  <td><span class="assignee"><span class="ava">MK</span>mk</span></td>
+                  <td class="actcell"><a class="btn btn--xs" href="#">Ticket</a></td>
+                </tr>
+                <!-- 5 · running -->
+                <tr data-st="running" data-project="bakers" data-claim="srv01-bakers" data-mine="1">
+                  <td class="rowlead"><span class="tid">GL-141</span></td>
+                  <td><span class="tcell-title">Run-Lease Heartbeat Endpoint</span></td>
+                  <td><span class="proj-tag">bakers</span></td>
+                  <td><span class="state-tag">review</span></td>
+                  <td><span class="lease lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01-bakers</span></td>
+                  <td><span class="pill pill--running"><span class="dot dot--running"></span>running</span></td>
+                  <td class="num since">3 min</td>
+                  <td><span class="assignee"><span class="ava">MK</span>mk</span></td>
+                  <td class="actcell"><a class="btn btn--xs" href="#">Ticket</a></td>
+                </tr>
+                <!-- 6 · bug, running auf stale node -->
+                <tr data-st="running" data-project="intern" data-claim="srv02-bakers" data-mine="0">
+                  <td class="rowlead"><span class="tid">GL-160</span></td>
+                  <td><span class="tcell-title">Conductor-Registry: stale wird nicht aufgeräumt</span></td>
+                  <td><span class="proj-tag">intern</span></td>
+                  <td><span class="state-tag">coding</span></td>
+                  <td><span class="lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv02-bakers</span></td>
+                  <td><span class="pill pill--running"><span class="dot dot--running"></span>running</span></td>
+                  <td class="num since">8 min</td>
+                  <td><span class="assignee"><span class="ava" style="background:var(--bakers-lease)">JD</span>jd</span></td>
+                  <td class="actcell"><a class="btn btn--xs" href="#">Ticket</a></td>
+                </tr>
+                <!-- 7 · aktiv im State, aber kein Run (todo, kein Claim) -->
+                <tr data-st="idle" data-project="kunde-x" data-claim="" data-mine="0">
+                  <td class="rowlead"><span class="tid">GL-170</span></td>
+                  <td><span class="tcell-title">Onboarding-Flow Spezifikation</span></td>
+                  <td><span class="proj-tag">kunde-x</span></td>
+                  <td><span class="state-tag">spec</span></td>
+                  <td><span class="pill__none">—</span></td>
+                  <td><span class="pill__none">kein Run</span></td>
+                  <td class="num since">1 d</td>
+                  <td><span class="pill__none">—</span></td>
+                  <td class="actcell"><a class="btn btn--xs" href="#">Ticket</a></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="col__empty" id="activeEmpty" style="display:none; padding:22px;"><span>Keine aktiven Tickets im aktuellen Filter.</span></div>
+          </div>
+        </section>
+
+        <!-- ===== BOARD (sekundär, workflow-bestimmt) ===== -->
+        <section class="sec" id="frag-board" data-screen-label="board">
+          <div class="sec__hd">
+            <h2>Board</h2>
+            <span style="margin-left:6px" class="wf-tabs" id="wfTabs">
+              <button class="wf-tab active" data-wf="feature" type="button">feature <span class="wct">8</span></button>
+              <button class="wf-tab" data-wf="bug" type="button">bug <span class="wct">3</span></button>
+              <button class="wf-tab" data-wf="chore" type="button">chore <span class="wct">2</span></button>
+            </span>
+            <span class="spacer"></span>
+            <span class="sec__upd">Spalten = States des Workflows</span>
+          </div>
+          <div class="sec__body">
+
+            <!-- ===== WF: feature (backlog todo spec coding review human_input done cancelled) ===== -->
+            <div class="boardwrap active" data-wf="feature">
+              <div class="board">
+                <div class="col" data-col="backlog">
+                  <div class="col__hd"><span class="nm">backlog</span><span class="ct">2</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-151</span><span class="sp"></span></div><p class="tk__title">Rate-Limit für JSON:API write-back dokumentieren</p></article>
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-152</span><span class="sp"></span><span class="prio prio--p2">P2</span></div><p class="tk__title">Conductor-Registry stale-cleanup Cron</p></article>
+                  </div>
+                </div>
+                <div class="col" data-col="todo">
+                  <div class="col__hd"><span class="nm">todo</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-143</span><span class="sp"></span></div><p class="tk__title">Lease-Renewal-Backoff implementieren</p></article>
+                  </div>
+                </div>
+                <div class="col" data-col="spec">
+                  <div class="col__hd"><span class="nm">spec</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="kunde-x" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-170</span><span class="sp"></span></div><p class="tk__title">Onboarding-Flow Spezifikation</p></article>
+                  </div>
+                </div>
+                <div class="col" data-col="coding">
+                  <div class="col__hd"><span class="dot dot--running"></span><span class="nm">coding</span><span class="ct">2</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-st="running" data-project="bakers" data-claim="srv01-bakers" data-mine="1">
+                      <div class="tk__top"><span class="tid">GL-138</span><span class="sp"></span><span class="prio prio--p2">P2</span></div>
+                      <p class="tk__title">Workflow-State-Machine refactoren</p>
+                      <div class="tk__foot"><span class="lease lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01</span><span class="sp"></span><span class="dot dot--running"></span></div>
+                    </article>
+                    <article class="tk" data-st="attention" data-project="bakers" data-claim="cw-laptop-bakers" data-mine="0">
+                      <div class="tk__top"><span class="tid">GL-139</span><span class="sp"></span></div>
+                      <p class="tk__title">JSON:API write-back Konfliktauflösung</p>
+                      <div class="tk__foot"><span class="lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>cw-laptop</span><span class="sp"></span>
+                        <svg class="warn-ic" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></div>
+                    </article>
+                  </div>
+                </div>
+                <div class="col" data-col="review">
+                  <div class="col__hd"><span class="nm">review</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-st="running" data-project="bakers" data-claim="srv01-bakers" data-mine="1">
+                      <div class="tk__top"><span class="tid">GL-141</span><span class="sp"></span></div>
+                      <p class="tk__title">Run-Lease Heartbeat Endpoint</p>
+                      <div class="tk__foot"><span class="lease lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01</span><span class="sp"></span><span class="miniava" style="background:var(--bakers-running)">MK</span></div>
+                    </article>
+                  </div>
+                </div>
+                <div class="col" data-col="human_input">
+                  <div class="col__hd"><span class="dot dot--attention"></span><span class="nm">human_input</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-st="needs_input" data-project="bakers" data-claim="cw-laptop-bakers" data-mine="0">
+                      <div class="tk__top"><span class="tid">GL-142</span><span class="sp"></span></div>
+                      <p class="tk__title">Deploy-Freigabe Prod?</p>
+                      <div class="tk__foot"><span class="miniava" style="background:var(--bakers-running)">CW</span><span class="sp"></span><span class="pill pill--attention" style="height:18px">needs_input</span></div>
+                    </article>
+                  </div>
+                </div>
+                <div class="col" data-col="done">
+                  <div class="col__hd"><span class="nm">done</span><span class="ct">12</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="1"><div class="tk__top"><span class="tid">GL-137</span><span class="sp"></span></div><p class="tk__title">Conductor-Bootstrap Skript</p></article>
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-136</span><span class="sp"></span></div><p class="tk__title">Ticket-Entity Felder &amp; Schema</p></article>
+                    <a class="col__more" href="#" style="display:block;text-decoration:none;color:var(--gin-primary)">+ 10 weitere →</a>
+                  </div>
+                </div>
+                <div class="col" data-col="cancelled">
+                  <div class="col__hd"><span class="nm">cancelled</span><span class="ct">0</span></div>
+                  <div class="col__empty"><span>nichts verworfen</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== WF: bug (backlog todo coding review human_input done cancelled — kein spec) ===== -->
+            <div class="boardwrap" data-wf="bug">
+              <div class="board">
+                <div class="col" data-col="backlog">
+                  <div class="col__hd"><span class="nm">backlog</span><span class="ct">0</span></div>
+                  <div class="col__empty"><span>leer</span></div>
+                </div>
+                <div class="col" data-col="todo">
+                  <div class="col__hd"><span class="nm">todo</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-161</span><span class="sp"></span><span class="prio prio--p2">P2</span></div><p class="tk__title">Lease-Countdown springt bei Renew</p></article>
+                  </div>
+                </div>
+                <div class="col" data-col="coding">
+                  <div class="col__hd"><span class="dot dot--running"></span><span class="nm">coding</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-st="running" data-project="intern" data-claim="srv02-bakers" data-mine="0">
+                      <div class="tk__top"><span class="tid">GL-160</span><span class="sp"></span><span class="prio prio--p1">P1</span></div>
+                      <p class="tk__title">Conductor-Registry: stale wird nicht aufgeräumt</p>
+                      <div class="tk__foot"><span class="lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv02</span><span class="sp"></span><span class="dot dot--running"></span></div>
+                    </article>
+                  </div>
+                </div>
+                <div class="col" data-col="review">
+                  <div class="col__hd"><span class="nm">review</span><span class="ct">0</span></div>
+                  <div class="col__empty"><span>nichts in review</span></div>
+                </div>
+                <div class="col" data-col="human_input">
+                  <div class="col__hd"><span class="nm">human_input</span><span class="ct">0</span></div>
+                  <div class="col__empty"><span>niemand wartet</span></div>
+                </div>
+                <div class="col" data-col="done">
+                  <div class="col__hd"><span class="nm">done</span><span class="ct">8</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-155</span><span class="sp"></span></div><p class="tk__title">Race bei Doppel-Claim</p></article>
+                    <a class="col__more" href="#" style="display:block;text-decoration:none;color:var(--gin-primary)">+ 7 weitere →</a>
+                  </div>
+                </div>
+                <div class="col" data-col="cancelled">
+                  <div class="col__hd"><span class="nm">cancelled</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-149</span><span class="sp"></span></div><p class="tk__title">Nicht reproduzierbar</p></article>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== WF: chore (backlog todo coding human_input done cancelled — kein spec, kein review) ===== -->
+            <div class="boardwrap" data-wf="chore">
+              <div class="board">
+                <div class="col" data-col="backlog">
+                  <div class="col__hd"><span class="nm">backlog</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="intern" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-180</span><span class="sp"></span></div><p class="tk__title">Abhängigkeiten aktualisieren</p></article>
+                  </div>
+                </div>
+                <div class="col" data-col="todo">
+                  <div class="col__hd"><span class="nm">todo</span><span class="ct">1</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="1"><div class="tk__top"><span class="tid">GL-181</span><span class="sp"></span></div><p class="tk__title">CI-Cache-Keys vereinheitlichen</p></article>
+                  </div>
+                </div>
+                <div class="col" data-col="coding">
+                  <div class="col__hd"><span class="nm">coding</span><span class="ct">0</span></div>
+                  <div class="col__empty"><span>kein Lauf</span></div>
+                </div>
+                <div class="col" data-col="human_input">
+                  <div class="col__hd"><span class="nm">human_input</span><span class="ct">0</span></div>
+                  <div class="col__empty"><span>niemand wartet</span></div>
+                </div>
+                <div class="col" data-col="done">
+                  <div class="col__hd"><span class="nm">done</span><span class="ct">5</span></div>
+                  <div class="col__body">
+                    <article class="tk" data-project="bakers" data-claim="" data-mine="0"><div class="tk__top"><span class="tid">GL-135</span><span class="sp"></span></div><p class="tk__title">Gin-Subtheme Setup</p></article>
+                    <a class="col__more" href="#" style="display:block;text-decoration:none;color:var(--gin-primary)">+ 4 weitere →</a>
+                  </div>
+                </div>
+                <div class="col" data-col="cancelled">
+                  <div class="col__hd"><span class="nm">cancelled</span><span class="ct">0</span></div>
+                  <div class="col__empty"><span>nichts verworfen</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===== NODES + BILLING ===== -->
+        <div class="duo">
+          <section class="sec" id="frag-nodes" data-screen-label="nodes">
+            <div class="sec__hd">
+              <h2>Nodes</h2><span class="sec__count">3</span>
+              <span class="spacer"></span><span class="sec__upd">Ampel: last_seen &lt; 600 s</span>
+            </div>
+            <div class="sec__body" style="padding-top:4px">
+              <table class="tbl">
+                <thead><tr><th>machine_id</th><th>Status</th><th>states</th><th class="num">load</th><th class="num">last_seen</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><span class="mono">srv01-bakers</span></td>
+                    <td><span class="cell-node"><span class="dot dot--online"></span>online</span></td>
+                    <td><span class="proj-tag">coding · review</span></td>
+                    <td class="num mono">2 / 8</td>
+                    <td class="num mono" style="color:var(--gin-text-light)">vor 12 s</td>
+                  </tr>
+                  <tr>
+                    <td><span class="mono">cw-laptop-bakers</span></td>
+                    <td><span class="cell-node"><span class="dot dot--online"></span>online</span></td>
+                    <td><span class="proj-tag">coding · human_input</span></td>
+                    <td class="num mono">2 / 2</td>
+                    <td class="num mono" style="color:var(--gin-text-light)">vor 31 s</td>
+                  </tr>
+                  <tr>
+                    <td><span class="mono">srv02-bakers</span></td>
+                    <td><span class="cell-node"><span class="dot dot--stale"></span><span style="color: var(--bakers-attention-ink)">stale</span></span></td>
+                    <td><span class="proj-tag">coding</span></td>
+                    <td class="num mono">1 / 4</td>
+                    <td class="num mono" style="color: var(--bakers-attention-ink)">vor 14 min
+                      <span class="warn-ic"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="sec" id="frag-billing" data-screen-label="billing">
+            <div class="sec__hd bill-head">
+              <h2>Billing</h2>
+              <span class="spacer"></span>
+              <span class="range"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16"/></svg>diese Woche
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="width:10px;height:10px;margin-left:2px"><path d="M6 9l6 6 6-6"/></svg></span>
+            </div>
+            <div class="sec__body" style="padding-top:4px">
+              <table class="tbl bill">
+                <thead><tr><th>Kunde / Projekt</th><th class="num">Zeit</th><th class="num">Tokens</th><th></th></tr></thead>
+                <tbody>
+                  <tr class="proj"><td>keytec</td><td class="num mono">42,5 h</td><td class="num mono">1,2M</td><td style="width:78px"><span class="bar"><i style="width:100%"></i></span></td></tr>
+                  <tr class="child"><td>bakers</td><td class="num mono">38,0 h</td><td class="num mono">1,1M</td><td><span class="bar"><i style="width:89%"></i></span></td></tr>
+                  <tr class="child"><td>intern</td><td class="num mono">4,5 h</td><td class="num mono">0,1M</td><td><span class="bar"><i style="width:11%"></i></span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+      </div><!-- /canvas -->
+    </div><!-- /main -->
+  </div><!-- /gin -->
+
+  <!-- ================= edge / empty states ================= -->
+  <section class="edges">
+    <div class="edge">
+      <div class="edge__cap">Leere Spalte</div>
+      <p class="edge__desc">Kein Container, keine Karte — nur ein dezenter Hinweis. Spalte behält Mindesthöhe, Board bleibt ruhig. Workflow-Spalten ohne Inhalt (z. B. <span class="mono">cancelled</span>) bleiben sichtbar, damit die Workflow-Form lesbar ist.</p>
+      <div class="edge__demo">
+        <div class="col" style="min-height:140px">
+          <div class="col__hd"><span class="nm">review</span><span class="ct">0</span></div>
+          <div class="col__empty"><span>nichts in review</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="edge">
+      <div class="edge__cap">Alles grün</div>
+      <p class="edge__desc">Kein needs_input, kein attention. Die Tabelle „Aktive Tickets" verschwindet nicht, sondern kollabiert zur Bestätigungszeile — Abwesenheit von Eskalation ist selbst eine Information.</p>
+      <div class="edge__demo">
+        <div class="allgreen">
+          <span class="check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+          Nichts wartet auf einen Menschen — alle Läufe laufen.
+        </div>
+      </div>
+    </div>
+
+    <div class="edge">
+      <div class="edge__cap">50+ in einer Spalte</div>
+      <p class="edge__desc">Kein Spalten-Scroll. Cap bei den N relevantesten (offen/zugewiesen vor erledigt), Rest als Zähler-Link auf die gefilterte Inhaltsliste.</p>
+      <div class="edge__demo">
+        <div class="col" style="min-height:140px">
+          <div class="col__hd"><span class="nm">done</span><span class="ct">63</span></div>
+          <div class="col__body">
+            <article class="tk"><div class="tk__top"><span class="tid">GL-204</span><span class="sp"></span></div><p class="tk__title">Letztes erledigtes Ticket</p></article>
+            <article class="tk"><div class="tk__top"><span class="tid">GL-203</span><span class="sp"></span></div><p class="tk__title">Vorletztes erledigtes Ticket</p></article>
+            <a class="col__more" href="#" style="display:block;text-decoration:none;color:var(--gin-primary)">+ 61 weitere →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= component notes ================= -->
+  <section class="notes">
+    <h3>Komponenten-Notizen · Twig · CSS · Gin · htmx · Felder</h3>
+    <div class="ncols">
+
+      <div class="note">
+        <h4>Eine Ebene — Filter im Querystring</h4>
+        <p>Keine separate <code>/my</code>-Route mehr. Die Filterleiste (<code>projects[]</code>, <code>conductors[]</code>, <code>mine</code>, <code>wf</code>) schreibt in den Querystring; jedes Fragment liest dieselben Query-Parameter und filtert serverseitig. „Meine" = <code>assignee_user_id == uid</code> ODER conductor-owner ist der angemeldete Nutzer.</p>
+        <pre><span class="c"># Beispiel-State</span>
+?projects=bakers,intern&amp;conductors=all
+  &amp;mine=1&amp;wf=feature</pre>
+      </div>
+
+      <div class="note">
+        <h4>Fragment-Wurzel = htmx-Einheit</h4>
+        <p>Polling pro Sektion; der Querystring wird in jeden <code>hx-get</code> durchgereicht (<code>hx-include="#filters"</code>), damit Refresh den Filter behält. <code>outerHTML</code>-Swap, Polling pausiert bei verstecktem Tab.</p>
+        <pre>&lt;section <span class="k">class</span>=<span class="s">"sec"</span> <span class="k">id</span>=<span class="s">"frag-active"</span>
+  <span class="k">hx-get</span>=<span class="s">"/admin/bakers/frag/active"</span>
+  <span class="k">hx-include</span>=<span class="s">"#filters"</span>
+  <span class="k">hx-trigger</span>=<span class="s">"every 15s [</span>
+    <span class="s">document.visibilityState==='visible'],</span>
+    <span class="s">change from:#filters"</span>
+  <span class="k">hx-swap</span>=<span class="s">"outerHTML"</span>
+  <span class="k">hx-sync</span>=<span class="s">"this:replace"</span>&gt; … &lt;/section&gt;</pre>
+      </div>
+
+      <div class="note">
+        <h4>Aktive Tickets — Sortierung &amp; Status</h4>
+        <p>Board-unabhängig: alle Tickets, deren <code>state</code> nicht <code>backlog/done/cancelled</code> ist. Eine Zeile, ein <code>data-st</code>. Sortierschlüssel absteigend nach Dringlichkeit, dann nach Alter:</p>
+        <ul>
+          <li><b>wait</b> — <code>run.state=needs_input</code> &amp; kein Assignee (rot)</li>
+          <li><b>needs_input</b> — <code>run.state=needs_input</code>, zugewiesen</li>
+          <li><b>attention</b> — <code>run.attention</code> gesetzt</li>
+          <li><b>running</b> — <code>run.state=running</code></li>
+          <li><b>idle</b> — kein aktiver Run (zuletzt)</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h4>Board — workflow-bestimmt</h4>
+        <p>Ein Tab pro Workflow; die Spalten sind <b>nicht</b> hartkodiert, sondern die <code>states</code> des jeweiligen Workflows in Reihenfolge. Leere &amp; übersprungene States (bug ohne <code>spec</code>, chore ohne <code>spec</code>+<code>review</code>) erscheinen gar nicht — die Workflow-Form bleibt lesbar.</p>
+        <pre>{% <span class="k">for</span> state <span class="k">in</span> workflow.states %}
+  &lt;div <span class="k">class</span>=<span class="s">"col"</span> <span class="k">data-col</span>=<span class="s">"{{ state.id }}"</span>&gt;
+    {{ <span class="k">column</span>(state) }}
+  &lt;/div&gt;
+{% <span class="k">endfor</span> %}</pre>
+      </div>
+
+      <div class="note">
+        <h4>Gin-Variablen (wiederverwendet)</h4>
+        <p>Keine Neutralfarbe hartkodiert — Gins Tokens werden konsumiert, dadurch laufen Light/Dark &amp; Accent-Color automatisch durch:</p>
+        <ul>
+          <li><code>--gin-app</code>, <code>--gin-layer</code>, <code>--gin-layer-2/3</code></li>
+          <li><code>--gin-line-color</code>, <code>--gin-color-text(-light)</code></li>
+          <li><code>--gin-color-primary</code> (Links, aktive Tabs, Fokusring)</li>
+          <li><code>--gin-line-radius</code>, <code>--gin-spacing-*</code>, <code>--font-sans-family</code></li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h4>Polling-Feedback — kein Flackern</h4>
+        <p>Statt Ausblenden: während des Requests Inhalt auf <code>opacity:.55</code> dimmen, nach Settle zurück (120 ms, kein Layout-Shift). Der Ring oben zählt die 15 s sichtbar herunter.</p>
+        <pre>htmx.on(<span class="s">'htmx:beforeRequest'</span>, e =&gt;
+  e.target.<span class="k">dataset</span>.refreshing = <span class="s">'1'</span>);
+htmx.on(<span class="s">'htmx:afterSettle'</span>, e =&gt;
+  <span class="k">delete</span> e.target.dataset.refreshing);</pre>
+      </div>
+
+      <div class="note full">
+        <h4>Echte Feldnamen (für Twig)</h4>
+        <pre><span class="c">// bb_ticket</span>
+identifier · title · state · assignee_user_id · project_id
+
+<span class="c">// bb_run</span>
+state          <span class="c">// claimed | running | retrying | released | succeeded | failed | needs_input</span>
+claim_owner    <span class="c">// Maschinen-String, z. B. "cw-laptop-bakers"</span>
+attention      <span class="c">// Timestamp; gesetzt = Agent wartet im Terminal</span>
+claim_expires_at <span class="c">// Lease-Countdown</span>
+
+<span class="c">// bb_conductor</span>
+machine_id · states · current_load · max_parallel · last_seen
+<span class="c">// Aktiv-Ampel: now() - last_seen &lt; 600s ⇒ ● online, sonst ○ stale</span></pre>
+      </div>
+
+      <div class="note full">
+        <h4>bakers.build-Zustands-Tokens (das Einzige, was bakers.build an Farbe einbringt)</h4>
+        <p>Vier semantische Tokens, geseedet aus dem keytec-Palette, mit Fallback auf Gins Status-Farben. Codierung immer <b>doppelt</b> — linke 3 px Akzentkante (Zeile/Karte) <b>+</b> Statuspunkt/Pille — nie Farbe allein. Keine Emoji; attention/needs_input sind als SVG gezeichnet.</p>
+        <pre><span class="k">:root</span> {
+  <span class="k">--bakers-unassigned</span>: <span class="s">#FF4E42</span>;  <span class="c">/* swimsuit — needs_input ohne Assignee = kritisch (rot) */</span>
+  <span class="k">--bakers-attention</span>:  <span class="s">#FFC024</span>;  <span class="c">/* sun      — needs_input zugewiesen · attention · stale (amber) */</span>
+  <span class="k">--bakers-running</span>:    <span class="s">#4BB9AE</span>;  <span class="c">/* teal     — Run läuft · Node online (grün) */</span>
+  <span class="k">--bakers-lease</span>:      <span class="s">#8197F8</span>;  <span class="c">/* ocean-tint — aktive Lease / Claim-Besitz (neutral, kein Alarm) */</span>
+}</pre>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var ME = { user: 'mk' }; // angemeldeter Nutzer; "Meine" = assignee==mk ODER eigener Conductor
+
+  var filters = document.getElementById('filters');
+  var qsEl = document.getElementById('qs');
+  var mineBtn = document.getElementById('mineToggle');
+  var state = { projects: null, conductors: null, mine: false, wf: 'feature' };
+
+  // ---- dropdown open/close ----
+  filters.querySelectorAll('.fdrop').forEach(function (d) {
+    var btn = d.querySelector('.fbtn');
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasOpen = d.classList.contains('open');
+      filters.querySelectorAll('.fdrop').forEach(function (x) { x.classList.remove('open'); });
+      if (!wasOpen) d.classList.add('open');
+    });
+    d.querySelectorAll('input').forEach(function (i) { i.addEventListener('change', apply); });
+  });
+  document.addEventListener('click', function () {
+    filters.querySelectorAll('.fdrop').forEach(function (x) { x.classList.remove('open'); });
+  });
+
+  // ---- Meine toggle ----
+  mineBtn.addEventListener('click', function () {
+    mineBtn.classList.toggle('on');
+    state.mine = mineBtn.classList.contains('on');
+    apply();
+  });
+
+  // ---- workflow tabs ----
+  var tabs = document.getElementById('wfTabs');
+  tabs.querySelectorAll('.wf-tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      tabs.querySelectorAll('.wf-tab').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      var wf = t.getAttribute('data-wf');
+      state.wf = wf;
+      document.querySelectorAll('.boardwrap').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-wf') === wf);
+      });
+      syncQs();
+    });
+  });
+
+  // ---- reset ----
+  document.getElementById('freset').addEventListener('click', function (e) {
+    e.preventDefault();
+    filters.querySelectorAll('.fdrop input').forEach(function (i) { i.checked = true; });
+    mineBtn.classList.remove('on'); state.mine = false;
+    apply();
+  });
+
+  function readSet(key) {
+    var inputs = filters.querySelector('[data-key="' + key + '"]').querySelectorAll('input');
+    var all = inputs.length, on = [];
+    inputs.forEach(function (i) { if (i.checked) on.push(i.value); });
+    return { all: on.length === all, values: on };
+  }
+
+  function updateBtnLabel(key, sel) {
+    var d = filters.querySelector('[data-key="' + key + '"]');
+    var lbl = d.querySelector('.lbl'), cnt = d.querySelector('.cnt');
+    if (sel.all) { lbl.textContent = 'alle'; lbl.hidden = false; cnt.hidden = true; }
+    else if (sel.values.length === 0) { lbl.textContent = 'keine'; lbl.hidden = false; cnt.hidden = true; }
+    else if (sel.values.length === 1) { lbl.textContent = sel.values[0]; lbl.hidden = false; cnt.hidden = true; }
+    else { lbl.hidden = true; cnt.hidden = false; cnt.textContent = sel.values.length; }
+  }
+
+  function rowVisible(el, projSel, condSel) {
+    var p = el.getAttribute('data-project');
+    var c = el.getAttribute('data-claim') || '';
+    var mine = el.getAttribute('data-mine') === '1';
+    if (!projSel.all && p && projSel.values.indexOf(p) === -1) return false;
+    if (!condSel.all) {
+      // ein Conductor-Filter zeigt nur Tickets, die von einem gewählten Conductor geclaimt sind
+      if (!c || condSel.values.indexOf(c) === -1) return false;
+    }
+    if (state.mine && !mine) return false;
+    return true;
+  }
+
+  function apply() {
+    var projSel = readSet('projects');
+    var condSel = readSet('conductors');
+    updateBtnLabel('projects', projSel);
+    updateBtnLabel('conductors', condSel);
+
+    // Aktive Tickets table
+    var rows = document.querySelectorAll('#activeTbl tbody tr');
+    var shown = 0;
+    rows.forEach(function (r) {
+      var v = rowVisible(r, projSel, condSel);
+      r.style.display = v ? '' : 'none';
+      if (v) shown++;
+    });
+    document.getElementById('activeCount').textContent = shown;
+    document.getElementById('activeEmpty').style.display = shown ? 'none' : '';
+    document.getElementById('activeTbl').style.display = shown ? '' : 'none';
+
+    // Board cards + per-column counts (all workflows)
+    document.querySelectorAll('.col').forEach(function (col) {
+      var cards = col.querySelectorAll('.tk');
+      if (!cards.length) return;
+      var n = 0;
+      cards.forEach(function (card) {
+        var v = rowVisible(card, projSel, condSel);
+        card.style.display = v ? '' : 'none';
+        if (v) n++;
+      });
+      var ct = col.querySelector('.col__hd .ct');
+      if (ct && !col.querySelector('.col__more')) ct.textContent = n;
+    });
+
+    syncQs();
+  }
+
+  function syncQs() {
+    var projSel = readSet('projects');
+    var condSel = readSet('conductors');
+    var p = projSel.all ? 'alle' : (projSel.values.join(',') || '–');
+    var c = condSel.all ? 'alle' : (condSel.values.join(',') || '–');
+    qsEl.innerHTML = '<b>?</b>projects=' + p + '&conductors=' + c + '&mine=' + (state.mine ? '1' : '0') + '&wf=' + state.wf;
+  }
+
+  apply();
+})();
+
+/* ===== Sektion 1: Fleet aufklappen + Claim-Queue umsortieren (drag&drop) ===== */
+document.querySelectorAll('.kachel__toggle').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var k = document.getElementById(btn.dataset.toggle);
+    var open = k.classList.toggle('is-expanded');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+});
+(function () {
+  document.querySelectorAll('.next[data-sortable]').forEach(function (list) {
+    var dragging = null;
+    list.querySelectorAll('.nextcard[draggable="true"]').forEach(function (card) {
+      card.addEventListener('dragstart', function () { dragging = card; setTimeout(function () { card.classList.add('dragging'); }, 0); });
+      card.addEventListener('dragend', function () { card.classList.remove('dragging'); dragging = null; list.classList.remove('dragover'); renumber(list); });
+    });
+    list.addEventListener('dragover', function (e) {
+      e.preventDefault(); if (!dragging) return;
+      list.classList.add('dragover');
+      var after = afterElement(list, e.clientY);
+      if (after == null) list.appendChild(dragging); else list.insertBefore(dragging, after);
+    });
+    list.addEventListener('drop', function (e) { e.preventDefault(); list.classList.remove('dragover'); renumber(list); });
+  });
+  function afterElement(list, y) {
+    var cards = [].slice.call(list.querySelectorAll('.nextcard[draggable="true"]:not(.dragging)'));
+    return cards.reduce(function (closest, child) {
+      var box = child.getBoundingClientRect(); var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) return { offset: offset, el: child };
+      return closest;
+    }, { offset: -Infinity, el: null }).el;
+  }
+  function renumber(list) {
+    var n = 1;
+    list.querySelectorAll('.nextcard[draggable="true"]').forEach(function (c) {
+      var q = c.querySelector('.nextcard__q'); if (q) q.textContent = n++;
+    });
+  }
+})();
+</script>
+</body>
+</html>
+

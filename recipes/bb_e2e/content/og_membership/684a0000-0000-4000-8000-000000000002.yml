@@ -1,0 +1,26 @@
+# BB-684: lead rank in the default workspace, which carries the
+# bb_ticket_template permissions.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 684a0000-0000-4000-8000-000000000002
+  default_langcode: en
+  bundle: default
+  depends:
+    684a0000-0000-4000-8000-000000000001: user
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
+  state:
+  - value: active
+  uid:
+  - entity: 684a0000-0000-4000-8000-000000000001
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-lead

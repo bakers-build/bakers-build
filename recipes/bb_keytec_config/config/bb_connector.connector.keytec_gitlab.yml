@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {  }
+id: keytec_gitlab
+label: 'keytec GitLab'
+plugin: gitlab
+import_interval: 0
+settings:
+  base_url: 'https://git.key-tec.de'
+  token: ''

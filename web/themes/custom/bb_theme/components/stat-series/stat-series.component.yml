@@ -1,0 +1,56 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Stat Series
+status: stable
+group: Data Display
+description: >-
+  A figure's recent daily counts drawn as BARS, so a trend is read at a glance
+  instead of by comparing a row of digits. Bars rather than a line because a
+  line stretched across a full-width content zone flattens into near-nothing,
+  while a bar is read against its own baseline and stays legible at any width
+  the layout gives it. Typically seven days, but the component fixes no length
+  and derives its geometry from however many points it is given. Drawn with proportional SVG bars and no charting library; the counts stay readable as text
+  above each bar, so nothing here is carried by the graphic alone.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: The figure's own name, rendered as the block heading.
+    days:
+      type: array
+      title: Days
+      minItems: 1
+      description: The points in chronological order, oldest first.
+      items:
+        type: object
+        properties:
+          date:
+            type: string
+            title: Date
+            description: ISO YYYY-MM-DD, used for the shape's accessible description.
+          label:
+            type: string
+            title: Axis label
+            description: The short caption drawn under the point, e.g. a weekday.
+          count:
+            type: integer
+            title: Count
+            description: The value at this point.
+        required:
+          - date
+          - label
+          - count
+    source:
+      type: string
+      title: Source
+      description: >-
+        Where the figure is read from, available in a native Data source disclosure.
+  required:
+    - label
+    - days
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

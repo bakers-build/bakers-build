@@ -1,0 +1,39 @@
+# bakers.build team OG role: lead.
+#
+# Carries the team's per-user (`by_user`) statistic reads, which are team-lead
+# only, the personal figures of the team's own members (bounded by the
+# user-scope disclosure check), and `edit`/`delete bb_project`: project
+# rights belong to the team, which carries visibility. Every lead also holds
+# `member`, so member's figures reach leads too.
+#
+# Shipped in its saved form, key for key.
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_team-bb_team-lead
+label: Lead
+weight: 2
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions:
+  - 'delete bb_project'
+  - 'edit bb_project'
+  - 'view bakers figure team_members'
+  - 'view bakers figure team_members_tickets_trend'
+  - 'view bakers figure team_user_overview'
+  - 'view bakers figure team_user_projects'
+  - 'view bakers figure team_user_runs_trend'
+  - 'view bakers figure team_user_tickets_trend'
+  - 'view bakers figure team_user_tokens_trend'
+  - 'view bakers figure user_models_trend'
+  - 'view bakers figure user_overview'
+  - 'view bakers figure user_projects'
+  - 'view bakers figure user_runs_trend'
+  - 'view bakers figure user_tickets_trend'
+  - 'view bakers figure user_tokens_trend'
+  - 'view team worklogs'
+role_type: standard

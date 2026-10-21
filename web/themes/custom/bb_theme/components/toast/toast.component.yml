@@ -1,0 +1,21 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Toast
+status: stable
+group: Data Display
+description: >-
+  A fixed bottom-right status toast for a short confirmation such as `Saved`. It
+  is one element without children, so a script can rewrite its text, `role` and
+  `hidden` in place. An empty message renders hidden. It announces through
+  `role="status"`; a caller that reports a failure switches it to `alert`.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    message:
+      type: string
+      title: Message
+      description: The confirmation text. Empty renders the toast hidden.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,93 @@
+(
+  /* The epics view mode is the PROJECT OVERVIEW INSPECTOR EPICS LIST.
+
+     The project `full` mapping places this mapping in the trailing inspector,
+     below Properties. The list is this project's `bb_epic` tickets as the normal
+     ticket list row. An empty list uses `empty-state`
+     (“No epics in this project.”). The inspector zone heading names the face,
+     so this mapping emits no extra heading. */
+  $p := $;
+  $facts := {
+    "1": {
+      "epics": [
+        {
+          "identifier": "BB-90",
+          "title": "Ticket detail overhaul",
+          "state": "active",
+          "created": "2 weeks ago",
+          "assignee_user_id": "1",
+          "priority": 2,
+          "url": "/acme/ticket/90"
+        },
+        {
+          "identifier": "BB-91",
+          "title": "First-time setup",
+          "state": "spec",
+          "created": "1 month ago",
+          "assignee_user_id": "2",
+          "priority": 2,
+          "url": "/acme/ticket/91"
+        }
+      ]
+    },
+    "3": {
+      "epics": []
+    }
+  };
+  $f := $lookup($facts, $p.id);
+  $people := {
+    "1": { "name": "Christian Wiedemann", "initials": "CW", "color": "unassigned" },
+    "2": { "name": "Sven Gruber", "initials": "SG", "color": "running" }
+  };
+  $exists($f) ? [{
+    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+    "props": {
+      "layout": "lines",
+      "pattern": {
+        "avatar": ["state"],
+        "headline": ["title", "priority"],
+        "meta": ["identifier", "created"],
+        "right": ["assignee"],
+        "captions": { "created": "Created" }
+      },
+      "items": [$map($f.epics, function($t) {
+        (
+          $who := $lookup($people, $t.assignee_user_id);
+          $prio := $t.priority ? "p" & $string($t.priority) : undefined;
+          {
+            "url": $t.url,
+            "accent": $t.state = "active" ? "running" : "idle",
+            "cells": $merge([
+              {
+                "state": { "kind": "status", "label": $t.state, "working": $t.state = "active" },
+                "title": { "kind": "link", "value": $t.title, "url": $t.url },
+                "identifier": { "kind": "link", "value": $t.identifier, "url": $t.url, "mono": true },
+                "created": { "kind": "rendered", "markup": $t.created },
+                "assignee": $who ? {
+                  "kind": "person",
+                  "display_name": $who.name,
+                  "initials": $who.initials,
+                  "color": $who.color,
+                  "name_hidden": true
+                } : {
+                  "kind": "person",
+                  "display_name": "Unassigned",
+                  "initials": "?",
+                  "color": "offline",
+                  "name_hidden": true
+                }
+              },
+              $prio ? { "priority": { "kind": "badge", "label": $uppercase($prio), "tone": $prio = "p1" ? "critical" : "neutral" } } : {}
+            ])
+          }
+        )
+      })]
+    },
+    "slots": {
+      "empty": {
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state",
+        "props": { "message": "No epics in this project." }
+      }
+    }
+  }] : []
+)

@@ -1,0 +1,51 @@
+component: bb_theme:summary-band
+name: Default
+slots:
+  flow:
+    - type: component
+      component: bb_theme:state-flow
+      props:
+        states:
+          - spec
+          - coding
+          - review
+          - done
+        current: coding
+        label: Workflow state flow
+  summary:
+    - type: component
+      component: bb_theme:event
+      props:
+        author_name: bakers-agent
+        author_initials: GA
+        author_color: running
+        role: agent
+        tag: summary
+        timestamp: 2026-06-29 09:14
+        body: <p>Extracted the transition table into <code>config/install/bb_ticket.workflow.yml</code>. Loaded transitions in the constructor, validated edges against the config on save, kept the e2e fixture states unchanged.</p>
+  links:
+    - type: component
+      component: bb_theme:link-group
+      props:
+        label: Code
+        links:
+          - url: https://gitlab.example.com/org/repo/-/merge_requests/42
+            title: MR !42 — per-project identifier
+            kind: mr
+          - url: https://gitlab.example.com/org/repo/-/tree/bakers/bb-42-identifier
+            title: bakers/bb-42-identifier
+            kind: branch
+    - type: component
+      component: bb_theme:link-group
+      props:
+        label: Test results
+        links:
+          - url: https://gitlab.example.com/org/repo/-/pipelines/12345
+            title: Pipeline
+            kind: ci
+          - url: https://gitlab.example.com/org/repo/-/pipelines/12345/test_report
+            title: Test report
+            kind: report
+            passed: 128
+            failed: 0
+            duration: 4m 12s

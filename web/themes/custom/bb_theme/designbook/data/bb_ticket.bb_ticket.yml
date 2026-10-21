@@ -1,0 +1,389 @@
+- id: '1'
+  created: '2026-06-01T08:00:00+00:00'
+  changed: '2026-06-30T16:45:00+00:00'
+  project_id: '1'
+  identifier: BB-142
+  workflow: bb_feature
+  title: Add designbook entity view-mode for bb_ticket
+  description: >-
+    <p>We need a <strong>full</strong> view-mode render for
+    <code>bb_ticket</code> so designers can preview ticket detail layouts
+    without hitting live Drupal data.</p><p>Scope includes the state-flow bar,
+    comment timeline, and reference chips for labels, parent, and blockers.</p>
+  state: coding
+  labels:
+    - '1'
+    - '2'
+  assignee_user_id: '1'
+  reviewers:
+    - '2'
+    - '3'
+  priority: 2
+  parent_id: '2'
+  blocked_by:
+    - '3'
+    - '5'
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/142
+  links:
+    - uri: https://gitlab.example.com/bakers/bakers/-/merge_requests/88
+      title: MR !88 — designbook entity view-mode
+      options:
+        bakers:
+          kind: mr
+    - uri: >-
+        https://gitlab.example.com/bakers/bakers/-/tree/bakers/bb-142-designbook-entity-view-mode
+      title: bakers/bb-142-designbook-entity-view-mode
+      options:
+        bakers:
+          kind: branch
+    - uri: https://gitlab.example.com/bakers/bakers/-/pipelines/48213
+      title: 'Pipeline #48213 (passed)'
+      options:
+        bakers:
+          kind: ci
+    - uri: https://bakers.example.com/docs/designbook
+      title: Designbook docs
+      options:
+        bakers:
+          kind: doc
+    - uri: >-
+        https://gitlab.example.com/bakers/bakers/-/jobs/48213/artifacts/file/playwright-report/index.html
+      title: Playwright BDD report — 48 scenarios
+      options:
+        bakers:
+          kind: report
+          passed: 46
+          failed: 2
+          duration: 3m 41s
+    - uri: https://bb-142.ddev.site/admin/bakers/ticket
+      title: Tickets screen on the bb-142 worktree
+      options:
+        bakers:
+          kind: ddev
+  comments:
+    - '1'
+    - '2'
+    - '3'
+  pending_reviews:
+    - '9'
+  branch_name: bakers/bb-142-designbook-entity-view-mode
+  closed: false
+  closed_date: null
+  number: 142
+  conductor_id: '1'
+  time_estimate: 14400
+  time_spent: 10800
+  environments:
+    - '2'
+  env_vars: |
+    BB_TARGET=develop
+  metrics:
+    - name: coverage
+      value: '84.2000'
+      unit: percent
+      recorded: '2026-06-28T14:30:00+00:00'
+  cleaned_up: true
+  owner_user_id: '1'
+  referenced_tickets: []
+  __designbook:
+    section: bb_ticket
+- id: '2'
+  created: '2026-05-10T10:00:00+00:00'
+  changed: '2026-06-20T11:00:00+00:00'
+  project_id: '1'
+  identifier: BB-100
+  number: 100
+  workflow: bb_feature
+  title: Designbook coverage for core bakers.build entities
+  description: >-
+    <p>Umbrella ticket tracking design-entity workflows across ticket, project,
+    comment, and term bundles. Hierarchy rides on parent_id/sub_tickets; there
+    is no epic workflow.</p>
+  state: qualification
+  labels:
+    - '1'
+  assignee_user_id: '2'
+  priority: 1
+  parent_id: null
+  blocked_by: []
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/100
+  links: []
+  comments: []
+  branch_name: null
+  closed: false
+  closed_date: null
+  __designbook:
+    section: bb_ticket
+- id: '3'
+  created: '2026-05-20T09:30:00+00:00'
+  changed: '2026-06-05T13:00:00+00:00'
+  project_id: '1'
+  identifier: BB-110
+  number: 110
+  workflow: bb_feature
+  title: Ship data-model schema for bb_ticket bundle
+  description: >-
+    <p>Formalize the field list and reference targets for <em>bb_ticket</em>
+    in <code>designbook/data-model.yml</code>.</p>
+  state: qualification
+  labels:
+    - '1'
+  assignee_user_id: '1'
+  priority: 3
+  parent_id: '2'
+  blocked_by: []
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/110
+  links: []
+  comments: []
+  branch_name: null
+  closed: false
+  closed_date: null
+  __designbook:
+    section: bb_ticket
+- id: '4'
+  created: '2026-05-25T14:00:00+00:00'
+  changed: '2026-06-10T09:15:00+00:00'
+  project_id: '1'
+  identifier: BB-118
+  number: 118
+  workflow: bb_feature
+  title: Draft ticket_detail component spec
+  description: >-
+    <p>Write the SDC spec for the ticket detail full-view component, covering
+    slots for state bar and comment timeline.</p>
+  state: spec
+  labels:
+    - '2'
+  assignee_user_id: '2'
+  priority: 2
+  parent_id: '2'
+  blocked_by: []
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/118
+  links: []
+  comments: []
+  branch_name: bakers/bb-118-ticket-detail-spec
+  closed: false
+  closed_date: null
+  __designbook:
+    section: bb_ticket
+- id: '5'
+  created: '2026-05-15T08:45:00+00:00'
+  changed: '2026-06-25T17:20:00+00:00'
+  project_id: '1'
+  identifier: BB-105
+  number: 105
+  workflow: bb_feature
+  title: Review comment-event rendering for typed comments
+  description: >-
+    <p>Confirm <code>spec</code>, <code>summary</code>, and plain
+    <code>comment</code> types each render with distinct visual treatment in the
+    timeline.</p>
+  state: review
+  labels:
+    - '2'
+    - '3'
+  assignee_user_id: '1'
+  priority: 2
+  parent_id: '2'
+  blocked_by: []
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/105
+  links:
+    - uri: https://gitlab.example.com/bakers/bakers/-/merge_requests/80
+      title: MR !80 — comment-event rendering
+      options:
+        bakers:
+          kind: mr
+  comments: []
+  branch_name: bakers/bb-105-comment-event-review
+  closed: false
+  closed_date: null
+  __designbook:
+    section: bb_ticket
+- id: '6'
+  created: '2026-04-01T08:00:00+00:00'
+  changed: '2026-04-20T12:00:00+00:00'
+  project_id: '1'
+  identifier: BB-90
+  number: 90
+  workflow: bb_feature
+  title: Bootstrap bb_theme SDC scaffolding
+  description: >-
+    <p>Initial scaffolding for the theme's single-directory components used by
+    designbook.</p>
+  state: done
+  labels:
+    - '3'
+  assignee_user_id: '2'
+  priority: 3
+  parent_id: null
+  blocked_by: []
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/90
+  links: []
+  comments: []
+  branch_name: bakers/bb-90-sdc-scaffolding
+  closed: true
+  closed_date: '2026-04-20T12:00:00+00:00'
+  __designbook:
+    section: bb_ticket
+- id: '7'
+  created: '2026-06-15T10:00:00+00:00'
+  changed: '2026-06-30T16:40:00+00:00'
+  project_id: '1'
+  identifier: BB-145
+  number: 145
+  workflow: bb_feature
+  title: Comment feed region in ticket_detail
+  description: <p>Render the ticket comment timeline inside the full view-mode.</p>
+  state: coding
+  labels:
+    - '2'
+  assignee_user_id: '1'
+  priority: 2
+  parent_id: '1'
+  blocked_by: []
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/145
+  links: []
+  comments: []
+  branch_name: bakers/bb-145-comment-feed-region
+  closed: false
+  closed_date: null
+  __designbook:
+    section: bb_ticket
+- id: '8'
+  created: '2026-06-16T09:00:00+00:00'
+  changed: '2026-06-29T14:10:00+00:00'
+  project_id: '1'
+  identifier: BB-146
+  number: 146
+  workflow: bb_feature
+  title: Runs, sub-tickets and footprint sections
+  description: >-
+    <p>Add reverse/aggregate regions (runs, sub-tickets, footprint) to the full
+    view-mode.</p>
+  state: review
+  labels:
+    - '2'
+    - '3'
+  assignee_user_id: '2'
+  priority: 3
+  parent_id: '1'
+  blocked_by: []
+  origin: https://gitlab.example.com/bakers/bakers/-/issues/146
+  links: []
+  comments: []
+  branch_name: bakers/bb-146-reverse-sections
+  closed: false
+  closed_date: null
+  __designbook:
+    section: bb_ticket
+# Northwind (workspace 2, project 2, key NWS). Selecting workspace 2 must yield
+# a non-empty Board, Tickets list and Runs list, so this workspace carries its
+# own tickets, run and comments, with assignees and owners drawn only from
+# Northwind's people (users 3 and 4). Numbers sit below the project's
+# next_number of 84.
+- id: '9'
+  created: '2026-06-08T09:00:00+00:00'
+  changed: '2026-06-29T16:20:00+00:00'
+  project_id: '2'
+  identifier: NWS-80
+  number: 80
+  workflow: bb_feature
+  title: Checkout address step rewrite
+  description: >-
+    <p>Rebuild the address step of the checkout flow so it validates postcodes
+    per country and keeps entered data on a failed submit.</p>
+  state: coding
+  labels:
+    - '2'
+  assignee_user_id: '3'
+  priority: 1
+  parent_id: null
+  blocked_by: []
+  origin: https://gitlab.example.com/northwind/shop/-/issues/80
+  links:
+    - uri: https://gitlab.example.com/northwind/shop/-/merge_requests/41
+      title: MR !41 — checkout address step
+      options:
+        bakers:
+          kind: mr
+  comments:
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+  branch_name: feat/nws-80-checkout-address-step
+  closed: false
+  closed_date: null
+  conductor_id: '2'
+  time_estimate: 21600
+  time_spent: 12600
+  environments:
+    - '3'
+  env_vars: |
+    NWS_TARGET=staging
+  metrics:
+    - name: coverage
+      value: '71.5000'
+      unit: percent
+      recorded: '2026-06-29T16:20:00+00:00'
+  cleaned_up: false
+  owner_user_id: '3'
+  referenced_tickets: []
+  __designbook:
+    section: bb_ticket
+- id: '10'
+  created: '2026-06-11T10:30:00+00:00'
+  changed: '2026-06-27T09:45:00+00:00'
+  project_id: '2'
+  identifier: NWS-81
+  number: 81
+  workflow: bb_bug
+  title: Cart total ignores per-item discounts
+  description: >-
+    <p>The cart summary sums list prices, so a per-item discount is applied at
+    payment but never shown in the total the customer sees.</p>
+  state: review
+  labels:
+    - '3'
+  assignee_user_id: '4'
+  priority: 1
+  parent_id: null
+  blocked_by: []
+  origin: https://gitlab.example.com/northwind/shop/-/issues/81
+  links: []
+  comments: []
+  branch_name: fix/nws-81-cart-total-discounts
+  closed: false
+  closed_date: null
+  owner_user_id: '3'
+  __designbook:
+    section: bb_ticket
+- id: '11'
+  created: '2026-06-24T14:00:00+00:00'
+  changed: '2026-06-26T08:10:00+00:00'
+  project_id: '2'
+  identifier: NWS-82
+  number: 82
+  workflow: bb_chore
+  title: Move the staging deploy onto the shared runner
+  description: >-
+    <p>Staging still builds on the retired dedicated runner. Move the pipeline
+    to the shared runner pool and drop the runner-specific cache paths.</p>
+  state: qualification
+  labels:
+    - '1'
+  assignee_user_id: '3'
+  priority: 3
+  parent_id: null
+  blocked_by: []
+  origin: https://gitlab.example.com/northwind/shop/-/issues/82
+  links: []
+  comments: []
+  branch_name: null
+  closed: false
+  closed_date: null
+  environments:
+    - '3'
+  owner_user_id: '3'
+  __designbook:
+    section: bb_ticket

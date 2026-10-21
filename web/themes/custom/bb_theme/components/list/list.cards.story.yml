@@ -1,0 +1,105 @@
+# The MEMBERS list, `layout: cards` — and the one INTERACTIVE cell in the whole set.
+#
+# A membership is a person, one small reversible property and a date, which is why it was never a
+# table: nobody scans a role down a column, and putting the values in cells promises a comparison the
+# data does not support. The deleted entry component made that argument in a 40-line block comment and
+# then owned the markup; the argument now lives in `layout: cards`, and the markup lives in one place
+# for every listing in the theme.
+#
+# THE ROLE IS A `picker` CELL, and that is the cell kind the members list cannot lose. A role is
+# reversible, so `action-pattern.md` › *Inline edit* applies unchanged — the pick IS the write, no save
+# button, no confirmation — and the cell therefore carries the option set, the `picker_id` and the open
+# state. A CLOSED PICKER AND A MISSING PICKER RENDER IDENTICALLY, and Storybook never calls
+# `Drupal.attachBehaviors`, so the open state is a prop and the second item here renders it open. That
+# is the only way this control is visible at all in a build.
+#
+# THIS STORY KEEPS THE `action` CELL FOR REMOVE, and the Drupal members surface reaches the same
+# control through a `rendered` cell instead (see `list.rendered.story.yml`). That is the same split
+# the role cell already documents below: an `action` cell is DATA — icon, variant, the accessible
+# sentence naming the effect — and `MemberItemBuilder` emits the remove control as markup a component
+# already produced, addressed by its key, so it has to be the ninth kind instead. The design's
+# statement is the action cell; the delivery mechanism is `rendered`. `label` stays a SENTENCE naming
+# the effect either way, because `action-pattern.md` names the effect of a single-step action that has
+# a server-side one instead of confirming it; `button` moves that sentence into `aria-label`, so it
+# never appears as visible prose on the item. Read the rendered output for the accessible name — the
+# visible line carries only the person, the role and the date.
+#
+# THE ROLES ARE THE ONES THE SITE SHIPS, which they were not until BB-435. This story offered
+# `Maintainer` / `Contributor` / `Viewer` — a rank set no `og.og_role` in `config/sync` has ever
+# carried — so the members list's own story taught three ranks the product does not have. A project
+# ships exactly two, `lead` and `member`, and `member` is `role_type: required`: `OgMembership::preSave()`
+# revokes it and `getRoles()` prepends it on read, so it is never stored and an empty `roles` array IS
+# a member. Both are named here as the picker's option set.
+#
+# THIS STORY KEEPS THE `picker` CELL, and the Drupal members surface reaches the same control through a
+# `rendered` cell instead (see `list.rendered.story.yml`). That is not two designs: a `picker` cell is
+# DATA, and a role pick that IS the write has to be a named submit trigger of the enclosing form,
+# which is markup the form layer produces. The design's statement is the picker; the delivery mechanism
+# is the ninth kind.
+#
+# TWO ARMS, NEVER BOTH, exactly as the deleted component had them: a workspace or project membership
+# grants rights and shows the role picker; a team membership grants none and shows its membership
+# state as a plain `badge`. Which arm an item is remains the mapping's decision — the container renders
+# the cells it is handed, so a scene cannot add the role control back by adding a column.
+component: bb_theme:list
+name: Cards
+props:
+  layout: cards
+  items:
+    - cells:
+        person:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: running
+          mail: christian.wiedemann@keytec.de
+        role:
+          kind: picker
+          label: Role
+          picker_id: member-role-1
+          value_labels:
+            - Lead
+          options:
+            - { value: lead, label: Lead, selected: true }
+            - { value: member, label: Member }
+        joined: { kind: text, value: joined 2026-03-04, emphasis: faint }
+        remove:
+          kind: action
+          icon: x-circle
+          icon_only: true
+          variant: ghost
+          label: Remove Christian Wiedemann from the project. Revokes their access.
+    - cells:
+        person:
+          kind: person
+          display_name: Marco Klein
+          initials: MK
+          color: attention
+          mail: marco.klein@example.org
+        role:
+          kind: picker
+          label: Role
+          picker_id: member-role-2
+          open: true
+          value_labels:
+            - Member
+          options:
+            - { value: lead, label: Lead }
+            - { value: member, label: Member, selected: true }
+        joined: { kind: text, value: joined 2026-05-19, emphasis: faint }
+        remove:
+          kind: action
+          icon: x-circle
+          icon_only: true
+          variant: ghost
+          label: Remove Marco Klein from the project. Revokes their access.
+    # The state arm: a team membership carries no role control at all — not an empty one and not a
+    # disabled one, because a disabled control invites the operator to hunt for what would enable it.
+    - cells:
+        person:
+          kind: person
+          display_name: bb_agent
+          initials: GA
+          color: offline
+        state: { kind: badge, label: active, tone: neutral }
+        joined: { kind: text, value: joined 2026-01-08, emphasis: faint }

@@ -1,0 +1,51 @@
+{#
+/**
+ * @file
+ * Style the <fieldset> wrapper used by options_buttons widgets (radios groups
+ * with a legend). Copies core's structure; only adds semantic-token
+ * utilities.
+ */
+#}
+{%
+  set classes = [
+    'js-form-item',
+    'form-item',
+    'js-form-wrapper',
+    'form-wrapper',
+    'border', 'border-control-border', 'rounded-sm', 'bg-app', 'px-3', 'py-2',
+  ]
+%}
+<fieldset{{ attributes.addClass(classes) }}>
+  {%
+    set legend_span_classes = [
+      'fieldset-legend',
+      'text-text', 'text-body', 'font-medium',
+      required ? 'js-form-required',
+      required ? 'form-required',
+    ]
+  %}
+  {# Always wrap fieldset legends in a <span> for CSS positioning. #}
+  <legend{{ legend.attributes }}>
+    <span{{ legend_span.attributes.addClass(legend_span_classes) }}>{{ legend.title }}</span>
+  </legend>
+  <div class="fieldset-wrapper">
+    {% if description_display == 'before' and description.content %}
+      <div{{ description.attributes.addClass(['description', 'text-caption', 'text-text-light']) }}>{{ description.content }}</div>
+    {% endif %}
+    {% if errors %}
+      <div>
+        {{ errors }}
+      </div>
+    {% endif %}
+    {% if prefix %}
+      <span class="field-prefix">{{ prefix }}</span>
+    {% endif %}
+    {{ children }}
+    {% if suffix %}
+      <span class="field-suffix">{{ suffix }}</span>
+    {% endif %}
+    {% if description_display in ['after', 'invisible'] and description.content %}
+      <div{{ description.attributes.addClass(['description', 'text-caption', 'text-text-light']) }}>{{ description.content }}</div>
+    {% endif %}
+  </div>
+</fieldset>

@@ -1,0 +1,53 @@
+# sgruber's WORKSPACE membership — the rank half of BB-359's browser evidence.
+#
+# `sgruber` deliberately holds NO Drupal role at all (see its user fixture), so
+# everything this account can do in the browser comes from this membership and
+# its Platform Crew team membership (…0007). That is the subject AC 1 asks for:
+# "a user with a rank and no product Drupal role".
+#
+# BB-462 D7: the project membership formerly paired with this fixture (the
+# original …0005) is gone — project membership no longer exists at all, and
+# …0007's team membership already gives this account team-scoped project reach
+# through bakers.build Platform's `teams` field, so nothing was lost by dropping it.
+#
+# `member`, not `lead`: the lead subject already exists (cwiedemann, …0002) and
+# a second one would prove nothing new. What is missing from the seeded world is
+# the ordinary contributor.
+#
+# No `roles` key, and that is not an omission: `member` is OG's structurally
+# REQUIRED role. OgMembership::preSave() revokes it as implicit and getRoles()
+# re-adds it, so naming it here is not just redundant — the importer rejects it
+# outright with "This entity (og_role: bb_workspace-bb_workspace-member)
+# cannot be referenced". An active membership carrying no roles IS a member.
+#
+# The workspace is BbWorkspace::DEFAULT_UUID, the one bb_core_install()
+# creates on every install path; it is deliberately not shipped as recipe
+# content, because `system.site.front` points at its slug.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000004
+  bundle: default
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    dbe50000-0000-4000-8000-000000000002: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_workspace
+  entity_bundle:
+    -
+      value: bb_workspace
+  entity_id:
+    -
+      value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
+  uid:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000002"
+  state:
+    -
+      value: active

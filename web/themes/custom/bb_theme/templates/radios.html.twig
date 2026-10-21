@@ -1,0 +1,9 @@
+{#
+/**
+ * @file
+ * Style the wrapper Drupal renders around a set of #type => radios children.
+ * Individual radio inputs stay bare (see input--radio.html.twig); this only
+ * spaces the group.
+ */
+#}
+<div{{ attributes.addClass(['flex', 'flex-col', 'gap-2']) }}>{{ children }}</div>

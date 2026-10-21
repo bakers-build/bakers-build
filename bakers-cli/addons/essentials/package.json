@@ -1,0 +1,35 @@
+{
+  "name": "@bakers-build/addon-essentials",
+  "version": "0.0.1",
+  "description": "bakers.build aggregator plugin: auto-loads the dropsh essentials (markdown + authoritative JSON:API schema).",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^"
+  },
+  "dependencies": {
+    "@dropsh/plugin-markdown": "^0.7.1",
+    "@dropsh/plugin-jsonapi-schema": "^0.7.1",
+    "@bakers-build/addon-name-refs": "workspace:^",
+    "dropsh": "^0.7.5"
+  },
+  "devDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

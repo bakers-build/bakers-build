@@ -1,0 +1,7 @@
+field.formatter.settings.bb_addon_definition:
+  type: mapping
+  label: 'Addon definition part formatter settings'
+  mapping:
+    part:
+      type: string
+      label: 'Part: label, icon or versions'

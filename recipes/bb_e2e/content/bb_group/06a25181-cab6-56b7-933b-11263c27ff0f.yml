@@ -1,0 +1,13 @@
+# Dedicated API contract fixture; independent of the product-navigation seed.
+_meta:
+  version: '1.0'
+  entity_type: bb_group
+  uuid: 06a25181-cab6-56b7-933b-11263c27ff0f
+  default_langcode: en
+  depends:
+    14e28539-bd41-58be-8f7f-f013035f69e5: bb_workspace
+default:
+  name:
+  - value: API other
+  workspace_id:
+  - entity: 14e28539-bd41-58be-8f7f-f013035f69e5

@@ -1,0 +1,56 @@
+bb_browser_test.profiles:
+  path: '/admin/structure/island/browser-fixture'
+  defaults:
+    _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::page'
+    _title: 'Repeated Island Profile fixture'
+  requirements:
+    _permission: 'administer island profiles'
+  options:
+    _admin_route: true
+
+bb_browser_test.mapping:
+  path: '/admin/structure/island/browser-mapping'
+  defaults:
+    _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::page'
+    _title: 'Mapped Island Profile fixture'
+    profile_id: 'browser_mapping'
+  requirements:
+    _permission: 'administer island profiles'
+  options:
+    _admin_route: true
+
+bb_browser_test.menu_first:
+  path: '/island-browser/menu/first'
+  defaults:
+    _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::menuPage'
+    _title: 'First menu page'
+    page: 'first'
+  requirements:
+    _permission: 'administer island profiles'
+
+bb_browser_test.menu_second:
+  path: '/island-browser/menu/second'
+  defaults:
+    _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::menuPage'
+    _title: 'Second menu page'
+    page: 'second'
+  requirements:
+    _permission: 'administer island profiles'
+
+bb_browser_test.conditional_first:
+  path: '/island-browser/conditional/first'
+  defaults:
+    _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::menuPage'
+    _title: 'First conditional page'
+    page: 'first'
+  requirements:
+    _permission: 'administer island profiles'
+
+bb_browser_test.conditional_second:
+  path: '/island-browser/conditional/second'
+  defaults:
+    _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::menuPage'
+    _title: 'Second conditional page'
+    page: 'second'
+  requirements:
+    _permission: 'administer island profiles'

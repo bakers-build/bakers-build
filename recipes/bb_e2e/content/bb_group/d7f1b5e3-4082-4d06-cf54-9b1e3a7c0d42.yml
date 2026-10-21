@@ -1,0 +1,13 @@
+# Dedicated group for write contracts; listings that filter "API home" ignore it.
+_meta:
+  version: '1.0'
+  entity_type: bb_group
+  uuid: d7f1b5e3-4082-4d06-cf54-9b1e3a7c0d42
+  default_langcode: en
+  depends:
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  name:
+  - value: API edit group
+  workspace_id:
+  - entity: e10b39b4-52d8-5384-84ba-95286c10edd3

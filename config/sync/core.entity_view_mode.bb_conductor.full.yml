@@ -1,0 +1,11 @@
+uuid: 4e7a1c8b-2d5f-4a91-b3e6-8c0d1f2a5b79
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_conductor.full
+label: Full
+description: ''
+targetEntityType: bb_conductor
+cache: true

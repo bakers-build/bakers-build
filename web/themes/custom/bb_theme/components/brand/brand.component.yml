@@ -1,0 +1,25 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Brand
+status: stable
+group: Shell
+description: bakers.build login heading with the original braid and terminal block wordmark.
+props:
+  type: object
+  properties:
+    size:
+      type: string
+      enum:
+        - default
+        - compact
+      title: Size
+      description: >-
+        `default` is the full mark onboarding uses. `compact` is the 128px mark
+        the gate chrome uses, so a gate page's message rather than its mark is
+        the dominant element. Compact marks are images, leaving the screen its
+        h1; their geometry comes from `component.brand.compact.*` and does not
+        follow the layout density.
+      default: default
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

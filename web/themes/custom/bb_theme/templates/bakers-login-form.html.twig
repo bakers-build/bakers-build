@@ -1,0 +1,40 @@
+{#
+/**
+ * @file
+ * Login presenter: the one labelled e-mail row and one primary action.
+ *
+ * THE ROW IS THE DESIGN SYSTEM'S, not this template's. `form-element-label`
+ * includes `bb_theme:form_label` and `input` includes
+ * `bb_theme:form_input`, so printing `form.mail` renders a component-styled
+ * label bound to a component-styled input by core's own `for`/`id` pair. That
+ * binding is why this file prints the ELEMENT and never rebuilds it from parts:
+ * a hand-written `<label for>` here would be a second source for one
+ * relationship AC-10 requires to hold.
+ *
+ * `bb_theme:form` IS NOT USED, and this is the template where that would be
+ * tempting. Its contract opens with *"The dialog is not a form of labelled
+ * rows"* and its slots are `lead`/`lines`/`pills`/`actions` with no label row
+ * at all — so it rejects this shape rather than merely not fitting it
+ * (BB-430 spec r2 R2).
+ *
+ * THE ERROR IS TIED TO THE FIELD by core, not here: `setErrorByName('mail')`
+ * makes core add `aria-invalid` and the `error` class to the input. The
+ * `aria-describedby` hop to the message region is the one thing core does not
+ * add, and it is added below — the same technique
+ * `user-login-form.html.twig` used for the password form this ticket replaces.
+ * That template is now unreachable: r8 mounts this form on `user.login`, the
+ * only route that ever built it. It is left in place rather than deleted here
+ * because removing it is a code change, not the comment fix this is.
+ */
+#}
+{% set field = form.mail %}
+{% if field['#errors'] %}
+  {% set field = field|merge({
+    '#attributes': field['#attributes']|merge({
+      'aria-describedby': (field['#attributes']['aria-describedby']|default('') ~ ' messages-error')|trim,
+    }),
+  }) %}
+{% endif %}
+{{ field }}
+{{ form.actions }}
+{{ form|without('mail', 'actions') }}

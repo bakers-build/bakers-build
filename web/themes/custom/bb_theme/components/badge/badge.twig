@@ -1,0 +1,92 @@
+{# ONE BADGE: `[dot] [icon] label [suffix]`, tinted by `tone`.
+
+   FOUR COMPONENTS FOLDED IN HERE, and each was a badge with one detail added:
+   the pill was a badge with a dot, the claim was a badge with a lock glyph and a
+   machine id, the refresh indicator was a badge with a relative time after the
+   label, and the dot was that detail on its own — no props, no story reference,
+   four composers. Every one of the four carried its own copy of the tint table
+   below, which is the whole reason there is now one.
+
+   THE DOT IS THE DELETED COMPONENT'S MARKUP, INLINED — one span, one colour from
+   the map, `aria-hidden`. It stays `aria-hidden` for the same reason it always
+   was: the colour is not information a screen reader can use, and the label
+   beside it says the same thing in words. That is also the part the bare dot got
+   wrong. On a board column header and a run's status line it was rendered with
+   NO label at all, so a sighted reader saw a state and a screen reader saw
+   nothing. Here `label` is required, so a dot can never again be the only thing
+   carrying the meaning.
+
+   THE TINT TABLE IS SHORTER THAN THE TONE LIST, and that is measured rather than
+   sloppy. `css/tokens/color.src.css` defines five state colours
+   (`running`, `attention`, `unassigned`, `lease`, `offline`), five `-tint`
+   variants and only FOUR `-ink` variants: there is no `--color-state-offline-ink`,
+   no `state-stale-*` and no `state-idle-*` at all. So three tones —
+   `stale`, `offline`, `idle` — have no tint/ink pair to be tinted with and read
+   on the quiet surface instead, while `stale` and `offline` keep the hollow ring
+   that distinguished them on the dot. Inventing the missing tokens here would
+   put a colour decision in a template.
+
+   `wait` MAPS ONTO THE `unassigned` TOKEN PAIR. That is not a typo: the deleted
+   pill mapped it the same way, because the red is the colour of "nobody is
+   acting on this" and `wait` is the name the tone vocabulary gives it.
+
+   `critical` MAPS ONTO THE SAME PAIR, and shares it rather than asking for a
+   sixth state colour, because the token layer defines no critical hue and a
+   template is the wrong place to choose one. Two tones over one pair is not a
+   duplicate: `wait` says nobody is acting on this and `critical` says this one is
+   first, and the second is what the absorbed `priority` variant rendered P1 with.
+   Until then P1 borrowed `wait` — the right red under the wrong name.
+
+   `lease` IS THE FIFTH PAIR AND THE ONE NOTHING REACHED. The indigo
+   `--color-state-lease-tint`/`-ink` existed in the token layer while the badge
+   that used it was folded in as `tone: neutral` + `icon: lock`, which lost the
+   tint, the mono face and the outline in one step. `mono` and `mine` below are
+   the other two thirds of that repair. #}
+{% set tone_key = tone|default('neutral') %}
+{% set quiet = 'bg-surface-3 text-text-light' %}
+{% set tint_map = {
+  'running': 'bg-state-running-tint text-state-running-ink',
+  'attention': 'bg-state-attention-tint text-state-attention-ink',
+  'wait': 'bg-state-unassigned-tint text-state-unassigned-ink',
+  'critical': 'bg-state-unassigned-tint text-state-unassigned-ink',
+  'lease': 'bg-state-lease-tint text-state-lease-ink'
+} %}
+{% set dot_map = {
+  'running': 'bg-state-running',
+  'attention': 'bg-state-attention',
+  'wait': 'bg-state-unassigned',
+  'critical': 'bg-state-unassigned',
+  'lease': 'bg-state-lease',
+  'stale': 'bg-transparent border-2 border-state-attention',
+  'offline': 'bg-transparent border-2 border-state-offline'
+} %}
+{#- THE OUTLINE OF `mine`, IN THE TONE'S OWN COLOUR, at the width and the opacity
+    the deleted claim badge drew it: one hairline at 45% of the state hue, which
+    reads as a ring on the tint without becoming a second border. It is mapped
+    per tone rather than hard-wired to indigo so that a `mine` badge on any tinted
+    tone outlines in its own colour instead of in somebody else's. #}
+{% set mine_map = {
+  'running': 'outline outline-1 outline-state-running/45',
+  'attention': 'outline outline-1 outline-state-attention/45',
+  'wait': 'outline outline-1 outline-state-unassigned/45',
+  'critical': 'outline outline-1 outline-state-unassigned/45',
+  'lease': 'outline outline-1 outline-state-lease/45'
+} %}
+{% set badge_classes = [
+  'inline-flex', 'max-w-full', 'min-w-0', 'overflow-x-clip', '*:min-w-0', 'items-center', 'gap-1', 'h-5', 'px-2',
+  'rounded-sm', 'text-eyebrow', 'font-semibold', 'whitespace-nowrap',
+  tint_map[tone_key]|default(quiet),
+] %}
+{% if mono %}{% set badge_classes = badge_classes|merge(['font-mono']) %}{% endif %}
+{% if mine and mine_map[tone_key] is defined %}{% set badge_classes = badge_classes|merge([mine_map[tone_key]]) %}{% endif %}
+{#- `role="listitem"` is not derived and not guessed: a badge cannot know whether
+    it is a direct child of a `role="list"` container, and a `listitem` outside a
+    list is as wrong as a list without items. So the caller that sets
+    `bb_theme:zone`'s `list: true` says so here too. It disappears the moment a
+    container owns its own items. #}
+<span{{ (attributes ?: create_attribute()).addClass(badge_classes) }}{% if list_item %} role="listitem"{% endif %}>
+  {%- if dot %}<span class="inline-block shrink-0 w-2 h-2 rounded-full {{ dot_map[tone_key]|default('bg-state-offline') }}" aria-hidden="true"></span>{% endif %}
+  {%- if icon %}{{ include('bb_theme:icon', { name: icon, size: 'xs' }, with_context = false) }}{% endif %}
+  <span data-badge-label>{{ label }}</span>
+  {%- if suffix %}<span class="font-mono text-eyebrow text-text-faint">{{ suffix }}</span>{% endif %}
+</span>

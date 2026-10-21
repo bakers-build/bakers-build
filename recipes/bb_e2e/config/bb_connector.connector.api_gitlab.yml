@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {}
+id: api_gitlab
+label: API contract GitLab
+plugin: gitlab
+settings:
+  base_url: https://gitlab.api-contract.test
+  token: public-test-token
+import_interval: 0

@@ -1,0 +1,21 @@
+uuid: c4590d09-e074-4433-95ec-aee2e5bbe0d0
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_figure.project_tickets_trend
+  - bb_core.bb_figure.team_members_tickets_trend
+  - bb_core.bb_figure.team_tickets_trend
+  - bb_core.bb_figure.team_user_tickets_trend
+  - bb_core.bb_figure.user_tickets_trend
+_core:
+  default_config_hash: bakers551_tickets
+id: tickets
+label: Tickets
+weight: 10
+figures:
+- user_tickets_trend
+- team_user_tickets_trend
+- team_tickets_trend
+- team_members_tickets_trend
+- project_tickets_trend

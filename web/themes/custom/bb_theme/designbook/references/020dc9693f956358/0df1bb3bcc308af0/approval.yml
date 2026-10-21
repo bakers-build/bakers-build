@@ -1,0 +1,11 @@
+decided_at: '2026-09-24T13:57:43.078Z'
+fingerprint: 40e37c2ef9c39d2e221ae7a33990bba8b536a094715bb0ca80712cf1c078227d
+note: 'User approved this exact image in the conversation: freigabe.'
+scope:
+  states:
+    - default
+  subjects:
+    - ticket-list
+  views:
+    - desktop
+status: approved

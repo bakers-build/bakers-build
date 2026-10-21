@@ -1,0 +1,21 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Icon
+status: stable
+group: Media
+description: 'Renders the bakers UI Icons pack through the Drupal Icon API. Storybook provides a preview implementation of icon().'
+provider: bb_theme
+props:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+      title: Name
+      description: 'Icon id = sprite symbol / source file name (user, team, project, dashboard, eye, arrow-right, lock, alert-triangle, x-circle, info-circle, plus).'
+    size:
+      type: string
+      title: Size
+      enum: [xs, sm, md, lg, xl]
+      default: md
+      description: 'xs 12 · sm 14 · md 16 · lg 20 · xl 24 (px).'

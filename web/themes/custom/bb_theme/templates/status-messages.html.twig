@@ -1,0 +1,61 @@
+{#
+/**
+ * @file
+ * bakers.build status messages: a confirmation is a toast, a warning or error a bar.
+ *
+ * A `status` message (every "… saved." among them) is a bb_theme:toast,
+ * fixed bottom-right, announced by its own role="status" and hidden again
+ * after a few seconds. Warnings and errors stay a bb_theme:message bar where
+ * they are rendered, next to the fields they concern. The
+ * accessibility semantics core relies on are preserved on the SDC root via the
+ * passed attributes: `data-drupal-messages` (drupal.message JS hook),
+ * role="alert" for errors / role="contentinfo" otherwise, and the aria-label
+ * from status_headings.
+ *
+ * Available variables:
+ * - message_list: List of messages keyed by type (status, warning, error).
+ * - status_headings: List of headings per message type.
+ * - attributes: HTML attributes for the outer wrapper (unused — each region is
+ *   its own SDC instance).
+ */
+#}
+{% for type, messages in message_list %}
+  {% if type == 'status' %}
+    {#- The toast is one element with a text prop, so the messages travel as
+        plain text; `data-drupal-messages` keeps core's message JS hook. #}
+    {% include 'bb_theme:toast' with {
+      message: messages|map(m => m|render|striptags|trim)|join(' '),
+      attributes: create_attribute({
+        'id': 'messages-status',
+        'data-drupal-messages': '',
+        'x-data': '',
+        'x-init': 'setTimeout(() => { $el.hidden = true }, 5000)',
+      }),
+    } only %}
+  {% else %}
+  {% set body %}
+    {% if status_headings[type] %}
+      <div class="visually-hidden">{{ status_headings[type] }}</div>
+    {% endif %}
+    {% if messages|length > 1 %}
+      <ul class="message__items">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      {{ messages|first }}
+    {% endif %}
+  {% endset %}
+  {% include 'bb_theme:message' with {
+    status: type,
+    body: body,
+    attributes: create_attribute({
+      'id': 'messages-' ~ type,
+      'data-drupal-messages': '',
+      'role': type == 'error' ? 'alert' : 'contentinfo',
+      'aria-label': status_headings[type]|default(type),
+    }),
+  } only %}
+{% endif %}
+{% endfor %}

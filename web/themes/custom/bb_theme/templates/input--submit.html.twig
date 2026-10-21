@@ -1,0 +1,17 @@
+{#
+/**
+ * @file
+ * Presenter override: the submit <input> gets the exact same classes as the
+ * bb_theme submit SDC button, so buttons rendered as <input type="submit">
+ * (core / formblock forms) match the submit component one-to-one. Class
+ * injection — the SDC itself is a <button>, which cannot wrap an <input>.
+ *
+ * @see web/themes/custom/bb_theme/components/submit/submit.twig
+ */
+#}
+<input{{ attributes.addClass([
+  'submit', 'flex', 'items-center', 'justify-center', 'gap-[8px]', 'w-full',
+  'h-[40px]', 'rounded-sm', 'bg-surface-2', 'border', 'border-border', 'text-text',
+  'text-body', 'font-bold', 'cursor-pointer', 'hover:bg-surface-3',
+  'disabled:opacity-60', 'disabled:cursor-not-allowed',
+]) }} />{{ children }}

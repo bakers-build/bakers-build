@@ -1,0 +1,11 @@
+{
+  "info": {
+    "id": "019ff5e0-9224-7121-9a76-52630bbd18ad",
+    "cwd": "/tmp/bakers-wt-grok"
+  },
+  "created_at": "2026-08-12T12:09:23.256056469Z",
+  "updated_at": "2026-08-12T12:09:32.451749681Z",
+  "current_model_id": "grok-4.5",
+  "agent_name": "grok-build-plan",
+  "reasoning_effort": "high"
+}

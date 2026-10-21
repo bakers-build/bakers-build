@@ -1,0 +1,81 @@
+# `surface`: the rail as one panel whose `rows` children are blocks separated
+# by one divider; the footer is the last block.
+component: bb_theme:inspector
+name: Surface
+props:
+  surface: true
+slots:
+  rows:
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: sm
+        columns: 1
+      slots:
+        heading:
+          - type: element
+            tag: span
+            value: Properties
+        content:
+          - type: component
+            component: bb_theme:list
+            props:
+              layout: plain
+              items:
+                - cells:
+                    label: { kind: text, value: Assignee, emphasis: faint }
+                    value: { kind: text, value: bakers-agent }
+                - cells:
+                    label: { kind: text, value: Created by, emphasis: faint }
+                    value: { kind: text, value: Christian Wiedemann }
+    - type: component
+      component: bb_theme:collapsible
+      props:
+        open: true
+      slots:
+        label:
+          - type: component
+            component: bb_theme:text
+            props: { text: Effort, as: span, size: caption, tone: faint }
+        content:
+          - type: component
+            component: bb_theme:list
+            props:
+              layout: plain
+              items:
+                - cells:
+                    label: { kind: text, value: Estimate, emphasis: faint }
+                    value: { kind: text, value: 4h }
+    - type: component
+      component: bb_theme:collapsible
+      props:
+        open: true
+      slots:
+        label:
+          - type: component
+            component: bb_theme:text
+            props: { text: Relations · 2, as: span, size: caption, tone: faint }
+        content:
+          - type: component
+            component: bb_theme:list
+            props:
+              layout: plain
+              items:
+                - cells:
+                    label: { kind: text, value: Blocked by, emphasis: faint }
+                    value: { kind: badge, label: BB-110, tone: neutral, mono: true, url: /_workspace/1/ticket/3 }
+                    value_2: { kind: badge, label: BB-105, tone: neutral, mono: true, url: /_workspace/1/ticket/5 }
+  footer:
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: danger
+        label: Cancel ticket
+        type: button
+    - type: component
+      component: bb_theme:text
+      props:
+        text: More settings
+        size: caption
+        href: /_workspace/1/ticket/1/edit

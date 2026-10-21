@@ -1,0 +1,22 @@
+# The workspace named here is BbWorkspace::DEFAULT_UUID — the one
+# bb_core_install() creates on every install path, deliberately NOT
+# shipped as recipe content (BB-350). Every term carries the edge since
+# BB-339 made workspace_id required.
+_meta:
+  version: '1.0'
+  entity_type: bb_term
+  uuid: 08b09637-d627-484d-a75a-4e1639ae0593
+  bundle: bb_labels
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+default:
+  name:
+    -
+      value: e2e-label
+  weight:
+    -
+      value: 0
+  workspace_id:
+    -
+      entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"

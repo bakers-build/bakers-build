@@ -1,0 +1,89 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket
+  uuid: dba00000-0000-4000-8000-000000000001
+  depends:
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbf00000-0000-4000-8000-000000000001: bb_project
+    dbe50000-0000-4000-8000-000000000001: user
+    db1a0000-0000-4000-8000-000000000001: bb_term
+    db1a0000-0000-4000-8000-000000000002: bb_term
+    dba00000-0000-4000-8000-000000000002: bb_ticket
+    dba00000-0000-4000-8000-000000000003: bb_ticket
+    dba00000-0000-4000-8000-000000000005: bb_ticket
+    dba00000-0000-4000-8000-000000000006: bb_ticket
+default:
+  created:
+    -
+      value: 1780300800
+  changed:
+    -
+      value: 1782837900
+  project_id:
+    -
+      entity: "dbf00000-0000-4000-8000-000000000001"
+  identifier:
+    -
+      value: "BB-142"
+  number:
+    -
+      value: 142
+  workflow:
+    -
+      value: "bb_feature"
+  title:
+    -
+      value: "Add designbook entity view-mode for bb_ticket"
+  description:
+    -
+      value: "We need a **full** view-mode render for `bb_ticket` so designers can preview ticket detail layouts without hitting live Drupal data.\n\nScope includes the state-flow bar, comment timeline, and reference chips for labels, parent, and blockers."
+      format: "bb_rich"
+  labels:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000001"
+    -
+      entity: "db1a0000-0000-4000-8000-000000000002"
+  assignee_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  priority:
+    -
+      value: 2
+  parent_id:
+    -
+      entity: "dba00000-0000-4000-8000-000000000002"
+  env_vars:
+    -
+      value: "APP_ENV=ci"
+  blocked_by:
+    -
+      entity: "dba00000-0000-4000-8000-000000000003"
+    -
+      entity: "dba00000-0000-4000-8000-000000000005"
+    # BB-90 is done → a resolved blocker (muted in the ticket_detail
+    # "Blocked by" section), alongside the two open blockers above (BB-110
+    # spec, BB-105 review). BB-98 e2e coverage.
+    -
+      entity: "dba00000-0000-4000-8000-000000000006"
+  origin:
+    -
+      value: "https://gitlab.example.com/bakers/bakers/-/issues/142"
+  links:
+    -
+      uri: "https://gitlab.example.com/bakers/bakers/-/merge_requests/88"
+      title: ""
+    -
+      uri: "https://gitlab.example.com/bakers/bakers/-/pipelines/4242"
+      title: ""
+    -
+      uri: "https://gitlab.example.com/bakers/bakers/-/jobs/9001/artifacts/file/playwright-report/index.html"
+      title: ""
+    -
+      uri: "https://bakers.example.com/docs/designbook"
+      title: ""
+    -
+      uri: "https://bb-142.ddev.site/board"
+      title: ""
+  closed:
+    -
+      value: false

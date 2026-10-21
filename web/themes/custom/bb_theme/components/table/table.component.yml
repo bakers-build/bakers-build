@@ -1,0 +1,666 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Table
+status: stable
+group: Data Display
+description: >-
+  A listing WITH COLUMNS, and it owns its rows. `columns` is the ordered column
+  set and `rows` is the data; a `<td>` is emitted per COLUMN and addressed by
+  that column's `key`, so a row cannot carry a cell for a column that does not
+  exist and a column with no cell renders an empty `<td>` instead of shifting
+  every value one place left. That keying is the whole point: it is what a
+  container of rendered row components could never do, and it is why three
+  headers over nine cells is no longer expressible. A header cell may be
+  SORTABLE, which is what makes this a table rather than a list with lines: the
+  cell then carries `aria-sort` and its label becomes the link that re-sorts,
+  the shape Drupal's own views-view-table renders. A Drupal view drives this
+  through `click_sort_column` on the field, so the affordance belongs to the
+  header — it never belonged to a row. `rows` is a PROP and not a slot because a
+  cell is plain data: a slot is how the previous architecture injected an
+  already-rendered row, and the one slot left here is the collapsed variant's
+  confirmation strip. A cell is rendered by the `cell()` macro this template
+  declares, which `list` imports, so a badge in a table cell and a badge in a
+  list item are one code path and not two that agree. THE MACRO IS ALSO
+  REACHABLE FROM PHP by component id, which is what lets a Drupal field
+  formatter produce a cell face without a second copy of it. EVERY TABLE VIEW IN
+  THIS THEME BINDS THIS COMPONENT, and it binds it from ONE GLOBAL style
+  template — `views-view-table.html.twig`, with no per-view suffix — which maps
+  Views' own `header` onto `columns` and each row's rendered field output onto a
+  `rendered` cell keyed by the field id. So a table view gets this component by
+  existing: the ticket list's nine real Views fields and the delivered team
+  members screen arrive here through the same file, and there is NO PER-VIEW PHP
+  AT ALL — no preprocess hook, and nothing to alter per view. What that template
+  cannot derive from Views' variables it asks of the ROW ENTITY, AND IT ASKS
+  WITHOUT AN INTERFACE: this sentence named `BbTableRowInterface` until
+  2026-09-04 and that class is DELETED — the human's instruction was that it
+  "must be gone" and `TableRowFaceTest` fails if it returns. The binding asks
+  the entity for its phase and lets `|default('')` absorb a missing method, so
+  an entity that cannot answer declines and declining needs no contract. That is
+  why the team screen's `og_membership` rows render with no accent while a
+  ticket's rows carry one, from one template. The ROW TARGET went with the
+  interface: no view fills `url` any more, measured before deleting the ask —
+  nothing in this theme read `data-row-url` except the tests asserting it. That
+  absence of a per-view seam is the property worth stating in the component
+  rather than only in the binding, because it is exactly what a later “just add
+  a preprocess” would quietly destroy while every gate stayed green.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    live_sums:
+      type: boolean
+      title: Live sums
+      description: >-
+        Totals follow typing: `text` cells with a `sum` show their `seconds`
+        plus every change typed into the `input` cells naming that key, before
+        the form is saved. For an editable timesheet.
+    columns:
+      type: array
+      title: Columns
+      description: >-
+        The column set, in render order. It replaces the old `headers` array,
+        and the difference is the `key`: a header without one cannot be keyed
+        against a cell, which is how a three-column table came to render
+        nine-cell rows. The columns are the TABLE'S order — a row does not get
+        to choose one.
+      items:
+        type: object
+        properties:
+          key:
+            type: string
+            title: Column key
+            description: >-
+              The key a row addresses this column's cell by. Unique within the
+              column set; a row's `cells` map is keyed by it.
+          label:
+            type: string
+            title: Header label
+            description: >-
+              The header text. An action column carries an empty label, like
+              every other action column here.
+          sort:
+            type: string
+            enum:
+              - none
+              - asc
+              - desc
+            title: Sort state
+            description: >-
+              Present on a SORTABLE column, absent on one that cannot be sorted
+              — never `none` as a way of saying "not sortable", which would
+              render a sort link that sorts nothing. `none` means this column
+              can be sorted and currently is not; `asc`/`desc` mean it is the
+              column the list is ordered by. Rendered as `aria-sort` on the
+              cell, so the state is readable without seeing the indicator.
+          url:
+            type: string
+            title: Sort URL
+            description: >-
+              Where the header link points — the query the view re-sorts with. A
+              Drupal view supplies it; in the designbook it is a rendered,
+              reachable, inert href like every other action here.
+          num:
+            type: boolean
+            title: Numeric
+            description: >-
+              Right-aligned and tabular, for a column of numbers or durations
+              that is read down rather than across.
+          row_header:
+            type: boolean
+            title: Row header
+            description: >-
+              The column whose cell names its row, such as the person or project
+              of a week grid. Its body cell renders as a row header (`<th
+              scope="row">`), so a screen reader announces every other cell of
+              the row with it, and it stays in view at the left edge when the
+              table scrolls sideways.
+    rows:
+      type: array
+      title: Rows
+      description: >-
+        The rows, as DATA. Each row is an optional link target, an optional
+        status accent and a map of cells keyed by column key — never a rendered
+        row, which is what the removed `body` slot used to take.
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+            title: Row target
+            description: >-
+              Where this row points, carried as `data-row-url` on the `<tr>`
+              rather than rendered as an anchor: a `<tr>` cannot be wrapped in a
+              link, and inventing one inside a cell would add a `<td>` no column
+              asked for. NO CALLER IN THE PRODUCT FILLS IT, and that is the
+              state of it rather than a defect. `views-view-table.html.twig`
+              used to ask the row entity for a target through
+              `BbTableRowInterface`; the interface is deleted and the ask went
+              with it, measured first — no JavaScript and no CSS in this theme
+              read the attribute, and its only readers were the tests asserting
+              it. The prop stays because the component's contract is not the
+              binding's: hand a row a `url` and the attribute is still emitted,
+              which `table.delivery.story.yml` and `table.unassigned.story.yml`
+              show. The VISIBLE affordance of a row remains a `link` cell in a
+              column of its own, which is what every live surface uses.
+          accent:
+            type: string
+            enum:
+              - running
+              - attention
+              - wait
+              - idle
+            title: Status accent
+            description: >-
+              The leading status rail on the row's first cell. `wait`
+              additionally tints the whole row, because a ticket nobody is
+              acting on is the one state the deleted row components made loud,
+              and the tint is what the `wait` badge's `-ink` colour is legible
+              against.
+          cells:
+            type: object
+            title: Cells
+            description: >-
+              The row's values, keyed by column key. A cell is plain data with a
+              `kind` — `text` | `mono` | `link` | `badge` | `person` | `picker`
+              | `masked` | `action` | `rendered` | `status` — and one macro
+              renders all ten. An unknown or absent `kind` renders the value as
+              plain text, so a mapping mistake shows up as unstyled content
+              rather than as an empty cell; plain text keeps its value's line
+              breaks. A value shape the kinds cannot express is the signal to
+              add a new kind DELIBERATELY, never to reintroduce a slot — and
+              that rule has now been exercised twice. `action` was the eighth:
+              the first seven all render a value the record HOLDS, none of them
+              was a control, and a row action had nowhere to go. `rendered` is
+              the ninth, and it arrived when the ticket list was bound through
+              core's own `table` views style over nine real Views FIELDS, each
+              rendering itself through its own formatter — so what reaches the
+              cell is markup another layer already produced and whose face this
+              component did not decide. A slot would be the wrong answer for it
+              for the same reason it was the wrong answer for a row: a slot lets
+              a caller inject a whole `<td>` and escape the keying this
+              container exists to enforce, while a `rendered` cell is still
+              ADDRESSED BY ITS COLUMN and still emits exactly the one `<td>`
+              that column asked for. SIX OF A CELL'S FIELDS ARE OPTIONAL STRINGS
+              the macro hands straight to a composed component — `icon`,
+              `suffix`, `mail`, `clear_label`, `create_label` and `picker_id`.
+              Omitting any of them is legal and renders nothing: `cell()` passes
+              an empty string rather than the NULL a composed component types as
+              a string and core's validator rejects. The `bare` story is what
+              covers that, because a guard nothing renders is closed but not
+              covered.
+            additionalProperties:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - text
+                    - mono
+                    - link
+                    - badge
+                    - person
+                    - picker
+                    - masked
+                    - action
+                    - rendered
+                    - status
+                    - input
+                  title: Cell kind
+                value:
+                  type: string
+                  title: Value
+                  description: The value of a `text`, `mono`, `link` or `masked` cell.
+                working:
+                  type: boolean
+                  title: Working
+                  description: >-
+                    A `status` cell: TRUE draws a filled disc (the row is in
+                    coding), FALSE or absent draws an empty dashed ring. The
+                    cell's `label` (the exact state) is its tooltip and
+                    accessible name. The rail, not this glyph, carries occupancy
+                    and review.
+                name_hidden:
+                  type: boolean
+                  title: Name hidden
+                  description: >-
+                    A `person` cell rendered as the circle alone, e.g. a list
+                    row's right-hand assignee. The `display_name` becomes the
+                    tooltip and the accessible name instead of visible text.
+                    Ignored when `mail` makes the cell a full identity.
+                emphasis:
+                  type: string
+                  enum:
+                    - default
+                    - faint
+                    - strong
+                  title: Text emphasis
+                  description: >-
+                    The three emphases the five deleted row templates carried
+                    between them, for `text` cells.
+                url:
+                  type: string
+                  title: Link target
+                  description: >-
+                    The address of a `link` cell, or — on a `badge` cell — what
+                    makes the badge a LINKED CHIP: the badge is wrapped in an
+                    anchor to this address (focus ring on the pill, dimmed on
+                    hover). Related tickets render this way, one `badge` cell
+                    per ticket with `mono: true` and `tone: neutral`, so the
+                    chips wrap side by side. Without it a badge is not a link.
+                    `full_load` applies to both.
+                mono:
+                  type: boolean
+                  title: Monospaced
+                  description: >-
+                    A `link` or a `badge` whose text is a machine name — an
+                    identifier, a branch, a key, the machine holding a lease.
+                    The face is the information: it says the string is to be
+                    matched character by character rather than read.
+                full_load:
+                  type: boolean
+                  title: Full document load
+                  description: >-
+                    A `link` cell whose target must be reached as a WHOLE
+                    DOCUMENT rather than swapped in, emitted as
+                    `data-hx-boost="false"` on the anchor. It is for a link that
+                    points at a FORM PAGE inside a boosted island: an island
+                    fragment does not run the response pipeline that replaces a
+                    form's `#action` placeholder, so a boosted navigation would
+                    render the form with an unreplaced `form_action_p_…` action
+                    that posts to a 404. The joinable row on the workspace
+                    overview is the case — it links to the join confirm form.
+                    Omitted or false keeps the row inside the island's boosted
+                    navigation, which is right for every link that targets
+                    another rendered row rather than a form.
+                external:
+                  type: boolean
+                  title: External address
+                  description: >-
+                    A `link` cell whose target lies outside bakers.build — a preview
+                    or tunnel address an addon reports. It reads as a link in
+                    prose (`text-link`, underlined) rather than as a row
+                    affordance, and opens in a new tab with `noopener`.
+                label:
+                  type: string
+                  title: Label
+                  description: >-
+                    The text of a `badge`, the exact state of a `status`, the
+                    field name of a `picker`, or the name of an `action`. On an
+                    icon-only `action` it is the accessible name and is expected
+                    to be a SENTENCE naming the effect, because `button` moves
+                    it into `aria-label`.
+                tone:
+                  type: string
+                  enum:
+                    - running
+                    - attention
+                    - wait
+                    - critical
+                    - lease
+                    - idle
+                    - stale
+                    - offline
+                    - neutral
+                  title: Badge tone
+                dot:
+                  type: boolean
+                  title: Badge dot
+                icon:
+                  type: string
+                  title: Icon name
+                  description: >-
+                    The sprite name of a `badge`'s leading icon, a `picker`'s
+                    trigger icon or an `action`'s icon. On a `picker` it is
+                    `option_picker`'s own prop — the icon sits on the trigger,
+                    which is why the field goes there and the clear/create
+                    fields go to `option_list`.
+                suffix:
+                  type: string
+                  title: Badge suffix
+                  description: >-
+                    The trailing count or duration on a `badge` — "14m" beside a
+                    running state. Optional; an omitted suffix renders nothing.
+                mine:
+                  type: boolean
+                  title: Held by the reader
+                  description: >-
+                    Outlines a `badge` cell that names something belonging to
+                    the READER rather than to somebody else — a lease your own
+                    session holds. Whose, not what: the same state demands
+                    opposite responses depending on the answer, so it is data.
+                    Pairs with `tone: lease`.
+                display_name:
+                  type: string
+                  title: Person name
+                initials:
+                  type: string
+                  title: Person initials
+                color:
+                  type: string
+                  title: Person colour key
+                mail:
+                  type: string
+                  title: Person mail
+                  description: >-
+                    A `person` cell's mail address, and the field the cell's
+                    VARIANT is derived from: a cell handed one is the subject of
+                    its row and renders `full`, one without it is a control or a
+                    cell and renders `compact`. Optional; omitting it is how a
+                    table row asks for the compact identity.
+                picture:
+                  type: string
+                  title: Person picture URL
+                  description: >-
+                    Optional image URL for a `person` cell's mark; the initials
+                    stay the fallback.
+                image_fit:
+                  type: string
+                  enum:
+                    - cover
+                    - contain
+                  title: Person picture fit
+                  description: >-
+                    How the picture fills the mark (`person`'s `image_fit`):
+                    `cover` crops, `contain` centres the whole image. Default
+                    `cover`.
+                size:
+                  type: string
+                  enum:
+                    - sm
+                    - md
+                  title: Person mark size
+                  description: >-
+                    Overrides the size derived from `mail`; a listing row's
+                    leading avatar asks for `md` without a mail.
+                value_labels:
+                  type: array
+                  title: Picked values
+                  description: >-
+                    The selected values of a `picker` cell, rendered as the
+                    first plus a `+N` count.
+                  items:
+                    type: string
+                options:
+                  type: array
+                  title: Picker options
+                  description: >-
+                    The option rows the picker offers, as plain data. The macro
+                    renders them through `option_list`, so the panel markup
+                    exists in one place only.
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                      label:
+                        type: string
+                      selected:
+                        type: boolean
+                      description:
+                        type: string
+                multiple:
+                  type: boolean
+                  title: Several values at once
+                  description: >-
+                    The field a `picker` cell edits holds several values. It is
+                    carried rather than derived from how many values are picked,
+                    because `aria-multiselectable` is a statement about the
+                    FIELD: a multi-value field currently holding one value would
+                    otherwise be announced as a single choice, and a
+                    single-value field would grow checkable rows. Default
+                    `false`.
+                searchable:
+                  type: boolean
+                  title: Panel search box
+                  description: >-
+                    Forwarded to `option_picker`. Default false, so existing
+                    pickers stay a closed list.
+                selected_chips:
+                  type: boolean
+                  title: Removable selected chips
+                  description: >-
+                    Opt-in. Forwards to `option_picker` so a multi-value field
+                    can show each selected identity as a chip. Default false.
+                selected:
+                  type: array
+                  title: Selected identities
+                  description: >-
+                    `{value, label}` rows for selected_chips, so a removal
+                    names the account rather than a label index.
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                      label:
+                        type: string
+                picker_id:
+                  type: string
+                  title: Picker id
+                  description: >-
+                    The picker's base id, which its panel derives its own id
+                    from. One per cell — two pickers sharing an id would open
+                    together.
+                open:
+                  type: boolean
+                  title: Picker open
+                  description: >-
+                    The panel's open state, as a prop rather than a click:
+                    Storybook never calls `Drupal.attachBehaviors`, and a closed
+                    picker renders identically to a missing one.
+                clearable:
+                  type: boolean
+                  title: The field can be emptied
+                  description: >-
+                    A `picker` panel opens with a CLEAR ROW as its first option,
+                    which is the only way this design lets a field be unset —
+                    `option_list` argues it at length: the row belongs to the
+                    listbox, so "no conductor" reads as a value the operator
+                    chose rather than as an absence they must produce. Without
+                    it a rail can set a field and never empty it, which is a
+                    lost capability and not a lost decoration. Declared by
+                    `option_list`, which is where the cell passes it.
+                clear_label:
+                  type: string
+                  title: Clear row label
+                  description: >-
+                    What the clear row says — "Unassigned", "No priority", "No
+                    conductor", "No labels". It is per FIELD and never a generic
+                    word, because the sentence a reader picks is about that
+                    field; `option_list` falls back to `— none —` only where
+                    nothing was said.
+                creatable:
+                  type: boolean
+                  title: A value can be created from the panel
+                  description: >-
+                    A `picker` panel ends with a create row — a real `<button>`,
+                    not a `role="option"`, because an action is not a selectable
+                    value. Rendered and reachable; it creates nothing until
+                    these pickers have an endpoint. Declared by `option_list`.
+                create_label:
+                  type: string
+                  title: Created noun
+                  description: >-
+                    The noun the create row invites — "+ New label". Singular,
+                    and the thing being created rather than the field it goes
+                    into.
+                variant:
+                  type: string
+                  enum:
+                    - primary
+                    - ghost
+                    - danger
+                  title: Action weight
+                  description: >-
+                    An `action` cell's weight, from `button`'s own variants.
+                    Default `ghost`: a row action is secondary to the row it
+                    sits on, and a listing where every item carries a
+                    primary-weight control emphasises nothing. `danger` is the
+                    quiet outline for an intervention on the row's record —
+                    Cancel run on a running run.
+                icon_only:
+                  type: boolean
+                  title: Icon-only action
+                  description: >-
+                    An `action` renders its icon alone and `button` moves the
+                    `label` into `aria-label`. This is what lets a row action be
+                    a sentence-long accessible name without printing that
+                    sentence on every item — the reason a `text` cell was the
+                    wrong answer for it.
+                name:
+                  type: string
+                  title: Submitted field name
+                  description: >-
+                    A `picker` cell's form field name — the key its value is
+                    POSTED under. Optional; absent, the macro derives a name
+                    from `label|lower` and renders no form control, which is
+                    right for an inert scene only. Set, `option_picker` receives
+                    it and `option_list` receives it as `input_name` too, so
+                    every option row carries a real radio (single) or checkbox
+                    (`name[]`, `multiple`) checked from `selected` — the same
+                    `name` / `name[]` input shape a `property_pill` posts, with
+                    a native `change` event for an autosaving form. The inline
+                    picker itself still writes no hidden input, so nothing posts
+                    twice. It also sets `option_list`'s `clear_control`: on a
+                    single-value field the clear row is a radio of the same name
+                    with the value "" (checked when nothing is selected), so the
+                    field can be emptied by posting; on a multi-value field the
+                    clear row unchecks every box. The accessible name keeps
+                    reading `label`.
+                href:
+                  type: string
+                  title: Action address
+                  description: >-
+                    An `action` cell's address. Optional; set, the action
+                    renders as `button`'s anchor form (`<a href>`), so it works
+                    without JavaScript — the dialog route's plain, non-wrapper
+                    URL. Absent, the action is the `<button type="button">` it
+                    always was.
+                hx:
+                  type: object
+                  title: Action htmx request
+                  description: >-
+                    An `action` cell's htmx request, as the attribute set a
+                    create trigger carries (`CreateActionSourceBase`): each key
+                    that is set becomes a `data-hx-<key>` attribute on the
+                    control, so a row action can open a dialog — `get` the
+                    wrapper-format dialog URL, `target` the overlay
+                    (`#bakers-overlay`), `select` `dialog`, `swap` `innerHTML`.
+                    Normally paired with `href`. An `input` cell uses the same
+                    set on its corner entry link, paired with `url`.
+                  additionalProperties: false
+                  properties:
+                    get:
+                      type: string
+                      title: hx-get
+                    target:
+                      type: string
+                      title: hx-target
+                    select:
+                      type: string
+                      title: hx-select
+                    swap:
+                      type: string
+                      title: hx-swap
+                revealed:
+                  type: boolean
+                  title: Revealed
+                  description: >-
+                    A `masked` cell shows its value instead of the dots.
+                    Normally no value reaches this component at all — masking
+                    happens upstream in the formatter that reads the field, so
+                    there is nothing sensitive in the render context to leak.
+                error:
+                  type: string
+                  title: Input error
+                  description: >-
+                    An `input` cell's field error, shown under the input and
+                    tied to it with aria-describedby; the input is marked
+                    invalid.
+                hint:
+                  type: string
+                  title: Input hint
+                  description: An `input` cell's state marker, e.g. Proposed.
+                url_label:
+                  type: string
+                  title: Input link label
+                  description: >-
+                    Accessible name of an `input` cell's corner `url` icon link;
+                    defaults to Details.
+                hidden:
+                  type: object
+                  title: Hidden inputs
+                  description: >-
+                    An `input` cell's hidden name => value pairs, e.g. the entry
+                    id and version a save checks for staleness.
+                  additionalProperties:
+                    type: string
+                autofocus:
+                  type: boolean
+                  title: Focus this input
+                  description: >-
+                    An `input` cell that receives focus, e.g. the first invalid
+                    cell.
+                stored:
+                  type: integer
+                  title: Stored seconds
+                  description: >-
+                    An `input` cell's stored value in seconds, the base its
+                    typed change is measured against.
+                sums:
+                  type: array
+                  title: Live total keys
+                  description: >-
+                    The `sum` keys of the totals an `input` cell's typed change
+                    moves while `live_sums` is on.
+                  items:
+                    type: string
+                sum:
+                  type: string
+                  title: Live total key
+                  description: >-
+                    A `text` cell that shows a live total; inputs naming this
+                    key move it.
+                seconds:
+                  type: integer
+                  title: Total base seconds
+                  description: A live total `text` cell's stored seconds.
+                markup:
+                  type: string
+                  title: Rendered markup
+                  description: >-
+                    The already-rendered markup of a `rendered` cell. DECLARED
+                    `string`, BUT THE VALUE MUST BE A `MarkupInterface` OBJECT,
+                    and that pair is measured rather than stylistic. SDC's
+                    class-type escape hatch — a prop whose `type` names a class
+                    — is TOP-LEVEL ONLY: `ComponentValidator::getClassProps()`
+                    loops `props.properties` once and never recurses, so a field
+                    at `rows[].cells.<key>.markup` cannot be typed as
+                    `MarkupInterface` at all. It does not need to be:
+                    `MarkupInterface extends \JsonSerializable` and the
+                    validator sees props through a json round-trip, so the
+                    object arrives as its string and satisfies `string`. What
+                    makes the object MANDATORY is Twig — it prints a
+                    `MarkupInterface` unescaped and exactly once, and it ESCAPES
+                    a plain string — so a caller handing over a string prints
+                    tag soup at the reader, and `|raw` on a string would be
+                    blind unescaping of content this component never inspected.
+                    A render ARRAY is rejected outright, and that rejection is
+                    load-bearing: it is what forces a Views field handler's
+                    output to be rendered before it is mapped.
+slots:
+  empty:
+    title: Empty
+    description: >-
+      Collapsed/empty confirmation content (collapsed variant) — the ONE
+      surviving slot. The strip is a sentence a screen writes, not a value a
+      listing carries.
+variants:
+  collapsed:
+    title: Collapsed
+    description: >-
+      All-green confirmation strip shown instead of rows when nothing needs
+      attention.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

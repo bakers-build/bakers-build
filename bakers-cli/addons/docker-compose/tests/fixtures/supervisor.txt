@@ -1,0 +1,3 @@
+webextradaemons:mailpit RUNNING pid 51, uptime 0:12:03
+webextradaemons:xhgui STOPPED Not started
+php-fpm RUNNING pid 50, uptime 1:03:12

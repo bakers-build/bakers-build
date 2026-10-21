@@ -1,0 +1,7 @@
+# Plugin types exposed to the contrib Plugin module, which derives the
+# `plugin:<id>` field type and its plugin-selector widget from each entry.
+bb_ticket_trigger_type:
+  label: bakers.build ticket trigger type
+  description: What makes a ticket trigger fire, such as a time schedule.
+  plugin_manager_service_id: plugin.manager.bb_ticket_trigger_type
+  plugin_definition_decorator_class: \Drupal\plugin\PluginDefinition\ArrayPluginDefinitionDecorator

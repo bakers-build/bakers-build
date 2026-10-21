@@ -1,0 +1,23 @@
+name: 'Island E2E'
+type: theme
+description: 'Harness theme for the island module. It owns the page-content container that a linkToPage() link targets — the theme''s half of the contract (BB-398 D2, D8).'
+base theme: stark
+package: Testing
+core_version_requirement: ^11
+# Declared explicitly rather than inherited. The container this theme exists to
+# write wraps `page.content` and nothing else, so which regions exist — and
+# which of them are OUTSIDE the container — is the whole point of the fixture
+# and belongs where a reader can see it.
+regions:
+  header: 'Header'
+  primary_menu: 'Primary menu'
+  secondary_menu: 'Secondary menu'
+  breadcrumb: 'Breadcrumb'
+  highlighted: 'Highlighted'
+  help: 'Help'
+  content: 'Content'
+  sidebar_first: 'Left sidebar'
+  sidebar_second: 'Right sidebar'
+  footer: 'Footer'
+  page_top: 'Page top'
+  page_bottom: 'Page bottom'

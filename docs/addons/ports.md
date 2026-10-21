@@ -1,0 +1,64 @@
+# Ports
+
+**Shares a running service of a ticket's worktree under a public URL.**
+
+Show a preview, such as a DDEV site, Mailpit or Storybook, to someone outside the machine.
+
+The `bakers ports` commands ship with the CLI. The addon entry adds the **Share tunnels** message to tickets.
+
+## Enable it
+
+1. Add the package to `addons` with one tunnel transport in its `with.transport`, usually in `~/.bakers/machine.config.js`: [Named Cloudflare](/addons/ports-cloudflare) and [frp](/addons/ports-frp) give a fixed name (`https://<ticket>-<key>.<zone>`), [Cloudflare Quick](/addons/ports-cloudflare-quick) an allocated `trycloudflare.com` URL. Named Cloudflare and frp also need their connector running on that machine.
+
+   ```js
+   addons: [
+     {
+       use: '@bakers-build/addon-ports',
+       with: { transport: { use: '@bakers-build/addon-ports-cloudflare-quick' } },
+     },
+   ],
+   ```
+
+   It may also go in the project's `.bakers/conductor.config.js`; with both, the machine `with` wins. Restart the conductor after a change.
+
+The conductor registers the addon; a **Share tunnels** message then appears in the message card of every ticket it works, in the web UI and in `bakers ui`. Anyone who may read the ticket may send it.
+
+## Options
+
+| Option | Meaning |
+|---|---|
+| `transport.use` | The transport package. Required for `bakers ports up`, `down`, `reap` and the **Share tunnels** message. |
+| `transport.with` | The transport's own settings; see each transport's page and [Shared service tunnels](/advanced/machines#shared-service-tunnels-bakers-ports). |
+| `services`, `all_node` | Which host processes are shared; see [Shared processes](/addons/ports-services). |
+
+Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file is retired; `bakers config upgrade --scope machine` moves it into the entry.
+
+## Check it works
+
+The ticket's message card offers **Share tunnels**. Sending it shares every eligible service not yet shared and lists each service's state.
+
+::: details Per CLI
+```sh
+bakers config check --scope machine
+bakers ports list                         # every claimed service of this worktree
+bakers ports up [service-key] [--ticket <id>]
+bakers ports status
+bakers ports down [service-key]
+bakers ports reap                         # machine-wide reconciliation
+```
+
+`list` shows a claimed service; `up` returns a public URL that serves it.
+:::
+
+## Good to know
+
+- Only claimed services get a tunnel: DDEV services by [DDEV discovery](/addons/ddev), host processes by [`services`](/addons/ports-services). A service key comes from `list`, never a raw port; `up` alone shares every eligible one.
+- In `bakers ui`, open the message card from Overview (`↓`/`j`, `Enter`). `←`/`→` switch addon, `Enter` sends Share tunnels, and `l` copies a link out of the answer.
+- Reap is no message: run `bakers ports reap` or wire the [`after_done` hook](/advanced/configuration/hooks#clean-up-a-preview), so a finished ticket leaves no tunnel behind.
+- A public URL is reachable from the internet while the tunnel lives.
+
+::: tip Ask your AI
+"Add the ports addon with a transport to my machine file's addons, then run the checks."
+:::
+
+Source: [`bakers-cli/addons/ports`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/ports)

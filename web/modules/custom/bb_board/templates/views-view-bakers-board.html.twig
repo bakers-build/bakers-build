@@ -1,0 +1,17 @@
+{#
+/**
+ * @file
+ * Fallback for the `bb_board` Views style outside `bb_theme`.
+ *
+ * `bb_theme` overrides this template and renders `bb_theme:board-card`.
+ *
+ * @see \Drupal\bb_board\Plugin\views\style\BbBoard
+ */
+#}
+{% if rows is empty %}
+  <p>No matching tickets.</p>
+{% else %}
+  {% for card in rows %}
+    <p>{{ card.identifier }} {{ card.title }}</p>
+  {% endfor %}
+{% endif %}

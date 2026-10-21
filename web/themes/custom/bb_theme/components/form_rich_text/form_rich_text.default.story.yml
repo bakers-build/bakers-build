@@ -1,0 +1,11 @@
+component: bb_theme:form_rich_text
+name: Default
+props:
+  id: edit-body
+  name: body
+  rows: 5
+  placeholder: Write in Markdown — the toolbar inserts the syntax
+  value: |-
+    ## What changed
+
+    The export now **keeps** the column order.

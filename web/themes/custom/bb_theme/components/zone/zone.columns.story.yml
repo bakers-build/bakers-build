@@ -1,0 +1,25 @@
+component: bb_theme:zone
+name: Three columns
+props:
+  inset: md
+  gap: md
+  direction: column
+  columns: 3
+slots:
+  heading: Delivery
+  content:
+    - type: element
+      tag: div
+      value: Cell one
+      attributes:
+        class: text-text-light text-[13px] border border-border rounded p-[10px]
+    - type: element
+      tag: div
+      value: Cell two
+      attributes:
+        class: text-text-light text-[13px] border border-border rounded p-[10px]
+    - type: element
+      tag: div
+      value: Cell three
+      attributes:
+        class: text-text-light text-[13px] border border-border rounded p-[10px]

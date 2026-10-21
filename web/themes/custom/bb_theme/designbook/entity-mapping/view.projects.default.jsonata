@@ -1,0 +1,63 @@
+(
+  /* THE PROJECTS LISTING, AS A VIEW THAT RENDERS ONE LIST ROW PER PROJECT (BB-592, field table
+     revised with the operator). The mapping emits ONE `list` node whose `pattern` is the `bb_list`
+     Views style's own pattern for `views.view.projects` — headline: the linked name only; no meta line
+     (v4, 2026-10-03); right: open, conductor-held and closed ticket counts as icon badges;
+     right_meta: created ("Created", relative). A view address takes no record, so the rows below mirror
+     `designbook/data/bb_project.bb_project.yml` by hand, scoped to workspace 1; the relative
+     "Created" value and the counts are pinned because a mapping cannot compute them.
+
+     AVATAR AND DESCRIPTION (BB-597): `name_avatar` is the row's leading avatar — a compact `md`
+     person cell drawn by the `bb_entity_avatar` formatter: the project image uncropped
+     (`image_fit: contain`) where one is set, otherwise the initials of the name in the colour keyed
+     on the project id (id modulo the five person colours, as PersonIdentityTrait does). The image is
+     a URL prop of that cell, as Drupal hands it over, because a list item carries data, not slots.
+     `description` is the plain-text description beneath the headline, and absent when empty. Row 4
+     is a long non-ASCII name with a description at the 280-character limit. */
+  $rows := [
+    { "id": "1", "name": "bakers.build Platform", "group_id": "1", "owner_user_id": "1", "created": "2026-01-15", "updated": "3 days ago", "open": 4, "conductor": 1, "closed": 23, "created_ago": "3 days ago", "initials": "GP", "color": "attention", "image": "/themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png", "description": "The control plane that dispatches agent runs and tracks every ticket from qualification to merge." },
+    { "id": "3", "name": "bakers.build Designbook", "group_id": "1", "owner_user_id": "1", "created": "2026-03-10", "updated": "2 days ago", "open": 1, "conductor": 1, "closed": 8, "created_ago": "3 days ago", "initials": "GD", "color": "lease", "description": "" },
+    { "id": "4", "name": "Øresund Ærø Straße Überführungsgesellschaft für Großprojekte", "group_id": "1", "owner_user_id": "1", "created": "2026-05-02", "updated": "2 days ago", "open": 2, "conductor": 1, "closed": 1, "created_ago": "3 days ago", "initials": "ØÆ", "color": "offline", "description": "Coordinates the cross-border bridge maintenance programme, its inspection rota and contractor hand-offs; every change request is traced here: ÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜber" }
+  ];
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "pattern": {
+          "avatar": ["name_avatar"],
+          "headline": ["name"],
+          "description": ["description"],
+          "right": ["open_tickets", "conductor_tickets", "closed_tickets"],
+          "right_meta": ["created"],
+          "captions": { "created": "Created" }
+        },
+        "items": [$map($rows, function ($p) {
+          (
+            {
+              "url": "/admin/bakers/project/" & $p.id,
+              "cells": $merge([
+                {
+                  "name_avatar": $merge([
+                    { "kind": "person", "initials": $p.initials, "color": $p.color, "size": "md", "image_fit": "contain" },
+                    $p.image ? { "picture": $p.image } : {}
+                  ]),
+                  "name": { "kind": "link", "value": $p.name, "url": "/admin/bakers/project/" & $p.id },
+                  "created": { "kind": "text", "value": $p.created_ago },
+                  /* THE COUNTS ARE ICON BADGES. Drupal adds the tooltip ("N open tickets" …) as
+                     `title`/`aria-label` attributes on the badge; the `badge` CELL kind has no field
+                     for it, so this preview shows the badges without. */
+                  "open_tickets": { "kind": "badge", "icon": "ticket", "label": $string($p.open), "tone": "neutral" },
+                  "conductor_tickets": { "kind": "badge", "icon": "conductor", "label": $string($p.conductor), "tone": "lease" },
+                  "closed_tickets": { "kind": "badge", "icon": "check", "label": $string($p.closed), "tone": "neutral" }
+                },
+                $p.description ? { "description": { "kind": "text", "value": $p.description } } : {},
+                {}
+              ])
+            }
+          )
+        })]
+      }
+    }
+  ]
+)

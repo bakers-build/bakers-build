@@ -1,0 +1,7 @@
+name: 'bakers.build inbox test'
+type: module
+description: 'Test handler responsible for the test.echo message.'
+package: Testing
+core_version_requirement: ^11
+dependencies:
+  - bb_inbox:bb_inbox

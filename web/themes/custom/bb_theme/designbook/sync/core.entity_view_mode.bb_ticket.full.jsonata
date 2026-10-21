@@ -1,0 +1,28 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_ticket.full
+ *
+ * Input ($) is the resolve-filter `unit`:
+ *   { config_name, entity_type: "bb_ticket", bundle: "bb_ticket" }
+ *
+ * Emits the `full` view-mode DEFINITION for the bb_ticket custom content
+ * entity. Shape mirrors the shipped core.entity_view_mode.bb_ticket.board_card
+ * (same targetEntityType, bb_core module dependency, cache: true). `full` is a
+ * CUSTOM mode for this code-defined entity — stock Drupal does not register it —
+ * so the definition unit is authored here rather than dropped by the existence
+ * filter. `uuid` / `_core` are intentionally omitted: drush config:import
+ * generates them on first import.
+ */
+(
+  $et := entity_type;
+  {
+    "uuid": "3d5c9b47-1f2a-4a6e-b8d0-5c7e2f9a4b10",
+    "langcode": "en",
+    "status": true,
+    "dependencies": { "module": ["bb_core"] },
+    "id": $et & ".full",
+    "label": "Full",
+    "description": "",
+    "targetEntityType": $et,
+    "cache": true
+  }
+)

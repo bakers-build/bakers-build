@@ -1,0 +1,8 @@
+name: bakers.build Activities test
+type: module
+description: 'Test-only activity kinds and their mails.'
+package: Testing
+hidden: true
+core_version_requirement: ^11
+dependencies:
+  - bb_activity:bb_activity

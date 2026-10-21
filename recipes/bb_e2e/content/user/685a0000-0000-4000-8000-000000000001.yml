@@ -1,0 +1,18 @@
+# The workspace service account ticket triggers run as in recipe-test worlds:
+# no password, no mail, no site role; the Contributor rank of the default
+# workspace (membership 685a0000-…-0002) carries `use bb_ticket_template`;
+# its team membership (685a0000-…-0005) reaches the project.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 685a0000-0000-4000-8000-000000000001
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+default:
+  name:
+  - value: template-automation
+  status:
+  - value: true
+  bb_service_workspace:
+  - entity: 2a92d03c-c4c6-41dc-b194-31aa299ed064

@@ -1,0 +1,89 @@
+/* Standalone Island Profile translated from the global scene. Stable placement
+ * IDs and source settings preserve the legacy page composition. */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "island.app.bakers"
+    ],
+    "enforced": {
+      "config": [
+        "island.app.bakers"
+      ]
+    },
+    "module": [
+      "island_ui_patterns",
+      "ui_patterns"
+    ],
+    "theme": [
+      "bb_theme"
+    ]
+  },
+  "id": "bb_gate",
+  "label": "bakers.build gate",
+  "app": "bakers",
+  "layout": "bb_theme:gate",
+  "layout_settings": {
+    "title": ""
+  },
+  "placements": {
+    "gate_mark": {
+      "plugin_id": "ui_patterns_component",
+      "slot": "mark",
+      "weight": 0,
+      "enabled": true,
+      "configuration": {
+        "component": {
+          "component_id": "bb_theme:brand",
+          "variant_id": null,
+          "props": {
+            "size": {
+              "source_id": "select",
+              "source": {
+                "value": "compact"
+              }
+            }
+          },
+          "slots": {}
+        }
+      },
+      "data": {}
+    },
+    "gate_messages": {
+      "plugin_id": "messages",
+      "slot": "content",
+      "weight": 0,
+      "enabled": true,
+      "configuration": {},
+      "data": {}
+    },
+    "gate_main": {
+      "plugin_id": "page_content",
+      "slot": "content",
+      "weight": 1,
+      "enabled": true,
+      "configuration": {},
+      "data": {}
+    }
+  },
+  "weight": -10,
+  "conditions": {
+    "paths": [
+      "/home",
+      "/home/new-workspace",
+      "/home/join",
+      "/home/join/*",
+      "/user/login",
+      "/user/logout",
+      "/user/logout/confirm",
+      "/user/register",
+      "/user/check-mail",
+      "/user/reset/*",
+      "/oauth/authorize",
+      "/oauth/device"
+    ]
+  }
+}
+)

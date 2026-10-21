@@ -1,0 +1,19 @@
+component: bb_theme:action_menu
+name: Default
+props:
+  label: Actions for service-ci-1a2b3c4d
+  align: start
+  open: true
+  items:
+    - label: Create API key
+      url: '#'
+      attributes:
+        data-hx-get: '#?_wrapper_format=island_dialog'
+        data-hx-target: '#bakers-create-dialog'
+        data-hx-swap: innerHTML
+    - label: Revoke bakers-key-7f3a
+      url: '#'
+    - label: Disable
+      url: '#'
+      attributes:
+        data-confirm-in: overlay

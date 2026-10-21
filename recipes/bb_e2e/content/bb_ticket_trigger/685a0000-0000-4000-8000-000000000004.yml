@@ -1,0 +1,36 @@
+# The AC-4 example: monthly on day 1 at 09:00 Europe/Berlin, enabled, run by
+# the template-automation service account. Saving computes next_run.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket_trigger
+  uuid: 685a0000-0000-4000-8000-000000000004
+  default_langcode: en
+  bundle: template
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    685a0000-0000-4000-8000-000000000003: bb_ticket_template
+    685a0000-0000-4000-8000-000000000001: user
+    # The account's ranks must exist first: saving validates the activation.
+    685a0000-0000-4000-8000-000000000002: og_membership
+    685a0000-0000-4000-8000-000000000005: og_membership
+default:
+  workspace_id:
+    -
+      entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"
+  template_id:
+    -
+      entity: "685a0000-0000-4000-8000-000000000003"
+  trigger_type:
+    -
+      plugin_id: schedule
+      plugin_configuration:
+        frequency: monthly
+        day: '1'
+        time: '09:00'
+        timezone: Europe/Berlin
+  actor_uid:
+    -
+      entity: "685a0000-0000-4000-8000-000000000001"
+  enabled:
+    -
+      value: true

@@ -1,0 +1,210 @@
+component: bb_theme:table
+name: Timesheet
+props:
+  variant: ''
+  columns:
+    - key: label
+      label: Project
+      row_header: true
+    - key: '2026-08-03'
+      label: Mon 03
+      num: true
+    - key: '2026-08-04'
+      label: Tue 04
+      num: true
+    - key: '2026-08-05'
+      label: Wed 05
+      num: true
+    - key: '2026-08-06'
+      label: Thu 06
+      num: true
+    - key: '2026-08-07'
+      label: Fri 07
+      num: true
+    - key: total
+      label: Total
+      num: true
+  rows:
+    - cells:
+        label:
+          kind: text
+          value: Customer · Project · WORK-12 Review the week grid
+        '2026-08-03':
+          kind: input
+          name: cells[2026-08-03:1:12][duration]
+          value: '1:30'
+          label: Mon 03 · Customer · Project · WORK-12
+          url: /time/0f0e-edit/edit
+          url_label: Details
+          hidden:
+            cells[2026-08-03:1:12][entry]: '41'
+            cells[2026-08-03:1:12][version]: a1b2
+          stored: 5400
+          sums:
+            - row:1:12
+          hx:
+            get: >-
+              /time/0f0e-edit/edit?destination=/workspace/time%3Fmode%3Dweek&_wrapper_format=island_dialog
+            target: '#bakers-overlay'
+            select: dialog:not(dialog dialog)
+            swap: innerHTML
+        '2026-08-04':
+          kind: input
+          name: cells[2026-08-04:1:12][duration]
+          value: ''
+          label: Tue 04 · Customer · Project · WORK-12
+          stored: 0
+          sums:
+            - row:1:12
+        '2026-08-05':
+          kind: input
+          name: cells[2026-08-05:1:12][duration]
+          value: '3:00'
+          label: Wed 05 · Customer · Project · WORK-12
+          hint: Proposed
+          url: /time/0f0f-edit/edit
+          url_label: Details
+          stored: 7200
+          sums:
+            - row:1:12
+            - proposed:2026-08-05
+            - proposed:total
+          hx:
+            get: >-
+              /time/0f0f-edit/edit?destination=/workspace/time%3Fmode%3Dweek&_wrapper_format=island_dialog
+            target: '#bakers-overlay'
+            select: dialog:not(dialog dialog)
+            swap: innerHTML
+        '2026-08-06':
+          kind: input
+          name: cells[2026-08-06:1:12][duration]
+          value: '25:61'
+          label: Thu 06 · Customer · Project · WORK-12
+          error: Duration must be bounded whole minutes.
+          stored: 0
+          sums:
+            - row:1:12
+        '2026-08-07':
+          kind: input
+          name: cells[2026-08-07:1:12][duration]
+          value: ''
+          label: Fri 07 · Customer · Project · WORK-12
+          stored: 0
+          sums:
+            - row:1:12
+        total:
+          kind: text
+          value: '3:30'
+          sum: row:1:12
+          seconds: 12600
+    - cells:
+        label:
+          kind: text
+          value: Customer · Project
+        '2026-08-03':
+          kind: input
+          name: cells[2026-08-03:1:0][duration]
+          value: '0:45'
+          label: Mon 03 · Customer · Project
+          stored: 2700
+          sums:
+            - row:1:0
+        '2026-08-04':
+          kind: link
+          value: 2:15 · 2 entries
+          url: /workspace/time?mode=day&date=2026-08-04&project=1
+        '2026-08-05':
+          kind: input
+          name: cells[2026-08-05:1:0][duration]
+          value: ''
+          label: Wed 05 · Customer · Project
+          stored: 0
+          sums:
+            - row:1:0
+        '2026-08-06':
+          kind: input
+          name: cells[2026-08-06:1:0][duration]
+          value: ''
+          label: Thu 06 · Customer · Project
+          stored: 0
+          sums:
+            - row:1:0
+        '2026-08-07':
+          kind: input
+          name: cells[2026-08-07:1:0][duration]
+          value: ''
+          label: Fri 07 · Customer · Project
+          stored: 0
+          sums:
+            - row:1:0
+        total:
+          kind: text
+          value: '3:00'
+          sum: row:1:0
+          seconds: 10800
+    - cells:
+        label:
+          kind: text
+          value: Recorded
+          emphasis: strong
+        '2026-08-03':
+          kind: text
+          value: '2:15'
+        '2026-08-04':
+          kind: text
+          value: '2:15'
+        '2026-08-05':
+          kind: text
+          value: '0:00'
+        '2026-08-06':
+          kind: text
+          value: '0:00'
+        '2026-08-07':
+          kind: text
+          value: '0:00'
+        total:
+          kind: text
+          value: '4:30'
+          emphasis: strong
+    - cells:
+        label:
+          kind: text
+          value: Proposed — not yet recorded
+          emphasis: faint
+        '2026-08-03':
+          kind: text
+          value: '0:00'
+          emphasis: faint
+          sum: proposed:2026-08-03
+          seconds: 0
+        '2026-08-04':
+          kind: text
+          value: '0:00'
+          emphasis: faint
+          sum: proposed:2026-08-04
+          seconds: 0
+        '2026-08-05':
+          kind: text
+          value: '2:00'
+          emphasis: faint
+          sum: proposed:2026-08-05
+          seconds: 7200
+        '2026-08-06':
+          kind: text
+          value: '0:00'
+          emphasis: faint
+          sum: proposed:2026-08-06
+          seconds: 0
+        '2026-08-07':
+          kind: text
+          value: '0:00'
+          emphasis: faint
+          sum: proposed:2026-08-07
+          seconds: 0
+        total:
+          kind: text
+          value: '2:00'
+          emphasis: faint
+          sum: proposed:total
+          seconds: 7200
+  live_sums: true

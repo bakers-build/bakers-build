@@ -1,0 +1,11 @@
+uuid: c2998368-3260-432f-b6ff-ff014c5bd11f
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_run.full
+label: Full
+description: ''
+targetEntityType: bb_run
+cache: true

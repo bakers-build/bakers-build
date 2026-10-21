@@ -1,0 +1,21 @@
+component: bb_theme:page_header
+name: Default
+props:
+  title: Tickets
+  description: 24 open, 3 waiting on input
+slots:
+  actions:
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: primary
+        icon_only: true
+        label: New ticket
+        href: /admin/bakers/ticket/add
+      slots:
+        icon:
+          - type: component
+            component: bb_theme:icon
+            props:
+              name: plus
+              size: sm

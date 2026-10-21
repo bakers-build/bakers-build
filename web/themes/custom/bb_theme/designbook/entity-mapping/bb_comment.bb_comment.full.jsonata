@@ -1,0 +1,24 @@
+(
+  /* Canonical comment body — and only its body.
+
+     A VIEW MODE EMITS NO LAYOUT. The comment-canonical scene owns the canvas,
+     the page_header and the inspector. Ticket and previous/next sit in the
+     inspector. What is left here is the event.
+
+     Type is shown verbatim, including `comment`. Author identity is the
+     computed author_* fields. */
+  $c := $;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:event",
+      "props": {
+        "author_name": $c.author_name,
+        "author_initials": $c.author_initials,
+        "author_color": $c.author_color,
+        "tag": $c.type,
+        "timestamp": $c.created,
+        "body": $c.body
+      }
+    }
+  ]
+)

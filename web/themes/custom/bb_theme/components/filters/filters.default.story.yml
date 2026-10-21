@@ -1,0 +1,64 @@
+component: bb_theme:filters
+name: Default
+props:
+  title: Filters
+  label: Ticket filters
+slots:
+  controls:
+    - type: component
+      component: bb_theme:option_picker
+      props:
+        variant: field
+        name: state
+        label: State
+        icon: board
+        aria_label: Filter by state. Currently coding and review.
+        id: story-filter-state
+        open: false
+        multiple: true
+        value_labels:
+          - coding
+          - review
+      slots:
+        options:
+          - type: component
+            component: bb_theme:option_list
+            props:
+              multiple: true
+              clearable: true
+              clear_label: Any state
+              options:
+                - value: coding
+                  label: coding
+                  selected: true
+                - value: review
+                  label: review
+                  selected: true
+                - value: done
+                  label: done
+                  selected: false
+    - type: component
+      component: bb_theme:option_picker
+      props:
+        variant: field
+        name: assignee
+        label: Assignee
+        icon: user
+        aria_label: Filter by assignee. Currently any assignee.
+        id: story-filter-assignee
+        open: false
+      slots:
+        options:
+          - type: component
+            component: bb_theme:option_list
+            props:
+              multiple: false
+              clearable: true
+              clear_label: Anyone
+              options:
+                - value: '1'
+                  label: Christian Wiedemann
+                  selected: false
+                - value: '2'
+                  label: Sven Gruber
+                  selected: false

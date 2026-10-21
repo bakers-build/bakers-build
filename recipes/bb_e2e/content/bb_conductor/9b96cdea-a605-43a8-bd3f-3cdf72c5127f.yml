@@ -1,0 +1,35 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: 9b96cdea-a605-43a8-bd3f-3cdf72c5127f
+  depends:
+    dbm00000-0000-4000-8000-000000000001: bb_machine
+    25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
+    262258a2-080f-4ab9-af1b-9028cef388da: bb_project
+default:
+  conductor_id:
+    -
+      value: bakers-e2e-node
+  label:
+    -
+      value: bakers-e2e-node
+  owner_user_id:
+    -
+      entity: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb
+  status:
+    -
+      value: online
+  machine:
+    -
+      entity: "dbm00000-0000-4000-8000-000000000001"
+  project_id:
+    -
+      entity: 262258a2-080f-4ab9-af1b-9028cef388da
+  states:
+    -
+      value: diagnose
+    -
+      value: coding
+  last_seen:
+    -
+      value: 1781278580

@@ -1,0 +1,10 @@
+component: bb_theme:zone
+name: Description only
+props:
+  inset: md
+  gap: md
+  direction: column
+  columns: 1
+  description: A heading and this sentence, and no content and no actions at all. The zone still renders, because a description is prose the reader was meant to read rather than a label for something absent — which is what a bare heading is, and why a heading alone still renders nothing.
+slots:
+  heading: Project settings

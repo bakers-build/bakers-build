@@ -1,0 +1,2736 @@
+id: projects
+group: "Designbook/Sections/Projects"
+title: Projects
+description: |
+  **Product place: Projects** and **Groups** (two nav top-level entries), plus the
+  **Conductors** and **Machines** listings (BB-619) as sibling user-area rail items with Account. List of projects, then
+  **project detail** (lead surface) when a row is opened; Groups is its own list. IA:
+  `docs/specs/ia-home-nav-roles-decisions.md`, plan: `docs/specs/project-lead-surface.plan.md`
+  (BB-358).
+
+  **Product section map (replaces BB-331 six-way nav sections):**
+
+  | Section id | Product place | Rail |
+  |---|---|---|
+  | `tickets` | My work (+ ticket detail/actions) | My work |
+  | `projects` | Groups list; Projects list + **project detail**; Conductors list + conductor Overview; Machines list | Groups; Projects; user-area Conductors; user-area Machines |
+  | `settings` | Settings (workspace + labels) + team detail | Settings; Teams rows |
+
+  Retired as product sections: `dashboard`, `board`, `runs` (no rail; board/runs
+  content folds into project detail, team detail, or ticket detail).
+
+  **Screens**
+
+  - `projects` — project **list** only: project table with Title search above it. Environments and
+    members hang on the **project**, not on this list — they belong on project detail. Groups is a
+    sibling rail destination, not a block on this list.
+  - `groups` — Groups **list**: groups table with Title search above it, the sentence that a group
+    grants no permissions, and New group.
+  - `conductors` — Conductors **list** (BB-619): Title search and this account's
+    conductors (linked label, status, reported load), reached from the person
+    mark as Conductors. Read-only: no create control. The
+    project Conductors tab is the project's conductors and reuses this listing chrome.
+    Machines is the sibling listing of this account's machines.
+  - `machines` — Machines **list** (BB-619): Title search and this account's
+    machines (linked name, host key, load, max parallel), reached from the
+    person mark as Machines. Read-only listing; View and Edit live on the row.
+  - `machine-detail-overview` — one machine's View: host key, max parallel,
+    current load, workspace, owner. Two tabs, View and Edit.
+  - `conductor-detail-overview` — one conductor's Overview: Activities beside one Identity card
+    (label, conductor ID, project, machine, owner). One tab. Sample id 1 is inactive; id 2 is active.
+  - `project-detail` — entity chrome = header + **tabs** (IA D12). **No project-edit route.**
+    Tab set (BB-454, seven tabs — `Delivery` retired in favour of the broader `Stats`, `Tickets`
+    joins as its own tab which BB-428 had already delivered without this scene reflecting it):
+    1. **Overview** (default) — the project's `full` view mode is the tab body (`canvas` with page_header, main, inspector). Mark beside a plain title, key · group caption, tabs (no search, no team switcher). Description then **Activities** in `main` (`bb_activity` `event` rows; `empty-state` when none). Inspector: Properties, Epics. Count figures belong on the Board. Settings is the write surface.
+    2. **Board** — operational board and active conductor capacity
+    3. **Tickets** — this project's tickets (native Views listing; no Designbook body of its own)
+    4. **Stats** — closed-work delivery lookback (Week|Month) **and** crew load, one tab
+    5. **Runs** — this project's runs (native Views listing since BB-454; a follow-up may still
+       design its body)
+    6. **Members** — the project's people: one `list`, and the add form that writes them
+    7. **Settings** — Environments, with its add
+    Scenes: `project-detail-overview`, `project-detail-board`, `project-detail-stats`,
+    `project-detail-runs`, `project-detail-members`, `project-detail-settings`
+    (+ `project-detail-overview-teams-open`, `project-detail-overview-flowing`). `Tickets` reuses the `tickets` section's own
+    `ticket-list` scene rather than a new one — the tab is reachable and correctly named, and the
+    listing itself is not a second Designbook artifact.
+
+    **Members IS ITS OWN FACE, and Settings no longer carries it** (BB-435). It was item 5 of this
+    set as one of "two blocks on one tab" beside Environments, which filed the same object under
+    infrastructure here and under people on the team screen — the team detail has had a Members face
+    since BB-419. One object cannot be two kinds of thing depending on which screen is open, so the
+    block moved out and Settings kept Environments alone.
+
+  **Board model** — Not assigned (open, no conductor), Intake (open, conductor
+  and qualification), Working (open, conductor, every other state). Done is
+  closed tickets. Work-state chips are all four; the three open ones start
+  active and Done is off, so the Done column stays detached until that chip
+  is on. Summary chips filter State, Assignee, Priority, Work state and Parent.
+  The Done column owns the 10 / 25 / 50
+  size (default 10) in the operational component story. Details splits only
+  Working by exact workflow state. Blocked and Cancelled remain textual markers.
+  The legacy four-phase component story remains a generic compatibility example.
+
+  **Action surface:** `project-create` (dialog over the list). Team assignment is edited on
+  **Settings**, not via a header switcher on Overview.
+
+  **Groups is its own screen**, opened by the Groups rail entry. Create from that screen's `[+]`.
+  A group still has no entity-detail page.
+
+  **Layout.** Every scene here inherits the one shell (`scene: "design-system:shell"`) and fills its
+  `content` with exactly one `canvas`; headings, regions and spacing follow
+  `designbook/design-system/layout.md`, which is the rule document for the layout layer.
+status: in-progress
+order: 2
+user_flows: |
+  - Open Projects; open a row → project **Overview** (default).
+  - Project identity on Overview is the mark, the title and the key · group caption — **no** project-edit page. Reversible writes live on Settings.
+  - **Board** tab for operational work; **Stats** for statistics, **Tickets** / **Runs** for
+    native listings.
+  - **Members** tab: the project's people as a list; add through the form on that face, change a
+    member's role on the member's own item, remove from the item that names them.
+  - **Settings** tab: Environments, with its add.
+  - On Projects: the project table with Title search; create via `[+]` dialog (owner/teams, not
+    full roster).
+  - On Groups: the groups table with Title search; create via `[+]`.
+ui_requirements: |
+  **Entities read**
+
+  - `view.projects` — the project table and the projects side of the n:m team assignment. A LISTING IS
+    A VIEW, and the View owns the table: six columns and their rows come from
+    `entity-mapping/view.projects.default.jsonata`, which reads `name`, `key`, `teams`, `group_id`
+    and `owner_user_id`. The `bb_project.bb_project.teaser` view mode this replaced is gone — a
+    listing row was never a view mode.
+  - `view.groups` — the Groups screen. Five columns; reads `name`, `billing_profile` and
+    `owner_user_id`.
+  - `view.environments` — **project detail only**. Four columns; reads `name`, `base_url`, `tier`,
+    `branch`. Not on the projects list.
+  - `og_membership.default` — **project detail** (and team) member items, `teaser`. Reads `uid`,
+    `entity_type`, `entity_id`, `state`, `roles`. Not on the projects list.
+  - `user.user` — every person on member rows, `compact`. Reads `display_name`, `initials`,
+    `mail`, `status`.
+
+  **LIST SCREEN SHAPES.** Projects and groups are TABLES on separate screens: values compared down a
+  column, headers with sort where a Drupal view can order. A multi-value teams cell or computed
+  environment count carries no sort rather than a fake one. Environments and members are **not**
+  list blocks — they hang on the project and ship with project-detail, environments as a table on
+  **Settings** and members as a `list` on their own **Members** face. A MEMBER LIST IS A LIST, NOT A
+  TABLE, which is the `settings` section's rule and reaches this screen too: no columns and no header
+  row, on the project exactly as on the team. Members are therefore not the table presenter's to
+  claim.
+
+  **The divergence is scoped and deliberate.** `board-card` (BB-334/335) keeps its pattern
+  unchanged; this reshape is BB-338's organisation surfaces only. (`node-row` belonged in that list
+  until BB-378 deleted it — reachable from no Designbook scene.) The tickets table left the list
+  when every listing became a View: it is `view.tickets`, the same shape as the two list screens,
+  so the pattern the sentence used to protect is now shared rather than diverged. Said here rather
+  than left silent, so the next author reads a decision instead of an inconsistency.
+
+  **Filters**: Title search on each list screen — a visible associated Title label, input name
+  `title`, empty default, and NO submit button — composed in `canvas.main` above the View table.
+  The field submits itself: Enter, or the autosubmit the exposed form already runs on the ticket
+  list, so a second control that says "now do it" never appears. Not a
+  `canvas.filters` aside and not shell chrome. Empty input means no title restriction. Storybook
+  demonstrates appearance, not server-side filtering. The workspace still comes from the shell
+  switcher rather than from a control here.
+
+  **Not a filter**: the workspace, for the same reason it is not one anywhere else (BB-327). The
+  screens here are scoped to workspace 1 accordingly: the project table lists the two projects of
+  that workspace and not the third, which belongs to the other tenant.
+
+  **Which surfaces grant permissions, and how a screen says so.** The workspace and the project are
+  the only two rights levels, so the member rows on this screen carry a role. A group carries none —
+  `og.settings` registers only the workspace and the project as OG groups — and the Groups screen
+  therefore states in words that it grants no permissions, because an absent column is not by itself
+  a statement: an operator who finds no role cell cannot otherwise tell whether the surface grants
+  nothing or the screen forgot the column. The rule is enforced one level below the screen, in
+  `og_membership.default.teaser.jsonata`, which branches on `entity_type`.
+
+  **UI patterns: everything inline, and one dialog.** Everything reversible is edited inline with
+  `option_picker` in its `inline` variant — a role, a team assignment — where the pick IS the write:
+  no save button, no per-field dirty state, no confirmation, because none of these fields has the
+  conductor's server-side side effect. The one surface that creates a PROJECT is a centered `dialog`
+  in the shell's `overlay` slot, exactly as `designbook/design-system/action-pattern.md` prescribes;
+  it was a full-page route through this ticket's design gate and the human reversed that at the
+  coding gate, which is why the pattern document now records **no exception at all**. There is **no
+  edit route and no edit dialog**. Adding a MEMBER is a form on the Members face rather than a
+  dialog, for the reason set out under *Project members* below — it is an addition to the face it
+  sits in, with no list context to lose, which is the condition the dialog rule is written for.
+
+  **Project members (on the Members face, not this list) need three affordances.**
+
+  **A MEMBER IS ADDED THROUGH A FORM, AND ONLY THERE** (BB-435). This sentence used to say the
+  opposite — "Add is an assignment (picker; pick IS the write — never a second create dialog beside
+  `project-create`)" — and it is deleted rather than softened, because it contradicted the rule it
+  sat beside. Adding a person to a group CREATES an `og_membership`; it is not a reversible field
+  edit, and *Inline edit*'s reason does not reach it: there is no value to put back. So the add
+  surface is a form the operator SUBMITS, which gives the addition a moment that can be abandoned.
+  There is no second way in — no inline picker, no autocomplete that commits on select, and no route.
+  The form serves the team screen and this one from one place, parameterised by the group it is
+  rendering for.
+
+  **It is a form in the MAIN CONTENT, not a dialog**, and that is a decision with a reason rather
+  than an exception being taken. `action-pattern.md` reserves the centered `dialog` for a create
+  surface that has a LIST CONTEXT to lose; this control lives inside the face it changes, and a
+  successful submit re-renders that face and nothing else — the tab strip, the rail and the shell
+  stay where the operator left them. A dialog would take the list away in order to add to it.
+
+  Remove is SINGLE-STEP AND NAMES ITS EFFECT: the rule confirms an action exactly when it ends or
+  discards the ticket; a membership removal does neither, so there is no confirmation. The control
+  names the effect — "Remove Sven Gruber from the project. Revokes their access." — via
+  `og_membership.default.teaser.jsonata`.
+
+  The role is changed on the member's own item, with `option_picker` in its `inline` variant: a role
+  IS reversible, so here the pick genuinely is the write — no save button, no dirty state, no
+  confirmation. A project ships exactly two roles, `lead` and `member`, and `member` is
+  `role_type: required`, so it is never stored and an empty `roles` array IS a member. A TEAM member
+  item now carries the same role control (BB-456 D9 ships the team its first `role_type: standard`
+  role, `lead`), so this face and the team's own share one code path — the form reads the role
+  vocabulary, never the entity type.
+
+  **Both interactive cells — role and remove — render as `rendered` cells**, the ninth cell kind
+  (BB-435). A cell is DATA, and the panel markup of a picker or a button exists in exactly one
+  place — `option_list` and `button` — so `MemberItemBuilder` builds each control's render array
+  once and a `#pre_render` on the form wrapper turns it into markup at render time; the cell only
+  ever addresses that markup by its key. `markup` must be a `MarkupInterface` object, never a string
+  and never a render array, which is why Twig prints it unescaped and exactly once where it would
+  escape a plain string. This replaces what used to be a `picker` cell for the role and an `action`
+  cell for remove — the eighth kind, still used elsewhere for a row control that IS the record's own
+  value rather than markup deferred from a component another layer already produced.
+
+  **ALL THREE NOW WRITE, and this paragraph used to say none of them did.** Its claim — "nothing in
+  this theme has ever written a membership — so the control is rendered and reachable and writes
+  nothing, exactly like every other pick on these screens" — was true when it was written and is
+  false now. Adding, changing a role and removing each store an `og_membership` and each survive a
+  reload. What still writes nothing is every OTHER pick on these screens; members are no longer one
+  of them, and that is the difference this section had to stop hiding.
+
+  **The n:m team assignment lives on `bb_project.teams`** and nowhere else, because `bb_team`
+  carries only `name`, `workspace_id` and `owner_user_id`. Both ends therefore read and edit one
+  field, which is why the assignment reads the same from this screen and from the team screen in the
+  `workspace` section.
+
+  **The Drupal binding for these listings is the VIEW**, not an entity view display — which is now
+  what the designbook side says too. The `teaser` view modes existed only because a row had to be
+  renderable in Storybook somehow, and `entity: "view.<id>"` is that somehow, so the workaround is
+  gone rather than renamed. In Drupal a list row is bound by the view:
+  `config/sync/views.view.active_tickets.yml` renders its rows with `row: type: ui_patterns` and
+  names the component directly. This section generates neither the view nor the display — no
+  `sync-to` was run and no `config/sync` file was touched.
+
+  **Nothing posts IN A SCENE**, which is a statement about the medium and no longer about the
+  product. Storybook posts nowhere and never calls `Drupal.attachBehaviors`, so every `[+]`, picker,
+  create row and inline control here is rendered, reachable and inert, and every open state in these
+  scenes is a **prop** rendered as an accessible attribute — `aria-expanded` plus `hidden` — never a
+  CSS class. Overview identity is a plain title (no search, no team switcher). What changed
+  with BB-435 is what the same markup does on the SERVER: the three member affordances write real
+  `og_membership` entities there. A scene proves the shape; the browser suite proves the behaviour,
+  and neither stands in for the other.
+
+  **Single-entity records are selected by pinned id** (`select: "$[id='1']"`), never by tag: the
+  sample data carries `__designbook.section` values that predate these section ids, so no record is
+  tagged for this section and a tag-selecting scene would find nothing. The same choice BB-335
+  made, for the same reason. **A LISTING selects nothing** — a `view.<id>` node is self-contained and
+  its mapping enumerates the rows, which is why the tables here carry no `select:` at all.
+scenes:
+  - name: projects
+    group: Screens
+    section: projects
+    docs: >-
+      THE PROJECTS LIST. Opened by the top-level `Projects` rail entry. One
+      listing only: the project table, with Title search above it. Environments
+      and members hang on the project entity and live on **project detail** —
+      not as pinned-project blocks on this list. Groups is its own rail
+      destination (`groups` in this section) and is not a block here.
+
+      THE TABLE IS SCOPED TO WORKSPACE 1. Two projects, not three. The teams
+      cell is the projects-side half of the n:m relation. The Environments
+      column is a count on the row, not a second table of environment records.
+
+      TITLE SEARCH sits in the listing zone, above the View table: a visible
+      Title label associated with the `title` input, empty by default, and NO
+      submit button — the field submits itself on Enter or by autosubmit.
+      Appearance only — Storybook does not filter.
+
+      Nothing posts and nothing opens. Every `[+]` and every picker is rendered,
+      reachable and inert.
+    items:
+      - scene: "design-system:shell"
+        with:
+          # No create or confirm surface on this screen — `project-create` is the
+          # scene that opens one over exactly this list.
+          overlay: ""
+          content: &projects_screen
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Projects
+                      description: keytec · 2 projects · the work unit that decides which tickets you can see
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: New project
+                          icon_only: true
+                          href: /admin/bakers/project/add
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  # The project table needs no zone heading: the screen's own
+                  # `page_header` names it, and a second "Projects" one level down
+                  # would say the same thing twice (D5). Title search sits in this
+                  # listing zone, above the View table — not in canvas.filters and
+                  # not in the shell.
+                  - component: bb_theme:zone
+                    slots:
+                      # A REAL TABLE, so its headers carry the sort — and the columns AND the rows
+                      # now come from one place, `entity-mapping/view.projects.default.jsonata`,
+                      # which is where the sort lives too: `sort` is present on every column a
+                      # Drupal view could order by and ABSENT on the two it could not (`Teams` is a
+                      # multi-value relation, `Environments` is a count), because a header link that
+                      # sorts nothing is worse than no affordance.
+                      #
+                      # THE VIEW GAINED A SEVENTH COLUMN. The row this replaces put the project name
+                      # and the project KEY in one cell; a cell is one value with one kind, so the
+                      # key took a column of its own rather than the bin — a value hidden inside
+                      # another column's cell is the same defect as a cell no column keys.
+                      content:
+                        # Title search is one form, not four listing-grid cells.
+                        # A nested row zone keeps the controls' intrinsic widths
+                        # so the field is not stretched across the main canvas.
+                        - component: bb_theme:zone
+                          props:
+                            direction: row
+                            inset: none
+                            gap: sm
+                          slots:
+                            content:
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-title
+                                slots:
+                                  title: Title
+                              - component: bb_theme:form_input
+                                props:
+                                  type: text
+                                  name: title
+                                  id: edit-title
+                                  value: ""
+                        - entity: "view.projects"
+                          view_mode: default
+
+  - name: groups
+    group: Screens
+    section: projects
+    docs: >-
+      THE GROUPS LIST. Opened by the top-level `Groups` rail entry. One listing
+      only: the groups table, with Title search above it. A group grants no
+      permissions — rights come from the workspace and the project only. Groups
+      are for create / billing context beside the projects they bundle; they are
+      not a membership surface.
+
+      THE TABLE IS SCOPED TO WORKSPACE 1. One group, not two. Northwind belongs
+      to the other tenant.
+
+      TITLE SEARCH sits in the listing zone, above the View table: a visible
+      Title label associated with the `title` input, empty by default, and NO
+      submit button — the field submits itself on Enter or by autosubmit.
+      Appearance only — Storybook does not filter.
+
+      The New group affordance lives on this screen's header, matching New
+      project on Projects. The listing zone has no heading of its own: the
+      page header already names Groups.
+
+      Nothing posts and nothing opens. Every `[+]` is rendered, reachable and
+      inert.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Groups
+                      description: keytec · 1 group · the customer and its cost centre
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: New group
+                          icon_only: true
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  # The groups table needs no zone heading: the screen's own
+                  # `page_header` names it, and a second "Groups" one level down
+                  # would say the same thing twice (D5). Title search sits in this
+                  # listing zone, above the View table — not in canvas.filters and
+                  # not in the shell.
+                  - component: bb_theme:zone
+                    props:
+                      description: >-
+                        A group grants no permissions — rights come from the
+                        workspace and the project only.
+                    slots:
+                      # The Groups listing is a View, and `Projects` stays a COUNT
+                      # rather than a field a view can order by — so that column
+                      # carries no sort, deliberately. The view is scoped to
+                      # workspace 1 like every screen in this section, which is
+                      # why it lists one group and not two.
+                      content:
+                        # Title search is one form, not four listing-grid cells.
+                        # A nested row zone keeps the controls' intrinsic widths
+                        # so the field is not stretched across the main canvas.
+                        - component: bb_theme:zone
+                          props:
+                            direction: row
+                            inset: none
+                            gap: sm
+                          slots:
+                            content:
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-title
+                                slots:
+                                  title: Title
+                              - component: bb_theme:form_input
+                                props:
+                                  type: text
+                                  name: title
+                                  id: edit-title
+                                  value: ""
+                        - entity: "view.groups"
+                          view_mode: default
+
+  - name: group-detail-overview
+    group: Screens
+    section: projects
+    docs: >-
+      ONE GROUP's OVERVIEW, the canonical face of the group screen. Reached by
+      clicking a group's name in the Groups listing — `/{workspace}/group/{id}`
+      is Overview because a default local task IS the base route.
+
+      THE SCREEN OWNS THE CHROME, exactly as `project-detail-overview` does:
+      `page_header` carries the group's image as a compact mark beside its name,
+      and two tabs — Overview (active) and Settings. The tabs are a screen-level
+      fact no single-record mapping can know.
+
+      THE BODY IS THE ENTITY'S OWN VIEW MODE: `canvas.main` places one
+      `bb_group.bb_group` `full` entity node, selected on this group's id:
+      the Activities feed of the group's projects' tickets beside read-only
+      cards — Properties first (Name, Workspace, Owner), then Identity
+      (Description).
+
+      NOTHING ON OVERVIEW SAVES. Settings edits name, description and image,
+      gated on `update` access. Storybook cannot render an island, so the tabs
+      are plain links and `active` is a prop.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: keytec
+                      description: Group · the customer and its cost centre
+                    slots:
+                      leading:
+                        component: bb_theme:person
+                        props:
+                          variant: compact
+                          size: md
+                          initials: KE
+                          color: attention
+                          image_fit: contain
+                          picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Group sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--group-detail-overview
+                              active: true
+                            - label: Settings
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--group-detail-overview
+                main:
+                  - entity: bb_group.bb_group
+                    view_mode: full
+                    select: $[id='1']
+  - name: conductors
+    group: Screens
+    section: projects
+    docs: >-
+      THE CONDUCTORS LIST. Opened from the user area Conductors tab.
+      One listing: this account's conductors, with Title search above it.
+      Each row is the linked label (registration id when the label is blank),
+      status, and reported load. There is no create control — registration
+      stays with the conductor process.
+
+      THE TABLE IS THIS ACCOUNT'S CONDUCTORS. Two sample conductors. Title search
+      sits in the listing zone, above the View table: a visible Title label
+      associated with the `title` input, empty by default, and NO submit
+      button. Appearance only — Storybook does not filter.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Conductors
+                      description: The claim-and-dispatch loops of this workspace
+                main:
+                  - component: bb_theme:zone
+                    slots:
+                      content:
+                        - component: bb_theme:zone
+                          props:
+                            direction: row
+                            inset: none
+                            gap: sm
+                          slots:
+                            content:
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-title
+                                slots:
+                                  title: Title
+                              - component: bb_theme:form_input
+                                props:
+                                  type: text
+                                  name: title
+                                  id: edit-title
+                                  value: ""
+                        - entity: "view.conductors"
+                          view_mode: default
+  - name: conductor-detail-overview
+    group: Screens
+    section: projects
+    docs: >-
+      ONE CONDUCTOR's OVERVIEW, the canonical face of the conductor screen.
+      Reached by clicking a conductor's name in the Conductors listing —
+      `/{workspace}/conductor/{id}` is Overview because a default local task
+      IS the base route.
+
+      THE SCREEN OWNS THE CHROME: `page_header` carries the conductor name
+      and one tab — Overview — with `Overview` active. There is no Settings
+      tab.
+
+      THE BODY IS THE ENTITY'S OWN VIEW MODE: `canvas.main` places one
+      `bb_conductor.bb_conductor` `full` entity node, selected on this
+      conductor's id. Its mapping, like the Drupal display, emits a canvas
+      of its own — the Activities feed in `main` and one Identity card in
+      `inspector` — so the card is not composed here. The screen shows no
+      states, status, last seen or load (heartbeat values; states set at
+      registration).
+      Sample record 1 is inactive, so the footer below the card offers
+      Enable conductor.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: cw · framework
+                      description: Conductor · the claim-and-dispatch loop
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Conductor sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--conductor-detail-overview
+                              active: true
+                main:
+                  - entity: bb_conductor.bb_conductor
+                    view_mode: full
+                    select: $[id='1']
+  - name: conductor-detail-overview-idle
+    group: Screens
+    section: projects
+    docs: >-
+      THE ACTIVE CONDUCTOR Overview. Same chrome as `conductor-detail-overview`,
+      selected on sample id 2, which is active, so the footer below its Identity
+      card offers Disable conductor.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: mvd · shop
+                      description: Conductor · the claim-and-dispatch loop
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Conductor sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--conductor-detail-overview
+                              active: true
+                main:
+                  - entity: bb_conductor.bb_conductor
+                    view_mode: full
+                    select: $[id='2']
+  - name: machines
+    group: Screens
+    section: projects
+    docs: >-
+      THE MACHINES LIST. Opened from the user area Machines tab.
+      One listing: this account's machines, with Title search above it.
+      Each row is the linked name, host key, current load and max parallel.
+
+      THE TABLE IS THIS ACCOUNT'S MACHINES. Two sample machines. Title search
+      sits in the listing zone, above the View table: a visible Title label
+      associated with the `title` input, empty by default, and NO submit
+      button. Appearance only — Storybook does not filter.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Machines
+                      description: The hosts this account owns
+                main:
+                  - component: bb_theme:zone
+                    slots:
+                      content:
+                        - component: bb_theme:zone
+                          props:
+                            direction: row
+                            inset: none
+                            gap: sm
+                          slots:
+                            content:
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-title
+                                slots:
+                                  title: Title
+                              - component: bb_theme:form_input
+                                props:
+                                  type: text
+                                  name: title
+                                  id: edit-title
+                                  value: ""
+                        - entity: "view.machines"
+                          view_mode: default
+  - name: machine-detail-overview
+    group: Screens
+    section: projects
+    docs: >-
+      ONE MACHINE's VIEW, the canonical face of the machine screen.
+      Reached by clicking a machine's name in the Machines listing —
+      `/user/{user}/machine/{id}` is View because a default local task
+      IS the base route.
+
+      THE SCREEN OWNS THE CHROME: `page_header` carries the machine name
+      and one tab — View — active. There is no Edit tab: the Identity and
+      Capacity cards edit name and max parallel, and the former `/edit` url
+      redirects to View.
+
+      THE BODY IS THE ENTITY'S OWN VIEW MODE: `canvas.main` places one
+      `bb_machine.bb_machine` `full` entity node — the Activities feed of
+      runs on this machine's conductors beside the Identity and Capacity cards.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: cw · laptop
+                      description: Machine · host capacity
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Machine sections
+                          items:
+                            - label: View
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--machine-detail-overview
+                              active: true
+                main:
+                  - entity: bb_machine.bb_machine
+                    view_mode: full
+                    select: $[id='1']
+  - name: addons
+    group: Screens
+    section: projects
+    docs: >-
+      THE ADDONS TAB (BB-654). Workspace Settings › Addons — view `addons`,
+      display `settings`, path /{ws}/settings/addons, the third tab after
+      Settings and Members. Workspace leads only, like Members; there is no rail
+      entry. Every registered addon ONCE, at its newest version, and the
+      conductors of this workspace that run any of its versions. Read-only: no
+      search, no toolbar, no actions, and rows open nothing.
+
+
+
+      Each row is the newest version's icon (its inline SVG, or the initials of
+      its label), the label and the name, every version of the name newest
+      first, the newest version's contract, and one status badge per conductor
+      of this workspace and version it runs.
+
+
+
+      TWO SAMPLE ROWS. Ports (versions 1.2.3, 1.1.0) carries an SVG icon and two
+      conductors, srv01-bakers online on 1.2.3 and laptop-cw offline on 1.1.0.
+      Bare (1.0.0) has no icon and no conductor in this workspace.
+
+
+
+      Drupal renders the title as the view's display-size zone heading; this
+      scene mirrors the sibling Settings tabs, where the page header carries it
+      and the tab row.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Addons
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Workspace settings
+                          items:
+                            - label: Settings
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--settings
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--workspace-members
+                              active: false
+                            - label: Addons
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--addons
+                              active: true
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      description: >-
+                        Every registered addon at its newest version, and the
+                        conductors of this workspace that run it.
+                    slots:
+                      content:
+                        - entity: view.addons
+                          view_mode: default
+  - name: project-create
+    group: Actions
+    section: projects
+    docs: >-
+      THE CREATE DIALOG OF THE PROJECTS SCREEN, centered in the shell's `overlay`
+      slot over the list it was opened from. It is the same hull BB-332 agreed
+      and BB-335 built for `ticket-create`, obeying the same rule:
+      `action-pattern.md` › *Create and edit surfaces* — a create surface is a
+      centered `dialog` in the shell's `overlay` slot, not an off-canvas tray and
+      not a standalone route.
+
+      IT WAS A FULL-PAGE ROUTE UNTIL THE CODING GATE, and the reversal is what
+      this scene is now for. The design gate argued that the rule's own reason
+      for rejecting a route — a route loses the LIST CONTEXT and cannot serve the
+      edit and cancel cases, which must overlay a detail screen — did not reach a
+      project form, because a project has no detail screen and no edit case at
+      all. The human read the first half of that reason back: a project form has
+      no detail screen, true, but it does have a LIST, and this dialog overlays
+      exactly the list context the reason is about. So the rule applies here as
+      written, `action-pattern.md` records NO exception any more, and the design
+      system carries one pattern instead of a pattern plus a footnote. A pattern
+      with a footnote invites the next surface to claim one.
+
+      THE SCREEN BEHIND THE DIALOG IS THE `projects` SCENE ITSELF, aliased
+      (`*projects_screen`) rather than retyped. That is not a saving: it is what
+      makes "the create surface preserves the list context" a property of the
+      file. A retyped list would drift from the screen it claims to be the
+      context of, and the drift would be invisible — two screens that look alike
+      is exactly the failure this design keeps catching elsewhere.
+
+      WHAT DID NOT CHANGE IS THE FORM. The widget grammar is the one every create
+      surface uses, and moving the hull changed none of it: no visible labels,
+      three borderless text lines, a `property_row` of `option_picker` pills, a
+      pill showing the field name when nothing is set and the name beside the
+      value when something is, and one primary submit beside one cancel. The
+      panel's clear row is first and its create row last WHEREVER EITHER IS
+      OFFERED — on this surface neither is, and the paragraph on selection-only
+      pickers below says why. What the route needed and the dialog does not is
+      its hand-built action bar: the `dialog` component owns an `actions` slot
+      that already right-aligns, so the titleless `page_header` the route used as
+      an action bar is gone.
+
+      WHERE THE ACTION ROW RENDERS, WHICH IS NOW WHERE THIS SCENE PUTS IT. This
+      paragraph used to record the delivery's one named divergence: the scene
+      composed Cancel and `Create project` into the `dialog`'s own `actions`
+      slot and the BUILT dialog rendered them INSIDE THE BODY instead, beneath
+      the surface, because the generic hull filled `message` and `body` and
+      nothing else and there was no footer for the row to reach. THE DIVERGENCE
+      IS CLOSED and the scene is what the build matches. What closed it is the
+      choice named two paragraphs down: the generic hull grew an `actions` slot,
+      and a wrapped form lifts its row into it. The lift is the mechanism worth
+      knowing, because it is not free — the hull is the form's ANCESTOR, so the
+      row renders OUTSIDE the `<form>`, and the submit only submits because it
+      is stamped with a `form` attribute naming its own form's id.
+
+      THE HULL CARRIES NO ID OF THIS SURFACE'S, WHICH IS WHY THIS SCENE STATES
+      NONE. The generic wrapper passes `open`, `title` and `dismissible` and no
+      `id`, so the component falls back to its own default — and with ONE hull
+      serving every create dialog in the product, a per-surface id is not
+      something the build can give. The scene therefore renders the same default
+      the page does. What names THIS surface, for a test or for an
+      `aria-controls`, is the FORM's own id, which is stable and unique per
+      subject: the browser suite binds `dialog[data-dialog]:has(form#…-form)` on
+      both create dialogs for exactly that reason.
+
+      TWO WAYS TO CLOSE IT WERE WEIGHED, AND (2) WAS TAKEN — on the operator
+      ruling of 2026-09-08 that the two create dialogs must behave the same.
+      (1) A HULL TEMPLATE OF THIS FORM'S OWN, composing `bb_theme:dialog` and
+      setting `#island_own_hull => FALSE` so the generic wrapper stands aside —
+      which is what the ticket dialog used to do, and which buys a footer at the
+      cost of a second hull to keep in step with the first. (2) AN `actions`
+      SLOT ON THE GENERIC `island` HULL, so any wrapped route can hand it a row
+      and the body template's boolean becomes unnecessary — one hull for
+      everything, at the cost of teaching a generic wrapper about a shape only
+      forms have. This scene predicted the trigger correctly and it is worth
+      recording that it did: "two hand-composed hulls is the point at which (1)
+      stops being the cheap answer." That point arrived, the ticket dialog gave
+      up its own hull rather than this one gaining a second, and the body
+      template's boolean is gone. THE COMING TEAM-ADD AND GROUP-ADD DIALOGS
+      INHERIT THE ANSWER instead of meeting the choice.
+
+      THE GROUP PILL LEADS AND IS PROMINENT, above the title line, the same
+      position `workflow` holds on the ticket create dialog and for the same
+      reason: it decides the cost centre this project is re-invoiced through and
+      cannot be changed cheaply afterwards.
+
+      EVERY PICKER ON THIS SURFACE SELECTS ONLY, and that is BB-421's
+      operator decision reversing an earlier one taken in the same session
+      (spec D7). `group_id` and `teams` carried `creatable`, and neither does
+      now: no picker here offers a create row. `teams` also carried a CLEAR
+      row, and a field the operator cannot clear is how this design system says
+      "this always holds a value" — `bb_project.teams` and `.group_id` are
+      both entity-required, so the clear row was offering a state the server
+      refuses. Both pickers therefore render selection and nothing else.
+
+      WHICH LEAVES A NAMED PRODUCT GAP, and it is recorded here rather than
+      quietly dropped. This scene used to argue that the group panel's create
+      row "is where a group is created now that it has no page". With the row
+      gone that is FALSE for this dialog. Groups is now its own listing screen
+      with a New group affordance; this picker still offers selection only.
+      `action-pattern.md` › *Creating the thing you are looking for* still
+      specifies the create row as a pattern, and the pattern is still right —
+      it is simply unwired here, and wiring it belongs to whichever ticket
+      gives these pickers a write endpoint.
+
+      THREE TEXT LINES, and the second and third are the REPOSITORY's URL and
+      DEFAULT BRANCH — the fields being `repository` and `default_branch`, which
+      is what this scene names them so that a reader can find the thing the form
+      actually submits. A project has no description field, so the grammar's
+      second and third lines carry the thing a new project actually needs typed:
+      the repository URL and the branch runs base work on and merge requests
+      target. `default_branch` is optional and falls back to `main` server-side
+      (spec D5, amended `9d718d2a`) — a repository is rarely useful without
+      naming it, so the field is shown rather than deferred to Settings.
+      `branch_convention` and `env_vars` stay off this surface: they are
+      configuration a project acquires after it exists. `key` and `next_number`
+      are deliberately not on this surface — `key` is derived from the name by
+      whoever wires this up, and `next_number` is machine-owned. Stated here
+      rather than left as a gap for a reader to find.
+
+      AND NO IMPORT PILL. `import_connector` sat in the pill row until BB-421
+      dropped it (spec D4). BB-554 retires the import surface entirely — the
+      two fields it read are gone from `bb_project` — so the pill does not
+      return.
+
+      NO CONTEXT CONTROL IN THE DIALOG HEAD, AND NO UNRESOLVED-CONTEXT STATE.
+      Rule 8's breadcrumb exists because a ticket needs a project and the
+      operator may have opened the create dialog from somewhere that resolves
+      none — BB-335 spends a whole scene on that case. This dialog opens from
+      the projects screen of ONE workspace, and the workspace switches globally
+      in the shell rather than per surface, so the context is resolved by
+      construction: there is nothing for a breadcrumb to change, the submit has
+      no reason to be disabled, and a `project-create (unresolved context)` scene
+      would render a state that cannot occur. The `context` slot is therefore
+      left empty rather than filled with a control that would decide nothing.
+
+      NO CONFIRMATION. Creating a project is reversible and has no server-side
+      side effect of the kind the conductor field has, so by the rule it is
+      single-step and nothing is named. And nothing posts HERE: the submit is a
+      control in this scene, not a write, and opening and closing the dialog is
+      Drupal behaviour, which Storybook never runs. The close button DOES have a
+      handler in the running app — it and Escape are wired by `island`'s own
+      `island.dialog.js`, which this component reaches by declaring
+      `island/dialog` as a library dependency. This paragraph used to say the
+      button "carries no handler"; that was false from the commit that added
+      one, and the true statement is the narrower one: Storybook runs no Drupal
+      behaviour, so nothing closes in a story.
+    items:
+      - scene: "design-system:shell"
+        with:
+          content: *projects_screen
+          # THE CREATE SURFACE IS THE SHELL'S OVERLAY, over the list it was opened
+          # from (`action-pattern.md` › *Create and edit surfaces*). The screen
+          # behind it is the `projects` scene itself, aliased rather than retyped,
+          # which is what makes "the create surface preserves the list context" a
+          # property of this file.
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: New project
+                label: New project
+                # NO `id`, deliberately — see the docs above. `island`'s generic
+                # wrapper passes none, so the built hull falls back to the
+                # component's own default, and one hull now serves every create
+                # dialog. Stating one here would render a surface the build
+                # cannot produce.
+                dismissible: true
+              slots:
+                body:
+                    # THE WHOLE ADD SURFACE IS ONE `form` NODE. It used to be four kinds of node
+                    # assembled here by hand — the separated lead row, two borderless lines, the
+                    # wrapping row of peer pills — and the widget grammar that says how they go
+                    # together lived in prose beside them. It is carried by the NAMED REGIONS now:
+                    # there is no slot that would take a second pill in the lead row, stack the
+                    # pills into a column, or turn a line into a labelled row.
+                    # The regions are SLOTS rather than props since BB-420 Task 20, because the
+                    # same surface is built by real Drupal field widgets on the server and a widget
+                    # renders itself. `lead`'s at-most-one is the one thing a slot cannot carry, so
+                    # it is enforced at the form display instead — see form.component.yml.
+                    # The action row is NOT in this node: it is in the hull's own `actions` slot
+                    # below, and the build puts it there too. This comment used to say the opposite
+                    # — "the BUILD renders it in the body" — which was the pre-ruling state and was
+                    # already contradicted by this file's own prose at the top of the scene when it
+                    # was left behind. See there for what closed the divergence: the generic hull
+                    # grew the slot and a wrapped form lifts its row into it, which is why the
+                    # submit carries a `form` attribute naming its own form.
+                  - component: bb_theme:form
+                    props:
+                      lead_label: Group
+                    slots:
+                      lead:
+                      - component: bb_theme:property_pill
+                        props:
+                          prominent: true
+                          name: group
+                          label: Group
+                          icon: project
+                          picker_id: create-project-group
+                          aria_label: Change group. Currently keytec.
+                          value_label: keytec
+                          values:
+                          - '1'
+                          open: false
+                          searchable: true
+                          search_placeholder: Search groups
+                          search_label: Search groups
+                          options:
+                          - value: '1'
+                            label: keytec
+                            description: KT-1000
+                            selected: true
+                      lines:
+                      - component: bb_theme:form_input
+                        props:
+                          type: text
+                          name: name
+                          id: create-project-name
+                          required: true
+                          placeholder: What is this project called
+                          value: bakers.build Designbook
+                      - component: bb_theme:form_textarea
+                        props:
+                          name: repository
+                          id: create-project-repository
+                          rows: 2
+                          placeholder: The repository this project's tickets branch from
+                          value: https://gitlab.example.com/bakers/designbook
+                      - component: bb_theme:form_input
+                        props:
+                          type: text
+                          name: default_branch
+                          id: create-project-default-branch
+                          placeholder: Default branch (falls back to main)
+                          value: main
+                      pills:
+                      - component: bb_theme:property_pill
+                        props:
+                          name: teams
+                          label: Teams
+                          icon: team
+                          picker_id: create-project-teams
+                          aria_label: Change teams. Currently Platform crew is set.
+                          value_labels:
+                          - Platform crew
+                          values:
+                          - '1'
+                          open: false
+                          multiple: true
+                          options:
+                          - value: '1'
+                            label: Platform crew
+                            selected: true
+                          - value: '3'
+                            label: Design crew
+                            selected: false
+                      - component: bb_theme:property_pill
+                        props:
+                          name: owner
+                          label: Owner
+                          icon: project
+                          picker_id: create-project-owner
+                          aria_label: Change owner. Currently Christian Wiedemann.
+                          value_label: Christian Wiedemann
+                          values:
+                          - '1'
+                          open: false
+                          searchable: true
+                          search_placeholder: Search people
+                          search_label: Search people
+                          options:
+                          - value: '1'
+                            label: Christian Wiedemann
+                            selected: true
+                          - value: '5'
+                            label: Lena Fischer
+                            selected: false
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Create project
+                      type: submit
+
+  - name: project-detail-overview
+    group: Screens
+    section: projects
+    docs: >-
+      PROJECT DETAIL default: Overview. Answers whether the project is running.
+      Scene owns page_header (mark, plain title, key · group, tabs — no search,
+      no team switcher). The project's `full` view mode is the tab body: a
+      `canvas` with description then Activities in `main`, and Properties and
+      Epics in `inspector`. Each activity row is `bb_activity` in `full`
+      (`event`; `empty-state` “No activity yet.”). Sample id 1 has three
+      activity rows and two epics.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: key bakers.build · group keytec
+                    slots:
+                      leading:
+                        component: bb_theme:person
+                        props:
+                          variant: compact
+                          size: md
+                          initials: GP
+                          color: attention
+                          image_fit: contain
+                          picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: true
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: bb_project.bb_project
+                    view_mode: full
+                    select: $[id='1']
+
+  - name: project-detail-overview-teams-open
+    group: Actions
+    section: projects
+    docs: >-
+      Same Overview `full` view mode as `project-detail-overview`. Team
+      assignment is a Settings write, not a header picker.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: key bakers.build · group keytec
+                    slots:
+                      leading:
+                        component: bb_theme:person
+                        props:
+                          variant: compact
+                          size: md
+                          initials: GP
+                          color: attention
+                          image_fit: contain
+                          picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: true
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: bb_project.bb_project
+                    view_mode: full
+                    select: $[id='1']
+
+  - name: project-detail-overview-flowing
+    group: Screens
+    section: projects
+    docs: >-
+      Overview `full` view mode on sample id 3: empty description omitted,
+      `empty-state` “No activity yet.”, no epics.
+      Same chrome as `project-detail-overview`.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Designbook
+                      description: key GDB · group keytec
+                    slots:
+                      leading:
+                        component: bb_theme:person
+                        props:
+                          variant: compact
+                          size: md
+                          initials: GD
+                          color: lease
+                          image_fit: contain
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: true
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: bb_project.bb_project
+                    view_mode: full
+                    select: $[id='3']
+
+  - name: project-detail-board
+    group: Screens
+    section: projects
+    docs: >-
+      Operational Board for this project. Not assigned has no conductor; Intake
+      is qualification with a conductor; Working is every other open state with
+      a conductor; Done is closed. Work-state chips default to the three open
+      columns; the Done chip reveals the Done column. Summary chips
+      filter State, Assignee, Priority, Work state and Parent. Done size
+      (10 / 25 / 50, default 10) sits in the Done column of the operational
+      component story. Details splits only Working by exact workflow state.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Board · this project only
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: true
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: view.project_board
+                    view_mode: default
+  - name: project-detail-stats
+    group: Screens
+    section: projects
+    docs: >-
+      Statistics: Stats — closed tickets in the time window (BB-454 renamed this tab from
+      `Delivery`; crew load joins the same tab as a follow-up).
+    items:
+      - scene: "design-system:shell"
+        with:
+          # An entity place opens no create surface of its own: everything
+          # reversible here is edited in place (`action-pattern.md` › *Inline
+          # edit*), and the one create dialog in this section is `project-create`.
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Stats · statistics · this week
+                    slots:
+                      actions:
+                        component: bb_theme:option_picker
+                        props:
+                          variant: inline
+                          label: Window
+                          name: time_axis
+                          id: project-stats-window
+                          open: false
+                          aria_label: Time window. Currently Week.
+                          value_label: Week
+                          values:
+                            - week
+                        slots:
+                          options:
+                            component: bb_theme:option_list
+                            props:
+                              multiple: false
+                              options:
+                                - value: week
+                                  label: Week
+                                  selected: true
+                                - value: month
+                                  label: Month
+                                  selected: false
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: true
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      columns: 3
+                      gap: md
+                    slots:
+                      content:
+                        - component: bb_theme:stat-tile
+                          props:
+                            value: '12'
+                            label: tickets closed
+                            window: this week
+                        - component: bb_theme:stat-tile
+                          props:
+                            value: '4'
+                            label: people delivered
+                            window: this week
+                        - component: bb_theme:stat-tile
+                          props:
+                            value: '3'
+                            label: features closed
+                            window: this week
+                  - component: bb_theme:zone
+                    props:
+                      description: Stats is closed tickets, not runs
+                    slots:
+                      heading: Closed this week
+                      # THIS IS THE TABLE THE WHOLE TICKET IS ABOUT, and it is the one table in this
+                      # file that is NOT a View. It declared THREE headers and filled its body with
+                      # two row components that emitted NINE `<td>` each — invalid markup on a
+                      # delivered screen, and nothing caught it, because a header list and a rendered
+                      # row cannot be compared: there was no key. Now there is, and the three columns
+                      # and the three cells of each row are keyed against each other in one place.
+                      #
+                      # NOT A VIEW, deliberately, and the reason is in the rows: these two tickets are
+                      # not in `designbook/data/bb_ticket.bb_ticket.yml` and never were. The block
+                      # is a hand-written illustration of a delivery figure, not a listing of records,
+                      # so it stays a `table` node with its columns and rows written where a reader of
+                      # the scene can see both. A listing of sample records is a View; this is not one.
+                      content:
+                        component: bb_theme:table
+                        props:
+                          columns:
+                            - key: identifier
+                              label: Ticket
+                            - key: closed
+                              label: Closed
+                              sort: desc
+                              url: '?order=Closed&sort=asc'
+                            - key: assignee
+                              label: Assignee
+                          rows:
+                            - cells:
+                                identifier:
+                                  kind: mono
+                                  value: BB-380
+                                closed:
+                                  kind: mono
+                                  value: '2026-06-30'
+                                assignee:
+                                  kind: person
+                                  initials: CW
+                                  color: running
+                            - cells:
+                                identifier:
+                                  kind: mono
+                                  value: BB-371
+                                closed:
+                                  kind: mono
+                                  value: '2026-06-27'
+                                assignee:
+                                  kind: person
+                                  initials: MR
+                                  color: lease
+
+  - name: project-detail-runs
+    group: Screens
+    section: projects
+    docs: >-
+      Statistics: Runs — factory pulse for this project.
+    items:
+      - scene: "design-system:shell"
+        with:
+          # An entity place opens no create surface of its own: everything
+          # reversible here is edited in place (`action-pattern.md` › *Inline
+          # edit*), and the one create dialog in this section is `project-create`.
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Runs · statistics · factory
+                    slots:
+                      actions:
+                        component: bb_theme:option_picker
+                        props:
+                          variant: inline
+                          label: Window
+                          name: time_axis
+                          id: project-runs-window
+                          open: false
+                          aria_label: Time window. Currently Week.
+                          value_label: Week
+                          values:
+                            - week
+                        slots:
+                          options:
+                            component: bb_theme:option_list
+                            props:
+                              multiple: false
+                              options:
+                                - value: week
+                                  label: Week
+                                  selected: true
+                                - value: month
+                                  label: Month
+                                  selected: false
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: true
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      columns: 3
+                      gap: md
+                    slots:
+                      content:
+                        - component: bb_theme:stat-tile
+                          props:
+                            value: '2'
+                            label: active runs
+                            window: now
+                        - component: bb_theme:stat-tile
+                          props:
+                            value: '1'
+                            label: problem runs
+                            window: this week
+                        - component: bb_theme:stat-tile
+                          props:
+                            value: '28'
+                            label: runs finished
+                            window: this week
+                  - component: bb_theme:zone
+                    props:
+                      gap: none
+                      description: Row opens the ticket — run history lives there
+                    slots:
+                      heading: Active and problem
+                      content:
+                        # THE RUN HISTORY IS ONE `list`, not two entry components. `layout: lines` is
+                        # the density the run line always had — a hairline between items and no surface
+                        # of its own — and the leading status rail is now the item accent rather than a
+                        # pseudo-element each entry drew for itself.
+                        - component: bb_theme:list
+                          props:
+                            layout: lines
+                            items:
+                              - accent: running
+                                cells:
+                                  state:
+                                    kind: badge
+                                    label: running
+                                    tone: running
+                                    dot: true
+                                  from_label:
+                                    kind: text
+                                    value: from
+                                    emphasis: faint
+                                  from:
+                                    kind: mono
+                                    value: coding
+                                  conductor:
+                                    kind: badge
+                                    label: srv02-bakers
+                                    tone: neutral
+                                    icon: conductor
+                                    mono: true
+                                  started_label:
+                                    kind: text
+                                    value: started
+                                    emphasis: faint
+                                  started:
+                                    kind: mono
+                                    value: 2026-08-16 09:12
+                                  took_label:
+                                    kind: text
+                                    value: took
+                                    emphasis: faint
+                                  took:
+                                    kind: mono
+                                    value: 14m
+                              - accent: attention
+                                cells:
+                                  state:
+                                    kind: badge
+                                    label: failed
+                                    tone: attention
+                                    dot: true
+                                  from_label:
+                                    kind: text
+                                    value: from
+                                    emphasis: faint
+                                  from:
+                                    kind: mono
+                                    value: review
+                                  conductor:
+                                    kind: badge
+                                    label: srv01-bakers
+                                    tone: neutral
+                                    icon: conductor
+                                    mono: true
+                                  started_label:
+                                    kind: text
+                                    value: started
+                                    emphasis: faint
+                                  started:
+                                    kind: mono
+                                    value: 2026-08-15 18:40
+                                  took_label:
+                                    kind: text
+                                    value: took
+                                    emphasis: faint
+                                  took:
+                                    kind: mono
+                                    value: 2m 05s
+
+  - name: project-detail-members
+    group: Screens
+    section: projects
+    docs: >-
+      MEMBERS AS ITS OWN FACE (BB-435). It was the second of two blocks on the
+      Settings tab, which filed the project's people under infrastructure while
+      the team screen — which has had a Members face since BB-419 — filed the
+      same object under people. One object cannot be two kinds of thing
+      depending on which screen is open, so this face exists and Settings kept
+      Environments.
+
+      THIS FACE AND THE TEAM'S MEMBERS FACE ARE ONE SURFACE, parameterised by
+      the group they render for. That is what BB-419 established and this
+      ticket keeps: the roster, the add form and the remove control do not know
+      which kind of group they belong to, and the ONE place the kind shows is
+      what the visible labels require — the noun in the remove sentence, and
+      whether the item carries a role at all.
+
+      A MEMBER IS ADDED THROUGH A FORM, AND ONLY HERE. The projects section used
+      to prescribe the opposite — an assignment picker where the pick IS the
+      write — and that contradicted `action-pattern.md`, which it sat beside.
+      Adding a person CREATES an `og_membership`; *Inline edit*'s reason does not
+      reach a create, because there is no value to put back. So the surface is a
+      `form` the operator submits: one person control in `pills`, one primary
+      submit in `actions`, and nothing that commits on select.
+
+      IT IS A FORM IN THE MAIN CONTENT AND NOT A DIALOG, which is a decision
+      with a reason rather than an exception. The dialog rule is written for a
+      create surface with a LIST CONTEXT to lose; this control lives inside the
+      face it changes, and a successful submit re-renders that face alone — the
+      tab strip, the rail and the shell stay put. A dialog would take the list
+      away in order to add to it.
+
+      THE ROSTER IS A `list`, NOT A TABLE, which is the settings section's rule
+      reaching this screen: no columns and no header row, `layout: cards`
+      with `spacing: comfortable` (BB-638),
+      because a membership is a person read one at a time and not a row of
+      comparable figures. Putting the values in cells aligned to a grid would
+      promise a comparison the data does not support.
+
+      EACH MEMBER IS ONE LINE OF FACTS, NOT A LEFT-TO-RIGHT RUN OF CELLS:
+      each item is a patterned row (BB-638) — `headline: [person]`,
+      `meta: [joined, team]`, `right: [state, role, transfer, remove]` —
+      so the person and the joined date sit on the left and the role or
+      state, transfer and remove are right-aligned, as
+      GroupMembersForm::listZone() renders it.
+
+      THE ROLE IS PICKED ON THE MEMBER'S OWN ITEM. A role IS reversible, so here
+      the pick genuinely is the write — no save button, no dirty state, no
+      confirmation. A project ships exactly two roles, and they are the two the
+      site actually has: `lead` and `member`. `member` is `role_type: required`,
+      so `OgMembership::preSave()` revokes it and `getRoles()` prepends it on
+      read — it is never stored, and an empty `roles` array IS a member. The
+      scene draws the control as a `picker` cell because that is the design's
+      statement; on the server the same control arrives as a `rendered` cell,
+      because a pick that IS the write has to be a named submit trigger of the
+      enclosing form and a cell is DATA. One design, one delivery mechanism.
+
+      REMOVE NAMES ITS EFFECT AND IS NOT CONFIRMED. The rule confirms an action
+      exactly when it ends or discards the ticket; a membership removal does
+      neither. But on a rights-granting surface it revokes somebody's access,
+      which is a server-side effect, so the control names it. The sentence is the
+      accessible name of an icon-only button and never visible text.
+
+      ALL THREE WRITE NOW, on the server. In a scene nothing posts and nothing
+      opens: Storybook never calls `Drupal.attachBehaviors`, so the open state
+      below is a prop and the panel is markup. The scene proves the shape; the
+      browser suite proves the behaviour.
+    items:
+      - scene: "design-system:shell"
+        with:
+          # An entity place opens no create surface of its own. The add form is
+          # part of this face, in the main content — see the docs above.
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Members · the people of this project
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: true
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      gap: none
+                      description: A project is a rights level — a member's role is picked on their own item
+                    slots:
+                      heading: Members
+                      # NO `[+]` IN THE ACTIONS SLOT, deliberately. The add surface is
+                      # a form on the face rather than a control behind an action, so
+                      # there is nothing here to open — and an action that duplicated
+                      # the form would be a second way to add, which is exactly what
+                      # criterion 1 forbids.
+                      content:
+                        - component: bb_theme:form
+                          slots:
+                            # ONE PEER PROPERTY, so one pill. The widget grammar allows
+                            # at most one emphasised property per surface and this
+                            # surface has nothing to emphasise against, so the pill is
+                            # not `prominent`.
+                            pills:
+                              - component: bb_theme:property_pill
+                                props:
+                                  name: account
+                                  label: Person
+                                  icon: user
+                                  picker_id: project-detail-add-member
+                                  prominent: false
+                                  multiple: false
+                                  open: false
+                                  searchable: true
+                                  search_placeholder: Search by name
+                                  search_label: Search by name
+                                  aria_label: Choose the person to add to bakers.build Platform.
+                                  value_label: ""
+                                  value_labels: []
+                                  values: []
+                                  clearable: false
+                                  clear_label: ""
+                                  creatable: false
+                                  create_label: ""
+                                  options:
+                                    - value: '5'
+                                      label: Lena Fischer
+                                      description: lena.fischer@keytec.example
+                                      selected: false
+                                    - value: '6'
+                                      label: Tom Beckett
+                                      description: tom.beckett@partner.example
+                                      selected: false
+                            # ONE PRIMARY SUBMIT AND NOTHING ELSE. The grammar allows a
+                            # second, secondary action — Cancel or create-another — and
+                            # neither applies: there is nothing to cancel on a face the
+                            # operator is already on, and adding one person at a time is
+                            # the whole interaction.
+                            actions:
+                              - component: bb_theme:button
+                                props:
+                                  variant: primary
+                                  type: submit
+                                  label: Add member
+                                  disabled: false
+                                  icon_only: false
+                        # THE ROSTER IS ONE `list` NODE. A slot holding two single-entity
+                        # nodes IS a hand-rolled listing, which is what the container
+                        # exists to remove; the form above it is not part of that rule,
+                        # because a form is not an item of the list.
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - person
+                              meta:
+                                - joined
+                                - team
+                              right:
+                                - state
+                                - role
+                                - transfer
+                                - remove
+                            items:
+                              # BOTH INTERACTIVE CELLS ARE `rendered` (BB-435): the role picker's
+                              # panel and the remove button are markup `option_picker`/`button`
+                              # produce, addressed by the cell's key rather than shaped by `list`
+                              # itself — see the section prose above. Storybook never calls
+                              # `Drupal.attachBehaviors`, so no panel opens in a build; `markup` here
+                              # is the same tag-free, escaped-string stand-in `list.rendered.story.yml`
+                              # establishes, and the live picker/button proof is that story plus the
+                              # Kernel test that reads the real rendered surface.
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    mail: christian.wiedemann@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Lead
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-15
+                                  remove:
+                                    kind: rendered
+                                    markup: Remove
+                              - cells:
+                                  person:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    mail: sven.gruber@keytec.example
+                                  role:
+                                    kind: rendered
+                                    markup: Member
+                                  joined:
+                                    kind: mono
+                                    value: joined 2026-01-15
+                                  remove:
+                                    kind: rendered
+                                    markup: Remove
+  - name: project-detail-settings
+    group: Screens
+    section: projects
+    docs: >-
+      Settings tab: Environments, and only Environments. New environment lives
+      here — not on the list, and not as a separate top-level tab.
+
+      MEMBERS LEFT THIS FACE (BB-435). It used to be the second of "two blocks
+      on one tab", which filed the project's people under infrastructure while
+      the team screen filed the same object under people. Members is now its own
+      face, `project-detail-members`, and what stayed behind is what Settings is
+      actually for: the deployment targets. Neither surface half-owns the other
+      any more.
+    items:
+      - scene: "design-system:shell"
+        with:
+          # An entity place opens no create surface of its own: everything
+          # reversible here is edited in place (`action-pattern.md` › *Inline
+          # edit*), and the one create dialog in this section is `project-create`.
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Settings · environments and members of this project
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: true
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      description: Deployment targets this project stamps and verifies against
+                    slots:
+                      heading: Environments
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: New environment
+                          icon_only: true
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                      # An environments listing is always the environments OF something: this View is
+                      # scoped to the project whose settings screen holds the block, which is why
+                      # `project_id` is not a column — the block already belongs to one project.
+                      content:
+                        entity: "view.environments"
+                        view_mode: default
+  - name: project-time
+    group: Screens
+    section: projects
+    docs: >-
+      The time calendar (BB-640): a week strip with each day's total and the
+      week total, then the day rows (Day) or a read-only week grid (Week).
+      Totals come from the authorized dataset, not from one page. PROJECT > TIME
+      in Week mode as a team lead: the viewer's hours plus their team members'
+      on this project. Project membership grants nothing.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Time
+                      description: Recorded hours on API home
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          icon_only: true
+                          label: Record time
+                          type: button
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Time
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--project-time
+                              active: true
+                            - label: Stats
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: >-
+                                /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                filters:
+                  - component: bb_theme:filters
+                    props:
+                      title: Filters
+                      label: Time filters
+                    slots:
+                      controls:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day'
+                                active: false
+                              - label: Week
+                                url: '?mode=week'
+                                active: true
+                        - component: bb_theme:option_picker
+                          props:
+                            label: Person
+                            name: person
+                            id: time-person
+                            icon: user
+                            open: false
+                            value_label: ''
+                            values: []
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: api-crew-mate
+                                    label: api-crew-mate
+                                    selected: false
+                                  - value: api-edit-team-lead
+                                    label: api-edit-team-lead
+                                    selected: false
+                                  - value: api-lead
+                                    label: api-lead
+                                    selected: false
+                                  - value: api-member
+                                    label: api-member
+                                    selected: false
+                main:
+                  - component: bb_theme:week-strip
+                    props:
+                      label: Days of week 2026-12-07
+                      days:
+                        - weekday: Mon
+                          date: '07'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-07'
+                          active: false
+                          aria_label: Mon 2026-12-07, 0:00
+                        - weekday: Tue
+                          date: '08'
+                          total: '2:45'
+                          url: '?mode=day&date=2026-12-08'
+                          active: false
+                          aria_label: Tue 2026-12-08, 2:45
+                        - weekday: Wed
+                          date: '09'
+                          total: '1:00'
+                          url: '?mode=day&date=2026-12-09'
+                          active: false
+                          aria_label: Wed 2026-12-09, 1:00
+                        - weekday: Thu
+                          date: '10'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-10'
+                          active: false
+                          aria_label: Thu 2026-12-10, 0:00
+                        - weekday: Fri
+                          date: '11'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-11'
+                          active: false
+                          aria_label: Fri 2026-12-11, 0:00
+                        - weekday: Sat
+                          date: '12'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-12'
+                          active: false
+                          aria_label: Sat 2026-12-12, 0:00
+                        - weekday: Sun
+                          date: '13'
+                          total: '0:00'
+                          url: '?mode=day&date=2026-12-13'
+                          active: false
+                          aria_label: Sun 2026-12-13, 0:00
+                      total_label: Week total
+                      total: '3:45'
+                  - component: bb_theme:text
+                    props:
+                      text: 'Total recorded time: 3:45'
+                  - component: bb_theme:table
+                    props:
+                      columns:
+                        - key: label
+                          label: Person
+                          row_header: true
+                        - key: '2026-12-07'
+                          label: Mon 07
+                          num: true
+                        - key: '2026-12-08'
+                          label: Tue 08
+                          num: true
+                        - key: '2026-12-09'
+                          label: Wed 09
+                          num: true
+                        - key: '2026-12-10'
+                          label: Thu 10
+                          num: true
+                        - key: '2026-12-11'
+                          label: Fri 11
+                          num: true
+                        - key: '2026-12-12'
+                          label: Sat 12
+                          num: true
+                        - key: '2026-12-13'
+                          label: Sun 13
+                          num: true
+                        - key: total
+                          label: Total
+                          num: true
+                      rows:
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-crew-mate
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: link
+                              value: '0:30'
+                              url: '?mode=day&date=2026-12-08'
+                            '2026-12-09':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-10':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '0:30'
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-edit-team-lead
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-09':
+                              kind: link
+                              value: '1:00'
+                              url: '?mode=day&date=2026-12-09'
+                            '2026-12-10':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '1:00'
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-lead
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: link
+                              value: '0:45'
+                              url: '?mode=day&date=2026-12-08'
+                            '2026-12-09':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-10':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '0:45'
+                        - cells:
+                            label:
+                              kind: text
+                              value: api-member
+                            '2026-12-07':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-08':
+                              kind: link
+                              value: '1:30'
+                              url: '?mode=day&date=2026-12-08'
+                            '2026-12-09':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-10':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-11':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-12':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            '2026-12-13':
+                              kind: text
+                              value: –
+                              emphasis: faint
+                            total:
+                              kind: text
+                              value: '1:30'
+                        - cells:
+                            label:
+                              kind: text
+                              value: Total
+                            '2026-12-07':
+                              kind: text
+                              value: '0:00'
+                            '2026-12-08':
+                              kind: text
+                              value: '2:45'
+                            '2026-12-09':
+                              kind: text
+                              value: '1:00'
+                            '2026-12-10':
+                              kind: text
+                              value: '0:00'
+                            '2026-12-11':
+                              kind: text
+                              value: '0:00'
+                            '2026-12-12':
+                              kind: text
+                              value: '0:00'
+                            '2026-12-13':
+                              kind: text
+                              value: '0:00'
+                            total:
+                              kind: text
+                              value: '3:45'
+  - name: project-detail-billing
+    group: Screens
+    section: projects
+    docs: 'THE BILLING FACE (BB-666). The page header says what it holds — "Who recorded time on this
+      project is billed to" — and carries New billing account top right; the content is the list alone,
+      with no heading of its own. A project owns several billing accounts and exactly one of them is the
+      project default: every ticket that links no account, and has no ancestor that links one, is booked
+      to it.
+
+
+      THE ACCOUNTS ARE A `list` OF PATTERNED ROWS, NOT A TABLE: `headline: [name]`, `meta: [type, tickets]`,
+      `right: [default, make_default, edit, archive]`. An account is read one at a time, not compared down
+      a column.
+
+
+      THE DEFAULT AND TICKET LINKS EXCLUDE EACH OTHER. The default row carries the Default badge and no
+      Archive — make another account the default first, so a project always has one. An account with linked
+      tickets offers no Make default. Only an unlinked, non-default account offers both.
+
+
+      TICKETS ARE LINKED ON THE TICKET, NEVER HERE (the inspector''s Billing row). This face only names
+      them in the meta line.
+
+
+      ARCHIVED ACCOUNTS STAY READABLE, collapsed below, because existing bookings keep their reference.
+      Make default, Edit and Archive are drawn as `action` cells; on the server they arrive as named submit
+      triggers of the face''s form.'
+    items:
+      - scene: design-system:shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Billing
+                      description: Who recorded time on this project is billed to
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Time
+                              url: /?path=/story/designbook-sections-projects-scenes--project-time
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Billing
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-billing
+                              active: true
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: New billing account
+                          icon_only: true
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      gap: lg
+                    slots:
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - name
+                              meta:
+                                - type
+                                - tickets
+                              right:
+                                - default
+                                - make_default
+                                - edit
+                                - archive
+                            items:
+                              - cells:
+                                  name:
+                                    kind: text
+                                    value: bakers.build Platform internal
+                                    emphasis: strong
+                                  type:
+                                    kind: text
+                                    value: Internal
+                                    emphasis: faint
+                                  tickets:
+                                    kind: text
+                                    value: Booked for every ticket without its own account
+                                    emphasis: faint
+                                  default:
+                                    kind: badge
+                                    label: Default
+                                    tone: running
+                                    dot: true
+                                  edit:
+                                    kind: action
+                                    label: Edit
+                                    variant: ghost
+                              - cells:
+                                  name:
+                                    kind: text
+                                    value: Kunde X maintenance
+                                    emphasis: strong
+                                  type:
+                                    kind: text
+                                    value: Time & Material
+                                    emphasis: faint
+                                  tickets:
+                                    kind: text
+                                    value: Linked to BB-12, BB-40
+                                    emphasis: faint
+                                  edit:
+                                    kind: action
+                                    label: Edit
+                                    variant: ghost
+                                  archive:
+                                    kind: action
+                                    label: Archive
+                                    variant: ghost
+                              - cells:
+                                  name:
+                                    kind: text
+                                    value: Relaunch fixed price
+                                    emphasis: strong
+                                  type:
+                                    kind: text
+                                    value: Fixed Price
+                                    emphasis: faint
+                                  tickets:
+                                    kind: text
+                                    value: No linked tickets
+                                    emphasis: faint
+                                  make_default:
+                                    kind: action
+                                    label: Make default
+                                    variant: ghost
+                                  edit:
+                                    kind: action
+                                    label: Edit
+                                    variant: ghost
+                                  archive:
+                                    kind: action
+                                    label: Archive
+                                    variant: ghost
+                        - component: bb_theme:collapsible
+                          props:
+                            open: false
+                          slots:
+                            label: Archived accounts (1)
+                            content:
+                              - component: bb_theme:list
+                                props:
+                                  layout: cards
+                                  spacing: comfortable
+                                  pattern:
+                                    headline:
+                                      - name
+                                    meta:
+                                      - type
+                                    right:
+                                      - state
+                                  items:
+                                    - cells:
+                                        name:
+                                          kind: text
+                                          value: Pilot phase
+                                        type:
+                                          kind: text
+                                          value: Fixed Price
+                                          emphasis: faint
+                                        state:
+                                          kind: badge
+                                          label: Archived
+                                          tone: offline
+  - name: project-detail-billing (new account)
+    group: Actions
+    section: projects
+    docs: 'THE CREATE DIALOG OF THE BILLING FACE (BB-666), in the shell''s `overlay` over the billing
+      face it was opened from (`action-pattern.md` › *Create and edit surfaces*).
+
+
+      NAME AND BILLING TYPE, NOTHING ELSE: no ticket field — tickets link on the ticket — and no default
+      switch — Make default is a row action. Edit opens the same dialog filled in, titled Edit billing account,
+      submitting Save.'
+    items:
+      - scene: design-system:shell
+        with:
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Billing
+                      description: Who recorded time on this project is billed to
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Time
+                              url: /?path=/story/designbook-sections-projects-scenes--project-time
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Billing
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-billing
+                              active: true
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: New billing account
+                          icon_only: true
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      gap: lg
+                    slots:
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: cards
+                            spacing: comfortable
+                            pattern:
+                              headline:
+                                - name
+                              meta:
+                                - type
+                                - tickets
+                              right:
+                                - default
+                                - make_default
+                                - edit
+                                - archive
+                            items:
+                              - cells:
+                                  name:
+                                    kind: text
+                                    value: bakers.build Platform internal
+                                    emphasis: strong
+                                  type:
+                                    kind: text
+                                    value: Internal
+                                    emphasis: faint
+                                  tickets:
+                                    kind: text
+                                    value: Booked for every ticket without its own account
+                                    emphasis: faint
+                                  default:
+                                    kind: badge
+                                    label: Default
+                                    tone: running
+                                    dot: true
+                                  edit:
+                                    kind: action
+                                    label: Edit
+                                    variant: ghost
+                              - cells:
+                                  name:
+                                    kind: text
+                                    value: Kunde X maintenance
+                                    emphasis: strong
+                                  type:
+                                    kind: text
+                                    value: Time & Material
+                                    emphasis: faint
+                                  tickets:
+                                    kind: text
+                                    value: Linked to BB-12, BB-40
+                                    emphasis: faint
+                                  edit:
+                                    kind: action
+                                    label: Edit
+                                    variant: ghost
+                                  archive:
+                                    kind: action
+                                    label: Archive
+                                    variant: ghost
+                              - cells:
+                                  name:
+                                    kind: text
+                                    value: Relaunch fixed price
+                                    emphasis: strong
+                                  type:
+                                    kind: text
+                                    value: Fixed Price
+                                    emphasis: faint
+                                  tickets:
+                                    kind: text
+                                    value: No linked tickets
+                                    emphasis: faint
+                                  make_default:
+                                    kind: action
+                                    label: Make default
+                                    variant: ghost
+                                  edit:
+                                    kind: action
+                                    label: Edit
+                                    variant: ghost
+                                  archive:
+                                    kind: action
+                                    label: Archive
+                                    variant: ghost
+                        - component: bb_theme:collapsible
+                          props:
+                            open: false
+                          slots:
+                            label: Archived accounts (1)
+                            content:
+                              - component: bb_theme:list
+                                props:
+                                  layout: cards
+                                  spacing: comfortable
+                                  pattern:
+                                    headline:
+                                      - name
+                                    meta:
+                                      - type
+                                    right:
+                                      - state
+                                  items:
+                                    - cells:
+                                        name:
+                                          kind: text
+                                          value: Pilot phase
+                                        type:
+                                          kind: text
+                                          value: Fixed Price
+                                          emphasis: faint
+                                        state:
+                                          kind: badge
+                                          label: Archived
+                                          tone: offline
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: New billing account
+                label: New billing account
+                dismissible: true
+              slots:
+                body:
+                  - component: bb_theme:form
+                    slots:
+                      lines:
+                        - component: bb_theme:form_input
+                          props:
+                            type: text
+                            name: name
+                            id: billing-account-name
+                            required: true
+                            placeholder: What is this billing account called
+                            value: ''
+                      pills:
+                        - component: bb_theme:property_pill
+                          props:
+                            name: billing_type
+                            label: Billing type
+                            icon: project
+                            picker_id: billing-account-type
+                            aria_label: Change billing type. Currently Internal.
+                            value_label: Internal
+                            values:
+                              - internal
+                            open: false
+                            multiple: false
+                            options:
+                              - value: time_material
+                                label: Time & Material
+                                selected: false
+                              - value: fixed_price
+                                label: Fixed Price
+                                selected: false
+                              - value: internal
+                                label: Internal
+                                selected: true
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Create billing account
+                      type: submit

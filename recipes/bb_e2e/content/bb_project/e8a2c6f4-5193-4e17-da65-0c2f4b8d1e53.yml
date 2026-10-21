@@ -1,0 +1,21 @@
+# Dedicated project for write contracts. References the API home team so a
+# team-lead-only account can edit it without workspace leadership.
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: e8a2c6f4-5193-4e17-da65-0c2f4b8d1e53
+  default_langcode: en
+  depends:
+    a5f6ffd1-70a9-50d2-95cb-0b82f93d4269: bb_group
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+default:
+  name:
+  - value: API edit project
+  key:
+  - value: EDP1
+  group_id:
+  - entity: a5f6ffd1-70a9-50d2-95cb-0b82f93d4269
+  teams:
+  - entity: fb355227-fe83-5482-819f-51f8011a78eb
+  next_number:
+  - value: 1

@@ -1,0 +1,51 @@
+_meta:
+  version: '1.0'
+  entity_type: consumer
+  uuid: 0b6fe9bf-d6b0-4133-bfa5-ddab589c80f1
+  default_langcode: en
+  depends: {  }
+default:
+  owner_id:
+    -
+      target_id: 0
+  client_id:
+    -
+      value: bakers-cli-device-e2e
+  label:
+    -
+      value: 'bakers.build E2E device client'
+  third_party:
+    -
+      value: true
+  is_default:
+    -
+      value: false
+  status:
+    -
+      value: true
+  grant_types:
+    -
+      value: device_code
+    -
+      value: refresh_token
+  confidential:
+    -
+      value: false
+  scopes:
+    -
+      scope_id: bb_session
+  access_token_expiration:
+    -
+      value: 300
+  refresh_token_expiration:
+    -
+      value: 1209600
+  pkce:
+    -
+      value: false
+  automatic_authorization:
+    -
+      value: false
+  remember_approval:
+    -
+      value: true

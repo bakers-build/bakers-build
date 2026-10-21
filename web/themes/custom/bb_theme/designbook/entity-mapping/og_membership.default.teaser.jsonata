@@ -1,0 +1,193 @@
+(
+  /* ONE MEMBERSHIP, AS ONE ITEM OF A `list`, and the mapping where "which surfaces grant
+     permissions" is DECIDED rather than described.
+
+     The data model states the rule on `og_membership.entity_type` itself. BB-462 D7 REVERSES half
+     of what this paragraph used to say: `bb_project` is no longer one of the levels a membership
+     can even anchor on — it is deregistered as an OG group entirely, and every membership row that
+     used to target one is deleted. The two levels left, `bb_workspace` and `bb_team`, BOTH grant
+     rights (`bb_team` since BB-456 D9's `lead` and BB-462 D3's `owner`), so this mapping
+     branches on `entity_type` and the role cell exists for both — the state cell never renders,
+     because the only surface that could ever fall back to it is a group type that ships no standard
+     role, which neither shipped type is in any more. Making it a property of the mapping is what
+     stops a stale absence drifting back in: a scene cannot put a role cell back on a listing whose
+     item does not carry one, and the reverse holds just as well — no scene can silently drop the role
+     a mapping decided to carry, because the container renders exactly the cells it is handed and owns
+     no per-arm branch of its own.
+
+     `layout: cards` IS THE ENTRY'S OWN ARGUMENT, KEPT. The deleted membership entry spent a forty-line
+     block comment establishing that a member list is not tabular data: nobody scans a role down a
+     column, and the moment the values are put in cells aligned to a grid the screen promises a
+     comparison the data does not support. That is true, and it is a density rather than a component
+     — one item per surface, read one at a time. The markup it used to own lives in one place for
+     every listing in the theme now.
+
+     BOTH INTERACTIVE CELLS ARE `rendered` CELLS, and that is the ninth cell kind rather than a slot
+     — corrected from `picker` / `action`, which is what this entry declared until a review caught the
+     two disagreeing with what `MemberItemBuilder` actually emits. A cell is DATA, and the panel markup
+     of a role picker and the markup of the remove button both exist in exactly one place — a PHP
+     caller that already rendered them — so they are addressed by their key and each emits one cell
+     carrying `markup`, never a `label`/`icon`/`options` shape a template would have to interpret. In a
+     SCENE `markup` is a tag-free, escaped-string stand-in — `list.rendered.story.yml` establishes the
+     convention — because Storybook never calls `Drupal.attachBehaviors`, so no picker panel opens and
+     no button renders there either way; the unescaped, live half of the contract is a Drupal property,
+     asserted where the object exists.
+
+     IT REACHES A WRITE NOW (BB-435), and this paragraph used to end by saying it did not — "the
+     affordance renders and REACHES NOTHING — no endpoint has ever written a membership anywhere in
+     this theme — so this restores the control, not a write." That was true when it was written.
+     Removing a member now deletes the `og_membership`, adding one creates it, and a role pick stores
+     `roles`. In a SCENE none of the three posts, because Storybook posts nowhere; the medium is what
+     is inert, not the control. */
+  $m := $;
+
+  /* THE PERSON LOOKUP TABLE, and why it is a table.
+
+     A JSONata mapping is evaluated against ONE record and cannot join across the sample
+     collections, so this mapping cannot read the `user` record its `uid` names — the constraint is
+     the entity builder's, not a preference. `bb_ticket.bb_ticket.teaser.jsonata` has exactly the
+     same problem and answers it exactly this way, keyed per user.
+
+     Written as a TABLE rather than as a chain of ternaries on purpose: the limitation is then legible
+     instead of hidden inside an expression, and a reader can see at a glance which people the
+     fixture is expected to contain.
+
+     IT WILL GO STALE IF THE USER FIXTURE CHANGES, AND NOTHING GUARDS THAT — which is a correction
+     rather than a note. This comment used to claim that
+     `tests/contract/bb-338-settings-screens.sh` "asserts that every `uid` present in
+     `data/og_membership.default.yml` has an entry here — a new user without one fails loudly instead
+     of rendering a blank item." Measured at BB-435: that script does not exist, in
+     `tests/contract/` or anywhere in the history, and no file under `scripts/` or `tests/` reads
+     `data/og_membership.default.yml` at all. So the failure mode the sentence promised to catch is
+     live: a membership whose `uid` is missing from this table renders a blank item, silently. The
+     claim is removed instead of being left to be trusted; writing the guard is separate work. */
+  $people := {
+    "1": { "name": "Christian Wiedemann", "initials": "CW", "mail": "christian.wiedemann@keytec.example", "color": "unassigned" },
+    "2": { "name": "Sven Gruber", "initials": "SG", "mail": "sven.gruber@keytec.example", "color": "running" },
+    "3": { "name": "Marieke van Dijk", "initials": "MD", "mail": "m.vandijk@northwind.example", "color": "lease" },
+    "4": { "name": "bakers.build agent", "initials": "GA", "color": "running" },
+    "5": { "name": "Lena Fischer", "initials": "LF", "mail": "lena.fischer@keytec.example", "color": "attention" },
+    "6": { "name": "Tom Beckett", "initials": "TB", "mail": "tom.beckett@partner.example", "color": "offline" },
+    "7": { "name": "keytec deploy bot", "initials": "KD", "color": "running" }
+  };
+  $who := $lookup($people, $m.uid);
+
+  /* WHICH LEVELS GRANT RIGHTS. BB-462 D7 REVERSES what this constant used to say: `bb_project`
+     is deregistered as an OG group entirely and carries no membership row at all any more — a
+     project's own `teams` field decides its visibility, never a role on the project itself. `og.
+     settings` now registers exactly `bb_workspace` and `bb_team`, and BOTH ship a standard role
+     (`bb_workspace-bb_workspace-{contributor,lead}`, `bb_team-bb_team-{lead,owner}` — BB-456
+     D9's team lead and BB-462 D3's team owner), so both take the role arm below; there is no group
+     type left in the state arm's position, which the arm stays live for a type that could ship none.
+     See `MemberItemBuilder::assignableRoles()`, which this constant mirrors. */
+  $grants_rights := $m.entity_type = "bb_workspace" or $m.entity_type = "bb_team";
+
+  /* THE ROLE LABEL, derived from the id's LAST SEGMENT.
+
+     A role is stored as the full og_role id — `bb_workspace-bb_workspace-lead`,
+     `bb_project-bb_project-lead` — and reading `og_role.label` would be the cross-entity
+     join this mapping cannot make. The last segment IS the role's own name, so it is split off and
+     capitalised. `non-member` cannot occur on a stored membership and is not special-cased.
+
+     `Member` FOR AN EMPTY ARRAY, never a blank and never a dash. OgMembership::preSave() revokes the
+     `member` role and getRoles() prepends it on read, so it is NEVER stored: six of the twelve
+     sample memberships carry `[]`, and an item rendering the raw array would show half the workspace
+     with no role at all. An active membership with no roles IS a member, and that is what the cell
+     says. A membership that is not active carries no role label either way — its state is the thing
+     to read — but the empty-array case is what this line exists for. */
+  $tail := $m.roles and $count($m.roles) > 0
+    ? $substringAfter($m.roles[0], $m.entity_type & "-" & $m.entity_bundle & "-")
+    : "";
+  $role := $grants_rights
+    ? ($tail = "" ? "Member" : $uppercase($substring($tail, 0, 1)) & $substring($tail, 1))
+    : undefined;
+
+  /* THE ROLE VOCABULARY THE ROLE CELL'S MARKUP CAN NAME — THE ROLES THE SITE ACTUALLY SHIPS, AS OF
+     BB-462. `config/sync` ships workspace `contributor` / `lead` (labelled "Admin") / `guest` /
+     `member` (empty by design, D1) and team `lead` / `owner` (BB-462 D3) / `member` (empty by
+     design, D3) — each plus a `non-member` no stored membership can carry. There is NO project role
+     of any kind any more (D7 deregisters `bb_project` as an OG group entirely) — the three names
+     this comment used to list (`bb_project-bb_project-{non-member,member,lead}`) do not exist.
+     `$role`, computed above, already reads one of these labels off the stored role id — this is the
+     set it draws from, stated so a reader can check it rather than trust it. */
+
+  /* THE TWO ARMS, AS TWO CELLS THAT ARE NEVER BOTH PRESENT. A `undefined` cell is not emitted at all,
+     so the role arm's item has no `state` key and the state arm's item has no `role` key — the
+     absence is structural, exactly as it was when it was a template branch, but it is now a property
+     of the DATA and the container has no arm to get wrong.
+
+     `markup` IS THE CURRENT ROLE'S LABEL, and nothing else — no `options`, no `picker_id`, no
+     `value_labels`. Those named the OLD `picker` cell's own props; `MemberItemBuilder::roleControl()`
+     builds the live picker panel as a `#type => component` render array and hands `renderControls()`
+     the resulting markup, so what a `rendered` cell carries is the ALREADY-RENDERED value, and the
+     picker's option rows are not this cell's concern — `option_picker` and `option_list`'s own stories
+     are what exercise them. */
+  $role_cell := $grants_rights
+    ? { "kind": "rendered", "markup": $role }
+    : undefined;
+  /* The membership state is what an item shows instead of a role, on a group type that ships no
+     standard role to assign — none of the three shipped types are in that position any more, but the
+     arm stays live for a type that could ship none, and only an active membership grants what its
+     roles carry. A term names itself and carries no state of its own, so the tone is neutral — the
+     badge is the label, not a status. */
+  $state_cell := $grants_rights
+    ? undefined
+    : { "kind": "badge", "label": $m.state, "tone": "neutral" };
+
+  /* THE REMOVE CONTROL IS THE OTHER `rendered` CELL, ON EVERY ITEM OF EVERY ARM — the one affordance
+     both arms share, because a membership can be ended on any surface. `MemberItemBuilder::
+     removeControl()` builds the live `bb_theme:button`, and its accessible name is the sentence
+     `removeSentence()` computes: it NAMES the effect rather than confirming it — `action-pattern.md`'s
+     rule for a single-step action with a server-side side effect — and the sentence DIFFERS BY ARM,
+     because a membership that carries a role revokes access when it is removed, while one on a group
+     type that ships no role grants none and its sentence says so instead. All three shipped levels now
+     take the first arm: "Revokes their access." That sentence lives in the button's `aria-label`,
+     which `icon_only` produces, and never in this cell's `markup` — the same split `list.rendered.
+     story.yml` already draws between a
+     `rendered` cell's visible stand-in and the control's own accessible name. */
+
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "cards",
+        /* A ROSTER IS READ PERSON BY PERSON, so it takes the roomier card spacing (BB-638). */
+        "spacing": "comfortable",
+        /* THE PATTERNED ROW GroupMembersForm::listZone() passes (BB-638): the person and the joined
+           date (and a pending invitation's team) on the left, role or state, transfer and remove
+           right-aligned. A key whose cell is absent leaves no gap. */
+        "pattern": {
+          "headline": ["person"],
+          "meta": ["joined", "team"],
+          "right": ["state", "role", "transfer", "remove"]
+        },
+        "items": [
+          {
+            "cells": {
+              /* The person is the SUBJECT of this item, which is why the mail is passed: the cell
+                 derives the full two-line identity from the presence of a mail address and the
+                 compact one from its absence, so a members list gets the identity and a table cell
+                 gets the chip — from one field rather than from a variant a mapping could get wrong. */
+              "person": {
+                "kind": "person",
+                "display_name": $who.name,
+                "initials": $who.initials,
+                "color": $who.color,
+                "mail": $who.mail
+              },
+              "role": $role_cell,
+              "state": $state_cell,
+              /* The joined date keeps its WORD, because it is no longer under a column heading that
+                 named it. A bare date beside a role would be a fact with no subject — the one thing a
+                 list loses when it stops being a table, paid for here rather than left to the reader. */
+              "joined": { "kind": "mono", "value": "joined " & $substringBefore($m.created, "T") },
+              /* LAST in the right block, because it acts on the whole item rather than on any one of
+                 its values, and a control between two values would read as belonging to one of them. */
+              "remove": { "kind": "rendered", "markup": "Remove" }
+            }
+          }
+        ]
+      }
+    }
+  ]
+)

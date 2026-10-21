@@ -1,0 +1,56 @@
+services:
+  bb_track.worklog_api_route_subscriber:
+    class: Drupal\bb_track\Routing\WorklogApiRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_track.worklog_resource_type_subscriber:
+    class: Drupal\bb_track\EventSubscriber\WorklogResourceTypeSubscriber
+    tags:
+      - { name: event_subscriber }
+  bb_track.mutation:
+    class: Drupal\bb_track\WorkTimeMutation
+    arguments: ['@database', '@lock']
+  bb_track.records:
+    class: Drupal\bb_track\WorkTimeRecords
+    arguments: ['@current_user', '@config.factory']
+  bb_track.assignments:
+    class: Drupal\bb_track\WorkAssignments
+    arguments: ['@entity_type.manager', '@bb_track.mutation', '@current_user', '@bb_track.records']
+  bb_track.account_guard:
+    class: Drupal\bb_track\AccountGuard
+    arguments: ['@entity_type.manager', '@bb_track.assignments']
+  bb_track.activity_input:
+    class: Drupal\bb_track\WorkActivityInput
+    arguments: ['@entity_type.manager', '@bb_track.mutation', '@bb_track.records', '@bb_track.assignments']
+  bb_track.settings:
+    class: Drupal\bb_track\WorkTimeSettings
+    arguments: ['@entity_type.manager', '@bb_track.mutation', '@bb_track.records']
+  bb_track.proposals:
+    class: Drupal\bb_track\Proposals
+    arguments: ['@entity_type.manager', '@bb_track.mutation', '@bb_track.records', '@bb_track.assignments']
+  bb_track.target_options:
+    class: Drupal\bb_track\WorkTargetOptions
+    arguments: ['@plugin.manager.entity_reference_selection', '@entity_type.manager']
+  bb_track.week_sheet:
+    class: Drupal\bb_track\WeekSheet
+    arguments: ['@entity_type.manager', '@bb_track.mutation', '@bb_track.records', '@bb_track.assignments', '@bb_track.target_options']
+  bb_track.integrity:
+    class: Drupal\bb_track\WorklogIntegrity
+    arguments: ['@bb_track.assignments', '@bb_track.activity_input', '@bb_track.week_sheet', '@bb_track.proposals']
+  Drupal\bb_track\Hook\WorkScheduleHooks:
+    arguments: ['@bb_track.settings', '@entity_type.manager']
+  Drupal\bb_track\Hook\ProjectBillingProfileHooks:
+    arguments: ['@bb_track.assignments']
+  bb_track.worklog_scope:
+    class: Drupal\bb_track\WorklogScope
+    arguments: ['@entity_type.manager', '@bb_core.rank_capability']
+  bb_track.worklog_calendar:
+    class: Drupal\bb_track\WorklogCalendar
+    arguments: ['@entity_type.manager', '@bb_core.workspace_read_scope', '@bb_track.worklog_scope', '@config.factory']
+  bb_track.worklog_aggregates:
+    class: Drupal\bb_track\WorklogAggregates
+    arguments: ['@entity_type.manager', '@bb_track.worklog_calendar']
+  bb_track.time_route_subscriber:
+    class: Drupal\bb_track\Routing\TimeRouteSubscriber
+    tags:
+      - { name: event_subscriber }

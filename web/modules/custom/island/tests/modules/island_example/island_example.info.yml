@@ -1,0 +1,9 @@
+name: Island example
+type: module
+description: 'Demo islands driving the island module browser harness.'
+package: Testing
+core_version_requirement: ^11.3
+dependencies:
+  - island:island
+  - drupal:field
+hidden: true

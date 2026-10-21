@@ -1,0 +1,35 @@
+# og's own membership BUNDLE (BB-318).
+#
+# og/config/install does not apply it reliably at recipe-install time — config
+# with an unmet module dependency is silently skipped at enable time — so on the
+# recipe path this bundle did not exist. Nothing noticed until this ticket,
+# because EntityInterface::save() does not validate: the memberships BB-316
+# creates for a conductor principal saved happily without a bundle definition.
+# A membership imported as recipe CONTENT is validated
+# (Importer::importContent() calls validate()), and validation resolves the
+# typed-data derivative `entity:og_membership:default`, which does not exist
+# without this file. Without it `ddev init --provider recipe-test` aborts.
+#
+# It lives in THIS recipe rather than in the `bakers` chain or in a module's
+# config/install, and that placement is measured rather than preferred: `bakers`
+# is the install profile, so anything it ships is created during
+# install_recipe_required_modules — and creating this bundle that early makes
+# core try og's `og_membership_request` field INSTANCE before its field storage
+# exists, which aborts the module install with a different error. `bb_e2e` is
+# applied after site:install has finished, where og is fully settled, and it is
+# also the only recipe that imports membership content. The server is unaffected
+# either way: config/sync already carries this file, so the CIM path has always
+# had the bundle.
+#
+# The remaining gap is the playground world (`ddev init --provider recipe`),
+# which still has no membership bundle. Nothing there imports a membership as
+# content and bakers-init-playground writes its memberships with save() rather
+# than validate(), so it works — but a future world that validates one will need
+# this moved into the `bakers` chain, which first needs og's field-ordering
+# interaction solved.
+langcode: en
+status: true
+dependencies: {  }
+type: default
+name: 'Default'
+description: 'Default OG membership type'

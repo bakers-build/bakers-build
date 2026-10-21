@@ -1,0 +1,127 @@
+component: bb_theme:table
+name: Default
+props:
+  variant: ''
+  columns:
+    - key: phase
+      label: ''
+    - key: identifier
+      label: Ticket
+      sort: asc
+      url: '?order=Ticket&sort=desc'
+    - key: title
+      label: Title
+      sort: none
+      url: '?order=Title&sort=asc'
+    - key: project
+      label: Project
+      sort: none
+      url: '?order=Project&sort=asc'
+    - key: state
+      label: State
+    - key: claim
+      label: Claim
+    - key: status
+      label: Status
+    - key: age
+      label: Age
+      num: true
+    - key: assignee
+      label: Assignee
+    - key: open
+      label: ''
+  rows:
+    - url: '#'
+      accent: running
+      cells:
+        phase:
+          kind: status
+          label: coding
+          working: true
+        identifier:
+          kind: mono
+          value: BB-378
+        title:
+          kind: text
+          value: Rethink the layout component set
+          emphasis: strong
+        project:
+          kind: text
+          value: bakers.build Platform
+          emphasis: faint
+        state:
+          kind: badge
+          label: coding
+          tone: neutral
+        claim:
+          kind: badge
+          label: srv01-bakers
+          tone: lease
+          mono: true
+          mine: true
+          icon: lock
+        status:
+          kind: badge
+          label: running
+          tone: running
+          dot: true
+          suffix: 14m
+        age:
+          kind: text
+          value: 14m
+          emphasis: faint
+        assignee:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: running
+        open:
+          kind: link
+          value: Ticket
+          url: '#'
+    - url: '#'
+      accent: idle
+      cells:
+        phase:
+          kind: status
+          label: review
+          working: false
+        identifier:
+          kind: mono
+          value: BB-356
+        title:
+          kind: text
+          value: Decide whether a team carries access
+        project:
+          kind: text
+          value: bakers.build Platform
+          emphasis: faint
+        state:
+          kind: badge
+          label: review
+          tone: neutral
+        claim:
+          kind: badge
+          label: srv02-bakers
+          tone: lease
+          mono: true
+          icon: lock
+        status:
+          kind: badge
+          label: idle
+          tone: idle
+          dot: true
+        age:
+          kind: text
+          value: 3h
+          emphasis: faint
+        assignee:
+          kind: person
+          display_name: Marco Klein
+          initials: MK
+          color: attention
+          name_hidden: true
+        open:
+          kind: link
+          value: Ticket
+          url: '#'

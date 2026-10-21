@@ -1,0 +1,23 @@
+component: bb_theme:form_select
+name: Default
+props:
+  id: edit-sort-bef-combine
+  name: sort_bef_combine
+  options:
+    - value: changed_DESC
+      label: Updated, newest first
+      selected: true
+    - value: changed_ASC
+      label: Updated, oldest first
+    - value: identifier_ASC
+      label: Identifier A–Z
+    - value: identifier_DESC
+      label: Identifier Z–A
+    - value: state_ASC
+      label: State ID A–Z
+    - value: state_DESC
+      label: State ID Z–A
+    - value: priority_ASC
+      label: Priority, highest first
+    - value: priority_DESC
+      label: Priority, lowest first

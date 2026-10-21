@@ -1,0 +1,75 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Button
+status: stable
+group: Action
+description: >-
+  Atomic action control with an optional leading icon slot. Renders an anchor
+  when href is set and a button otherwise. Distinct from the submit component,
+  which is form-bound.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+    href:
+      type: string
+      title: Href
+      description: When set the control renders as an anchor instead of a button.
+    type:
+      type: string
+      title: Button type attribute
+      enum:
+        - button
+        - submit
+        - reset
+    disabled:
+      type: boolean
+      title: Disabled
+    icon_only:
+      type: boolean
+      title: Icon only
+      description: Render the icon alone and move the label into aria-label.
+    tone:
+      type: string
+      enum:
+        - wait
+        - attention
+        - running
+        - critical
+        - idle
+      title: Tone
+      description: >-
+        Optional fill from the badge token vocabulary, for a control that is
+        also a labelled state (Board work-state and priority chips). When set
+        it replaces the variant colours. The label still names the value.
+  required:
+    - label
+slots:
+  icon:
+    title: Icon
+    description: Optional leading icon rendered before the label.
+variants:
+  neutral:
+    title: Neutral
+    description: White surface, dark text and a subtle border for authentication actions.
+  primary:
+    title: Primary
+    description: Dominant weight, used for the New ticket call to action.
+  ghost:
+    title: Ghost
+    description: >-
+      No border, no background — the sidebar collapse toggle and other icon-only
+      controls.
+  danger:
+    title: Danger
+    description: >-
+      Quiet outline in the semantic danger role — transparent background, danger
+      border and text, a danger tint on hover. For intervention actions that
+      stop or end work (Cancel ticket, Cancel run); there is deliberately no
+      filled danger.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

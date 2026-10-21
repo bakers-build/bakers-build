@@ -1,0 +1,9 @@
+component: bb_theme:person
+name: Picture
+props:
+  display_name: Christian Wiedemann
+  initials: CW
+  picture: https://picsum.photos/seed/bb-507/40/40
+  mail: christian.wiedemann@keytec.example
+  color: unassigned
+  size: md

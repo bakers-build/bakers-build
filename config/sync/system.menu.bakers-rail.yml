@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: bakers-rail
+label: 'bakers.build navigation rail'
+description: 'Workspace navigation rail: My work, Groups, Projects, Settings and Teams. Rendered by the ui_patterns menu source into bb_theme:nav.'
+locked: true

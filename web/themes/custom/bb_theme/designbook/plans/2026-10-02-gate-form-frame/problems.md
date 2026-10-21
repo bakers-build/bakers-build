@@ -1,0 +1,6 @@
+# Execution problems — design-component
+
+| When | Step | Task | Title | Why | Attempted correction |
+|---|---|---|---|---|---|
+| 2026-10-02T08:30:00Z | write-scene | write-scene | check mail, device code entry, device consent, workspace create | The first wrap placed `form_label` and `form_input` as separate cells of the frame's grid, so the scenes showed 22px between a label and its input where Drupal renders both inside one `.form-item` (6px); the device scenes also stacked the two submits that Drupal renders in one action row. | Grouped each label with its input (and description) in a `zone` with `gap: none`, and the two device submits in a `zone` row with `gap: sm`; the probe then measured 16px between every part, as on the live forms. The default story got the same grouping. |
+| 2026-10-02T08:35:00Z | validate | validate | all 6 story URLs | `storybook check <url>` cannot run: `Cannot find package 'playwright'` in the addon. The validate tasks stay pending. | Equivalent probe with the repository's Playwright (`assets-ai/BB-594/storybook-probe/forms.cjs`, output `forms.txt`, screenshots beside it) at 360px and 1440px: zero console errors after a re-run (one `ERR_NETWORK_CHANGED` run), no overflow, 16px between every visible part of each form. |

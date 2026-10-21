@@ -1,0 +1,30 @@
+{
+  "name": "@bakers-build/addon-claude",
+  "version": "0.0.1",
+  "description": "bakers.build agent plugin for the Claude CLI.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src",
+    "measure/*.json",
+    "measure/agent-proxy.mjs",
+    "measure/claude-measure.mjs"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,18 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: e2dd7e68-3ccc-5a4d-8c92-93817c8e0932
+  default_langcode: en
+default:
+  name:
+  - value: api-foreign-only
+  mail:
+  - value: api-foreign-only@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

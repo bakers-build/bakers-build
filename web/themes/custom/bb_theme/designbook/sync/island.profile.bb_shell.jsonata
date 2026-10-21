@@ -1,0 +1,188 @@
+/* Standalone Island Profile translated from the global scene. Stable placement
+ * IDs and source settings preserve the legacy page composition.
+ *
+ * THE SHIPPED YAML IS THE SAVED FORM (see README.md). page_header.breadcrumb
+ * binds `bb_run_breadcrumb` and `bb_comment_breadcrumb` as sibling sources;
+ * each returns empty off its own canonical route so the shared header stays
+ * one title row. This generator is older than that slot and is not the
+ * install copy. */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "island.app.bakers"
+    ],
+    "enforced": {
+      "config": [
+        "island.app.bakers"
+      ]
+    },
+    "module": [
+      "bb_core",
+      "island_ui_patterns",
+      "ui_patterns"
+    ],
+    "theme": [
+      "bb_theme"
+    ]
+  },
+  "id": "bb_shell",
+  "label": "bakers.build application shell",
+  "app": "bakers",
+  "layout": "bb_theme:shell",
+  "layout_settings": {},
+  "placements": {
+    "shell_rail": {
+      "plugin_id": "ui_patterns_component",
+      "events": ["bakers.team.created"],
+      "slot": "sidebar",
+      "weight": 0,
+      "enabled": true,
+      "configuration": {
+        "component": {
+          "component_id": "bb_theme:nav",
+          "variant_id": null,
+          "props": {
+            "label": {
+              "source_id": "textfield",
+              "source": {
+                "value": "Primary"
+              }
+            },
+            "variant": {
+              "source_id": "textfield",
+              "source": {
+                "value": "main"
+              }
+            },
+            "items": {
+              "source_id": "bb_menu",
+              "source": {
+                "menu": "bakers-rail"
+              }
+            }
+          },
+          "slots": {}
+        },
+        "boost": true,
+        "target_placement": "shell_content_island"
+      },
+      "data": {}
+    },
+    "shell_topbar": {
+      "plugin_id": "ui_patterns_component",
+      "slot": "header",
+      "weight": 1,
+      "enabled": true,
+      "configuration": {
+        "component": {
+          "component_id": "bb_theme:topbar",
+          "variant_id": null,
+          "props": {},
+          "slots": {
+            "search": {
+              "sources": [
+                {
+                  "source_id": "component",
+                  "source": {
+                    "component": {
+                      "component_id": "bb_theme:search_trigger",
+                      "variant_id": null,
+                      "props": {
+                        "placeholder": {
+                          "source_id": "textfield",
+                          "source": {
+                            "value": "Search tickets, runs, conductors"
+                          }
+                        },
+                        "shortcut": {
+                          "source_id": "textfield",
+                          "source": {
+                            "value": "\u2318K"
+                          }
+                        }
+                      },
+                      "slots": {
+                        "icon": {
+                          "sources": [
+                            {
+                              "source_id": "component",
+                              "source": {
+                                "component": {
+                                  "component_id": "bb_theme:icon",
+                                  "variant_id": null,
+                                  "props": {
+                                    "name": {
+                                      "source_id": "textfield",
+                                      "source": {
+                                        "value": "search"
+                                      }
+                                    },
+                                    "size": {
+                                      "source_id": "textfield",
+                                      "source": {
+                                        "value": "md"
+                                      }
+                                    }
+                                  },
+                                  "slots": {}
+                                }
+                              },
+                              "node_id": "shell_search_icon"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "node_id": "shell_search"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "data": {}
+    },
+    "shell_content_island": {
+      "plugin_id": "page_content",
+      "slot": "content",
+      "weight": 2,
+      "enabled": true,
+      "configuration": {
+        "prefix_blocks": {
+          "shell_tabs": {
+            "plugin_id": "local_tasks_block",
+            "configuration": {}
+          }
+        },
+        "content_source_id": "shell_main"
+      },
+      "data": {}
+    },
+    "shell_status_bar": {
+      "plugin_id": "ui_patterns_component",
+      "slot": "footer",
+      "weight": 3,
+      "enabled": true,
+      "configuration": {
+        "component": {
+          "component_id": "bb_theme:status_bar",
+          "variant_id": null,
+          "props": {},
+          "slots": {}
+        }
+      },
+      "data": {}
+    }
+  },
+  "weight": -10,
+  "conditions": {
+    "paths": [
+      "/_workspace/*"
+    ]
+  }
+}
+)

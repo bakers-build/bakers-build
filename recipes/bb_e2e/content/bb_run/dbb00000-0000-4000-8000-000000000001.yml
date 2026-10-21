@@ -1,0 +1,38 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_run
+  uuid: dbb00000-0000-4000-8000-000000000001
+  depends:
+    dba00000-0000-4000-8000-000000000001: bb_ticket
+    dbc00000-0000-4000-8000-000000000001: bb_conductor
+default:
+  created:
+    -
+      value: 1780390800
+  changed:
+    -
+      value: 1780392120
+  ticket_id:
+    -
+      entity: "dba00000-0000-4000-8000-000000000001"
+  conductor_id:
+    -
+      entity: "dbc00000-0000-4000-8000-000000000001"
+  state_at_start:
+    -
+      value: "spec"
+  started_at:
+    -
+      value: 1780390800
+  heartbeat:
+    -
+      value: 1780392120
+  worktree_path:
+    -
+      value: "/srv/bakers/wt/bb-142-spec"
+  closed:
+    -
+      value: true
+  closed_date:
+    -
+      value: 1780392120

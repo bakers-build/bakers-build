@@ -1,0 +1,216 @@
+uuid: f18f8bd8-e5a3-49c1-856d-316190ebf76a
+langcode: en
+status: true
+dependencies:
+  config:
+    - search_api.server.bb_db
+  module:
+    - bb_core
+id: bb_tickets
+name: 'bakers.build tickets'
+description: 'Tickets, for the ticket list, its facets, and the project board.'
+read_only: false
+field_settings:
+  assignee_user_id:
+    label: Assignee
+    datasource_id: 'entity:bb_ticket'
+    property_path: assignee_user_id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  changed:
+    label: Changed
+    datasource_id: 'entity:bb_ticket'
+    property_path: changed
+    type: date
+    dependencies:
+      module:
+        - bb_core
+  closed:
+    label: Closed
+    datasource_id: 'entity:bb_ticket'
+    property_path: closed
+    type: boolean
+    dependencies:
+      module:
+        - bb_core
+  closed_date:
+    label: 'Closed date'
+    datasource_id: 'entity:bb_ticket'
+    property_path: closed_date
+    type: date
+    dependencies:
+      module:
+        - bb_core
+  conductor_id:
+    label: Conductor
+    datasource_id: 'entity:bb_ticket'
+    property_path: conductor_id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  created:
+    label: Created
+    datasource_id: 'entity:bb_ticket'
+    property_path: created
+    type: date
+    dependencies:
+      module:
+        - bb_core
+  group_id:
+    label: Group
+    datasource_id: 'entity:bb_ticket'
+    property_path: 'project_id:entity:group_id'
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  identifier:
+    label: Identifier
+    datasource_id: 'entity:bb_ticket'
+    property_path: identifier
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  labels:
+    label: Labels
+    datasource_id: 'entity:bb_ticket'
+    property_path: labels
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  origin_ref:
+    label: 'Origin reference'
+    property_path: origin_ref
+    type: string
+  owner_user_id:
+    label: Owner
+    datasource_id: 'entity:bb_ticket'
+    property_path: owner_user_id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  parent_id:
+    label: Parent
+    datasource_id: 'entity:bb_ticket'
+    property_path: parent_id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  priority:
+    label: Priority
+    datasource_id: 'entity:bb_ticket'
+    property_path: priority
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  priority_rank:
+    label: 'Priority rank'
+    property_path: priority_rank
+    type: integer
+  project_id:
+    label: Project
+    datasource_id: 'entity:bb_ticket'
+    property_path: project_id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  project_team_ids:
+    label: 'Project teams'
+    datasource_id: 'entity:bb_ticket'
+    property_path: 'project_id:entity:teams'
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  state:
+    label: State
+    datasource_id: 'entity:bb_ticket'
+    property_path: state
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  template_id:
+    label: Template
+    datasource_id: 'entity:bb_ticket'
+    property_path: template_id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  ticket_id:
+    label: 'Ticket ID'
+    datasource_id: 'entity:bb_ticket'
+    property_path: id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  title:
+    label: Title
+    datasource_id: 'entity:bb_ticket'
+    property_path: title
+    type: text
+    dependencies:
+      module:
+        - bb_core
+  work_state:
+    label: 'Work state'
+    datasource_id: 'entity:bb_ticket'
+    property_path: work_state
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  workflow:
+    label: Workflow
+    datasource_id: 'entity:bb_ticket'
+    property_path: workflow
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  workspace_id:
+    label: Workspace
+    datasource_id: 'entity:bb_ticket'
+    property_path: 'project_id:entity:group_id:entity:workspace_id'
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+datasource_settings:
+  'entity:bb_ticket':
+    bundles:
+      default: true
+      selected: {  }
+    languages:
+      default: true
+      selected: {  }
+processor_settings:
+  add_url: {  }
+  aggregated_field: {  }
+  custom_value: {  }
+  entity_type: {  }
+  bb_origin_ref: {  }
+  bb_read_scope: {  }
+  bb_ticket_priority_rank: {  }
+  language_with_fallback: {  }
+  rendered_item: {  }
+tracker_settings:
+  default:
+    indexing_order: fifo
+options:
+  cron_limit: 50
+  delete_on_fail: true
+  index_directly: true
+  track_changes_in_references: true
+server: bb_db

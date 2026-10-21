@@ -1,0 +1,24 @@
+bb_oauth_device.verify:
+  path: '/oauth/device'
+  defaults:
+    _form: 'Drupal\bb_oauth_device\Form\DeviceVerificationForm'
+    _title: 'Confirm device sign-in'
+  methods: [GET, POST]
+  requirements:
+    # The same permission simple_oauth's own /oauth/authorize consent screen
+    # gates on, granted to `authenticated` by recipes/bakers/recipe.yml.
+    _permission: 'grant simple_oauth codes'
+  options:
+    no_cache: TRUE
+
+bb_oauth_device.device_authorization:
+  path: '/oauth/device_authorization'
+  defaults:
+    _controller: 'Drupal\bb_oauth_device\Controller\DeviceAuthorizationController::authorize'
+  methods: [POST]
+  requirements:
+    # The device is unauthenticated at this point; the human authenticates
+    # later, on the verification route.
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE

@@ -1,0 +1,166 @@
+{
+  "id": "qualify-prior-art-base-negative",
+  "synthetic": true,
+  "profile": "prior-art-base",
+  "execution": "simulated-tools",
+  "skill": "qualify-ticket",
+  "references": [
+    "method-context/references/prior-art-build.md",
+    "workflow-step/references/prior-art-search.md",
+    "read-ticket/SKILL.md",
+    "publish-comment/SKILL.md",
+    "workflow-step/SKILL.md",
+    "run-outtake/SKILL.md"
+  ],
+  "input": {
+    "task": "Run qualification only, publish the qualification handoff and summary on a negative, and remain in qualification.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "identifier": "EVAL-30",
+    "created": "2026-01-01",
+    "base_branch": "develop",
+    "ask": "Document invoice export: use export --project NAME.",
+    "terms": [
+      "invoice",
+      "invoices"
+    ],
+    "paths": [
+      "docs"
+    ],
+    "probe": "Guide",
+    "observations": [
+      "Use invoice and invoices for ticket and remote searches. The known-present ticket probe term is ticket; the repository probe is Guide in docs.",
+      "Ticket context, comments and method/work type were read completely. work:docs and method:superpowers are confirmed; acceptance AC-1: operators can find the invoice export command and project option.",
+      "No runtime account, browser, reproduction or agent override is required. No origin publication. Qualification approval is standing but state is restricted to qualification.",
+      "For merge only: MR 30 targets develop, latest pipeline and required manual jobs passed, no conflict, mergeable. Source feat/eval-30 is this ticket\u2019s short-lived branch; no other MR targets it and deletion is safe. Concrete merge authorization is already given. MR title is Document invoice export.",
+      "Repository Git operations are fixture-only literal commands. Candidate base for diff is <candidate-sha>^; inspect the current file docs/invoices.md. The command catalog in the tool description is syntax, not evidence.",
+      "All qualification substeps other than prior-art search and publication are already completed and confirmed: method, classification (bb_chore, work:docs), acceptance quality gate, actors, agent recommendation (retain confirmed defaults), provenance fixture-revision-1, handoff_version 1. Reuse these observations; no unresolved catalog or method choice remains."
+    ],
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555"
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-30",
+      "title": "Document invoice export options",
+      "description": {
+        "value": "Document invoice export: use export --project NAME.",
+        "format": "bb_rich"
+      },
+      "created": "2026-01-01",
+      "base_branch": "develop",
+      "state": "qualification",
+      "changed": "fixture-revision-1",
+      "comments": []
+    },
+    "prior_art": {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "identifier": "EVAL-70",
+      "title": "Delivered documentation",
+      "description": {
+        "value": "Operator documentation.",
+        "format": "bb_rich"
+      },
+      "state": "done",
+      "assignee": "fixture-maintainer"
+    },
+    "commands": {
+      "git": [
+        {
+          "argv": [
+            "git",
+            "fetch",
+            "origin",
+            "--quiet"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "rev-parse",
+            "origin/develop"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "log",
+            "--oneline",
+            "origin/develop",
+            "--since=2026-01-01"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "grep",
+            "-nEi",
+            "invoice|invoices",
+            "origin/develop",
+            "--",
+            "docs"
+          ],
+          "result": {
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "grep",
+            "-c",
+            "Guide",
+            "origin/develop",
+            "--",
+            "docs"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "origin/develop:docs/README.md:1\n",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "diff",
+            "--stat",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..origin/develop"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        }
+      ]
+    },
+    "outcome": "negative",
+    "checkpoint": "qualify",
+    "checked_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "rubric": [
+    {
+      "id": "evidence-meaning",
+      "criterion": "Distinguish delivered, reverted and self-ticket changes. Report only observed evidence, stop on a hit or error, and explain the decision needed without inventing missing metadata."
+    }
+  ]
+}

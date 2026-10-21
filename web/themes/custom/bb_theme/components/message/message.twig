@@ -1,0 +1,35 @@
+{# Inline status note-bar for one Drupal message region. Tint, border and icon
+   are driven by the `status` prop (status|warning|error). Extracted from the
+   auth_card note-bar so Drupal status_messages and the auth card share one
+   presentation. Rendered once per non-empty message region by the
+   status-messages template. #}
+{% set status = status|default('status') %}
+{% set msg_tint = {
+  'status': 'bg-state-running-tint',
+  'warning': 'bg-state-attention-tint',
+  'error': 'bg-state-unassigned-tint',
+} %}
+{% set msg_icon = {
+  'status': 'text-state-running-ink',
+  'warning': 'text-state-attention-ink',
+  'error': 'text-state-unassigned-ink',
+} %}
+{% set msg_border = {
+  'status': 'border-[color-mix(in_srgb,var(--color-state-running)_32%,transparent)]',
+  'warning': 'border-[color-mix(in_srgb,var(--color-state-attention)_36%,transparent)]',
+  'error': 'border-[color-mix(in_srgb,var(--color-state-unassigned)_36%,transparent)]',
+} %}
+<div{{ attributes.addClass([
+  'message',
+  'flex', 'items-center', 'gap-[9px]', 'px-[11px]', 'py-[9px]',
+  'rounded-sm', 'border', 'text-caption', 'text-text-light', 'mb-[16px]',
+  msg_tint[status]|default(msg_tint['status']),
+  msg_border[status]|default(msg_border['status']),
+]) }}>
+  <span class="message__icon shrink-0 {{ msg_icon[status]|default(msg_icon['status']) }}">
+    {% if status == 'warning' %}<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+    {% elseif status == 'error' %}<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+    {% else %}<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>{% endif %}
+  </span>
+  <span class="message__body">{% block body %}{% if body %}{{ body }}{% endif %}{% endblock %}</span>
+</div>

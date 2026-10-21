@@ -1,0 +1,7 @@
+langcode: en
+status: true
+dependencies: {  }
+id: bakers-account
+label: 'bakers.build account navigation'
+description: 'Account-area navigation: Account, Time, Schedule, Conductors, Machines, API keys, Workspaces, Log out. Placed instead of bakers-rail on account-area routes via the bb_user_area_route condition.'
+locked: true

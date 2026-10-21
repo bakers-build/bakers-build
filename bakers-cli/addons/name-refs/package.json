@@ -1,0 +1,33 @@
+{
+  "name": "@bakers-build/addon-name-refs",
+  "version": "0.0.1",
+  "description": "bakers.build connection addon: resolve entity NAMES (--label_names, --environment_names) into the relationships that reference them, on the live write, via dropsh's extendOperationSchema and alterRequest hooks.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/name-refs/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^"
+  },
+  "dependencies": {
+    "dropsh": "^0.7.5"
+  },
+  "devDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "ajv": "^8.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

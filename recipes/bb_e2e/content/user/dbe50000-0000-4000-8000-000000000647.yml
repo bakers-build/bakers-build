@@ -1,0 +1,37 @@
+# The guest reviewer of the ticket's inline addons card.
+#
+# A workspace GUEST of the seeded `bakers` workspace: it may view tickets, but
+# not update them and not register a conductor. That is the account the
+# addon access split is observed with — an action with `access: view` (Ports
+# Share/Stop) is offered and accepted, one with `access: update` (Ports Reap)
+# is neither offered nor accepted from it.
+#
+# No `user_role`: everything it can do comes from its memberships.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: dbe50000-0000-4000-8000-000000000647
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: "en"
+  name:
+    -
+      value: "addon-reviewer"
+  mail:
+    -
+      value: "addon-reviewer@example.com"
+  timezone:
+    -
+      value: "Europe/Berlin"
+  status:
+    -
+      value: true
+  pass:
+    -
+      value: "Bb-test-login-426!"
+      pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

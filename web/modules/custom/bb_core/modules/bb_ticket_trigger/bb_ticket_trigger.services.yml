@@ -1,0 +1,21 @@
+services:
+  # Ticket trigger types; `bb_ticket_trigger.plugin_type.yml` exposes them
+  # to the Plugin module's field type.
+  plugin.manager.bb_ticket_trigger_type:
+    class: Drupal\bb_ticket_trigger\TicketTrigger\TicketTriggerTypePluginManager
+    parent: default_plugin_manager
+
+  # Ticket trigger targets: the bundles of `bb_ticket_trigger`.
+  plugin.manager.bb_ticket_trigger_target:
+    class: Drupal\bb_ticket_trigger\TicketTrigger\TicketTriggerTargetPluginManager
+    parent: default_plugin_manager
+
+  # Runs due triggers from cron and event types' fire() calls.
+  bb_ticket_trigger.runner:
+    class: Drupal\bb_ticket_trigger\TicketTrigger\TicketTriggerRunner
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@datetime.time'
+      - '@plugin.manager.bb_ticket_trigger_type'
+      - '@logger.channel.bb_core'

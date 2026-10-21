@@ -1,0 +1,21 @@
+{#
+/**
+ * @file
+ * Presenter override: render text-like inputs through the bb_theme
+ * form_input SDC.
+ *
+ * The real Drupal `attributes` (type, name, id, value, autocomplete, data-*,
+ * #states classes …) are passed straight through to the SDC, which only adds
+ * its own styling classes — so the input keeps working while the look comes
+ * from the component (single source of truth). Submit, checkbox and radio have
+ * their own theme-suggestion overrides; hidden inputs fall here but carry no
+ * visual.
+ *
+ * @see web/themes/custom/bb_theme/components/form_input/form_input.twig
+ */
+#}
+{{ include('bb_theme:form_input', {
+  attributes: attributes,
+  disabled: attributes.offsetExists('disabled'),
+  readonly: attributes.offsetExists('readonly'),
+}, with_context = false) }}{{ children }}

@@ -1,0 +1,24 @@
+component: bb_theme:option_picker
+name: Default
+variant: field
+props:
+  variant: field
+  label: Conductor
+  icon: conductor
+  aria_label: Change conductor. Nothing is set.
+  open: false
+  name: conductor
+  id: option-picker-default
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: conductor
+        multiple: false
+        clearable: true
+        clear_label: No conductor
+        options:
+          - value: '6'
+            label: cw-framework
+            selected: false

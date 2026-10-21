@@ -1,0 +1,7 @@
+component: bb_theme:collection-position
+name: Default
+props:
+  from: 21
+  to: 40
+  total: 60
+  noun: tickets

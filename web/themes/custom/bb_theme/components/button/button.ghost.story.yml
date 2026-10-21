@@ -1,0 +1,13 @@
+component: bb_theme:button
+name: Ghost
+variant: ghost
+props:
+  label: Collapse sidebar
+  icon_only: true
+slots:
+  icon:
+    - type: component
+      component: bb_theme:icon
+      props:
+        name: panel-left
+        size: md

@@ -1,0 +1,68 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Image crop
+status: experimental
+group: Form
+provider: bb_theme
+description: >-
+  Square crop control of one image upload: an 80px avatar showing the staged
+  square (or a user-icon placeholder), Choose picture / Choose another, Edit
+  crop and the field's Remove, plus a native modal dialog that pans and zooms
+  the image behind a fixed square. Rendered by the bb_square_image widget's
+  presenter; the registered Alpine component imageCrop (image_crop.src.js)
+  writes the widget's hidden crop input. Geometry is {x, y, size} in the
+  original image's pixels.
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: The image field's label; describes the Edit crop button.
+    id:
+      type: string
+      title: Id
+      description: Base id; the dialog title id is derived from it.
+    src:
+      type: string
+      title: Image URL
+      description: URL of the original image. Empty until a file is chosen.
+    width:
+      type: integer
+      title: Width
+      description: Original width in pixels.
+    height:
+      type: integer
+      title: Height
+      description: Original height in pixels.
+    crop:
+      type: string
+      title: Saved crop
+      description: JSON {x, y, size} of the saved square; empty for the centred default.
+    input_id:
+      type: string
+      title: File input id
+      description: >-
+        Id of the field's file input; the visible Choose button is its label.
+        Absent when a saved file replaces the input.
+    hint:
+      type: string
+      title: Hint
+      description: Accepted formats, shown under the buttons.
+  required:
+    - label
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true
+slots:
+  upload:
+    title: Upload
+    description: The field's own file input, kept in the document and visually hidden.
+  remove:
+    title: Remove
+    description: The field's Remove button, present for a saved file.
+  rest:
+    title: Rest
+    description: >-
+      Hidden values and optional alt or title fields, rendered below the
+      control.

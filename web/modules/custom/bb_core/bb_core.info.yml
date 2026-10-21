@@ -1,0 +1,31 @@
+name: bakers.build Core
+type: module
+description: 'bakers.build v2 control-plane domain model, ticket workflow runtime, and admin UI.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - drupal:link
+  - drupal:options
+  - drupal:text
+  - drupal:user
+  - drupal:filter
+  # The bb_markdown text editor (Editor API) bound to bb_rich.
+  - drupal:editor
+  # bb_run's log file base fields reference 'file'; without it, installing
+  # the entity schema throws a FieldException.
+  - drupal:file
+  # bb_project and bb_group carry an `image` base field.
+  - drupal:image
+  - og:og
+  - markdown_easy:markdown_easy
+  - state_machine:state_machine
+  - entity:entity
+  # Several classes import `Drupal\island\*` (islands, boosted shell, the
+  # dialog wrapper format).
+  - island:island
+  # The claim, claim-next, heartbeat and statistics routes use
+  # `_jsonapi_resource`.
+  - jsonapi_resources:jsonapi_resources
+  # McpResourceMetadataSubscriber narrows RFC 9728 protected-resource
+  # metadata (BB-658).
+  - simple_oauth_server_metadata:simple_oauth_server_metadata

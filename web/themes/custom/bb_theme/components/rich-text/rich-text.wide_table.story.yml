@@ -1,0 +1,15 @@
+component: bb_theme:rich-text
+name: Wide table
+props:
+  body: >-
+    <p>Every environment the release touched, with the exact command that
+    verified
+    it.</p><table><thead><tr><th>Environment</th><th>Service</th><th>Revision</th><th>Command</th><th>Observed
+    result</th><th>Owner</th></tr></thead><tbody><tr><td>recipe-test</td><td>web</td><td><code>abcbb87ae0c8b08369389e919da236b7f4d7fb97</code></td><td><code>ddev
+    init --provider recipe-test --fresh</code></td><td>Installed from the recipe
+    without a configuration import and answered every route with
+    200.</td><td>Conductor</td></tr><tr><td>existing-config</td><td>web</td><td><code>abcbb87ae0c8b08369389e919da236b7f4d7fb97</code></td><td><code>ddev
+    drush cim -y &amp;&amp; ddev drush cr</code></td><td>Imported config/sync
+    and rendered the same tables, headers and trailing
+    prose.</td><td>Reviewer</td></tr></tbody></table><p>The last column stays
+    reachable by scrolling inside this body.</p>

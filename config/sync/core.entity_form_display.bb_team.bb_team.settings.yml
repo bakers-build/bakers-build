@@ -1,0 +1,31 @@
+uuid: d24d31e2-bddc-4c47-8779-96037251b60c
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_team.settings
+  module:
+    - bb_core
+_core:
+  default_config_hash: HVUWHxWFLU-t4ZXMlqDY88zZ1bY52hiFnNFNGG0ZQPE
+id: bb_team.bb_team.settings
+targetEntityType: bb_team
+bundle: bb_team
+mode: settings
+content:
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  changed: true
+  created: true
+  id: true
+  owner_user_id: true
+  projects: true
+  uuid: true
+  workspace_id: true

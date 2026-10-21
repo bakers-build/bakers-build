@@ -1,0 +1,9 @@
+component: bb_theme:person
+name: Picture contain
+props:
+  variant: compact
+  size: md
+  initials: GP
+  color: running
+  picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+  image_fit: contain

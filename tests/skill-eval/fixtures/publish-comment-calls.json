@@ -1,0 +1,32 @@
+{
+  "id": "publish-comment-calls",
+  "synthetic": true,
+  "profile": "publish-comment-calls",
+  "execution": "simulated-tools",
+  "skill": "publish-comment",
+  "references": [
+    "workflow-step/SKILL.md"
+  ],
+  "input": {
+    "task": "Publish the caller-authored Markdown comment now using the supplied skill, then return the verified comment identifier or a concrete failure. The payload fields have not yet been discovered. Tool calls are authorized only in this synthetic fixture.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "comment_type": "coding",
+    "body_file": "/fixture/comment.md",
+    "authorization": "Caller explicitly authorizes this one publication; do not change any ticket state."
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "state": "coding"
+    },
+    "files": {
+      "/fixture/comment.md": "-- Publication probe\n\n## Observed result\n\n- Keep `code`, $HOME, $(echo untouched), \"quotes\" and Unicode: Prüfung.\n\n[Evidence](https://evidence.example.invalid/result)\n\n"
+    }
+  },
+  "rubric": [
+    {
+      "id": "verified-result",
+      "criterion": "Reports success only after an actual create or unique reconciliation followed by matching readback; does not claim any other live action."
+    }
+  ]
+}

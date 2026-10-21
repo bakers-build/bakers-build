@@ -1,0 +1,29 @@
+{# Daily counts share one scale. Text carries every value without relying on color or SVG.
+   Count the peak by iteration: Twing may coerce prop arrays when using length. #}
+{% set peak = 0 %}
+{% for day in days %}
+  {% if day.count > peak %}{% set peak = day.count %}{% endif %}
+{% endfor %}
+{% set span = peak > 0 ? peak : 1 %}
+<section{{ (attributes ?: create_attribute()).addClass(['min-w-0', 'flex', 'flex-col', 'gap-5', 'py-4', 'border-b', 'border-border-2']) }}>
+  <h2 class="m-0 text-section font-semibold text-title">{{ label }}</h2>
+  <ol class="flex items-end gap-2 list-none p-0 m-0 overflow-x-auto" tabindex="0" aria-label="{{ label }}">
+    {% for day in days %}
+      {% set height = day.count > 0 ? (day.count / span * 100)|round(2) : 0 %}
+      <li class="min-w-12 flex-1 flex flex-col items-center gap-2">
+        <span class="text-caption font-semibold text-text tabular-nums">{{ day.count }}</span>
+        <svg viewBox="0 0 40 100" preserveAspectRatio="none" class="block w-full max-w-11 h-36 text-primary" aria-hidden="true">
+          <rect x="0" y="{{ 100 - height }}" width="40" height="{{ height }}" fill="currentColor" />
+          <path d="M0 100H40" stroke="currentColor" vector-effect="non-scaling-stroke" />
+        </svg>
+        <time datetime="{{ day.date }}" title="{{ day.date }}" class="text-caption text-text-light">{{ day.label }}</time>
+      </li>
+    {% endfor %}
+  </ol>
+  {% if source %}
+    <details class="text-caption text-text-light">
+      <summary class="w-fit cursor-pointer rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">Data source</summary>
+      <code class="block pt-2 text-caption break-all">{{ source }}</code>
+    </details>
+  {% endif %}
+</section>

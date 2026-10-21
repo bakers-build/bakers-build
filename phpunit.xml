@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         bootstrap="web/core/tests/bootstrap.php"
+         colors="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         cacheResult="false"
+         cacheDirectory=".phpunit.cache">
+  <php>
+    <ini name="error_reporting" value="32767"/>
+    <ini name="memory_limit" value="-1"/>
+    <env name="SIMPLETEST_BASE_URL" value="http://web"/>
+    <!-- sqlite `:memory:`, not the MariaDB service, and it is the DEFAULT rather
+         than a variant: each phpunit process gets a private in-memory database,
+         so runs parallelise with no table-prefix collision and no shared server
+         to contend for. Measured on five bb_core Kernel classes: 7:57 against
+         MariaDB serially, 3:00 against sqlite, 1:52 at five processes. It also
+         stops a local full run from occupying the MariaDB that `ddev init` has
+         to drop. The one place the databases differ observably is decimal
+         scale — MariaDB's `decimal(x,4)` returns '0.8000', sqlite '0.8' — so
+         the two bb_metric round-trip assertions compare numerically; pinning
+         the string would pin the test database. NOTE: this element does NOT
+         force, so an exported SIMPLETEST_DB still wins (that is how .gitlab-ci.yml
+         overrides it per job).
+
+         Historical measurement: BB-488 re-measured the then-221-class unit-kernel suite on the CI
+         `parallel` runner tag (16 cores, ~29GB RAM available): 18:21 real at
+         the old fixed processes count of 2, 3:54 at a processes count of 16
+         (nproc), no OOM, RAM held around 29GB free throughout. The
+         WrapperRunner paratest runner was measured against that same
+         processes count and rejected: 3:58, no improvement over the default
+         runner. Current CI and documented local full runs use four workers
+         with the default runner, leaving capacity for other work. This is a
+         per-invocation limit, not a machine-wide budget; historical timings
+         above do not predict this configuration's runtime or peak memory. -->
+    <env name="SIMPLETEST_DB" value="sqlite://localhost/:memory:"/>
+    <env name="SYMFONY_DEPRECATIONS_HELPER" value="weak"/>
+  </php>
+  <testsuites>
+    <testsuite name="custom">
+      <directory>./web/modules/custom</directory>
+    </testsuite>
+    <!-- What CI runs, and what parallelises. Two properties the old form lacked:
+         (1) it is a GLOB, so a custom module added later is gated automatically —
+         the CI job used to name seven directories one by one, and BB-396 records
+         `island` having sat in NO job at all while carrying the whole boost
+         mechanism; (2) it selects Unit + Kernel only, so a Functional test added
+         later cannot silently join a run whose database is sqlite `:memory:`
+         (a Functional test serves HTTP from another process, which cannot see an
+         in-memory database, and would fail for a reason that looks nothing like
+         its cause). There are no PHPUnit Functional tests left in this repository
+         — they were migrated to Playwright BDD — and this suite is what keeps a
+         new one from being mistaken for one of these. A single `*` matches exactly
+         one path segment, so a sub-module nested one level deeper than a direct
+         child of `web/modules/custom` (e.g. `bb_core/modules/bb_login_oauth`)
+         was invisible to the two-segment globs below and its tests ran in no CI
+         job at all — the second `*/modules/*` pair closes that gap (BB-476). -->
+    <testsuite name="unit-kernel">
+      <directory>./web/modules/custom/*/tests/src/Unit</directory>
+      <directory>./web/modules/custom/*/tests/src/Kernel</directory>
+      <directory>./web/modules/custom/*/modules/*/tests/src/Unit</directory>
+      <directory>./web/modules/custom/*/modules/*/tests/src/Kernel</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>

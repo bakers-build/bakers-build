@@ -1,0 +1,27 @@
+<!-- @dsCard group="Tokens" viewport="700x220" subtitle="The four bakers.build state colors + idle, with pill-text ink variants" name="State colors" -->
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;background:var(--gin-app);color:var(--gin-text);font-family:var(--font-sans);padding:18px;}
+  .row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  .sw{border:1px solid var(--gin-hair);border-radius:var(--radius-s);overflow:hidden;width:150px;}
+  .sw .c{height:46px;} .sw .m{padding:7px 9px;background:var(--gin-canvas);}
+  .sw .n{font-size:12px;font-weight:600;} .sw .h{font-family:var(--font-mono);font-size:10.5px;color:var(--gin-text-faint);}
+  .sw .v{font-family:var(--font-mono);font-size:10px;color:var(--gin-text-light);display:block;margin-top:2px;}
+  .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gin-text-faint);margin:0 0 12px;}
+</style></head><body>
+<div class="lbl">Raw hues (dots, accent edges, CTA backgrounds)</div>
+<div class="row">
+  <div class="sw"><div class="c" style="background:var(--bakers-unassigned)"></div><div class="m"><div class="n">Critical</div><div class="h">#FF4E42</div><span class="v">--bakers-unassigned</span></div></div>
+  <div class="sw"><div class="c" style="background:var(--bakers-attention)"></div><div class="m"><div class="n">Waiting</div><div class="h">#FFC024</div><span class="v">--bakers-attention</span></div></div>
+  <div class="sw"><div class="c" style="background:var(--bakers-running)"></div><div class="m"><div class="n">Healthy</div><div class="h">#4BB9AE</div><span class="v">--bakers-running</span></div></div>
+  <div class="sw"><div class="c" style="background:var(--bakers-lease)"></div><div class="m"><div class="n">Lease</div><div class="h">#8197F8</div><span class="v">--bakers-lease</span></div></div>
+  <div class="sw"><div class="c" style="background:var(--bakers-offline)"></div><div class="m"><div class="n">Idle</div><div class="h">#707888</div><span class="v">--bakers-offline</span></div></div>
+</div>
+<div class="lbl">Pill-text ink (on the matching -soft tint; each ≥4.5:1 contrast)</div>
+<div class="row">
+  <div class="sw"><div class="c" style="background:var(--bakers-unassigned-soft);color:var(--bakers-unassigned-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">needs_input</div><div class="m"><div class="n">Critical ink</div><div class="h">#A5301F</div><span class="v">--bakers-unassigned-ink</span></div></div>
+  <div class="sw"><div class="c" style="background:var(--bakers-attention-soft);color:var(--bakers-attention-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">attention</div><div class="m"><div class="n">Waiting ink</div><div class="h">#7A5600</div><span class="v">--bakers-attention-ink</span></div></div>
+  <div class="sw"><div class="c" style="background:var(--bakers-running-soft);color:var(--bakers-running-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">running</div><div class="m"><div class="n">Healthy ink</div><div class="h">#1F6B63</div><span class="v">--bakers-running-ink</span></div></div>
+  <div class="sw"><div class="c" style="background:var(--bakers-lease-soft);color:var(--bakers-lease-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">lease</div><div class="m"><div class="n">Lease ink</div><div class="h">#3B4BA8</div><span class="v">--bakers-lease-ink</span></div></div>
+</div></body></html>

@@ -1,0 +1,104 @@
+bb_api_key.add:
+  path: '/user/{user}/api-keys/add'
+  defaults:
+    _form: '\Drupal\bb_api_key\Form\ApiKeyCreateForm'
+    _title: 'Create API key'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: 'Drupal\bb_api_key\Access\ApiKeyAccess::personal'
+    user: '\d+'
+  options:
+    parameters:
+      user:
+        type: 'entity:user'
+    no_cache: TRUE
+    _auth: ['cookie']
+
+bb_api_key.delete:
+  path: '/user/{user}/api-keys/{consumer}/delete'
+  defaults:
+    _form: '\Drupal\bb_api_key\Form\ApiKeyDeleteForm'
+    _title: 'Revoke API key'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: 'Drupal\bb_api_key\Access\ApiKeyAccess::revoke'
+    user: '\d+'
+  options:
+    parameters:
+      user:
+        type: 'entity:user'
+      consumer:
+        type: 'entity:consumer'
+    _auth: ['cookie']
+
+# Workspace-administered service accounts. All four routes sit
+# under the `/_workspace/{bb_workspace}` prefix, so BbWorkspaceRouteSubscriber
+# applies the slug converter and `_bb_workspace_match`; the custom access
+# checks below additionally require `bb_workspace.update` plus the marker
+# binding ServiceAccountAccess::manage() composes. Bearer auth is excluded by
+# `_auth: ['cookie']` on every one: a leaked key must not be able to create,
+# rotate or disable identities.
+bb_api_key.service_account.add:
+  path: '/_workspace/{bb_workspace}/service-accounts/add'
+  defaults:
+    _form: '\Drupal\bb_api_key\Form\ServiceAccountCreateForm'
+    _title: 'Create service account'
+  requirements:
+    _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::createAccount'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'entity:bb_workspace'
+    no_cache: TRUE
+    _auth: ['cookie']
+
+bb_api_key.service_account.key_add:
+  path: '/_workspace/{bb_workspace}/service-accounts/{user}/keys/add'
+  defaults:
+    _form: '\Drupal\bb_api_key\Form\ServiceAccountKeyCreateForm'
+    _title: 'Create API key'
+  requirements:
+    _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::issueKey'
+    user: '\d+'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'entity:bb_workspace'
+      user:
+        type: 'entity:user'
+    no_cache: TRUE
+    _auth: ['cookie']
+
+bb_api_key.service_account.key_revoke:
+  path: '/_workspace/{bb_workspace}/service-accounts/{user}/keys/{consumer}/revoke'
+  defaults:
+    _form: '\Drupal\bb_api_key\Form\ServiceAccountKeyRevokeForm'
+    _title: 'Revoke API key'
+  requirements:
+    _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::manageKey'
+    user: '\d+'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'entity:bb_workspace'
+      user:
+        type: 'entity:user'
+      consumer:
+        type: 'entity:consumer'
+    _auth: ['cookie']
+
+bb_api_key.service_account.disable:
+  path: '/_workspace/{bb_workspace}/service-accounts/{user}/disable'
+  defaults:
+    _form: '\Drupal\bb_api_key\Form\ServiceAccountDisableForm'
+    _title: 'Disable service account'
+  requirements:
+    _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::manageAccount'
+    user: '\d+'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'entity:bb_workspace'
+      user:
+        type: 'entity:user'
+    _auth: ['cookie']

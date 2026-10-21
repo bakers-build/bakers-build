@@ -1,0 +1,7 @@
+name: 'bakers.build activity kind test'
+type: module
+description: 'Test helper: makes chosen activity kinds fail inside record(), so a test can prove the causing write rolls back.'
+package: Testing
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core

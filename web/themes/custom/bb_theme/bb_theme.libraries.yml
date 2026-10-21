@@ -1,0 +1,79 @@
+skin:
+  # Colour-mode bootstrap. Must land in <head> and run before the token CSS
+  # (global.css.theme, below) is applied, so `header: true` + a very low
+  # weight puts its <script> as early as possible, and `preprocess: false`
+  # keeps it out of the aggregated bundle so it is never deferred behind the
+  # rest of the page's JS. See js/skin.src.js for what it does and why.
+  #
+  # NO `version` on this or `global`: Vite writes fixed file names, so the
+  # only thing that renames these URLs across a deployment is Drupal's cache
+  # busting query string, which every `drush cr` renews and a fixed version
+  # replaces. With `version: 1.x` browsers kept a year-old alpine.js against
+  # new markup and threw `imageCrop is not defined` (BB-609).
+  header: true
+  weight: -1000
+  js:
+    dist/js/skin.js: { preprocess: false, minified: true }
+
+global:
+  css:
+    theme:
+      dist/css/app.css: {}
+  js:
+    # Alpine is attached up front for the same reason core/drupal.autocomplete is,
+    # stated below: a library a swapped fragment has to fetch can lose the race
+    # against attachBehaviors. Alpine additionally does not depend on that event at
+    # all — it observes the document and initialises inserted subtrees itself.
+    #
+    # `type: module` is LOAD-BEARING and was measured rather than chosen. Vite
+    # emits this entry point as an ES module, and a module's top-level bindings
+    # are scoped to it. Served as a classic script the same bytes execute in
+    # global scope instead, and Alpine's minified reactivity helper — declared
+    # as `function _(t){…}` — becomes `window._`. Before BB-683 retired
+    # `core/modules/toolbar`, that silently replaced the Underscore its
+    # Backbone views call `_.defer()` on, observable as a bare `_.defer is not
+    # a function` page error with the admin toolbar dead; because a page
+    # error stops the rest of that script, pickers inside a swapped dialog
+    # never initialised either. `type: module` still matters on its own
+    # merits — any future classic-script global it would otherwise leak.
+    dist/js/alpine.js: { attributes: { type: module } }
+    # Chart.js, ATTACHED UP FRONT for the same measured reason as
+    # core/drupal.autocomplete below: the statistics tabs arrive as a swapped
+    # fragment, and a library that fragment has to FETCH can lose the race
+    # against attachBehaviors — the canvas is then inserted and never painted.
+    # On a fast connection the fetch wins and it looks fine; over a tunnel it
+    # does not. `type: module` for the same scoping reason as Alpine above.
+    dist/js/chart.js: { attributes: { type: module } }
+    # The Markdown toolbar (form_rich_text, and the bb_markdown text editor's
+    # adapter), up front for the same swapped-fragment reason: every body form
+    # — create, edit, comment, review — arrives as an htmx fragment.
+    dist/js/markdown-toolbar.js: { attributes: { type: module } }
+  dependencies:
+    - core/drupal
+    - core/once
+    # One htmx, and it is core's (BB-398 D10). The theme used to bundle
+    # htmx.org 2.0.10 into dist/js/htmx.js and ship its own
+    # js/htmx-behaviors.js beside it. Both are gone: core/drupal.htmx carries
+    # htmx plus a behaviours bridge that guards against processing the same
+    # content twice and adds a Drupal.behaviors.htmx for content the Ajax
+    # framework inserts.
+    #
+    # ONE CLAIM THAT USED TO STAND HERE IS WITHDRAWN: that core's bridge waits
+    # for the request's CSS and JS before it re-attaches. It does not.
+    # `misc/htmx/htmx-assets.js` never stores the addAssets() promise back into
+    # its WeakMap, so `htmx:afterSettle` resolves the ORIGINAL Promise.resolve()
+    # and fires `htmx:drupal:load` without waiting. Measured, BB-396 F43.
+    - core/drupal.htmx
+    # ATTACHED UP FRONT RATHER THAN LEFT TO THE SWAP, and this is the
+    # consequence of the line above. A library a swapped fragment has to FETCH
+    # may arrive after core has already run attachBehaviors, and then the
+    # markup is inserted and never processed — on a fast connection the fetch
+    # wins the race and it looks fine, over a tunnel it loses and the widget is
+    # dead. Measured both ways, BB-396 F43.
+    #
+    # So every library the reference surface's islands need is on the page from
+    # the start. The cost is that every front-end page carries the autocomplete
+    # JS whether or not it shows a form. The limit is that this only covers
+    # libraries we KNOW about: a future island whose content needs a library
+    # nobody listed here hits the same race, and the fix for that is core's.
+    - core/drupal.autocomplete

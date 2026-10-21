@@ -1,0 +1,9 @@
+favicon:
+  use_default: false
+  path: themes/custom/bb_theme/assets/brand/bakers-braid.svg
+  mimetype: image/svg+xml
+features:
+  favicon: true
+logo:
+  use_default: false
+  path: themes/custom/bb_theme/assets/brand/bakers-braid.svg

@@ -1,0 +1,29 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Form
+status: stable
+group: Form
+description: 'An add or edit surface, and it owns its fields. Its contract is deliberately NOT a list of fields: the widget grammar in designbook/design-system/action-pattern.md is a rule and not a style — "every add, edit and organisation surface uses it without variation" — and its first line rejects the shape a flat field list would produce, "the dialog is not a form of labelled rows". A flat fields[] array would let a caller build three text lines, or two prominent properties, or a column of labelled rows, all of which the grammar forbids; lead + lines + pills + actions cannot express any of them, so the grammar is carried by the type rather than described beside it. The four regions are SLOTS since BB-420 Task 20, where they were props before, and the reason is the create-ticket dialog: its fields are real Drupal field widgets, a widget renders itself, and rendered content cannot go into a prop. The caller renders each field — a real form element (`bb_theme:form_input` / `bb_theme:form_textarea`, since BB-420 Task 31 retired the bespoke `text_line`) for a line, property_pill for a peer or a lead — and this component places what it is handed. Four NAMED slots keep "no flat field list" exactly as four named props did: there is no slot that would take a second pill in the lead row, a column of pills, or a labelled row. What the change did cost is lead''s cardinality. lead was an object, and grammar 3a — at most one emphasised property per surface, because "a surface where everything is emphasised emphasises nothing" — was carried by that type. A slot cannot carry a cardinality: core''s slot definition admits only title, description and examples, and ComponentValidator does not validate slot content at all. The rule did not become a comment — it moved to the one place that can still check it, the FORM DISPLAY, where BbTicketCreateForm refuses to build a surface whose display configures two fields with surface_region lead, and a kernel test pins that refusal. lead_label is a prop for the same reason: the lead row names itself from the property it holds, and with lead rendered by the caller that label is no longer readable from it. Where the form is the body of a dialog the hull owns the action row and actions is left empty — a confirmation or a create dialog is the dialog component with two actions, never a second component. A surface of one line has no wrapper, and that is the line''s own job now rather than a branch of this component: page_header''s editable heading renders `bb_theme:form_input` directly (BB-420 Task 31; formerly `text_line`), because a heading takes phrasing content and a surface is what you reach for when there is more than one thing to place.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    lead_label:
+      type: string
+      title: The name of the lead row
+      description: The accessible name of the row that holds the lead — the field name of the one property that is not a peer. A prop rather than a reading off the lead itself, because the lead is rendered by the caller. Omit it and the row carries no group role.
+slots:
+  lead:
+    title: The one property that is not a peer
+    description: The property that constrains the rest, or cannot be changed cheaply afterwards. It sits on its own row above the lines, separated by a rule, and renders heavier — a property_pill with prominent set. AT MOST ONE, a cardinality this slot cannot express and the form display enforces instead. Omit it and no lead row is rendered.
+  lines:
+    title: The text lines that open the surface
+    description: 'A large title line and a smaller description line beneath it — `bb_theme:form_input` / `bb_theme:form_textarea` (BB-420 Task 31 retired the bespoke, borderless `text_line`; every editable field is now a real form element, which costs the no-box, no-border look this surface used to have here). Each line carries its identity in its placeholder. The title is an input and the description a textarea, because a title is one line and a description is not.'
+  pills:
+    title: The peer properties, as ONE wrapping row
+    description: Every peer property of the surface, as a property_pill in one row that wraps rather than stacks. It is one row and not a list of rows because that is the rule; a vertical stack of pills is the labelled form this grammar rejects.
+  actions:
+    title: The action row
+    description: 'One primary submit plus one secondary action, which is Cancel or a create-another toggle and never a second submit. Left EMPTY where the form is the body of a dialog: the hull already renders an action row of its own, and two would be two answers to "how do I finish".'
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

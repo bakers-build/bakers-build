@@ -1,0 +1,11 @@
+uuid: 9150f719-1bb1-4951-893b-073b3d7e8692
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_activity
+id: bb_activity.full
+label: Full
+description: ''
+targetEntityType: bb_activity
+cache: true

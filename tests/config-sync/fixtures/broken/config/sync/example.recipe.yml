@@ -1,0 +1,5 @@
+uuid: export-uuid-is-different
+_core:
+  default_config_hash: export-hash-is-different
+enabled: false
+export_only: tolerated

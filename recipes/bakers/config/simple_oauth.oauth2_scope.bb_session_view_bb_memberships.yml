@@ -1,0 +1,15 @@
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_view_bb_memberships
+name: 'bb:session:view_bb_memberships'
+description: 'bakers.build session ceiling — view bakers memberships'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'view bakers memberships'

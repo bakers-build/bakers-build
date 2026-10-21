@@ -1,0 +1,23 @@
+# A claim by the properties conductor's run, for the detail page's Activities feed.
+_meta:
+  version: '1.0'
+  entity_type: bb_activity
+  uuid: d41d8e69-eae1-47a1-baf4-6c92154e77b9
+  default_langcode: en
+  depends:
+    8cf82f7f-c1c4-5955-8fbd-83203c1f2d76: bb_ticket
+    1f1764cf-f41e-4077-8495-2bce8ed508b2: bb_conductor
+    e85bbe83-c582-4ed8-8d2d-5076d98ddc54: bb_run
+default:
+  ticket_id:
+  - entity: 8cf82f7f-c1c4-5955-8fbd-83203c1f2d76
+  kind:
+  - value: claimed
+  step:
+  - value: spec
+  run_id:
+  - entity: e85bbe83-c582-4ed8-8d2d-5076d98ddc54
+  conductor_id:
+  - entity: 1f1764cf-f41e-4077-8495-2bce8ed508b2
+  created:
+  - value: 1790000000

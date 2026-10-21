@@ -1,0 +1,26 @@
+<!-- @dsCard group="Tokens" viewport="700x150" subtitle="Single consolidated radius + compact density" name="Radii & density" -->
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;background:var(--gin-app);color:var(--gin-text);font-family:var(--font-sans);padding:18px;}
+  .row{display:flex;flex-wrap:wrap;gap:10px;}
+  .sw{border:1px solid var(--gin-hair);border-radius:var(--radius-s);overflow:hidden;width:150px;}
+  .sw .c{height:46px;} .sw .m{padding:7px 9px;background:var(--gin-canvas);}
+  .sw .n{font-size:12px;font-weight:600;} .sw .h{font-family:var(--font-mono);font-size:10.5px;color:var(--gin-text-faint);}
+  .sw .v{font-family:var(--font-mono);font-size:10px;color:var(--gin-text-light);display:block;margin-top:2px;}
+  .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gin-text-faint);margin:0 0 12px;}
+</style></head><body>
+<div style="display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;">
+  <div style="display:flex;gap:14px;align-items:flex-end;">
+    <div style="text-align:center;"><div style="width:52px;height:40px;background:var(--gin-layer-3);border:1px solid var(--gin-line);border-radius:var(--radius);"></div><div style="font-family:var(--font-mono);font-size:10px;color:var(--gin-text-faint);margin-top:5px;">--radius · 4px</div></div>
+    <div style="text-align:center;"><div style="width:52px;height:40px;background:var(--gin-layer-3);border:1px solid var(--gin-line);border-radius:var(--radius-s);"></div><div style="font-family:var(--font-mono);font-size:10px;color:var(--gin-text-faint);margin-top:5px;">--radius-s · 4px</div></div>
+    <div style="text-align:center;"><div style="width:52px;height:40px;background:var(--gin-layer-3);border:1px solid var(--gin-line);border-radius:var(--radius-xs);"></div><div style="font-family:var(--font-mono);font-size:10px;color:var(--gin-text-faint);margin-top:5px;">--radius-xs · 4px</div></div>
+  </div>
+  <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:12px;color:var(--gin-text-light);">
+    <dt style="font-family:var(--font-mono);color:var(--gin-text-faint)">--row-h</dt><dd style="margin:0">34px · table row</dd>
+    <dt style="font-family:var(--font-mono);color:var(--gin-text-faint)">--sec-pad</dt><dd style="margin:0">14px · section</dd>
+    <dt style="font-family:var(--font-mono);color:var(--gin-text-faint)">--canvas-gap</dt><dd style="margin:0">14px · between fragments</dd>
+  </dl>
+</div>
+<p style="font-size:11px;color:var(--gin-text-faint);margin:14px 0 0;">All three radius tokens are consolidated to the same 4px value in the light reskin (previously a 10/7/5 three-tier scale) — kept as separate tokens for semantic clarity, not visual distinction.</p>
+</body></html>

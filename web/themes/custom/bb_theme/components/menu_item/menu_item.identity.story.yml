@@ -1,0 +1,11 @@
+component: bb_theme:menu_item
+name: Identity
+props:
+  label: Northwind
+  url: /northwind/tickets
+  current: false
+  mark:
+    initials: false
+    color: lease
+    picture: ''
+  description: The Northwind retail team's workspace for its shop and warehouse projects.

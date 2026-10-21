@@ -1,0 +1,37 @@
+{# A FULL-WIDTH BAND above a two-column layout, answering three questions in one
+   glance: where does this stand (`flow`), what was done (`summary`), and what
+   evidence is there (`links`).
+
+   THREE SLOTS, NOT FOUR. It carried an `actions` region declared for a
+   transition control that had been removed at a review gate and never refilled.
+   Measured across every scene composing this band, all three fill `flow`,
+   `summary` and `links` and none fills `actions` — so the region was not a
+   shape held open for later, it was one more thing every reader of this file had
+   to account for. Adding it back is a line of YAML and a `{% if %}` at the
+   moment somebody has a band action to place.
+
+   THE LINKS SIT BELOW THE SUMMARY, NOT BESIDE IT (C21). The first iteration put
+   them in a second column of the body row, and the human read that as two
+   things competing for one glance. Stacked, the band reads top to bottom in the
+   order the questions are asked, and the link groups get the full width — so
+   they lay out as one wrapping row of groups instead of a narrow gutter that
+   wraps every label. Slot order is unchanged: flow, summary, links, in the DOM
+   and on screen.
+
+   IT KNOWS NOTHING ABOUT WHAT IT SUMMARISES. The three questions are asked of a
+   release, a run and a deployment in the same words; every region renders only
+   when its slot is filled, so a caller with two of the three gets a band of
+   two. #}
+<div{{ (attributes ?: create_attribute()).addClass(['summary-band', 'flex', 'flex-col', 'gap-5', 'p-5', 'bg-surface-2', 'border', 'border-border', 'rounded-[var(--radius-sm,7px)]']) }}>
+  {% if flow %}
+    <div class="summary-band__header flex items-center justify-between gap-[12px] flex-wrap">
+      <div class="summary-band__flow min-w-0">{% block flow %}{{ flow }}{% endblock %}</div>
+    </div>
+  {% endif %}
+  {% if summary or links %}
+    <div class="summary-band__body flex flex-col gap-5">
+      {% if summary %}<div class="summary-band__summary min-w-0">{% block summary %}{{ summary }}{% endblock %}</div>{% endif %}
+      {% if links %}<div class="summary-band__links min-w-0 flex flex-wrap items-start gap-x-[28px] gap-y-[12px]">{% block links %}{{ links }}{% endblock %}</div>{% endif %}
+    </div>
+  {% endif %}
+</div>

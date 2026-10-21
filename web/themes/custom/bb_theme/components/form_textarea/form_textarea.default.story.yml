@@ -1,0 +1,7 @@
+component: bb_theme:form_textarea
+name: Default
+props:
+  id: edit-description
+  name: description
+  rows: 3
+  placeholder: The problem, and how the result is verified

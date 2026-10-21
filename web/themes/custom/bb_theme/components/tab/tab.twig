@@ -1,0 +1,27 @@
+{# One destination of an entity tab row, and the only place its link look is
+   declared: a lightweight text link, no fill, a thin underline on the current
+   place, a focus ring (an outline) independent of that underline.
+   `aria-current` comes from `active` alone.
+   Drupal's local-task presenter passes its `link` render element as the slot;
+   it is printed whole, so localized options, access and cacheability stay on
+   it, and only receives the classes below. Without the slot (Storybook,
+   `tabs`' `items`) the link is built from `label` and `url`. #}
+{%
+  set link_classes = [
+    'inline-flex', 'items-center', 'min-h-10', 'px-2', 'border-b-2',
+    'text-body', 'font-medium', 'no-underline', 'whitespace-nowrap',
+    'transition-colors', 'duration-fast',
+    'focus-visible:outline-2', 'focus-visible:outline-offset-2',
+    'focus-visible:outline-focus-ring',
+    active ? 'border-primary text-text' : 'border-transparent text-text-light hover:border-border hover:text-text',
+  ]
+%}
+<li{{ (attributes ?: create_attribute()).addClass(['m-0', 'p-0']).setAttribute('role', 'listitem') }}>
+  {%- if link -%}
+    {%- set link = link|add_class(link_classes) -%}
+    {%- if active %}{% set link = link|set_attribute('aria-current', 'page') %}{% endif -%}
+    {{ link }}
+  {%- else -%}
+    <a{{ create_attribute({'class': link_classes, 'href': url}) }}{% if active %} aria-current="page"{% endif %}>{{ label }}</a>
+  {%- endif -%}
+</li>

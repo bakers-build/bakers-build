@@ -1,0 +1,11 @@
+uuid: 6b5d16b5-1724-432d-905b-05a13395318d
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_team.full
+label: Full
+description: ''
+targetEntityType: bb_team
+cache: true

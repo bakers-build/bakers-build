@@ -1,0 +1,31 @@
+{# Horizontal entity tabs (IA D12). Links, not a JS tablist panel switcher: each
+   tab is a real destination under the entity (…/board, …/members). Each entry
+   is `bb_theme:tab`, which owns the link look (BB-593); this component owns
+   the row: a labelled nav whose list wraps on narrow viewports instead of
+   scrolling.
+   `tab_items` takes already rendered entries — Drupal's local-task
+   `primary`/`secondary` render arrays, each task rendering `tab` — and is
+   printed whole; otherwise the `items` prop is rendered entry by entry.
+   No BEM `tabs` / `tabs__link` classes: those are Drupal core/Gin local-task
+   selectors and would restyle this row with Gin's own tab bar.
+   Vertical space under the row belongs to `page_header`, not this component. #}
+<nav{{ (attributes ?: create_attribute()).addClass([
+    'block', 'text-body',
+  ]) }}
+  {%- if id %} id="{{ id }}"{% endif %}
+  data-tabs
+  aria-label="{{ label|default('Sections') }}">
+  <ul class="m-0 flex list-none flex-wrap gap-x-2 gap-y-1 p-0" role="list">
+    {%- if tab_items -%}
+      {{ tab_items }}
+    {%- else -%}
+      {%- for item in items %}
+        {{ include('bb_theme:tab', {
+          label: item.label,
+          url: item.url,
+          active: item.active|default(false),
+        }, with_context = false) }}
+      {%- endfor %}
+    {%- endif -%}
+  </ul>
+</nav>

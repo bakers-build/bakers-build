@@ -1,0 +1,16 @@
+# Dedicated time crew keeps the shared Platform Crew roster unchanged.
+_meta:
+  version: '1.0'
+  entity_type: bb_team
+  uuid: 614a0000-0000-4000-8000-000000000003
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    614a0000-0000-4000-8000-000000000001: user
+default:
+  name:
+    - value: Personal time crew
+  workspace_id:
+    - entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"
+  owner_user_id:
+    - entity: "614a0000-0000-4000-8000-000000000001"

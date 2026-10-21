@@ -1,0 +1,160 @@
+uuid: 75d0829b-7c54-487e-ad03-e0970ff0a7bd
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_ticket.create
+  module:
+    - bb_core
+    - text
+id: bb_ticket.bb_ticket.create
+targetEntityType: bb_ticket
+bundle: bb_ticket
+mode: create
+content:
+  blocked_by:
+    type: bb_picker
+    weight: 7
+    region: content
+    settings:
+      picker_region: pills
+      label: 'Blocked by'
+      icon: lock
+      searchable: true
+      clear_label: 'Nothing blocking'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+      selection_handler: bb_ticket_in_ticket_project
+    third_party_settings: {  }
+  conductor_id:
+    type: bb_picker
+    weight: 8
+    region: content
+    settings:
+      picker_region: pills
+      label: Conductor
+      icon: conductor
+      searchable: false
+      clear_label: 'No conductor'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: Set
+      note_prefix: 'This ticket is claimed at the next poll and an agent run starts on '
+      note_suffix: '. Clear the field to let it wait for a human.'
+    third_party_settings: {  }
+  description:
+    type: text_textarea
+    weight: 3
+    region: content
+    settings:
+      rows: 3
+      placeholder: 'The problem, and how the result is verified'
+    third_party_settings: {  }
+  labels:
+    type: bb_picker
+    weight: 9
+    region: content
+    settings:
+      picker_region: pills
+      label: Labels
+      icon: tag
+      searchable: false
+      clear_label: 'No labels'
+      create_label: label
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  parent_id:
+    type: bb_picker
+    weight: 6
+    region: content
+    settings:
+      picker_region: pills
+      label: Parent
+      icon: ticket
+      searchable: true
+      clear_label: 'No parent'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+      selection_handler: bb_ticket_in_ticket_project
+    third_party_settings: {  }
+  title:
+    type: string_textfield
+    weight: 2
+    region: content
+    settings:
+      size: 60
+      placeholder: 'What needs to happen'
+    third_party_settings: {  }
+  workflow:
+    type: bb_picker
+    weight: 1
+    region: content
+    settings:
+      picker_region: lead
+      label: Workflow
+      icon: board
+      searchable: false
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: bb_feature
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+hidden:
+  assignee_color: true
+  assignee_initials: true
+  assignee_name: true
+  assignee_user_id: true
+  base_branch: true
+  branch_name: true
+  changed: true
+  claim_machine: true
+  cleaned_up: true
+  cleaned_up_date: true
+  closed: true
+  closed_date: true
+  comments: true
+  created: true
+  derived_status: true
+  edit_url: true
+  effective_env_vars: true
+  env_vars: true
+  environments: true
+  frozen: true
+  frozen_at: true
+  id: true
+  identifier: true
+  links: true
+  metrics: true
+  number: true
+  origin: true
+  owner_user_id: true
+  priority: true
+  project_id: true
+  referenced_tickets: true
+  reviewers: true
+  runs: true
+  since_label: true
+  stall_reason: true
+  state: true
+  state_flow: true
+  sub_tickets: true
+  time_estimate: true
+  time_spent: true
+  uuid: true
+

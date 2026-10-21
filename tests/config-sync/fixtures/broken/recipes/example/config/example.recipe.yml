@@ -1,0 +1,4 @@
+uuid: source-uuid-is-ignored
+_core:
+  default_config_hash: source-hash-is-ignored
+enabled: true

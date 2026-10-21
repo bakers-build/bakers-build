@@ -1,0 +1,23 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_run.overlay
+ *
+ * Emitted by the designbook `sync-to` workflow. Overlay is the product view
+ * mode of the run detail dialog, so island_dialog does not wrap the
+ * canonical page.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_core"
+    ]
+  },
+  "id": "bb_run.overlay",
+  "label": "Overlay",
+  "description": "",
+  "targetEntityType": "bb_run",
+  "cache": true
+}
+)

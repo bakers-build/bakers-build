@@ -1,0 +1,52 @@
+# The account that belongs to the `other` workspace and to nothing else
+# (BB-415, R3).
+#
+# IT EXISTS FOR ONE ACCEPTANCE CRITERION: "a member of a non-`bakers` workspace
+# lands in theirs". Before this fixture the seeded world could not express it —
+# exactly one account held exactly one membership (`cwiedemann`, in the default
+# workspace), so every landing the browser suite could observe was the `bakers`
+# one, and a controller that hard-coded the default slug would have passed.
+#
+# THE ALTERNATIVE WAS REJECTED ON THE RECORD. Giving `cwiedemann` a second
+# membership would have been one line, and it would have given that account TWO
+# workspaces — so `/` would answer with the CHOOSER for it, and every existing
+# scenario whose actor is `cwiedemann` would land on a page it does not expect.
+# A new account with one membership changes nothing that already passes.
+#
+# It carries NO `user_role`, deliberately: everything it can do comes from the
+# single og_membership in …0009, so a landing it reaches is a landing its
+# MEMBERSHIP explains.
+#
+# The name matches the account `tests/playwright/steps/tickets/ticket-detail.steps.ts`
+# creates on demand for the tenancy scenarios. That is not a collision: the step
+# is create-if-absent and now simply finds it, and the two uses agree about what
+# the account is — a member of `other` and of nothing else. Shipping it makes it
+# a property of the seeded world instead of a side effect of one scenario.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: dbe50000-0000-4000-8000-000000000003
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: "en"
+  name:
+    -
+      value: "other-member"
+  mail:
+    -
+      value: "other-member@example.com"
+  timezone:
+    -
+      value: "Europe/Berlin"
+  status:
+    -
+      value: true
+  pass:
+    -
+      value: "Bb-test-login-426!"
+      pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

@@ -1,0 +1,19 @@
+/* Radii, spacing rhythm, density knobs. Radius consolidated to a single
+   small value everywhere (was a 10/7/5 three-tier scale in dark mode);
+   density (row height, padding) is unchanged. */
+:root {
+  --radius:    4px; /* cards / sections */
+  --radius-s:  4px; /* chips / buttons-lg / columns */
+  --radius-xs: 4px; /* buttons / cards-in-board */
+
+  --row-h:  34px;
+  --sec-pad: 14px;
+  --canvas-gap: 14px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 10px;
+  --space-4: 14px;
+  --space-5: 20px;
+  --space-6: 26px;
+}

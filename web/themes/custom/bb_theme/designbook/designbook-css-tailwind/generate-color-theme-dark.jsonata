@@ -1,0 +1,72 @@
+/** @config
+ {
+   "input": "../design-system/design-tokens.yml",
+   "output": "../../css/tokens/color-theme-dark.src.css"
+ }
+ */
+
+(
+  $normalizeCssValue := function($val) {
+    $type($val) = "string"
+      ? $replace($replace($val, /(^|[\s:,])\.(\d)/, "$10.$2"), /(^|[\s:,])-\.(\d)/, "$1-0.$2")
+      : $val
+  };
+  $walk := function($node, $path) {
+    $reduce(
+      $keys($node),
+      function($acc, $k) {
+        $substring($k, 0, 1) != "$" ? (
+          $v := $lookup($node, $k);
+          $sub := $path = "" ? $k : $path & "-" & $k;
+          $exists($v."$value") ? (
+            $val := $v."$value";
+            $resolved := $substring($val, 0, 1) = "{" ? (
+              $ref := $replace($replace($val, "{", ""), "}", "");
+              $parts := $split($ref, ".");
+              $typeKeywords := ["color","spacing","radius","fontFamily","fontSize","fontWeight","lineHeight","elevation","lineWeight","duration","focusRing"];
+
+              $matchIdxs := $filter($map($parts, function($p, $i) { $count($filter($typeKeywords, function($t) { $t = $p })) > 0 ? $i : -1 }), function($x) { $x >= 0 });
+
+
+              $typeIdx := $count($matchIdxs) > 0 ? $matchIdxs[0] : -1;
+
+              $rtype := $typeIdx >= 0 ? $parts[$typeIdx] : $parts[1];
+
+              $primPrefix := $rtype = "fontFamily" ? "font"
+
+                : $rtype = "fontSize" ? "text"
+
+                : $rtype = "fontWeight" ? "font-weight"
+
+                : $rtype = "lineHeight" ? "leading"
+
+                : $rtype = "focusRing" ? "focus-ring"
+
+                : $rtype;
+
+              $suffixStart := $typeIdx >= 0 ? $typeIdx + 1 : 2;
+
+              "var(--" & $primPrefix & "-" & $join($filter($parts, function($p, $i) { $i >= $suffixStart }), "-") & ")"
+            ) : $normalizeCssValue($val);
+            $append($acc, "    --color-" & $sub & ": " & $resolved & ";")
+          )
+          : $append($acc, $walk($v, $sub))
+        ) : $acc
+      },
+      []
+    )
+  };
+  $theme := $$.themes."dark";
+  $node := $reduce($split("semantic.color", "."), function($a, $s) { $lookup($a, $s) }, $theme);
+  $lines := $walk($node, "");
+  $block := $join($lines, "\n");
+  /* Dark values are applied exclusively via the explicit `[data-mode="dark"]`
+     attribute (set synchronously by js/skin.src.js, which seeds its default
+     from `prefers-color-scheme` when nothing is stored yet). No
+     `@media (prefers-color-scheme: dark)` branch is emitted: that would
+     apply at the same specificity as `[data-mode="dark"]` with no way to
+     switch back to light on a dark-configured OS. */
+  $count($lines) > 0
+    ? ":root[data-mode=\"dark\"] {\n" & $block & "\n}\n"
+    : ""
+)

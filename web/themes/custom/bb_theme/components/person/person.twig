@@ -1,0 +1,83 @@
+{# ONE PERSON, rendered the same way everywhere.
+
+   Four rows name a person — a member, a group's owner, a project's owner, a
+   team's owner — and this is the component all four go through, so a change to
+   how a person looks is one change rather than four.
+
+   THE INITIALS CIRCLE IS THIS COMPONENT'S OWN MARKUP. It was a component of its
+   own, `avatar`, and this was the only thing that composed it after every direct
+   caller was repointed here — a directory a single caller composes is the
+   single-caller component this theme forbids. Its lines moved in below,
+   unchanged, and its comment came with them because it is still true: THE COLOUR
+   IS PASSED IN, NOT DERIVED. A deterministic per-user colour is a decision about
+   a user, not about a span, so whoever knows the user picks the key and this
+   template only maps the key onto a token. That is also why the enum here is the
+   one the circle always had — this component adds no colour vocabulary.
+
+   THE MAIL LINE IS ABSENT, NOT BLANK, when there is none. An app account
+   (`bb_agent` in the sample world) has `mail: null`, and a dash there would
+   read as an address somebody forgot to fill in rather than as a kind of account
+   that has none. The name alone is the whole truth for such a row.
+
+   `compact` IS ONE LINE AND NO MAIL, and its name is optional on purpose. Every
+   caller that used to place the bare circle — the user menu, the workspace
+   switcher, a team row in the nav, a comment's author, a ticket row's assignee —
+   already renders its own label beside it, with its own truncation and its own
+   collapse behaviour, so a name forced out of this template would be a second
+   copy of one they already have. Pass a `display_name` and `compact` is the
+   circle and the name on one line; leave it out and `compact` is the circle,
+   which is exactly what the deleted component was.
+
+   `picture` REPLACES THE CIRCLE, NOT THE FALLBACK (BB-507): a rendered image
+   URL swaps the initials mark for an `<img>` of the same size and shape; without
+   one, the initials circle is unchanged. `image_fit` chooses how the image
+   fills the mark: `cover` (the default, every account picture) crops to the
+   circle, `contain` centres the whole image uncropped, for a project or group
+   image of any aspect ratio, on a neutral surface instead of the colour key
+   so the letterbox around a non-square image reads as a frame.
+
+   `profile` IS THE SUBJECT OF A WHOLE PAGE — the account overview on
+   `/user/{user}`: a large mark centred above the name in the display role,
+   `subtitle` beneath it, and no mail. `subtitle` is one secondary line (the
+   developer title); `full` renders it too, `compact` has no room for it. #}
+{% set compact = variant == 'compact' %}
+{% set profile = variant == 'profile' %}
+{% set color_map = {
+  'running': 'bg-state-running',
+  'attention': 'bg-state-attention',
+  'unassigned': 'bg-state-unassigned',
+  'lease': 'bg-state-lease',
+  'offline': 'bg-state-offline'
+} %}
+{% set size_classes = profile ? 'w-20 h-20 text-display' : (size == 'md' ? 'w-7 h-7 text-eyebrow' : 'w-6 h-6 text-eyebrow') %}
+{% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'leading-none', 'font-bold', 'text-state-ink', size_classes, color_map[color]|default('bg-state-running')] %}
+{% set stack_gap = profile ? 'gap-3' : (size == 'md' ? 'gap-2' : 'gap-1') %}
+{% set root_classes = profile ? ['flex', 'flex-col', 'items-center', 'text-center', stack_gap, 'min-w-0'] : ['inline-flex', 'items-center', stack_gap, 'min-w-0'] %}
+{% set identity %}
+<span{{ (attributes ?: create_attribute()).addClass(root_classes) }}>
+  {%- if picture %}
+    <img data-person-mark class="{{ (image_fit == 'contain' ? mark_classes|filter(c => not (c starts with 'bg-'))|merge(['object-contain', 'object-center', 'bg-surface-2', 'border', 'border-border-2']) : mark_classes|merge(['object-cover']))|join(' ') }}" src="{{ picture }}" alt="" />
+  {%- else %}
+    <span data-person-mark class="{{ mark_classes|join(' ') }}">{{ initials }}</span>
+  {%- endif %}
+  {%- if compact %}
+    {%- if display_name %}<span class="truncate text-body text-text" data-collapse-hidden>{{ display_name }}</span>{% endif %}
+  {%- elseif profile %}
+    <span class="flex flex-col items-center gap-1 min-w-0">
+      <span class="text-display text-text">{{ display_name|default(initials) }}</span>
+      {%- if subtitle %}<span class="text-body text-text-light">{{ subtitle }}</span>{% endif %}
+    </span>
+  {%- else %}
+    <span class="flex flex-col min-w-0 leading-tight">
+      <span class="truncate text-body text-text">{{ display_name|default(initials) }}</span>
+      {%- if subtitle %}<span class="truncate text-eyebrow text-text-light">{{ subtitle }}</span>{% endif %}
+      {%- if mail %}<span class="truncate text-eyebrow text-text-faint">{{ mail }}</span>{% endif %}
+    </span>
+  {%- endif %}
+</span>
+{% endset %}
+{%- if url -%}
+  <a href="{{ url }}" class="min-w-0 no-underline text-inherit">{{ identity }}</a>
+{%- else -%}
+  {{ identity }}
+{%- endif -%}

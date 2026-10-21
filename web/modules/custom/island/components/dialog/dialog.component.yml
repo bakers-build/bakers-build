@@ -1,0 +1,117 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Dialog
+status: stable
+description: >-
+  The island module's OWN default hull for Render\WrappedRouteRenderer
+  registered against the `island_dialog` wrapper format in
+  island.services.yml. Enabling `island` alone therefore gives the mechanism a
+  working wrapper format with no theme involved, rather than a mechanism that
+  renders nothing until a consumer supplies a hull of its own.
+
+  It carries what WrappedRouteRenderer populates and can serve — see that
+  class's own docblock, `hull()` and `hullProps()` — a `title` prop, an `open`
+  prop, and the `message` / `body` / `actions` slots. `message` renders ABOVE
+  `body` so a queued refusal appears where the writer is looking rather than
+  below the fields it complains about; `actions` renders below it, which is
+  where a wrapped form's own submit row lands once the renderer lifts it out
+  of the form, and dropping that slot would answer a complete, valid form with
+  no way to send it.
+
+  `dismissible` RENDERS THE CLOSE CONTROL, and dismissal is this hull's own
+  concern rather than a consumer's: the hull is the wrapper format's
+  mechanism, so the script that makes its close control mean something ships
+  with it (`js/island.dialog.js`, declared as this component's library
+  dependency below). An override hull inherits the BEHAVIOUR by being the
+  override — but not the library, which `replaces:` does not carry — so it
+  declares the same dependency itself.
+
+  THE ATTRIBUTE CONTRACT the behaviour reads is documented, not enforced, on
+  the same footing as the slots: `data-dialog` marks the hull, and
+  `data-dialog-close` marks any control that closes it — both rendered here.
+  The third, `data-dialog-cancel`, marks the control whose href IS the close
+  target and is written by the FORM inside the hull, because a wrapped route
+  is what knows where the operator came from. A hull whose content renders no
+  such control simply cannot be closed by the button.
+
+  THE SLOT CONTRACT IS DOCUMENTED, NOT ENFORCED, deliberately (the operator's
+  decision, recorded on the task this component shipped with): Drupal's own
+  template conventions are looser than a validated contract, and a contract
+  that only LOOKS enforced — SDC `replaces` validates props only, never slots
+  — is worse than a documented one. A hull that declares different names is
+  simply never reached: SDC silently drops props and slots a component does
+  not know, with a 200 and no warning anywhere, so a consumer that must be
+  sure its own hull renders correctly needs a test asserting the RENDERED
+  CONTENT, not a schema.
+
+  This component is deliberately bare — no design system, no story, no scene,
+  no design token, authored under a narrow exception to the project's
+  "components only via designbook:debo" rule because this is module
+  infrastructure rather than the theme's design system. A site is free to
+  override this default with its OWN, richer hull instead of registering a
+  second wrapper format against a second target — `bb_theme:dialog` is the
+  worked example: its own `component.yml` declares `replaces: island:dialog`,
+  which is core SDC's own override mechanism
+  (`ComponentPluginManager::alterDefinitions()`, negotiated by
+  `ComponentNegotiator::maybeNegotiateByTheme()`), so `island_dialog` renders
+  `bb_theme:dialog` whenever bb_theme is the active theme, with no format
+  of bb_core's own.
+provider: island
+# A component library dependency rather than an `#attached` on the renderer's
+# hull, so a direct `include()` gets the behaviour too. SDC `replaces:` swaps
+# the component, not its library, so an override must declare it as well.
+# Declaring `libraryOverrides` also makes core add `core/drupal`.
+libraryOverrides:
+  dependencies:
+    - island/dialog
+props:
+  type: object
+  properties:
+    open:
+      type: boolean
+      title: Open
+      description: >-
+        The dialog's own open state, rendered as the <dialog> element's own
+        `open` attribute rather than a class — a <dialog> with no `open`
+        attribute does not render at all, so this is load-bearing rather than
+        decoration, and it is what keeps the state readable with JavaScript
+        disabled entirely.
+    title:
+      type: string
+      title: Title
+      description: >-
+        The wrapped route's title (or the main content's own `#title`),
+        rendered in the hull's title row.
+    dismissible:
+      type: boolean
+      title: Dismissible
+      description: >-
+        Whether to render a close control. WrappedRouteRenderer passes TRUE for
+        every route it wraps — a surface the operator opened over something
+        else always needs a way back — and `js/island.dialog.js`, this
+        component's own library dependency, is what makes that control
+        navigate there.
+  required:
+    - title
+slots:
+  message:
+    title: Message
+    description: >-
+      Rendered ABOVE body. WrappedRouteRenderer fills this with a
+      `status_messages` element unless the wrapped main content declares
+      WrappedRouteRenderer::OWN_HULL_PROPERTY FALSE, in which case this
+      renderer is never reached at all — the surface has composed its own
+      hull.
+  body:
+    title: Body
+    description: 'The wrapped route''s own main content.'
+  actions:
+    title: Actions
+    description: >-
+      Rendered BELOW body, as the hull's footer. WrappedRouteRenderer fills
+      this from the main content's own
+      WrappedRouteRenderer::ACTIONS_SLOT_PROPERTY when it declares one, and
+      omits the slot entirely otherwise so a route that is not a form gets no
+      empty footer strip. A submit control here is OUTSIDE the wrapped
+      `<form>` and submits nothing unless it names its form owner with the
+      `form` attribute — which is what WrappedDialogFormTrait's own lift
+      stamps on it.

@@ -1,0 +1,32 @@
+# BB-684: project owning the ticket template fixture. Read only by the
+# ticket-template scenarios.
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: 684a0000-0000-4000-8000-000000000003
+  depends:
+    dbc50000-0000-4000-8000-0000000000c1: bb_group
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    685a0000-0000-4000-8000-000000000006: bb_team
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  group_id:
+    -
+      entity: "dbc50000-0000-4000-8000-0000000000c1"
+  name:
+    -
+      value: "Template fixtures"
+  key:
+    -
+      value: "TPLF"
+  next_number:
+    -
+      value: 1
+  teams:
+    -
+      entity: "dbc70000-0000-4000-8000-000000000001"
+    -
+      entity: "685a0000-0000-4000-8000-000000000006"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

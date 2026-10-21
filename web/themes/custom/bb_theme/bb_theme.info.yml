@@ -1,0 +1,16 @@
+name: bakers.build Theme
+type: theme
+description: 'Frontend theme for the bakers.build dashboard. Owns its design tokens outright — no theme dependency.'
+package: bakers.build
+core_version_requirement: ^11
+# stable9 is a deliberate choice, not a leftover: it is Drupal's markup-only
+# base theme, so it contributes no visual opinions for a fully custom Tailwind
+# theme to override. Olivero or Claro would have to be fought; stable9 does not.
+base theme: stable9
+libraries:
+  - bb_theme/global
+  - bb_theme/skin
+regions:
+  content: Content
+  page_top: 'Page top'
+  page_bottom: 'Page bottom'

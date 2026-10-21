@@ -1,0 +1,69 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for bb_activity.
+ */
+
+declare(strict_types=1);
+
+/**
+ * Implements hook_install().
+ *
+ * On a site that already has bb_activity rows the module installer adopts
+ * the existing tables: it creates only tables that do not exist. No mail
+ * settings rows: an account has one only once it saves its choices.
+ */
+function bb_activity_install(): void {
+  _bb_activity_drop_claim_key();
+  _bb_activity_settle_adopted_schema();
+  _bb_activity_drop_builder_copies();
+}
+
+/**
+ * Drops the Display Builder working copies of the activity displays.
+ *
+ * A copy from before this module holds sample entities of a class that no
+ * longer exists, so importing the display config fails to save it again. The
+ * display config brings the layout back. Idempotent.
+ */
+function _bb_activity_drop_builder_copies(): void {
+  $state = \Drupal::state();
+  $index = $state->get('display_builder_index', []);
+  $stale = array_filter(array_keys($index), static fn ($id): bool => str_starts_with((string) $id, 'entity_view__bb_activity__'));
+  if ($stale === []) {
+    return;
+  }
+  $state->set('display_builder_index', array_diff_key($index, array_flip($stale)));
+  $state->deleteMultiple(array_map(static fn ($id): string => 'display_builder_' . $id, $stale));
+}
+
+/**
+ * Records the entity schema of an adopted table as it is.
+ *
+ * Adopting an existing table stores entity schema data without its
+ * ticket/id index, although the table has it; updating the entity type
+ * stores it again. A fresh install has nothing pending. Idempotent.
+ */
+function _bb_activity_settle_adopted_schema(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  if (isset($manager->getChangeList()['bb_activity']['entity_type'])) {
+    $manager->updateEntityType(\Drupal::entityTypeManager()->getDefinition('bb_activity'));
+  }
+}
+
+/**
+ * Drops the claim key column a site from before this module still carries.
+ *
+ * The claim service keeps one row per claim. The adopted table keeps every
+ * column it had; this one alone is no longer defined. Idempotent.
+ */
+function _bb_activity_drop_claim_key(): void {
+  $schema = \Drupal::database()->schema();
+  if (!$schema->fieldExists('bb_activity', 'claim_key')) {
+    return;
+  }
+  $schema->dropUniqueKey('bb_activity', 'bb_activity__claim_key');
+  $schema->dropField('bb_activity', 'claim_key');
+  \Drupal::keyValue('entity.storage_schema.sql')->delete('bb_activity.field_schema_data.claim_key');
+}

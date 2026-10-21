@@ -1,0 +1,30 @@
+# Listing-search fixture: one Alpha title in the default workspace so the
+# Projects Title contains filter can keep Alpha and drop Beta.
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: 571a0000-0000-4000-8000-0000000000b1
+  default_langcode: en
+  depends:
+    571a0000-0000-4000-8000-0000000000a1: bb_group
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  group_id:
+    -
+      entity: "571a0000-0000-4000-8000-0000000000a1"
+  name:
+    -
+      value: "Alpha North"
+  key:
+    -
+      value: "ALPN"
+  next_number:
+    -
+      value: 1
+  teams:
+    -
+      entity: "dbc70000-0000-4000-8000-000000000001"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

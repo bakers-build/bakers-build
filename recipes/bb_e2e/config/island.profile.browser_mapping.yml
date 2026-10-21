@@ -1,0 +1,68 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - island.app.browser_test
+  module:
+    - bb_browser_test
+    - island_ui_patterns
+    - ui_patterns
+  theme:
+    - bb_theme
+  enforced:
+    config:
+      - island.app.browser_test
+    module:
+      - bb_browser_test
+      - island_ui_patterns
+id: browser_mapping
+label: 'Browser mapped profile'
+app: browser_test
+layout: 'bb_theme:gate'
+layout_settings: { }
+placements:
+  trigger:
+    plugin_id: browser_counter
+    slot: content
+    weight: 0
+    enabled: true
+    configuration:
+      label: Trigger
+      trigger: true
+    events: []
+  mapped:
+    plugin_id: ui_patterns_component
+    slot: content
+    weight: 1
+    enabled: true
+    configuration:
+      component:
+        component_id: 'bb_theme:note'
+        variant_id: null
+        props:
+          lead:
+            source_id: 'field_property:user:name:value'
+            source:
+              context_mapping:
+                entity: entity
+        slots:
+          body:
+            sources:
+              - source_id: textfield
+                source:
+                  value: 'Mapped body survives refresh.'
+    events:
+      - counter.changed
+  beta:
+    plugin_id: browser_counter
+    slot: content
+    weight: 2
+    enabled: true
+    configuration:
+      label: Beta
+      trigger: false
+    events:
+      - counter.other
+weight: 0
+condition_operator: and
+conditions: { }

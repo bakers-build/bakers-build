@@ -1,0 +1,79 @@
+uuid: 0b5d7e3a-6f21-4c8e-9a47-d2c81f3e6b95
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_comment.teaser
+    - bb_core.bb_comment_type.review
+  module:
+    - display_builder
+    - text
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: bb_comment_teaser
+        source:
+          context_mapping:
+            entity: entity
+        node_id: comment_teaser
+id: bb_comment.review.teaser
+targetEntityType: bb_comment
+bundle: review
+mode: teaser
+content:
+  author:
+    type: entity_reference_label
+    label: inline
+    settings:
+      link: false
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  body:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  created:
+    type: timestamp
+    label: inline
+    settings:
+      date_format: normal
+      custom_date_format: ''
+      timezone: ''
+      tooltip:
+        date_format: long
+        custom_date_format: ''
+      time_diff:
+        enabled: false
+        future_format: '@interval hence'
+        past_format: '@interval ago'
+        granularity: 2
+        refresh: 60
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  type:
+    type: string
+    label: inline
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  author_color: true
+  author_initials: true
+  author_name: true
+  decided_at: true
+  decided_by: true
+  review_state: true
+  search_api_excerpt: true
+  submitted_at: true

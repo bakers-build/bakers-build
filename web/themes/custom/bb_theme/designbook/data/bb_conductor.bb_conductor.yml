@@ -1,0 +1,44 @@
+- id: '1'
+  created: '2026-02-01T10:00:00+00:00'
+  changed: '2026-06-30T09:15:00+00:00'
+  machine_id: cw-framework
+  conductor_name: conductor
+  label: cw · framework
+  owner_user_id: '1'
+  status: online
+  project_id: '1'
+  states:
+    - qualification
+    - spec
+    - coding
+    - review
+  workspace_root: /home/cw/projects/bakers
+  max_parallel: 2
+  current_load: 1
+  last_pid: 481203
+  last_seen: '2026-06-30T09:15:00+00:00'
+  lease_expires_at: '2026-06-30T09:20:00+00:00'
+  active: false
+  __designbook:
+    section: conductors
+- id: '2'
+  created: '2026-03-12T08:30:00+00:00'
+  changed: '2026-06-29T17:40:00+00:00'
+  machine_id: mvd-thinkpad
+  conductor_name: shop
+  label: mvd · shop
+  owner_user_id: '3'
+  status: offline
+  project_id: '2'
+  states:
+    - coding
+    - review
+  workspace_root: /home/mvd/projects/northwind
+  max_parallel: 1
+  current_load: 0
+  last_pid: 90114
+  last_seen: '2026-06-29T17:40:00+00:00'
+  lease_expires_at: '2026-06-29T17:45:00+00:00'
+  active: true
+  __designbook:
+    section: conductors

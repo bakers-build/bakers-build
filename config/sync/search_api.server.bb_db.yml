@@ -1,0 +1,17 @@
+uuid: 08b9b7b5-08b5-4adb-bc74-64aa9ae4cdf6
+langcode: en
+status: true
+dependencies:
+  module:
+    - search_api_db
+id: bb_db
+name: 'bakers.build database'
+description: 'The database-backed Search API server behind the ticket list.'
+backend: search_api_db
+backend_config:
+  database: 'default:default'
+  min_chars: 3
+  matching: words
+  autocomplete:
+    suggest_suffix: true
+    suggest_words: true

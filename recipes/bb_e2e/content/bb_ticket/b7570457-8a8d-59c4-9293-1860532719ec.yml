@@ -1,0 +1,22 @@
+# Dedicated API contract fixture; independent of the product-navigation seed.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket
+  uuid: b7570457-8a8d-59c4-9293-1860532719ec
+  default_langcode: en
+  depends:
+    edc03624-629b-5606-b650-0a1dbf8ea9ad: bb_project
+    02043966-170c-5ae3-8d9e-5ef816ff74f4: bb_team
+default:
+  identifier:
+  - value: APIO-1
+  number:
+  - value: 1
+  title:
+  - value: API other contract
+  workflow:
+  - value: bb_feature
+  state:
+  - value: spec
+  project_id:
+  - entity: edc03624-629b-5606-b650-0a1dbf8ea9ad

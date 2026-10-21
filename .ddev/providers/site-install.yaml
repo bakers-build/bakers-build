@@ -1,0 +1,15 @@
+#ddev-generated
+# Fresh-install "source": populate the DB with `drush site:install` instead of a dump.
+# Nothing to fetch, so there is NO db_pull_command; the install runs as DDEV's import step
+# (db_import_command). Selected via `ddev pull site-install` (init.default_sync_provider:
+# site-install, or `ddev init --provider site-install`). Honours KEYTEC_AI_SITE for multisite
+# (--uri). Pulled WITHOUT --skip-import: DDEV takes the empty-db_pull early-return and runs
+# db_import_command (a cosmetic "skipping database pull" warning is expected).
+db_import_command:
+  command: |
+    set -eu
+    URI_ARG=""
+    if [ -n "${KEYTEC_AI_SITE:-}" ] && [ "${KEYTEC_AI_SITE}" != "default" ]; then
+      URI_ARG="--uri=${KEYTEC_AI_SITE}"
+    fi
+    drush ${URI_ARG} site:install "${INIT_PROFILE:-minimal}" -y

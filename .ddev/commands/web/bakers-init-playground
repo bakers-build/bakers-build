@@ -1,0 +1,57 @@
+#!/bin/bash
+## Description: Provision the playground world (bb_keytec) on the default site
+## Usage: bakers-init-playground
+
+set -euo pipefail
+cd /var/www/html
+source /var/www/html/.ddev/commands/web/lib/bakers-auth-lib.sh
+
+PROJECT_NAME="playground-test"
+
+[ -d /var/www/html/vendor ] || { echo "ERROR: vendor/ missing — run 'ddev composer install'." >&2; exit 1; }
+drush status --fields=bootstrap --format=string 2>/dev/null | grep -q Successful \
+  || { echo "ERROR: default site not installed — run 'ddev init' first." >&2; exit 1; }
+
+echo "==> Applying bb_keytec_config recipe (base+bakers+seed chain + keytec connector)"
+drush recipe /var/www/html/recipes/bb_keytec_config -y
+echo "==> Applying bb_keytec recipe (keytec users)"
+drush recipe /var/www/html/recipes/bb_keytec -y
+
+bb_enable_write_transport ""
+bb_ensure_project "" "${PROJECT_NAME}"
+
+# BB-318: a bakers.build collection query now returns only the rows of the requesting
+# account's OG scope, and no role holds `administer bakers`. Without a membership
+# every seeded keytec user reads an empty playground — HTTP 200, zero rows, no
+# error. The memberships cannot live in the recipe: recipes/bb_keytec seeds
+# users only, and the project above is created HERE at runtime with a generated
+# UUID and no group, so no content file can reference it. They are written by the
+# same step that creates the project, which is the only place that knows its id.
+echo "==> Placing the keytec users in project '${PROJECT_NAME}' (BB-318 read scope)"
+drush ev '
+$storage = \Drupal::entityTypeManager()->getStorage("bb_project");
+$found = $storage->loadByProperties(["name" => "'"${PROJECT_NAME}"'"]);
+$project = $found ? reset($found) : NULL;
+if ($project === NULL) {
+  print "  no project; nothing to place\n";
+  return;
+}
+$placed = 0;
+foreach (\Drupal::entityTypeManager()->getStorage("user")->loadMultiple() as $account) {
+  if ((int) $account->id() < 2) {
+    continue;
+  }
+  if (\Drupal\og\Og::getMembership($project, $account, \Drupal\og\OgMembershipInterface::ALL_STATES) !== NULL) {
+    continue;
+  }
+  \Drupal\og\Og::createMembership($project, $account)
+    ->setState(\Drupal\og\OgMembershipInterface::STATE_ACTIVE)
+    ->save();
+  $placed++;
+}
+print "  placed " . $placed . " membership(s)\n";
+' >/dev/null 2>&1 || echo "  WARNING: could not place playground memberships" >&2
+
+drush cr >/dev/null
+
+echo "bakers.build playground prepared (project '${PROJECT_NAME}'); auth is written inline by the skill setup."

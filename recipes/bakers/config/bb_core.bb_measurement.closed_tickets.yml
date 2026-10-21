@@ -1,0 +1,36 @@
+langcode: en
+status: true
+dependencies: {}
+id: closed_tickets
+label: Closed tickets
+value_type: integer
+unit: tickets
+source:
+  entity_type: bb_ticket
+  time_field: closed_date
+operation:
+  type: count
+predicates:
+- field: closed
+  operator: '='
+  value: true
+bindings:
+  project:
+    field: project_id
+    resolver: entity_id
+  user:
+    field: assignee_user_id
+    resolver: entity_id
+  team:
+    field: project_id
+    resolver: team_projects
+  workspace:
+    field: project_id
+    resolver: workspace_projects
+dimensions:
+  project:
+    field: project_id
+    entity_type: bb_project
+  user:
+    field: assignee_user_id
+    entity_type: user

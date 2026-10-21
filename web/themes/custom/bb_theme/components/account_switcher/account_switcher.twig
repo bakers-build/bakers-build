@@ -1,0 +1,67 @@
+{# Head-of-rail workspace switcher — the retired workspace_switcher, kept
+   under the account_switcher name because the sidebar's `workspace` slot
+   still addresses it that way. A disclosure button carrying
+   `aria-expanded`/`aria-controls` — but ONLY when `multiple` is true, i.e.
+   there is more than one workspace to switch to. With a single workspace it
+   is a plain, non-interactive label: no chevron, no panel, nothing to
+   disclose. The signed-in account is NOT rendered by this component: it sits
+   at the rail FOOT, in the sidebar's `actions` slot, as a plain avatar
+   (`bb_theme:person` compact). Collapsed drops the label/caret through
+   `data-collapse-hidden`, leaving the mark alone for the 56px rail — the
+   same contract the nav labels use, so an Alpine collapse hides them too.
+
+   The panel opens DOWNWARD (`top-full`) because this component sits at the
+   rail HEAD, below its trigger — the reverse of a rail-foot placement, where
+   the panel would have to open upward to stay in the viewport. Corrected at
+   BB-503 review; was `bottom-full`, leaving the viewport at `top: -10px`.
+
+   The disclosure is Alpine, declared here rather than in a script file. The
+   server still renders `aria-expanded="false"` and a `hidden` panel, so the
+   closed state holds with JavaScript disabled and Alpine only binds the two
+   attributes. Escape and outside-click close it, which preserves what the
+   retired workspace_switcher.js did rather than adding to it.
+
+   The single-workspace branch gets NO Alpine attributes: a switcher with
+   nothing to switch to is not a control, which is what this component's
+   description already states.
+
+   `workspace_picture` is the current workspace's image: the mark shows it whole
+   (`image_fit: contain`) and falls back to the initials when it is empty. #}
+{% set switcher_id = id|default('bakers-account-switcher') %}
+{% set workspace_panel_id = switcher_id ~ '-workspace-panel' %}
+{% set is_collapsed = collapsed|default(false) or variant == 'collapsed' %}
+{% set is_switcher = multiple is not defined or multiple %}
+<div{{ (attributes ?: create_attribute()).addClass(['relative', 'min-w-0', 'w-full', 'group-[.is-collapsed]:w-auto']) }}
+  data-account-switcher
+  {%- if is_switcher %}
+  x-data="{ open: false }"
+  @keydown.escape.window="open = false"
+  @click.outside="open = false"
+  {%- endif %}>
+  {% if is_switcher %}
+    <button type="button"
+      class="flex items-center gap-2 w-full min-w-0 h-8 px-1 rounded-xs bg-transparent border-0 text-text cursor-pointer transition-colors duration-fast hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0 group-[.is-collapsed]:w-auto"
+      data-account-switcher-toggle="workspace"
+      aria-controls="{{ workspace_panel_id }}"
+      aria-expanded="false"
+      aria-haspopup="menu"
+      @click="open = !open"
+      :aria-expanded="open ? 'true' : 'false'">
+      {{ include('bb_theme:person', { variant: 'compact', initials: workspace_initials|default('W'), color: workspace_color|default('running'), size: 'sm', picture: workspace_picture|default(''), image_fit: 'contain' }, with_context = false) }}
+      <span class="flex-1 min-w-0 truncate text-left text-body text-title" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{{ workspace_label }}</span>
+      <span class="flex items-center text-text-faint" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{{ include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) }}</span>
+    </button>
+    <div class="absolute left-0 top-full translate-y-1 z-40 w-55 rounded-sm border border-border bg-surface p-1 text-caption text-text"
+      id="{{ workspace_panel_id }}"
+      role="menu"
+      :hidden="!open"
+      hidden>
+      {% block workspace_panel %}{% if workspace_panel %}{{ workspace_panel }}{% endif %}{% endblock %}
+    </div>
+  {% else %}
+    <div class="flex items-center gap-2 w-full min-w-0 h-8 px-1 group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0 group-[.is-collapsed]:w-auto">
+      {{ include('bb_theme:person', { variant: 'compact', initials: workspace_initials|default('W'), color: workspace_color|default('running'), size: 'sm', picture: workspace_picture|default(''), image_fit: 'contain' }, with_context = false) }}
+      <span class="flex-1 min-w-0 truncate text-left text-body text-title" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{{ workspace_label }}</span>
+    </div>
+  {% endif %}
+</div>

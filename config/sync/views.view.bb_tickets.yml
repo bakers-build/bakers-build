@@ -1,0 +1,715 @@
+uuid: 1bfede9e-1152-46c1-9646-5204026dc08f
+langcode: en
+status: true
+dependencies:
+  module:
+    - better_exposed_filters
+    - bb_core
+    - options
+    - user
+id: bb_tickets
+label: 'bakers.build tickets'
+module: views
+description: 'Administrative table of all bakers.build tickets: sortable columns and exposed filters (identifier + title autocomplete, workflow + state + assignee + conductor selects).'
+tag: ''
+base_table: bb_ticket
+base_field: id
+display:
+  default:
+    id: default
+    display_title: Default
+    display_plugin: default
+    position: 0
+    display_options:
+      title: 'bakers.build tickets'
+      fields:
+        identifier:
+          id: identifier
+          table: bb_ticket
+          field: identifier
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: identifier
+          plugin_id: field
+          label: Identifier
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        title:
+          id: title
+          table: bb_ticket
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: title
+          plugin_id: field
+          label: Title
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        project_id:
+          id: project_id
+          table: bb_ticket
+          field: project_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: project_id
+          plugin_id: field
+          label: Project
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        workflow:
+          id: workflow
+          table: bb_ticket
+          field: workflow
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: workflow
+          plugin_id: field
+          label: Workflow
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: value
+          type: list_default
+          settings: {  }
+          group_column: value
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        state:
+          id: state
+          table: bb_ticket
+          field: state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: state
+          plugin_id: field
+          label: State
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: value
+          type: bb_state_label
+          settings: {  }
+          group_column: value
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        assignee_user_id:
+          id: assignee_user_id
+          table: bb_ticket
+          field: assignee_user_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: assignee_user_id
+          plugin_id: field
+          label: Assignee
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        owner_user_id:
+          id: owner_user_id
+          table: bb_ticket
+          field: owner_user_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: owner_user_id
+          plugin_id: field
+          label: 'Created by'
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        conductor_id:
+          id: conductor_id
+          table: bb_ticket
+          field: conductor_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: conductor_id
+          plugin_id: field
+          label: Conductor
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        changed:
+          id: changed
+          table: bb_ticket
+          field: changed
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: changed
+          plugin_id: field
+          label: Changed
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          click_sort_column: value
+          type: timestamp
+          settings:
+            date_format: medium
+            custom_date_format: ''
+            timezone: ''
+            tooltip:
+              date_format: ''
+              custom_date_format: ''
+            time_diff:
+              enabled: false
+              future_format: '@interval hence'
+              past_format: '@interval ago'
+              granularity: 2
+              refresh: 60
+          group_column: value
+          group_rows: true
+          multi_type: separator
+          separator: ', '
+        operations:
+          id: operations
+          table: bb_ticket
+          field: operations
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          plugin_id: entity_operations
+          label: Operations
+          exclude: false
+          alter:
+            alter_text: false
+          element_label_colon: true
+          destination: true
+      pager:
+        type: full
+        options:
+          offset: 0
+          items_per_page: 50
+          total_pages: null
+          id: 0
+          tags:
+            next: 'Next ›'
+            previous: '‹ Previous'
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
+      exposed_form:
+        type: bef
+        options:
+          submit_button: Apply
+          reset_button: true
+          reset_button_label: Reset
+          exposed_sorts_label: 'Sort by'
+          expose_sort_order: true
+          sort_asc_label: Asc
+          sort_desc_label: Desc
+          bef:
+            general:
+              autosubmit: false
+              autosubmit_exclude_textfield: false
+              autosubmit_textfield_delay: 500
+              autosubmit_hide: false
+              input_required: false
+              allow_secondary: false
+              secondary_label: 'Advanced options'
+              reset_button_always_show: false
+            filter:
+              project_id:
+                plugin_id: default
+                advanced:
+                  collapsible: false
+                  is_secondary: false
+              workflow:
+                plugin_id: default
+                advanced:
+                  collapsible: false
+                  is_secondary: false
+              assignee_user_id:
+                plugin_id: default
+                advanced:
+                  collapsible: false
+                  is_secondary: false
+              state:
+                plugin_id: default
+                advanced:
+                  collapsible: false
+                  is_secondary: false
+              conductor_id:
+                plugin_id: default
+                advanced:
+                  collapsible: false
+                  is_secondary: false
+      access:
+        type: perm
+        options:
+          perm: 'administer bakers'
+      cache:
+        type: tag
+        options: {  }
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: text_custom
+          empty: true
+          content: 'No bakers.build tickets found.'
+      sorts:
+        changed:
+          id: changed
+          table: bb_ticket
+          field: changed
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: changed
+          plugin_id: date
+          order: DESC
+          expose:
+            label: ''
+          exposed: false
+          granularity: second
+      arguments: {  }
+      filters:
+        identifier:
+          id: identifier
+          table: bb_ticket
+          field: identifier
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: identifier
+          plugin_id: string
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: identifier_op
+            label: Identifier
+            description: ''
+            use_operator: false
+            operator: identifier_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: identifier
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            autocomplete_filter: 1
+            autocomplete_items: '10'
+            autocomplete_field: identifier
+            autocomplete_raw_suggestion: 1
+            autocomplete_raw_dropdown: 1
+            autocomplete_dependent: 0
+            autocomplete_contextual: 0
+          is_grouped: false
+        title:
+          id: title
+          table: bb_ticket
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: title
+          plugin_id: string
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: title_op
+            label: Title
+            description: ''
+            use_operator: false
+            operator: title_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: title
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            autocomplete_filter: 1
+            autocomplete_items: '10'
+            autocomplete_field: title
+            autocomplete_raw_suggestion: 1
+            autocomplete_raw_dropdown: 1
+            autocomplete_dependent: 0
+            autocomplete_contextual: 0
+          is_grouped: false
+        workflow:
+          id: workflow
+          table: bb_ticket
+          field: workflow
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: workflow
+          plugin_id: list_field
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: workflow_op
+            label: Workflow
+            description: ''
+            use_operator: false
+            operator: workflow_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: workflow
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+        assignee_user_id:
+          id: assignee_user_id
+          table: bb_ticket
+          field: assignee_user_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: assignee_user_id
+          plugin_id: entity_reference
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: assignee_user_id_op
+            label: Assignee
+            description: ''
+            use_operator: false
+            operator: assignee_user_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: assignee_user_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          sub_handler: 'default:user'
+          widget: autocomplete
+          sub_handler_settings: {  }
+        state:
+          id: state
+          table: bb_ticket
+          field: state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: state
+          plugin_id: bb_ticket_state
+          operator: in
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: state_op
+            label: State
+            description: ''
+            use_operator: false
+            operator: state_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: state
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+        conductor_id:
+          id: conductor_id
+          table: bb_ticket
+          field: conductor_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: conductor_id
+          plugin_id: entity_reference
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: conductor_id_op
+            label: Conductor
+            description: ''
+            use_operator: false
+            operator: conductor_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: conductor_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          sub_handler: 'default:bb_conductor'
+          widget: autocomplete
+          sub_handler_settings: {  }
+        project_id:
+          id: project_id
+          table: bb_ticket
+          field: project_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket
+          entity_field: project_id
+          plugin_id: entity_reference
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: project_id_op
+            label: Project
+            description: ''
+            use_operator: false
+            operator: project_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: project_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          sub_handler: 'default:bb_project'
+          widget: autocomplete
+          sub_handler_settings: {  }
+      style:
+        type: table
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+          columns:
+            identifier: identifier
+            title: title
+            assignee_user_id: assignee_user_id
+            conductor_id: conductor_id
+            workflow: workflow
+            state: state
+            changed: changed
+            operations: operations
+          default: changed
+          info:
+            identifier:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            title:
+              sortable: false
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            assignee_user_id:
+              sortable: false
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            conductor_id:
+              sortable: false
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            workflow:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            state:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            changed:
+              sortable: true
+              default_sort_order: desc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            operations:
+              sortable: false
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+          override: true
+          sticky: true
+          summary: ''
+          empty_table: true
+          caption: ''
+          description: ''
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      query:
+        type: views_query
+        options:
+          query_comment: ''
+          disable_sql_rewrite: false
+          distinct: false
+          replica: false
+          query_tags: {  }
+      relationships: {  }
+      header: {  }
+      footer: {  }
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user.permissions
+      tags: {  }
+  page_1:
+    id: page_1
+    display_title: Page
+    display_plugin: page
+    position: 1
+    display_options:
+      display_extenders: {  }
+      path: admin/bakers/tickets
+      route_name: entity.bb_ticket.collection
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user.permissions
+      tags: {  }

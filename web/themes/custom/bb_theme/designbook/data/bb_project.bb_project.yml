@@ -1,0 +1,91 @@
+- id: '1'
+  created: '2026-01-15T09:00:00+00:00'
+  changed: '2026-06-28T14:30:00+00:00'
+  group_id: '1'
+  name: bakers.build Platform
+  description: >-
+    The control plane that dispatches agent runs and tracks every ticket from
+    qualification to merge.
+  image:
+    alt: bakers.build Platform braid mark
+    src: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+  repository:
+    url: https://gitlab.example.com/bakers/bakers
+    default_branch: develop
+    branch_convention: feat/<identifier>-<title>
+  key: bakers.build
+  next_number: 339
+  coder_config:
+    default_agent: claude
+    conductor_pool: keytec
+  env_vars: |-
+    CONDUCTOR_POOL=keytec
+    DEFAULT_AGENT=claude
+  teams:
+    - '1'
+    - '3'
+  owner_user_id: '1'
+  __designbook:
+    section: bb_ticket
+- id: '2'
+  created: '2026-02-20T11:30:00+00:00'
+  changed: '2026-06-27T10:05:00+00:00'
+  group_id: '2'
+  name: Northwind Shop
+  description: The storefront and its checkout, rebuilt for the spring catalogue.
+  repository:
+    url: https://gitlab.example.com/northwind/shop
+    default_branch: main
+    branch_convention: feat/<identifier>-<title>
+  key: NWS
+  next_number: 84
+  coder_config:
+    default_agent: codex
+    conductor_pool: northwind
+  env_vars: |-
+    CONDUCTOR_POOL=northwind
+    DEFAULT_AGENT=codex
+  teams:
+    - '2'
+  owner_user_id: '3'
+  __designbook:
+    section: settings
+- id: '3'
+  created: '2026-03-10T08:55:00+00:00'
+  changed: '2026-06-29T11:20:00+00:00'
+  group_id: '1'
+  name: bakers.build Designbook
+  description: ''
+  repository:
+    url: https://gitlab.example.com/bakers/designbook
+    default_branch: main
+    branch_convention: feat/<identifier>-<title>
+  key: GDB
+  next_number: 12
+  coder_config:
+    default_agent: claude
+    conductor_pool: keytec
+  env_vars: |-
+    CONDUCTOR_POOL=keytec
+    DEFAULT_AGENT=claude
+  teams:
+    - '1'
+  owner_user_id: '1'
+  __designbook:
+    section: settings
+- id: '4'
+  created: '2026-05-02T09:15:00+00:00'
+  changed: '2026-06-30T16:40:00+00:00'
+  group_id: '1'
+  name: Øresund Ærø Straße Überführungsgesellschaft für Großprojekte
+  description: >-
+    Coordinates the cross-border bridge maintenance programme, its inspection
+    rota and contractor hand-offs; every change request is traced here:
+    ÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜber
+  key: ORE
+  next_number: 4
+  teams:
+    - '1'
+  owner_user_id: '1'
+  __designbook:
+    section: projects

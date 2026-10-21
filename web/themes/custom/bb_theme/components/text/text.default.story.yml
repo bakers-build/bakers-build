@@ -1,0 +1,7 @@
+component: bb_theme:text
+name: Default
+props:
+  text: >-
+    We sent you a login link. Open it on this device to sign in. The link works
+    only once.
+  tone: light

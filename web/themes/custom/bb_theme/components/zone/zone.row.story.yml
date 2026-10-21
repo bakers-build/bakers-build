@@ -1,0 +1,24 @@
+component: bb_theme:zone
+name: Row
+props:
+  inset: md
+  gap: sm
+  direction: row
+slots:
+  heading: Labels
+  content:
+    - type: component
+      component: bb_theme:badge
+      props:
+        label: frontend
+        tone: neutral
+    - type: component
+      component: bb_theme:badge
+      props:
+        label: needs-spec
+        tone: neutral
+    - type: component
+      component: bb_theme:badge
+      props:
+        label: regression
+        tone: neutral

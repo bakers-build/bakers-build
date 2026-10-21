@@ -1,0 +1,14 @@
+component: bb_theme:stat-ratio
+name: Default
+props:
+  label: Closed per run
+  quotients:
+    - label: Last 24 hours
+      value: —
+    - label: Last 7 days
+      value: '0.72'
+    - label: Last 30 days
+      value: '0.55'
+  numerator_label: My closed tickets
+  denominator_label: My runs
+  source: bakers/statistics/user_closed_per_run

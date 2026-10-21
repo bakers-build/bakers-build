@@ -1,0 +1,11 @@
+{# The time form's "Change date, project or ticket" group as the theme's native
+   collapsible. Core opens the details when a grouped field has an error.
+
+   @see \Drupal\bb_track\Form\WorklogFormLayout::addContext()
+#}
+{{ include('bb_theme:collapsible', {
+  open: attributes.hasAttribute('open'),
+  label: title,
+  content: children,
+  attributes: create_attribute({ id: attributes.id }),
+}, with_context = false) }}

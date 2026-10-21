@@ -1,0 +1,238 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: List
+status: stable
+group: Data Display
+description: >-
+  A listing WITHOUT COLUMNS, and it owns its items. It is `table`'s twin below
+  the header and nothing else: the same cell, keyed by the same map, rendered by
+  the same macro. What it does not have is the one thing that makes a table a
+  table — a header cell that sorts — and that absence is why these are two
+  components and not one with a flag. A list has no header, so there is nothing
+  to sort and nothing to align down, which is precisely the statement `layout`
+  makes: putting values in cells promises a comparison, and a membership or a
+  run is a person or an event with a few properties, not a row of comparable
+  figures.
+
+
+  IT ABSORBED THREE LIST-ENTRY COMPONENTS whose only job was to be one item of
+  something — a run line, a membership row and a label/value pair — and their
+  arguments came with them rather than being lost. The membership entry defended
+  itself in a forty-line block comment: a member list is not tabular data,
+  nobody scans a role down a column, and aligning the properties to a grid would
+  draw a table in flexbox. That argument is true and it is now `layout: cards`;
+  the markup it used to own lives in one place for every listing in the theme.
+
+
+  `items` IS A PROP AND NOT A SLOT, for the same reason `table`'s `rows` is: a
+  slot is how the previous architecture injected an already-rendered entry, and
+  a cell is DATA — props carry scalar data only and never rendered content. The
+  one slot is `empty`, and it is a sentence a screen writes rather than a value
+  a listing carries. A value shape the nine cell kinds cannot express is the
+  signal to add a tenth kind, once, in the macro — never to reopen a slot here.
+
+
+  A CELL IS THE SAME NINE KINDS `table` DECLARES — `text` (`value`, `emphasis:
+  default|faint|strong`), `mono` (`value`), `link` (`value`, `url`, `mono?`),
+  `badge` (`label`, `tone`, `dot?`, `icon?`, `suffix?`, `mono?`, `mine?`,
+  `url?`), `person` (`display_name`, `initials`, `color`, `mail?`), `picker`
+  (`label`, `value_labels`, `options`, `picker_id`, `multiple?`, `open?`,
+  `icon?`, `clearable?`, `clear_label?`, `creatable?`, `create_label?`,
+  `name?`, `searchable?`, `selected_chips?`, `selected?`), `masked` (`value?`, `revealed?`), `action` (`label`, `icon?`,
+  `icon_only?`, `variant?`, `href?`, `hx?` {`get?`, `target?`, `select?`,
+  `swap?`}) and `rendered` (`markup`) — and their field list is declared once,
+  in `table.component.yml`, beside the `cell()` macro that reads it. It is
+  deliberately not copied here: one macro renders both containers, and a second
+  copy of its schema is a second copy that drifts. An unknown or absent `kind`
+  renders the value as plain text, so a mapping mistake shows as unstyled
+  content rather than as an empty item.
+
+
+  `rendered` WAS MISSING FROM THIS SCHEMA ONLY, and that is what BB-435
+  corrected rather than invented. The kind is `table`'s ninth, the shared
+  `cell()` macro this component imports has always rendered it, and `list.twig`
+  hands every cell to that macro without inspecting its kind — so the markup
+  path existed and only the enum here refused it, which made a `rendered` cell
+  handed to `list` an invalid prop for no reason a reader could find. Its
+  `markup` carries the same contract it carries on `table`: the value must be a
+  `MarkupInterface` object, never a plain string and never a render array,
+  because Twig prints the object unescaped and exactly once and escapes the
+  string.
+
+
+  `action` IS THE ONE KIND THAT IS NOT A VALUE, and it is item-scoped rather
+  than a members-only special case: seven kinds render something the record
+  HOLDS, and a listing whose items can be acted on had nowhere to put the
+  control. It arrived by the rule the macro states — add a kind, never reopen a
+  slot — because the shape that asked for it was a membership's remove control,
+  whose accessible name is a whole sentence that a `text` cell would have
+  printed as prose on every item.
+
+
+  IT RENDERS A REAL `<ul>` OF `<li>`, which is the accessibility half of the
+  change. The entries it absorbed had to carry `role="listitem"` themselves and
+  rely on a generic container being told to say `role="list"`, because neither
+  of them was a list; a real list needs no such arrangement, and the
+  `role="list"` here is only Tailwind's own reset being undone.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    pattern:
+      type: object
+      title: Row pattern
+      description: >-
+        Optional, and what turns an item into a LISTING ROW (BB-592): the
+        GitLab-style row the projects, groups, tickets and runs listings share.
+        Each region lists cell keys in display order — `avatar` (optional: a
+        compact mark that leads the row on the left, before the text, and never
+        shrinks), `headline` (identity and key facts, one wrapping line), `meta`
+        (secondary facts, a faint caption line beneath), `description`
+        (optional: one short plain-text line beneath the meta line that wraps
+        inside the row) `right` (compact cells at the right edge) and
+        `right_meta` (an optional faint caption line beneath them,
+        right-aligned); the right block is a small column of those two lines
+        that flows beneath the left block on a narrow viewport. A key whose cell
+        is absent is skipped, so an optional fact leaves no gap; a cell no
+        region names is not rendered. `captions` maps a key to a short visible
+        caption shown faintly before its value ("Owner", "Took"), because a row
+        has no header to say what a value is. A patterned item whose headline
+        carries a link is clickable as a whole: a click on the row's own surface
+        (not on a control, a link or a text selection) forwards to that first
+        headline link, declared with Alpine on the `<li>` and marked
+        `cursor-pointer`. Without `pattern` the item renders its cells in map
+        order, exactly as before.
+      properties:
+        avatar:
+          type: array
+          title: Avatar keys
+          items:
+            type: string
+        headline:
+          type: array
+          title: Headline keys
+          items:
+            type: string
+        meta:
+          type: array
+          title: Meta line keys
+          items:
+            type: string
+        description:
+          type: array
+          title: Description keys
+          items:
+            type: string
+        right:
+          type: array
+          title: Right column keys
+          items:
+            type: string
+        captions:
+          type: object
+          title: Visible captions
+          additionalProperties:
+            type: string
+        right_meta:
+          type: array
+          title: Right meta keys
+          items:
+            type: string
+    layout:
+      type: string
+      enum:
+        - lines
+        - cards
+        - plain
+      title: Density
+      description: >-
+        The two densities the tree actually has, and the reason this is a prop
+        rather than a second component: the items and the cells are identical,
+        only the treatment differs. `lines` is dense — one line per item, a
+        hairline between them, no surface of its own — and it is the run list.
+        `cards` gives each item its own surface, border and radius, and it is
+        the members list, whose entries are read one at a time rather than
+        scanned down. `plain` is a block's property rows — no line, hover fill
+        or inset; the enclosing block carries the separation, and the label cell
+        takes a fixed `w-28` track. Default `lines`.
+      default: lines
+    spacing:
+      type: string
+      enum:
+        - default
+        - comfortable
+      title: Spacing
+      description: >-
+        `comfortable` gives card items more room — row gap and vertical padding
+        at semantic spacing role 3 — for lists read person by person, such as
+        members. Only `layout: cards` reads it. Default `default`.
+      default: default
+    items:
+      type: array
+      title: Items
+      description: >-
+        The items, as DATA. Each is an optional link target, an optional status
+        accent and a map of cells — never a rendered entry, which is what the
+        absorbed components were.
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+            title: Item target
+            description: >-
+              Where this item points. Carried as `data-item-url` on the `<li>`
+              rather than rendered as an anchor: an item with several cells has
+              no single thing to wrap, and an anchor around all of them would
+              swallow the interactive cell. The VISIBLE affordance is a `link`
+              cell; this is the machine-readable target a later interaction
+              layer reads.
+          accent:
+            type: string
+            enum:
+              - running
+              - attention
+              - wait
+              - idle
+            title: Status accent
+            description: >-
+              The leading status rail. `wait` additionally tints the whole item,
+              because a thing nobody is acting on is the one state the absorbed
+              entries made loud, and the tint is what a `wait` badge's `-ink`
+              colour is legible against.
+          cells:
+            type: object
+            title: Cells
+            description: >-
+              The item's values, keyed by a name of the mapping's choosing —
+              there are no columns here, so the key names the value rather than
+              addressing a column. The ten kinds and their fields are declared
+              once, in `table.component.yml`, beside the one macro that renders
+              them.
+            additionalProperties:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - text
+                    - mono
+                    - link
+                    - badge
+                    - person
+                    - picker
+                    - masked
+                    - action
+                    - rendered
+                    - status
+                  title: Cell kind
+slots:
+  empty:
+    title: Empty
+    description: >-
+      What to show when there is nothing to list — a sentence that names WHAT is
+      absent, which is a thing a screen knows and a listing does not. It is the
+      only slot, and it is content because a sentence is content.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

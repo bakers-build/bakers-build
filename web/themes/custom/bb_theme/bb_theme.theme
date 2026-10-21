@@ -1,0 +1,150 @@
+<?php
+
+/**
+ * @file
+ * Theme registrations for bakers.build presenter templates.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Entity\ContentEntityFormInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
+use Drupal\filter\Entity\FilterFormat;
+use Drupal\bb_core\Form\BbCreateDialogFormBase;
+use Drupal\bb_core\Form\BbWorkspaceCreateForm;
+use Drupal\bb_core\Form\GroupMembersForm;
+
+/**
+ * Implements hook_theme().
+ *
+ * A FORM ID REGISTERED HERE BECOMES A TEMPLATE. `FormBuilder::prepareForm()`
+ * sets `#theme` to the form id, so a hook of that name makes the unrendered
+ * form available to Twig — which is what keeps accessibility and submit
+ * presentation in a template instead of in PHP.
+ *
+ * `user_login_form` is core's and is now unreachable in the product: BB-430
+ * D15 mounts `BbLoginForm` on `user.login`, so the password form renders
+ * nowhere. The registration is kept because the hook is cheap and its template
+ * documents the surface that was retired; deleting the pair belongs to whoever
+ * removes the last caller, and `user.pass` still renders core account forms.
+ */
+function bb_theme_theme(): array {
+  return [
+    'user_login_form' => ['render element' => 'form'],
+    'bb_login_form' => ['render element' => 'form'],
+    // The onboarding wizard's presenter: this hook hands
+    // `bakers-onboarding-wizard-form.html.twig` the `form` element it composes
+    // the chrome from. Core's own `form.html.twig` stays the wrapper.
+    'bb_onboarding_wizard_form' => ['render element' => 'form'],
+    'user_logout_confirm' => ['render element' => 'form'],
+  ];
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Full-page entity edit/settings forms (workspace, user, team, project) are
+ * not create dialogs: they have no hull of their own, so the action row has
+ * to look like `bb_theme:form`'s — primary submit on the right, separated
+ * from the fields. Create dialogs keep the dialog hull's actions and are
+ * skipped.
+ */
+function bb_theme_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+  if (in_array($form_id, ['bb_login_form', 'bb_login_code_form', 'user_logout_confirm'], TRUE)) {
+    $form['actions']['submit']['#bb_variant'] = 'neutral';
+    if (isset($form['oauth'])) {
+      $form['oauth']['#props']['variant'] = 'neutral';
+    }
+  }
+  if ($form_id === 'user_logout_confirm') {
+    $form['#theme'] = 'user_logout_confirm';
+    $form['#attributes']['data-hx-boost'] = 'false';
+  }
+  // Only the two gate forms this ticket put in the island profile
+  // (`/oauth/authorize`, `/oauth/device`) render outside bb_theme's own
+  // form classes and don't set `#theme_wrappers` themselves — every other
+  // form does so directly in its own PHP (BbLoginForm, BbCodeForm,
+  // GroupMembersForm, BbWorkspaceJoinForm, the two dialog/create bases
+  // below). `#theme_wrappers` can only be added in PHP, so this loop exists
+  // for these two form ids only, not for every form on the site.
+  if (
+    in_array($form_id, ['simple_oauth_authorize_form', 'bb_oauth_device_verify'], TRUE)
+    && isset($form['actions'])
+  ) {
+    foreach (Element::children($form['actions']) as $key) {
+      $button = &$form['actions'][$key];
+      if (($button['#type'] ?? NULL) === 'submit') {
+        $wrappers = $button['#theme_wrappers'] ?? [];
+        if (!in_array('input__submit__bb_button', $wrappers, TRUE)) {
+          $button['#theme_wrappers'][] = 'input__submit__bb_button';
+        }
+      }
+    }
+    unset($button);
+  }
+  $object = $form_state->getFormObject();
+  if ($object instanceof GroupMembersForm) {
+    $form['#attributes']['class'] = array_merge(
+      $form['#attributes']['class'] ?? [],
+      ['flex', 'flex-col', 'gap-5', 'min-w-0'],
+    );
+  }
+  if (!$object instanceof ContentEntityFormInterface) {
+    return;
+  }
+  if ($object instanceof BbCreateDialogFormBase) {
+    return;
+  }
+  // The gate create form already states its own wrapper; appending another
+  // prints a second Create workspace button via {{ children }}.
+  if ($object instanceof BbWorkspaceCreateForm) {
+    return;
+  }
+  // Core renders these forms without the SDC form wrapper. Keep the same
+  // sibling spacing on their actual form container, including after a swap.
+  $form['#attributes']['class'] = array_merge(
+    $form['#attributes']['class'] ?? [],
+    ['flex', 'flex-col', 'gap-3', 'min-w-0'],
+  );
+  if (!isset($form['actions'])) {
+    return;
+  }
+  $form['actions']['#theme_wrappers'] = ['container__form_actions'];
+  if (isset($form['actions']['submit'])) {
+    $wrappers = $form['actions']['submit']['#theme_wrappers'] ?? [];
+    if (!in_array('input__submit__bb_button', $wrappers, TRUE)) {
+      $form['actions']['submit']['#theme_wrappers'][] = 'input__submit__bb_button';
+    }
+  }
+}
+
+/**
+ * Implements hook_page_attachments_alter().
+ *
+ * Attaches the bb_rich text editor settings to every page up front. Body
+ * forms arrive as htmx fragments (a tab, a dialog), and a fragment brings no
+ * drupalSettings: core's editor behavior then finds no `settings.editor` and
+ * attaches no Markdown toolbar. editor/drupal.editor comes up front with the
+ * settings, for the same reason bb_theme/global carries its libraries. Not
+ * in bb_theme/global: a deploy runs updatedb (bb_core_update_8052) after
+ * the code lands, and until then `editor` is not an extension to load from.
+ */
+function bb_theme_page_attachments_alter(array &$attachments): void {
+  $attachments['#cache']['contexts'][] = 'user.permissions';
+  $attachments['#cache']['tags'][] = 'config:editor.editor.bb_rich';
+  $attachments['#cache']['tags'][] = 'config:filter.format.bb_rich';
+  if (!\Drupal::moduleHandler()->moduleExists('editor')) {
+    return;
+  }
+  $format = FilterFormat::load('bb_rich');
+  if ($format === NULL || !$format->access('use')) {
+    return;
+  }
+  $attachments['#attached'] = NestedArray::mergeDeep(
+    $attachments['#attached'] ?? [],
+    \Drupal::service('plugin.manager.editor')->getAttachments(['bb_rich']),
+    ['library' => ['editor/drupal.editor']],
+  );
+}

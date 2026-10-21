@@ -1,0 +1,101 @@
+uuid: 9b3e6d12-7a4c-4f80-9e21-5d8c0a1b4e67
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_conductor.full
+  module:
+    - display_builder
+    - bb_core
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:canvas'
+            variant_id: null
+            props: {  }
+            slots:
+              main:
+                sources:
+                  -
+                    source_id: bb_entity_detail_activities
+                    source:
+                      context_mapping:
+                        entity: entity
+                    node_id: conductor_activities
+              inspector:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:inspector'
+                        variant_id: null
+                        props:
+                          surface:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          rows:
+                            sources:
+                              -
+                                source_id: component
+                                source:
+                                  component:
+                                    component_id: 'bb_theme:zone'
+                                    variant_id: null
+                                    props:
+                                      inset:
+                                        source_id: select
+                                        source:
+                                          value: none
+                                      gap:
+                                        source_id: select
+                                        source:
+                                          value: sm
+                                    slots:
+                                      heading:
+                                        sources:
+                                          -
+                                            source_id: token
+                                            source:
+                                              value: Identity
+                                            node_id: conductor_identity_heading
+                                      content:
+                                        sources:
+                                          -
+                                            source_id: entity_form
+                                            source:
+                                              operation: identity
+                                              context_mapping:
+                                                entity: entity
+                                            node_id: conductor_identity_form
+                                node_id: conductor_identity
+                          footer:
+                            sources:
+                              -
+                                source_id: bb_conductor_actions
+                                source:
+                                  context_mapping:
+                                    entity: entity
+                                node_id: conductor_actions
+                    node_id: conductor_inspector
+        node_id: conductor_canvas
+id: bb_conductor.bb_conductor.full
+targetEntityType: bb_conductor
+bundle: bb_conductor
+mode: full
+content: {  }
+hidden:
+  active: true
+  last_seen_label: true
+  node_load_label: true
+  node_states_label: true
+  node_status: true
+  search_api_excerpt: true
+

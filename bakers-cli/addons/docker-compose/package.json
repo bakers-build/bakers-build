@@ -1,0 +1,29 @@
+{
+  "name": "@bakers-build/addon-docker-compose",
+  "version": "0.1.0",
+  "description": "Generic Docker Compose discovery: containers, bound ports, in-container sockets and supervisor status for a worktree — no DDEV knowledge.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/docker-compose/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

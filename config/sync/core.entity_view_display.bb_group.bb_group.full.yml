@@ -1,0 +1,123 @@
+uuid: 9f827996-4243-4f93-9b95-237e2815278f
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_group.full
+  module:
+    - display_builder
+    - bb_core
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:canvas'
+            variant_id: null
+            props: {  }
+            slots:
+              main:
+                sources:
+                  -
+                    source_id: bb_entity_detail_activities
+                    source:
+                      context_mapping:
+                        entity: entity
+                    node_id: group_activities
+              inspector:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:inspector'
+                        variant_id: null
+                        props:
+                          surface:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          rows:
+                            sources:
+                              -
+                                source_id: component
+                                source:
+                                  component:
+                                    component_id: 'bb_theme:zone'
+                                    variant_id: null
+                                    props:
+                                      inset:
+                                        source_id: select
+                                        source:
+                                          value: none
+                                      gap:
+                                        source_id: select
+                                        source:
+                                          value: sm
+                                    slots:
+                                      heading:
+                                        sources:
+                                          -
+                                            source_id: token
+                                            source:
+                                              value: Properties
+                                            node_id: group_properties_heading
+                                      content:
+                                        sources:
+                                          -
+                                            source_id: entity_form
+                                            source:
+                                              operation: properties
+                                              context_mapping:
+                                                entity: entity
+                                            node_id: group_properties_form
+                                node_id: group_properties
+                              -
+                                source_id: component
+                                source:
+                                  component:
+                                    component_id: 'bb_theme:zone'
+                                    variant_id: null
+                                    props:
+                                      inset:
+                                        source_id: select
+                                        source:
+                                          value: none
+                                      gap:
+                                        source_id: select
+                                        source:
+                                          value: sm
+                                    slots:
+                                      heading:
+                                        sources:
+                                          -
+                                            source_id: token
+                                            source:
+                                              value: Identity
+                                            node_id: group_identity_heading
+                                      content:
+                                        sources:
+                                          -
+                                            source_id: entity_form
+                                            source:
+                                              operation: identity
+                                              context_mapping:
+                                                entity: entity
+                                            node_id: group_identity_form
+                                node_id: group_identity
+                    node_id: group_inspector
+        node_id: group_canvas
+id: bb_group.bb_group.full
+targetEntityType: bb_group
+bundle: bb_group
+mode: full
+content: {  }
+hidden:
+  description: true
+  image: true
+  search_api_excerpt: true
+

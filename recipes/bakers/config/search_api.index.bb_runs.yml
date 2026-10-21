@@ -1,0 +1,133 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - search_api.server.bb_db
+  module:
+    - bb_core
+id: bb_runs
+name: 'bakers.build runs'
+description: 'Runs, for the project and team Runs listings (BB-454).'
+read_only: false
+field_settings:
+  agent:
+    label: Agent
+    datasource_id: 'entity:bb_run'
+    property_path: agent
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  changed:
+    label: Changed
+    datasource_id: 'entity:bb_run'
+    property_path: changed
+    type: date
+    dependencies:
+      module:
+        - bb_core
+  closed:
+    label: Closed
+    datasource_id: 'entity:bb_run'
+    property_path: closed
+    type: boolean
+    dependencies:
+      module:
+        - bb_core
+  conductor_id:
+    label: Conductor
+    datasource_id: 'entity:bb_run'
+    property_path: conductor_id
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  duration_s:
+    label: 'Duration in seconds'
+    datasource_id: 'entity:bb_run'
+    property_path: duration_s
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  identifier:
+    label: 'Ticket identifier'
+    datasource_id: 'entity:bb_run'
+    property_path: 'ticket_id:entity:identifier'
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  project_id:
+    label: Project
+    datasource_id: 'entity:bb_run'
+    property_path: 'ticket_id:entity:project_id'
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  project_team_ids:
+    label: 'Project teams'
+    datasource_id: 'entity:bb_run'
+    property_path: 'ticket_id:entity:project_id:entity:teams'
+    type: integer
+    dependencies:
+      module:
+        - bb_core
+  started_at:
+    label: 'Started at'
+    datasource_id: 'entity:bb_run'
+    property_path: started_at
+    type: date
+    dependencies:
+      module:
+        - bb_core
+  state:
+    label: 'Run state'
+    datasource_id: 'entity:bb_run'
+    property_path: state
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  state_at_start:
+    label: 'Ticket state at start'
+    datasource_id: 'entity:bb_run'
+    property_path: state_at_start
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  ticket_title:
+    label: 'Ticket title'
+    datasource_id: 'entity:bb_run'
+    property_path: 'ticket_id:entity:title'
+    type: text
+    dependencies:
+      module:
+        - bb_core
+datasource_settings:
+  'entity:bb_run':
+    bundles:
+      default: true
+      selected: {  }
+    languages:
+      default: true
+      selected: {  }
+processor_settings:
+  add_url: {  }
+  aggregated_field: {  }
+  custom_value: {  }
+  entity_type: {  }
+  bb_read_scope: {  }
+  language_with_fallback: {  }
+  rendered_item: {  }
+tracker_settings:
+  default:
+    indexing_order: fifo
+options:
+  cron_limit: 50
+  delete_on_fail: true
+  index_directly: true
+  track_changes_in_references: true
+server: bb_db

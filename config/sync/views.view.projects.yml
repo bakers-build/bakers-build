@@ -1,0 +1,928 @@
+uuid: a1dac82c-c963-4954-8813-cd81128fd85f
+langcode: en
+status: true
+dependencies:
+  module:
+    - better_exposed_filters
+    - bb_core
+    - user
+id: projects
+label: Projects
+module: views
+description: |-
+  The projects of the workspace named in the URL, five columns. A LISTING IS A
+  VIEW: the row this replaced was a bb_project.bb_project.teaser view mode,
+  and BB-389 removed it because a list row was never a view mode.
+
+  THE ROWS COME FROM THE URL, and that is this view's own argument rather than the
+  query-access layer's doing. BbWorkspaceReadScope resolves an ACCOUNT's scope —
+  the union of every OG membership, with no workspace parameter — so for a user
+  who belongs to several workspaces it admits more rows than the URL asked for.
+  The `workspace_id` argument narrows to the one workspace, walking the group_id
+  relationship because bb_project carries no workspace field of its own. Its
+  `default_action` is `access denied` rather than a fallback to all: a view that
+  listed every workspace the moment a route stopped supplying the parameter is how
+  ambient scoping turns into a disclosure. Query access stays the floor
+  underneath — the two layers answer two different questions.
+
+  THE TWO RELATIONSHIPS DISAGREE ABOUT `required` ON PURPOSE. owner_user_id is a
+  LEFT JOIN, and the reason stated here used to be that BbProject::owner_user_id
+  is not setRequired(TRUE). That is now FALSE — the field has carried
+  setRequired(TRUE) since 66780aa93 — and the LEFT JOIN is still right, so only
+  the rationale is corrected. setRequired() is a VALIDATION constraint on a write
+  to the project; it is not delete protection on the account referenced. bb_core
+  guards that nowhere — no preDelete, no cascade, no reference constraint — so a
+  stored project can still be left pointing at a deleted user, and an inner join
+  on it drops the whole project from this listing the moment that happens: no
+  message, no empty cell, no row. group_id stays an INNER JOIN, and for a positive
+  reason rather than the same one: it carries the workspace argument, so a project
+  whose group is gone has no workspace to be listed under, and the honest answer
+  is no workspace rather than every workspace. That the referenced rows can vanish
+  at all is a data-integrity gap, not this listing's to paper over.
+
+  TWO DESIGNED COLUMNS ARE ABSENT, NAMED HERE RATHER THAN LEFT TO AN EMPTY SPACE.
+  Teams is absent, and the reason stated here used to be that bb_project carries
+  no `teams` field at all. That is now FALSE, in the same way the owner_user_id
+  sentence above was: BB-419 added `teams` as a required, unlimited-cardinality
+  entity_reference (BbProject.php), so the n:m assignment DOES exist and the
+  cancelled BB-356 no longer describes the state of the field. What is true is
+  that this listing still renders no teams column, and no decision has been
+  recorded that it should not — so this is an open question about the listing
+  rather than a structural impossibility, and it is named as one here instead of
+  being justified by a field that is gone from the reasoning. Environments is
+  absent for a reason that does still hold: it is a COUNT over a multi-value
+  entity reference and core views has no field for that; a column showing the
+  first referenced environment instead of the count would be a different and
+  wrong value.
+
+  IT COMPOSES A CANVAS WHOSE HEADING LIVES IN THE SHELL. The screen title,
+  tabs and New-project action are the `page_header` island on
+  `island.profile.bb_shell`. This display's tree is `bb_theme:canvas`
+  with a `bb_theme:zone` in `main` wrapping `view_rows` plus `view_pager`.
+  The `empty` area is untouched, because ui_patterns' own `view_rows` source
+  renders a view's empty areas when it has no rows.
+
+  THE ROWS ARE STILL CORE'S `table` WITH `row: type: fields`, AND NOT FOR THE
+  REASON D1 GAVE. D1 priced the alternative as a bespoke ui_patterns Source, and that
+  is not what it costs: a PRESENTER TEMPLATE — a markup-free template that
+  transforms what views handed it and include()s the component, reached by core's
+  own theme suggestion (ViewExecutable::buildThemeFunctions() emits
+  views_view_table__projects) — needs no plugin and would leave this file exactly
+  as it is. What IS true is that site building cannot do it: `rows` is a PROP
+  holding an array of objects, and no shipped ui_patterns source serves such a
+  prop type — ui_patterns_views's view_rows declares `prop_types: [slot]`, and
+  across all 22 shipped sources the prop types are attributes, boolean, enum,
+  enum_list, enum_set, identifier, links, list, number, slot, string, url and
+  variant. That absence is the condition under which a presenter is the right
+  answer rather than a trick. BB-413 owns that template; when it lands this
+  listing renders through bb_theme:table with no change here.
+tag: ''
+base_table: bb_project
+base_field: id
+display:
+  default:
+    id: default
+    display_title: Master
+    display_plugin: default
+    position: 0
+    display_options:
+      fields:
+        name_avatar:
+          id: name_avatar
+          table: bb_project
+          field: name
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: name
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: bb_entity_avatar
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        name:
+          id: name
+          table: bb_project
+          field: name
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: name
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        key:
+          id: key
+          table: bb_project
+          field: key
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: key
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        description:
+          id: description
+          table: bb_project
+          field: description
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: description
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: basic_string
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        open_tickets:
+          id: open_tickets
+          table: bb_project
+          field: open_tickets
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_reference_count
+          label: ''
+          exclude: false
+        conductor_tickets:
+          id: conductor_tickets
+          table: bb_project
+          field: conductor_tickets
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_reference_count
+          label: ''
+          exclude: false
+        closed_tickets:
+          id: closed_tickets
+          table: bb_project
+          field: closed_tickets
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_reference_count
+          label: ''
+          exclude: false
+        created:
+          id: created
+          table: bb_project
+          field: created
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: created
+          plugin_id: field
+          label: Created
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: timestamp_ago
+          settings:
+            future_format: '@interval hence'
+            past_format: '@interval ago'
+            granularity: 1
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+      pager:
+        type: full
+        options:
+          offset: 0
+          items_per_page: 50
+          total_pages: null
+          id: 0
+          tags:
+            next: ››
+            previous: ‹‹
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
+      exposed_form:
+        type: basic
+        options:
+          submit_button: Apply
+          reset_button: false
+          reset_button_label: Reset
+          exposed_sorts_label: 'Sort by'
+          expose_sort_order: true
+          sort_asc_label: Asc
+          sort_desc_label: Desc
+      access:
+        type: perm
+        options:
+          perm: 'view bb_project'
+      cache:
+        type: tag
+        options: {  }
+      empty:
+        bb_empty:
+          id: bb_empty
+          table: views
+          field: bb_empty
+          relationship: none
+          group_type: group
+          admin_label: 'No results text'
+          plugin_id: bb_empty
+          empty: true
+          content: 'There are no projects in this workspace yet.'
+          tokenize: false
+      sorts:
+        name:
+          id: name
+          table: bb_project
+          field: name
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: name
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: 'Project name'
+            field_identifier: name
+          exposed: true
+        key:
+          id: key
+          table: bb_project
+          field: key
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: key
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: Key
+            field_identifier: key
+          exposed: true
+        name_1:
+          id: name_1
+          table: bb_group
+          field: name
+          relationship: group_id
+          group_type: group
+          admin_label: ''
+          entity_type: bb_group
+          entity_field: name
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: Group
+            field_identifier: name_1
+          exposed: true
+        name_2:
+          id: name_2
+          table: users_field_data
+          field: name
+          relationship: owner_user_id
+          group_type: group
+          admin_label: ''
+          entity_type: user
+          entity_field: name
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: Owner
+            field_identifier: name_2
+          exposed: true
+        changed:
+          id: changed
+          table: bb_project
+          field: changed
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_project
+          entity_field: changed
+          plugin_id: date
+          order: DESC
+          expose:
+            label: Updated
+            field_identifier: changed
+          exposed: true
+          granularity: second
+        bb_tie_breaker:
+          id: bb_tie_breaker
+          table: bb_project
+          field: bb_tie_breaker
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_tie_breaker
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: bb_tie_breaker
+          exposed: false
+      arguments:
+        workspace_id:
+          id: workspace_id
+          table: bb_group
+          field: workspace_id
+          relationship: group_id
+          group_type: group
+          admin_label: Workspace
+          entity_type: bb_group
+          entity_field: workspace_id
+          plugin_id: entity_target_id
+          default_action: 'access denied'
+          exception:
+            value: all
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: false
+          validate:
+            type: none
+            fail: 'not found'
+          validate_options: {  }
+          break_phrase: false
+          not: false
+      filters: {  }
+      style:
+        type: bb_list
+        options:
+          grouping: {  }
+          uses_fields: false
+          pattern:
+            avatar:
+              - name_avatar
+            headline:
+              - name
+            meta: {  }
+            description:
+              - description
+            right:
+              - open_tickets
+              - conductor_tickets
+              - closed_tickets
+            right_meta:
+              - created
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      query:
+        type: views_query
+        options:
+          query_comment: ''
+          disable_sql_rewrite: false
+          distinct: false
+          replica: false
+          query_tags: {  }
+      relationships:
+        group_id:
+          id: group_id
+          table: bb_project
+          field: group_id
+          relationship: none
+          group_type: group
+          admin_label: Group
+          entity_type: bb_project
+          entity_field: group_id
+          plugin_id: standard
+          required: true
+        owner_user_id:
+          id: owner_user_id
+          table: bb_project
+          field: owner_user_id
+          relationship: none
+          group_type: group
+          admin_label: Owner
+          entity_type: bb_project
+          entity_field: owner_user_id
+          plugin_id: standard
+          required: false
+      header: {  }
+      footer: {  }
+      display_extenders:
+        display_builder:
+          profile: default
+          sources:
+            -
+              source_id: component
+              source:
+                component:
+                  component_id: 'bb_theme:zone'
+                  variant_id: null
+                  props: {  }
+                  slots:
+                    content:
+                      sources:
+                        -
+                          source_id: view_rows
+                          source: {  }
+                          node_id: projects_rows
+                        -
+                          source_id: view_pager
+                          source: {  }
+                          node_id: projects_pager
+              node_id: projects_canvas
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'url.query_args:sort_by'
+        - 'url.query_args:sort_order'
+        - user.permissions
+      tags: {  }
+  workspace_list:
+    id: workspace_list
+    display_title: Projects
+    display_plugin: page
+    position: 1
+    display_options:
+      title: Projects
+      exposed_form:
+        type: bef
+        options:
+          submit_button: Search
+          reset_button: false
+          reset_button_label: Reset
+          exposed_sorts_label: 'Sort by'
+          expose_sort_order: true
+          sort_asc_label: Asc
+          sort_desc_label: Desc
+          text_input_required: 'Select any filter and click on Apply to see results'
+          text_input_required_format: bb_rich
+          bef:
+            general:
+              autosubmit: true
+              auto_submit_sort_only: false
+              autosubmit_breakpoint: ''
+              autosubmit_exclude_textfield: false
+              autosubmit_textfield_delay: 500
+              autosubmit_textfield_minimum_length: 3
+              autosubmit_hide: true
+              input_required: false
+              allow_secondary: false
+              secondary_label: 'Advanced options'
+              secondary_open: false
+              reset_button_always_show: false
+            sort:
+              plugin_id: default
+              advanced:
+                combine: true
+                combine_rewrite: |-
+                  Project name Asc|Project name A–Z
+                  Project name Desc|Project name Z–A
+                  Key Asc|Key A–Z
+                  Key Desc|Key Z–A
+                  Group Asc|Group A–Z
+                  Group Desc|Group Z–A
+                  Owner Asc|Owner A–Z
+                  Owner Desc|Owner Z–A
+                  Updated Desc|Updated, newest first
+                  Updated Asc|Updated, oldest first
+                combine_param: sort_bef_combine
+                reset: false
+                reset_label: ''
+                collapsible: false
+                collapsible_label: 'Sort options'
+                is_secondary: false
+      empty:
+        bb_empty:
+          id: bb_empty
+          table: views
+          field: bb_empty
+          relationship: none
+          group_type: group
+          admin_label: 'No results text'
+          plugin_id: bb_empty
+          empty: true
+          content: 'No projects found.'
+          tokenize: false
+      arguments:
+        workspace_id:
+          id: workspace_id
+          table: bb_group
+          field: workspace_id
+          relationship: group_id
+          group_type: group
+          admin_label: Workspace
+          entity_type: bb_group
+          entity_field: workspace_id
+          plugin_id: entity_target_id
+          default_action: 'access denied'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: true
+          validate:
+            type: bb_workspace_reference
+            fail: 'not found'
+          validate_options:
+            bundles: {  }
+            access: false
+            operation: view
+            multiple: 0
+          break_phrase: false
+          not: false
+      filters:
+        combine:
+          id: combine
+          table: views
+          field: combine
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: combine
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: combine_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: combine_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: title
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: 'Name or key'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          fields:
+            name: name
+            key: key
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      defaults:
+        empty: false
+        title: false
+        exposed_form: false
+        arguments: false
+        filters: false
+        filter_groups: false
+      display_extenders:
+        display_builder:
+          profile: default
+          sources:
+            -
+              source_id: component
+              source:
+                component:
+                  component_id: 'bb_theme:zone'
+                  variant_id: null
+                  props: {  }
+                  slots:
+                    content:
+                      sources:
+                        -
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:filters'
+                              variant_id: null
+                              props:
+                                layout:
+                                  source_id: select
+                                  source:
+                                    value: bar
+                                label:
+                                  source_id: textfield
+                                  source:
+                                    value: 'Search and sort'
+                              slots:
+                                controls:
+                                  sources:
+                                    -
+                                      source_id: bb_view_search
+                                      source: {  }
+                                      node_id: projects_workspace_list_search
+                          node_id: projects_workspace_list_toolbar
+                        -
+                          source_id: view_rows
+                          source: {  }
+                          node_id: projects_list_rows
+                        -
+                          source_id: view_pager
+                          source: {  }
+                          node_id: projects_list_pager
+                        -
+                          source_id: view_exposed
+                          source: {  }
+                          node_id: projects_list_exposed
+              node_id: projects_list_zone
+      path: _workspace/%bb_workspace/projects
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - 'url.query_args:sort_by'
+        - 'url.query_args:sort_order'
+        - user.permissions
+      tags: {  }

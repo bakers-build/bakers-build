@@ -1,0 +1,5 @@
+entity.bb_connector.add_form:
+  route_name: entity.bb_connector.add_form
+  title: 'Add connector'
+  appears_on:
+    - entity.bb_connector.collection

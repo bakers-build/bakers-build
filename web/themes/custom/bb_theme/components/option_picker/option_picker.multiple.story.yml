@@ -1,0 +1,52 @@
+component: bb_theme:option_picker
+name: Multiple (long value)
+variant: field
+props:
+  variant: field
+  label: Labels
+  icon: tag
+  # Four values, one of them longer than any pill can show. This is the case C18
+  # and C19 exist for: the trigger states the first value plus how many more
+  # there are instead of hiding the count behind a submitted `[]`, the long term
+  # is bounded and truncated rather than stretching the row, and its full text
+  # stays reachable through the title attribute and the accessible name below.
+  value_labels:
+    - designbook-scene-regression-guard
+    - frontend
+    - backend
+    - infra
+  aria_label: Change labels. Currently designbook-scene-regression-guard, frontend, backend and infra are set.
+  open: false
+  multiple: true
+  name: labels
+  id: multi-labels
+  values:
+    - designbook-scene-regression-guard
+    - frontend
+    - backend
+    - infra
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: labels
+        multiple: true
+        clearable: true
+        clear_label: No labels
+        options:
+          - value: designbook-scene-regression-guard
+            label: designbook-scene-regression-guard
+            selected: true
+          - value: frontend
+            label: frontend
+            selected: true
+          - value: backend
+            label: backend
+            selected: true
+          - value: infra
+            label: infra
+            selected: true
+          - value: docs
+            label: docs
+            selected: false

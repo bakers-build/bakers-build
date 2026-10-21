@@ -1,0 +1,533 @@
+{# THE ONLY TEMPLATE IN THIS THEME WITH A `<tr>`, and the place the cell macro lives.
+
+   A LISTING WITH COLUMNS, AND IT OWNS ITS ROWS. `columns` is the ordered column
+   set, `rows` is the data, and a `<td>` is emitted PER COLUMN, addressed by that
+   column's `key`. That keying is the whole change: a row cannot carry a cell for
+   a column that does not exist, and a column with no cell renders an empty `<td>`
+   instead of shifting every value one place to the left. Five row components used
+   to own these cells between them, which is how three headers came to sit over
+   rows that emitted nine `<td>` each on a delivered screen — invalid markup that
+   rendered without complaint, because the container could not see its own cells.
+
+   `rows` IS A PROP AND NOT A SLOT. A slot is how the previous architecture
+   injected an already-rendered row, and the `head`/`body` slots are gone for that
+   reason alone. What makes the prop legal is that a cell is ADDRESSED BY ITS
+   COLUMN: eight of the nine kinds below are a handful of strings, and the ninth
+   — `rendered` — carries markup a field formatter already produced, but it is
+   still keyed against a column and still emits exactly one `<td>`. That is the
+   whole difference from a slot, which would let a caller inject a `<td>` no
+   column asked for. The one slot left is `empty`, the collapsed variant's
+   confirmation strip — a sentence a screen writes, not a value a listing
+   carries.
+
+   HOW A DRUPAL VIEW BINDS THIS, since that is now a real caller rather than a
+   hypothetical — and the caller is EVERY table view in this theme, not one
+   screen. `views-view-table.html.twig` is a GLOBAL style template with no
+   per-view suffix: it maps Views' own `header` onto `columns` and each row's
+   rendered field output onto a `rendered` cell keyed by the field id. So a
+   table view gets this component by existing. The ticket list's nine real Views
+   fields and the delivered team members screen (`views.view.bb_team_members`)
+   both arrive here through that one file.
+
+   THERE IS NO PER-VIEW PHP, AND THAT IS THE POINT. No preprocess hook, no
+   style plugin, nothing to alter per view — the component fits any table view
+   with nothing to maintain alongside it, which is the property that was asked
+   for rather than one that happened. It is recorded in the component and not
+   only in the binding because it is exactly what a later “just add a
+   preprocess for this one view” would quietly destroy: the markup would still
+   render, every gate would still pass, and the guarantee would be gone.
+
+   WHAT THE TEMPLATE CANNOT DERIVE, IT ASKS THE ROW ENTITY — AND IT ASKS
+   WITHOUT AN INTERFACE. This paragraph named `BbTableRowInterface` until
+   2026-09-04, and that class is DELETED: the human's instruction was that it
+   "must be gone", and `TableRowFaceTest` fails if it comes back. What the
+   binding does now is ask the entity for its phase and let `|default('')`
+   absorb a missing method — an entity that cannot answer declines, and
+   declining needs no contract to be legal. The team screen's `og_membership`
+   rows render with no accent while a ticket's rows carry one, out of the same
+   template and with no branch that knows which is which, and an absent `accent`
+   falls through to the transparent rail.
+
+   THE ROW TARGET WENT WITH THE INTERFACE, and this component still HAS the
+   prop. `views-view-table.html.twig` used to ask `getBbRowUrl` and pass the
+   answer; it does not any more, measured before deleting it — no JavaScript and
+   no CSS in this theme read `data-row-url`, and its only readers were the tests
+   asserting it. So `url` is a prop no caller in the product fills, and the
+   `{% if row.url %}` below is dead on every live surface while remaining true
+   of the component: hand a row a `url` and it still emits the attribute, which
+   is what `table.delivery.story.yml` and `table.unassigned.story.yml` exercise.
+   It is kept rather than deleted because the component's contract is not the
+   binding's, and it is described as unfilled rather than as live because a
+   reader who believed the old sentence would go looking for the view that
+   supplies it.
+
+   SO VIEWS OWNS the column set, the per-field access check and the sort
+   affordance; each column renders itself through its own formatter; and the
+   faces still live in one place, because a formatter reaches `cell()` by
+   component id — an `{% import 'bb_theme:table' %}` resolves from a render
+   array exactly as it resolves from `list`. That is what keeps a badge in a
+   table cell and a badge produced by a field formatter one code path and not
+   two that agree.
+
+   WHERE THE MACRO LIVES, AND WHY IT LIVES HERE. `cell()` is declared by this
+   template and imported by `list` through `{% import 'bb_theme:table' %}`, so
+   exactly one place in the theme knows what a badge cell or a person cell looks
+   like. It is not a bare `components/_cell.twig`, and that is a resolution fact
+   rather than a preference: Drupal's `ComponentLoader` resolves ONLY component
+   ids, and its `@bb_theme` namespace points at `templates/` and at the theme
+   root — never at `components/` — while the Storybook loader points the same
+   namespace AT `components/`. So `@bb_theme/_cell.twig` names two different
+   files in the two environments and a component id names the same file in both.
+   The component id is the only portable address a shared macro can have, so the
+   macro lives inside a component, and it lives inside this one because a table
+   cell is the shape it was written for. Importing a template runs none of its
+   body, so `list` pays nothing for the import but the macro.
+
+   THE SORTABLE HEADER IS WHAT MAKES THIS A TABLE rather than a list with lines,
+   and it survives this rewrite unchanged — it only moved from `headers` to
+   `columns`.
+
+   EVERY OPTIONAL CELL FIELD IS GUARDED IN `cell()`, and the guard is load-bearing
+   rather than tidy. A cell that omits `icon`, `suffix`, `mail`, `clear_label`,
+   `create_label` or `picker_id` used to forward NULL to a prop the composed
+   component types as a string, and core's validator rejects exactly that:
+   "[bb_theme:badge/icon] NULL value found, but a string or an object is
+   required." It never surfaced on the running site for one reason only — the
+   ui_patterns node visitor unsets NULL props before the validator sees them — so
+   this component was rendering its own optional props on a contrib module's side
+   effect. A `|default('')` on each of the six ends that dependency and changes no
+   output, because every consumer already reads an empty string as absent: badge
+   tests `icon` and `suffix` for truth, person tests `mail`, `option_list` falls
+   back to `— none —` and `+ New item`, and `option_picker` falls back to its own
+   base id.
+
+   WHERE EACH CELL KIND IS EXERCISED, because a keyed cell set is only as good as
+   its coverage, and no single story shows all eight. `default` is this
+   component's REFERENCE render — the nine-column ticket list — and it carries
+   five kinds: `mono` for the identifier, `text` in all three emphases, `badge`
+   plain and with an `icon`, a `dot` and a `suffix`, `person`, and `link`. It is
+   also the only story that shows all three sort states side by side — `asc` (this
+   IS the sort column), `none` (sortable, not current) and `sort` ABSENT (not
+   sortable) — with `num: true` on the column that is read down rather than
+   across, and its claim cell carries the whole lease badge in both of its
+   answers: `tone: lease` with `mono: true`, and `mine: true` where the lease is
+   the reader's own rather than somebody else's. `picker` and `masked` are
+   exercised by the `list` stories, which are the surfaces that carry them.
+   `rendered` is covered by a TEST and not by a story, which is a deliberate
+   choice and is recorded rather than left to be discovered: a story would show
+   only that markup appears, while the thing that can actually rot is that a
+   `MarkupInterface` prints once where a plain string does not. Telling those
+   two apart needs two renders compared against each other, and needs core's
+   validator called directly, because the Storybook build validates no props at
+   all.
+   `bare` is the cover for the guards above: one row whose badge, person and
+   picker cells omit all six optional fields, so an edit that drops a guard has
+   something to fail against. `wired` is the cover for the form-wired options:
+   a `picker` cell with a submitted `name` and an `action` cell with `href` and
+   `hx`. #}
+{% import _self as cells %}
+
+{% macro cell(c) %}
+  {#- ONE CELL, NINE KINDS, and the only place any of them is decided.
+
+      `text` IS THE `else` BRANCH DELIBERATELY. An unknown `kind`, or a cell with
+      no `kind` at all, renders its value as plain text — so a mapping mistake
+      shows up as unstyled content that a reviewer sees, rather than as an empty
+      cell that looks like missing data. Failing visibly beats failing silently in
+      a layer nothing type-checks.
+
+      IT COMPOSES `badge`, `person`, `option_picker`/`option_list` and `button`,
+      AND NOTHING ELSE. Every other kind is a span this macro owns outright. A
+      value shape the nine cannot express is the signal to add a TENTH kind here,
+      deliberately — never to reintroduce a slot, which would buy back exactly the
+      freedom the container exists to remove. That rule has been exercised twice
+      now. `action` is the eighth: seven kinds rendered a value the record HOLDS
+      and none of them was a control, so a row action had nowhere to go.
+      `rendered` is the ninth: a Views field decides its own face through its
+      formatter and hands this template finished markup rather than data. Neither
+      is a slot, and the difference is not cosmetic — a slot injects a whole
+      `<td>` and escapes the keying, while both of these are addressed by a
+      column and emit exactly the one `<td>` that column asked for. `status` is
+      the tenth: a workflow state shown as a glyph rather than a word, which a
+      badge (label required, text first) cannot be. #}
+  {%- set emphasis_map = {
+    'faint': 'text-text-faint',
+    'strong': 'font-semibold text-text'
+  } -%}
+  {%- if c.kind == 'mono' -%}
+    {#- A machine name: an id, a branch, a key. The FACE is the information — it
+        tells a reader to match the string character by character instead of
+        reading it — which is why the face is a kind of its own and not an
+        emphasis. #}
+    <span class="font-mono text-mono text-text-light">{{ c.value }}</span>
+  {%- elseif c.kind == 'link' -%}
+    {#- The row's VISIBLE affordance. A `<tr>` cannot be wrapped in an anchor and
+        inventing one inside a cell would add a `<td>` no column asked for, so a
+        row that is reachable says so in a column of its own. Underline on hover
+        AND on focus-visible: a keyboard reader gets the same signal as a mouse.
+        `full_load` opts the anchor out of the island's htmx boost, so a link to
+        a FORM PAGE is a full document load and the form's `#action` placeholder
+        is replaced instead of posting to a 404 (see the prop's description). #}
+    {%- if c.external -%}
+      {#- An address outside bakers.build: styled like a prose link, opened apart. #}
+      <a class="text-body text-link underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring break-all" href="{{ c.url|default('#') }}" target="_blank" rel="noopener noreferrer">{{ c.value }}</a>
+    {%- else -%}
+    <a class="{{ c.mono ? 'font-mono font-semibold text-mono' : 'text-body' }} text-text no-underline hover:underline focus-visible:underline"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
+    {%- endif -%}
+  {%- elseif c.kind == 'badge' -%}
+    {#- With `url` a badge is a linked chip; hover dims it, because underline
+        does not paint through an inline-flex child. #}
+    {%- if c.url is defined and c.url is not empty -%}
+    <a class="inline-flex rounded-sm no-underline transition-opacity duration-fast hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url }}">
+    {%- endif -%}
+    {{ include('bb_theme:badge', {
+      label: c.label,
+      tone: c.tone|default('neutral'),
+      dot: c.dot|default(false),
+      icon: c.icon|default(''),
+      suffix: c.suffix|default(''),
+      mono: c.mono|default(false),
+      mine: c.mine|default(false),
+    }, with_context = false) }}
+    {%- if c.url is defined and c.url is not empty %}</a>{% endif -%}
+  {%- elseif c.kind == 'person' -%}
+    {#- THE VARIANT IS DERIVED FROM `mail`, and that is the cell's field list
+        talking rather than cleverness. `person` itself says `full` is "an identity
+        that is the subject of its row" and `compact` is "an identity that is a
+        control or a cell"; a cell that was handed a mail address is the first kind
+        and one that was not is the second. Hard-coding `compact` would silently
+        drop the mail a members list passes, and adding a `variant` field to the
+        cell would let a mapping ask for a two-line identity in a table row. #}
+    {#- `picture`, `image_fit` and `size` pass through: a listing row's leading
+        avatar is a person cell with no name, an image and `size: md`. #}
+    {#- `name_hidden` keeps the circle alone, a row's right-hand assignee: the
+        name moves into the tooltip and, through `role="img"`, into the
+        accessible name, so the person is still named rather than only coloured. #}
+    {%- set subject = c.mail is not empty -%}
+    {%- set name_hidden = c.name_hidden|default(false) and not subject -%}
+    {{ include('bb_theme:person', {
+      attributes: name_hidden ? create_attribute({ 'role': 'img', 'aria-label': c.display_name|default(c.initials), 'title': c.display_name|default(c.initials) }) : null,
+      variant: subject ? 'full' : 'compact',
+      size: c.size|default(subject ? 'md' : 'sm'),
+      display_name: name_hidden ? '' : c.display_name|default(''),
+      initials: c.initials,
+      color: c.color|default('running'),
+      mail: c.mail|default(''),
+      picture: c.picture|default(''),
+      image_fit: c.image_fit|default('cover'),
+    }, with_context = false) }}
+  {%- elseif c.kind == 'status' -%}
+    {#- Working vs not: a filled disc while the row is in coding, an empty
+        dashed ring otherwise. The rail carries occupancy and review; this
+        glyph does not. The exact state label is the tooltip and, via
+        `role="img"`, the accessible name. #}
+    {%- set working = c.working|default(false) -%}
+    <span role="img" aria-label="{{ c.label }}" title="{{ c.label }}" class="inline-flex shrink-0 items-center {{ working ? 'text-text' : 'text-text-faint' }}">
+      {{- include('bb_theme:icon', { name: working ? 'status-running' : 'status-prepare', size: 'lg' }, with_context = false) -}}
+    </span>
+  {%- elseif c.kind == 'picker' -%}
+    {#- THE ONE INTERACTIVE CELL, and it needs no new rule: the values it offers
+        are reversible, so `action-pattern.md` › *Inline edit* applies unchanged —
+        the pick IS the write, no save button and no confirmation. The inline
+        variant shows no visible field name, so the accessible name carries both
+        the field and its current value; the panel markup comes from `option_list`
+        so it exists in one place only.
+
+        `multiple` DEFAULTS TO FALSE and is not derived from how many values
+        happen to be picked. `aria-multiselectable` is a statement about the FIELD,
+        and a multi-value field holding one value would otherwise be announced as
+        a single choice.
+
+        A PICKER CELL CARRIES WHAT THE PICKER NEEDS, and the five fields below are
+        why. `clearable`/`clear_label` and `creatable`/`create_label` are declared
+        by `option_list`, because a clear row and a create row ARE rows of the
+        listbox (`option_list` says so at length); `icon` is declared by
+        `option_picker`, because the icon sits on the trigger. So each field goes
+        to whichever of the two owns it — the cell is the union of both contracts,
+        not a guess at one. Without `clearable` a field cannot be EMPTIED from a
+        rail at all: the clear row is the only unset affordance the design has,
+        and its absence is a lost capability rather than a lost decoration.
+
+        `name` is the submitted field name, so the cell can live in a real form:
+        `option_list` renders real inputs under it and a clearable clear row.
+        Without it the name is derived from the label, for inert scenes. The
+        accessible name keeps reading the label. #}
+    {%- set field = c.name|default(c.label|lower) -%}
+    {%- set spoken = c.label|lower -%}
+    {%- set picked = c.value_labels|default([]) -%}
+    {%- set panel %}
+      {{- include('bb_theme:option_list', {
+        multiple: c.multiple|default(false),
+        name: field,
+        input_name: c.name|default(''),
+        clear_control: c.name is not empty,
+        options: c.options|default([]),
+        clearable: c.clearable|default(false),
+        clear_label: c.clear_label|default(''),
+        creatable: c.creatable|default(false),
+        create_label: c.create_label|default(''),
+      }, with_context = false) -}}
+    {% endset -%}
+    {{ include('bb_theme:option_picker', {
+      variant: 'inline',
+      label: c.label,
+      name: field,
+      id: c.picker_id|default(''),
+      multiple: c.multiple|default(false),
+      icon: c.icon|default(''),
+      aria_label: 'Change ' ~ spoken ~ '. ' ~ (picked is not empty ? 'Currently ' ~ picked|join(', ') ~ '.' : 'Nothing is set.'),
+      value_labels: picked,
+      searchable: c.searchable|default(false),
+      selected_chips: c.selected_chips|default(false),
+      selected: c.selected|default([]),
+      open: c.open|default(false),
+      options: panel,
+    }, with_context = false) }}
+  {%- elseif c.kind == 'masked' -%}
+    {#- A VALUE THAT MUST NOT BE PRINTED. Normally no value reaches this template
+        at all — masking happens upstream in the formatter that reads the field, so
+        there is nothing sensitive in the render context to leak, and the dots
+        stand for a value this template never saw.
+
+        THE DOTS ARE `role="img"` WITH AN ACCESSIBLE NAME, carried over from the
+        component this absorbed. Six bullet characters read aloud are six bullet
+        characters; the name is what tells a screen reader that a value exists and
+        is withheld. `select-none` keeps them out of a copied selection, where they
+        would look like the value. #}
+    {%- if c.revealed and c.value is not empty -%}
+      <span class="font-mono text-mono text-text-light">{{ c.value }}</span>
+    {%- else -%}
+      <span class="text-caption text-text-faint tracking-widest leading-none select-none" role="img" aria-label="value hidden">••••••</span>
+    {%- endif -%}
+  {%- elseif c.kind == 'action' -%}
+    {#- THE ONE KIND THAT IS NOT A VALUE, and the reason it exists at all. Seven
+        kinds render something a record HOLDS; this one renders something a reader
+        can DO to the record. It was added deliberately, on the rule this macro
+        states above: a shape the kinds cannot express is answered by a new kind
+        and never by a slot. The shape that asked for it was a membership's remove
+        control — a whole sentence serving as an icon-only button's accessible
+        name, which a `text` cell would have printed as prose on every item.
+
+        ITEM-SCOPED, not members-only. It acts on the record the cell belongs to,
+        so any listing can carry a row action; nothing here knows what a
+        membership is.
+
+        ITS FIELD LIST IS `button`'S, and that is the whole contract — `label`,
+        `icon`, `icon_only`, `variant`. There is no `aria_label`: `button` declares
+        none, and moves `label` into `aria-label` when the control is icon-only, so
+        a second name field would be a second copy of one name that could disagree
+        with the first. The `label` of an icon-only action is therefore expected to
+        be a SENTENCE naming the effect, which is what
+        `action-pattern.md` asks of a single-step action with a server-side one.
+
+        With `href` the control is a link that works without JavaScript; `hx`
+        adds the create-trigger htmx attributes, so a row action can open a
+        dialog. Without either it stays a `<button type="button">`.
+
+        `ghost` IS THE DEFAULT WEIGHT. A row action is secondary to the row it sits
+        on; a listing where every item carries a primary-weight button emphasises
+        nothing, which is the same argument the add surface's single `lead` makes. #}
+    {%- set action_attributes = create_attribute() -%}
+    {%- for key in ['get', 'target', 'select', 'swap'] -%}
+      {%- if c.hx[key] is defined and c.hx[key] is not empty -%}
+        {%- set action_attributes = action_attributes.setAttribute('data-hx-' ~ key, c.hx[key]) -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{ include('bb_theme:button', {
+      variant: c.variant|default('ghost'),
+      type: 'button',
+      href: c.href|default(''),
+      attributes: action_attributes,
+      icon_only: c.icon_only|default(false),
+      label: c.label,
+      icon: c.icon ? include('bb_theme:icon', { name: c.icon, size: 'sm' }, with_context = false) : null,
+    }, with_context = false) }}
+  {%- elseif c.kind == 'input' -%}
+    {#- AN EDITABLE VALUE, the eleventh kind, for a timesheet cell: a text input
+        under the cell's own `name`, carrying the typed text back when the form
+        is refused so nothing the reader typed is lost. `label` is its accessible
+        name, because a grid cell has no visible label of its own. `error` is
+        tied to the input with `aria-describedby` and marks it invalid; `hint`
+        names a state the value is in (Proposed); `url` + `url_label` open the
+        whole entry; `hidden` carries the entry's identity and version so the
+        save can refuse a stale cell. The entry link is an icon in the cell's
+        corner, so the input keeps its width; `hx` lets it open the dialog the
+        way the action kind does. `stored` and `sums` feed `live_sums`. #}
+    {%- set input_id = c.name|replace({'[': '-', ']': ''}) -%}
+    {%- set input_attributes = create_attribute()
+      .addClass(['text-right', 'tabular-nums'])
+      .setAttribute('aria-label', c.label|default(''))
+      .setAttribute('inputmode', 'text')
+      .setAttribute('size', '5') -%}
+    {%- if c.sums is defined -%}
+      {%- set input_attributes = input_attributes
+        .setAttribute('data-sheet-stored', c.stored|default(0))
+        .setAttribute('data-sheet-sums', c.sums|join(' ')) -%}
+    {%- endif -%}
+    {%- if c.error -%}
+      {%- set input_attributes = input_attributes
+        .addClass(['border-state-attention'])
+        .setAttribute('aria-invalid', 'true')
+        .setAttribute('aria-describedby', input_id ~ '--error') -%}
+    {%- endif -%}
+    {%- if c.autofocus -%}
+      {%- set input_attributes = input_attributes.setAttribute('autofocus', 'autofocus') -%}
+    {%- endif -%}
+    <span class="relative inline-flex flex-col items-end gap-1 w-20 whitespace-normal text-left">
+      {{- include('bb_theme:form_input', {
+        type: 'text',
+        id: input_id,
+        name: c.name,
+        value: c.value|default(''),
+        autocomplete: 'off',
+        attributes: input_attributes,
+      }, with_context = false) -}}
+      {%- for hidden_name, hidden_value in c.hidden|default({}) %}
+      <input type="hidden" name="{{ hidden_name }}" value="{{ hidden_value }}" />
+      {%- endfor -%}
+      {%- if c.hint -%}
+      <span class="text-caption text-text-light">{{ c.hint }}</span>
+      {%- endif -%}
+      {%- if c.url -%}
+      {%- set details_attributes = create_attribute()
+        .addClass(['absolute', '-top-2', '-right-2', 'grid', 'place-items-center', 'w-4', 'h-4', 'rounded-xs', 'bg-surface', 'text-text-faint', 'hover:text-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'])
+        .setAttribute('href', c.url)
+        .setAttribute('data-hx-boost', 'false')
+        .setAttribute('aria-label', c.url_label|default('Details'))
+        .setAttribute('title', c.url_label|default('Details')) -%}
+      {%- for key in ['get', 'target', 'select', 'swap'] -%}
+        {%- if c.hx[key] is defined and c.hx[key] is not empty -%}
+          {%- set details_attributes = details_attributes.setAttribute('data-hx-' ~ key, c.hx[key]) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      <a{{ details_attributes }}>{{ include('bb_theme:icon', { name: 'more-horizontal', size: 'xs' }, with_context = false) }}</a>
+      {%- endif -%}
+      {%- if c.error -%}
+      <span id="{{ input_id }}--error" class="text-caption text-state-attention-ink" role="alert">{{ c.error }}</span>
+      {%- endif -%}
+    </span>
+  {%- elseif c.kind == 'rendered' -%}
+    {#- MARKUP ANOTHER LAYER ALREADY PRODUCED, and a ninth KIND rather than a
+        second slot. The ticket list is bound by core's own `table` views style
+        over nine real Views FIELDS, so the face of such a cell is decided by
+        that field's FORMATTER and arrives here finished. This template's job
+        for it is the same as for the other eight: put it in the `<td>` its
+        column asked for, and print it once.
+
+        IT IS PRINTED AND NOT `|raw`-ed. The value is a `MarkupInterface`
+        object, which Twig prints unescaped and exactly once; a plain string in
+        the same field IS escaped, and that measured difference is what makes
+        the object mandatory rather than convenient. `|raw` would unescape
+        whatever arrived, including a string this component never inspected, so
+        the safety lives in the TYPE of the value and not in a filter here.
+
+        NO GUARD, deliberately. An absent `markup` prints nothing, which is the
+        empty cell a column with no value should render — and it is how the
+        `Team` column reads honestly while it waits for BB-356 to decide
+        whether a ticket has a team at all. The six guarded fields above are
+        guarded because they are FORWARDED to a composed component that types
+        them as strings; this one is printed, and printing nothing is already
+        the right answer. #}
+    {{ c.markup }}
+  {%- else -%}
+    {#- `sum` names a live total this value shows, `seconds` its stored base;
+        a `live_sums` table rewrites it while the reader types. -#}
+    <span class="block max-w-full overflow-hidden text-ellipsis whitespace-pre-line {{ emphasis_map[c.emphasis]|default('text-text') }}"
+      {%- if c.sum %} data-sheet-sum="{{ c.sum }}" data-sheet-seconds="{{ c.seconds|default(0) }}"{% endif %}>{{ c.value }}</span>
+  {%- endif -%}
+{% endmacro %}
+
+{% if variant == 'collapsed' %}
+  <div{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', 'gap-2', 'p-3', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'text-text-light', 'text-mono']) }}>
+    <span class="w-6 h-6 rounded-full bg-state-running-tint text-state-running-ink grid place-items-center shrink-0"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>
+    {% if empty %}{{ empty }}{% else %}Nothing is waiting for a human — every run is running.{% endif %}
+  </div>
+{% else %}
+  {#- THE ROW ACCENT, and the two things it does. The leading rail is drawn on the
+      FIRST cell of the row with a pseudo-element, so it costs no `<td>` no column
+      asked for. `wait` additionally tints the whole row: a listing nobody is
+      acting on is the one state the deleted row components made loud, and the tint
+      is what a `wait` badge's `-ink` colour is legible against — the raw hue
+      measures 2.76:1 there against the 4.5:1 the contrast criterion asks for. #}
+  {% set accent_map = {
+    'running': 'bg-state-running',
+    'attention': 'bg-state-attention',
+    'wait': 'bg-state-unassigned',
+    'idle': 'bg-transparent'
+  } %}
+  {% set rail_classes = ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs'] %}
+  {#- LIVE SUMS: a timesheet's totals follow what the reader types, before the
+      save, and after a refused save already on render. Each input names its
+      totals (`sums`) and the seconds it held; each total shows its base plus
+      every change made into it. Unparsable text
+      counts nothing, exactly as the server would refuse it. #}
+  {% set table_attributes = (attributes ?: create_attribute()).addClass(['w-full', 'border-collapse', 'text-body']) %}
+  {% if live_sums %}
+    {% set table_attributes = table_attributes
+      .setAttribute('x-data', "{ secs(v) { const m = /^(\\d{1,6}):([0-5]\\d)$/.exec((v || '').trim()); return m ? m[1] * 3600 + m[2] * 60 : 0 }, recalc() { const t = {}; this.$root.querySelectorAll('[data-sheet-sums]').forEach((i) => { const d = this.secs(i.value) - Number(i.dataset.sheetStored || 0); i.dataset.sheetSums.split(' ').forEach((k) => { t[k] = (t[k] || 0) + d }) }); this.$root.querySelectorAll('[data-sheet-sum]').forEach((c) => { const s = Math.max(0, Number(c.dataset.sheetSeconds || 0) + (t[c.dataset.sheetSum] || 0)); c.textContent = Math.floor(s / 3600) + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') }) } }")
+      .setAttribute('x-init', 'recalc()')
+      .setAttribute('x-on:input', 'recalc()') %}
+  {% endif %}
+  <div class="overflow-x-auto max-w-full">
+  <table{{ table_attributes }}>
+    <thead>
+      {#- A SORTABLE HEADER CELL, shaped like Drupal's own `views-view-table`: the cell
+          carries `aria-sort` and the label IS the link that re-sorts, with the
+          indicator after it. That is the affordance a Drupal view's table row has —
+          a view declares `click_sort_column` on its fields and renders through this
+          component — and it is what separates a table from a list here: a list is
+          not a table, and a table without a sort is a list with lines.
+
+          `sort` is ABSENT on a column that cannot be sorted, rather than `none`.
+          `none` means "sortable, not currently the sort column", so an absent value
+          renders plain text and no link — a header link that sorts nothing is worse
+          than no affordance, by the same rule the add action follows.
+
+          The indicator is `chevron-down` rotated for ascending rather than a second
+          symbol: the sprite ships no `chevron-up`, and `collapsible` already rotates
+          a chevron through a class for exactly this reason. It is `aria-hidden`
+          through the icon component, because `aria-sort` on the cell already says
+          what it shows. #}
+      {% set sort_aria = { 'asc': 'ascending', 'desc': 'descending', 'none': 'none' } %}
+      <tr>
+        {% for column in columns %}
+          <th class="text-left text-caption font-semibold text-text-light bg-app px-3 py-3 border-b border-border-2 whitespace-nowrap {{ column.num ? 'text-right tabular-nums' : '' }}"
+            {%- if column.sort %} aria-sort="{{ sort_aria[column.sort]|default('none') }}"{% endif %}>
+            {%- if column.sort %}
+              <a data-table-sort class="inline-flex items-center gap-1 text-inherit no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ column.url|default('#') }}">
+                {{- column.label -}}
+                {%- if column.sort != 'none' %}
+                  <span class="inline-flex {{ column.sort == 'asc' ? 'rotate-180' : '' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>
+                {%- endif -%}
+              </a>
+            {%- else %}{{ column.label }}{% endif -%}
+          </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {#- ITERATE THE COLUMNS, NOT THE CELLS. The order is the TABLE'S and a row
+          does not get to choose one, so a cell for a column that does not exist is
+          simply never reached and a column with no cell renders an empty `<td>`.
+          That is the difference between a value in the wrong column and a value
+          that is absent, and it is the whole reason the cells are keyed. #}
+      {% for row in rows %}
+        {% set row_classes = ['group', 'transition-colors', 'duration-fast', 'hover:bg-app'] %}
+        {% if row.accent == 'wait' %}{% set row_classes = row_classes|merge(['bg-state-unassigned-tint']) %}{% endif %}
+        <tr data-table-row class="{{ row_classes|join(' ') }}"{% if row.url %} data-row-url="{{ row.url }}"{% endif %}>
+          {% for column in columns %}
+            {%- set c = row.cells[column.key]|default(null) -%}
+            {#- A row-header column names its row for assistive technology and
+                stays at the left edge while the table scrolls sideways. #}
+            {%- set cell_tag = column.row_header ? 'th' : 'td' -%}
+            <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="h-row px-3 py-3 align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-3' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
+              {%- if loop.first %}<span class="{{ (rail_classes|merge([accent_map[row.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>{% endif -%}
+              {%- if c %}{{ cells.cell(c) }}{% endif -%}
+            </{{ cell_tag }}>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{% endif %}

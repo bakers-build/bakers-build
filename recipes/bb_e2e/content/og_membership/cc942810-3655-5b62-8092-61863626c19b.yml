@@ -1,0 +1,23 @@
+# Explicit tenancy/rank precondition for API contract scenarios.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: cc942810-3655-5b62-8092-61863626c19b
+  default_langcode: en
+  bundle: default
+  depends:
+    d57809ac-72eb-5be3-abed-07816ac8f37e: user
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+default:
+  entity_type:
+  - value: bb_team
+  entity_bundle:
+  - value: bb_team
+  entity_id:
+  - value: fb355227-fe83-5482-819f-51f8011a78eb
+  state:
+  - value: active
+  uid:
+  - entity: d57809ac-72eb-5be3-abed-07816ac8f37e
+  type:
+  - target_id: default

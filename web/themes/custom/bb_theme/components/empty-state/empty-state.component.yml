@@ -1,0 +1,26 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Empty State
+status: stable
+group: Data Display
+description: 'A NAMED absence. The message is required and must say what is not there and over what period — "no tickets closed in this window", never a bare dash — because on a dashboard an empty figure and a broken figure look identical, and only the sentence tells them apart. Usable in two places by design (BB-333 D10/D14): free-standing, where a whole statistics block has nothing to show, and inside `board`''s `empty` slot, where a phase is genuinely unstaffed. It renders no action: an absence this component describes is a fact about the data, not an invitation, and the add affordance is owned by the screen that can receive the addition.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    message:
+      type: string
+      title: Message
+      description: What is absent, and over what period. A full statement, not a placeholder.
+    icon:
+      type: string
+      title: Icon
+      description: Small decorative icon beside the existing list message; defaults to inbox.
+    compact:
+      type: boolean
+      title: Compact
+      description: Compact list usage; the existing message is preserved.
+  required:
+    - message
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

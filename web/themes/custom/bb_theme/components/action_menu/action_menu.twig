@@ -1,0 +1,24 @@
+{# A row's action menu: a more-horizontal trigger disclosing a `role="menu"`
+   panel of `menu_item` links. Native <details> keeps every action reachable
+   without JavaScript; Alpine only closes it on an outside click or Escape.
+   An item's optional `attributes` land on its link, e.g. an htmx dialog
+   trigger; the plain href keeps working without JavaScript. #}
+<details{{ attributes.addClass(['relative', 'inline-block']) }}
+  data-action-menu
+  x-data
+  @click.outside="$el.open = false"
+  @keydown.escape="$el.open = false; $el.querySelector('summary').focus()"
+  {%- if open %} open{% endif %}>
+  <summary class="inline-grid place-items-center w-6 h-6 list-none rounded-xs text-text-faint cursor-pointer transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+    aria-label="{{ label }}"
+    aria-haspopup="menu">
+    {{- include('bb_theme:icon', { name: 'more-horizontal', size: 'sm' }, with_context = false) -}}
+  </summary>
+  <ul class="absolute {{ align|default('end') == 'start' ? 'left-0' : 'right-0' }} top-full z-10 min-w-40 m-0 list-none p-1 rounded-sm bg-surface-2 border border-border text-caption" role="menu">
+    {% for item in items|default([]) %}
+      <li class="list-none" role="none">
+        {{- include('bb_theme:menu_item', { label: item.label, url: item.url, attributes: item.attributes ? create_attribute(item.attributes) : null }, with_context = false) -}}
+      </li>
+    {% endfor %}
+  </ul>
+</details>

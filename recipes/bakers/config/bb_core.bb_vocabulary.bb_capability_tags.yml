@@ -1,0 +1,6 @@
+langcode: en
+status: true
+dependencies: {}
+id: bb_capability_tags
+label: 'bakers.build capability tags'
+description: ''

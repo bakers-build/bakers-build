@@ -1,0 +1,58 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Setup paths
+status: stable
+group: Action
+description: >-
+  A generic two-position in-page panel switcher: a segmented control plus two
+  panels. Owns the Alpine `selected` state and shows one panel at a time, so
+  PHP passes the filter items and the `panel_a`/`panel_b` slots with no CSS
+  classes or Alpine attributes. `panel_a` and `panel_b` match `items[0]` and
+  `items[1]` by position, not by value. The filter is `segmented_control`
+  inside this wrapper; do not nest another `x-data` on that control. Both
+  panels stay in the DOM so their content remains readable with JavaScript
+  off.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    selected:
+      type: string
+      title: Initial selection
+      description: Starting Alpine `selected` value. Defaults to the first item's value.
+    filter_label:
+      type: string
+      title: Filter label
+      description: Accessible name for the segmented control.
+    items:
+      type: array
+      title: Positions
+      description: Segmented control items with label and value, exactly two.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Label
+          value:
+            type: string
+            title: Value
+        required:
+          - label
+          - value
+slots:
+  intro:
+    title: Intro
+    description: Line above the panels.
+  panel_a:
+    title: First panel
+    description: Shown when `selected` matches the first item's value.
+  panel_b:
+    title: Second panel
+    description: Shown when `selected` matches the second item's value.
+  after:
+    title: After
+    description: Shared content below both panels.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

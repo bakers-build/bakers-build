@@ -1,0 +1,23 @@
+{# One figure, named and attributed (BB-333 D10/D11).
+
+   The tone accent is applied to the VALUE only, and the label repeats in text what the accent
+   suggests, so nothing here is carried by colour alone (C2). #}
+{% set tone_map = {
+  'running': 'text-state-running-ink',
+  'attention': 'text-state-attention-ink'
+} %}
+{% set compact = size|default('default') == 'compact' %}
+{% set tile_classes = compact
+  ? ['stat-tile', 'flex', 'flex-col', 'gap-1', 'px-2', 'py-1', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'min-w-16']
+  : ['stat-tile', 'flex', 'flex-col', 'gap-[2px]', 'px-[12px]', 'py-[10px]', 'bg-surface-2', 'border', 'border-border-2', 'rounded-[var(--radius-sm,7px)]', 'min-w-[120px]'] %}
+<div{{ (attributes ?: create_attribute()).addClass(tile_classes) }}>
+  <span class="stat-tile__value {{ compact ? 'text-body' : 'text-heading' }} font-bold leading-tight {{ tone_map[tone]|default('text-title') }}">{{ value }}</span>
+  <span class="stat-tile__label text-caption text-text-light">{{ label }}</span>
+  {% if window %}
+    <span class="stat-tile__window text-eyebrow text-text-light">{{ window }}</span>
+  {% endif %}
+  {# `break-words`, never `break-all`: the source is the one string on the tile a reader has to be
+     able to READ, and break-all split `claimable` across two lines as "cl aimable" in the first
+     browser walk. Wrapping between words keeps a long source legible and still bounds the tile. #}
+  <span class="stat-tile__source text-nano text-text-faint font-mono mt-[4px] break-words">{{ source }}</span>
+</div>

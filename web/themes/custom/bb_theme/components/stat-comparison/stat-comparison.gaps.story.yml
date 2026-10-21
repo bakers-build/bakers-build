@@ -1,0 +1,47 @@
+component: bb_theme:stat-comparison
+name: Gaps
+props:
+  chart:
+    state: ready
+    label: Model comparison
+    value_label: Value
+    labels:
+      - '2026-01-01'
+      - '2026-01-02'
+      - '2026-01-04'
+    series:
+      - key: a
+        style: a
+        label: Model A
+        latest_value: '15'
+        values:
+          - x: '2026-01-01'
+            'y': 10
+          - x: '2026-01-02'
+            'y': null
+          - x: '2026-01-04'
+            'y': 15
+      - key: b
+        style: b
+        label: Model B
+        latest_value: '20'
+        values:
+          - x: '2026-01-01'
+            'y': 30
+          - x: '2026-01-02'
+            'y': 10
+          - x: '2026-01-04'
+            'y': 20
+    rows:
+      - date: '2026-01-01'
+        values:
+          - '10'
+          - '30'
+      - date: '2026-01-02'
+        values:
+          - —
+          - '10'
+      - date: '2026-01-04'
+        values:
+          - '15'
+          - '20'

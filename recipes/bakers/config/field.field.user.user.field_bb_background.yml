@@ -1,0 +1,19 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.user.field_bb_background
+  module:
+    - user
+id: user.user.field_bb_background
+field_name: field_bb_background
+entity_type: user
+bundle: user
+label: 'What should bakers.build know about your background?'
+description: 'Optional, e.g. "Drupal developer, confident with PHP; little DevOps experience."'
+required: false
+translatable: null
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long

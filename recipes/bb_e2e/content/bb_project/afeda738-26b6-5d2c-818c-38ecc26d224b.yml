@@ -1,0 +1,17 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: afeda738-26b6-5d2c-818c-38ecc26d224b
+  default_langcode: en
+  depends:
+    a5f6ffd1-70a9-50d2-95cb-0b82f93d4269: bb_group
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+default:
+  name:
+  - value: API orphan
+  key:
+  - value: APIZ
+  group_id:
+  - entity: a5f6ffd1-70a9-50d2-95cb-0b82f93d4269
+  teams:
+  - entity: fb355227-fe83-5482-819f-51f8011a78eb

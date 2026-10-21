@@ -1,0 +1,74 @@
+(
+  /* ONE RUN, AS ONE ITEM OF A `list` — the row inside the ticket's Run history.
+
+     `full` is the DETAIL (the run detail overlay); this is the row. BB-389 dissolved the row
+     COMPONENT into a container that owns its items, so the row is cells rather than `run_row`, but
+     the view-mode split BB-336 made is unchanged and still load-bearing: one view mode cannot be
+     both the item of a listing and the body of a dialog.
+
+     EVERY STATE CARRIES ITS OWN GLYPH, and that is C2 rather than decoration. Tone is COLOUR, so a
+     state told only by its tone is a state a colour-blind reader cannot read, and the mapping this
+     one replaces collided `running` and `done` on the same tone — two of the five were not even
+     distinguishable in full colour. The glyph is the carrier and the tone confirms it:
+
+       claimed  lock            wait
+       running  run             running
+       done     check           idle
+       expired  clock           stale
+       failed   alert-triangle  attention
+
+     Five glyphs, five tones, no collision. `released` and `dispatched` are GONE: the workflow
+     (bb_core.workflows.yml > bb_run) defines exactly the five above, and branching on values
+     that cannot occur is what let the dead branches survive three revisions unnoticed.
+
+     THE GLYPH MAP NOW LIVES IN TWO PLACES — here, and in `run_state_badge` which the overlay body
+     uses. BB-336 originally had one home for it and called that indivisible; BB-389 took the
+     row component away, and a JSONata mapping cannot import from a Twig component. What replaces
+     the structural guarantee is an asserted one: the contract check reads BOTH and fails if they
+     disagree on any of the five. Weaker than a shared component, and stated here rather than left
+     to be discovered as drift. */
+  $r := $;
+  $glyph := $r.state = "claimed" ? "lock"
+    : $r.state = "running" ? "run"
+    : $r.state = "done" ? "check"
+    : $r.state = "expired" ? "clock"
+    : $r.state = "failed" ? "alert-triangle"
+    : "info-circle";
+  $tone := $r.state = "claimed" ? "wait"
+    : $r.state = "running" ? "running"
+    : $r.state = "done" ? "idle"
+    : $r.state = "expired" ? "stale"
+    : $r.state = "failed" ? "attention"
+    : "neutral";
+  /* The item accent is narrower than the tone on purpose (BB-389): a rail says whether anything
+     is happening, a badge says which state it is. `idle` and `stale` both rest. */
+  $accent := $tone = "idle" or $tone = "stale" or $tone = "neutral" ? "idle" : $tone;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "items": [
+          {
+            "accent": $accent,
+            "cells": {
+              "state": { "kind": "badge", "label": $r.state, "tone": $tone, "icon": $glyph, "dot": true },
+              "from_label": { "kind": "text", "value": "from", "emphasis": "faint" },
+              "from": { "kind": "mono", "value": $r.state_at_start },
+              /* The conductor keeps its icon: it is the one value here that names a MACHINE, and
+                 without the icon it is another mono string beside the from-state. */
+              "conductor": { "kind": "badge", "label": "srv01-bakers", "tone": "neutral", "icon": "conductor", "mono": true },
+              /* Minute precision, not the raw ISO string: the seconds and the UTC offset are noise
+                 on a list whose job is to let a reader pick the run to open. The overlay keeps the
+                 full timestamp, where precision is the point. */
+              "started_label": { "kind": "text", "value": "started", "emphasis": "faint" },
+              "started": { "kind": "mono", "value": $r.started_at ? $substring($r.started_at, 0, 10) & " " & $substring($r.started_at, 11, 5) : undefined },
+              "took_label": $r.duration_s ? { "kind": "text", "value": "took", "emphasis": "faint" } : undefined,
+              "took": $r.duration_s ? { "kind": "mono", "value": $string($r.duration_s) & "s" } : undefined
+            }
+          }
+        ]
+      }
+    }
+  ]
+)

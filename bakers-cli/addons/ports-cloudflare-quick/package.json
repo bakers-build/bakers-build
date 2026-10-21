@@ -1,0 +1,31 @@
+{
+  "name": "@bakers-build/addon-ports-cloudflare-quick",
+  "version": "0.1.0",
+  "description": "bakers.build ports transport: one cloudflared Quick Tunnel process per route, with no fixed name/URL/uptime guarantee. Implements @bakers-build/addon-ports's PortsTransport contract.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/ports-cloudflare-quick/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/addon-ports": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/addon-ports": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

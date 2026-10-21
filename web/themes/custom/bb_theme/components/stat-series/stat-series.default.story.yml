@@ -1,0 +1,27 @@
+component: bb_theme:stat-series
+name: Default
+props:
+  label: My closed tickets, daily
+  days:
+    - date: '2026-09-11'
+      label: Fri
+      count: 2
+    - date: '2026-09-12'
+      label: Sat
+      count: 0
+    - date: '2026-09-13'
+      label: Sun
+      count: 1
+    - date: '2026-09-14'
+      label: Mon
+      count: 5
+    - date: '2026-09-15'
+      label: Tue
+      count: 4
+    - date: '2026-09-16'
+      label: Wed
+      count: 7
+    - date: '2026-09-17'
+      label: Thu
+      count: 3
+  source: bb_ticket.closed_date

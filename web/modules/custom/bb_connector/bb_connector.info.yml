@@ -1,0 +1,8 @@
+name: bakers.build Connector
+type: module
+description: 'Config-entity and plugin system for external system connectors (GitLab, etc.).'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - entity:entity
+  - bb_core:bb_core

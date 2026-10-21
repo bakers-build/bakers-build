@@ -1,0 +1,34 @@
+# Explicit tenancy/rank precondition for API contract scenarios.
+#
+# BB-462 D1: the implicit `member` rank now grants nothing, so an account
+# this many API scenarios use to CREATE (writeback.feature, session-
+# writeback.feature, comments.feature, claims.feature, optional-finish.feature)
+# needs the explicit `contributor` floor — the same default the migration
+# hook (`bb_core_post_update_bb_462_a_…`) gives a pre-existing bare
+# membership on a live site. `rank-access.feature`'s "a project member reads
+# its own filtered tickets" still exercises the TEAM half separately
+# (…/785ec1dd): this rank is the CREATE half, not the read one.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: e94c0448-7425-527c-878f-b1be6e773843
+  default_langcode: en
+  bundle: default
+  depends:
+    6e52c2ea-3411-5276-b0de-b9a17e20cdb9: user
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  state:
+  - value: active
+  uid:
+  - entity: 6e52c2ea-3411-5276-b0de-b9a17e20cdb9
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-contributor

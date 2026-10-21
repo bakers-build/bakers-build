@@ -1,0 +1,103 @@
+component: bb_theme:stat-comparison
+name: Six
+props:
+  chart:
+    state: ready
+    label: Six series
+    value_label: Value
+    labels:
+      - '2026-01-01'
+      - '2026-01-02'
+      - '2026-01-04'
+    series:
+      - key: a
+        style: a
+        label: Opus
+        latest_value: '25'
+        values:
+          - x: '2026-01-01'
+            'y': 30
+          - x: '2026-01-02'
+            'y': 20
+          - x: '2026-01-04'
+            'y': 25
+      - key: b
+        style: b
+        label: Grok
+        latest_value: '15'
+        values:
+          - x: '2026-01-01'
+            'y': 24
+          - x: '2026-01-02'
+            'y': 28
+          - x: '2026-01-04'
+            'y': 15
+      - key: c
+        style: c
+        label: Sol
+        latest_value: '22'
+        values:
+          - x: '2026-01-01'
+            'y': 18
+          - x: '2026-01-02'
+            'y': 10
+          - x: '2026-01-04'
+            'y': 22
+      - key: d
+        style: d
+        label: Astra
+        latest_value: '8'
+        values:
+          - x: '2026-01-01'
+            'y': 12
+          - x: '2026-01-02'
+            'y': 16
+          - x: '2026-01-04'
+            'y': 8
+      - key: e
+        style: e
+        label: Luna
+        latest_value: '12'
+        values:
+          - x: '2026-01-01'
+            'y': 6
+          - x: '2026-01-02'
+            'y': 8
+          - x: '2026-01-04'
+            'y': 12
+      - key: f
+        style: f
+        label: Other
+        latest_value: '5'
+        values:
+          - x: '2026-01-01'
+            'y': 3
+          - x: '2026-01-02'
+            'y': 4
+          - x: '2026-01-04'
+            'y': 5
+    rows:
+      - date: '2026-01-01'
+        values:
+          - '30'
+          - '24'
+          - '18'
+          - '12'
+          - '6'
+          - '3'
+      - date: '2026-01-02'
+        values:
+          - '20'
+          - '28'
+          - '10'
+          - '16'
+          - '8'
+          - '4'
+      - date: '2026-01-04'
+        values:
+          - '25'
+          - '15'
+          - '22'
+          - '8'
+          - '12'
+          - '5'

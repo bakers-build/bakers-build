@@ -1,0 +1,56 @@
+/* Island Profile for the two-step onboarding wizard. The chrome itself is
+   `bb_theme:onboarding`, composed by the wizard form's presenter template
+   inside page content; this profile only frames messages and page content in
+   a one-column zone. */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "island.app.bakers"
+    ],
+    "enforced": {
+      "config": [
+        "island.app.bakers"
+      ]
+    },
+    "theme": [
+      "bb_theme"
+    ]
+  },
+  "id": "bb_onboarding",
+  "label": "bakers.build onboarding",
+  "app": "bakers",
+  "layout": "bb_theme:zone",
+  "layout_settings": {
+    "inset": "none",
+    "gap": "none",
+    "columns": 1
+  },
+  "placements": {
+    "onboarding_messages": {
+      "plugin_id": "messages",
+      "slot": "content",
+      "weight": 0,
+      "enabled": true,
+      "configuration": {},
+      "data": {}
+    },
+    "onboarding_main": {
+      "plugin_id": "page_content",
+      "slot": "content",
+      "weight": 1,
+      "enabled": true,
+      "configuration": {},
+      "data": {}
+    }
+  },
+  "weight": -20,
+  "conditions": {
+    "paths": [
+      "/home/onboarding"
+    ]
+  }
+}
+)

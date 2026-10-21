@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * @file
+ * Demo module for the island browser harness.
+ */
+
+declare(strict_types=1);

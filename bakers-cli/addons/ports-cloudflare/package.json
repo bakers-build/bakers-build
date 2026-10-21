@@ -1,0 +1,31 @@
+{
+  "name": "@bakers-build/addon-ports-cloudflare",
+  "version": "0.1.0",
+  "description": "bakers.build ports transport: a named Cloudflare Tunnel, reconciled via the Cloudflare API (DNS + ingress). Implements @bakers-build/addon-ports's PortsTransport contract.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/ports-cloudflare/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/addon-ports": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/addon-ports": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

@@ -1,0 +1,39 @@
+{# The GATE — the product's SECOND chrome, and the peer of `shell` rather than a
+   variant of it (BB-415 D6). It frames everything that stands BEFORE the
+   product: a surface that is, by definition, outside every workspace.
+
+   WHY IT IS NOT `shell`. The rail is workspace-ambient, and
+   its workspace links (`WorkspaceMenuLink`) are denied on a route that
+   carries no workspace — so `shell` here would render a navigation with no
+   reachable entry, which reads as a defect rather than as a state. It shares no
+   slot with `shell` either: that one is a full-viewport flex layout with
+   sidebar/header/content/footer/overlay, this one is a centred card.
+
+   IT CARRIES NO NAVIGATION, and the absence is the design. A gate offers the
+   one thing the page is for and nothing else; a link into a workspace the
+   reader may not be in is exactly the wrong guess `BbWorkspaceAccessCheck`
+   answers with a 404.
+
+   The `mark` slot is the product mark, and it is a SLOT rather than a prop
+   because a mark is rendered content — an icon component, an image — and props
+   carry scalar data only. `content` is the one region a screen fills, exactly
+   as in `shell`, so a scene opens with `scene: "design-system:gate"` and fills
+   `content` and nothing else.
+
+   NOT A SCROLL CONTAINER. `min-h-screen` with centred items lets a long card
+   grow the page rather than clip itself, which is what keeps a chooser with
+   twenty workspaces readable. #}
+<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'items-center', 'justify-center', 'gap-[16px]', 'p-[24px]', 'bg-app', 'text-text', 'font-sans']) }}>
+  <div class="gate__card w-full max-w-[420px] flex flex-col gap-[16px] p-[24px] bg-surface border border-border-2 rounded-[var(--radius-md,10px)]">
+    {% if mark %}
+      <div class="gate__mark flex items-center justify-center">{% block mark %}{{ mark }}{% endblock %}</div>
+    {% endif %}
+    {% if title %}
+      <h1 class="gate__title text-h3 text-center">{{ title }}</h1>
+    {% endif %}
+    {% if description %}
+      <p class="gate__description text-caption text-text-faint text-center max-w-[40ch] mx-auto">{{ description }}</p>
+    {% endif %}
+    <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
+  </div>
+</div>

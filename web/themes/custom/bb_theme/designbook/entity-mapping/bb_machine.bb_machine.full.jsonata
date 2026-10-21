@@ -1,0 +1,56 @@
+(
+  /* The machine detail body, one `canvas` like the shipped display
+     (config/sync/core.entity_view_display.bb_machine.bb_machine.full.yml).
+
+     `main`: the Activities zone, its Refresh control and its rows (none are
+     pinned to a machine, so the empty text). `inspector`: one surface whose
+     one zone is the machine's single card —
+       Identity   editable name and max parallel (one Save) plus read-only
+                  Host key, Owner and Current load.
+
+     Drupal fills the Activities zone (`bb_entity_detail_activities`) and
+     the card (the shared detail-card `entity_form`) from sources, so the
+     preview pins their reader output as text and names only canvas,
+     inspector and zone — the same convention as the units that have a sync
+     generator. The page header and the tabs belong to the screen. The owner
+     is shown by name, not linked. */
+  $m := $;
+  $or := function ($v) { $v ? $v : "—" };
+  $zone := function ($heading, $content) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm" },
+      "slots": { "heading": $heading, "content": $content }
+    }
+  };
+  $surface := function ($rows) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:inspector",
+      "props": { "surface": true },
+      "slots": { "rows": $rows }
+    }
+  };
+  [{
+    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:canvas",
+    "slots": {
+      "main": [{
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+        "props": { "inset": "none", "gap": "sm" },
+        "slots": {
+          "heading": "Activities",
+          "actions": "Refresh",
+          "content": "No activity yet."
+        }
+      }],
+      "inspector": [$surface([
+        $zone("Identity",
+          "Name: " & $or($m.name)
+          & "<br>Max parallel: " & $string($exists($m.max_parallel) ? $m.max_parallel : 1)
+          & "<br>Host key: " & $or($m.host_key)
+          & "<br>Owner: " & $or($m.owner_label)
+          & "<br>Current load: " & $string($exists($m.current_load) ? $m.current_load : 0)
+          & "<br>Save")
+      ])]
+    }
+  }]
+)

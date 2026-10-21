@@ -1,0 +1,22 @@
+{# The message slot renders ABOVE the body, which is the ordering
+   WrappedRouteRenderer's own contract depends on: a refusal has to appear
+   where the writer is looking rather than below the fields it complains
+   about. A hull that reversed them would still pass a presence assertion,
+   which is why the test asserts byte offsets.
+
+   `dismissible` AND `actions` ARE RENDERED HERE BECAUSE THE RENDERER PASSES
+   THEM, and a fixture that declared either and printed neither would let the
+   renderer stop passing it with nothing going red. `actions` renders BELOW the
+   body — a hull's footer — and its wrapper is captured first so an empty slot
+   paints no strip at all, which is the one property distinguishing "no action
+   row declared" from "an empty one". #}
+{% set actions_content %}{% block actions %}{{ actions }}{% endblock %}{% endset %}
+<div class="test-hull"{% if open %} data-open{% endif %}>
+  <h2 class="test-hull__title">{{ title }}</h2>
+  {%- if dismissible %}<button class="test-hull__close" data-dialog-close>Close</button>{% endif %}
+  <div class="test-hull__message">{% block message %}{{ message }}{% endblock %}</div>
+  <div class="test-hull__body">{% block body %}{{ body }}{% endblock %}</div>
+  {%- if actions_content|trim is not empty %}
+    <div class="test-hull__actions">{{ actions_content }}</div>
+  {% endif %}
+</div>

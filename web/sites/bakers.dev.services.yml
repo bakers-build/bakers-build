@@ -1,0 +1,14 @@
+# bakers.build local-dev container overrides (NOT a Composer scaffold file, so a
+# `composer require` won't overwrite it — unlike development.services.yml).
+# Included from settings.php only under DDEV. Enables Twig theme debug so
+# template suggestions + the chosen source template are emitted as HTML
+# comments (to see which presenter templates / preprocess hooks apply), and
+# provides the null cache backend used by settings.php.
+parameters:
+  twig.config:
+    debug: true
+    auto_reload: true
+    cache: false
+services:
+  cache.backend.null:
+    class: Drupal\Core\Cache\NullBackendFactory

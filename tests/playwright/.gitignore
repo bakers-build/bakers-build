@@ -1,0 +1,8 @@
+.features-gen/
+bdd-results.json
+node_modules/
+.auth/
+test-results/
+playwright-report/
+junit-playwright.xml
+.playdrop/

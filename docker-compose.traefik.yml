@@ -1,0 +1,42 @@
+# Ingress overlay — Traefik hosts (e.g. dev2).
+# Layered on top of docker-compose.yml via the Komodo stack's file_paths:
+#   file_paths = ["docker-compose.yml", "docker-compose.traefik.yml"]
+# Adds the Traefik router labels + the external traefik_proxy network to nginx.
+# Runtime ${STACK_NAME}/${DOMAIN} come from the stack environment.
+services:
+  nginx:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${STACK_NAME}.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${STACK_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${STACK_NAME}.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${STACK_NAME}.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+    networks:
+      - internal
+      - traefik_proxy
+
+  # /mcp on the same domain, routed to the mcp service's in-container nginx
+  # (port 8080) instead of the Drupal nginx. No explicit priority label:
+  # Traefik defaults a router's priority to its rule's length, so this
+  # longer `Host(...) && PathPrefix("/mcp")` rule already outranks the
+  # catch-all `Host(...)` router above (BB-658 review F2 — an explicit
+  # `priority=10` here was LOWER than the catch-all's rule-length default and
+  # sent /mcp to Drupal). Streamable HTTP needs no extra Traefik buffering
+  # config — Traefik does not buffer responses by default.
+  mcp:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${STACK_NAME}-mcp.rule=Host(`${DOMAIN}`) && PathPrefix(`/mcp`)"
+      - "traefik.http.routers.${STACK_NAME}-mcp.entrypoints=websecure"
+      - "traefik.http.routers.${STACK_NAME}-mcp.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${STACK_NAME}-mcp.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik_proxy"
+    networks:
+      - internal
+      - traefik_proxy
+
+networks:
+  traefik_proxy:
+    external: true
+    name: traefik_proxy

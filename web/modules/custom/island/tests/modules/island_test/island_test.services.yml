@@ -1,0 +1,37 @@
+services:
+  island_test.host:
+    class: Drupal\island_test\TestHostProvider
+    tags:
+      - { name: island.context_provider }
+  island_test.form_host:
+    class: Drupal\island_test\FormHostProvider
+    tags:
+      - { name: island.context_provider }
+  island_test.silent_host:
+    class: Drupal\island_test\SilentHostProvider
+    tags:
+      - { name: island.context_provider }
+  island_test.broken_host:
+    class: Drupal\island_test\BrokenHostProvider
+    tags:
+      - { name: island.context_provider }
+  island_test.gated_host:
+    class: Drupal\island_test\GatedHostProvider
+    tags:
+      - { name: island.context_provider }
+  # A wrapper format, registered exactly the way a consumer registers one: the
+  # generic renderer, with the hull component named as its last argument. Two
+  # things are under test through it — that the registration mechanism works
+  # from a plain service tag, and that the hull really is configuration rather
+  # than something the class knows.
+  main_content_renderer.island_test_hull:
+    class: Drupal\island\Render\WrappedRouteRenderer
+    arguments:
+      - '@title_resolver'
+      - '@renderer'
+      - '@render_cache'
+      - '%renderer.config%'
+      - '@messenger'
+      - 'island_test:test_hull'
+    tags:
+      - { name: render.main_content_renderer, format: island_test_hull }

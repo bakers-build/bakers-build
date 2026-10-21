@@ -1,0 +1,180 @@
+{# `views_filters_summary`, RESTYLED AS `bb_theme:active-filters`.
+
+   WHY A TEMPLATE OVERRIDE AND NO PHP OF OURS. The human's decision of
+   2026-09-04: take `views_filters_summary` — which upstream names as the
+   replacement for `facets_summary` and the recommended companion of
+   `facets_exposed_filters` — rather than keep bakers's own summary code. A
+   contrib module's output is restyled by overriding its template, which is what
+   this file is: `bb_core` contributes no presenter, no area handler and no
+   hook to this screen any more.
+
+   WHAT THE MODULE HANDS OVER, MEASURED RATHER THAN ASSUMED (3.4.0, live
+   surface, `?state[]=coding&state[]=review&priority[]=2`). With
+   `group_values: true` the `summary` array carries ONE ENTRY PER FACET, keyed
+   `id` (the exposed identifier, `state`), `label` (the exposed label, `State`)
+   and `groups` — one entry per chosen value, each with the DISPLAY value the
+   facet's own build processors resolved (`Coding`, not `coding`) and a `link`
+   render array. Without `group_values` it is one entry per VALUE, which cannot
+   feed a component whose chip is one facet with several values, so the option
+   is load-bearing rather than cosmetic.
+
+   THE VALUES OF ONE FACET THEREFORE ARRIVE TOGETHER, which is what lets the
+   component derive its own operator: `active-filters.twig` reads `is` from one
+   value and `is either of` from several. Measured on the rendered page:
+   `State is either of Coding, Review` and `Priority is Medium`.
+
+   THE PER-FIELD OPERATOR OVERRIDE IS BACK, BY A DIFFERENT ROUTE, and the route
+   it used to take really is dead. `Labels` read `includes any of` from a
+   `summary_operator` on its BEF widget. The `views_filters_summary` theme hook
+   declares exactly three variables — `summary`, `options`, `exposed_form_id` —
+   and `options` holds the AREA's own settings; nothing in either names a
+   filter's widget configuration, and a summary entry carries only `id`, `label`
+   and `groups` (`buildFilterSummaryGroupedItem()` builds a fresh array from
+   those three, so even a key added by
+   `hook_views_filters_summary_info_alter()` is discarded). There is no path
+   from a widget's settings to this template, so THAT override would need a hook
+   of ours — which the same decision refused, and `summary_operator` stays
+   deleted rather than left in a settings form nothing reads.
+
+   WHAT THERE IS A PATH FOR IS THE FACET'S OWN IDENTIFIER. `id` is the exposed
+   identifier the checkboxes submit, it is one of the three keys a summary entry
+   does carry, and `active-filters` has always accepted a per-facet `operator`
+   prop — the prop predates the module. So the word is stated HERE, by the
+   caller, keyed on the identifier: `bb_operators` below. That is the same
+   kind of decision as `empty_label` two lines further down — a rendering word
+   this template owns because it is the one calling the component — rather than
+   a value the view carries. A facet the map does not name gets NO `operator`
+   key at all, so the component keeps deriving `is` / `is either of` from the
+   number of values, which is where that logic belongs.
+
+   REMOVAL IS AN ADDRESS, NOT A SCRIPT, AND THAT IS THIS FILE'S ONE PIECE OF
+   REAL WORK. The module's own dismiss link is `Url::fromUserInput('/')` plus
+   `data-remove-selector="<identifier>:<raw value>"`, and its JavaScript
+   unchecks the matching exposed control and calls `location.reload()` — a full
+   page load, per VALUE, with `form_build_id` and `form_id` swept into the
+   address by `new FormData(form)`. `bb_theme:active-filters` renders a chip's
+   `×` as an ANCHOR over a `remove_url`, the region this renders inside is
+   boosted so following an anchor swaps that region rather than reloading, and
+   the chip's sentence is about the whole facet. So the addresses are built here
+   from the set the module just stated: the current path plus every OTHER
+   facet's values, in the `id[]=value` spelling the exposed checkboxes submit,
+   so a shared link reads the same however it was reached.
+
+   THE RAW VALUES COME OUT OF `data-remove-selector`, and that is ugly on
+   purpose rather than by accident. A summary entry states the DISPLAY value
+   (`Coding`) and the raw one (`coding`) only inside that attribute, which is
+   the module's own removal contract — its JavaScript reads exactly this
+   attribute to learn which control to uncheck. An address has to carry the raw
+   value, so the attribute is the only source there is; the alternative was a
+   PHP hook, which is what this whole file exists to avoid.
+
+   THE UNFILTERED CASE NEVER REACHES THIS FILE, and that is still true — what
+   changed on 2026-09-04 is who states it. `buildFilterSummary()` returns `[]`
+   when no filter has a value, `buildFilterSummaryMarkup()` then returns NULL,
+   and the area renders an empty string, so this theme hook is never invoked at
+   all. No hook of ours and no Views option changes that.
+
+   SO THE STATEMENT MOVED OUT OF THIS FILE AND UP ONE LEVEL. This file now
+   renders the `chips_only` VARIANT of `active-filters` — the chip sentences and
+   nothing else, no wrapper — and the view's own `display_builder` tree wraps
+   the whole `view_header` in an OUTER `active-filters` node that fills its
+   `chips` slot. That outer node owns the wrapper, the accessible name and
+   `empty_label`, and it states `empty_label` exactly when the slot renders no
+   text — which is precisely the case the module cannot report. `label` and
+   `empty_label` are therefore NOT passed from here any more; passing them would
+   be a second caller claiming the same words, and the outer one can say
+   different words per display (`All tickets` on the full list, `My open
+   tickets` on `my_work`) where this file can only say one.
+
+   WHAT THAT ARRANGEMENT COSTS, stated because it is a real loss. The outer node
+   cannot tell "no filter has a value" from "every value present is one the
+   facet cannot name", because both reach it as an empty slot. So
+   `?label[]=999999` reads `All tickets` above a list narrowed to nothing.
+   `TicketFacetLabelsTest::testAnIdNothingResolvesStatesTheUnfilteredWordAndNoChip`
+   asserts that, with the reasoning for accepting it.
+
+   ONE MORE THING THE SEAM COSTS, AND THE COMPONENT NOW CARRIES THE REPAIR.
+   `Result::render()` returns `['#markup' => str_replace(…)]` — a plain PHP
+   string, so `Renderer::ensureMarkupIsSafe()` puts everything below through
+   `Xss::filterAdmin()`. That list has no `svg` and no `use`, so the sprite icon
+   `active-filters` used to draw inside the `×` anchor was STRIPPED and the
+   anchor rendered empty; and attribute values are protocol-filtered, so
+   `aria-label="Remove filter: State"` arrived as `" State"`. Both were measured
+   on the live page and both are FIXED — in the component, which is where they
+   are emitted: the glyph is a text `×` no XSS filter has a reason to remove,
+   and the accessible name reads `Remove the State filter`, which has no colon
+   for `filterBadProtocol()` to mistake for a scheme. The `::after` rule in
+   `css/app.src.css` that used to put the glyph back is deleted with them.
+#}
+{% set bb_path = path('<current>') %}
+
+{# One entry per facet: what it is called, what reads, and the RAW values an
+   address has to carry. `item.groups` is the grouped shape; the `[item]`
+   fallback keeps this template honest if the option is ever turned off. #}
+{% set bb_applied = [] %}
+{% for item in summary %}
+  {% set bb_values = [] %}
+  {% set bb_raws = [] %}
+  {% for entry in item.groups|default([item]) %}
+    {% set bb_values = bb_values|merge([entry.value ~ '']) %}
+    {% set bb_selector = attribute(entry.link, '#attributes')['data-remove-selector']|default('') ~ '' %}
+    {% if bb_selector is not empty %}
+      {% set bb_raws = bb_raws|merge([bb_selector|split(':', 2)|last]) %}
+    {% endif %}
+  {% endfor %}
+  {% set bb_applied = bb_applied|merge([{
+    'id': item.id ~ '',
+    'field': item.label ~ '',
+    'values': bb_values,
+    'raws': bb_raws,
+  }]) %}
+{% endfor %}
+
+{# THE FACETS WHOSE OWN VOCABULARY DIFFERS FROM THE DERIVED ONE, keyed by the
+   exposed identifier. Only `label` is in here, and that is the whole point of a
+   map rather than a flag: `Labels` is the one facet on this screen whose values
+   are a SET the ticket may hold several of, so `includes any of` says something
+   `is either of` does not — the ticket carries any of these, not is one of
+   them. Every other facet is a single-valued field where the derived operator
+   is right, and a facet absent from this map gets no `operator` key at all. #}
+{% set bb_operators = {
+  'label': 'includes any of'|t,
+} %}
+
+{# The chip set: each facet's sentence plus the address of this list WITHOUT it.
+   Built from the applied set rather than from the request, so a link cannot
+   carry a filter the chips do not show. #}
+{% set bb_facets = [] %}
+{% for facet in bb_applied %}
+  {% set bb_query = [] %}
+  {% for other in bb_applied %}
+    {% if other.id != facet.id %}
+      {% for raw in other.raws %}
+        {% set bb_query = bb_query|merge([other.id|url_encode ~ '[]=' ~ raw|url_encode]) %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+  {% set bb_chip = {
+    'field': facet.field,
+    'values': facet.values,
+  } %}
+  {# `|default(true)` treats boolean false as empty, so a View that turns
+     the remove control off would still emit `id[]=value` addresses. #}
+  {% if options.show_remove_link is not defined or options.show_remove_link %}
+    {% set bb_chip = bb_chip|merge({
+      'remove_url': bb_query is empty ? bb_path : bb_path ~ '?' ~ bb_query|join('&'),
+    }) %}
+  {% endif %}
+  {# MERGED RATHER THAN SET TO NULL. `operator` is typed `string`, and SDC's
+     prop validation runs whenever `twig.config.debug` is on, so an explicit
+     null would be a validation failure on exactly the surfaces that check. #}
+  {% if bb_operators[facet.id] is defined %}
+    {% set bb_chip = bb_chip|merge({'operator': bb_operators[facet.id]}) %}
+  {% endif %}
+  {% set bb_facets = bb_facets|merge([bb_chip]) %}
+{% endfor %}
+
+{{ include('bb_theme:active-filters', {
+  variant: 'chips_only',
+  facets: bb_facets,
+}, with_context = false) }}

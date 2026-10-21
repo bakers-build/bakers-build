@@ -1,0 +1,23 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_project.epics
+ *
+ * The Epics project tab body. Same chrome as Overview; the list is epic
+ * tickets. Lives in bb_core/config/optional and is named in the recipe
+ * `config: import:` list, matching `bb_project.full`.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_core"
+    ]
+  },
+  "id": "bb_project.epics",
+  "label": "Epics",
+  "description": "",
+  "targetEntityType": "bb_project",
+  "cache": true
+}
+)

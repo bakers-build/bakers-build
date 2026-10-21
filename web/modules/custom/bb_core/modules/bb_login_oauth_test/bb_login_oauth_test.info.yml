@@ -1,0 +1,7 @@
+name: bakers.build Login OAuth Test
+type: module
+description: 'A stub OAuth provider for the browser suite, enabled only in the e2e world.'
+package: Testing
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_login_oauth

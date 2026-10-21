@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Install-time fixture the browser suite depends on.
+ */
+
+declare(strict_types=1);
+
+use Drupal\bb_core\Onboarding\OnboardingDestination;
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_install().
+ *
+ * MARKS THE ADMINISTRATOR AS ONBOARDED, which the e2e content fixtures cannot
+ * do for it: the 36 seeded accounts each ship a
+ * `field_onboarding_completed: true` of their own, but uid 1 is created by the
+ * installer before any recipe content is imported, so nothing else reaches it.
+ *
+ * Without this the onboarding guard — correctly, per the confirmed policy that
+ * existing human accounts start incomplete — redirects every scenario that
+ * signs in as "Administrator" into the wizard, and the ticket, team, island,
+ * project and dialog features all fail on their Background step rather than on
+ * anything they assert.
+ *
+ * This module is installed only by `recipes/bb_e2e`, so the write never
+ * reaches a real site.
+ */
+function bb_browser_test_install(): void {
+  $admin = User::load(1);
+  if ($admin === NULL || !$admin->hasField(OnboardingDestination::COMPLETION_FIELD)) {
+    return;
+  }
+  $admin->set(OnboardingDestination::COMPLETION_FIELD, TRUE);
+  $admin->save();
+}

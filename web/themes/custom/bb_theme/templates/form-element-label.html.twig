@@ -1,0 +1,19 @@
+{#
+/**
+ * @file
+ * Presenter override: render the form element label through the bb_theme
+ * form_label SDC. The real label `attributes` (the `for` binding, required/state
+ * classes) pass through; the SDC adds its styling. `inline` switches to the
+ * checkbox/radio label variant.
+ *
+ * @see web/themes/custom/bb_theme/components/form_label/form_label.twig
+ */
+#}
+{% if title is not empty or required -%}
+  {{ include('bb_theme:form_label', {
+    attributes: attributes,
+    title: title,
+    title_display: title_display,
+    inline: title_display == 'after',
+  }, with_context = false) }}
+{%- endif %}

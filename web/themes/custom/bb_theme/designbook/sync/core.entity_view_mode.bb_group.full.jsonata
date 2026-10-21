@@ -1,0 +1,24 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_group.full
+ *
+ * Authored for BB-587 from the bb_group `full` entity mapping. Ordered
+ * before the display it names by the display's own `dependencies.config:
+ * [core.entity_view_mode.bb_group.full]`, not by phase order (a recipe has
+ * none inside a single `installRecipeConfig()` batch).
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_core"
+    ]
+  },
+  "id": "bb_group.full",
+  "label": "Full",
+  "description": "",
+  "targetEntityType": "bb_group",
+  "cache": true
+}
+)

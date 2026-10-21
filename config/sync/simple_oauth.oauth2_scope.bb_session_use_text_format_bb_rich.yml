@@ -1,0 +1,16 @@
+uuid: 64e24109-7492-423b-9fa6-a75ef7fd6a1b
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_use_text_format_bb_rich
+name: 'bb:session:use_text_format_bb_rich'
+description: 'bakers.build session ceiling — use text format bb_rich'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'use text format bb_rich'

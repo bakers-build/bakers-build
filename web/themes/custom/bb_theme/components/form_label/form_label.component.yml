@@ -1,0 +1,26 @@
+$schema: "https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json"
+name: "Label"
+status: "stable"
+group: "Form"
+description: "Form label rendered inside a form element's label slot."
+provider: "bb_theme"
+props:
+  type: "object"
+  properties:
+    for:
+      type: "string"
+      title: "For (target input id)"
+    title_display:
+      type: "string"
+      enum: ["before", "after", "invisible"]
+      title: "Title display"
+    inline:
+      type: "boolean"
+      title: "Inline (checkbox/radio row label)"
+slots:
+  title:
+    title: "Title"
+    description: "The label text content."
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

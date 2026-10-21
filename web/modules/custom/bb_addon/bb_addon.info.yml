@@ -1,0 +1,10 @@
+name: bakers.build Addon
+type: module
+description: 'Addon definitions run by conductors and the ticket addons card (inbox messages, contract 2).'
+package: bakers.build
+core_version_requirement: ^11.3
+dependencies:
+  - bb_core:bb_core
+  - bb_inbox:bb_inbox
+  - island:island
+  - ui_patterns:ui_patterns

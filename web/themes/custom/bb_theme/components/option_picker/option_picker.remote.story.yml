@@ -1,0 +1,38 @@
+component: bb_theme:option_picker
+name: Remote
+variant: field
+props:
+  variant: field
+  label: Ticket
+  icon: ticket
+  value_label: "WORK-12 Review the week grid"
+  aria_label: "Change ticket. Currently WORK-12 Review the week grid."
+  open: true
+  multiple: false
+  searchable: true
+  search_placeholder: "Search tickets"
+  search_label: "Search tickets"
+  search_url: "/time/options/ticket?project=1"
+  name: ticket
+  id: edit-ticket
+  values:
+    - "12"
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: ticket
+        multiple: false
+        clearable: true
+        clear_label: "No ticket"
+        options:
+          - value: "12"
+            label: "WORK-12 Review the week grid"
+            selected: true
+          - value: "13"
+            label: "WORK-13 Proposal handoff"
+            selected: false
+          - value: "14"
+            label: "WORK-14 Picker search"
+            selected: false

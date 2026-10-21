@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:bakers:skills:measurements:definition",
+  "title": "bakers.build measurement definition",
+  "description": "Normative shape of ONE reusable ticket-measurement definition. A definition names a fixed, ordered set of numeric values (score mandatory) that a workflow measures and writes into the bb_ticket.metrics field as namespaced bb_metric rows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "label", "values"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Stable machine id of the definition; the metric-name namespace prefix (`<id>.<value_name>`)."
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Mandatory human-readable name of the definition."
+    },
+    "label_term": {
+      "type": "string",
+      "minLength": 1,
+      "description": "OPTIONAL. Name of an existing bb_labels taxonomy term assigned to the ticket on measure as human-visible provenance. Omit it when the namespaced metric name (and, for a sub-work measurement, the ticket's work:* label) already makes the origin clear — then no term is assigned and none needs seeding."
+    },
+    "values": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Fixed, ordered set of numeric values this definition measures. Order is significant (display + write order).",
+      "items": { "$ref": "#/$defs/value" },
+      "contains": {
+        "type": "object",
+        "properties": { "name": { "const": "score" } },
+        "required": ["name"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    }
+  },
+  "$defs": {
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "label"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Machine name of the value; the namespaced metric name is `<definition id>.<name>`. All values are numeric by contract."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Mandatory human-readable name of this value."
+        },
+        "description": {
+          "type": "string",
+          "description": "What the value means / how it is derived."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit written to bb_metric.unit (e.g. `ratio`, `count`, `points`). Omit for a bare number."
+        },
+        "min": {
+          "type": "number",
+          "description": "Lower bound of the value's expected range."
+        },
+        "max": {
+          "type": "number",
+          "description": "Upper bound of the value's expected range."
+        },
+        "direction": {
+          "enum": ["up", "down", "neutral"],
+          "description": "Scoring direction: `up` = higher is better, `down` = lower is better, `neutral` = informational."
+        }
+      }
+    }
+  }
+}

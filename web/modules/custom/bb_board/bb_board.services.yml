@@ -1,0 +1,19 @@
+services:
+  # Board-card records for one column's tickets.
+  bb_board.project_board:
+    class: Drupal\bb_board\ProjectBoard
+    arguments: ['@bb_core.ticket_run_deriver', '@date.formatter']
+  Drupal\bb_board\ProjectBoard:
+    alias: bb_board.project_board
+  # A board parent's visible descendants, resolved once per request.
+  bb_board.parent_ticket_scope:
+    class: Drupal\bb_board\ParentTicketScope
+    arguments: ['@entity_type.manager', '@current_user']
+  Drupal\bb_board\ParentTicketScope:
+    alias: bb_board.parent_ticket_scope
+  # Labelled, ordered chip rows from the control panel's aggregations.
+  bb_board.project_board_summary:
+    class: Drupal\bb_board\ProjectBoardSummary
+    arguments: ['@entity_type.manager']
+  Drupal\bb_board\ProjectBoardSummary:
+    alias: bb_board.project_board_summary

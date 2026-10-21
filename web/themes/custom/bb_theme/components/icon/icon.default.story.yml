@@ -1,0 +1,5 @@
+component: bb_theme:icon
+name: Default
+props:
+  name: user
+  size: md

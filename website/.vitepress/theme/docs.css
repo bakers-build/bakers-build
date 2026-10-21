@@ -1,0 +1,815 @@
+/* bakers.build docs — the Storybook-docs look, adapted to the bakers.build brand (BB-427 D7).
+ *
+ * Scope: every page EXCEPT the landing. The landing owns `html.landing-page`
+ * and sets its own VP variables in landing.css; nothing here may leak into it,
+ * so every rule is guarded with `:not(.landing-page)` or lives under `.vp-doc`
+ * / VP layout classes the landing never renders.
+ *
+ * Specificity note: VitePress's default theme ships *scoped* styles
+ * (`.foo[data-v-…]`), which beat a plain class chain of the same length. Rules
+ * that override such styles therefore carry the `html:not(.landing-page)`
+ * prefix — it adds a type and a class to the chain — and, where the scoped
+ * rule is itself long (`.VPDoc.has-aside .content-container`), the full
+ * ancestor path. VitePress puts a page's `pageClass` on `.Layout`, so the docs
+ * home is addressed as `.doc-home-page …`, an ancestor of `.vp-doc`.
+ *
+ * What "Storybook look" means here, and only here:
+ *   - Nunito Sans, a calm slate text palette, generous line-height
+ *   - the pastel arc along the top edge (storybook.js.org/bubbles.png, rebuilt)
+ *   - sidebar groups as small uppercase labels, a violet marker on the active item
+ *   - flat callouts with a coloured left edge, dark code blocks in both modes
+ *   - calm tables, boxed diagrams, prev/next as cards
+ *   - a docs home made of a quick-links strip and tiles
+ * The accent stays bakers.build violet, never Storybook pink.
+ */
+
+/* ---------- tokens: light (default) ---------- */
+html:not(.landing-page) {
+  --vp-font-family-base: 'Nunito Sans', 'Inter', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --vp-font-family-mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+  --vp-code-font-size: 14px;
+  --vp-code-line-height: 1.45;
+
+  --vp-c-brand-1: #6e46e6;
+  --vp-c-brand-2: #5b35c9; /* link hover — 4.5:1 on white */
+  --vp-c-brand-3: #ba9cff;
+  --vp-c-brand-soft: rgba(143, 104, 255, 0.14);
+  --bakers-violet: #8f68ff; /* decorative only: markers, borders, washes */
+
+  --vp-c-text-1: #2e3438;
+  --vp-c-text-2: #5c6870;
+  --vp-c-text-3: #626f78; /* 5.17:1 on white, 4.7:1 on the soft surface */
+
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f7f8fa;
+  --vp-c-bg-soft: #f3f4f7;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-divider: #e6e8ec;
+  --vp-c-gutter: #e6e8ec;
+
+  --vp-c-tip-1: var(--vp-c-brand-1);
+  --vp-c-tip-2: var(--vp-c-brand-2);
+  --vp-c-tip-soft: var(--vp-c-brand-soft);
+  --vp-c-warning-1: #b7791f;
+  --vp-c-warning-soft: rgba(245, 166, 35, 0.14);
+  --vp-c-danger-1: #c0392b;
+  --vp-c-danger-soft: rgba(224, 82, 82, 0.12);
+
+  --vp-code-block-bg: #1c1b22;
+  --vp-code-block-divider-color: #2a2833;
+  --vp-code-copy-code-bg: #2a2833;
+  --vp-code-copy-code-hover-bg: #3a3745;
+  --vp-code-tab-bg: #1c1b22;
+  --vp-code-tab-divider: #2a2833;
+  --vp-code-tab-text-color: #a3a1b8;
+  --vp-code-tab-active-text-color: #ecebf5;
+  --vp-code-tab-active-bar-color: var(--vp-c-brand-3);
+  --vp-code-color: #6e46e6;
+  --vp-code-bg: rgba(143, 104, 255, 0.1);
+
+  --vp-nav-bg-color: rgba(255, 255, 255, 0.85);
+  --vp-sidebar-bg-color: #ffffff;
+  --bakers-scrollbar-thumb: rgba(60, 55, 90, 0.3);
+  --vp-c-default-soft: #f3f4f7;
+}
+
+/* ---------- tokens: dark ---------- */
+html.dark:not(.landing-page) {
+  --vp-c-brand-1: #c7b2ff;
+  --vp-c-brand-2: #ba9cff;
+  --vp-c-brand-3: #8f68ff;
+  --vp-c-brand-soft: rgba(164, 143, 255, 0.18);
+
+  --vp-c-text-1: #ecebf5;
+  --vp-c-text-2: #a3a1b8;
+  --vp-c-text-3: #8e8ba3; /* 5.8:1 on the page, 5.5:1 on the soft surface */
+
+  --vp-c-bg: #100c1d;
+  --vp-c-bg-alt: #0b0816;
+  --vp-c-bg-soft: #181329;
+  --vp-c-bg-elv: #181329;
+  --vp-c-divider: rgba(255, 255, 255, 0.09);
+  --vp-c-gutter: rgba(255, 255, 255, 0.09);
+
+  --vp-c-warning-1: #f2c14e;
+  --vp-c-danger-1: #ff7b7b;
+
+  --vp-code-block-bg: #0b0816;
+  --vp-code-block-divider-color: #241d3a;
+  --vp-code-color: #d3c4ff;
+  --vp-code-bg: rgba(164, 143, 255, 0.14);
+
+  --vp-nav-bg-color: rgba(16, 12, 29, 0.85);
+  --vp-sidebar-bg-color: #100c1d;
+  --bakers-scrollbar-thumb: rgba(220, 215, 245, 0.24);
+  --vp-c-default-soft: #181329;
+}
+
+/* ---------- utilities ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- the "bubbles": Storybook's pastel arc along the top edge ---------- */
+/* storybook.js.org/bubbles.png is a full-width, very soft horizontal spectrum
+ * hugging the top of the content area and fading to the page colour within a
+ * few hundred pixels, its lower boundary curved like the rim of a huge circle.
+ * Rebuilt here in CSS, in bakers.build's family (rosé → violet → sky → mint) instead of
+ * Storybook's rainbow: a horizontal gradient shaped by an elliptical mask, on a
+ * full-bleed pseudo-element behind the content column — never a box. */
+/* Painted on the whole page (`.Layout`), so it runs under the nav, the sidebar
+ * and the content alike — no seam where the sidebar starts or the nav's content
+ * width ends. Two mask layers intersect: the elliptical rim, and a left-to-right
+ * fade that keeps the sidebar side very quiet while the content area carries
+ * the colour. `isolation: isolate` keeps the negative z-index inside .Layout. */
+html:not(.landing-page) .Layout {
+  position: relative;
+  isolation: isolate;
+}
+html:not(.landing-page) .Layout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 560px;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.6;
+  background: linear-gradient(
+    90deg,
+    #ffd0dd 0%,
+    #e2c8ff 22%,
+    #bda3ff 42%,
+    #a9d3ff 62%,
+    #a6ecd6 80%,
+    #d3f3c0 100%
+  );
+  -webkit-mask-image:
+    radial-gradient(130% 100% at 60% -18%, #000 0%, #000 34%, rgba(0, 0, 0, 0.5) 58%, transparent 84%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.55) 18%, #000 40%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(130% 100% at 60% -18%, #000 0%, #000 34%, rgba(0, 0, 0, 0.5) 58%, transparent 84%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.55) 18%, #000 40%);
+  mask-composite: intersect;
+}
+html.dark:not(.landing-page) .Layout::before {
+  opacity: 0.34;
+  background: linear-gradient(
+    90deg,
+    #ff8fb1 0%,
+    #b48cff 22%,
+    #7d5cff 42%,
+    #5aa9ff 62%,
+    #3fcfa0 82%,
+    #9be36f 100%
+  );
+}
+/* The sidebar lets the arc through on desktop; the mobile drawer stays solid. */
+@media (min-width: 960px) {
+  html:not(.landing-page) {
+    --vp-sidebar-bg-color: transparent;
+  }
+  html.dark:not(.landing-page) {
+    --vp-sidebar-bg-color: transparent;
+  }
+}
+/* The nav's translucent surface and blur run the full width, not only over the
+ * content column — otherwise the tint under the nav starts and stops with it. */
+html:not(.landing-page) .VPNavBar:not(.home) {
+  background-color: var(--vp-nav-bg-color);
+  -webkit-backdrop-filter: saturate(50%) blur(8px);
+  backdrop-filter: saturate(50%) blur(8px);
+}
+html:not(.landing-page) .VPNavBar:not(.home) .content-body {
+  background-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ---------- reading column: 720px beside the aside ---------- */
+html:not(.landing-page) .VPDoc.has-aside .content-container {
+  max-width: 720px;
+}
+
+/* ---------- nav ---------- */
+html:not(.landing-page) .VPNavBarTitle .logo {
+  height: 30px;
+}
+/* The logo carries the wordmark; the text title stays for assistive tech only. */
+html:not(.landing-page) .VPNavBarTitle .title > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+html:not(.landing-page) .VPNavBarMenuLink {
+  font-weight: 700;
+}
+/* The version dropdown reads as a badge, not as another destination. */
+html:not(.landing-page) .VPNavBarMenuGroup > .button > .text {
+  padding: 4px 8px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ---------- sidebar: Storybook's rhythm — area strip, version row, groups ---------- */
+/* Measured on storybook.js.org/docs: area rows 32px with an 18px coloured
+ * icon and a 12px gap, 6px apart; a version row over a hairline; group titles
+ * 14px/700 on 34px rows; links 14px/20px on 30px rows with 8px of inner
+ * padding, muted until hovered or current; 24px between groups. The 8px inner
+ * padding puts the text on the nav logo's 32px line. */
+@media (min-width: 960px) {
+  html:not(.landing-page) .VPSidebar {
+    padding-top: calc(var(--vp-nav-height) + 28px);
+    padding-right: 20px;
+    padding-left: max(24px, calc((100% - (var(--vp-layout-max-width) - 64px)) / 2 - 8px));
+  }
+}
+html:not(.landing-page) .sb-areas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+html:not(.landing-page) .sb-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+html:not(.landing-page) .sb-area:hover,
+html:not(.landing-page) .sb-area.is-active {
+  color: var(--vp-c-brand-1);
+}
+html:not(.landing-page) .sb-area__icon,
+html:not(.landing-page) .sb-area__icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+html:not(.landing-page) .sb-version {
+  margin: 20px 0 14px;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+html:not(.landing-page) .sb-version select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 44px;
+  padding: 0 28px 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626f78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center / 16px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+}
+html.dark:not(.landing-page) .sb-version select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8ba3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+html:not(.landing-page) .sb-version select:hover {
+  color: var(--vp-c-text-1);
+}
+html:not(.landing-page) .VPSidebarItem.level-0 {
+  padding-bottom: 24px;
+}
+html:not(.landing-page) .VPSidebarItem.level-0 > .item > .text {
+  padding: 8px 8px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  color: var(--vp-c-text-1);
+}
+/* Linked items render `.item > .link > .text`. */
+html:not(.landing-page) .VPSidebarItem:is(.level-1, .level-2) > .item > .link > .text {
+  padding: 5px 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--vp-c-text-2);
+}
+html:not(.landing-page) .VPSidebarItem:is(.level-1, .level-2) > .item > .link:hover > .text,
+html:not(.landing-page) .VPSidebarItem.is-active > .item > .link > .text {
+  color: var(--vp-c-brand-1);
+}
+/* Storybook marks the current page by colour alone. */
+html:not(.landing-page) .VPSidebarItem > .item > .indicator {
+  display: none;
+}
+html:not(.landing-page) .VPSidebar .group + .group {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* ---------- sidebar scrollbar: thin, shown only while the pointer is over it ---------- */
+/* Storybook's docs sidebar keeps its scrollbar out of sight until you hover the
+ * list. Engines that honour the standard properties (Chromium ≥ 121, Firefox,
+ * Safari ≥ 18.2) take the first block and ignore the WebKit pseudo-elements;
+ * the second block serves older Safari. So the two never fight. */
+@media (min-width: 960px) {
+  html:not(.landing-page) .VPSidebar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s ease;
+  }
+  html:not(.landing-page) .VPSidebar:hover {
+    scrollbar-color: var(--bakers-scrollbar-thumb) transparent;
+  }
+  @supports not (scrollbar-color: auto) {
+    html:not(.landing-page) .VPSidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    html:not(.landing-page) .VPSidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    html:not(.landing-page) .VPSidebar::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: 999px;
+    }
+    html:not(.landing-page) .VPSidebar:hover::-webkit-scrollbar-thumb {
+      background: var(--bakers-scrollbar-thumb);
+    }
+  }
+}
+
+/* ---------- aside ---------- */
+/* The outline keeps VitePress's vertical geometry (32px title, 32px rows):
+ * the theme positions the active marker from the link's offsetTop plus a
+ * constant calibrated for exactly these heights, so a tighter line-height
+ * makes the marker drift away from the current entry. */
+html:not(.landing-page) .VPDocAsideOutline .outline-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 32px;
+  color: var(--vp-c-text-1);
+}
+html:not(.landing-page) .VPDocAsideOutline .outline-link {
+  font-size: 14px;
+  line-height: 32px;
+  padding: 0;
+}
+html:not(.landing-page) .VPDocAsideOutline .outline-marker {
+  background: var(--bakers-violet);
+  width: 2px;
+}
+
+/* ---------- typography: the scale of storybook.js.org/docs ---------- */
+/* Same face (Nunito Sans), same sizes and weights: h1 36/40, h2 24/32, h3
+ * 20/28, h4 18/28, all 700 with normal tracking; body 16/28; code 14. */
+.vp-doc {
+  font-size: 16px;
+  line-height: 1.75;
+}
+.vp-doc h1 {
+  font-size: 2.25rem;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin-bottom: 0.6rem;
+}
+/* The template's lead: the first paragraph after the H1 ("You'll learn …"). */
+.vp-doc h1 + p {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+  margin: 0 0 2rem;
+  padding-bottom: 1.4rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+.vp-doc h2 {
+  font-size: 1.5rem;
+  line-height: 1.34;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: 2.8rem 0 1rem;
+  padding-top: 0;
+  border-top: none;
+}
+html:not(.landing-page) .vp-doc h2 .header-anchor {
+  top: 0;
+}
+.vp-doc h3 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 700;
+  margin: 2rem 0 0.75rem;
+}
+.vp-doc h4 {
+  font-size: 1.125rem;
+  line-height: 1.56;
+  font-weight: 700;
+}
+.vp-doc p,
+.vp-doc li {
+  color: var(--vp-c-text-1);
+}
+.vp-doc li {
+  line-height: 1.6;
+}
+.vp-doc a {
+  font-weight: 500;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.vp-doc strong {
+  font-weight: 700;
+}
+.vp-doc blockquote {
+  border-left: 3px solid var(--vp-c-brand-3);
+  color: var(--vp-c-text-2);
+}
+
+/* ---------- code ---------- */
+.vp-doc div[class*='language-'] {
+  border-radius: 10px;
+  margin: 1.2rem 0;
+}
+.vp-doc :not(pre) > code {
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 14px;
+}
+html:not(.landing-page) .vp-doc div[class*='language-'] > span.lang {
+  color: #a3a1b8;
+}
+
+/* ---------- diagrams: boxed, centred, capped on desktop, click to zoom ---------- */
+html:not(.landing-page) .vp-doc .mermaid {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 1.4rem 0 1.8rem;
+  padding: 18px 12px 26px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-alt);
+  overflow-x: auto;
+  cursor: zoom-in;
+}
+html:not(.landing-page) .vp-doc .mermaid svg {
+  max-height: 640px;
+  width: auto;
+  height: auto;
+}
+html:not(.landing-page) .vp-doc .mermaid::after {
+  content: 'Click to zoom';
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+  pointer-events: none;
+}
+/* The zoom overlay (built by theme/index.ts on click). */
+.bakers-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 12, 29, 0.82);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: zoom-out;
+}
+.bakers-zoom__card {
+  max-width: min(96vw, 1600px);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 24px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+html.dark .bakers-zoom__card {
+  background: #181329;
+}
+/* Sized by the zoom script from the diagram's viewBox (fit to the viewport
+ * width, at most 2x); the card scrolls vertically for tall diagrams. */
+.bakers-zoom__card svg {
+  display: block;
+}
+.bakers-zoom__hint {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ---------- tables: calm, bottom rules only ---------- */
+html:not(.landing-page) .vp-doc table {
+  font-size: 14px;
+  line-height: 20px;
+}
+html:not(.landing-page) .vp-doc tr {
+  border: 0;
+  background: transparent;
+}
+html:not(.landing-page) .vp-doc :is(td, th) {
+  border: 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding: 12px 16px;
+  vertical-align: top;
+}
+html:not(.landing-page) .vp-doc td {
+  font-size: inherit;
+}
+html:not(.landing-page) .vp-doc th {
+  background: var(--vp-c-bg-soft);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--vp-c-text-2);
+}
+
+/* ---------- callouts: flat, coloured left edge, small-caps title ---------- */
+.vp-doc .custom-block {
+  border-width: 0 0 0 4px;
+  border-radius: 8px;
+  padding: 14px 18px 14px 18px;
+  margin: 1.4rem 0;
+  font-size: 15px;
+}
+.vp-doc .custom-block .custom-block-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  margin-bottom: 6px;
+}
+.vp-doc .custom-block.tip {
+  border-color: var(--bakers-violet);
+  background: var(--vp-c-brand-soft);
+}
+.vp-doc .custom-block.info {
+  border-color: var(--vp-c-text-3);
+  background: var(--vp-c-bg-soft);
+}
+.vp-doc .custom-block.warning {
+  border-color: var(--vp-c-warning-1);
+  background: var(--vp-c-warning-soft);
+}
+.vp-doc .custom-block.danger {
+  border-color: var(--vp-c-danger-1);
+  background: var(--vp-c-danger-soft);
+}
+.vp-doc .custom-block p + p {
+  margin-top: 6px;
+}
+
+/* ---------- prev / next as cards ---------- */
+.VPDocFooter .pager-link {
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.VPDocFooter .pager-link .desc {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--vp-c-text-3);
+}
+.VPDocFooter .pager-link .title {
+  font-weight: 700;
+}
+.VPDocFooter .pager-link:hover {
+  border-color: var(--bakers-violet);
+}
+
+/* ---------- the docs home (`pageClass: doc-home-page` on .Layout) ---------- */
+html:not(.landing-page) .Layout.doc-home-page .VPDoc .content-container {
+  max-width: 960px;
+}
+html:not(.landing-page) .doc-home-page .vp-doc h1 {
+  font-size: 2.25rem;
+}
+html:not(.landing-page) .doc-home-page .vp-doc h1 + p {
+  max-width: 640px;
+  margin-bottom: 8px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+html:not(.landing-page) .doc-home-page .vp-doc h2 {
+  margin-top: 32px;
+}
+
+/* quick links strip */
+html:not(.landing-page) .doc-quicklinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0 32px;
+}
+html:not(.landing-page) .vp-doc .doc-quicklink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px 9px 11px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+html:not(.landing-page) .vp-doc .doc-quicklink:hover {
+  border-color: var(--bakers-violet);
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+}
+html.dark:not(.landing-page) .vp-doc .doc-quicklink {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.doc-quicklink__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: var(--vp-c-brand-1);
+}
+.doc-quicklink__icon svg {
+  width: 16px;
+  height: 16px;
+}
+.doc-quicklink__icon--area svg {
+  width: 18px;
+  height: 18px;
+}
+.doc-quicklink__ext {
+  font-size: 12px;
+  color: var(--vp-c-text-3);
+  margin-left: -2px;
+}
+
+/* tiles */
+html:not(.landing-page) .doc-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+  margin: 1.5rem 0 2.5rem;
+}
+html:not(.landing-page) .vp-doc .doc-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  font-weight: 400;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+html:not(.landing-page) .vp-doc .doc-tile:hover {
+  border-color: var(--bakers-violet);
+  box-shadow: 0 8px 24px rgba(110, 70, 230, 0.1);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+html.dark:not(.landing-page) .vp-doc .doc-tile {
+  background: var(--vp-c-bg-soft);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.doc-tile__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+.doc-tile__icon svg {
+  width: 20px;
+  height: 20px;
+}
+.doc-tile__title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--vp-c-text-1);
+}
+/* `.vp-doc p` would otherwise win and re-apply body margins and colour. */
+html:not(.landing-page) .vp-doc .doc-tile__text {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--vp-c-text-2);
+}
+html:not(.landing-page) .doc-tile__meta {
+  margin-top: auto;
+  padding-top: 4px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--vp-c-brand-1);
+  font-weight: 700;
+}
+
+/* ---------- keyboard focus: one violet ring everywhere ---------- */
+html:not(.landing-page)
+  :is(
+    .doc-tile,
+    .doc-quicklink,
+    .sb-area,
+    .sb-version select,
+    .VPSidebarItem .link,
+    .VPSidebarItem > .item[tabindex='0'],
+    .VPNavBarMenuLink,
+    .VPNavBarMenuGroup .button,
+    .VPDocFooter .pager-link,
+    .VPDocAsideOutline .outline-link
+  ):focus-visible {
+  outline: 3px solid var(--vp-c-brand-1);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+html:not(.landing-page) .doc-tile:focus-visible {
+  border-radius: 12px;
+}
+html:not(.landing-page) .doc-quicklink:focus-visible {
+  border-radius: 999px;
+}
+
+/* ---------- ≤ 768px: the custom layer adapts; VitePress owns the mobile shell ---------- */
+@media (max-width: 768px) {
+  html:not(.landing-page) .vp-doc h1,
+  html:not(.landing-page) .doc-home-page .vp-doc h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  html:not(.landing-page) .vp-doc h1 + p {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+  html:not(.landing-page) .vp-doc h2 {
+    margin-top: 32px;
+  }
+  html:not(.landing-page) .doc-tiles {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+  html:not(.landing-page) .vp-doc .doc-tile {
+    padding: 16px;
+  }
+  html:not(.landing-page) .doc-quicklinks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 24px 0;
+  }
+  html:not(.landing-page) .vp-doc .doc-quicklink {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+  html:not(.landing-page) .VPSidebarItem .link {
+    min-height: 44px;
+  }
+  /* Diagrams keep their labels readable and scroll sideways instead. */
+  html:not(.landing-page) .vp-doc .mermaid {
+    justify-content: flex-start;
+    padding: 12px;
+  }
+  html:not(.landing-page) .vp-doc .mermaid svg {
+    max-height: none;
+    max-width: none;
+  }
+}

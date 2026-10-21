@@ -1,0 +1,47 @@
+component: bb_theme:stat-comparison
+name: Signed
+props:
+  chart:
+    state: ready
+    label: Model comparison
+    value_label: Value
+    labels:
+      - '2026-01-01'
+      - '2026-01-02'
+      - '2026-01-04'
+    series:
+      - key: a
+        style: a
+        label: Model A
+        latest_value: '1.25'
+        values:
+          - x: '2026-01-01'
+            'y': -2.5
+          - x: '2026-01-02'
+            'y': 0.5
+          - x: '2026-01-04'
+            'y': 1.25
+      - key: b
+        style: b
+        label: Model B
+        latest_value: '2'
+        values:
+          - x: '2026-01-01'
+            'y': 4
+          - x: '2026-01-02'
+            'y': -1
+          - x: '2026-01-04'
+            'y': 2
+    rows:
+      - date: '2026-01-01'
+        values:
+          - '-2.5'
+          - '4'
+      - date: '2026-01-02'
+        values:
+          - '0.5'
+          - '-1'
+      - date: '2026-01-04'
+        values:
+          - '1.25'
+          - '2'

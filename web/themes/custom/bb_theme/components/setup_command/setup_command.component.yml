@@ -1,0 +1,29 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Setup command
+status: stable
+group: Action
+description: >-
+  A copyable command: escaped pre/code text and a native Copy button. Copy reads
+  the command from this component's own DOM, never from a JavaScript expression,
+  so the text stays selectable when the clipboard is denied. Confirmation is the
+  reusable `copied` overlay, absolutely positioned just below the Copy control
+  and cleared so it hides again.
+provider: bb_theme
+props:
+  type: object
+  required:
+    - command
+    - label
+  properties:
+    command:
+      type: string
+      title: Command
+      description: The exact command line shown in the pre/code block.
+    label:
+      type: string
+      title: Label
+      description: Accessible purpose of the Copy control, used as aria-label.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

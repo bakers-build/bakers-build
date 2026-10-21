@@ -1,0 +1,22 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Shell
+status: stable
+group: Shell
+description: 'The application shell — declared once and inherited by every screen scene, never re-composed per screen. BB-503 removes the header entirely: the shell is now a collapsible navigation rail beside a main column that stacks the screen content and the status bar, with an overlay layer last for dialogs. `content` is the one region a screen fills, and it is deliberately NOT a scroll container: a scrolling ancestor here would take a sticky `inspector` and a sticky `filters` their stick and clip every absolutely positioned picker panel. Every region renders only when its slot is filled, so a screen that supplies content alone renders exactly as before.'
+provider: bb_theme
+slots:
+  sidebar:
+    title: Sidebar
+    description: The shell's navigation landmark — normally the sidebar component, which carries the workspace switcher at its head, the primary navigation, and the signed-in account at its foot.
+  content:
+    title: Content
+    description: Main content area where screens and section scenes inject their content.
+  footer:
+    title: Footer
+    description: Bottom bar of the shell — normally the status bar component with the auto-refresh indicator.
+  overlay:
+    title: Overlay
+    description: Overlay layer stacked above the shell — the dialog surface.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

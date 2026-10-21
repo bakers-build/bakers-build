@@ -1,0 +1,27 @@
+component: bb_theme:board-card
+name: Default
+props:
+  identifier: GL-138
+  title: Refactor the workflow state machine
+  status: running
+  priority: p2
+slots:
+  footer:
+    - type: component
+      component: bb_theme:badge
+      props:
+        label: srv01
+        tone: lease
+        mono: true
+        icon: lock
+    - type: element
+      tag: span
+      value: ''
+      attributes:
+        class: flex-1
+    - type: component
+      component: bb_theme:badge
+      props:
+        label: running
+        tone: running
+        dot: true

@@ -1,0 +1,101 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_run.full
+  module:
+    - display_builder
+    - bb_core
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:canvas'
+            variant_id: null
+            props: {  }
+            slots:
+              main:
+                sources:
+                  -
+                    source_id: bb_run_canonical_body
+                    source:
+                      context_mapping:
+                        entity: entity
+                    node_id: run_canonical_body
+                  -
+                    source_id: bb_run_activity
+                    source:
+                      context_mapping:
+                        entity: entity
+                    node_id: run_activity
+              inspector:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:inspector'
+                        variant_id: null
+                        props:
+                          surface:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          rows:
+                            sources:
+                              -
+                                source_id: bb_run_inspector
+                                source:
+                                  context_mapping:
+                                    entity: entity
+                                node_id: run_inspector_rows
+                    node_id: run_inspector
+        node_id: run_canonical_canvas
+id: bb_run.bb_run.full
+targetEntityType: bb_run
+bundle: bb_run
+mode: full
+content: {  }
+hidden:
+  active_s: true
+  agent: true
+  agent_turns: true
+  claim_expires_at: true
+  closed: true
+  closed_date: true
+  conductor_id: true
+  duration: true
+  duration_s: true
+  error_log: true
+  error_log_bytes: true
+  error_log_file: true
+  error_log_sha256: true
+  harness: true
+  heartbeat: true
+  log: true
+  log_bytes: true
+  log_file: true
+  log_sha256: true
+  log_upload_omitted: true
+  model: true
+  model_version: true
+  owner_user_id: true
+  search_api_excerpt: true
+  started_at: true
+  state: true
+  state_at_start: true
+  state_flow: true
+  ticket_id: true
+  tokens: true
+  tool_calls: true
+  user_prompt_words: true
+  user_prompts: true
+  worktree_path: true

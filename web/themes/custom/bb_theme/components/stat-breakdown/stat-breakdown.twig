@@ -1,0 +1,49 @@
+{# A figure split into rows, each carrying its own trailing totals (BB-481 D6).
+
+   IT EMITS NO TABLE MARKUP OF ITS OWN. `table` is the only template in this theme permitted to
+   render a table row, so this composes it rather than growing a second row-bearing template —
+   which would both duplicate that contract and break it.
+
+   An empty breakdown renders `empty-state`, not an empty table: on a figure block an absent
+   number and a broken one look identical, and only a sentence tells them apart. #}
+{% set block_classes = ['min-w-0', 'flex', 'flex-col', 'gap-5', 'py-4'] %}
+<section{{ (attributes ?: create_attribute()).addClass(block_classes) }}>
+  <h2 class="m-0 text-section font-semibold text-title">{{ label }}</h2>
+  {% if entries is empty %}
+    {{ include('bb_theme:empty-state', {
+      message: empty|default('Nothing was counted in any period of this breakdown.'),
+      compact: true,
+    }, with_context = false) }}
+  {% else %}
+    {# The leading column carries the row's own name and is deliberately unlabelled: the block
+       heading above already says what the rows are. #}
+    {% set table_columns = [{ key: 'label', label: '' }] %}
+    {% for column in columns %}
+      {% set table_columns = table_columns|merge([{ key: column.key, label: column.label, num: true }]) %}
+    {% endfor %}
+    {% set table_rows = [] %}
+    {% for row in entries %}
+      {% set cells = { label: { kind: 'text', value: row.label } } %}
+      {% for column in columns %}
+        {# `~ ''` is not decoration: `table` types a cell's `value` as a STRING,
+           and Drupal validates SDC props at render time while Storybook does
+           not — so an integer here renders green in a story and blank-screens
+           the real page. Coerced at the point the table contract is met, so a
+           caller passing numbers (a story, a scene, the renderer) cannot get
+           it wrong independently. #}
+        {% set cells = cells|merge({ (column.key): { kind: 'text', value: row.counts[column.key] ~ '' } }) %}
+      {% endfor %}
+      {% set table_rows = table_rows|merge([{ cells: cells }]) %}
+    {% endfor %}
+    {{ include('bb_theme:table', {
+      columns: table_columns,
+      rows: table_rows,
+    }, with_context = false) }}
+  {% endif %}
+  {% if source %}
+    <details class="text-caption text-text-light">
+      <summary class="w-fit cursor-pointer rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">Data source</summary>
+      <code class="block pt-2 text-caption break-all">{{ source }}</code>
+    </details>
+  {% endif %}
+</section>

@@ -1,0 +1,221 @@
+{
+  "synthetic": true,
+  "profile": "artifact",
+  "skill": "prepare-time",
+  "references": [
+    "prepare-time/references/daily-evidence.md"
+  ],
+  "id": "prepare-time-daily",
+  "input": {
+    "request": "Prepare Monday time. Show the next employee-facing response at each independent checkpoint and the result for each boundary variant. Use only supplied observations; no actual writes are available.",
+    "employee": "employee-elm",
+    "authentication": "verified as employee-elm",
+    "origin": "https://time.example.invalid",
+    "timezone": "Europe/Berlin",
+    "range": [
+      "2026-10-12",
+      "2026-10-12"
+    ],
+    "work_schedule": {
+      "day_0": 32400,
+      "day_1": 32400,
+      "day_2": 32400,
+      "day_3": 32400,
+      "day_4": 32400,
+      "day_5": 0,
+      "day_6": 0,
+      "cap": 21600
+    },
+    "tickets": {
+      "A": {
+        "assignee_user_id": "employee-elm",
+        "permitted_project": "P",
+        "summary": "Employee implemented the import mapping and checked sample records during the morning; remaining work was a short evening correction."
+      },
+      "B": {
+        "assignee_user_id": "employee-other",
+        "permitted_project": "P",
+        "summary": "Employee investigated export failures and verified the fix in the afternoon; exact employee durations are unknown."
+      },
+      "C": {
+        "assignee_user_id": "employee-other",
+        "employee_reviewed": true
+      }
+    },
+    "conductors": {
+      "own": {
+        "owner_user_id": "employee-elm"
+      },
+      "foreign": {
+        "owner_user_id": "employee-other"
+      }
+    },
+    "runs": [
+      {
+        "id": "R1",
+        "started_at": "2026-10-12T08:10:00+02:00",
+        "closed_date": "2026-10-12T10:10:00+02:00",
+        "state": "closed",
+        "ticket_id": "A",
+        "conductor_id": "own",
+        "owner_user_id": "employee-elm"
+      },
+      {
+        "id": "R2",
+        "started_at": "2026-10-12T09:00:00+02:00",
+        "closed_date": "2026-10-12T11:00:00+02:00",
+        "state": "closed",
+        "ticket_id": "A",
+        "conductor_id": "foreign",
+        "owner_user_id": "employee-elm"
+      },
+      {
+        "id": "R3",
+        "started_at": "2026-10-12T14:01:00+02:00",
+        "closed_date": "2026-10-12T19:02:00+02:00",
+        "state": "closed",
+        "ticket_id": "B",
+        "conductor_id": "own",
+        "owner_user_id": "employee-elm"
+      },
+      {
+        "id": "R4",
+        "started_at": "2026-10-12T20:01:00+02:00",
+        "closed_date": "2026-10-12T20:20:00+02:00",
+        "state": "closed",
+        "ticket_id": "A",
+        "conductor_id": "foreign",
+        "owner_user_id": "employee-elm"
+      },
+      {
+        "id": "R5",
+        "started_at": "2026-10-12T22:01:00+02:00",
+        "closed_date": "2026-10-12T22:10:00+02:00",
+        "state": "closed",
+        "ticket_id": "B",
+        "conductor_id": "own",
+        "owner_user_id": "employee-elm"
+      },
+      {
+        "id": "RX",
+        "started_at": "2026-10-12T12:00:00+02:00",
+        "closed_date": "2026-10-12T13:00:00+02:00",
+        "state": "closed",
+        "ticket_id": "C",
+        "conductor_id": "foreign",
+        "owner_user_id": "employee-other"
+      },
+      {
+        "id": "R1",
+        "started_at": "2026-10-12T08:10:00+02:00",
+        "closed_date": "2026-10-12T10:10:00+02:00",
+        "state": "closed",
+        "ticket_id": "A",
+        "conductor_id": "own",
+        "owner_user_id": "employee-elm"
+      },
+      {
+        "id": "RY",
+        "owner_user_id": "employee-other",
+        "started_at": "2026-10-12T12:00:00+02:00",
+        "closed_date": "2026-10-12T13:00:00+02:00",
+        "state": "closed",
+        "ticket_id": "A",
+        "conductor_id": "own"
+      }
+    ],
+    "observations": [
+      "All target and history pages were read successfully; one page repeats R1. Historical Run owner is employee-elm for R1–R5, regardless of current conductor/ticket ownership. RY has a currently assigned ticket but a foreign historical Run owner and must be excluded. Runs have no employee-work attribution beyond the displayed ownership. No supplied activities or absences. Project P and A/B accept employee time; billing account exists. Existing proposed and recorded totals are zero unless a variant says otherwise. Proposal support is deployed, but no write or URL-access observation has been supplied.",
+      "Ticket summaries provide qualitative employee-work context for a tentative allocation, not measured durations. Before any employee answer, suggest a reasoned A/B split of the unconfirmed 9h schedule, label assumptions, and keep it separate from confirmed rows. No additional profile or ticket reads are needed for these frozen facts."
+    ],
+    "history": [
+      {
+        "date": "2026-09-14",
+        "deduplicated_eligible_run_count": 2,
+        "complete": true
+      },
+      {
+        "date": "2026-09-21",
+        "deduplicated_eligible_run_count": 2,
+        "complete": true
+      },
+      {
+        "date": "2026-09-28",
+        "deduplicated_eligible_run_count": 2,
+        "complete": true
+      },
+      {
+        "date": "2026-10-05",
+        "deduplicated_eligible_run_count": 2,
+        "complete": true
+      }
+    ],
+    "checkpoints": [
+      {
+        "id": "waiting",
+        "mode": "interactive",
+        "employee_answer": null
+      },
+      {
+        "id": "answered",
+        "mode": "interactive",
+        "employee_answer": "7 h total: A 4 h, B 3 h"
+      },
+      {
+        "id": "recorded-source",
+        "mode": "interactive",
+        "employee_answer": "7 h total: A 4 h, B 3 h",
+        "existing_recorded": [
+          {
+            "ticket": "A",
+            "seconds": 3600,
+            "source_system": "employee",
+            "source_key": "retained-A",
+            "source_version": "1"
+          }
+        ]
+      }
+    ],
+    "variants": {
+      "strict_boundaries": "Independent day with median 2, count 4, exactly 2 h interior gap, exactly 4 h complete run.",
+      "midnight": "Run 2026-10-11T23:30:00+02:00 to 2026-10-12T01:30:00+02:00 overlaps Monday. The run is complete, belongs historically to employee-elm, and references ticket A; eligibility is confirmed.",
+      "dst": "Independent range 2026-10-25 in Europe/Berlin: run 2026-10-24T23:30:00+02:00 to 2026-10-26T00:30:00+01:00. The run is complete, belongs historically to employee-elm, and references ticket A; eligibility is confirmed.",
+      "partial_week": "Existing recorded time outside the requested Monday but inside its week is 5 h; existing proposals zero."
+    },
+    "evidence_source": "Frozen, synthetic observations for the authenticated employee report from bakers track evidence. Use supplied facts without executing the command. Activities add context only; run durations are not employee hours."
+  },
+  "rubric": [
+    {
+      "id": "historical-owner",
+      "criterion": "Eligible count 5, R1 once, RX and RY excluded even though RY has an assigned ticket and currently owned conductor; ticket counts A=3 B=2; states visible. Historical Run ownership is not employee duration."
+    },
+    {
+      "id": "timeline",
+      "criterion": "First start 08:10 last end 22:10; merged 08:10–11:00 cluster; 3h1 gap before 14:01; R3 duration 5h1; evening and night flags. No overlap double count."
+    },
+    {
+      "id": "baseline",
+      "criterion": "Previous four Mondays, median 2, count 5 unusually high (>4); report four samples. Strict-boundary count 4/gap 2h/run 4h do not trigger high/gap/long warnings."
+    },
+    {
+      "id": "question",
+      "criterion": "Waiting checkpoint first presents a tentative A/B allocation using the unconfirmed 9h schedule, qualitative ticket summaries and explicit assumptions, then asks exactly one consolidated Monday confirmation/correction question and stops without published entries or writes. It does not ask for the total before offering a suggestion or equate run durations/counts with employee shares. Answered checkpoint replaces estimates with confirmed 7h, A4+B3."
+    },
+    {
+      "id": "reconcile",
+      "criterion": "Recorded-source checkpoint keeps stable source and existing 1h; new A3+B3 totals 6h, combined 7h, not 8h. No invented successful writes/link."
+    },
+    {
+      "id": "capacity",
+      "criterion": "Daily 7h is 2h below expected 9h, with separate 1h excess above 6h cap and no truncation; partial-week combined 12h against full 45h week, not just Monday capacity. Refresh the complete daily capacity row after each independent answered checkpoint."
+    },
+    {
+      "id": "civil-days",
+      "criterion": "Cross-midnight clips Monday display to 00:00–01:30, preserves full 2h run duration. DST date is one 25h civil day, not fixed 86400s. Midnight has a night flag. DST includes long-run, evening, night and weekend flags; Sunday schedule remains zero."
+    },
+    {
+      "id": "publication",
+      "criterion": "Only describes proposed-only delivery after answer; no booking, no fabricated readback/review link; unchanged source retry/user-correction safeguards."
+    }
+  ]
+}

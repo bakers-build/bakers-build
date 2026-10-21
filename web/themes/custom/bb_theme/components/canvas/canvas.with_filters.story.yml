@@ -1,0 +1,99 @@
+component: bb_theme:canvas
+name: With filters
+# The three-region list canvas: a header, the `filters` aside on the leading
+# edge, and a main region whose first child states what has been chosen. The
+# `inspector` slot is empty here, so its 320px track drops out of the grid
+# template and the main region takes the width back.
+slots:
+  header:
+    - type: component
+      component: bb_theme:page_header
+      props:
+        title: Tickets
+        description: 24 open, 3 waiting on input
+      slots:
+        actions:
+          - type: component
+            component: bb_theme:button
+            props:
+              variant: primary
+              icon_only: true
+              label: New ticket
+              href: /admin/bakers/ticket/add
+            slots:
+              icon:
+                - type: component
+                  component: bb_theme:icon
+                  props:
+                    name: plus
+                    size: sm
+  filters:
+    - type: component
+      component: bb_theme:filters
+      props:
+        title: Filters
+        label: Ticket filters
+      slots:
+        controls:
+          - type: component
+            component: bb_theme:option_picker
+            props:
+              variant: field
+              name: state
+              label: State
+              icon: board
+              aria_label: Filter by state. Currently coding and review.
+              id: canvas-filter-state
+              open: false
+              multiple: true
+              value_labels:
+                - coding
+                - review
+            slots:
+              options:
+                - type: component
+                  component: bb_theme:option_list
+                  props:
+                    multiple: true
+                    clearable: true
+                    clear_label: Any state
+                    options:
+                      - value: coding
+                        label: coding
+                        selected: true
+                      - value: review
+                        label: review
+                        selected: true
+  main:
+    - type: component
+      component: bb_theme:active-filters
+      props:
+        label: Active filters
+        facets:
+          - field: State
+            values:
+              - coding
+              - review
+        empty_label: All tickets
+      slots:
+        meta:
+          - type: component
+            component: bb_theme:collection-position
+            props:
+              from: 1
+              to: 8
+              total: 11
+              noun: tickets
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: none
+        columns: 1
+      slots:
+        content:
+          - type: element
+            tag: p
+            value: The rows themselves are the list scene's job — this story is about the canvas's three-column grid.
+            attributes:
+              class: text-text-light text-[13px] p-[10px]

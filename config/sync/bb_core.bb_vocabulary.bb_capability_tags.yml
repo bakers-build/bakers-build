@@ -1,0 +1,9 @@
+uuid: 17a26f2c-6c34-481e-a263-80c6a51e6bf9
+langcode: en
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: 2ixbkWl8neVFHkbilKfPymvCqjrCXxz3LH1j1xKH4jM
+id: bb_capability_tags
+label: 'bakers.build capability tags'
+description: ''

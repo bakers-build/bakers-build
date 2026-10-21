@@ -1,0 +1,44 @@
+{# Mutually exclusive positions. List filters are destination links, exactly
+   one carrying aria-current="page". In-page filters (items with `value` plus
+   a `state` Alpine key) are buttons that select a panel in an ancestor scope;
+   those use aria-pressed. This is a FILTER, not page navigation and not an
+   entity tab: `tabs` switches the subject of an entity page and is bound to
+   `page_header`'s `tabs` slot. `role="group"` (not `role="tablist"`) states
+   that reading, and the wrapper is a `<div>` rather than `<nav>` for the same
+   reason a filter facet is not a landmark. Link positions work with JavaScript
+   off — following one re-requests the list with the position applied. #}
+{% set item_class = 'inline-flex items-center rounded-sm px-2 py-1 text-body font-medium whitespace-nowrap' %}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'segmented-control', 'inline-flex', 'max-w-full', 'min-w-0', 'flex-wrap', 'items-center', 'gap-[2px]',
+    'rounded-[8px]', 'border', 'border-border', 'bg-surface-2', 'p-[2px]',
+  ]) }}
+  role="group"
+  {%- if label %} aria-label="{{ label }}"{% endif %}>
+  {%- for item in items %}
+    {%- if item.value is defined and state -%}
+      {%- set value_js = item.value|json_encode -%}
+      {%- set selected = state ~ ' === ' ~ value_js -%}
+      {# Single-quoted attributes so json_encode double quotes survive HTML
+         parsing (Storybook Twing does not autoescape these). #}
+      <button
+        type="button"
+        class="{{ item_class }} cursor-pointer border-0"
+        x-on:click='{{ state }} = {{ value_js }}'
+        x-bind:class='{{ selected }} ? "bg-surface text-title shadow-sm" : "bg-transparent text-text-faint hover:text-text"'
+        x-bind:aria-pressed='{{ selected }}'>
+        {{ item.label }}
+      </button>
+    {%- else -%}
+      {%- set is_active = item.active|default(false) %}
+      <a
+        class="{{ item_class }} no-underline
+          {{ is_active
+            ? 'bg-surface text-title shadow-sm'
+            : 'text-text-faint hover:text-text' }}"
+        href="{{ item.url }}"
+        {%- if is_active %} aria-current="page"{% endif %}>
+        {{ item.label }}
+      </a>
+    {%- endif %}
+  {%- endfor %}
+</div>

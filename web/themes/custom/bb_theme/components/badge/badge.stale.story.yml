@@ -1,0 +1,9 @@
+component: bb_theme:badge
+name: Stale
+# A HOLLOW RING AND NO TINT, and that is the token layer rather than a choice:
+# there is no `state-stale-*` colour, so the ring the deleted dot used is the only
+# thing that distinguishes stale from attention.
+props:
+  label: stale
+  tone: stale
+  dot: true

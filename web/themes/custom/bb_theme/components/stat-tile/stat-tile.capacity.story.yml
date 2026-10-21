@@ -1,0 +1,11 @@
+# The second use the one component covers (BB-333 D4/D10): a per-person capacity figure. It
+# differs from the Default story in exactly one thing that matters — it counts a PRESENT set rather
+# than a period, so it carries no window. The source names the file whose own flag decides the set,
+# never a list of states, which is the rule C11 asserts.
+component: bb_theme:stat-tile
+name: Capacity
+props:
+  value: '4'
+  label: Christian Wiedemann
+  tone: attention
+  source: bb_ticket.assignee_user_id x bb_core.workflows.yml claimable

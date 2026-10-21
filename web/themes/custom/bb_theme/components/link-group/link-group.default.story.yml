@@ -1,0 +1,14 @@
+component: bb_theme:link-group
+name: Default
+props:
+  label: Test results
+  links:
+    - url: https://gitlab.example.com/org/repo/-/pipelines/12345
+      title: Pipeline
+      kind: ci
+    - url: https://gitlab.example.com/org/repo/-/pipelines/12345/test_report
+      title: Test report
+      kind: report
+      passed: 128
+      failed: 0
+      duration: 4m 12s

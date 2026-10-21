@@ -1,0 +1,5 @@
+component: bb_theme:mode_toggle
+name: Default
+props:
+  mode: light
+  label: Choose theme

@@ -1,0 +1,159 @@
+/*
+ * sync-to generator — core.entity_view_display.bb_conductor.bb_conductor.full
+ *
+ * The entity detail page: one `canvas` whose `main` is the
+ * `bb_entity_detail_activities` feed and whose `inspector` holds one
+ * surface `inspector` with one `zone` — the activities of this conductor's runs beside one
+ * Identity card (`identity` form: label) with Disable/Enable in the surface footer. The
+ * page shows no states, status, last seen or load (heartbeat values; states set at registration).
+ *
+ * THE SHIPPED YAML IS THE SAVED FORM (see README.md): `content` and `hidden`
+ * are materialised from the entity's fields on first save and re-exported
+ * from the site, not taken from this generator's empty maps.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "core.entity_view_mode.bb_conductor.full"
+    ],
+    "module": [
+      "display_builder",
+      "bb_core"
+    ]
+  },
+  "third_party_settings": {
+    "display_builder": {
+      "profile": "default",
+      "sources": [
+        {
+          "source_id": "component",
+          "source": {
+            "component": {
+              "component_id": "bb_theme:canvas",
+              "variant_id": null,
+              "props": {},
+              "slots": {
+                "main": {
+                  "sources": [
+                    {
+                      "source_id": "bb_entity_detail_activities",
+                      "source": {
+                        "context_mapping": {
+                          "entity": "entity"
+                        }
+                      },
+                      "node_id": "conductor_activities"
+                    }
+                  ]
+                },
+                "inspector": {
+                  "sources": [
+                    {
+                      "source_id": "component",
+                      "source": {
+                        "component": {
+                          "component_id": "bb_theme:inspector",
+                          "variant_id": null,
+                          "props": {
+                            "surface": {
+                              "source_id": "checkbox",
+                              "source": {
+                                "value": true
+                              }
+                            }
+                          },
+                          "slots": {
+                            "rows": {
+                              "sources": [
+                                {
+                                  "source_id": "component",
+                                  "source": {
+                                    "component": {
+                                      "component_id": "bb_theme:zone",
+                                      "variant_id": null,
+                                      "props": {
+                                        "inset": {
+                                          "source_id": "select",
+                                          "source": {
+                                            "value": "none"
+                                          }
+                                        },
+                                        "gap": {
+                                          "source_id": "select",
+                                          "source": {
+                                            "value": "sm"
+                                          }
+                                        }
+                                      },
+                                      "slots": {
+                                        "heading": {
+                                          "sources": [
+                                            {
+                                              "source_id": "token",
+                                              "source": {
+                                                "value": "Identity"
+                                              },
+                                              "node_id": "conductor_identity_heading"
+                                            }
+                                          ]
+                                        },
+                                        "content": {
+                                          "sources": [
+                                            {
+                                              "source_id": "entity_form",
+                                              "source": {
+                                                "operation": "identity",
+                                                "context_mapping": {
+                                                  "entity": "entity"
+                                                }
+                                              },
+                                              "node_id": "conductor_identity_form"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "node_id": "conductor_identity"
+                                }
+                              ]
+                            },
+                            "footer": {
+                              "sources": [
+                                {
+                                  "source_id": "bb_conductor_actions",
+                                  "source": {
+                                    "context_mapping": {
+                                      "entity": "entity"
+                                    }
+                                  },
+                                  "node_id": "conductor_actions"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "node_id": "conductor_inspector"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "node_id": "conductor_canvas"
+        }
+      ]
+    }
+  },
+  "id": "bb_conductor.bb_conductor.full",
+  "targetEntityType": "bb_conductor",
+  "bundle": "bb_conductor",
+  "mode": "full",
+  "content": {},
+  "hidden": {}
+}
+)

@@ -1,0 +1,16 @@
+#!/bin/bash
+#ddev-generated
+## Description: Run all PHP linting tools (phpcs, phpmd, phpstan) (keytec)
+## Usage: lint
+set -e
+# Invoke the sibling keytec wrappers by explicit path. Bare `phpmd`/`phpstan`
+# resolve to vendor/bin (earlier on the container $PATH) and run the raw
+# binaries without the wrapper's arguments (scan paths, ruleset, config).
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "==> Running PHPCS..."
+"${DIR}/phpcs"
+echo "==> Running PHPMD..."
+"${DIR}/phpmd"
+echo "==> Running PHPStan..."
+"${DIR}/phpstan"
+echo "All linting checks passed."

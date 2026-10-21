@@ -1,0 +1,8 @@
+{
+  "assistantMessageCount": 1,
+  "toolCallCount": 0,
+  "turnCount": 1,
+  "userMessageCount": 1,
+  "primaryModelId": "grok-4.5",
+  "sessionDurationSeconds": 4
+}

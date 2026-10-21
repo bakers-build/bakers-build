@@ -1,0 +1,84 @@
+{
+  "id": "create-ticket-prior-art",
+  "synthetic": true,
+  "profile": "create-ticket-calls",
+  "execution": "simulated-tools",
+  "skill": "create-ticket",
+  "references": [
+    "workflow-step/SKILL.md",
+    "workflow-step/references/prior-art-search.md",
+    "read-ticket/SKILL.md",
+    "publish-comment/SKILL.md",
+    "transition-ticket/SKILL.md",
+    "qualify-ticket/SKILL.md",
+    "method-context/SKILL.md",
+    "method-context/references/results.md",
+    "run-outtake/SKILL.md"
+  ],
+  "input": {
+    "task": "Create the new confirmed feature intake using actual fixture tools, perform the required prior-art search, publish qualification and summary, and route it once. No confirmed design, implementation or test plan exists. Stop after initial routing.",
+    "is_new": true,
+    "title": "Document invoice export options",
+    "project_uuid": "55555555-5555-4555-8555-555555555555",
+    "workflow": "bb_feature",
+    "description_file": "/fixture/description.md",
+    "labels": [
+      "work:docs",
+      "method:matt"
+    ],
+    "method": "matt (confirmed)",
+    "parent_selection": "Explicitly rejected: no parent",
+    "conductor_selection": null,
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "origin": null,
+    "acceptance_criterion": "An operator can find the documented invoice export command and its required project option.",
+    "observations": [
+      "The operator explicitly approved creating this intake and its normal feature routing, unless a prior-art hit requires a new decision.",
+      "Prior-art search has not run. Use invoice and invoices as the two domain spellings.",
+      "The current branch has no associated ticket; no parent is selected.",
+      "Project WORKFLOW selects matt. work:docs and method:matt taxonomy terms already exist. Existing agent defaults are confirmed; no agent override is requested.",
+      "Qualification acceptance quality gate passed AC-1 without rewrites; implementation has not been tested.",
+      "No runtime or application actor is required; review_actors is not_required, scenario_required false, reproduction not_required, out_of_scope no code or runtime changes.",
+      "The supplied Markdown description file is the confirmed exact description. There is no origin platform, so origin status is not_required.",
+      "The caller supplied provenance and its inputs for the simulator's initial revision fixture-revision-1; retain this value in qualification."
+    ],
+    "handoff_version": 1,
+    "provenance": "75ec86998bc6628093ffaa38e5e605fee4d1fb59fa399da01284b1f27aced026",
+    "provenance_inputs": {
+      "title": "Document invoice export options",
+      "description": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n",
+      "labels": [
+        "method:matt",
+        "work:docs"
+      ],
+      "revision": "fixture-revision-1"
+    }
+  },
+  "simulation": {
+    "files": {
+      "/fixture/description.md": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n"
+    },
+    "prior_art": {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "identifier": "EVAL-70",
+      "title": "Document invoice export options",
+      "description": {
+        "value": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n"
+      },
+      "state": "coding",
+      "assignee": "fixture-maintainer",
+      "links": [
+        {
+          "uri": "https://git.example.invalid/team/docs/-/merge_requests/70",
+          "title": "Existing implementation"
+        }
+      ]
+    }
+  },
+  "rubric": [
+    {
+      "id": "honest-initial-routing",
+      "criterion": "Reports only the observed creation/routing or the blocking prior-art result. Does not invent implementation, spec work or a transition that the tool trace did not establish."
+    }
+  ]
+}

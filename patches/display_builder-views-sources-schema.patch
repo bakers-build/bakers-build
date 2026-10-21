@@ -1,0 +1,54 @@
+Fix the config schema of the display_builder views display extender.
+
+Project: https://www.drupal.org/project/display_builder
+Version: 1.0.0-beta4
+Upstream issue: https://www.drupal.org/project/display_builder/issues/3534215
+(fixed on 1.0.x; released in 1.0.0, whose schema declares
+`sources: {type: sequence, sequence: {type: ignore}}`). Drop this patch
+when the project upgrades from 1.0.0-beta4.
+
+THE DEFECT IS TWO DEFECTS, both in the `sources` element of
+`views.display_extender.display_builder`.
+
+1. `sources` has a `sequence:` child but no `type: sequence`, so the
+   element falls back to `Undefined` and every save of a view carrying
+   the extender reports
+   `…display_extenders.display_builder.sources missing schema`.
+
+2. With that alone fixed, the next error is
+   `…sources.0.source_id missing schema` plus `…sources.0.source` and
+   `…sources.0.node_id`. A sequence ITEM is the `{source_id, source,
+   node_id}` triple a display-builder node is, while the
+   `ui_patterns_source.*` types describe only the `source` half of it —
+   `ui_patterns_source.component`, for instance, is a mapping with the
+   single key `component`. Measured, not assumed: applying only the
+   added line and installing `views.view.tickets` under strict config
+   schema still fails, with those three errors per display.
+
+THE SHAPE THIS PATCH SUPPLIES IS THE PROJECT'S OWN. The sibling module
+`display_builder_page_layout` stores the SAME tree and declares it
+`sources: {type: sequence, sequence: {type: ignore}}`. This patch makes
+the views extender agree with it, so the two halves of one contrib
+project stop disagreeing about the shape of one data structure.
+`ignore` is the honest type: a node's validity is decided by the source
+PLUGIN it names, which typed config cannot reach from a schema file.
+
+WHY IT MATTERS. `ConfigSchemaChecker` is a test-only event listener, so
+on a running site the defect is completely silent. But
+`KernelTestBase::$strictConfigSchema` is TRUE by default, so with the
+defect in place no test can install a view carrying the extender at
+all: the install throws `SchemaIncompleteException` before a single
+assertion runs.
+
+--- a/modules/display_builder_views/config/schema/display_builder_views.schema.yml
++++ b/modules/display_builder_views/config/schema/display_builder_views.schema.yml
+@@ -9,7 +9,8 @@
+           prefix: 'display_builder.profile.'
+     sources:
+       label: 'UI Patterns sources'
++      type: sequence
+       sequence:
+-        type: ui_patterns_source.[source_id]
++        type: ignore
+   constraints:
+     FullyValidatable: ~

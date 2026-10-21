@@ -1,0 +1,12 @@
+component: bb_theme:button
+name: Default
+props:
+  label: New ticket
+  href: /admin/bakers/ticket/add
+slots:
+  icon:
+    - type: component
+      component: bb_theme:icon
+      props:
+        name: plus
+        size: sm

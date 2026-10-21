@@ -1,0 +1,35 @@
+{
+  "name": "@bakers-build/addon-dropsh",
+  "version": "0.0.1",
+  "description": "bakers.build dropsh command plugin: the `bakers dropsh` JSON:API shell bound to the split connection config.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/core": "workspace:^"
+  },
+  "dependencies": {
+    "@dropsh/plugin-jsonapi-schema": "^0.7.1",
+    "@dropsh/plugin-oauth2": "^0.7.5",
+    "commander": "^12.1.0",
+    "dropsh": "^0.7.5"
+  },
+  "devDependencies": {
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

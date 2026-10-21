@@ -1,0 +1,143 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_run.teaser
+  module:
+    - display_builder
+    - bb_core
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:list'
+            variant_id: null
+            props:
+              layout:
+                source_id: select
+                source:
+                  value: lines
+              items:
+                source_id: bb_run_row
+                source: {  }
+            slots: {  }
+        node_id: run_teaser_list
+id: bb_run.bb_run.teaser
+targetEntityType: bb_run
+bundle: bb_run
+mode: teaser
+content:
+  active_s:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 26
+    region: content
+  agent_turns:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 22
+    region: content
+  duration_s:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 21
+    region: content
+  error_log_bytes:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 14
+    region: content
+  harness:
+    type: string
+    label: inline
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 8
+    region: content
+  model:
+    type: string
+    label: inline
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 9
+    region: content
+  model_version:
+    type: string
+    label: inline
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 10
+    region: content
+  tokens:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 20
+    region: content
+  tool_calls:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 23
+    region: content
+  user_prompt_words:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 25
+    region: content
+  user_prompts:
+    type: number_integer
+    label: inline
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 24
+    region: content
+hidden:
+  duration: true
+  error_log: true
+  error_log_file: true
+  error_log_sha256: true
+  log_bytes: true
+  log_file: true
+  log_sha256: true
+  log_upload_omitted: true
+  search_api_excerpt: true
+  state_flow: true

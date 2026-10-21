@@ -1,0 +1,4 @@
+component: bb_theme:copied
+name: Default
+props:
+  message: Copied

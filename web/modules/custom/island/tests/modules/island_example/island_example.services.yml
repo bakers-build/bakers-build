@@ -1,0 +1,9 @@
+services:
+  island_example.task_store:
+    class: Drupal\island_example\TaskStore
+    arguments: ['@state']
+  island_example.host:
+    class: Drupal\island_example\TaskHostProvider
+    arguments: ['@island_example.task_store', '@current_route_match', '@entity_type.manager']
+    tags:
+      - { name: island.context_provider }

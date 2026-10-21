@@ -1,0 +1,35 @@
+# Explicit tenancy/rank precondition for API contract scenarios.
+#
+# BB-462 D1: the implicit `member` rank now grants nothing, including the
+# base `view bb_ticket`/`view bb_project`/`view bb_run` a bare
+# membership used to carry implicitly.
+# `bakers-cli/conductor/tests/integration/workspace-isolation.test.ts` (BB-315
+# AC2) authenticates as this exact account ("api-foreign") to prove it CAN
+# read its own workspace's ticket/project/run and CANNOT read the other's —
+# both halves need the read floor this account otherwise has no path to.
+# `contributor`, not `guest`: `guest` carries no `view bb_run` at all, which
+# that suite's bb_run assertions need.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 1abc8c51-8a45-5961-a07a-a449c37132be
+  default_langcode: en
+  bundle: default
+  depends:
+    90083207-9a0b-5bf9-9f61-ca46635652ef: user
+    14e28539-bd41-58be-8f7f-f013035f69e5: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: 14e28539-bd41-58be-8f7f-f013035f69e5
+  state:
+  - value: active
+  uid:
+  - entity: 90083207-9a0b-5bf9-9f61-ca46635652ef
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-contributor

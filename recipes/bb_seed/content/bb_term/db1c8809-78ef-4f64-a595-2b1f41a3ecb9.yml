@@ -1,0 +1,25 @@
+# The workspace named here is BbWorkspace::DEFAULT_UUID — the one
+# bb_core_install() creates on every install path, deliberately NOT
+# shipped as recipe content (BB-350). Every term carries the edge since
+# BB-339 made workspace_id required.
+_meta:
+  version: '1.0'
+  entity_type: bb_term
+  uuid: db1c8809-78ef-4f64-a595-2b1f41a3ecb9
+  bundle: bb_labels
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+default:
+  name:
+    -
+      value: "pi"
+  description:
+    -
+      value: "Agent routing label: dispatch the ticket to the pi coding CLI (@bakers-build/addon-pi, BB-220)."
+  weight:
+    -
+      value: 0
+  workspace_id:
+    -
+      entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"

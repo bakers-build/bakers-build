@@ -1,0 +1,40 @@
+{# The `bb_worklog_calendar` style hands over the time calendar as `rows`:
+   scope sentence, a clear-filters address, week strip props, the period total, an own proposed total
+   and proposal bar, and either day list items, week grid table props or the
+   employee's editable week form. This file only maps that data into
+   components; it emits no markup of its own.
+
+   @see \Drupal\bb_track\Plugin\views\style\WorklogCalendar
+#}
+{{ include('bb_theme:text', { text: rows.scope, tone: 'faint' }, with_context = false) }}
+{% if rows.clear_filters %}
+  {{ include('bb_theme:button', { label: 'Clear filters'|t, href: rows.clear_filters, variant: 'ghost' }, with_context = false) }}
+{% endif %}
+{{ include('bb_theme:week-strip', rows.strip, with_context = false) }}
+{{ include('bb_theme:text', { text: rows.total, as: 'p', size: 'body' }, with_context = false) }}
+{% if rows.proposed_total %}
+  {{ include('bb_theme:text', { text: rows.proposed_total, as: 'p', tone: 'faint' }, with_context = false) }}
+{% endif %}
+{% if rows.proposal %}
+  {{ include('bb_theme:message', { status: 'status', body: rows.proposal.text }, with_context = false) }}
+  {{ rows.proposal.actions }}
+{% endif %}
+{% if rows.empty %}
+  {{ include('bb_theme:empty-state', { message: rows.empty, icon: 'clock', compact: true }, with_context = false) }}
+{% endif %}
+{% if rows.week_form %}
+  {{ rows.week_form }}
+{% elseif rows.empty %}
+{% elseif rows.mode == 'day' %}
+  {{ include('bb_theme:list', {
+    items: rows.rows,
+    pattern: {
+      headline: ['project', 'ticket'],
+      meta: ['state', 'person'],
+      description: ['description'],
+      right: ['duration', 'open'],
+    },
+  }, with_context = false) }}
+{% else %}
+  {{ include('bb_theme:table', rows.grid, with_context = false) }}
+{% endif %}

@@ -1,0 +1,22 @@
+langcode: en
+status: true
+dependencies:
+  config:
+  - field.storage.user.field_onboarding_completed
+  module:
+  - user
+id: user.user.field_onboarding_completed
+field_name: field_onboarding_completed
+entity_type: user
+bundle: user
+label: 'Onboarding completed'
+description: 'Set only by successful final wizard completion. Incomplete accounts must finish the wizard.'
+required: false
+translatable: null
+default_value:
+- value: 0
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+// BB-201: the `bakers` entrypoint lives in the meta package now (AC-1). It runs
+// the plugin host, which dynamically mounts the ui/conductor/dropsh command
+// plugins — conductor is no longer the CLI owner.
+import('../dist/src/host.js').then((m) => m.main(process.argv));

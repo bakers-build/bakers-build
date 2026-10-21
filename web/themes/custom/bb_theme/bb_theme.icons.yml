@@ -1,0 +1,29 @@
+bakers:
+  enabled: true
+  label: "bakers.build Icons"
+  description: "bakers.build icon sprite (built by the vite spritemap plugin from assets/icons/src/*.svg)."
+  extractor: svg_sprite
+  config:
+    sources:
+      - dist/assets/icons/sprite.svg
+  settings:
+    size:
+      title: "Size"
+      description: "Token size: xs 12 · sm 14 · md 16 · lg 20 · xl 24 (px)."
+      type: "string"
+      default: "md"
+    class:
+      title: "Class"
+      type: "string"
+      default: "icon inline-block shrink-0"
+  template: >
+    {% set px = { xs: 12, sm: 14, md: 16, lg: 20, xl: 24 } %}
+    {% set s = px[size|default('md')]|default(16) %}
+    <svg
+      {{ attributes
+          .setAttribute('width', s)
+          .setAttribute('height', s)
+          .addClass(class|default('icon inline-block shrink-0'))
+          .setAttribute('aria-hidden', 'true')
+          .setAttribute('focusable', 'false') }}
+    ><use href="{{ source }}#{{ icon_id }}"></use></svg>

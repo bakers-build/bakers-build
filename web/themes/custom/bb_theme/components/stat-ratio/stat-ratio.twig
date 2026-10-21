@@ -1,0 +1,27 @@
+{# One figure derived by dividing two others (BB-481 D3/D6).
+
+   THIS TEMPLATE PERFORMS NO ARITHMETIC. The quotient arrives already computed and already
+   formatted, because the division and its zero-denominator rule belong to the server that
+   serves both the terminal and the browser. `value` is a STRING precisely so an em-dash is a
+   legal value: a numeric prop would force this component to decide what an undefined quotient
+   looks like, and that decision travels with the division, not with the display. #}
+<section{{ (attributes ?: create_attribute()).addClass(['min-w-0', 'flex', 'flex-col', 'gap-5', 'py-4', 'border-b', 'border-border-2']) }}>
+  <h2 class="m-0 text-section font-semibold text-title">{{ label }}</h2>
+  {% if numerator_label and denominator_label %}
+    <p class="m-0 text-caption text-text-light">{{ numerator_label }} ÷ {{ denominator_label }}</p>
+  {% endif %}
+  <dl class="m-0 grid grid-cols-3 gap-y-2 divide-x divide-border-2">
+    {% for quotient in quotients %}
+      <div class="min-w-0 grid grid-rows-subgrid row-span-2 px-3 first:pl-0 last:pr-0">
+        <dt class="text-caption text-text-light">{{ quotient.label }}</dt>
+        <dd class="m-0 text-display font-bold leading-tight text-title tabular-nums">{{ quotient.value }}</dd>
+      </div>
+    {% endfor %}
+  </dl>
+  {% if source %}
+    <details class="text-caption text-text-light">
+      <summary class="w-fit cursor-pointer rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">Data source</summary>
+      <code class="block pt-2 text-caption break-all">{{ source }}</code>
+    </details>
+  {% endif %}
+</section>

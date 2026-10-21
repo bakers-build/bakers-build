@@ -1,0 +1,115 @@
+uuid: e22d3186-a280-4dd3-bad6-11b827669130
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_project.settings
+  module:
+    - bb_core
+    - bb_image
+_core:
+  default_config_hash: sBDc99LsmosP-bWx_EiCpHtW64M1w5rr0irybGcS-00
+id: bb_project.bb_project.settings
+targetEntityType: bb_project
+bundle: bb_project
+mode: settings
+content:
+  description:
+    type: string_textarea
+    weight: 4
+    region: content
+    settings:
+      rows: 3
+      placeholder: ''
+    third_party_settings: {  }
+  env_vars:
+    type: string_textarea
+    weight: 8
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+  group_id:
+    type: bb_picker
+    weight: 1
+    region: content
+    settings:
+      picker_region: lead
+      label: Group
+      icon: project
+      searchable: true
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  image:
+    type: bb_square_image
+    weight: 5
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: ''
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: 3
+    region: content
+    settings:
+      size: 60
+      placeholder: 'What is this project called'
+    third_party_settings: {  }
+  owner_user_id:
+    type: bb_picker
+    weight: 7
+    region: content
+    settings:
+      picker_region: pills
+      label: Owner
+      icon: project
+      searchable: true
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  repository:
+    type: bb_repo
+    weight: 6
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  teams:
+    type: bb_picker
+    weight: 2
+    region: content
+    settings:
+      picker_region: pills
+      label: Teams
+      icon: team
+      searchable: false
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+hidden:
+  changed: true
+  coder_config: true
+  created: true
+  environments: true
+  id: true
+  key: true
+  next_number: true
+  og_group: true
+  uuid: true

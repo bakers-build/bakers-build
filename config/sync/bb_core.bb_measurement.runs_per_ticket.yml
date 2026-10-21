@@ -1,0 +1,21 @@
+uuid: a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_measurement.closed_tickets
+  - bb_core.bb_measurement.runs
+_core:
+  default_config_hash: bakers548_runs_per_ticket
+id: runs_per_ticket
+label: Runs per closed ticket
+value_type: decimal
+unit: runs_per_ticket
+source: {}
+operation:
+  type: divide
+  numerator: runs
+  denominator: closed_tickets
+predicates: {}
+bindings: {}
+dimensions: {}

@@ -1,0 +1,11 @@
+uuid: 3d788b9b-3cc5-4f3f-a629-20dbf821e731
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_ticket.property
+label: Property
+description: null
+targetEntityType: bb_ticket
+cache: true

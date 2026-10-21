@@ -1,0 +1,60 @@
+# User-bound recipe-test client for the rankless session token.
+# Secret is a public test value, not production.
+_meta:
+  version: '1.0'
+  entity_type: consumer
+  uuid: 4e08b1ca-1759-4d2f-af3b-6c9d8e2f5071
+  default_langcode: en
+  depends:
+    5606b91c-bcc5-5c3a-a564-e07886c30417: user
+default:
+  owner_id:
+    -
+      target_id: 0
+  client_id:
+    -
+      value: bakers-e2e-session-stranger
+  label:
+    -
+      value: 'bakers.build E2E session stranger'
+  third_party:
+    -
+      value: true
+  is_default:
+    -
+      value: false
+  status:
+    -
+      value: true
+  secret:
+    -
+      value: Bb-test-client-426!
+      pre_hashed: false
+      existing: null
+  grant_types:
+    -
+      value: client_credentials
+  confidential:
+    -
+      value: true
+  scopes:
+    -
+      scope_id: bb_session
+  access_token_expiration:
+    -
+      value: 300
+  refresh_token_expiration:
+    -
+      value: 1209600
+  user_id:
+    -
+      entity: 5606b91c-bcc5-5c3a-a564-e07886c30417
+  pkce:
+    -
+      value: false
+  automatic_authorization:
+    -
+      value: false
+  remember_approval:
+    -
+      value: true

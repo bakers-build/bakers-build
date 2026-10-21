@@ -1,0 +1,120 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Person
+status: stable
+group: Data Display
+description: >-
+  ONE identity, rendered the same way everywhere: the initials circle, the
+  display name, and the mail address beneath it. It exists because four
+  different rows of the organisation surface name a person — a workspace or
+  project member, a group's owner, a project's owner, a team's owner — and a
+  fragment repeated four times drifts in four directions. The initials circle is
+  this component's own markup rather than a component of its own: it had one,
+  and once every direct caller was repointed here the only thing composing it
+  was this file, which is the single-caller component the theme forbids. It is
+  also the mapping target of `user.user.compact`, so a person read out of the
+  sample data and a person written into a story render identically. An app
+  account has no mail address; the line is then absent rather than blank,
+  because a dash where an address belongs reads as a missing value rather than
+  as a kind of account that has none.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    variant:
+      type: string
+      enum:
+        - full
+        - compact
+        - profile
+      title: Variant
+      description: >-
+        `full` is the circle with the name and the mail beneath it — an identity
+        that is the subject of its row. `compact` is one line and no mail, for
+        an identity that is a control or a cell: the circle plus the name where
+        a name is given, and the circle alone where it is not. `profile` is the
+        subject of a whole page — the account overview: a large mark centred
+        above the name in the display type role, with `subtitle` beneath and no
+        mail. Default `full`.
+      default: full
+    display_name:
+      type: string
+      title: Display name
+      description: >-
+        The person's own name. `user.display_name` in the model, which is
+        computed. Optional in `compact`, where a caller that already renders its
+        own label wants the circle alone.
+    initials:
+      type: string
+      title: Initials
+      description: >-
+        The two or three letters drawn in the circle. The one required prop — a
+        circle with nothing in it identifies nobody. Rendered whenever `picture`
+        is absent.
+    picture:
+      type: string
+      title: Profile picture URL
+      description: >-
+        A rendered image URL for the circle, e.g. `user.user_picture`
+        (BB-507). Optional: initials are the fallback for any account without
+        one, which is why initials stays the required prop.
+    image_fit:
+      type: string
+      enum:
+        - cover
+        - contain
+      title: Image fit
+      description: >-
+        How `picture` fills the mark. `cover` crops it to the circle, the right
+        fit for a profile picture. `contain` centres the whole image inside the
+        circle without cropping, for a project or group image of any aspect
+        ratio. Default `cover`.
+      default: cover
+    subtitle:
+      type: string
+      title: Subtitle
+      description: >-
+        One secondary line beneath the name, e.g. the developer title. Rendered
+        in `full` and `profile`, omitted when empty; `compact` has no room for
+        it.
+    mail:
+      type: string
+      title: Email
+      description: >-
+        Rendered beneath the name, and only in `full`. Omit it for an app
+        account, which has none.
+    color:
+      type: string
+      enum:
+        - running
+        - attention
+        - unassigned
+        - lease
+        - offline
+      title: Colour key
+      description: >-
+        Which token tints the circle. PASSED IN, NEVER DERIVED: a deterministic
+        per-user colour is a decision about a user, not about a span, so whoever
+        knows the user picks the key and this template only maps it onto a
+        token.
+    size:
+      type: string
+      enum:
+        - sm
+        - md
+      title: Size
+      description: >-
+        The circle's scale. `md` for a member list, where the row is the person;
+        `sm` for an owner cell, where the person is one column of something
+        else.
+    url:
+      type: string
+      title: Url
+      description: >-
+        Optional destination. When set, the identity is a link — the signed-in
+        account in the rail foot points at the account's own profile.
+  required:
+    - initials
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

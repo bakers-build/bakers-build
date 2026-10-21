@@ -1,0 +1,40 @@
+component: bb_theme:option_picker
+name: Field
+variant: field
+props:
+  variant: field
+  label: Labels
+  icon: tag
+  value_labels:
+    - frontend
+    - backend
+  aria_label: Change labels. Currently frontend and backend are set.
+  open: true
+  multiple: true
+  name: labels
+  id: edit-labels
+  values:
+    - frontend
+    - backend
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: labels
+        multiple: true
+        clearable: true
+        clear_label: No labels
+        options:
+          - value: frontend
+            label: frontend
+            selected: true
+          - value: backend
+            label: backend
+            selected: true
+          - value: infra
+            label: infra
+            selected: false
+          - value: docs
+            label: docs
+            selected: false

@@ -1,0 +1,7 @@
+component: bb_theme:badge
+name: Running
+# THE ABSORBED PILL. `status-pill` was exactly this: a dot, a tint and a label.
+props:
+  label: running
+  tone: running
+  dot: true

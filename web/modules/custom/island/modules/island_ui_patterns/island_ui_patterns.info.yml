@@ -1,0 +1,9 @@
+name: 'Island UI Patterns'
+type: module
+description: 'Optional UI Patterns component and source mapping for Island Profiles.'
+package: Web services
+core_version_requirement: ^11.3
+dependencies:
+  - island:island
+  - ui_patterns:ui_patterns
+  - ui_patterns:ui_patterns_library

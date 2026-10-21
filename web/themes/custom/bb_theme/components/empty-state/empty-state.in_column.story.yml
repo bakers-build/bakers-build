@@ -1,0 +1,20 @@
+# The COMPACT rendering, which is what a board column gets: no dashed frame and no icon, because
+# the column already provides the frame and a second border inside it reads as a second container.
+#
+# This story first targeted the column component that used to exist, to show the composition itself.
+# It rendered EMPTY. The SDC addon resolves a story to the component of the DIRECTORY it sits in and
+# ignores the `component:` key, so that component's props went to empty-state's twig, `message` was
+# undefined, and Storybook showed an empty dashed box with no error at all — every file assertion
+# green. A story may therefore only target its own directory's component, and the contract check now
+# asserts that. (The column is data on `board` now, so the address it named is gone as well.)
+#
+# The composition is still proved, in the `project-dashboard` scene, where Accept is empty and this
+# component fills its `empty` slot — asserted by the contract check's C9/D14 group.
+#
+# The variant suffix uses an UNDERSCORE. A hyphen there becomes `export const in-column`, which the
+# browser rejects as a const declaration without an initializer (BB-334's finding).
+component: bb_theme:empty-state
+name: In column
+props:
+  compact: true
+  message: Nothing is waiting to be picked up.

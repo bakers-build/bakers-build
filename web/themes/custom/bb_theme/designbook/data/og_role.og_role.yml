@@ -1,0 +1,177 @@
+# The NINE og_role config objects BB-462 ships, verbatim from
+# config/sync/og.og_role.*.yml. BB-462 D7 deregisters bb_project as an OG
+# group entirely — its three roles (non-member, member, lead) are GONE, not
+# updated. Five for bb_workspace (non-member, member, contributor, lead,
+# guest) and four for bb_team (non-member, member, lead, owner). `app` is
+# GONE (D9: a conductor's OAuth identity is bound to its owning user, so it
+# sees exactly what that user's own rank sees). `owner` is NEW (D3: governs
+# the team itself, who may join it and its own settings). `permissions` is
+# empty in exactly four of the nine — the three non-member roles and
+# bb_team-bb_team-member — and `is_admin` is FALSE on all nine. Both are
+# load-bearing for a Settings screen; see the og.og_role entry in
+# data-model.yml. Permission lists are copied verbatim from config/sync.
+- id: bb_workspace-bb_workspace-non-member
+  label: Non-member
+  weight: 0
+  is_admin: false
+  permissions: []
+  group_type: bb_workspace
+  group_bundle: bb_workspace
+  role_type: required
+  __designbook:
+    section: settings
+- id: bb_workspace-bb_workspace-member
+  label: Member
+  weight: 1
+  is_admin: false
+  permissions: []
+  group_type: bb_workspace
+  group_bundle: bb_workspace
+  role_type: required
+  __designbook:
+    section: settings
+- id: bb_workspace-bb_workspace-contributor
+  label: Contributor
+  weight: 1
+  is_admin: false
+  permissions:
+    - access bakers dashboard
+    - claim bakers tickets
+    - create bb_comment
+    - create bb_group
+    - create bb_project
+    - create bb_term
+    - create bb_ticket
+    - update any bb_term
+    - update any bb_ticket
+    - use text format bb_rich
+    - view bb_comment
+    - view bb_conductor
+    - view bb_environment
+    - view bb_group
+    - view bb_machine
+    - view bb_project
+    - view bb_run
+    - view bb_team
+    - view bb_term
+    - view bb_ticket
+    - view bb_workspace
+  group_type: bb_workspace
+  group_bundle: bb_workspace
+  role_type: standard
+  __designbook:
+    section: settings
+- id: bb_workspace-bb_workspace-lead
+  label: Admin
+  weight: 2
+  is_admin: false
+  permissions:
+    - access bakers dashboard
+    - claim bakers tickets
+    - create bb_comment
+    - create bb_environment
+    - create bb_group
+    - create bb_project
+    - create bb_team
+    - create bb_term
+    - create bb_ticket
+    - delete any bb_comment
+    - delete any bb_environment
+    - delete any bb_group
+    - delete any bb_team
+    - delete any bb_term
+    - delete any bb_ticket
+    - delete bb_project
+    - edit bb_project
+    - manage members
+    - update any bb_comment
+    - update any bb_environment
+    - update any bb_group
+    - update any bb_team
+    - update own bb_machine
+    - update any bb_term
+    - update any bb_ticket
+    - update any bb_workspace
+    - update group
+    - use text format bb_rich
+    - view bb_comment
+    - view bb_conductor
+    - view bb_environment
+    - view bb_group
+    - view bb_machine
+    - view bb_project
+    - view bb_run
+    - view bb_team
+    - view bb_term
+    - view bb_ticket
+    - view bb_workspace
+  group_type: bb_workspace
+  group_bundle: bb_workspace
+  role_type: standard
+  __designbook:
+    section: settings
+- id: bb_workspace-bb_workspace-guest
+  label: Guest
+  weight: 3
+  is_admin: false
+  permissions:
+    - access bakers dashboard
+    - view bb_comment
+    - view bb_group
+    - view bb_project
+    - view bb_team
+    - view bb_term
+    - view bb_ticket
+    - view bb_workspace
+  group_type: bb_workspace
+  group_bundle: bb_workspace
+  role_type: standard
+  __designbook:
+    section: settings
+- id: bb_team-bb_team-non-member
+  label: Non-member
+  weight: 0
+  is_admin: false
+  permissions: []
+  group_type: bb_team
+  group_bundle: bb_team
+  role_type: required
+  __designbook:
+    section: settings
+- id: bb_team-bb_team-member
+  label: Member
+  weight: 1
+  is_admin: false
+  permissions: []
+  group_type: bb_team
+  group_bundle: bb_team
+  role_type: required
+  __designbook:
+    section: settings
+- id: bb_team-bb_team-lead
+  label: Lead
+  weight: 2
+  is_admin: false
+  permissions:
+    - delete bb_project
+    - edit bb_project
+    - view bakers statistic team_runs_per_project
+    - view bakers statistic team_runs_per_user
+    - view bakers statistic team_tickets_per_user
+  group_type: bb_team
+  group_bundle: bb_team
+  role_type: standard
+  __designbook:
+    section: settings
+- id: bb_team-bb_team-owner
+  label: Owner
+  weight: 2
+  is_admin: false
+  permissions:
+    - manage members
+    - update group
+  group_type: bb_team
+  group_bundle: bb_team
+  role_type: standard
+  __designbook:
+    section: settings

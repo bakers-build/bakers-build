@@ -1,0 +1,41 @@
+uuid: 30e83a75-5133-4133-8a09-a162716135d5
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_measurement.closed_tickets
+  - bb_core.bb_measurement.runs
+_core:
+  default_config_hash: fx89t4dye_2RrzZ1WoDbspTX0XG0GPSxCpGZFVfMj9E
+id: team_members
+label: Team members
+description: "Closed tickets and runs by team member. Date basis: ticket closed_date for closed tickets, run creation time for runs. Attribution basis: the ticket's current assignee."
+weight: 1
+widget: grouped_horizontal_bars
+measurements:
+- closed_tickets
+- runs
+categories:
+  type: dimension
+  dimension: user
+series: {  }
+filters:
+  period:
+    label: Period
+    default: '7'
+    options:
+    - value: '7'
+      label: 7 days
+    - value: '30'
+      label: 30 days
+    - value: '365'
+      label: 1 year
+context_shape:
+- team
+conditions:
+  team:
+    id: bb_route_context
+    entity_type: bb_team
+    negate: false
+    context_mapping:
+      entity: team

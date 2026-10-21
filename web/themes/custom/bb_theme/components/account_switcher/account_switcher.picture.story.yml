@@ -1,0 +1,9 @@
+component: bb_theme:account_switcher
+name: Picture
+props:
+  workspace_label: keytec
+  workspace_initials: KT
+  workspace_color: running
+  workspace_picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+  multiple: false
+  collapsed: false

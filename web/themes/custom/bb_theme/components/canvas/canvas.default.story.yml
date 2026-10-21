@@ -1,0 +1,50 @@
+component: bb_theme:canvas
+name: Default
+slots:
+  header:
+    - type: component
+      component: bb_theme:page_header
+      props:
+        title: BB-378
+        description: Rethink the layout components for the BB-327 web UI IA
+  main:
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: md
+        gap: md
+        columns: 1
+      slots:
+        heading: About
+        content:
+          - type: element
+            tag: p
+            value: The main region carries the screen's route-bearing content — the entity, the view's rows, the board.
+            attributes:
+              class: text-text-light text-[13px]
+  inspector:
+    - type: component
+      component: bb_theme:inspector
+      slots:
+        rows:
+          - type: component
+            component: bb_theme:list
+            props:
+              layout: lines
+              items:
+                - cells:
+                    label:
+                      kind: text
+                      value: Assignee
+                      emphasis: faint
+                    value:
+                      kind: text
+                      value: bakers-agent
+                - cells:
+                    label:
+                      kind: text
+                      value: Priority
+                      emphasis: faint
+                    value:
+                      kind: text
+                      value: P2

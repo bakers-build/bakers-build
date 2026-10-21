@@ -1,0 +1,78 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Text
+status: stable
+group: Data Display
+description: >-
+  One run of plain text in one of the theme's typographic roles: a paragraph, a
+  heading, an inline span, or a link. The element (`as`) serves the document
+  outline and the role (`size`, `tone`) the look, independently, so a page's h1
+  can read at the h3 step. It is for copy a form or controller supplies as a
+  single string; rich or multi-part content belongs in a component with slots.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    text:
+      type: string
+      title: Text
+      description: The copy, printed escaped; its line breaks are kept.
+    as:
+      type: string
+      enum:
+        - p
+        - span
+        - h1
+        - h2
+      title: Element
+      description: The HTML element. Ignored when `href` is set. Default `p`.
+      default: p
+    size:
+      type: string
+      enum:
+        - body
+        - caption
+        - h3
+        - display
+        - gate-body
+      title: Size
+      description: >-
+        Typographic role: body, caption, the h3 step, `display` (the 24px bold
+        page-title role) or `gate-body` (the 16px body of a standalone gate
+        result). Default `body`.
+      default: body
+    tone:
+      type: string
+      enum:
+        - default
+        - light
+        - faint
+      title: Tone
+      description: >-
+        Text colour role: the default text colour, the lighter secondary one, or
+        the faint tertiary one. Ignored when `href` is set.
+      default: default
+    align:
+      type: string
+      enum:
+        - start
+        - center
+      title: Alignment
+      default: start
+    tracking:
+      type: string
+      enum:
+        - normal
+        - widest
+      title: Letter spacing
+      description: '`widest` spaces a code a reader copies character by character.'
+      default: normal
+    href:
+      type: string
+      title: Link URL
+      description: Renders the run as a link in the link colour.
+  required:
+    - text
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

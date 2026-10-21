@@ -1,0 +1,21 @@
+component: bb_theme:option_list
+name: Form
+variant: form
+props:
+  name: state
+  multiple: true
+  input_name: state
+  input_type: checkbox
+  clearable: true
+  clear_label: Any state
+  clear_url: "?priority[]=2"
+  options:
+    - value: coding
+      label: coding
+      selected: true
+    - value: review
+      label: review
+      selected: false
+    - value: spec
+      label: spec
+      selected: false

@@ -1,0 +1,36 @@
+(
+  /* Compact embedded comment: the event plus an accessible canonical link.
+
+     `full` is the DETAIL page body. This mode is what ticket handoffs and the
+     run latest-summary embed, so it must not grow sibling navigation or a
+     nested shell. The default type `comment` is untagged — that vocabulary
+     stays in this mapping, not in the event component. Author identity comes
+     from the computed author_* fields, never from the type. */
+  $c := $;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:event",
+      "props": {
+        "author_name": $c.author_name,
+        "author_initials": $c.author_initials,
+        "author_color": $c.author_color,
+        "tag": $c.type != "comment" ? $c.type,
+        "timestamp": $c.created,
+        "body": $c.body
+      }
+    },
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:link-group",
+      "props": {
+        "label": "Comment",
+        "links": [
+          {
+            "url": "/comment/" & $c.id,
+            "title": "Open " & $c.type & " comment",
+            "target": "_self"
+          }
+        ]
+      }
+    }
+  ]
+)

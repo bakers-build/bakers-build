@@ -1,0 +1,15 @@
+export {
+  type ComposeContainer,
+  type ComposeDiagnostic,
+  type ComposeDiscovery,
+  type ComposeSocket,
+  type ComposeUnattachedDaemon,
+  type DockerComposeDeps,
+  discoverCompose,
+  parseDockerInspect,
+  parseDockerPsIds,
+  parsePidParents,
+  parseSocketListeners,
+  parseSupervisorStatus,
+  type SocketListener,
+} from './discovery.js';

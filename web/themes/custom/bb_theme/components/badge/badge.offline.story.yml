@@ -1,0 +1,8 @@
+component: bb_theme:badge
+name: Offline
+# `--color-state-offline-tint` exists and `--color-state-offline-ink` does not, so
+# this tone has no PAIR and reads on the quiet surface.
+props:
+  label: offline
+  tone: offline
+  dot: true

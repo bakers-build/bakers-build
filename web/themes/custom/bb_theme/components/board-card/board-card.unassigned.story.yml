@@ -1,0 +1,21 @@
+component: bb_theme:board-card
+name: Unassigned
+props:
+  identifier: GL-142
+  title: Lease expired, nobody assigned
+  status: wait
+  priority: p1
+  type: bb_bug
+slots:
+  footer:
+    - type: element
+      tag: span
+      value: ''
+      attributes:
+        class: flex-1
+    - type: component
+      component: bb_theme:badge
+      props:
+        label: wait
+        tone: wait
+        dot: true

@@ -1,0 +1,16 @@
+# Work with bakers.build
+
+**bakers.build lets AI agents work your tickets while you stay in charge.** Start with your agent; this manual shows the way.
+
+| You want to | Start here | Skill |
+|---|---|---|
+| Try bakers.build for the first time | [Get started](/get-started/) | `init` |
+| Work without installing anything | [Work in the browser](/get-started/work-in-the-browser) | - |
+| Decide whether bakers.build fits your team | [Is bakers.build right for us?](/get-started/is-bakers-right-for-us) | - |
+| Connect a project | [Connect your project](/get-started/connect-a-project) | `init-project` |
+| Create, follow and accept tickets | [Daily work](/daily-work/) | `create-ticket`, `read-ticket`, `acceptance` |
+| Understand skills, `WORKFLOW.md` and states | [Skills & Workflows](/skills-and-workflows/) | `workflow-step` |
+| Extend bakers.build | [Addons](/addons/) | - |
+| Configure, operate or use the CLI | [Advanced](/advanced/) | `upgrade-project` |
+
+The site is published from `develop`, so it can describe features the latest release does not have yet; the version row names the commit it was built from.

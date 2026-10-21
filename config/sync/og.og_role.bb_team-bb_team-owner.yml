@@ -1,0 +1,20 @@
+uuid: 8c1b07d2-2104-4304-987a-5de11468243b
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+_core:
+  default_config_hash: bb_team_owner_placeholder
+id: bb_team-bb_team-owner
+label: Owner
+weight: 2
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions:
+  - 'edit bb_project'
+  - 'manage members'
+  - 'update group'
+role_type: standard

@@ -1,0 +1,13 @@
+uuid: ee7b77b5-9b41-4450-9c36-d849919b6a50
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+_core:
+  default_config_hash: XsOEIey4f_BXDAlX2VfrJmLspgLyqiCqsNw1YNiBw44
+id: bb_workspace.settings
+label: Settings
+description: null
+targetEntityType: bb_workspace
+cache: true

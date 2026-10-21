@@ -1,0 +1,196 @@
+component: bb_theme:board
+name: Operational Details
+props:
+  controls_enabled: true
+  details_default: true
+  filter_title: Conductor
+  as_of: '2026-10-06T12:00:00Z'
+  filter_options:
+    lanes:
+    - value: '1'
+      label: cw · framework
+    - value: c-board
+      label: cw · board
+  columns:
+  - name: Backlog
+    cards:
+    - identifier: BOARD-01
+      title: Unassigned backlog
+      state: spec
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: ''
+      lane_id: ''
+      closed_date: ''
+      blocked: false
+      status: idle
+    - identifier: BOARD-02
+      title: Assigned backlog
+      state: spec
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: ''
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-11
+      title: Blocked without conductor
+      state: spec
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: ''
+      blocked: true
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+  - name: Intake
+    cards:
+    - identifier: BOARD-03
+      title: Ready for conductor
+      state: qualification
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: '1'
+      closed_date: ''
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+  - name: Working
+    cards:
+    - identifier: BOARD-04
+      title: Blocked dependency
+      state: spec
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: '1'
+      closed_date: ''
+      blocked: true
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-05
+      title: Build the project screen
+      state: coding
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: '1'
+      closed_date: ''
+      blocked: false
+      status: running
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-06
+      title: Review the project screen
+      state: review
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '2'
+      lane_id: '1'
+      closed_date: ''
+      blocked: false
+      status: running
+      assignee_name: Sven Gruber
+      assignee_initials: SG
+    - identifier: BOARD-12
+      title: Running despite block
+      state: coding
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '2'
+      lane_id: c-board
+      closed_date: ''
+      blocked: true
+      status: running
+      assignee_name: Sven Gruber
+      assignee_initials: SG
+  - name: Done
+    cards:
+    - identifier: BOARD-07
+      title: Delivered screen
+      state: done
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: '1'
+      closed_date: '2026-10-05T12:00:00Z'
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-08
+      title: Cancelled experiment
+      state: cancelled
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: '2026-10-04T12:00:00Z'
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-09
+      title: Older delivery
+      state: done
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: '2026-09-01T12:00:00Z'
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-10
+      title: Missing closing time
+      state: done
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: ''
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-13
+      title: Terminal overrides stale run
+      state: done
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: '1'
+      closed_date: '2026-10-06T10:00:00Z'
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-15
+      title: Seven-day boundary
+      state: done
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: '2026-09-29T12:00:00Z'
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-16
+      title: Outside seven days
+      state: done
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: '2026-09-29T11:59:59Z'
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW
+    - identifier: BOARD-17
+      title: Future closing date
+      state: done
+      url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
+      assignee_id: '1'
+      lane_id: ''
+      closed_date: '2026-10-07T12:00:00Z'
+      blocked: false
+      status: idle
+      assignee_name: Christian Wiedemann
+      assignee_initials: CW

@@ -1,0 +1,31 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: 262258a2-080f-4ab9-af1b-9028cef388da
+  depends:
+    dbc50000-0000-4000-8000-0000000000c1: bb_group
+    dbc70000-0000-4000-8000-000000000002: bb_team
+default:
+  group_id:
+    -
+      entity: "dbc50000-0000-4000-8000-0000000000c1"
+  name:
+    -
+      value: bakers-e2e-project
+  # The listing row's description region; the other seeded projects carry
+  # none, so one listing shows both shapes.
+  description:
+    -
+      value: "The end-to-end world's own project: tickets, runs and conductors the browser suite drives, with an unbroken token Donaudampfschifffahrtsgesellschaftskapitänsmützenabzeichen to prove wrapping."
+  key:
+    -
+      value: GLE2E
+  next_number:
+    -
+      value: 5
+  # ONE crew, and deliberately the OTHER one — a project belongs to at least
+  # one team (BB-419), and giving the two fixtures different crews is what
+  # makes a team's computed project list distinguishable from "every project".
+  teams:
+    -
+      entity: "dbc70000-0000-4000-8000-000000000002"

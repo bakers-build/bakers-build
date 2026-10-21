@@ -1,0 +1,20 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: afa9b1da-0df1-51d0-8156-52d2d90c2b85
+  default_langcode: en
+default:
+  name:
+  - value: api-pagination-other
+  mail:
+  - value: api-pagination-other@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  roles:
+  - target_id: api_machine
+  field_onboarding_completed:
+    -
+      value: true

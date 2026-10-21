@@ -1,0 +1,11 @@
+component: bb_theme:rich-text
+name: Default
+props:
+  body: >-
+    <p>The transition table moved into config, and the loader reads it at
+    construction time. See <a href="https://example.test/notes">the notes</a>
+    for the edge cases; the value is validated against
+    <code>workflow.transitions</code> on save.</p><pre><code>drush
+    cr</code></pre><ul><li>Load the transitions once, not per
+    save</li><li>Validate every edge against the config</li><li>Leave the
+    fixture states unchanged</li></ul><p>Everything else is unchanged.</p>

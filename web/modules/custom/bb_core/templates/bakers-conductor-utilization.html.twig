@@ -1,0 +1,11 @@
+{#
+/**
+ * @file
+ * A conductor's load against its capacity, with its machine-readable level.
+ *
+ * Available variables:
+ * - label: Load text, e.g. "2/4".
+ * - level: idle, partial or full.
+ */
+#}
+<span data-utilization="{{ level }}">{{ label }}</span>

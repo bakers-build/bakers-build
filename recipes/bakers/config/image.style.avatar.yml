@@ -1,0 +1,25 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - crop.type.bb_avatar
+  module:
+    - crop
+name: avatar
+label: Avatar
+effects:
+  3c1f0a52-9b0e-4d5c-8a47-2f6c1d9e7b31:
+    uuid: 3c1f0a52-9b0e-4d5c-8a47-2f6c1d9e7b31
+    id: crop_crop
+    weight: -10
+    data:
+      crop_type: bb_avatar
+      automatic_crop_provider: null
+  67740c36-7fd9-447c-8fc9-a96b56c4ad8d:
+    uuid: ''
+    id: image_scale_and_crop
+    weight: 0
+    data:
+      width: 80
+      height: 80
+      anchor: center-center

@@ -1,0 +1,7 @@
+record own worklog:
+  title: 'Record own worklog'
+  description: 'Create, correct and delete your own recorded time entries.'
+view team worklogs:
+  title: 'View team worklogs'
+  description: 'Read recorded time of active members of a team you lead. Granted through the team lead group role only.'
+  restrict access: true

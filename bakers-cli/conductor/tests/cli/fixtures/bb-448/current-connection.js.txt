@@ -1,0 +1,15 @@
+// @bakers-schema-version 4
+// Global bakers.build connection: credentials and workspace. Keep this file private.
+export default {
+  schema_version: 4,
+  site: { base_url: "https://historical.test", jsonapi_prefix: '/jsonapi' },
+  workspace_id: "11111111-1111-4111-8111-111111111111",
+  plugins: [
+    { plugin: '@bakers-build/addon-essentials' },
+    { plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: {
+      id: 'bakers', default: true, type: 'oauth2_client_credentials', scope: 'bb:session',
+      client_id: "historical-client", client_secret: "historical-secret",
+      token_url: "https://historical.test/oauth/token",
+    } },
+  ],
+};

@@ -1,0 +1,33 @@
+# The SECOND crew, so the Teams surface is a list rather than a single row.
+#
+# One team cannot show that the list is scoped, ordered or countable, and one
+# team makes "PER TEAM" indistinguishable from a total. This one exists to be the
+# other row.
+#
+# It also carries the case BB-321 D6 records: `cwiedemann` is an active member
+# of BOTH crews (owner here through …0001's explicit owner, member here through
+# …0008), so a person with dual membership increments both teams' rows and
+# `by_team` may exceed the total. That is the documented non-invariant, and
+# without a second team the seeded world could not exhibit it.
+#
+# Same workspace as …0001 — see that file for why the workspace is
+# BbWorkspace::DEFAULT_UUID and never a shipped one, and for why the owner is
+# named explicitly rather than left to the default-value callback.
+_meta:
+  version: '1.0'
+  entity_type: bb_team
+  uuid: dbc70000-0000-4000-8000-000000000002
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    dbe50000-0000-4000-8000-000000000002: user
+default:
+  name:
+    -
+      value: "Design Crew"
+  workspace_id:
+    -
+      entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000002"

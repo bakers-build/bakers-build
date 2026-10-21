@@ -1,0 +1,10 @@
+component: bb_theme:menu_item
+name: Picture
+props:
+  label: keytec
+  url: /keytec/tickets
+  current: true
+  mark:
+    initials: KE
+    color: running
+    picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png

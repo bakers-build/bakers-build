@@ -1,0 +1,25 @@
+{
+  "id": "msg_a1",
+  "sessionID": "ses_A",
+  "role": "assistant",
+  "parentID": "msg_u1",
+  "time": {
+    "created": 1768658022000,
+    "completed": 1768658024000
+  },
+  "modelID": "big-pickle",
+  "providerID": "opencode",
+  "mode": "build",
+  "agent": "build",
+  "cost": 0.012,
+  "tokens": {
+    "input": 1000,
+    "output": 200,
+    "reasoning": 50,
+    "cache": {
+      "read": 400,
+      "write": 0
+    }
+  },
+  "finish": "tool"
+}

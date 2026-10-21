@@ -1,0 +1,283 @@
+{
+  "schemas": {
+    "bb_ticket/bb_ticket": {
+      "allOf": [
+        {
+          "properties": {
+            "type": {
+              "const": "bb_ticket--bb_ticket"
+            },
+            "attributes": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "title",
+                "workflow"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "title": "Title",
+                  "maxLength": 255
+                },
+                "workflow": {
+                  "type": "string",
+                  "title": "Workflow",
+                  "enum": [
+                    "bb_bug",
+                    "bb_chore",
+                    "bb_feature"
+                  ]
+                },
+                "description": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "title": "Text"
+                    },
+                    "format": {
+                      "type": "string",
+                      "title": "Text format"
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "title": "State"
+                },
+                "links": {
+                  "type": "array",
+                  "title": "Links",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "uri": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "relationships": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "project_id"
+              ],
+              "properties": {
+                "project_id": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bb_project--bb_project"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                },
+                "labels": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "id"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "bb_term--bb_labels"
+                            ]
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "parent_id": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bb_ticket--bb_ticket"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                },
+                "conductor_id": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bb_conductor--bb_conductor"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "bb_comment/bb_comment": {
+      "allOf": [
+        {
+          "properties": {
+            "type": {
+              "const": "bb_comment--bb_comment"
+            },
+            "attributes": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "body",
+                "bb_comment_type"
+              ],
+              "properties": {
+                "body": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "title": "Text"
+                    },
+                    "format": {
+                      "type": "string",
+                      "title": "Text format"
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                },
+                "bb_comment_type": {
+                  "type": "string",
+                  "title": "Type",
+                  "maxLength": 255
+                }
+              }
+            },
+            "relationships": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ticket_id"
+              ],
+              "properties": {
+                "ticket_id": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bb_ticket--bb_ticket"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "terms": [
+    {
+      "id": "88888888-8888-4888-8888-000000000001",
+      "name": "work:docs"
+    },
+    {
+      "id": "88888888-8888-4888-8888-000000000002",
+      "name": "method:matt"
+    },
+    {
+      "id": "88888888-8888-4888-8888-000000000003",
+      "name": "work:code"
+    }
+  ],
+  "probe_ticket": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "title": "Unrelated dashboard ticket",
+    "identifier": "EVAL-90",
+    "state": "done",
+    "description": {
+      "value": "Dashboard colors only"
+    },
+    "assignee": "fixture-reader",
+    "links": []
+  }
+}

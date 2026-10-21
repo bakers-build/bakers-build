@@ -1,0 +1,8 @@
+#ddev-generated
+# Merged into the project's DDEV config automatically (config.*.yaml). Feeds .keytec-ai.yml
+# into the web container as REGISTRY_*/SANITIZE_*/INIT_* env vars before the container starts,
+# so `ddev pull gitlab-registry` works with zero manual hook wiring.
+# `|| true`: a missing npx/keytec-ai must never block `ddev start`.
+hooks:
+  pre-start:
+    - exec-host: "npx -y keytec-ai-cli config to-env --to-file .ddev/.env.web || true"

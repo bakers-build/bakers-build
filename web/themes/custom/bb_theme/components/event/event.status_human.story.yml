@@ -1,0 +1,15 @@
+component: bb_theme:event
+name: Status human
+props:
+  author_name: cw
+  author_initials: CW
+  author_color: lease
+  subject_label: BB-650
+  subject_url: '#subject'
+  role: human
+  tag: status
+  timestamp: 2 h ago
+  statement: qualification → spec
+  links:
+    - title: Summary
+      url: '#summary'

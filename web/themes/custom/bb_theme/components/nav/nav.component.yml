@@ -1,0 +1,125 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Nav
+status: stable
+group: Navigation
+description: 'The menu tree (renamed from `navigation` — BB-378 D9; short because its container, `sidebar`, is named). Renders the tree from an items array through a recursive Twig macro. Entries are never hardcoded. An entry is a link by default; setting heading makes it a GROUP HEADING — a single disclosure button spanning the row, with no href, because a heading has no destination. A row may carry a mark instead of an icon (a team, rendered through `person`), one create action and one dot menu, each an object and never an array: the dot menu IS the overflow, so an unbounded control strip inside a 28px row has nothing to be. Every open/closed state is an accessible attribute — a disclosure trigger carries aria-expanded and aria-controls, the panel carries the matching id and starts hidden — and no CSS class ever carries state.'
+provider: bb_theme
+props:
+  type: object
+  properties:
+    items:
+      type: array
+      title: Items
+      description: Menu tree. A link entry carries title, url, icon and in_active_trail; a group heading carries title and heading, and may carry icon. Any entry may carry open, mark, action, menu and below.
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+            title: Title
+          url:
+            type: string
+            title: Url
+            description: The destination. A group heading has none.
+          full_page:
+            type: boolean
+            title: Full page
+            description: Disable inherited HTMX boost for a full document navigation.
+            default: false
+          at_end:
+            type: boolean
+            title: At end
+            description: Start a group anchored at the bottom of the available navigation space.
+            default: false
+          icon:
+            type: string
+            title: Icon
+            description: Sprite symbol id rendered before the label. Replaced by mark when both are set.
+          in_active_trail:
+            type: boolean
+            title: In active trail
+          heading:
+            type: boolean
+            title: Group heading
+            description: 'Render the whole row as one disclosure button rather than as a link: no href, no aria-current, and the children are not indented.'
+          open:
+            type: boolean
+            title: Open
+            description: Per-entry disclosure state. Overrides the coarse expanded prop, which is what makes "Workspace and Teams open, Settings closed" expressible.
+          mark:
+            type: object
+            title: Mark
+            description: An initials mark rendered through `person` in place of the icon. What distinguishes a team row from an icon-led entry, in the collapsed rail too.
+            properties:
+              initials:
+                type: string
+              color:
+                type: string
+                enum:
+                  - running
+                  - attention
+                  - unassigned
+                  - lease
+                  - offline
+          action:
+            type: object
+            title: Row action
+            description: One create affordance, rendered as the button component in its ghost + icon_only variant. Earned only by a row that IS the list receiving the addition; a row that merely links to a screen carries none.
+            properties:
+              icon:
+                type: string
+              label:
+                type: string
+              href:
+                type: string
+                title: Href
+                description: Optional destination. Renders the existing action control as a link when set.
+              attributes:
+                title: Attributes
+                description: Optional Drupal Attribute object forwarded to the action control, including dialog request attributes.
+          menu:
+            type: object
+            title: Dot menu
+            description: 'One overflow menu: a disclosure over a ul[role=menu] of role=menuitem links. Deliberately not option_picker/option_list, whose role=option would announce an action as a selectable value.'
+            properties:
+              label:
+                type: string
+              open:
+                type: boolean
+              items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    label:
+                      type: string
+                    url:
+                      type: string
+          below:
+            type: array
+            title: Children
+    collapsed:
+      type: boolean
+      title: Collapsed
+      description: 'Icon-only rendering: labels, row actions and dot menus are hidden. Link rows stay as their icons, a group heading that carries an icon stays as that icon, and team rows stay as their marks. A heading without an icon is hidden.'
+    expanded:
+      type: boolean
+      title: Sub-navigation disclosed
+      description: Coarse default for every disclosure. Defaults to true for the settings_open variant; an entry in the active trail is disclosed regardless, and a per-entry open wins over both.
+    id:
+      type: string
+      title: Id
+      description: Base id; every disclosure panel derives its id from it.
+    label:
+      type: string
+      title: Accessible label for the navigation landmark
+variants:
+  main:
+    title: Main
+    description: The navigation with the Settings sub-navigation closed.
+  settings_open:
+    title: Settings open
+    description: The same tree with every sub-navigation disclosed, so the opened state is verifiable.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,18 @@
+uuid: c236ee00-626b-48db-995d-da943b5b6b99
+langcode: en
+status: true
+dependencies:
+  module:
+    - simple_oauth
+    - system
+    - user
+_core:
+  default_config_hash: dJ0L2DNSj5q6XVZAGsuVDpJTh5UeYkIPwKrUOOpr8YI
+id: authenticated
+label: 'Authenticated user'
+weight: 1
+is_admin: false
+permissions:
+  - 'access content'
+  - 'change own username'
+  - 'grant simple_oauth codes'

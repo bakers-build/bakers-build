@@ -1,0 +1,23 @@
+# bakers.build team OG role: member, OG's required role (the name derives the role
+# type, so it cannot be a second role).
+#
+# The floor: a team carries visibility, not rights. It reads only the project
+# overview and the team's project breakdown, selected by context.
+#
+# Shipped in its saved form, key for key.
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_team-bb_team-member
+label: 'Member'
+weight: 1
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions:
+  - 'view bakers figure project_overview'
+  - 'view bakers figure team_projects'
+role_type: required

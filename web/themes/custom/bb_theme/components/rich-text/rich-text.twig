@@ -1,0 +1,77 @@
+{# THE ONE PROSE TREATMENT IN THIS THEME, and it owns nothing else. A body that
+   a text format has already rendered arrives here as markup and leaves with a
+   typographic treatment; no other component may carry these selectors, and
+   tests/contract/data-display-components.sh (B9) asserts it. Ticket
+   descriptions and every comment body (through `event`) reach this one file,
+   so they cannot drift apart.
+
+   WHAT A BODY CAN CONTAIN is decided by the `bb_rich` format, not here: it is
+   GitHub-flavoured Markdown (markdown_easy, `flavor: github`) that strips raw
+   HTML, followed by an allow-list of p, br, strong, em, h1-h4, ul, ol, li, a,
+   blockquote, hr, code, pre and table/thead/tbody/tr/th/td. Every one of those
+   is styled below and nothing else is. Pipe tables DO arrive as real tables.
+
+   `body` IS A PROP AND NOT A SLOT: a processed field value is one field's value
+   rather than structure anybody composed, and a prop can be typed and described
+   as the PROCESSED value. It is printed WITHOUT `|raw` — Drupal's autoescape
+   passes the filter's Markup object through and escapes a plain string, which
+   is the trust boundary a text format exists for. `has_table` only READS the
+   string to pick the wrapper; the printed value is never rebuilt. #}
+{#- An EMPTY BODY RENDERS NOTHING. `body` is not `required` because ui_patterns
+    drops an empty prop before SDC validates it, so a required prop bound to an
+    empty field would turn the whole screen into a 500 (BB-414). `|trim`
+    because a processed field ends in a newline that is not content. #}
+{% set compact = size|default('default') == 'compact' %}
+{% set has_table = '<table' in (body ~ '') %}
+{% set prose_classes = [
+  'min-w-0 max-w-full text-body text-text leading-normal break-words',
+  compact ? '[&>*]:my-1 [&>:is(h1,h2,h3,h4)]:mt-3' : '[&>*]:my-2 [&>:is(h1,h2,h3,h4)]:mt-4',
+  '[&>:first-child]:mt-0 [&>:last-child]:mb-0',
+  '[&_:is(h1,h2,h3,h4)]:text-title [&_h1]:text-heading [&_h1]:pb-1 [&_h1]:border-b [&_h1]:border-border [&_h2]:text-section [&_h3]:text-body [&_h3]:font-semibold [&_h4]:text-eyebrow [&_h4]:uppercase [&_h4]:text-text-light',
+  '[&_ul]:list-disc [&_ol]:list-decimal [&_:is(ul,ol)]:pl-5 [&_li]:my-1 [&_li>:is(ul,ol,p)]:my-1 [&_li]:marker:text-text-light',
+  '[&_a]:text-link [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:decoration-2 [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-focus-ring [&_a:focus-visible]:rounded-xs',
+  '[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-text-light [&_hr]:border-border [&>hr]:my-4',
+  '[&_code]:font-mono [&_code]:text-mono [&_code]:bg-surface-3 [&_code]:px-1 [&_code]:rounded-xs',
+  '[&_pre]:bg-surface-3 [&_pre]:p-3 [&_pre]:rounded-sm [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:rounded-none',
+  '[&_table]:w-full [&_table]:border-collapse [&_tr]:border-b [&_tr]:border-border [&_thead_tr]:border-b-2 [&_tbody_tr:last-child]:border-b-0',
+  '[&_th]:bg-surface-3 [&_th]:font-semibold [&_th]:text-title [&_th]:text-left [&_:is(th,td)]:align-top',
+  compact ? '[&_:is(th,td)]:px-2 [&_:is(th,td)]:py-1' : '[&_:is(th,td)]:px-3 [&_:is(th,td)]:py-2',
+]|join(' ') %}
+{#- A TABLE IS NEVER CLAMPED AND NEVER WIDENS THE PAGE. Five clamped lines of a
+    table hide rows behind a misleading cut, so `clamp` is ignored for it. The
+    root becomes the horizontal scroll container instead — the table keeps its
+    native semantics (a `display: block` table loses them in some screen
+    readers) — and, being a scroller, it is a named region in the tab order so
+    a keyboard can scroll it without JavaScript. The name is the optional
+    `label` prop so each caller can tie it to its content; the component
+    default is "Formatted content". #}
+{% set region_label = label|default('')|trim ?: 'Formatted content' %}
+{% if body|trim is not empty and clamp|default(false) and not has_table %}
+<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'items-start', 'gap-1']) }}
+  x-data="{ expanded: false, overflows: false }"
+  x-id="['rich-text-body']"
+  x-init="$nextTick(() => { overflows = $refs.body.scrollHeight > $refs.body.clientHeight })">
+  <div class="rich-text self-stretch {{ prose_classes }}" x-ref="body" :id="$id('rich-text-body')" :class="expanded ? '' : 'line-clamp-5'">{{ body }}</div>
+  <button type="button" hidden aria-expanded="false"
+    class="p-0 bg-transparent border-0 text-caption text-link cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+    :hidden="!overflows"
+    :aria-expanded="expanded ? 'true' : 'false'"
+    :aria-controls="$id('rich-text-body')"
+    @click="expanded = !expanded"
+    x-text="expanded ? 'Show less' : 'Show more'">Show more</button>
+</div>
+{% elseif body|trim is not empty and has_table %}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'rich-text',
+    prose_classes,
+    'overflow-x-auto',
+    'focus-visible:outline-2',
+    'focus-visible:outline-offset-2',
+    'focus-visible:outline-focus-ring',
+  ]).setAttribute('role', 'region').setAttribute('aria-label', region_label).setAttribute('tabindex', '0') }}>{{ body }}</div>
+{% elseif body|trim is not empty %}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'rich-text',
+    prose_classes,
+  ]) }}>{{ body }}</div>
+{% endif %}

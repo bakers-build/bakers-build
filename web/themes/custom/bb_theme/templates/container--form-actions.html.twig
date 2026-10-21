@@ -1,0 +1,13 @@
+{#
+/**
+ * @file
+ * The action row of a full-page entity form: primary submit on the right,
+ * separated from the fields, as `bb_theme:form` draws its own actions.
+ *
+ * Reached by name: bb_theme_form_alter() sets this wrapper on every core
+ * rendered form with actions, Settings and the ticket properties alike.
+ */
+#}
+<div{{ attributes.addClass(['flex', 'flex-wrap', 'items-center', 'justify-end', 'gap-3', 'pt-5', 'mt-5', 'border-t', 'border-border-2']) }}>
+  {{- children -}}
+</div>

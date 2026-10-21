@@ -1,0 +1,11 @@
+name: bakers.build Board
+type: module
+description: 'The project Board: lifecycle columns, parent focus and the summary header.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core
+  - drupal:views
+  - search_api:search_api
+  - facets:facets_exposed_filters
+  - better_exposed_filters:better_exposed_filters

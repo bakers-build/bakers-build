@@ -1,0 +1,36 @@
+{# The ONBOARDING chrome — `gate`'s sibling, and the third chrome after `shell`
+   and that one. A gate is a card offering the one thing a page is for;
+   onboarding is a short conversation, so the same centred column carries the
+   step's words above the form rather than beside it.
+
+   ONE COLUMN, NOT TWO. A two-column frame was built first and rejected on
+   sight: it reads as two subjects where there is one, and it halved the
+   form's measure for no gain — a wizard step is a single line of thought, and
+   the widest thing in it is the form.
+
+   IT CARRIES THE STEP'S COPY AS PROPS, filled by the wizard form rather than
+   by the Island Profile. The copy belongs to the step, and a profile's layout
+   settings are static config that cannot differ between step 1 and step 2.
+
+   THE ID IS THE HTMX FRAGMENT BOUNDARY'S ANCHOR: the form swaps its own
+   `outerHTML` and this element rides inside it, so copy and fields can never
+   describe different steps.
+
+   NOT A SCROLL CONTAINER, for `gate`'s reason: `min-h-screen` with centred
+   items lets a long card grow the page instead of clipping itself. #}
+<div{{ (attributes ?: create_attribute()).setAttribute('id', 'bakers-onboarding').addClass(['min-h-screen', 'flex', 'items-center', 'justify-center', 'p-6', 'bg-app', 'text-text', 'font-sans']) }}>
+  <div class="w-full max-w-xl min-w-0 flex flex-col items-center gap-4">
+    <div class="w-full flex flex-col items-center text-center gap-2">
+      {% if mark %}
+        <div>{% block mark %}{{ mark }}{% endblock %}</div>
+      {% endif %}
+      {% if title %}
+        <h1 class="text-h3" tabindex="-1" x-init="$el.focus({preventScroll: true})">{{ title }}</h1>
+      {% endif %}
+      {% if description %}
+        <p class="text-caption text-text-faint max-w-xs">{{ description }}</p>
+      {% endif %}
+    </div>
+    <div class="w-full min-w-0 flex flex-col gap-4 p-6 bg-surface border border-border-2 rounded-md">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
+  </div>
+</div>

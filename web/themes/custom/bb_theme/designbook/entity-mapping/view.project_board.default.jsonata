@@ -1,0 +1,398 @@
+(
+  /* Frozen project preview inputs. No live API or shared sample mutations. */
+  $tickets := [
+  {
+    "id": "01",
+    "identifier": "BOARD-01",
+    "title": "Unassigned backlog",
+    "state": "spec",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": null,
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "02",
+    "identifier": "BOARD-02",
+    "title": "Assigned backlog",
+    "state": "spec",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "03",
+    "identifier": "BOARD-03",
+    "title": "Ready for conductor",
+    "state": "qualification",
+    "project_id": "1",
+    "conductor_id": "1",
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "04",
+    "identifier": "BOARD-04",
+    "title": "Blocked dependency",
+    "state": "spec",
+    "project_id": "1",
+    "conductor_id": "1",
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": true,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "05",
+    "identifier": "BOARD-05",
+    "title": "Build the project screen",
+    "state": "coding",
+    "project_id": "1",
+    "conductor_id": "1",
+    "assignee_id": "1",
+    "has_running_run": true,
+    "blocked": false,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "06",
+    "identifier": "BOARD-06",
+    "title": "Review the project screen",
+    "state": "review",
+    "project_id": "1",
+    "conductor_id": "1",
+    "assignee_id": "2",
+    "has_running_run": true,
+    "blocked": false,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "07",
+    "identifier": "BOARD-07",
+    "title": "Delivered screen",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": "1",
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-10-05T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "08",
+    "identifier": "BOARD-08",
+    "title": "Cancelled experiment",
+    "state": "cancelled",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-10-04T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "09",
+    "identifier": "BOARD-09",
+    "title": "Older delivery",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-09-01T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "10",
+    "identifier": "BOARD-10",
+    "title": "Missing closing time",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "11",
+    "identifier": "BOARD-11",
+    "title": "Blocked without conductor",
+    "state": "spec",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": true,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "12",
+    "identifier": "BOARD-12",
+    "title": "Running despite block",
+    "state": "coding",
+    "project_id": "1",
+    "conductor_id": "c-board",
+    "assignee_id": "2",
+    "has_running_run": true,
+    "blocked": true,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "13",
+    "identifier": "BOARD-13",
+    "title": "Terminal overrides stale run",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": "1",
+    "assignee_id": "1",
+    "has_running_run": true,
+    "blocked": false,
+    "closed_date": "2026-10-06T10:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "14",
+    "identifier": "BOARD-14",
+    "title": "Another project",
+    "state": "coding",
+    "project_id": "2",
+    "conductor_id": "2",
+    "assignee_id": "1",
+    "has_running_run": true,
+    "blocked": false,
+    "closed_date": null,
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "15",
+    "identifier": "BOARD-15",
+    "title": "Seven-day boundary",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-09-29T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "16",
+    "identifier": "BOARD-16",
+    "title": "Outside seven days",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-09-29T11:59:59Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "17",
+    "identifier": "BOARD-17",
+    "title": "Future closing date",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-10-07T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "18",
+    "identifier": "BOARD-18",
+    "title": "Closed three days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": "1",
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-10-03T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "19",
+    "identifier": "BOARD-19",
+    "title": "Closed four days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "2",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-10-02T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "20",
+    "identifier": "BOARD-20",
+    "title": "Closed five days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-10-01T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "21",
+    "identifier": "BOARD-21",
+    "title": "Closed six days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": "c-board",
+    "assignee_id": "2",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-09-30T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "22",
+    "identifier": "BOARD-22",
+    "title": "Closed sixteen days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-09-20T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "23",
+    "identifier": "BOARD-23",
+    "title": "Closed twenty-one days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-09-15T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "24",
+    "identifier": "BOARD-24",
+    "title": "Closed twenty-six days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "2",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-09-10T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  },
+  {
+    "id": "25",
+    "identifier": "BOARD-25",
+    "title": "Closed forty-seven days ago",
+    "state": "done",
+    "project_id": "1",
+    "conductor_id": null,
+    "assignee_id": "1",
+    "has_running_run": false,
+    "blocked": false,
+    "closed_date": "2026-08-20T12:00:00Z",
+    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
+  }
+];
+  $conductors := [
+  {
+    "id": "1",
+    "project_id": "1",
+    "label": "cw \u00b7 framework",
+    "status": "online",
+    "current_load": 2,
+    "max_parallel": 5,
+    "active_ticket_ids": [
+      "05",
+      "06"
+    ]
+  },
+  {
+    "id": "c-board",
+    "project_id": "1",
+    "label": "cw \u00b7 board",
+    "status": "online",
+    "current_load": 1,
+    "max_parallel": null,
+    "active_ticket_ids": [
+      "12"
+    ]
+  },
+  {
+    "id": "offline-board",
+    "project_id": "1",
+    "label": "Offline worker",
+    "status": "offline",
+    "current_load": 0,
+    "max_parallel": 2,
+    "active_ticket_ids": []
+  },
+  {
+    "id": "2",
+    "project_id": "2",
+    "label": "Other project",
+    "status": "online",
+    "current_load": 1,
+    "max_parallel": 2,
+    "active_ticket_ids": [
+      "14"
+    ]
+  }
+];
+  $phase := function($t) { $t.closed_date ? "Done" : $t.conductor_id ? ($t.state = "qualification" ? "Intake" : "Working") : "Not assigned" };
+  $columns := $map(["Not assigned", "Intake", "Working"], function($name) {
+    { "name": $name, "cards": [$map($tickets[project_id = "1" and $phase($) = $name], function($t) {
+      {
+        "identifier": $t.identifier, "title": $t.title, "state": $t.state, "url": $t.url,
+        "status": $t.has_running_run and $name = "Working" ? "running" : "idle", "blocked": $t.blocked,
+        "assignee_id": $t.assignee_id ? $t.assignee_id : "",
+        "lane_id": $t.conductor_id ? $t.conductor_id : "",
+        "closed_date": $t.closed_date ? $t.closed_date : "",
+        "assignee_name": $t.assignee_id = "1" ? "Christian Wiedemann" : $t.assignee_id = "2" ? "Sven Gruber" : "",
+        "assignee_initials": $t.assignee_id = "1" ? "CW" : $t.assignee_id = "2" ? "SG" : ""
+      }
+    })] }
+  });
+  [
+  {
+    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:board",
+    "props": {
+      "controls_enabled": false,
+      "columns": $columns
+    }
+  }
+]
+)

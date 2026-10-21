@@ -1,0 +1,33 @@
+# Integration-suite dispatch conductor. Seeded unbound: the runner's first
+# heartbeat binds it to its own host; a bound id refuses another host.
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: f8c245b8-661c-4358-837b-13bdff3090c1
+  depends:
+    25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
+    262258a2-080f-4ab9-af1b-9028cef388da: bb_project
+default:
+  conductor_id:
+    -
+      value: bakers-e2e-dispatch-node
+  label:
+    -
+      value: bakers-e2e-dispatch-node
+  owner_user_id:
+    -
+      entity: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb
+  status:
+    -
+      value: online
+  project_id:
+    -
+      entity: 262258a2-080f-4ab9-af1b-9028cef388da
+  states:
+    -
+      value: diagnose
+    -
+      value: coding
+  last_seen:
+    -
+      value: 1781278580

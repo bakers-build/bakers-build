@@ -1,0 +1,24 @@
+# Dedicated to the Overview Properties box scenarios (Save, Disable/Enable).
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: 1f1764cf-f41e-4077-8495-2bce8ed508b2
+  default_langcode: en
+  depends:
+    b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
+    db58173e-ed5d-50cf-af02-2943a2803c36: user
+default:
+  conductor_id:
+  - value: bdd-properties-conductor
+  label:
+  - value: BDD properties conductor
+  status:
+  - value: online
+  active:
+  - value: true
+  project_id:
+  - entity: b76b40df-436c-5d3d-9bf1-5745fa621a7a
+  owner_user_id:
+  - entity: db58173e-ed5d-50cf-af02-2943a2803c36
+  states:
+  - value: coding

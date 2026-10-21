@@ -1,0 +1,25 @@
+# The template-automation service account in its own team on "Template
+# fixtures": a project's tickets are reachable through its teams, so without
+# this the trigger's activation gate rejects the account.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 685a0000-0000-4000-8000-000000000005
+  default_langcode: en
+  bundle: default
+  depends:
+    685a0000-0000-4000-8000-000000000001: user
+    685a0000-0000-4000-8000-000000000006: bb_team
+default:
+  entity_type:
+  - value: bb_team
+  entity_bundle:
+  - value: bb_team
+  entity_id:
+  - value: 685a0000-0000-4000-8000-000000000006
+  state:
+  - value: active
+  uid:
+  - entity: 685a0000-0000-4000-8000-000000000001
+  type:
+  - target_id: default

@@ -1,0 +1,6 @@
+# Declared here, not in bb_core: the route belongs to this module's view.
+bb_api_key.bb_workspace.service_accounts:
+  title: 'Service accounts'
+  route_name: view.bb_service_accounts.settings
+  base_route: bb_core.bb_workspace.settings
+  weight: 3

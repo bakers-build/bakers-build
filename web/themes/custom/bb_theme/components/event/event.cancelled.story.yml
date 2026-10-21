@@ -1,0 +1,17 @@
+component: bb_theme:event
+name: Cancelled
+props:
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  role: agent
+  subject_label: BB-650
+  subject_url: '#subject'
+  tag: cancelled
+  timestamp: 5 min ago
+  statement: run cancelled in review
+  facts:
+    - cw-framework
+  links:
+    - title: Run
+      url: '#run'

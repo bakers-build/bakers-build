@@ -1,0 +1,33 @@
+(
+  /* THE MACHINES LISTING. One list row per machine owned by the URL account.
+     Pattern matches views.view.machines: headline linked name, meta host key,
+     current load and max parallel. */
+  $rows := [
+    { "id": "1", "name": "cw · laptop", "host_key": "cw-laptop", "current_load": 1, "max_parallel": 2 },
+    { "id": "2", "name": "e2e full-capacity host", "host_key": "e2e-host-full", "current_load": 2, "max_parallel": 2 }
+  ];
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "pattern": {
+          "headline": ["name"],
+          "meta": ["host_key", "current_load", "max_parallel"],
+          "captions": { "current_load": "Load", "max_parallel": "Max parallel" }
+        },
+        "items": [$map($rows, function ($m) {
+          {
+            "url": "/user/" & $m.owner_user_id & "/machine/" & $m.id,
+            "cells": {
+              "name": { "kind": "link", "value": $m.name, "url": "/user/" & $m.owner_user_id & "/machine/" & $m.id },
+              "host_key": { "kind": "text", "value": $m.host_key },
+              "current_load": { "kind": "text", "value": $string($m.current_load) },
+              "max_parallel": { "kind": "text", "value": $string($m.max_parallel) }
+            }
+          }
+        })]
+      }
+    }
+  ]
+)

@@ -1,0 +1,22 @@
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: d2f8f521-4004-54b9-b073-f32ed4d6f21f
+  default_langcode: en
+  bundle: default
+  depends:
+    69dd2fa3-72e6-53f8-85ed-9742870a71e5: user
+    14e28539-bd41-58be-8f7f-f013035f69e5: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: 14e28539-bd41-58be-8f7f-f013035f69e5
+  state:
+  - value: active
+  uid:
+  - entity: 69dd2fa3-72e6-53f8-85ed-9742870a71e5
+  roles:
+  - target_id: bb_workspace-bb_workspace-lead

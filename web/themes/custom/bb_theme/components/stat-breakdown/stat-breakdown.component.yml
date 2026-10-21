@@ -1,0 +1,77 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Stat Breakdown
+status: stable
+group: Data Display
+description: >-
+  A figure split into entries - per project, per person, per whatever axis the
+  figure was configured with - each row carrying its own trailing totals. It
+  answers where a single total came from, for a figure whose one number hides a
+  distribution. It emits no table markup of its own: it composes the existing
+  table component, which is the only template in this theme permitted to render
+  a table row.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: The figure's own name, rendered as the block heading.
+    columns:
+      type: array
+      title: Columns
+      minItems: 1
+      description: The trailing period columns, in display order.
+      items:
+        type: object
+        properties:
+          key:
+            type: string
+            title: Column key
+            description: The key each row's counts are stored under.
+          label:
+            type: string
+            title: Header label
+            description: The column heading.
+        required:
+          - key
+          - label
+    entries:
+      type: array
+      title: Rows
+      description: One entry per axis value. Empty renders the named absence instead.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Row label
+            description: >-
+              The row's name, already resolved by the caller, including the
+              explicit wording used for entries that could not be attributed.
+          counts:
+            type: object
+            title: Counts
+            description: The row's values, keyed by the column keys.
+        required:
+          - label
+          - counts
+    empty:
+      type: string
+      title: Empty message
+      description: >-
+        The sentence shown when there are no entries, naming what is absent and
+        over what period.
+    source:
+      type: string
+      title: Source
+      description: >-
+        Where the figure is read from, available in a native Data source disclosure.
+  required:
+    - label
+    - columns
+    - entries
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

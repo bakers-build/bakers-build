@@ -1,0 +1,37 @@
+# Deterministic personal overview fixture. Descriptions are unique to this ticket.
+_meta:
+  version: '1.0'
+  entity_type: bb_track_worklog
+  uuid: 613a0000-0000-4000-8000-000000000004
+  depends:
+    dbe50000-0000-4000-8000-000000000001: user
+    612a0000-0000-4000-8000-000000000001: bb_project
+    613c0000-0000-4000-8000-000000000001: bb_track_account
+default:
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  work_date:
+    -
+      value: "2026-11-08"
+  timezone:
+    -
+      value: "Europe/Berlin"
+  duration_seconds:
+    -
+      value: 7200
+  description:
+    -
+      value: "Overview A P Sunday 2:00"
+  derivation:
+    -
+      value: "manual"
+  state:
+    -
+      value: "recorded"
+  project_id:
+    -
+      entity: "612a0000-0000-4000-8000-000000000001"
+  account_id:
+    -
+      entity: "613c0000-0000-4000-8000-000000000001"

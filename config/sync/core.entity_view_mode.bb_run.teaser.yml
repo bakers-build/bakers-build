@@ -1,0 +1,11 @@
+uuid: 8c1c0f5d-4f9a-4c2a-9a0e-1d5b6a7c3e02
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_run.teaser
+label: Teaser
+description: ''
+targetEntityType: bb_run
+cache: true

@@ -1,0 +1,51 @@
+{# The bakers.build application shell. It is declared ONCE — in
+   `designbook/design-system/design-system.scenes.yml` — and every screen scene
+   inherits it with `scene: "design-system:shell"`, filling nothing but
+   `content`. The rail and the status bar therefore exist in exactly one place:
+   a collapsible navigation rail beside a main column that stacks the screen
+   content and the status bar, with the overlay layer last so a dialog stacks
+   above everything. BB-503 removed the header/top bar entirely; identity
+   moved into the rail and splits across it — the workspace switcher
+   (`bb_theme:account_switcher`) at the head, the signed-in account as a
+   plain `bb_theme:person` avatar at the foot.
+
+   `content` IS NOT A SCROLL CONTAINER, and must not become one. An `overflow`
+   ancestor here would take a sticky `inspector` and a sticky `filters` their
+   stick, and would clip every absolutely positioned picker panel a `meta_row`
+   or a facet control opens.
+
+   Every region but the overlay is still rendered conditionally — a screen that
+   fills nothing but `content` renders exactly as it did before the shell
+   regions existed. The slot wrappers sit OUTSIDE their {% block %} so filling a
+   slot replaces the content, never the wrapper.
+
+   THE OVERLAY WRAPPER IS UNCONDITIONAL (BB-420 Task 26). A dialog reaches it
+   by a route swapped into `#bakers-overlay`, not by a screen filling the shell's
+   own `overlay` slot, so the wrapper has to exist on every screen whether or
+   not one is open — painting it only when filled would leave htmx nothing to
+   swap into. Until this task that emptiness was a `ui_patterns` Source
+   (`BbOverlaySource`) addressed from the page layout for exactly that reason;
+   now the id is simply on the wrapper the component already renders.
+
+   `hx-target="this"` IS WHAT MAKES INHERITANCE RESOLVE HERE (BB-420 Task 30).
+   htmx inherits `hx-target` down the DOM the same way it inherits `hx-select`,
+   so a form swapped into this wrapper with no target of its own resolves
+   `this` AT THIS ELEMENT rather than at itself — which is what lets
+   `BbTicketCreateForm` state no target at all and still land in exactly one
+   place. `TicketCreateActionSource::TARGET_ID` (BB-420 Task 36 moved it there
+   when `BbDialogPlacement` was deleted) stays the single spelling this id is
+   drawn from (Controller Ruling) precisely so `ShellOverlayTargetTest` can
+   still catch a rename on either side; this attribute is the second half of
+   the same pairing and carries no id of its own to drift. #}
+<div{{ (attributes ?: create_attribute()).setAttribute('data-bakers-shell', '').addClass(['min-h-screen', 'flex', 'items-stretch', 'bg-surface', 'text-text', 'font-sans', 'max-md:[html:not(.js)_&]:flex-col', 'max-md:[html:not(.js)_&_[data-sidebar]]:w-full', 'max-md:[html:not(.js)_&_[data-sidebar]]:h-auto', 'max-md:[html:not(.js)_&_[data-sidebar]>button]:hidden']) }}>
+  {% if sidebar %}
+    <div class="sticky top-shell-offset self-start shrink-0 max-md:[html:not(.js)_&]:static max-md:[html:not(.js)_&]:w-full">{% block sidebar %}{{ sidebar }}{% endblock %}</div>
+  {% endif %}
+  <div class="flex flex-col flex-1 min-w-0">
+    <main class="flex-1 min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</main>
+    {% if footer %}
+      <footer class="shrink-0">{% block footer %}{{ footer }}{% endblock %}</footer>
+    {% endif %}
+  </div>
+  <div id="bakers-overlay" hx-target="this">{% block overlay %}{% if overlay %}{{ overlay }}{% endif %}{% endblock %}</div>
+</div>

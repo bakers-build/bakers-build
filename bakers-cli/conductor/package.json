@@ -1,0 +1,40 @@
+{
+  "name": "@bakers-build/conductor",
+  "version": "0.0.1",
+  "description": "bakers.build conductor engine + CLI: registers, claims tickets via JSON:API, dispatches agents.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./contract": "./dist/src/contract.js",
+    "./preset": "./dist/src/preset.js",
+    "./commands/conductor": "./dist/src/commands/conductor.js",
+    "./project-context": "./dist/src/cli/project-context.js",
+    "./package.json": "./package.json",
+    "./config": "./dist/src/cli/config-plan.js"
+  },
+  "files": [
+    "dist/src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root .. conductor/tests"
+  },
+  "dependencies": {
+    "@dropsh/plugin-jsonapi-schema": "^0.7.1",
+    "@dropsh/plugin-oauth2": "^0.7.5",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^",
+    "commander": "^12.1.0",
+    "dropsh": "^0.7.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  }
+}

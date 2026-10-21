@@ -1,0 +1,54 @@
+{# EVERY `bb_list` VIEW IN THIS THEME, AS `bb_theme:list` WITH A PATTERN.
+
+   The `bb_list` style (`BbList`) hands over, per result row, the RENDERED
+   output of the fields its pattern names, plus the entity behind the row, and
+   `options.pattern` / `options.labels` say which field fills which region and
+   which field carries a visible label (the list's `pattern.captions`). This
+   file only maps that into list props; it emits no markup of its own.
+
+   THE SAME TWO RULES AS `views-view-table.html.twig`, for the same measured
+   reasons stated there: a field whose output strips to nothing (theme-debug
+   comments included) is ABSENT, and a control or image with no text node is
+   content. An absent value in the right-hand column reads as a faint em-dash,
+   because that column is the one a reader scans for; an absent headline or
+   meta value is simply omitted, so optional facts leave no gap.
+
+   The rail is occupancy, not phase: teal when a conductor holds the row,
+   amber when the workflow is in review (review wins even with a conductor).
+   The guarded ask keeps rows with no entity or no workflow legal.
+
+   @see \Drupal\bb_core\Plugin\views\style\BbList
+   @see web/themes/custom/bb_theme/templates/views-view-table.html.twig
+#}
+{% set bb_content_tags = '<a><button><img><input><select><svg><textarea>' %}
+{% set bb_dash = { 'kind': 'text', 'value': '—', 'emphasis': 'faint' } %}
+{# An empty map would arrive as a list and fail the object schema, so the
+   captions are only passed when a field carries a label. #}
+{% set bb_pattern = options.labels is not empty
+  ? options.pattern|merge({ 'captions': options.labels })
+  : options.pattern %}
+{% set bb_right = options.pattern.right|default([]) %}
+
+{% set items = [] %}
+{% for row in rows %}
+  {% set cells = {} %}
+  {% for key, output in row.fields %}
+    {%- set markup -%}{{ output }}{%- endset -%}
+    {% if markup|striptags(bb_content_tags)|trim is not empty %}
+      {% set cells = cells|merge({ (key): { 'kind': 'rendered', 'markup': markup } }) %}
+    {% elseif key in bb_right %}
+      {% set cells = cells|merge({ (key): bb_dash }) %}
+    {% endif %}
+  {% endfor %}
+  {% set item = { 'cells': cells } %}
+  {%- if row.entity -%}
+    {%- set phase = row.entity.getBbPhase|default('') ~ '' -%}
+    {%- set row_accent = phase == 'review' ? 'attention' : (row.entity.hasBbConductor ? 'running' : '') -%}
+    {% if row_accent %}{% set item = item|merge({ 'accent': row_accent }) %}{% endif %}
+  {%- endif -%}
+  {% set items = items|merge([item]) %}
+{% endfor %}
+{{ include('bb_theme:list', {
+  items: items,
+  pattern: bb_pattern,
+}, with_context = false) }}

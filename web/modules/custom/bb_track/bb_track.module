@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * JSON:API filter-access grant for owner-scoped Worklog reads.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\entity\QueryAccess\QueryAccessHandlerInterface;
+use Drupal\jsonapi\JsonApiFilter;
+
+/**
+ * Implements hook_jsonapi_ENTITY_TYPE_filter_access() for bb_track_worklog.
+ *
+ * @phpstan-return array<string, \Drupal\Core\Access\AccessResultInterface>
+ */
+function bb_track_jsonapi_bb_track_worklog_filter_access(EntityTypeInterface $entity_type, AccountInterface $account): array {
+  $handler = \Drupal::entityTypeManager()->getHandler($entity_type->id(), 'query_access');
+  if (!$handler instanceof QueryAccessHandlerInterface) {
+    return [];
+  }
+  $conditions = $handler->getConditions('view', $account);
+  if ($conditions->isAlwaysFalse()) {
+    return [];
+  }
+  return [
+    JsonApiFilter::AMONG_ALL => AccessResult::allowed()
+      ->addCacheableDependency($conditions),
+  ];
+}
+
+/**
+ * Implements hook_jsonapi_ENTITY_TYPE_filter_access() for submissions.
+ *
+ * @phpstan-return array<string, \Drupal\Core\Access\AccessResultInterface>
+ */
+function bb_track_jsonapi_bb_track_submission_filter_access(EntityTypeInterface $entity_type, AccountInterface $account): array {
+  return bb_track_jsonapi_bb_track_worklog_filter_access($entity_type, $account);
+}

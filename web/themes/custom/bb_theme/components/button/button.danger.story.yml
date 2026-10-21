@@ -1,0 +1,6 @@
+component: bb_theme:button
+name: Danger
+variant: danger
+props:
+  label: Cancel ticket
+  type: button

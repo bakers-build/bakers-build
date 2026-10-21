@@ -1,0 +1,38 @@
+backend: drupal
+frameworks:
+  component: sdc
+  css: tailwind
+designbook:
+  cmd: npx storybook dev
+  home: .
+  url: "http://localhost:6006"
+dirs:
+  components: components
+  css:
+    tokens: css/tokens
+    themes: css/themes
+css:
+  app: css/app.src.css
+component:
+  namespace: 'bb_theme'
+  src: components
+extensions:
+  - id: drupal
+    skill: designbook-drupal
+  - id: tailwind
+    skill: designbook-css-tailwind
+# Backend command strings consumed by the `sync-to` workflow (sync concern).
+# bakers keeps its config-sync dir at <repo>/config/sync (settings.php:
+# $settings['config_sync_directory'] = '../config/sync', relative to the web
+# docroot). drush runs inside the ddev web container, which mounts the repo
+# root at /var/www/html — so the container-side sync source is
+# /var/www/html/config/sync (NOT web/sites/default/files/sync).
+backend_cmd:
+  # resolve-filter: append a config name → exit 0 iff it already exists (drop it).
+  exists_cmd: ddev drush config:get
+  # transform prepare: append a config name → JSON Schema on stdout.
+  schema_cmd: ddev drush designbook:config-schema
+  # transform (currently unused) / future: append config name + yaml path.
+  validate_cmd: ddev drush designbook:config-validate
+  # sync stage: run as-is to import the host config/sync into the live site.
+  import: ddev drush config:import --partial -y --source=/var/www/html/config/sync

@@ -1,0 +1,50 @@
+{
+  "name": "bakers-conductor-workspace",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "bootstrap": "bash scripts/setup.sh",
+    "build:all": "pnpm -r run build",
+    "prepare:publish": "node scripts/prepare-publish.mjs",
+    "release": "node scripts/release.mjs",
+    "release:semver": "node scripts/release.mjs --require-version",
+    "verify:package": "node scripts/verify-package.mjs",
+    "dev": "tsx host/src/host.ts",
+    "test": "pnpm run test:vitest && pnpm run test:tui",
+    "test:vitest": "vitest run --passWithNoTests",
+    "test:tui": "pnpm --filter @bakers-build/addon-bakers-ui run test:tui",
+    "test:integration": "vitest run -c vitest.config.integration.ts",
+    "test:watch": "vitest",
+    "typecheck": "pnpm -r run build && pnpm -r run typecheck",
+    "lint": "biome check core/src core/tests message/src message/tests host/src host/tests conductor/src conductor/tests ui/src ui/tests addons/*/src addons/*/tests addons/*/tests-bun addons/claude/measure",
+    "lint:fix": "biome check --write core/src core/tests message/src message/tests host/src host/tests conductor/src conductor/tests ui/src ui/tests addons/*/src addons/*/tests addons/*/tests-bun addons/claude/measure"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.0",
+    "@dropsh/plugin-jsonapi-schema": "^0.7.1",
+    "@dropsh/plugin-oauth2": "^0.7.5",
+    "@bakers-build/addon-agents": "workspace:^",
+    "@bakers-build/addon-auth-basic": "workspace:^",
+    "@bakers-build/addon-claude": "workspace:^",
+    "@bakers-build/addon-codex": "workspace:^",
+    "@bakers-build/addon-essentials": "workspace:^",
+    "@bakers-build/addon-fake": "workspace:^",
+    "@bakers-build/addon-bakers-ui": "workspace:^",
+    "@bakers-build/addon-grok": "workspace:^",
+    "@bakers-build/addon-herdr": "workspace:^",
+    "@bakers-build/addon-kimi": "workspace:^",
+    "@bakers-build/addon-opencode": "workspace:^",
+    "@bakers-build/addon-pi": "workspace:^",
+    "@bakers-build/addon-remote-drupal": "workspace:^",
+    "@bakers-build/addon-workspace": "workspace:^",
+    "@bakers-build/addon-workspace-git": "workspace:^",
+    "@types/node": "^20.19.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

@@ -1,0 +1,689 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+    - options
+    - user
+id: bb_ticket_templates
+label: 'Ticket templates'
+module: views
+description: "Ticket templates: a project's Templates tab and the workspace Templates page. Rows link to the template and carry Create-ticket/Settings/Delete operations; the Add template action opens the project- or workspace-scoped add form."
+tag: ''
+base_table: bb_ticket_template
+base_field: id
+display:
+  default:
+    id: default
+    display_title: Master
+    display_plugin: default
+    position: 0
+    display_options:
+      title: Templates
+      fields:
+        name:
+          id: name
+          table: bb_ticket_template
+          field: name
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket_template
+          entity_field: name
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: true
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        enabled:
+          id: enabled
+          table: bb_ticket_template
+          field: enabled
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket_template
+          entity_field: enabled
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: true
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: boolean
+          settings:
+            format: enabled-disabled
+            format_custom_false: ''
+            format_custom_true: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        workflow:
+          id: workflow
+          table: bb_ticket_template
+          field: workflow
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket_template
+          entity_field: workflow
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: true
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: list_default
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        created:
+          id: created
+          table: bb_ticket_template
+          field: created
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket_template
+          entity_field: created
+          plugin_id: field
+          label: Created
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: true
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: timestamp_ago
+          settings:
+            future_format: '@interval hence'
+            past_format: '@interval ago'
+            granularity: 1
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        owner:
+          id: owner
+          table: bb_ticket_template
+          field: owner_user_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket_template
+          entity_field: owner_user_id
+          plugin_id: field
+          label: by
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: bb_ticket_owner_cell
+          settings: {  }
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        operations:
+          id: operations
+          table: bb_ticket_template
+          field: operations
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket_template
+          plugin_id: entity_operations
+          label: ''
+          destination: true
+      pager:
+        type: full
+        options:
+          offset: 0
+          items_per_page: 50
+          total_pages: null
+          id: 0
+          tags:
+            next: ››
+            previous: ‹‹
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
+      exposed_form:
+        type: basic
+        options:
+          submit_button: Apply
+          reset_button: false
+          reset_button_label: Reset
+          exposed_sorts_label: 'Sort by'
+          expose_sort_order: true
+          sort_asc_label: Asc
+          sort_desc_label: Desc
+      access:
+        type: perm
+        options:
+          perm: 'view bb_ticket_template'
+      cache:
+        type: tag
+        options: {  }
+      empty:
+        bb_contextual_empty:
+          id: bb_contextual_empty
+          table: views
+          field: bb_contextual_empty
+          relationship: none
+          group_type: group
+          admin_label: 'No results text'
+          plugin_id: bb_contextual_empty
+          empty: true
+          content: 'This project has no ticket templates yet.'
+          tokenize: false
+      sorts:
+        name:
+          id: name
+          table: bb_ticket_template
+          field: name
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_ticket_template
+          entity_field: name
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: name
+          exposed: false
+      arguments: {  }
+      filters: {  }
+      style:
+        type: bb_list
+        options:
+          grouping: {  }
+          uses_fields: false
+          pattern:
+            avatar: {  }
+            headline:
+              - name
+            meta:
+              - workflow
+              - created
+              - owner
+              - enabled
+            description: {  }
+            right:
+              - operations
+            right_meta: {  }
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+      query:
+        type: views_query
+        options:
+          query_comment: ''
+          disable_sql_rewrite: false
+          distinct: false
+          replica: false
+          query_tags: {  }
+      relationships: {  }
+      header: {  }
+      footer: {  }
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url.query_args
+        - user.permissions
+      tags: {  }
+  project_list:
+    id: project_list
+    display_title: 'Project templates'
+    display_plugin: page
+    position: 1
+    display_options:
+      title: Templates
+      arguments:
+        'null':
+          id: 'null'
+          table: views
+          field: 'null'
+          relationship: none
+          group_type: group
+          admin_label: 'Workspace route segment'
+          plugin_id: 'null'
+          default_action: 'not found'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: false
+          validate:
+            type: none
+            fail: 'not found'
+          validate_options: {  }
+          must_not_be: false
+        project_id:
+          id: project_id
+          table: bb_ticket_template
+          field: project_id
+          relationship: none
+          group_type: group
+          admin_label: 'Project templates'
+          entity_type: bb_ticket_template
+          entity_field: project_id
+          plugin_id: entity_target_id
+          default_action: 'access denied'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: true
+          validate:
+            type: bb_project_reference
+            fail: 'not found'
+          validate_options:
+            bundles: {  }
+            access: true
+            operation: view
+            multiple: 0
+          break_phrase: false
+          not: false
+      defaults:
+        arguments: false
+      display_extenders:
+        display_builder:
+          profile: default
+          sources:
+            -
+              source_id: component
+              source:
+                component:
+                  component_id: 'bb_theme:canvas'
+                  variant_id: null
+                  props: {  }
+                  slots:
+                    main:
+                      sources:
+                        -
+                          source_id: block
+                          source:
+                            plugin_id: system_messages_block
+                          node_id: bb_ticket_templates_project_messages
+                        -
+                          source_id: view_header
+                          source: {  }
+                          node_id: bb_ticket_templates_project_header
+                        -
+                          source_id: view_rows
+                          source: {  }
+                          node_id: bb_ticket_templates_project_rows
+                        -
+                          source_id: view_pager
+                          source: {  }
+                          node_id: bb_ticket_templates_project_pager
+              node_id: bb_ticket_templates_project_canvas
+      path: _workspace/%bb_workspace/project/%bb_project/templates
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user.permissions
+      tags: {  }
+  workspace_list:
+    id: workspace_list
+    display_title: 'Workspace templates'
+    display_plugin: page
+    position: 2
+    display_options:
+      title: Templates
+      empty:
+        bb_contextual_empty:
+          id: bb_contextual_empty
+          table: views
+          field: bb_contextual_empty
+          relationship: none
+          group_type: group
+          admin_label: 'No results text'
+          plugin_id: bb_contextual_empty
+          empty: true
+          content: 'This workspace has no ticket templates yet.'
+          tokenize: false
+      arguments:
+        workspace_id:
+          id: workspace_id
+          table: bb_ticket_template
+          field: workspace_id
+          relationship: none
+          group_type: group
+          admin_label: 'Workspace templates'
+          entity_type: bb_ticket_template
+          entity_field: workspace_id
+          plugin_id: entity_target_id
+          default_action: 'access denied'
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options: {  }
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: true
+          validate:
+            type: bb_workspace_reference
+            fail: 'not found'
+          validate_options:
+            bundles: {  }
+            access: false
+            operation: view
+            multiple: 0
+          break_phrase: false
+          not: false
+      defaults:
+        empty: false
+        arguments: false
+      display_extenders:
+        display_builder:
+          profile: default
+          sources:
+            -
+              source_id: component
+              source:
+                component:
+                  component_id: 'bb_theme:canvas'
+                  variant_id: null
+                  props: {  }
+                  slots:
+                    main:
+                      sources:
+                        -
+                          source_id: block
+                          source:
+                            plugin_id: system_messages_block
+                          node_id: bb_ticket_templates_workspace_messages
+                        -
+                          source_id: view_header
+                          source: {  }
+                          node_id: bb_ticket_templates_workspace_header
+                        -
+                          source_id: view_rows
+                          source: {  }
+                          node_id: bb_ticket_templates_workspace_rows
+                        -
+                          source_id: view_pager
+                          source: {  }
+                          node_id: bb_ticket_templates_workspace_pager
+              node_id: bb_ticket_templates_workspace_canvas
+      path: _workspace/%bb_workspace/settings/templates
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user.permissions
+      tags: {  }

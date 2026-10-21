@@ -1,0 +1,28 @@
+# Explicit tenancy/rank precondition for API contract scenarios.
+#
+# BB-462 D7: bb_project stops being an OG group, so project-level access
+# comes from the project's own `teams` field (D4). This membership moves onto
+# "API other"'s team rather than the project itself; the alias
+# (membership.foreign.project.other) is unchanged in contract-world.json.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: a60964c9-fa1d-5621-8528-ebff4e7582c4
+  default_langcode: en
+  bundle: default
+  depends:
+    90083207-9a0b-5bf9-9f61-ca46635652ef: user
+    02043966-170c-5ae3-8d9e-5ef816ff74f4: bb_team
+default:
+  entity_type:
+  - value: bb_team
+  entity_bundle:
+  - value: bb_team
+  entity_id:
+  - value: 02043966-170c-5ae3-8d9e-5ef816ff74f4
+  state:
+  - value: active
+  uid:
+  - entity: 90083207-9a0b-5bf9-9f61-ca46635652ef
+  type:
+  - target_id: default

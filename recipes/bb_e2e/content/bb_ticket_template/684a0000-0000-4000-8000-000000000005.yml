@@ -1,0 +1,41 @@
+# BB-684: an enabled template for the Web ticket-template scenarios, apart
+# from the API one so their open-ticket dedupe never interferes. Nothing
+# instantiates it at seed time; the scenario's ticket is removed after it.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket_template
+  uuid: 684a0000-0000-4000-8000-000000000005
+  default_langcode: en
+  depends:
+    684a0000-0000-4000-8000-000000000003: bb_project
+    dbe50000-0000-4000-8000-000000000001: user
+    db1a0000-0000-4000-8000-000000000010: bb_term
+default:
+  name:
+    -
+      value: "Web fixture template"
+  enabled:
+    -
+      value: true
+  title_pattern:
+    -
+      value: "Web fixture ticket {{date}}"
+  description:
+    -
+      value: "Generated from the fixture template."
+      format: bb_rich
+  workflow:
+    -
+      value: "bb_chore"
+  target_state:
+    -
+      value: "qualification"
+  labels:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000010"
+  project_id:
+    -
+      entity: "684a0000-0000-4000-8000-000000000003"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

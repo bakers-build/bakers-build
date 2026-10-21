@@ -1,0 +1,21 @@
+# Public test credentials; this account exists only in recipe-test worlds.
+# BB-684: the workspace lead (membership 684a0000-…-0002) that may manage
+# and instantiate ticket templates.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 684a0000-0000-4000-8000-000000000001
+  default_langcode: en
+default:
+  name:
+  - value: template-manager
+  mail:
+  - value: template-manager@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

@@ -1,0 +1,149 @@
+# Views handler schema for the bb_metric field type.
+views.field.bb_metric:
+  type: views.field.numeric
+  label: 'bakers.build metric value'
+  mapping:
+    metric_name:
+      type: string
+      label: 'Metric name'
+
+views.sort.bb_metric_value:
+  type: views_sort
+  label: 'bakers.build metric value sort'
+  mapping:
+    metric_name:
+      type: string
+      label: 'Metric name'
+
+views.filter.bb_metric_value:
+  type: views.filter.numeric
+  label: 'bakers.build metric value filter'
+  mapping:
+    metric_name:
+      type: string
+      label: 'Metric name'
+
+views.filter.bb_metric_name:
+  type: views.filter.string
+  label: 'bakers.build metric name filter'
+
+# The BEF widget that renders an exposed filter as the theme's option picker.
+# BEF types per-filter settings as `better_exposed_filters.filter.<plugin id>`;
+# without this, strict schema checking (every Kernel/Functional test) aborts
+# the save of any view using the widget.
+better_exposed_filters.filter.bb_option_picker:
+  label: 'bakers.build option picker'
+  type: better_exposed_filters_filter_widget
+  mapping:
+    clear_label:
+      type: label
+      label: 'Clear row label'
+    icon:
+      type: string
+      label: 'Trigger icon'
+    searchable:
+      type: boolean
+      label: 'Searchable'
+
+# The label processor for the `state` facet. Facets types processor settings
+# as `plugin.plugin_configuration.facets_processor.<processor id>` (keyed by
+# `processor_id`, not the sequence key); without this, strict schema checking
+# aborts every save of a view enabling it. Empty: nothing to configure.
+plugin.plugin_configuration.facets_processor.bb_ticket_state_label:
+  type: mapping
+  label: 'bakers.build ticket state label'
+
+# The run sibling of the above — same reason, same empty mapping.
+plugin.plugin_configuration.facets_processor.bb_run_state_label:
+  type: mapping
+  label: 'bakers.build run state label'
+
+views.argument_validator.bb_project_reference:
+  type: views.argument_validator_entity
+  label: 'bakers.build project reference validation'
+
+views.argument_validator.bb_workspace_reference:
+  type: views.argument_validator_entity
+  label: 'bakers.build workspace reference validation'
+
+# BbTicketState extends state_machine's State filter (itself an in_operator)
+# but registers under its own plugin id, so it needs its own schema entry
+# rather than inheriting state_machine's `views.filter.state_machine_state`.
+# Without this, `expose.reduce` and a non-scalar `value` are
+# "missing schema" under strict config checking, which is every Kernel test
+# that installs a view using this filter.
+views.filter.bb_ticket_state:
+  type: views.filter.in_operator
+  label: 'bakers.build ticket state filter'
+
+views.area.bb_contextual_empty:
+  type: views.area.text_custom
+  label: 'Contextual ticket empty state'
+
+views.area.bb_empty:
+  type: views.area.text_custom
+  label: 'Empty state with configured text'
+
+views.field.bb_related_max_timestamp:
+  type: views_field
+  label: 'Related max timestamp'
+
+# The `bb_list` Views style: ordered field IDs per row region.
+views.style.bb_list:
+  type: views_style
+  label: 'bakers.build list'
+  mapping:
+    pattern:
+      type: mapping
+      label: 'Row pattern'
+      mapping:
+        avatar:
+          type: sequence
+          label: 'Avatar fields'
+          sequence:
+            type: string
+            label: 'Field ID'
+        headline:
+          type: sequence
+          label: 'Headline fields'
+          sequence:
+            type: string
+            label: 'Field ID'
+        meta:
+          type: sequence
+          label: 'Meta line fields'
+          sequence:
+            type: string
+            label: 'Field ID'
+        description:
+          type: sequence
+          label: 'Description fields'
+          sequence:
+            type: string
+            label: 'Field ID'
+        right:
+          type: sequence
+          label: 'Right column fields'
+          sequence:
+            type: string
+            label: 'Field ID'
+        right_meta:
+          type: sequence
+          label: 'Right column caption fields'
+          sequence:
+            type: string
+            label: 'Field ID'
+
+# The listings' unique last sort, which follows the chosen direction.
+views.sort.bb_tie_breaker:
+  type: views_sort
+  label: 'bakers.build tie-breaker'
+
+# Core's combined-fields filter with the LIKE escape clause (BbCombine).
+views.filter.bb_combine:
+  type: views.filter.combine
+  label: 'bakers.build combined fields filter'
+
+views.filter.bb_ticket_search:
+  type: views.filter.search_api_fulltext
+  label: 'bakers.build ticket search filter'

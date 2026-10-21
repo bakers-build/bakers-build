@@ -1,0 +1,15 @@
+uuid: 181886dd-bf91-4aea-8a8f-2109203c6021
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_workspace-bb_workspace-member
+label: Member
+weight: 1
+group_id: null
+group_type: bb_workspace
+group_bundle: bb_workspace
+is_admin: false
+permissions: {  }
+role_type: required

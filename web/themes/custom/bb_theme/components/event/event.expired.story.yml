@@ -1,0 +1,18 @@
+component: bb_theme:event
+name: Expired
+props:
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  role: agent
+  subject_label: BB-650
+  subject_url: '#subject'
+  tag: expired
+  timestamp: 40 min ago
+  statement: run expired in coding
+  facts:
+    - cw-framework
+    - 30 min
+  links:
+    - title: Run
+      url: '#run'

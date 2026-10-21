@@ -1,0 +1,19 @@
+{# Lean text-like input. The concrete kind (text, password, email, …) comes from
+   the `type` prop and is emitted as the HTML type attribute; the input itself
+   carries no label or icon — those belong to the wrapping form_element.
+   `type` is only emitted when given as a prop, so the form presenter can
+   include this component with a passthrough `attributes` that already carries
+   the real input's type without producing a duplicate type attribute. #}
+<input{{ (attributes ?: create_attribute()).addClass([
+    'input', 'w-full', 'h-[38px]', 'px-[11px]', 'bg-app', 'border', 'border-control-border',
+    'rounded-sm', 'text-text', 'text-body', 'focus:outline-none', 'focus:border-primary',
+  ]) }}
+  {%- if type %} type="{{ type }}"{% endif %}
+  {%- if id %} id="{{ id }}"{% endif %}
+  {%- if name %} name="{{ name }}"{% endif %}
+  {%- if value %} value="{{ value }}"{% endif %}
+  {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
+  {%- if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}
+  {%- if required %} required{% endif %}
+  {%- if disabled %} disabled{% endif %}
+  {%- if readonly %} readonly{% endif %} />

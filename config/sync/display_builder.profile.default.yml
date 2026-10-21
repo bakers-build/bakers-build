@@ -1,0 +1,117 @@
+uuid: e23f6df7-3e09-4d57-942c-a43b91d51dfd
+langcode: en
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: RpD1Qoc6jvgcBQPfq46J475T_wz30d5trXECbgKo_uw
+id: default
+label: Default
+description: 'With sensible configuration, for the common usage.'
+islands:
+  component_library:
+    status: true
+    weight: -10
+    exclude: {  }
+    exclude_id: ''
+    component_status:
+      experimental: '0'
+      deprecated: '0'
+      obsolete: '0'
+    include_no_ui: false
+    show_grouped: true
+    show_variants: true
+    show_mosaic: true
+  block_library:
+    status: true
+    weight: -9
+    exclude:
+      htmx: htmx
+      shortcut: shortcut
+  preset_library:
+    status: true
+    weight: -8
+  builder:
+    status: true
+    weight: -8
+    region: main
+  layers:
+    status: true
+    weight: -7
+    region: main
+  preview:
+    status: true
+    weight: -5
+    region: main
+  library:
+    status: true
+    weight: -10
+    region: sidebar
+  tree:
+    status: false
+    weight: -9
+    region: sidebar
+  logs:
+    status: true
+    weight: -6
+    region: main
+  history:
+    status: true
+    weight: -9
+    region: end
+    undo:
+      value: icon_label
+    redo:
+      value: icon_label
+    clear:
+      value: hidden
+  state:
+    status: true
+    weight: -10
+    region: end
+    publish:
+      value: label
+    restore:
+      value: icon
+    revert:
+      value: icon
+  controls:
+    status: true
+    weight: -8
+    region: end
+    highlight:
+      value: icon
+    fullscreen:
+      value: icon
+    theme:
+      value: hidden
+    help:
+      value: icon
+  contextual_form:
+    status: true
+    weight: -10
+  styles:
+    status: true
+    weight: -9
+  visibility_conditions:
+    status: false
+    weight: -7
+  menu:
+    status: true
+    weight: -10
+  menu_preset:
+    status: true
+    weight: -9
+  menu_delete:
+    status: true
+    weight: -8
+  collaboration:
+    status: false
+    weight: -4
+    region: end
+  back:
+    status: true
+    weight: -6
+    region: end
+    back:
+      value: icon
+weight: 0

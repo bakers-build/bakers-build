@@ -1,0 +1,59 @@
+- id: '8'
+  created: '2026-06-30T09:00:00+00:00'
+  changed: '2026-06-30T09:00:00+00:00'
+  ticket_id: '1'
+  author: '2'
+  type: comment
+  body: '<p>Draft notes on the view-mode mapping. Not submitted yet.</p>'
+  status: false
+  review_state: draft
+  submitted_at: null
+  decided_at: null
+  decided_by: null
+  __designbook:
+    section: bb_ticket
+- id: '9'
+  created: '2026-06-30T10:30:00+00:00'
+  changed: '2026-06-30T11:00:00+00:00'
+  ticket_id: '1'
+  author: '2'
+  type: comment
+  body: '<p>The mapping should keep submitted reviews off the ordinary handoff stream until the assignee accepts them.</p>'
+  status: false
+  review_state: submitted
+  submitted_at: '2026-06-30T11:00:00+00:00'
+  decided_at: null
+  decided_by: null
+  __designbook:
+    section: bb_ticket
+- id: '10'
+  created: '2026-06-28T08:00:00+00:00'
+  changed: '2026-06-28T12:00:00+00:00'
+  ticket_id: '1'
+  author: '3'
+  author_name: Marieke van Dijk
+  author_initials: MD
+  author_color: lease
+  type: comment
+  body: '<p>Accepted earlier: the sticky inspector is the right call for a long handoff.</p>'
+  status: true
+  review_state: accepted
+  submitted_at: '2026-06-28T09:00:00+00:00'
+  decided_at: '2026-06-28T12:00:00+00:00'
+  decided_by: '1'
+  __designbook:
+    section: bb_ticket
+- id: '11'
+  created: '2026-06-27T14:00:00+00:00'
+  changed: '2026-06-27T16:00:00+00:00'
+  ticket_id: '1'
+  author: '3'
+  type: comment
+  body: '<p>Rejected: this draft asked for a notification service, which is out of scope.</p>'
+  status: false
+  review_state: rejected
+  submitted_at: '2026-06-27T15:00:00+00:00'
+  decided_at: '2026-06-27T16:00:00+00:00'
+  decided_by: '1'
+  __designbook:
+    section: bb_ticket

@@ -1,0 +1,680 @@
+id: gate
+group: Designbook/Sections/Gate
+title: Gate
+description: >-
+  **Product place: the Gate** — the frame for everything that stands BEFORE the
+  product, and the
+
+  only section whose screens carry no workspace. Its chrome is
+  `design-system:gate`, the peer of
+
+  `design-system:shell` declared beside it, so every scene here opens with
+
+  `scene: "design-system:gate"` rather than with the shell every product screen
+  inherits.
+
+
+  **Why it is its own section.** A screen in `tickets`, `projects` or `settings`
+  is always
+
+  addressed under a workspace slug — `/{slug}/tickets`, `/{slug}/project/1` —
+  and inherits the
+
+  rail, the top bar and the status bar because all three are workspace-ambient.
+  A gate screen has
+
+  no slug in its address and no workspace to be ambient about. Putting it in an
+  existing section
+
+  would make that section's one rule ("every scene opens with the shell") false.
+
+
+  **Screens**
+
+
+  - `workspace-chooser` — the operator belongs to several workspaces, so the
+  site root asks which
+    one instead of picking. Each row is a link into that workspace's own My work list, at the
+    public `/{slug}/tickets` address that names the workspace and can be bookmarked.
+  - `workspace-chooser (no workspaces)` — the same screen's other state: the
+  operator belongs to
+    none. A named absence rather than an empty list, because an empty list and a broken list render
+    identically and only the sentence tells them apart.
+
+  **Not here, and each for a stated reason.** Sign-in, register and password are
+  the gate's
+
+  intended second inhabitant — their components were deleted as
+  scene-unreachable and reinstating
+
+  them is its own work, so today they render core's own markup under the default
+  theme. Sign-up and
+
+  invite are their own tickets. And the workspace SWITCHER is not this: a
+  switcher moves an
+
+  operator who has already landed, this chooser is what answers the landing
+  itself.
+
+
+  Sibling sections: `tickets`, `projects`, `settings` — all three under the
+  shell.
+status: in-progress
+order: 4
+scenes:
+  - name: workspace chooser
+    group: Gate
+    section: gate
+    docs: >-
+      THE SCREEN THE SITE ROOT RENDERS WHEN THERE IS NO SINGLE ANSWER (BB-415
+      D5). `/` is
+
+      `system.site.front` and points at `/home`; `BbHomeController` resolves
+      the operator's read scope
+
+      and, when it holds MORE THAN ONE workspace, renders this instead of
+      picking one.
+
+
+      ASKING IS NOT A FALLBACK, it is the only answer that cannot be wrong. A
+      workspace outside the
+
+      reader's scope answers 404 rather than 403 — `BbWorkspaceAccessCheck`
+      returns a forbidden result
+
+      carrying WORKSPACE_MISMATCH_REASON and `BbWorkspaceNotFoundSubscriber`
+      converts it on the way
+
+      out — so a wrong guess is a *page not found* with nothing in the log
+      naming the cause. Ranking
+
+      candidates would have made that failure a coin flip.
+
+
+      EVERY ROW POINTS AT THE PUBLIC ADDRESS, `/{slug}/tickets`, and that is the
+      acceptance criterion
+
+      rather than a detail. The route is `view.tickets.my_work` at
+
+      `/_workspace/{bb_workspace}/tickets`; the outbound half of
+      `BbWorkspacePathProcessor` strips
+
+      the internal prefix, so what the reader clicks — and what ends up in the
+      address bar and in a
+
+      bookmark — names the workspace. A row pointing at the internal form would
+      look identical here and
+
+      be unfollowable.
+
+
+      THE ROWS ARE `list` WITH `layout: cards`, NOT `table`. A table promises a
+      comparison down a
+
+      column; three workspaces are three destinations read one at a time, which
+      is exactly the
+
+      distinction `list.component.yml` draws between the two. The slug rides
+      along as a `mono` cell
+
+      because it is the thing that will be in the URL, and an operator who has
+      two workspaces with
+
+      similar names picks by it.
+
+
+      `items` IS AN ARRAY PROP, AND A GREEN BUILD SAYS NOTHING ABOUT IT.
+      ui_patterns'
+
+      `CompatibilityChecker` ignores object properties and mistypes array props,
+      `display_builder` drops
+
+      an invalid SDC prop silently, and the Storybook build validates no props
+      at all — so this payload
+
+      is asserted against the RENDERED output, in `BbHomeControllerTest` and
+      in the browser scenario,
+
+      never against an exit code.
+
+
+      ORDERED BY SLUG, ASCENDING. The slug is the authored, stable handle; ids
+      follow install order,
+
+      which is an accident of provisioning and would reorder this list for no
+      reason a reader can see.
+
+
+      THE SCREEN CARRIES NO SENTENCE OF ITS OWN, AND THAT IS A DECISION MADE
+      AGAINST THE ALTERNATIVE.
+
+      ONE page layout matches `/home`, so the `gate` chrome frames BOTH of the
+      controller's 200 answers;
+
+      a chrome that said "Choose a workspace" would have said it to an operator
+      who belongs to none, and
+
+      the chrome cannot see which answer it is framing. The chrome therefore
+      names the product and
+
+      nothing else. The instruction was then not moved into the content but
+      dropped: the content IS the
+
+      list of the reader's own workspaces, each row a link into that workspace's
+      work, under the product
+
+      mark — there is nothing else on the page to do, and a line telling the
+      reader to click the only
+
+      thing on the page is a line that ages into noise. The other state is
+      different and says so, because
+
+      its content is a sentence rather than a list.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:zone
+              props:
+                inset: none
+                gap: md
+              slots:
+                content:
+                  - component: bb_theme:list
+                    props:
+                      layout: cards
+                      items:
+                        - url: /bakers/tickets
+                          cells:
+                            workspace:
+                              kind: link
+                              value: bakers.build
+                              url: /bakers/tickets
+                            slug:
+                              kind: mono
+                              value: bakers
+                        - url: /keytec/tickets
+                          cells:
+                            workspace:
+                              kind: link
+                              value: keytec
+                              url: /keytec/tickets
+                            slug:
+                              kind: mono
+                              value: keytec
+                        - url: /other/tickets
+                          cells:
+                            workspace:
+                              kind: link
+                              value: Other
+                              url: /other/tickets
+                            slug:
+                              kind: mono
+                              value: other
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Setup guide
+                      href: /home/onboarding
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Create a new workspace
+                      href: /home/new-workspace
+  - name: workspace chooser no workspaces
+    group: Gate
+    section: gate
+    docs: >-
+      THE SAME SCREEN'S OTHER STATE: an operator who belongs to NO workspace
+      (BB-415 D5, AC 5).
+
+
+      IT IS NOT A 404 AND NOT AN EMPTY LIST. A 404 would say the address is
+      wrong when the address is
+
+      right — `/home` is exactly where this person should be. An empty list is
+      worse: an empty list and a
+
+      broken list render identically, so the operator cannot tell "you are in no
+      workspace" from "the
+
+      workspace list failed to load", and neither can whoever they report it to.
+
+
+      SO THE ANSWER IS A SENTENCE, rendered by the existing `empty-state`
+      component, whose whole contract
+
+      is a NAMED absence — it says what is not there rather than showing a bare
+      dash. The message names
+
+      the absence and the way out of it.
+
+
+      THE CREATE ACTION SITS BESIDE THE SENTENCE, not inside `empty-state`.
+      Creating a workspace is a navigation this operator may take; the empty
+      state still describes the absence and does not own the affordance.
+      `BbHomeController::createAction()` is the sibling control, a primary
+      `bb_theme:button` to `/home/new-workspace` with `data-hx-boost="false"`.
+
+
+      THE ADMINISTRATOR NEVER SEES THIS, and the reason is worth stating because
+      it looks like a gap.
+
+      `bb_core_install()` creates the default workspace with no
+      `og_membership` at all, so the
+
+      administrator's membership set is empty on every install path — but
+      `BbHomeController` resolves
+
+      candidates through `BbWorkspaceReadScope::isBypassed()` first, and for a
+      bypass account the
+
+      candidates are every workspace. The empty state is for a real,
+      unprivileged operator whom nobody
+
+      has added yet.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:zone
+              props:
+                inset: none
+                gap: md
+              slots:
+                content:
+                  - component: bb_theme:empty-state
+                    props:
+                      message: >-
+                        No workspace yet. Create one, or join one if you have an
+                        invitation.
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Setup guide
+                      href: /home/onboarding
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Create a new workspace
+                      href: /home/new-workspace
+  - name: workspace create
+    group: Gate
+    section: gate
+    docs: >-
+      `BbWorkspaceCreateForm` at `/home/new-workspace`, which the overview's
+      Create a new workspace action opens: one named field and its submit in
+      `bb_theme:gate_form`, whose gap keeps the button off the field's
+      description.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: none
+                    slots:
+                      content:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-name
+                          slots:
+                            title: Workspace name
+                        - component: bb_theme:form_input
+                          props:
+                            name: name
+                            id: edit-name
+                            value: ''
+                            required: true
+                        - component: bb_theme:text
+                          props:
+                            text: Your workspace's address is derived from this.
+                            size: caption
+                            tone: light
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      type: submit
+                      label: Create workspace
+  - name: workspace join
+    group: Gate
+    section: gate
+    docs: >-
+      `BbWorkspaceJoinForm` at `/home/join/{invite}`: the invitation sentence
+      and its Join submit in `bb_theme:gate_form`.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:text
+                    props:
+                      text: You have been invited to bakers.build.
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      type: submit
+                      label: Join
+  - name: check mail
+    group: Gate
+    section: gate
+    docs: >-
+      The page the login form sends a visitor to (`/user/check-mail`,
+      BbCodeForm). Its heading and its fixed confirmation sentence are
+      `bb_theme:text` runs: the heading an h1 at the h3 step, centred, and the
+      sentence a light body paragraph. The sentence is identical for every
+      address, so the page cannot tell a known address from an unknown one.
+      Below it the code field and the Sign in submit. The workspace join page
+      uses the same two text runs for its invitation sentence and its Go to home
+      link.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:text
+                    props:
+                      text: Check your mail
+                      as: h1
+                      size: h3
+                      align: center
+                  - component: bb_theme:text
+                    props:
+                      text: >-
+                        We sent you a login link. Open it on this device to sign
+                        in. The link works only once.
+                      tone: light
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: none
+                    slots:
+                      content:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-code
+                          slots:
+                            title: Code from the e-mail
+                        - component: bb_theme:form_input
+                          props:
+                            name: code
+                            id: edit-code
+                            value: ''
+                            required: true
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      type: submit
+                      label: Sign in
+  - name: device sign-in done
+    group: Gate
+    section: gate
+    docs: >-
+      The result a signed-in human sees after confirming a terminal sign-in
+      (`/oauth/device?done=confirmed`, DeviceVerificationForm). A `zone` with
+      `align: center` holds an h2 at the h3 step, a faint sentence and the one
+      way on. The prefilled device code on the confirm step is a `text` span at
+      the h3 step with `tracking: widest`, because a reader compares it
+      character by character with the terminal.
+
+
+      THE MESSAGE OUTRANKS THE MARK. The title reads at the 24px `display` role
+      and the body at the 16px `gate-body` role in the default text colour,
+      under the gate's compact brand: the reader came here to learn whether the
+      sign-in worked, and the page answers that first.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:zone
+              props:
+                inset: none
+                gap: sm
+                align: center
+              slots:
+                content:
+                  - component: bb_theme:text
+                    props:
+                      text: Welcome, Ada
+                      as: h2
+                      size: display
+                  - component: bb_theme:text
+                    props:
+                      text: You are signed in. You can return to your terminal.
+                      size: gate-body
+                      tone: default
+                  - component: bb_theme:button
+                    props:
+                      label: Go to bakers.build
+                      href: /home
+  - name: device sign-in denied
+    group: Gate
+    section: gate
+    docs: >-
+      The denial result of `DeviceVerificationForm::buildDoneResult()`: the same
+      hierarchy as the confirmation, and no action, because there is nowhere
+      this reader asked to go.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:zone
+              props:
+                inset: none
+                gap: sm
+                align: center
+              slots:
+                content:
+                  - component: bb_theme:text
+                    props:
+                      text: Sign-in denied
+                      as: h2
+                      size: display
+                  - component: bb_theme:text
+                    props:
+                      text: You can return to your terminal.
+                      size: gate-body
+                      tone: default
+  - name: device sign-in done long name
+    group: Gate
+    section: gate
+    docs: >-
+      The confirmation with a long display name, one word of which is a single
+      unbroken token, previewed so the title is seen wrapping at word boundaries
+      and staying inside the card at 360px.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:zone
+              props:
+                inset: none
+                gap: sm
+                align: center
+              slots:
+                content:
+                  - component: bb_theme:text
+                    props:
+                      text: >-
+                        Welcome, Maximiliane Theodora
+                        Wolfeschlegelsteinhausenbergerdorff-Ottenheimer
+                      as: h2
+                      size: display
+                  - component: bb_theme:text
+                    props:
+                      text: You are signed in. You can return to your terminal.
+                      size: gate-body
+                      tone: default
+                  - component: bb_theme:button
+                    props:
+                      label: Go to bakers.build
+                      href: /home
+  - name: device code entry
+    group: Gate
+    section: gate
+    docs: >-
+      The blank code-entry step of `/oauth/device`: the reader types the code
+      the terminal printed, then confirms or denies.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: none
+                    slots:
+                      content:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-user-code
+                          slots:
+                            title: Device code
+                        - component: bb_theme:form_input
+                          props:
+                            name: user_code
+                            id: edit-user-code
+                            value: ''
+                            required: true
+                        - component: bb_theme:text
+                          props:
+                            text: Enter the code shown in your terminal.
+                            size: caption
+                            tone: light
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: sm
+                      direction: row
+                      align: center
+                    slots:
+                      content:
+                        - component: bb_theme:button
+                          props:
+                            variant: primary
+                            type: submit
+                            label: Confirm sign-in
+                        - component: bb_theme:button
+                          props:
+                            type: submit
+                            label: Deny
+              props:
+                align: center
+  - name: device consent
+    group: Gate
+    section: gate
+    docs: >-
+      The prefilled consent step: the code arrives from the terminal's
+      verification link and is shown as text rather than an input, with the
+      requesting client and the scopes the token will carry.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: none
+                    slots:
+                      content:
+                        - component: bb_theme:form_label
+                          slots:
+                            title: Device code
+                        - component: bb_theme:text
+                          props:
+                            text: ABCD-EFGH
+                            as: span
+                            size: h3
+                            tracking: widest
+                  - component: bb_theme:text
+                    props:
+                      text: bakers.build CLI wants to sign in
+                  - component: bb_theme:text
+                    props:
+                      text: 'Requested access: bb:session'
+                      tone: faint
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: sm
+                      direction: row
+                      align: center
+                    slots:
+                      content:
+                        - component: bb_theme:button
+                          props:
+                            variant: primary
+                            type: submit
+                            label: Confirm sign-in
+                        - component: bb_theme:button
+                          props:
+                            type: submit
+                            label: Deny
+              props:
+                align: center
+  - name: page not found
+    group: Gate
+    section: gate
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:text
+                    props:
+                      text: 404 — Page not found
+                      as: h1
+                      size: display
+                      align: center
+                main:
+                  - component: bb_theme:empty-state
+                    props:
+                      icon: signpost-missing
+                      message: >-
+                        We couldn't find this page. It may have moved or the
+                        address may be incorrect.
+                  - component: bb_theme:button
+                    props:
+                      label: Go to home
+                      href: /home
+  - name: access denied
+    group: Gate
+    section: gate
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:text
+                    props:
+                      text: 403 — Access denied
+                      as: h1
+                      size: display
+                      align: center
+                main:
+                  - component: bb_theme:empty-state
+                    props:
+                      icon: signpost-denied
+                      message: You don't have permission to open this page.
+                  - component: bb_theme:button
+                    props:
+                      label: Go to home
+                      href: /home

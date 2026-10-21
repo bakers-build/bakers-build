@@ -1,0 +1,71 @@
+(
+  /* The conductor detail body, one `canvas` like its sync generator
+     (core.entity_view_display.bb_conductor.bb_conductor.full).
+
+     `main`: the Activities zone, its Refresh control and its rows.
+     `inspector`: one surface with one card —
+       Identity        editable label (Save) plus read-only Conductor ID,
+                       Project, Machine and Owner.
+     The surface footer, below that card = Disable conductor when active,
+     Enable conductor when not. States, status, last seen and load are not
+     shown (heartbeat values; states set at registration).
+
+     Drupal fills the Activities zone (`bb_entity_detail_activities`), the
+     Identity card (the shared detail-card `entity_form`) and the footer
+     (`bb_conductor_actions`) from sources, so the preview pins their
+     reader output as text and names exactly the generator's components.
+
+     PINNED FACTS. A mapping is evaluated against one record and cannot join
+     the activity, project, machine or user collections, so rows and labels
+     are pinned per record — a sample-data change is a visible diff. */
+  $c := $;
+  $activityRows := {
+    "1": ["Christian Wiedemann · claimed · 2 hours ago — BB-142 claimed at coding."]
+  };
+  $projects := { "1": "bakers.build Platform", "2": "Northwind Shop" };
+  $machines := { "1": "cw · laptop" };
+  $owners := { "1": "Christian Wiedemann", "3": "Marieke van Dijk" };
+  $activities := $exists($lookup($activityRows, $c.id)) ? $lookup($activityRows, $c.id) : [];
+  $active := $c.active != false;
+  $conductorId := $c.conductor_id ? $c.conductor_id : ($c.machine_id and $c.conductor_name ? $c.machine_id & "/" & $c.conductor_name : undefined);
+  $or := function ($v) { $v ? $v : "—" };
+  $zone := function ($heading, $content) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm" },
+      "slots": { "heading": $heading, "content": $content }
+    }
+  };
+  [{
+    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:canvas",
+    "slots": {
+      "main": [{
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+        "props": { "inset": "none", "gap": "sm" },
+        "slots": {
+          "heading": "Activities",
+          "actions": "Refresh",
+          "content": $count($activities) > 0 ? $join($activities, "<br>") : "No activity yet."
+        }
+      }],
+      "inspector": [
+        {
+          "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:inspector",
+          "props": { "surface": true },
+          "slots": {
+            "rows": [
+              $zone("Identity",
+                "Label: " & $or($c.label)
+                & "<br>Conductor ID: " & $or($conductorId)
+                & "<br>Project: " & $or($lookup($projects, $c.project_id))
+                & "<br>Machine: " & $or($lookup($machines, $c.id))
+                & "<br>Owner: " & $or($lookup($owners, $c.owner_user_id))
+                & "<br>Save")
+            ],
+            "footer": $active ? "Disable conductor" : "Enable conductor"
+          }
+        }
+      ]
+    }
+  }]
+)

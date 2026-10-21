@@ -1,0 +1,10 @@
+# bakers-account entry for the mail settings route. Route access (own account
+# or `administer bakers`) hides it on another member's account.
+bb_activity.account.notifications:
+  title: 'Notifications'
+  route_name: bb_activity.notifications
+  menu_name: bakers-account
+  class: '\Drupal\bb_core\Plugin\Menu\AccountMenuLink'
+  weight: 3
+  options:
+    icon: inbox

@@ -1,0 +1,25 @@
+# The template-automation service account's own team on "Template fixtures": a
+# project's tickets are reachable through its teams, so without one the
+# trigger's activation gate rejects the account. A team of its own keeps the
+# member counts of the shared crews, which other features assert, unchanged.
+# A service account cannot own a team, so template-manager owns it and gets
+# its membership from og.settings' auto_add_group_owner_membership; the
+# account's membership is og_membership …0005.
+_meta:
+  version: '1.0'
+  entity_type: bb_team
+  uuid: 685a0000-0000-4000-8000-000000000006
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    684a0000-0000-4000-8000-000000000001: user
+default:
+  name:
+    -
+      value: "Automation Crew"
+  workspace_id:
+    -
+      entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"
+  owner_user_id:
+    -
+      entity: "684a0000-0000-4000-8000-000000000001"

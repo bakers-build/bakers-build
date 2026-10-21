@@ -1,0 +1,18 @@
+component: bb_theme:option_list
+name: Default
+props:
+  name: conductor
+  multiple: false
+  input_name: ''
+  clearable: true
+  clear_label: No conductor
+  clear_url: ''
+  creatable: true
+  create_label: conductor
+  options:
+    - value: cw-framework
+      label: cw-framework
+      selected: true
+    - value: cw-laptop
+      label: cw-laptop
+      selected: false

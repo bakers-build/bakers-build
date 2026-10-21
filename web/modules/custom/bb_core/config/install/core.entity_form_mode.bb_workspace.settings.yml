@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_workspace.settings
+label: Settings
+description: null
+targetEntityType: bb_workspace
+cache: true

@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - bb_browser_test
+id: browser-test
+label: 'Browser navigation fixture'
+description: 'Deterministic links for standard Menu island browser coverage.'
+locked: false

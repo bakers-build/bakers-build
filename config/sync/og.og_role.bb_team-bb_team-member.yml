@@ -1,0 +1,19 @@
+uuid: 8d4f2b9a-3c5e-4f0b-ad2e-6e9f1b3c7d5e
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+_core:
+  default_config_hash: bb_team_member_placeholder
+id: bb_team-bb_team-member
+label: Member
+weight: 1
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions:
+  - 'view bakers figure project_overview'
+  - 'view bakers figure team_projects'
+role_type: required

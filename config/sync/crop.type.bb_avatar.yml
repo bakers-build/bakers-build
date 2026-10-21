@@ -1,0 +1,14 @@
+uuid: 49be1ddf-29eb-4a18-8743-e4eb50725bde
+langcode: en
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: ftdbSvSwwuYg-PmM6ooePMoUOWzWDSgR1TkOrWvQJGY
+label: Avatar
+id: bb_avatar
+description: 'The square framing chosen for an image wherever it is uploaded; every avatar derived from the file uses it.'
+aspect_ratio: '1:1'
+soft_limit_width: null
+soft_limit_height: null
+hard_limit_width: null
+hard_limit_height: null

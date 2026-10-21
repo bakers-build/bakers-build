@@ -1,0 +1,17 @@
+overrides:
+  vite-plugin-twing-drupal: "^1.1.3"
+allowBuilds:
+  esbuild: true
+  odiff-bin: true
+# Skip the automatic pre-run-script deps check — it re-verifies the lockfile
+# against the supply-chain policy and ignores minimumReleaseAgeExclude, so a
+# freshly published (excluded) designbook release wrongly blocks `pnpm run`
+# scripts. Same reason and same fix as bakers-cli/pnpm-workspace.yaml.
+verifyDepsBeforeRun: false
+# pnpm matches these by package-name pattern, NOT `name@version`. A `@<version>`
+# suffix never matches, so a freshly published release is still rejected by the
+# supply-chain minimumReleaseAge policy (default ~24h in pnpm 11). Keep entries
+# name-only — that is what lets us adopt a same-day designbook release.
+minimumReleaseAgeExclude:
+  - storybook-addon-designbook
+  - vite-plugin-twing-drupal

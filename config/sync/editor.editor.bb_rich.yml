@@ -1,0 +1,12 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - filter.format.bb_rich
+  module:
+    - bb_core
+format: bb_rich
+editor: bb_markdown
+settings: {  }
+image_upload:
+  status: false

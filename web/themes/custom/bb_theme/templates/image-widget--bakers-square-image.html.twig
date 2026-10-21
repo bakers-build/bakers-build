@@ -1,0 +1,14 @@
+{#
+/**
+ * @file
+ * Presenter for the bb_square_image widget: hands the widget's props and
+ * children to bb_theme:image_crop. The file input and Remove button keep
+ * their Form API identity; everything else (hidden values, optional alt and
+ * title fields) renders below the control.
+ */
+#}
+{{ include('bb_theme:image_crop', element['#bb_crop']|merge({
+  upload: data.upload,
+  remove: data.remove_button,
+  rest: data|without('upload', 'remove_button', 'preview'),
+}), with_context = false) }}

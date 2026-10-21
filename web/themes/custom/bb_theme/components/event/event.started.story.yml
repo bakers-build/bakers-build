@@ -1,0 +1,17 @@
+component: bb_theme:event
+name: Started
+props:
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  role: agent
+  subject_label: BB-650
+  subject_url: '#subject'
+  tag: started
+  timestamp: 2 h ago
+  statement: started work in spec
+  facts:
+    - cw-framework
+  links:
+    - title: Run
+      url: '#run'

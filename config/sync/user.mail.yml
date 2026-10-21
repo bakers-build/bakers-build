@@ -1,0 +1,83 @@
+_core:
+  default_config_hash: 6CZIzFifRq3qbdq3n3nDpEOO4hWIQtKOAQNPvGNGKeM
+langcode: en
+cancel_confirm:
+  subject: 'Confirm canceling your [site:name] account'
+  body: |-
+    # Sorry to see you go
+
+    We're sad to see you leave. Confirm below and your account will be canceled. This can't be undone.
+
+    Cancel account: [user:cancel-url]
+
+    Changed your mind? Simply ignore this e-mail. The link expires in one day.
+password_reset:
+  subject: 'Sign in to [site:name]'
+  body: |-
+    # Welcome back
+
+    Good to see you again. One click and you're back in, no password needed.
+
+    Sign in: [user:one-time-login-url]
+
+    Or enter this code on the sign-in page instead. The link works once within a day, the code for 15 minutes.
+
+    [bakers:login-code]
+register_admin_created:
+  subject: 'Your [site:name] account is ready'
+  body: |-
+    # Your account is ready
+
+    An administrator set everything up for you. Welcome aboard!
+
+    Sign in: [user:one-time-login-url]
+
+    The link works once within a day.
+register_no_approval_required:
+  subject: 'Welcome to [site:name]'
+  body: |-
+    # Great to have you
+
+    We're excited to have you on board. One click and you're in, no password needed.
+
+    Create account: [bakers:login-url]
+
+    Or enter this code on the sign-in page instead. The link works once within a day, the code for 15 minutes.
+
+    [bakers:login-code]
+register_pending_approval:
+  subject: 'Your [site:name] account is waiting for approval'
+  body: |-
+    # Almost there
+
+    Thanks for signing up, we can't wait to have you on board. An administrator still has to approve your account, and we'll e-mail you as soon as it's ready.
+register_pending_approval_admin:
+  subject: 'New [site:name] account waiting for approval'
+  body: |-
+    # Someone wants to join
+
+    Good news: [user:mail] signed up and is waiting for your approval.
+
+    Review account: [user:edit-url]
+status_activated:
+  subject: 'Your [site:name] account is active'
+  body: |-
+    # You're all set
+
+    Your account is active, and we're happy to have you with us!
+
+    Sign in: [user:one-time-login-url]
+
+    The link works once within a day.
+status_blocked:
+  subject: 'Your [site:name] account has been blocked'
+  body: |-
+    # Your account is blocked
+
+    We're sorry for the trouble. If you think this is a mistake, please get in touch and we'll sort it out together.
+status_canceled:
+  subject: 'Your [site:name] account has been canceled'
+  body: |-
+    # Goodbye for now
+
+    Your account is canceled. Thank you for the time you spent with us. You're always welcome back.

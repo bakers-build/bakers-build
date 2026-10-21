@@ -1,0 +1,13 @@
+bb_connector.config:
+  title: 'Configuration'
+  description: 'bakers.build configuration entities.'
+  parent: bb_core.admin
+  route_name: bb_connector.config
+  weight: 50
+
+entity.bb_connector.collection:
+  title: 'Connectors'
+  description: 'External system instances bakers.build imports from.'
+  parent: bb_connector.config
+  route_name: entity.bb_connector.collection
+  weight: 0

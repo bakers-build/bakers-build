@@ -1,0 +1,17 @@
+{#
+/**
+ * @file
+ * Device sign-in verification form presenter (BB-496), centred.
+ *
+ * `data-hx-boost="false"` for the same reason BbLoginForm sets it:
+ * confirming or denying a device code is a decision, not a navigation, and
+ * has to be a full document POST rather than intercepted and boosted by the
+ * gate region's own `data-hx-boost="true"` — a boosted submit inside that
+ * region silently swallowed the click instead of posting.
+ */
+#}
+{{ include('bb_theme:gate_form', {
+  attributes: attributes.setAttribute('data-hx-boost', 'false'),
+  align: 'center',
+  content: children,
+}, with_context = false) }}

@@ -1,0 +1,4 @@
+services:
+  plugin.manager.bb_connector:
+    class: Drupal\bb_connector\ConnectorPluginManager
+    parent: default_plugin_manager

@@ -1,0 +1,8 @@
+component: bb_theme:badge
+name: Idle
+# The one tone with no state colour at all in `css/tokens/color.src.css`. It reads
+# quiet, and the dot falls back to the offline grey.
+props:
+  label: idle
+  tone: idle
+  dot: true

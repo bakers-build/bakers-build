@@ -1,0 +1,31 @@
+- id: '1'
+  created: '2026-01-05T08:00:00+00:00'
+  changed: '2026-01-05T08:00:00+00:00'
+  name: keytec
+  description: >-
+    keytec builds and runs bakers.build here: the platform, its design system and the
+    agents that ship them.
+  image:
+    alt: keytec braid mark
+    src: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+  billing_profile:
+    contract: agency
+    subscription: annual
+    seats: 25
+    renews_on: '2027-01-05'
+  owner_user_id: '1'
+  __designbook:
+    section: settings
+- id: '2'
+  created: '2026-02-20T10:00:00+00:00'
+  changed: '2026-02-20T10:00:00+00:00'
+  name: Northwind
+  description: The Northwind retail team's workspace for its shop and warehouse projects.
+  billing_profile:
+    contract: team
+    subscription: monthly
+    seats: 8
+    renews_on: '2026-09-20'
+  owner_user_id: '3'
+  __designbook:
+    section: settings

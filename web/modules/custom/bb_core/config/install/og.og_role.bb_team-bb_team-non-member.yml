@@ -1,0 +1,18 @@
+# bakers.build team OG role: non-member, OG's required role for everyone outside the
+# team; OG has no rule set for outsiders without it. Empty on purpose.
+#
+# Shipped in its saved form, key for key.
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_team-bb_team-non-member
+label: 'Non-member'
+weight: 0
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions: {  }
+role_type: required

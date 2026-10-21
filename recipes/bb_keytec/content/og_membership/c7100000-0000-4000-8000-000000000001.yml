@@ -1,0 +1,49 @@
+# The keytec team member's workspace rank (BB-359 D6/D12).
+#
+# Until BB-359 this account's product capability came from the site-wide
+# `bb_project_manager` role. D6 deletes that role, so the capability has to
+# arrive the way the model now says it does: as an `og_membership` carrying the
+# workspace `lead` rank.
+#
+# This fixture is what makes the FRESH install path correct.
+# bb_core_post_update_workspace_product_role_ranks() covers a site that
+# already exists, but core baselines every post_update on a fresh install, so a
+# new `ddev init --provider recipe` would otherwise seed an account holding only
+# the two site-wide residue permissions and no rank at all — a user who can log
+# in and see nothing, with no error to explain it.
+#
+# The workspace named here is BbWorkspace::DEFAULT_UUID, the one
+# bb_core_install() creates on every install path (BB-350); it is
+# deliberately not shipped as recipe content, because `system.site.front`
+# points at its slug.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: c7100000-0000-4000-8000-000000000001
+  bundle: default
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    3b72a85c-4455-4c86-b207-bdcc7de4fdc6: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_workspace
+  entity_bundle:
+    -
+      value: bb_workspace
+  entity_id:
+    -
+      value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
+  uid:
+    -
+      entity: "3b72a85c-4455-4c86-b207-bdcc7de4fdc6"
+  roles:
+    -
+      target_id: bb_workspace-bb_workspace-lead
+  state:
+    -
+      value: active

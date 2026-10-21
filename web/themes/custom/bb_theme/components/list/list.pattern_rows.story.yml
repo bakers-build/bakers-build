@@ -1,0 +1,112 @@
+component: bb_theme:list
+name: Pattern rows
+props:
+  layout: lines
+  pattern:
+    headline:
+      - identifier
+      - title
+      - state
+      - priority
+    meta:
+      - project
+      - conductor
+      - age
+    right:
+      - assignee
+    captions:
+      age: Updated
+  items:
+    - accent: running
+      cells:
+        identifier:
+          kind: link
+          value: BB-592
+          url: '#'
+          mono: true
+        title:
+          kind: text
+          value: Render the listings as rows instead of tables
+          emphasis: strong
+        state:
+          kind: badge
+          label: Coding
+          tone: running
+          dot: true
+        priority:
+          kind: badge
+          label: High
+          tone: attention
+        project:
+          kind: text
+          value: bakers.build Platform
+        conductor:
+          kind: badge
+          label: cw-framework
+          tone: lease
+          icon: lock
+        age:
+          kind: text
+          value: 3d
+        assignee:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: unassigned
+    - accent: attention
+      cells:
+        identifier:
+          kind: link
+          value: BB-585
+          url: '#'
+          mono: true
+        title:
+          kind: text
+          value: Prune the ticket filters
+          emphasis: strong
+        state:
+          kind: badge
+          label: Review
+          tone: attention
+          dot: true
+        project:
+          kind: text
+          value: bakers.build Platform
+        age:
+          kind: text
+          value: 2h
+        assignee:
+          kind: person
+          display_name: Marieke van Dijk
+          initials: MD
+          color: lease
+    - cells:
+        identifier:
+          kind: link
+          value: GDB-41
+          url: '#'
+          mono: true
+        title:
+          kind: text
+          value: Document the scene grammar
+          emphasis: strong
+        state:
+          kind: badge
+          label: Spec
+          tone: neutral
+          dot: true
+        priority:
+          kind: badge
+          label: Low
+          tone: neutral
+        project:
+          kind: text
+          value: bakers.build Designbook
+        age:
+          kind: text
+          value: 1w
+        assignee:
+          kind: person
+          display_name: Unassigned
+          initials: '?'
+          color: offline

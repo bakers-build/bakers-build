@@ -1,0 +1,8 @@
+# simple_oauth types a scope's grant_types sequence as `grant_type.[%key]` and
+# declares only authorization_code, client_credentials and refresh_token. The
+# device grant's key is the RFC URN, because ScopeRepository::finalizeScopes()
+# is handed league's own getIdentifier(); without this type the scope config is
+# schema-incomplete.
+'grant_type.urn:ietf:params:oauth:grant-type:device_code':
+  type: grant_type.settings
+  label: 'Device code'

@@ -1,0 +1,38 @@
+# A known address that no feature file signs in as or follows a login link
+# for — only the signup suite's "known address" assertions read its mailbox.
+#
+# `cwiedemann@example.com` used to fill that role, but it is also the suite's
+# principal seeded actor: `login.feature`'s "External destinations cannot
+# leave the origin" requests a login link for it too, from a different
+# feature file and therefore a different worker. Two concurrent login-link
+# requests for the same address make "exactly one login mail was sent"
+# non-deterministic under parallelism. This account exists solely to be a
+# quiet known address nothing else touches.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: dbe50000-0000-4000-8000-000000000009
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: "en"
+  name:
+    -
+      value: "login-quiet"
+  mail:
+    -
+      value: "login-quiet@example.com"
+  timezone:
+    -
+      value: "Europe/Berlin"
+  status:
+    -
+      value: true
+  pass:
+    -
+      value: "Bb-test-login-426!"
+      pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

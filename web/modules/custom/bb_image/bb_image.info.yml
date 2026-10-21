@@ -1,0 +1,8 @@
+name: bakers.build Image
+type: module
+description: 'One square crop per image file, chosen in the uploading form and used by every avatar.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - drupal:image
+  - crop:crop

@@ -1,0 +1,35 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Gate form
+status: stable
+group: Shell
+description: >-
+  The frame of a form that stands in the gate card: login, the e-mail code,
+  device sign-in, and creating or joining a workspace. Core's form elements
+  carry no spacing of their own, so this frame owns the gap between the copy,
+  the form items and the action row, lays the action row out, and gives inputs,
+  buttons and links their keyboard focus ring. A form template passes its
+  attributes and rendered children here and adds nothing of its own.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    align:
+      type: string
+      enum:
+        - start
+        - center
+      title: Alignment
+      description: >-
+        `center` centres the copy and the action row, for a short decision such
+        as confirming a device sign-in. Default `start`.
+      default: start
+slots:
+  content:
+    title: Content
+    description: >-
+      The form's rendered children — copy, form items and the action row — in
+      their own order.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

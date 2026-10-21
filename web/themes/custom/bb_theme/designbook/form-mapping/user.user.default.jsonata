@@ -1,0 +1,115 @@
+(
+  /* Account edit form (`user.user.default`) on `/user/{user}/edit`.
+     Identity, nickname/mail, Position and Background on one surface.
+     Onboarding uses its own Form API form; this mapping is account edit.
+     Picture is a file input here because Storybook has no crop widget. */
+  $u := $;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form",
+      "slots": {
+        "lines": [
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-user-picture" },
+            "slots": { "title": "Profile picture" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input",
+            "props": {
+              "type": "file",
+              "name": "user_picture",
+              "id": "edit-user-picture"
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-field-full-name" },
+            "slots": { "title": "Full name" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input",
+            "props": {
+              "name": "field_full_name",
+              "id": "edit-field-full-name",
+              "value": $u.field_full_name ? $u.field_full_name : $u.display_name
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-name" },
+            "slots": { "title": "Nickname (username)" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input",
+            "props": {
+              "name": "name",
+              "id": "edit-name",
+              "value": $u.name,
+              "required": true
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-mail" },
+            "slots": { "title": "E-Mail-Adresse" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input",
+            "props": {
+              "type": "email",
+              "name": "mail",
+              "id": "edit-mail",
+              "value": $u.mail
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:note",
+            "props": { "tone": "attention" },
+            "slots": {
+              "body": "bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later."
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-field-developer-title" },
+            "slots": { "title": "Position" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input",
+            "props": {
+              "name": "field_developer_title",
+              "id": "edit-field-developer-title",
+              "placeholder": "e.g. Product Lead",
+              "value": $u.field_developer_title
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-field-bakers-background" },
+            "slots": { "title": "What should bakers.build know about your background?" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_textarea",
+            "props": {
+              "name": "field_bb_background",
+              "id": "edit-field-bakers-background",
+              "rows": 3,
+              "value": $u.field_bb_background
+            }
+          }
+        ],
+        "actions": [
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:button",
+            "props": {
+              "variant": "primary",
+              "type": "submit",
+              "label": "Save"
+            }
+          }
+        ]
+      }
+    }
+  ]
+)

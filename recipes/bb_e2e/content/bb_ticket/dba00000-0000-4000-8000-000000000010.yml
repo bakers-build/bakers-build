@@ -1,0 +1,43 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket
+  uuid: dba00000-0000-4000-8000-000000000010
+  depends:
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbf00000-0000-4000-8000-000000000001: bb_project
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  created:
+    -
+      value: 1781600010
+  changed:
+    -
+      value: 1781600010
+  project_id:
+    -
+      entity: "dbf00000-0000-4000-8000-000000000001"
+  identifier:
+    -
+      value: "BB-150"
+  number:
+    -
+      value: 150
+  workflow:
+    -
+      value: "bb_feature"
+  title:
+    -
+      value: "Pager fixture 150"
+  description:
+    -
+      value: "Extra active feature ticket so the list exceeds one page and the pager renders."
+      format: "bb_rich"
+  assignee_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  priority:
+    -
+      value: 2
+  closed:
+    -
+      value: false

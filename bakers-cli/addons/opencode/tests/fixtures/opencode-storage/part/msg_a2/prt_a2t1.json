@@ -1,0 +1,11 @@
+{
+  "id": "prt_a2t1",
+  "sessionID": "ses_A",
+  "messageID": "msg_a2",
+  "type": "tool",
+  "tool": "edit",
+  "callID": "c3",
+  "state": {
+    "status": "completed"
+  }
+}

@@ -1,0 +1,59 @@
+{# Linear-style navigation rail: workspace switcher on top, the primary
+   navigation below it, a collapse toggle on the rail's right edge and an
+   actions area at the foot.
+
+   Collapse is `data-sidebar-collapsed` on `<html>`, not a class on this
+   aside. IslandBoost OOB-swaps the whole rail on every destination click,
+   so Alpine state on this island is replaced with the expanded default.
+   html is never an island. The toggle writes the attribute; a head script
+   restores it before first paint. Initialization only asserts collapse for a
+   first mobile visit; it never clears the attribute during an island swap.
+
+   The width binding uses the object form rather than a ternary string on
+   purpose: the ternary would only ever ADD a class, leaving the server-rendered
+   one in place, so a disagreeing stored state would put both widths on the
+   element. The object form sets and removes both keys, which is exactly what
+   the deleted sidebar.js did with classList.toggle. #}
+{% set rail_id = id|default('bakers-sidebar') %}
+{% set body_id = rail_id ~ '-body' %}
+{% set is_collapsed = collapsed|default(false) or variant == 'collapsed' %}
+<aside{{ (attributes ?: create_attribute()).addClass([
+    'group', 'relative', 'overflow-visible', 'flex', 'flex-col', 'shrink-0', 'h-shell-height', 'min-h-0',
+    'bg-app', 'border-r', 'border-b', 'border-border', 'text-text',
+    is_collapsed ? 'w-14 is-collapsed' : 'w-58',
+  ]) }}
+  id="{{ rail_id }}"
+  data-sidebar
+  x-data="{ railOpen: $persist({{ is_collapsed ? 'false' : 'true' }} && window.matchMedia('(min-width: 768px)').matches).as('bakers.sidebar') }"
+  x-init="if (!railOpen) document.documentElement.setAttribute('data-sidebar-collapsed', '')"
+  :class="{ 'w-58': railOpen, 'w-14': !railOpen, 'is-collapsed': !railOpen }"
+  aria-label="{{ label|default('Workspace navigation') }}">
+  {# The toggle sits on the rail's right edge, half outside, so it never
+     shares a row with the workspace mark. `translate-x-1/2` is the "beside"
+     placement: the hit target stays on the border in both widths. #}
+  <button type="button"
+    class="absolute top-2 right-0 translate-x-1/2 z-10 inline-grid place-items-center w-7 h-7 shrink-0 rounded-full bg-surface-2 border border-border text-text-faint cursor-pointer transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+    data-sidebar-toggle
+    aria-controls="{{ body_id }}"
+    aria-expanded="{{ is_collapsed ? 'false' : 'true' }}"
+    aria-label="{{ is_collapsed ? 'Expand sidebar' : 'Collapse sidebar' }}"
+    @click="railOpen = !railOpen; document.documentElement.toggleAttribute('data-sidebar-collapsed', !railOpen)"
+    :aria-expanded="railOpen ? 'true' : 'false'"
+    :aria-label="railOpen ? 'Collapse sidebar' : 'Expand sidebar'">
+    {{ include('bb_theme:icon', { name: 'panel-left', size: 'md' }, with_context = false) }}
+  </button>
+  <div class="flex shrink-0 items-center gap-1 px-3 py-4 border-b border-border-2 group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-2">
+    {% if workspace %}
+      <div class="min-w-0 flex-1 group-[.is-collapsed]:flex-none">{% block workspace %}{{ workspace }}{% endblock %}</div>
+    {% endif %}
+  </div>
+  <div class="flex flex-col flex-1 min-h-0 overflow-y-auto p-3 group-[.is-collapsed]:px-2" id="{{ body_id }}">
+    {% block navigation %}{% if navigation %}{{ navigation }}{% endif %}{% endblock %}
+  </div>
+  {% if actions %}
+    {# Identity and the mode toggle are expanded-only: a 56px rail has no
+       room for a named account plus a palette control beside the nav icons.
+       `justify-between` pins the palette to the right edge at full width. #}
+    <div class="flex shrink-0 items-center justify-between gap-2 px-3 py-3 border-t border-border-2" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{% block actions %}{{ actions }}{% endblock %}</div>
+  {% endif %}
+</aside>

@@ -1,0 +1,29 @@
+# The finished run behind the properties conductor's seeded claim: detail
+# feeds reach an activity's conductor only through its run.
+_meta:
+  version: '1.0'
+  entity_type: bb_run
+  uuid: e85bbe83-c582-4ed8-8d2d-5076d98ddc54
+  depends:
+    8cf82f7f-c1c4-5955-8fbd-83203c1f2d76: bb_ticket
+    1f1764cf-f41e-4077-8495-2bce8ed508b2: bb_conductor
+    db58173e-ed5d-50cf-af02-2943a2803c36: user
+default:
+  ticket_id:
+    -
+      entity: 8cf82f7f-c1c4-5955-8fbd-83203c1f2d76
+  conductor_id:
+    -
+      entity: 1f1764cf-f41e-4077-8495-2bce8ed508b2
+  owner_user_id:
+    -
+      entity: db58173e-ed5d-50cf-af02-2943a2803c36
+  state:
+    -
+      value: done
+  state_at_start:
+    -
+      value: spec
+  started_at:
+    -
+      value: 1790000000

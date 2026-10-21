@@ -1,0 +1,49 @@
+# ORDERING, not a data reference (BB-350). This conductor's owner is
+# `cwiedemann`, and bb_core_bb_conductor_insert() gives that account a
+# workspace membership with the `app` role as soon as the conductor is saved.
+# The workspace-admin fixture dbd10000-…-0002 wants a membership for the SAME
+# account in the SAME workspace, and OG allows only one — so whichever is
+# written second aborts the import with "already a member in this group".
+# Only one order works: the fixture first, the hook then adding `app` to the
+# row that already exists. Naming it here makes the Finder's topological sort
+# guarantee that order. It used to hold by accident — the sort weights shift
+# with the uuid set, and dropping the e2e workspace file flipped them.
+_meta:
+  version: '1.0'
+  entity_type: bb_conductor
+  uuid: dbc00000-0000-4000-8000-000000000002
+  depends:
+    dbm00000-0000-4000-8000-000000000002: bb_machine
+    dbe50000-0000-4000-8000-000000000001: user
+    dbf00000-0000-4000-8000-000000000001: bb_project
+    dbd10000-0000-4000-8000-000000000002: og_membership
+default:
+  # BB-79 AC-2 fixture: linked to a machine at full capacity (load == max).
+  # Every other seeded conductor's machine is idle, so without this one the
+  # listing has no full-vs-idle pair and the criterion is untestable.
+  conductor_id:
+    -
+      value: "srv02-bakers-busy"
+  label:
+    -
+      value: "srv02-bakers-busy"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  status:
+    -
+      value: "online"
+  machine:
+    -
+      entity: "dbm00000-0000-4000-8000-000000000002"
+  project_id:
+    -
+      entity: "dbf00000-0000-4000-8000-000000000001"
+  states:
+    -
+      value: "diagnose"
+    -
+      value: "coding"
+  last_seen:
+    -
+      value: 1782837900

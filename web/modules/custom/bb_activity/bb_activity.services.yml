@@ -1,0 +1,21 @@
+services:
+  plugin.manager.bb_activity_kind:
+    class: Drupal\bb_activity\Activity\ActivityKindManager
+    parent: default_plugin_manager
+  Drupal\bb_activity\Activity\ActivityKindManager: '@plugin.manager.bb_activity_kind'
+  bb_activity.entity_detail_activities:
+    class: Drupal\bb_activity\Activity\EntityDetailActivities
+    arguments: ['@entity_type.manager']
+  Drupal\bb_activity\Activity\EntityDetailActivities:
+    alias: bb_activity.entity_detail_activities
+  Drupal\bb_activity\NotificationSettings:
+    autowire: true
+  logger.channel.bb_activity:
+    parent: logger.channel_base
+    arguments: ['bb_activity']
+  Drupal\bb_activity\ActivityMailer:
+    autowire: true
+  Drupal\bb_activity\EventSubscriber\ClaimActivitySubscriber:
+    autowire: true
+    tags:
+      - { name: event_subscriber }

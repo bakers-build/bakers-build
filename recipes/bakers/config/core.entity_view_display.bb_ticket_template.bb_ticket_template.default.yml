@@ -1,0 +1,132 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - display_builder
+    - bb_core
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.bb_labels
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:canvas'
+            variant_id: null
+            props: {  }
+            slots:
+              main:
+                sources:
+                  -
+                    source_id: block
+                    source:
+                      plugin_id: system_messages_block
+                    node_id: template_messages
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:zone'
+                        variant_id: null
+                        props:
+                          inset:
+                            source_id: select
+                            source:
+                              value: none
+                          gap:
+                            source_id: select
+                            source:
+                              value: sm
+                          columns:
+                            source_id: select
+                            source:
+                              value: 1
+                        slots:
+                          heading:
+                            sources:
+                              -
+                                source_id: token
+                                source:
+                                  value: About
+                                node_id: template_about_heading
+                          content:
+                            sources:
+                              -
+                                source_id: component
+                                source:
+                                  component:
+                                    component_id: 'bb_theme:rich-text'
+                                    variant_id: null
+                                    props:
+                                      body:
+                                        source_id: 'field_property:bb_ticket_template:description:processed'
+                                        source: {  }
+                                      size:
+                                        source_id: select
+                                        source:
+                                          value: default
+                                      clamp:
+                                        source_id: checkbox
+                                        source:
+                                          value: false
+                                      label:
+                                        source_id: token
+                                        source:
+                                          value: Description
+                                    slots: {  }
+                                node_id: template_about_body
+                    node_id: template_about
+              inspector:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:inspector'
+                        variant_id: null
+                        props:
+                          surface:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          rows:
+                            sources:
+                              -
+                                source_id: bb_ticket_template_inspector
+                                source:
+                                  context_mapping:
+                                    entity: entity
+                                node_id: template_properties
+                          footer:
+                            sources:
+                              -
+                                source_id: bb_ticket_template_actions
+                                source:
+                                  context_mapping:
+                                    entity: entity
+                                node_id: template_actions
+                    node_id: template_inspector
+        node_id: template_canvas
+id: bb_ticket_template.bb_ticket_template.default
+targetEntityType: bb_ticket_template
+bundle: bb_ticket_template
+mode: default
+content: {  }
+hidden:
+  conductor_id: true
+  created: true
+  description: true
+  enabled: true
+  labels: true
+  name: true
+  owner_user_id: true
+  project_id: true
+  search_api_excerpt: true
+  target_state: true
+  title_pattern: true
+  workflow: true

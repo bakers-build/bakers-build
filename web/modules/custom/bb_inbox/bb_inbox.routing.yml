@@ -1,0 +1,33 @@
+# Writes and conductor reads go through these resources only. Generic
+# JSON:API create checks create access without the entity and so cannot see
+# the ticket; the message's own access handler closes it for everyone else.
+bb_inbox.send:
+  path: '/%jsonapi%/bakers/inbox/send'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_inbox\Resource\InboxSendResource
+    _jsonapi_resource_types: ['bb_inbox_message--bb_inbox_message']
+  requirements:
+    _user_is_logged_in: 'TRUE'
+
+bb_inbox.pending:
+  path: '/%jsonapi%/bakers/inbox/{conductor_id}'
+  methods: ['GET']
+  defaults:
+    _jsonapi_resource: Drupal\bb_inbox\Resource\InboxPendingResource
+  requirements:
+    _permission: 'register bakers conductor'
+
+bb_inbox.result:
+  path: '/%jsonapi%/bakers/inbox/{bb_inbox_message}/result'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_inbox\Resource\InboxResultResource
+    _jsonapi_resource_types: ['bb_inbox_message--bb_inbox_message']
+  requirements:
+    _permission: 'register bakers conductor'
+  options:
+    parameters:
+      bb_inbox_message:
+        type: entity:bb_inbox_message
+        converter: bb_core.paramconverter.entity_uuid

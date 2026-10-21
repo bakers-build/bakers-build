@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_run
+  uuid: 3fd63759-d5a2-4d29-8363-371e8017dd42
+  depends:
+    841c33c3-6186-4968-8921-be29a91149e3: bb_ticket
+    9b96cdea-a605-43a8-bd3f-3cdf72c5127f: bb_conductor
+default:
+  ticket_id:
+    -
+      entity: 841c33c3-6186-4968-8921-be29a91149e3
+  conductor_id:
+    -
+      entity: 9b96cdea-a605-43a8-bd3f-3cdf72c5127f
+  state:
+    -
+      value: running
+  state_at_start:
+    -
+      value: coding
+  started_at:
+    -
+      value: 1798000000
+  agent:
+    -
+      value: opus
+  duration_s:
+    -
+      value: 142
+  claim_expires_at:
+    -
+      value: 1798761600

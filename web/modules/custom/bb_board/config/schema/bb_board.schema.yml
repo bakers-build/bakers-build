@@ -1,0 +1,28 @@
+# The Board's own Views plugins.
+views.filter.bb_board_parent:
+  type: views.filter.in_operator
+  label: 'Board parent filter'
+
+views.display.bb_board_column:
+  type: views.display.attachment
+  label: 'Board column display options'
+
+views.style.bb_board:
+  type: views_style
+  label: 'bakers.build board'
+
+views.area.bb_board_summary:
+  type: views_area
+  label: 'Project board summary'
+
+# The Assignee and Priority chips' facets, which keep their missing value.
+# Facets types processor settings as
+# `plugin.plugin_configuration.facets_processor.<processor id>`; empty: nothing
+# to configure.
+plugin.plugin_configuration.facets_processor.bb_user_label:
+  type: mapping
+  label: 'bakers.build user label'
+
+plugin.plugin_configuration.facets_processor.bb_missing_label:
+  type: mapping
+  label: 'bakers.build missing label'

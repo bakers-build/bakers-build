@@ -1,0 +1,11 @@
+bb_ticket:
+  label: bakers.build Ticket
+  entity_type: bb_ticket
+
+bb_run:
+  label: bakers.build Run
+  entity_type: bb_run
+
+bb_comment:
+  label: bakers.build Comment
+  entity_type: bb_comment

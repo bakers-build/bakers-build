@@ -1,0 +1,33 @@
+{
+  "name": "@bakers-build/addon-bakers-ui-artifacts",
+  "version": "0.0.1",
+  "description": "bakers.build TUI: an Artifacts tab on ticket detail, reading assets-ai/<bakers.build-nnn>/.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/panel.js",
+    "./preset": "./dist/src/preset.js",
+    "./ui": "./dist/src/ui.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/bakers-ui-artifacts/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/addon-bakers-ui": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/addon-bakers-ui": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

@@ -1,0 +1,24 @@
+{#
+/**
+ * @file
+ * Login presenter: retain core controls and validation, using bakers.build presenters.
+ *
+ * Core selects user_login_form; the theme registration exposes the unrendered
+ * form so accessibility and submit presentation stay entirely in Twig.
+ */
+#}
+{% for name in ['name', 'pass'] %}
+  {% set field = form[name] %}
+  {% if field['#errors'] %}
+    {% set field = field|merge({
+      '#attributes': field['#attributes']|merge({
+        'aria-describedby': (field['#attributes']['aria-describedby']|default('') ~ ' messages-error')|trim,
+      }),
+    }) %}
+  {% endif %}
+  {{ field }}
+{% endfor %}
+{% set submit = form.actions.submit|merge({'#theme_wrappers': ['input__submit__bb_button']}) %}
+{{ form.actions|merge({'submit': submit}) }}
+{{ form|without('name', 'pass', 'actions') }}
+<a href="{{ path('user.pass') }}" data-hx-boost="false">{{ 'Forgot your password?'|t }}</a>

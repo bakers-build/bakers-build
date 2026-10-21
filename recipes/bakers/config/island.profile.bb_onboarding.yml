@@ -1,0 +1,43 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - island.app.bakers
+  enforced:
+    config:
+      - island.app.bakers
+  module:
+    - system
+  theme:
+    - bb_theme
+id: bb_onboarding
+label: 'bakers.build onboarding'
+app: bakers
+layout: 'bb_theme:zone'
+layout_settings:
+  inset: none
+  gap: none
+  columns: 1
+placements:
+  onboarding_messages:
+    plugin_id: messages
+    slot: content
+    weight: 0
+    enabled: true
+    configuration: {  }
+    data: {  }
+  onboarding_main:
+    plugin_id: page_content
+    slot: content
+    weight: 1
+    enabled: true
+    configuration: {  }
+    data: {  }
+weight: -20
+condition_operator: and
+conditions:
+  request_path:
+    id: request_path
+    negate: false
+    pages: |-
+      /home/onboarding

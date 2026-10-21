@@ -1,0 +1,111 @@
+{# AN ADD OR EDIT SURFACE, AND IT OWNS ITS FIELDS. Four kinds of node used to be
+   assembled by hand in the scene files — a separated lead row, two borderless
+   lines, a wrapping row of peer pills, an action row — and the surface is the
+   thing that knows how they go together, so it says it once. That is the same
+   move `table` makes for its rows, applied to input rather than output.
+
+   THE CONTRACT IS NOT A LIST OF FIELDS, DELIBERATELY. The widget grammar in
+   `designbook/design-system/action-pattern.md` is a RULE — "every add, edit and
+   organisation surface uses it without variation" — and its first line rejects
+   the shape a field list would produce: "The dialog is not a form of labelled
+   rows." A flat `fields[]` array would let a caller build three text lines, or
+   two prominent properties, or a column of labelled rows. `lead` + `lines` +
+   `pills` + `actions` cannot express any of them.
+
+   THE FOUR REGIONS ARE SLOTS, AND SINCE BB-420 TASK 20 THEY ARE SLOTS RATHER
+   THAN PROPS. The reason is the create-ticket dialog, whose fields are real
+   Drupal field widgets: a widget RENDERS itself, and rendered content cannot go
+   into a prop. So the caller renders each field — a real form element
+   (`form_input` / `form_textarea`, since BB-420 Task 31 retired the bespoke
+   `text_line`) for a line, `property_pill` for a peer or a lead — and this
+   component places what it is handed.
+
+   WHAT THAT COST, STATED RATHER THAN HIDDEN. `lead` was an OBJECT before, and
+   its singularity was carried by the type: grammar 3a allows at most one
+   emphasised property per surface, because "a surface where everything is
+   emphasised emphasises nothing". A slot cannot carry a cardinality — core's own
+   slot definition admits only `title`, `description` and `examples`, and
+   `ComponentValidator` does not validate slot content at all. The rule did not
+   become a comment: it moved to the one place that can still check it, the FORM
+   DISPLAY, where `BbTicketCreateForm` refuses to build a surface whose display
+   configures two fields with `surface_region: lead`, and a kernel test pins that
+   refusal. `lead_label` is a prop for the same reason — the row names itself
+   from the property it holds, and with `lead` rendered by the caller the label
+   is no longer readable from it.
+
+   "NO FLAT FIELD LIST" SURVIVES THE CHANGE UNTOUCHED: four NAMED slots keep it
+   exactly as four named props did. A caller still cannot put a second pill in
+   the lead row, stack the pills into a column, or turn a line into a labelled
+   row — there is no slot that would take it.
+
+   THE TWO RULES THAT MOVED OUT WITH THEIR MARKUP, restated because this is where
+   they are enforced:
+
+     "a large title line and a smaller description line beneath it. The line
+      carries its identity in its placeholder."   → `form_input` / `form_textarea`
+      (BB-420 Task 31 retired `text_line`; the "no box, no border" half of
+      this rule did not survive the retirement — every editable field is now a
+      real form element, which carries its own visible border)
+
+     "the row is a rule: every peer property is a pill in ONE row, it wraps
+      rather than stacks, and beyond roughly six pills the low-frequency ones
+      collapse behind an overflow control that will belong here."  → the pill row
+                                                                     below
+
+   No overflow control is rendered today, and that is the second rule's own
+   stance rather than an omission: the create surface carries three peer pills
+   plus the lead, which fit in one row, and a `…` that opens nothing is a worse
+   lie than an absent affordance.
+
+   WHERE THE ACTION ROW IS. `dialog` owns the hull — a title row, then `message`,
+   `body` and `actions` in a bordered footer — so a form that is a dialog's body
+   leaves `actions` empty and the hull renders them. `actions` here is for a form
+   that is its own surface, and it is what keeps "exactly one submit plus cancel"
+   a property of the form rather than of whatever happens to contain it.
+
+   A SURFACE OF ONE LINE HAS NO WRAPPER — and that is the line's own job now, not
+   a branch of this file. The one caller that renders a single line is
+   `page_header`'s editable heading, which keeps the field INSIDE the `<h1>`
+   because an editable heading is still the screen's heading, and an `<h1>` takes
+   phrasing content, so an `<input>` is legal there and a `<div>` is not. That
+   caller renders `form_input` directly (BB-420 Task 31; formerly
+   `text_line`); a surface is what you reach for when there is more than one
+   thing to place. #}
+<div{{ (attributes ?: create_attribute()).addClass(['form', 'flex', 'flex-col', 'gap-3']) }}>
+  {#- THE LEAD ROW, grammar 3a. It is above the lines and separated from them by a
+      rule, because the property that decides what the rest of the surface even
+      means is not one of the surface's peers. Making it merely the first pill was
+      tried and was not enough — first in a row still reads as "the first of
+      these", and it is not one of these. The row names itself from the property
+      it holds, which is what `lead_label` is: one name for a row of one
+      property. #}
+  {% set lead_content %}{% block lead %}{% if lead %}{{ lead }}{% endif %}{% endblock %}{% endset %}
+  {% if lead_content is not empty %}
+    <div class="form__lead flex flex-wrap items-center gap-[6px] pb-[12px] border-b border-border-2"
+      {%- if lead_label %} role="group" aria-label="{{ lead_label }}"{% endif %}>
+      {{ lead_content }}
+    </div>
+  {% endif %}
+  {% block lines %}{% if lines %}{{ lines }}{% endif %}{% endblock %}
+  {#- ONE ROW THAT WRAPS. `flex-wrap` and not a grid and not a scroller: the pills
+      keep their intrinsic widths and fall to a second line when they run out of
+      room, which is what keeps a long row from becoming either a column of
+      controls or a horizontal scroll nobody finds. The group name is fixed rather
+      than passed, for the reason above — the row is a row of this surface's
+      properties, and there is nothing else it could be called. #}
+  {% set pills_content %}{% block pills %}{% if pills %}{{ pills }}{% endif %}{% endblock %}{% endset %}
+  {% if pills_content is not empty %}
+    <div class="form__properties flex flex-wrap items-center gap-[6px]" role="group" aria-label="Properties">
+      {{ pills_content }}
+    </div>
+  {% endif %}
+  {#- THE ACTION ROW, right-aligned and separated, in the same treatment the hull
+      gives its own footer — so a form that is its own surface and a form inside a
+      dialog do not disagree about where the submit is. #}
+  {% set actions_content %}{% block actions %}{% if actions %}{{ actions }}{% endif %}{% endblock %}{% endset %}
+  {% if actions_content is not empty %}
+    <div class="form__actions flex items-center justify-end gap-[8px] pt-[12px] mt-[10px] border-t border-border-2">
+      {{ actions_content }}
+    </div>
+  {% endif %}
+</div>

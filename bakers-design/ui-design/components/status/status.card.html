@@ -1,0 +1,21 @@
+<!-- @dsCard group="Components" viewport="700x220" name="Status · Dot · Pill · Lease" subtitle="running / attention / needs_input / unassigned + lease ownership" -->
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body{margin:0;background:var(--gin-app);color:var(--gin-text);font-family:var(--font-sans);padding:18px;}
+  .grp{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;}
+  .cap{width:100%;font-family:var(--font-mono);font-size:10.5px;color:var(--gin-text-faint);margin-top:6px;}
+  .cap:first-child{margin-top:0;}
+</style></head><body>
+<div class="grp">
+  <span class="cap">StatusDot — running pulses · stale/offline are rings</span>
+  <span class="bakers-dot bakers-dot--running"></span><span class="bakers-dot bakers-dot--attention"></span><span class="bakers-dot bakers-dot--wait"></span><span class="bakers-dot bakers-dot--online"></span><span class="bakers-dot bakers-dot--stale"></span><span class="bakers-dot bakers-dot--offline"></span>
+  <span class="cap">StatusPill</span>
+  <span class="bakers-pill bakers-pill--running"><span class="bakers-dot bakers-dot--running"></span>running</span>
+  <span class="bakers-pill bakers-pill--attention"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>attention</span>
+  <span class="bakers-pill bakers-pill--needs_input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>needs_input</span>
+  <span class="bakers-pill bakers-pill--wait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>needs_input</span>
+  <span class="cap">LeaseBadge — outlined = mine</span>
+  <span class="bakers-lease"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv02-bakers</span>
+  <span class="bakers-lease bakers-lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01-bakers</span>
+</div></body></html>

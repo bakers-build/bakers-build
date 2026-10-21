@@ -1,0 +1,13 @@
+name: bakers.build ticket triggers
+type: module
+description: 'Triggers on ticket templates: a time schedule (and further trigger types) creates tickets through the template instantiator, as a workspace service account.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core
+  # The execution identity is a workspace service account.
+  - bb_core:bb_api_key
+  # The trigger type plugin and its configuration live in a
+  # `plugin:bb_ticket_trigger_type` field.
+  - plugin:plugin
+  - drupal:views

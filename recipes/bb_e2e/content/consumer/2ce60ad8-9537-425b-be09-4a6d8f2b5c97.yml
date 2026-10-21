@@ -1,0 +1,59 @@
+# Owner-bound recipe-test client. Secret is a public test value, not production.
+_meta:
+  version: '1.0'
+  entity_type: consumer
+  uuid: 2ce60ad8-9537-425b-be09-4a6d8f2b5c97
+  default_langcode: en
+  depends:
+    db58173e-ed5d-50cf-af02-2943a2803c36: user
+default:
+  owner_id:
+    -
+      target_id: 0
+  client_id:
+    -
+      value: bakers-conductor-owner-e2e
+  label:
+    -
+      value: 'bakers.build E2E conductor owner'
+  third_party:
+    -
+      value: true
+  is_default:
+    -
+      value: false
+  status:
+    -
+      value: true
+  secret:
+    -
+      value: Bb-test-client-426!
+      pre_hashed: false
+      existing: null
+  grant_types:
+    -
+      value: client_credentials
+  confidential:
+    -
+      value: true
+  scopes:
+    -
+      scope_id: bb_session
+  access_token_expiration:
+    -
+      value: 300
+  refresh_token_expiration:
+    -
+      value: 1209600
+  user_id:
+    -
+      entity: db58173e-ed5d-50cf-af02-2943a2803c36
+  pkce:
+    -
+      value: false
+  automatic_authorization:
+    -
+      value: false
+  remember_approval:
+    -
+      value: true

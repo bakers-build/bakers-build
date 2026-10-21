@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 97928c59-56fd-462e-80f4-394692344cc3
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: en
+  name:
+    -
+      value: mz
+  mail:
+    -
+      value: michael.zemui@keytec.de
+  pass:
+    -
+      value: '$2y$12$b0xw1IuFBEUZN9u792/xRu2N2i.al5qD4WhkZz8gdTlkwpuv2uLoe'
+      pre_hashed: true
+      existing: null
+  timezone:
+    -
+      value: Europe/Berlin
+  status:
+    -
+      value: 1
+  access:
+    -
+      value: 0
+  login:
+    -
+      value: 0

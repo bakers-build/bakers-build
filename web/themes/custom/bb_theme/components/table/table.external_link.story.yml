@@ -1,0 +1,19 @@
+component: bb_theme:table
+name: External link
+props:
+  variant: ''
+  columns:
+    - key: service
+      label: Service
+    - key: address
+      label: Address
+  rows:
+    - cells:
+        service:
+          kind: text
+          value: DDEV
+        address:
+          kind: link
+          value: https://example.trycloudflare.com
+          url: https://example.trycloudflare.com
+          external: true

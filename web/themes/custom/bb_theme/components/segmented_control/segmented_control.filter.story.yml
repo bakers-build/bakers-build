@@ -1,0 +1,10 @@
+component: bb_theme:segmented_control
+name: In-page filter
+props:
+  label: Agent
+  state: client
+  items:
+    - label: Claude Code
+      value: claude
+    - label: Codex
+      value: codex

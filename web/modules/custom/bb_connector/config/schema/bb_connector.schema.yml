@@ -1,0 +1,26 @@
+bb_connector.connector.*:
+  type: config_entity
+  label: 'bakers.build connector'
+  mapping:
+    id:
+      type: machine_name
+      label: 'ID'
+    label:
+      type: required_label
+      label: 'Label'
+    plugin:
+      type: string
+      label: 'Connector plugin'
+    import_interval:
+      type: integer
+      label: 'Cron import interval in seconds (0 disables cron import)'
+    settings:
+      type: mapping
+      label: 'Plugin settings'
+      mapping:
+        base_url:
+          type: string
+          label: 'Base URL'
+        token:
+          type: string
+          label: 'API token (override via settings.php)'

@@ -1,0 +1,19 @@
+# bakers-account entries for bb_track's own routes.
+bb_track.account.time:
+  title: 'Time'
+  route_name: view.worklog.personal
+  menu_name: bakers-account
+  class: '\Drupal\bb_core\Plugin\Menu\AccountMenuLink'
+  weight: 1
+  options:
+    icon: clock
+    active_routes: [entity.bb_track_submission.canonical]
+
+bb_track.account.schedule:
+  title: 'Schedule'
+  route_name: bb_track.schedule
+  menu_name: bakers-account
+  class: '\Drupal\bb_core\Plugin\Menu\AccountMenuLink'
+  weight: 2
+  options:
+    icon: clock

@@ -1,0 +1,194 @@
+# Static tab rows for My work, project, team and workspace settings; project
+# and team need bundle-free rows with no view/edit pair.
+#
+# The default tab of each row (Overview) is not a route of its own: it names
+# the entity's own canonical route as both `route_name` and `base_route`,
+# which is what makes it render on `/{ws}/project/{id}` itself rather than a
+# `/overview` suffix.
+
+# --- My work: Tickets, My time, Stats ---
+# Tickets is NOT declared here: the `my_work` Views page display owns it as its
+# own `default tab`, which is what puts the tab row on `/{ws}/tickets` without
+# moving the page My work opens on. My time (weight 1, bb_track) sits between
+# that default tab (weight 0) and Stats. Stats must weigh more than My time or
+# the two share a weight and discovery order puts Stats first.
+
+bb_core.my_work.stats:
+  title: 'Stats'
+  route_name: bb_core.my_work.stats
+  base_route: view.tickets.my_work
+  weight: 2
+
+# --- Project: Overview, Board, Stats, Tickets, Runs, Conductors, Settings ---
+# No Members tab: a project carries no membership of its own.
+
+entity.bb_project.canonical:
+  title: 'Overview'
+  route_name: entity.bb_project.canonical
+  base_route: entity.bb_project.canonical
+  weight: 0
+
+bb_core.bb_project.stats:
+  title: 'Stats'
+  route_name: bb_core.bb_project.stats
+  base_route: entity.bb_project.canonical
+  weight: 2
+
+view.tickets.project_tickets:
+  title: 'Tickets'
+  route_name: view.tickets.project_tickets
+  base_route: entity.bb_project.canonical
+  weight: 3
+
+view.runs.project_runs:
+  title: 'Runs'
+  route_name: view.runs.project_runs
+  base_route: entity.bb_project.canonical
+  weight: 4
+
+view.conductors.project_list:
+  title: 'Conductors'
+  route_name: view.conductors.project_list
+  base_route: entity.bb_project.canonical
+  weight: 5
+
+view.bb_ticket_templates.project_list:
+  title: 'Templates'
+  route_name: view.bb_ticket_templates.project_list
+  base_route: entity.bb_project.canonical
+  weight: 5.5
+
+bb_core.bb_project.settings:
+  title: 'Settings'
+  route_name: bb_core.bb_project.settings
+  base_route: entity.bb_project.canonical
+  weight: 6
+
+# --- Ticket template: Overview, Settings ---
+# Settings is the edit form as a page; nothing edits a template in a dialog.
+
+entity.bb_ticket_template.canonical:
+  title: 'Overview'
+  route_name: entity.bb_ticket_template.canonical
+  base_route: entity.bb_ticket_template.canonical
+  weight: 0
+
+entity.bb_ticket_template.edit_form:
+  title: 'Settings'
+  route_name: entity.bb_ticket_template.edit_form
+  base_route: entity.bb_ticket_template.canonical
+  weight: 1
+
+# --- Machine: View ---
+# Product tabs in the user area. Add, delete and the collection stay
+# under /admin/bakers. Name and capacity are edited on the View cards; the
+# former Settings url redirects there.
+
+entity.bb_machine.canonical:
+  title: 'View'
+  route_name: entity.bb_machine.canonical
+  base_route: entity.bb_machine.canonical
+  weight: 0
+
+# --- Conductor: Overview ---
+# One product tab. Edit, delete and the collection stay under /admin/bakers.
+
+entity.bb_conductor.canonical:
+  title: 'Overview'
+  route_name: entity.bb_conductor.canonical
+  base_route: entity.bb_conductor.canonical
+  weight: 0
+
+# --- Run: Overview ---
+# One product tab. Edit and delete stay on the un-nested workspace paths.
+
+entity.bb_run.canonical:
+  title: 'Overview'
+  route_name: entity.bb_run.canonical
+  base_route: entity.bb_run.canonical
+  weight: 0
+
+# --- Comment: Overview ---
+# One product tab. Edit and delete stay on the un-nested workspace paths.
+
+entity.bb_comment.canonical:
+  title: 'Overview'
+  route_name: entity.bb_comment.canonical
+  base_route: entity.bb_comment.canonical
+  weight: 0
+
+# --- Group: Overview, Settings ---
+
+entity.bb_group.canonical:
+  title: 'Overview'
+  route_name: entity.bb_group.canonical
+  base_route: entity.bb_group.canonical
+  weight: 0
+
+bb_core.bb_group.settings:
+  title: 'Settings'
+  route_name: bb_core.bb_group.settings
+  base_route: entity.bb_group.canonical
+  weight: 1
+
+# --- Team: Overview, Stats, Tickets, Runs, Members ---
+
+entity.bb_team.canonical:
+  title: 'Overview'
+  route_name: entity.bb_team.canonical
+  base_route: entity.bb_team.canonical
+  weight: 0
+
+bb_core.bb_team.stats:
+  title: 'Stats'
+  route_name: bb_core.bb_team.stats
+  base_route: entity.bb_team.canonical
+  weight: 1
+
+view.tickets.team_tickets:
+  title: 'Tickets'
+  route_name: view.tickets.team_tickets
+  base_route: entity.bb_team.canonical
+  weight: 2
+
+view.runs.team_runs:
+  title: 'Runs'
+  route_name: view.runs.team_runs
+  base_route: entity.bb_team.canonical
+  weight: 3
+
+bb_core.bb_team.members:
+  title: 'Members'
+  route_name: bb_core.bb_team.members
+  base_route: entity.bb_team.canonical
+  weight: 4
+
+
+# --- Workspace settings: Settings, Members, Addons, Templates ---
+# Settings is the default tab on its own route (same shape as project/team
+# Overview). Members is the invite-and-roster face.
+
+bb_core.bb_workspace.settings:
+  title: Settings
+  route_name: bb_core.bb_workspace.settings
+  base_route: bb_core.bb_workspace.settings
+  weight: 0
+
+bb_core.bb_workspace.members:
+  title: Members
+  route_name: bb_core.bb_workspace.members
+  base_route: bb_core.bb_workspace.settings
+  weight: 1
+
+bb_core.bb_workspace.addons:
+  title: Addons
+  route_name: view.addons.settings
+  base_route: bb_core.bb_workspace.settings
+  weight: 2
+
+# After the optional Service accounts tab (bb_api_key, weight 3).
+bb_core.bb_workspace.templates:
+  title: Templates
+  route_name: view.bb_ticket_templates.workspace_list
+  base_route: bb_core.bb_workspace.settings
+  weight: 4

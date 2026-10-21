@@ -1,0 +1,14 @@
+{#
+/**
+ * @file
+ * Login form presenter. Authentication requires a full document POST so the
+ * authenticated shell and session assets replace the anonymous entry page.
+ */
+#}
+{% if element.name['#errors'] or element.pass['#errors'] %}
+  {% set attributes = attributes.setAttribute('aria-describedby', 'messages-error') %}
+{% endif %}
+{{ include('bb_theme:gate_form', {
+  attributes: attributes.setAttribute('aria-label', 'Log in'|t).setAttribute('data-hx-boost', 'false'),
+  content: children,
+}, with_context = false) }}

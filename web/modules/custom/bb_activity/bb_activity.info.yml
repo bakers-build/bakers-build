@@ -1,0 +1,10 @@
+name: bakers.build Activities
+type: module
+description: 'Ticket activities: the feed rows, how they read, and opt-in emails about them.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - drupal:options
+  - drupal:user
+  - entity:entity
+  - bb_core:bb_core

@@ -1,0 +1,25 @@
+{#
+/**
+ * @file
+ * Presenter override: render every select through the bb_theme form_select
+ * SDC.
+ *
+ * The real Drupal `attributes` (name, id, data-*, #states classes …) and
+ * Drupal's own `options` list pass straight through, so the control keeps
+ * working while the look comes from the component. The listings' "Sort by"
+ * dropdown is the first consumer: a native select sizes itself to its longest
+ * option, and the component keeps it inside a narrow column.
+ *
+ * @see web/themes/custom/bb_theme/components/form_select/form_select.twig
+ */
+#}
+{#- Drupal option labels and values may be integers or markup objects; the
+    component types both as strings. #}
+{% set bb_options = options|map(option => option.type == 'optgroup'
+  ? option|merge({ 'label': option.label ~ '', 'options': option.options|map(child => child|merge({ 'label': child.label ~ '', 'value': child.value ~ '' })) })
+  : option|merge({ 'label': option.label ~ '', 'value': option.value ~ '' })) %}
+{{ include('bb_theme:form_select', {
+  attributes: attributes,
+  options: bb_options,
+  disabled: attributes.offsetExists('disabled'),
+}, with_context = false) }}

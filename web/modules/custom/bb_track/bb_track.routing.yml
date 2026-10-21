@@ -1,0 +1,161 @@
+bb_track.worklog.add:
+  path: '/time/add'
+  defaults:
+    _form: '\Drupal\bb_track\Form\WorklogForm'
+    _title: 'Record time'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\bb_track\Access\WorklogFormAccess::add'
+
+bb_track.week.add_row:
+  path: '/time/week/row'
+  defaults:
+    _form: '\Drupal\bb_track\Form\WorklogWeekRowForm'
+    _title: 'Add row'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\bb_track\Access\WorklogFormAccess::add'
+
+bb_track.worklog.ticket_options:
+  path: '/time/options/ticket'
+  defaults:
+    _controller: '\Drupal\bb_track\Controller\WorklogOptionsController::ticketFragment'
+  methods: [GET]
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\bb_track\Access\WorklogFormAccess::ticketOptions'
+
+bb_track.worklog.edit:
+  path: '/time/{bb_track_worklog}/edit'
+  defaults:
+    _form: '\Drupal\bb_track\Form\WorklogForm'
+    _title: 'Record time'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _entity_access: 'bb_track_worklog.view'
+    _custom_access: '\Drupal\bb_track\Access\WorklogFormAccess::own'
+  options:
+    parameters:
+      bb_track_worklog:
+        type: entity:bb_track_worklog
+        converter: bb_core.paramconverter.entity_uuid
+
+bb_track.worklog.delete:
+  path: '/time/{bb_track_worklog}/delete'
+  defaults:
+    _form: '\Drupal\bb_track\Form\WorklogDeleteForm'
+    _title: 'Delete this time entry?'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _entity_access: 'bb_track_worklog.delete'
+    _custom_access: '\Drupal\bb_track\Access\WorklogFormAccess::own'
+  options:
+    parameters:
+      bb_track_worklog:
+        type: entity:bb_track_worklog
+        converter: bb_core.paramconverter.entity_uuid
+
+bb_track.schedule:
+  path: '/user/{user}/schedule'
+  defaults:
+    _form: '\Drupal\bb_track\Form\WorkScheduleForm'
+    _title: 'Personal schedule'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\bb_track\Access\TimeRouteAccess::personal'
+  options:
+    parameters:
+      user:
+        type: 'entity:user'
+
+bb_track.account:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/accounts'
+  defaults:
+    _form: '\Drupal\bb_track\Form\AccountForm'
+    _title: 'Billing'
+  requirements:
+    _entity_access: 'bb_project.update'
+  options:
+    parameters:
+      bb_project:
+        type: entity:bb_project
+        converter: bb_core.paramconverter.entity_uuid
+
+bb_track.account_add:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/accounts/add'
+  defaults:
+    _form: '\Drupal\bb_track\Form\AccountEditForm'
+    _title: 'New billing account'
+  requirements:
+    _entity_access: 'bb_project.update'
+  options:
+    parameters:
+      bb_project:
+        type: entity:bb_project
+        converter: bb_core.paramconverter.entity_uuid
+
+bb_track.account_edit:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/accounts/{bb_track_account}/edit'
+  defaults:
+    _form: '\Drupal\bb_track\Form\AccountEditForm'
+    _title: 'Edit billing account'
+  requirements:
+    _entity_access: 'bb_project.update'
+    bb_track_account: '\d+'
+  options:
+    parameters:
+      bb_project:
+        type: entity:bb_project
+        converter: bb_core.paramconverter.entity_uuid
+      bb_track_account:
+        type: entity:bb_track_account
+
+bb_track.activity_input:
+  path: '/api/time/activity'
+  defaults:
+    _controller: '\Drupal\bb_track\Controller\WorkActivityController::input'
+  methods: [POST]
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _csrf_request_header_token: 'TRUE'
+  options:
+    _auth: ['basic_auth', 'oauth2', 'cookie']
+
+entity.bb_track_submission.canonical:
+  path: '/time/submission/{bb_track_submission}'
+  defaults:
+    _form: '\Drupal\bb_track\Form\SubmissionReviewForm'
+    _title: 'Submission'
+  requirements:
+    _entity_access: 'bb_track_submission.view'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_track_submission:
+        type: entity:bb_track_submission
+        converter: bb_core.paramconverter.entity_uuid
+
+# The ticket inspector's Billing row posts here, never to the ticket page:
+# that page's Properties form claims every POST to its own address.
+bb_track.ticket_account:
+  path: '/_workspace/{bb_workspace}/ticket/{bb_ticket}/billing-account'
+  defaults:
+    _form: '\Drupal\bb_track\Form\TicketAccountForm'
+    _title: 'Billing account'
+  requirements:
+    _custom_access: '\Drupal\bb_track\Access\TicketAccountAccess::link'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_ticket:
+        type: 'entity:bb_ticket'
+
+bb_track.worklog_evidence:
+  path: '/api/time/worklogs'
+  defaults:
+    _controller: '\Drupal\bb_track\Controller\WorklogEvidenceController::read'
+  methods: [GET]
+  requirements:
+    _user_is_logged_in: 'TRUE'
+  options:
+    _auth: ['basic_auth', 'oauth2', 'cookie']

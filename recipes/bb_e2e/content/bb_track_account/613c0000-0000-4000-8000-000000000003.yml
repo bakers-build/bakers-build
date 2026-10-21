@@ -1,0 +1,17 @@
+# Project-level billing-account default for the API home fixture project.
+_meta:
+  version: '1.0'
+  entity_type: bb_track_account
+  uuid: 613c0000-0000-4000-8000-000000000003
+  depends:
+    b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
+default:
+  name:
+    -
+      value: "API home billing"
+  project_id:
+    -
+      entity: "b76b40df-436c-5d3d-9bf1-5745fa621a7a"
+  is_default:
+    -
+      value: true

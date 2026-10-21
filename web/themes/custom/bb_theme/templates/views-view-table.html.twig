@@ -1,0 +1,234 @@
+{# EVERY TABLE VIEW IN THIS THEME, AS `bb_theme:table`.
+
+   WHY A STYLE TEMPLATE AND NOT A ROW ONE. `bb_theme:table` renders the header
+   and the body together and keys every cell against its column, so a component
+   instantiated once per RESULT ROW cannot emit a column set at all (spec F2).
+   Core's `table` style already runs its template once per result set, which is
+   exactly the level that binding needs — so this file is the whole binding and
+   no bakers code sits at the style level to reach it.
+
+   AND WHY THERE IS NO PHP LEFT AT ALL. The human's instruction of 2026-09-03:
+   *"der hook muss weg. die componente sollte automatisch passen ohne das man
+   was altern muss."* `TicketTableHooks` derived three things and nothing
+   replaced it, generic or otherwise. Two of the three were never ticket-
+   specific and are derived HERE, from `views_view_table`'s own variables:
+
+     - `columns` from `header` — the key, `content` as the label, `url` when
+       Views made the column sortable, `attributes['aria-sort']` for which way,
+       and `options.info[key].align` for a numeric column. All of it is already
+       in the variables, which is why no hook had to put it there.
+     - the cells, unchanged, including the one em-dash rule below.
+
+   The third — the row's status accent — is HALF derived here, and the split is
+   the point. A `state → running|attention|wait` map in a template that also
+   renders `user_admin_people` would be the coupling the 2026-09-03 deletion
+   removed: the state vocabulary is a ticket's, it is declared per state in
+   `bb_core.workflows.yml`, and Twig cannot reach the workflow plugin manager
+   at all. So the ROW ENTITY is asked what it IS — `getBbPhase`, one ask,
+   guarded — and this file decides what that LOOKS LIKE.
+
+   THE RAIL MAP LIVES HERE, and it was moved out of PHP deliberately. It sat
+   first as a private `state → accent` table on the ticket and then for one
+   day as `TypeWorkflows::accentForPhase()`; both returned a `bb_theme:table`
+   vocabulary word — `running`, `attention` — out of the model layer, which is
+   an entity making a rendering decision on the design system's behalf. The
+   map belongs to the renderer:
+
+     - a conductor on the row → the `running` (teal) rail.
+     - workflow phase `review` → `attention` (amber), and review wins even
+       when a conductor is also set: somebody has to look.
+     - otherwise NOTHING. `wait` additionally tints the whole row and is
+       unused here: an unassigned ticket is already named in the assignee
+       cell. `idle` renders the same transparent rail an ABSENT accent
+       renders, so emitting it would only restate the component's default.
+
+   There is NO INTERFACE behind the ask: an entity with no workflow has no
+   phase, and the `|default('')` below is what makes declining legal.
+
+   THERE IS NO ROW TARGET, AND ITS DELETION IS THE SECOND HALF OF BB-413.
+   This file used to ask `getBbRowUrl` as well and carry the answer as
+   `data-row-url` on the `<tr>`. Measured before deleting it: no JavaScript and
+   no CSS in this theme read that attribute, and its only readers were the tests
+   asserting it plus two Playwright steps using `[data-row-url]` as a row
+   COUNTER — which now count `.table__row`. The visible affordance of a row was
+   always the identifier cell's link, rendered by that column's own formatter,
+   and it is untouched. What went with it is the ONE argument that made a
+   table-row interface look unavoidable: `TwigSandboxPolicy` allows only `id`,
+   `label`, `bundle`, `get`, `toString`, `__toString` and the `get`/`has`/`is`
+   prefixes, so `toUrl()` was unreachable from here — probed 2026-09-03,
+   `{{ entity.toUrl().toString() }}` answers `Twig\Sandbox\SecurityError:
+   Calling "toUrl" method on a "Drupal\bb_core\Entity\BbTicket" object is
+   not allowed`. With no URL to fetch, that constraint no longer decides
+   anything except the NAME of the one method still asked here.
+
+   `|default('')` IS WHAT MAKES "ASK ANY ENTITY" LEGAL. A missing method throws
+   under `strict_variables` and returns NULL without it; measured both ways on
+   2026-09-03, `{{ e.getBbRowAccent|default('NONE') }}` answers `NONE` in both
+   configurations while the bare access throws in one. (That was the method's
+   old name; the guard is the same for `getBbPhase`.) So every ask is guarded,
+   and the props are OMITTED rather than emptied when the answer is nothing —
+   `accent` declares an enum, and `''` would fail the component's validator
+   where an absent key falls back to the transparent rail.
+
+   WHAT VIEWS OWNS AND WHAT THIS FILE OWNS. Views owns the column set, the
+   per-field access check, the sort affordance and each column's FACE (through
+   that field's formatter, which may build a cell array and render it through
+   the `cell()` macro this component declares — so the faces stay one code path,
+   spec F14). This file owns exactly one thing: putting each column's finished
+   output into the `rendered` cell that column asked for.
+
+   ONE EM-DASH RULE, NOT NINE. Spec F13 measured that
+   `ViewsThemeHooks::preprocessViewsViewTable()` only appends to a column's
+   `content` when `trim($field_output) != ''`, so a column with no value
+   contributes NOTHING and absence is detectable here. That is what lets a
+   single rule serve every empty column instead of seven `dash()` equivalents in
+   seven formatters — and `team`, the one ticket column with no data path at all
+   (spec F5: `bb_project` carries no `teams` field and BB-356 owns whether
+   it should), reads the same faint em-dash as an unset conductor rather than a
+   different kind of absence. The one column that is NAMED rather than dashed is
+   the ticket assignee: `Unassigned` is a state somebody acts on, so its
+   formatter renders for an empty item list and this rule never sees it.
+
+   THE RULE IS `|striptags` AND NOT A BARE `|trim`, AND THAT IS A MEASUREMENT
+   RATHER THAN CAUTION. F13's absence signal is only clean while `twig.config`
+   `debug` is FALSE. With theme debug on — which is every DDEV and every
+   developer's local — `FieldPluginBase::theme()` renders each field through
+   `views-view-field.html.twig`, and the theme-debug comments make
+   `trim($field_output) != ''` true for an EMPTY field, so Views appends content
+   for every column and F13's signal is gone. Measured on this site: an empty
+   `priority` arrives 247 bytes long and strips to 0, where `state` strips to 8.
+   A bare `|trim` therefore renders a blank cell instead of the em-dash on every
+   local, which is the same "empty cell that looks like missing data" the
+   component's own macro documentation warns about. Stripping tags makes the
+   test blind to the comments and identical in both configurations, and
+   `TicketsViewTableTest` runs with debug ON so the naive rule cannot come back.
+
+   AND IT KEEPS THE TAGS THAT ARE CONTENT WITHOUT BEING TEXT. Stripping ALL of
+   them asks "is there text", which is a narrower question than "is there
+   anything" — and the answer is wrong for a cell that IS a control. Measured on
+   the case that motivated the rule, and that case is GONE: the retired
+   `views.view.bb_group_members` had a `bb_group_member_remove` column whose
+   whole output was a submit carrying an `aria-label` and a
+   `data-bakers-member-uid` and no text node, so a bare `|striptags` emptied it
+   and this rule drew the em-dash OVER the only affordance the row had. Four
+   browser scenarios failed on it.
+
+   THE RULE STAYS, AND ITS SUBJECT IS NOW EVERY OTHER TABLE VIEW. BB-435
+   retired that view and its field plugin — the members surface is a form that
+   renders its own items, so no control is smuggled through a Views field any
+   more — and `GroupMembersRemoveCellTest`, which pinned the rule from that end,
+   retired with the mechanism rather than being kept green against nothing. What
+   did not change is why the rule is right: this template binds EVERY table view
+   from one place, with no per-view seam, so the next field to output a control
+   with no text node would hit exactly the same em-dash. Keeping a rule whose
+   original subject is gone is the cheap half of that bet.
+
+   THE ALLOWED LIST IS "CONTENT IN ITSELF", NOT "EVERY TAG", and the exclusions
+   carry the meaning. `<a>`, `<button>`, `<input>`, `<select>` and `<textarea>`
+   are things a person can act on; `<img>` and `<svg>` are things a person can
+   see. A `<div>` or a `<span>` holding no text is not content — it is the empty
+   cell this rule exists to catch — so admitting wrappers would put the blank
+   cell back under a different name. PHP's `strip_tags()` drops HTML comments
+   unconditionally, with an allowed list exactly as without one ("this is
+   hardcoded and can not be changed with allowed_tags"); probed on PHP 8.4.20,
+   a theme-debug comment block strips to whitespace under both forms, which is
+   what keeps the two configurations identical.
+
+   WHAT THIS RULE CANNOT SEE is a hidden input, because `strip_tags()` reads
+   tag NAMES and not attributes. A form whose only elements are FormBuilder's
+   own `form_id`, `form_token` and `form_build_id` therefore counts as content
+   while showing nothing — so a field that has decided NOT to draw a control
+   must not hand one over anyway. `GroupMemberRemove::render()` used to be where
+   that was answered; BB-435 deleted it with its view, so the obligation now
+   sits on whichever field next chooses to emit a form, and it is recorded here
+   because nothing else states it.
+
+   IT ITERATES `columns` AND NOT `row.columns`. The order is the TABLE'S and a
+   row does not get to choose one, and reading the header's keys is also what
+   guarantees a cell per column on every row: a column missing from a row's own
+   map would otherwise arrive at the component as an absent cell, which renders
+   an empty `<td>` and reads as data rather than as absence.
+
+   `result` AND `rows` SHARE THEIR KEYS, which is what lets a row reach the
+   entity that produced it. `ViewsThemeHooks::preprocessViewsViewTable()` moves
+   the raw result set aside as `result` and rebuilds `rows` keyed by the same
+   `$num` — *"Store rows so that they may be used by further preprocess
+   functions"* — so `result[index]` is the `ResultRow` behind `rows[index]`.
+   `_entity` is what both the SQL entity query and `SearchApiQuery::addResults()`
+   write; `_object` is the datasource's typed-data adapter and is the fallback,
+   because a Search API row whose original object could not be loaded carries
+   neither. A row standing for no entity at all is legal and simply has no
+   target and no accent.
+
+   `{% set %}` IS THE CAPTURE, AND IT IS MEASURED RATHER THAN IDIOMATIC. Views
+   hands each column a list of `{ separator, field_output }` render arrays; a
+   `{% set %}` block yields a `\Twig\Markup`, which `TwigExtension::
+   escapeFilter()` keeps intact (`TwigExtension.php:450`) so the cell prints it
+   unescaped and exactly once. A plain string in the same field IS escaped and
+   would print tag soup, and a render ARRAY is rejected outright by the
+   component's validator — which is what forces the output to be rendered before
+   it is mapped (spec F12, probe 1d).
+
+   THE ONE SHAPE THIS FILE DOES NOT SERVE, stated rather than discovered. A
+   table view whose every field label is empty gets `header = []` from Views
+   ("Hide table header if all labels are empty"), and with no header there are
+   no column keys, so such a table would render as rows of nothing. None of the
+   five `style: table` views in this tree is like that, and the honest fix if
+   one ever is would be to give it labels rather than to guess a column set
+   here. The same applies to the `empty_table` option, which none of the five
+   enables: its placeholder row is keyed `0` and has no result behind it.
+
+   @see \Drupal\bb_core\Entity\BbTicket::getBbPhase()
+   @see \Drupal\bb_core\Workflow\TypeWorkflows::phase()
+   @see web/themes/custom/bb_theme/components/table/table.twig
+#}
+{# Occupancy teal, review amber. See the header. #}
+{# What counts as content when there is no text. See the header. #}
+{% set bb_content_tags = '<a><button><img><input><select><svg><textarea>' %}
+{% set bb_columns = [] %}
+{% for key, column_header in header %}
+  {% set column = {
+    'key': key,
+    'label': column_header.content|default('') ~ '',
+  } %}
+  {%- if column_header.url|default('') -%}
+    {%- set aria = column_header.attributes['aria-sort']|default('') ~ '' -%}
+    {% set column = column|merge({
+      'sort': aria == 'ascending' ? 'asc' : (aria == 'descending' ? 'desc' : 'none'),
+      'url': column_header.url ~ '',
+    }) %}
+  {%- endif -%}
+  {%- if options.info[key].align|default('') == 'views-align-right' -%}
+    {% set column = column|merge({ 'num': true }) %}
+  {%- endif -%}
+  {% set bb_columns = bb_columns|merge([column]) %}
+{% endfor %}
+
+{% set component_rows = [] %}
+{% for index, row in rows %}
+  {% set cells = {} %}
+  {% for column in bb_columns %}
+    {%- set markup -%}
+      {%- for content in row.columns[column.key].content|default([]) -%}{{ content.field_output }}{%- endfor -%}
+    {%- endset -%}
+    {% set cells = cells|merge({
+      (column.key): markup|striptags(bb_content_tags)|trim is empty
+        ? { 'kind': 'text', 'value': '—', 'emphasis': 'faint' }
+        : { 'kind': 'rendered', 'markup': markup }
+    }) %}
+  {% endfor %}
+
+  {% set source = result[index]|default(null) %}
+  {% set subject = source._entity|default(source._object.value|default(null)) %}
+  {% set component_row = { 'cells': cells } %}
+  {%- if subject -%}
+    {%- set phase = subject.getBbPhase|default('') ~ '' -%}
+    {%- set row_accent = phase == 'review' ? 'attention' : (subject.hasBbConductor ? 'running' : '') -%}
+    {% if row_accent %}{% set component_row = component_row|merge({ 'accent': row_accent }) %}{% endif %}
+  {%- endif -%}
+  {% set component_rows = component_rows|merge([component_row]) %}
+{% endfor %}
+{{ include('bb_theme:table', {
+  columns: bb_columns,
+  rows: component_rows,
+}, with_context = false) }}

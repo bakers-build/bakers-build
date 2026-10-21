@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ * Field and run access restrictions for access regression tests.
+ */
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
+
+/**
+ * Implements hook_entity_field_access().
+ */
+function bb_property_access_test_entity_field_access(string $operation, FieldDefinitionInterface $definition): AccessResultInterface {
+  $denied = \Drupal::state()->get('bb_property_access_test.denied', []);
+  return in_array($definition->getName(), $denied[$operation] ?? [], TRUE)
+    ? AccessResult::forbidden()->setCacheMaxAge(0)
+    : AccessResult::neutral();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access() for bb_run.
+ *
+ * Denies viewing selected runs per entity only; query access still lists them.
+ */
+function bb_property_access_test_bb_run_access(EntityInterface $run, string $operation): AccessResultInterface {
+  $denied = \Drupal::state()->get('bb_property_access_test.denied_runs', []);
+  return $operation === 'view' && in_array((int) $run->id(), $denied, TRUE)
+    ? AccessResult::forbidden()->setCacheMaxAge(0)
+    : AccessResult::neutral();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access() for bb_comment.
+ *
+ * Denies viewing selected comments per entity only; query access still
+ * lists them.
+ */
+function bb_property_access_test_bb_comment_access(EntityInterface $comment, string $operation): AccessResultInterface {
+  $denied = \Drupal::state()->get('bb_property_access_test.denied_comments', []);
+  return $operation === 'view' && in_array((int) $comment->id(), $denied, TRUE)
+    ? AccessResult::forbidden()->setCacheMaxAge(0)
+    : AccessResult::neutral();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access() for bb_ticket.
+ *
+ * Denies viewing selected tickets per entity only.
+ */
+function bb_property_access_test_bb_ticket_access(EntityInterface $ticket, string $operation): AccessResultInterface {
+  $denied = \Drupal::state()->get('bb_property_access_test.denied_tickets', []);
+  return $operation === 'view' && in_array((int) $ticket->id(), $denied, TRUE)
+    ? AccessResult::forbidden()->setCacheMaxAge(0)
+    : AccessResult::neutral();
+}

@@ -1,0 +1,42 @@
+component: bb_theme:nav
+name: Settings open
+variant: settings_open
+props:
+  items:
+    - title: My work
+      url: /admin/bakers/work
+      icon: ticket
+      in_active_trail: true
+      below: []
+    - title: Projects
+      url: /admin/bakers/project
+      icon: project
+      in_active_trail: false
+      below: []
+    - title: Teams
+      heading: true
+      icon: team
+      open: true
+      action:
+        icon: plus
+        label: New team
+      below:
+        - title: Team A
+          url: /admin/bakers/team/team-a
+          in_active_trail: false
+          mark:
+            initials: TA
+            color: running
+        - title: Team B
+          url: /admin/bakers/team/team-b
+          in_active_trail: false
+          mark:
+            initials: TB
+            color: lease
+    - title: Settings
+      url: /admin/bakers/settings
+      icon: settings
+      in_active_trail: false
+      below: []
+  collapsed: false
+  expanded: true

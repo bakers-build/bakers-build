@@ -1,0 +1,18 @@
+# Isolated one-slot capacity refusal fixture: reported load 0, counted occupancy 1.
+_meta:
+  version: '1.0'
+  entity_type: bb_machine
+  uuid: b0d04b55-da86-57d1-afb9-b47856fc6c2c
+  depends:
+    25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
+default:
+  name:
+  - value: claim-capacity-host
+  host_key:
+  - value: claim-capacity-host
+  max_parallel:
+  - value: 1
+  current_load:
+  - value: 0
+  owner_user_id:
+  - entity: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb

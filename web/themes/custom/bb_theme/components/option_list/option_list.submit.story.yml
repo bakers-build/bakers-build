@@ -1,0 +1,59 @@
+# THE SUBMIT MODE — every option row IS a named submit trigger of the enclosing form.
+#
+# The subject is a membership role, which is the shape that asked for this mode (BB-435). A role is
+# reversible, so `action-pattern.md` › *Inline edit* applies: the pick IS the write, no save button and
+# no confirmation. `option_picker`'s `inline` variant states that it emits NO hidden inputs for exactly
+# that reason — there is no later submit for a carried value to travel to — so a value-carrying
+# `<input>` is the wrong shape for it and the row has to submit now instead. That is what `submit_name`
+# does, and it is why this is a third mode rather than a flag on the `form` one: `form` carries a value
+# somebody else submits later, this row submits it itself.
+#
+# READ THE `name` AND `value` PAIR IN THE OUTPUT — that pair is the whole server contract. Both rows
+# carry `name="role_7"` and differ only in `value`, which is the mechanism a form's ordinary buttons
+# already use: several controls sharing one name, distinguished by the value of the one that was
+# pressed. Nothing new is invented to read the pick back.
+#
+# `formnovalidate` IS ON BOTH ROWS. This control submits one field's value while sitting in a form that
+# may hold another field's constraint — on the members surface, a required person picker. The browser
+# refuses a submit for an empty required field before any script sees the event, so without the
+# attribute an unrelated empty field would silently disable every row here.
+#
+# NO CLEAR ROW, and that is the subject talking rather than a gap in the mode. A project membership's
+# role is a two-state pick: `member` is `role_type: required`, so `OgMembership::preSave()` revokes it
+# and an empty `roles` array IS a member — "no role" is already one of the two options and there is
+# nothing to clear TO. The clear row's own contract is untouched by this mode anyway; it is an ADDRESS
+# and carries no control in any mode.
+#
+# `member` IS A SENTINEL, NOT AN EMPTY STRING, and the difference is measured rather than tidy. The
+# value a row submits is what identifies the pick, and an empty value cannot: a form's button
+# identification compares the submitted value against the control's own, so `value=""` collides with
+# "this control was not pressed" and with every other empty-valued row. It is also unrenderable on the
+# host — a submit element's value is its label there — so the row would lose its name. The server
+# therefore reads `member` and stores an EMPTY `roles` array, which is the same statement written where
+# it can be read.
+#
+# NOTHING SUBMITS HERE. Storybook posts nowhere and never calls `Drupal.attachBehaviors`, so this story
+# proves the MARKUP of a submit row — the tag, the name/value pair, the attribute, the kept
+# `role="option"`/`aria-selected` semantics. That a pick becomes a stored role is a runtime property and
+# the browser suite is what observes it.
+component: bb_theme:option_list
+name: Submit
+variant: submit
+props:
+  name: role
+  multiple: false
+  submit_name: role_7
+  clearable: false
+  clear_label: ""
+  clear_url: ""
+  creatable: false
+  create_label: ""
+  options:
+    - value: bb_project-bb_project-lead
+      label: Lead
+      description: Administers the project
+      selected: false
+    - value: member
+      label: Member
+      description: The default; an empty roles array IS this
+      selected: true

@@ -1,0 +1,30 @@
+component: bb_theme:active-filters
+name: Default
+props:
+  variant: ''
+  label: Chosen facets
+  facets:
+    - field: Project
+      values:
+        - bakers.build Platform
+      remove_url: '?state[0]=coding&label[0]=backend'
+    - field: State
+      values:
+        - coding
+        - review
+      remove_url: '?project[0]=1&label[0]=backend'
+    - field: Labels
+      operator: includes any of
+      values:
+        - backend
+        - ui
+  empty_label: All tickets
+slots:
+  meta:
+    - type: component
+      component: bb_theme:collection-position
+      props:
+        from: 1
+        to: 8
+        total: 11
+        noun: tickets

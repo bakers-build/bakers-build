@@ -1,0 +1,35 @@
+component: bb_theme:active-filters
+name: Nothing chosen
+props:
+  # STATED BECAUSE THE ADDON WOULD OTHERWISE PICK A VARIANT FOR THIS STORY.
+  # `storybook-addon-sdc` builds a component's base args as
+  # `...content.variants && { variant: Object.keys(content.variants)[0] }` and
+  # spreads them into every generated story, so a story that omits `variant`
+  # renders the FIRST DECLARED variant instead of the default one. With
+  # `chips_only` declared, this story rendered nothing at all: that variant
+  # emits only chip sentences, and this story has no facets. The same behaviour
+  # already breaks `table--default`, `table--delivery` and `table--unassigned`.
+  #
+  # THIS KEY IS THE ONE HAND EDIT IN BB-413, and it is stated rather than
+  # hidden. WORKFLOW.md binds every story to `designbook:debo`, and `debo`'s
+  # `design-component` workflow writes exactly two story files —
+  # `<component>.default.story.yml` and `<component>.<variant-id>.story.yml`.
+  # There is no workflow that writes an arbitrarily named story, so this file is
+  # unreachable by the tool. The alternative was to leave a story that renders
+  # an empty page, which is worse than a recorded exception.
+  variant: ''
+  label: Chosen facets
+  # The unfiltered case, and the reason `empty_label` exists: with no chips the
+  # strip would be blank, and a blank strip above a table reads as a rendering
+  # fault rather than as "you are looking at everything".
+  facets: []
+  empty_label: All tickets
+slots:
+  meta:
+    - type: component
+      component: bb_theme:collection-position
+      props:
+        from: 1
+        to: 8
+        total: 11
+        noun: tickets

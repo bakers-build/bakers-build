@@ -1,0 +1,8 @@
+name: Island test fixtures
+description: 'Fixtures for the island kernel tests.'
+type: module
+package: Testing
+core_version_requirement: ^11.3
+dependencies:
+  - island:island
+hidden: true

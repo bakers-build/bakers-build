@@ -1,0 +1,6 @@
+component: bb_theme:note
+name: Default
+props:
+  lead: Set
+slots:
+  body: This is claimed at the next poll and an agent run starts on cw-framework. Clear the field to let it wait for a human.

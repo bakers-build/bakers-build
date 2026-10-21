@@ -1,0 +1,23 @@
+component: bb_theme:option_list
+name: Single
+variant: single
+props:
+  name: priority
+  multiple: false
+  input_name: ''
+  clearable: true
+  clear_label: No priority
+  clear_url: ''
+  options:
+    - value: p1
+      label: P1
+      description: Urgent
+      selected: false
+    - value: p2
+      label: P2
+      description: Normal
+      selected: true
+    - value: p3
+      label: P3
+      description: Low
+      selected: false

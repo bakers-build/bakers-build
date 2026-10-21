@@ -1,0 +1,23 @@
+# bakers.build team OG role: owner. Governs the team itself (who may join, its
+# settings) through OG's generic `update group` / `manage members`, scoped to
+# the team by OG's per-group-type role resolution. `edit bb_project` is the
+# same grant the team lead rank carries for projects that name this team.
+#
+# Shipped in its saved form, key for key.
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_team-bb_team-owner
+label: 'Owner'
+weight: 2
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions:
+  - 'edit bb_project'
+  - 'manage members'
+  - 'update group'
+role_type: standard

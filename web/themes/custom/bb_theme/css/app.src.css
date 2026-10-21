@@ -1,0 +1,77 @@
+/* Document-level defaults first, so @theme below sees them. This file used to map
+   Gin's custom properties onto Tailwind; that bridge is gone and the theme owns
+   its token set outright (BB-329). */
+@import "./tailwind.config.pcss";
+
+/* Designbook-generated design tokens (from design-tokens.yml). */
+@import "./tokens/index.src.css";
+
+/* Keep Tailwind in its own layer for stable cascade ordering. */
+@import "tailwindcss" source(none);
+
+/* Scan the theme's templates, components and scripts. */
+@source "../templates/**/*.{twig,js}";
+@source "../components/**/*.{twig,js,yml}";
+@source "../js/**/*.{js}";
+
+/* Off-canvas cascade fix — INTENTIONALLY UNLAYERED (top level, not in @layer).
+   Our utilities live in Tailwind v4 `@layer utilities`; Drupal core's off-canvas
+   reset (`#drupal-off-canvas-wrapper …`) is unlayered, and unlayered author
+   styles beat any @layer regardless of specificity — so bakers components render
+   unstyled inside the off-canvas tray. This rule is also unlayered and
+   out-specifies the reset; `all: revert-layer` rolls the cascaded value back to
+   the previous layer, re-exposing the @layer utility values. Scoped to any
+   bb_theme SDC in the tray, so it is a no-op wherever there is no
+   `#drupal-off-canvas` wrapper (the full-page view). Keep it OUTSIDE @layer or it
+   loses to the reset again. */
+#drupal-off-canvas [data-component-id^="bb_theme:"],
+#drupal-off-canvas [data-component-id^="bb_theme:"] * {
+  all: revert-layer;
+}
+
+/* Rail collapse lives on <html>, not on the rail island. Every boosted
+   nav click OOB-swaps the whole sidebar (IslandBoost prepends the rail's
+   own id), so a class or Alpine state on <aside> is replaced with the
+   server default (expanded). html is never an island. w-14 = 3.5rem. */
+html[data-sidebar-collapsed] [data-collapse-hidden] {
+  display: none !important;
+}
+html[data-sidebar-collapsed] [data-sidebar] {
+  width: 3.5rem !important;
+}
+html[data-sidebar-collapsed] [data-sidebar] > div {
+  justify-content: center;
+  padding-inline: 0.5rem;
+}
+html[data-sidebar-collapsed] [data-navigation] a {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+/* Autosave toast: `fixed` would otherwise keep a [hidden] node on screen. */
+[data-form-autosave-status][hidden] {
+  display: none !important;
+}
+
+/* BB-378: the two `ticket_detail` off-canvas rules that used to sit here are GONE
+   with the component. They existed only to correct that one card's re-exposed `mt-6`
+   inside the tray (BB-48 / BB-198) and to give the tray a compensating top
+   padding, both selectors naming `bb_theme:ticket_detail` explicitly. `ticket_detail`
+   is not reachable from any Designbook scene, so it was deleted together with its
+   Drupal wiring; a rule keyed on a component that no longer exists is dead bytes, and
+   the `:has()` one would have kept adding a top padding to every tray that happened to
+   match nothing. The generic off-canvas layer reset above is UNTOUCHED — it is scoped to
+   `bb_theme:` as a prefix, not to this component, and every other SDC in a tray still
+   needs it. */
+
+/* Alpine removes x-cloak once it has initialised the element. Without this the
+   pre-boot frame shows the unbound markup. The theme renders every state
+   server-side, so this hides only the gap between paint and boot. */
+[x-cloak] {
+  display: none !important;
+}
+
+/* The htmx-request loading spinner moved into button.twig (BB-661 review):
+   token-discipline check 5 reserves this file for cross-cutting rules no
+   component's own Twig can express, and `.htmx-request` is scoped to one
+   component (`button`), so it belongs there as arbitrary-variant utilities. */

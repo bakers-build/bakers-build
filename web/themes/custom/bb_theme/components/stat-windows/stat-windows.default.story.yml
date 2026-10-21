@@ -1,0 +1,12 @@
+component: bb_theme:stat-windows
+name: Default
+props:
+  label: My closed tickets
+  windows:
+    - label: Last 24 hours
+      value: '3'
+    - label: Last 7 days
+      value: '18'
+    - label: Last 30 days
+      value: '64'
+  source: bb_ticket.closed_date

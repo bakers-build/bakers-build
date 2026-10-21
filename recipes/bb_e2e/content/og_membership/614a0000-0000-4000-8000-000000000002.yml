@@ -1,0 +1,31 @@
+# Dedicated personal-time contributor; no project-edit or administrator grant.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 614a0000-0000-4000-8000-000000000002
+  bundle: default
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+    614a0000-0000-4000-8000-000000000001: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_workspace
+  entity_bundle:
+    -
+      value: bb_workspace
+  entity_id:
+    -
+      value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
+  uid:
+    -
+      entity: "614a0000-0000-4000-8000-000000000001"
+  roles:
+    - target_id: bb_workspace-bb_workspace-contributor
+  state:
+    -
+      value: active

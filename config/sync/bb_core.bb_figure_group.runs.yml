@@ -1,0 +1,19 @@
+uuid: 7ace3a5f-5348-490f-927f-5b3d64b48bd1
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_figure.project_runs_trend
+  - bb_core.bb_figure.team_runs_trend
+  - bb_core.bb_figure.team_user_runs_trend
+  - bb_core.bb_figure.user_runs_trend
+_core:
+  default_config_hash: bakers548_runs
+id: runs
+label: Runs
+weight: 15
+figures:
+- user_runs_trend
+- team_user_runs_trend
+- team_runs_trend
+- project_runs_trend

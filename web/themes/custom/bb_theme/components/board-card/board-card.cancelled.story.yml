@@ -1,0 +1,8 @@
+component: bb_theme:board-card
+name: Cancelled
+props:
+  identifier: BOARD-08
+  title: Cancelled experiment
+  state: cancelled
+  status: idle
+  blocked: false

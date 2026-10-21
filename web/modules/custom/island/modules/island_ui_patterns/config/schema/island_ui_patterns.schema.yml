@@ -1,0 +1,21 @@
+island.configuration.ui_patterns_component:
+  type: mapping
+  label: 'UI Patterns island configuration'
+  mapping:
+    component:
+      type: ignore
+      label: 'UI Patterns component sources'
+    boost:
+      type: boolean
+      label: 'Boost links'
+    swap_target:
+      type: string
+      label: 'Swap target'
+    target_placement:
+      type: string
+      label: 'Target placement'
+    also_placements:
+      type: sequence
+      label: 'Also placements'
+      sequence:
+        type: string

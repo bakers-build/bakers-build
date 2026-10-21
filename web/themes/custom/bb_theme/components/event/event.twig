@@ -1,0 +1,70 @@
+{# ONE ENTRY OF AN ACTIVITY TIMELINE: who, an optional tag, when, a rich body.
+
+   THE TAG IS A FREE STRING, so the two maps below are a set of KNOWN values and
+   not a list of permitted ones. A tag the maps do not carry falls to the neutral
+   accent by `|default`, which is why nothing here has to be kept in step with
+   any other layer's vocabulary.
+
+   THE UNTAGGED CASE IS THE ABSENT TAG, not a named one. The maps used to carry a
+   branch for one source's default type value — an entity's default hard-coded
+   into a display — and it did two jobs badly: it made this template know that
+   vocabulary, and it made a DROPPED prop indistinguishable from a deliberately
+   untagged entry, because both landed on the same branch. Now an absent tag
+   renders no tag, and every tag that arrives is shown as itself. #}
+{% set accent_map = {
+  'spec': 'text-state-lease',
+  'plan': 'text-state-lease',
+  'debug_diagnose': 'text-state-attention',
+  'summary': 'text-state-running',
+  'acceptance': 'text-state-unassigned',
+  'scenario': 'text-state-lease',
+  'test': 'text-state-offline',
+  'failed': 'text-state-attention'
+} %}
+{% set rail_map = {
+  'spec': 'before:bg-state-lease',
+  'plan': 'before:bg-state-lease',
+  'debug_diagnose': 'before:bg-state-attention',
+  'summary': 'before:bg-state-running',
+  'acceptance': 'before:bg-state-unassigned',
+  'scenario': 'before:bg-state-lease',
+  'test': 'before:bg-state-offline',
+  'failed': 'before:bg-state-attention'
+} %}
+{% set typed = tag is not empty %}
+{% set root_classes = ['event', 'group', 'relative', 'flex', 'gap-[10px]', 'pl-[14px]', 'py-[10px]', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-[2px]', 'before:rounded-[2px]', rail_map[tag]|default('before:bg-border')] %}
+<article{{ (attributes ?: create_attribute()).addClass(root_classes).setAttribute('data-tag', tag|default('')) }}>
+  {{ include('bb_theme:person', { variant: 'compact', initials: author_initials, color: author_color|default(role == 'agent' ? 'running' : 'lease'), size: 'md' }, with_context = false) }}
+  <div class="flex-1 min-w-0 flex flex-col gap-[4px]">
+    <div class="flex items-center gap-[8px] flex-wrap">
+      <span class="text-body font-semibold text-text">{{ author_name }}</span>
+      {% if role %}{{ include('bb_theme:badge', { label: role, tone: 'neutral' }, with_context = false) }}{% endif %}
+      {% if typed %}<span class="text-eyebrow font-semibold uppercase tracking-[0.04em] {{ accent_map[tag]|default('text-text-light') }}">{{ tag }}</span>{% endif %}
+      <span class="flex-1"></span>
+      {% if timestamp %}<time class="text-caption text-text-faint font-mono tabular-nums whitespace-nowrap">{{ timestamp }}</time>{% endif %}
+    </div>
+    {#- THE PROSE TREATMENT IS NOT HERE ANY MORE. It used to be a fifteen-
+        declaration blob on this div, which made this the only place in the theme
+        that knew what a rich body looks like — and the About zone of the detail
+        screen, rendering the same field type, therefore looked different for no
+        reason anybody had decided. `rich-text` owns it now, so the two agree by
+        construction rather than by two people remembering the same string. #}
+    {#- THE STRUCTURED LEAD: a caller that knows facts, not prose, gets the
+        same rich-text treatment without building markup itself. #}
+    {% if not body and (subject_label or statement) %}
+      {% set parts = (facts|default([]))|map(fact => fact|e)|merge((links|default([]))|filter(link => link.url is defined)|map(link => '<a href="' ~ link.url|e ~ '">' ~ link.title|e ~ '</a>')) %}
+      {% set body %}
+<p>{% if subject_url %}<a href="{{ subject_url }}" class="font-semibold">{{ subject_label }}</a>{% elseif subject_label %}<strong>{{ subject_label }}</strong>{% endif %}{% if statement %} {{ statement }}{% endif %}</p>
+{% if parts is not empty %}<p class="text-caption text-text-light">{{ parts|join(' · ')|raw }}</p>{% endif %}
+{% if detail %}<pre><code>{{ detail }}</code></pre>{% endif %}
+      {% endset %}
+    {% endif %}
+    {% if body %}
+      {#- The table scroll region's name ties the body to its entry: the tag
+          and author this entry already displays; an untagged entry falls back
+          to Note. Two entries with the same tag and author share a name. #}
+      {% set body_label = (tag|default('Note')) ~ ' by ' ~ author_name %}
+      {{ include('bb_theme:rich-text', { body: body, label: body_label }, with_context = false) }}
+    {% endif %}
+  </div>
+</article>

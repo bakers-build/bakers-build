@@ -1,0 +1,229 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - island.app.bakers
+    - system.menu.bakers-account
+  enforced:
+    config:
+      - island.app.bakers
+  module:
+    - bb_api_key
+    - bb_core
+    - bb_ticket_trigger
+    - bb_track
+    - island_ui_patterns
+    - ui_patterns
+  theme:
+    - bb_theme
+id: bb_shell_account
+label: 'bakers.build application shell (account area)'
+app: bakers
+layout: 'bb_theme:shell'
+layout_settings: {  }
+placements:
+  # The account-area twin of `bb_shell`, matched by the
+  # `bb_user_area_route` condition and weighted ahead of `bb_shell`, whose
+  # `/user/*` path also covers these routes. `nav`'s items come from the same
+  # `bb_menu` source over the `bakers-account` menu. The page header also
+  # carries the API key create action, which renders only on the API key
+  # list. Everything else matches `bb_shell`; no `bakers.team.created` refresh
+  # event, since teams are not created from an account-area page.
+  shell_rail:
+    plugin_id: ui_patterns_component
+    slot: sidebar
+    weight: 0
+    enabled: true
+    configuration:
+      component:
+        component_id: 'bb_theme:sidebar'
+        variant_id: null
+        props:
+          label:
+            source_id: textfield
+            source:
+              value: 'Workspace navigation'
+        slots:
+          workspace:
+            sources:
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:account_switcher'
+                    variant_id: null
+                    props:
+                      multiple:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_label:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_initials:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_color:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                      workspace_picture:
+                        source_id: bb_workspace_switcher
+                        source: {  }
+                    slots:
+                      workspace_panel:
+                        sources:
+                          - source_id: bb_workspace_switcher_panel
+                            source: {  }
+          navigation:
+            sources:
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:nav'
+                    variant_id: null
+                    props:
+                      label:
+                        source_id: textfield
+                        source:
+                          value: Primary
+                      variant:
+                        source_id: textfield
+                        source:
+                          value: main
+                      items:
+                        source_id: bb_menu
+                        source:
+                          menu: bakers-account
+                    slots: {  }
+          actions:
+            sources:
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:person'
+                    variant_id: null
+                    props:
+                      variant:
+                        source_id: textfield
+                        source:
+                          value: compact
+                      display_name:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      initials:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      color:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      picture:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      url:
+                        source_id: bb_current_user_person_props
+                        source: {  }
+                      size:
+                        source_id: textfield
+                        source:
+                          value: md
+                    slots: {  }
+                _weight: '0'
+              - source_id: component
+                source:
+                  component:
+                    component_id: 'bb_theme:mode_toggle'
+                    variant_id: null
+                    props:
+                      label:
+                        source_id: textfield
+                        source:
+                          value: 'Choose theme'
+                    slots: {  }
+                _weight: '1'
+      boost: true
+      target_placement: shell_content_island
+      also_placements:
+        - shell_page_header
+    data: {  }
+  shell_page_header:
+    plugin_id: ui_patterns_component
+    events:
+      - bakers.entity.renamed
+    slot: content
+    weight: 1
+    enabled: true
+    configuration:
+      component:
+        component_id: 'bb_theme:page_header'
+        variant_id: null
+        props:
+          title:
+            source_id: bb_page_title
+            source: {  }
+          description:
+            source_id: bb_page_header_description
+            source: {  }
+        slots:
+          leading:
+            sources:
+              - source_id: bb_entity_page_header_mark
+                source: {  }
+          breadcrumb:
+            sources:
+              - source_id: bb_run_breadcrumb
+                source: {  }
+              - source_id: bb_comment_breadcrumb
+                source: {  }
+          tabs:
+            sources:
+              - source_id: block
+                source:
+                  plugin_id: local_tasks_block
+          actions:
+            sources:
+              - source_id: bb_ticket_create_action
+                source: {  }
+              - source_id: bb_project_create_action
+                source: {  }
+              - source_id: bb_ticket_template_create_action
+                source: {  }
+              - source_id: bb_ticket_trigger_create_action
+                source: {  }
+              - source_id: bb_group_create_action
+                source: {  }
+              - source_id: bb_worklog_create_action
+                source: {  }
+              - source_id: bb_api_key_create_action
+                source: {  }
+              - source_id: bb_service_account_create_action
+                source: {  }
+      boost: true
+      target_placement: shell_content_island
+    data: {  }
+  shell_content_island:
+    plugin_id: page_content
+    slot: content
+    weight: 2
+    enabled: true
+    configuration:
+      also_placements:
+        - shell_page_header
+      content_source_id: shell_main
+    data: {  }
+  shell_status_bar:
+    plugin_id: ui_patterns_component
+    slot: footer
+    weight: 3
+    enabled: true
+    configuration:
+      component:
+        component_id: 'bb_theme:status_bar'
+        variant_id: null
+        props: {  }
+        slots: {  }
+    data: {  }
+weight: -11
+condition_operator: and
+conditions:
+  bb_user_area_route:
+    id: bb_user_area_route
+    negate: false
+    enabled: true

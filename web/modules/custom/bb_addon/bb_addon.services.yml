@@ -1,0 +1,35 @@
+services:
+  bb_addon.contract_validator:
+    class: Drupal\bb_addon\AddonContractValidator
+    arguments: ['@bb_inbox.message_contract_validator']
+  Drupal\bb_addon\AddonContractValidator: '@bb_addon.contract_validator'
+  bb_addon.repository:
+    class: Drupal\bb_addon\AddonRepository
+    arguments: ['@entity_type.manager']
+  Drupal\bb_addon\AddonRepository: '@bb_addon.repository'
+  bb_addon.workspace_resolver:
+    class: Drupal\bb_addon\AddonWorkspaceResolver
+  Drupal\bb_addon\AddonWorkspaceResolver: '@bb_addon.workspace_resolver'
+  bb_addon.inbox_subscriber:
+    class: Drupal\bb_addon\EventSubscriber\AddonInboxSubscriber
+    arguments: ['@bb_addon.repository', '@bb_inbox.message_contract_validator']
+    tags:
+      - { name: event_subscriber }
+  bb_addon.read_model:
+    class: Drupal\bb_addon\AddonReadModel
+    arguments: ['@bb_addon.repository']
+  Drupal\bb_addon\AddonReadModel: '@bb_addon.read_model'
+  bb_addon.form_builder:
+    class: Drupal\bb_addon\AddonFormBuilder
+  Drupal\bb_addon\AddonFormBuilder: '@bb_addon.form_builder'
+  # The Addons overlay's island host: makes the addon panel addressable so it
+  # re-renders itself after an action.
+  bb_addon.island_host:
+    class: Drupal\bb_addon\Island\AddonsIslandHost
+    arguments: ['@current_route_match', '@request_stack', '@entity_type.manager', '@bb_addon.repository']
+    tags:
+      - { name: island.context_provider }
+  bb_addon.action_sender:
+    class: Drupal\bb_addon\AddonActionSender
+    arguments: ['@bb_inbox.sender', '@messenger']
+  Drupal\bb_addon\AddonActionSender: '@bb_addon.action_sender'

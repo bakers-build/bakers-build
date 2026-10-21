@@ -1,0 +1,12 @@
+component: bb_theme:person
+name: Compact
+# ONE LINE, NO MAIL — an identity that is a cell or a control rather than the
+# subject of its row: a ticket's assignee, a comment's author, a team in the nav.
+# Drop `display_name` and this is the initials circle on its own, which is what
+# the deleted avatar component was and what the chrome controls place.
+props:
+  variant: compact
+  display_name: Christian Wiedemann
+  initials: CW
+  color: unassigned
+  size: sm

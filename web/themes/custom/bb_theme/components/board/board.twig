@@ -1,0 +1,82 @@
+{# Columns are data. Operational controls are opt-in; the mapping owns phase classification. #}
+{% set operational = controls_enabled|default(false) %}
+{% set behavior %}{
+  lane: 'all', limit: '10', details: {{ details_default|default(false) ? 'true' : 'false' }},
+  now: Date.parse({{ as_of|default('')|json_encode|raw }}) || Date.now(),
+  peopleMatch(card) {
+    if (this.lane !== 'all' && (card.lane_id || '') !== this.lane) return false;
+    return true;
+  },
+  doneIds(cards) {
+    return cards.filter(card => {
+      if (!this.peopleMatch(card)) return false;
+      const closed = Date.parse(card.closed_date);
+      return Number.isFinite(closed) && closed <= this.now;
+    }).sort((a, b) => Date.parse(b.closed_date) - Date.parse(a.closed_date))
+      .slice(0, Number(this.limit)).map(card => card.identifier);
+  },
+  matches(card, terminal, cards) {
+    if (!this.peopleMatch(card)) return false;
+    return !terminal || this.doneIds(cards).includes(card.identifier);
+  },
+  count(cards, terminal) { return cards.filter(card => this.matches(card, terminal, cards)).length; }
+}{% endset %}
+<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-3', 'min-w-0']).setAttribute('data-component-id', 'bb_theme:board') }}{% if operational and toolbar is empty %} x-data="{{ behavior|escape('html_attr') }}" x-id="['board-lane']"{% endif %}>
+  {% if toolbar is not empty %}
+    <div class="flex flex-nowrap items-end gap-3 min-w-0 overflow-x-auto" tabindex="0" role="group" aria-label="Board controls">{{ toolbar }}</div>
+  {% elseif operational %}
+    <div class="flex flex-wrap items-end gap-3" role="group" aria-label="Board controls">
+      <div class="w-full min-w-0 basis-full sm:w-56 sm:basis-auto">
+        {{ include('bb_theme:form_label', { title: filter_title|default('Owner'), attributes: create_attribute().setAttribute('x-bind:for', "$id('board-lane')") }, with_context = false) }}
+        {{ include('bb_theme:form_select', { name: 'lane', options: [{value: 'all', label: 'All'}]|merge(filter_options.lanes|default([])), attributes: create_attribute().setAttribute('x-model', 'lane').setAttribute('x-bind:id', "$id('board-lane')") }, with_context = false) }}
+      </div>
+      {{ include('bb_theme:button', { label: 'Details', variant: 'neutral', attributes: create_attribute().setAttribute('x-on:click', 'details = !details').setAttribute('x-bind:aria-pressed', 'details').setAttribute('aria-pressed', details_default|default(false) ? 'true' : 'false') }, with_context = false) }}
+    </div>
+  {% endif %}
+  {% if column_views is not empty %}
+    <div class="flex gap-2 overflow-x-auto pb-2 min-w-0" tabindex="0" role="region" aria-label="Board columns">
+      {{ column_views }}
+    </div>
+  {% else %}
+  <div class="flex gap-2 overflow-x-auto pb-2 min-w-0" tabindex="0" role="region" aria-label="Board columns">
+    {% for column in columns %}
+      {% set terminal = column.name == 'Done' %}
+      {% set split = operational and column.name == 'Working' %}
+      {% set cards = column.cards|default([]) %}
+      {% set groups = {'all': cards} %}
+      {% if split %}
+        {% set groups = {} %}
+        {% for card in cards %}{% set groups = groups|merge({(card.state): groups[card.state]|default([])|merge([card])}) %}{% endfor %}
+      {% endif %}
+      <section class="flex flex-col min-h-38 flex-1 shrink-0 basis-38 min-w-38 bg-app border border-border-2 rounded-sm" data-col="{{ column.name }}"{% if split %} x-bind:class="details ? 'min-w-max' : ''"{% endif %}{% if operational %} x-bind:data-count="count({{ cards|json_encode|escape('html_attr') }}, {{ terminal ? 'true' : 'false' }})"{% else %} data-count="{{ column.count|default(0) }}"{% endif %}>
+        <div class="flex flex-col gap-1 px-2 py-2 border-b border-border-2">
+          <h2 class="flex items-center justify-between gap-2 m-0">
+            {{ include('bb_theme:badge', {label: column.name|upper, tone: column.dot|default('neutral'), dot: column.dot ? true : false}, with_context = false) }}
+            {% if operational %}<span class="text-caption text-text-light" x-text="count({{ cards|json_encode|escape('html_attr') }}, {{ terminal ? 'true' : 'false' }})"></span>{% endif %}
+          </h2>
+          {% if operational and terminal %}
+            {{ include('bb_theme:segmented_control', { label: 'Done', state: 'limit', items: [{label: '10', value: '10'}, {label: '25', value: '25'}, {label: '50', value: '50'}] }, with_context = false) }}
+          {% endif %}
+        </div>
+        <div class="flex flex-col gap-2 flex-1 p-2"{% if split %} x-bind:class="details ? 'sm:flex-row' : 'flex-col'"{% endif %}>
+          {% for state, group in groups %}
+            <div class="flex flex-col gap-2 min-w-0"{% if split %} x-bind:class="details ? 'sm:w-38 sm:shrink-0 flex-1' : ''" x-show="count({{ group|json_encode|escape('html_attr') }}, false) > 0"{% endif %}>
+              {% if split %}<h3 class="text-caption font-semibold text-text-light m-0" x-show="details">{{ state }}</h3>{% endif %}
+              {% for card in group %}
+                <div{% if operational %} x-show="matches({{ card|json_encode|escape('html_attr') }}, {{ terminal ? 'true' : 'false' }}, {{ cards|json_encode|escape('html_attr') }})"{% endif %}>
+                  {{ include('bb_theme:board-card', card, with_context = false) }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+          {% if operational %}
+            <p class="text-caption text-text-faint text-center p-3" x-show="count({{ cards|json_encode|escape('html_attr') }}, {{ terminal ? 'true' : 'false' }}) === 0">No matching tickets.</p>
+          {% elseif cards is empty %}
+            <div class="flex-1 grid place-items-center text-text-faint text-eyebrow p-3 text-center">{% if empty %}{{ empty }}{% else %}<span class="opacity-60">empty</span>{% endif %}</div>
+          {% endif %}
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

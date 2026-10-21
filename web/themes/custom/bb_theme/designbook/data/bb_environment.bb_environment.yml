@@ -1,0 +1,33 @@
+- id: '1'
+  created: '2026-01-16T10:00:00+00:00'
+  changed: '2026-06-20T12:00:00+00:00'
+  name: production
+  project_id: '1'
+  base_url: https://bakers.example.com
+  tier: production
+  branch: main
+  owner_user_id: '1'
+  __designbook:
+    section: settings
+- id: '2'
+  created: '2026-01-16T10:05:00+00:00'
+  changed: '2026-06-28T08:30:00+00:00'
+  name: develop
+  project_id: '1'
+  base_url: https://bakers-develop.example.com
+  tier: development
+  branch: develop
+  owner_user_id: '1'
+  __designbook:
+    section: settings
+- id: '3'
+  created: '2026-02-21T09:00:00+00:00'
+  changed: '2026-06-26T15:20:00+00:00'
+  name: staging
+  project_id: '2'
+  base_url: https://staging.northwind.example
+  tier: staging
+  branch: main
+  owner_user_id: '3'
+  __designbook:
+    section: settings

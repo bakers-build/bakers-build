@@ -1,0 +1,16 @@
+uuid: 4ca88032-acc3-4298-b53c-542a92bd7f75
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_view_bb_term
+name: 'bb:session:view_bb_term'
+description: 'bakers.build session ceiling — view bb_term'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'view bb_term'

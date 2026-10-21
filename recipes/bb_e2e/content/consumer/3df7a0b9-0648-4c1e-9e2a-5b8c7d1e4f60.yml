@@ -1,0 +1,60 @@
+# User-bound recipe-test client for the workspace-contributor session token.
+# Secret is a public test value, not production.
+_meta:
+  version: '1.0'
+  entity_type: consumer
+  uuid: 3df7a0b9-0648-4c1e-9e2a-5b8c7d1e4f60
+  default_langcode: en
+  depends:
+    6e52c2ea-3411-5276-b0de-b9a17e20cdb9: user
+default:
+  owner_id:
+    -
+      target_id: 0
+  client_id:
+    -
+      value: bakers-e2e-session-member
+  label:
+    -
+      value: 'bakers.build E2E session member'
+  third_party:
+    -
+      value: true
+  is_default:
+    -
+      value: false
+  status:
+    -
+      value: true
+  secret:
+    -
+      value: Bb-test-client-426!
+      pre_hashed: false
+      existing: null
+  grant_types:
+    -
+      value: client_credentials
+  confidential:
+    -
+      value: true
+  scopes:
+    -
+      scope_id: bb_session
+  access_token_expiration:
+    -
+      value: 300
+  refresh_token_expiration:
+    -
+      value: 1209600
+  user_id:
+    -
+      entity: 6e52c2ea-3411-5276-b0de-b9a17e20cdb9
+  pkce:
+    -
+      value: false
+  automatic_authorization:
+    -
+      value: false
+  remember_approval:
+    -
+      value: true

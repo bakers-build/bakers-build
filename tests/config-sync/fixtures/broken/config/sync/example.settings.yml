@@ -1,0 +1,6 @@
+uuid: module-export-uuid
+_core:
+  default_config_hash: module-export-hash
+nested: { export_only: tolerated }
+list: [alpha]
+export_only: true

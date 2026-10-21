@@ -1,0 +1,6 @@
+component: bb_theme:collection-position
+name: Unknown Total
+props:
+  from: 21
+  to: 40
+  noun: tickets

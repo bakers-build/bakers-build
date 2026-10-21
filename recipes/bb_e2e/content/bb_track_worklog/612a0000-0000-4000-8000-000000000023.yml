@@ -1,0 +1,41 @@
+# Proposed row the owner can edit and delete without creating a new entry first.
+_meta:
+  version: '1.0'
+  entity_type: bb_track_worklog
+  uuid: 612a0000-0000-4000-8000-000000000023
+  depends:
+    dbe50000-0000-4000-8000-000000000001: user
+    612a0000-0000-4000-8000-000000000001: bb_project
+    613c0000-0000-4000-8000-000000000001: bb_track_account
+    612a0000-0000-4000-8000-000000000011: bb_ticket
+default:
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"
+  work_date:
+    -
+      value: "2026-10-05"
+  timezone:
+    -
+      value: "Europe/Berlin"
+  duration_seconds:
+    -
+      value: 5400
+  description:
+    -
+      value: "Seeded proposed time"
+  derivation:
+    -
+      value: "manual"
+  state:
+    -
+      value: "recorded"
+  project_id:
+    -
+      entity: "612a0000-0000-4000-8000-000000000001"
+  ticket_id:
+    -
+      entity: "612a0000-0000-4000-8000-000000000011"
+  account_id:
+    -
+      entity: "613c0000-0000-4000-8000-000000000001"

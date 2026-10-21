@@ -1,0 +1,66 @@
+# THE `wait` ROW — the most colour-loaded state in the product, and the one whose text sits on its own
+# state tint (the contrast criterion the state palette was measured against).
+#
+# The row's `accent` is what carries it now. `accent: wait` draws the leading rail AND tints the whole
+# row, exactly as the deleted row component did off its own `status` prop, so the tint survives the
+# move into the container. The missing assignee is a `badge` cell with `tone: wait`, which is what
+# gives the warning the `-ink` colour it needs to stay legible on that tint: the raw hue measures
+# 2.76:1 there against criterion 10's 4.5:1. That decision moved out of a row template and into the
+# one tint table `badge` owns — it is not re-derived here.
+#
+# KNOWN LIMITATION, pre-existing and not this ticket's to fix: `storybook-addon-sdc` has applied the
+# component's declared `collapsed` variant to every story of `table`, so the rows may not be visible
+# in a browser at all. It was recorded on this story before the rewrite and is recorded again rather
+# than quietly dropped; the fixture is the correct composition either way.
+component: bb_theme:table
+name: Unassigned
+props:
+  columns:
+    - key: identifier
+      label: Ticket
+    - key: title
+      label: Title
+    - key: project
+      label: Project
+    - key: state
+      label: State
+    - key: claim
+      label: Claim
+    - key: status
+      label: Status
+    - key: age
+      label: Age
+      num: true
+    - key: assignee
+      label: Assignee
+    - key: open
+      label: ''
+  rows:
+    - url: '#'
+      accent: wait
+      cells:
+        identifier: { kind: mono, value: BB-142 }
+        title: { kind: text, value: Lease expired, nobody assigned }
+        project: { kind: text, value: bakers, emphasis: faint }
+        state: { kind: badge, label: coding, tone: neutral }
+        claim: { kind: text, value: '—', emphasis: faint }
+        status: { kind: badge, label: needs_input, tone: wait, dot: true }
+        age: { kind: text, value: 3h, emphasis: faint }
+        assignee: { kind: badge, label: nobody, tone: wait }
+        open: { kind: link, value: Ticket, url: '#' }
+    - url: '#'
+      accent: running
+      cells:
+        identifier: { kind: mono, value: BB-110 }
+        title: { kind: text, value: Ship data-model schema for the ticket bundle }
+        project: { kind: text, value: bakers, emphasis: faint }
+        state: { kind: badge, label: coding, tone: neutral }
+        claim: { kind: badge, label: srv01-bakers, tone: lease, mono: true, icon: lock }
+        status: { kind: badge, label: running, tone: running, dot: true, suffix: 12m }
+        age: { kind: text, value: 12m, emphasis: faint }
+        assignee:
+          kind: person
+          display_name: mk
+          initials: MK
+          color: running
+        open: { kind: link, value: Ticket, url: '#' }

@@ -1,0 +1,21 @@
+component: bb_theme:event
+name: Status agent
+props:
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  role: agent
+  subject_label: BB-650
+  subject_url: '#subject'
+  tag: status
+  timestamp: 1 h ago
+  statement: spec → coding
+  facts:
+    - claude-code
+    - cw-framework
+    - 14 min
+  links:
+    - title: Summary
+      url: '#summary'
+    - title: Run
+      url: '#run'

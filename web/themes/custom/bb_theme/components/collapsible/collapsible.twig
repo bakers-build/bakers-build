@@ -1,0 +1,22 @@
+{# Native <details>/<summary> collapsible. Storybook never calls
+   Drupal.attachBehaviors, so a scripted accordion would be a dead control on
+   this review surface — clicking it would do nothing. <details> needs no
+   JavaScript at all, so this component carries no .js file and declares no
+   libraryOverrides: the collapse keeps working with JavaScript disabled
+   entirely (D2, R1). The chevron rotates through a pure CSS ancestor
+   selector (`details[open] &`), never a script.
+
+   Empty content renders nothing — no <details>, summary or label — using
+   `zone`'s emptiness test. The content is captured once, before the wrapper
+   opens, because a block cannot be read twice. #}
+{% set content_content %}{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}{% endset %}
+{% set visible_tags = '<img><svg><iframe><video><canvas><input><hr><progress><audio><drupal-render-placeholder>' %}
+{% if content_content|striptags(visible_tags)|trim is not empty %}
+<details{{ (attributes ?: create_attribute()).addClass(['collapsible']) }}{% if open %} open{% endif %}>
+  <summary class="collapsible__summary flex items-center gap-[6px] cursor-pointer list-none text-body font-semibold text-text select-none">
+    <span class="collapsible__chevron inline-flex shrink-0 transition-transform duration-150 [details[open]_&]:rotate-90">{{ include('bb_theme:icon', { name: 'chevron-right', size: 'sm' }, with_context = false) }}</span>
+    {% block label %}{{ label }}{% endblock %}
+  </summary>
+  <div class="collapsible__content pt-[8px]">{{ content_content }}</div>
+</details>
+{% endif %}

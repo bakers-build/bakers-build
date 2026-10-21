@@ -1,0 +1,5 @@
+component: bb_theme:setup_command
+name: Default
+props:
+  command: npm install -g @bakers-build/bakers
+  label: Copy the install command

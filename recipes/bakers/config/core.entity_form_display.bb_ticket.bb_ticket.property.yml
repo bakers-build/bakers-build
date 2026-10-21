@@ -1,0 +1,182 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_ticket.property
+  module:
+    - bb_core
+id: bb_ticket.bb_ticket.property
+targetEntityType: bb_ticket
+bundle: bb_ticket
+mode: property
+content:
+  assignee_user_id:
+    type: bb_picker
+    weight: 0
+    region: content
+    settings:
+      picker_region: pills
+      label: Assignee
+      icon: user
+      searchable: false
+      selected_chips: false
+      clear_label: 'Unassigned'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  blocked_by:
+    type: bb_picker
+    weight: 6
+    region: content
+    settings:
+      picker_region: pills
+      label: 'Blocked by'
+      icon: lock
+      searchable: true
+      selected_chips: false
+      clear_label: 'Nothing blocking'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+      selection_handler: bb_ticket_in_ticket_project
+    third_party_settings: {  }
+  conductor_id:
+    type: bb_picker
+    weight: 2
+    region: content
+    settings:
+      picker_region: pills
+      label: Conductor
+      icon: conductor
+      searchable: false
+      selected_chips: false
+      clear_label: 'No conductor'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  labels:
+    type: bb_picker
+    weight: 4
+    region: content
+    settings:
+      picker_region: pills
+      label: Labels
+      icon: tag
+      searchable: false
+      selected_chips: false
+      clear_label: 'No labels'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  parent_id:
+    type: bb_picker
+    weight: 5
+    region: content
+    settings:
+      picker_region: pills
+      label: Parent
+      icon: ticket
+      searchable: true
+      selected_chips: false
+      clear_label: 'No parent'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+      selection_handler: bb_ticket_in_ticket_project
+    third_party_settings: {  }
+  priority:
+    type: bb_picker
+    weight: 3
+    region: content
+    settings:
+      picker_region: pills
+      label: Priority
+      icon: priority
+      searchable: false
+      selected_chips: false
+      clear_label: 'No priority'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  reviewers:
+    type: bb_picker
+    weight: 1
+    region: content
+    settings:
+      picker_region: pills
+      label: Reviewers
+      icon: user
+      searchable: true
+      selected_chips: true
+      clear_label: 'No reviewers'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+hidden:
+  assignee_color: true
+  assignee_initials: true
+  assignee_name: true
+  base_branch: true
+  branch_name: true
+  changed: true
+  claim_machine: true
+  cleaned_up: true
+  cleaned_up_date: true
+  closed: true
+  closed_date: true
+  comments: true
+  created: true
+  derived_status: true
+  description: true
+  edit_url: true
+  effective_env_vars: true
+  env_vars: true
+  environments: true
+  frozen: true
+  frozen_at: true
+  id: true
+  identifier: true
+  links: true
+  metrics: true
+  number: true
+  origin: true
+  owner_user_id: true
+  project_id: true
+  referenced_tickets: true
+  runs: true
+  since_label: true
+  stall_reason: true
+  state: true
+  state_flow: true
+  sub_tickets: true
+  time_estimate: true
+  time_spent: true
+  title: true
+  uuid: true
+  workflow: true

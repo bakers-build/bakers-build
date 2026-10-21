@@ -1,0 +1,13 @@
+{#
+/**
+ * @file
+ * Fallback for the `bb_list` Views style outside `bb_theme`.
+ *
+ * `bb_theme` overrides this template and renders the rows as
+ * `bb_theme:list`; any other theme prints the pattern's field output in
+ * order.
+ */
+#}
+{% for row in rows %}
+  {% for output in row.fields %}{{ output }} {% endfor %}
+{% endfor %}

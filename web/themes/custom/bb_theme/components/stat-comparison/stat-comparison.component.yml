@@ -1,0 +1,105 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Stat Comparison
+status: stable
+group: Data Display
+description: >-
+  Up to six series on one shared category/value plot, drawn client-side by
+  Chart.js. The component receives values and labels only: it computes no
+  geometry, because the canvas knows the width it actually gets and the server
+  does not. Series colours are read at runtime from the theme's
+  `chart-series-a`…`chart-series-f` custom properties, so the plot follows the
+  light and dark theme without a second palette. The legend and the exact-value
+  disclosure are plain markup and stay readable without the canvas. Sample
+  demonstrations use illustrative values, never live tenant observations.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    chart:
+      type: object
+      title: Chart
+      description: Values and labels for the client-side comparison plot.
+      properties:
+        state:
+          type: string
+          enum:
+            - ready
+            - empty
+          title: State
+        label:
+          type: string
+          title: Label
+        value_label:
+          type: string
+          title: Value axis caption
+        labels:
+          type: array
+          title: Category labels
+          description: One label per position on the shared X axis.
+          items:
+            type: string
+        series:
+          type: array
+          title: Series
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              style:
+                type: string
+                enum:
+                  - a
+                  - b
+                  - c
+                  - d
+                  - e
+                  - f
+              label:
+                type: string
+              latest_value:
+                type:
+                  - string
+                  - 'null'
+              values:
+                type: array
+                title: Points
+                description: >-
+                  One point per category label, in category order. `y: null` is
+                  a gap the line spans. A point is an object rather than a bare
+                  number so a gap is never a null array element.
+                items:
+                  type: object
+                  properties:
+                    x:
+                      type: string
+                    'y':
+                      type:
+                        - number
+                        - 'null'
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              values:
+                type: array
+                items:
+                  type: string
+          title: Rows
+          description: >-
+            The exact-value table beside the canvas. Named `rows` rather than
+            `entries` because Twing json_encode duck-types a Map by calling
+            `thing.entries()`.
+      required:
+        - state
+        - label
+        - series
+  required:
+    - chart
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,11 @@
+{# The fixed bottom-right status toast for a short confirmation ("Saved").
+   ONE element and no child elements: a script may rewrite its text, `role`
+   and `hidden` in place, so a wrapper inside it would be wiped on the first
+   update. An empty message renders hidden; the unlayered
+   `[data-form-autosave-status][hidden]` rule in css/app.src.css keeps a hidden
+   fixed node off the screen. #}
+<div{{ (attributes ?: create_attribute()).setAttribute('role', 'status').addClass([
+    'fixed', 'bottom-4', 'right-4', 'z-50', 'px-3', 'py-2', 'rounded-sm',
+    'bg-state-running-tint', 'border', 'border-state-running',
+    'text-caption', 'text-state-running-ink', 'shadow-shadow-1',
+  ]) }}{% if not message %} hidden{% endif %}>{{ message }}</div>

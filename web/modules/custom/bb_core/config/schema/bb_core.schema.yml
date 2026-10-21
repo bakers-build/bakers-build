@@ -1,0 +1,423 @@
+field.formatter.settings.bb_integer_badge:
+  type: mapping
+  label: 'Integer badge'
+  mapping:
+    icon:
+      type: string
+      label: Icon
+    tone:
+      type: string
+      label: Tone
+    singular:
+      type: label
+      label: Singular tooltip
+    plural:
+      type: label
+      label: Plural tooltip
+
+bb_core.settings:
+  type: config_object
+  label: 'bakers.build core settings'
+  mapping:
+    default_lease_seconds:
+      type: integer
+      label: 'Default claim lease (seconds)'
+    max_lease_seconds:
+      type: integer
+      label: 'Maximum claim lease (seconds)'
+    failed_retry_cap:
+      type: integer
+      label: 'Failed-run retry cap: consecutive failed runs that park a ticket'
+    failed_retry_window_seconds:
+      type: integer
+      label: 'Failed-run retry window (seconds): how long the cap parks a ticket'
+    plugin_source_base:
+      type: string
+      label: 'Plugin source base URL (git group prefix)'
+
+bb_core.bb_vocabulary.*:
+  type: config_entity
+  label: 'bakers.build vocabulary'
+  mapping:
+    id:
+      type: string
+      label: 'Machine name'
+    label:
+      type: label
+      label: 'Label'
+    description:
+      type: text
+      label: 'Description'
+
+bb_core.bb_comment_type.*:
+  type: config_entity
+  label: 'bakers.build comment type'
+  mapping:
+    id:
+      type: string
+      label: 'Machine name'
+    label:
+      type: label
+      label: 'Label'
+
+bb_core.bb_measurement.*:
+  type: config_entity
+  label: 'bakers.build measurement'
+  mapping:
+    id:
+      type: machine_name
+      label: 'ID'
+    label:
+      type: required_label
+      label: 'Label'
+    value_type:
+      type: string
+      label: 'Value type'
+      constraints:
+        Choice:
+          choices: [integer, decimal]
+    unit:
+      type: string
+      label: 'Unit'
+    source:
+      type: mapping
+      label: 'Source query'
+      mapping:
+        entity_type:
+          type: string
+          label: 'Source entity type'
+          requiredKey: false
+        time_field:
+          type: string
+          label: 'Time field'
+          requiredKey: false
+    operation:
+      type: mapping
+      label: 'Aggregate or derived operation'
+      mapping:
+        type:
+          type: string
+          label: 'Operation type'
+          constraints:
+            Choice:
+              choices: [count, sum, divide]
+        field:
+          type: string
+          label: 'Summed source field'
+          requiredKey: false
+        numerator:
+          type: string
+          label: 'Numerator measurement'
+          requiredKey: false
+        denominator:
+          type: string
+          label: 'Denominator measurement'
+          requiredKey: false
+    predicates:
+      type: sequence
+      label: 'Fixed predicates'
+      sequence:
+        type: mapping
+        mapping:
+          field:
+            type: string
+            label: 'Field'
+          operator:
+            type: string
+            label: 'Operator'
+          value:
+            # `ignore` rather than `boolean`: a predicate value is field-typed
+            # — `closed = true` is a boolean, `state = done` is a string — and
+            # the query hands it straight to condition() either way.
+            type: ignore
+            label: 'Predicate value'
+    bindings:
+      type: sequence
+      label: 'Context query bindings'
+      sequence:
+        type: mapping
+        mapping:
+          field:
+            type: string
+            label: 'Query field'
+          resolver:
+            type: string
+            label: 'Binding resolver'
+            constraints:
+              Choice:
+                choices: [entity_id, team_projects, workspace_projects]
+    dimensions:
+      type: sequence
+      label: 'Breakdown dimensions by category key'
+      sequence:
+        type: mapping
+        mapping:
+          field:
+            type: string
+            label: 'Dimension field'
+          entity_type:
+            type: string
+            label: 'Label entity type'
+            # Omitted for a SCALAR dimension (a run's model or state), whose
+            # grouped value is its own key and label with no entity to load.
+            requiredKey: false
+
+bb_core.bb_figure.*:
+  type: config_entity
+  label: 'bakers.build figure'
+  mapping:
+    id:
+      type: machine_name
+      label: 'ID'
+    label:
+      type: required_label
+      label: 'Label'
+    description:
+      type: text
+      label: 'Description'
+    weight:
+      type: integer
+      label: 'Weight'
+    widget:
+      type: string
+      label: 'Widget'
+      constraints:
+        Choice:
+          choices: [matrix, line, grouped_horizontal_bars]
+    measurements:
+      type: sequence
+      label: 'Ordered measurement IDs'
+      sequence:
+        type: string
+    categories:
+      type: mapping
+      label: 'Category definition'
+      mapping:
+        type:
+          type: string
+          label: 'Category type'
+          constraints:
+            Choice:
+              choices: [windows, days, months, dimension]
+        values:
+          type: sequence
+          label: 'Fixed category values'
+          requiredKey: false
+          sequence:
+            type: string
+        dimension:
+          type: string
+          label: 'Dimension key'
+          requiredKey: false
+    series:
+      type: mapping
+      label: 'Series source'
+      requiredKey: false
+      mapping:
+        dimension:
+          type: string
+          label: 'Dimension key'
+          requiredKey: false
+        limit:
+          type: integer
+          label: 'Individually shown series'
+          requiredKey: false
+    filters:
+      type: sequence
+      label: 'Exposed filters'
+      sequence:
+        type: mapping
+        mapping:
+          label:
+            type: label
+            label: 'Filter label'
+          default:
+            type: string
+            label: 'Default value'
+            constraints:
+              Choice:
+                choices: ['7', '30', '365']
+          options:
+            type: sequence
+            label: 'Allowed values'
+            sequence:
+              type: mapping
+              mapping:
+                value:
+                  type: string
+                  label: 'Value'
+                  constraints:
+                    Choice:
+                      choices: ['7', '30', '365']
+                label:
+                  type: label
+                  label: 'Label'
+    context_shape:
+      type: sequence
+      label: 'Exact route context keys'
+      sequence:
+        type: string
+    conditions:
+      type: sequence
+      label: 'Applicability conditions'
+      sequence:
+        type: condition.plugin.[id]
+
+bb_core.bb_figure_group.*:
+  type: config_entity
+  label: 'bakers.build figure group'
+  mapping:
+    id:
+      type: machine_name
+      label: 'ID'
+    label:
+      type: required_label
+      label: 'Label'
+    weight:
+      type: integer
+      label: 'Weight'
+    figures:
+      type: sequence
+      label: 'Ordered figure IDs'
+      sequence:
+        type: string
+
+condition.plugin.bb_route_context:
+  type: condition.plugin
+  label: 'bakers.build route context condition'
+  mapping:
+    entity_type:
+      type: string
+      label: 'Required entity type'
+
+condition.plugin.route_name:
+  type: condition.plugin
+  label: 'Route name condition'
+  mapping:
+    route_names:
+      type: sequence
+      label: 'Route names'
+      sequence:
+        type: string
+        label: 'Route name'
+
+condition.plugin.bb_user_area_route:
+  type: condition.plugin
+  label: 'bakers.build user area route condition'
+  mapping:
+    enabled:
+      type: boolean
+      label: 'Require a user area route'
+
+condition.plugin.bb_ambient_workspace:
+  type: condition.plugin
+  label: 'bakers.build workspace resolves condition'
+  mapping:
+    enabled:
+      type: boolean
+      label: 'Require a resolved workspace'
+
+condition.plugin.bb_workspace_rank:
+  type: condition.plugin
+  label: 'bakers.build workspace rank condition'
+  mapping:
+    ranks:
+      type: sequence
+      label: 'Workspace ranks'
+      sequence:
+        type: string
+        label: 'Rank'
+        constraints:
+          Choice:
+            choices: [lead, contributor, guest, non-member]
+
+ui_patterns_source.entity_form:
+  type: mapping
+  label: 'Source: Entity form'
+  mapping:
+    operation:
+      type: string
+      label: 'Form operation'
+
+ui_patterns_source.bb_menu:
+  type: mapping
+  label: 'Source: bakers.build ambient menu'
+  mapping:
+    menu:
+      type: string
+      label: 'Menu'
+    level:
+      type: integer
+      label: 'Initial visibility level'
+    depth:
+      type: integer
+      label: 'Number of levels to display'
+
+ui_patterns_source.bb_workspace_switcher:
+  type: ignore
+  label: 'Source: bakers.build workspace switcher props'
+
+ui_patterns_source.bb_workspace_switcher_panel:
+  type: ignore
+  label: 'Source: bakers.build workspace switcher panel'
+
+# The picker widget. This settings mapping is what makes a form display, rather than a form
+# class, decide how one field of a `bb_theme:form` surface presents itself:
+# which region it renders in, what the pill is called, which query parameter
+# it opens on, and — for a field whose value has a server-authored side
+# effect — the sentence that names that effect at the control
+# (`action-pattern.md` rule 9). A second create surface is a second form
+# display configuring this same plugin.
+field.widget.settings.bb_picker:
+  type: mapping
+  label: 'bakers.build picker settings'
+  mapping:
+    picker_region:
+      type: string
+      label: 'Picker region: context, lead or pills'
+    label:
+      type: label
+      label: 'Field name shown on the pill'
+    icon:
+      type: string
+      label: 'Leading sprite symbol'
+    searchable:
+      type: boolean
+      label: 'Render the panel search box'
+    selected_chips:
+      type: boolean
+      label: 'Render each selected value as a removable chip'
+    fallback:
+      type: boolean
+      label: 'Render a no-JavaScript fallback on full pages'
+    clear_label:
+      type: label
+      label: 'Clear row label, or empty for no clear row'
+    create_label:
+      type: label
+      label: 'Create row noun, or empty for no create row'
+    context_parameter:
+      type: string
+      label: 'Query parameter this field opens on'
+    default_value:
+      type: string
+      label: 'Value this field opens on, absent any other'
+    note_lead:
+      type: label
+      label: 'Note lead word, or empty for no note'
+    note_prefix:
+      type: label
+      label: 'Note text before the value'
+    note_suffix:
+      type: label
+      label: 'Note text after the value'
+    selection_handler:
+      type: string
+      label: "Selection handler replacing the field's own, or empty"
+
+# The bb_markdown text editor has no settings; editor.editor.* is
+# FullyValidatable, so its settings need a schema even when empty.
+editor.settings.bb_markdown:
+  type: mapping
+  label: 'bakers.build Markdown toolbar settings'
+  mapping: {  }

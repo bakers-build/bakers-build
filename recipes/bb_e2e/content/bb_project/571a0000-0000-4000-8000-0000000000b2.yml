@@ -1,0 +1,30 @@
+# Listing-search fixture: the distinguishable Beta title in the default
+# workspace. A partial Title search for Alpha must drop this row.
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: 571a0000-0000-4000-8000-0000000000b2
+  default_langcode: en
+  depends:
+    571a0000-0000-4000-8000-0000000000a2: bb_group
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  group_id:
+    -
+      entity: "571a0000-0000-4000-8000-0000000000a2"
+  name:
+    -
+      value: "Beta South"
+  key:
+    -
+      value: "BTST"
+  next_number:
+    -
+      value: 1
+  teams:
+    -
+      entity: "dbc70000-0000-4000-8000-000000000001"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

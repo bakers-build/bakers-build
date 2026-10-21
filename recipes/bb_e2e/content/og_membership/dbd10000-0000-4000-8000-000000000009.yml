@@ -1,0 +1,55 @@
+# `other-member`'s ONLY membership: the `other` workspace (BB-415, R3).
+#
+# This is the fixture acceptance criterion 4 is measured against — "/ lands a
+# member of a non-`bakers` workspace in THEIR workspace". `BbHomeController`
+# resolves this account's read scope to exactly one workspace and redirects to
+# `/other/tickets`, which is a different slug from the one every other seeded
+# account reaches. Without a second single-membership account the criterion is
+# unobservable, and a controller that returned `BbWorkspace::DEFAULT_SLUG`
+# would satisfy every other scenario in the suite.
+#
+# ONE membership and no more, which is the whole design of it. A second one
+# would turn this account's landing into the chooser and cost the suite its only
+# non-default redirect subject.
+#
+# `contributor`, not `lead`: the landing question is about MEMBERSHIP, not
+# about see-all reach, and a lead here would have let a bug in the bypass
+# branch pass as a success — that distinction is what the explicit-tier
+# choice below preserves. It is EXPLICIT rather than the bare `member`
+# this fixture originally carried, because BB-462 D1 empties the
+# implicit rank: ticket-list.feature's "a member of another workspace
+# sees none of these tickets" scenario signs in as this same account and
+# needs the ordinary `access bakers dashboard` floor just to render the
+# screen at all, which a bare membership no longer grants.
+
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000009
+  bundle: default
+  default_langcode: en
+  depends:
+    dbc60000-0000-4000-8000-000000000002: bb_workspace
+    dbe50000-0000-4000-8000-000000000003: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_workspace
+  entity_bundle:
+    -
+      value: bb_workspace
+  entity_id:
+    -
+      value: dbc60000-0000-4000-8000-000000000002
+  uid:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000003"
+  state:
+    -
+      value: active
+  roles:
+    -
+      target_id: bb_workspace-bb_workspace-contributor

@@ -1,0 +1,36 @@
+# api-conductor-owner's workspace membership — new, not a rename (F5).
+#
+# claims.feature calls `POST /jsonapi/bakers/claim-next` as this account, which
+# `ConductorResolverTrait::resolveConductor()` gates on the plain Drupal
+# permission `claim bakers tickets` (`hasPermission()`, no OG-chain walk). This
+# account never carried an `og_membership` fixture at all in this repo's
+# history. Before BB-462, `claim bakers tickets` shipped on the workspace
+# `app` role (verified against the pre-BB-462 config, commit fbaded64d);
+# D9 deleted that role without migrating the permission anywhere else, so
+# no account — this one included — had a path to it until the sibling fix
+# on `contributor`/`lead` restored it. `contributor` is the tier that now
+# carries it.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 60366a8b-f4c6-578c-bee3-2a832cfc96c3
+  default_langcode: en
+  bundle: default
+  depends:
+    db58173e-ed5d-50cf-af02-2943a2803c36: user
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  state:
+  - value: active
+  uid:
+  - entity: db58173e-ed5d-50cf-af02-2943a2803c36
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-contributor

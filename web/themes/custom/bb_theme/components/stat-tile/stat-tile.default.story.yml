@@ -1,0 +1,7 @@
+component: bb_theme:stat-tile
+name: Default
+props:
+  value: '7'
+  label: tickets closed
+  window: last 24 h
+  source: /jsonapi/bakers/statistics

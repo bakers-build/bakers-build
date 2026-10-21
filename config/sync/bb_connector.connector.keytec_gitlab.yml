@@ -1,0 +1,13 @@
+uuid: 7cdf835c-9298-41a9-b8c3-d2ee90c2e393
+langcode: en
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: PTDRL0C94246dE2mQGN3i-bNMj3cBfPwZosAd53D_Rk
+id: keytec_gitlab
+label: 'keytec GitLab'
+plugin: gitlab
+import_interval: 0
+settings:
+  base_url: 'https://git.key-tec.de'
+  token: ''

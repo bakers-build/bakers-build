@@ -1,0 +1,17 @@
+{
+  "id": "ses_A",
+  "slug": "brave-otter",
+  "version": "1.1.19",
+  "projectID": "global",
+  "directory": "/tmp/bakers-wt-opencode-A",
+  "title": "add the real footprint",
+  "time": {
+    "created": 1768658020000,
+    "updated": 1768658030000
+  },
+  "summary": {
+    "additions": 0,
+    "deletions": 0,
+    "files": 0
+  }
+}

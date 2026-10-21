@@ -1,0 +1,34 @@
+# Explicit tenancy/rank precondition for API contract scenarios.
+#
+# BB-462 D1: the implicit `member` rank now grants nothing. ticket-api.steps.ts's
+# "the session actor owns a running lease" step deliberately restores this
+# membership to its "ordinary seeded rank" after registration (so only
+# session write authority, not a registration-derived one, is under test) —
+# under the OLD model that ordinary rank was the implicit `member`; under
+# D1 the equivalent ordinary floor is the explicit `contributor`. Without
+# it, comments.feature's comment-creation step 403/422s: the account has
+# neither `create bb_comment` nor `use text format bb_rich`.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 1694ed41-5414-5393-8711-77d38c56bcef
+  default_langcode: en
+  bundle: default
+  depends:
+    f2aac53e-7d62-5d75-95b8-52638b82b55e: user
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  state:
+  - value: active
+  uid:
+  - entity: f2aac53e-7d62-5d75-95b8-52638b82b55e
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-contributor

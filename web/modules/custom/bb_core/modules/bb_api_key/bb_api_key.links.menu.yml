@@ -1,0 +1,11 @@
+# bakers-account entry for the API key list. Its route access already limits it
+# to the signed-in account's own page.
+bb_api_key.account.api_keys:
+  title: 'API keys'
+  route_name: view.bb_api_keys.page
+  menu_name: bakers-account
+  class: '\Drupal\bb_core\Plugin\Menu\AccountMenuLink'
+  weight: 5
+  options:
+    icon: lock
+    active_routes: [bb_api_key.add, bb_api_key.delete]

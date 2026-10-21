@@ -1,0 +1,65 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Week strip
+status: stable
+group: Data Display
+description: >-
+  A day selector for one calendar week: seven links, Monday to Sunday, each with
+  that day's recorded total, and the week total at the end. The selected day is
+  marked aria-current="date". It is navigation inside one listing, so it is a
+  nav landmark named by `label`. On narrow screens each cell shows the weekday
+  initial and the total only; the full day sentence stays in the link's
+  accessible name.
+props:
+  type: object
+  required:
+    - label
+    - days
+    - total_label
+    - total
+  properties:
+    label:
+      type: string
+      title: Accessible name of the strip
+      description: E.g. "Days of week 2026-11-02".
+    days:
+      type: array
+      title: The seven days, Monday first
+      minItems: 7
+      maxItems: 7
+      items:
+        type: object
+        required:
+          - weekday
+          - date
+          - total
+          - url
+          - aria_label
+        properties:
+          weekday:
+            type: string
+            title: Short weekday name
+          date:
+            type: string
+            title: Day of month
+          total:
+            type: string
+            title: Recorded time as H:MM
+          url:
+            type: string
+            title: Address of that day
+          active:
+            type: boolean
+            title: The selected day
+          aria_label:
+            type: string
+            title: Accessible name of the day link
+    total_label:
+      type: string
+      title: Label of the week total
+    total:
+      type: string
+      title: Week total as H:MM
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

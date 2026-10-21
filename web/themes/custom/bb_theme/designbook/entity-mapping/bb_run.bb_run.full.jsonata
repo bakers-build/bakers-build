@@ -1,0 +1,62 @@
+(
+  /* The full view mode is the RUN CANONICAL PAGE'S BODY — and only its body.
+
+     A VIEW MODE EMITS NO LAYOUT (BB-378). It displays an entity; the SCREEN
+     arranges one. The run-canonical scene owns the canvas, the page_header
+     (breadcrumb, title, tabs) and the inspector. What is left here is the two
+     zones of the left column, in reading order:
+
+       Latest ticket summary    the newest summary comment on the ticket
+       Activity                 the newest activity for this run
+
+     Logs are download-only on this page. `error_log` and `log-viewer` belong
+     to the overlay mapping, never here. Claim-history is not a model.
+
+     A JSONata mapping is evaluated against ONE record and cannot join across
+     sample collections, so presence of a summary or an activity is pinned per
+     run id — the same idiom the ticket mapping uses. Run 5 is the
+     missing-content fixture: neither summary nor activity. */
+  $r := $;
+  $facts := {
+    "1": { "summary": true, "activity": true },
+    "2": { "summary": true, "activity": false },
+    "3": { "summary": true, "activity": true },
+    "4": { "summary": true, "activity": false },
+    "5": { "summary": false, "activity": false },
+    "6": { "summary": true, "activity": false }
+  };
+  $f := $lookup($facts, $r.id);
+
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      "slots": {
+        "heading": "Latest ticket summary",
+        "content": $f.summary ? {
+          "entity": "bb_comment.bb_comment",
+          "view_mode": "teaser",
+          "select": "$[ticket_id='" & $r.ticket_id & "' and type = 'summary'][0]"
+        } : {
+          "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state",
+          "props": { "message": "No ticket summary" }
+        }
+      }
+    },
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      "slots": {
+        "heading": "Activity",
+        "content": $f.activity ? {
+          "entity": "bb_activity.bb_activity",
+          "view_mode": "full",
+          "select": "$[run_id='" & $r.id & "'][0]"
+        } : {
+          "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state",
+          "props": { "message": "No activity for this run" }
+        }
+      }
+    }
+  ]
+)

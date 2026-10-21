@@ -1,0 +1,11 @@
+uuid: 6a2e8c13-7b40-4d95-a1c6-2f8b0d4e5719
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_comment.full
+label: Full
+description: ''
+targetEntityType: bb_comment
+cache: true

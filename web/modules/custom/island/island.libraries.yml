@@ -1,0 +1,47 @@
+base:
+  version: 1.x
+  js:
+    # A shim for a defect in core's own htmx bridge, not a feature of this
+    # module: an out-of-band island fragment never gets Drupal's behaviours
+    # re-attached. See js/island.behaviors.js for the measurement and for the
+    # condition under which this file is deleted again.
+    js/island.behaviors.js: {}
+    # Subscribed islands re-render on an event announced in HX-Trigger.
+    js/island.events.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.htmx
+    - core/once
+    # The dismissal listeners must be on the page before a dialog arrives.
+    #.
+    - island/dialog
+
+# The hull's own dismissal behaviour. Declared BOTH here and by the hull
+# component (see `components/dialog/dialog.component.yml`), deliberately: the
+# component's declaration is what a standalone render of the hull needs, and
+# `base` above is what gets the listeners onto the page BEFORE a dialog fragment
+# can arrive. Neither one alone is enough.
+dialog:
+  version: 1.x
+  js:
+    js/island.dialog.js: {}
+  dependencies:
+    # `core/drupal` and nothing else. The file delegates both of its listeners
+    # from the document and uses no Drupal API at all — it stopped needing
+    # `core/once` when the click half stopped being a `Drupal.behaviors`
+    # attachment (see the file's own docblock for the measurement). The
+    # dependency stays because a consumer hull declaring THIS library is
+    # relying on it to bring Drupal's own front-end base with it; a component
+    # library that declares no dependency at all is the latent bug this very
+    # ticket found in `bb_theme:dialog`.
+    - core/drupal
+
+# The FORM half of the round trip, attached by WrappedDialogFormTrait on a
+# dialog request only — it guards a swap that the form's own `hx-select` is
+# what makes possible, so a hull with no form in it needs none of it.
+dialog_form:
+  version: 1.x
+  js:
+    js/island.dialog_form.js: {}
+  dependencies:
+    - core/drupal.htmx

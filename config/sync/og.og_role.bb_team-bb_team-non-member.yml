@@ -1,0 +1,17 @@
+uuid: 7c3e1a8f-2b4d-4e9a-9c1f-5d8e0a2b6c4d
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+_core:
+  default_config_hash: bb_team_non_member_placeholder
+id: bb_team-bb_team-non-member
+label: Non-member
+weight: 0
+group_id: null
+group_type: bb_team
+group_bundle: bb_team
+is_admin: false
+permissions: {  }
+role_type: required

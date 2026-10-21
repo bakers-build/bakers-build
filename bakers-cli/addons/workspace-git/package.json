@@ -1,0 +1,31 @@
+{
+  "name": "@bakers-build/addon-workspace-git",
+  "version": "0.0.1",
+  "description": "bakers.build conductor workspace addon: plain git-worktree workspace + the WORKFLOW.md instruction loader.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

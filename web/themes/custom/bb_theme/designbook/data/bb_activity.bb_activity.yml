@@ -1,0 +1,85 @@
+- id: '1'
+  created: 2 hours ago
+  ticket_id: '1'
+  ticket_identifier: BB-142
+  kind: claimed
+  actor: '1'
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  workflow: bb_feature
+  step: coding
+  run_id: '1'
+  conductor_id: '1'
+  conductor_label: cw-framework
+  claim_key: run-1
+  __designbook:
+    section: projects
+- id: '2'
+  created: yesterday
+  ticket_id: '4'
+  ticket_identifier: BB-118
+  kind: status_changed
+  actor: '2'
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  workflow: bb_feature
+  previous_state: spec
+  new_state: coding
+  run_id: '2'
+  conductor_id: '1'
+  conductor_label: cw-framework
+  comment_id: '1'
+  run_harness: claude-code
+  run_duration: 14 min
+  __designbook:
+    section: projects
+- id: '3'
+  created: 3 days ago
+  ticket_id: '5'
+  ticket_identifier: BB-105
+  kind: status_changed
+  actor: '1'
+  author_name: Christian Wiedemann
+  author_initials: CW
+  author_color: unassigned
+  workflow: bb_feature
+  previous_state: review
+  new_state: done
+  comment_id: '2'
+  __designbook:
+    section: projects
+- id: '4'
+  created: 4 days ago
+  ticket_id: '5'
+  ticket_identifier: BB-105
+  kind: run_ended
+  actor: '2'
+  author_name: claude-opus-5-5
+  author_initials: CO
+  author_color: running
+  workflow: bb_feature
+  step: review
+  run_id: '3'
+  conductor_id: '1'
+  conductor_label: cw-framework
+  run_harness: claude-code
+  run_duration: 40 min
+  run_outcome: failed
+  run_error_line: 'Error: ddev phpunit exited with status 2'
+  __designbook:
+    section: projects
+- id: '5'
+  created: 5 days ago
+  ticket_id: '5'
+  ticket_identifier: BB-105
+  kind: created
+  actor: '1'
+  author_name: Christian Wiedemann
+  author_initials: CW
+  author_color: unassigned
+  workflow: bb_feature
+  new_state: qualification
+  __designbook:
+    section: projects

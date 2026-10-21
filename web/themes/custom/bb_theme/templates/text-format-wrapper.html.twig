@@ -1,0 +1,5 @@
+{# Style a text format field's help text like every other field's; stable9 puts `attributes` on the description. #}
+{% if description %}
+  {% do attributes.addClass(['text-caption', 'text-text-light', 'pt-1']) %}
+{% endif %}
+{% include '@stable9/content-edit/text-format-wrapper.html.twig' %}

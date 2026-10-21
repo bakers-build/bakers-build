@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_machine.full
+label: Full
+description: ''
+targetEntityType: bb_machine
+cache: true

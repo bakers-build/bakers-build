@@ -1,0 +1,154 @@
+# THE CREATE SURFACE, as one node. Four hand-assembled nodes used to say this —
+# a lead row, two borderless lines, a row of peer pills — and the surface is the
+# thing that knows how they go together, so it says it once.
+#
+# THE COMMENTS IN THIS FILE ARE RE-ADDED BY HAND AFTER EVERY debo RUN, and that
+# is a property of the tool rather than a choice: `design-component` submits a
+# story as JSON and the CLI serialises it to YAML, so a comment has nowhere to
+# live in the payload and every write drops the lot. Measured twice on this file
+# during BB-420 Task 20 — twelve comment lines gone, no warning, exit 0 both
+# times. Re-add them; do not conclude they were deliberately removed.
+component: bb_theme:form
+name: Default
+props:
+  # The lead row names itself from the property it holds. A PROP since BB-420
+  # Task 20, because `lead` is a slot now and a rendered pill cannot be read for
+  # its own label.
+  lead_label: Workflow
+slots:
+  # Grammar 3a: the one property that is not a peer of the others sits on its own
+  # row above the lines and is rendered heavier. There is at most one — a
+  # cardinality this slot cannot carry, so the form display enforces it for the
+  # server and `tests/contract/data-display-components.sh` for a scene.
+  lead:
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        prominent: true
+        name: workflow
+        label: Workflow
+        icon: board
+        picker_id: story-form-workflow
+        aria_label: Change workflow. Currently bb_feature.
+        value_label: bb_feature
+        values:
+          - bb_feature
+        options:
+          - value: bb_feature
+            label: bb_feature
+            description: Feature work — spec before coding
+            selected: true
+          - value: bb_bug
+            label: bb_bug
+            description: Defect work — diagnose before coding
+            selected: false
+  # Grammar 1 and 2: no visible labels; the identity of a line is its
+  # placeholder. BB-420 Task 31 retired `text_line` (everything through
+  # form elements) for `bb_theme:form_input` / `bb_theme:form_textarea` — real
+  # form elements, neither of which declares an `aria_label` prop, so this
+  # story (which renders the bare components with no wrapping label) no
+  # longer models an accessible name at all. The real form supplies one via a
+  # visually-hidden `<label>` (`#title_display: invisible`, Task 30); this
+  # story does not reconstruct that wrapper, since doing so is new structure
+  # beyond the swap.
+  lines:
+    - type: component
+      component: bb_theme:form_input
+      props:
+        type: text
+        name: title
+        id: story-form-title
+        required: true
+        placeholder: What needs to happen
+        value: Retire the Gin-era ticket components
+    - type: component
+      component: bb_theme:form_textarea
+      props:
+        name: description
+        id: story-form-description
+        rows: 3
+        placeholder: The problem, and how the result is verified
+        value: Repoint the Drupal routes at the new tickets screens and run sync-to.
+  # Grammar 3: every peer property is a pill in ONE row that wraps.
+  pills:
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: parent
+        label: Parent
+        icon: ticket
+        picker_id: story-form-parent
+        aria_label: Change parent. Currently no parent is set.
+        searchable: true
+        search_placeholder: Search tickets
+        search_label: Search tickets
+        clearable: true
+        clear_label: No parent
+        options:
+          - value: '1'
+            label: BB-142 Add designbook entity view-mode
+            selected: false
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: conductor
+        label: Conductor
+        icon: conductor
+        picker_id: story-form-conductor
+        aria_label: Change conductor. Currently cw-framework.
+        value_label: cw-framework
+        values:
+          - cw-framework
+        clearable: true
+        clear_label: No conductor
+        options:
+          - value: cw-framework
+            label: cw-framework
+            selected: true
+          - value: mvd-thinkpad
+            label: mvd-thinkpad
+            selected: false
+    - type: component
+      component: bb_theme:property_pill
+      props:
+        name: labels
+        label: Labels
+        icon: tag
+        picker_id: story-form-labels
+        aria_label: Change labels. Currently backend and ui are set.
+        multiple: true
+        value_labels:
+          - backend
+          - ui
+        values:
+          - '1'
+          - '2'
+        clearable: true
+        clear_label: No labels
+        creatable: true
+        create_label: label
+        options:
+          - value: '1'
+            label: backend
+            selected: true
+          - value: '2'
+            label: ui
+            selected: true
+          - value: '3'
+            label: bug
+            selected: false
+  # Grammar 7: one primary submit, and the secondary action is Cancel. A form
+  # inside a `dialog` leaves these to the hull's own action row; a form that is
+  # its own surface renders them here.
+  actions:
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: ghost
+        label: Cancel
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: primary
+        label: Create ticket
+        type: submit

@@ -1,0 +1,12 @@
+component: bb_theme:link-group
+name: Self target
+props:
+  label: Test results
+  links:
+    - url: /tickets/BB-657
+      title: BB-657
+      kind: doc
+      target: _self
+    - url: https://gitlab.example.com/org/repo/-/pipelines/12345
+      title: Pipeline
+      kind: ci

@@ -1,0 +1,33 @@
+(
+  /* THE CONDUCTORS LISTING. One list row per conductor in the URL workspace.
+     Pattern matches views.view.conductors: headline linked label (registration
+     fallback), meta status and reported load. Rows below mirror
+     designbook/data/bb_conductor.bb_conductor.yml, workspace 1. */
+  $rows := [
+    { "id": "1", "label": "cw · framework", "status": "online", "reported_load": 1, "conductor_id": "cw-framework" },
+    { "id": "2", "label": "mvd · shop", "status": "offline", "reported_load": 0, "conductor_id": "mvd-shop" }
+  ];
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "pattern": {
+          "headline": ["label"],
+          "meta": ["status", "reported_load"],
+          "captions": { "reported_load": "Reported load" }
+        },
+        "items": [$map($rows, function ($c) {
+          {
+            "url": "/bakers/conductor/" & $c.id,
+            "cells": {
+              "label": { "kind": "link", "value": $c.label, "url": "/bakers/conductor/" & $c.id },
+              "status": { "kind": "text", "value": $c.status },
+              "reported_load": { "kind": "text", "value": $string($c.reported_load) }
+            }
+          }
+        })]
+      }
+    }
+  ]
+)

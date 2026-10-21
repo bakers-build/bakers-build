@@ -1,0 +1,120 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Event
+status: stable
+group: Data Display
+description: >-
+  One entry of an activity timeline: who, an optional tag, when, and a rich
+  body. Read-only.
+
+
+  IT KNOWS NOTHING ABOUT WHAT PRODUCED IT, and that is the whole of this
+  contract. It used to be a comment renderer, and the shape it drew was never a
+  comment's: a person, a tag, a timestamp and a prose body describe a run's
+  handoff, a deployment note and a review remark just as exactly. The entity
+  knowledge went back to the mapping, which is the layer that knows which field
+  is the author and which is the body, and the component then serves every one
+  of those without a second copy of itself.
+
+
+  THE TAG IS A FREE STRING AND NOT AN ENUM. It was an enum over one entity's
+  type field, which is two defects in one: a display component had a list of
+  another layer's permitted values, and the list could only ever be BEHIND them.
+  The failure that produces is the worst kind — measured on a running site, the
+  display_builder render path does not reject an out-of-enum value, it silently
+  drops the prop, and a handoff of a new kind is then displayed as an ordinary
+  untagged entry with nothing signalling it. So the tag is whatever the caller
+  passes: a KNOWN value takes its own accent, anything else renders with the
+  neutral one, and an ABSENT tag renders no tag at all.
+
+
+  THAT AN UNTAGGED ENTRY IS UNTAGGED IS THE CALLER'S KNOWLEDGE. A source whose
+  type field has a default meaning "no particular kind" passes no tag, rather
+  than passing that default here for this component to recognise — which is what
+  the deleted `comment` branch of the accent map was, an entity's default value
+  hard-coded into a display.
+
+
+  THE BODY IS A SLOT-LESS PROP CARRYING PROCESSED MARKUP, and the prose
+  treatment is not here: `rich-text` owns it, so this body and a description
+  elsewhere in the theme agree by construction. Two facts about that format
+  matter to whoever fills it — the format is GitHub-flavoured Markdown and
+  STRIPS RAW HTML, so a body authored as HTML renders empty, and a pipe table
+  arrives as a real table, which `rich-text` styles and lets scroll inside
+  itself.
+
+
+  A STRUCTURED LEAD IS THE OTHER WAY TO FILL THE ENTRY. A caller that knows
+  facts rather than prose passes a subject (label, optional URL), a statement,
+  plain `facts`, `links` and one preformatted `detail` line; the template lays
+  them out and the same `rich-text` treatment styles them. `body` wins when
+  both arrive.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    author_name:
+      type: string
+      title: Author name
+    author_initials:
+      type: string
+      title: Author initials
+    author_color:
+      type: string
+      enum:
+        - running
+        - attention
+        - unassigned
+        - lease
+        - offline
+      title: Author avatar colour key
+    role:
+      type: string
+      enum:
+        - agent
+        - human
+      title: Author role tag
+    tag:
+      type: string
+      title: >-
+        Tag — free text; drives the typed accent when it is a known value,
+        otherwise renders with the neutral accent. Absent renders no tag.
+    timestamp:
+      type: string
+      title: Posted-at label
+    body:
+      type: string
+      title: Rendered body markup; absent when the structured lead is used
+    subject_label:
+      type: string
+      title: Subject label, shown first and linked when subject_url is set
+    subject_url:
+      type: string
+      title: Subject URL
+    statement:
+      type: string
+      title: What happened, after the subject
+    facts:
+      type: array
+      items:
+        type: string
+      title: Secondary facts, joined by middots
+    links:
+      type: array
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+          url:
+            type: string
+      title: Links after the facts
+    detail:
+      type: string
+      title: One preformatted line, e.g. an error
+  required:
+    - author_name
+    - author_initials
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

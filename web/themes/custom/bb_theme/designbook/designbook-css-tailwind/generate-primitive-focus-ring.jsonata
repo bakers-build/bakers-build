@@ -1,0 +1,63 @@
+/** @config
+ {
+   "input": "../design-system/design-tokens.yml",
+   "output": "../../css/tokens/primitive-focus-ring.src.css"
+ }
+ */
+
+(
+  $normalizeCssValue := function($val) {
+    $type($val) = "string"
+      ? $replace($replace($val, /(^|[\s:,])\.(\d)/, "$10.$2"), /(^|[\s:,])-\.(\d)/, "$1-0.$2")
+      : $val
+  };
+  $walk := function($node, $path) {
+    $reduce(
+      $keys($node),
+      function($acc, $k) {
+        $substring($k, 0, 1) != "$" ? (
+          $v := $lookup($node, $k);
+          $sub := $path = "" ? $k : $path & "-" & $k;
+          $exists($v."$value") ? (
+            $val := $v."$value";
+            $resolved := $substring($val, 0, 1) = "{" ? (
+              $ref := $replace($replace($val, "{", ""), "}", "");
+              $parts := $split($ref, ".");
+              $typeKeywords := ["color","spacing","radius","fontFamily","fontSize","fontWeight","lineHeight","elevation","lineWeight","duration","focusRing"];
+
+              $matchIdxs := $filter($map($parts, function($p, $i) { $count($filter($typeKeywords, function($t) { $t = $p })) > 0 ? $i : -1 }), function($x) { $x >= 0 });
+
+              $typeIdx := $count($matchIdxs) > 0 ? $matchIdxs[0] : -1;
+
+              $rtype := $typeIdx >= 0 ? $parts[$typeIdx] : $parts[1];
+
+              $primPrefix := $rtype = "fontFamily" ? "font"
+
+                : $rtype = "fontSize" ? "text"
+
+                : $rtype = "fontWeight" ? "font-weight"
+
+                : $rtype = "lineHeight" ? "leading"
+
+                : $rtype = "focusRing" ? "focus-ring"
+
+                : $rtype;
+
+              $suffixStart := $typeIdx >= 0 ? $typeIdx + 1 : 2;
+
+              "var(--" & $primPrefix & "-" & $join($filter($parts, function($p, $i) { $i >= $suffixStart }), "-") & ")"
+            ) : $normalizeCssValue($val);
+            $append($acc, "  --focus-ring-" & $sub & ": " & $resolved & ";")
+          )
+          : $append($acc, $walk($v, $sub))
+        ) : $acc
+      },
+      []
+    )
+  };
+  $node := $reduce($split("primitive.style.focusRing", "."), function($a, $s) { $lookup($a, $s) }, $$);
+  $lines := $walk($node, "");
+  $count($lines) > 0
+    ? "@theme static {\n" & $join($lines, "\n") & "\n}\n"
+    : ""
+)

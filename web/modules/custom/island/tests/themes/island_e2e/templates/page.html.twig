@@ -1,0 +1,30 @@
+{#
+/**
+ * @file
+ * Harness page template: the PAGE owns the swap container (BB-398 D2).
+ *
+ * `#page-content` wraps the main-content region and nothing else, because an
+ * htmx fragment is exactly the page's main content (spec M2). Everything
+ * outside `page.content` therefore stays outside the container, and a
+ * linkToPage() swap can never nest a region inside itself.
+ *
+ * This template is the executable half of the contract the module documents
+ * and deliberately does not own: the module neither creates this container nor
+ * knows its id. HtmxRenderer never runs a page template, so `#page-content`
+ * exists in the document and never in the response fragment — which is why a
+ * link that targets it needs no hx-select, and why the container itself is
+ * never the thing being replaced.
+ *
+ * `page_top` and `page_bottom` are rendered by html.html.twig, not here.
+ */
+#}
+{{ page.header }}
+{{ page.primary_menu }}
+{{ page.secondary_menu }}
+{{ page.breadcrumb }}
+{{ page.highlighted }}
+{{ page.help }}
+<div id="page-content">{{ page.content }}</div>
+{{ page.sidebar_first }}
+{{ page.sidebar_second }}
+{{ page.footer }}

@@ -1,0 +1,28 @@
+# Markdown output fixture: the same corpus as APIS-1's description, once per comment surface.
+_meta:
+  version: '1.0'
+  entity_type: bb_comment
+  uuid: 61cc0000-0000-4000-8000-000000000003
+  depends:
+    61000000-0000-4000-8000-000000000001: bb_ticket
+    6e52c2ea-3411-5276-b0de-b9a17e20cdb9: user
+default:
+  created:
+    -
+      value: 1780390920
+  changed:
+    -
+      value: 1780390920
+  ticket_id:
+    -
+      entity: "61000000-0000-4000-8000-000000000001"
+  author:
+    -
+      entity: "6e52c2ea-3411-5276-b0de-b9a17e20cdb9"
+  body:
+    -
+      value: "## Release checks\n\n| Check | Result | Notes |\n| --- | --- | --- |\n| **Build** | Passed | See [details](/home). |\n| Parser | Pending | Preserve `a\\|b` and Grüße. |\n| Empty | | A deliberately empty middle cell. |\n\nText after the table must remain visible.\n\n### Wide table\n\n| Environment | Service | Revision | Command | Observed result | Owner |\n| --- | --- | --- | --- | --- | --- |\n| recipe-test | web | `abcbb87ae0c8b08369389e919da236b7f4d7fb97` | `ddev init --provider recipe-test --fresh` | Installed from the recipe and answered every route. | Conductor |\n\n| Only | Header | Row |\n| --- | --- | --- |\n\n#### Formatting\n\nA paragraph with **strong**, *emphasis*, `inline code` and a [link](https://example.test/a/very/long/path/that/has/to/wrap/inside/the/body).\n\n- Outer item\n  - Nested item\n1. First\n2. Second\n\n> A quiet quote.\n\n---\n\n```html\n<script>alert(\"literal\")</script>\n```\n"
+      format: "bb_rich"
+  type:
+    -
+      value: "summary"

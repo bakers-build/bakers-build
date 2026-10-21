@@ -1,0 +1,11 @@
+views.filter.bb_worklog_period:
+  type: views_filter
+  label: 'Worklog period'
+  mapping:
+    context:
+      type: string
+      label: 'Calendar context'
+
+views.style.bb_worklog_calendar:
+  type: views_style
+  label: 'Time calendar'

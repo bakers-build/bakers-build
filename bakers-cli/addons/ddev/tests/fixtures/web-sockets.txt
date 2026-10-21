@@ -1,0 +1,3 @@
+LISTEN 0      511    127.0.0.1:443       0.0.0.0:*          users:(("php-fpm",pid=50,fd=6))
+LISTEN 0      511    127.0.0.1:8025      0.0.0.0:*          users:(("mailpit",pid=51,fd=6))
+LISTEN 0      511    127.0.0.1:3002      0.0.0.0:*          users:(("node",pid=52,fd=6))

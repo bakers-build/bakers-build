@@ -1,0 +1,17 @@
+# `plain`: a block's property rows inside an inspector with `surface`; the last
+# row shows linked chips, one `badge` cell with a `url` per related ticket.
+component: bb_theme:list
+name: Plain
+props:
+  layout: plain
+  items:
+    - cells:
+        label: { kind: text, value: Assignee, emphasis: faint }
+        value: { kind: text, value: Christian Wiedemann }
+    - cells:
+        label: { kind: text, value: Created by, emphasis: faint }
+        value: { kind: text, value: Christian Wiedemann }
+    - cells:
+        label: { kind: text, value: Blocked by, emphasis: faint }
+        value: { kind: badge, label: BB-110, tone: neutral, mono: true, url: /_workspace/1/ticket/3 }
+        value_2: { kind: badge, label: BB-105, tone: neutral, mono: true, url: /_workspace/1/ticket/5 }

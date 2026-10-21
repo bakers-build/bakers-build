@@ -1,0 +1,66 @@
+import { calls, check, commentMatches, commonChecks, data, discoveryBefore, firstEvidence, readAfter, readRecovery, succeeded, uuid, validateTools, value, writes } from '../call-utils.mjs';
+import { nonempty, requireValue } from '../validation.mjs';
+export function validate(f) {
+  validateTools(f, 'create-ticket');
+  requireValue(uuid(f.input.project_uuid) && nonempty(f.input.title) && nonempty(f.simulation.files?.[f.input.description_file]), 'Expected title, project and virtual Markdown description');
+}
+// qualify-ticket fields appear as `out_of_scope: …` or as an "Out of scope" section.
+const recorded = (body, field) => body.includes(field) ||
+  new RegExp(`^#+ *${field.replaceAll('_', ' ')} *$`, 'im').test(body);
+function analyze(f, context) {
+  const trace = calls(context), allWrites = writes(trace);
+  const searches = trace.filter(c => c.action === 'search' && c.target === 'bb_ticket' && succeeded(c));
+  const queries = searches.flatMap(c => c.flags.filter ?? []);
+  const terms = new Set(queries.filter(q => /^(title|description\.value):CONTAINS:/.test(q)).map(q => q.split(':').slice(2).join(':')).filter(q => q !== 'ticket'));
+  const coverage = [...terms].filter(term => queries.includes(`title:CONTAINS:${term}`) && queries.includes(`description.value:CONTAINS:${term}`)).length >= 2;
+  const probe = searches.some(c => (c.flags.filter ?? []).includes('title:CONTAINS:ticket') && data(c)?.length > 0);
+  const prior = f.simulation.prior_art;
+  const searchCheck = check('prior-art-search', coverage && (prior || probe), 'Search two domain spellings in both title and description.value; validate empty queries with a known-positive probe');
+  if (prior) return { diagnostics: [], checks: [...commonChecks(trace), searchCheck,
+    check('prior-art-read', trace.some(c => c.action === 'read' && c.target === `bb_ticket/bb_ticket/${prior.id}` && succeeded(c)) ||
+      searches.some(c => data(c)?.some(row => row.id === prior.id && row.attributes?.description?.value === prior.description.value && row.attributes?.state === prior.state)),
+      'Inspect a complete returned candidate, either in search results or through a separate read'),
+    check('prior-art-stop', allWrites.length === 0, 'A relevant unresolved prior-art hit permits no create, comment or transition'),
+  ] };
+  const creates = allWrites.filter(c => c.action === 'create' && c.target === 'bb_ticket');
+  const create = creates[0], identifier = data(create)?.id;
+  const target = `bb_ticket/bb_ticket/${identifier}`;
+  const initial = readAfter(trace, create, target);
+  const comments = allWrites.filter(c => c.action === 'create' && c.target === 'bb_comment');
+  const qualification = comments.find(c => value(c, 'bb_comment_type') === 'qualification');
+  const summary = comments.find(c => value(c, 'bb_comment_type') === 'summary');
+  const transitions = allWrites.filter(c => c.action === 'update' && value(c, 'state'));
+  const transition = transitions[0], final = readAfter(trace, transition, target);
+  const description = f.simulation.files[f.input.description_file];
+  // Both publications are confirmed by their create responses before the first state write;
+  // an optional readback can still earn a recovered-read warning.
+  const barrier = transition?.index ?? Infinity;
+  const obligations = comments.map(c => {
+    const id = data(c)?.id;
+    const first = firstEvidence(trace, id, c.index);
+    const exact = commentMatches(first?.record, { id, ticket: identifier, type: value(c, 'bb_comment_type'), body: value(c, 'body.value') }) &&
+      value(c, 'ticket_id') === identifier && value(c, 'body.format') === 'bb_rich';
+    return { id, after: c.index, before: barrier, verified: exact ? first.index : undefined };
+  });
+  const { recovered, diagnostics } = readRecovery(trace, obligations);
+  return { diagnostics, checks: [...commonChecks(trace, () => false, recovered), searchCheck,
+    check('create-after-search', create && searches.filter(c => c.index < create.index).length >= 5 && discoveryBefore(trace, create), 'Complete prior-art search and schema discovery before creating'),
+    check('ticket-create', creates.length === 1 && value(create, 'bundle') === 'bb_ticket' && value(create, 'title') === f.input.title &&
+      value(create, 'workflow') === 'bb_feature' && value(create, 'project_id') === f.input.project_uuid && value(create, 'description.value') === description &&
+      value(create, 'description.format') === 'bb_rich' && ['work:docs', 'method:matt'].every(label => value(create, 'label_names')?.split(',').includes(label)) &&
+      !value(create, 'base_branch') && !value(create, 'parent_id') && !value(create, 'conductor_id'),
+      'Create one feature with the verbatim title, exact Markdown, project and confirmed labels; infer no parent, conductor or base_branch'),
+    check('ticket-readback', uuid(identifier) && data(initial)?.attributes?.title === f.input.title && data(initial)?.attributes?.description?.value === description &&
+      data(initial)?.attributes?.description?.format === 'bb_rich' && (data(initial)?.relationships?.project_id?.data?.id ?? data(initial)?.attributes?.project_id) === f.input.project_uuid && data(initial)?.attributes?.state === 'qualification',
+      'Read the created UUID and verify identity, description, project and initial state'),
+    check('qualification-and-summary', comments.length === 2 && qualification && summary && qualification.index < summary.index &&
+      ['review_actors', 'out_of_scope', 'handoff_version', 'provenance', 'reproduction', 'scenario_required'].every(field => recorded(value(qualification, 'body.value') ?? '', field)) &&
+      value(qualification, 'body.value')?.includes(f.input.acceptance_criterion) && comments.every(c => succeeded(c) && uuid(data(c)?.id) && c.index < barrier),
+      'Publish one complete qualification and one summary, both confirmed, before routing'),
+    check('single-initial-route', allWrites.length === 4 && transitions.length === 1 && transition.target === target && value(transition, 'state') === 'spec' &&
+      discoveryBefore(trace, transition) && data(final)?.attributes?.state === 'spec' && trace.at(-1) === final,
+      'Route the normal feature once to spec, verify readback and stop without starting spec work'),
+  ] };
+}
+export const checkOutput = (f, _output, context) => analyze(f, context).checks;
+export const diagnose = (f, _output, context) => analyze(f, context).diagnostics;

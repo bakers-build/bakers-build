@@ -1,0 +1,201 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Zone
+status: stable
+group: Layout
+description: >-
+  A body region inside a screen — the IA document's own word for it (D9.3
+  "Zones", D10.1/D10.2 "Board / Delivery / Runs zone"). It is what a screen puts
+  inside `canvas.main`: an optional heading, optional right-aligned actions, and
+  a content grid whose direct children are the cells. It supersedes `section` in
+  every scene (BB-378 D14) and deliberately arrives with three of that
+  component's concerns dropped. `padding_x`/`padding_y` are replaced by ONE
+  `inset`, because on `section` the same word meant two sizes — `sm` was 10px
+  horizontally and 8px vertically (F7) — which is a trap rather than a feature.
+  `justify_items` is replaced by `direction: row`, which wraps and keeps its
+  children's intrinsic widths: the only thing `justify_items: start` was ever
+  used for was stopping a grid cell blockifying an `inline-flex` pill, and a
+  wrapping row does that by construction. `header_style` does not come along at
+  all: a zone heading has ONE style, so a scene cannot make two adjacent zones
+  disagree about what a zone heading looks like. `inset` and `gap` resolve to
+  `space-*` tokens only — spacing here is configuration on a measured scale,
+  never a hard pixel value (D16). The heading renders `<h2>`, because
+  `page_header` owns the screen's only `<h1>` (D5); a zone with no heading
+  renders none, not an empty one. A ZONE WITH NOTHING TO SHOW RENDERS NOTHING AT
+  ALL (BB-414) — no `<section>`, no heading, no empty grid. `content` and
+  `actions` are what count as something to show; a heading alone does not,
+  because a heading is a label for something and a label over nothing is a
+  promise the screen does not keep. Two surfaces on the ticket detail forced it
+  and both used to render as a heading over an empty box: the About zone on a
+  ticket whose `description` is empty, and the Run history zone on a ticket
+  whose runs are all invisible to the reader. THE TEST STRIPS TAGS AND COMMENTS
+  FIRST, which is measured rather than defensive: with `twig.config.debug` on —
+  every DDEV site — SDC wraps every component in `<!-- Component start/end -->`
+  markers, so a child that rendered nothing still arrives as 91 bytes, and a
+  naive emptiness test would keep the zone in development and drop it in
+  production. `|striptags` removes both, and its allow-list keeps the void
+  elements (`img`, `svg`, `input`, …) that are content without carrying text.
+  Actions count as content on purpose: a zone with an empty list but an add
+  affordance is the only place a reader can put the first item into it. THE
+  HONEST LIMIT: hiding the Run history zone removes a misleading sight, it does
+  not make the runs visible. Run rows are filtered by `view` access and
+  `bb_run`'s admin permission is `administer bakers`, so a reader without it now
+  sees no trace of run history at all rather than an empty box. That is an
+  accepted trade, not a fix — the permission model is a separate decision and a
+  separate ticket. BB-414's second review gate corrected the gate twice more.
+  `description` NOW COUNTS as something to show: it is a prop rather than a
+  slot, so it is not part of the content capture, and a zone carrying a heading
+  and a description but no content used to drop the description with everything
+  else — prose the reader was meant to read, gone with the box it explained. A
+  description is a sentence, not a label for something absent, so unlike a
+  heading it keeps the zone. And `drupal-render-placeholder` is NOW IN THE
+  ALLOW-LIST: anything Drupal defers — a lazy builder, a form, a cached block,
+  the messages area — arrives here as that one element and nothing else, carries
+  no text and no void element, and was therefore measured as empty and dropped
+  moments before Drupal would have replaced it with the real markup. Content
+  that has not been built yet is still content.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    heading_size:
+      type: string
+      enum:
+        - section
+        - display
+      title: Heading size
+      description: >-
+        Use display for a peer section matching the page title; defaults to
+        section.
+    inset:
+      type: string
+      enum:
+        - none
+        - sm
+        - md
+        - lg
+      title: Inset
+      description: >-
+        Padding on BOTH axes, from one scale: `none` = 0, `sm` = 12px, `md` =
+        20px (the default), `lg` = 24px at default density, and 18px, 30px and
+        36px under cozy (Tailwind's `p-3`/`p-5`/`p-6`, which scale with the
+        density's `--spacing`). One property and one scale on purpose: `section`
+        shipped `padding_x` and `padding_y` whose shared vocabulary resolved to
+        different sizes per axis, and sixteen scenes then corrected its default
+        by hand (F6, F7). The default is the value those sixteen corrections
+        were reaching for, so a zone that says nothing is already right.
+    gap:
+      type: string
+      enum:
+        - none
+        - sm
+        - md
+        - lg
+      title: Gap
+      description: >-
+        Distance between the cells of the content grid, from
+        `component.zone.gap.*`, which point at the space scale: `none` = 0, `sm`
+        = `space-3` (12px, 16px cozy), `md` = `space-5` (20px, 24px cozy, the
+        default), `lg` = `space-6` (24px, 32px cozy).
+    direction:
+      type: string
+      enum:
+        - column
+        - row
+        - fill
+      title: Direction
+      description: >-
+        `fill` is one row for a single field and its submit (or a search and its
+        sort): the first cell takes the remaining width, every later cell keeps
+        its intrinsic width on one line, and all cells align to the bottom edge,
+        so a button lines up with the input rather than with the field label. It
+        wraps only when the row cannot fit — below the first cell's basis the
+        later cells move to a new line, capped at the row width — so a narrow
+        column never overflows. How the content is arranged. `column` (the
+        default) is the `columns`-wide grid. `row` is a WRAPPING row whose
+        children keep their intrinsic widths — which is what `section`'s
+        `justify_items: start` was working around: a grid cell blockifies its
+        child, so an `inline-flex` badge became a full-width rounded rectangle
+        and a list of labels rendered as a column of them instead of as pills
+        (F9). In `row`, `columns` has nothing to do and is ignored.
+    align:
+      type: string
+      enum:
+        - start
+        - center
+      title: Alignment
+      description: >-
+        `center` centres the heading, the description and the cells, for a short
+        standalone result — a heading, a sentence and one action inside a card.
+        Default `start`.
+      default: start
+    columns:
+      type: integer
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+      title: Columns
+      description: >-
+        Number of columns the content grid renders at `lg` and above, narrowing
+        to two at `md` and one below it. Only meaningful when `direction` is
+        `column`. Defaults to 1.
+    description:
+      type: string
+      title: Description
+      description: >-
+        The block's sub-line, rendered below the `<h2>` in the same treatment
+        `page_header` gives the screen's sub-line — one level of type smaller
+        and recessive. It exists because ten block headers in the delivered
+        scenes needed one and `zone` had none (BB-378 D14 did not think of
+        it), so they were written as block-level `<span>`s with inline styles
+        inside the `heading` slot — scene YAML sits outside the CSS build's
+        source paths, so a utility class written there is never compiled and
+        inline styles were the only thing that worked. A prop is the better
+        answer: it is reviewable, it is styled once here, and it keeps the
+        heading slot for the heading. Omitted means no element, never an empty
+        one. It does NOT truncate: a block sub-line is a sentence and wraps,
+        where a screen sub-line is an identity line on one row.
+    list:
+      type: boolean
+      title: Content is an ARIA list
+      description: >-
+        Opt-in, default `false`, so a zone that says nothing renders a plain
+        content grid. When true the content container itself (never the outer
+        `<section>`) gets `role="list"`. A stack of plain `<div>` rows otherwise
+        gives a screen reader neither a table nor a list — no item count and no
+        way to navigate the members as a set. This is deliberately ARIA rather
+        than a `<ul>`/`<li>` rewrite of a layout primitive used across the whole
+        theme. A caller that sets this is responsible for giving each direct
+        child of the content slot `role="listitem"` (`badge` takes a `list_item`
+        prop for exactly this) — `role="list"`/`role="listitem"` must be direct
+        parent/child in the accessibility tree, or a browser drops both roles.
+        NO SURFACE IN THIS THEME SETS IT ANY MORE: every listing that did is a
+        `list` node now, which renders a real `<ul>` of `<li>` and needs none of
+        this arrangement. The prop stays because the pairing is still the only
+        answer for a caller that has no container to reach for, and because
+        removing it is a change to `zone`, which this listing work does not
+        touch.
+slots:
+  heading:
+    title: Heading
+    description: >-
+      The zone's heading, rendered as `<h2>` in the one style a zone heading
+      has. Plain text is the normal case; rich markup (an icon, a count badge)
+      is supported and inherits the same style. Leave it empty and no heading
+      element is rendered at all.
+  actions:
+    title: Actions
+    description: >-
+      Actions this zone owns, right-aligned on the heading row — an add
+      affordance for the list the zone holds. Empty means the zone owns no
+      action, and nothing is rendered rather than something disabled.
+  content:
+    title: Content
+    description: >-
+      The zone's body. Each direct child becomes a cell of the content grid, or
+      an item of the wrapping row when `direction` is `row`.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

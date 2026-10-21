@@ -1,0 +1,39 @@
+/** @config
+ {
+   "input": "../design-system/design-tokens.yml",
+   "output": "../../css/tokens/component-sizing.src.css"
+ }
+ */
+
+(
+  $normalizeCssValue := function($val) {
+    $type($val) = "string"
+      ? $replace($replace($val, /(^|[\s:,])\.(\d)/, "$10.$2"), /(^|[\s:,])-\.(\d)/, "$1-0.$2")
+      : $val
+  };
+  $base := $$.primitive.layout;
+  $cozy := $$.themes."cozy".primitive.layout;
+  $baseLines := [
+    "  --spacing-shell-offset: " & $$.component.shell.offset."$value" & ";",
+    "  --spacing-shell-height: " & $$.component.shell.height."$value" & ";",
+    "  --spacing-row: " & $normalizeCssValue($base."row-h"."$value") & ";",
+    "  --spacing-control: " & $normalizeCssValue($base."control-h"."$value") & ";"
+  ];
+  /* Compact brand geometry: fixed component values, so no cozy override. */
+  $brandLines := $each($$.component.brand.compact, function($v, $k) {
+    "  --spacing-brand-compact-" & $k & ": " & $normalizeCssValue($v."$value") & ";"
+  });
+  /* Zone gaps reference the space scale, so cozy repoints them through the primitive it overrides. */
+  $zoneLines := $each($$.component.zone.gap, function($v, $k) {
+    "  --spacing-zone-" & $k & ": var(--spacing-" & $split($replace($replace($v."$value", "{", ""), "}", ""), ".")[-1] & ");"
+  });
+  $stateLines := $each($$.component."empty-state", function($v, $k) {
+    "  --spacing-empty-state-" & $k & ": " & $normalizeCssValue($v."$value") & ";"
+  });
+  $baseLines := $append($append($append($baseLines, $brandLines), $zoneLines), $stateLines);
+  $cozyLines := [
+    "    --spacing-row: " & $normalizeCssValue($cozy."row-h"."$value") & ";",
+    "    --spacing-control: " & $normalizeCssValue($cozy."control-h"."$value") & ";"
+  ];
+  "@theme static {\n" & $join($baseLines, "\n") & "\n}\n[data-layout=\"cozy\"] {\n" & $join($cozyLines, "\n") & "\n}\n"
+)

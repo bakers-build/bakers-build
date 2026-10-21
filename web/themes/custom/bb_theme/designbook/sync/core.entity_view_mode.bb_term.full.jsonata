@@ -1,0 +1,24 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_term.full
+ *
+ * Emitted by the designbook `sync-to` workflow (bb-8a9979fd). The static
+ * config below is the transform output for this unit — a display_builder
+ * component binding (or view-mode definition) authored from the entity-mapping
+ * design + the live typed-config schema, following the board_card source model.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "module": [
+      "bb_core"
+    ]
+  },
+  "id": "bb_term.full",
+  "label": "Full",
+  "description": "",
+  "targetEntityType": "bb_term",
+  "cache": true
+}
+)

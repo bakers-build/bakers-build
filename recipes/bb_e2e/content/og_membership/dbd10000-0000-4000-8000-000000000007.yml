@@ -1,0 +1,55 @@
+# sgruber's TEAM membership — a crew member who holds no Drupal role at all.
+#
+# `sgruber` deliberately carries no `user_role` (see its user fixture), so this
+# membership is the whole reason the account appears in a team at all. It is the
+# subject that shows a team is a crew for REPORTING and not an access carrier: the
+# account's ticket reach is unchanged by it, because that comes from …0004 /
+# …0005 (workspace + project), never from the team.
+#
+# Platform Crew, not Design Crew: sgruber already OWNS Design Crew
+# (…0002's `owner_user_id`) and `og.settings` has
+# `auto_add_group_owner_membership: true`, so a fixture naming that pair would
+# abort the import with "already a member in this group". Placing it here also
+# gives Platform Crew three active members against Design Crew's two, so the two
+# crews differ in size and a per-team count is distinguishable from a constant.
+#
+# The sizes are real in the database AND readable over a machine identity's
+# token, so they are an observable and not just a row. OG reserves membership
+# reads to site-wide `administer organic groups` or an in-group
+# `administer group`/`manage members` grant, none of which the `bb:session`
+# umbrella names; membership reads are opened instead by the child scope
+# `view bakers memberships`, whose permission `BbOgMembershipAccessControlHandler`
+# checks on the single row and `WorkspaceReadScopeSubscriber`'s `og_membership`
+# rule enforces on the collection. Both bound the row to the account's read
+# scope, so the count the `bakers ui` Teams tab renders is this crew's real size.
+#
+# No `roles` key — `member` is OG's REQUIRED role and naming it is rejected. See
+# …0006 for the full reasoning.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000007
+  bundle: default
+  default_langcode: en
+  depends:
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbe50000-0000-4000-8000-000000000002: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_team
+  entity_bundle:
+    -
+      value: bb_team
+  entity_id:
+    -
+      value: dbc70000-0000-4000-8000-000000000001
+  uid:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000002"
+  state:
+    -
+      value: active

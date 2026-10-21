@@ -1,0 +1,47 @@
+# The confirmation screen a submitted address lands on.
+#
+# `/user/check-mail` sits under core's `user` prefix on purpose. `user` is
+# already on BbWorkspaceSlugConstraint::RESERVED, so this path can never be
+# shadowed by a workspace slug — a NEW root segment would have to be added to
+# that list and ReservedSlugCoverageTest would (correctly) fail until it was.
+#
+# `_access: 'TRUE'` because the visitor who reaches it is by definition not yet
+# signed in. This route has to exist at all — rather than redirecting to
+# `<front>` — because `<front>` is `/home`, which requires an authenticated
+# user, so an anonymous visitor sent there is bounced by r4032login back onto
+# the form they just submitted, which reads as the submit having failed.
+bb_login.check_mail:
+  path: '/user/check-mail'
+  defaults:
+    _form: '\Drupal\bb_login\Form\BbCodeForm'
+    _title: 'Check your mail'
+  requirements:
+    # DELIBERATELY OPEN: the visitor who reaches this screen has just submitted
+    # an address and is by definition NOT yet signed in, so any access
+    # restriction would bounce them onto the form they just submitted — which
+    # reads as the submit having failed. The screen discloses nothing: it names
+    # no address, carries no account state and renders one fixed sentence.
+    _access: 'TRUE'
+  options:
+    # Same reason core sets it on `user.login`: a shared cache must not serve
+    # one visitor's far-side-of-a-POST screen to another.
+    no_cache: 'TRUE'
+
+# Redeems a pending sign-up: the account is created when the mailed link is
+# opened, not when the address was typed.
+#
+# `/user/...` because `user` is already on
+# `BbWorkspaceSlugConstraint::RESERVED`, so this path can never be shadowed
+# by a workspace slug.
+bb_login.claim:
+  path: '/user/claim/{nonce}'
+  defaults:
+    _controller: '\Drupal\bb_login\Controller\BbSignupClaimController::claim'
+    _title: 'Signing you in'
+  requirements:
+    # Open by definition: the visitor holding this link has no session yet,
+    # and the nonce IS the credential. It is 32 random bytes, so there is
+    # nothing for a flood counter to protect.
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'

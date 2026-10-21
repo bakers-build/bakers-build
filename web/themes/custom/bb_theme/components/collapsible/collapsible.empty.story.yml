@@ -1,0 +1,11 @@
+# An empty content slot renders nothing, so this story's root stays empty.
+component: bb_theme:collapsible
+name: Empty
+props:
+  open: false
+slots:
+  label:
+    - type: element
+      tag: span
+      value: Handoffs (0)
+  content: []

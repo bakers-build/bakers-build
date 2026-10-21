@@ -1,0 +1,12 @@
+uuid: b4aa2267-1daa-4a01-a35b-f1f216982e98
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_ticket.create
+label: 'Create dialog'
+description: null
+targetEntityType: bb_ticket
+cache: true
+

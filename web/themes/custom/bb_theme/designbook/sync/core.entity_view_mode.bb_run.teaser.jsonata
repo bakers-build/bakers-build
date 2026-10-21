@@ -1,0 +1,46 @@
+/*
+ * sync-to generator — core.entity_view_mode.bb_run.teaser
+ *
+ * Input ($) is the resolve-filter `unit`:
+ *   { config_name, entity_type: "bb_run", bundle: "bb_run" }
+ *
+ * Emits the `teaser` view-mode DEFINITION for the bb_run custom content
+ * entity. Shape mirrors the sibling `core.entity_view_mode.bb_run.full`
+ * generator beside it (same targetEntityType, bb_core module dependency,
+ * cache: true).
+ *
+ * WHY A `teaser` MODE EXISTS AT ALL. BB-336 split the run in two: `teaser` is
+ * the ROW inside a ticket's Run history, `full` is the body of the run detail
+ * overlay. One view mode cannot be both the item of a listing and the body of a
+ * dialog. BB-414 ships the row because the ticket's `full` display renders its
+ * `runs` reference in this mode — and a display whose view-mode definition is
+ * absent cannot be imported at all, which is the same premise correction F1
+ * makes for the ticket's own `full` mode. `full` is NOT shipped by BB-414: the
+ * overlay is BB-401's, and shipping the name of a display nothing renders is
+ * the mistake this directory's README records twice.
+ *
+ * `full` is a stock Drupal mode name and `teaser` is one too, but neither is
+ * REGISTERED for a code-defined custom entity type — `ddev drush config:get
+ * core.entity_view_mode.bb_run.teaser` exits non-zero on a provisioned site,
+ * so the resolve-filter existence check keeps this unit rather than dropping it.
+ *
+ * The `uuid` is pinned so a re-emission is byte-stable against the shipped file,
+ * for the reason the page-layout generator states in full: a `config/sync` copy
+ * without one never equals active config, and `drush cim` then re-saves the
+ * entity on every deploy — manufacturing the second save the recipe's strict
+ * list rejects (BB-414 R1/R2).
+ */
+(
+  $et := entity_type;
+  {
+    "uuid": "8c1c0f5d-4f9a-4c2a-9a0e-1d5b6a7c3e02",
+    "langcode": "en",
+    "status": true,
+    "dependencies": { "module": ["bb_core"] },
+    "id": $et & ".teaser",
+    "label": "Teaser",
+    "description": "",
+    "targetEntityType": $et,
+    "cache": true
+  }
+)

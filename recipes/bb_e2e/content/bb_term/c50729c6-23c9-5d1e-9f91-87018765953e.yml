@@ -1,0 +1,13 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_term
+  uuid: c50729c6-23c9-5d1e-9f91-87018765953e
+  bundle: bb_labels
+  default_langcode: en
+  depends:
+    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+default:
+  name:
+  - value: API customer-visible
+  workspace_id:
+  - entity: e10b39b4-52d8-5384-84ba-95286c10edd3

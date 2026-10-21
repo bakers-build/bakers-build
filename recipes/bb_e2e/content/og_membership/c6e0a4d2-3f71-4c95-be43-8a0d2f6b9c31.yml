@@ -1,0 +1,25 @@
+# Team lead on the team referenced by API home / API edit project.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: c6e0a4d2-3f71-4c95-be43-8a0d2f6b9c31
+  default_langcode: en
+  bundle: default
+  depends:
+    a4c8e2b0-1d5f-4a73-9c21-6e8b0d4f7a19: user
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+default:
+  entity_type:
+  - value: bb_team
+  entity_bundle:
+  - value: bb_team
+  entity_id:
+  - value: fb355227-fe83-5482-819f-51f8011a78eb
+  state:
+  - value: active
+  uid:
+  - entity: a4c8e2b0-1d5f-4a73-9c21-6e8b0d4f7a19
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_team-bb_team-lead

@@ -1,0 +1,68 @@
+/** @config
+ {
+   "input": "../design-system/design-tokens.yml",
+   "output": "../../css/tokens/semantic-shadow.src.css"
+ }
+ */
+
+(
+  $hexVal := function($c) {
+    $lookup(
+      {"0":0,"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"a":10,"b":11,"c":12,"d":13,"e":14,"f":15},
+      $lowercase($c)
+    )
+  };
+  $hexByte := function($s) { $hexVal($substring($s, 0, 1)) * 16 + $hexVal($substring($s, 1, 1)) };
+  $toRgba := function($hex, $opacity) {
+    "rgba(" & $string($hexByte($substring($hex, 1, 2))) & ", " & $string($hexByte($substring($hex, 3, 2))) & ", " & $string($hexByte($substring($hex, 5, 2))) & ", " & $string($opacity) & ")"
+  };
+  $toBoxShadow := function($s) {
+    $string($s.offsetX) & " " & $string($s.offsetY) & " " & $string($s.blur) & " " & $string($s.spread) & " " & $toRgba($s.color, $s.opacity)
+  };
+  $resolveRef := function($val) {
+    $substring($val, 0, 1) = "{" ? (
+      $ref := $replace($replace($val, "{", ""), "}", "");
+      $reduce($split($ref, "."), function($a, $s) { $lookup($a, $s) }, $$)."$value"
+    ) : $val
+  };
+  $walk := function($node, $path, $root, $prefix, $indent) {
+    $reduce(
+      $keys($node),
+      function($acc, $k) {
+        $substring($k, 0, 1) != "$" ? (
+          $v := $lookup($node, $k);
+          $sub := $path = "" ? $k : $path & "-" & $k;
+          $exists($v."$value")
+            ? $append($acc, $indent & "--" & $prefix & "-" & $sub & ": " & $toBoxShadow($resolveRef($v."$value")) & ";")
+            : $append($acc, $walk($v, $sub, $root, $prefix, $indent))
+        ) : $acc
+      },
+      []
+    )
+  };
+  $base := $reduce($split("semantic.shadow", "."), function($a, $s) { $lookup($a, $s) }, $$);
+  $baseLines := $walk($base, "", $$, "shadow", "  ");
+  $dark := $$.themes."dark".primitive.style.elevation;
+  $darkLines := $dark = undefined ? [] : $reduce(
+    $keys($base),
+    function($acc, $k) {
+      (
+        $v := $lookup($base, $k);
+        $exists($v."$value") ? (
+          $ref := $replace($replace($v."$value", "{", ""), "}", "");
+          $parts := $split($ref, ".");
+          $elevationKey := $parts[-1];
+          $override := $lookup($dark, $elevationKey);
+          $exists($override)
+            ? $append($acc, "    --shadow-" & $k & ": " & $toBoxShadow($override."$value") & ";")
+            : $acc
+        ) : $acc
+      )
+    },
+    []
+  );
+  $result := "@theme static {\n" & $join($baseLines, "\n") & "\n}\n";
+  $count($darkLines) > 0
+    ? $result & "\n[data-mode=\"dark\"] {\n" & $join($darkLines, "\n") & "\n}\n"
+    : $result
+)

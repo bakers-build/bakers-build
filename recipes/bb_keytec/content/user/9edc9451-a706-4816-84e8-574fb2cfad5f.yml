@@ -1,0 +1,32 @@
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 9edc9451-a706-4816-84e8-574fb2cfad5f
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: en
+  name:
+    -
+      value: ds
+  mail:
+    -
+      value: david.stangl@keytec.de
+  pass:
+    -
+      value: '$2y$12$b0xw1IuFBEUZN9u792/xRu2N2i.al5qD4WhkZz8gdTlkwpuv2uLoe'
+      pre_hashed: true
+      existing: null
+  timezone:
+    -
+      value: Europe/Berlin
+  status:
+    -
+      value: 1
+  access:
+    -
+      value: 0
+  login:
+    -
+      value: 0

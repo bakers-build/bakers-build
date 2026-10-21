@@ -1,0 +1,54 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Form Rich Text
+status: stable
+group: Form
+description: >-
+  Markdown authoring control: a formatting toolbar (Heading, Bold, Italic, Code,
+  Link, Bullet list, Numbered list) over a plain textarea. The toolbar is
+  `<markdown-toolbar for="{id}">` from @github/markdown-toolbar-element
+  (registered by form_rich_text.src.js); it only inserts Markdown syntax into
+  the textarea, so the submitted value is exactly the textarea text. Without
+  JavaScript the custom element never upgrades and the toolbar is hidden
+  (`markdown-toolbar:not(:defined)`), leaving the plain textarea. Distinct from
+  rich-text, which displays already-processed HTML, and from form_textarea, the
+  plain box.
+provider: bb_theme
+props:
+  type: object
+  required:
+    - id
+  properties:
+    name:
+      type: string
+      title: Name attribute
+    id:
+      type: string
+      title: ID attribute
+      description: 'Required: the toolbar targets the textarea by id (`for`).'
+    value:
+      type: string
+      title: Value
+      description: >-
+        Markdown source, printed as the textarea text node with no surrounding
+        whitespace.
+    placeholder:
+      type: string
+      title: Placeholder
+    rows:
+      type: integer
+      title: Visible row count
+    autocomplete:
+      type: string
+      title: Autocomplete token
+    required:
+      type: boolean
+      title: Required
+    disabled:
+      type: boolean
+      title: Disabled
+      description: 'Read-only body: renders the textarea disabled and no toolbar.'
+      default: false
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

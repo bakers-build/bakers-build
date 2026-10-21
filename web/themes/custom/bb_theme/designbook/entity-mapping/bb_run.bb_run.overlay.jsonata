@@ -1,0 +1,131 @@
+(
+  /* ONE RUN IN OVERLAY — the body of the run detail overlay, so a `failed` or `expired` run can be
+     investigated WITHOUT OPENING A TERMINAL.
+
+     `teaser` is the ROW inside the ticket's Run history; `full` is the canonical page body;
+     this is the overlay body. The view-mode split BB-336 made is still load-bearing: one
+     view mode cannot be both an item of a listing and the body of a dialog.
+
+     NO `run_detail` COMPONENT, and that is BB-389 rather than a preference. This body was a
+     component of its own, with props called `run_state`, `conductor` and `state_at_start` — a
+     DISPLAY component that knew what a run, a conductor and a ticket are, which B10 forbids and
+     which the deleted run entry was deleted for. The container owns what is inside it: the
+     composition lives here, in the mapping that already knows it is looking at a run, and every
+     component it names is generic.
+
+     EVERY STATE CARRIES ITS OWN GLYPH (C2), on the same map the teaser uses. Tone is COLOUR, so a
+     state told only by its tone is unreadable to a colour-blind reader, and the map BB-389
+     shipped collided `running` and `done`. The contract check reads both mappings and fails if they
+     disagree on any of the five.
+
+     THE SIX MEASUREMENTS ARE ITEMS OF A `list`, not props of a bespoke component. They were own
+     props rather than `footprint_summary` because that component's six props are TICKET aggregates
+     and only two of the six had a counterpart there — the reason holds, and a label/value list is
+     what it looks like once no display component may know what a token is.
+
+     A `list` AND NOT A `table` for these three blocks, deliberately. A table always renders its
+     `<thead>`, so three label/value blocks became three tables each announcing `FIELD | VALUE` —
+     column headings over a shape that has no columns to name. `list` at `layout: lines` is the same
+     dense one-line-per-item treatment without inventing headings for it. */
+  $r := $;
+  $glyph := $r.state = "claimed" ? "lock"
+    : $r.state = "running" ? "run"
+    : $r.state = "done" ? "check"
+    : $r.state = "expired" ? "clock"
+    : $r.state = "failed" ? "alert-triangle"
+    : "info-circle";
+  $tone := $r.state = "claimed" ? "wait"
+    : $r.state = "running" ? "running"
+    : $r.state = "done" ? "idle"
+    : $r.state = "expired" ? "stale"
+    : $r.state = "failed" ? "attention"
+    : "neutral";
+  $accent := $tone = "idle" or $tone = "stale" or $tone = "neutral" ? "idle" : $tone;
+  $took := $r.duration_s ? $string($r.duration_s) & "s" : undefined;
+
+  /* A label/value pair as one item of a `list`. The measurements, the timeline and the origin are
+     the same shape, so they are the same node three times rather than three hand-written blocks. */
+  $pair := function($label, $value) {
+    $value ? { "cells": {
+      "name": { "kind": "text", "value": $label, "emphasis": "faint" },
+      "value": { "kind": "mono", "value": $string($value) }
+    } } : undefined
+  };
+  $pairs := function($items) {
+    [{
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": { "layout": "lines", "items": $items }
+    }]
+  };
+  [
+    /* The hero: the state first, because it is the reason the overlay was opened. One item, so the
+       same `list` the row uses, with one entry. */
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
+      "props": {
+        "layout": "lines",
+        "items": [
+          {
+            "accent": $accent,
+            "cells": {
+              "state": { "kind": "badge", "label": $r.state, "tone": $tone, "icon": $glyph, "dot": true },
+              "from_label": { "kind": "text", "value": "from", "emphasis": "faint" },
+              "from": { "kind": "mono", "value": $r.state_at_start },
+              "took_label": $took ? { "kind": "text", "value": "took", "emphasis": "faint" } : undefined,
+              "took": $took ? { "kind": "mono", "value": $took } : undefined
+            }
+          }
+        ]
+      }
+    },
+    /* Who ran it, and from where. */
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      "slots": {
+        "heading": "Origin",
+        "content": $pairs([
+          $pair("agent", $r.agent),
+          $pair("conductor", "srv01-bakers"),
+          $pair("worktree", $r.worktree_path)
+        ])
+      }
+    },
+    /* THE ERROR LOG — the reason this overlay exists at all. Absent, not empty, on a run that did
+       not fail: an empty box would say the log was read and found blank. */
+    $r.error_log ? {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:log-viewer",
+      "props": { "caption": "Error log", "text": $r.error_log }
+    } : undefined,
+    /* The six BB-132 measurements. */
+    $r.tokens or $r.duration_s or $r.agent_turns or $r.tool_calls or $r.user_prompts or $r.user_prompt_words ? {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      "slots": {
+        "heading": "Measurements",
+        "content": $pairs([
+          $pair("tokens", $r.tokens),
+          $pair("duration", $took),
+          $pair("agent turns", $r.agent_turns),
+          $pair("tool calls", $r.tool_calls),
+          $pair("user prompts", $r.user_prompts),
+          $pair("prompt words", $r.user_prompt_words)
+        ])
+      }
+    } : undefined,
+    /* The four timestamps of the run's life, in order. */
+    $r.created or $r.started_at or $r.heartbeat or $r.closed_date ? {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm", "columns": 1 },
+      "slots": {
+        "heading": "Timeline",
+        "content": $pairs([
+          $pair("created", $r.created),
+          $pair("started", $r.started_at),
+          $pair("heartbeat", $r.heartbeat),
+          $pair("closed", $r.closed_date)
+        ])
+      }
+    } : undefined
+  ]
+)

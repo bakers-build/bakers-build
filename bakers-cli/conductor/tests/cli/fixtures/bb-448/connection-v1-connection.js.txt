@@ -1,0 +1,60 @@
+// @bakers-schema-version 1
+// Canonical bakers.build CONNECTION config — committed (BB-201). A dropsh-shaped
+// { site, plugins } read by 'bakers ui', 'bakers dropsh', and this conductor's auth.
+// Connection + credentials come from your user-global machine context
+// (~/.bakers/machine.config.js). The engine wiring lives in the sibling
+// conductor.config.js (engine-only).
+//
+// plugins[] is consumed by DROPSH, whose resolver has no sole-function
+// auto-pick, so @dropsh/plugin-oauth2 entries MUST name export: 'oauth2Plugin'.
+async function loadMachine() {
+  try {
+    return (await import(`${process.env.HOME}/.bakers/machine.config.js`)).default ?? {};
+  } catch {}
+  return {};
+}
+
+async function loadLocal() {
+  try { return (await import('./conductor.config.local.js')).default ?? {}; } catch {}
+  return {};
+}
+
+const machine = await loadMachine();
+const local = await loadLocal();
+const baseUrl = local.base_url ?? machine.base_url;
+const clientId = local.oauth?.client_id ?? machine.client_id ?? 'bakers-agent';
+const clientSecret = local.oauth?.client_secret ?? machine.client_secret;
+
+export default {
+  // BB-216: the connection-config schema version — kept in sync with the
+  // header marker above so `bakers upgrade` can migrate a stale-shape config.
+  schema_version: 1,
+  site: { base_url: baseUrl, jsonapi_prefix: local.jsonapi_prefix ?? '/jsonapi' },
+  plugins: [
+    {
+      plugin: '@dropsh/plugin-oauth2',
+      export: 'oauth2Plugin',
+      with: {
+        id: 'session',
+        default: true,
+        type: 'oauth2_client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+        token_url: `${baseUrl}/oauth/token`,
+        scope: 'bb:session',
+      },
+    },
+    {
+      plugin: '@dropsh/plugin-oauth2',
+      export: 'oauth2Plugin',
+      with: {
+        id: 'pm',
+        type: 'oauth2_client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+        token_url: `${baseUrl}/oauth/token`,
+        scope: 'bakers:project_manager',
+      },
+    },
+  ],
+};

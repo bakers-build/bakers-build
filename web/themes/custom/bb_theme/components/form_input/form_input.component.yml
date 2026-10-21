@@ -1,0 +1,39 @@
+$schema: "https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json"
+name: "Input"
+status: "stable"
+group: "Form"
+description: "Lean text-based input element; the input type is set via the type prop."
+provider: "bb_theme"
+props:
+  type: "object"
+  properties:
+    type:
+      type: "string"
+      title: "HTML input type"
+    name:
+      type: "string"
+      title: "Name attribute"
+    id:
+      type: "string"
+      title: "ID attribute"
+    value:
+      type: "string"
+      title: "Value"
+    placeholder:
+      type: "string"
+      title: "Placeholder"
+    autocomplete:
+      type: "string"
+      title: "Autocomplete token"
+    required:
+      type: "boolean"
+      title: "Required"
+    disabled:
+      type: "boolean"
+      title: "Disabled"
+    readonly:
+      type: "boolean"
+      title: "Readonly"
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

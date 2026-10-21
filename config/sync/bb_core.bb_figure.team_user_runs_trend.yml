@@ -1,0 +1,45 @@
+uuid: c76ccc83-2a09-4b4c-83ff-af2508dbb002
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_measurement.runs
+_core:
+  default_config_hash: bakers548_team_user_runs_trend
+id: team_user_runs_trend
+label: Runs trend
+description: "Runs over time, by day or month. Date basis: run creation time. Attribution basis: the ticket's current assignee, this team member."
+weight: 2
+widget: grouped_horizontal_bars
+measurements:
+- runs
+categories:
+  type: days
+series: {  }
+filters:
+  period:
+    label: Period
+    default: '7'
+    options:
+    - value: '7'
+      label: 7 days
+    - value: '30'
+      label: 30 days
+    - value: '365'
+      label: 1 year
+context_shape:
+- team
+- user
+conditions:
+  team:
+    id: bb_route_context
+    entity_type: bb_team
+    negate: false
+    context_mapping:
+      entity: team
+  user:
+    id: bb_route_context
+    entity_type: user
+    negate: false
+    context_mapping:
+      entity: user

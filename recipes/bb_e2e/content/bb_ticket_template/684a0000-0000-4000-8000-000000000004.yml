@@ -1,0 +1,41 @@
+# BB-684: an enabled template for the ticket-template scenarios. Nothing
+# instantiates it at seed time, so the project has no generated ticket until a
+# scenario does.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket_template
+  uuid: 684a0000-0000-4000-8000-000000000004
+  default_langcode: en
+  depends:
+    684a0000-0000-4000-8000-000000000003: bb_project
+    dbe50000-0000-4000-8000-000000000001: user
+    db1a0000-0000-4000-8000-000000000010: bb_term
+default:
+  name:
+    -
+      value: "Fixture template"
+  enabled:
+    -
+      value: true
+  title_pattern:
+    -
+      value: "Fixture ticket {{date}}"
+  description:
+    -
+      value: "Generated from the fixture template."
+      format: bb_rich
+  workflow:
+    -
+      value: "bb_chore"
+  target_state:
+    -
+      value: "qualification"
+  labels:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000010"
+  project_id:
+    -
+      entity: "684a0000-0000-4000-8000-000000000003"
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

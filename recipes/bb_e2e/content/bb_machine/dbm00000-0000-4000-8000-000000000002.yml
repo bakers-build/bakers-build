@@ -1,0 +1,22 @@
+_meta:
+  version: '1.0'
+  entity_type: bb_machine
+  uuid: dbm00000-0000-4000-8000-000000000002
+  depends:
+    dbe50000-0000-4000-8000-000000000001: user
+default:
+  name:
+    -
+      value: "e2e full-capacity host"
+  host_key:
+    -
+      value: "e2e-host-full"
+  max_parallel:
+    -
+      value: 3
+  current_load:
+    -
+      value: 3
+  owner_user_id:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000001"

@@ -1,0 +1,33 @@
+[
+  {
+    "Id": "web1",
+    "State": { "Running": true },
+    "Config": {
+      "Labels": {
+        "com.ddev.approot": "/home/cw/wt/pynq-42",
+        "com.docker.compose.service": "web"
+      },
+      "Env": [
+        "HTTPS_EXPOSE=443:443,8026:8025,5173:5173",
+        "VIRTUAL_HOST=pynq-42.ddev.site,admin.pynq.pynq-42.ddev.site"
+      ]
+    },
+    "NetworkSettings": {
+      "Ports": {
+        "443/tcp": [{ "HostIp": "127.0.0.1", "HostPort": "33217" }],
+        "80/tcp": [{ "HostIp": "127.0.0.1", "HostPort": "33218" }]
+      }
+    }
+  },
+  {
+    "Id": "xhgui1",
+    "State": { "Running": false },
+    "Config": {
+      "Labels": {
+        "com.ddev.approot": "/home/cw/wt/pynq-42",
+        "com.docker.compose.service": "xhgui"
+      },
+      "Env": []
+    }
+  }
+]

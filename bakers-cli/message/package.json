@@ -1,0 +1,31 @@
+{
+  "name": "@bakers-build/message",
+  "version": "0.0.1",
+  "description": "The InboxMessageHandler contract: a message type's definition (label, access, optional input) and its handler's one-Markdown result. Owns only the message shape, independent of addon/workspace/conductor concepts.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/src",
+    "schemas",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root .. message/tests"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

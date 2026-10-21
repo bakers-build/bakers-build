@@ -1,0 +1,4 @@
+ERROR: recipes/example/config/example.missing.yml (recipe source) declares configuration "example.missing"; config/sync (export) lacks config/sync/example.missing.yml
+ERROR: recipes/example/config/example.recipe.yml (recipe source) declares /enabled = true; config/sync/example.recipe.yml (export) declares false
+ERROR: web/modules/custom/example/config/install/example.settings.yml (module source) declares /nested/required = "present"; config/sync/example.settings.yml (export) lacks that key
+FAIL: 3 config source/export mismatch(es).

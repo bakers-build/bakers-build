@@ -1,0 +1,11 @@
+component: bb_theme:note
+name: Attention
+# The second tone, and the reason it is a story rather than only an enum value: a
+# tone nothing renders is a contract nobody can review, which is exactly the
+# defect this ticket removed from the band next door. The hairline is the ONLY
+# thing that changes between this and Default — no icon, no tint, no background.
+props:
+  lead: Cleared
+  tone: attention
+slots:
+  body: The next poll will not claim this, and any run already started keeps its lease until it ends on its own.

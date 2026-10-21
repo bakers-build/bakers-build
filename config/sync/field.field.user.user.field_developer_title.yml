@@ -1,0 +1,20 @@
+uuid: fc1056b1-4ef3-4e6b-b10f-8b4400cccfaa
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.user.field_developer_title
+  module:
+    - user
+id: user.user.field_developer_title
+field_name: field_developer_title
+entity_type: user
+bundle: user
+label: 'Developer title'
+description: ''
+required: false
+translatable: null
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

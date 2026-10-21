@@ -1,0 +1,9 @@
+name: bakers.build Inbox
+type: module
+description: 'Point-to-point messages from the server to one conductor, polled and answered by it.'
+package: bakers.build
+core_version_requirement: ^11.3
+dependencies:
+  - entity:entity
+  - bb_core:bb_core
+  - jsonapi_resources:jsonapi_resources

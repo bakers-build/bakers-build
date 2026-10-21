@@ -1,0 +1,100 @@
+services:
+  island.app_provider_manager:
+    class: Drupal\island\AppProviderManager
+    tags:
+      - { name: service_collector, tag: island.app_provider, call: addProvider }
+  island.default_app_provider:
+    class: Drupal\island\DefaultAppProvider
+    tags:
+      - { name: island.app_provider }
+  island.profile_renderer:
+    class: Drupal\island\IslandProfileRenderer
+    arguments: ['@entity_type.manager', '@plugin.manager.island', '@island.app_provider_manager', '@island.host_resolver', '@island.condition_evaluator']
+  island.layout_manager:
+    class: Drupal\island\IslandLayoutManager
+    arguments: ['@plugin.manager.sdc']
+  island.profile_selector:
+    class: Drupal\island\IslandProfileSelector
+    arguments: ['@entity_type.manager', '@island.condition_evaluator']
+  island.condition_evaluator:
+    class: Drupal\island\IslandConditionEvaluator
+    arguments: ['@plugin.manager.condition', '@context.repository', '@context.handler', '@logger.channel.island']
+  island.profile_migrator:
+    class: Drupal\island\IslandProfileMigrator
+    arguments: ['@entity_type.manager', '@config.storage', '@island.legacy_layout_converter']
+  island.legacy_layout_converter:
+    class: Drupal\island\IslandLegacyLayoutConverter
+    arguments: ['@island.layout_manager', '@plugin.manager.island', '@plugin.manager.block', '@?plugin.manager.ui_patterns_source']
+  island.migration_uninstall_validator:
+    class: Drupal\island\IslandMigrationUninstallValidator
+    arguments: ['@island.profile_migrator']
+    tags:
+      - { name: module_install.uninstall_validator }
+  island.migration_import_subscriber:
+    class: Drupal\island\EventSubscriber\IslandMigrationImportSubscriber
+    arguments: ['@config.storage', '@island.profile_migrator']
+    tags:
+      - { name: event_subscriber }
+  island.app_page_builder:
+    class: Drupal\island\IslandAppPageBuilder
+    arguments: ['@island.profile_selector', '@island.profile_renderer']
+  island.profile_page_variant_subscriber:
+    class: Drupal\island\EventSubscriber\IslandProfilePageVariantSubscriber
+    arguments: ['@entity_type.manager', '@island.profile_selector', '@island.profile_renderer', '@config.factory']
+    tags:
+      - { name: event_subscriber }
+  plugin.manager.island:
+    class: Drupal\island\IslandPluginManager
+    parent: default_plugin_manager
+  Drupal\island\IslandPluginManagerInterface:
+    alias: plugin.manager.island
+  island.host_resolver:
+    class: Drupal\island\IslandHostResolver
+    arguments: ['@plugin.manager.island', '@entity_type.manager', '@island.app_provider_manager', '@request_stack', '@island.condition_evaluator']
+    tags:
+      - { name: service_collector, tag: island.context_provider, call: addProvider }
+  island.placement:
+    class: Drupal\island\IslandPlacement
+    arguments: ['@island.host_resolver', '@plugin.manager.island']
+  island.responder:
+    class: Drupal\island\IslandResponder
+    arguments: ['@renderer', '@plugin.manager.island', '@island.placement', '@current_user']
+  island.page_cache_request_policy:
+    class: Drupal\island\PageCache\IslandPageCacheRequestPolicy
+    tags:
+      # BOTH caches. The internal page cache is the one the design named; the
+      # dynamic page cache turned out to have the identical hazard and was
+      # found by the browser test, not by reading. See the class docblock.
+      - { name: page_cache_request_policy }
+      - { name: dynamic_page_cache_request_policy }
+  logger.channel.island:
+    parent: logger.channel_base
+    arguments: ['island']
+  island.fragment_resolver:
+    class: Drupal\island\IslandFragmentResolver
+    arguments: ['@island.host_resolver', '@current_user', '@logger.channel.island', '@title_resolver', '@request_stack']
+  island.action_subscriber:
+    class: Drupal\island\EventSubscriber\IslandActionSubscriber
+    arguments: ['@island.host_resolver', '@plugin.manager.island', '@island.responder', '@current_user', '@csrf_token']
+    tags:
+      - { name: event_subscriber }
+  island.get_subscriber:
+    class: Drupal\island\EventSubscriber\IslandGetSubscriber
+    arguments: ['@request_stack', '@island.fragment_resolver', '@island.responder', '@logger.channel.island']
+    tags:
+      - { name: event_subscriber }
+
+  # The module's default dialog hull, so the wrapper format works with no
+  # theme. A theme overrides the component via SDC `replaces: island:dialog`
+  # (as bb_theme does), not with a second format.
+  main_content_renderer.island_dialog:
+    class: Drupal\island\Render\WrappedRouteRenderer
+    arguments:
+      - '@title_resolver'
+      - '@renderer'
+      - '@render_cache'
+      - '%renderer.config%'
+      - '@messenger'
+      - 'island:dialog'
+    tags:
+      - { name: render.main_content_renderer, format: island_dialog }

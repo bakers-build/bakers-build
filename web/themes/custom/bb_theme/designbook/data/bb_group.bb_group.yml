@@ -1,0 +1,41 @@
+- id: '1'
+  created: '2026-01-10T08:00:00+00:00'
+  changed: '2026-01-10T08:00:00+00:00'
+  name: keytec
+  description: >-
+    keytec builds and runs bakers.build; its projects carry the platform and the design
+    system.
+  image:
+    alt: keytec braid mark
+    src: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+  workspace_id: '1'
+  billing_profile:
+    cost_centre: KT-1000
+    invoice_to: billing@keytec.example
+  owner_user_id: '1'
+  __designbook:
+    section: settings
+- id: '2'
+  created: '2026-02-20T11:00:00+00:00'
+  changed: '2026-05-04T14:10:00+00:00'
+  name: Northwind Trading
+  description: ''
+  workspace_id: '2'
+  billing_profile:
+    cost_centre: NW-2200
+    invoice_to: ap@northwind.example
+  owner_user_id: '3'
+  __designbook:
+    section: settings
+- id: '3'
+  created: '2026-04-12T10:00:00+00:00'
+  changed: '2026-06-02T09:30:00+00:00'
+  name: Ærøskøbing Søndergård Genossenschaft für Brückenbau und Küstenschutz
+  description: >-
+    A cooperative of harbour towns sharing one maintenance budget for bridges,
+    quays and dikes along the coast:
+    ÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdoku
+  workspace_id: '1'
+  owner_user_id: '3'
+  __designbook:
+    section: projects

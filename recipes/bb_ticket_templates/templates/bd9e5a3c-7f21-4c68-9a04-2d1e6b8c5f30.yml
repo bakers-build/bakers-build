@@ -1,0 +1,49 @@
+# Example ticket template: monthly Drupal update.
+#
+# Default-content format, but deliberately NOT under a `content/` directory:
+# `project_id` and `owner_user_id` below are placeholders for the importing
+# workspace, so applying the recipe must never load this file as is. See
+# README.md for the import procedure (UUID check first, never overwrites).
+#
+# Shipped DISABLED. Instantiating (manual, Web or HTTP) is blocked until a
+# human enables it. Monthly scheduling is a follow-up ticket, not part of
+# this template.
+_meta:
+  version: '1.0'
+  entity_type: bb_ticket_template
+  uuid: bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30
+  default_langcode: en
+  depends:
+    db1a0000-0000-4000-8000-000000000010: bb_term
+default:
+  name:
+    -
+      value: "Drupal update"
+  enabled:
+    -
+      value: false
+  title_pattern:
+    -
+      value: "Update Drupal to the latest version — {{month}}"
+  description:
+    -
+      value: "Update Drupal core and contrib to the latest version. Follow the `keytec-drupal-update` skill: load it, pick the update mode it names (security, patch, minor or major) and finish through its review step."
+      format: bb_rich
+  workflow:
+    -
+      value: "bb_chore"
+  target_state:
+    -
+      value: "qualification"
+  # Replace before import: the target workspace's own `work:code` label.
+  labels:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000010"
+  # Replace both before import: the project (its UUID in the target
+  # workspace) and the owner (a user UUID of that workspace).
+  project_id:
+    -
+      entity: "<project-uuid>"
+  owner_user_id:
+    -
+      entity: "<owner-user-uuid>"

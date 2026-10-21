@@ -1,0 +1,7 @@
+administer island apps:
+  title: 'Administer island apps'
+  restrict access: true
+
+administer island profiles:
+  title: 'Administer island profiles'
+  restrict access: true

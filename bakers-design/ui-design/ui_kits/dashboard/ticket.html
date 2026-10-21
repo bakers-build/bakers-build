@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bakers.build Ticket — Visuelles Design (light)</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-sans);
+  background: #F6F6F2;
+  color: var(--gin-text);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  padding: 28px 22px 60px;
+}
+
+.doc { max-width: 1460px; margin: 0 auto; }
+.doc__lead { margin: 0 0 22px; }
+.doc__kicker {
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--bakers-running-ink); margin: 0 0 8px;
+}
+.doc__h { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 10px; color: var(--gin-text); }
+.doc__sub { font-size: 14px; color: var(--gin-text-light); max-width: 80ch; margin: 0; }
+.doc__sub b { color: var(--gin-text); font-weight: 600; }
+.doc__sub code { font-family: var(--font-mono); font-size: 12px; background:var(--gin-layer-3); color:var(--gin-text); padding:1px 5px; border-radius:4px; }
+
+.legend {
+  display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center;
+  margin: 16px 0 26px; padding: 12px 16px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-hair); border-radius: var(--radius);
+}
+.legend__t { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gin-text-faint); margin-right: 4px; }
+.lg { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--gin-text-light); }
+.lg__sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.lg b { color: var(--gin-text); font-weight: 600; }
+
+.gin {
+  background: var(--gin-app);
+  border: 1px solid var(--gin-line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(20,23,26,.05), 0 16px 40px -20px rgba(20,23,26,.10);
+}
+.main { min-width: 0; display: flex; flex-direction: column; }
+
+.appbar {
+  display: flex; align-items: stretch; gap: 4px;
+  height: 56px; padding: 0 16px;
+  background: var(--gin-header);
+  border-bottom: 2px solid var(--border-strong);
+}
+.brand { display: flex; align-items: center; gap: 11px; padding-right: 10px; }
+.brand__mark {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: linear-gradient(155deg, #1f2530, #15171c); border: 1px solid #2c333f;
+  display: grid; place-items: center; color: #E8EAEF;
+}
+.brand__mark svg { overflow: visible; }
+.brand__txt { display: flex; flex-direction: column; line-height: 1.02; }
+.brand__name { font-size: 15px; font-weight: 800; letter-spacing: .05em; color: var(--gin-text); }
+.brand__sub { font-size: 9px; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; color: var(--gin-text-faint); }
+
+.nav { display: flex; align-items: stretch; }
+.nav a {
+  position: relative; display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 15px; font-size: 13px; font-weight: 600; color: var(--gin-text-light);
+  text-decoration: none; border-bottom: 2px solid transparent;
+}
+.nav a svg { width: 16px; height: 16px; opacity: .8; }
+.nav a:hover { color: var(--gin-text); background: rgba(20,23,26,.04); }
+.nav a.active { color: var(--gin-text); border-bottom-color: var(--gin-primary); }
+.nav a.active svg { opacity: 1; color: var(--gin-primary); }
+.nav__badge {
+  min-width: 17px; height: 17px; padding: 0 5px; border-radius: 20px;
+  background: var(--bakers-unassigned); color: #2a0b08;
+  font-size: 10px; font-weight: 800; display: inline-grid; place-items: center;
+}
+
+.appbar__sp { flex: 1; }
+.appbar__right { display: flex; align-items: center; gap: 10px; }
+
+.user {
+  display: inline-flex; align-items: center; gap: 9px; height: 34px; padding: 0 9px 0 5px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line); border-radius: 20px;
+  font-size: 12.5px; color: var(--gin-text); cursor: default;
+}
+.user .ava { width: 24px; height: 24px; font-size: 10px; }
+.user .uname { font-weight: 600; }
+.user svg { width: 13px; height: 13px; color: var(--gin-text-light); }
+
+.crumbbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 20px; background: var(--gin-app);
+  border-bottom: 1px solid var(--gin-hair);
+}
+.crumb { font-size: 11.5px; color: var(--gin-text-faint); }
+.crumb a { color: var(--gin-text-faint); text-decoration: none; }
+.crumb a:hover { color: var(--gin-text-light); }
+.crumb b { color: var(--gin-text-light); font-weight: 500; }
+.crumb .cur { color: var(--gin-text); font-family: var(--font-mono); font-weight: 600; }
+
+.refresh {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 12px 0 8px;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line);
+  border-radius: var(--radius-s); font-size: 12px; color: var(--gin-text-light); white-space: nowrap;
+}
+.refresh b { color: var(--gin-text); font-weight: 600; }
+.ring { width: 18px; height: 18px; transform: rotate(-90deg); }
+.ring__bg { stroke: var(--gin-line); }
+.ring__fg { stroke: var(--bakers-running); stroke-linecap: round;
+  stroke-dasharray: 50.27; animation: ring 15s linear infinite; }
+@keyframes ring { from { stroke-dashoffset: 50.27; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .ring__fg { animation: none; stroke-dashoffset: 12; } }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+.dot--running  { background: var(--bakers-running); box-shadow: 0 0 0 0 rgba(75,185,174,.5); animation: pulse 2.4s ease-out infinite; color: var(--bakers-running-ink); }
+.dot--attention{ background: var(--bakers-attention); color: var(--bakers-attention); }
+.dot--wait     { background: var(--bakers-unassigned); }
+.dot--online   { background: var(--bakers-running); }
+.dot--offline  { background: transparent; border: 2px solid var(--bakers-offline); }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 currentColor; } 70%,100% { box-shadow: 0 0 0 6px transparent; } }
+@media (prefers-reduced-motion: reduce){ .dot--running{ animation:none; } }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 20px; padding: 0 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.pill--running   { background: var(--bakers-running-soft);    color: var(--bakers-running-ink); }
+.pill--attention { background: var(--bakers-attention-soft);  color: var(--bakers-attention-ink); }
+.pill--wait      { background: var(--bakers-unassigned-soft); color: var(--bakers-unassigned-ink); }
+.pill svg { width: 11px; height: 11px; }
+.pill__none { color: var(--gin-text-faint); font-family: var(--font-mono); }
+
+.lease {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 19px; padding: 0 7px 0 6px; border-radius: 6px;
+  background: var(--bakers-lease-soft); color: var(--bakers-lease-ink);
+  font-size: 11px; font-weight: 600; font-family: var(--font-mono); white-space: nowrap;
+}
+.lease svg { width: 11px; height: 11px; }
+.lease--mine { outline: 1px solid rgba(129,151,248,.45); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px;
+  border-radius: var(--radius-xs); font-size: 12px; font-weight: 600;
+  border: 1px solid var(--gin-line); background: var(--gin-layer-2); color: var(--gin-text);
+  text-decoration: none; white-space: nowrap; cursor: pointer;
+}
+.btn:hover { background: var(--gin-layer-3); border-color: #BDB8AA; }
+.btn svg { width: 12px; height: 12px; color: var(--gin-text-light); }
+.btn--xs { height: 22px; padding: 0 8px; font-size: 11px; }
+.btn--primary { background: var(--gin-primary); border-color: var(--gin-primary); color: var(--text-inverse); }
+.btn--primary svg { color: var(--text-inverse); }
+.btn--primary:hover { filter: brightness(1.07); background: var(--gin-primary); }
+.btn--cta { background: var(--bakers-unassigned); border-color: var(--bakers-unassigned); color: #2a0b08; }
+.btn--cta svg { color: #2a0b08; }
+.btn--cta:hover { filter: brightness(1.08); background: var(--bakers-unassigned); }
+
+.mono { font-family: var(--font-mono); }
+.tid { font-family: var(--font-mono); font-weight: 600; letter-spacing: .01em; }
+.ava { width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 9px; font-weight: 700; color: #06120f; background: var(--bakers-running); flex: none; }
+.assignee { display: inline-flex; align-items: center; gap: 6px; color: var(--gin-text-light); }
+.none-tag { display: inline-flex; align-items: center; gap: 5px; color: var(--bakers-unassigned-ink); font-weight: 700; }
+.none-tag svg { width:12px; height:12px; }
+.since { color: var(--gin-text-faint); font-family: var(--font-mono); }
+
+.sec {
+  background: var(--gin-layer);
+  border: 1px solid var(--gin-hair);
+  border-radius: var(--radius);
+  overflow: hidden; position: relative;
+}
+.sec__hd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: var(--gin-layer-2);
+  border-bottom: 1px solid var(--gin-hair);
+}
+.sec__hd h2 {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gin-text-light); margin: 0;
+}
+.sec__count { font-size: 11px; font-weight: 700; color: var(--gin-text-faint);
+  background: var(--gin-layer-3); border-radius: 20px; padding: 1px 8px; }
+.sec__hd .spacer { flex: 1; }
+.sec__upd { font-size: 11px; color: var(--gin-text-faint); font-family: var(--font-mono); }
+.sec__body { padding: var(--sec-pad); }
+
+.tk-layout { display: grid; grid-template-columns: 1fr 312px; gap: 14px; align-items: start; }
+.tk-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.tk-aside { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 14px; }
+
+.canvas { padding: 16px 20px 22px; }
+
+.hero {
+  background: var(--gin-layer);
+  border: 1px solid var(--gin-line);
+  border-radius: var(--radius);
+  overflow: hidden; position: relative;
+}
+.hero::before {
+  content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background: var(--bakers-running);
+}
+.hero[data-st="attention"]::before { background: var(--bakers-attention); }
+.hero[data-st="wait"]::before      { background: var(--bakers-unassigned); }
+.hero__body { padding: 16px 18px 14px; }
+.hero__meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; }
+.hero__tid { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--gin-text-light); }
+.wf-badge {
+  display: inline-flex; align-items: center; gap: 6px; height: 21px; padding: 0 9px;
+  border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing:.03em;
+  background: var(--gin-primary-soft); color: var(--gin-primary);
+}
+.wf-badge svg { width: 12px; height: 12px; }
+.prio { font-size: 10px; font-weight: 800; letter-spacing: .04em; padding: 2px 7px; border-radius: 5px; }
+.prio--p1 { color: var(--bakers-unassigned-ink); background: var(--bakers-unassigned-soft); }
+.prio--p2 { color: var(--gin-text-light); background: var(--gin-layer-3); }
+.hero__sep { width: 1px; height: 16px; background: var(--gin-line); }
+.hero h1.tk-title { font-size: 21px; font-weight: 700; letter-spacing: -.01em; margin: 0; color: var(--gin-text); line-height: 1.25; }
+
+.flow {
+  display: flex; align-items: stretch; gap: 0;
+  padding: 12px 14px; background: var(--gin-app);
+  border-top: 1px solid var(--gin-hair);
+  overflow-x: auto;
+}
+.fstep { display: flex; align-items: center; gap: 0; flex: none; }
+.fstep__node {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 26px; padding: 0 11px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  background: transparent; border: 1px solid var(--gin-hair); color: var(--gin-text-faint);
+}
+.fstep__node .ic { width: 13px; height: 13px; display:grid; place-items:center; }
+.fstep__node .ic svg { width: 13px; height: 13px; }
+.fstep--done .fstep__node { color: var(--gin-text-light); border-color: var(--gin-line); }
+.fstep--done .ic { color: var(--bakers-running-ink); }
+.fstep--current .fstep__node {
+  background: var(--bakers-running-soft); border-color: var(--bakers-running); color: var(--bakers-running-ink); font-weight: 700;
+}
+.fstep--attention.fstep--current .fstep__node {
+  background: var(--bakers-attention-soft); border-color: var(--bakers-attention); color: var(--bakers-attention-ink);
+}
+.fstep__bar { width: 22px; height: 1.5px; background: var(--gin-hair); flex: none; }
+.fstep--done + .fstep .fstep__bar,
+.fstep--done .fstep__bar { background: var(--bakers-running); opacity: .5; }
+.fstep__term { margin-left: 4px; }
+
+.prose { color: var(--gin-text-light); font-size: 13px; line-height: 1.6; }
+.prose p { margin: 0 0 10px; }
+.prose p:last-child { margin-bottom: 0; }
+.prose h3 { font-size: 13px; font-weight: 700; color: var(--gin-text); margin: 14px 0 7px; }
+.prose ul { margin: 0 0 10px; padding-left: 18px; }
+.prose li { margin-bottom: 4px; }
+.prose code { font-family: var(--font-mono); font-size: 11.5px; background:var(--gin-layer-3); color:var(--gin-text); padding:1px 5px; border-radius:4px; }
+.prose a { color: var(--gin-primary); text-decoration: none; }
+.prose a:hover { text-decoration: underline; }
+
+.tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tbl th {
+  text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--gin-text-faint); padding: 0 10px 7px; border-bottom: 1px solid var(--gin-hair); white-space: nowrap;
+}
+.tbl th.num, .tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl td { padding: 0 10px; height: 34px; border-bottom: 1px solid var(--gin-hair); vertical-align: middle; white-space: nowrap; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tbody tr:hover { background: rgba(20,23,26,.03); }
+.runid { font-family: var(--font-mono); font-size: 12px; color: var(--gin-text); }
+.cost { font-family: var(--font-mono); color: var(--gin-text-light); }
+
+.feed { display: flex; flex-direction: column; gap: 0; }
+.ev { display: grid; grid-template-columns: 26px 1fr; gap: 11px; position: relative; padding-bottom: 16px; }
+.ev:last-child { padding-bottom: 0; }
+.ev::before { content:""; position:absolute; left:12px; top:24px; bottom:-2px; width:1.5px; background: var(--gin-hair); }
+.ev:last-child::before { display: none; }
+.ev__ic {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none; z-index: 1;
+  background: var(--gin-layer-2); border: 1px solid var(--gin-line); color: var(--gin-text-faint);
+}
+.ev__ic svg { width: 13px; height: 13px; }
+.ev__ic.agent { background: var(--bakers-running-soft); border-color: rgba(75,185,174,.4); color: var(--bakers-running-ink); }
+.ev__ic.human { background: var(--bakers-lease-soft); border-color: rgba(129,151,248,.4); color: var(--bakers-lease-ink); }
+.ev__ic.state { background: var(--bakers-attention-soft); border-color: rgba(255,192,36,.35); color: var(--bakers-attention-ink); }
+.ev__hd { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.ev__who { font-size: 12.5px; font-weight: 600; color: var(--gin-text); }
+.ev__role { font-size: 10px; font-weight: 700; letter-spacing:.05em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; }
+.ev__role.agent { background: var(--bakers-running-soft); color: var(--bakers-running-ink); }
+.ev__role.human { background: var(--bakers-lease-soft); color: var(--bakers-lease-ink); }
+.ev__time { font-size: 11px; color: var(--gin-text-faint); font-family: var(--font-mono); margin-left: auto; }
+.ev__body { font-size: 12.5px; color: var(--gin-text-light); line-height: 1.55; }
+.ev__body .trans { font-family: var(--font-mono); font-size: 11.5px; }
+.ev__body .trans .from { color: var(--gin-text-faint); }
+.ev__body .trans .arr { color: var(--gin-text-faint); margin: 0 4px; }
+.ev__body .trans .to { color: var(--bakers-attention-ink); font-weight: 600; }
+.ev__card { margin-top: 6px; background: var(--gin-app); border: 1px solid var(--gin-hair);
+  border-radius: var(--radius-xs); padding: 9px 11px; color: var(--gin-text-light); }
+.ev__card code { font-family: var(--font-mono); font-size: 11px; background:var(--gin-layer-3); color:var(--gin-text); padding:1px 5px; border-radius:4px; }
+
+.props { display: flex; flex-direction: column; }
+.prop { display: grid; grid-template-columns: 96px 1fr; gap: 8px; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--gin-hair); }
+.prop:last-child { border-bottom: 0; }
+.prop__k { font-size: 11px; font-weight: 600; letter-spacing:.03em; text-transform: uppercase; color: var(--gin-text-faint); }
+.prop__v { font-size: 12.5px; color: var(--gin-text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.state-tag { font-size: 12.5px; color: var(--gin-text); }
+.lease-time { font-family: var(--font-mono); }
+.lease-time.low { color: var(--bakers-attention-ink); }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+  background: var(--gin-layer-3); color: var(--gin-text-light); }
+.tag--cap { background: var(--gin-primary-soft); color: var(--gin-primary); font-family: var(--font-mono); }
+
+.subs { display: flex; flex-direction: column; gap: 7px; }
+.sub { display: flex; align-items: center; gap: 8px; padding: 7px 9px;
+  background: var(--gin-app); border: 1px solid var(--gin-hair); border-radius: var(--radius-xs); }
+.sub__lead { width: 3px; align-self: stretch; border-radius: 3px; background: var(--gin-line); flex: none; }
+.sub[data-st="running"] .sub__lead   { background: var(--bakers-running); }
+.sub[data-st="done"] .sub__lead      { background: var(--bakers-running); opacity:.55; }
+.sub[data-st="attention"] .sub__lead { background: var(--bakers-attention); }
+.sub__tid { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; color: var(--gin-text-light); flex: none; }
+.sub__t { font-size: 12px; color: var(--gin-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub__st { margin-left: auto; flex: none; }
+.sub__done { color: var(--gin-text-faint); }
+
+.fp { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--gin-hair);
+  border: 1px solid var(--gin-hair); border-radius: var(--radius-s); overflow: hidden; }
+.fp__cell { background: var(--gin-app); padding: 11px 12px; }
+.fp__k { font-size: 10.5px; font-weight: 600; letter-spacing:.04em; text-transform: uppercase; color: var(--gin-text-faint); margin-bottom: 4px; }
+.fp__v { font-size: 17px; font-weight: 700; color: var(--gin-text); font-variant-numeric: tabular-nums; }
+.fp__v .u { font-size: 11px; font-weight: 600; color: var(--gin-text-faint); margin-left: 3px; }
+
+.notes { margin-top: 30px; }
+.notes h3 { font-size: 13px; font-weight: 700; letter-spacing:.04em; color: var(--gin-text); margin: 0 0 14px; padding-bottom: 9px; border-bottom: 1px solid var(--gin-hair); }
+.ncols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 20px; }
+.note { background: var(--gin-layer-2); border: 1px solid var(--gin-hair); border-radius: var(--radius); padding: 14px 16px; }
+.note h4 { font-size: 12px; font-weight: 700; color: var(--bakers-running-ink); margin: 0 0 8px; letter-spacing:.03em; }
+.note p { font-size: 12px; color: var(--gin-text-light); margin: 0 0 8px; }
+.note p:last-child { margin-bottom: 0; }
+.note code { font-family: var(--font-mono); font-size: 11px; background: var(--gin-layer-3); color: var(--gin-text); padding: 1px 5px; border-radius: 4px; }
+
+@media (max-width: 1080px) {
+  .tk-layout { grid-template-columns: 1fr; }
+  .tk-aside { position: static; }
+  .ncols { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <header class="doc__lead">
+    <p class="doc__kicker">bakers.build · Phase 6 · Visuelles Design</p>
+    <h1 class="doc__h">bakers.build Ticket <span style="color:var(--gin-text-faint);font-weight:500;font-size:18px;">/admin/bakers/ticket/{id}</span></h1>
+    <p class="doc__sub">Detail-Screen zum Dashboard, gleiche <b>Gin-native (dark)</b> Sprache und exakt dieselben Primitive (Pille · Lease · Dot · Avatar · State-Akzentkante). Links die <b>Hauptspalte</b> mit Hero + State-Bahn, Beschreibung (<code>bb_rich</code>), Run-Historie (<code>bb_run</code>) und der Aktivitäts-Timeline (Comment-Writeback + State-Übergänge). Rechts das <b>Eigenschaften-Aside</b>: State · Claim/Lease · Assignee · Labels · Sub-Tickets · Footprint-Summe. Strikt <b>read-only</b> — reine Anzeige, keine Mutations-UI im Screen.</p>
+  </header>
+
+  <div class="legend">
+    <span class="legend__t">Status</span>
+    <span class="lg"><span class="lg__sw" style="background:#FF4E42"></span><b>needs_input · unassigned</b> — kritisch</span>
+    <span class="lg"><span class="lg__sw" style="background:#FFC024"></span><b>needs_input / attention</b> — wartet auf Mensch</span>
+    <span class="lg"><span class="lg__sw" style="background:#4BB9AE"></span><b>running / online</b></span>
+    <span class="lg"><span class="lg__sw" style="background:#8197F8"></span><b>aktive Lease</b> — Claim-Besitz</span>
+    <span class="lg"><span class="lg__sw" style="background:#707888"></span><b>kein Run / offline</b></span>
+  </div>
+
+  <div class="gin">
+    <div class="main">
+
+      <header class="appbar">
+        <div class="brand">
+          <div class="brand__mark" title="bakers.build">
+            <svg width="24" height="27" viewBox="0 0 64 74" fill="none" aria-label="bakers.build">
+              <line x1="32" y1="7" x2="32" y2="16" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+              <line x1="17" y1="16" x2="47" y2="16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="17" y1="16" x2="17" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".5"/><circle cx="17" cy="30" r="6.2" fill="#4BB9AE"/>
+              <line x1="47" y1="16" x2="47" y2="24" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+              <line x1="40" y1="24" x2="54" y2="24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="40" y1="24" x2="40" y2="31" stroke="currentColor" stroke-width="1.4" opacity=".5"/><path d="M40 30 l5.4 9 h-10.8 Z" fill="#8197F8"/>
+              <line x1="54" y1="24" x2="54" y2="30" stroke="currentColor" stroke-width="1.4" opacity=".5"/><rect x="49.4" y="30" width="9.2" height="9.2" rx="2.4" fill="#FFC024"/>
+            </svg>
+          </div>
+          <div class="brand__txt"><span class="brand__name">bakers.build</span><span class="brand__sub">Orchestrierung</span></div>
+        </div>
+
+        <nav class="nav" aria-label="Hauptnavigation">
+          <a href="bakers.build Dashboard.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Dashboard <span class="nav__badge" title="2 Tickets warten auf Input">2</span></a>
+          <a href="bakers.build Dashboard.html#frag-board" class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="5" height="14" rx="1"/></svg>
+            Board</a>
+          <a href="bakers.build Dashboard.html#frag-nodes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+            Nodes</a>
+          <a href="bakers.build Dashboard.html#frag-billing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+            Abrechnung</a>
+        </nav>
+
+        <span class="appbar__sp"></span>
+
+        <div class="appbar__right">
+          <div class="refresh">
+            <svg class="ring" viewBox="0 0 20 20" fill="none" stroke-width="2.5">
+              <circle class="ring__bg" cx="10" cy="10" r="8"/>
+              <circle class="ring__fg" cx="10" cy="10" r="8"/>
+            </svg>
+            auto <b>15 s</b>
+          </div>
+          <span class="user" title="mk · besitzt srv01-bakers">
+            <span class="ava" style="background:var(--bakers-running)">MK</span>
+            <span class="uname">mk</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </div>
+      </header>
+
+      <div class="crumbbar">
+        <div class="crumb"><a href="bakers.build Dashboard.html">Dashboard</a> <b>›</b> <a href="bakers.build Dashboard.html#frag-board">Board</a> <b>›</b> <span class="cur">GL-138</span></div>
+      </div>
+
+      <div class="canvas">
+        <div class="tk-layout">
+
+          <div class="tk-col">
+
+            <section class="hero" id="frag-hero" data-st="running" data-screen-label="ticket-hero">
+              <div class="hero__body">
+                <div class="hero__meta">
+                  <span class="hero__tid">GL-138</span>
+                  <span class="hero__sep"></span>
+                  <span class="wf-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg>feature</span>
+                  <span class="prio prio--p2">P2</span>
+                  <span class="pill pill--running"><span class="dot dot--running"></span>running</span>
+                </div>
+                <h1 class="tk-title">Workflow-State-Machine refactoren</h1>
+              </div>
+              <div class="flow" aria-label="Workflow-Verlauf (feature)">
+                <div class="fstep fstep--done">
+                  <span class="fstep__node"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>backlog</span>
+                </div>
+                <span class="fstep__bar"></span>
+                <div class="fstep fstep--done">
+                  <span class="fstep__node"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>todo</span>
+                </div>
+                <span class="fstep__bar"></span>
+                <div class="fstep fstep--done">
+                  <span class="fstep__node"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>spec</span>
+                </div>
+                <span class="fstep__bar"></span>
+                <div class="fstep fstep--current">
+                  <span class="fstep__node"><span class="dot dot--running"></span>coding</span>
+                </div>
+                <span class="fstep__bar"></span>
+                <div class="fstep">
+                  <span class="fstep__node">review</span>
+                </div>
+                <span class="fstep__bar"></span>
+                <div class="fstep">
+                  <span class="fstep__node">human_input</span>
+                </div>
+                <span class="fstep__bar"></span>
+                <div class="fstep fstep__term">
+                  <span class="fstep__node">done</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="sec" id="frag-desc" data-screen-label="ticket-description">
+              <div class="sec__hd">
+                <h2>Beschreibung</h2>
+                <span class="spacer"></span>
+                <span class="sec__upd">format: bb_rich</span>
+              </div>
+              <div class="sec__body">
+                <div class="prose">
+                  <p>Die aktuelle State-Machine ist über mehrere Plugins verstreut und schwer testbar. Übergänge werden an drei Stellen validiert (<code>presave</code>, Form-Alter, JSON:API-Constraint) — die Logik soll in einen einzigen <code>WorkflowTransitionValidator</code>-Service wandern.</p>
+                  <h3>Akzeptanzkriterien</h3>
+                  <ul>
+                    <li>Alle erlaubten Übergänge in <em>einer</em> Definition (pro Workflow-Bundle).</li>
+                    <li><code>done</code> bleibt terminal — kein Rückweg nach <code>review</code>.</li>
+                    <li>Ein released Run verliert den Write-Scope (403 bei späterem Write).</li>
+                    <li>Kernel-Test deckt jede Kante ab; CI grün.</li>
+                  </ul>
+                  <p>Referenz: <a href="#">#GL-129 (Workflow-Plugin-Architektur)</a>.</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="sec" id="frag-runs" data-screen-label="ticket-runs">
+              <div class="sec__hd">
+                <h2>Runs</h2><span class="sec__count">3</span>
+                <span class="spacer"></span>
+                <span class="sec__upd">conductor-driven · aktualisiert vor 12 s</span>
+              </div>
+              <div class="sec__body" style="padding-top:4px; overflow-x:auto;">
+                <table class="tbl">
+                  <thead><tr>
+                    <th>Run</th><th>Conductor</th><th>State</th><th>Lease</th><th class="num">Tokens</th><th class="num">Kosten</th><th class="num">gestartet</th>
+                  </tr></thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="runid">run-7f3a</span></td>
+                      <td><span class="cell-node"><span class="dot dot--online" style="margin-right:6px"></span><span class="mono" style="font-size:12px">srv01-bakers</span></span></td>
+                      <td><span class="pill pill--running"><span class="dot dot--running"></span>running</span></td>
+                      <td><span class="lease lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="lease-time">8:24</span></span></td>
+                      <td class="num cost">214k</td>
+                      <td class="num cost">$1.92</td>
+                      <td class="num since">12 min</td>
+                    </tr>
+                    <tr>
+                      <td><span class="runid">run-6b1c</span></td>
+                      <td><span class="cell-node"><span class="dot dot--offline" style="margin-right:6px"></span><span class="mono" style="font-size:12px">srv01-bakers</span></span></td>
+                      <td><span class="state-tag">released</span></td>
+                      <td><span class="pill__none">—</span></td>
+                      <td class="num cost">98k</td>
+                      <td class="num cost">$0.88</td>
+                      <td class="num since">1 h</td>
+                    </tr>
+                    <tr>
+                      <td><span class="runid">run-4a09</span></td>
+                      <td><span class="cell-node"><span class="dot dot--offline" style="margin-right:6px"></span><span class="mono" style="font-size:12px">cw-laptop-bakers</span></span></td>
+                      <td><span class="state-tag">done</span></td>
+                      <td><span class="pill__none">—</span></td>
+                      <td class="num cost">61k</td>
+                      <td class="num cost">$0.55</td>
+                      <td class="num since">2 d</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="sec" id="frag-activity" data-screen-label="ticket-activity">
+              <div class="sec__hd">
+                <h2>Aktivität</h2>
+                <span class="spacer"></span>
+                <span class="sec__upd">Comments + State-Übergänge</span>
+              </div>
+              <div class="sec__body">
+                <div class="feed">
+
+                  <div class="ev">
+                    <div class="ev__ic state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+                    <div>
+                      <div class="ev__hd"><span class="ev__who">srv01-bakers</span><span class="ev__time">vor 12 min</span></div>
+                      <div class="ev__body"><span class="trans">State <span class="from">spec</span><span class="arr">→</span><span class="to">coding</span></span> · Run <span class="mono">run-7f3a</span> dispatcht, Lease übernommen.</div>
+                    </div>
+                  </div>
+
+                  <div class="ev">
+                    <div class="ev__ic agent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M12 8V5M9 3h6M9 13h.01M15 13h.01"/></svg></div>
+                    <div>
+                      <div class="ev__hd"><span class="ev__who">claude (Agent)</span><span class="ev__role agent">Agent</span><span class="ev__time">vor 6 min</span></div>
+                      <div class="ev__body">Validator-Service extrahiert; alle drei Validierungsstellen rufen jetzt <code>WorkflowTransitionValidator::assert()</code>. Kernel-Test für die <code>done</code>-Terminalität ergänzt.
+                        <div class="ev__card">+187 −94 über 6 Dateien · <code>web/modules/custom/bb_core/src/Workflow/*</code></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="ev">
+                    <div class="ev__ic human"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+                    <div>
+                      <div class="ev__hd"><span class="ev__who">cw</span><span class="ev__role human">Mensch</span><span class="ev__time">vor 3 min</span></div>
+                      <div class="ev__body">Sieht gut aus. Bitte noch die <code>human_input</code>-Kante mit abdecken, bevor du auf <code>review</code> gehst.</div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </section>
+
+          </div>
+
+          <aside class="tk-aside">
+
+            <section class="sec" id="frag-props" data-screen-label="ticket-properties">
+              <div class="sec__hd"><h2>Eigenschaften</h2></div>
+              <div class="sec__body" style="padding-top:6px; padding-bottom:6px;">
+                <div class="props">
+                  <div class="prop"><span class="prop__k">State</span><span class="prop__v"><span class="state-tag">coding</span></span></div>
+                  <div class="prop"><span class="prop__k">Workflow</span><span class="prop__v"><span class="wf-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg>feature</span></span></div>
+                  <div class="prop"><span class="prop__k">Projekt</span><span class="prop__v"><span class="mono">bakers</span></span></div>
+                  <div class="prop"><span class="prop__k">Priorität</span><span class="prop__v"><span class="prio prio--p2">P2</span></span></div>
+                  <div class="prop"><span class="prop__k">Assignee</span><span class="prop__v"><span class="assignee"><span class="ava">MK</span>mk</span></span></div>
+                  <div class="prop"><span class="prop__k">Claim</span><span class="prop__v"><span class="lease lease--mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>srv01-bakers</span></span></div>
+                  <div class="prop"><span class="prop__k">Lease bis</span><span class="prop__v"><span class="lease-time">in 8:24</span></span></div>
+                  <div class="prop"><span class="prop__k">Erstellt</span><span class="prop__v since">2 d</span></div>
+                  <div class="prop"><span class="prop__k">Aktualisiert</span><span class="prop__v since">12 min</span></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="sec" id="frag-labels" data-screen-label="ticket-labels">
+              <div class="sec__hd"><h2>Labels</h2></div>
+              <div class="sec__body">
+                <div class="tags">
+                  <span class="tag">refactor</span>
+                  <span class="tag">backend</span>
+                  <span class="tag--cap tag">cap:drupal</span>
+                  <span class="tag--cap tag">cap:php</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="sec" id="frag-subs" data-screen-label="ticket-subtickets">
+              <div class="sec__hd"><h2>Sub-Tickets</h2><span class="sec__count">3</span></div>
+              <div class="sec__body">
+                <div class="subs">
+                  <div class="sub" data-st="done">
+                    <span class="sub__lead"></span>
+                    <span class="sub__tid">GL-138a</span>
+                    <span class="sub__t">Validator-Service-Gerüst</span>
+                    <span class="sub__st sub__done"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+                  </div>
+                  <div class="sub" data-st="running">
+                    <span class="sub__lead"></span>
+                    <span class="sub__tid">GL-138b</span>
+                    <span class="sub__t">Aufrufstellen umbiegen</span>
+                    <span class="sub__st"><span class="dot dot--running"></span></span>
+                  </div>
+                  <div class="sub" data-st="attention">
+                    <span class="sub__lead"></span>
+                    <span class="sub__tid">GL-138c</span>
+                    <span class="sub__t">Kernel-Tests Kantenabdeckung</span>
+                    <span class="sub__st"><span class="dot dot--attention"></span></span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="sec" id="frag-footprint" data-screen-label="ticket-footprint">
+              <div class="sec__hd"><h2>Footprint</h2><span class="spacer"></span><span class="sec__upd">3 Runs</span></div>
+              <div class="sec__body">
+                <div class="fp">
+                  <div class="fp__cell"><div class="fp__k">Tokens</div><div class="fp__v">373<span class="u">k</span></div></div>
+                  <div class="fp__cell"><div class="fp__k">Kosten</div><div class="fp__v">$3.35</div></div>
+                  <div class="fp__cell"><div class="fp__k">Laufzeit</div><div class="fp__v">47<span class="u">min</span></div></div>
+                  <div class="fp__cell"><div class="fp__k">Runs</div><div class="fp__v">3</div></div>
+                </div>
+              </div>
+            </section>
+
+          </aside>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>Designnotizen</h3>
+    <div class="ncols">
+      <div class="note">
+        <h4>Konsistenz mit dem Dashboard</h4>
+        <p>Keine neuen Tokens, keine neuen Farben. Hero-Akzentkante, <code>.pill</code>, <code>.lease</code>, <code>.dot</code>, <code>.ava</code> und die Run-Tabelle sind 1:1 die Dashboard-Primitive — der Ticket-Screen ist visuell dieselbe App, nur eine Ebene tiefer.</p>
+      </div>
+      <div class="note">
+        <h4>State-Bahn = Workflow-Definition</h4>
+        <p>Die Schritte spiegeln das Workflow-Bundle (<code>feature</code>: backlog→…→done). <code>current</code> trägt die Zustandsfarbe (teal=running, gelb=needs_input). <code>done</code> ist terminal dargestellt — kein Rückweg, passend zur State-Machine.</p>
+      </div>
+      <div class="note">
+        <h4>Strikt read-only</h4>
+        <p>Reine Anzeige — keine Mutations-UI im Screen: keine Action-Buttons, kein Kommentar-Composer. Der Screen pollt nur (15 s, gleiche Ring-Animation) und spiegelt den Stand. Schreiben passiert außerhalb (Drupal-Forms / JSON:API), nicht hier.</p>
+      </div>
+      <div class="note">
+        <h4>Fragmente</h4>
+        <p>Jede <code>&lt;section&gt;</code> trägt eine <code>id="frag-*"</code> und ein <code>data-screen-label</code> — je Sektion ein htmx-Fragment, das unabhängig nachladen kann (Runs/Aktivität refreshen häufiger als die Beschreibung).</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

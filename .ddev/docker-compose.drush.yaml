@@ -1,0 +1,8 @@
+# Make Drush resolve the project's real URL instead of the http://default
+# fallback. DDEV expands $DDEV_PRIMARY_URL per project at container start, so
+# this works for every worktree (each has its own bakers-wt-<hash> URL) without
+# hard-coding a host. Fixes `drush uli` / `drush status --field=uri`.
+services:
+  web:
+    environment:
+      - DRUSH_OPTIONS_URI=$DDEV_PRIMARY_URL

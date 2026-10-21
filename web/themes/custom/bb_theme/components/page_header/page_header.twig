@@ -1,0 +1,107 @@
+{# The header of a SCREEN: what this screen is, what can be done to it, and — on
+   an entity place — which of its faces you are looking at. It fills
+   `canvas.header`, and it owns the screen's single h1 (D5): every further
+   heading on the screen is a `zone` heading and renders one level below it.
+
+   THERE IS EXACTLY ONE h1 ELEMENT IN THIS TEMPLATE, not one per branch. The
+   heading slot and the `title` prop are two ways of filling the same heading, so
+   they resolve to one value before it is rendered; writing the element twice
+   would make "the screen has one heading" a property of which branch happened to
+   be taken rather than a property of this file.
+
+   It exists because the add action belongs to the screen that can receive the
+   addition, not to the shell's chrome
+   (designbook/design-system/action-pattern.md).
+
+   That is the whole reason this component was added rather than reusing
+   something. A global "Add <entity>" button parked in the top bar is the Drupal
+   toolbar mindset: the chrome cannot know whether the screen under it can accept
+   an addition, so it either shows an action that sometimes lies or hides one that
+   sometimes puzzles. Moving the affordance into the screen's own header makes the
+   question answerable by the only component that knows — the screen.
+
+   `actions` is right-aligned by this component rather than by whatever fills it,
+   so every screen's actions land in the same place and a scene cannot drift.
+
+   ABSENCE IS THE POINT of the `actions` slot. A screen that cannot add fills
+   nothing and the affordance does not exist — it is not rendered disabled and not
+   rendered hidden. A hidden control is still a promise the screen cannot keep,
+   and a disabled one invites the operator to hunt for the condition that would
+   enable it. Both are worse than nothing where the answer is "not here".
+
+   THE TABS LIVE HERE, below the title row, rather than in a chrome component of
+   their own (D7). Ant Design's `PageHeader` and Primer's `PageHeader.Navigation`
+   both fold them in, and this component already carries the title, the sub-line
+   and the actions — a second component whose only content is a header and a tab
+   row would have nothing else to be. An entity place fills the slot; every other
+   screen leaves it empty and renders exactly one row, as before.
+
+   THE BREADCRUMB LIVES HERE TOO, above the title row and still inside this
+   header, so a nested place can name its parents without a Drupal breadcrumb
+   region. Empty is the supported case and renders no extra row.
+
+   Spacing is the token scale, never a hard pixel value (D16). #}
+<header{{ (attributes ?: create_attribute()).addClass([
+    'flex', 'flex-col', 'border-b', 'border-border-2', 'text-text',
+  ]) }}
+  data-page-header>
+  {#- THE HEADING MAY BE THE FIELD. A screen that shows ONE object carries that
+      object's name as its heading, and a name is a reversible field — so on the
+      workspace screen the heading holds a `bb_theme:form_input` (BB-420
+      Task 31; formerly the bespoke `text_line`) and the commit IS the write
+      (action-pattern.md › *Inline edit*). The slot is captured outside the `if`,
+      because a filled slot must render even when no `title` prop was passed; and
+      it stays inside the heading element, because an editable heading is still
+      the screen's heading and a text input contributes its value to the
+      heading's accessible name. Every other screen fills nothing and the `title`
+      prop renders exactly as before. #}
+  {%- set heading_content %}{% block heading %}{{ heading }}{% endblock %}{% endset %}
+  {%- set breadcrumb_content %}{% block breadcrumb %}{{ breadcrumb }}{% endblock %}{% endset %}
+  {%- set tabs_content %}{% block tabs %}{{ tabs }}{% endblock %}{% endset %}
+  {%- set editable = heading_content|trim is not empty %}
+  {%- if breadcrumb_content|trim is not empty %}
+    <div class="px-5 pt-4">{{ breadcrumb_content }}</div>
+  {% endif %}
+  <div class="flex items-center justify-between gap-4 min-h-11 px-5 {{ breadcrumb_content|trim is not empty ? 'pb-4 pt-2' : 'py-4' }}">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="shrink-0 empty:hidden">{% block leading %}{{ leading }}{% endblock %}</div>
+    <div class="flex flex-col min-w-0">
+      {#- THE EDITABLE HEADING USED TO NEED HOVER/FOCUS STYLING TO LOOK EDITABLE,
+          AND NO LONGER DOES (BB-420 Task 31). `text_line` was borderless by
+          contract — that is the widget grammar, and it is right inside a create
+          dialog where the operator came to type. On a READ screen a borderless
+          field rendered pixel-identical to static heading text, so a hover/focus
+          reveal (targeting the retired `text_line` component's own styling hook) was applied HERE, by this
+          caller, to disclose it. `text_line` is retired: every editable field is
+          now `bb_theme:form_input`, which carries its own permanent visible
+          border and background — the field looks like a field at rest, on every
+          screen, with nothing left to disclose on hover. The class hook and its
+          selectors are removed rather than re-targeted at `form_input`'s own
+          classes, since re-adding a reveal for an already-visible border would be
+          a new visual decision, not a swap; report to the operator if the heading
+          is judged to want one. #}
+      {%- set editable_classes = 'min-w-0' %}
+      {%- if editable or title %}
+        <h1 class="text-display font-bold text-title {{ editable ? editable_classes : 'truncate' }}">{{ editable ? heading_content : title }}</h1>
+      {% endif %}
+      {%- if description %}
+        <p class="truncate text-caption text-text-faint">{{ description }}</p>
+      {% endif %}
+    </div>
+    </div>
+    {#- `justify-between` on the row rather than an auto-margin utility on this
+        element — an outer margin belongs to a layout component, not to this
+        content one — so a header with no title still pushes its actions to the
+        right edge. #}
+    <div class="flex items-center gap-3 shrink-0">
+      {%- block actions %}{% if actions %}{{ actions }}{% endif %}{% endblock %}
+    </div>
+  </div>
+  {#- The tab row sits BELOW the title row and ABOVE this header's bottom border,
+      so the active tab reads as attached to the body it reveals. No bottom padding:
+      the active tab's underline sits on that bottom rule. Absent on every screen
+      that is not an entity place. #}
+  {%- if tabs_content|trim is not empty %}
+    <div class="px-5">{{ tabs_content }}</div>
+  {% endif %}
+</header>

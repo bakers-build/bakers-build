@@ -1,0 +1,42 @@
+/*
+ * Document-level defaults.
+ *
+ * The spacing and radius density tokens that used to be bridged in from Gin
+ * here now live in the design tokens like every other value
+ * (designbook/design-system/design-tokens.yml → css/tokens/*.src.css). The
+ * theme owns its token set outright: it reads no custom property defined by
+ * another theme, so the palette no longer depends on Gin being loaded.
+ */
+
+/*
+ * Page background + base text colour. The page SDC carries min-h-screen/bg-app/
+ * text-text, but the theme has no page.html.twig — Drupal renders the real page
+ * via the stable9 template without that wrapper, so set the document backdrop
+ * here. bb_theme CSS only loads on bb_theme pages; Gin's admin theme is
+ * untouched.
+ *
+ * No literal fallbacks: the tokens always load through tokens/index.src.css, so
+ * a fallback could only ever mask a broken import — and the ones that used to
+ * stand here masked it *dark*, which is precisely how the theme kept rendering
+ * dark against a light reference.
+ */
+html {
+  background-color: var(--color-app);
+  color-scheme: light;
+  accent-color: var(--color-primary);
+  caret-color: var(--color-primary);
+  scrollbar-color: var(--color-border) var(--color-app);
+}
+
+body {
+  color: var(--color-text);
+}
+
+html[data-mode="dark"] {
+  color-scheme: dark;
+}
+
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}

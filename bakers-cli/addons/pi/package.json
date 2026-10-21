@@ -1,0 +1,27 @@
+{
+  "name": "@bakers-build/addon-pi",
+  "version": "0.0.1",
+  "description": "bakers.build agent plugin for the pi coding CLI, with a real transcript footprint.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0"
+  }
+}

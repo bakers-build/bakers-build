@@ -1,0 +1,36 @@
+(
+  /* The `full` view mode of a user is the ACCOUNT OVERVIEW BODY on `/user/{user}` — the read-only
+     identity, and nothing else. The shell owns the page heading, the rail and core's View/Edit tasks.
+
+     It is `person` in its `profile` variant: the large mark (picture, or initials on the person
+     colour) centred above the display name, with the developer title as the `subtitle` line and
+     omitted when empty. It is the same component `user.user.compact` maps to, so one account keeps
+     one mark and one colour everywhere. The mail is deliberately NOT passed: the overview discloses
+     no mail, roles or AI-context answers — those stay on the edit form.
+
+     The `zone` supplies the body's inset: the shell's content placement has none of its own, so
+     without it the mark would touch the page header's rule. */
+  $u := $;
+  $colors := { "1": "unassigned", "2": "running", "3": "lease", "4": "running", "5": "attention", "6": "offline", "7": "running" };
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "md" },
+      "slots": {
+        "content": [
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:person",
+            "props": {
+              "variant": "profile",
+              "display_name": $u.field_full_name ? $u.field_full_name : $u.display_name,
+              "initials": $u.initials,
+              "subtitle": $u.field_developer_title,
+              "color": $lookup($colors, $u.id) ? $lookup($colors, $u.id) : "running",
+              "size": "md"
+            }
+          }
+        ]
+      }
+    }
+  ]
+)

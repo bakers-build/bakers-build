@@ -1,0 +1,11 @@
+{# Preserve core confirmation, CSRF tokens and the cancel destination. #}
+<div class="flex flex-col gap-4">
+  <h2 class="m-0 text-section text-title">{{ form['#title'] }}</h2>
+  {{ form.description }}
+  <div class="flex flex-wrap items-center gap-3">
+    {{ form.actions.submit|merge({'#theme_wrappers': ['input__submit__bb_button']}) }}
+    {{ form.actions.cancel }}
+    {{ form.actions|without('submit', 'cancel') }}
+  </div>
+  {{ form|without('description', 'actions') }}
+</div>

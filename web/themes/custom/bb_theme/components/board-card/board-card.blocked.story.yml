@@ -1,0 +1,8 @@
+component: bb_theme:board-card
+name: Blocked
+props:
+  identifier: BOARD-04
+  title: Waiting for a dependency
+  state: spec
+  status: idle
+  blocked: true

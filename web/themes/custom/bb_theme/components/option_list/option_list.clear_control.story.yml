@@ -1,0 +1,18 @@
+component: bb_theme:option_list
+name: Clear control
+variant: clear_control
+props:
+  name: conductor
+  multiple: false
+  input_name: conductor
+  clearable: true
+  clear_control: true
+  clear_label: No conductor
+  clear_url: ''
+  options:
+    - value: '1'
+      label: cw-framework
+      selected: false
+    - value: '2'
+      label: mvd-thinkpad
+      selected: false

@@ -1,0 +1,59 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Menu Item
+status: stable
+group: Shell
+description: >-
+  One link row of a disclosed menu panel (`role="menu"`), such as the workspace
+  list in `account_switcher`'s `workspace_panel` slot. The current row is set
+  bold and carries `aria-current`, so an open panel names where the reader
+  already is.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+    url:
+      type: string
+      title: URL
+    current:
+      type: boolean
+      title: Current
+      description: The row is the reader's current location.
+      default: false
+    mark:
+      type: object
+      title: Mark
+      description: >-
+        Optional leading mark, rendered as a compact `person` (`sm`, image shown
+        whole): the entry's image, else its initials.
+      properties:
+        initials:
+          type: string
+          title: Initials
+        color:
+          type: string
+          enum:
+            - running
+            - attention
+            - unassigned
+            - lease
+            - offline
+          title: Colour key
+        picture:
+          type: string
+          title: Picture URL
+    description:
+      type: string
+      title: Description
+      description: >-
+        Optional secondary text beneath the label, its line breaks kept; absent
+        when empty.
+  required:
+    - label
+    - url
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

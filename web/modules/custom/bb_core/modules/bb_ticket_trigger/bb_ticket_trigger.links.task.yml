@@ -1,0 +1,6 @@
+# The template's Triggers tab, after Overview and Settings.
+view.bb_ticket_triggers.template_list:
+  title: 'Triggers'
+  route_name: view.bb_ticket_triggers.template_list
+  base_route: entity.bb_ticket_template.canonical
+  weight: 2

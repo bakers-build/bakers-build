@@ -1,0 +1,11 @@
+name: bakers.build API keys
+type: module
+description: 'Self-service pipeline API keys: a logged-in user creates, lists and revokes their own client_credentials OAuth consumers, each acting as that user.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core
+  - consumers:consumers
+  - simple_oauth:simple_oauth
+  - drupal:views
+  - og:og

@@ -1,0 +1,92 @@
+{#
+/**
+ * @file
+ * The shared HTML envelope of every bakers.build mail.
+ *
+ * A standalone email document rather than a theme component: mail clients
+ * need inline styles and presentation tables, and the active web theme is
+ * not loaded in an inbox. The header is the gate's brand lockup (braid and
+ * block wordmark) as an embedded PNG on an opaque surface, so it survives
+ * dark-mode recoloring; its alt text keeps the name when images are blocked.
+ * Colors are resolved snapshots of bb_theme's semantic roles (app,
+ * surface, title, text, text-light, link, border).
+ *
+ * Available variables:
+ * - subject: The plain-text subject.
+ * - paragraphs: Paragraphs of segments; each segment has `text` and an
+ *   optional `url`, or is a lone `code` to set apart, or a lone `action`
+ *   link rendered as a button; the text part keeps its URL. All message
+ *   data is escaped here.
+ * - langcode: The message language.
+ * - logo_src: The lockup image source, normally an embedded `cid:` URL.
+ */
+#}
+{% set font = 'Arial, Helvetica, sans-serif' %}
+<!DOCTYPE html>
+<html lang="{{ langcode }}" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F1F0EA;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F1F0EA" style="width:100%;background-color:#F1F0EA;">
+  <tr>
+    <td align="center" style="padding:32px 12px;">
+      <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td><![endif]-->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAFAF7" style="width:100%;max-width:600px;background-color:#FAFAF7;border:1px solid #D6D3CA;border-radius:8px;">
+        <tr>
+          <td align="center" bgcolor="#FAFAF7" style="padding:40px 24px 0 24px;background-color:#FAFAF7;border-radius:8px 8px 0 0;font-family:{{ font }};">
+            <img src="{{ logo_src }}" width="149" height="56" alt="bakers.build" style="display:block;width:149px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;font-family:{{ font }};font-size:24px;line-height:56px;font-weight:bold;letter-spacing:4px;color:#14171A;">
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:32px 28px 16px 28px;font-family:{{ font }};color:#2C3137;text-align:center;">
+            {% if subject %}
+              <h1 align="center" style="margin:0 0 20px 0;text-align:center;font-family:{{ font }};font-size:24px;line-height:32px;font-weight:bold;color:#14171A;word-break:break-word;">{{ subject }}</h1>
+            {% endif %}
+            {% for paragraph in paragraphs %}
+              {% if paragraph|length == 1 and paragraph[0].code is defined %}
+              <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:4px auto 20px auto;">
+                <tr>
+                  <td bgcolor="#F1F0EA" style="padding:12px 20px;background-color:#F1F0EA;border:1px solid #D6D3CA;border-radius:8px;font-family:'SFMono-Regular',Menlo,Consolas,'Courier New',monospace;font-size:28px;line-height:36px;font-weight:bold;letter-spacing:6px;color:#14171A;">{{ paragraph[0].text }}</td>
+                </tr>
+              </table>
+              {% elseif paragraph|length == 1 and paragraph[0].action is defined %}
+              <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:8px auto 24px auto;">
+                <tr>
+                  <td bgcolor="#14171A" style="background-color:#14171A;border-radius:8px;">
+                    <a href="{{ paragraph[0].url }}" style="display:inline-block;padding:14px 28px;font-family:{{ font }};font-size:16px;line-height:20px;font-weight:bold;color:#FAFAF7;text-decoration:none;border-radius:8px;">{{ paragraph[0].label ?? 'Open link'|t({}, {'langcode': langcode}) }}</a>
+                  </td>
+                </tr>
+              </table>
+              {% else %}
+              <p align="center" style="margin:0 0 16px 0;font-size:16px;line-height:24px;color:#2C3137;word-break:break-word;text-align:center;">
+                {%- for segment in paragraph -%}
+                  {%- if segment.url is defined -%}
+                    <a href="{{ segment.url }}" style="color:#494FE5;text-decoration:underline;word-break:break-all;">{{ segment.text }}</a>
+                  {%- else -%}
+                    {{ segment.text|nl2br }}
+                  {%- endif -%}
+                {%- endfor -%}
+              </p>
+              {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:20px 24px 28px 24px;border-top:1px solid #D6D3CA;font-family:{{ font }};font-size:13px;line-height:20px;color:#5B6169;word-break:break-word;">
+            {{ "If you didn't expect this e-mail, you can safely ignore it."|t({}, {'langcode': langcode}) }}<br>
+            {{ 'Need a hand? Contact your workspace administrator.'|t({}, {'langcode': langcode}) }}
+          </td>
+        </tr>
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td>
+  </tr>
+</table>
+</body>
+</html>

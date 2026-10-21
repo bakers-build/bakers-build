@@ -1,0 +1,18 @@
+component: bb_theme:rich-text
+name: Formatting
+props:
+  body: >-
+    <h1>Release notes</h1><p>This body exercises <strong>every</strong>
+    supported construct, with <em>emphasis</em>, <a
+    href="https://example.test/a/very/long/path/that/has/to/wrap/inside/the/body/without/widening/the/page">a
+    long link that wraps</a> and <code>inline
+    code</code>.</p><h2>Scope</h2><ul><li>Render tables<ul><li>Header
+    surface</li><li>Row separators</li></ul></li><li>Render
+    lists</li></ul><h3>Order</h3><ol><li>Build the theme</li><li>Run the
+    suite<ol><li>Recipe path</li><li>Existing
+    config</li></ol></li></ol><h4>Note</h4><blockquote><p>Stored Markdown is
+    never rewritten by the presentation.</p></blockquote><hr><pre><code
+    class="language-html">&lt;script&gt;alert(1)&lt;/script&gt; stays literal
+    text.
+      indented line keeps its whitespace
+    </code></pre><p>Everything else is unchanged.</p>

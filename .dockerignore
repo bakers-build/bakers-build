@@ -1,0 +1,14 @@
+# Keep the build context small and reproducible. composer install (php stage)
+# regenerates vendor/; the theme stage regenerates the theme dist/ — neither
+# should come from the host. node_modules and local git worktrees must never
+# ship into the image.
+.git
+.bakers-worktrees/
+**/node_modules/
+vendor/
+web/themes/custom/*/dist/
+
+# DDEV / local dev runtime
+.ddev/
+.idea/
+.vscode/

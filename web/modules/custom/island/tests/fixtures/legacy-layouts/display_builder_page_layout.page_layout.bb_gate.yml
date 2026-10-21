@@ -1,0 +1,54 @@
+uuid: a3977e6c-396a-49ab-9823-053212c63475
+langcode: en
+status: true
+dependencies:
+  module:
+  - system
+  enforced:
+    config:
+    - display_builder.profile.default
+id: bb_gate
+label: bakers.build gate
+weight: -10
+conditions:
+  request_path:
+    id: request_path
+    negate: false
+    pages: /home
+profile: default
+sources:
+- source_id: component
+  source:
+    component:
+      component_id: bb_theme:gate
+      variant_id:
+      props:
+        title:
+          source_id: textfield
+          source:
+            value: bakers.build
+      slots:
+        mark:
+          sources:
+          - source_id: component
+            source:
+              component:
+                component_id: bb_theme:icon
+                variant_id:
+                props:
+                  name:
+                    source_id: textfield
+                    source:
+                      value: project
+                  size:
+                    source_id: textfield
+                    source:
+                      value: xl
+                slots: {}
+            node_id: gate_mark
+        content:
+          sources:
+          - source_id: main_page_content
+            source: {}
+            node_id: gate_main
+  node_id: bb_gate

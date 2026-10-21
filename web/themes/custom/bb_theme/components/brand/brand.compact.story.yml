@@ -1,0 +1,4 @@
+component: bb_theme:brand
+name: Compact
+props:
+  size: compact

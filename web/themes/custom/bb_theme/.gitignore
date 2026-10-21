@@ -1,0 +1,32 @@
+node_modules/
+dist/
+# storybook build output — the web_ui CI job publishes it as an artifact instead,
+# which .gitignore does not affect; a local build left in the tree makes phpcs
+# choke on its minified CSS for a reason that has nothing to do with the code.
+storybook-static/
+.agents/
+# Track designbook authoring artifacts (vision, data-model, design-system,
+# entity-mapping, sections, css jsonata). Ignore only the ephemeral workflow
+# task runtime + archived tasks.
+designbook/workflows/
+design/
+.playwright-cli/
+.stylelintrc.json
+css/app.css
+css/_token-probe.html
+designbook/**/*.log
+# Written by the same `storybook start` launcher as the log beside it: pid,
+# port, started_at and absolute log/cwd paths. Pure runtime state, meaningless
+# in any other worktree — it had this repository carrying a BB-327 checkout
+# path until 2026-09-17, and it makes the tree dirty on every dev-server start.
+designbook/storybook.json
+# `design-verify` runtime output. The score and comparison JSON are a single
+# run's result, the diffs are its throwaway images: all three belong in the
+# ticket's transient root, and none of them describes the design system. Left
+# untracked but unignored they were swept into the next broad `git add`.
+designbook/verify-score.json
+designbook/compare-result.json
+designbook/verify-diffs/
+# Sealed ephemeral workflow plans. They are a single run's scaffolding and are
+# deleted when it finishes; two of them reached a commit before this line did.
+designbook/plans/.ephemeral/

@@ -1,0 +1,24 @@
+bb_track.my_time:
+  title: 'My time'
+  route_name: view.worklog.page
+  base_route: view.tickets.my_work
+  weight: 1
+
+bb_track.accounts:
+  title: 'Billing'
+  route_name: bb_track.account
+  base_route: entity.bb_project.canonical
+  weight: 15
+
+# Ties with Tickets on weight; the title orders Time after it, before Runs.
+bb_track.team_time:
+  title: 'Time'
+  route_name: view.worklog.team
+  base_route: entity.bb_team.canonical
+  weight: 2
+
+bb_track.project_time:
+  title: 'Time'
+  route_name: view.worklog.project
+  base_route: entity.bb_project.canonical
+  weight: 3

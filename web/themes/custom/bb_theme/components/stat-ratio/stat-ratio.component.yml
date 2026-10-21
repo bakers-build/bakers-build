@@ -1,0 +1,61 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Stat Ratio
+status: stable
+group: Data Display
+description: >-
+  One figure derived by dividing two others, shown per trailing period. The
+  quotient is already computed by the caller and arrives as a string; this
+  component performs no arithmetic whatsoever, which is what keeps one rule in
+  one place rather than one copy per surface. The value is a string and not a
+  number precisely so an em-dash is a legal value for a period with nothing to
+  divide by.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    label:
+      type: string
+      title: Label
+      description: The figure's own name, rendered as the block heading.
+    quotients:
+      type: array
+      title: Quotients
+      minItems: 3
+      maxItems: 3
+      description: The derived value per trailing period, in display order.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Period
+            description: The period this quotient covers.
+          value:
+            type: string
+            title: Value
+            description: >-
+              The quotient, already formatted - two decimals, or an em-dash
+              where there was nothing to divide by.
+        required:
+          - label
+          - value
+    numerator_label:
+      type: string
+      title: Numerator
+      description: The name of the figure on top of the division.
+    denominator_label:
+      type: string
+      title: Denominator
+      description: The name of the figure underneath it.
+    source:
+      type: string
+      title: Source
+      description: >-
+        Where the figure is read from, available in a native Data source disclosure.
+  required:
+    - label
+    - quotients
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

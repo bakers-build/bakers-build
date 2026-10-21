@@ -1,0 +1,23 @@
+component: bb_theme:option_picker
+name: Facet
+variant: facet
+props:
+  id: project-facet
+  name: project
+  label: Project
+  value_label: bakers.build
+  values:
+    - bakers
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        clearable: true
+        clear_label: Any
+        options:
+          - value: bakers
+            label: bakers.build
+            selected: true
+          - value: northwind
+            label: Northwind

@@ -1,0 +1,72 @@
+(
+  /* The team detail body, one `canvas` like its sync generator
+     (core.entity_view_display.bb_team.bb_team.full).
+
+     `main`: the Activities zone, its Refresh control and its rows.
+     `inspector`: one surface whose zones are the cards —
+       Identity   the editable name (Save) plus read-only Workspace and Owner.
+       Projects   the n:m relation from the team side, as linked labels.
+
+     Drupal fills the Activities zone (`bb_entity_detail_activities`), the
+     Identity card (the shared detail-card `entity_form`) and Projects (an
+     `entity_reference_label` formatter) from sources, so the preview pins
+     their reader output as text and names exactly the generator's
+     components. The page header and the tabs belong to the screen.
+
+     PINNED FACTS. A mapping is evaluated against one record and cannot join
+     the activity, project, workspace or user collections, so rows and labels
+     are pinned per record — a sample-data change is a visible diff. */
+  $t := $;
+  $facts := {
+    "1": {
+      "activities": [
+        "Christian Wiedemann · claimed · 2 hours ago — BB-142 claimed at coding.",
+        "Sven Gruber · status · yesterday — BB-118 moved from spec to coding.",
+        "Christian Wiedemann · status · 3 days ago — BB-105 moved from review to done."
+      ],
+      "projects": ["bakers.build Platform", "bakers.build Designbook"]
+    }
+  };
+  $workspaces := { "1": "keytec", "2": "Northwind" };
+  $owners := { "1": "Christian Wiedemann", "3": "Marieke van Dijk" };
+  $f := $lookup($facts, $t.id);
+  $activities := $exists($f) ? $f.activities : [];
+  $projects := $exists($f) ? $f.projects : [];
+  $or := function ($v) { $v ? $v : "—" };
+  $zone := function ($heading, $content) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+      "props": { "inset": "none", "gap": "sm" },
+      "slots": { "heading": $heading, "content": $content }
+    }
+  };
+  $surface := function ($rows) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:inspector",
+      "props": { "surface": true },
+      "slots": { "rows": $rows }
+    }
+  };
+  [{
+    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:canvas",
+    "slots": {
+      "main": [{
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+        "props": { "inset": "none", "gap": "sm" },
+        "slots": {
+          "heading": "Activities",
+          "actions": "Refresh",
+          "content": $count($activities) > 0 ? $join($activities, "<br>") : "No activity yet."
+        }
+      }],
+      "inspector": [$surface([
+        $zone("Identity",
+          "Name: " & $or($t.name)
+          & "<br>Workspace: " & $or($lookup($workspaces, $t.workspace_id))
+          & "<br>Owner: " & $or($lookup($owners, $t.owner_user_id))
+          & "<br>Save"),
+        $zone("Projects", $count($projects) > 0 ? $join($projects, "<br>") : "—")
+      ])]
+    }
+  }]
+)

@@ -1,0 +1,497 @@
+# The site's landing route and the only product page without a workspace.
+# `system.site.front` points here; the controller redirects into the
+# operator's My work list or renders the workspace chooser.
+#
+# `/home` is on BbWorkspaceSlugConstraint::RESERVED, so no workspace slug
+# can shadow it (the front page would otherwise be rewritten to a 404).
+# Anonymous visitors get 403, which r4032login sends to the login form.
+bb_core.home:
+  path: '/home'
+  defaults:
+    _controller: '\Drupal\bb_core\Controller\BbHomeController::land'
+    _title: 'Home'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+
+# Creating a workspace with its first team and both memberships.
+#
+# A child of the reserved `home` segment, so no new reserved slug is needed.
+# `_user_is_logged_in`, not `create bb_workspace`: that permission is
+# granted to no rank; the system provisions the workspace on the person's
+# behalf.
+bb_core.workspace_create:
+  path: '/home/new-workspace'
+  defaults:
+    _form: '\Drupal\bb_core\Form\BbWorkspaceCreateForm'
+    _title: 'Create a new workspace'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+
+# Confirming a join, and the POST that performs it.
+#
+# A screen, not a row button or a tokened GET: a CSRF token in a URL leaks via
+# history and Referer, and prefetchers fetch URLs. `_custom_access` because an
+# invitee is not yet a member; the submit handler re-checks it.
+# `bb_invite` is a raw parameter, not an entity upcast: a revoked (deleted)
+# invitation must reach the form's "no longer valid" page, not a 404.
+bb_core.workspace_join:
+  path: '/home/join/{bb_invite}'
+  defaults:
+    _form: '\Drupal\bb_core\Form\BbWorkspaceJoinForm'
+    _title: 'Join workspace'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\bb_core\Form\BbWorkspaceJoinForm::access'
+
+bb_core.admin:
+  path: '/admin/bakers'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'bakers.build'
+  requirements:
+    _permission: 'administer bakers'
+  options:
+    _admin_route: TRUE
+
+bb_core.settings:
+  path: '/admin/bakers/settings'
+  defaults:
+    _form: '\Drupal\bb_core\Form\BbSettingsForm'
+    _title: 'bakers.build settings'
+  requirements:
+    _permission: 'administer bakers'
+  options:
+    _admin_route: TRUE
+
+bb_core.claim_next:
+  path: '/%jsonapi%/bakers/claim-next'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_core\Resource\ClaimNextResource
+    _jsonapi_resource_types: ['bb_run--bb_run']
+  requirements:
+    _permission: 'claim bakers tickets'
+
+bb_core.heartbeat:
+  path: '/%jsonapi%/bakers/heartbeat'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_core\Resource\HeartbeatResource
+    _jsonapi_resource_types: ['bb_conductor--bb_conductor']
+  requirements:
+    _permission: 'register bakers conductor'
+
+# POST only; the optional body is a bb_ticket document of overrides.
+# `_auth` is added by jsonapi_resources (all providers);
+# a cookie session must also present the CSRF header token.
+bb_core.ticket_template_instantiate:
+  path: '/%jsonapi%/bb_ticket_template/bb_ticket_template/{bb_ticket_template}/instantiate'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_core\Resource\TicketTemplateInstantiateResource
+    _jsonapi_resource_types: ['bb_ticket--bb_ticket']
+  requirements:
+    _permission: 'use bb_ticket_template'
+    _csrf_request_header_token: 'TRUE'
+  options:
+    parameters:
+      bb_ticket_template:
+        type: entity:bb_ticket_template
+        converter: bb_core.paramconverter.entity_uuid
+
+# Workspace-scoped like the template's other product routes, so the template
+# must belong to the addressed workspace and be viewable by the reader.
+bb_core.ticket_template_instantiate_form:
+  path: '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}/instantiate'
+  defaults:
+    _form: '\Drupal\bb_core\Form\TicketTemplateInstantiateForm'
+    _title: 'Create ticket from template'
+  requirements:
+    _permission: 'use bb_ticket_template'
+    _entity_access: 'bb_ticket_template.view'
+  options:
+    parameters:
+      bb_ticket_template:
+        type: entity:bb_ticket_template
+        converter: bb_core.paramconverter.entity_uuid
+
+bb_core.ticket_claim:
+  path: '/%jsonapi%/bb_ticket/{bb_ticket}/claim'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_core\Resource\TicketClaimResource
+    _jsonapi_resource_types: ['bb_run--bb_run']
+    resource_type: 'bb_ticket--bb_ticket'
+  requirements:
+    _permission: 'claim bakers tickets'
+  options:
+    parameters:
+      bb_ticket:
+        type: entity:bb_ticket
+        converter: bb_core.paramconverter.entity_uuid
+
+# Graceful shutdown: owner (or instance admin) only. No body values are
+# applied; an absent row is a 404, never a create. Compatible CLI must ship
+# with the field allowlist — older generic status PATCH callers fail.
+bb_core.conductor_offline:
+  path: '/%jsonapi%/bb_conductor/{bb_conductor}/offline'
+  methods: ['POST']
+  defaults:
+    _jsonapi_resource: Drupal\bb_core\Resource\ConductorOfflineResource
+    _jsonapi_resource_types: ['bb_conductor--bb_conductor']
+    resource_type: 'bb_conductor--bb_conductor'
+  requirements:
+    _entity_access: 'bb_conductor.update'
+  options:
+    parameters:
+      bb_conductor:
+        type: entity:bb_conductor
+        converter: bb_core.paramconverter.entity_uuid
+
+# Statistics discovery returns titled groups of complete atomic figures for
+# explicitly named route contexts. Both routes return synthetic documents, so
+# neither declares `_jsonapi_resource_types`; each resource's
+# getRouteResourceTypes() builds it. Figures the caller may not see are absent.
+# My work > Stats: the signed-in account's own figures (what `bakers ui` shows
+# on startup). No `_bb_stats_scope`: the shared controller falls back to the
+# current user, and a user's own figures are always disclosed to them.
+bb_core.my_work.stats:
+  path: '/_workspace/{bb_workspace}/stats'
+  defaults:
+    _controller: '\Drupal\bb_core\Controller\BbStatsController::stats'
+    _title: 'Stats'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+
+bb_core.statistics.index:
+  path: '/%jsonapi%/bakers/statistics'
+  methods: ['GET']
+  defaults:
+    _jsonapi_resource: Drupal\bb_core\Resource\StatisticsIndexResource
+  requirements:
+    _user_is_logged_in: 'TRUE'
+
+# Direct values for one configured figure. `{bb_figure}` is upcast by the
+# entity param converter; FigureAccess applies the same contexts, Conditions,
+# and permission rule used by discovery.
+bb_core.statistics.item:
+  path: '/%jsonapi%/bakers/statistics/{bb_figure}'
+  methods: ['GET']
+  defaults:
+    _jsonapi_resource: Drupal\bb_core\Resource\StatisticsResource
+  requirements:
+    _custom_access: '\Drupal\bb_core\Access\FigureAccess::access'
+  options:
+    parameters:
+      bb_figure:
+        type: entity:bb_figure
+
+# The contextual environment-add form is a product route: it addresses one
+# project, so it carries that project's workspace.
+entity.bb_environment.add_for_project:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/environment/add'
+  defaults:
+    _entity_form: 'bb_environment.add'
+    _title: 'Add environment'
+  requirements:
+    _entity_create_access: 'bb_environment'
+  options:
+    parameters:
+      bb_project:
+        type: 'entity:bb_project'
+
+# Ticket templates are added from their project's Templates tab, so the add
+# form addresses one project and carries that project's workspace.
+entity.bb_ticket_template.add_for_project:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/ticket-template/add'
+  defaults:
+    _entity_form: 'bb_ticket_template.add'
+    _title: 'Add template'
+  requirements:
+    _entity_create_access: 'bb_ticket_template'
+  options:
+    parameters:
+      bb_project:
+        type: 'entity:bb_project'
+
+# Workspace templates are added from the workspace Templates page. The
+# workspace-scoped create check reads the right in that workspace only.
+entity.bb_ticket_template.add_for_workspace:
+  path: '/_workspace/{bb_workspace}/ticket-template/add-for-workspace'
+  defaults:
+    _entity_form: 'bb_ticket_template.add'
+    _title: 'Add template'
+  requirements:
+    _bb_workspace_create: 'bb_ticket_template'
+
+# The create-ticket dialog is a route, so its form is main content. With
+# `?_wrapper_format=island_dialog` it answers as a dialog fragment; without,
+# as an ordinary page.
+#
+# Not `entity.bb_ticket.add_form`, which is the full admin form: `create` is
+# a second form operation and the form mode owning the dialog's widgets.
+# Gated by `_entity_create_access`; the form checks the permission again.
+# The public address is `/{workspace}/ticket/create`.
+entity.bb_ticket.create_form:
+  path: '/_workspace/{bb_workspace}/ticket/create'
+  defaults:
+    _entity_form: 'bb_ticket.create'
+    # The dialog's own head reads `New ticket`, and the hull that renders it is
+    # the surface's. This title is what a JavaScript-less visit puts in the
+    # browser tab and what a generic `island_dialog` hull would announce.
+    _title: 'New ticket'
+  requirements:
+    _entity_create_access: 'bb_ticket'
+
+# The create-project dialog, built like the create-ticket dialog above: a
+# route whose form is main content. `create` is a second form operation and
+# mode beside the admin `entity.bb_project.add_form`;
+# `_entity_create_access` gates it and the form checks again.
+# The public address is `/{workspace}/project/create`.
+entity.bb_project.create_form:
+  path: '/_workspace/{bb_workspace}/project/create'
+  defaults:
+    _entity_form: 'bb_project.create'
+    # Also the dialog's own head: this form composes no hull, so island's
+    # generic hull reads the route `_title`. Renaming it renames the dialog.
+    _title: 'New project'
+  requirements:
+    _entity_create_access: 'bb_project'
+
+# The team screen's routes (canonical Overview, stats, members) are emitted
+# by \Drupal\bb_core\Routing\BbTeamRouteProvider; Tickets and Runs are
+# Views pages.
+
+# Projects and Groups listings are Views page displays
+# (`view.projects.workspace_list`, `view.groups.workspace_list`). The combined
+# controller route is gone: each view owns its path under `/_workspace/{bb_workspace}/`.
+
+# Projects carry no membership, so there is no project members route.
+# BbProjectRouteProvider points `entity.bb_project.canonical` at
+# `_entity_view: bb_project.full` (Overview). Board stays a controller.
+
+# `/{workspace}/tickets` is owned by the `views.view.tickets` page display
+# (`view.tickets.page_1`); BbWorkspaceRouteSubscriber applies the workspace
+# wiring by path. Do not re-add a route at this path: two routes for one path
+# are chosen by fit, and Views' own takeover does not fire for the named
+# `%bb_workspace` placeholder.
+# @see \Drupal\Tests\bb_core\Kernel\TicketListRouteTest
+
+# Shares the canonical detail's workspace and entity access boundaries.
+entity.bb_ticket.property_form:
+  path: '/_workspace/{bb_workspace}/ticket/{bb_ticket}/property'
+  defaults:
+    _entity_form: 'bb_ticket.property'
+    _title: 'Edit ticket properties'
+  requirements:
+    _entity_access: 'bb_ticket.update'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_ticket:
+        type: 'entity:bb_ticket'
+
+# Review draft: a dialog over the ticket with JavaScript, a page without it.
+entity.bb_comment.review_add:
+  path: '/_workspace/{bb_workspace}/ticket/{bb_ticket}/review/add'
+  defaults:
+    _entity_form: 'bb_comment.review'
+    bundle: review
+    _title: 'Write a review'
+  requirements:
+    _custom_access: 'Drupal\bb_core\Access\ReviewCommentFormAccess::add'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_ticket:
+        type: 'entity:bb_ticket'
+
+# Edit a draft or decide a submitted review.
+entity.bb_comment.review_form:
+  path: '/_workspace/{bb_workspace}/comment/{bb_comment}/review'
+  defaults:
+    _entity_form: 'bb_comment.review'
+    _title: 'Review'
+  requirements:
+    _custom_access: 'Drupal\bb_core\Access\ReviewCommentFormAccess::form'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_comment:
+        type: 'entity:bb_comment'
+
+# A review's state widget posts here, so its redirect is not inside the canvas.
+bb_core.review_transition:
+  path: '/_workspace/{bb_workspace}/comment/{bb_comment}/review/transition'
+  defaults:
+    _controller: '\Drupal\bb_core\Controller\ReviewTransitionController::form'
+    _title: 'Review'
+  requirements:
+    _custom_access: 'Drupal\bb_core\Access\ReviewCommentFormAccess::transition'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_comment:
+        type: 'entity:bb_comment'
+
+# The intervention confirmation (cancel the ticket, or `?run=<uuid>` one of
+# its runs): a dialog over the detail with JavaScript, a page without it.
+entity.bb_ticket.action_form:
+  path: '/_workspace/{bb_workspace}/ticket/{bb_ticket}/action'
+  defaults:
+    _entity_form: 'bb_ticket.action'
+    _title_callback: '\Drupal\bb_core\Controller\BbTicketDetailController::interventionTitle'
+  requirements:
+    _entity_access: 'bb_ticket.update'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_ticket:
+        type: 'entity:bb_ticket'
+
+# Disable / Enable confirmation: a dialog over the Overview with JavaScript,
+# a page without it.
+entity.bb_conductor.action_form:
+  path: '/_workspace/{bb_workspace}/conductor/{bb_conductor}/action'
+  defaults:
+    _entity_form: 'bb_conductor.action'
+    _title: 'Conductor activity'
+  requirements:
+    _entity_access: 'bb_conductor.update'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_conductor:
+        type: 'entity:bb_conductor'
+
+entity.bb_group.create_form:
+  path: '/_workspace/{bb_workspace}/group/create'
+  defaults:
+    _entity_form: 'bb_group.create'
+    _title: 'New group'
+  requirements:
+    _entity_create_access: 'bb_group'
+    _bb_workspace_create: 'bb_group'
+
+# The group's Settings tab: the `settings` form mode, gated on `update`
+# because it is an edit surface. A static title, because core's
+# `EntityController::editTitle()` would title the route's first entity
+# parameter, which on a workspace-prefixed route is the workspace.
+bb_core.bb_group.settings:
+  path: '/_workspace/{bb_workspace}/group/{bb_group}/settings'
+  defaults:
+    _entity_form: 'bb_group.settings'
+    _title: 'Settings'
+  requirements:
+    _entity_access: 'bb_group.update'
+  options:
+    parameters:
+      bb_group:
+        type: 'entity:bb_group'
+
+entity.bb_team.create_form:
+  path: '/_workspace/{bb_workspace}/team/create'
+  defaults:
+    _entity_form: 'bb_team.create'
+    _title: 'New team'
+  requirements:
+    _entity_create_access: 'bb_team'
+    _bb_workspace_create: 'bb_team'
+
+# Workspace settings, the workspace's first product route; it has no
+# canonical route of its own. Gated on `update` because the screen is the
+# workspace edit surface (workspace lead only).
+bb_core.bb_workspace.settings:
+  path: '/_workspace/{bb_workspace}/settings'
+  defaults:
+    _entity_form: 'bb_workspace.settings'
+    _title: 'Settings'
+  requirements:
+    _entity_access: 'bb_workspace.update'
+
+# Workspace Members, a Settings tab. Adding a person here is an invitation
+# (bb_invite), not a direct membership. The same members island the team
+# screen uses; the form branches on whether the group has a parent workspace.
+# The invite dialog, built like the create dialogs: a route whose form is main
+# content, answered as a dialog fragment with `?_wrapper_format=island_dialog`.
+# Same gate as the Members face it is opened from.
+# The public address is `/{workspace}/invite`.
+bb_core.workspace_invite:
+  path: '/_workspace/{bb_workspace}/invite'
+  defaults:
+    _form: '\Drupal\bb_core\Form\WorkspaceInviteForm'
+    _title: 'Invite members'
+  requirements:
+    _entity_access: 'bb_workspace.update'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'entity:bb_workspace'
+
+bb_core.bb_workspace.members:
+  path: '/_workspace/{bb_workspace}/settings/members'
+  defaults:
+    _controller: '\Drupal\bb_core\Controller\BbWorkspaceMembersController::members'
+    _title: 'Members'
+  requirements:
+    _entity_access: 'bb_workspace.update'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'entity:bb_workspace'
+
+# Run log retrieval. `_entity_access: bb_run.view` is the whole gate — see
+# RunLogController's docblock for why that is deliberate.
+#
+# The workspace prefix makes BbWorkspaceRouteSubscriber require the run's
+# real slug, so only callers holding it (the web UI) use this route; the
+# conductor uses `bb_core.run_log_download_api` below.
+bb_core.run_log_download:
+  path: '/_workspace/{bb_workspace}/run/{bb_run}/log/{kind}'
+  defaults:
+    _controller: 'Drupal\bb_core\Controller\RunLogController::download'
+  requirements:
+    _entity_access: 'bb_run.view'
+    kind: 'log|error_log'
+  options:
+    parameters:
+      bb_run:
+        type: 'entity:bb_run'
+        converter: bb_core.paramconverter.entity_uuid
+    no_cache: TRUE
+
+# The same retrieval without a workspace slug, for the bakers-cli conductor
+# (which has a run uuid but not its workspace). Outside the workspace prefix;
+# access is `bb_run.view` only. `_bakers-api` starts with an underscore, which
+# the slug pattern forbids, so no workspace slug (e.g. the default `bakers`) can
+# capture it.
+bb_core.run_log_download_api:
+  path: '/_bakers-api/run/{bb_run}/log/{kind}'
+  defaults:
+    _controller: 'Drupal\bb_core\Controller\RunLogController::download'
+  requirements:
+    _entity_access: 'bb_run.view'
+    kind: 'log|error_log'
+  options:
+    # Conductor downloads send Basic or OAuth on this route; without _auth,
+    # Drupal 403s the used authentication method before entity access runs.
+    _auth: ['basic_auth', 'oauth2', 'cookie']
+    parameters:
+      bb_run:
+        type: 'entity:bb_run'
+        converter: bb_core.paramconverter.entity_uuid
+    no_cache: TRUE
+
+# The four-step onboarding wizard (identity, About you, setup, project).
+# Incomplete interactive HTML entry is sent here by OnboardingGuardSubscriber;
+# the route must stay reachable so that redirect cannot loop, including when a
+# completed account reopens Setup guide. The form IS this route's main content
+# so `_wrapper_format=drupal_htmx` builds and submits it (island README: a form
+# island outside main content never sees its POST).
+bb_core.onboarding:
+  path: '/home/onboarding'
+  defaults:
+    _form: '\Drupal\bb_core\Form\BbOnboardingWizardForm'
+    _title: 'What should we call you?'
+  requirements:
+    _user_is_logged_in: 'TRUE'

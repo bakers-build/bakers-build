@@ -1,0 +1,18 @@
+{#
+/**
+ * @file
+ * Exposed-form layout for the dashboard ticket list (active_tickets, bb_theme
+ * is the active theme on the bakers routes). Lays the BEF text filters
+ * (identifier / title) + submit out as a compact inline bar matching the
+ * filter-bar above the board, instead of the default full-width stack. The
+ * inputs themselves keep their bb_theme:form_input styling; this only arranges
+ * them. Any other exposed elements (hidden/system) still render via the
+ * catch-all at the end.
+ */
+#}
+<div{{ attributes.addClass(['bakers-exposed-form', 'flex', 'items-end', 'gap-[12px]', 'flex-wrap', 'px-[20px]', 'py-[12px]', 'bg-app', 'border-b', 'border-border-2', '[&_.form-item]:m-0', '[&_label]:text-eyebrow', '[&_label]:font-bold', '[&_label]:tracking-[0.1em]', '[&_label]:uppercase', '[&_label]:text-text-faint', '[&_label]:mb-[4px]', '[&_label]:block', '[&_.form-text]:bg-surface-2', '[&_.form-text]:border-border-2']) }}>
+  {% if form.identifier %}<div class="w-[200px] max-w-full">{{ form.identifier }}</div>{% endif %}
+  {% if form.title %}<div class="w-[240px] max-w-full">{{ form.title }}</div>{% endif %}
+  {% if form.actions %}<div class="shrink-0 [&_.form-actions]:flex [&_.form-actions]:items-center [&_.form-actions]:gap-[8px] [&_.form-actions]:m-0">{{ form.actions }}</div>{% endif %}
+  {{ form|without('identifier', 'title', 'actions') }}
+</div>

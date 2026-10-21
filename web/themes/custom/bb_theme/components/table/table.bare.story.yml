@@ -1,0 +1,23 @@
+component: bb_theme:table
+name: Bare cells
+props:
+  variant: ''
+  columns:
+    - key: state
+      label: State
+    - key: assignee
+      label: Assignee
+    - key: priority
+      label: Priority
+  rows:
+    - cells:
+        state:
+          kind: badge
+          label: coding
+        assignee:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+        priority:
+          kind: picker
+          label: Priority

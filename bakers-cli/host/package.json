@@ -1,0 +1,60 @@
+{
+  "name": "@bakers-build/bakers",
+  "version": "0.0.1",
+  "description": "bakers.build meta package: the `bakers` plugin-host CLI + all runtime plugins. Global install target.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "bin": {
+    "bakers": "./bin/bakers"
+  },
+  "exports": {
+    "./host": "./dist/src/host.js",
+    "./plugins": "./dist/src/plugins-barrel.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "dist/src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bakers-build/addon-agents": "workspace:^",
+    "@bakers-build/addon-auth-basic": "workspace:^",
+    "@bakers-build/addon-claude": "workspace:^",
+    "@bakers-build/addon-codex": "workspace:^",
+    "@bakers-build/addon-deployment": "workspace:^",
+    "@bakers-build/addon-dropsh": "workspace:^",
+    "@bakers-build/addon-essentials": "workspace:^",
+    "@bakers-build/addon-bakers-ui": "workspace:^",
+    "@bakers-build/addon-bakers-ui-artifacts": "workspace:^",
+    "@bakers-build/addon-grok": "workspace:^",
+    "@bakers-build/addon-herdr": "workspace:^",
+    "@bakers-build/addon-info": "workspace:^",
+    "@bakers-build/addon-kimi": "workspace:^",
+    "@bakers-build/addon-opencode": "workspace:^",
+    "@bakers-build/addon-pi": "workspace:^",
+    "@bakers-build/addon-ports": "workspace:^",
+    "@bakers-build/addon-ports-cloudflare": "workspace:^",
+    "@bakers-build/addon-ports-cloudflare-quick": "workspace:^",
+    "@bakers-build/addon-ports-frp": "workspace:^",
+    "@bakers-build/addon-remote-drupal": "workspace:^",
+    "@bakers-build/addon-track": "workspace:^",
+    "@bakers-build/addon-workspace": "workspace:^",
+    "@bakers-build/addon-workspace-git": "workspace:^",
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/ui": "workspace:^",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  }
+}

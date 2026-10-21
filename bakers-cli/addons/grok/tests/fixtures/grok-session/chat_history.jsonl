@@ -1,0 +1,4 @@
+{"type":"user","content":[{"type":"text","text":"Sanitized bootstrap context."}]}
+{"type":"user","content":[{"type":"text","text":"Sanitized system reminder."}],"synthetic_reason":"system_reminder"}
+{"type":"user","content":[{"type":"text","text":"Inspect the repository and report status."}],"prompt_index":0}
+{"type":"assistant","content":"The repository is ready.","model_fingerprint":"captured","model_id":"grok-4.5-build","reasoning_effort":"high"}

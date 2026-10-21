@@ -1,0 +1,31 @@
+{
+  "role": "reference",
+  "source": {
+    "kind": "image",
+    "identity": "bakers-shell-ticket-list-approved-mock",
+    "revision": "b49b9ff71a3fae4c76b68a3f8b152fe8ba13e145a9133bb0bea35c2f299e343d"
+  },
+  "elements": [
+    {
+      "id": "ticket-list",
+      "locator": {
+        "kind": "image",
+        "value": "shell-ticket-list.png"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1659,
+          "height": 948
+        }
+      ]
+    }
+  ],
+  "assets_dir": "assets"
+}

@@ -1,0 +1,13 @@
+services:
+  bb_oauth_device.repositories.device_code:
+    class: Drupal\bb_oauth_device\Repositories\DeviceCodeRepository
+    arguments:
+      - '@keyvalue.expirable'
+      - '@simple_oauth.repositories.client'
+      - '@simple_oauth.repositories.scope'
+
+  bb_oauth_device.anonymous_verification_redirect:
+    class: Drupal\bb_oauth_device\EventSubscriber\AnonymousVerificationRedirectSubscriber
+    arguments: ['@current_user']
+    tags:
+      - { name: event_subscriber }

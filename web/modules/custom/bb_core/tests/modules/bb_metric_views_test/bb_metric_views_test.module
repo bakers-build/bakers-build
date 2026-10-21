@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Test helper hooks for bb_metric Views integration tests.
+ */
+
+declare(strict_types=1);
+
+use Drupal\views\EntityViewsData;
+
+/**
+ * Implements hook_entity_type_alter().
+ *
+ * A NO-OP SINCE BB-396, and kept as a deliberate safety net rather than
+ * deleted. It used to attach the default `EntityViewsData` handler to
+ * bb_ticket, mirroring what `bb_dashboard` did, so the bb_metric Views
+ * handlers could be exercised without the dashboard's contrib dependency
+ * stack. BB-396 deleted that module and moved the handler declaration onto
+ * the entity classes themselves — `BbTicket` now declares `views_data`
+ * directly — so the condition below can no longer be true.
+ *
+ * The guard is what makes keeping it safe: this hook only ever fills a gap, and
+ * it now finds none. If a future refactor moved the handler declaration off the
+ * entity class again, the tests that depend on a Views surface would keep
+ * working here instead of failing in a way that looks unrelated.
+ */
+function bb_metric_views_test_entity_type_alter(array &$entity_types): void {
+  if (isset($entity_types['bb_ticket']) && !$entity_types['bb_ticket']->hasHandlerClass('views_data')) {
+    $entity_types['bb_ticket']->setHandlerClass('views_data', EntityViewsData::class);
+  }
+}

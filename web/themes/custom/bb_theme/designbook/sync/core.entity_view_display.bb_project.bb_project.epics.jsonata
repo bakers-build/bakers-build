@@ -1,0 +1,49 @@
+/*
+ * sync-to generator — core.entity_view_display.bb_project.bb_project.epics
+ *
+ * Authored for BB-628 from `entity-mapping/bb_project.bb_project.epics.jsonata`.
+ * Binds the SDC components bb_theme:empty-state and bb_theme:list to
+ * bb_project.epics. Inspector Epics list only. The project `full` display
+ * places this list in the trailing inspector. The list is
+ * `bb_project_overview` section `epics`.
+ *
+ * THE SHIPPED YAML IS THE SAVED FORM (see README.md): `content` and `hidden`
+ * are materialised from bb_project's fields on first save and re-exported
+ * from the site, not taken from this generator's empty maps.
+ */
+(
+{
+  "langcode": "en",
+  "status": true,
+  "dependencies": {
+    "config": [
+      "core.entity_view_mode.bb_project.epics"
+    ],
+    "module": [
+      "display_builder",
+      "bb_core"
+    ]
+  },
+  "third_party_settings": {
+    "display_builder": {
+      "profile": "default",
+      "sources": [
+        {
+          "source_id": "bb_project_overview",
+          "source": {
+            "section": "epics",
+            "context_mapping": { "entity": "entity" }
+          },
+          "node_id": "overview_epics"
+        }
+      ]
+    }
+  },
+  "id": "bb_project.bb_project.epics",
+  "targetEntityType": "bb_project",
+  "bundle": "bb_project",
+  "mode": "epics",
+  "content": {},
+  "hidden": {}
+}
+)

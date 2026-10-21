@@ -1,0 +1,29 @@
+# og's field storage for `og_membership_request`, shipped with the bundle beside
+# it (BB-318).
+#
+# Needed for the same reason and by the same mechanism: og/config/install is
+# skipped wholesale for the og_membership group at recipe-install time, so
+# neither the bundle nor this storage exists. Creating only the bundle is worse
+# than creating neither — core then tries og's field INSTANCE
+# `field.field.og_membership.default.og_membership_request`, whose storage is
+# still absent, and aborts with "Attempted to create ... when the field storage
+# does not exist". The instance itself needs no copy: core creates it from og's
+# own config once both of these exist.
+langcode: en
+status: true
+dependencies:
+  module:
+    - og
+id: og_membership.og_membership_request
+field_name: og_membership_request
+entity_type: og_membership
+type: string_long
+settings:
+  case_sensitive: false
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

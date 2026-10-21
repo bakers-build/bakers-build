@@ -1,0 +1,13 @@
+{# The frame of a gate form. The caller's attributes carry the form's own
+   (`action`, `method`, `id`, `data-hx-boost`, `aria-*`); this frame adds only
+   layout: a gap between the parts core renders without spacing, the action
+   row, and a visible focus ring, because the input resets its outline. #}
+{% set centered = align|default('start') == 'center' %}
+<form{{ (attributes ?: create_attribute()).addClass([
+  'grid', 'gap-4', 'min-w-0', '*:min-w-0',
+  '[&_.form-actions]:flex', '[&_.form-actions]:flex-wrap', '[&_.form-actions]:items-center', '[&_.form-actions]:gap-3',
+  '[&_:is(input,button,a):focus-visible]:outline-2', '[&_:is(input,button,a):focus-visible]:outline-solid',
+  '[&_:is(input,button,a):focus-visible]:outline-primary', '[&_:is(input,button,a):focus-visible]:outline-offset-3',
+]|merge(centered ? ['text-center', '[&_.form-actions]:justify-center'] : [])) }}>
+  {% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}
+</form>

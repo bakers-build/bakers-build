@@ -1,0 +1,13 @@
+uuid: 36e79687-c196-44f5-8804-926268dc2209
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+_core:
+  default_config_hash: 53qNoKOuePTL3H9DRwyS7Rrr7-69WdnipLEApIQq8g8
+id: bb_team.settings
+label: Settings
+description: null
+targetEntityType: bb_team
+cache: true

@@ -1,0 +1,29 @@
+component: bb_theme:stat-comparison
+name: Single
+props:
+  chart:
+    state: ready
+    label: Model comparison
+    value_label: Value
+    labels:
+      - '2026-01-01'
+    series:
+      - key: a
+        style: a
+        label: Model A
+        latest_value: '4'
+        values:
+          - x: '2026-01-01'
+            'y': 4
+      - key: b
+        style: b
+        label: Model B
+        latest_value: '8'
+        values:
+          - x: '2026-01-01'
+            'y': 8
+    rows:
+      - date: '2026-01-01'
+        values:
+          - '4'
+          - '8'

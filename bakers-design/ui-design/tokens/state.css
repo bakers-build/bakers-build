@@ -1,0 +1,33 @@
+/* bakers.build state colors — seeded from the keytec palette. The ONLY color
+   signal bakers.build introduces. Always encode state DOUBLY (accent edge + dot/pill),
+   never color alone. Tints (~14% alpha) are for fills; they render as pale
+   tones over the light surfaces in tokens/colors.css without adjustment. */
+:root {
+  --bakers-unassigned: #FF4E42; /* swimsuit — needs_input WITHOUT assignee = critical */
+  --bakers-attention:  #FFC024; /* sun      — needs_input (assigned) / attention / stale */
+  --bakers-running:    #4BB9AE; /* teal     — run active / node online */
+  --bakers-lease:      #8197F8; /* ocean    — active lease / claim ownership (neutral) */
+  --bakers-offline:    #707888; /* gray     — no run / offline / released */
+
+  --bakers-unassigned-soft: rgba(255,78,66,.14);
+  --bakers-attention-soft:  rgba(255,192,36,.13);
+  --bakers-running-soft:    rgba(75,185,174,.14);
+  --bakers-lease-soft:      rgba(129,151,248,.15);
+  --bakers-offline-soft:    rgba(112,120,136,.14);
+
+  /* pill/text-on-tint variants: the raw hues above are too light to use as
+     TEXT color once the tint sits on a white/near-white background (verified
+     failing WCAG AA at ~2-3:1). These are the same hues darkened until they
+     clear 4.5:1 against their matching -soft tint background. */
+  --bakers-unassigned-ink: #A5301F; /* on --bakers-unassigned-soft: 5.73:1 */
+  --bakers-attention-ink:  #7A5600; /* on --bakers-attention-soft: 5.97:1 */
+  --bakers-running-ink:    #1F6B63; /* on --bakers-running-soft: 5.45:1 */
+  --bakers-lease-ink:      #3B4BA8; /* on --bakers-lease-soft: 6.34:1 */
+
+  /* semantic aliases (read at call sites) */
+  --state-critical:  var(--bakers-unassigned);
+  --state-waiting:   var(--bakers-attention);
+  --state-healthy:   var(--bakers-running);
+  --state-owned:     var(--bakers-lease);
+  --state-idle:      var(--bakers-offline);
+}

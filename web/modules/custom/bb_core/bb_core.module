@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * @file
+ * bakers.build Core module hooks.
+ *
+ * Hooks live in `#[Hook]` classes under `src/Hook/`. The functions below stay
+ * procedural because already-run deploy and post-update hooks call them.
+ */
+
+declare(strict_types=1);
+
+use Drupal\bb_core\Entity\BbConductorInterface;
+use Drupal\bb_core\Entity\BbGroupInterface;
+use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\og\Entity\OgRole;
+use Drupal\og\Og;
+use Drupal\og\OgMembershipInterface;
+use Drupal\user\UserInterface;
+
+/**
+ * Ensures a conductor's account holds the `app` role in its workspace.
+ *
+ * Kept only for already-run deploy and post-update hooks; the workspace `app`
+ * role no longer exists, so every call logs a warning and returns. The
+ * workspace is derived: conductor project -> project group -> group workspace.
+ * Failures are logged, never raised.
+ *
+ * @param \Drupal\bb_core\Entity\BbConductorInterface $conductor
+ *   The conductor whose principal to place.
+ */
+function _bb_core_ensure_conductor_workspace_membership(BbConductorInterface $conductor): void {
+  $logger = \Drupal::logger('bb_core');
+  $account = $conductor->get('owner_user_id')->entity;
+  if (!$account instanceof UserInterface) {
+    $logger->info('Conductor @id has no owner account; no workspace membership.', ['@id' => $conductor->id()]);
+    return;
+  }
+
+  $workspace = _bb_core_conductor_workspace($conductor);
+  if ($workspace === NULL) {
+    $logger->info('Conductor @id resolves to no workspace; no membership created.', ['@id' => $conductor->id()]);
+    return;
+  }
+
+  $role = OgRole::load('bb_workspace-bb_workspace-app');
+  if ($role === NULL) {
+    $logger->warning('The bb_workspace `app` role is missing; conductor @id was not placed.', ['@id' => $conductor->id()]);
+    return;
+  }
+
+  try {
+    $membership = Og::getMembership($workspace, $account, OgMembershipInterface::ALL_STATES);
+    if ($membership === NULL) {
+      $membership = Og::createMembership($workspace, $account);
+    }
+    elseif (in_array($role->id(), $membership->getRolesIds(), TRUE)) {
+      // Already placed — idempotent, so nothing to write.
+      return;
+    }
+    $membership->addRole($role)->save();
+  }
+  catch (\Exception $e) {
+    $logger->warning('Could not place conductor @id in workspace @workspace: @message', [
+      '@id' => $conductor->id(),
+      '@workspace' => $workspace->id(),
+      '@message' => $e->getMessage(),
+    ]);
+  }
+}
+
+/**
+ * Derives the workspace a conductor belongs to, or NULL if the chain breaks.
+ *
+ * @param \Drupal\bb_core\Entity\BbConductorInterface $conductor
+ *   The conductor to resolve.
+ *
+ * @return \Drupal\bb_core\Entity\BbWorkspaceInterface|null
+ *   The workspace, or NULL when the conductor has no project, the project has
+ *   no group, or the group has not been placed in a workspace yet.
+ */
+function _bb_core_conductor_workspace(BbConductorInterface $conductor): ?BbWorkspaceInterface {
+  $project = $conductor->get('project_id')->entity;
+  if (!$project instanceof BbProjectInterface) {
+    return NULL;
+  }
+  $group = $project->get('group_id')->entity;
+  if (!$group instanceof BbGroupInterface) {
+    return NULL;
+  }
+  return $group->getWorkspace();
+}

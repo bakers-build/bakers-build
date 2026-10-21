@@ -1,0 +1,9 @@
+@theme static {
+  --spacing: 4px;
+  --spacing-space-1: 4px;
+  --spacing-space-2: 8px;
+  --spacing-space-3: 12px;
+  --spacing-space-4: 16px;
+  --spacing-space-5: 20px;
+  --spacing-space-6: 24px;
+}

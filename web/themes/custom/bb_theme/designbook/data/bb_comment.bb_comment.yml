@@ -1,0 +1,705 @@
+- id: '1'
+  created: '2026-06-02T09:00:00+00:00'
+  changed: '2026-06-02T09:00:00+00:00'
+  ticket_id: '1'
+  author: '1'
+  author_name: Christian Wiedemann
+  author_initials: CW
+  author_color: attention
+  type: spec
+  body: >-
+    <p>Proposed spec: the <code>full</code> view mode renders a state-flow bar
+    (backlog → todo → spec → coding → review → done), a metadata rail (project,
+    priority, assignee, labels), and a comment timeline grouped by
+    type.</p><p>Reference chips for <em>parent</em> and <em>blocked by</em> link
+    to sibling tickets by identifier.</p>
+  __designbook:
+    section: bb_ticket
+- id: '2'
+  created: '2026-06-15T13:30:00+00:00'
+  changed: '2026-06-15T13:30:00+00:00'
+  ticket_id: '1'
+  author: '2'
+  author_name: Sven Gruber
+  author_initials: SG
+  author_color: unassigned
+  type: summary
+  body: >-
+    <p><strong>Summary:</strong> Component scaffolding for
+    <code>ticket_detail</code> and <code>comment_event</code> is in place.
+    Sample data now covers all six ticket states and three comment types.</p>
+  __designbook:
+    section: bb_ticket
+- id: '3'
+  created: '2026-06-28T16:00:00+00:00'
+  changed: '2026-06-28T16:00:00+00:00'
+  ticket_id: '1'
+  author: '1'
+  author_name: Christian Wiedemann
+  author_initials: CW
+  author_color: attention
+  type: comment
+  body: >-
+    <p>Looks good so far — can we also verify the blocked-by chips render
+    correctly when a ticket has more than one blocker?</p>
+  __designbook:
+    section: bb_ticket
+- id: '4'
+  created: '2026-06-29T15:05:00+00:00'
+  changed: '2026-06-29T15:05:00+00:00'
+  ticket_id: '9'
+  author: '3'
+  author_name: Marieke van Dijk
+  author_initials: MD
+  author_color: lease
+  type: spec
+  body: >-
+    <p>Validate the postcode per country using the shop's existing country
+    table, and keep the entered values on a failed submit so nothing is retyped.
+    The step order itself does not change.</p>
+  __designbook:
+    section: bb_ticket
+- id: '5'
+  created: '2026-06-29T16:20:00+00:00'
+  changed: '2026-06-29T16:20:00+00:00'
+  ticket_id: '9'
+  author: '4'
+  author_name: bakers.build agent
+  author_initials: GA
+  author_color: offline
+  type: summary
+  body: >-
+    <p><strong>Summary:</strong> The address step is rebuilt. Postcodes now
+    validate per country against the shop's existing country table, and every
+    entered value survives a failed submit, so a rejected write no longer costs
+    the customer their typing.</p><p><strong>What changed.</strong> The step was
+    one controller holding both the country lookup and the postcode rules, which
+    is why adding a country meant editing the validator. The rules moved into a
+    per-country strategy resolved from the country table, so a new country is a
+    table row rather than a code change. The controller kept exactly one job:
+    collect the submitted values, ask the resolved strategy whether they are
+    acceptable, and re-render the step with them still in place when they are
+    not.</p><p><strong>Why the values used to disappear.</strong> The step
+    rebuilt its form from the persisted order rather than from the submitted
+    request, so anything the customer typed after the last successful save was
+    gone by the time the error rendered. The form now rebuilds from the request
+    first and falls back to the order, which is the same ordering the rest of
+    the checkout already used and the reason this was a one-line fix once it was
+    found rather than a rewrite.</p><p><strong>What was tested.</strong>
+    Fourteen postcode formats across nine countries, including the three that
+    are genuinely ambiguous (Ireland's Eircode, the Netherlands'
+    four-digit-plus-two-letter form, and Canada's alternating pattern), plus the
+    two failure paths that matter: an unknown country falling back to a
+    permissive rule rather than refusing, and a submit rejected twice in a row
+    keeping the typed values both times. Coverage on the checkout module is at
+    71.5%, up from 64.2%, and the two uncovered branches are both in the legacy
+    address importer this ticket does not touch.</p><p><strong>What is
+    deliberately not done.</strong> The country table is still read on every
+    request rather than cached; measured at 0.4ms it is not worth a cache and a
+    cache invalidation path yet, and saying so is cheaper than a reader
+    rediscovering it. Address autocompletion was raised during the work and is
+    not in scope — it needs a third-party provider, a contract and a failure
+    path, so it belongs to its own ticket rather than to this one's tail
+    end.</p><p><strong>How to look at it.</strong> The pipeline link carries the
+    run; the report link carries the fourteen format cases as named scenarios,
+    which is faster to read than the diff if the question is "does it handle my
+    country".</p>
+  __designbook:
+    section: bb_ticket
+- id: '6'
+  created: '2026-06-29T16:35:00+00:00'
+  changed: '2026-06-29T16:35:00+00:00'
+  ticket_id: '9'
+  author: '4'
+  author_name: bakers.build agent
+  author_initials: GA
+  author_color: offline
+  type: test
+  body: >-
+    <p>Fourteen postcode formats across nine countries, each as its own named
+    scenario rather than a table-driven loop, so a failure names the country
+    instead of a row index. The three ambiguous formats are called out
+    separately because they are the ones a regression would hit first: Ireland's
+    Eircode (no fixed length, letters and digits mixed), the Netherlands' four
+    digits plus two letters with an optional space, and Canada's strict
+    alternating letter-digit pattern.</p><p>Two failure paths are covered as
+    deliberately as the happy ones. An unknown country falls back to a
+    permissive rule rather than refusing the address — refusing would make the
+    shop unreachable from any country nobody has added yet, which is a worse
+    failure than accepting a postcode it cannot check. And a submit rejected
+    twice in a row keeps the typed values both times, because the bug being
+    fixed was specifically that the second rejection cleared what the first one
+    had preserved.</p>
+  __designbook:
+    section: bb_ticket
+- id: '7'
+  created: '2026-06-29T17:05:00+00:00'
+  changed: '2026-06-29T17:05:00+00:00'
+  ticket_id: '9'
+  author: '3'
+  author_name: Marieke van Dijk
+  author_initials: MD
+  author_color: lease
+  type: review
+  body: >-
+    <p>Read the strategy resolution twice before I was happy with it. The thing
+    I was looking for and did not find is a silent default: an unknown country
+    resolves to the permissive rule <em>explicitly</em>, and the resolution logs
+    which rule it picked, so "why did this postcode pass" is answerable from the
+    log rather than by reading the table. That is the difference between a
+    fallback and an accident.</p><p>One thing I asked to change and one I did
+    not. The changed one: the country table lookup was inside the loop over
+    submitted fields, so a five-field address hit it five times — hoisted. The
+    one I left: the table is not cached. At 0.4ms it does not pay for a cache
+    invalidation path, and the summary says so, which is what I wanted rather
+    than the cache itself.</p>
+  __designbook:
+    section: bb_ticket
+- id: '8'
+  created: '2026-06-28T17:00:00+00:00'
+  changed: '2026-06-28T17:00:00+00:00'
+  ticket_id: '1'
+  author: '1'
+  author_name: Christian Wiedemann
+  author_initials: CW
+  author_color: attention
+  type: handoff-v3
+  body: >-
+    <p>Unknown comment type fixture — the badge must still render
+    <code>handoff-v3</code> with the neutral accent.</p>
+  __designbook:
+    section: bb_ticket
+- id: '9'
+  created: '2026-06-29T18:00:00+00:00'
+  changed: '2026-06-29T18:00:00+00:00'
+  ticket_id: '9'
+  author: '4'
+  author_name: bakers.build agent
+  author_initials: GA
+  author_color: offline
+  type: spec
+  body: >
+    <table><thead><tr><th>Col A</th><th>Col
+    B</th></tr></thead><tbody><tr><td>alpha</td><td>bravo</td></tr><tr><td>charlie</td><td>delta</td></tr></tbody></table>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad
+    long-handoff-pad long-handoff-pad long-handoff-pad long-handoff-pad </p>
+
+    <p>BB-657-END-MARKER</p>
+  __designbook:
+    section: bb_ticket
+- id: '10'
+  created: '2026-06-10T10:00:00+00:00'
+  changed: '2026-06-10T10:00:00+00:00'
+  ticket_id: '4'
+  author: '1'
+  author_name: Christian Wiedemann
+  author_initials: CW
+  author_color: attention
+  type: comment
+  body: >-
+    <p>Only comment on BB-118 — canonical navigation has neither previous nor
+    next.</p>
+  __designbook:
+    section: bb_ticket

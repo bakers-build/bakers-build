@@ -1,0 +1,18 @@
+{#
+   The bb_markdown form element: Drupal's textarea rendered through
+   bb_theme:form_rich_text, a Markdown toolbar over the same textarea.
+
+   `id` and `disabled` become props (the toolbar targets the id; a disabled
+   body gets no toolbar), so they leave `attributes` before it reaches the
+   component, which prints both itself.
+#}
+{% set textarea_id = attributes.id ~ '' %}
+{% set textarea_disabled = attributes.hasAttribute('disabled') %}
+<div{{ wrapper_attributes.addClass(['w-full', 'min-w-0']) }}>
+  {{ include('bb_theme:form_rich_text', {
+    attributes: attributes.removeAttribute('id').removeAttribute('disabled'),
+    id: textarea_id,
+    disabled: textarea_disabled,
+    value: value,
+  }, with_context = false) }}
+</div>

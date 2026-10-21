@@ -1,0 +1,102 @@
+{# The work surface of the app. A screen puts exactly ONE of these into the
+   shell's `content` slot, and this template is the only place the relation
+   between a screen's header, its filters, its main region and its inspector is
+   written down: `header` spans the full width, and below it a row places
+   `filters` on the leading edge (192px, `w-48` on Tailwind's 4px-based dynamic
+   spacing scale — 48 × 4px), `main` (the flexible remainder) and `inspector`
+   (320px, `w-80`), single column below `lg`.
+
+   EACH ASIDE DROPS OUT OF THE TEMPLATE when its slot is empty, rather than
+   rendering an empty 192px or 320px gutter. Its content is CAPTURED first, so
+   the test is what the region actually renders — a slot filled through a
+   `{% block %}` override carries no variable of that name, and testing the
+   variable would drop a region that has content.
+
+   THE ROW IS FLEX, NOT A CSS GRID TEMPLATE. Fixed-width asides sized with a
+   `grid-template-columns` literal (`192px minmax(0,1fr) 320px`) can only be
+   written as an arbitrary-value Tailwind class, which the token-discipline
+   gate (BB-504) forbids in a layout component same as anywhere else. A
+   flex row states the same three tracks with named-scale utilities instead:
+   each aside carries `w-48`/`w-80` and `shrink-0`, `main` carries `flex-1`, and
+   the single-column collapse below `lg` is `flex-col` reverting to `flex-row`
+   at `lg` rather than a grid template swap — the aside widths apply only from
+   `lg` up (`lg:w-48`/`lg:w-80`), so a narrow viewport gets full-width stacked
+   regions in document order exactly as it did before.
+
+   `main` is not conditional. It is the region that carries the route, so a
+   canvas without it is a screen without a subject, and an author who forgot to
+   fill it should see an empty main column rather than a silently reflowed grid.
+
+   THIS IS NOT A SCROLL CONTAINER, and must never become one. `items-start`
+   keeps the flex items at their natural height, and no clipping declaration
+   appears anywhere in this file — a scrolling ancestor here would take the
+   sticky `inspector` and the sticky `filters` their stick, and an absolutely
+   positioned picker panel (a `meta_row`'s inline edit, a facet control) cannot
+   escape one, so it would be cut off at the region's edge instead of opening
+   over it (D6, D12, BB-332 R9).
+
+   BOTH ASIDES STICK FROM THEIR OWN FLEX ITEM, and that placement — not the
+   declaration itself — is the whole of why they stick. A sticky flex item is
+   offset inside its own flex line, which with `items-start` is as tall as
+   itself — a `self-start` on the item and `items-start` on the row are what
+   let the item's containing block be tall enough to give the `sticky` a
+   travel range, exactly as the grid version needed the item to sit in the
+   full-height GRID AREA rather than a cell shrunk to its content. This is
+   the same fix `inspector` needed until BB-414 measured it stuck at
+   zero travel range; `filters` never had the bug because it was written this
+   way from the start. `inspector.twig`'s own <aside> still declares a `sticky
+   top-0`, which inside this row is inert for exactly the reason above; it is
+   left standing because the component answers for itself wherever else it is
+   placed, and it is not what makes the rail stick here. The remedy for a rail
+   that does not stick is never a clipping declaration on this element or any
+   ancestor of it — the A6 contract check greps this file for the property
+   that does it, and is right to — because that would buy the stick back at
+   the price of the paragraph above.
+
+   Spacing is the token scale, never a hard pixel value: the gap between the
+   header and the row, and between the row's tracks, is `space-5` (D16).
+
+   `main` is a vertical flex stack with the same `space-5` gap, so the region
+   owns the rhythm between its children; a single child still stretches to the
+   full width. `inspector` uses the same `flex flex-col gap-5` stack, so two
+   surface panels in that region keep the canvas rhythm instead of sitting
+   flush. Inspector asides are `w-full` so a short panel still fills the
+   320px column.
+
+   THE STICKY `filters` ASIDE CARRIES A `z-index`, AND THAT IS NOT DECORATION.
+   `position: sticky` creates a stacking context whatever its `z-index` — so
+   every absolutely positioned panel a facet control opens is trapped inside the
+   aside's own stacking context and cannot paint over its siblings. `main`'s
+   table has positioned cells (`<td class="relative">`) that come LATER in the
+   document, so with the aside at `z-index: auto` they painted on top of the
+   panel: `document.elementFromPoint()` at the centre of an open facet row
+   returned that `<td>` and a pointer click picked nothing, while focus and Space
+   on the row's own control still worked. The fix is the `z-index` and not
+   `position: static` and not `overflow`: static would cost the aside its stick,
+   and a clipping declaration is forbidden two paragraphs above, because a facet
+   opened low in a long list must be able to open past the aside's own bottom
+   edge. `40` places the aside above the content row and below `dialog`'s `50`,
+   which is the theme's existing scale (BB-413 R8).
+   The whole declaration is `lg:`-gated because the stick is: below `lg` the
+   aside is static, creates no stacking context, and the panel's own `z-30`
+   already paints over the table. #}
+{% set header_content %}{% block header %}{{ header }}{% endblock %}{% endset %}
+{% set filters_content %}{% block filters %}{{ filters }}{% endblock %}{% endset %}
+{% set main_content %}{% block main %}{{ main }}{% endblock %}{% endset %}
+{% set inspector_content %}{% block inspector %}{{ inspector }}{% endblock %}{% endset %}
+{% set has_filters = filters_content|trim is not empty %}
+{% set has_inspector = inspector_content|trim is not empty %}
+<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-5']) }}>
+  {% if header_content|trim is not empty %}
+    <div data-canvas-region="header">{{ header_content }}</div>
+  {% endif %}
+  <div class="flex flex-col lg:flex-row gap-5 items-start px-5 pb-5 {{ header_content|trim is empty ? 'pt-5' : '' }}">
+    {% if has_filters %}
+      <div data-canvas-region="filters" class="w-full lg:w-48 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 lg:z-40">{{ filters_content }}</div>
+    {% endif %}
+    <div data-canvas-region="main" class="w-full lg:w-auto flex-1 min-w-0 flex flex-col gap-5">{{ main_content }}</div>
+    {% if has_inspector %}
+      <div data-canvas-region="inspector" class="w-full lg:w-80 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 flex flex-col gap-5">{{ inspector_content }}</div>
+    {% endif %}
+  </div>
+</div>
