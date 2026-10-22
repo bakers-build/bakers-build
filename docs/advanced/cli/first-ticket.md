@@ -36,8 +36,8 @@ Open a bakers.build project checkout, create a small ticket, let a conductor wor
      herdr --version
      herdr workspace list
      bakers agents
-     bakers conductor start
-     bakers conductor status
+     bakers oven start
+     bakers oven status
      ```
 
      `herdr workspace list` needs a running herdr session; start one with `herdr`. `bakers agents` prints the agent catalog as JSON and must list at least one agent. A fresh machine file lists every alias of the Claude, Codex and Grok addons and names no default route; narrow it as described in [Agents and models](/advanced/configuration/agents-and-models). The status line shows your conductor as `online`.

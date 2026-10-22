@@ -3,6 +3,19 @@ import { shellQuote } from '../core/shell.js';
 import type { BbCommandHost } from './commands.js';
 import { type ConfigReport, finalizeConfigReport } from './config-report.js';
 import { type BbConnectionConfig, loadBbConfig } from './load-bakers-config.js';
+import { resolveCliVersion } from './version-check.js';
+
+/** The server's client-version contract: claims require it, other errors hint at it. */
+export function withBakersClientHeader(http: HttpClient): HttpClient {
+  const value = `bakers/${resolveCliVersion()}`;
+  return {
+    send: (request) =>
+      http.send({
+        ...request,
+        headers: { ...request.headers, 'X-Bakers-Client': value },
+      }),
+  };
+}
 
 /** Shared normal dropsh authentication, context and request-hook composition. */
 export async function createBbConnectionContext(
@@ -31,7 +44,9 @@ export async function createBbConnectionContext(
     send: (request) =>
       (request.method === 'GET' ? reads : writes).send(request),
   };
-  const http = options.wrapHttp ? options.wrapHttp(transport) : transport;
+  const http = withBakersClientHeader(
+    options.wrapHttp ? options.wrapHttp(transport) : transport,
+  );
   const auth =
     options.auth ??
     (await resolveAuth({
@@ -173,7 +188,7 @@ export async function verifyConfigConnections(
       let auth: AuthAdapter | undefined;
       if (options.ephemeralClientCredentials) {
         const { createHttpClient } = await import('dropsh/plugin');
-        http = createHttpClient();
+        http = withBakersClientHeader(createHttpClient());
         const provider = connection.plugins
           .map((plugin) => plugin.authProvider)
           .find((candidate) => candidate?.id === 'bakers');

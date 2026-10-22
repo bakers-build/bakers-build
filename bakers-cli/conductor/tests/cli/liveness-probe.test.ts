@@ -27,21 +27,21 @@ vi.mock('dropsh', async (orig) => {
 });
 
 /**
- * `bakers conductor ls`/`status` probing THIS machine's own pid (BB-473,
+ * `bakers oven ls`/`status` probing THIS machine's own pid (BB-473,
  * defect 2): `deriveConductorLiveness` (core) is record-only and MUST NOT
  * change (it also classifies conductors on other hosts this machine cannot
  * probe) — `classify()` additionally consults an injected `ProcProbe` when
  * the row is this machine's own conductor (`hostKey` matches) with a
  * positive `lastPid` on record.
  */
-describe('bakers conductor ls/status: local pid probe (BB-473)', () => {
+describe('bakers oven ls/status: local pid probe (BB-473)', () => {
   let home: string;
   let out: string[];
   const originalHome = process.env.BB_HOME;
   const originalLog = process.env.BB_CONDUCTOR_LOG;
   const HOST = 'cw-dev-box';
   const CONDUCTOR_CMDLINE =
-    'node /usr/local/bin/bakers conductor start --foreground --no-update-check';
+    'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-liveness-probe-'));
@@ -88,7 +88,7 @@ describe('bakers conductor ls/status: local pid probe (BB-473)', () => {
       config: makeConfig(),
       procProbe: probe,
     };
-    await buildConductorProgram(deps).parseAsync(['conductor', 'ls'], {
+    await buildConductorProgram(deps).parseAsync(['oven', 'ls'], {
       from: 'user',
     });
   }
@@ -102,7 +102,7 @@ describe('bakers conductor ls/status: local pid probe (BB-473)', () => {
       config: makeConfig(),
       procProbe: probe,
     };
-    await buildConductorProgram(deps).parseAsync(['conductor', 'status'], {
+    await buildConductorProgram(deps).parseAsync(['oven', 'status'], {
       from: 'user',
     });
   }

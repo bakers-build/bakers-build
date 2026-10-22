@@ -59,11 +59,11 @@ export type VerifyOutcome =
 
 /**
  * Substrings a live bakers-conductor foreground process's command line must all
- * contain (see `cmdStartBody`'s `fgCmd`: `bakers conductor … start --foreground
+ * contain (see `cmdStartBody`'s `fgCmd`: `bakers oven … start --foreground
  * --no-update-check`). Deliberately loose — the proof this function performs
  * is "is a bakers conductor foreground loop", not an exact argv match.
  */
-const CONDUCTOR_CMDLINE_MARKERS = ['conductor', 'start', '--foreground'];
+const CONDUCTOR_CMDLINE_MARKERS = ['oven', 'start', '--foreground'];
 
 function looksLikeBbConductor(cmdline: string): boolean {
   return CONDUCTOR_CMDLINE_MARKERS.every((marker) => cmdline.includes(marker));

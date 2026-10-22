@@ -55,6 +55,7 @@ Feature: Ticket activity JSON:API contract
 
   Scenario: A successful claim records one claimed activity
     Given the API client is "login-admin"
+    And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
@@ -98,6 +99,7 @@ Feature: Ticket activity JSON:API contract
 
   Scenario: A later claim of the same ticket adds no claimed activity
     Given the API client is "login-admin"
+    And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
@@ -136,6 +138,7 @@ Feature: Ticket activity JSON:API contract
 
   Scenario: A run that fails without moving the ticket records run_ended
     Given the API client is "login-admin"
+    And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
@@ -167,6 +170,7 @@ Feature: Ticket activity JSON:API contract
 
   Scenario: Two simultaneous claims yield one success and one conflict
     Given the API client is "login-admin"
+    And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """

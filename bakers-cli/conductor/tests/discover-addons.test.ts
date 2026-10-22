@@ -524,11 +524,7 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
       'command',
       bases,
     );
-    expect(cmds.commands.map((c) => c.name)).toEqual([
-      'conductor',
-      'ui',
-      'dropsh',
-    ]);
+    expect(cmds.commands.map((c) => c.name)).toEqual(['oven', 'ui', 'dropsh']);
     // each descriptor carries a describe (for --help stubs)
     expect(cmds.commands.every((c) => c.describe.length > 0)).toBe(true);
   });

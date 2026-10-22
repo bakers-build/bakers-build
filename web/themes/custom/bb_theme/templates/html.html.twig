@@ -19,11 +19,12 @@
     <css-placeholder token="{{ placeholder_token }}">
     <js-placeholder token="{{ placeholder_token }}">
     {# Apply stored rail collapse before first paint. Alpine persist on the
-       aside cannot: IslandBoost OOB-swaps that island on every rail click. #}
+       aside cannot: IslandBoost OOB-swaps that island on every rail click.
+       Below 768px the rail starts collapsed whatever was stored. #}
     <script>
       try {
         var v = localStorage.getItem('_x_bakers.sidebar') || localStorage.getItem('bakers.sidebar');
-        if (v === 'false' || v === '"false"') {
+        if (v === 'false' || v === '"false"' || !window.matchMedia('(min-width: 768px)').matches) {
           document.documentElement.setAttribute('data-sidebar-collapsed', '');
         }
       } catch (e) {}

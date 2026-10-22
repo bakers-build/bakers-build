@@ -34,6 +34,9 @@ bb_core.settings:
     plugin_source_base:
       type: string
       label: 'Plugin source base URL (git group prefix)'
+    min_client_version:
+      type: string
+      label: 'Minimum bakers CLI version (semver) allowed to claim work'
 
 bb_core.bb_vocabulary.*:
   type: config_entity

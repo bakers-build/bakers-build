@@ -12,7 +12,7 @@ import {
  * `running | wedged | stopped | registry-only`, the renderer said
  * `running | stale | offline | registry-only`, and the server's ConductorDeriver
  * said a third thing. Two vocabularies for one fact is the defect — an operator
- * reading `wedged` in `bakers conductor ls` and `stale` in the cockpit has no way
+ * reading `wedged` in `bakers oven ls` and `stale` in the cockpit has no way
  * to know they mean the same conductor in the same condition.
  *
  * The words that survive are the server's, because they are what the dashboard

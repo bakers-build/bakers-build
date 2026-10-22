@@ -27,7 +27,7 @@ vi.mock('dropsh', async (orig) => {
 });
 
 /**
- * `bakers conductor stop` is a verified signal, and nothing else.
+ * `bakers oven stop` is a verified signal, and nothing else.
  *
  * It no longer kills a herdr tab (that killed the pane, not necessarily the
  * conductor) and no longer writes `offline` itself — a heartbeat would erase
@@ -39,7 +39,7 @@ vi.mock('dropsh', async (orig) => {
  * never the process's working directory, which only ever coincided with
  * `workspace_root` over a herdr spawn.
  */
-describe('bakers conductor stop', () => {
+describe('bakers oven stop', () => {
   let home: string;
   let out: string[];
   const originalHome = process.env.BB_HOME;
@@ -47,7 +47,7 @@ describe('bakers conductor stop', () => {
   const WORKSPACE = '/home/dev/project';
   const HOST = 'cw-dev-box';
   const CONDUCTOR_CMDLINE =
-    'node /usr/local/bin/bakers conductor start --foreground --no-update-check';
+    'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-stop-'));
@@ -296,7 +296,7 @@ export default {
         for (const dir of [repoRoot, repoBbDir, linkedWorktree]) {
           process.chdir(dir);
           const deps: BbCliDeps = { remote, procProbe: probe };
-          await buildConductorProgram(deps).parseAsync(['conductor', 'stop'], {
+          await buildConductorProgram(deps).parseAsync(['oven', 'stop'], {
             from: 'user',
           });
         }
@@ -342,7 +342,7 @@ export default {
       config: makeConfig(),
       procProbe: probe,
     };
-    await buildConductorProgram(deps).parseAsync(['conductor', ...argv], {
+    await buildConductorProgram(deps).parseAsync(['oven', ...argv], {
       from: 'user',
     });
   }

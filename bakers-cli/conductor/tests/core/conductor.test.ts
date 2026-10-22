@@ -2438,7 +2438,7 @@ describe('Conductor', () => {
     expect(remote.calls.markCleanedUp).toEqual([]);
   });
 
-  // --- reaper: standalone reconciliation (bakers conductor reap) --------------
+  // --- reaper: standalone reconciliation (bakers oven clean) --------------
   // reap() is the SAME reconciliation the tick runs; called directly it recovers
   // this conductor's orphans a live tick never processed (conductor down at done
   // / restarted). DB-driven off the cleaned_up flag, scoped to this conductor

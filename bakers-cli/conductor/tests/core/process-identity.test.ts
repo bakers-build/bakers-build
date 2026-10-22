@@ -20,7 +20,7 @@ import { Conductor } from '../../src/core/conductor.js';
  * already sends, which is sound only because the serve loop is the process
  * that owns the pid. `poll` and `reap` build a Conductor and call start() +
  * tick() too, then exit within seconds; if they reported a pid unconditionally
- * every `bakers conductor poll` would overwrite a running conductor's pid with
+ * every `bakers oven once` would overwrite a running conductor's pid with
  * its own short-lived one, and the next stop would signal a dead — or worse,
  * recycled — process.
  *

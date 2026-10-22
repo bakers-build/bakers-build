@@ -4,6 +4,7 @@ Feature: Conductor claims over HTTP
 
   Scenario: Priority orders the queue before it becomes empty
     Given the API client is "login-admin"
+    And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "first"
     And the API client creates a "bb_bug" ticket in "home" as "second"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
@@ -49,6 +50,7 @@ Feature: Conductor claims over HTTP
 
   Scenario: An empty state list serves both diagnose and coding
     Given the API client is "login-admin"
+    And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "first"
     And the API client creates a "bb_bug" ticket in "home" as "second"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
@@ -96,6 +98,7 @@ Feature: Conductor claims over HTTP
 
   Scenario: A specific ticket cannot be claimed twice
     Given the API client is "login-admin"
+    And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "first"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """

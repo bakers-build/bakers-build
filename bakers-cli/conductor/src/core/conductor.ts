@@ -266,7 +266,7 @@ export class Conductor {
    *
    * Only `cmdStartForeground` calls this. `cmdPoll` and `cmdReap` also build a
    * Conductor and call start() + tick(), then exit; if they reported a pid,
-   * every `bakers conductor poll` would overwrite the running conductor's pid
+   * every `bakers oven once` would overwrite the running conductor's pid
    * with its own short-lived one and the next stop would signal a dead — or
    * recycled — process. Making the report opt-in means those two commands
    * cannot do so even by accident.
@@ -326,7 +326,7 @@ export class Conductor {
     }
   }
 
-  /** One tick that also waits for its actions: `bakers conductor poll`, tests. */
+  /** One tick that also waits for its actions: `bakers oven once`, tests. */
   async tick(): Promise<void> {
     await this.produce();
     await this.queue.drain();
@@ -888,7 +888,7 @@ export class Conductor {
    * whose workspace still lingers (BB-89). Driven by the durable `cleaned_up`
    * flag via {@link BbRemote.fetchUncleanedTickets}: every ticket the server
    * has already closed but not yet cleaned. The SAME reconciliation runs on
-   * every tick AND standalone as `bakers conductor reap`, and the query is
+   * every tick AND standalone as `bakers oven clean`, and the query is
    * scoped to THIS conductor (BB-121) — so it catches the orphans a
    * live-tick-only path structurally cannot (the conductor was down when the
    * ticket closed, or crashed mid-cleanup) for its OWN tickets. A foreign
@@ -1551,7 +1551,7 @@ export class Conductor {
     }
     await this.queue.drain();
     // NB: the poll loop never writes status=offline itself. A graceful stop
-    // (`bakers conductor stop`) writes offline directly server-side; a crash or
+    // (`bakers oven stop`) writes offline directly server-side; a crash or
     // hard-kill leaves a stale lease that the Drupal cron reaper flips to
     // offline (bb_core cron → ConductorReaper). Liveness is thus always
     // derived from status + last_seen/lease_expires_at, never from the loop.

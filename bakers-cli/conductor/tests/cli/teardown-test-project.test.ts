@@ -37,7 +37,7 @@ if (tool === 'git') {
 } else if (tool === 'node') {
   process.stdout.write('tester\\thost');
 } else if (tool === 'bakers') {
-  if (args.join(' ') !== 'conductor stop --now') process.exit(1);
+  if (args.join(' ') !== 'oven stop --now') process.exit(1);
 } else if (tool === 'ddev') {
   const statePath = path.join(root, 'projects.json');
   const projects = JSON.parse(fs.readFileSync(statePath, 'utf8'));

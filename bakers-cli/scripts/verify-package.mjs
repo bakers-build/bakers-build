@@ -363,13 +363,13 @@ console.log(m[1]);
     //     lazy mount — help imports none of them). BB-224 Finding 7 added
     //     `deployment` (@bakers-build/addon-deployment), which the `conductor` command
     //     plugin used to register as a side effect.
-    for (const cmd of ['conductor', 'ui', 'dropsh', 'deployment']) {
+    for (const cmd of ['oven', 'ui', 'dropsh', 'deployment']) {
       if (!new RegExp(`\\b${cmd}\\b`).test(help)) {
         fail(`\`bakers --help\` did not list the '${cmd}' command`);
       }
     }
     ok(
-      '`bakers --help` lists conductor/ui/dropsh/deployment command plugins (lazy stubs)',
+      '`bakers --help` lists oven/ui/dropsh/deployment command plugins (lazy stubs)',
     );
 
     // 1c. the deployment command really MOUNTS from its own package (not from the
@@ -412,7 +412,7 @@ console.log(m[1]);
     }
     // `bakers init` is not in this list: it returned as the shortcut for
     // `bakers config init` (device-code sign-in), so it must not be rejected.
-    for (const args of [['upgrade'], ['conductor', 'init']]) {
+    for (const args of [['upgrade'], ['conductor'], ['bake'], ['oven', 'init']]) {
       let rejected = false;
       try {
         run(bin, args, { cwd: broken, env: offlineEnv });

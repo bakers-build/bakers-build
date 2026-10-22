@@ -53,7 +53,7 @@ A run that shows `running` with no new comment is usually a blocked tab nobody h
 bakers dropsh update bb_ticket/bb_ticket/<ticket-uuid> --frozen true
 ```
 
-In the terminal UI, press `f` on the ticket; `--frozen false` or `f` again releases it. Freezing a whole project or machine is `bakers conductor stop`.
+In the terminal UI, press `f` on the ticket; `--frozen false` or `f` again releases it. Freezing a whole project or machine is `bakers oven stop`.
 
 The conductor that holds the ticket's worktree notices the change on its next poll and:
 
@@ -67,6 +67,6 @@ herdr shows the token in its left-hand sidebar once a row names it. Add it to `~
 rows = [["state_icon", "workspace", "$bb_frozen"], ["branch", "git_status"]]
 ```
 
-A ticket without a worktree on that machine gets no hook and no marker. The conductor records the frozen tickets it has seen in `.bakers/<config name>.frozen.json` beside its config, so a restart or a one-shot `bakers conductor poll` does not repeat `on_freeze`, and a ticket unfrozen while the conductor was down gets its `on_resume` on the next poll.
+A ticket without a worktree on that machine gets no hook and no marker. The conductor records the frozen tickets it has seen in `.bakers/<config name>.frozen.json` beside its config, so a restart or a one-shot `bakers oven once` does not repeat `on_freeze`, and a ticket unfrozen while the conductor was down gets its `on_resume` on the next poll.
 
 `on_resume` runs whenever a ticket leaves the conductor's frozen list, so closing or reassigning a frozen ticket whose worktree still exists runs it too. A conductor follows its first 50 frozen tickets; any beyond that get no hooks. The server records the freeze time in `frozen_at`; clients cannot write it.

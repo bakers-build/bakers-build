@@ -7,7 +7,7 @@ description: Start, inspect, stop and clean up a conductor, what one polling cyc
 
 A conductor is the claim-and-dispatch loop bound to one project checkout: it claims eligible tickets from the control plane and starts one agent run per ticket state.
 
-This page covers the `bakers conductor` commands, one polling cycle, logs, several conductors in one repository and a team host. The file that wires a conductor is described in [Conductor configuration](/advanced/conductor-config); the per-command flags are in [bakers conductor](/advanced/cli/conductor).
+This page covers the `bakers oven` commands, one polling cycle, logs, several conductors in one repository and a team host. The file that wires a conductor is described in [Conductor configuration](/advanced/conductor-config); the per-command flags are in [bakers conductor](/advanced/cli/conductor).
 
 ## Before you start
 
@@ -25,18 +25,18 @@ A conductor starts without a `WORKFLOW.md`, but then logs a warning and dispatch
 
 | Command | What it does |
 |---|---|
-| `bakers conductor start` | Hands the loop to herdr, waits for the first fresh heartbeat and prints the conductor id, pid and host. |
-| `bakers conductor status` | One line for this checkout's conductor. |
-| `bakers conductor ls` | One line for every conductor you own on the control plane, on any machine. |
-| `bakers conductor stop` | Sends `SIGTERM`; the process POSTs its own `/offline` lifecycle operation on the way out. |
-| `bakers conductor poll` | Runs one cycle and exits. |
-| `bakers conductor reap` | Tears down the worktrees of finished tickets that were never cleaned up. |
+| `bakers oven start` | Hands the loop to herdr, waits for the first fresh heartbeat and prints the conductor id, pid and host. |
+| `bakers oven status` | One line for this checkout's conductor. |
+| `bakers oven ls` | One line for every conductor you own on the control plane, on any machine. |
+| `bakers oven stop` | Sends `SIGTERM`; the process POSTs its own `/offline` lifecycle operation on the way out. |
+| `bakers oven once` | Runs one cycle and exits. |
+| `bakers oven clean` | Tears down the worktrees of finished tickets that were never cleaned up. |
 
 ```sh
 cd /path/to/your/repo
-bakers conductor start
-bakers conductor status
-bakers conductor stop
+bakers oven start
+bakers oven status
+bakers oven stop
 ```
 
 `start` accepts `--foreground` (run the loop in this process, for a service unit or debugging), `--no-update-check` (skip the daily notice about a newer `@bakers-build/bakers`) and `--force` (stop the running conductor with `SIGTERM`, then `SIGKILL` after a grace period, and start a new one; it fails instead of starting a second conductor when the old one cannot be verified or stopped). `--foreground` moves only the loop: worker sessions still need herdr. Without `--force`, a conductor that is already alive prints `already running` and exits.
@@ -66,7 +66,7 @@ The loop repeats every `poll_interval_ms` (default 5000). Each cycle:
 
 A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker.
 
-`poll` runs one cycle without looping. With `--log-level debug` it shows whether it claimed, was at capacity or found nothing. It never says why a given ticket was passed over, because an ineligible ticket is simply not a candidate.
+`once` runs one cycle without looping. With `--log-level debug` it shows whether it claimed, was at capacity or found nothing. It never says why a given ticket was passed over, because an ineligible ticket is simply not a candidate.
 
 ## Which tickets it takes
 
@@ -90,7 +90,7 @@ The conductor logs to `.bakers/log.txt` in the checkout and, when it has a termi
 | `--log-sink` | `BB_CONDUCTOR_LOG` | `stdout`, `file`, `both` (default on a terminal; `file` otherwise) |
 
 ```sh
-bakers conductor --log-level debug start --foreground
+bakers oven --log-level debug start --foreground
 ```
 
 Each run's own log and footprint are on the ticket's Runs tab.
@@ -98,7 +98,7 @@ Each run's own log and footprint are on the ticket's Runs tab.
 ## Clean up worktrees
 
 ```sh
-bakers conductor reap
+bakers oven clean
 ```
 
 Every cycle already reaps, so run this by hand when the conductor was down while tickets closed, was restarted or was reassigned. It is safe at any time.
@@ -117,13 +117,13 @@ One repository can serve several bakers.build projects, for example a Drupal mul
 A file is a conductor config only if it is exactly `conductor.config.js` or ends in `.conductor.config.js`. Select one per invocation by stem, with the flag before the subcommand; the flag wins over the variable:
 
 ```sh
-bakers --conductor shop conductor start
-BB_CONDUCTOR=intra bakers conductor status
+bakers --conductor shop oven start
+BB_CONDUCTOR=intra bakers oven status
 ```
 
 With no selector, `conductor.config.js` is the default; otherwise a lone config is used; otherwise the command fails and lists the stems. `--conductor conductor` names the default explicitly. `BB_CONDUCTOR_CONFIG` may name an exact file instead.
 
-Each config has its own `conductor_id`, so each is a separate conductor with its own claims, and `bakers conductor ls` lists all of them. When a herdr-hosted conductor starts, it carries its selector along, so it keeps the config you chose.
+Each config has its own `conductor_id`, so each is a separate conductor with its own claims, and `bakers oven ls` lists all of them. When a herdr-hosted conductor starts, it carries its selector along, so it keeps the config you chose.
 
 ## Run a conductor for a team
 
@@ -131,7 +131,7 @@ A team host provides execution capacity so project managers need no conductor of
 
 1. Prepare the host: herdr with a running session, the agent harnesses, repository access, and a machine file with its own `machine_id` and a `max_parallel` that fits the hardware ([Machines](/advanced/machines)).
 2. Give the host a service identity: a connection with the `client_credentials` profile and a secret kept in an environment variable ([Connections](/advanced/connections)). The identity needs workspace and project access.
-3. Clone each project on the host, commit its `.bakers/conductor.config.js`, and start one conductor per checkout with `bakers conductor start`. Under a service manager, run `bakers conductor start --foreground` with herdr already running.
-4. Check `bakers conductor ls` from any machine, assign a small ticket to the conductor and confirm a run appears.
+3. Clone each project on the host, commit its `.bakers/conductor.config.js`, and start one conductor per checkout with `bakers oven start`. Under a service manager, run `bakers oven start --foreground` with herdr already running.
+4. Check `bakers oven ls` from any machine, assign a small ticket to the conductor and confirm a run appears.
 
 If a ticket is not picked up, check its conductor, state and blockers, and the conductor's liveness.

@@ -125,7 +125,7 @@ export interface ConductorFileConfig extends ConductorSettings {
   inboxAddons?: LoadedInbox[];
   /**
    * Conductor process host from the `processHosts` accumulator (last wins).
-   * Absent when no addon contributed one — `bakers conductor start` then fails
+   * Absent when no addon contributed one — `bakers oven start` then fails
    * with the existing no-herdr hint.
    */
   processHost?: HerdrHost;

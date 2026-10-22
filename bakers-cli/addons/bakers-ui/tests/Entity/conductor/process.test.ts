@@ -26,7 +26,7 @@ describe('conductor process host', () => {
     });
 
   describe('start', () => {
-    it('runs `bakers conductor start` in the conductor’s own workspace', async () => {
+    it('runs `bakers oven start` in the conductor’s own workspace', async () => {
       const spawn = vi.fn();
       const h = host({ spawn });
 
@@ -39,7 +39,7 @@ describe('conductor process host', () => {
       expect(spawn).toHaveBeenCalledOnce();
       const call = spawn.mock.calls[0]?.[0];
       expect(call.command).toBe('bakers');
-      expect(call.args).toEqual(['conductor', 'start']);
+      expect(call.args).toEqual(['oven', 'start']);
       expect(call.cwd).toBe(WORKSPACE);
     });
 

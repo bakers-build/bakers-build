@@ -29,7 +29,7 @@ vi.mock('dropsh', async (orig) => {
 });
 
 /**
- * BB-474: `bakers conductor start --foreground` carries no one-per-project
+ * BB-474: `bakers oven start --foreground` carries no one-per-project
  * guard at all — `cmdStartForeground` goes straight from `resolveConfig` to
  * `conductor.claimServeProcess()` / `start()`, unlike the detached path's
  * `cmdStartBody`, which refuses a second start when an existing record is
@@ -37,10 +37,10 @@ vi.mock('dropsh', async (orig) => {
  * refused, verified by an actual process probe of the recorded `last_pid`,
  * not by the entity's derived liveness alone.
  */
-describe('bakers conductor start --foreground duplicate guard (BB-474)', () => {
+describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
   const HOST = 'mid-fg';
   const CONDUCTOR_CMDLINE =
-    'node /usr/local/bin/bakers conductor start --foreground --no-update-check';
+    'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   let home: string;
   const originalHome = process.env.BB_HOME;
@@ -138,7 +138,7 @@ describe('bakers conductor start --foreground duplicate guard (BB-474)', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
-      await program.parseAsync(['conductor', 'start', '--foreground'], {
+      await program.parseAsync(['oven', 'start', '--foreground'], {
         from: 'user',
       });
     } finally {

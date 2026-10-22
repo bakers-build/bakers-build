@@ -12,5 +12,6 @@
 | Understand skills, `WORKFLOW.md` and states | [Skills & Workflows](/skills-and-workflows/) | `workflow-step` |
 | Extend bakers.build | [Addons](/addons/) | - |
 | Configure, operate or use the CLI | [Advanced](/advanced/) | `upgrade-project` |
+| Switch from the old CLI to `bakers` | [Switch to the bakers CLI](/advanced/cli/switch-to-bakers) | - |
 
 The site is published from `develop`, so it can describe features the latest release does not have yet; the version row names the commit it was built from.

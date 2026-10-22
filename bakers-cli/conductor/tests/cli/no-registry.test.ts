@@ -152,12 +152,12 @@ describe('the local conductor registry is gone', () => {
     expect(text).not.toContain('stopped');
   });
 
-  it('no longer offers `bakers conductor rm`', async () => {
+  it('no longer offers `bakers oven rm`', async () => {
     const program = buildConductorProgram({
       remote: new ListRemote([]),
       config: makeConfig(),
     });
-    const conductor = program.commands.find((c) => c.name() === 'conductor');
+    const conductor = program.commands.find((c) => c.name() === 'oven');
     const names = (conductor?.commands ?? []).map((c) => c.name());
 
     expect(names).not.toContain('rm');
@@ -196,7 +196,7 @@ describe('the local conductor registry is gone', () => {
       startPollIntervalMs: 0,
       startPollAttempts: 1,
     };
-    await buildConductorProgram(deps).parseAsync(['conductor', ...argv], {
+    await buildConductorProgram(deps).parseAsync(['oven', ...argv], {
       from: 'user',
     });
   }

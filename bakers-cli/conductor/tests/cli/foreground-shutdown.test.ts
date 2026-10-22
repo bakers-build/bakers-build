@@ -35,7 +35,7 @@ vi.mock('dropsh', async (orig) => {
  * have stopped is the value trustworthy, and the only party that knows they
  * have stopped is the process that stopped them.
  */
-describe('bakers conductor start --foreground shutdown', () => {
+describe('bakers oven start --foreground shutdown', () => {
   let home: string;
   const originalHome = process.env.BB_HOME;
   const originalLog = process.env.BB_CONDUCTOR_LOG;
@@ -80,7 +80,7 @@ describe('bakers conductor start --foreground shutdown', () => {
 
   /**
    * Drives one serve cycle and then asks the process to stop, exactly as a
-   * `bakers conductor stop` would: the SIGTERM handler cmdStartForeground
+   * `bakers oven stop` would: the SIGTERM handler cmdStartForeground
    * installs aborts the loop.
    */
   async function runForeground(remote: ShutdownRemote): Promise<void> {
@@ -92,7 +92,7 @@ describe('bakers conductor start --foreground shutdown', () => {
       agents: [{ id: 'claude', agent: claudeAgent() }],
     };
     const program = buildConductorProgram(deps);
-    await program.parseAsync(['conductor', 'start', '--foreground'], {
+    await program.parseAsync(['oven', 'start', '--foreground'], {
       from: 'user',
     });
   }
@@ -119,7 +119,7 @@ describe('bakers conductor start --foreground shutdown', () => {
 
 /**
  * A remote that lets the serve loop run exactly one tick, then signals the
- * process to stop — the same SIGTERM a `bakers conductor stop` sends.
+ * process to stop — the same SIGTERM a `bakers oven stop` sends.
  */
 class ShutdownRemote extends FakeBbRemote {
   registrations: ConductorRegistration[] = [];

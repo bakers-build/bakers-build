@@ -19,7 +19,5 @@ it('builds host help without loading command runtime modules', async () => {
   const { buildHostProgram } = await import('../src/host.js');
   const program = await buildHostProgram(['--help']);
 
-  expect(program.commands.map((command) => command.name())).toContain(
-    'conductor',
-  );
+  expect(program.commands.map((command) => command.name())).toContain('oven');
 });

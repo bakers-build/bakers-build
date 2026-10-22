@@ -9,6 +9,8 @@ export class ApiClient {
     response?: APIResponse;
     private readonly saved = new Map<string, { id: string; type: string; attributes?: Record<string, unknown> }>();
     private readonly created: Array<{ id: string; type: string }> = [];
+    /** Sent on writes once the client speaks as the bakers CLI; claims require it. */
+    private bakersClient: Record<string, string> = {};
 
     constructor(private readonly playwright: PlaywrightWorkerArgs['playwright'], private readonly baseURL: string) {}
 
@@ -79,6 +81,10 @@ export class ApiClient {
         }
     }
 
+    identifyAsBakersCli(version: string): void {
+        this.bakersClient = { 'X-Bakers-Client': `bakers/${version}` };
+    }
+
     async read(path: string): Promise<void> {
         if (!this.context) throw new Error('Select an API identity before making a request.');
         this.response = await this.context.get(this.resolve(path), { maxRedirects: 0 });
@@ -88,7 +94,7 @@ export class ApiClient {
         if (!this.context) throw new Error('Select an API identity before making a request.');
         this.response = await this.context.fetch(this.resolve(path), {
             method, data: JSON.parse(this.resolve(document)), maxRedirects: 0,
-            headers: { 'Content-Type': 'application/vnd.api+json' },
+            headers: { 'Content-Type': 'application/vnd.api+json', ...this.bakersClient },
         });
         if (method === 'POST' && this.response.status() === 201) {
             const body = await this.response.json();
@@ -149,7 +155,7 @@ export class ApiClient {
                 method,
                 data,
                 maxRedirects: 0,
-                headers: { 'Content-Type': 'application/vnd.api+json' },
+                headers: { 'Content-Type': 'application/vnd.api+json', ...this.bakersClient },
             })));
             const results = [];
             for (const response of responses) {
