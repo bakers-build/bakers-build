@@ -4,8 +4,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_activity.full
   module:
-    - display_builder
     - bb_activity
+    - display_builder
   enforced:
     config:
       - bb_core.bb_vocabulary.bb_labels

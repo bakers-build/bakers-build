@@ -44,7 +44,7 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
 //   node verify-clipboard.mjs
-//   node verify-clipboard.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/pty-clipboard.txt
+//   node verify-clipboard.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-clipboard.txt
 //
 //   --project <name>   the project the walk opens (default: bakers)
 //   --cols/--rows <n>  the pty geometry (default 120x40)
@@ -365,9 +365,7 @@ async function main() {
     // truncates a long way in. So what has to be guaranteed is that the copy
     // notice is the part that survives, which is a property of its POSITION.
     check(
-      /^ R reload · copied bakers.build-\d+/.test(
-        afterDetailY.split('\n').at(-1) ?? '',
-      ),
+      /^ R reload · copied BB-\d+/.test(afterDetailY.split('\n').at(-1) ?? ''),
       'the notice leads the footer, so a narrow terminal cannot truncate it away',
       `footer: '${(afterDetailY.split('\n').at(-1) ?? '').slice(0, 60)}…'`,
     );

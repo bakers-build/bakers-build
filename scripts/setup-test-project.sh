@@ -117,11 +117,9 @@
 #     false-negative machine and reports nothing about it.
 #  9. THE CONTROL-PLANE WORLD CAN BE OLDER THAN THE CHECKOUT. Step 2 skips
 #     provisioning when the project already exists, so a world built before a
-#     rebase keeps its old entity schema — BB-525 hit a `bb_project` that still
-#     had the retired `repos` field because `bb_core_update_8029()` had never
-#     run there, and step 5's read of `repository` failed with exit 1 and no
-#     message. `ddev drush updatedb` in this checkout is the repair, and a step
-#     that reads an entity field is where the staleness shows up first.
+#     rebase keeps its old entity schema, and a step that reads a changed
+#     entity field fails with exit 1 and no message. Reinstalling the world
+#     (`ddev init --provider recipe-test --fresh`) is the repair.
 # =============================================================================
 set -euo pipefail
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  type DropshProgram,
   type BbUiLauncherOptions,
+  type DropshProgram,
   runBbUi,
 } from '../src/launcher.js';
 import type { TuiAgentService } from '../src/types.js';

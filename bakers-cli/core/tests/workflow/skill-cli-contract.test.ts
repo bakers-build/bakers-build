@@ -200,14 +200,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           a,
           '--help',
         ]),
-        [
-          ...G,
-          'create',
-          'bb_comment',
-          '--bundle',
-          'bb_comment',
-          '--fields',
-        ],
+        [...G, 'create', 'bb_comment', '--bundle', 'bb_comment', '--fields'],
         [...G, 'create', 'bb_ticket', '--bundle', 'bb_ticket', '--fields'],
         [...G, 'update', ticket, '--fields'],
       ];
@@ -422,14 +415,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
       const body = `${simulation.files['/fixture/comment.md']}'single' and "double" — ✓ \`$(id)\`\n\n`;
       const corrected = `${body}Correction: ünïcode.\n`;
       const steps = [
-        [
-          ...G,
-          'create',
-          'bb_comment',
-          '--bundle',
-          'bb_comment',
-          '--fields',
-        ],
+        [...G, 'create', 'bb_comment', '--bundle', 'bb_comment', '--fields'],
         [
           ...G,
           'create',
@@ -509,8 +495,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           'correction-scope',
           mutations(endpoint).length === 2 &&
             patch?.method === 'PATCH' &&
-            patch.path ===
-              `/jsonapi/bb_comment/bb_comment/${firstComment}` &&
+            patch.path === `/jsonapi/bb_comment/bb_comment/${firstComment}` &&
             same(patch.json?.data?.attributes, {
               body: { value: corrected, format: 'bb_rich' },
             }),
@@ -1228,14 +1213,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
       const fixture = await loadFixture('publish-comment-calls');
       const body = fixture.simulation.files['/fixture/comment.md'];
       const steps = [
-        [
-          ...G,
-          'create',
-          'bb_comment',
-          '--bundle',
-          'bb_comment',
-          '--fields',
-        ],
+        [...G, 'create', 'bb_comment', '--bundle', 'bb_comment', '--fields'],
         [
           ...G,
           'create',

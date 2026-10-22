@@ -298,7 +298,8 @@ describe('HerdrWorkspace', () => {
         herdrCalls.push(args);
         if (args.includes('list'))
           return listWithEntry('bakers/GL-3', onDiskPath);
-        if (args.includes('open')) return openResponse('bakers/GL-3', onDiskPath);
+        if (args.includes('open'))
+          return openResponse('bakers/GL-3', onDiskPath);
         return '';
       },
     });

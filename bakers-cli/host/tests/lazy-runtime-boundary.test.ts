@@ -10,7 +10,9 @@ vi.mock('@bakers-build/conductor/config', () => {
   throw new Error('eager runtime import: @bakers-build/conductor/config');
 });
 vi.mock('@bakers-build/conductor/project-context', () => {
-  throw new Error('eager runtime import: @bakers-build/conductor/project-context');
+  throw new Error(
+    'eager runtime import: @bakers-build/conductor/project-context',
+  );
 });
 
 it('builds host help without loading command runtime modules', async () => {

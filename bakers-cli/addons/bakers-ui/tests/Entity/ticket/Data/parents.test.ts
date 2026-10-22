@@ -143,7 +143,7 @@ it('the candidate read never carries a parent_id filter, even now the shared bui
 
 it('asks for a sparse fieldset — the picker needs two attributes, not a body', async () => {
   // A `bb_ticket` carries its whole description; 50 of them is a lot of bytes
-  // for a list that renders `bakers.build-nnn · title`.
+  // for a list that renders `BB-nnn · title`.
   const client = fakeClient({ documents: doc });
   await loadParentCandidates(client, PROJECT, '');
   const s = queryString(client.requests[0]?.params);

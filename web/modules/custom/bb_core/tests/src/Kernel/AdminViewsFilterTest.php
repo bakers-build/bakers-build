@@ -54,11 +54,11 @@ final class AdminViewsFilterTest extends KernelTestBase {
     $this->installConfig(['bb_core']);
     $this->installShippedView('views.view.bb_tickets');
 
-    // WorkspaceReadScopeSubscriber narrows every bakers.build collection query to the
-    // acting account's OG read scope; 'administer bakers' is its documented
-    // bypass (used the same way by ConductorProjectMatchTest and others),
-    // which is what lets this test be about the exposed filters rather than
-    // about building a workspace/project membership chain it does not
+    // WorkspaceReadScopeSubscriber narrows every bakers.build collection query
+    // to the acting account's OG read scope; 'administer bakers' is its
+    // documented bypass (used the same way by ConductorProjectMatchTest and
+    // others), which is what lets this test be about the exposed filters rather
+    // than about building a workspace/project membership chain it does not
     // otherwise need.
     $this->setUpCurrentUser([], ['administer bakers']);
 

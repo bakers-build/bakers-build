@@ -5,6 +5,9 @@
   <arg name="colors"/>
   <arg name="cache" value=".phpcs-cache"/>
   <arg name="parallel" value="10"/>
+  <!-- Warnings fail the gate too; pinned here so a local or CI
+       CodeSniffer.conf cannot relax it. -->
+  <config name="ignore_warnings_on_exit" value="0"/>
   <file>web/modules/custom</file>
   <file>web/themes/custom</file>
   <exclude-pattern>*/node_modules</exclude-pattern>

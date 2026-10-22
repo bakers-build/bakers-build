@@ -2,10 +2,7 @@ import type { AuthAdapter, HttpClient, JsonApiClient } from 'dropsh/plugin';
 import { shellQuote } from '../core/shell.js';
 import type { BbCommandHost } from './commands.js';
 import { type ConfigReport, finalizeConfigReport } from './config-report.js';
-import {
-  type BbConnectionConfig,
-  loadBbConfig,
-} from './load-bakers-config.js';
+import { type BbConnectionConfig, loadBbConfig } from './load-bakers-config.js';
 
 /** Shared normal dropsh authentication, context and request-hook composition. */
 export async function createBbConnectionContext(

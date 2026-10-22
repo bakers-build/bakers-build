@@ -32,7 +32,7 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install      # once: native deps
 //   node verify-screen.mjs --surface new-ticket
-//   node verify-screen.mjs --surface tickets --out ../../../../../assets-ai/bakers.build-nnn/node/pty-tickets-before.txt
+//   node verify-screen.mjs --surface tickets --out ../../../../../assets-ai/BB-nnn/node/pty-tickets-before.txt
 //
 //   --surface <new-ticket|tickets|dashboard>   which walk, and which deep link
 //   --out <file>       write the transcript here as well as to stdout
@@ -346,9 +346,7 @@ async function main() {
   // descendant to find.
   say(`# runtime:  ${describeRuntime(child.pid)}`);
   say('#');
-  say(
-    '# The runtime line is not decoration. Since BB-326 Task 2 the cockpit',
-  );
+  say('# The runtime line is not decoration. Since BB-326 Task 2 the cockpit');
   say('# re-execs under Bun, so a BEFORE run captured with $BB_UI_NO_BUN=1');
   say('# would differ from the after run in the runtime AND the renderer, and');
   say(

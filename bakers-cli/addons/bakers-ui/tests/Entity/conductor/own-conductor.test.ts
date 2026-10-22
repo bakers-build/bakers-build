@@ -102,7 +102,10 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
     const doc = {
       data: [
         conductor(
-          { machine_id: 'cw-framework', workspace_root: '/repos/bakers/.bakers' },
+          {
+            machine_id: 'cw-framework',
+            workspace_root: '/repos/bakers/.bakers',
+          },
           'p-bakers',
         ),
       ],

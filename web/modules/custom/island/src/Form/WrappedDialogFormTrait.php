@@ -147,7 +147,6 @@ trait WrappedDialogFormTrait {
     $form['#after_build'][] = '::selectThisForm';
     $form['#after_build'][] = '::liftActionsIntoHull';
     // Guards against `hx-select` matching nothing (e.g. an expired session).
-    //.
     $form['#attached']['library'][] = 'island/dialog_form';
   }
 

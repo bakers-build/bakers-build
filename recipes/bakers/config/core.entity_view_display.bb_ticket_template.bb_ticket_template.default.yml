@@ -2,8 +2,8 @@ langcode: en
 status: true
 dependencies:
   module:
-    - display_builder
     - bb_core
+    - display_builder
   enforced:
     config:
       - bb_core.bb_vocabulary.bb_labels

@@ -17,11 +17,11 @@ use Symfony\Component\Routing\RouteCollection;
  * 403 "authentication method not allowed on this route" — even though the route
  * grants access to everyone, including anonymous.
  *
- * bakers.build agents authenticate via OAuth2 bearer tokens (dropsh sends the token on
- * EVERY request, including the authoritative-schema fetch), so without this
- * patch dropsh's schema fetch 403s and silently falls back to the heuristic
- * schema. This subscriber patches every jsonapi_schema.* route to allow the
- * machine-auth providers, so authenticated agents receive the schema.
+ * bakers.build agents authenticate via OAuth2 bearer tokens (dropsh sends the
+ * token on EVERY request, including the authoritative-schema fetch), so without
+ * this patch dropsh's schema fetch 403s and silently falls back to the
+ * heuristic schema. This subscriber patches every jsonapi_schema.* route to
+ * allow the machine-auth providers, so authenticated agents receive the schema.
  */
 final class JsonApiSchemaRouteSubscriber extends RouteSubscriberBase {
 

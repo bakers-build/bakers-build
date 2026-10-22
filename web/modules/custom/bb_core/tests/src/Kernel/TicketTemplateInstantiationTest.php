@@ -132,7 +132,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
   }
 
   /**
-   * Creates a user with the given bakers.build permissions via a dedicated role.
+   * Creates a user with the given permissions via a dedicated role.
    *
    * @param string $name
    *   The username.

@@ -18,8 +18,8 @@ use Drupal\bb_connector\ListBuilder\BbConnectorListBuilder;
  * Tokens are stored as a config property but their real value is injected
  * via config overrides in settings.php from an environment variable:
  * @code
- * $config['bb_connector.connector.keytec_gitlab']['settings']['token']
- *   = getenv('BB_GITLAB_TOKEN_KEYTEC');
+ * $config['bb_connector.connector.<id>']['settings']['token']
+ *   = getenv('BB_GITLAB_TOKEN');
  * @endcode
  */
 #[ConfigEntityType(

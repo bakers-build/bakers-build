@@ -198,11 +198,11 @@ datasource_settings:
 processor_settings:
   add_url: {  }
   aggregated_field: {  }
-  custom_value: {  }
-  entity_type: {  }
   bb_origin_ref: {  }
   bb_read_scope: {  }
   bb_ticket_priority_rank: {  }
+  custom_value: {  }
+  entity_type: {  }
   language_with_fallback: {  }
   rendered_item: {  }
 tracker_settings:

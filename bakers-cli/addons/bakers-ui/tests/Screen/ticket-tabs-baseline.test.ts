@@ -330,8 +330,8 @@ describe('ticket tab behaviour before the screen-per-tab migration', () => {
     expect(ladders).toMatchInlineSnapshot(`
       {
         "addons": "Tab section · e edit · ↑↓ select · Enter run · l copy link",
-        "comments": "Tab section · e edit · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
         "bakers/artifacts": "Tab section · e edit · y copy id · Y copy link · ↑↓ scroll",
+        "comments": "Tab section · e edit · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
         "overview": "Tab section · e edit · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
         "planning": "Tab section · e edit · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
         "runs": "Tab section · e edit · y copy id · Y copy link · ↑↓ select · Enter open run",
@@ -352,6 +352,10 @@ describe('ticket tab behaviour before the screen-per-tab migration', () => {
         "addons": [
           "l",
         ],
+        "bakers/artifacts": [
+          "y",
+          "Y",
+        ],
         "comments": [
           "y",
           "Y",
@@ -363,10 +367,6 @@ describe('ticket tab behaviour before the screen-per-tab migration', () => {
           "down",
           "g",
           "G",
-        ],
-        "bakers/artifacts": [
-          "y",
-          "Y",
         ],
         "overview": [
           "y",

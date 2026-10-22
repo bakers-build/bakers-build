@@ -123,8 +123,7 @@ function fakeServices(reads: string[]): RendererServices {
     collection,
     get: async (path: string) => {
       reads.push(path);
-      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`))
-        return ticketDoc;
+      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`)) return ticketDoc;
       return { data: [] };
     },
     update: async () => ({}),
@@ -372,9 +371,7 @@ describe('A4 — per-section state survives the walk', () => {
         rows,
         `one Esc left the ticket — the ${tab.id} bar is nowhere on screen`,
       ).not.toContain(ticketBar(tab.id));
-    expect(rows.join('\n'), 'the open ticket is gone').not.toContain(
-      'BB-255',
-    );
+    expect(rows.join('\n'), 'the open ticket is gone').not.toContain('BB-255');
 
     await quit(tui);
   });

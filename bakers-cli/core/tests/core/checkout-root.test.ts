@@ -19,7 +19,8 @@ describe('deriveCheckoutRoot', () => {
   it('derives the main clone from git --git-common-dir when run inside a linked worktree', async () => {
     // A checked-in .bakers/ makes config discovery walk up to the worktree-local
     // config; its dirname IS the linked worktree — the bug (BB-177).
-    const configPath = '/parent/.bakers-worktrees/x/.bakers/conductor.config.js';
+    const configPath =
+      '/parent/.bakers-worktrees/x/.bakers/conductor.config.js';
     const calls: GitCall[] = [];
     const root = await deriveCheckoutRoot(configPath, {
       execGit: recordingGit(calls, '/parent/.git\n'),

@@ -35,10 +35,10 @@ import { resolveModuleEslintStyle } from '../cli/resolve-module.js';
 import type { ConductorLogger } from '../core/logger.js';
 import {
   type AddonEntry,
-  type DiscoveredContributions,
-  emptyContributions,
   type BbPreset,
   type BbSurface,
+  type DiscoveredContributions,
+  emptyContributions,
   PRESET_FUNCTION_KEYS,
   SURFACE_KEYS,
 } from './preset.js';

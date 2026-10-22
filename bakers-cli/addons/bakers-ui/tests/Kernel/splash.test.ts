@@ -21,7 +21,7 @@ describe('splash (BB-375 D6)', () => {
     expect(SPLASH_MS).toBe(500);
   });
 
-  it('splashTree renders a BORDER-bordered ASCIIFont bakers.build mark (not a chrome wash)', () => {
+  it('splashTree renders a BORDER-bordered ASCIIFont bakers mark (not a chrome wash)', () => {
     const tree = splashTree();
     const frame = nodeById(tree, 'splash-frame');
     expect(

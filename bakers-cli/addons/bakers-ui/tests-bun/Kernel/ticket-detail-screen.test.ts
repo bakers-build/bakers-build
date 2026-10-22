@@ -199,8 +199,7 @@ function fakeServices(): RendererServices {
   const client: DropshClient = {
     collection,
     get: async (path: string) => {
-      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`))
-        return ticketDoc;
+      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`)) return ticketDoc;
       if (path.startsWith(`bb_ticket/bb_ticket/${BARE}`)) return bareDoc;
       if (path.startsWith(`bb_ticket/bb_ticket/${TYPED}`)) return typedDoc;
       return { data: [] };

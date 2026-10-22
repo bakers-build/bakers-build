@@ -12,9 +12,9 @@ export const ticketRendererPlugin = bakersUiPlugin;
 // of the conductor `bakers ui` command). herdr-agnostic (agent impl injected) and
 // dropsh-decoupled (buildProgram injected).
 export {
+  type BbUiLauncherOptions,
   type DropshBuildProgram,
   type DropshProgram,
-  type BbUiLauncherOptions,
   type HomeConnection,
   runBbUi,
 } from './launcher.js';

@@ -1,11 +1,11 @@
 import {
-  FakeExecutor,
   FakeBbRemote,
+  FakeExecutor,
   FakeWorkspace,
 } from '@bakers-build/addon-fake';
 import type {
-  ConductorRegistration,
   BbAgent,
+  ConductorRegistration,
   ResolvedAgent,
 } from '@bakers-build/conductor/contract';
 import { describe, expect, it } from 'vitest';

@@ -154,7 +154,9 @@ describe('offline configuration inventory', () => {
       join(home, '.bakers/bakers.config.js'),
       'export default { site: { base_url: ; } };',
     );
-    mkdirSync(join(project, '.bakers/conductor.config.js'), { recursive: true });
+    mkdirSync(join(project, '.bakers/conductor.config.js'), {
+      recursive: true,
+    });
     const { report } = core.inventoryConfig({
       scope: 'all',
       home,
@@ -203,9 +205,9 @@ describe('offline configuration inventory', () => {
       statically_determined: false,
     });
     expect(JSON.stringify(report)).not.toContain('DO_NOT_LEAK');
-    expect(sources.get(join(home, '.bakers/machine.config.js'))?.text).toContain(
-      'DO_NOT_LEAK',
-    );
+    expect(
+      sources.get(join(home, '.bakers/machine.config.js'))?.text,
+    ).toContain('DO_NOT_LEAK');
   });
 
   it('reports agents.addons as retired with the addons fragment', () => {
@@ -220,7 +222,9 @@ describe('offline configuration inventory', () => {
     });
     const finding = report.findings.find((f) => f.key === 'agents.addons');
     expect(finding).toMatchObject({ code: 'retired_key', severity: 'error' });
-    expect(finding?.remediation).toContain("addons: ['@bakers-build/addon-claude']");
+    expect(finding?.remediation).toContain(
+      "addons: ['@bakers-build/addon-claude']",
+    );
     expect(finding?.remediation).toContain(
       'bakers config upgrade --scope machine',
     );
@@ -433,7 +437,10 @@ describe('offline configuration inventory', () => {
   });
 
   it('reports an unsupported export as incomplete and still inventories independent selected files', () => {
-    put(join(home, '.bakers/machine.config.js'), 'export default makeConfig();');
+    put(
+      join(home, '.bakers/machine.config.js'),
+      'export default makeConfig();',
+    );
     const { report } = core.inventoryConfig({
       scope: 'all',
       home,

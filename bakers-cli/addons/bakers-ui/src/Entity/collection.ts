@@ -634,7 +634,7 @@ export function listTableTree<Row extends { id: string }, Ctx>(
 
 /**
  * BB-345 D7 — the SAME list for the surface that has no layout:
- * `bakers ui bakers.build-nnn | cat`.
+ * `bakers ui BB-nnn | cat`.
  *
  * BB-340 F5 keeps the pipe's own output, and this keeps its BYTES while
  * retiring the last per-entity column→row mapper (`run-table`'s `runTableRows`):

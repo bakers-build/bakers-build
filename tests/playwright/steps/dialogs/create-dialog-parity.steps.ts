@@ -93,22 +93,22 @@ const SURFACES: Record<string, Surface> = {
   ticket: {
     screen: () => `/${workspaceSlug()}/tickets/all?project=${anyProjectId()}`,
     trigger: 'New ticket',
-    form: 'form#bakers-ticket-create-form',
+    form: 'form#bb-ticket-create-form',
   },
   project: {
     screen: () => `/${workspaceSlug()}/projects`,
     trigger: 'New project',
-    form: 'form#bakers-project-create-form',
+    form: 'form#bb-project-create-form',
   },
   group: {
     screen: () => `/${workspaceSlug()}/groups`,
     trigger: 'New group',
-    form: 'form#bakers-group-create-form',
+    form: 'form#bb-group-create-form',
   },
   team: {
     screen: () => `/${workspaceSlug()}/projects`,
     trigger: 'New team',
-    form: 'form#bakers-team-create-form',
+    form: 'form#bb-team-create-form',
   },
 };
 

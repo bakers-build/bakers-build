@@ -9,6 +9,7 @@ export const commands: BbPreset['commands'] = (acc) => [
   {
     name: 'dropsh',
     plugin: '@bakers-build/addon-dropsh',
-    describe: 'JSON:API shell (dropsh) bound to the bakers.build connection config',
+    describe:
+      'JSON:API shell (dropsh) bound to the bakers.build connection config',
   },
 ];

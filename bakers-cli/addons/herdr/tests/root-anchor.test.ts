@@ -16,7 +16,8 @@ describe('deriveHerdrRoot', () => {
   it('derives the main clone from git --git-common-dir when run inside a linked worktree', async () => {
     // A checked-in .bakers/ makes config discovery walk up to the worktree-local
     // config; its dirname IS the linked worktree — the bug (BB-177).
-    const configPath = '/parent/.bakers-worktrees/x/.bakers/conductor.config.js';
+    const configPath =
+      '/parent/.bakers-worktrees/x/.bakers/conductor.config.js';
     const calls: GitCall[] = [];
     const root = await deriveHerdrRoot(configPath, {
       execGit: recordingGit(calls, '/parent/.git\n'),
@@ -34,20 +35,26 @@ describe('deriveHerdrRoot', () => {
 
   it('lets an explicit override win and never invokes git', async () => {
     const calls: GitCall[] = [];
-    const root = await deriveHerdrRoot('/anywhere/.bakers/conductor.config.js', {
-      override: '/explicit',
-      execGit: recordingGit(calls, '/should/not/matter/.git'),
-    });
+    const root = await deriveHerdrRoot(
+      '/anywhere/.bakers/conductor.config.js',
+      {
+        override: '/explicit',
+        execGit: recordingGit(calls, '/should/not/matter/.git'),
+      },
+    );
     expect(root).toBe('/explicit');
     expect(calls).toHaveLength(0);
   });
 
   it('falls back to dirname(config_path) when git fails (e.g. not a repo)', async () => {
-    const root = await deriveHerdrRoot('/some/repo/.bakers/conductor.config.js', {
-      execGit: async () => {
-        throw new Error('not a git repository');
+    const root = await deriveHerdrRoot(
+      '/some/repo/.bakers/conductor.config.js',
+      {
+        execGit: async () => {
+          throw new Error('not a git repository');
+        },
       },
-    });
+    );
     expect(root).toBe('/some/repo/.bakers');
   });
 

@@ -74,7 +74,7 @@ describe('a bar block is drawn as a table', () => {
       `  Tickets${' '.repeat(47)}24h${' '.repeat(7)}7d${' '.repeat(6)}30d   `,
     );
     expect(frame[2]).toBe(
-      `  bakers${' '.repeat(24)}██${'░'.repeat(18)}${' '.repeat(8)}8${' '.repeat(7)}53${' '.repeat(6)}170   `,
+      `  bakers${' '.repeat(22)}██${'░'.repeat(18)}${' '.repeat(8)}8${' '.repeat(7)}53${' '.repeat(6)}170   `,
     );
     expect(frame[3]).toBe(
       `  — unattributed${' '.repeat(14)}${'█'.repeat(20)}${' '.repeat(8)}0${' '.repeat(8)}1${' '.repeat(5)}1658   `,

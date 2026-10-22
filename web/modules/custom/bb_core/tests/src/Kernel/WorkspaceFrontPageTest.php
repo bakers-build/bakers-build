@@ -43,10 +43,10 @@ use Symfony\Component\Yaml\Yaml;
  * page no longer depends on the 200/150 ordering, and
  * `testTheFrontPageResolvesToTheHomeRouteAndIsNotBridged()` asserts exactly
  * that against the SHIPPED literal — the new chain. Every PRODUCT URL still
- * does depend on the ordering, and the `/bakers/board` fixture is what keeps that
- * regression covered now that the shipped literal has stopped exercising it.
- * The fixture is not a leftover; it is the only remaining way to exercise the
- * composition. That both install paths agree on the shipped literal remains
+ * does depend on the ordering, and the `/bakers/board` fixture is what keeps
+ * that regression covered now that the shipped literal has stopped exercising
+ * it. The fixture is not a leftover; it is the only remaining way to exercise
+ * the composition. That both install paths agree on the shipped literal remains
  * \Drupal\Tests\bb_core\Unit\ShippedConfigDriftTest's job.
  *
  * The processor manager is asked to process the path, rather than a full

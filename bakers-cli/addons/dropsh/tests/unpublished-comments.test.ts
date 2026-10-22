@@ -2,11 +2,7 @@ import { HttpError } from 'dropsh/plugin';
 import { describe, expect, it } from 'vitest';
 import { hideUnpublishedComments } from '../src/unpublished-comments.js';
 
-const comment = (
-  id: string,
-  status: boolean,
-  type = 'bb_comment--review',
-) => ({
+const comment = (id: string, status: boolean, type = 'bb_comment--review') => ({
   type,
   id,
   attributes: { status, body: { value: `body ${id}` } },
@@ -32,10 +28,7 @@ const get = { method: 'GET' as const, url: 'https://x.test/jsonapi/x' };
 describe('bakers dropsh hides unpublished comments from agent reads', () => {
   it('drops unpublished comments from a collection', async () => {
     const { http } = serve({
-      data: [
-        comment('a', true, 'bb_comment--bb_comment'),
-        comment('b', false),
-      ],
+      data: [comment('a', true, 'bb_comment--bb_comment'), comment('b', false)],
     });
     const out = JSON.parse((await http.send(get)).body);
     expect(out.data.map((r: { id: string }) => r.id)).toEqual(['a']);

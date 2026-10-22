@@ -24,10 +24,7 @@ import {
   inventoryConfig,
   shellQuote,
 } from '@bakers-build/core';
-import {
-  applyMigrations,
-  BB_CONFIG_SCHEMA_VERSION,
-} from './config-schema.js';
+import { applyMigrations, BB_CONFIG_SCHEMA_VERSION } from './config-schema.js';
 import {
   ConfigSourceEditor,
   redactConfigSource,
@@ -1142,7 +1139,10 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               .filter((value): value is string => typeof value === 'string'),
           );
           const providers: Record<string, string[]> = {
-            remote: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-fake'],
+            remote: [
+              '@bakers-build/addon-remote-drupal',
+              '@bakers-build/addon-fake',
+            ],
             executor: ['@bakers-build/addon-herdr', '@bakers-build/addon-fake'],
             workspace: [
               '@bakers-build/addon-herdr',

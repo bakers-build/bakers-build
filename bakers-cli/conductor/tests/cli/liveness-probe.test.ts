@@ -16,8 +16,8 @@ import type { ProcProbe } from '@bakers-build/core';
 import { deriveConductorLiveness } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  buildConductorProgram,
   type BbCliDeps,
+  buildConductorProgram,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 

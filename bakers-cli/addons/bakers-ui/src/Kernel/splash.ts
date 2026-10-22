@@ -2,7 +2,7 @@
 // Non-TTY / pipe never enters this path. Injected-renderer harnesses skip by
 // default (`shouldSkipSplash`) so the bun suite does not pay SPLASH_MS.
 //
-// OpenTUI cannot change the terminal typeface. Splash “bakers.build” uses ASCIIFont
+// OpenTUI cannot change the terminal typeface. Splash “bakers” uses ASCIIFont
 // (multi-line block letters) so the mark reads large inside a BORDER box.
 
 import {
@@ -26,7 +26,7 @@ export { SPLASH_MS };
 /** OpenTUI ASCIIFont name for the splash wordmark. */
 export const SPLASH_FONT = 'block' as const;
 /** Splash wordmark text (ASCIIFont has no emoji glyphs). */
-export const SPLASH_TEXT = 'bakers.build';
+export const SPLASH_TEXT = 'bakers';
 /** Vertical padding inside the splash frame. */
 export const SPLASH_FRAME_PAD_Y = 2;
 /** Horizontal padding inside the splash frame. */
@@ -39,7 +39,7 @@ export const SPLASH_FRAME_WIDTH =
   splashMarkSize.width + BRAID_WIDTH + 3 + SPLASH_FRAME_PAD_X * 2 + 2;
 
 /**
- * Centered BORDER box with an ASCIIFont bakers.build mark — modal-like, not a wash.
+ * Centered BORDER box with an ASCIIFont bakers mark — modal-like, not a wash.
  * Font is OpenTUI block letters; the terminal typeface is unchanged.
  *
  * `position: 'absolute'` is load-bearing: the splash is mounted into the SAME

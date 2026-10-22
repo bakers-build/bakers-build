@@ -131,7 +131,7 @@ describe('the ticket table is laid out in fixed columns', () => {
       'IDENTIFIER STATE         PRIO  WHO  BY   RUN          PARENT     COND           TITLE',
     );
     expect(painted[1]).toBe(
-      'BB-294   spec          3     CW   —    running      BB-292   cw-framework   Centralize the TUI list logic  [work:code]',
+      'BB-294     spec          3     CW   —    running      BB-292     cw-framework   Centralize the TUI list logic  [work:code]',
     );
   });
 });

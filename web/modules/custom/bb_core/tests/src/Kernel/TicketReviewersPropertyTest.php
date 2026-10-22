@@ -150,8 +150,9 @@ final class TicketReviewersPropertyTest extends KernelTestBase {
   /**
    * A plain ticket reader sees other people's names in the read-only rows.
    *
-   * Names follow `view label`, as the ticket cell formatters do: no bakers.build role
-   * holds `access user profiles`, so `view` would blank every other person.
+   * Names follow `view label`, as the ticket cell formatters do: no
+   * bakers.build role holds `access user profiles`, so `view` would blank every
+   * other person.
    */
   public function testReadOnlyPeopleRowsNameOtherAccountsForPlainReaders(): void {
     $assignee = $this->account('Assigned Person');

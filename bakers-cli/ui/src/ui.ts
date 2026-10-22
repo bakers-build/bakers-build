@@ -2,9 +2,15 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { type AgentLaunchHost, herdrAgentHost } from '@bakers-build/addon-herdr';
+import {
+  type AgentLaunchHost,
+  herdrAgentHost,
+} from '@bakers-build/addon-herdr';
 import { workspacePlugin } from '@bakers-build/addon-workspace';
 import {
+  type BbCommandHost,
+  type BbCommandPlugin,
+  type BbConnectionConfig,
   CommandRunner,
   type ConductorLogger,
   createBbConnectionClient,
@@ -12,9 +18,6 @@ import {
   createLogger,
   exec,
   fetchUpdateNotice,
-  type BbCommandHost,
-  type BbCommandPlugin,
-  type BbConnectionConfig,
   loadReadyBbConnection,
   type MachineContext,
   machineContextPath,
@@ -764,7 +767,10 @@ const uiCommandPlugin: BbCommandPlugin = {
         '--config <path>',
         'connection config path; wins over the project and home configs',
       )
-      .option('--connection <id>', 'named connection from ~/.bakers/connections')
+      .option(
+        '--connection <id>',
+        'named connection from ~/.bakers/connections',
+      )
       .option(
         '--workspace <name|uuid>',
         'select a workspace for THIS run only — never written to the connection config',

@@ -56,10 +56,7 @@ signed-in user's own role already grants; it never gets less, either, so
 blocked for a user whose role lacks them — there is no connector-specific
 ceiling beyond this allowlist and the project instructions. Exercised by
 `web/modules/custom/bb_core/tests/src/Kernel/OauthClaudeConnectorAccessTest.php`
-(the rank/permission boundary, mocked token) and
-`OauthClaudeConnectorProvisioningTest::testRealConnectorTokenCreatesBbRichTicket`
-(a real `claude-connector` consumer, a real `bb:session`-shaped token, and
-an actual JSON:API POST).
+(the rank/permission boundary, mocked token).
 
 A missing bearer on `/mcp` gets a clean HTTP 401 (`nginx.conf`); an invalid,
 expired, revoked or wrong-audience bearer does not — it is forwarded, and

@@ -31,7 +31,7 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Routing\Route;
 
 /**
- * The bakers.build condition plugins decide through core and declare their variance.
+ * The bb_core condition plugins decide through core and declare their variance.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]

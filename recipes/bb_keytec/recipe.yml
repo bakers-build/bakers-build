@@ -1,3 +1,0 @@
-name: 'bakers.build keytec'
-description: 'Content-only keytec seed: the keytec team users. No config, no recipe chain — safe to apply on an --existing-config server (default_content is upsert-by-UUID, no config.import abort). Fresh installs apply bb_keytec_config first (base+bakers+seed config + keytec connector), then this for the users.'
-type: 'Site'

@@ -7,9 +7,9 @@ import { commands as portsCommands } from '@bakers-build/addon-ports/preset';
 import { commands as trackCommands } from '@bakers-build/addon-track/preset';
 import { commands as conductorCommands } from '@bakers-build/conductor/preset';
 import {
-  type CommandDescriptor,
   type BbCommandHost,
   type BbCommandPlugin,
+  type CommandDescriptor,
   resolveCliVersion,
   resolveConfigPath,
   resolveModuleEslintStyle,

@@ -130,8 +130,8 @@ final class ProjectsViewTenancyTest extends KernelTestBase {
    * they mean anything. `assertNotContains` passes just as happily when the
    * other workspace's row is missing for a reason that has nothing to do with
    * tenancy — a broken relationship, a required join dropping the row, a view
-   * that returns nothing at all. An `administer bakers` holder bypasses the read
-   * scope, so seeing BOTH rows here proves the rows are reachable and the
+   * that returns nothing at all. An `administer bakers` holder bypasses the
+   * read scope, so seeing BOTH rows here proves the rows are reachable and the
    * views work, which leaves the scope as the only explanation for the
    * negatives.
    *

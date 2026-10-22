@@ -95,7 +95,7 @@ final class OriginReference {
   }
 
   /**
-   * The alias of a repository URL: the last path segment, `bakers`.
+   * The alias of a repository URL: the last path segment, `bakers-build`.
    */
   public static function aliasOf(string $repositoryUrl): ?string {
     $path = self::pathOf($repositoryUrl);

@@ -33,9 +33,9 @@ final class OauthConsumerCandidates {
    * superuser would be a root-privileged token minted by a deploy script — a
    * strictly worse posture than the one this replaces.
    *
-   * Ranks are deliberately NOT filtered: the keytec seed's original membership
-   * carries `lead` while the ones added for D5 carry `member`, and a selector
-   * keyed on a rank would seed one group and silently skip the other.
+   * Ranks are deliberately NOT filtered: team users hold different ranks, and
+   * a selector keyed on a rank would seed one group and silently skip the
+   * other.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.

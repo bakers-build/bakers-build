@@ -54,9 +54,10 @@ it('AC-3 (F2): the read addresses the BUNDLE, not the entity type alone', async 
       ],
     },
   });
-  expect(
-    (await listTerms(client, 'bb_labels')).rows.map((t) => t.id),
-  ).toEqual(['t1', 't2']);
+  expect((await listTerms(client, 'bb_labels')).rows.map((t) => t.id)).toEqual([
+    't1',
+    't2',
+  ]);
   expect(client.collections).toEqual(['bb_term/bb_labels']);
 });
 

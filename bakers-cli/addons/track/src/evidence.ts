@@ -96,11 +96,7 @@ async function collect(
 function context(params: DrupalJsonApiParams) {
   return params
     .addInclude(['ticket_id.project_id'])
-    .addFields('bb_ticket--bb_ticket', [
-      'identifier',
-      'title',
-      'project_id',
-    ])
+    .addFields('bb_ticket--bb_ticket', ['identifier', 'title', 'project_id'])
     .addFields('bb_project--bb_project', ['name']);
 }
 

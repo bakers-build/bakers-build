@@ -80,7 +80,7 @@
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
 //   node verify-colors.mjs
 //   node verify-colors.mjs --surface dashboard
-//   node verify-colors.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/pty-colors-after.txt
+//   node verify-colors.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-colors-after.txt
 //
 //   --surface <all|new-ticket|tickets|dashboard>   default: all three
 //   --project <name>   the project the two project-scoped surfaces open
@@ -509,9 +509,7 @@ async function main() {
   say('#');
   say(`# cwd:      ${REPO_ROOT}`);
   say(`# pty:      ${options.cols}x${options.rows}, TERM=xterm-256color`);
-  say(
-    '# log:      BB_CONDUCTOR_LOG=file — pino-pretty’s own colours are not',
-  );
+  say('# log:      BB_CONDUCTOR_LOG=file — pino-pretty’s own colours are not');
   say('#           the renderer’s and must not be counted as its vocabulary.');
   say(`# started:  ${new Date().toISOString()}`);
   say('');

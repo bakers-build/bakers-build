@@ -510,10 +510,7 @@ it('the edit popup offers my conductors first (AC-14)', async () => {
     });
   const client = fakeClient({
     rows: {
-      bb_conductor: [
-        conductor('tom', 'user-tm'),
-        conductor('mine', 'user-cw'),
-      ],
+      bb_conductor: [conductor('tom', 'user-tm'), conductor('mine', 'user-cw')],
     },
   });
   const options = await loadEditFormOptions(

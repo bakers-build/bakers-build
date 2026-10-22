@@ -545,9 +545,7 @@ describe('reconcileFrp', () => {
 
   it('a reachable direct origin is written as a plain proxy with the forwarded proto', async () => {
     const { deps, writes } = fakeWorld({
-      statusSequence: [
-        [{ http: [{ name: 'bb-99-web', status: 'running' }] }],
-      ],
+      statusSequence: [[{ http: [{ name: 'bb-99-web', status: 'running' }] }]],
     });
     const result = await reconcileFrp(
       [directWeb],

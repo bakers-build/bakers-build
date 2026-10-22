@@ -2,16 +2,16 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.closed_tickets
-  - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.runs
 id: user_projects
 label: Projects
 description: "Closed tickets and runs by project. Date basis: ticket closed_date for closed tickets, run creation time for runs. Attribution basis: the ticket's current assignee."
 weight: 0
 widget: grouped_horizontal_bars
 measurements:
-- closed_tickets
-- runs
+  - closed_tickets
+  - runs
 categories:
   type: dimension
   dimension: project
@@ -21,18 +21,21 @@ filters:
     label: Period
     default: '7'
     options:
-    - value: '7'
-      label: 7 days
-    - value: '30'
-      label: 30 days
-    - value: '365'
-      label: 1 year
+      -
+        value: '7'
+        label: '7 days'
+      -
+        value: '30'
+        label: '30 days'
+      -
+        value: '365'
+        label: '1 year'
 context_shape:
-- user
+  - user
 conditions:
   user:
     id: bb_route_context
-    entity_type: user
     negate: false
     context_mapping:
       entity: user
+    entity_type: user

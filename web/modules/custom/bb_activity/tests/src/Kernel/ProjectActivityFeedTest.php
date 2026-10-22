@@ -93,7 +93,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $team->save();
     $project = $storage->getStorage('bb_project')->create([
       'name' => 'bakers.build Platform',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $group->id(),
       'teams' => [$team->id()],
       'description' => 'The settings note on Overview.',

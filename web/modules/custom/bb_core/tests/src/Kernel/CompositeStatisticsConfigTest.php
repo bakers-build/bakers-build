@@ -2,21 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Drupal\Tests\bb_core\Kernel\Update;
+namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Config\Schema\SchemaCheckTrait;
 use Drupal\KernelTests\KernelTestBase;
-use Drupal\bb_core\Statistics\CompositeStatisticsDefaults;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Covers shipped composite statistics config and upgrade migration.
+ * Recipe and sync ship the same complete composite statistics config.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
-final class CompositeStatisticsUpdateTest extends KernelTestBase {
+final class CompositeStatisticsConfigTest extends KernelTestBase {
 
   use SchemaCheckTrait;
 
@@ -86,18 +85,18 @@ final class CompositeStatisticsUpdateTest extends KernelTestBase {
   }
 
   /**
-   * Recipe, sync, and update-path definitions are complete and identical.
+   * Recipe and sync definitions are complete and identical.
    */
   public function testRecipeAndSyncShipTheSameCompleteCompositeModel(): void {
     $root = dirname($this->root, 1);
-    $defaults = CompositeStatisticsDefaults::configurations();
     // Every decimal-valued measurement (a ratio, not a count) that any bar
     // figure could list by name. A `grouped_horizontal_bars` figure shares
     // one scale across every measurement it plots, so a ratio sharing an
     // axis with a count is meaningless there.
     $ratioMeasurements = [];
-    foreach ($defaults as $configName => $data) {
-      if (str_starts_with($configName, 'bb_core.bb_measurement.') && ($data['value_type'] ?? NULL) === 'decimal') {
+    foreach (glob($root . '/recipes/bakers/config/bb_core.bb_measurement.*.yml') ?: [] as $file) {
+      $data = Yaml::parseFile($file);
+      if (($data['value_type'] ?? NULL) === 'decimal') {
         $ratioMeasurements[] = $data['id'];
       }
     }
@@ -110,7 +109,6 @@ final class CompositeStatisticsUpdateTest extends KernelTestBase {
       $syncData = Yaml::parseFile($sync);
       unset($syncData['uuid'], $syncData['_core']);
       self::assertSame($recipeData, $syncData, $name . ' is identical on both install paths.');
-      self::assertSame($recipeData, $defaults[$name], $name . ' matches the update-path definition.');
       $schema = $this->checkConfigSchema($this->container->get('config.typed'), $name, $recipeData);
       self::assertTrue($schema === TRUE, sprintf('%s schema errors: %s', $name, print_r($schema, TRUE)));
       // No figure description may state an attribution basis the metric

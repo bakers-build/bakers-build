@@ -93,7 +93,10 @@ describe('bakers validate — host layer (BB-436)', () => {
 
     it('resolves a directory to its WORKFLOW.md and takes a .md path as the document', () => {
       writeSkill(join(project, '.claude/skills'), 'owner', universal('owner'));
-      writeFileSync(join(project, 'WORKFLOW.md'), loader('- @bakers-build/owner'));
+      writeFileSync(
+        join(project, 'WORKFLOW.md'),
+        loader('- @bakers-build/owner'),
+      );
       const elsewhere = join(project, 'OTHER.md');
       writeFileSync(elsewhere, loader('- @bakers-build/owner'));
 
@@ -124,7 +127,10 @@ describe('bakers validate — host layer (BB-436)', () => {
           'owner',
           codingOnly('owner'),
         );
-        writeFileSync(join(project, 'WORKFLOW.md'), loader('- @bakers-build/owner'));
+        writeFileSync(
+          join(project, 'WORKFLOW.md'),
+          loader('- @bakers-build/owner'),
+        );
 
         const report = runValidate({ path: project, skills: [extra] });
 
@@ -254,7 +260,10 @@ describe('bakers validate — host layer (BB-436)', () => {
     });
 
     it('reports that nothing was indexed when no skill root holds a SKILL.md', () => {
-      writeFileSync(join(project, 'WORKFLOW.md'), loader('- @bakers-build/owner'));
+      writeFileSync(
+        join(project, 'WORKFLOW.md'),
+        loader('- @bakers-build/owner'),
+      );
 
       const out = formatReport(runValidate({ path: project })).join('\n');
 
@@ -301,7 +310,10 @@ describe('bakers validate — host layer (BB-436)', () => {
           universal('owner'),
         );
         // A `*` marker: address-shaped to a human, invisible to the loader.
-        writeFileSync(join(project, 'WORKFLOW.md'), loader('* @bakers-build/owner'));
+        writeFileSync(
+          join(project, 'WORKFLOW.md'),
+          loader('* @bakers-build/owner'),
+        );
 
         const out = formatReport(runValidate({ path: project })).join('\n');
 
@@ -387,7 +399,10 @@ describe('bakers validate — host layer (BB-436)', () => {
 
     it('a clean load exits 0 and reports on stdout', async () => {
       writeSkill(join(project, '.claude/skills'), 'owner', universal('owner'));
-      writeFileSync(join(project, 'WORKFLOW.md'), loader('- @bakers-build/owner'));
+      writeFileSync(
+        join(project, 'WORKFLOW.md'),
+        loader('- @bakers-build/owner'),
+      );
 
       const { stdout, stderr, exitCode } = await run([project]);
 
@@ -398,7 +413,10 @@ describe('bakers validate — host layer (BB-436)', () => {
 
     it('a contract defect exits 1 and reports on stderr', async () => {
       writeSkill(join(project, '.claude/skills'), 'owner', codingOnly('owner'));
-      writeFileSync(join(project, 'WORKFLOW.md'), loader('- @bakers-build/owner'));
+      writeFileSync(
+        join(project, 'WORKFLOW.md'),
+        loader('- @bakers-build/owner'),
+      );
 
       const { stdout, stderr, exitCode } = await run([project]);
 

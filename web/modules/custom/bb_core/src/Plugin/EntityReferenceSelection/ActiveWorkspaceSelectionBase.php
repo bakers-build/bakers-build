@@ -8,7 +8,7 @@ use Drupal\Core\Entity\Plugin\EntityReferenceSelection\DefaultSelection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Shared plumbing for the workspace-narrowing selection handlers on bakers types.
+ * Shared plumbing for workspace-narrowing selection handlers on bakers types.
  *
  * The plugins narrow different types with different conditions, but they ask
  * the same two questions first — "may this account be narrowed at all" and

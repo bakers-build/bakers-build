@@ -260,10 +260,7 @@ function compareCommentsNewestFirst(
  * tickets) and shared with those consumers, so an in-place sort would be an
  * invisible side effect on someone else's input.
  */
-const COMMENT_TYPES = new Set([
-  'bb_comment--bb_comment',
-  'bb_comment--review',
-]);
+const COMMENT_TYPES = new Set(['bb_comment--bb_comment', 'bb_comment--review']);
 
 function isCommentResource(resource: JsonApiResource): boolean {
   return typeof resource.type === 'string' && COMMENT_TYPES.has(resource.type);
@@ -1074,7 +1071,7 @@ export function commentItems(document: TicketDetailDocument): CommentItem[] {
 
 // The whole ticket-detail document flattened (all sections) — the NON-TTY ticket
 // render, printed verbatim by the kernel when stdout is not a terminal
-// (`Kernel/tui-kernel.ts:147`), i.e. what `bakers ui bakers.build-nnn | cat` shows. The
+// (`Kernel/tui-kernel.ts:147`), i.e. what `bakers ui BB-nnn | cat` shows. The
 // interactive screen renders one tab at a time via tabViewLines instead.
 export function detailLines(
   detail?: TicketDetailDocument | null,

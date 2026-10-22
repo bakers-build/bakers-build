@@ -57,11 +57,14 @@ import {
   fakeExecutor,
   fakeWorkspace,
 } from '@bakers-build/addon-fake';
-import { DrupalBbRemote, drupalRemote } from '@bakers-build/addon-remote-drupal';
+import {
+  DrupalBbRemote,
+  drupalRemote,
+} from '@bakers-build/addon-remote-drupal';
 import type {
-  ConductorFileConfig,
   BbAgent,
   BbRemote,
+  ConductorFileConfig,
 } from '@bakers-build/conductor/contract';
 import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import { createLogger } from '@bakers-build/core';

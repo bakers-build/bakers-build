@@ -138,7 +138,7 @@ final class RunIndexFieldsTest extends KernelTestBase {
     ]);
     $project = $this->create('bb_project', [
       'name' => 'bakers.build',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $group->id(),
     ]);
     $ticket = $this->create('bb_ticket', [

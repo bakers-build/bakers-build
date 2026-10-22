@@ -168,7 +168,7 @@ const parent = decl({
 const candidates = (count: number, from = 0) =>
   Array.from({ length: count }, (_, i) => ({
     id: `k${from + i}`,
-    label: `bakers.build-${100 + from + i} · candidate ${from + i}`,
+    label: `BB-${100 + from + i} · candidate ${from + i}`,
   }));
 
 it('autocomplete: idle it shows the picked label, or `—` when nothing is picked', () => {
@@ -224,7 +224,7 @@ it('AC-17: at the page cap the incompleteness note SURVIVES a narrowing filter',
     { width: 58 },
   );
   // The filter leaves one match, so the render window hides nothing…
-  expect(rows.filter((r) => /^ {3}[›\s]bakers.build-/.test(r))).toHaveLength(1);
+  expect(rows.filter((r) => /^ {3}[›\s]BB-/.test(r))).toHaveLength(1);
   expect(rows.some((r) => /\+\d+ more/.test(r))).toBe(false);
   // …and the popup still says the bag it filtered may be incomplete.
   expect(

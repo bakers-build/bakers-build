@@ -95,7 +95,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     $team->save();
     $project = $storage->getStorage('bb_project')->create([
       'name' => 'bakers.build Platform',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $group->id(),
       'teams' => [$team->id()],
       'description' => 'The settings note on Overview.',
@@ -154,7 +154,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     self::assertStringNotContainsString('in progress', $html);
     self::assertStringContainsString('Properties', $html);
     self::assertStringContainsString('Key', $html);
-    self::assertStringContainsString('bakers.build', $html);
+    self::assertStringContainsString('BB', $html);
     self::assertStringContainsString('https://git.example/bakers.git', $html);
     self::assertStringContainsString('Environments', $html);
     self::assertStringContainsString('production', $html);
@@ -172,7 +172,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     self::assertSame(['key', 'repository', 'environments'], array_keys($rows));
     self::assertSame('Key', $rows['key']['cells']['label']['value']);
     self::assertSame('mono', $rows['key']['cells']['value']['kind']);
-    self::assertSame('bakers.build', $rows['key']['cells']['value']['value']);
+    self::assertSame('BB', $rows['key']['cells']['value']['value']);
     self::assertSame('badge', $rows['environments']['cells']['value']['kind']);
     self::assertSame('production', $rows['environments']['cells']['value']['label']);
 

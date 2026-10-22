@@ -40,7 +40,9 @@ const resolveModulePath = fileURLToPath(
 );
 const hostPackageJson = new URL('../../../host/package.json', import.meta.url)
   .href;
-const spec = '@bakers-build/addon-bakers-ui-artifacts/ui';
+// A published host dependency, so Bun's auto-install really fills the isolated
+// cache; the workspace's own addons are not on the registry.
+const spec = 'commander';
 
 function runnerScript(emptyBase: string, hostBase: string, cacheDir: string) {
   return (
@@ -95,7 +97,8 @@ describe('resolveModuleEslintStyle under the pinned Bun', () => {
     const result = spawnSync(bun, ['run', runner], {
       encoding: 'utf8',
       timeout: 60_000,
-      env: { ...process.env, BUN_INSTALL_CACHE_DIR: cacheDir },
+      // vitest's NODE_PATH reaches pnpm's hoisted tree, which would serve the empty base.
+      env: { ...process.env, NODE_PATH: '', BUN_INSTALL_CACHE_DIR: cacheDir },
     });
 
     expect(result.status, result.stderr || result.stdout).toBe(0);
@@ -108,9 +111,9 @@ describe('resolveModuleEslintStyle under the pinned Bun', () => {
     expect(parsed.resolved.replaceAll('\\', '/')).not.toContain(
       cacheDir.replaceAll('\\', '/'),
     );
-    expect(parsed.resolved).toMatch(/bakers-ui-artifacts/);
+    expect(parsed.resolved).toMatch(/node_modules\/commander\//);
     expect(parsed.importError).toBeNull();
-    expect(parsed.hoisted).toMatch(/bakers-ui-artifacts/);
+    expect(parsed.hoisted).toMatch(/node_modules\/commander\//);
     expect(parsed.hoisted.replaceAll('\\', '/')).not.toContain(
       cacheDir.replaceAll('\\', '/'),
     );

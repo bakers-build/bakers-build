@@ -1,9 +1,9 @@
 import { resolveBbProjectContext } from '@bakers-build/conductor/contract';
 import { readBbProjectSelection } from '@bakers-build/conductor/project-context';
 import {
+  type BbCommandHost,
   createBbConnectionClient,
   discoverBbWorkspaces,
-  type BbCommandHost,
   loadReadyBbConnection,
   resolveConfigPath,
 } from '@bakers-build/core';

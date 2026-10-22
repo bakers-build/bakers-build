@@ -10,8 +10,8 @@ use Drupal\user\EntityOwnerInterface;
 /**
  * Defines the interface for bakers.build comment entities.
  *
- * A comment is a structured note attached to a bakers.build ticket, authored by either
- * a human user or an automated conductor run.
+ * A comment is a structured note attached to a bakers.build ticket, authored by
+ * either a human user or an automated conductor run.
  */
 interface BbCommentInterface extends BbContentEntityInterface, EntityPublishedInterface, EntityOwnerInterface {
 

@@ -117,7 +117,7 @@ When('I submit the login address {string}', async ({ page, baseURL }, address: s
     // step times out waiting for a navigation that cannot happen — while the
     // thing the scenario asserts is DRUPAL's server-side error. The technique
     // is the one the login suite already used for its empty-fields scenario.
-    await page.locator('form#bakers-login-form').evaluate((form: HTMLFormElement) => {
+    await page.locator('form#bb-login-form').evaluate((form: HTMLFormElement) => {
         form.noValidate = true;
     });
     await submitAddress(page, address);
@@ -156,7 +156,7 @@ Then('the login form is accessible', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Send login link', exact: true })).toBeVisible();
     // Exactly one visible input: AC-1 asks for one field, and a second one
     // would mean a workspace selection or a slug crept back in.
-    await expect(page.locator('form#bakers-login-form input:not([type=hidden])')).toHaveCount(1);
+    await expect(page.locator('form#bb-login-form input:not([type=hidden])')).toHaveCount(1);
 });
 
 Then('no password field is present', async ({ page }) => {

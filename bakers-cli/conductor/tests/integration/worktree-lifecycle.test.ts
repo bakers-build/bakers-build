@@ -45,8 +45,8 @@ import { dirname } from 'node:path';
 import { HerdrExecutor, HerdrWorkspace } from '@bakers-build/addon-herdr';
 import { DrupalBbRemote } from '@bakers-build/addon-remote-drupal';
 import type {
-  ConductorFileConfig,
   BbAgent,
+  ConductorFileConfig,
 } from '@bakers-build/conductor/contract';
 import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import { createLogger } from '@bakers-build/core';

@@ -398,7 +398,9 @@ describe('resolveRoute — project by repo (AC-2, AC-8)', () => {
       project(
         PROJECT,
         'bakers',
-        JSON.stringify({ url: 'ssh://git@git.key-tec.de/bakers-build/bakers-build.git' }),
+        JSON.stringify({
+          url: 'ssh://git@git.key-tec.de/bakers-build/bakers-build.git',
+        }),
       ),
     ]);
     await expect(
@@ -408,7 +410,9 @@ describe('resolveRoute — project by repo (AC-2, AC-8)', () => {
 
   it('throws on ZERO matches, naming the repo and listing the known projects', async () => {
     const client = projectsClient([
-      project(PROJECT, 'bakers', { url: 'git@host:bakers-build/bakers-build.git' }),
+      project(PROJECT, 'bakers', {
+        url: 'git@host:bakers-build/bakers-build.git',
+      }),
       project(PROJECT_B, 'shop', { url: 'git@host:keytec/shop.git' }),
     ]);
     const err = await resolveRoute(

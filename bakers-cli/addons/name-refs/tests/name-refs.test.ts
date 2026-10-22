@@ -426,7 +426,9 @@ describe('nameRefsPlugin — alterRequest, environments (names unique per projec
             type: 'bb_ticket--bb_ticket',
             id: 'ticket-1',
             relationships: {
-              project_id: { data: { type: PROJECT_TYPE, id: 'project-bakers' } },
+              project_id: {
+                data: { type: PROJECT_TYPE, id: 'project-bakers' },
+              },
             },
           },
         };

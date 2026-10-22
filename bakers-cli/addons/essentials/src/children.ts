@@ -6,9 +6,9 @@
 // Storybook-style `addons: ['@bakers-build/addon-essentials']`, which runs its
 // `./preset`. Both call this function, so a child added here appears on both.
 
+import { nameRefsPlugin } from '@bakers-build/addon-name-refs';
 import { jsonapiSchemaPlugin } from '@dropsh/plugin-jsonapi-schema';
 import { markdownPlugin } from '@dropsh/plugin-markdown';
-import { nameRefsPlugin } from '@bakers-build/addon-name-refs';
 import type { DropSHPlugin } from 'dropsh/plugin';
 
 /** Options essentials forwards to the children that take any. */

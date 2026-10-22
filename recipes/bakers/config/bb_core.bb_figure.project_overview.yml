@@ -2,34 +2,34 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.closed_tickets
-  - bb_core.bb_measurement.run_tokens
-  - bb_core.bb_measurement.runs
-  - bb_core.bb_measurement.runs_per_ticket
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.run_tokens
+    - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.runs_per_ticket
 id: project_overview
 label: Overview
 description: "Closed tickets, runs, runs per closed ticket, and token spend by window. Date basis: ticket closed_date for closed tickets, run creation time for runs and tokens. Attribution basis: the ticket's project. runs_per_ticket: numerator and denominator share the same time window but not the same population — not a success rate. Token unit: consumption."
 weight: 0
 widget: matrix
 measurements:
-- closed_tickets
-- runs
-- runs_per_ticket
-- run_tokens
+  - closed_tickets
+  - runs
+  - runs_per_ticket
+  - run_tokens
 categories:
   type: windows
   values:
-  - day
-  - week
-  - month
+    - day
+    - week
+    - month
 series: {  }
-filters: {}
+filters: {  }
 context_shape:
-- project
+  - project
 conditions:
   project:
     id: bb_route_context
-    entity_type: bb_project
     negate: false
     context_mapping:
       entity: project
+    entity_type: bb_project

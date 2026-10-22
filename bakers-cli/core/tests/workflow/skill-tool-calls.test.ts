@@ -22,7 +22,12 @@ const result = (stdout: unknown, exit_code = 0, stderr = '') => ({
   exit_code,
   stderr,
 });
-const bakers = (argv: string[], stdout: unknown, exit_code = 0, stderr = '') => ({
+const bakers = (
+  argv: string[],
+  stdout: unknown,
+  exit_code = 0,
+  stderr = '',
+) => ({
   tool: 'bakers',
   arguments: { argv: ['bakers', 'dropsh', ...argv] },
   result: result(stdout, exit_code, stderr),

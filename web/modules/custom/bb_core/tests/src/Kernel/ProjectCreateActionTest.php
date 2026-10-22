@@ -237,11 +237,11 @@ final class ProjectCreateActionTest extends KernelTestBase {
    * `htmx:afterSwap` on the right target, an empty overlay.
    *
    * `dialog` AND NOT `form#…`, CORRECTED AGAINST A BROWSER (BB-421 Task 8).
-   * This assertion used to pin `form#bakers-project-create`, on reasoning lifted
-   * from the ticket trigger: "the response carries the form and the dialog hull
-   * under the SAME id". That is true of the TICKET dialog, whose surface
-   * composes its own hull inside the form's own `#theme` template — and false
-   * of this one, which composes no hull at all (spec D2), so `island`'s
+   * This assertion used to pin `form#bakers-project-create`, on reasoning
+   * lifted from the ticket trigger: "the response carries the form and the
+   * dialog hull under the SAME id". That is true of the TICKET dialog, whose
+   * surface composes its own hull inside the form's own `#theme` template — and
+   * false of this one, which composes no hull at all (spec D2), so `island`'s
    * `WrappedRouteRenderer` wraps the form and the hull is its ANCESTOR.
    * Selecting the form therefore discarded the hull: measured in Chromium, the
    * overlay received a bare `<form>` and the document held ZERO `<dialog>`

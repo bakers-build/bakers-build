@@ -19,10 +19,10 @@ use Symfony\Component\Yaml\Yaml;
  * `UnmetDependenciesException` and the module install FAILS.
  *
  * That is the plain module-install path: every `KernelTestBase` calling
- * `installConfig(['bb_core'])`, every `BrowserTestBase` naming the module,
- * and any site enabling it. `bb_core.bb_vocabulary.bb_labels` ships only
- * from `config/sync/**` and `recipes/bakers/config/**`, never from the module, so
- * a file here naming it is unsatisfiable.
+ * `installConfig(['bb_core'])`, every `BrowserTestBase` naming the module, and
+ * any site enabling it. `bb_core.bb_vocabulary.bb_labels` ships only from
+ * `config/sync/**` and `recipes/bakers/config/**`, never from the module, so a
+ * file here naming it is unsatisfiable.
  *
  * Measured on BB-421: the two create form displays carried
  * `dependencies.enforced.config: [bb_core.bb_vocabulary.bb_labels]` and

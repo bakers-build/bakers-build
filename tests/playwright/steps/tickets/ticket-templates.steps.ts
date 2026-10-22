@@ -34,7 +34,7 @@ After({ tags: '@feature:ticket-templates' }, async () => {
 /** The add form: inside the dialog with JavaScript, the page without. */
 async function addForm(page: Page): Promise<Locator> {
   const dialog = page.locator('dialog[open]');
-  await expect(dialog.or(page.locator('form.bakers-ticket-template-add-form, form[id^="bakers-ticket-template-add-form"]')).first()).toBeVisible();
+  await expect(dialog.or(page.locator('form.bb-ticket-template-add-form, form[id^="bb-ticket-template-add-form"]')).first()).toBeVisible();
   return (await dialog.count()) > 0 ? dialog : page.locator('main');
 }
 
@@ -151,11 +151,11 @@ Then('the template offers the action {string}', async ({ page }, action: string)
 
 When('I open the settings of the template {string} from the list and save it', async ({ page }, name: string) => {
   await (await rowAction(page, name, `Settings ${name}`)).click();
-  await expect(page.locator('form[id^="bakers-ticket-template-edit-form"]')).toBeVisible();
+  await expect(page.locator('form[id^="bb-ticket-template-edit-form"]')).toBeVisible();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   // A page save is a full navigation; htmx state in the address would leave
   // the landing page without its assets.
-  await expect(page.locator('form[id^="bakers-ticket-template-edit-form"]')).toHaveCount(0);
+  await expect(page.locator('form[id^="bb-ticket-template-edit-form"]')).toHaveCount(0);
   expect(page.url()).not.toContain('ajax_page_state');
 });
 

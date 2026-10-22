@@ -11,10 +11,7 @@ export interface AuthBasicOptions {
   basic?: string;
 }
 
-export const connectionPlugins: BbPreset['connectionPlugins'] = (
-  acc,
-  opts,
-) => {
+export const connectionPlugins: BbPreset['connectionPlugins'] = (acc, opts) => {
   const o = (opts ?? {}) as AuthBasicOptions;
   if (typeof o.basic !== 'string' || o.basic.trim() === '') return acc;
   // basicAuthProvider returns the dropsh auth-plugin shape ({ id, authProvider })

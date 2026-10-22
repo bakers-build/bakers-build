@@ -5,10 +5,10 @@ dependencies:
   config:
     - search_api.index.bb_tickets
   module:
-    - better_exposed_filters
-    - facets_exposed_filters
     - bb_board
     - bb_core
+    - better_exposed_filters
+    - facets_exposed_filters
     - search_api
 _core:
   default_config_hash: MbenMHEisD1_KH4lLDQxnibqfpgHqP53ge2J0B2zG7g

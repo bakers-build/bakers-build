@@ -31,7 +31,7 @@ it('project ticket-list: the selected row stays inside the window across the who
   // highlight fell one row past the bottom and no row was highlighted).
   const tickets = Array.from({ length: 30 }, (_, i) => ({
     id: `t${i}`,
-    identifier: `bakers.build-${i}`,
+    identifier: `BB-${i}`,
     state: 'coding',
     priority: null,
     assigneeInitials: '',

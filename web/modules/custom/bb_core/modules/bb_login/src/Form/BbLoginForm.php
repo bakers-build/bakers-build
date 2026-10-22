@@ -73,7 +73,7 @@ final class BbLoginForm extends FormBase {
   public function getFormId(): string {
     // THE THEME HOOK IS THIS STRING. `bb_theme_theme()` registers
     // `bb_login_form` with `render element: form`, and formdazzle resolves
-    // the wrapper to `form--bakers-login-form.html.twig`. Renaming this id
+    // the wrapper to `form--bb-login-form.html.twig`. Renaming this id
     // silently drops both templates back to core's markup.
     return 'bb_login_form';
   }
@@ -124,7 +124,7 @@ final class BbLoginForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Send login link'),
       // Renders the submit as a real `<button>` through
-      // `input--submit--bakers-button.html.twig`, so it agrees with every other
+      // `input--submit--bb-button.html.twig`, so it agrees with every other
       // primary control in the product rather than being core's `<input>`.
       '#theme_wrappers' => ['input__submit__bb_button'],
     ];

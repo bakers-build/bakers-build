@@ -63,7 +63,6 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
    *
    * The create-dialog trigger's attributes: `hx-get` through the dialog
    * format into the shell overlay, `href` for a browser without JavaScript.
-   *.
    *
    * @return array<string, mixed>
    *   The button.

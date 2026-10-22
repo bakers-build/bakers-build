@@ -238,7 +238,7 @@ describe('BB-256 AC-2 — the all-projects overview, pinned before the rename', 
       [
         "╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮",
         "│ PROJECT                                                                                      STATUS         AGE      │",
-        "│ bakers                                                                                         online         5m ago   │",
+        "│ bakers                                                                                       online         5m ago   │",
         "│ shop-de                                                                                      stale          3h ago   │",
         "│ laws-of-robotics                                                                             offline        2d ago   │",
         "│                                                                                                                      │",

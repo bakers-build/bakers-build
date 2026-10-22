@@ -14,7 +14,8 @@ const record = (port: number): TunnelRecord => ({
 /** An in-memory file, so a test never touches disk. */
 const memoryDeps = (initial?: string) => {
   const store = new Map<string, string>();
-  if (initial !== undefined) store.set('/wt/.bakers/ports-tunnels.json', initial);
+  if (initial !== undefined)
+    store.set('/wt/.bakers/ports-tunnels.json', initial);
   const deps: StateDeps = {
     readFile: vi.fn(async (path: string) => store.get(path) ?? null),
   };

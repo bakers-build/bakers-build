@@ -3,10 +3,10 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.closed_tickets
-  - bb_core.bb_measurement.run_tokens
-  - bb_core.bb_measurement.runs
-  - bb_core.bb_measurement.runs_per_ticket
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.run_tokens
+    - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.runs_per_ticket
 _core:
   default_config_hash: LhkmDE3IWDVZGqqJCiv70GeJrsf3YQjzYZKMz8tXYes
 id: user_overview
@@ -15,24 +15,24 @@ description: "Closed tickets, runs, runs per closed ticket, and token spend by w
 weight: 0
 widget: matrix
 measurements:
-- closed_tickets
-- runs
-- runs_per_ticket
-- run_tokens
+  - closed_tickets
+  - runs
+  - runs_per_ticket
+  - run_tokens
 categories:
   type: windows
   values:
-  - day
-  - week
-  - month
+    - day
+    - week
+    - month
 series: {  }
-filters: {}
+filters: {  }
 context_shape:
-- user
+  - user
 conditions:
   user:
     id: bb_route_context
-    entity_type: user
     negate: false
     context_mapping:
       entity: user
+    entity_type: user

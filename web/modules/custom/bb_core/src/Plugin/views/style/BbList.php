@@ -19,7 +19,7 @@ use Drupal\views\Plugin\views\style\StylePluginBase;
  * optional and may be absent from a pattern.
  * The plugin carries rendered field output only — access, formatters and
  * cacheability stay with Views — and the theme's
- * `views-view-bakers-list.html.twig` turns it into list props.
+ * `views-view-bb-list.html.twig` turns it into list props.
  */
 #[ViewsStyle(
   id: 'bb_list',

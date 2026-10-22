@@ -19,9 +19,7 @@ function row(
         {
           data: {
             type:
-              key === 'owner_user_id'
-                ? 'user--user'
-                : 'bb_ticket--bb_ticket',
+              key === 'owner_user_id' ? 'user--user' : 'bb_ticket--bb_ticket',
             id: value,
           },
         },

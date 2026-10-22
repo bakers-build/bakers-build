@@ -81,7 +81,9 @@ beforeEach(() => {
 
 describe('run() hands the kernel this checkout’s project + conductor (F1)', () => {
   it('resolves both from the conductor record matching bakersDir', async () => {
-    const opts = await optionsHandedToKernel({ bakersDir: '/repos/bakers/.bakers' });
+    const opts = await optionsHandedToKernel({
+      bakersDir: '/repos/bakers/.bakers',
+    });
 
     expect(opts.project).toBe('bakers');
     expect(opts.ownConductorMachineId).toBe('cw-framework');

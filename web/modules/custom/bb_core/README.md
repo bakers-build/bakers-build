@@ -1,7 +1,7 @@
 # bb_core
 
-Core bakers.build control-plane entities (ticket, project, conductor, run, …) and their
-services.
+Core bakers.build control-plane entities (ticket, project, conductor, run, …)
+and their services.
 
 ## Typed ticket links
 

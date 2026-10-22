@@ -962,7 +962,11 @@ describe('every statistics scope in the running cockpit', () => {
     { route: 'my.stats', params: {}, context: 'user_id=account' },
     {
       route: 'project.stats',
-      params: { projectId: PROJECT, projectName: 'bakers', projectSlug: 'bakers' },
+      params: {
+        projectId: PROJECT,
+        projectName: 'bakers',
+        projectSlug: 'bakers',
+      },
       context: `project_id=${PROJECT}`,
     },
     {

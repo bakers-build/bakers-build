@@ -16,8 +16,8 @@ import {
 } from '@bakers-build/addon-claude';
 import { parseCodexTranscript } from '@bakers-build/addon-codex';
 import {
-  FakeExecutor,
   FakeBbRemote,
+  FakeExecutor,
   type FakeRemoteSeed,
   type FakeSeedRun,
   type FakeSeedTicket,
@@ -29,11 +29,11 @@ import {
 } from '@bakers-build/addon-fake';
 import type {
   AgentRunIdentity,
-  ConductorFileConfig,
   BbAgent,
   BbExecutor,
   BbRemote,
   BbWorkspace,
+  ConductorFileConfig,
   HookContext,
   HookListener,
   HookListenerContext,
@@ -4521,7 +4521,7 @@ describe('qualification gate orchestration (step-owning skills)', () => {
     expect(guard).toContain('returned_to_qualification');
     expect(guard).toMatch(/then stop/);
     expect(guard).toMatch(
-      /@bakers\/transition-ticket.*destination `qualification`/,
+      /@bakers-build\/transition-ticket.*destination `qualification`/,
     );
   });
 
@@ -4547,7 +4547,9 @@ describe('qualification gate orchestration (step-owning skills)', () => {
     expect(reviewSection).not.toContain('@bakers-build/ensure-qualification');
     // deployment step skills carry no guard at all
     for (const skill of ['prepare-deployment', 'post-deployment']) {
-      expect(readSkill(skill)).not.toContain('@bakers-build/ensure-qualification');
+      expect(readSkill(skill)).not.toContain(
+        '@bakers-build/ensure-qualification',
+      );
     }
   });
 
@@ -4937,7 +4939,11 @@ describe('action queue', () => {
     Object.fromEntries(
       Array.from({ length: n }, (_, k) => [
         `t-${k + 1}`,
-        { identifier: `bakers.build-${k + 1}`, title: `T${k + 1}`, state: 'coding' },
+        {
+          identifier: `bakers.build-${k + 1}`,
+          title: `T${k + 1}`,
+          state: 'coding',
+        },
       ]),
     );
 

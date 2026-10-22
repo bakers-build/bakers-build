@@ -19,9 +19,9 @@ use Drupal\simple_oauth\Oauth2ScopeProviderInterface;
  * `$container->set()` cannot retrofit an optional `@?` reference once the
  * consuming service has already been compiled with NULL baked in.
  *
- * Only `scopeHasPermission()` is exercised by bakers.build's own code. Every other
- * method of the two interfaces this class satisfies is unreachable from that
- * path and returns the cheapest empty/NULL answer its return type allows.
+ * Only `scopeHasPermission()` is exercised by bakers.build's own code. Every
+ * other method of the two interfaces this class satisfies is unreachable from
+ * that path and returns the cheapest empty/NULL answer its return type allows.
  *
  * @see \Drupal\bb_scope_identity_test\Access\ScopeCeilingAccessPolicy
  * @see \Drupal\bb_core\Access\BbRankCapability

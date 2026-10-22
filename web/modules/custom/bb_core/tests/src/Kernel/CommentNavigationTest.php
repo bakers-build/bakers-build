@@ -79,7 +79,7 @@ final class CommentNavigationTest extends KernelTestBase {
     $group->save();
     $project = $etm->getStorage('bb_project')->create([
       'name' => 'bakers.build',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $group->id(),
     ]);
     $project->save();

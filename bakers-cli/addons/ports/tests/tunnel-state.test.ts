@@ -253,7 +253,9 @@ describe('readTunnelState (list view)', () => {
       },
       deps,
     );
-    expect(await readTunnelState('/wt/a', '/home/.bakers', deps)).toHaveLength(1);
+    expect(await readTunnelState('/wt/a', '/home/.bakers', deps)).toHaveLength(
+      1,
+    );
     expect(
       await readTunnelState('/wt/missing', '/home/.bakers', deps),
     ).toHaveLength(0);

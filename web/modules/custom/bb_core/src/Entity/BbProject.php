@@ -69,7 +69,6 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
     ],
     // Canonical renders the Overview tab through core's `_entity_view` of the
     // `full` view mode, gated on `view` rather than `update`.
-    //.
     // @see \Drupal\bb_core\Routing\BbProjectRouteProvider
     'route_provider' => ['html' => BbProjectRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml, so no
@@ -120,7 +119,7 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
     $fields['image'] = static::imageBaseFieldDefinition('project-images', 3);
     $fields['key'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Key'))
-      ->setDescription(new TranslatableMarkup('Short project prefix used to build ticket identifiers (KEY-<n>), e.g. bakers.build. Uppercase letters/digits, editable.'))
+      ->setDescription(new TranslatableMarkup('Short project prefix used to build ticket identifiers (KEY-<n>), e.g. BB. Uppercase letters/digits, editable.'))
       ->setSetting('max_length', 10)
       // Server-provided (not client-required): the default-value callback fills
       // it from the name, and it is editable in the UI. Declaring it required
@@ -135,7 +134,7 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
       ->addPropertyConstraints('value', [
         'Regex' => [
           'pattern' => '/^[A-Z][A-Z0-9]{1,9}$/',
-          'message' => 'The project key must be 2–10 uppercase letters or digits, starting with a letter (e.g. bakers.build).',
+          'message' => 'The project key must be 2–10 uppercase letters or digits, starting with a letter (e.g. BB).',
         ],
       ])
       ->setDisplayConfigurable('form', TRUE)
@@ -167,7 +166,6 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
     // named here (or a see-all workspace admin), and `create bb_project` is
     // checked against these teams. Required enforces "at least one team";
     // BbWorkspaceScope keeps every item inside the actor's tenancy.
-    //.
     $fields['teams'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Teams'))
       ->setDescription(new TranslatableMarkup('The teams this project belongs to. A project belongs to at least one team; visibility and the right to create a project both flow from team membership.'))
@@ -202,9 +200,9 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
    *
    * Derives a short, uppercase prefix from the project name: lowercase, strip
    * everything but ASCII letters/digits, uppercase, cap at 10 characters. Falls
-   * back to "bakers.build" when the name yields nothing usable. Applied during entity
-   * initialisation (before validation) so a created project satisfies the
-   * required + format constraints without the caller passing a key.
+   * back to "bakers.build" when the name yields nothing usable. Applied during
+   * entity initialisation (before validation) so a created project satisfies
+   * the required + format constraints without the caller passing a key.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The project the default is being computed for.
@@ -216,7 +214,7 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
     $name = (string) ($entity->get('name')->value ?? '');
     $slug = preg_replace('/[^a-z0-9]+/', '', mb_strtolower($name)) ?? '';
     $key = mb_strtoupper(mb_substr($slug, 0, 10));
-    return [['value' => $key !== '' ? $key : 'bakers.build']];
+    return [['value' => $key !== '' ? $key : 'BB']];
   }
 
   /**

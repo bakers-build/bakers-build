@@ -14,8 +14,8 @@ import type {
 } from '@bakers-build/conductor/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  buildConductorProgram,
   type BbCliDeps,
+  buildConductorProgram,
   type HerdrHost,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
@@ -118,7 +118,10 @@ describe('the local conductor registry is gone', () => {
   });
 
   it('ls builds its rows from the control plane alone', async () => {
-    await run(['ls'], [row({ id: 'mid-a', project: 'bakers', label: 'alpha' })]);
+    await run(
+      ['ls'],
+      [row({ id: 'mid-a', project: 'bakers', label: 'alpha' })],
+    );
 
     const text = out.join('\n');
     expect(text).toContain('mid-a');

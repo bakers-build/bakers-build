@@ -14,8 +14,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 /**
  * Cross-workspace assignment is rejected on all four fields (V2).
  *
- * BB-351 D6 as corrected at the second coding gate: TWO guards then two
- * rules. Guard A leaves emptiness to NotNull, guard B is the `administer bakers`
+ * BB-351 D6 as corrected at the second coding gate: TWO guards then two rules.
+ * Guard A leaves emptiness to NotNull, guard B is the `administer bakers`
  * escape hatch asked as a permission (Fact 12), rule 1 is membership and rule 2
  * is the ambient match under an add-form route. One constraint class rather
  * than four, because all four fields need the same value-to-workspace walk and

@@ -19,7 +19,7 @@ Then('the authentication module adds no theme navigation links', async ({ page }
     // form, so `user-login-form` is no longer built anywhere. What the check is
     // about is unchanged — the module contributes no register or password link
     // of its own — and the login form deliberately carries neither.
-    await expect(page.locator('form#bakers-login-form')).toBeVisible();
+    await expect(page.locator('form#bb-login-form')).toBeVisible();
     await expect(page.locator('a[href*="/user/register"]')).toHaveCount(0);
     await expect(page.locator('a[href*="/user/password"]')).toHaveCount(0);
 });

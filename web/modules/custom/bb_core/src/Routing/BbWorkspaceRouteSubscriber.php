@@ -180,11 +180,11 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
   /**
    * Drops OG's group-management routes from bakers.build's own entity types.
    *
-   * `og_entity_type_alter()` adds an `og-admin-routes` template to every
-   * entity type, and `OgLocalTask` turns each route into a "Group management"
-   * tab. bakers.build's Members tab already does that job, so the route is removed
-   * (which removes the tab) rather than gated. Only `bb_*` types are
-   * touched; the others belong to their own modules.
+   * `og_entity_type_alter()` adds an `og-admin-routes` template to every entity
+   * type, and `OgLocalTask` turns each route into a "Group management" tab.
+   * bakers.build's Members tab already does that job, so the route is removed
+   * (which removes the tab) rather than gated. Only `bb_*` types are touched;
+   * the others belong to their own modules.
    *
    * @param \Symfony\Component\Routing\RouteCollection $collection
    *   The route collection to alter.

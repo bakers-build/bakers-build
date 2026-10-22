@@ -89,7 +89,7 @@ it('multi is kind `multiselect` and also names its bag key', () => {
 // above must keep its outcome. Two keys, both named BY KEY like `from` already
 // is: the picked id and the typed query. The kernel stays domain-free; that a
 // substring of the label matches "identifier OR title" is the ADAPTER's doing,
-// which composes the label as `bakers.build-nnn · <title>`.
+// which composes the label as `BB-nnn · <title>`.
 
 it('autocomplete names both its option bag and its query key, by key', () => {
   expect(

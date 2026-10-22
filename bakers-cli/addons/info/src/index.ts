@@ -12,7 +12,10 @@ const infoCommand: BbCommandPlugin = {
         'Print the resolved project and workspace context (BB-495) as JSON',
       )
       .option('--config <path>', 'connection config path')
-      .option('--connection <id>', 'named connection from ~/.bakers/connections')
+      .option(
+        '--connection <id>',
+        'named connection from ~/.bakers/connections',
+      )
       .action(async (options: { config?: string; connection?: string }) => {
         const result = await resolveBbInfo({
           host,

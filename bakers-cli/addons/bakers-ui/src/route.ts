@@ -249,10 +249,7 @@ async function resolveProject(
 ): Promise<ResolvedRoute> {
   if (route.by === 'repo') return resolveProjectByRepo(client, route, ctx);
   if (route.by === 'uuid') {
-    const found = await getOne(
-      client,
-      `bb_project/bb_project/${route.value}`,
-    );
+    const found = await getOne(client, `bb_project/bb_project/${route.value}`);
     if (!found?.id) {
       throw new Error(`no project ${route.value}${on(ctx)}${via(route)}.`);
     }

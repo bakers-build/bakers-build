@@ -10,14 +10,14 @@ import {
 import { shellQuote } from '../core/shell.js';
 import { discoverAddons } from '../plugins/discover-addons.js';
 import type { AddonEntry } from '../plugins/preset.js';
-import type { BbCommandHost } from './commands.js';
-import { inspectConfigSource } from './config-source.js';
 import {
-  findConfigProjectBbDir,
   type BbConfigSource,
+  findConfigProjectBbDir,
   homeBbDir,
   resolveBbConfigPath,
 } from './bakers-dir.js';
+import type { BbCommandHost } from './commands.js';
+import { inspectConfigSource } from './config-source.js';
 import { importConfig } from './import-config.js';
 import {
   machineUiConfigPath,
@@ -245,8 +245,7 @@ export async function resolveBbConnectionSelection(
   Object.defineProperty(dropshEnv, 'DROPSH_CONNECTION', {
     enumerable: true,
     get() {
-      const environmentConnection =
-        env.BB_CONNECTION || env.DROPSH_CONNECTION;
+      const environmentConnection = env.BB_CONNECTION || env.DROPSH_CONNECTION;
       if (environmentConnection) return environmentConnection;
       projectConnectionRead = true;
       projectConnection = projectConnectionSelection(

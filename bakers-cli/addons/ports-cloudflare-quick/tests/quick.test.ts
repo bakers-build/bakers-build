@@ -216,9 +216,14 @@ describe('reconcileQuick', () => {
   it('spawns a managed process and reports the parsed URL as applied', async () => {
     const h = makeFakeDeps();
     const checkpoints: TunnelDesiredRecord[][] = [];
-    const result = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async (r) => void checkpoints.push(r.slice()),
-    });
+    const result = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async (r) => void checkpoints.push(r.slice()),
+      },
+    );
     expect(result.ok).toBe(true);
     expect(result.records[0]?.applied).toBe('applied');
     expect(result.records[0]?.url).toMatch(
@@ -232,9 +237,14 @@ describe('reconcileQuick', () => {
 
   it('reuses an already-live matching owned process on a repeated up (no duplicate spawn)', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const second = await reconcileQuick(
       [first.records[0] as TunnelDesiredRecord],
       h.deps,
@@ -275,9 +285,14 @@ describe('reconcileQuick', () => {
 
   it('recreates the route when the origin (service) changes, and the new URL may differ', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const oldPid = (first.records[0]?.data as { pid: number } | undefined)!.pid;
     const changed = {
       ...(first.records[0] as TunnelDesiredRecord),
@@ -294,9 +309,14 @@ describe('reconcileQuick', () => {
 
   it('recreates the route when the owned process is confirmed dead, without killing anything', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const oldPid = (first.records[0]?.data as { pid: number } | undefined)!.pid;
     h.forgetProcess(oldPid); // simulate the process having crashed
     const second = await reconcileQuick(
@@ -319,9 +339,14 @@ describe('reconcileQuick', () => {
   // alongside the still-running orphan.
   it('adopts a live orphan sharing this route directory instead of spawning a duplicate, even when recorded data exists but its pid is dead (I2)', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const recordedData = first.records[0]?.data as
       | { pid: number; routeDir: string }
       | undefined;
@@ -368,9 +393,14 @@ describe('reconcileQuick', () => {
   // stale service from a previous life must never be silently adopted.
   it('terminates and replaces an orphan whose actual origin no longer matches the desired one, instead of adopting it', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const recordedData = first.records[0]?.data as
       | { pid: number; routeDir: string }
       | undefined;
@@ -408,9 +438,14 @@ describe('reconcileQuick', () => {
   it('reports a missing binary as an error without spawning', async () => {
     const h = makeFakeDeps();
     h.setBinary(null);
-    const result = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const result = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     expect(result.ok).toBe(false);
     expect(result.records[0]?.applied).toBe('error');
     expect(result.records[0]?.error).toMatch(/cloudflared binary not found/);
@@ -428,9 +463,14 @@ describe('reconcileQuick', () => {
       startTime: 0,
       bootId: 'boot-1',
     });
-    const result = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const result = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     expect(result.ok).toBe(false);
     expect(result.records[0]?.applied).toBe('error');
     expect(result.records[0]?.error).toMatch(/timed out/);
@@ -442,12 +482,7 @@ describe('reconcileQuick', () => {
 
   it('recovers ownership of a process spawned by a crashed prior run (checkpoint never happened) without duplicating it', async () => {
     const h = makeFakeDeps({ seedLogUrl: false });
-    const dir = routeDirFor(
-      '/home/.bakers',
-      '/work/bb-1',
-      'BB-1',
-      'storybook',
-    );
+    const dir = routeDirFor('/home/.bakers', '/work/bb-1', 'BB-1', 'storybook');
     const configPath = `${dir}/gen-1/config.yaml`;
     const logPath = `${dir}/gen-1/cloudflared.log`;
     h.setProcess(55, {
@@ -484,12 +519,17 @@ describe('reconcileQuick', () => {
   it('treats checkpoint failure as a failed attempt without killing the freshly spawned process', async () => {
     const h = makeFakeDeps();
     let calls = 0;
-    const result = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {
-        calls += 1;
-        throw new Error('disk full');
+    const result = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {
+          calls += 1;
+          throw new Error('disk full');
+        },
       },
-    });
+    );
     expect(calls).toBeGreaterThan(0);
     expect(result.ok).toBe(false);
     expect(result.records[0]?.applied).toBe('error');
@@ -499,12 +539,7 @@ describe('reconcileQuick', () => {
 
   it('refuses an ambiguous recovered ownership match — never kills or spawns alongside it', async () => {
     const h = makeFakeDeps();
-    const dir = routeDirFor(
-      '/home/.bakers',
-      '/work/bb-1',
-      'BB-1',
-      'storybook',
-    );
+    const dir = routeDirFor('/home/.bakers', '/work/bb-1', 'BB-1', 'storybook');
     const configPath = `${dir}/gen-1/config.yaml`;
     const identity = (pid: number): ManagedProcessIdentity => ({
       pid,
@@ -532,9 +567,14 @@ describe('reconcileQuick', () => {
 
   it('a UID mismatch (PID reused by a different process) is treated as "gone", never as a kill target', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const recordedData = first.records[0]?.data as {
       pid: number;
       exe: string;
@@ -565,9 +605,14 @@ describe('reconcileQuick', () => {
 
   it('down (`desired: absent`) terminates only an owned, revalidated process and then clears the tombstone', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const pid = (first.records[0]?.data as { pid: number } | undefined)!.pid;
     const tombstone = {
       ...(first.records[0] as TunnelDesiredRecord),
@@ -590,9 +635,14 @@ describe('reconcileQuick', () => {
   // tombstone while the orphan keeps serving its tunnel forever.
   it('down scans for and terminates an owned orphan when the recorded pid no longer matches', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const recordedData = first.records[0]!.data as {
       pid: number;
       startTime: number;
@@ -639,9 +689,14 @@ describe('reconcileQuick', () => {
   // stale URL as if it belonged to the new process.
   it('a route recreated after down always gets a fresh, never-before-used generation directory', async () => {
     const h = makeFakeDeps();
-    const first = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const first = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const firstArgs = h.spawnCalls[0]!.args;
     const firstConfig = firstArgs[firstArgs.indexOf('--config') + 1];
 
@@ -655,9 +710,14 @@ describe('reconcileQuick', () => {
 
     // Re-up from scratch: no recorded data at all, exactly as a fresh
     // `bakers ports up mailpit` after `down` sees it.
-    const second = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      checkpoint: async () => {},
-    });
+    const second = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        checkpoint: async () => {},
+      },
+    );
     const secondArgs = h.spawnCalls[1]!.args;
     const secondConfig = secondArgs[secondArgs.indexOf('--config') + 1];
 
@@ -672,10 +732,15 @@ describe('reconcileQuick', () => {
     // Abort takes effect on the very first poll — the fake `sleep` resolves
     // immediately, so the loop re-checks `signal.aborted` right away.
     controller.abort();
-    const result = await reconcileQuick([baseRecord()], h.deps, '/home/.bakers', {
-      signal: controller.signal,
-      checkpoint: async () => {},
-    });
+    const result = await reconcileQuick(
+      [baseRecord()],
+      h.deps,
+      '/home/.bakers',
+      {
+        signal: controller.signal,
+        checkpoint: async () => {},
+      },
+    );
     expect(result.ok).toBe(false);
     expect(h.killed).toHaveLength(0);
     expect(h.spawnCalls).toHaveLength(1);
@@ -696,9 +761,9 @@ describe('isOwnedArgv', () => {
         '/home/.bakers/ports/quick/abc',
       ),
     ).toBe(false);
-    expect(isOwnedArgv(['tunnel', 'run'], '/home/.bakers/ports/quick/abc')).toBe(
-      false,
-    );
+    expect(
+      isOwnedArgv(['tunnel', 'run'], '/home/.bakers/ports/quick/abc'),
+    ).toBe(false);
   });
 });
 

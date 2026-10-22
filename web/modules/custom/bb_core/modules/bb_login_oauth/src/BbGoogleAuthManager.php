@@ -15,8 +15,8 @@ use League\OAuth2\Client\Provider\GoogleUser;
  * GOOGLE SENDS `email_verified` AND THE CONTRIB MANAGER DISCARDS IT. Its
  * `getUserInfo()` builds a SocialAuthUser from name, id, token, e-mail and
  * avatar; League's GoogleUser exposes `getEmailVerified()` and nothing calls
- * it. bakers.build keys accounts by e-mail, so that claim is the difference between a
- * sign-in and an account takeover.
+ * it. bakers.build keys accounts by e-mail, so that claim is the difference
+ * between a sign-in and an account takeover.
  */
 final class BbGoogleAuthManager extends GoogleAuthManager {
 

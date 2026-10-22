@@ -12,7 +12,7 @@ default:
       value: bakers-e2e-agent
   pass:
     -
-      value: $2y$12$741RZ0YPywKlhE2JNw9PPu.WlgGqXW8lTJ6a/0nJoifCo406u8cS.
+      value: $2y$12$oEc/bcRr0f2QFIiHTJLGFeRUYh5u9h37uo0HX0PARYjBsMZ9w0n.u
       pre_hashed: true
       existing: null
   timezone:

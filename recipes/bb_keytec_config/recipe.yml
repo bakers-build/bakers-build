@@ -1,5 +1,0 @@
-name: 'bakers.build keytec config'
-description: 'Fresh-install only: base+bakers+seed chain plus the customer-specific keytec_gitlab connector config. NOT for --existing-config servers (config/sync owns this config there — re-importing it aborts). Server seeding uses the content-only bb_keytec recipe.'
-type: 'Site'
-recipes:
-  - bb_seed

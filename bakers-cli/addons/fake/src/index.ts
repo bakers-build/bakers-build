@@ -1,9 +1,9 @@
 import { writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type {
+  BbExecutor,
   ExecutorCapabilities,
   ExecutorPlugin,
-  BbExecutor,
   HookContext,
   HookName,
   HookResult,

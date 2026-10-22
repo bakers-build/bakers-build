@@ -112,7 +112,7 @@ const QUOTED_LEGACY_ADDON = new RegExp(
 );
 
 /** `'@bakers-build/core/builtins'` inside a matched quote pair (the deleted preset). */
-const QUOTED_LEGACY_BUILTINS = /(['"`])@bakers-ai\/core\/builtins\1/g;
+const QUOTED_LEGACY_BUILTINS = /(['"`])@bakers-build\/core\/builtins\1/g;
 
 /**
  * Where each export of the host barrels lives now — the DELETED

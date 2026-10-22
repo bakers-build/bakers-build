@@ -127,9 +127,9 @@ it('typing moves the cursor along the query, one column per character', async ()
   const cursor = d.tui.renderer.getCursorState();
   expect(cursor.visible).toBe(true);
   expect(cursor.y).toBe(at + 1);
-  // Six characters typed, six columns moved — and the reducer, not the widget,
+  // Four characters typed, four columns moved — and the reducer, not the widget,
   // is what advanced it: `FieldTextarea` declines every key.
-  expect(cursor.x).toBe(before.x + 6);
+  expect(cursor.x).toBe(before.x + 4);
 
   await d.quit();
 });
@@ -154,7 +154,7 @@ it('the slot does not double a keystroke on the query row EITHER', async () => {
   // So this case captures the frame the instant the handlers have run.
   const d = await boot();
   await d.openPicker();
-  for (const ch of 'bakers.build-') await d.press(ch);
+  for (const ch of 'BB-') await d.press(ch);
 
   d.tui.mockInput.pressKey('2');
   await d.tui.renderOnce();
@@ -162,7 +162,7 @@ it('the slot does not double a keystroke on the query row EITHER', async () => {
   const rows = d.tui.rows();
   const at = queryRow(rows);
   const query = (rows[at] ?? '').replace(/│/g, '').trim();
-  expect(query, 'six typed characters, six on the row').toBe('search: BB-2');
+  expect(query, 'four typed characters, four on the row').toBe('search: BB-2');
 
   await d.quit();
 });

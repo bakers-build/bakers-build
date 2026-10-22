@@ -76,7 +76,7 @@ final class TicketSearchFilterTest extends KernelTestBase {
 
     $expected = [$first->uuid(), $second->uuid()];
     sort($expected);
-    self::assertSame($expected, $this->uuids(['search' => 'bakers#20']));
+    self::assertSame($expected, $this->uuids(['search' => 'bakers-build#20']));
     self::assertSame($expected, $this->uuids(['search' => 'https://git.key-tec.de/bakers-build/bakers-build/-/issues/20']));
     // A bare `#20` resolves through the project the list is narrowed to.
     self::assertSame($expected, $this->uuids([
@@ -84,7 +84,7 @@ final class TicketSearchFilterTest extends KernelTestBase {
       'project_id.id' => $this->fixture('a', 'bb_project')->uuid(),
     ]));
     // An origin no ticket carries is an empty page, not every ticket.
-    self::assertSame([], $this->uuids(['search' => 'bakers#999']));
+    self::assertSame([], $this->uuids(['search' => 'bakers-build#999']));
   }
 
   /**
@@ -148,8 +148,8 @@ final class TicketSearchFilterTest extends KernelTestBase {
     $closed->set('closed', TRUE)->save();
     Index::load('bb_tickets')->indexItems();
 
-    self::assertSame([$open->uuid()], $this->uuids(['search' => 'bakers#20', 'closed' => '0']));
-    self::assertSame([$closed->uuid()], $this->uuids(['search' => 'bakers#20', 'closed' => '1']));
+    self::assertSame([$open->uuid()], $this->uuids(['search' => 'bakers-build#20', 'closed' => '0']));
+    self::assertSame([$closed->uuid()], $this->uuids(['search' => 'bakers-build#20', 'closed' => '1']));
   }
 
   /**
@@ -159,7 +159,7 @@ final class TicketSearchFilterTest extends KernelTestBase {
     [$status, $document] = $this->get(['search' => 'nosuchrepo#1']);
     self::assertSame(400, $status);
     self::assertSame(
-      'No repository matches "nosuchrepo". Known in your projects: bakers.',
+      'No repository matches "nosuchrepo". Known in your projects: bakers-build.',
       $document['errors'][0]['detail'] ?? NULL,
     );
     // The answer depends on the query string and on who asks.

@@ -14,9 +14,9 @@ use Drupal\island\Form\WrappedDialogFormBase;
  * THE FIXTURE FOR `WrappedDialogFormTest`, and deliberately in THIS module
  * rather than in a consumer's. The round trip the trait carries is a property
  * of the wrapper format, so it has to be observable with `island` and
- * `island_test` alone — no theme, no entity type, no product. A test that
- * drove a bakers.build form instead would be measuring that form's own composition and
- * would keep passing if the trait were quietly bypassed.
+ * `island_test` alone — no theme, no entity type, no product. A test that drove
+ * a bakers.build form instead would be measuring that form's own composition
+ * and would keep passing if the trait were quietly bypassed.
  *
  * THE ID ENDS IN `_form`, AND THAT IS PART OF THE FIXTURE RATHER THAN A
  * naming habit: the format refuses any other, because core's own htmx-form

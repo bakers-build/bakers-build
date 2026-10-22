@@ -104,7 +104,8 @@ final class TicketSearchResolverTest extends KernelTestBase {
   public function testBareShortReferenceUsesProjectRepository(): void {
     $query = $this->resolveAs('#19', $this->project('a'));
     self::assertSame('origin_ref', $query->field);
-    // An exact key: `#19` can never compare equal to `bakers-build/bakers-build#190`.
+    // An exact key: `#19` can never compare equal to
+    // `bakers-build/bakers-build#190`.
     self::assertSame('bakers-build/bakers-build#19', $query->value);
   }
 
@@ -123,14 +124,14 @@ final class TicketSearchResolverTest extends KernelTestBase {
     $query = $this->resolveAs('#19');
     self::assertTrue($query->failed());
     self::assertStringContainsString('ambiguous', (string) $query->error);
-    self::assertSame(['bakers', 'symbiont'], $query->candidates);
+    self::assertSame(['bakers-build', 'symbiont'], $query->candidates);
   }
 
   /**
    * An exact alias wins without a project context.
    */
   public function testExactAlias(): void {
-    self::assertSame('bakers-build/bakers-build#19', $this->resolveAs('bakers#19')->value);
+    self::assertSame('bakers-build/bakers-build#19', $this->resolveAs('bakers-build#19')->value);
   }
 
   /**
@@ -174,7 +175,7 @@ final class TicketSearchResolverTest extends KernelTestBase {
     $query = $this->resolveAs('foo#1');
     self::assertNull($query->value);
     self::assertStringContainsString('No repository matches "foo"', (string) $query->error);
-    self::assertSame(['bakers'], $query->candidates);
+    self::assertSame(['bakers-build'], $query->candidates);
   }
 
   /**
@@ -183,7 +184,7 @@ final class TicketSearchResolverTest extends KernelTestBase {
   public function testUnreadableRepositoryIsNeitherResolvedNorNamed(): void {
     $query = $this->resolveAs('sym#1');
     self::assertTrue($query->failed());
-    self::assertSame(['bakers'], $query->candidates);
+    self::assertSame(['bakers-build'], $query->candidates);
     self::assertStringNotContainsString('symbiont', (string) $query->error);
   }
 

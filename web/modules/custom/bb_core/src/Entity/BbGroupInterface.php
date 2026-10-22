@@ -8,8 +8,8 @@ namespace Drupal\bb_core\Entity;
  * Defines the interface for bakers.build group entities.
  *
  * A group is the top-level billing and organisational unit that owns one or
- * more bakers.build projects.  The interface exposes name access and a structured
- * billing profile that is stored as a serialised key–value map.
+ * more bakers.build projects. The interface exposes name access and a
+ * structured billing profile that is stored as a serialised key–value map.
  */
 interface BbGroupInterface extends BbContentEntityInterface {
 

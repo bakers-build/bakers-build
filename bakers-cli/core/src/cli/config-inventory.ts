@@ -4,6 +4,11 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { shellQuote } from '../core/shell.js';
 import {
+  findConfigProjectBbDir,
+  homeBbDir,
+  stemForConfigFile,
+} from './bakers-dir.js';
+import {
   type ConfigFileKind,
   type ConfigFileReport,
   type ConfigFinding,
@@ -20,11 +25,6 @@ import {
   type ConfigSourceProperty,
   inspectConfigSource,
 } from './config-source.js';
-import {
-  findConfigProjectBbDir,
-  homeBbDir,
-  stemForConfigFile,
-} from './bakers-dir.js';
 
 export interface ConfigInventoryOptions {
   operation?: ConfigOperation;

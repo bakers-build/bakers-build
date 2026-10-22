@@ -609,7 +609,9 @@ describe('ticketContentModel Overview', () => {
   // `origin` URL, first and activatable like the existing link rows.
   it('lists the source ticket as the first Related row when origin is an http URL', () => {
     const model = ticketContentModel(
-      document({ origin: 'https://git.key-tec.de/bakers-build/bakers-build/-/issues/16' }),
+      document({
+        origin: 'https://git.key-tec.de/bakers-build/bakers-build/-/issues/16',
+      }),
       'overview',
       labels,
       NOW,

@@ -62,7 +62,7 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
 //   node verify-links.mjs
-//   node verify-links.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/pty-links.txt
+//   node verify-links.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-links.txt
 //
 //   --cols/--rows <n>  the pty geometry (default 120x40)
 //   --out <file>       write the transcript here as well as to stdout

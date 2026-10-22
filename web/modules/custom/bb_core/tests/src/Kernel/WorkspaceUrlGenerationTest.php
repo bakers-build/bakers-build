@@ -89,8 +89,8 @@ final class WorkspaceUrlGenerationTest extends KernelTestBase {
   public function testProjectUrlUsesSlugAndKey(): void {
     $project = $this->makeProject();
 
-    self::assertSame('/bakers/project/bakers', $project->toUrl()->toString());
-    self::assertSame('/bakers/project/bakers/edit', $project->toUrl('edit-form')->toString());
+    self::assertSame('/bakers/project/bb', $project->toUrl()->toString());
+    self::assertSame('/bakers/project/bb/edit', $project->toUrl('edit-form')->toString());
   }
 
   /**
@@ -245,7 +245,7 @@ final class WorkspaceUrlGenerationTest extends KernelTestBase {
     ]);
     return $this->create('bb_project', [
       'name' => 'bakers.build',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $group->id(),
     ]);
   }

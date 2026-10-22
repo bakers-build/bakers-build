@@ -20,8 +20,8 @@ export {
 export {
   type AgentFootprint,
   type AgentRunIdentity,
-  emptyAgentFootprint,
   type BbAgent,
+  emptyAgentFootprint,
 } from './plugins/agent.js';
 export {
   detectKnownOverrides,
@@ -34,8 +34,8 @@ export {
   validateOptionalString,
 } from './plugins/agent-args.js';
 export type {
-  ExecutorCapabilities,
   BbExecutor,
+  ExecutorCapabilities,
   HookContext,
   HookListener,
   HookListenerContext,
@@ -85,6 +85,7 @@ export type {
   ActiveRun,
   AddonDefinitionV2,
   AddonRegistration,
+  BbRemote,
   ClaimedRun,
   ClaimOptions,
   ClaimWithheld,
@@ -92,7 +93,6 @@ export type {
   ConductorStatus,
   FinalizableRun,
   FrozenTicket,
-  BbRemote,
   InboxMessage,
   InboxSnapshot,
   RunMetrics,
@@ -102,8 +102,8 @@ export type {
   UncleanTicket,
 } from './plugins/remote.js';
 export type {
-  EnsuredWorkspace,
   BbWorkspace,
+  EnsuredWorkspace,
 } from './plugins/workspace.js';
 export type {
   ConductorEngineConfig,

@@ -80,11 +80,11 @@ final class BbWorkspace extends BbContentEntityBase implements BbWorkspaceInterf
   use BbBaseFieldsTrait;
 
   /**
-   * The UUID of the workspace every pre-existing group is migrated under.
+   * The UUID of the default workspace.
    *
-   * Minted once and never changed afterwards: it — not the name —
-   * is the anchor that lets bb_core_post_update_seed_default_workspace() find
-   * an already-seeded workspace and do nothing on a second run.
+   * Minted once and never changed afterwards: it — not the name — is the
+   * anchor that lets DefaultWorkspace::ensure() find an existing default
+   * workspace and do nothing on a second run.
    */
   public const DEFAULT_UUID = '2a92d03c-c4c6-41dc-b194-31aa299ed064';
 

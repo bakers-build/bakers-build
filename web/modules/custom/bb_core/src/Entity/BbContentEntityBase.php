@@ -15,8 +15,9 @@ use Drupal\bb_core\Access\WorkspaceResolverInterface;
  * Provides the common base for all bakers.build content entities.
  *
  * Adds the standard 'created' and 'changed' timestamp fields and exposes them
- * through the BbContentEntityInterface accessors so that every concrete bakers.build
- * entity inherits uniform creation/modification tracking without repetition.
+ * through the BbContentEntityInterface accessors so that every concrete
+ * bakers.build entity inherits uniform creation/modification tracking without
+ * repetition.
  */
 abstract class BbContentEntityBase extends ContentEntityBase implements BbContentEntityInterface {
 
@@ -47,11 +48,11 @@ abstract class BbContentEntityBase extends ContentEntityBase implements BbConten
    *
    * Fills the workspace segment of a product URL.
    *
-   * The one place a workspace-prefixed URL is composed; every bakers.build link goes
-   * through toUrl(). Keyed on the link template, not the rel: only templates
-   * containing `{bb_workspace}` get the parameter, otherwise Url would turn
-   * it into a query argument. The same pass swaps a type's own slot for its
-   * human reference, declared once in HUMAN_REFERENCE_FIELDS.
+   * The one place a workspace-prefixed URL is composed; every bakers.build link
+   * goes through toUrl(). Keyed on the link template, not the rel: only
+   * templates containing `{bb_workspace}` get the parameter, otherwise Url
+   * would turn it into a query argument. The same pass swaps a type's own slot
+   * for its human reference, declared once in HUMAN_REFERENCE_FIELDS.
    */
   protected function urlRouteParameters($rel) {
     $parameters = parent::urlRouteParameters($rel);

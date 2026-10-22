@@ -4,16 +4,16 @@
 // never from the uploaded log.
 import { claudeAgent, parseClaudeTranscript } from '@bakers-build/addon-claude';
 import {
-  FakeExecutor,
   FakeBbRemote,
+  FakeExecutor,
   FakeWorkspace,
   fakeExecutor,
   fakeRemote,
   fakeWorkspace,
 } from '@bakers-build/addon-fake';
 import type {
-  ConductorFileConfig,
   BbAgent,
+  ConductorFileConfig,
   ResolvedAgent,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';

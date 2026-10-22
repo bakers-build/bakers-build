@@ -176,8 +176,6 @@ describe('a departed screen leaves nothing standing (BB-340 F2)', () => {
       isSameNode(tui, rowId(TICKET), first),
       'and are new renderables, not the parked originals',
     ).toBe(false);
-    expect(tui.frame(), 'the list really is painted').toContain(
-      'BB-341 title',
-    );
+    expect(tui.frame(), 'the list really is painted').toContain('BB-341 title');
   });
 });

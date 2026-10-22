@@ -3,10 +3,10 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   type AddonEntry,
+  type BbConnectionConfig,
   discoverAddons,
   discoverScoped,
   findDefaultExportObject,
-  type BbConnectionConfig,
   machineContextPath,
   matchDelimiter,
   readMachineContext,

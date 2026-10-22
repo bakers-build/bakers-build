@@ -24,7 +24,7 @@ import { buildTicketQueryParams } from './query.js';
 /** One ticket offered as a possible parent, as the picker needs it. */
 export interface ParentCandidate {
   id: string;
-  /** `bakers.build-nnn`; falls back to the uuid, so nothing renders as blank. */
+  /** `BB-nnn`; falls back to the uuid, so nothing renders as blank. */
   identifier: string;
   title: string;
 }
@@ -33,7 +33,7 @@ export interface ParentCandidate {
  * The primary type's sparse fieldset.
  *
  * A `bb_ticket` carries its whole description, and a page holds up to 50 of
- * them; the picker renders `bakers.build-nnn · title` and needs nothing else.
+ * them; the picker renders `BB-nnn · title` and needs nothing else.
  */
 const FIELDS: string[] = ['identifier', 'title'];
 

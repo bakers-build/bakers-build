@@ -19,7 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Validates persistence and constraint enforcement for all bakers.build entity types.
+ * Validates persistence and constraints for all bakers.build entity types.
  *
  * Checks that each entity (group, project, conductor, ticket, comment,
  * run) can be saved/reloaded with all required schema fields, and that
@@ -551,11 +551,8 @@ final class EntitySchemaTest extends KernelTestBase {
   /**
    * Verifies the `cleaned_up_date` base field exists and round-trips.
    *
-   * A fresh install gets the column from baseFieldDefinitions() directly, so
-   * this is the schema-presence half of the claim (BB-451);
-   * bb_core_update_8026 covers the same claim on a site that already has a
-   * schema (Check 5, which cannot run here — a fresh install never exercises
-   * installFieldStorageDefinition).
+   * An install gets the column from baseFieldDefinitions() directly
+   * (BB-451).
    */
   public function testTicketPersistsCleanedUpDateField(): void {
     $fields = $this->container->get('entity_field.manager')->getBaseFieldDefinitions('bb_ticket');

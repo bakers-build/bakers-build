@@ -1,5 +1,7 @@
+uuid: 2cc177d7-c63a-4a9c-a390-2ebf23e08964
 langcode: en
 status: true
+dependencies: {  }
 id: bakers
 label: bakers.build
 provider: default

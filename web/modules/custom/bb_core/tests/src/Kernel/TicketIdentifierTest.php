@@ -115,7 +115,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * The ticket has a `number` field.
    */
   public function testNumberFieldExists(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $ticket = $this->createTicket($project, 'First');
     $this->assertTrue($ticket->hasField('number'));
   }
@@ -124,7 +124,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * Tickets in one project get sequential identifiers 1, 2, 3.
    */
   public function testSequentialPerProject(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $a = $this->createTicket($project, 'A');
     $b = $this->createTicket($project, 'B');
     $c = $this->createTicket($project, 'C');
@@ -139,7 +139,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * Two projects keep independent counters (BB-1 and WEB-1 coexist).
    */
   public function testTwoProjectsIndependent(): void {
-    $bakers = $this->createProject('Bb', 'bakers.build');
+    $bakers = $this->createProject('Bb', 'BB');
     $web = $this->createProject('Web Shop', 'WEB');
     $g1 = $this->createTicket($bakers, 'G1');
     $w1 = $this->createTicket($web, 'W1');
@@ -153,7 +153,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * Deleting the highest ticket does not lower the next number (no reuse).
    */
   public function testMonotonicAfterDelete(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $this->createTicket($project, 'A');
     $this->createTicket($project, 'B');
     $c = $this->createTicket($project, 'C');
@@ -166,7 +166,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * Re-saving a ticket never reallocates its number or identifier.
    */
   public function testResaveKeepsNumber(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $ticket = $this->createTicket($project, 'A');
     $this->assertSame('BB-1', $ticket->getIdentifier());
     $ticket->setTitle('A renamed');
@@ -181,7 +181,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * A frozen identifier survives a later rename of the project key.
    */
   public function testIdentifierFrozenOnKeyRename(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $ticket = $this->createTicket($project, 'A');
     $this->assertSame('BB-1', $ticket->getIdentifier());
     $project->set('key', 'CORE');
@@ -201,7 +201,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * past it instead of minting a duplicate identifier.
    */
   public function testDriftedCounterCannotReuseNumber(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $first = $this->createTicket($project, 'A');
     $this->assertSame('BB-1', $first->getIdentifier());
     // Counter drifts back onto the number just used.
@@ -217,7 +217,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * Allocation floors on max(number)+1 when the counter is well behind (AC-1).
    */
   public function testAllocationFloorsOnMaxNumber(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $this->createTicket($project, 'A');
     $this->createTicket($project, 'B');
     $this->createTicket($project, 'C');
@@ -236,7 +236,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * create draws the next distinct number.
    */
   public function testCreateAdvancesAfterUpdate(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $a = $this->createTicket($project, 'A');
     $a->setTitle('A renamed');
     $a->save();
@@ -254,7 +254,7 @@ final class TicketIdentifierTest extends KernelTestBase {
    * exactly one number and advances next_number by exactly one.
    */
   public function testConcurrentAllocationNoCollision(): void {
-    $project = $this->createProject('Bb', 'bakers.build');
+    $project = $this->createProject('Bb', 'BB');
     $a = $this->createTicket($project, 'A');
     $b = $this->createTicket($project, 'B');
     $this->assertNotSame($a->getIdentifier(), $b->getIdentifier());

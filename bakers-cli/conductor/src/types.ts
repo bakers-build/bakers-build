@@ -6,8 +6,8 @@
 
 import type { AgentRoutes } from '@bakers-build/core';
 import type { DropSHPlugin } from 'dropsh/plugin';
-import type { BbProjectSelection } from './cli/project-context.js';
 import type { ResolvedBbProjectContext } from './bakers-project-context.js';
+import type { BbProjectSelection } from './cli/project-context.js';
 import type { HookListener } from './plugins/executor.js';
 import type { LoadedInbox } from './plugins/message.js';
 import type {

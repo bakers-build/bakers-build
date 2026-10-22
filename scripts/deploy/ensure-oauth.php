@@ -2,11 +2,12 @@
 
 /**
  * @file
- * One-time OAuth consumer bootstrap for the bakers dropsh write-back transport.
- * Run via `drush php:script scripts/deploy/ensure-oauth.php` from the deliberate
- * one-shot `install` service ONLY (never from the per-deploy `deploy` service),
- * AFTER config:import and AFTER the team users and their workspace memberships
- * exist (bb_keytec recipe content).
+ * One-time per-user OAuth consumer bootstrap for conductor write-back.
+ *
+ * Run via `drush php:script scripts/deploy/ensure-oauth.php` from the
+ * deliberate one-shot `install` service ONLY (never from the per-deploy
+ * `deploy` service), AFTER config:import and AFTER the team users and their
+ * workspace memberships exist (deployment content).
  *
  * Provisions ONE confidential client_credentials consumer PER team user, bound
  * to that user, so the conductor authenticates and writes back AS the real
@@ -18,13 +19,11 @@
  * ranks (BB-359), so membership is the only source of it — and now the only
  * source of this seed too, rather than a second parallel answer on a role.
  *
- * The consumer is issued with the ONE bakers.build scope, `bb_session`, and issuing it
- * is not optional. The e2e world's `bb_e2e` scope is deleted — it gave that
- * world a ceiling of its own — but the surviving scope carries real
- * authority: for a `client_credentials` token
- * `Oauth2AccessPolicy::alterPermissions()` replaces the account's permissions
- * with EXACTLY the scope's, so a consumer seeded with no scopes mints no usable
- * token at all. Which ROWS the token then
+ * The consumer is issued with the ONE bakers.build scope, `bb_session`, and
+ * issuing it is not optional. The scope carries real authority: for a
+ * `client_credentials` token `Oauth2AccessPolicy::alterPermissions()` replaces
+ * the account's permissions with EXACTLY the scope's, so a consumer seeded
+ * with no scopes mints no usable token at all. Which ROWS the token then
  * reaches still comes from the account's ranks.
  *
  * `bb_session` is an UMBRELLA, and only its id is written here on purpose:
@@ -32,9 +31,7 @@
  * per-permission children at request time, so the ceiling can be widened or
  * narrowed in `config/sync` and the recipe without touching this script. The
  * corollary is that a site where the umbrella imported but its children did not
- * mints a perfectly valid token that can read nothing — which is why
- * `bb_core_post_update_delete_machine_roles_and_scopes()` logs a warning naming
- * the missing permissions rather than leaving that state silent.
+ * mints a perfectly valid token that can read nothing.
  *
  * CREATE-ONLY (BB-111): a consumer is seeded exactly once, when it is missing.
  * An existing consumer is NEVER touched — no re-hash, no rotation — so a
@@ -47,17 +44,11 @@
  * (`BB_CONSUMER_SECRET_<KUERZEL>`). Secrets come from the environment (one
  * Komodo variable per user), never from config.
  *
- * A SECOND, independent seed step follows the per-user loop: the shared
- * PUBLIC `bakers-cli` consumer (BB-494) that lets a human sign the CLI in
- * through the browser via OAuth `authorization_code` + PKCE, so no person
- * handles a personal `client_secret`. It carries no `user_id` and no secret
- * — PKCE plus the browser login step supply identity. It is the one named
- * exception to the create-only contract: a deploy adds its missing grants and
- * pins its access-token lifetime (OauthCliConsumer), and touches nothing else.
+ * The public `bakers-cli` consumer needs no secret; bb_core_install() creates
+ * it on every install path (Drupal\bb_core\Install\CliConsumer).
  */
 
 use Drupal\consumers\Entity\Consumer;
-use Drupal\bb_core\Deploy\OauthCliConsumer;
 use Drupal\bb_core\Deploy\OauthConsumerCandidates;
 use Drupal\bb_core\Deploy\OauthConsumerSecret;
 
@@ -124,46 +115,4 @@ foreach ($userStorage->loadMultiple($uids) as $user) {
   $consumer->save();
 
   printf("Seeded consumer %s -> user %s (uid %s) [created]\n", $clientId, $kuerzel, $user->id());
-}
-
-// The shared PUBLIC consumer for browser CLI sign-in (BB-494). Independent
-// of the per-user loop above: it is not bound to any account (no `user_id`,
-// no secret), so there is no candidate list to select and no secret to read
-// from the environment — PKCE plus the browser login step supply identity.
-$cliClientId = 'bakers-cli';
-$cliConsumers = $consumerStorage->loadByProperties(['client_id' => $cliClientId]);
-
-if ($cliConsumers) {
-  // The ONE named exception to this script's create-only contract
-  // (BB-550, extended): add the missing grants and pin the access-token
-  // lifetime; no secret, scopes or redirect is touched. Without it a control
-  // plane provisioned earlier never gains device sign-in or a refreshable
-  // session, since every other branch here refuses to write.
-  $cliConsumer = reset($cliConsumers);
-  $grants = array_column($cliConsumer->get('grant_types')->getValue(), 'value');
-  $wanted = OauthCliConsumer::grants($grants);
-  $ttl = (int) $cliConsumer->get('access_token_expiration')->value;
-
-  if ($wanted !== $grants || $ttl !== OauthCliConsumer::ACCESS_TOKEN_EXPIRATION) {
-    $cliConsumer->set('grant_types', $wanted);
-    $cliConsumer->set('access_token_expiration', OauthCliConsumer::ACCESS_TOKEN_EXPIRATION);
-    $cliConsumer->save();
-    printf("Updated grants and token lifetime of consumer %s [updated]\n", $cliClientId);
-  }
-  else {
-    printf("Kept existing consumer %s [untouched]\n", $cliClientId);
-  }
-}
-else {
-  $cliConsumer = Consumer::create(['client_id' => $cliClientId]);
-  $cliConsumer->set('label', 'bakers.build CLI');
-  $cliConsumer->set('is_default', FALSE);
-  $cliConsumer->set('confidential', FALSE);
-  $cliConsumer->set('grant_types', OauthCliConsumer::GRANTS);
-  $cliConsumer->set('access_token_expiration', OauthCliConsumer::ACCESS_TOKEN_EXPIRATION);
-  $cliConsumer->set('redirect', 'http://localhost:7432/callback');
-  $cliConsumer->set('scopes', [['scope_id' => 'bb_session']]);
-  $cliConsumer->save();
-
-  printf("Seeded consumer %s [created]\n", $cliClientId);
 }

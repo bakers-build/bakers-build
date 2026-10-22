@@ -609,11 +609,31 @@ export function footerTree(input: ChromeInput): VNode {
   // than gated like `R`, which only applies where a screen is reloadable.
   segments.push(footerKey('footer-workspace', 'W', ':workspace'));
   segments.push(footerKey('footer-quit', 'q', ':quit'));
-  const statusChildren: VNode[] = [
+  const keys: VNode[] = [
     // Leading pad so the row is not flush against the left edge.
     textNode({ id: 'footer-lead', content: ' ' }),
     // │ between notice / version / keys — never placed by hand.
     ...withActionPipes('footer-sep', segments),
+  ];
+  const statusChildren: VNode[] = [
+    // A right-pinned spinner or toast keeps its columns; the key list gives up
+    // its tail instead, as it does on any narrow terminal.
+    ...(input.busy || toast !== ''
+      ? [
+          h(
+            BoxRenderable,
+            {
+              id: 'footer-keys',
+              flexDirection: 'row',
+              height: 1,
+              flexShrink: 1,
+              minWidth: 0,
+              overflow: 'hidden',
+            },
+            ...keys,
+          ),
+        ]
+      : keys),
     ...(input.busy
       ? [
           textNode({

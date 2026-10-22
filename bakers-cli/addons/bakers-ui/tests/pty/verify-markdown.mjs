@@ -62,7 +62,7 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
 //   node verify-markdown.mjs --ticket BB-372
-//   node verify-markdown.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/pty-markdown.txt
+//   node verify-markdown.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-markdown.txt
 //
 //   --ticket <id>      the ticket to open (default BB-372)
 //   --cols/--rows <n>  the pty geometry (default 120x40)

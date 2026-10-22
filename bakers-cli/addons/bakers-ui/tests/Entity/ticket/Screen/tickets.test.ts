@@ -85,7 +85,7 @@ describe('the ticket list loader returns a page', () => {
   it('a full page with no links.next is the last page', async () => {
     const data = Array.from({ length: 20 }, (_, i) => ({
       id: `id-${i}`,
-      attributes: { identifier: `bakers.build-${i}` },
+      attributes: { identifier: `BB-${i}` },
     }));
     const client = { get: async () => ({ data, links: { self: {} } }) };
     const page = await loadFilteredTickets(
@@ -514,7 +514,7 @@ describe('the ticket screen holds and moves the page', () => {
   ) => ({
     data: Array.from({ length: rows }, (_, i) => ({
       id: `t${i}`,
-      attributes: { identifier: `bakers.build-${i}`, closed },
+      attributes: { identifier: `BB-${i}`, closed },
     })),
     ...(total === undefined ? {} : { meta: { count: total } }),
     links: last ? { self: {} } : { next: {} },
@@ -695,11 +695,11 @@ describe('the ticket screen holds and moves the page', () => {
     expect(bodyText(screen, held)).toMatch(/1–20 of 42 ticket\(s\)/);
 
     screen.handleInput('/', held);
-    screen.handleInput('G', held);
+    screen.handleInput('B', held);
     const meta = screen.present(held).meta;
     expect(meta).not.toMatch(/42/);
     // Nothing is established for the narrowed collection yet, so the line states
-    // the explicit unknown rather than the superseded 42 (D6d). `G` matches every
+    // the explicit unknown rather than the superseded 42 (D6d). `B` matches every
     // fixture identifier, so the narrowing dropped nothing and the window still
     // positions the rows (BB-312 D4) — only the TOTAL is unknown.
     expect(bodyText(screen, held)).toMatch(/1–20 of \? ticket\(s\)/);
@@ -740,10 +740,10 @@ describe('the ticket screen holds and moves the page', () => {
   it('the optimistic search narrowing KEEPS the window when it drops nothing (BB-312 D4)', async () => {
     const { screen, held } = await narrowingProbe();
     expect(screen.windowForTest()).toEqual({ offset: 0, limit: 20 });
-    // Every fixture identifier is `bakers.build-<n>`, so `G` matches all twenty: the rows
+    // Every fixture identifier is `BB-<n>`, so `B` matches all twenty: the rows
     // on screen are still the whole window and still sit where it says.
     screen.handleInput('/', held);
-    screen.handleInput('G', held);
+    screen.handleInput('B', held);
     expect(screen.rows).toHaveLength(20);
     expect(screen.windowForTest()).toEqual({ offset: 0, limit: 20 });
   });

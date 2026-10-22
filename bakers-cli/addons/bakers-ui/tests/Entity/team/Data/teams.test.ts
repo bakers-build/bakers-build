@@ -345,7 +345,7 @@ it('declares the three columns the list is asked for, and the noun rows key on',
 // The server half (a query_access rule plus bakers.build's own access handler) makes the
 // rows FILTERED rather than omitted, so a fixed deployment never sends this
 // shape. These cases are for the ones that are not fixed yet: a control plane
-// without the child scope `bb:session:view_bb_memberships`, or with an older
+// without the child scope `bb:session:view_bakers_memberships`, or with an older
 // bb_core.
 
 /** A 200 that WITHHELD its rows: the shape a refusing control plane sends. */

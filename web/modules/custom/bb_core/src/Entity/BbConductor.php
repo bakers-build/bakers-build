@@ -143,8 +143,7 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
       ->setSetting('allowed_values_function', TypeWorkflows::class . '::stateOptions')
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'options_select', 'weight' => 6]);
-    // Host capacity entity. Null only mid-migration until
-    // post_update links every row; registration always sets it.
+    // Host capacity entity; registration always sets it.
     $fields['machine'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Machine'))
       ->setSetting('target_type', 'bb_machine')

@@ -115,8 +115,7 @@ install:
   # listed the module since BB-389, so every environment has already
   # uninstalled it. `better_exposed_filters` and `views_autocomplete_filters`
   # (see its own comment above) stay installed for other exposed filters;
-  # `formblock` is retired by BB-683 (no remaining block consumer; see
-  # bb_core_post_update_reduce_backend_surface()).
+  # `formblock` is retired by BB-683 (no remaining block consumer).
   - bb_theme
   - ui_icons
   - formdazzle
@@ -127,18 +126,18 @@ install:
   # Time-scheduled (and further) triggers on ticket templates. Pulls in the
   # contrib Plugin module for its plugin field.
   - bb_ticket_trigger
-  # BB-658 — lets a keytec member connect their own claude.ai account via a
-  # fixed public OAuth client (Authorization Code + S256 PKCE, no dynamic
-  # client registration). `simple_oauth_21` is the umbrella module both
-  # submodules below depend on; `simple_oauth_server_metadata` supplies RFC
-  # 8414 `/.well-known/oauth-authorization-server` and RFC 9728
-  # `/.well-known/oauth-protected-resource` discovery with no controller code
-  # of ours, and `simple_oauth_pkce` enforces PKCE on the authorization_code
-  # grant. `simple_oauth_client_registration` (dynamic client registration) is
-  # deliberately NOT enabled — the user chose a fixed public client instead.
+  # MCP clients (claude.ai, ChatGPT, Cursor, …) connect through OAuth
+  # Authorization Code + S256 PKCE. `simple_oauth_21` is the umbrella module
+  # the submodules below depend on; `simple_oauth_server_metadata` supplies
+  # RFC 8414 `/.well-known/oauth-authorization-server` and RFC 9728
+  # `/.well-known/oauth-protected-resource` discovery, `simple_oauth_pkce`
+  # enforces PKCE on the authorization_code grant, and
+  # `simple_oauth_client_registration` lets every client register itself at
+  # `/oauth/register` (RFC 7591) instead of an admin creating its consumer.
   - simple_oauth_21
   - simple_oauth_server_metadata
   - simple_oauth_pkce
+  - simple_oauth_client_registration
   # BB-550 — RFC 8628 device authorization grant. Carries no config entity,
   # so it needs no `config: import:` entry on the recipe strict list.
   - bb_oauth_device
@@ -188,9 +187,9 @@ config:
   # RecipePreExistingConfigException and aborts the WHOLE recipe.
   #
   # That never fires on a virgin site — the config is not in active storage yet
-  # — so it looks fine and detonates on the SECOND application: `bb_e2e`,
-  # `bb_seed` and `bb_keytec_config` all depend on this recipe, so every
-  # `ddev init` constructs it again against a site that already has the config.
+  # — so it looks fine and detonates on the SECOND application: `bb_e2e` and
+  # `bb_seed` both depend on this recipe, so every `ddev init` constructs it
+  # again against a site that already has the config.
   #
   # A name may therefore be listed here only if the extension's source file is
   # the SAVED form, key for key. That is achievable for config whose schema we
@@ -202,7 +201,7 @@ config:
     # Create bb_core/config/install/filter.format.bb_rich.yml reliably.
     # config/install is not applied reliably at recipe-install time (unmet module
     # deps at enable → silently skipped). config.import is idempotent (including
-    # repeated application through bb_seed/bb_keytec).
+    # repeated application through bb_seed/bb_e2e).
     bb_core:
       - filter.format.bb_rich
       # Binds bb_rich to the bb_markdown text editor; imported by name for

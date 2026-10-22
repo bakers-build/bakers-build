@@ -172,8 +172,8 @@ final class TicketEnvVarsFieldAccessTest extends KernelTestBase {
       'plain reader' => $this->createUser('eq-reader', ['view bb_ticket']),
       'ticket editor' => $this->createUser('eq-editor', ['view bb_ticket', 'update any bb_ticket']),
       'admin' => $this->createUser('eq-admin', ['administer bakers']),
-      // Holds a bakers.build permission but not `view bb_ticket`, so the entity is
-      // closed to it — the case that separates the field gate from entity
+      // Holds a bakers.build permission but not `view bb_ticket`, so the entity
+      // is closed to it — the case that separates the field gate from entity
       // access, and the reason this test is an equality.
       'outsider' => $this->createUser('eq-outsider', ['view bb_run']),
     ];

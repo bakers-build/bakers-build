@@ -67,9 +67,7 @@ describe('the ticket detail copies to the operator’s clipboard', () => {
     const { screen, context, copied } = harness();
     expect(screen.handleInput('Y', context)).toBe(true);
     expect(copied).toEqual([`${BASE}/admin/bakers/ticket/uuid-of-1`]);
-    expect(screen.present(context).status).toContain(
-      'copied the link to BB-1',
-    );
+    expect(screen.present(context).status).toContain('copied the link to BB-1');
   });
 
   it('keeps the standing key hints beside the copy notice', () => {

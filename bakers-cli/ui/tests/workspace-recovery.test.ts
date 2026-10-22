@@ -194,10 +194,9 @@ it('picks up a workspace named in the local project config, without any prompt',
         process.stdout.write = (() => true) as typeof stdout;
         await opts
           .buildProgram({ plugins: opts.connection.authPlugins })
-          .parseAsync(
-            ['search', 'bb_workspace', '--bundle', 'bb_workspace'],
-            { from: 'user' },
-          );
+          .parseAsync(['search', 'bb_workspace', '--bundle', 'bb_workspace'], {
+            from: 'user',
+          });
       } finally {
         process.stdout.write = stdout;
       }

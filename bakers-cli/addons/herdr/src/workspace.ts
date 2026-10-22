@@ -1,10 +1,10 @@
 import { resolve } from 'node:path';
 import { loadInstructions } from '@bakers-build/addon-workspace-git';
 import type {
+  BbWorkspace,
   ConductorFileConfig,
   EnsuredWorkspace,
   ExecutorDeps,
-  BbWorkspace,
   WorkspacePlugin,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';

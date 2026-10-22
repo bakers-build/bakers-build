@@ -1080,7 +1080,7 @@ Given('the workspace has an open ticket and a closed ticket assigned to me', asy
   const snippet = [
     '$etm = \\Drupal::entityTypeManager();',
     '$ts = $etm->getStorage("bb_ticket");',
-    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "bakers.build"]));',
+    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
     'if (!$p) { print "NO_PROJECT"; return; }',
     `$open = current($ts->loadByProperties(["title" => "${OPEN_FIXTURE_TICKET_TITLE}"]));`,
     'if (!$open) {',
@@ -1265,7 +1265,7 @@ Given('the workspace has tickets from origin issues 19, 190 and twice 20', async
   const result = php([
     '$etm = \\Drupal::entityTypeManager();',
     '$ts = $etm->getStorage("bb_ticket");',
-    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "bakers.build"]));',
+    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
     'if (!$p) { print "NO_PROJECT"; return; }',
     ...upserts,
     'print "OK";',

@@ -142,7 +142,7 @@ final class WorkspaceReadScopeIsolationTest extends KernelTestBase {
   }
 
   /**
-   * An account with no membership at all sees nothing of the eight bakers.build types.
+   * An account with no membership sees nothing of the eight bakers.build types.
    *
    * D7 guard 3, and the reason it is a falsified group rather than an empty
    * `IN` list: an empty list is a database-level accident waiting to differ per

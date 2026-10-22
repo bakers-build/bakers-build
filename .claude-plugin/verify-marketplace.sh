@@ -59,7 +59,7 @@ echo "Scenario: the shipped skill set is exactly bakers"
 # for — one plugin, and no second skill bundle sitting in the same directory that a
 # reader would take for a shipped one.
 SKILLS="$(cd .claude/skills && ls -1)"
-[ "$SKILLS" = "bakers" ] || fail ".claude/skills holds more than the bakers bundle: $SKILLS"
-ok "bakers is the only project skill bundle, and it is the one the marketplace ships"
+[ "$SKILLS" = "bakers-build" ] || fail ".claude/skills holds more than the bakers-build bundle: $SKILLS"
+ok "bakers-build is the only project skill bundle, and it is the one the marketplace ships"
 
 echo "ALL SCENARIOS GREEN"

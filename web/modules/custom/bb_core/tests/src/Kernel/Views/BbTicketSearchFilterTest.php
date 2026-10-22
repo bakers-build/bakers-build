@@ -92,7 +92,7 @@ final class BbTicketSearchFilterTest extends KernelTestBase {
     $this->indexTickets();
 
     $expected = [(int) $first->id(), (int) $second->id()];
-    self::assertSame($expected, $this->ticketIds('page_1', [], 'bakers#20'));
+    self::assertSame($expected, $this->ticketIds('page_1', [], 'bakers-build#20'));
     // A bare `#20` resolves through the project argument's repository.
     self::assertSame($expected, $this->ticketIds('project_tickets', [$this->fixture('a', 'bb_project')->uuid()], '#20'));
     self::assertSame($expected, $this->ticketIds('page_1', [], 'https://git.key-tec.de/bakers-build/bakers-build/-/issues/20'));
@@ -156,7 +156,7 @@ final class BbTicketSearchFilterTest extends KernelTestBase {
       $form_state->setValue('title', 'nosuchrepo#1');
       $view->filter['search_api_fulltext']->validateExposed($form, $form_state);
       $errors = array_map('strval', $form_state->getErrors());
-      self::assertSame(['title' => 'No repository matches "nosuchrepo". Known in your projects: bakers.'], $errors);
+      self::assertSame(['title' => 'No repository matches "nosuchrepo". Known in your projects: bakers-build.'], $errors);
     });
     self::assertSame([], $this->ticketIds('page_1', [], 'nosuchrepo#1'));
   }

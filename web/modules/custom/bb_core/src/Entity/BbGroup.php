@@ -22,7 +22,7 @@ use Drupal\user\EntityOwnerInterface;
 use Drupal\bb_core\Form\BbEntityDetailCardForm;
 
 /**
- * Represents a bakers.build group — the top-level organisational and billing unit.
+ * Represents a group — the top-level organisational and billing unit.
  *
  * Each group record stores a human-readable name and an optional structured
  * billing profile used for cost attribution and invoicing.
@@ -104,10 +104,8 @@ final class BbGroup extends BbContentEntityBase implements BbGroupInterface, Ent
     $fields['image'] = static::imageBaseFieldDefinition('group-images', 2);
     $fields['billing_profile'] = BaseFieldDefinition::create('map')
       ->setLabel(new TranslatableMarkup('Billing profile'));
-    // The tenancy root this group belongs to. Required as a
-    // validation constraint rather than a NOT NULL column, which is exactly
-    // what makes the migration possible: the column can exist empty and be
-    // filled by bb_core_post_update_seed_default_workspace() afterwards.
+    // The tenancy root this group belongs to. Required as a validation
+    // constraint rather than a NOT NULL column.
     $fields['workspace_id'] = static::workspaceBaseFieldDefinition(5)
       // The workspace edge may only point at one the acting account belongs
       // to, and — under a workspace-scoped route — at the one being created

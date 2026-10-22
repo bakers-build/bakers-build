@@ -21,8 +21,8 @@ use PHPUnit\Framework\Attributes\Group;
  *
  * THE SECOND CLAIM MOVED AGAIN, TASK 26. The `ui_patterns` Source this class
  * used to assert (`BbOverlaySource`) is itself gone — `shell.twig` now paints
- * `#bakers-overlay` directly, unconditionally, rather than through a page-layout
- * source — so "what paints the place it lands in" is covered by
+ * `#bakers-overlay` directly, unconditionally, rather than through a
+ * page-layout source — so "what paints the place it lands in" is covered by
  * `ShellOverlayTargetTest` instead. What stays here is only the first claim.
  *
  * WHAT GATES IT NOW. The island had two doors — its host's own

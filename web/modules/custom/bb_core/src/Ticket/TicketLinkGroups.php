@@ -106,10 +106,10 @@ final class TicketLinkGroups {
   /**
    * The row's kind: the stored one when it is valid, else derived from the URI.
    *
-   * The fallback is not defensive decoration. `options.bakers.kind` has only been
-   * written since normalisation existed, and an unknown value — from an import,
-   * or from a hand-edited field — would otherwise put the link in no group at
-   * all, which is indistinguishable from losing it.
+   * The fallback is not defensive decoration. `options.bakers.kind` has only
+   * been written since normalisation existed, and an unknown value — from an
+   * import, or from a hand-edited field — would otherwise put the link in no
+   * group at all, which is indistinguishable from losing it.
    *
    * @param string $uri
    *   The link URI.

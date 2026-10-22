@@ -5,8 +5,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_ticket.full
   module:
-    - display_builder
     - bb_core
+    - display_builder
     - link
   enforced:
     config:

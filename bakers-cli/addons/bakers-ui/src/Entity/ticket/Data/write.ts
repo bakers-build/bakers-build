@@ -89,10 +89,7 @@ export function buildTicketCreateBody(
   };
   const assignee = one('user--user', payload.assignee?.id);
   if (assignee) relationships.assignee_user_id = assignee;
-  const conductor = one(
-    'bb_conductor--bb_conductor',
-    payload.conductor?.id,
-  );
+  const conductor = one('bb_conductor--bb_conductor', payload.conductor?.id);
   if (conductor) relationships.conductor_id = conductor;
   if (payload.labels.length > 0) {
     relationships.labels = {

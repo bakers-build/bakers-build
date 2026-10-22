@@ -38,7 +38,7 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
 //   node verify-mouse-modes.mjs
-//   node verify-mouse-modes.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/pty-mouse-modes-after.txt
+//   node verify-mouse-modes.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-mouse-modes-after.txt
 //
 //   Exit code: 0 on `RESULT: OK`, 1 otherwise.
 
@@ -121,9 +121,7 @@ const finish = (bootBytes) => {
   say(`# cwd:      ${REPO_ROOT}`);
   say('# pty:      120x40, TERM=xterm-256color');
   say('#');
-  say(
-    '# BB-241 AC-1/AC-2 — SGR button-event reporting is enabled and undone.',
-  );
+  say('# BB-241 AC-1/AC-2 — SGR button-event reporting is enabled and undone.');
   say('# BB-241 AC-9 — motion tracking must not be enabled: ?1002h/?1003h');
   say(
     '#                 take the terminal’s own text selection away. ?1003h is',

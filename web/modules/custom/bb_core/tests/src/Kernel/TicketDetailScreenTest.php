@@ -120,14 +120,14 @@ final class TicketDetailScreenTest extends KernelTestBase {
       ->set('timezone.user.configurable', FALSE)
       ->save();
     $this->installTicketDetailDisplays();
-    // `administer bakers` IS THE RUN ROWS' PRECONDITION, and it is stated rather
-    // than inherited from being uid 1. `bb_run` declares that as its
+    // `administer bakers` IS THE RUN ROWS' PRECONDITION, and it is stated
+    // rather than inherited from being uid 1. `bb_run` declares that as its
     // `admin_permission`, and `EntityReferenceEntityFormatter` filters its
     // referenced entities by `view` access — so a reader without it gets the
     // Run history heading over an empty zone, which is exactly the shape the
     // unbound `items` prop produced. Reproduced here: with no permission the
-    // zone renders 0 rows and every assertion below fails for the wrong
-    // reason. uid 1 does NOT bypass this in a kernel test.
+    // zone renders 0 rows and every assertion below fails for the wrong reason.
+    // uid 1 does NOT bypass this in a kernel test.
     $this->setUpCurrentUser(['uid' => 1], ['administer bakers']);
     $this->installTicketNavigationViews();
     $this->installRunsNavigationViews();
@@ -173,14 +173,14 @@ final class TicketDetailScreenTest extends KernelTestBase {
       'title' => 'Add designbook entity view-mode for bb_ticket',
       'state' => 'coding',
       'project_id' => $project->id(),
-      // THE DESCRIPTION IS NOT DECORATION HERE. The `full` display's About
-      // zone feeds `rich-text.body` from `description:processed`. It USED TO BE
-      // a REQUIRED prop, and an empty description dropped it and made SDC
-      // refuse the whole render: measured on the live screen,
-      // `/bakers/ticket/GL-E2E-DROPSH` answered 500 where `/bakers/ticket/BB-142`
-      // answered 200. The test named for that case is below; the fixture states
-      // a description so every OTHER assertion here measures the Run history
-      // zone and not that.
+      // THE DESCRIPTION IS NOT DECORATION HERE. The `full` display's About zone
+      // feeds `rich-text.body` from `description:processed`. It USED TO BE a
+      // REQUIRED prop, and an empty description dropped it and made SDC refuse
+      // the whole render: measured on the live screen,
+      // `/bakers/ticket/GL-E2E-DROPSH` answered 500 where
+      // `/bakers/ticket/BB-142` answered 200. The test named for that case is
+      // below; the fixture states a description so every OTHER assertion here
+      // measures the Run history zone and not that.
       'description' => ['value' => 'Wire the ticket detail screen.', 'format' => 'bb_rich'],
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -1477,8 +1477,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * Gives the ticket one link of every kind, saved through the normaliser.
    *
    * Saved rather than set, because `BbTicket::preSave()` is what writes
-   * `options.bakers.kind` — a fixture that set the options by hand would test the
-   * mapper against data the application never produces.
+   * `options.bakers.kind` — a fixture that set the options by hand would test
+   * the mapper against data the application never produces.
    */
   private function giveTheTicketItsLinks(): void {
     $this->ticket->set('links', [

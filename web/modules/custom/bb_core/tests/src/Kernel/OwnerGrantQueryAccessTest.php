@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Query access on the owner-granted bakers.build entities agrees with checkAccess().
+ * Query access on owner-granted entities agrees with checkAccess().
  *
  * The bb_conductor and bb_run types grant view to the account that owns
  * the row on top of the `view <type>` permission. This asserts the SQL gate

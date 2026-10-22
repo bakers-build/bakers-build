@@ -5,8 +5,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_run.overlay
   module:
-    - display_builder
     - bb_core
+    - display_builder
   enforced:
     config:
       - bb_core.bb_vocabulary.bb_labels

@@ -115,7 +115,6 @@ class DeviceAuthorizationController extends ControllerBase {
       // Not access_denied (the CLI treats it as terminal) and not slow_down
       // (token endpoint only): RFC 6749 §5.2 has no rate-limit code, so
       // invalid_request with a hint, at HTTP 429.
-      //.
       $exception = new OAuthServerException(
         'Too many device authorization requests. Try again later.',
         429,
@@ -135,7 +134,6 @@ class DeviceAuthorizationController extends ControllerBase {
    * named scope on the device_code path, and a grant-level default scope is
    * overwritten by the server. So the default is injected as the request's
    * own `scope` parameter and a named scope is checked against the consumer.
-   *.
    */
   protected function applyScope(
     ServerRequestInterface $server_request,

@@ -23,7 +23,9 @@ function tsFiles(dir: string): string[] {
 describe('@bakers-build/ui does not statically import the renderer (BB-201)', () => {
   it("has no `from '@bakers-build/addon-bakers-ui'` in src", () => {
     const offenders = tsFiles(srcDir).filter((f) =>
-      /from\s+['"]@bakers-ai\/addon-bakers-ui['"]/.test(readFileSync(f, 'utf8')),
+      /from\s+['"]@bakers-build\/addon-bakers-ui['"]/.test(
+        readFileSync(f, 'utf8'),
+      ),
     );
     expect(offenders).toEqual([]);
   });

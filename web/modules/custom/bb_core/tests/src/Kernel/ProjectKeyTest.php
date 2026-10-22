@@ -102,10 +102,10 @@ final class ProjectKeyTest extends KernelTestBase {
   }
 
   /**
-   * A blank name falls back to the bakers.build key.
+   * A blank name falls back to the BB key.
    */
   public function testKeyFallsBackToBbWhenNameEmpty(): void {
-    $this->assertSame('bakers.build', $this->makeProject('')->get('key')->value);
+    $this->assertSame('BB', $this->makeProject('')->get('key')->value);
   }
 
   /**
@@ -133,7 +133,7 @@ final class ProjectKeyTest extends KernelTestBase {
    */
   public function testValidKeyPassesValidation(): void {
     $project = $this->makeProject('Bb');
-    $project->set('key', 'bakers.build');
+    $project->set('key', 'BB');
     $this->assertCount(0, $project->validate());
   }
 

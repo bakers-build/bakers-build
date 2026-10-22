@@ -27,7 +27,7 @@ final class OauthDiscoveryMetadataTest extends KernelTestBase {
     'system', 'user', 'serialization', 'options', 'image', 'file',
     'consumers', 'simple_oauth',
     'simple_oauth_21', 'simple_oauth_server_metadata', 'simple_oauth_pkce',
-    'bb_core',
+    'simple_oauth_client_registration', 'bb_core',
   ];
 
   /**
@@ -40,6 +40,7 @@ final class OauthDiscoveryMetadataTest extends KernelTestBase {
     $this->installEntitySchema('file');
     $this->installConfig([
       'simple_oauth', 'simple_oauth_server_metadata', 'simple_oauth_pkce',
+      'simple_oauth_client_registration',
     ]);
   }
 
@@ -117,8 +118,8 @@ final class OauthDiscoveryMetadataTest extends KernelTestBase {
   /**
    * The required grant types are advertised among the supported ones.
    *
-   * `authorization_code` and `refresh_token` — the two grants the
-   * `claude-connector` consumer is seeded with.
+   * `authorization_code` and `refresh_token` — the two grants a registered
+   * MCP client uses.
    */
   public function testRequiredGrantTypesAreAdvertised(): void {
     $metadata = $this->serverMetadata()->getServerMetadata();
@@ -143,21 +144,17 @@ final class OauthDiscoveryMetadataTest extends KernelTestBase {
   }
 
   /**
-   * BB-688 AC-01: no usable `registration_endpoint` is advertised.
+   * MCP clients find the dynamic client registration endpoint.
    *
-   * DCR stays off (ticket "Nicht" / out-of-scope): either the key is absent,
-   * or `registration_endpoint_auth_methods_supported` is empty — either
-   * shape means claude.ai has nothing to actually register against.
+   * Any MCP client registers itself at `/oauth/register` (RFC 7591) instead of
+   * an admin creating a consumer per client; login and PKCE still guard every
+   * token.
    */
-  public function testNoUsableRegistrationEndpointIsAdvertised(): void {
+  public function testTheRegistrationEndpointIsAdvertised(): void {
     $metadata = $this->serverMetadata()->getServerMetadata();
 
-    if (array_key_exists('registration_endpoint', $metadata) && $metadata['registration_endpoint'] !== NULL) {
-      self::assertEmpty(
-        $metadata['registration_endpoint_auth_methods_supported'] ?? [],
-        'registration_endpoint is present but not usable (no supported auth method)',
-      );
-    }
+    self::assertArrayHasKey('registration_endpoint', $metadata);
+    self::assertStringEndsWith('/oauth/register', (string) $metadata['registration_endpoint']);
   }
 
   /**

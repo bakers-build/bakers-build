@@ -2,8 +2,8 @@ uuid: e8a896e1-0982-4167-a833-82893760e24d
 langcode: en
 status: true
 dependencies: {  }
-id: bb_session_register_bb_conductor
-name: 'bb:session:register_bb_conductor'
+id: bb_session_register_bakers_conductor
+name: 'bb:session:register_bakers_conductor'
 description: 'bakers.build session ceiling — register bakers conductor'
 grant_types:
   client_credentials:

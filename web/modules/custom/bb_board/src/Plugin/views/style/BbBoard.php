@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * The plugin reads ticket entities, not field output. Card status, assignee
  * marks and lease live in {@see ProjectBoard}. Column placement is each
  * column display's filters on general index fields. The theme's
- * `views-view-bakers-board.html.twig` turns the cards into board-card. Empty
+ * `views-view-bb-board.html.twig` turns the cards into board-card. Empty
  * results still render: the column chrome stays up with an empty sentence.
  */
 #[ViewsStyle(

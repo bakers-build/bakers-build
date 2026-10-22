@@ -12,13 +12,14 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 /**
  * The shell's own template paints the overlay swap target now (Task 26).
  *
- * WHAT REPLACED WHAT. Until this task the empty `#bakers-overlay` container came
- * from `BbOverlaySource`, a ui_patterns Source addressed from the `overlay`
- * slot of both copies of the shell page layout. That indirection existed only
- * because `shell.twig`'s overlay region was guarded by `{% if overlay %}`, so
- * an empty slot painted no wrapper at all. This task drops the guard and puts
- * the id directly on the wrapper the component already renders — the source,
- * its class and the page layout's `bb_overlay` entry are gone.
+ * WHAT REPLACED WHAT. Until this task the empty `#bakers-overlay` container
+ * came from `BbOverlaySource`, a ui_patterns Source addressed from the
+ * `overlay` slot of both copies of the shell page layout. That indirection
+ * existed only because `shell.twig`'s overlay region was guarded by
+ * `{% if overlay %}`, so an empty slot painted no wrapper at all. This task
+ * drops the guard and puts the id directly on the wrapper the component already
+ * renders — the source, its class and the page layout's `bb_overlay` entry are
+ * gone.
  *
  * THE ONE REAL COST, PAID HERE. `TicketCreateActionSource::TARGET_ID` (BB-420
  * Task 36 moved it there when `BbDialogPlacement` was deleted — the action is

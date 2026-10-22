@@ -244,8 +244,8 @@ final class TicketListRouteTest extends KernelTestBase {
   /**
    * Only the rail and the account link claim this route, both `bb_core`.
    *
-   * My work in `bakers-rail` and Back to workspace in `bakers-account`. A renamed
-   * route would leave both links silently inaccessible, so the claim is
+   * My work in `bakers-rail` and Back to workspace in `bakers-account`. A
+   * renamed route would leave both links silently inaccessible, so the claim is
    * asserted by name.
    */
   public function testOnlyTheRailAndAccountLinksClaimTheViewRoute(): void {

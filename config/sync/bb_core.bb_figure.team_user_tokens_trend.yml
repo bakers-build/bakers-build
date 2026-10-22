@@ -3,16 +3,16 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.run_tokens
+    - bb_core.bb_measurement.run_tokens
 _core:
   default_config_hash: bakers548_team_user_tokens_trend
 id: team_user_tokens_trend
-label: Tokens trend
+label: 'Tokens trend'
 description: "Tokens over time, by day or month. Date basis: run creation time. Attribution basis: the ticket's current assignee, this team member. Token unit: consumption."
 weight: 3
 widget: grouped_horizontal_bars
 measurements:
-- run_tokens
+  - run_tokens
 categories:
   type: days
 series: {  }
@@ -21,25 +21,28 @@ filters:
     label: Period
     default: '7'
     options:
-    - value: '7'
-      label: 7 days
-    - value: '30'
-      label: 30 days
-    - value: '365'
-      label: 1 year
+      -
+        value: '7'
+        label: '7 days'
+      -
+        value: '30'
+        label: '30 days'
+      -
+        value: '365'
+        label: '1 year'
 context_shape:
-- team
-- user
+  - team
+  - user
 conditions:
   team:
     id: bb_route_context
-    entity_type: bb_team
     negate: false
     context_mapping:
       entity: team
+    entity_type: bb_team
   user:
     id: bb_route_context
-    entity_type: user
     negate: false
     context_mapping:
       entity: user
+    entity_type: user

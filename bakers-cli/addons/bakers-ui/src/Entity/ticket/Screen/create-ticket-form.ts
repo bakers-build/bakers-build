@@ -507,7 +507,7 @@ export class CreateTicketFormScreen extends AsyncModalScreen<CreateFormOptions> 
   ): Promise<void> {
     if (this.submitting) return;
     // D8 — a project is a PRECONDITION, not a fallback. Without `project_id`
-    // the server writes a ticket that draws no number and gets no bakers.build-nnn
+    // the server writes a ticket that draws no number and gets no BB-nnn
     // identifier (`BbTicket::allocateNumber()` returns early), which is worse
     // than not writing one. BB-664 AC-8: with no project already in scope the
     // popup shows a Project field instead of refusing outright, so the

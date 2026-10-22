@@ -77,7 +77,7 @@ export async function submitAddress(page: Page, address: string): Promise<void> 
     // makes the browser refuse an empty or malformed value, so without this the
     // form never POSTs and a caller waits for a navigation that cannot happen —
     // while what the scenarios assert is DRUPAL's server-side answer.
-    await page.locator('form#bakers-login-form').evaluate((form: HTMLFormElement) => {
+    await page.locator('form#bb-login-form').evaluate((form: HTMLFormElement) => {
         form.noValidate = true;
     });
     await page.getByLabel('E-mail address', { exact: true }).fill(address);

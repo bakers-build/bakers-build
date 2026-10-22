@@ -15,8 +15,8 @@ import type {
 import type { ProcProbe } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  buildConductorProgram,
   type BbCliDeps,
+  buildConductorProgram,
   strayConductorsOf,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
@@ -278,7 +278,11 @@ export default {
 
       const repoRoot = join(home, 'real-checkout');
       const repoBbDir = join(repoRoot, '.bakers');
-      const linkedWorktree = join(home, '.bakers-worktrees', 'real-other-ticket');
+      const linkedWorktree = join(
+        home,
+        '.bakers-worktrees',
+        'real-other-ticket',
+      );
       const worktreeBbDir = join(linkedWorktree, '.bakers');
       for (const dir of [repoBbDir, worktreeBbDir]) {
         mkdirSync(dir, { recursive: true });

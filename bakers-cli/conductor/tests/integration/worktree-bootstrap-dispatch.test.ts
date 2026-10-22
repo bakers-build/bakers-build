@@ -35,8 +35,8 @@ import { fileURLToPath } from 'node:url';
 import { FakeBbRemote } from '@bakers-build/addon-fake';
 import { HerdrExecutor, HerdrWorkspace } from '@bakers-build/addon-herdr';
 import type {
-  ConductorFileConfig,
   BbAgent,
+  ConductorFileConfig,
 } from '@bakers-build/conductor/contract';
 import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import { createLogger } from '@bakers-build/core';

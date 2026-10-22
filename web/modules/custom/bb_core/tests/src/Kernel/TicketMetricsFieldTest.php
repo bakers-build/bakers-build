@@ -94,8 +94,7 @@ final class TicketMetricsFieldTest extends KernelTestBase {
   /**
    * A fresh install already has the metrics storage (AC-5).
    *
-   * BaseFieldDefinitions creates the column on a fresh install, so the
-   * server-only update hook bb_core_update_8011 is a guarded no-op there.
+   * BaseFieldDefinitions creates the column on a fresh install.
    */
   public function testFreshInstallHasMetricsStorage(): void {
     $storage_definitions = $this->container->get('entity_field.manager')

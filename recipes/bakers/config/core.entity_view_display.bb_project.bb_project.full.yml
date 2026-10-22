@@ -4,8 +4,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_project.full
   module:
-    - display_builder
     - bb_core
+    - display_builder
 third_party_settings:
   display_builder:
     profile: default
@@ -136,4 +136,3 @@ hidden:
   repository: true
   search_api_excerpt: true
   teams: true
-

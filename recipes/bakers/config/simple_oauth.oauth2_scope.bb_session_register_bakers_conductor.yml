@@ -1,10 +1,9 @@
-uuid: f61bddc5-658f-4c7f-b460-9fc3686383f1
 langcode: en
 status: true
 dependencies: {  }
-id: bb_session_view_bb_memberships
-name: 'bb:session:view_bb_memberships'
-description: 'bakers.build session ceiling — view bakers memberships'
+id: bb_session_register_bakers_conductor
+name: 'bb:session:register_bakers_conductor'
+description: 'bakers.build session ceiling — register bakers conductor'
 grant_types:
   client_credentials:
     status: true
@@ -13,4 +12,4 @@ umbrella: false
 parent: bb_session
 granularity_id: permission
 granularity_configuration:
-  permission: 'view bakers memberships'
+  permission: 'register bakers conductor'

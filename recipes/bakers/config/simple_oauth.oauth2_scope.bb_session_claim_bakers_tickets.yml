@@ -1,9 +1,8 @@
-uuid: 4f5dc197-f242-41c9-b6bb-461bf1972b3f
 langcode: en
 status: true
 dependencies: {  }
-id: bb_session_claim_bb_tickets
-name: 'bb:session:claim_bb_tickets'
+id: bb_session_claim_bakers_tickets
+name: 'bb:session:claim_bakers_tickets'
 description: 'bakers.build session ceiling — claim bakers tickets'
 grant_types:
   client_credentials:

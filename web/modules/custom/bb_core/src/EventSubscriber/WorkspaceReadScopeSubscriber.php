@@ -19,7 +19,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  *
  * Organic Groups decides access per entity, never per query; this subscriber
  * adds one condition per in-scope entity type. It listens on the qualified
- * `entity.query_access.<type>` events, so non-bakers.build types are never touched.
+ * `entity.query_access.<type>` events, so non-bakers.build types are never
+ * touched.
  *
  * Narrowing is `AND(<original>, <ours>)` because appending to `OR` widens, and
  * conditions stay single-level because Views maps a traversal onto the wrong
@@ -71,10 +72,10 @@ final class WorkspaceReadScopeSubscriber implements EventSubscriberInterface {
    * Named here rather than derived, because `og_membership` declares no
    * `admin_permission`: `isBypassed()` therefore falls back to a permission
    * (`administer og_membership`) that does not exist and nobody can hold, which
-   * would narrow uid 1 and every `administer bakers` operator too. Both bypasses
-   * are listed — bakers.build's own, so a membership collection behaves like every
-   * other bakers.build collection for an administrator, and OG's, so OG's site-wide
-   * administrator keeps the reach OG gives it.
+   * would narrow uid 1 and every `administer bakers` operator too. Both
+   * bypasses are listed — bakers.build's own, so a membership collection
+   * behaves like every other bakers.build collection for an administrator, and
+   * OG's, so OG's site-wide administrator keeps the reach OG gives it.
    *
    * @var array<string>
    */
@@ -87,10 +88,10 @@ final class WorkspaceReadScopeSubscriber implements EventSubscriberInterface {
    * The types whose own handler already grants the row's owner.
    *
    * BbOwnerGrantQueryAccessHandler puts `owner_user_id = <uid>` into an `OR`
-   * group, and `bakers ui` depends on it: the Conductors tab reads conductors and
-   * runs through that grant alone. So the scope condition for these two types
-   * carries the owner as a further `OR` member and the composition can never
-   * remove it.
+   * group, and `bakers ui` depends on it: the Conductors tab reads conductors
+   * and runs through that grant alone. So the scope condition for these two
+   * types carries the owner as a further `OR` member and the composition can
+   * never remove it.
    *
    * @var array<string>
    */
@@ -117,9 +118,9 @@ final class WorkspaceReadScopeSubscriber implements EventSubscriberInterface {
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager, for the owner key of the two granted types.
    * @param \Drupal\bb_core\Access\MembershipResolutionGuard $guard
-   *   The guard that tells this listener when bakers.build's own membership resolution
-   *   is on the stack, so the og_membership rule does not filter the reads it
-   *   is computed from.
+   *   The guard that tells this listener when bakers.build's own membership
+   *   resolution is on the stack, so the og_membership rule does not filter the
+   *   reads it is computed from.
    * @param \Drupal\bb_core\Access\BbRankCapabilityInterface $capability
    *   Answers a permission per workspace rather than as the OG union.
    */
@@ -346,12 +347,13 @@ final class WorkspaceReadScopeSubscriber implements EventSubscriberInterface {
   /**
    * Whether the membership rule may narrow this account's query at all.
    *
-   * Exempt: bakers.build's own membership resolution (a falsified one makes every
-   * account look rankless; see MembershipResolutionGuard); anonymous, because
-   * drush/deploy/cron paths look up someone else's membership and a NULL
-   * answer makes the caller's `Og::createMembership()` abort as a duplicate,
-   * while the access handler still refuses anonymous every row; and the admin
-   * bypass permissions, because og_membership declares no `admin_permission`.
+   * Exempt: bakers.build's own membership resolution (a falsified one makes
+   * every account look rankless; see MembershipResolutionGuard); anonymous,
+   * because drush/deploy/cron paths look up someone else's membership and a
+   * NULL answer makes the caller's `Og::createMembership()` abort as a
+   * duplicate, while the access handler still refuses anonymous every row; and
+   * the admin bypass permissions, because og_membership declares no
+   * `admin_permission`.
    *
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The account being narrowed.

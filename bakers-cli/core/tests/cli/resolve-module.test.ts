@@ -36,7 +36,9 @@ describe('resolveModuleEslintStyle', () => {
 
   it('returns undefined when no base resolves the specifier', () => {
     expect(
-      resolveModuleEslintStyle('@bakers-build/does-not-exist', [import.meta.url]),
+      resolveModuleEslintStyle('@bakers-build/does-not-exist', [
+        import.meta.url,
+      ]),
     ).toBeUndefined();
   });
 

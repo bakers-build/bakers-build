@@ -226,7 +226,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
   }
 
   /**
-   * Creates a bakers.build project with workspace chain the registrar can resolve.
+   * Creates a project with a workspace chain the registrar can resolve.
    */
   private function createProject(string $name): void {
     $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')

@@ -242,6 +242,11 @@ services:
     arguments: ['@entity.repository', '@entity_type.bundle.info', '@typed_data_manager']
     tags:
       - { name: event_subscriber }
+  bb_core.workspace_group_registration_subscriber:
+    class: Drupal\bb_core\EventSubscriber\WorkspaceGroupRegistrationSubscriber
+    arguments: ['@Drupal\bb_core\Hook\WorkspaceMembershipHooks', '@?og.group_type_manager']
+    tags:
+      - { name: event_subscriber }
   bb_core.workspace_read_scope_subscriber:
     class: Drupal\bb_core\EventSubscriber\WorkspaceReadScopeSubscriber
     arguments: ['@bb_core.workspace_read_scope', '@entity_type.manager', '@bb_core.membership_resolution_guard', '@bb_core.rank_capability']

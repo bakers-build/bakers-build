@@ -1,8 +1,9 @@
+uuid: e4afa40f-6ae9-4250-a4e5-f1ddbb12deb7
 langcode: en
 status: true
 dependencies: {  }
-id: bb_session_write_bb_via_session_scope
-name: 'bb:session:write_bb_via_session_scope'
+id: bb_session_write_bakers_via_session_scope
+name: 'bb:session:write_bakers_via_session_scope'
 description: 'bakers.build session ceiling — write bakers via session scope'
 grant_types:
   client_credentials:

@@ -59,7 +59,7 @@ final class OriginRefProcessorTest extends KernelTestBase {
   public function testIssueOriginIsIndexed(): void {
     self::assertSame(
       ['bakers-build/bakers-build#19'],
-      $this->indexValuesFor('https://git.key-tec.de/Keytec/bakers/issues/19/'),
+      $this->indexValuesFor('https://git.key-tec.de/Bakers-Build/Bakers-Build/issues/19/'),
     );
   }
 

@@ -50,7 +50,7 @@ final class BbSettingsConfigTest extends KernelTestBase {
     $this->assertSame(3600, $config->get('max_lease_seconds'));
     $this->assertSame(3, $config->get('failed_retry_cap'));
     $this->assertSame(7200, $config->get('failed_retry_window_seconds'));
-    $this->assertSame('https://git.key-tec.de/keytec/', $config->get('plugin_source_base'));
+    $this->assertSame('https://git.key-tec.de/bakers-build/', $config->get('plugin_source_base'));
   }
 
 }

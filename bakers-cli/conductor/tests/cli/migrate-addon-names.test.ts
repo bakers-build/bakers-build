@@ -299,7 +299,10 @@ export default {
         CORE_PLUGINS_BARREL_EXPORTS,
       )) {
         expect(target.startsWith('@bakers-build/addon-')).toBe(true);
-        const dir = join(addonsRoot, target.slice('@bakers-build/addon-'.length));
+        const dir = join(
+          addonsRoot,
+          target.slice('@bakers-build/addon-'.length),
+        );
         const manifest = JSON.parse(
           readFileSync(join(dir, 'package.json'), 'utf8'),
         ) as { name: string };
@@ -549,7 +552,9 @@ describe('runAddonRenameMigration rename pass', () => {
     expect(readFileSync(join(dir, 'conductor.config.js'), 'utf8')).toBe(
       after.engine,
     );
-    expect(readFileSync(join(dir, 'bakers.config.js'), 'utf8')).toBe(after.conn);
+    expect(readFileSync(join(dir, 'bakers.config.js'), 'utf8')).toBe(
+      after.conn,
+    );
   });
 
   it('a config already on addon-* is never rewritten and gets no backup', () => {

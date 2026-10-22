@@ -27,7 +27,7 @@ After({ tags: '@feature:ticket-template-triggers' }, async () => {
 /** The add form: inside the dialog with JavaScript, the page without. */
 async function addForm(page: Page): Promise<Locator> {
   const dialog = page.locator('dialog[open]');
-  await expect(dialog.or(page.locator('form[id^="bakers-ticket-trigger-add-form"]')).first()).toBeVisible();
+  await expect(dialog.or(page.locator('form[id^="bb-ticket-trigger-add-form"]')).first()).toBeVisible();
   return (await dialog.count()) > 0 ? dialog : page.locator('main');
 }
 

@@ -403,17 +403,16 @@ second.
 
 ## Inline edit
 
-On a detail screen the reversible meta fields (assignee, priority,
-labels, conductor) are edited in place with an `option_picker` in its
-`inline` variant — the pill grammar one size smaller: the same component,
-the same self-naming `aria-label`, the same popover with the clear row
-first, only without the pill's chip chrome, because on a detail screen the
-value is already the thing on the page. A pick changes nothing until
-**Save**, the same explicit commit a Settings form uses: the primary button
-at the right of the separated action row below the properties. A completed
-save shows Drupal's ordinary status message (`bakers.build ticket <label> saved.`)
-as the bottom-right toast every status message uses, and leaves the operator
-on the screen; a rejected save keeps the
+On a detail screen the reversible meta fields (assignee, priority, labels,
+conductor) are edited in place with an `option_picker` in its `inline` variant —
+the pill grammar one size smaller: the same component, the same self-naming
+`aria-label`, the same popover with the clear row first, only without the pill's
+chip chrome, because on a detail screen the value is already the thing on the
+page. A pick changes nothing until **Save**, the same explicit commit a Settings
+form uses: the primary button at the right of the separated action row below the
+properties. A completed save shows Drupal's ordinary status message
+(`bakers.build ticket <label> saved.`) as the bottom-right toast every status
+message uses, and leaves the operator on the screen; a rejected save keeps the
 attempted values and names the error, which is the dialog's rule one level
 smaller.
 

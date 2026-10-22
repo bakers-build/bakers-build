@@ -61,7 +61,9 @@ export function readBbProjectSelection(path: string): BbProjectSelection {
 export function bakersProjectOwner(path: string): BbProjectOwner {
   const file = basename(path);
   if (file !== 'conductor.config.js' && !file.endsWith('.conductor.config.js'))
-    throw new Error(`Cannot write bakers.build workspace selection to ${path}.`);
+    throw new Error(
+      `Cannot write bakers.build workspace selection to ${path}.`,
+    );
   readBbProjectSelection(path);
   return { path, before: readFileSync(path, 'utf8') };
 }
@@ -147,6 +149,8 @@ export async function writeBbWorkspaceSelection(
     renameSync(temporary, owner.path);
   } catch {
     if (existsSync(temporary)) unlinkSync(temporary);
-    throw new Error(`Could not write bakers.build workspace to ${owner.path}. ${hint}`);
+    throw new Error(
+      `Could not write bakers.build workspace to ${owner.path}. ${hint}`,
+    );
   }
 }

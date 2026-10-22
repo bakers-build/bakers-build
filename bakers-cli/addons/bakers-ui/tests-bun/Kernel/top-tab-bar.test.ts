@@ -239,7 +239,10 @@ function fakeServices(
     collection,
     get: async (path: string) => {
       if (path === 'user/user') return { data: [{ id: 'u-cw' }] };
-      if (path === 'bakers/statistics' || path.startsWith('bakers/statistics/')) {
+      if (
+        path === 'bakers/statistics' ||
+        path.startsWith('bakers/statistics/')
+      ) {
         if (stats.status !== undefined) {
           throw Object.assign(new Error(`HTTP ${stats.status}`), {
             status: stats.status,
@@ -253,8 +256,7 @@ function fakeServices(
       }
       if (path.startsWith('bb_conductor/')) return conductorDoc;
       if (path === 'bb_project/bb_project') return projectListDoc;
-      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`))
-        return ticketDoc;
+      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`)) return ticketDoc;
       if (path === 'bb_ticket/bb_ticket') return ticketListDoc;
       if (runsGate && path.startsWith('bb_run/')) {
         await runsGate;
@@ -971,7 +973,9 @@ describe('a project open arrives once', () => {
 
     await tui.press('\x1b'); // Esc — back to where we came from
 
-    expect(frameOf(tui), 'one frame, not two').toContain('bakers.build projects');
+    expect(frameOf(tui), 'one frame, not two').toContain(
+      'bakers.build projects',
+    );
     expect(rootBarRows(tui)).not.toEqual([]);
 
     await quit(tui);

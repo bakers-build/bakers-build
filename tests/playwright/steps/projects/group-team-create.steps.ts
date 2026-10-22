@@ -7,7 +7,7 @@ type Subject = 'group' | 'team';
 type Context = { type: Subject; workspace: string; owner: string; initial: number; names: string[] };
 const contexts = new WeakMap<Page, Context>();
 const labels = { group: { title: 'New group', submit: 'Create group' }, team: { title: 'New team', submit: 'Create team' } };
-const dialog = (page: Page) => page.locator(`dialog[open]:has(form#bakers-${context(page).type}-create-form)`);
+const dialog = (page: Page) => page.locator(`dialog[open]:has(form#bb-${context(page).type}-create-form)`);
 const nameField = (page: Page) => dialog(page).locator('input[name="name[0][value]"]');
 const descriptionField = (page: Page) => dialog(page).locator('textarea[name="description[0][value]"]');
 function context(page: Page): Context {

@@ -1,5 +1,6 @@
 langcode: en
 status: true
+dependencies: {  }
 id: bakers
 label: bakers.build
 provider: default

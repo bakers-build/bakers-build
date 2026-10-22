@@ -12,7 +12,6 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
  * The URL is the only source: an add-form route (`_entity_form` operation
  * `add`) whose match carries an upcast bb_workspace parameter; otherwise
  * none. It takes no account and is permission-blind by construction.
- *.
  */
 interface BbActiveWorkspaceInterface {
 

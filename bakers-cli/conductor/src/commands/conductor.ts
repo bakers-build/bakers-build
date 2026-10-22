@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { basename, dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import {
+  type BbCommandHost,
+  type BbCommandPlugin,
   CommandRunner,
   type ConductorLiveness,
   type ConductorLogger,
@@ -12,8 +14,6 @@ import {
   defaultProcProbe,
   deriveCheckoutRoot,
   deriveConductorLiveness,
-  type BbCommandHost,
-  type BbCommandPlugin,
   loadReadyBbConnection,
   type ProcProbe,
   printVersionLine,
@@ -27,10 +27,10 @@ import {
 } from '@bakers-build/core';
 import { Command } from 'commander';
 import { authStatus } from 'dropsh';
+import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
 import { Conductor } from '../core/conductor.js';
 import { hostKeyOf } from '../core/host-key.js';
-import { resolveBbProjectContext } from '../bakers-project-context.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
   type ResolvedAgent,
@@ -40,7 +40,7 @@ import {
   selectWorkspace,
 } from '../plugins/plugins.js';
 import type { HerdrHost } from '../plugins/process-host.js';
-import type { ConductorStatus, BbRemote } from '../plugins/remote.js';
+import type { BbRemote, ConductorStatus } from '../plugins/remote.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 
@@ -221,10 +221,7 @@ function loggerFor(checkoutRoot: string, log: LogOpts = {}): ConductorLogger {
   return logger;
 }
 
-function herdrHostOf(
-  deps: BbCliDeps,
-  config: ConductorFileConfig,
-): HerdrHost {
+function herdrHostOf(deps: BbCliDeps, config: ConductorFileConfig): HerdrHost {
   const host = deps.herdr ?? config.processHost;
   if (!host) {
     throw new Error(

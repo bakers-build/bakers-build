@@ -9,14 +9,14 @@ use Drupal\Core\Hook\Attribute\Hook;
 /**
  * Integrates bakers.build entity forms with the Gin admin theme.
  *
- * Registers all bakers.build entity add/edit routes as content form routes so that
- * Gin renders them with the full sidebar layout instead of the basic admin
+ * Registers all bakers.build entity add/edit routes as content form routes so
+ * that Gin renders them with the full sidebar layout instead of the basic admin
  * page wrapper.
  */
 final class GinIntegrationHooks {
 
   /**
-   * Returns bakers.build entity form routes that Gin should treat as content forms.
+   * Returns bakers.build entity form routes Gin should treat as content forms.
    *
    * @return string[]
    *   Array of route names for bakers.build entity add and edit forms.

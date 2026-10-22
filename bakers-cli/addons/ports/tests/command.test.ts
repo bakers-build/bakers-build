@@ -100,10 +100,7 @@ describe('resolveTicketIdentifier', () => {
   });
 
   it('fails on an ambiguous branch rather than guessing', () => {
-    const result = resolveTicketIdentifier(
-      undefined,
-      'merge-bb-1-into-bb-2',
-    );
+    const result = resolveTicketIdentifier(undefined, 'merge-bb-1-into-bb-2');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toMatch(/ambiguous/i);
   });

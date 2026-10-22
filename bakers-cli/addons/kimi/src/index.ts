@@ -2,8 +2,8 @@ import {
   type AgentFootprint,
   type AgentPlugin,
   type AgentRunIdentity,
-  emptyAgentFootprint,
   type BbAgent,
+  emptyAgentFootprint,
   type KnownOptionSpec,
   resolveAgentCliOptions,
 } from '@bakers-build/conductor/contract';

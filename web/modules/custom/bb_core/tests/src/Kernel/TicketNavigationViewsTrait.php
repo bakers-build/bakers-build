@@ -12,7 +12,8 @@ use Symfony\Component\Yaml\Yaml;
  *
  * Full shipped View coverage lives in TicketListRouteTest and
  * TicketsContextualDisplayTest. These displays only exercise route generation
- * and bakers.build's route alterations, access checks, and navigation integration.
+ * and bakers.build's route alterations, access checks, and navigation
+ * integration.
  */
 trait TicketNavigationViewsTrait {
 

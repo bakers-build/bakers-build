@@ -18,7 +18,7 @@ Before({ tags: '@feature:activity-mails' }, async ({ $testInfo }) => {
   $testInfo.setTimeout(120_000);
 });
 
-const SETTINGS_FORM = 'form#bakers-notification-setting-form';
+const SETTINGS_FORM = 'form#bb-notification-setting-form';
 const rail = (page: Page) => page.locator(RAIL_ISLAND);
 const group = (page: Page, name: string) => page.locator(SETTINGS_FORM).getByRole('group', { name });
 

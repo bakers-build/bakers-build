@@ -26,7 +26,7 @@
 // USAGE
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
-//   node capture-lists.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/lists.txt
+//   node capture-lists.mjs --out ../../../../../assets-ai/BB-nnn/node/lists.txt
 
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

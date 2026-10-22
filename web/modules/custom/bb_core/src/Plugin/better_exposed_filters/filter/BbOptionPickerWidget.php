@@ -404,7 +404,6 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
    * set is empty; an unrendered checkbox is not submitted, so the next pick
    * would silently widen the query. The row reads by its raw value because no
    * result exists to label it.
-   *.
    *
    * @param array<array-key, string> $options
    *   The option set the filter offers, keyed by submitted value.

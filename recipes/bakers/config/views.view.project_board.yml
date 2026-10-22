@@ -4,10 +4,10 @@ dependencies:
   config:
     - search_api.index.bb_tickets
   module:
-    - better_exposed_filters
-    - facets_exposed_filters
     - bb_board
     - bb_core
+    - better_exposed_filters
+    - facets_exposed_filters
     - search_api
 id: project_board
 label: 'Project board'

@@ -653,7 +653,9 @@ export default {
   it('leaves the engine slots, hooks, project/machine_id, and loadLocal intact', () => {
     const { text } = stripLegacyConnectionFromConfigSource(REPO_LIKE);
     expect(text).toContain("remote: { plugin: '@bakers-build/core/plugins'");
-    expect(text).toContain("executor: { plugin: '@bakers-build/plugin-herdr' }");
+    expect(text).toContain(
+      "executor: { plugin: '@bakers-build/plugin-herdr' }",
+    );
     expect(text).toContain('agent: [');
     expect(text).toContain('@bakers-build/plugin-codex');
     // The sibling `agent` array (its nested objects + NEGATIVE_INFINITY) survives.
@@ -1190,7 +1192,10 @@ describe('BB-209 upgrade states-strip', () => {
     mkdirSync(bakers);
     // valid: default + one variant
     writeFileSync(join(bakers, 'conductor.config.js'), 'export default {};');
-    writeFileSync(join(bakers, 'shop.conductor.config.js'), 'export default {};');
+    writeFileSync(
+      join(bakers, 'shop.conductor.config.js'),
+      'export default {};',
+    );
     // unrelated / near-miss: never enumerated
     writeFileSync(join(bakers, 'vite.config.js'), 'export default {};');
     writeFileSync(join(bakers, 'myconductor.config.js'), 'export default {};');
@@ -1489,7 +1494,7 @@ export default {
       name: 'a catalog harness missing from machine addons[]',
       machine:
         "{ addons: ['@bakers-build/addon-codex'], agents: { catalog: [{ harness: '@bakers-build/addon-pi', alias: 'pi' }] } }",
-      message: /agents\.catalog.*@bakers-ai\/addon-pi.*addons\[\]/,
+      message: /agents\.catalog.*@bakers-build\/addon-pi.*addons\[\]/,
     },
     {
       name: 'an unknown enabled alias',
@@ -1593,7 +1598,9 @@ export default {
     writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
 
     const { warnings, result } = await capture(() =>
-      loadConductorConfig(writeConfig(slotOnlyConfig("'@bakers-build/addon-grok'"))),
+      loadConductorConfig(
+        writeConfig(slotOnlyConfig("'@bakers-build/addon-grok'")),
+      ),
     );
     const cfg = result as Awaited<ReturnType<typeof loadConductorConfig>>;
 
@@ -1630,7 +1637,7 @@ export default {
 
     await expect(
       loadConductorConfig(writeConfig(slotOnlyConfig())),
-    ).rejects.toThrow(/agents\.catalog.*@bakers-ai\/addon-pi.*addons\[\]/);
+    ).rejects.toThrow(/agents\.catalog.*@bakers-build\/addon-pi.*addons\[\]/);
   });
 
   it('rejects a non-array machine addons', async () => {

@@ -27,9 +27,8 @@ final class ApiKeyHooks {
    * Two nullable, non-translatable, stored timestamps on the Simple OAuth
    * `consumer` content entity. Existing consumers keep NULL values; a
    * nonempty `bb_key_created` is what marks a consumer as a self-service
-   * key (ApiKeyManager::isManaged()). Fresh installs/enablement get the
-   * storage from this definition automatically; a deployed site needs the
-   * guarded update hook in bb_core.install (bb_core_update_8047).
+   * key (ApiKeyManager::isManaged()). Installs get the storage from this
+   * definition automatically.
    *
    * @return array<string, \Drupal\Core\Field\BaseFieldDefinition>
    *   The base field definitions this hook adds.

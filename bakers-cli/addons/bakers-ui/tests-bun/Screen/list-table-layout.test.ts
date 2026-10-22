@@ -230,7 +230,7 @@ describe('BB-345 — the row-wide attributes are ONE continuous bar', () => {
       'IDENTIFIER STATE         PRIO  WHO  BY   RUN          PARENT     COND           TITLE',
     );
     expect(frame[1]).toBe(
-      'BB-1     todo          —     CW   —    idle         BB-175   x              TITLE-MARK',
+      'BB-1       todo          —     CW   —    idle         BB-175     x              TITLE-MARK',
     );
   });
 });
@@ -495,11 +495,11 @@ describe('BB-345 AC 5 — a free-text column grows on the conductors list too', 
 
   it('shows an ordinary project name WHOLE once the row HAS a surplus', async () => {
     // 160 columns, which is where this list first has one to share. Before this
-    // change the same frame read `keytec-bakers-p…` with 15 columns unused at the
+    // change the same frame read `keytec-bakers…` with 15 columns unused at the
     // right edge.
     const frame = await conductorsAt(160);
     expect(frame[1]).toContain(PROJECT_NAME);
-    expect(frame[1]).not.toContain('keytec-bakers-p…');
+    expect(frame[1]).not.toContain('keytec-bakers…');
     // And NAME took its own larger share rather than being squeezed by it: its
     // value starts at column 0 and MACHINE's begins well past its `min: 20`.
     expect(frame[0]?.indexOf('MACHINE')).toBeGreaterThan(20);
@@ -587,7 +587,7 @@ describe('BB-345 AC 5 — a free-text column grows on the conductors list too', 
         expect(line.length).toBeLessThanOrEqual(columns);
       // …and PROJECT keeps precisely the 14 columns it had before this ticket:
       // its `width` is a BASIS, so a row with nothing to share leaves it there.
-      expect(frame[1]).toContain('keytec-bakers-pl');
+      expect(frame[1]).toContain('keytec-bakers-');
     }
   });
 
@@ -637,19 +637,19 @@ describe('BB-345 AC 5 — a free-text column grows on the conductors list too', 
     // WORKSPACE went 30 → 24. BB-450 AC-7 moved it again, 24 → 18, to pay for
     // the new `LOAD` column the same way — six columns that keep the row inside
     // the cockpit's default 120. The shared fixture's `/home/cw/projects/bakers/.bakers`
-    // is 28 columns, so what was painted whole at 30 is now elided — which
+    // is 32 columns, so what was painted whole at 30 is now elided — which
     // DEMONSTRATES the claim rather than costing it, and the assertion is
     // strengthened rather than relaxed: it is now made from both sides of the
     // budget, and the surviving tail is named exactly instead of by containment.
     //
     // Within the budget, untouched and no marker.
-    expect(await withWorkspace('/srv/bakers/.bakers')).toContain(
-      ' /srv/bakers/.bakers ',
+    expect(await withWorkspace('/srv/bb/.bakers')).toContain(
+      ' /srv/bb/.bakers ',
     );
     // Past it, the HEAD goes and the tail stays — the whole reason this column
     // keeps a declared width instead of growing.
     const trimmed = await withWorkspace('/home/cw/projects/bakers/.bakers');
-    expect(trimmed).toContain('…ojects/bakers/.bakers');
+    expect(trimmed).toContain('…ts/bakers/.bakers');
     expect(trimmed).not.toContain('/home/cw/projects');
     // …and the same for a path far past it: `feat/x/.bakers` is what tells two
     // worktrees of one checkout apart, and it survives.
@@ -657,7 +657,7 @@ describe('BB-345 AC 5 — a free-text column grows on the conductors list too', 
       await withWorkspace(
         '/home/cw/projects/bakers/.bakers-worktrees/feat/x/.bakers',
       ),
-    ).toContain('…rees/feat/x/.bakers');
+    ).toContain('…es/feat/x/.bakers');
   });
 });
 

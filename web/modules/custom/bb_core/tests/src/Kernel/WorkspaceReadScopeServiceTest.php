@@ -14,9 +14,10 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * Spec D3/D4/D11. The interesting half is what OG cannot answer: it has no
  * group nesting, so "a workspace admin sees every project of that workspace" is
- * bakers.build's own rule and is resolved here as an entity query whose *result* goes
- * into the filter — never as a traversal written into the condition, which
- * ViewsQueryAlter would silently map onto the wrong column (Fact 6, D4).
+ * bakers.build's own rule and is resolved here as an entity query whose
+ * *result* goes into the filter — never as a traversal written into the
+ * condition, which ViewsQueryAlter would silently map onto the wrong column
+ * (Fact 6, D4).
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]

@@ -178,39 +178,6 @@ flowchart TB
 |---|---|
 | [`07-billing.md`](docs/decisions/time-tracking-and-billing.md) | Separate commercial/worklog context, one-way Domain Links, Delivery Points, and Harvest boundary |
 
-## Setup — GitLab token for ticket import
-
-`bakers ticket import <url>` makes Drupal fetch the issue from GitLab via the `keytec_gitlab`
-connector. Private repos return HTTP 404 without auth, so the import fails with
-`HTTP 502 — Import migration failed with result 4; the external API may be unreachable.`
-
-The token is **never** stored in config (it ships empty). `web/sites/default/settings.php`
-injects it at runtime from the `BB_GITLAB_TOKEN_KEYTEC` environment variable:
-
-```php
-$config['bb_connector.connector.keytec_gitlab']['settings']['token']
-  = getenv('BB_GITLAB_TOKEN_KEYTEC') ?: '';
-```
-
-DDEV does not pass host env into the web container automatically. Map a GitLab PAT (scope
-`read_api`) into DDEV under that exact name — global, so every worktree gets it:
-
-```bash
-ddev config global --web-environment-add="BB_GITLAB_TOKEN_KEYTEC=<your-PAT>"
-ddev restart
-```
-
-Verify:
-
-```bash
-ddev exec 'echo ${#BB_GITLAB_TOKEN_KEYTEC}'                                   # non-zero length
-ddev drush cget bb_connector.connector.keytec_gitlab settings.token --include-overridden
-```
-
-Note: the value lands in plain text in `~/.ddev/global_config.yaml` (not committed).
-<!-- conductor test 2026-07-08 -->
-
-
 ## Join this repository
 
 Repository: `bakers-build/bakers-build`; bakers.build project: `bakers`. The committed `.bakers` configuration targets

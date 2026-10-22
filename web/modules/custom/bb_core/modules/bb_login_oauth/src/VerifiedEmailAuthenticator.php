@@ -24,8 +24,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 /**
  * Gates provider e-mail matching on an address the provider confirmed.
  *
- * The social_auth module matches by e-mail unconditionally and bakers.build keys
- * accounts by e-mail, so matching an unconfirmed address is an account
+ * The social_auth module matches by e-mail unconditionally and bakers.build
+ * keys accounts by e-mail, so matching an unconfirmed address is an account
  * takeover; no event can stop it, so decoration is the seam. Creation goes
  * through `EmailLogin::createAccount()` because registration is `admin_only`,
  * and the gated work runs on `$this` via `parent::`, never on a second

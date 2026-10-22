@@ -94,7 +94,7 @@ final class ReferenceOptionsTest extends KernelTestBase {
     $ticket = $this->createTicket();
     $this->createTicket(['title' => 'BB-100 sample candidate']);
     self::assertSame([], $this->options->for($ticket, 'parent_id', 'no-such-ticket'));
-    self::assertNotSame([], $this->options->for($ticket, 'parent_id', 'bakers.build-'));
+    self::assertNotSame([], $this->options->for($ticket, 'parent_id', 'BB-'));
   }
 
   /**

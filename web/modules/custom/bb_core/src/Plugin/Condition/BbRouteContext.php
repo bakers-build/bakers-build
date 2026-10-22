@@ -12,7 +12,7 @@ use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
- * Checks that one explicitly mapped bakers.build route context is present and typed.
+ * Checks that one explicitly mapped route context is present and typed.
  */
 #[Condition(
   id: 'bb_route_context',
