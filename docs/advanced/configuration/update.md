@@ -12,7 +12,7 @@ Move a workstation to a newer bakers.build release: the CLI first, then your con
    bakers --version
    ```
 
-   `bakers update` runs `npm install -g @bakers-build/bakers@latest` and prints `<before> → <after>`. To pin a release instead, run `npm install -g @bakers-build/bakers@<version>`. An interactive `bakers conductor start` can run that install and the all-scope migration for you: Enter accepts, then the process exits so you can rerun start; `n` continues on the current release. Failures stop this start and leave a running conductor untouched. `bakers ui`, foreground, CI and non-TTY starts only print a notice. `--no-update-check` skips the lookup. Manual update and the dry-run path below still work.
+   `bakers update` runs `npm install -g @bakers-build/bakers@latest` and prints `<before> → <after>`. To pin a release instead, run `npm install -g @bakers-build/bakers@<version>`. An interactive `bakers oven start` can run that install and the all-scope migration for you: Enter accepts, then the process exits so you can rerun start; `n` continues on the current release. Failures stop this start and leave a running conductor untouched. `bakers ui`, foreground, CI and non-TTY starts only print a notice. `--no-update-check` skips the lookup. Manual update and the dry-run path below still work.
 
 2. Preview the configuration migration. Add `--connection <id>` if you use a named connection.
 

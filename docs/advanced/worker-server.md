@@ -54,4 +54,4 @@ Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example
 
 **Done when:** all checks succeed, the online check has no findings and `bakers info` lists a workspace. Continue with [Conductors](/advanced/conductors).
 
-After reboot, a service manager must start `herdr server` as the worker user before `bakers conductor start --foreground`; bakers.build ships no service unit.
+After reboot, a service manager must start `herdr server` as the worker user before `bakers oven start --foreground`; bakers.build ships no service unit.

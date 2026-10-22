@@ -225,3 +225,39 @@ it('establishes online readiness for a computed base_url while retaining incompl
   expect(report.verification.readiness).toBe('ready');
   expect(report.result).toBe('ok');
 });
+
+it('identifies every connection request as the bakers CLI with its version', async () => {
+  const seen: Array<Record<string, string> | undefined> = [];
+  const context = await online.createBbConnectionContext(
+    {
+      site: {
+        base_url: 'http://bakers.test',
+        jsonapi_prefix: 'jsonapi',
+      } as never,
+      plugins: [],
+    },
+    {
+      auth: { apply: async (request) => request },
+      http: {
+        send: async (request) => {
+          seen.push(request.headers);
+          return {
+            status: 200,
+            headers: { 'content-type': 'application/vnd.api+json' },
+            body: JSON.stringify({
+              meta: { links: { me: { meta: { id: 'u' } } } },
+            }),
+          };
+        },
+      },
+    },
+  );
+  await context.client.me();
+  await context.http.send({
+    method: 'GET',
+    url: 'http://bakers.test/_bakers-api/x',
+  });
+  expect(seen).toHaveLength(2);
+  for (const headers of seen)
+    expect(headers?.['X-Bakers-Client']).toMatch(/^bakers\/\d+\.\d+\.\d+/);
+});

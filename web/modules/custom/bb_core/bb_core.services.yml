@@ -68,6 +68,11 @@ services:
     class: Drupal\bb_core\EventSubscriber\BbWorkspaceNotFoundSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.client_version_subscriber:
+    class: Drupal\bb_core\EventSubscriber\ClientVersionSubscriber
+    arguments: ['@config.factory', '@session_configuration', '@page_cache_kill_switch']
+    tags:
+      - { name: event_subscriber }
   bb_core.workspace_access_check:
     class: Drupal\bb_core\Access\BbWorkspaceAccessCheck
     arguments: ['@bb_core.workspace_resolver', '@bb_core.workspace_read_scope']

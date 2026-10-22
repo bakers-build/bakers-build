@@ -139,6 +139,7 @@ export const SIDEBAR = {
     ]),
     group('CLI setup', [
       ['Install the CLI', '/advanced/cli/install'],
+      ['Switch to the bakers CLI', '/advanced/cli/switch-to-bakers'],
       ['Prepare a machine', '/advanced/cli/prepare-machine'],
       ['Check machine tools', '/advanced/cli/check-machine-tools'],
       ['Set up herdr', '/advanced/cli/herdr'],
@@ -152,7 +153,7 @@ export const SIDEBAR = {
     ]),
     group('CLI reference', [
       ['Commands', '/advanced/cli/'],
-      ['bakers conductor', '/advanced/cli/conductor'],
+      ['bakers oven', '/advanced/cli/conductor'],
       ['bakers ui', '/advanced/cli/ui'],
       ['bakers ui keys', '/advanced/cli/ui-keys'],
       ['bakers dropsh', '/advanced/cli/dropsh'],

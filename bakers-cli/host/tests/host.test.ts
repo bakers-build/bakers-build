@@ -16,7 +16,7 @@ const names = DEFAULT_COMMANDS.map((c) => c.name);
 
 describe('scanTarget — value-aware lazy pre-scan (AC-2)', () => {
   it('picks the first positional command name', () => {
-    expect(scanTarget(['conductor', 'poll'], names)).toBe('conductor');
+    expect(scanTarget(['oven', 'once'], names)).toBe('oven');
     expect(scanTarget(['dropsh', 'read', 'x'], names)).toBe('dropsh');
     expect(scanTarget(['ui'], names)).toBe('ui');
   });
@@ -26,7 +26,7 @@ describe('scanTarget — value-aware lazy pre-scan (AC-2)', () => {
     );
   });
   it('maps `help <name>` to that command', () => {
-    expect(scanTarget(['help', 'conductor'], names)).toBe('conductor');
+    expect(scanTarget(['help', 'oven'], names)).toBe('oven');
   });
   it('returns undefined for --help, an unknown first positional, or bare', () => {
     expect(scanTarget(['--help'], names)).toBeUndefined();
@@ -42,10 +42,10 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
     if (saved === undefined) delete process.env.BB_COMMANDS;
     else process.env.BB_COMMANDS = saved;
   });
-  it('defaults to conductor/ui/dropsh/deployment/agents/info/ports/track', () => {
+  it('defaults to oven/ui/dropsh/deployment/agents/info/ports/track', () => {
     delete process.env.BB_COMMANDS;
     expect(resolveCommands().map((c) => c.name)).toEqual([
-      'conductor',
+      'oven',
       'ui',
       'dropsh',
       'deployment',
@@ -74,7 +74,9 @@ describe('buildHostProgram — help completeness + version (AC-1/AC-2)', () => {
     delete process.env.BB_COMMANDS;
     const program = await buildHostProgram(['--help']);
     const cmds = program.commands.map((c) => c.name());
-    expect(cmds).toContain('conductor');
+    expect(cmds).toContain('oven');
+    expect(cmds).not.toContain('conductor');
+    expect(cmds).not.toContain('bake');
     expect(cmds).toContain('ui');
     expect(cmds).toContain('dropsh');
     expect(cmds).toContain('deployment');

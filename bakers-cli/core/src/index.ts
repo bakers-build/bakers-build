@@ -26,6 +26,7 @@ export {
   createBbConnectionContext,
   hasStoredBbSession,
   verifyConfigConnections,
+  withBakersClientHeader,
 } from './cli/config-online.js';
 export type {
   ConfigChange,

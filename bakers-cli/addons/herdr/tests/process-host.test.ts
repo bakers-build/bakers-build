@@ -75,7 +75,7 @@ class FakeHerdrBinary extends CommandRunner {
 }
 
 const LABEL = 'bakers-conductor:pm-minipm-test';
-const CMD = 'BB_CONDUCTOR_LOG=file bakers conductor start --foreground';
+const CMD = 'BB_CONDUCTOR_LOG=file bakers oven start --foreground';
 
 describe('herdrProcessHost workspace lifecycle', () => {
   let herdr: FakeHerdrBinary;

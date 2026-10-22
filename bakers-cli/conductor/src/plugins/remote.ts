@@ -377,7 +377,7 @@ export interface BbRemote {
    * tickets assigned to `conductorId` are loaded, so every ticket on the list
    * is unambiguously this conductor's — a missing worktree means "already torn
    * down on this host", not "belongs to another host". The same query backs
-   * the live tick and the standalone `bakers conductor reap`. Empty once every
+   * the live tick and the standalone `bakers oven clean`. Empty once every
    * closed ticket this conductor owns is cleaned.
    */
   fetchUncleanedTickets(conductorId: string): Promise<UncleanTicket[]>;

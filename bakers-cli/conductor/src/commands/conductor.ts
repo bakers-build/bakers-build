@@ -48,7 +48,7 @@ export type { HerdrHost };
 
 // BB-201: the `conductor` command PLUGIN. `bakers` is now a thin host
 // (`@bakers-build/bakers`) that dynamically mounts this package's command plugin under
-// `bakers conductor …`. This module owns the conductor lifecycle only; the UI
+// `bakers oven …`. This module owns the conductor lifecycle only; the UI
 // (`@bakers-build/ui`), dropsh (`@bakers-build/addon-dropsh`) and — since BB-224
 // (Finding 7) — deployment (`@bakers-build/addon-deployment`, `bakers deployment …`)
 // are their own command packages. The connection
@@ -246,7 +246,7 @@ type StatusLabel = ConductorLiveness;
 /**
  * The liveness words this CLI prints.
  *
- * Delegated to core so `bakers conductor ls`, the cockpit and the server-side
+ * Delegated to core so `bakers oven ls`, the cockpit and the server-side
  * deriver describe one conductor identically. The previous CLI-only vocabulary
  * (`wedged`, `stopped`, `host-missing`, `registry-only`) went with the registry
  * that made those distinctions expressible.
@@ -649,7 +649,7 @@ async function cmdStart(
       const prefix = env.BB_CONDUCTOR
         ? `bakers --conductor ${env.BB_CONDUCTOR}`
         : 'bakers';
-      const rerun = `${prefix} conductor start${force ? ' --force' : ''}`;
+      const rerun = `${prefix} oven start${force ? ' --force' : ''}`;
       if (accepted) {
         try {
           await runBb(['update']);
@@ -803,7 +803,7 @@ async function waitForNotRunning(
 }
 
 /**
- * `bakers conductor start` reports exactly one of three outcomes (BB-450
+ * `bakers oven start` reports exactly one of three outcomes (BB-450
  * AC-12): **started**, naming the pid and `host_key`; **already running**,
  * naming the live pid and its heartbeat age; **failed**, naming the reason.
  * `failed` sets a non-zero exit status so a script can tell the three apart.
@@ -912,7 +912,7 @@ async function cmdStartBody(
   const selectorFlag =
     stem && stem !== 'conductor' ? `--conductor ${stem} ` : '';
   const fgCmd =
-    `BB_CONDUCTOR_LOG=file bakers ${selectorFlag}conductor ${fgFlags} start --foreground --no-update-check`.replace(
+    `BB_CONDUCTOR_LOG=file bakers ${selectorFlag}oven ${fgFlags} start --foreground --no-update-check`.replace(
       /\s+/g,
       ' ',
     );
@@ -926,7 +926,7 @@ async function cmdStartBody(
     );
     logger.warn(
       {},
-      'Hint: run `bakers conductor start --foreground` under a service manager (systemd-user / docker) on hosts without herdr.',
+      'Hint: run `bakers oven start --foreground` under a service manager (systemd-user / docker) on hosts without herdr.',
     );
     console.log(
       `failed to start conductor ${id}: could not launch via herdr — ${(err as Error).message}`,
@@ -1070,9 +1070,9 @@ async function tryConfig(
 /** Prompt for the developer Kürzel / user id on an interactive terminal. */
 // --- the conductor command tree --------------------------------------------
 
-/** Build the `conductor` subcommand tree (lifecycle + registry). */
+/** Build the `oven` subcommand tree (lifecycle + registry). */
 export function createConductorCommand(deps: BbCliDeps): Command {
-  const conductor = new Command('conductor')
+  const conductor = new Command('oven')
     .description('node-agent lifecycle + local registry')
     .option(
       '--log-level <level>',
@@ -1095,9 +1095,9 @@ Logging (precedence: CLI flag > env var > default):
   BB_CONDUCTOR_LOG   env fallback for --log-sink.
 
 Examples:
-  bakers conductor --log-level debug start --foreground
-  bakers conductor --log-level debug poll
-  BB_LOG_LEVEL=debug bakers conductor poll`,
+  bakers oven --log-level debug start --foreground
+  bakers oven --log-level debug once
+  BB_LOG_LEVEL=debug bakers oven once`,
     );
 
   conductor
@@ -1127,14 +1127,14 @@ Examples:
     });
 
   conductor
-    .command('poll')
+    .command('once')
     .description('run one conductor cycle then exit')
     .action(async function (this: Command) {
       await cmdPoll(deps, logOptsOf(this));
     });
 
   conductor
-    .command('reap')
+    .command('clean')
     .description(
       'tear down herdr worktrees of finished-but-uncleaned tickets (recovers orphans a live tick missed: conductor was down at done, restarted, or reassigned)',
     )
@@ -1178,12 +1178,12 @@ Examples:
   return conductor;
 }
 
-/** The `conductor` command plugin the host mounts (BB-201). BB-224
+/** The `oven` command plugin the host mounts (BB-201). BB-224
  *  (Finding 7): the `bakers deployment` batch helper is no longer registered here —
  *  it is its own command addon, `@bakers-build/addon-deployment`. */
 const conductorCommandPlugin: BbCommandPlugin = {
   kind: 'command',
-  name: 'conductor',
+  name: 'oven',
   describe: 'node-agent lifecycle + local registry',
   register(program: Command, host: BbCommandHost): void {
     program.addCommand(createConductorCommand({ host }));
@@ -1194,7 +1194,7 @@ export default conductorCommandPlugin;
 
 /**
  * Build a standalone program with the conductor command mounted — the test entry
- * (mirrors what the host does for `bakers conductor …`). `deps` inject fakes.
+ * (mirrors what the host does for `bakers oven …`). `deps` inject fakes.
  */
 export function buildConductorProgram(deps: BbCliDeps = {}): Command {
   const program = new Command();

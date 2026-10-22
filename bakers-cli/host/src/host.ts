@@ -25,7 +25,7 @@ import { registerValidate } from './validate.js';
 // ESLint-style resolved, LAZILY mounted command plugins (AC-2). The host
 // discovers + mounts; it hard-wires nothing. Only the invoked subcommand's module
 // is imported — `bakers --help` lists all four via describe-only stubs and imports
-// none; `bakers conductor …` imports only the conductor module.
+// none; `bakers oven …` imports only the conductor module.
 //
 // BB-215: the registry is DERIVED from the command surface — the command
 // addons' preset `commands` accumulators — rather than a hand-written list.
@@ -162,7 +162,7 @@ function pluginDescribe(entry: CommandDescriptor): string {
     return entry.describe;
   }
   switch (entry.name) {
-    case 'conductor':
+    case 'oven':
       return 'node-agent lifecycle + local registry';
     case 'ui':
       return 'interactive terminal UI: dashboard, projects, tickets';

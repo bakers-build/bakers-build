@@ -6,8 +6,10 @@
    aside. IslandBoost OOB-swaps the whole rail on every destination click,
    so Alpine state on this island is replaced with the expanded default.
    html is never an island. The toggle writes the attribute; a head script
-   restores it before first paint. Initialization only asserts collapse for a
-   first mobile visit; it never clears the attribute during an island swap.
+   restores it before first paint. Below 768px the rail always starts
+   collapsed: `open` is the rail's own state, the persisted `railOpen` is the
+   wide-screen preference, and a narrow visit neither honours nor overwrites
+   it. Initialization never clears the attribute during an island swap.
 
    The width binding uses the object form rather than a ternary string on
    purpose: the ternary would only ever ADD a class, leaving the server-rendered
@@ -24,9 +26,9 @@
   ]) }}
   id="{{ rail_id }}"
   data-sidebar
-  x-data="{ railOpen: $persist({{ is_collapsed ? 'false' : 'true' }} && window.matchMedia('(min-width: 768px)').matches).as('bakers.sidebar') }"
-  x-init="if (!railOpen) document.documentElement.setAttribute('data-sidebar-collapsed', '')"
-  :class="{ 'w-58': railOpen, 'w-14': !railOpen, 'is-collapsed': !railOpen }"
+  x-data="{ railOpen: $persist({{ is_collapsed ? 'false' : 'true' }} && window.matchMedia('(min-width: 768px)').matches).as('bakers.sidebar'), open: false, wide: () => window.matchMedia('(min-width: 768px)').matches }"
+  x-init="open = railOpen && wide(); if (!open) document.documentElement.setAttribute('data-sidebar-collapsed', '')"
+  :class="{ 'w-58': open, 'w-14': !open, 'is-collapsed': !open }"
   aria-label="{{ label|default('Workspace navigation') }}">
   {# The toggle sits on the rail's right edge, half outside, so it never
      shares a row with the workspace mark. `translate-x-1/2` is the "beside"
@@ -37,9 +39,9 @@
     aria-controls="{{ body_id }}"
     aria-expanded="{{ is_collapsed ? 'false' : 'true' }}"
     aria-label="{{ is_collapsed ? 'Expand sidebar' : 'Collapse sidebar' }}"
-    @click="railOpen = !railOpen; document.documentElement.toggleAttribute('data-sidebar-collapsed', !railOpen)"
-    :aria-expanded="railOpen ? 'true' : 'false'"
-    :aria-label="railOpen ? 'Collapse sidebar' : 'Expand sidebar'">
+    @click="open = !open; if (wide()) railOpen = open; document.documentElement.toggleAttribute('data-sidebar-collapsed', !open)"
+    :aria-expanded="open ? 'true' : 'false'"
+    :aria-label="open ? 'Collapse sidebar' : 'Expand sidebar'">
     {{ include('bb_theme:icon', { name: 'panel-left', size: 'md' }, with_context = false) }}
   </button>
   <div class="flex shrink-0 items-center gap-1 px-3 py-4 border-b border-border-2 group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-2">

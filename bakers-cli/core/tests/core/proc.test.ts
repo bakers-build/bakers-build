@@ -27,7 +27,7 @@ import {
 describe('signalVerifiedProcess', () => {
   const HOST = 'cw-dev-box';
   const CONDUCTOR_CMDLINE =
-    'node /usr/local/bin/bakers conductor start --foreground --no-update-check';
+    'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   it('signals a live pid whose command line identifies a bakers conductor, owned by this user, on this host', () => {
     const probe = fakeProbe({
@@ -241,7 +241,7 @@ describe('signalVerifiedProcess', () => {
 describe('verifyConductorProcess', () => {
   const HOST = 'cw-dev-box';
   const CONDUCTOR_CMDLINE =
-    'node /usr/local/bin/bakers conductor start --foreground --no-update-check';
+    'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   it('never calls probe.send — it is read-only', () => {
     const probe = fakeProbe({

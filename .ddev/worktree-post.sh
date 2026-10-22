@@ -44,7 +44,7 @@ echo "==> bakers worktree bootstrap (init.worktree_post) — copy parent .bakers
 # so a fresh worktree checkout never has it.
 #
 # BB-154: the parent config carries the parent's base_url (the shared project control plane,
-# e.g. dev2). Inheriting it means a `bakers conductor start` run in the worktree registers against
+# e.g. dev2). Inheriting it means a `bakers oven start` run in the worktree registers against
 # that shared plane and races the main conductor's claim pool (duplicate-identity pile-up). So we
 # point the copied config at THIS worktree's OWN local DDEV site instead — the worktree conductor
 # is then isolated to its own site and never contends for the shared pool. init-worktree exports

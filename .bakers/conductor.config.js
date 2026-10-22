@@ -50,7 +50,7 @@ export default {
   // capacity a SINGLE owner: `max_parallel` in the machine context
   // (~/.bakers/machine.config.js). This file was the dogfood config that the
   // migration missed — `bakers-cli/templates/conductor.config.js` had already been
-  // converted — so it kept both stale keys and every `bakers conductor …` command
+  // converted — so it kept both stale keys and every `bakers oven …` command
   // in this repo died at load with
   // `misplaced max_parallel belongs in …/machine.config.js`
   // (`bakers-cli/conductor/src/config.ts:316`, an unconditional throw). Do NOT

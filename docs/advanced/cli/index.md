@@ -21,7 +21,7 @@ Options and subcommands are copied from `bakers --help` and the help of each com
 | `bakers config` | Initialize, migrate and validate scoped configuration: `init`, `upgrade`, `check` |
 | `bakers update` | Install the latest CLI |
 | `bakers validate` | Validate a project's `WORKFLOW.md` against the loaded skills' step contract |
-| `bakers conductor` | Node-agent lifecycle and the registry of conductors: [bakers conductor](/advanced/cli/conductor) |
+| `bakers oven` | Node-agent lifecycle and the registry of conductors: [bakers oven](/advanced/cli/conductor) |
 | `bakers ui` | Interactive terminal UI: [bakers ui](/advanced/cli/ui) and [keys](/advanced/cli/ui-keys) |
 | `bakers dropsh` | JSON:API shell bound to the bakers.build connection: [bakers dropsh](/advanced/cli/dropsh) |
 | `bakers deployment` | Release and deployment helpers: [bakers deployment](/advanced/cli/deployment) |

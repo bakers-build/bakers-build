@@ -61,11 +61,11 @@ bakers init --base-url <control-plane-url> --project <name>   # scaffold .bakers
 ### Run the conductor node
 
 ```bash
-bakers conductor start                                        # claim + dispatch loop (hosted in herdr)
-bakers conductor start --foreground --log-level=debug         # run in the foreground
+bakers oven start                                        # claim + dispatch loop (hosted in herdr)
+bakers oven start --foreground --log-level=debug         # run in the foreground
 ```
 
-`bakers conductor start` is the node agent itself — one per project checkout, tracked in a local
+`bakers oven start` is the node agent itself — one per project checkout, tracked in a local
 registry (like `ddev`). There is no central daemon and no TCP.
 
 ### Working on the CLI itself (dev build)

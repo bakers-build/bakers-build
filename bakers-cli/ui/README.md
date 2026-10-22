@@ -216,11 +216,11 @@ repeats the same head, and only the tail distinguishes.
 
 **Rows from your other machines appear, marked `elsewhere`, and do not act.** The control
 plane is scoped to *you*, not to this machine, so hiding them would make the cockpit
-disagree with `bakers conductor ls` for no visible reason — while acting on them is
+disagree with `bakers oven ls` for no visible reason — while acting on them is
 meaningless, since a pid only identifies a process on the machine that reported it.
 
 **A conductor that has never run on this machine does not appear**, because it has no record
-to appear from. Its first start is still `bakers conductor start` inside the checkout; after
+to appear from. Its first start is still `bakers oven start` inside the checkout; after
 that it is on the list like any other.
 
 **Each repo reaches its own control plane**, so this tab shows the conductors of whichever

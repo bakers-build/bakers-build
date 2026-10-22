@@ -50,7 +50,10 @@ export async function fetchLatestVersion(
   try {
     const result = await fetchImpl(REGISTRY_LATEST_URL, {
       signal: controller.signal,
-      headers: { accept: 'application/json' },
+      headers: {
+        accept: 'application/json',
+        'X-Bakers-Client': `bakers/${resolveCliVersion()}`,
+      },
     });
     if (!result.ok) return null;
     const body = (await result.json()) as { version?: unknown };

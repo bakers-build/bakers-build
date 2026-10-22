@@ -11,6 +11,10 @@ Given('the API client is {string}', async ({ apiClient }, account: string) => {
     await apiClient.identify(account);
 });
 
+Given('the API client identifies as the bakers CLI {string}', async ({ apiClient }, version: string) => {
+    apiClient.identifyAsBakersCli(version);
+});
+
 Given('the API client uses a session token for {string}', async ({ apiClient }, account: string) => {
     await apiClient.identifyOAuth(account);
 });

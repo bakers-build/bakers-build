@@ -494,6 +494,8 @@ final class RunLogCompressionTest extends KernelTestBase {
       'CONTENT_TYPE' => 'application/vnd.api+json',
       'HTTP_ACCEPT' => 'application/vnd.api+json',
       'CONTENT_LENGTH' => (string) strlen($body),
+      // The oven writes run logs; like the real CLI it identifies itself.
+      'HTTP_X_BAKERS_CLIENT' => 'bakers/0.0.1',
     ];
     foreach ($extra_headers as $name => $value) {
       $server['HTTP_' . strtoupper(str_replace('-', '_', $name))] = $value;

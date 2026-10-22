@@ -797,7 +797,7 @@ for unit in "${BUILD_UNITS[@]}"; do
 done
 [ -x "${BB_BIN}" ] || die "the checkout's bakers CLI is missing at ${BB_BIN}"
 
-mkdir -p "${WORKSPACE}/node_modules/@bakers-ai"
+mkdir -p "${WORKSPACE}/node_modules/@bakers-build"
 for addon in herdr claude codex remote-drupal essentials ports; do
   ln -sfn "${BB_CLI}/addons/${addon}" "${WORKSPACE}/node_modules/@bakers-build/addon-${addon}"
 done
@@ -1145,7 +1145,7 @@ The ticket is yours. Three steps, and the last one spends real agent money.
   1. Register the conductor, because it has no record and therefore no uuid until
      it has run one cycle — so there is nothing to write in step 2 before this:
 
-       cd ${WORKSPACE} && bakers conductor poll
+       cd ${WORKSPACE} && bakers oven once
 
   2. Create a work:docs ticket in project '${PROJECT}' and set its conductor_id to
      the conductor carrying machine_id '${MACHINE_ID}'. The claim keys on that
@@ -1162,7 +1162,7 @@ The ticket is yours. Three steps, and the last one spends real agent money.
 
   3. Drive the run and WATCH it:
 
-       cd ${WORKSPACE} && bakers conductor start
+       cd ${WORKSPACE} && bakers oven start
 
      The agent works in ${WORKSPACE}/.bakers-worktrees/<branch>; the conductor's own
      log is at ${WORKSPACE}/.bakers/log.txt, which is a DIFFERENT log from

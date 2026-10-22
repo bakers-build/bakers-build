@@ -9,6 +9,7 @@ import https from 'node:https';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { basicAuthProvider } from '@bakers-build/addon-auth-basic';
+import { withBakersClientHeader } from '@bakers-build/core';
 import type { JsonApiClient } from 'dropsh/plugin';
 import { createHttpClient, createJsonApiClient } from 'dropsh/plugin';
 
@@ -61,7 +62,8 @@ export function requiredEnv(name: string): string {
 
 export async function createContext(): Promise<E2EContext> {
   const baseUrl = requiredEnv('BB_E2E_BASE_URL');
-  const http = createHttpClient();
+  // Claims require the client-version header, as from the real CLI.
+  const http = withBakersClientHeader(createHttpClient());
   const provider = basicAuthProvider(requiredEnv('BB_E2E_BASIC'))
     .authProvider as {
     createAdapter(): { apply(req: unknown): Promise<unknown> };
@@ -92,7 +94,7 @@ export async function createContextForAccount(
   password: string,
 ): Promise<E2EContext> {
   const baseUrl = requiredEnv('BB_E2E_BASE_URL');
-  const http = createHttpClient();
+  const http = withBakersClientHeader(createHttpClient());
   const token = Buffer.from(`${account}:${password}`).toString('base64');
   const provider = basicAuthProvider(token).authProvider as {
     createAdapter(): { apply(req: unknown): Promise<unknown> };

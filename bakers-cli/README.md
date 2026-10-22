@@ -228,6 +228,8 @@ the build under test.
 
 ## Configuration setup and upgrades
 
+Coming from the old CLI? Follow [Switch to the bakers CLI](../docs/advanced/cli/switch-to-bakers.md).
+
 Initialize the scopes you need:
 
 ```bash
@@ -316,7 +318,7 @@ non-interactive report. Offline checks and
 upgrades do not establish online readiness. Full ownership, scope options, supported
 history and the exact focused regression/CI gates are in [`CONFIG.md`](CONFIG.md).
 
-Interactive `bakers conductor start` (stdin and stdout are TTYs, `CI` is unset or empty, and
+Interactive `bakers oven start` (stdin and stdout are TTYs, `CI` is unset or empty, and
 `--foreground` is absent) offers to install a newer release and migrate configuration.
 Enter accepts; `n` continues and suppresses another prompt until the cached check expires.
 After an accepted update, rerun the start command. `bakers ui`, foreground, CI and non-TTY
@@ -365,7 +367,7 @@ distinguish the two outcomes.
 
 ## Conductor lifecycle: identity, not paths (BB-450)
 
-`bakers conductor stop` finds its conductor by `conductor_id` and `host_key` from the
+`bakers oven stop` finds its conductor by `conductor_id` and `host_key` from the
 control-plane record — never by comparing the signalled process's working directory against
 `workspace_root`. That means `stop` (and `start`) work identically from the project root, from
 `.bakers/`, or from a linked worktree. Before signalling, the pid is verified as a live process
@@ -374,7 +376,7 @@ whose command line identifies a bakers-conductor foreground loop, owned by the s
 never a recycled pid that happens to share the number. With no pid on record, `stop` refuses and
 says so; it never guesses which process to signal.
 
-`bakers conductor start` reports exactly one of three outcomes: **started** (pid + host),
+`bakers oven start` reports exactly one of three outcomes: **started** (pid + host),
 **already running** (the live pid + heartbeat age), or **failed** (the reason) — and "started"
 means a fresh heartbeat actually arrived, not merely that the spawn call returned. `start --force`
 turns "already running" into a restart: a verified `SIGTERM`, a bounded grace period, an
@@ -392,10 +394,10 @@ break** from the earlier `<name>.config.js` variant naming — old variant files
 Select one per invocation by conductor name (= file stem, the part before `.conductor.config.js`):
 
 ```bash
-bakers conductor poll                       # the default conductor.config.js, or a sole lone config
-bakers --conductor shop conductor poll      # → .bakers/shop.conductor.config.js
-BB_CONDUCTOR=intra bakers conductor poll  # → .bakers/intra.conductor.config.js
-bakers --conductor conductor conductor poll # → .bakers/conductor.config.js (the default, explicitly)
+bakers oven once                       # the default conductor.config.js, or a sole lone config
+bakers --conductor shop oven once      # → .bakers/shop.conductor.config.js
+BB_CONDUCTOR=intra bakers oven once  # → .bakers/intra.conductor.config.js
+bakers --conductor conductor oven once # → .bakers/conductor.config.js (the default, explicitly)
 ```
 
 With no selector: `conductor.config.js` present → it is the default (used automatically); else a

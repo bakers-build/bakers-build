@@ -26,7 +26,7 @@ A run ends on the server. When the ticket moves to its next state, the server cl
 
 ## Conductor
 
-The conductor is the claim-and-dispatch loop that `bakers conductor start` runs, in `@bakers-build/conductor`. One conductor serves one project checkout, and the control plane coordinates them; there is no central daemon. Each tick does the following.
+The conductor is the claim-and-dispatch loop that `bakers oven start` runs, in `@bakers-build/conductor`. One conductor serves one project checkout, and the control plane coordinates them; there is no central daemon. Each tick does the following.
 
 1. Send a heartbeat, which refreshes the registration and recomputes the machine's load.
 2. Read the machine's shared capacity.
