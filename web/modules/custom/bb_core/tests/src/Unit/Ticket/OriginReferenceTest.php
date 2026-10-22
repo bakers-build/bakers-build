@@ -30,11 +30,26 @@ final class OriginReferenceTest extends TestCase {
    */
   public static function issueUrls(): array {
     return [
-      'canonical' => ['https://git.key-tec.de/bakers-build/bakers-build/-/issues/19', 'bakers-build/bakers-build#19'],
-      'without dash segment' => ['https://git.key-tec.de/bakers-build/bakers-build/issues/19', 'bakers-build/bakers-build#19'],
-      'http' => ['http://git.key-tec.de/bakers-build/bakers-build/-/issues/19', 'bakers-build/bakers-build#19'],
-      'trailing slash' => ['https://git.key-tec.de/bakers-build/bakers-build/-/issues/19/', 'bakers-build/bakers-build#19'],
-      'mixed case path' => ['https://git.key-tec.de/Keytec/bakers.build/-/issues/19', 'bakers-build/bakers-build#19'],
+      'canonical' => [
+        'https://git.key-tec.de/bakers-build/bakers-build/-/issues/19',
+        'bakers-build/bakers-build#19',
+      ],
+      'without dash segment' => [
+        'https://git.key-tec.de/bakers-build/bakers-build/issues/19',
+        'bakers-build/bakers-build#19',
+      ],
+      'http' => [
+        'http://git.key-tec.de/bakers-build/bakers-build/-/issues/19',
+        'bakers-build/bakers-build#19',
+      ],
+      'trailing slash' => [
+        'https://git.key-tec.de/bakers-build/bakers-build/-/issues/19/',
+        'bakers-build/bakers-build#19',
+      ],
+      'mixed case path' => [
+        'https://git.key-tec.de/Bakers-Build/BAKERS-BUILD/-/issues/19',
+        'bakers-build/bakers-build#19',
+      ],
       'nested group' => ['https://git.key-tec.de/a/b/c/-/issues/7', 'a/b/c#7'],
     ];
   }
@@ -74,13 +89,13 @@ final class OriginReferenceTest extends TestCase {
   public static function shortReferences(): array {
     return [
       'bare hash' => ['#19', ['alias' => NULL, 'number' => 19]],
-      'alias' => ['bakers#19', ['alias' => 'bakers', 'number' => 19]],
+      'alias' => ['bakers-build#19', ['alias' => 'bakers-build', 'number' => 19]],
       'alias prefix' => ['sym#1234', ['alias' => 'sym', 'number' => 1234]],
-      'uppercase alias' => ['bakers.build#19', ['alias' => 'bakers', 'number' => 19]],
+      'uppercase alias' => ['BAKERS-BUILD#19', ['alias' => 'bakers-build', 'number' => 19]],
       'surrounding space' => ['  #19  ', ['alias' => NULL, 'number' => 19]],
       'identifier is not one' => ['BB-295', NULL],
       'bare number is not one' => ['19', NULL],
-      'no number' => ['bakers#', NULL],
+      'no number' => ['bakers-build#', NULL],
       'zero rejected' => ['#0', NULL],
       'free text' => ['theme tokens', NULL],
     ];
@@ -100,9 +115,17 @@ final class OriginReferenceTest extends TestCase {
    */
   public static function repositoryUrls(): array {
     return [
-      'ssh with .git' => ['ssh://git@git.key-tec.de/bakers-build/bakers-build.git', 'bakers-build/bakers-build', 'bakers'],
-      'https' => ['https://git.key-tec.de/bakers-build/bakers-build', 'bakers-build/bakers-build', 'bakers'],
-      'scp shorthand' => ['git@git.key-tec.de:bakers-build/bakers-build.git', 'bakers-build/bakers-build', 'bakers'],
+      'ssh with .git' => [
+        'ssh://git@git.key-tec.de/bakers-build/bakers-build.git',
+        'bakers-build/bakers-build',
+        'bakers-build',
+      ],
+      'https' => ['https://git.key-tec.de/bakers-build/bakers-build', 'bakers-build/bakers-build', 'bakers-build'],
+      'scp shorthand' => [
+        'git@git.key-tec.de:bakers-build/bakers-build.git',
+        'bakers-build/bakers-build',
+        'bakers-build',
+      ],
       'nested group' => ['https://git.key-tec.de/a/b/c.git', 'a/b/c', 'c'],
       'empty' => ['', NULL, NULL],
     ];

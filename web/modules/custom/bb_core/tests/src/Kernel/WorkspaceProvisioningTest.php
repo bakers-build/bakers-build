@@ -33,8 +33,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * THE INJECTED FAULT IS A REAL ONE, not a mock that throws. It deletes the
  * `lead` rank and then provisions, which is precisely the state
- * `_bb_core_place_group_owner_in_lead()` documents a deployed site really
- * passing through — *"between `updatedb` and `config:import`"* — and its
+ * `WorkspaceMembershipHooks::placeGroupOwnerInLead()` documents a deployed site
+ * really passing through — *"between `updatedb` and `config:import`"* — and its
  * handling there is deliberately forgiving: *"every failure is logged and
  * skipped … saving a group must not fail there."* That forgiveness is right for
  * every other caller and is exactly what AC-6 cannot accept, so this is the

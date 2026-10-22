@@ -13,9 +13,9 @@ use Drupal\jsonapi\ResourceType\ResourceTypeRepository;
  *
  * Selection is by entity type ID prefix and content-entity-ness rather than by
  * an enumerated list of resource types: a list would be a second source of
- * truth that goes stale the first time a new bakers.build entity gets a list screen.
- * Everything else — user, file, the bb_vocabulary config
- * entity — keeps core's FALSE and pays nothing.
+ * truth that goes stale the first time a new bakers.build entity gets a list
+ * screen. Everything else — user, file, the bb_vocabulary config entity — keeps
+ * core's FALSE and pays nothing.
  */
 final class BbResourceTypeRepository extends ResourceTypeRepository {
 

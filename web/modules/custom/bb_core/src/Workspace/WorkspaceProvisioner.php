@@ -125,7 +125,7 @@ final class WorkspaceProvisioner {
       }
 
       // THE WORKSPACE MEMBERSHIP IS VERIFIED, NOT CREATED: `og_entity_insert()`
-      // writes it and `_bb_core_place_group_owner_in_lead()` adds `lead`, so
+      // writes it and `WorkspaceMembershipHooks` adds `lead`, so
       // a third write would be a duplicate `OgMembership::preSave()` refuses.
       // That hook is best-effort; asserting here makes it this act's guarantee.
       $this->assertMembership($owner, $workspace, self::WORKSPACE_LEAD_ROLE);

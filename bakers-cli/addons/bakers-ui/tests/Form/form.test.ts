@@ -340,7 +340,7 @@ it('autocomplete: insert/backspace edit the QUERY, never the id', () => {
   expect(s.parentQuery).toBe('BB-2');
   expect(s.parent).toBeNull();
   s = picker.apply(s, pickOpts, { kind: 'backspace' });
-  expect(s.parentQuery).toBe('bakers.build-');
+  expect(s.parentQuery).toBe('BB-');
   // Backspacing an empty query is a no-op, not an error.
   expect(
     picker.apply(picker.initial(pickOpts), pickOpts, { kind: 'backspace' })
@@ -358,10 +358,7 @@ it('filterOptions is EXPORTED, because the renderer shows the same list', () => 
   // The reducer clamps its cursor against the filtered list; if the renderer
   // filtered by a rule of its own, the `›` marker would point at a different
   // row than `pick` takes (D7's "always apply the local filter").
-  expect(filterOptions(parents, 'BB-2').map((o) => o.id)).toEqual([
-    'p2',
-    'p3',
-  ]);
+  expect(filterOptions(parents, 'BB-2').map((o) => o.id)).toEqual(['p2', 'p3']);
   expect(filterOptions(parents, 'POPUP').map((o) => o.id)).toEqual(['p3']);
   expect(filterOptions(parents, 'nope')).toEqual([]);
   expect(filterOptions([], 'anything')).toEqual([]);

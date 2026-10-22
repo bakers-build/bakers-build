@@ -20,8 +20,8 @@ use PHPUnit\Framework\Attributes\Group;
  * and needs no extra interface."* So this test asserts three deletions and one
  * derivation:
  *
- * - **The interface is gone**, and `BbContentEntityInterface` no longer
- *   extends it. A bakers.build entity is not defined by being able to be a table row.
+ * - **The interface is gone**, and `BbContentEntityInterface` no longer extends
+ *   it. A bakers.build entity is not defined by being able to be a table row.
  * - **`getBbRowUrl()` is gone**, and with it `data-row-url`. Measured before
  *   the deletion: no JavaScript and no CSS in this theme read that attribute;
  *   its only readers were the tests that asserted it and two Playwright steps
@@ -110,14 +110,14 @@ final class TableRowFaceTest extends KernelTestBase {
    *
    * ENUMERATED FROM THE ENTITY TYPE MANAGER rather than asserted about two
    * classes by hand, for the same reason the phase test enumerates workflows:
-   * `getBbRowUrl()` lived on `BbContentEntityBase`, so EVERY bakers.build entity
-   * had it, and a deletion that left one override behind would be invisible to
-   * a two-case check. The method's absence is the deliverable, so every class
-   * that could carry it is asked.
+   * `getBbRowUrl()` lived on `BbContentEntityBase`, so EVERY bakers.build
+   * entity had it, and a deletion that left one override behind would be
+   * invisible to a two-case check. The method's absence is the deliverable, so
+   * every class that could carry it is asked.
    *
    * The `_TEST_` suffix guard is not needed here — the loop is scoped by the
-   * class's own namespace, which is what makes it list bakers's entities and not
-   * core's fifty.
+   * class's own namespace, which is what makes it list bakers's entities and
+   * not core's fifty.
    */
   public function testNoBbEntityClassAnswersTheRowUrl(): void {
     $classes = [];
@@ -215,7 +215,7 @@ final class TableRowFaceTest extends KernelTestBase {
   }
 
   /**
-   * A bakers.build entity with no workflow answers no phase and needs no override.
+   * An entity with no workflow answers no phase and needs no override.
    *
    * The base class no longer answers one at all: with no interface to satisfy,
    * a method returning NULL for every entity but one was a default restated in

@@ -1,12 +1,10 @@
+uuid: 4582b480-c6d8-4472-9144-3233454b4ef0
 langcode: en
 status: true
 dependencies:
   config:
     - island.app.bakers
     - system.menu.bakers-rail
-  enforced:
-    config:
-      - island.app.bakers
   module:
     - bb_api_key
     - bb_core
@@ -17,6 +15,9 @@ dependencies:
     - ui_patterns
   theme:
     - bb_theme
+  enforced:
+    config:
+      - island.app.bakers
 id: bb_shell
 label: 'bakers.build application shell'
 app: bakers
@@ -39,11 +40,11 @@ placements:
   # which component fills it.
   shell_rail:
     plugin_id: ui_patterns_component
-    events:
-      - bakers.team.created
     slot: sidebar
     weight: 0
     enabled: true
+    events:
+      - bakers.team.created
     configuration:
       component:
         component_id: 'bb_theme:sidebar'
@@ -155,11 +156,11 @@ placements:
     data: {  }
   shell_page_header:
     plugin_id: ui_patterns_component
-    events:
-      - bakers.entity.renamed
     slot: content
     weight: 1
     enabled: true
+    events:
+      - bakers.entity.renamed
     configuration:
       component:
         component_id: 'bb_theme:page_header'
@@ -214,9 +215,9 @@ placements:
     weight: 2
     enabled: true
     configuration:
+      content_source_id: shell_main
       also_placements:
         - shell_page_header
-      content_source_id: shell_main
     data: {  }
   shell_status_bar:
     plugin_id: ui_patterns_component

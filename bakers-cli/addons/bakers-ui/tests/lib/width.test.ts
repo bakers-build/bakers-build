@@ -14,14 +14,14 @@ import {
 describe('displayWidth', () => {
   it('displayWidth counts East-Asian wide characters as two columns', () => {
     expect(displayWidth('⚡')).toBe(2);
-    expect(displayWidth('bakers.build')).toBe(4);
+    expect(displayWidth('bakers.build')).toBe(12);
     expect(displayWidth('╭─')).toBe(2);
     expect(displayWidth('日本')).toBe(4);
     expect(displayWidth('')).toBe(0);
-    // The exact prefix `renderScreen` builds its top frame from: 10 code units,
-    // 11 columns. That gap is the whole defect.
-    expect('╭─ ⚡ bakers.build '.length).toBe(10);
-    expect(displayWidth('╭─ ⚡ bakers.build ')).toBe(11);
+    // The exact prefix `renderScreen` builds its top frame from: 18 code units,
+    // 19 columns. That gap is the whole defect.
+    expect('╭─ ⚡ bakers.build '.length).toBe(18);
+    expect(displayWidth('╭─ ⚡ bakers.build ')).toBe(19);
   });
 
   it('displayWidth ignores combining marks', () => {

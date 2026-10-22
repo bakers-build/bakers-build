@@ -61,9 +61,9 @@ final class ConfigCopyDriftTest extends UnitTestCase {
   /**
    * The surviving OAuth2 scope's per-permission children (BB-391).
    *
-   * The umbrella's children ARE the ceiling of every bakers.build machine identity, so
-   * the pair has to be compared STRUCTURALLY and not only by the permission
-   * each child names: a child that drifts in `status`, in
+   * The umbrella's children ARE the ceiling of every bakers.build machine
+   * identity, so the pair has to be compared STRUCTURALLY and not only by the
+   * permission each child names: a child that drifts in `status`, in
    * `grant_types.client_credentials.status` or in `parent` still names the
    * right permission and grants nothing, and
    * `Oauth2ScopeProvider::getPermissions()` would simply return a shorter union
@@ -80,7 +80,7 @@ final class ConfigCopyDriftTest extends UnitTestCase {
    */
   private const SCOPE_CONFIG_NAMES = [
     'simple_oauth.oauth2_scope.bb_session',
-    'simple_oauth.oauth2_scope.bb_session_claim_bb_tickets',
+    'simple_oauth.oauth2_scope.bb_session_claim_bakers_tickets',
     'simple_oauth.oauth2_scope.bb_session_create_bb_comment',
     'simple_oauth.oauth2_scope.bb_session_create_bb_environment',
     'simple_oauth.oauth2_scope.bb_session_create_bb_group',
@@ -89,7 +89,7 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'simple_oauth.oauth2_scope.bb_session_create_bb_term',
     'simple_oauth.oauth2_scope.bb_session_create_bb_ticket',
     'simple_oauth.oauth2_scope.bb_session_edit_bb_project',
-    'simple_oauth.oauth2_scope.bb_session_register_bb_conductor',
+    'simple_oauth.oauth2_scope.bb_session_register_bakers_conductor',
     'simple_oauth.oauth2_scope.bb_session_update_any_bb_group',
     'simple_oauth.oauth2_scope.bb_session_update_any_bb_term',
     'simple_oauth.oauth2_scope.bb_session_update_any_bb_ticket',
@@ -101,22 +101,22 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'simple_oauth.oauth2_scope.bb_session_view_bb_environment',
     'simple_oauth.oauth2_scope.bb_session_view_bb_group',
     'simple_oauth.oauth2_scope.bb_session_view_bb_machine',
-    'simple_oauth.oauth2_scope.bb_session_view_bb_memberships',
+    'simple_oauth.oauth2_scope.bb_session_view_bakers_memberships',
     'simple_oauth.oauth2_scope.bb_session_view_bb_project',
     'simple_oauth.oauth2_scope.bb_session_view_bb_run',
     'simple_oauth.oauth2_scope.bb_session_view_bb_team',
     'simple_oauth.oauth2_scope.bb_session_view_bb_term',
     'simple_oauth.oauth2_scope.bb_session_view_bb_ticket',
     'simple_oauth.oauth2_scope.bb_session_view_bb_workspace',
-    'simple_oauth.oauth2_scope.bb_session_write_bb_via_session_scope',
+    'simple_oauth.oauth2_scope.bb_session_write_bakers_via_session_scope',
   ];
 
   /**
    * The config objects the bakers recipe ships a second copy of, by name.
    *
    * A third pair of directories with the same two-install-paths problem:
-   * config/sync is what CIM imports on the server, recipes/bakers/config is what
-   * a recipe install applies.
+   * config/sync is what CIM imports on the server, recipes/bakers/config is
+   * what a recipe install applies.
    *
    * BB-391 D2 emptied this list of everything auth-related — both machine
    * roles and the `pm` scope are DELETED, not re-pointed — and then D3 put the
@@ -137,13 +137,13 @@ final class ConfigCopyDriftTest extends UnitTestCase {
    *
    * The two PAGE LAYOUTS joined on BB-415, and the reason each is here is a
    * different one. `bb_gate` is new and simply obeys D8: a page layout has
-   * exactly two homes and this pair is them. `bb_shell` is the older object
-   * and was ABSENT from this list precisely because its second copy sat in
+   * exactly two homes and this pair is them. `bb_shell` is the older object and
+   * was ABSENT from this list precisely because its second copy sat in
    * `bb_core/config/optional/` — display_builder-owned config shipped from a
    * module that does not depend on display_builder, which CLAUDE.md recorded as
    * a standing BB-396 exception "to fix, not to copy". BB-415 fixed it: the
-   * file moved to `recipes/bakers/config/`, its `config: import:` entry went, and
-   * the pair became comparable for the first time. Shipping the new layout
+   * file moved to `recipes/bakers/config/`, its `config: import:` entry went,
+   * and the pair became comparable for the first time. Shipping the new layout
    * correctly while the old one kept the wrong placement would have encoded the
    * exception as the pattern.
    *

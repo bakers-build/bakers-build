@@ -72,4 +72,4 @@ The conductor and `bakers agents` fail with one of these messages; `bakers confi
 | `agents.default_agent names unavailable alias '<alias>'` | `default_agent` is not among the enabled aliases. |
 | `agents.enabled names unknown alias '<alias>'` | Typo, or the addon that publishes it is missing. |
 
-A label that names an unknown alias or route only logs a warning and falls back, so check the observed agent instead of trusting the label. Pins, options such as `model` and `effort`, catalog overlays and every field are in [Machines](/advanced/machines#the-agents-object). Measuring Claude runs and applying state-group settings is [Claude profiles](/advanced/configuration/claude-profiles).
+A label that names an unknown alias or route only logs a warning and falls back, so check the observed agent instead of trusting the label. Pins, options such as `model` and `effort`, catalog overlays and every field are in [Machines](/advanced/machines#the-agents-object).

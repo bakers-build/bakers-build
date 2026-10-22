@@ -19,7 +19,7 @@ When('I set a personal two-hour schedule as {string}', async ({ page }, account:
   await page.getByLabel('Optional proposal-day cap (H:MM)', { exact: true }).fill('');
   await page.getByRole('button', { name: 'Save schedule', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/user/${uid}/schedule$`));
-  await expect(page.locator('#bakers-track-schedule').getByText('Personal schedule saved.', { exact: true })).toBeVisible();
+  await expect(page.locator('#bb-track-schedule').getByText('Personal schedule saved.', { exact: true })).toBeVisible();
 });
 
 When('I submit a two-hour activity for {string} with source {string}', async ({ page }, date: string, source: string) => {

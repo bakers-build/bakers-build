@@ -15,14 +15,15 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for WriteAuditHooks.
  *
- * Verifies that entity insert events on bakers.build entity types are logged with the
- * correct context, and that non-bakers.build entities are silently ignored.
+ * Verifies that entity insert events on bakers.build entity types are logged
+ * with the correct context, and that non-bakers.build entities are silently
+ * ignored.
  */
 #[Group('bb_core')]
 final class WriteAuditHooksTest extends UnitTestCase {
 
   /**
-   * Verifies that inserting a bakers.build ticket triggers exactly one log entry.
+   * Verifies that inserting a ticket triggers exactly one log entry.
    *
    * The log entry must contain entity type, operation, and current user ID.
    */

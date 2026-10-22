@@ -172,13 +172,13 @@ final class WorkspaceReadScopeViewsTest extends KernelTestBase {
    * Returns every View config file this guard has to read.
    *
    * THREE globs, and the third is not an install path — which is the thing to
-   * be careful about. bakers.build reaches a server through `config/sync` and a fresh
-   * recipe install through the module's `config/install` and `config/optional`,
-   * so a View that leaked into only one of them would be missed by scanning
-   * either alone: both are scanned. The FIXTURES directory is scanned in
-   * addition, because `bb_dashboard`'s Views were rehomed there when BB-396
-   * deleted the module, and the objects the rule was originally written against
-   * still have to be measured somewhere.
+   * be careful about. bakers.build reaches a server through `config/sync` and a
+   * fresh recipe install through the module's `config/install` and
+   * `config/optional`, so a View that leaked into only one of them would be
+   * missed by scanning either alone: both are scanned. The FIXTURES directory
+   * is scanned in addition, because `bb_dashboard`'s Views were rehomed there
+   * when BB-396 deleted the module, and the objects the rule was originally
+   * written against still have to be measured somewhere.
    *
    * The distinction matters for what a failure means. A hit under
    * `config/{install,optional}` or `config/sync` is a SHIPPED View breaking the

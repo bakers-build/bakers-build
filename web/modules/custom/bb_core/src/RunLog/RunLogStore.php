@@ -14,7 +14,8 @@ use Drupal\bb_core\Entity\BbRunInterface;
 /**
  * Stores a run log as a managed file under the private scheme.
  *
- * Layout: private://bakers-run-logs/<workspace-uuid>/<run-uuid>/<random>.log.gz.
+ * Layout:
+ * private://bakers-run-logs/<workspace-uuid>/<run-uuid>/<random>.log.gz.
  *
  * The workspace segment is the UUID rather than the slug, so renaming a
  * workspace cannot orphan its files. New writes are gzip (not encrypted);

@@ -34,11 +34,6 @@ $settings['trusted_host_patterns'] = ['.*'];
 // fixed IP that would drift with the container.
 $settings['reverse_proxy_addresses'] = ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'];
 
-// Real secret: GitLab connector token from the environment. The connector config
-// keeps the token empty and it is injected here from BB_GITLAB_TOKEN_KEYTEC
-// (see the BbConnector entity doc).
-$config['bb_connector.connector.keytec_gitlab']['settings']['token'] = getenv('BB_GITLAB_TOKEN_KEYTEC') ?: '';
-
 // Local development (DDEV only — never on a deployed/Komodo container): enable
 // Twig theme debug (template-suggestion + source comments) and disable the
 // render/page caches so template + preprocess changes show immediately. This is

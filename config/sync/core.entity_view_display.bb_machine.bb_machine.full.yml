@@ -5,8 +5,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_machine.full
   module:
-    - display_builder
     - bb_core
+    - display_builder
 third_party_settings:
   display_builder:
     profile: default
@@ -90,4 +90,3 @@ hidden:
   name: true
   owner_user_id: true
   search_api_excerpt: true
-

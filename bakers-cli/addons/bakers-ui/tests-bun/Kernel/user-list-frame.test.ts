@@ -56,7 +56,9 @@ function services(): RendererServices {
         tickets: {
           total: { day: 1, week: 2, month: 3 },
           by_user: [{ id: 'u-cw', label: 'cw', day: 1, week: 2, month: 30 }],
-          by_project: [{ id: 'p1', label: 'bakers', day: 1, week: 2, month: 3 }],
+          by_project: [
+            { id: 'p1', label: 'bakers', day: 1, week: 2, month: 3 },
+          ],
           by_day: Array.from({ length: 7 }, (_, i) => ({
             date: `2026-08-${12 + i}`,
             label: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'][i],
@@ -66,7 +68,9 @@ function services(): RendererServices {
         runs: {
           total: { day: 1, week: 2, month: 3 },
           by_user: [{ id: 'u-cw', label: 'cw', day: 1, week: 2, month: 10 }],
-          by_project: [{ id: 'p1', label: 'bakers', day: 1, week: 2, month: 3 }],
+          by_project: [
+            { id: 'p1', label: 'bakers', day: 1, week: 2, month: 3 },
+          ],
           by_day: Array.from({ length: 7 }, (_, i) => ({
             date: `2026-08-${12 + i}`,
             label: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'][i],

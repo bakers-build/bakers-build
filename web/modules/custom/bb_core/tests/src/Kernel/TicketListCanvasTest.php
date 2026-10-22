@@ -319,12 +319,11 @@ final class TicketListCanvasTest extends KernelTestBase {
     self::assertStringStartsWith('/bakers/ticket/create?', $href, 'The trigger addresses the create route.');
     self::assertStringContainsString('keep=me', $href, 'The merge adds a key, it does not replace the query.');
     // The screen the dialog is opened OVER, which the form reads back as
-    // `Cancel`'s href and as the post-write `HX-Location`. The dialog no
-    // longer renders on that screen, so nothing else can answer for it.
-    // `/` is not percent-encoded by `UrlHelper::buildQuery()`, and the QUERY
-    // inside the destination is — `destination=/bakers/tickets/all%3Fkeep%3Dme` —
-    // which is what keeps the screen's own query from leaking into the
-    // dialog's.
+    // `Cancel`'s href and as the post-write `HX-Location`. The dialog no longer
+    // renders on that screen, so nothing else can answer for it. `/` is not
+    // percent-encoded by `UrlHelper::buildQuery()`, and the QUERY inside the
+    // destination is — `destination=/bakers/tickets/all%3Fkeep%3Dme` — which is
+    // what keeps the screen's own query from leaking into the dialog's.
     self::assertStringContainsString('destination=/bakers/tickets/all', $href);
     self::assertStringContainsString('%3Fkeep%3Dme', $href, 'The screen keeps its own query, encoded.');
     self::assertStringNotContainsString('_wrapper_format', $href, 'The plain href is a page url.');

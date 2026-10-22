@@ -103,7 +103,7 @@ function worklogExists(description: string): boolean {
   ) === '1';
 }
 
-const TIME_FORM = 'form#bakers-track-worklog-form';
+const TIME_FORM = 'form#bb-track-worklog-form';
 const OPEN_TIME_DIALOG = `dialog[data-dialog][open]:has(${TIME_FORM})`;
 
 Then('I see the Record time action', async ({ page }) => {

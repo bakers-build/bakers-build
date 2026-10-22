@@ -10,16 +10,16 @@ import type {
 } from '../plugins/executor.js';
 import { type ResolvedAgent, resolveAgent } from '../plugins/plugins.js';
 import type {
+  BbRemote,
   ClaimedRun,
   ConductorRegistration,
   FinalizableRun,
   FrozenTicket,
-  BbRemote,
   RunMetrics,
   Ticket,
   UncleanTicket,
 } from '../plugins/remote.js';
-import type { EnsuredWorkspace, BbWorkspace } from '../plugins/workspace.js';
+import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';

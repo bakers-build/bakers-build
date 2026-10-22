@@ -11,7 +11,7 @@ import world from '../../support/contract-world.json';
 
 const { Given, When, Then, After } = createBdd(test);
 
-const bakers.build = resolve(__dirname, '../../../../bakers-cli/bin/bakers');
+const BAKERS = resolve(__dirname, '../../../../bakers-cli/bin/bakers');
 
 type FixtureName = keyof typeof world;
 
@@ -112,7 +112,7 @@ let dropshConfig = '';
 let lastDropsh = { status: null as number | null, stdout: '', stderr: '' };
 
 function runBb(args: string[], home: string): typeof lastDropsh {
-  const result = spawnSync(bakers.build, args, {
+  const result = spawnSync(BAKERS, args, {
     encoding: 'utf8',
     env: {
       ...process.env,

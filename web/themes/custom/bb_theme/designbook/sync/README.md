@@ -91,17 +91,17 @@ inside contrib; and the fact that the emitted `dependencies` are the
 **first-save** form, because a second save adds keys the recipe's strict list
 rejects.
 
-**Every unit of that run was a blueprint-precedence stage-4 hit**, reported
-in the run's `uncovered_units` rather than swallowed: `designbook-drupal`
-ships no blueprint with a `trigger.config_name` glob, none for
-`display_builder_page_layout`, and none for bakers.build's custom entity types — its
-entity-type blueprints are `node`, `media`, `taxonomy_term`, `block_content`
+**Every unit of that run was a blueprint-precedence stage-4 hit**, reported in
+the run's `uncovered_units` rather than swallowed: `designbook-drupal` ships no
+blueprint with a `trigger.config_name` glob, none for
+`display_builder_page_layout`, and none for bakers.build's custom entity types —
+its entity-type blueprints are `node`, `media`, `taxonomy_term`, `block_content`
 and `canvas_page`. The `canvas` data-mapping blueprint does describe a
-`page_layout` config unit, but it gates on `build_form: canvas` and this
-page's `build_form` is `field-map`. So all three generators that run emitted —
-the page layout and the two `bb_team` ones since removed — were authored from
-`prepared` (the live typed-config JSON Schema) plus the scene and the data
-model. That is a gap in the backend integration, not in this project.
+`page_layout` config unit, but it gates on `build_form: canvas` and this page's
+`build_form` is `field-map`. So all three generators that run emitted — the page
+layout and the two `bb_team` ones since removed — were authored from `prepared`
+(the live typed-config JSON Schema) plus the scene and the data model. That is a
+gap in the backend integration, not in this project.
 
 **There is no `block.block.*` generator, and that is measured.** D10 names
 "the rail block's placement" beside the page layout, but that clause survives
@@ -252,15 +252,15 @@ npx storybook-addon-designbook workflow create --workflow sync-to --params '{
   comes back with an empty unit list and writes nothing — the correct
   idempotent behaviour, and useless when the point is that the shipped file
   *is* the emission.
-- **`backend_cmd.import` does not work on a recipe-provisioned site.** It
-  runs `--source=/var/www/html/config/sync`, and `config/sync/system.site.yml`
+- **`backend_cmd.import` does not work on a recipe-provisioned site.** It runs
+  `--source=/var/www/html/config/sync`, and `config/sync/system.site.yml`
   carries a different site UUID than a `ddev init --provider recipe-test`
-  install, so the whole-directory import fails validation ("Site UUID in
-  source storage does not match the target storage"), together with
-  pre-existing-entity errors for og_membership and the two bakers.build vocabularies.
-  `--partial` seeds from **active** storage, so pointing `--source` at a
-  directory holding only the run's own emitted files makes `system.site` come
-  from active and the import succeed. Same command, narrower source.
+  install, so the whole-directory import fails validation ("Site UUID in source
+  storage does not match the target storage"), together with pre-existing-entity
+  errors for og_membership and the two bakers.build vocabularies. `--partial`
+  seeds from **active** storage, so pointing `--source` at a directory holding
+  only the run's own emitted files makes `system.site` come from active and the
+  import succeed. Same command, narrower source.
 
 ## Re-running the sync (BB-414, run `sync-to-2026-09-01-6202`)
 
@@ -329,12 +329,12 @@ Four things about this invocation are worth copying.
   operations, exit 0.
 
 **Every unit was a blueprint-precedence stage-4 hit again**, reported in
-`uncovered_units` rather than swallowed — the same gap the BB-396 run found
-and for the same reason: `designbook-drupal` ships no blueprint with a
+`uncovered_units` rather than swallowed — the same gap the BB-396 run found and
+for the same reason: `designbook-drupal` ships no blueprint with a
 `trigger.config_name` glob and its entity-type blueprints are `node`, `media`,
-`taxonomy_term`, `block_content` and `canvas_page`, none of which is a bakers.build
-custom entity type. All six were authored from `prepared` (the live typed-config
-JSON Schema) plus the entity mappings and the data model.
+`taxonomy_term`, `block_content` and `canvas_page`, none of which is a
+bakers.build custom entity type. All six were authored from `prepared` (the live
+typed-config JSON Schema) plus the entity mappings and the data model.
 
 **What the run could not express, stated rather than faked.** One of the three
 displays binds less than its mapping composes, and its generator says so in its

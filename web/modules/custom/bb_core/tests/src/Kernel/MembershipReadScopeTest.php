@@ -19,11 +19,10 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * or an OG `administer group` / `manage members` grant
  * (`OgMembershipAccessControlHandler::checkAccess()`). The `bb:session`
  * umbrella names none of those, so a machine identity's collection read
- * answered
- * HTTP 200 with `data: []` and a `meta.omitted` block listing every row, and
- * the `bakers ui` Teams tab reported `MEMBERS 0` for a crew of three. Measured at
- * BB-391; a count of zero is worse than the `—` the client reserves for
- * "uncounted", because only one of the two admits it does not know.
+ * answered HTTP 200 with `data: []` and a `meta.omitted` block listing every
+ * row, and the `bakers ui` Teams tab reported `MEMBERS 0` for a crew of three.
+ * Measured at BB-391; a count of zero is worse than the `—` the client reserves
+ * for "uncounted", because only one of the two admits it does not know.
  *
  * The fix is deliberately NOT `administer organic groups`: that is site-wide
  * and
@@ -33,10 +32,11 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * the rank, the `state`, or the workspace- and project-level rows, and it would
  * drift from the relation it mirrors.
  *
- * So capability and rows are split the way the rest of bakers.build splits them:
+ * So capability and rows are split the way the rest of bakers.build splits
+ * them:
  *
- * - the PERMISSION `view bakers memberships` decides that the operation exists at
- *   all, and it grants unconditionally — a child scope always does;
+ * - the PERMISSION `view bakers memberships` decides that the operation exists
+ *   at all, and it grants unconditionally — a child scope always does;
  * - the ROWS come from the read scope, twice over: a `query_access` rule for
  *   the collection (so the rows are FILTERED, and an empty crew stops looking
  *   like an unreadable one) and this module's own access control handler for
@@ -279,14 +279,13 @@ final class MembershipReadScopeTest extends KernelTestBase {
   }
 
   /**
-   * bakers.build's own membership resolution is never filtered by the scope it feeds.
+   * Membership resolution is never filtered by the read scope it feeds.
    *
    * The recursion this rule invites, and the reason it terminates: resolving
-   * the
-   * read scope RUNS an `og_membership` query, and that query re-enters the very
-   * listener that is resolving. It is left unnarrowed rather than falsified —
-   * falsifying it would make every account look rankless, which at the call
-   * site is indistinguishable from holding no rank.
+   * the read scope RUNS an `og_membership` query, and that query re-enters the
+   * very listener that is resolving. It is left unnarrowed rather than
+   * falsified — falsifying it would make every account look rankless, which at
+   * the call site is indistinguishable from holding no rank.
    *
    * Asserted through the rank layer rather than on the guard itself: an account
    * whose ONLY capability comes from a rank must still hold that rank's
@@ -310,13 +309,12 @@ final class MembershipReadScopeTest extends KernelTestBase {
    *
    * Found by two write-scope tests going red, not predicted. The read scope is
    * memoised per request and deliberately not invalidated, which was harmless
-   * while the only thing that resolved it was a bakers.build collection query — by then
-   * the request's memberships were written. Narrowing `og_membership` changed
-   * that: OG's own upsert asks `getMembership()` FIRST, that lookup now
-   * resolves
-   * the scope, and the membership then lands behind a memo saying the account
-   * belongs to nothing. Every later read in the same request is empty at HTTP
-   * 200 with no log line.
+   * while the only thing that resolved it was a bakers.build collection query —
+   * by then the request's memberships were written. Narrowing `og_membership`
+   * changed that: OG's own upsert asks `getMembership()` FIRST, that lookup now
+   * resolves the scope, and the membership then lands behind a memo saying the
+   * account belongs to nothing. Every later read in the same request is empty
+   * at HTTP 200 with no log line.
    *
    * Asserted through the ORDER, because the order is the bug: the lookup
    * happens
@@ -349,10 +347,10 @@ final class MembershipReadScopeTest extends KernelTestBase {
    * An ANONYMOUS current user leaves the membership query untouched.
    *
    * Not a hole, and not cosmetic. `Og::getMembership()` queries with
-   * `accessCheck(TRUE)`, and every drush, deploy-hook and cron path runs as
+   * `accessCheck(TRUE)`, and every drush, install and cron path runs as
    * anonymous while asking about SOMEBODY ELSE's membership — the owner
-   * placement in `_bb_core_place_group_owner()`, the project-member migration
-   * in `bb_core.deploy.php`, the workspace backfill in the post_update.
+   * placement in `WorkspaceMembershipHooks::placeGroupOwnerInLead()`, for
+   * one.
    * Narrowing those would answer NULL for a membership that exists, and the
    * caller's next step is `Og::createMembership()`, which then aborts with "An
    * OG membership already exists for user ID …".

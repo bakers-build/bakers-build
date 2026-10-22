@@ -3,8 +3,8 @@ langcode: en
 status: true
 dependencies:
   config:
-    - core.entity_view_mode.bb_comment.full
     - bb_core.bb_comment_type.bb_comment
+    - core.entity_view_mode.bb_comment.full
   module:
     - display_builder
     - text

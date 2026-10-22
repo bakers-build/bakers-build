@@ -3,9 +3,9 @@ import {
   addRendererPluginEntry,
   applyMigrations,
   assertContiguous,
+  BB_CONFIG_SCHEMA_VERSION,
   CONNECTION_MIGRATIONS,
   type ConnectionConfigMigration,
-  BB_CONFIG_SCHEMA_VERSION,
   OAUTH2_PLUGIN_PACKAGE,
   RENDERER_PLUGIN_ENTRY,
   RENDERER_PLUGIN_PACKAGE,
@@ -218,7 +218,9 @@ describe('config-schema', () => {
       expect(out).toContain('client_secret: clientSecret,');
       expect(out).toContain(`token_url: \`\${baseUrl}/oauth/token\`,`);
       expect(out).toContain('workspace_id: workspaceId,');
-      expect(out).toContain("addons: ['@bakers-build/addon-bakers-ui-artifacts'],");
+      expect(out).toContain(
+        "addons: ['@bakers-build/addon-bakers-ui-artifacts'],",
+      );
       // The renderer aggregator v1→v2 installed survives the collapse.
       expect(out).toContain(RENDERER_PLUGIN_PACKAGE);
     });

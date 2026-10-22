@@ -236,7 +236,6 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
       // Only the `Htmx` attributes are used (they go on a prop), so its
       // library is stated here, with the option picker's: the dialog's own
       // libraries arrive too late for the first click.
-      //.
       '#attached' => [
         'library' => [
           'core/drupal.htmx',
@@ -257,7 +256,6 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
           // element is common to both hulls. Only the outermost: htmx swaps in
           // every match, which would lift a nested dialog, such as the image
           // crop's, out of its form.
-          //.
           ->select('dialog:not(dialog dialog)')
           ->swap('innerHTML')
           ->getAttributes(),

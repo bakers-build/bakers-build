@@ -59,7 +59,9 @@ function schemaDir(): string {
     } catch {}
     dir = dirname(dir);
   }
-  throw new Error('message/schema: @bakers-build/message package root not found');
+  throw new Error(
+    'message/schema: @bakers-build/message package root not found',
+  );
 }
 
 function loadSchema(file: string): object {

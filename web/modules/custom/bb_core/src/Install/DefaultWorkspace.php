@@ -10,10 +10,8 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 /**
  * Creates the one workspace every bakers.build instance is guaranteed to have.
  *
- * Shared by bb_core_install() (fresh installs, recipe or existing-config)
- * and bb_core_post_update_seed_default_workspace() (deployed sites); exactly
- * one of them runs on a given site. The slug is written here because a fresh
- * install baselines the slug-backfill post-update too.
+ * Called by bb_core_install() on every install path (recipe or
+ * existing-config).
  */
 final class DefaultWorkspace {
 

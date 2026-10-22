@@ -5,10 +5,7 @@
 import type { BbPreset } from '@bakers-build/core';
 import bakersUiPlugin from './index.js';
 
-export const connectionPlugins: BbPreset['connectionPlugins'] = (
-  acc,
-  opts,
-) => [
+export const connectionPlugins: BbPreset['connectionPlugins'] = (acc, opts) => [
   ...acc,
   // The tui renderer plugin is a DropSHPlugin structurally (id + renderers);
   // its concrete renderer types are wider than dropsh's exported interface.

@@ -6,9 +6,9 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type {
+  BbWorkspace,
   ConductorFileConfig,
   EnsuredWorkspace,
-  BbWorkspace,
   WorkspacePlugin,
 } from '@bakers-build/conductor/contract';
 import { deriveCheckoutRoot, exec, slugify } from '@bakers-build/core';

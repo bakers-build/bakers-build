@@ -78,7 +78,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
   private ContentEntityInterface $ticket;
 
   /**
-   * The project at /bakers/project/bakers.
+   * The project at /bakers/project/bb.
    */
   private ContentEntityInterface $project;
 
@@ -118,7 +118,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
     ]);
     $this->project = $this->create('bb_project', [
       'name' => 'bakers.build',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $group->id(),
     ]);
     $this->ticket = $this->create('bb_ticket', [
@@ -142,7 +142,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
     // superseded once Overview got a face of its own, and canonical is
     // gated on `bb_project.view` rather than `.update`, so a member with
     // ordinary view access gets 200 rather than a redirect or a 403.
-    self::assertSame(200, $this->statusOf('/bakers/project/bakers'));
+    self::assertSame(200, $this->statusOf('/bakers/project/bb'));
     self::assertSame(200, $this->statusOf($this->runCanonicalPath()));
     self::assertSame(200, $this->statusOf($this->runCanonicalPath() . '/overlay'));
     self::assertSame(404, $this->statusOf('/bakers/run/' . $this->run->id()));
@@ -179,7 +179,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
     $this->actAs($account);
 
     self::assertSame(404, $this->statusOf('/other/ticket/bb-1'));
-    self::assertSame(404, $this->statusOf('/other/project/bakers'));
+    self::assertSame(404, $this->statusOf('/other/project/bb'));
     self::assertSame(404, $this->statusOf('/other/ticket/bb-1/run/' . $this->run->id()));
   }
 
@@ -190,7 +190,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
     $this->actAs($this->memberWithViewAccess());
 
     self::assertSame(404, $this->statusOf('/nope/ticket/bb-1'));
-    self::assertSame(404, $this->statusOf('/nope/project/bakers'));
+    self::assertSame(404, $this->statusOf('/nope/project/bb'));
   }
 
   /**

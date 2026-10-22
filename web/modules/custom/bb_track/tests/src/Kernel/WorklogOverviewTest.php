@@ -750,7 +750,7 @@ final class WorklogOverviewTest extends KernelTestBase {
     $markup = $this->renderDisplay($team, 'team');
     self::assertMatchesRegularExpression('/Total recorded time:\s*1:00/', $markup);
     self::assertStringNotContainsString('Proposed', $markup);
-    self::assertStringNotContainsString('bakers-track-week-form', $markup);
+    self::assertStringNotContainsString('bb-track-week-form', $markup);
   }
 
   /**
@@ -759,7 +759,7 @@ final class WorklogOverviewTest extends KernelTestBase {
   public function testWeekGridIsEditableOnlyInPersonalContexts(): void {
     $this->createRecorded($this->employee, ['work_date' => '2026-10-05', 'duration_seconds' => 3600]);
     $workspace = $this->renderView($this->overview($this->employee, ['mode' => 'week', 'date' => '2026-10-05']));
-    self::assertStringContainsString('bakers-track-week-form', $workspace);
+    self::assertStringContainsString('bb-track-week-form', $workspace);
     self::assertStringContainsString('name="cells[2026-10-05:' . $this->projectP->id() . ':0][duration]"', $workspace);
     self::assertStringContainsString('value="1:00"', $workspace);
     $personal = $this->calendar(
@@ -768,14 +768,14 @@ final class WorklogOverviewTest extends KernelTestBase {
       ['user' => $this->employee],
       ['mode' => 'week', 'date' => '2026-10-05'],
     );
-    self::assertStringContainsString('bakers-track-week-form', $this->renderDisplay($personal, 'personal'));
+    self::assertStringContainsString('bb-track-week-form', $this->renderDisplay($personal, 'personal'));
     $foreign = $this->calendar(
       'personal',
       $this->peer,
       ['user' => $this->employee],
       ['mode' => 'week', 'date' => '2026-10-05'],
     );
-    self::assertStringNotContainsString('bakers-track-week-form', $this->renderDisplay($foreign, 'personal'));
+    self::assertStringNotContainsString('bb-track-week-form', $this->renderDisplay($foreign, 'personal'));
   }
 
   /**

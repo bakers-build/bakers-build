@@ -79,7 +79,9 @@ describe('parseStepValues (inline per-skill values)', () => {
 
   it('reads values keyed by skill name, stripping @bakers-build/', () => {
     const v = parseStepValues(md);
-    expect(v['ddev-drupal-bug']['validate.command']).toBe('ddev bakers-test-e2e');
+    expect(v['ddev-drupal-bug']['validate.command']).toBe(
+      'ddev bakers-test-e2e',
+    );
     expect(v['docs-authoring']['validate.command']).toBe('pnpm lint');
   });
 
@@ -182,7 +184,10 @@ describe('readSkillWhen', () => {
     const c = readSkillWhen(
       skill(
         'name: essential-skills',
-        bundleBody('- @bakers-build/qualify-ticket', '- @bakers-build/create-spec'),
+        bundleBody(
+          '- @bakers-build/qualify-ticket',
+          '- @bakers-build/create-spec',
+        ),
       ),
     );
     expect(c.name).toBe('essential-skills');
@@ -217,7 +222,10 @@ describe('readSkillWhen', () => {
   it('rejects a bundle that also declares when', () => {
     expect(() =>
       readSkillWhen(
-        skill('name: b\nwhen:\n  step: coding', bundleBody('- @bakers-build/x')),
+        skill(
+          'name: b\nwhen:\n  step: coding',
+          bundleBody('- @bakers-build/x'),
+        ),
       ),
     ).toThrow(/must declare no `when`/);
   });
@@ -392,7 +400,10 @@ describe('expandLoad (dedup + cycle + missing + value precedence)', () => {
     expect(
       names(
         expandLoad(
-          loaderMd('- @bakers-build/essential-skills', '- @bakers-build/ddev-drupal-bug'),
+          loaderMd(
+            '- @bakers-build/essential-skills',
+            '- @bakers-build/ddev-drupal-bug',
+          ),
           byName,
         ),
       ),
@@ -403,7 +414,10 @@ describe('expandLoad (dedup + cycle + missing + value precedence)', () => {
     expect(
       names(
         expandLoad(
-          loaderMd('- @bakers-build/essential-skills', '- @bakers-build/essential-skills'),
+          loaderMd(
+            '- @bakers-build/essential-skills',
+            '- @bakers-build/essential-skills',
+          ),
           byName,
         ),
       ),
@@ -414,7 +428,10 @@ describe('expandLoad (dedup + cycle + missing + value precedence)', () => {
     expect(
       names(
         expandLoad(
-          loaderMd('- @bakers-build/essential-skills', '- @bakers-build/create-spec'),
+          loaderMd(
+            '- @bakers-build/essential-skills',
+            '- @bakers-build/create-spec',
+          ),
           byName,
         ),
       ),
@@ -427,9 +444,9 @@ describe('expandLoad (dedup + cycle + missing + value precedence)', () => {
 
   it('throws naming an unknown bundle member (AC7)', () => {
     const bad = map(bundle('essential-skills', ['nope']));
-    expect(() => expandLoad(loaderMd('- @bakers-build/essential-skills'), bad)).toThrow(
-      /nope/,
-    );
+    expect(() =>
+      expandLoad(loaderMd('- @bakers-build/essential-skills'), bad),
+    ).toThrow(/nope/);
   });
 
   it('throws naming an unknown root skill', () => {
@@ -1000,11 +1017,7 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
 
     const docs = readSkillWhen(readSkill('docs-authoring'));
     expect(docs.when?.work_type).toEqual(['docs']);
-    expect(docs.when?.workflow).toEqual([
-      'bb_feature',
-      'bb_bug',
-      'bb_chore',
-    ]);
+    expect(docs.when?.workflow).toEqual(['bb_feature', 'bb_bug', 'bb_chore']);
     expect(docs.when?.step).toEqual(['spec', 'diagnose', 'coding', 'review']);
   });
 
@@ -1015,8 +1028,10 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
     expect(md).toMatch(/^## review/m);
     expect(md).toMatch(/RED/);
     expect(md).toMatch(/GREEN/);
-    expect(md).toMatch(/@bakers\/workflow-step/);
-    expect(readSkill('workflow-step')).toMatch(/@bakers\/transition-ticket/);
+    expect(md).toMatch(/@bakers-build\/workflow-step/);
+    expect(readSkill('workflow-step')).toMatch(
+      /@bakers-build\/transition-ticket/,
+    );
     expect(md).not.toMatch(/^phases:/m);
   });
 
@@ -1042,7 +1057,7 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
       expect(c.when, `${name} must declare when`).toBeDefined();
       expect(c.when?.work_type, `${name} must omit work_type`).toBeUndefined();
       expect(c.when?.step).toContain(step);
-      expect(readSkill(name)).toMatch(/@bakers\/transition-ticket/);
+      expect(readSkill(name)).toMatch(/@bakers-build\/transition-ticket/);
     }
   });
 
@@ -1061,7 +1076,7 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
     for (const name of ['create-spec', 'docs-authoring'] as const) {
       const md = readSkill(name);
       expect(md, `${name} names @bakers-build/publish-comment`).toMatch(
-        /@bakers\/publish-comment/,
+        /@bakers-build\/publish-comment/,
       );
       expect(md, `${name} publishes typed plan (not only spec + test)`).toMatch(
         /`plan`/,
@@ -1072,7 +1087,7 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
     const diagnose = readSkill('diagnose-ticket');
     expect(diagnose).toMatch(/debug_diagnose/);
     expect(diagnose).not.toMatch(
-      /@bakers\/publish-comment[\s\S]{0,120}`plan`|`plan`[\s\S]{0,120}@bakers\/publish-comment/,
+      /@bakers-build\/publish-comment[\s\S]{0,120}`plan`|`plan`[\s\S]{0,120}@bakers-build\/publish-comment/,
     );
   });
 
@@ -1082,20 +1097,16 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
   it('BB-381: qualify/create-ticket/acceptance publish typed qualification and acceptance', () => {
     const md = readSkill('qualify-ticket');
     expect(md).toMatch(
-      /Publish one complete `qualification` handoff through\s+`@bakers\/publish-comment`/,
+      /Publish one complete `qualification` handoff through\s+`@bakers-build\/publish-comment`/,
     );
-    expect(md).toMatch(/@bakers\/acceptance/);
-    expect(md).toMatch(/@bakers\/run-outtake` once/);
+    expect(md).toMatch(/@bakers-build\/acceptance/);
+    expect(md).toMatch(/@bakers-build\/run-outtake` once/);
   });
 
   it('docs-authoring is self-contained: owns work:docs spec + coding + review with a non-runtime, no-provision contract', () => {
     const c = readSkillWhen(readSkill('docs-authoring'));
     expect(c.when?.work_type).toEqual(['docs']);
-    expect(c.when?.workflow).toEqual([
-      'bb_feature',
-      'bb_bug',
-      'bb_chore',
-    ]);
+    expect(c.when?.workflow).toEqual(['bb_feature', 'bb_bug', 'bb_chore']);
     expect(c.when?.step).toEqual(['spec', 'diagnose', 'coding', 'review']);
     expect(c.inputs).toEqual([]);
     // the prose owns spec + coding + review (no diagnose), routes via transition-ticket,
@@ -1106,9 +1117,9 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
     expect(md).toMatch(/^## coding/m);
     expect(md).toMatch(/^## review/m);
     expect(md).toMatch(/^## diagnose/m);
-    expect(md).toMatch(/@bakers\/transition-ticket/);
-    expect(md).not.toMatch(/@bakers\/provision-ddev/);
-    expect(md).not.toMatch(/@bakers\/scenario/);
+    expect(md).toMatch(/@bakers-build\/transition-ticket/);
+    expect(md).not.toMatch(/@bakers-build\/provision-ddev/);
+    expect(md).not.toMatch(/@bakers-build\/scenario/);
   });
 
   it('the loaders + README + presentation carry docs-authoring / work:docs', () => {
@@ -1251,7 +1262,7 @@ describe('BB-209 MR-link persistence + merge gate (AC 6, 7, 8, 9)', () => {
     // BB-444 single-sourced the review orchestration. The merge gate, OK->done and
     // Not OK->coding now live in method-context › Review flow; the owners point at it.
     const flow = section(readSkill('method-context'), 'Review flow');
-    expect(flow).toMatch(/@bakers\/merge-mr/);
+    expect(flow).toMatch(/@bakers-build\/merge-mr/);
     expect(flow).toMatch(/only after a verified merge/i);
     expect(flow).toMatch(/Not OK/);
     expect(flow).toMatch(/coding/);
@@ -1263,11 +1274,11 @@ describe('BB-209 MR-link persistence + merge gate (AC 6, 7, 8, 9)', () => {
     ]) {
       const review = stepSection(readSkill(s), 'review');
       expect(review, `${s} must reference the Review flow`).toMatch(
-        /@bakers\/method-context` › \*Review flow\*/,
+        /@bakers-build\/method-context` › \*Review flow\*/,
       );
       // and must NOT restate the merge gate itself
       expect(review, `${s} must not restate the merge gate`).not.toMatch(
-        /@bakers\/merge-mr/,
+        /@bakers-build\/merge-mr/,
       );
     }
   });
@@ -1356,7 +1367,7 @@ describe('BB-290 workflow evidence contract', () => {
     // the ticket never links to.
     const owner = readSkill('verify-playwright-cli');
     expect(owner).toMatch(/`playwright\/` tool directory/);
-    expect(owner).toMatch(/@bakers\/essential-skills/);
+    expect(owner).toMatch(/@bakers-build\/essential-skills/);
     expect(owner).not.toMatch(/attempt-<n>|e2e-testing/);
     expect(owner).toMatch(/before/);
     expect(owner).toMatch(/after/);
@@ -1434,7 +1445,9 @@ describe('BB-290 workflow evidence contract', () => {
   it('captures check output in the transient root and publishes only durable links', () => {
     const verify = readSkill('verify-tests');
     expect(verify).toContain('durable evidence and transient-root rules');
-    expect(readSkill('essential-skills')).toContain('assets-ai/<bakers.build-nnn>/');
+    expect(readSkill('essential-skills')).toContain(
+      'assets-ai/<bakers.build-nnn>/',
+    );
     const outtake = readSkill('run-outtake');
     expect(outtake).toMatch(/Ticket evidence uses verified absolute/);
     expect(outtake).toMatch(/local artifacts remain terminal conveniences/);
@@ -1467,7 +1480,7 @@ describe('BB-290 workflow evidence contract', () => {
     expect(md).toMatch(/screenshots/);
     expect(md).toMatch(/transient-root rules/);
     expect(md).toMatch(/permanent/i);
-    expect(md).toMatch(/@bakers\/verify-tests/);
+    expect(md).toMatch(/@bakers-build\/verify-tests/);
   });
 });
 
@@ -1780,7 +1793,7 @@ describe('BB-371 no artifact publishes the retired evidence model', () => {
    */
   const MIGRATOR = resolve(
     CLAUDE_DIR,
-    'skills/bakers/skills/upgrade-project/SKILL.md',
+    'skills/bakers-build/skills/upgrade-project/SKILL.md',
   );
 
   it('no skill or loader still names it (the migrator excepted)', () => {
@@ -1887,14 +1900,14 @@ describe('BB-431 `## Skill set` is a list and the choice is a ticket label', () 
     expect(md).toMatch(
       /Later states resolve the standing label or first available default/,
     );
-    expect(md).toMatch(/Changes follow `@bakers\/scope-change`/);
+    expect(md).toMatch(/Changes follow `@bakers-build\/scope-change`/);
   });
 
   it('the switch sentence describes a list, not a single reference (AC1)', () => {
     const md = readSkill('method-context');
     expect(md).toMatch(/Skill set selects the method/);
     expect(md).toMatch(
-      /Recognize Markdown links or `@bakers\/method-context` references/,
+      /Recognize Markdown links or `@bakers-build\/method-context` references/,
     );
   });
 
@@ -1934,7 +1947,7 @@ describe('BB-431 `## Skill set` is a list and the choice is a ticket label', () 
         `${skill} must resolve the label before invoking its method`,
       ).toBeLessThan(invoked);
       expect(selecting()).toMatch(/Reuse confirmed choices/);
-      expect(body).toMatch(/@bakers\/method-context/);
+      expect(body).toMatch(/@bakers-build\/method-context/);
     }
   });
 
@@ -2153,7 +2166,7 @@ describe('BB-402 prior-art check (R1-R8)', () => {
   it('qualify-ticket runs the search on every qualification, before the intake (R2)', () => {
     const md = readSkill('qualify-ticket');
     expect(md).toMatch(
-      /Read complete context[\s\S]*Search prior art[\s\S]*@bakers\/run-intake/,
+      /Read complete context[\s\S]*Search prior art[\s\S]*@bakers-build\/run-intake/,
     );
     expect(md).toMatch(/On a hit, publish nothing,\s+transition nothing/);
   });
@@ -3136,7 +3149,7 @@ describe('BB-444 read includes labels (method:*/work:* resolvable by name)', () 
       /name.*only readable[\s\S]{0,80}Included|Included/i,
     );
     expect(readSkill('workflow-step')).toMatch(
-      /Read complete current-step context through `@bakers\/read-ticket`/i,
+      /Read complete current-step context through `@bakers-build\/read-ticket`/i,
     );
   });
 });
@@ -3205,7 +3218,7 @@ describe('BB-463: coding transitions only on an explicit human choice', () => {
       const coding = section(readSkill(owner), 'coding');
       expect(coding, `${owner} must own a \`## coding\` section`).not.toBe('');
       expect(coding, `${owner} references the single-sourced gate`).toMatch(
-        /`@bakers\/method-context` › \*Coding gate\*/,
+        /`@bakers-build\/method-context` › \*Coding gate\*/,
       );
     });
 
@@ -3364,7 +3377,7 @@ describe('the rendered result carries its cause', () => {
     const sec = read(
       resolve(SKILLS_DIR, 'method-context/references/results.md'),
     );
-    expect(sec).toMatch(/@bakers\/review-ticket` › \*The verdict\*/);
+    expect(sec).toMatch(/@bakers-build\/review-ticket` › \*The verdict\*/);
   });
 });
 
@@ -3416,7 +3429,7 @@ describe('a criterion cause does not take the coding route', () => {
 
   it('Review flow references the cause set rather than restating it', () => {
     const flow = section(readSkill('method-context'), 'Review flow');
-    expect(flow).toMatch(/@bakers\/review-ticket` › \*The verdict\*/);
+    expect(flow).toMatch(/@bakers-build\/review-ticket` › \*The verdict\*/);
     // `criterion` is needed for routing; the other cause names stay owned by
     // review-ticket and must not be copied into Review flow.
     expect(flow).not.toMatch(/`implementation`|`evidence`/);
@@ -3460,7 +3473,7 @@ describe('acceptance criteria are gated on quality, not only on shape', () => {
     // A second copy of the list is the failure mode: the copy that is not being
     // edited is the copy that goes stale, and then a review finding and the gate
     // that passed it stop naming the same thing.
-    expect(gate()).toMatch(/@bakers\/review-ticket` › \*The verdict\*/);
+    expect(gate()).toMatch(/@bakers-build\/review-ticket` › \*The verdict\*/);
   });
 
   it('gives every defect a worked failing example and its repair', () => {
@@ -3510,7 +3523,7 @@ describe('the qualification handoff shows what the gate did', () => {
   it('points at acceptance for the rules rather than restating them', () => {
     const md = readSkill('qualify-ticket');
     expect(md).toMatch(
-      /@bakers\/acceptance` › \*Gate each criterion before\s+publishing it\*/,
+      /@bakers-build\/acceptance` › \*Gate each criterion before\s+publishing it\*/,
     );
   });
 
@@ -3522,7 +3535,7 @@ describe('the qualification handoff shows what the gate did', () => {
       'Run flow',
     );
     expect(flow).toMatch(
-      /@bakers\/acceptance` › \*Gate each criterion before\s+publishing it\*/,
+      /@bakers-build\/acceptance` › \*Gate each criterion before\s+publishing it\*/,
     );
   });
 
@@ -3579,7 +3592,9 @@ describe('the gate adds to the acceptance rules without replacing any', () => {
 describe('both qualification paths inherit the gate from one place', () => {
   it('create-ticket points at the acceptance template and copies no rule', () => {
     const md = readSkill('create-ticket');
-    expect(md).toMatch(/every required field from\s+`@bakers\/qualify-ticket`/);
+    expect(md).toMatch(
+      /every required field from\s+`@bakers-build\/qualify-ticket`/,
+    );
   });
 });
 
@@ -3658,7 +3673,7 @@ describe('audience and register', () => {
     for (const name of REGISTER_OWNERS) {
       const md = readSkill(name);
       expect(md, `${name} must reference the shared context`).toMatch(
-        /@bakers\/method-context/,
+        /@bakers-build\/method-context/,
       );
       // The rule lives in method-context once; the owners carry a reference, not a copy.
       expect(md, `${name} must not restate the rule`).not.toMatch(
@@ -3717,7 +3732,7 @@ describe('run-outtake destinations and the print-before-confirm chain', () => {
 
     const codingGate = section(readSkill('method-context'), 'Coding gate');
     expect(codingGate).toMatch(
-      /publish\s+\*\*both\*\*[\s\S]*?print that summary in full in the terminal[\s\S]*?`@bakers\/run-outtake` › \*Input contract\*/,
+      /publish\s+\*\*both\*\*[\s\S]*?print that summary in full in the terminal[\s\S]*?`@bakers-build\/run-outtake` › \*Input contract\*/,
     );
     expect(codingGate).toMatch(
       /\*\*Ask the human to confirm that summary and MR\*\*/,
@@ -3785,7 +3800,7 @@ describe('remote prior-art lifecycle boundaries', () => {
     for (const name of ['coding', 'review']) {
       const flow = raw(`method-context/references/${name}.md`);
       expect(flow).toMatch(
-        /@bakers\/merge-mr[\s\S]*including its \*Caller handoff\*[\s\S]*transition/,
+        /@bakers-build\/merge-mr[\s\S]*including its \*Caller handoff\*[\s\S]*transition/,
       );
       expect(flow).not.toContain('### Merge check handoff');
     }

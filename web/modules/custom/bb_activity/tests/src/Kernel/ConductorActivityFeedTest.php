@@ -115,7 +115,7 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     ]);
     $this->homeProject = $this->create('bb_project', [
       'name' => 'bakers.build',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $home_group->id(),
     ]);
     $this->extraProject = $this->create('bb_project', [

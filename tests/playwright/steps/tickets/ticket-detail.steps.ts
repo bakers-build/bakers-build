@@ -292,7 +292,7 @@ Given('the workspace has a ticket whose body is taller than the viewport', async
     '$ts = $etm->getStorage("bb_ticket");',
     `$t = current($ts->loadByProperties(["title" => "${TALL_TICKET_TITLE}"]));`,
     'if (!$t) {',
-    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "bakers.build"]));',
+    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
     'if (!$p) { print "NO_PROJECT"; return; }',
     '$body = str_repeat("A paragraph of handoff prose, repeated so that this body is taller than any viewport this suite runs in.\\n\\n", 200);',
     `$t = $ts->create(["project_id" => $p->id(), "title" => "${TALL_TICKET_TITLE}", "workflow" => "bb_feature", "state" => "coding", "description" => ["value" => $body, "format" => "bb_rich"]]);`,

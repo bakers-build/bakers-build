@@ -163,7 +163,7 @@ Place that object in `addons` of `machine.config.js`. An agent harness in a cond
 | pi | `--session-dir`, `--approve`, `-a`, `--no-approve`, `-na` |
 | grok | `--permission-mode`, `--session-id` |
 
-`skip_permissions: false` only omits bakers.build's bypass flag; Claude settings that select bypass mode still apply. Pi's `approve` trusts project-local Pi files and grants no bakers.build access. Claude `measure: true` launches Claude through the addon's measure wrapper, which runs a logging proxy for that process and applies the state-group settings; it also works on a `catalog` entry. See [Measure Claude runs](/advanced/configuration/claude-profiles).
+`skip_permissions: false` only omits bakers.build's bypass flag; Claude settings that select bypass mode still apply. Pi's `approve` trusts project-local Pi files and grants no bakers.build access. Claude `measure: true` launches Claude through the addon's measure wrapper, which runs a logging proxy for that process and applies the state-group settings; it also works on a `catalog` entry.
 
 ## Mixed harnesses
 

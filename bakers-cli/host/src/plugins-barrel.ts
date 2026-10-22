@@ -11,7 +11,10 @@
 // they moved into `@bakers-build/addon-fake`, a workspace-only test fixture that is
 // never published, so the published meta package must not depend on it.
 export { basicAuthProvider } from '@bakers-build/addon-auth-basic';
-export { DrupalBbRemote, drupalRemote } from '@bakers-build/addon-remote-drupal';
+export {
+  DrupalBbRemote,
+  drupalRemote,
+} from '@bakers-build/addon-remote-drupal';
 export {
   GitWorkspace,
   gitWorkspace,

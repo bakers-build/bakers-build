@@ -13,7 +13,7 @@ use Drupal\bb_core\Entity\BbContentEntityInterface;
 use Drupal\ui_patterns\Entity\SampleEntityGenerator;
 
 /**
- * Generates bakers.build previews without recursively expanding entity references.
+ * Generates previews without recursively expanding entity references.
  */
 final class PreviewSampleEntityGenerator extends SampleEntityGenerator {
 
@@ -62,7 +62,7 @@ final class PreviewSampleEntityGenerator extends SampleEntityGenerator {
   }
 
   /**
-   * Whether a type is bakers.build's: bb_core's, or one extending its entity base.
+   * Whether a type is bb_core's own, or one extending its entity base.
    */
   private static function isBbType(EntityTypeInterface $definition): bool {
     return $definition->getProvider() === 'bb_core'

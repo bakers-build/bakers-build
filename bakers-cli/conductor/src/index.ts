@@ -24,8 +24,8 @@ export {
 // host, not the CLI entrypoint. `main`/`runBbCli` are gone; the default export
 // is the `BbCommandPlugin`, exposed here as `./commands/conductor` too.
 export {
-  default as conductorCommandPlugin,
   type BbCliDeps,
+  default as conductorCommandPlugin,
   runConductorCli,
 } from './commands/conductor.js';
 // BB-218: the balanced strip is exported for the host/tests + reuse.

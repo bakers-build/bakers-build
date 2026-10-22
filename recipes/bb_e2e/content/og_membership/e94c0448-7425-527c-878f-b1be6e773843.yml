@@ -3,9 +3,7 @@
 # BB-462 D1: the implicit `member` rank now grants nothing, so an account
 # this many API scenarios use to CREATE (writeback.feature, session-
 # writeback.feature, comments.feature, claims.feature, optional-finish.feature)
-# needs the explicit `contributor` floor — the same default the migration
-# hook (`bb_core_post_update_bb_462_a_…`) gives a pre-existing bare
-# membership on a live site. `rank-access.feature`'s "a project member reads
+# needs the explicit `contributor` floor. `rank-access.feature`'s "a project member reads
 # its own filtered tickets" still exercises the TEAM half separately
 # (…/785ec1dd): this rank is the CREATE half, not the read one.
 _meta:

@@ -43,7 +43,7 @@ async function createTicket(page: Page, withConductor: boolean): Promise<void> {
   const title = `Addons ${withConductor ? 'with' : 'without'} conductor ${Date.now()}`;
   const output = php([
     '$etm = \\Drupal::entityTypeManager();',
-    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "bakers.build"]));',
+    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
     'if (!$p) { print "NO_PROJECT"; return; }',
     `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "bb_feature", "state" => "coding"]);`,
     '$c = NULL;',

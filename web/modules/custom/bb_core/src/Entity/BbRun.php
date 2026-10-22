@@ -24,7 +24,7 @@ use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
 
 /**
- * Represents a single execution attempt of a bakers.build ticket by a conductor.
+ * Represents one execution attempt of a bakers.build ticket by a conductor.
  *
  * A run is created when a conductor claims a ticket from the dispatch queue.
  * It tracks the full lifecycle of that attempt — from the initial 'claimed'
@@ -334,8 +334,7 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
       $this->set($base . '_sha256', hash('sha256', $payload));
       $this->set($base . '_bytes', strlen($payload));
       // Clear the payload — this is what keeps it out of the row, the entity
-      // cache and Search API's entity load. The column itself goes away in
-      // bb_core_post_update_run_logs_2_drop_columns().
+      // cache and Search API's entity load.
       $this->set($base, NULL);
       if ($previous_file_id !== NULL && (int) $previous_file_id !== (int) $file->id()) {
         $this->supersededLogFiles[$base] = (int) $previous_file_id;

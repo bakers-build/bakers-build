@@ -7,7 +7,7 @@ namespace Drupal\bb_core\Entity;
 use Drupal\Core\Entity\ContentEntityInterface;
 
 /**
- * Interface for bakers.build term content entities (node-free taxonomy replacement).
+ * Interface for bakers.build term entities (node-free taxonomy replacement).
  */
 interface BbTermInterface extends ContentEntityInterface {
 

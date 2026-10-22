@@ -17,13 +17,13 @@
  * instead would pin one heading to both steps: its layout settings are static
  * config.
  *
- * PRINTING THE ELEMENTS, NOT REBUILDING THEM, is `bakers-login-form.html.twig`'s
+ * PRINTING THE ELEMENTS, NOT REBUILDING THEM, is `bb-login-form.html.twig`'s
  * rule and holds here for the same reason: `form-element-label.html.twig` and
  * `input.html.twig` already render through `bb_theme:form_label` and
  * `bb_theme:form_input`, so core's own `for`/`id` pair stays the single
  * source for that binding.
  *
- * THERE IS NO `form--bakers-onboarding-wizard-form.html.twig` BESIDE THIS ONE.
+ * THERE IS NO `form--bb-onboarding-wizard-form.html.twig` BESIDE THIS ONE.
  * The wrapper this hook's form used to carry was `<form{{ attributes }}>` with
  * `{{ children }}` inside it — character for character what core's own
  * `form.html.twig` already renders — so it said nothing and is deleted.

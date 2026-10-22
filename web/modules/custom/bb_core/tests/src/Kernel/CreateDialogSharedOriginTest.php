@@ -126,7 +126,7 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
    */
   public function testExactlyOneTemplateComposesTheSurface(): void {
     self::assertSame(
-      ['bakers-create-dialog.html.twig'],
+      ['bb-create-dialog.html.twig'],
       $this->templatesContaining('bb_core', 'bb_theme:form'),
     );
   }

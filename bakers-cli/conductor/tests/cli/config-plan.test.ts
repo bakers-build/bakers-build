@@ -92,7 +92,9 @@ it('migrates legacy project identity without changing the technical workspace pl
     project: 'demo',
     workspace: 'Engineering',
   });
-  expect(migrated).toContain("workspace: { plugin: '@bakers-build/addon-herdr' }");
+  expect(migrated).toContain(
+    "workspace: { plugin: '@bakers-build/addon-herdr' }",
+  );
   expect(migrated).toContain('hooks: keepHooks');
   expect(
     service.planConfig({ ...w, scope: 'project', operation: 'upgrade' }).report
@@ -197,7 +199,10 @@ it('config check rejects a spread nested bakers.build identity', () => {
   }).report;
   expect(report.result).toBe('blocked');
   expect(report.findings).toContainEqual(
-    expect.objectContaining({ key: 'bakers', code: 'unsupported_source_shape' }),
+    expect.objectContaining({
+      key: 'bakers',
+      code: 'unsupported_source_shape',
+    }),
   );
 });
 
@@ -1529,7 +1534,10 @@ it('does not reinterpret an existing legacy project file as an engine config', (
   rmSync(w.engine);
   writeFileSync(
     path,
-    engineText().replace('@bakers-build/addon-claude', '@bakers-build/addon-codex'),
+    engineText().replace(
+      '@bakers-build/addon-claude',
+      '@bakers-build/addon-codex',
+    ),
   );
   const plan = service.planConfig(w);
   expect(service.applyConfigPlan(plan).result).toBe('blocked');

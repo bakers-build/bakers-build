@@ -4,10 +4,10 @@ import { createInterface } from 'node:readline';
 import { pathToFileURL } from 'node:url';
 import type { ConfigPlanOptions } from '@bakers-build/conductor/config';
 import type {
-  ConfigOperation,
-  ConfigReport,
   BbCommandHost,
   BbConnectionSelection,
+  ConfigOperation,
+  ConfigReport,
 } from '@bakers-build/core';
 import {
   homeBbDir,
@@ -269,7 +269,10 @@ function buildConfigCommand(
         '--config <file>',
         'override global connection configuration path',
       )
-      .option('--connection <id>', 'named connection from ~/.bakers/connections')
+      .option(
+        '--connection <id>',
+        'named connection from ~/.bakers/connections',
+      )
       .option('--yes', 'disable prompts and automatic selections')
       .option(
         '--online',
@@ -688,7 +691,9 @@ export function registerConfig(
 ): void {
   const group = program
     .command('config')
-    .description('initialize, migrate and validate scoped bakers.build configuration');
+    .description(
+      'initialize, migrate and validate scoped bakers.build configuration',
+    );
   for (const operation of ['init', 'upgrade', 'check'] as ConfigOperation[])
     buildConfigCommand(group, operation, deps);
 

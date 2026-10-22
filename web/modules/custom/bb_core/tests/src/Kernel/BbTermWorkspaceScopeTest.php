@@ -21,10 +21,7 @@ use PHPUnit\Framework\Attributes\Group;
  * the constraint it reuses (D9).
  *
  * The second case is the load-bearing one. `setRequired(TRUE)` installs a
- * NotNull constraint, NOT a NOT NULL column, and the difference is what makes
- * the migration possible: bb_core_update_8021() installs the column onto a
- * populated table and bb_core_post_update_workspace_term_backfill() fills it
- * afterwards. A NOT NULL column could do neither.
+ * NotNull constraint, NOT a NOT NULL column.
  *
  * @see \Drupal\bb_core\Entity\BbTerm::baseFieldDefinitions()
  * @see \Drupal\bb_core\Plugin\Validation\Constraint\BbWorkspaceScopeConstraint
@@ -86,8 +83,7 @@ final class BbTermWorkspaceScopeTest extends KernelTestBase {
    * A term with no workspace fails validation — and still saves unvalidated.
    *
    * Both halves matter: the requirement is a NotNull constraint, NOT a NOT NULL
-   * column, which is exactly what lets bb_core_update_8021() install the
-   * column onto a populated table and the post-update fill it afterwards (D1).
+   * column (D1).
    */
   public function testWorkspacelessTermIsInvalidButStorable(): void {
     $term = BbTerm::create(['vid' => 'bb_labels', 'name' => 'unscoped']);

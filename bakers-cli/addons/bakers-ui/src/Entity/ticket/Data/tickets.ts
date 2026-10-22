@@ -36,7 +36,7 @@ export interface TicketRow {
   derivedStatus: string;
   labels?: string[];
   type: string | null;
-  /** Parent ticket identifier (`bakers.build-nnn`) from `parent_id`, else null (AC-1/2). */
+  /** Parent ticket identifier (`BB-nnn`) from `parent_id`, else null (AC-1/2). */
   parent: string | null;
   /** Assigned conductor label from `conductor_id`, else null (AC-3/4). */
   conductor: string | null;

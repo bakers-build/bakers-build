@@ -99,7 +99,9 @@ export async function runTicketTui(
       ...(options.configPath !== undefined
         ? { configPath: options.configPath }
         : {}),
-      ...(options.bakersDir !== undefined ? { bakersDir: options.bakersDir } : {}),
+      ...(options.bakersDir !== undefined
+        ? { bakersDir: options.bakersDir }
+        : {}),
       ...(options.currentUser ? { currentUser: options.currentUser } : {}),
       isWorkspaceAdmin: options.isWorkspaceAdmin ?? false,
       ...(options.ownConductorMachineId

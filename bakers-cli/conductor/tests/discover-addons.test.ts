@@ -461,9 +461,11 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
     const fakeBase = pathToFileURL(
       join(import.meta.dirname, '..', '..', 'addons', 'fake', 'package.json'),
     ).href;
-    const out = await discoverAddons(['@bakers-build/addon-fake'], 'conductor', [
-      fakeBase,
-    ]);
+    const out = await discoverAddons(
+      ['@bakers-build/addon-fake'],
+      'conductor',
+      [fakeBase],
+    );
     expect(out.remotes.length).toBeGreaterThan(0);
   });
 
@@ -514,7 +516,11 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
 
   it('ui + dropsh + conductor contribute command descriptors', async () => {
     const cmds = await discoverAddons(
-      ['@bakers-build/conductor', '@bakers-build/ui', '@bakers-build/addon-dropsh'],
+      [
+        '@bakers-build/conductor',
+        '@bakers-build/ui',
+        '@bakers-build/addon-dropsh',
+      ],
       'command',
       bases,
     );
@@ -532,9 +538,11 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
     const fakeBase = pathToFileURL(
       join(import.meta.dirname, '..', '..', 'addons', 'fake', 'package.json'),
     ).href;
-    const out = await discoverAddons(['@bakers-build/addon-fake'], 'conductor', [
-      fakeBase,
-    ]);
+    const out = await discoverAddons(
+      ['@bakers-build/addon-fake'],
+      'conductor',
+      [fakeBase],
+    );
     expect(out.executors.length).toBeGreaterThan(0);
     expect(out.workspaces.length).toBeGreaterThan(0);
   });

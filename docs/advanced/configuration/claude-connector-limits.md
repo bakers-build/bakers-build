@@ -10,14 +10,8 @@ What the claude.ai connector cannot do, which errors to expect, and how to recon
   disconnect and reconnect the bakers.build connector to re-run the sign-in/consent flow.
 - **Permissions changed on your bakers.build account**: nothing to do — permissions are evaluated on
   every request, so the change applies to the next call without reconnecting.
-- **The connector URL or client ID changed** (rare — only if bakers.build's operators rotate the consumer):
-  remove the connector and add it again with the new values from
-  [Connect Claude.ai to bakers.build](/daily-work/claude-ai).
-- **Client ID moved from `claude-connector` to `bakers-claude`**: the old `claude-connector`
-  consumer still exists and keeps working for anyone already connected with it — bakers.build never patches
-  or revokes it in place. New connectors should use `bakers-claude`; there is no automatic token
-  migration between the two, so switching an existing connection means disconnecting and
-  reconnecting with the new Client ID.
+- **The connector URL changed**: remove the connector and add it again with the new URL from
+  [Connect Claude.ai to bakers.build](/daily-work/claude-ai). The client registers itself again.
 
 ## Permission errors (expected, not a bug)
 

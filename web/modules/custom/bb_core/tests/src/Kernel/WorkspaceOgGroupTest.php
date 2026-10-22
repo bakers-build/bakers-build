@@ -42,8 +42,8 @@ final class WorkspaceOgGroupTest extends KernelTestBase {
    * The roles the workspace ships, keyed by role name => role_type.
    *
    * `non-member` and `member` are OG's structurally required roles — OgRole
-   * derives the type from the NAME, so bakers.build's `member` IS OG's required role
-   * rather than a second role sharing its name (Fact 8).
+   * derives the type from the NAME, so bakers.build's `member` IS OG's required
+   * role rather than a second role sharing its name (Fact 8).
    *
    * @var array<string, string>
    */

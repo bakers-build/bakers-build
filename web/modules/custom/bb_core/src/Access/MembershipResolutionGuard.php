@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Access;
 
 /**
- * Marks bakers.build's own membership resolution, so the read scope cannot filter it.
+ * Marks internal membership resolution, so the read scope cannot filter it.
  *
  * The `og_membership` query-access rule is resolved from `og_membership`, so
  * the read scope and rank resolution would recurse without bound. While this

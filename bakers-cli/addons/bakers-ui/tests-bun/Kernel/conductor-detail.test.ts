@@ -137,11 +137,7 @@ describe('the conductor detail scope', () => {
           return {
             data: runs,
             included: [
-              ticketIncludeDoc(
-                't-538',
-                'BB-538',
-                'Conductor claims a ticket',
-              ),
+              ticketIncludeDoc('t-538', 'BB-538', 'Conductor claims a ticket'),
             ],
           };
         }

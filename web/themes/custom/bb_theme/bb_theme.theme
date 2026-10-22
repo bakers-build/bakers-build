@@ -35,7 +35,7 @@ function bb_theme_theme(): array {
     'user_login_form' => ['render element' => 'form'],
     'bb_login_form' => ['render element' => 'form'],
     // The onboarding wizard's presenter: this hook hands
-    // `bakers-onboarding-wizard-form.html.twig` the `form` element it composes
+    // `bb-onboarding-wizard-form.html.twig` the `form` element it composes
     // the chrome from. Core's own `form.html.twig` stays the wrapper.
     'bb_onboarding_wizard_form' => ['render element' => 'form'],
     'user_logout_confirm' => ['render element' => 'form'],
@@ -127,9 +127,7 @@ function bb_theme_form_alter(array &$form, FormStateInterface $form_state, strin
  * forms arrive as htmx fragments (a tab, a dialog), and a fragment brings no
  * drupalSettings: core's editor behavior then finds no `settings.editor` and
  * attaches no Markdown toolbar. editor/drupal.editor comes up front with the
- * settings, for the same reason bb_theme/global carries its libraries. Not
- * in bb_theme/global: a deploy runs updatedb (bb_core_update_8052) after
- * the code lands, and until then `editor` is not an extension to load from.
+ * settings, for the same reason bb_theme/global carries its libraries.
  */
 function bb_theme_page_attachments_alter(array &$attachments): void {
   $attachments['#cache']['contexts'][] = 'user.permissions';

@@ -158,8 +158,7 @@ final class TicketConductorCleanupAccessTest extends KernelTestBase {
    * Since BB-451, BbTicket::preSave() closes a terminal ticket on its own
    * save, so a plain create()+save() of a `cancelled` fixture no longer stays
    * open — the case the terminal-state (not `closed`) access grant exists for
-   * is now reachable only through a write that skips presave logic, exactly
-   * as every historical-row backfill in bb_core.post_update.php does.
+   * is now reachable only through a write that skips presave logic.
    */
   private function forceOpen(BbTicketInterface $ticket): BbTicketInterface {
     $this->container->get('database')->update('bb_ticket')

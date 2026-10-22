@@ -32,9 +32,9 @@ import {
   fakeWorkspace,
 } from '@bakers-build/addon-fake';
 import type {
-  ConductorFileConfig,
   BbAgent,
   BbExecutor,
+  ConductorFileConfig,
   ResolvedAgent,
   SpawnRunInput,
 } from '@bakers-build/conductor/contract';

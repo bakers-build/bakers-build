@@ -4,31 +4,23 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Config\FileStorage;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\bb_core\Entity\BbWorkspace;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\og\Entity\OgRole;
+use Drupal\og\Og;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * A fresh install owns a default workspace, on every install path (BB-350).
+ * A fresh install owns a default workspace, led by the installing admin.
  *
- * Every product URL — `/bakers/team/1` and its siblings — is only a resolvable
- * path if a workspace with the slug `bakers` exists. Nothing guaranteed that on a
- * fresh install: bb_core_post_update_seed_default_workspace() is BASELINED on
- * a fresh install (core marks pending post-updates invoked instead of running
- * them), and only recipes/bb_e2e ever shipped workspace content — so a plain
- * `ddev init` and a server `site:install --existing-config`, where no recipe
- * runs at all, both booted with zero workspaces and every product URL a 404.
- * The symptom named here used to be `system.site.front: /bakers/dashboard`; since
- * BB-415 the front page is `/home`, which carries no workspace and answers
- * even on a workspaceless site. The product URLs are what this guards, and they
- * are the reason such an install is still broken — just quieter.
- *
- * hook_install() is the one seam all three paths share, so that is where the
- * default workspace is created. The body is shared with the post-update rather
- * than duplicated (Drupal\bb_core\Install\DefaultWorkspace), because "which
- * uuid, which slug, which owner" must have exactly one answer.
+ * Every product URL is only resolvable below a workspace slug, so every
+ * install path (recipe, existing-config, plain site install) must create the
+ * default workspace. hook_install() is the one seam all paths share.
  *
  * The hook is invoked directly here: KernelTestBase enables modules without
  * running hook_install, so the schema below is installed by hand and the hook
@@ -46,7 +38,8 @@ final class DefaultWorkspaceInstallTest extends KernelTestBase {
   protected static $modules = [
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
-    'field', 'og', 'link', 'text', 'bb_core',
+    'field', 'og', 'link', 'text', 'serialization', 'consumers',
+    'simple_oauth', 'bb_core',
   ];
 
   /**
@@ -54,7 +47,7 @@ final class DefaultWorkspaceInstallTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    foreach (['user', 'og_membership', 'bb_workspace', 'bb_group'] as $type) {
+    foreach (['user', 'og_membership', 'bb_workspace', 'bb_group', 'consumer'] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['system', 'user']);
@@ -128,6 +121,115 @@ final class DefaultWorkspaceInstallTest extends KernelTestBase {
     $workspace = $this->loadDefaultWorkspace();
     self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
     self::assertCount(0, $workspace->validate());
+  }
+
+  /**
+   * On existing-config installs the admin leads once the ranks arrive.
+   *
+   * OG's settings come from config/sync when OG installs, but bb_core's config
+   * entities are imported after its hook_install(), so the `lead` rank does
+   * not exist yet when the default workspace is created.
+   */
+  public function testTheAdminLeadsWhenTheRanksArriveLast(): void {
+    $this->registerWorkspaceGroup();
+    bb_core_install();
+    $this->importWorkspaceRanks();
+
+    $this->assertTheOwnerLeadsTheDefaultWorkspace();
+  }
+
+  /**
+   * On recipe installs the admin leads once the group is registered.
+   *
+   * The recipe imports the ranks as config and registers the group in its
+   * `actions:`, which run after that import.
+   */
+  public function testTheAdminLeadsWhenTheGroupIsRegisteredLast(): void {
+    bb_core_install();
+    $this->importWorkspaceRanks();
+    $this->registerWorkspaceGroup();
+
+    $this->assertTheOwnerLeadsTheDefaultWorkspace();
+  }
+
+  /**
+   * A later og.settings save leaves a demoted owner where they are.
+   */
+  public function testLaterGroupSaveDoesNotPromoteTheOwnerAgain(): void {
+    bb_core_install();
+    $this->importWorkspaceRanks();
+    $this->registerWorkspaceGroup();
+    $workspace = $this->loadDefaultWorkspace();
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
+    $owner = $workspace->get('owner_user_id')->entity;
+    self::assertInstanceOf(UserInterface::class, $owner);
+    $membership = Og::getMembership($workspace, $owner);
+    self::assertNotNull($membership);
+    $membership->revokeRoleById('bb_workspace-bb_workspace-lead')->save();
+
+    $this->config('og.settings')
+      ->set('groups', ['bb_workspace' => ['bb_workspace'], 'user' => ['user']])
+      ->save();
+
+    $membership = Og::getMembership($workspace, $owner);
+    self::assertNotNull($membership);
+    self::assertNotContains('bb_workspace-bb_workspace-lead', $membership->getRolesIds());
+  }
+
+  /**
+   * Installing bb_core creates the public consumer the CLI signs in with.
+   */
+  public function testInstallCreatesTheCliConsumer(): void {
+    bb_core_install();
+    bb_core_install();
+
+    $consumers = $this->container->get('entity_type.manager')
+      ->getStorage('consumer')
+      ->loadByProperties(['client_id' => 'bakers-cli']);
+    self::assertCount(1, $consumers);
+    $consumer = reset($consumers);
+    self::assertInstanceOf(ContentEntityInterface::class, $consumer);
+    self::assertFalse((bool) $consumer->get('confidential')->value);
+    self::assertTrue((bool) $consumer->get('pkce')->value);
+    self::assertSame(
+      ['authorization_code', 'device_code', 'refresh_token'],
+      array_column($consumer->get('grant_types')->getValue(), 'value'),
+    );
+    self::assertSame(3600, (int) $consumer->get('access_token_expiration')->value);
+    self::assertSame('bb_session', $consumer->get('scopes')->scope_id);
+    self::assertSame('http://localhost:7432/callback', $consumer->get('redirect')->value);
+  }
+
+  /**
+   * Asserts the default workspace's owner holds the workspace `lead` rank.
+   */
+  private function assertTheOwnerLeadsTheDefaultWorkspace(): void {
+    $workspace = $this->loadDefaultWorkspace();
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
+    $owner = $workspace->get('owner_user_id')->entity;
+    self::assertInstanceOf(UserInterface::class, $owner);
+    $membership = Og::getMembership($workspace, $owner);
+    self::assertNotNull($membership);
+    self::assertContains('bb_workspace-bb_workspace-lead', $membership->getRolesIds());
+  }
+
+  /**
+   * Registers bb_workspace as an OG group through og.settings, as installs do.
+   */
+  private function registerWorkspaceGroup(): void {
+    $this->config('og.settings')
+      ->set('groups', ['bb_workspace' => ['bb_workspace']])
+      ->save();
+  }
+
+  /**
+   * Creates the workspace OG ranks bb_core ships, as a config import would.
+   */
+  private function importWorkspaceRanks(): void {
+    $source = new FileStorage($this->container->get('extension.list.module')->getPath('bb_core') . '/config/install');
+    foreach ($source->listAll('og.og_role.bb_workspace-') as $name) {
+      OgRole::create((array) $source->read($name))->save();
+    }
   }
 
   /**

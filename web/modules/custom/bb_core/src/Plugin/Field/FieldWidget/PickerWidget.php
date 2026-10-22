@@ -413,11 +413,11 @@ final class PickerWidget extends WidgetBase implements PickerWidgetInterface, Co
     $name = $this->fieldDefinition->getName();
     $label = $set ? $options[$values[0]] : '';
     // The note listens for the pick rather than being written into by the
-    // picker. The picker dispatches `bakers-picker-picked` on the window with the
-    // field name and the selected labels; a note whose own field name matches
-    // updates itself. The server still renders the label and the `hidden`
-    // attribute, so the note reads correctly with JavaScript disabled and
-    // Alpine only binds what it already rendered.
+    // picker. The picker dispatches `bakers-picker-picked` on the window with
+    // the field name and the selected labels; a note whose own field name
+    // matches updates itself. The server still renders the label and the
+    // `hidden` attribute, so the note reads correctly with JavaScript disabled
+    // and Alpine only binds what it already rendered.
     $state = Json::encode(['value' => $label, 'set' => $set]);
     $listener = sprintf(
       "\$event.detail.name === %s && (set = \$event.detail.labels.length > 0, value = set ? \$event.detail.labels[0] : value)",

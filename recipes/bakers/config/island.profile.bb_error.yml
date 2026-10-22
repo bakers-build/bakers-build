@@ -3,15 +3,15 @@ status: true
 dependencies:
   config:
     - island.app.bakers
-  enforced:
-    config:
-      - island.app.bakers
   module:
     - bb_core
     - island_ui_patterns
     - ui_patterns
   theme:
     - bb_theme
+  enforced:
+    config:
+      - island.app.bakers
 id: bb_error
 label: 'bakers.build error'
 app: bakers

@@ -78,12 +78,8 @@ it('fakeClient records every update, get and collection call', async () => {
 
 it('resolveCollectionPath mirrors dropsh: shorthand, path and type all resolve', () => {
   expect(resolveCollectionPath('bb_run')).toBe('bb_run/bb_run');
-  expect(resolveCollectionPath('bb_term/bb_labels')).toBe(
-    'bb_term/bb_labels',
-  );
-  expect(resolveCollectionPath('bb_term--bb_labels')).toBe(
-    'bb_term/bb_labels',
-  );
+  expect(resolveCollectionPath('bb_term/bb_labels')).toBe('bb_term/bb_labels');
+  expect(resolveCollectionPath('bb_term--bb_labels')).toBe('bb_term/bb_labels');
 });
 
 it('fakeClient records the RESOLVED path, so a wrong bundle cannot pass', () => {
@@ -92,10 +88,7 @@ it('fakeClient records the RESOLVED path, so a wrong bundle cannot pass', () => 
   client.collection('bb_term/bb_labels');
   // The two are different requests, and only the second one exists on the
   // control plane — which is exactly BB-257 F2.
-  expect(client.collections).toEqual([
-    'bb_term/bb_term',
-    'bb_term/bb_labels',
-  ]);
+  expect(client.collections).toEqual(['bb_term/bb_term', 'bb_term/bb_labels']);
 });
 
 it('rows and failingCollections may be keyed in EITHER form', async () => {

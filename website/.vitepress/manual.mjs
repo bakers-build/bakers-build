@@ -117,7 +117,6 @@ export const SIDEBAR = {
       ['Which file owns what', '/advanced/configuration/'],
       ['Hooks', '/advanced/configuration/hooks'],
       ['Agents and models', '/advanced/configuration/agents-and-models'],
-      ['Claude profiles', '/advanced/configuration/claude-profiles'],
       ['Update bakers.build', '/advanced/configuration/update'],
       ['claude.ai limits and errors', '/advanced/configuration/claude-connector-limits'],
       ['claude.ai project instructions', '/advanced/configuration/claude-project-instructions'],

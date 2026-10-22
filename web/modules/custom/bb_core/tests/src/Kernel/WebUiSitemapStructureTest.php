@@ -22,7 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 /**
- * Drives every place `tests/fixtures/web-ui-sitemap.md` declares, once per rank.
+ * Drives every place `tests/fixtures/web-ui-sitemap.md` names, once per rank.
  *
  * BB-454's one new test seam. The sitemap file is the DATA this class
  * iterates, not documentation it happens to check: every product route in the
@@ -505,9 +505,9 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
    * a "Group management" route from each, and `OgLocalTask` derived a tab into
    * this very row — a sixth on team, a seventh on project, invisible to both
    * this test and the Playwright suite, which checks named tabs one at a time.
-   * `BbWorkspaceRouteSubscriber::removeOgAdminRoutes()` takes those routes
-   * off bakers.build's entity types, and the filter goes with them: what the criterion
-   * says is "exactly", so that is what is asserted.
+   * `BbWorkspaceRouteSubscriber::removeOgAdminRoutes()` takes those routes off
+   * bakers.build's entity types, and the filter goes with them: what the
+   * criterion says is "exactly", so that is what is asserted.
    */
   public function testProjectTabRowMatchesTheAgreedOrder(): void {
     // Asserted BEFORE the `assertSame` below, and against a literal 8 rather
@@ -600,7 +600,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * OG's group-management route is gone from bakers.build's types, and only from those.
+   * OG's group-management route is gone from `bb_*` types, and only from those.
    *
    * THE DIRECT GUARD FOR `removeOgAdminRoutes()`, and it is written as a pair
    * on purpose. Asserting only that `entity.bb_project.og_admin_routes` does
@@ -708,11 +708,11 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   /**
    * Named routes with no nav home, excluded by name rather than entity type.
    *
-   * `bb_core.run_log_download` is a run's OWN log-download action
-   * (BB-556 AC4/AC10), not that run's canonical page, so it needs a name
-   * here rather than a place in `NO_NAV_HOME_ENTITY_TYPES`'s entity-type-keyed
-   * exclusion. Matches `tests/fixtures/web-ui-sitemap.md`'s own bullet naming it
-   * for the same reason — keep the two in step.
+   * `bb_core.run_log_download` is a run's OWN log-download action (BB-556
+   * AC4/AC10), not that run's canonical page, so it needs a name here rather
+   * than a place in `NO_NAV_HOME_ENTITY_TYPES`'s entity-type-keyed exclusion.
+   * Matches `tests/fixtures/web-ui-sitemap.md`'s own bullet naming it for the
+   * same reason — keep the two in step.
    *
    * @var array<string>
    */
@@ -947,8 +947,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.bb_group.settings' => 403,
     'entity.bb_conductor.canonical' => 403,
     'entity.bb_machine.canonical' => 403,
-    // Own-account View is 200; this request is the lead's uid, and no bakers.build
-    // rank holds `access user profiles`, so a stranger is 403.
+    // Own-account View is 200; this request is the lead's uid, and no
+    // bakers.build rank holds `access user profiles`, so a stranger is 403.
     'entity.user.canonical' => 403,
   ];
 

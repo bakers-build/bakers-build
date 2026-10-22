@@ -61,9 +61,8 @@ final class ServiceAccountHooks {
    * Implements hook_entity_base_field_info().
    *
    * Nullable, single-value, non-translatable reference on the `user` entity.
-   * NULL means an ordinary human; a fresh install/enable gets the storage
-   * from this definition automatically, a deployed site needs the guarded
-   * update hook in bb_core.install (bb_core_update_8048).
+   * NULL means an ordinary human; installs get the storage from this
+   * definition automatically.
    *
    * @return array<string, \Drupal\Core\Field\BaseFieldDefinition>
    *   The base field definitions this hook adds.

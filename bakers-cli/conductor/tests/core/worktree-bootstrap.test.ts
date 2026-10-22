@@ -118,7 +118,9 @@ describe('BB-237 worktree bootstrap completes (.ddev/worktree-post.sh)', () => {
 
     // AC-1: the bootstrap reached its LAST action.
     expect(status, `bootstrap aborted (exit ${status}):\n${output}`).toBe(0);
-    expect(existsSync(join(worktree, '.bakers/.worktree-post-done'))).toBe(true);
+    expect(existsSync(join(worktree, '.bakers/.worktree-post-done'))).toBe(
+      true,
+    );
 
     // AC-2: the copied config points at THIS worktree's own DDEV site, and is
     // therefore no longer byte-identical to the parent's dev2 config.
@@ -177,14 +179,14 @@ describe('BB-237 worktree bootstrap completes (.ddev/worktree-post.sh)', () => {
     const { status, output } = runBootstrap(worktree);
 
     expect(status, `bootstrap aborted (exit ${status}):\n${output}`).toBe(0);
-    expect(existsSync(join(worktree, '.bakers/.worktree-post-done'))).toBe(true);
+    expect(existsSync(join(worktree, '.bakers/.worktree-post-done'))).toBe(
+      true,
+    );
     const repaired = readFileSync(
       join(worktree, '.bakers/conductor.config.local.js'),
       'utf8',
     );
-    expect(repaired).toContain(
-      "base_url: 'https://bb-237-fixture.ddev.site'",
-    );
+    expect(repaired).toContain("base_url: 'https://bb-237-fixture.ddev.site'");
     expect(
       repaired.lastIndexOf('bb-237-fixture.ddev.site'),
       'the worktree URL must be the LAST base_url so it wins',

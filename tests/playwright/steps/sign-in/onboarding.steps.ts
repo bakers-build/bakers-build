@@ -139,7 +139,7 @@ When('I choose the {string} agent filter', async ({ page }, name: string) => {
 Then('the setup page links to the documentation and Claude skills', async ({ page }) => {
     await expect(page.locator('[data-component-id="bb_theme:link-group"]')).toBeVisible();
     const docs = page.getByRole('link', { name: 'bakers.build documentation' });
-    await expect(docs).toHaveAttribute('href', 'https://bb-539921.gitlab-pages.keytec.de/get-started/');
+    await expect(docs).toHaveAttribute('href', 'https://bakers.build/docs/get-started/');
     await expect(docs).toHaveAttribute('target', '_blank');
     const install = page.getByRole('link', { name: /Install bakers.build.*new tab/ });
     await expect(install).toBeVisible();

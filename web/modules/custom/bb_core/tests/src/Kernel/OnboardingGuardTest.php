@@ -176,7 +176,7 @@ final class OnboardingGuardTest extends KernelTestBase {
   }
 
   /**
-   * bakers.build's own API is not a browser screen, even without an Accept header.
+   * The bakers.build API is not a browser screen, even with no Accept header.
    */
   public function testBbApiRequestIsNotIntercepted(): void {
     $account = $this->createUser();

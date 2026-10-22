@@ -15,8 +15,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * Both are proposed by an agent and confirmed by a human (BB-308 D1), so
  * neither is computed. The absence of a default is the load-bearing part: a
  * ticket nobody estimated has no estimate, which is a different statement from
- * "estimated at zero", and a default would erase that difference for every row
- * bb_core_update_8015 touches.
+ * "estimated at zero", and a default would erase that difference.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]

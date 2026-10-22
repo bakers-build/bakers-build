@@ -28,7 +28,7 @@ const uidOf = (name: string): string =>
 Given('a disposable review ticket assigned to {string} with reviewer {string}', async ({ page }, assignee: string, reviewer: string) => {
   const output = php([
     '$etm = \\Drupal::entityTypeManager();',
-    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "bakers.build"]));',
+    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
     'if (!$p) { print "NO_PROJECT"; return; }',
     `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "Review flow ${Date.now()}", "workflow" => "bb_feature", "state" => "coding", "assignee_user_id" => ${uidOf(assignee)}, "reviewers" => [${uidOf(reviewer)}]]);`,
     '$t->save();',

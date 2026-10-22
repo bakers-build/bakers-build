@@ -115,7 +115,7 @@ final class RunListCanvasTest extends KernelTestBase {
 
     $workspace = $this->create('bb_workspace', ['name' => 'bakers.build', 'slug' => 'bakers']);
     $group = $this->create('bb_group', ['name' => 'Platform', 'workspace_id' => $workspace->id()]);
-    $project = $this->create('bb_project', ['name' => 'bakers.build', 'key' => 'bakers.build', 'group_id' => $group->id()]);
+    $project = $this->create('bb_project', ['name' => 'bakers.build', 'key' => 'BB', 'group_id' => $group->id()]);
     $conductor = $this->create('bb_conductor', ['name' => 'cw-framework']);
 
     for ($i = 0; $i < 11; $i++) {
@@ -284,7 +284,7 @@ final class RunListCanvasTest extends KernelTestBase {
     $team = $this->create('bb_team', ['name' => 'Core team', 'workspace_id' => $workspace->id()]);
     $project = $this->create('bb_project', [
       'name' => 'bakers.build',
-      'key' => 'bakers.build',
+      'key' => 'BB',
       'group_id' => $group->id(),
       'teams' => [$team->id()],
     ]);

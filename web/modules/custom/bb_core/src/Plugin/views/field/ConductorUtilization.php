@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Views' `alter.text` rewrite yields "2/4" only as a plain string, so a full
  * conductor looks like an idle one in the DOM. This field emits the same text
  * plus a `data-utilization` level, the stable contract tests bind to; the
- * markup lives in `bakers-conductor-utilization.html.twig`.
+ * markup lives in `bb-conductor-utilization.html.twig`.
  *
  * Freshness is not folded in: the adjacent Heartbeat column carries it.
  */

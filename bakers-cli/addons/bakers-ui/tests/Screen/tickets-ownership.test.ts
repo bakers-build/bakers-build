@@ -4,7 +4,7 @@ import { TicketsScreen } from '../../src/Entity/ticket/Screen/tickets.js';
 
 const row = (id: string): TicketRow => ({
   id,
-  identifier: `bakers.build-${id}`,
+  identifier: `BB-${id}`,
   title: id,
   state: 'coding',
   priority: null,

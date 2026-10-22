@@ -208,9 +208,7 @@ describe('Planning route', () => {
     } as unknown as ScreenContext;
     screen.enter(ctx);
     await tick();
-    expect(queries).toEqual([
-      'bb_ticket/bb_ticket/T1?include=comments,labels',
-    ]);
+    expect(queries).toEqual(['bb_ticket/bb_ticket/T1?include=comments,labels']);
   });
 });
 

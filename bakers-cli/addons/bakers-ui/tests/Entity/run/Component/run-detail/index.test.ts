@@ -113,7 +113,9 @@ it('D6: every section is rendered, each with the run’s own fields', () => {
   );
   expect(rendered, 'the footprint').toContain('1234');
   expect(rendered).toContain('17');
-  expect(rendered).toContain('/home/cw/projects/bakers/.bakers-worktrees/feat/x');
+  expect(rendered).toContain(
+    '/home/cw/projects/bakers/.bakers-worktrees/feat/x',
+  );
 });
 
 // BB-556 — the transcript/error payload lives in a private file now; the

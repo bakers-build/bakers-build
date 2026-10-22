@@ -387,7 +387,10 @@ function fakeServices(
         if (overrides.currentUserId === null) return { data: [] };
         return { data: [{ id: overrides.currentUserId ?? 'u-current' }] };
       }
-      if (path === 'bakers/statistics' || path.startsWith('bakers/statistics/')) {
+      if (
+        path === 'bakers/statistics' ||
+        path.startsWith('bakers/statistics/')
+      ) {
         // A `'HTTP_<n>'` override rejects with dropsh's `HttpError` shape, which
         // is how the loader tells an absent endpoint (404) from a real outage.
         const stats = overrides.statistics;
@@ -745,9 +748,9 @@ describe('kernel boot — a picker route (AC-8, Decision 14)', () => {
     });
     expect(frameOf(tui)).toContain('shop-de');
     expect(frameOf(tui)).toContain('shop-at');
-    expect(
-      tui.services.paths.some((p) => p.startsWith('bb_conductor/')),
-    ).toBe(false);
+    expect(tui.services.paths.some((p) => p.startsWith('bb_conductor/'))).toBe(
+      false,
+    );
 
     await quit(tui);
   });

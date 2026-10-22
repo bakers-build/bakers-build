@@ -25,9 +25,9 @@ use Drupal\Core\State\StateInterface;
  *
  * `overwrite: TRUE` and the wholesale replacement of each item's permissions
  * mirror `Oauth2AccessPolicy::alterPermissions()` for the `auth_user_id`-empty
- * case, which is every `client_credentials` token and therefore every bakers.build
- * machine identity: the set becomes EXACTLY the scope's permissions, and no
- * role and no rank survives it.
+ * case, which is every `client_credentials` token and therefore every
+ * bakers.build machine identity: the set becomes EXACTLY the scope's
+ * permissions, and no role and no rank survives it.
  *
  * State-driven rather than constructor-configured, because a kernel test
  * installs the module before it knows which account it is about to create.

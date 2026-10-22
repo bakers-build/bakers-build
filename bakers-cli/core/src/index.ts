@@ -1,4 +1,19 @@
 // BB-201: the `bakers` plugin-host contract + the split-config helpers.
+
+export type {
+  BbConfigResolution,
+  BbConfigSource,
+} from './cli/bakers-dir.js';
+export {
+  findBbConfig,
+  findBbDir,
+  findConfigProjectBbDir,
+  findProjectBbDir,
+  homeBbDir,
+  resolveBbConfigPath,
+  resolveConfigPath,
+  stemForConfigFile,
+} from './cli/bakers-dir.js';
 export type { BbCommandHost, BbCommandPlugin } from './cli/commands.js';
 export {
   type ConfigInventory,
@@ -48,20 +63,6 @@ export {
   skipString,
   skipTrivia,
 } from './cli/config-source.js';
-export type {
-  BbConfigResolution,
-  BbConfigSource,
-} from './cli/bakers-dir.js';
-export {
-  findConfigProjectBbDir,
-  findBbConfig,
-  findBbDir,
-  findProjectBbDir,
-  homeBbDir,
-  resolveConfigPath,
-  resolveBbConfigPath,
-  stemForConfigFile,
-} from './cli/bakers-dir.js';
 export {
   HOME_IMPORT_EXPRESSION_PATTERN,
   importConfig,
@@ -73,12 +74,12 @@ export {
   readUiEntryLayers,
 } from './cli/layered-ui-entries.js';
 export {
-  type EffectiveConnectionField,
   type BbConnectionConfig,
   BbConnectionConfigError,
   type BbConnectionGlobals,
   type BbConnectionLoadOptions,
   type BbConnectionSelection,
+  type EffectiveConnectionField,
   loadBbConfig,
   loadBbConnectionBootstrap,
   reportLoadedBbConfigFields,
@@ -95,12 +96,12 @@ export {
 export { corePackageRoot } from './cli/paths.js';
 export { resolveModuleEslintStyle } from './cli/resolve-module.js';
 export {
+  BB_PACKAGE,
   checkForUpdate,
   declineUpdate,
   defaultUpdateCachePath,
   fetchLatestVersion,
   fetchUpdateNotice,
-  BB_PACKAGE,
   printVersionLine,
   REGISTRY_LATEST_URL,
   resolveCliVersion,
@@ -172,11 +173,11 @@ export {
 export {
   type AddonEntry,
   type AddonScope,
+  type BbPreset,
+  type BbSurface,
   type CommandDescriptor,
   type DiscoveredContributions,
   emptyContributions,
-  type BbPreset,
-  type BbSurface,
   type OpaqueAccumulator,
   PRESET_FUNCTION_KEYS,
   SURFACE_KEYS,

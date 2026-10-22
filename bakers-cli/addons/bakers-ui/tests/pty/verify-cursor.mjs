@@ -35,7 +35,7 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install      # once: native deps
 //   node verify-cursor.mjs
-//   node verify-cursor.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/pty-cursor.txt
+//   node verify-cursor.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-cursor.txt
 //
 //   --project <name>   the project the popup opens under
 //   --cols/--rows <n>  the pty geometry (default 120x40)

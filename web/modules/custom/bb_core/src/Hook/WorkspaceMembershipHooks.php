@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Hook;
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityLastInstalledSchemaRepositoryInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbWorkspace;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\Og;
 use Drupal\og\OgMembershipInterface;
@@ -35,6 +38,10 @@ final class WorkspaceMembershipHooks {
     private readonly BbWorkspaceReadScopeInterface $readScope,
     #[Autowire(service: 'typed_data_manager')]
     private readonly TypedDataManagerInterface $typedDataManager,
+    #[Autowire(service: 'entity_type.manager')]
+    private readonly EntityTypeManagerInterface $entityTypeManager,
+    #[Autowire(service: 'entity.last_installed_schema.repository')]
+    private readonly EntityLastInstalledSchemaRepositoryInterface $installedSchema,
   ) {
   }
 
@@ -46,6 +53,43 @@ final class WorkspaceMembershipHooks {
   #[Hook('bb_workspace_insert')]
   public function bakersWorkspaceInsert(EntityInterface $workspace): void {
     $this->placeGroupOwnerInLead($workspace);
+  }
+
+  /**
+   * Implements hook_ENTITY_TYPE_insert() for og_role.
+   */
+  #[Hook('og_role_insert')]
+  public function ogRoleInsert(OgRole $role): void {
+    if ($role->id() === 'bb_workspace-bb_workspace-lead') {
+      $this->placeDefaultWorkspaceOwnerInLead();
+    }
+  }
+
+  /**
+   * Places the default workspace's owner in `lead` once rank and group exist.
+   *
+   * Recipe and existing-config installs create the default workspace in
+   * hook_install(), before the `lead` rank is imported and, on the recipe
+   * path, before the recipe registers the group. Called when either arrives;
+   * the call that finds both does the placing.
+   */
+  public function placeDefaultWorkspaceOwnerInLead(): void {
+    // Kernel tests may create OG config without the workspace table.
+    if ($this->installedSchema->getLastInstalledDefinition('bb_workspace') === NULL) {
+      return;
+    }
+    if (!Og::isGroup('bb_workspace', 'bb_workspace') || OgRole::load('bb_workspace-bb_workspace-lead') === NULL) {
+      return;
+    }
+    $matches = $this->entityTypeManager->getStorage('bb_workspace')
+      ->loadByProperties(['uuid' => BbWorkspace::DEFAULT_UUID]);
+    $workspace = reset($matches);
+    if ($workspace instanceof EntityOwnerInterface) {
+      $this->placeGroupOwnerInLead($workspace);
+      // This runs mid-install; a later install step must load the owner with
+      // the fields imported after this point.
+      $this->entityTypeManager->getStorage('user')->resetCache([$workspace->getOwnerId()]);
+    }
   }
 
   /**
@@ -65,20 +109,22 @@ final class WorkspaceMembershipHooks {
     if (!$group instanceof EntityOwnerInterface) {
       return;
     }
-    $account = $group->getOwner();
-    if (!$account instanceof UserInterface) {
-      $this->logger->info('Group @type @id has no owner account; no lead placement.', [
-        '@type' => $group->getEntityTypeId(),
-        '@id' => $group->id(),
-      ]);
-      return;
-    }
-
+    // The rank is checked before the owner loads: during an install the user
+    // fields may not exist yet, and a cached owner would keep that state.
     $group_type = $group->getEntityTypeId();
     $role = OgRole::load("$group_type-$group_type-lead");
     if ($role === NULL) {
       $this->logger->warning('The @type `lead` role is missing; the owner of @id was not placed.', [
         '@type' => $group_type,
+        '@id' => $group->id(),
+      ]);
+      return;
+    }
+
+    $account = $group->getOwner();
+    if (!$account instanceof UserInterface) {
+      $this->logger->info('Group @type @id has no owner account; no lead placement.', [
+        '@type' => $group->getEntityTypeId(),
         '@id' => $group->id(),
       ]);
       return;

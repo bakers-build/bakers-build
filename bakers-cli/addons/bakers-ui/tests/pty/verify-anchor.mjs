@@ -43,7 +43,7 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install    # once: native deps
 //   node verify-anchor.mjs
-//   node verify-anchor.mjs --out ../../../../../assets-ai/bakers.build-nnn/node/pty-anchor-after.txt
+//   node verify-anchor.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-anchor-after.txt
 //
 //   --cols/--rows <n>   the pty geometry (default 120x40)
 //   --prefill <n>       lines of shell output before the cockpit (default 12)

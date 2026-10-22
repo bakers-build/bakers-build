@@ -24,7 +24,7 @@ let invitedAddress = '';
 let typedText = '';
 
 /** The open invite dialog, by the form it hosts. */
-const DIALOG = 'dialog[data-dialog]:has(form#bakers-workspace-invite-form)';
+const DIALOG = 'dialog[data-dialog]:has(form#bb-workspace-invite-form)';
 
 /** The status the Members screen answered the last direct request with. */
 let requestStatus = 0;

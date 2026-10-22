@@ -35,7 +35,7 @@ final class BbOgMembershipAccessControlHandler extends OgMembershipAccessControl
   public const VIEW_PERMISSION = 'view bakers memberships';
 
   /**
-   * The bakers.build-wide bypass, which og_membership otherwise would not honour.
+   * The bakers.build-wide bypass, which og_membership would not honour.
    */
   public const ADMIN_PERMISSION = 'administer bakers';
 

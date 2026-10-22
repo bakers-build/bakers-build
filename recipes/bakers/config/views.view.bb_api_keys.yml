@@ -2,14 +2,14 @@ langcode: en
 status: true
 dependencies:
   module:
-    - consumers
     - bb_api_key
     - bb_core
+    - consumers
     - user
 id: bb_api_keys
 label: 'My API keys'
 module: views
-description: 'Self-service pipeline API keys: list and revoke the current user''s own keys.'
+description: "Self-service pipeline API keys: list and revoke the current user's own keys."
 tag: ''
 base_table: consumer_field_data
 base_field: id

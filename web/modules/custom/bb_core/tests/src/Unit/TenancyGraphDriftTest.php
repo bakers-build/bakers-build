@@ -181,13 +181,13 @@ final class TenancyGraphDriftTest extends UnitTestCase {
   }
 
   /**
-   * Every bakers.build type the read-scope subscriber names is a type the fence knows.
+   * Every `bb_*` type the read-scope subscriber names is one the fence knows.
    *
-   * The rule map names exactly the types a per-field query-access rule
-   * applies to; every bakers.build type among them must be a type the fence also
-   * knows about (either through `HOP_FIELDS` or one of its own special
-   * cases), or the read-scope narrows a type the fence would answer
-   * differently for on the SAME collection.
+   * The rule map names exactly the types a per-field query-access rule applies
+   * to; every bakers.build type among them must be a type the fence also knows
+   * about (either through `HOP_FIELDS` or one of its own special cases), or the
+   * read-scope narrows a type the fence would answer differently for on the
+   * SAME collection.
    *
    * `user` and `og_membership` are excluded: neither is a `bb_*` type, so
    * both are out of `bb_core_entity_access()`'s own routing

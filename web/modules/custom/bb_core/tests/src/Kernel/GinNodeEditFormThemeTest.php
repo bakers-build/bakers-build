@@ -13,10 +13,11 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * Gin renders its two-column meta sidebar on content forms by setting
  * $form['#theme'] = ['node_edit_form'] (GinContentFormHelper). The
- * node_edit_form theme hook is registered only by the node module, which bakers.build
- * does not enable. Without the hook the #theme resolves to nothing, the sidebar
- * collapses inline, and the meta sidebar is "missing". bb_core registers the
- * hook itself so Gin's node-edit-form template override applies node-free.
+ * node_edit_form theme hook is registered only by the node module, which
+ * bakers.build does not enable. Without the hook the #theme resolves to
+ * nothing, the sidebar collapses inline, and the meta sidebar is "missing".
+ * bb_core registers the hook itself so Gin's node-edit-form template override
+ * applies node-free.
  *
  * @see \Drupal\bb_core\Hook\GinIntegrationHooks::theme()
  */

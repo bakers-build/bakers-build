@@ -4,8 +4,8 @@ import {
   selectRemote,
 } from '@bakers-build/conductor';
 import type {
-  ConductorFileConfig,
   BbRemote,
+  ConductorFileConfig,
 } from '@bakers-build/conductor/contract';
 import {
   type BbCommandHost,

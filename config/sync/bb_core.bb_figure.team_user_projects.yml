@@ -3,8 +3,8 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.closed_tickets
-  - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.runs
 _core:
   default_config_hash: H4V1qjjiZHC7m3DKJT8f4ZFstDTf4qsD4tvceeBJ-8I
 id: team_user_projects
@@ -13,8 +13,8 @@ description: "This team member's closed tickets and runs by project. Date basis:
 weight: 0
 widget: grouped_horizontal_bars
 measurements:
-- closed_tickets
-- runs
+  - closed_tickets
+  - runs
 categories:
   type: dimension
   dimension: project
@@ -24,25 +24,28 @@ filters:
     label: Period
     default: '7'
     options:
-    - value: '7'
-      label: 7 days
-    - value: '30'
-      label: 30 days
-    - value: '365'
-      label: 1 year
+      -
+        value: '7'
+        label: '7 days'
+      -
+        value: '30'
+        label: '30 days'
+      -
+        value: '365'
+        label: '1 year'
 context_shape:
-- team
-- user
+  - team
+  - user
 conditions:
   team:
     id: bb_route_context
-    entity_type: bb_team
     negate: false
     context_mapping:
       entity: team
+    entity_type: bb_team
   user:
     id: bb_route_context
-    entity_type: user
     negate: false
     context_mapping:
       entity: user
+    entity_type: user

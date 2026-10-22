@@ -16,8 +16,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * Projects, groups and workspaces carry an optional description and image.
  *
  * Pins the field contract — multiline plain text of at most 280 characters
- * and a single, optional, private raster image — and the update hooks that
- * install the storages and make an existing description multiline.
+ * and a single, optional, private raster image.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]

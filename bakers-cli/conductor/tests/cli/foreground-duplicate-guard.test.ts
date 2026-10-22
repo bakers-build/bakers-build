@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { claudeAgent } from '@bakers-build/addon-claude';
 import {
-  FakeExecutor,
   FakeBbRemote,
+  FakeExecutor,
   FakeWorkspace,
   fakeExecutor,
   fakeRemote,
@@ -18,8 +18,8 @@ import type {
 import type { ProcProbe } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  buildConductorProgram,
   type BbCliDeps,
+  buildConductorProgram,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 

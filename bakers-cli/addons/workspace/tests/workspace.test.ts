@@ -157,10 +157,7 @@ describe('workspacePlugin — the types it deliberately leaves alone', () => {
   it('leaves a binary (upload) body unchanged', async () => {
     const bin = new Uint8Array([1, 2, 3]);
     const r: HttpRequest = { ...req(), body: bin };
-    const out = await alter(plugin())(
-      r,
-      ctx('upload', 'bb_group', 'bb_group'),
-    );
+    const out = await alter(plugin())(r, ctx('upload', 'bb_group', 'bb_group'));
     expect(out.body).toBe(bin);
   });
 });
@@ -202,10 +199,7 @@ describe('workspacePlugin — loud failures', () => {
 
   it('throws a named error on a malformed JSON body rather than half-parsing it', async () => {
     await expect(
-      alter(plugin())(
-        req('{not json'),
-        ctx('create', 'bb_group', 'bb_group'),
-      ),
+      alter(plugin())(req('{not json'), ctx('create', 'bb_group', 'bb_group')),
     ).rejects.toMatchObject({ name: 'WorkspacePayloadError' });
   });
 });
@@ -213,10 +207,7 @@ describe('workspacePlugin — loud failures', () => {
 describe('workspacePlugin — headers are never touched', () => {
   it('carries Authorization and the JSON:API content-type through verbatim', async () => {
     const r = req(createBody('bb_group'));
-    const out = await alter(plugin())(
-      r,
-      ctx('create', 'bb_group', 'bb_group'),
-    );
+    const out = await alter(plugin())(r, ctx('create', 'bb_group', 'bb_group'));
     expect(out.headers).toEqual(r.headers);
     expect(out.headers?.Authorization).toBe('Bearer tok-abc');
     expect(out.headers?.['Content-Type']).toBe('application/vnd.api+json');
@@ -332,15 +323,15 @@ describe('read scoping', () => {
       ctx('search', 'bb_ticket_template'),
     );
     const params = new URL(out!.url).searchParams;
-    expect(
-      params.get('filter[bb_ambient_workspace][group][conjunction]'),
-    ).toBe('OR');
-    expect(
-      params.get('filter[bb_ambient_workspace_0][condition][path]'),
-    ).toBe('project_id.group_id.workspace_id.id');
-    expect(
-      params.get('filter[bb_ambient_workspace_1][condition][path]'),
-    ).toBe('workspace_id.id');
+    expect(params.get('filter[bb_ambient_workspace][group][conjunction]')).toBe(
+      'OR',
+    );
+    expect(params.get('filter[bb_ambient_workspace_0][condition][path]')).toBe(
+      'project_id.group_id.workspace_id.id',
+    );
+    expect(params.get('filter[bb_ambient_workspace_1][condition][path]')).toBe(
+      'workspace_id.id',
+    );
     for (const i of [0, 1]) {
       expect(
         params.get(`filter[bb_ambient_workspace_${i}][condition][value]`),
@@ -355,9 +346,7 @@ describe('read scoping', () => {
   it('preserves a caller filter instead of replacing it', async () => {
     const plugin = workspacePlugin({ workspace_id: WS });
     const out = await plugin.alterRequest?.(
-      getReq(
-        'https://example.test/jsonapi/bb_team/bb_team?filter[name]=crew',
-      ),
+      getReq('https://example.test/jsonapi/bb_team/bb_team?filter[name]=crew'),
       ctx('search', 'bb_team'),
     );
     expect(new URL(out!.url).searchParams.get('filter[name]')).toBe('crew');

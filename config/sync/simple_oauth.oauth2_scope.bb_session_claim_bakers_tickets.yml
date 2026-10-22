@@ -1,9 +1,10 @@
+uuid: 4f5dc197-f242-41c9-b6bb-461bf1972b3f
 langcode: en
 status: true
 dependencies: {  }
-id: bb_session_register_bb_conductor
-name: 'bb:session:register_bb_conductor'
-description: 'bakers.build session ceiling — register bakers conductor'
+id: bb_session_claim_bakers_tickets
+name: 'bb:session:claim_bakers_tickets'
+description: 'bakers.build session ceiling — claim bakers tickets'
 grant_types:
   client_credentials:
     status: true
@@ -12,4 +13,4 @@ umbrella: false
 parent: bb_session
 granularity_id: permission
 granularity_configuration:
-  permission: 'register bakers conductor'
+  permission: 'claim bakers tickets'

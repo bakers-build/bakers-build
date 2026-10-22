@@ -16,9 +16,8 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
  * database-level guarantee a reload-on-collision retry (AddonsRegisterResource)
  * relies on under concurrent registration.
  *
- * `workspace_id` is entity-required but kept DB-nullable so installing the
- * field against a site with existing rows does not fail; the post-update
- * backfill fills every row before anything relies on it being non-null.
+ * `workspace_id` is entity-required but kept DB-nullable; registration
+ * always sets it.
  */
 final class BbAddonStorageSchema extends SqlContentEntityStorageSchema {
 

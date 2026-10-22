@@ -21,7 +21,9 @@ vi.mock('@bakers-build/core', async (importOriginal) => {
 });
 vi.mock('@bakers-build/conductor/project-context', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@bakers-build/conductor/project-context')>();
+    await importOriginal<
+      typeof import('@bakers-build/conductor/project-context')
+    >();
   return { ...actual, readBbProjectSelection };
 });
 vi.mock('@bakers-build/conductor/contract', async (importOriginal) => {
@@ -238,9 +240,7 @@ describe('resolveBbInfo (BB-495)', () => {
   });
 
   it('leaves every key null/empty, never throwing, when nothing resolves', async () => {
-    loadReadyBbConnection.mockRejectedValue(
-      new Error('no connection config'),
-    );
+    loadReadyBbConnection.mockRejectedValue(new Error('no connection config'));
     const result = await resolveBbInfo({ host, env: {} });
     expect(result).toEqual({
       project: null,

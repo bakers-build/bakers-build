@@ -15,10 +15,7 @@ export async function listLinkedProjectIds(
       .addSort('drupal_internal__id', 'ASC')
       .addPageLimit(LIST_PAGE_SIZE);
     if (offset > 0) params.addPageOffset(offset);
-    const document = (await client.get(
-      'bb_project/bb_project',
-      params,
-    )) as {
+    const document = (await client.get('bb_project/bb_project', params)) as {
       data?: JsonApiResource[];
       links?: { next?: unknown };
       meta?: { omitted?: unknown };

@@ -115,7 +115,7 @@ final class VerifiedEmailAuthenticatorTest extends KernelTestBase {
   }
 
   /**
-   * The plugin definition resolves to bakers.build's auth manager, not contrib's.
+   * The plugin definition resolves to BbGoogleAuthManager, not contrib's.
    *
    * The prior round's fix (routing the claim into `additionalData`) still
    * left the network plugin's `auth_manager` pointed at contrib's

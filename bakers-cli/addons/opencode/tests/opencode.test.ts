@@ -5,7 +5,10 @@ import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import { describe, expect, it } from 'vitest';
 
 const pluginRoot = new URL('..', import.meta.url);
-const bakersPackagePath = new URL('../../../host/package.json', import.meta.url);
+const bakersPackagePath = new URL(
+  '../../../host/package.json',
+  import.meta.url,
+);
 
 async function loadOpencodeModule() {
   return import('../src/index.js');
@@ -47,7 +50,9 @@ describe('workspace package structure', () => {
       '@bakers-build/core': 'workspace:^',
     });
     expect(tsconfig.extends).toBe('../../tsconfig.base.json');
-    expect(bakersPkg.dependencies['@bakers-build/addon-opencode']).toBe('workspace:^');
+    expect(bakersPkg.dependencies['@bakers-build/addon-opencode']).toBe(
+      'workspace:^',
+    );
     expect(existsSync(join(rootPath, 'src/index.ts'))).toBe(true);
     expect(existsSync(join(rootPath, 'tests/opencode.test.ts'))).toBe(true);
   });
@@ -192,7 +197,9 @@ describe('OpencodeAgent.getRunLog', () => {
   it("returns '' and never throws when the storage root is absent (AC-1)", async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
     const agent = new OpencodeAgent({}, '/tmp/does-not-exist-opencode-storage');
-    await expect(agent.getRunLog('/tmp/bakers-wt-opencode-A')).resolves.toBe('');
+    await expect(agent.getRunLog('/tmp/bakers-wt-opencode-A')).resolves.toBe(
+      '',
+    );
   });
 
   it('R4: never selects a session created before run.startedAt, even when it is the only/newest matching-directory session (BB-473)', async () => {

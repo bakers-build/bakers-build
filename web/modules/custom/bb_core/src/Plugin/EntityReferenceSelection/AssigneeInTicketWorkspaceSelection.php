@@ -69,8 +69,8 @@ class AssigneeInTicketWorkspaceSelection extends UserSelection {
     }
     $uids = $this->memberIdsOfWorkspace($workspace_id);
     // A workspace with no member must offer NOBODY, not everybody — and the
-    // sentinel is -1 rather than the 0 the bakers-type plugins use, because 0 is
-    // the anonymous account and `UserSelection` keeps it in the query unless
+    // sentinel is -1 rather than the 0 the bakers-type plugins use, because 0
+    // is the anonymous account and `UserSelection` keeps it in the query unless
     // `include_anonymous` is switched off.
     $query->condition('uid', $uids === [] ? [-1] : $uids, 'IN');
     return $query;

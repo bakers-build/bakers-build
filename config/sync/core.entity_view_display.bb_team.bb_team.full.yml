@@ -5,8 +5,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_team.full
   module:
-    - display_builder
     - bb_core
+    - display_builder
   enforced:
     module:
       - og
@@ -124,4 +124,3 @@ hidden:
   og_group: true
   projects: true
   search_api_excerpt: true
-

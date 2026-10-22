@@ -62,8 +62,7 @@ final class BbNonTerminalTicketState extends FilterPluginBase {
     }
     $terminal = TypeWorkflows::terminalTicketStates();
     if ($terminal === []) {
-      // Load-bearing guard rather than defensive noise, and the same one
-      // `bb_core_post_update_close_terminal_tickets()` states: a condition
+      // Load-bearing guard rather than defensive noise: a condition
       // group with no children narrows nothing, so an empty map has to mean
       // "keep every row" and not "an empty condition". Unreachable while the
       // workflows are installed.

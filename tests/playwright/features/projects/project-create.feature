@@ -33,7 +33,7 @@ Feature: Creating a project from the projects screen
   trigger selects `dialog` now and that test pins the correction.
 
   THE HULL IS NOT THIS SURFACE'S (spec D2), which is why every selector in the
-  steps binds to `dialog[data-dialog]` holding `form#bakers-project-create-form`
+  steps binds to `dialog[data-dialog]` holding `form#bb-project-create-form`
   rather than to an id of its own. `BbProjectCreateForm` composes no hull at all:
   `island`'s `WrappedRouteRenderer` wraps the route's main content because the
   form does nothing to opt out, and the component that renders is

@@ -1,8 +1,9 @@
+uuid: f61bddc5-658f-4c7f-b460-9fc3686383f1
 langcode: en
 status: true
 dependencies: {  }
-id: bb_session_view_bb_memberships
-name: 'bb:session:view_bb_memberships'
+id: bb_session_view_bakers_memberships
+name: 'bb:session:view_bakers_memberships'
 description: 'bakers.build session ceiling — view bakers memberships'
 grant_types:
   client_credentials:

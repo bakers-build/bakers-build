@@ -45,7 +45,9 @@ export function shouldReExecUnderBun(input: {
 export function resolveBunBinary(bases: string[]): string | undefined {
   for (const base of bases) {
     try {
-      const addon = createRequire(base).resolve('@bakers-build/addon-bakers-ui');
+      const addon = createRequire(base).resolve(
+        '@bakers-build/addon-bakers-ui',
+      );
       const manifest = createRequire(addon).resolve('bun/package.json');
       const { bin } = JSON.parse(readFileSync(manifest, 'utf8')) as {
         bin?: Record<string, string> | string;

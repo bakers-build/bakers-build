@@ -1,27 +1,33 @@
 ---
 title: Web UI sitemap
-description: "The route, gate and tab-position tables that WebUiSitemapStructureTest reads, one per nav place, with the reasoning split into parts."
+description: >-
+  The route, gate and tab-position tables that WebUiSitemapStructureTest
+  reads, one per nav place, with the reasoning split into parts.
 ---
 
 # Web UI sitemap
 
-**This file is a test fixture, not prose.** `Drupal\Tests\bb_core\Kernel\WebUiSitemapStructureTest`
-(BB-454) reads it directly and, for each row below, requests the route once per rank — workspace
-lead, workspace contributor, workspace guest, non-member — asserting that the response status matches the
-declared gate, that a tab row (where one applies) carries the row in its declared position, and that
-the response raises no PHP error or warning. It is a Kernel test rather than a browser one: a real
-request over `SIMPLETEST_BASE_URL` would hit the web server's own separate `:memory:` SQLite database,
-never this test's fixtures — the class's own docblock measures why. The file and the routing are
-asserted to agree in **both** directions, from a **live** enumeration of `router.route_provider`
-rather than a fixed list of the routes this ticket happened to add: a route declared here but absent
-from routing fails the test, and a product route under `/_workspace/` present in routing but absent
-from here fails it too — every CRUD form route and the canonical route of an entity type with no nav
-home of its own (see below) are excluded from that reverse check, not silently passed. Edit this file
-when the structure changes; a stale row is a red test, not stale documentation.
+**This file is a test fixture, not prose.**
+`Drupal\Tests\bb_core\Kernel\WebUiSitemapStructureTest` (BB-454) reads it
+directly and, for each row below, requests the route once per rank — workspace
+lead, workspace contributor, workspace guest, non-member — asserting that the
+response status matches the declared gate, that a tab row (where one applies)
+carries the row in its declared position, and that the response raises no PHP
+error or warning. It is a Kernel test rather than a browser one: a real request
+over `SIMPLETEST_BASE_URL` would hit the web server's own separate `:memory:`
+SQLite database, never this test's fixtures — the class's own docblock measures
+why. The file and the routing are asserted to agree in **both** directions, from
+a **live** enumeration of `router.route_provider` rather than a fixed list of
+the routes this ticket happened to add: a route declared here but absent from
+routing fails the test, and a product route under `/_workspace/` present in
+routing but absent from here fails it too — every CRUD form route and the
+canonical route of an entity type with no nav home of its own (see below) are
+excluded from that reverse check, not silently passed. Edit this file when the
+structure changes; a stale row is a red test, not stale documentation.
 
-Every place is deliberately **empty** as of BB-454 — the scaffold gives each place a route, a gate and,
-where it has one, a tab position. Filling a place with real content is a named follow-up, created after
-this ticket merges.
+Every place is deliberately **empty** as of BB-454 — the scaffold gives each
+place a route, a gate and, where it has one, a tab position. Filling a place
+with real content is a named follow-up, created after this ticket merges.
 
 ## Rail
 
@@ -44,13 +50,14 @@ this ticket merges.
 | Templates | `view.bb_ticket_templates.workspace_list` | `/{ws}/settings/templates` | View (page display) | `view bb_ticket_template` in this workspace | `_bb_workspace_permission` instead of its sibling tabs' lead gate, so contributors may list and use workspace templates and a guest may not, whatever rank it holds elsewhere; they see no Settings entry and reach the tab by its address. Lists the workspace templates of this workspace only. Its *Add template* header action opens `entity.bb_ticket_template.add_for_workspace`, gated by `_bb_workspace_create` (the create right in this workspace); its optional project makes a project template. |
 
 The `bb_api_key` submodule adds a fourth tab, **Service accounts**
-(`view.bb_service_accounts.settings`, `/{ws}/settings/service-accounts`), when it is enabled;
-see service accounts.
+(`view.bb_service_accounts.settings`, `/{ws}/settings/service-accounts`), when
+it is enabled; see service accounts.
 
 ## Workspace invitation — a dialog, not a tab
 
-The **Invite members** button in the Members zone opens a dialog on its own route. It is not a
-tab, so it has its own table rather than a row in the tab table above.
+The **Invite members** button in the Members zone opens a dialog on its own
+route. It is not a tab, so it has its own table rather than a row in the tab
+table above.
 
 | Place | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
@@ -100,11 +107,13 @@ tab, so it has its own table rather than a row in the tab table above.
 
 ## Admin routes (unchanged)
 
-Every route under `/admin/bakers/*` — the collections for `bb_workspace`, `bb_team`, `bb_project`,
-`bb_run`, `bb_conductor`, `bb_machine`, `bb_group`, `bb_ticket`, plus `bb_core.settings` — is
-out of this umbrella's scope and unchanged. They are listed here once, as a block, rather than one row
-each: gated by `administer bakers` (or the specific admin-collection permission each already carries),
-rendered by each entity's list builder, and reachable only from the Drupal admin backend, never the rail.
+Every route under `/admin/bakers/*` — the collections for `bb_workspace`,
+`bb_team`, `bb_project`, `bb_run`, `bb_conductor`, `bb_machine`, `bb_group`,
+`bb_ticket`, plus `bb_core.settings` — is out of this umbrella's scope and
+unchanged. They are listed here once, as a block, rather than one row each:
+gated by `administer bakers` (or the specific admin-collection permission each
+already carries), rendered by each entity's list builder, and reachable only
+from the Drupal admin backend, never the rail.
 
 ## Entity types with no nav home of their own
 
@@ -115,4 +124,3 @@ rendered by each entity's list builder, and reachable only from the Drupal admin
 | Account | `entity.user.canonical` | `/user/{user}` | `user.full` | `user.view` | Person-mark destination. View and Edit stay core's local tasks on this row. |
 | Conductors | `view.conductors.user_list` | `/user/{user}/conductors` | View (page display) | `view bb_conductor` | view's own `access: type: perm` plus the `{user}` argument validator (`entity:user`, view). Sibling of Account in the user-area rail. Rows are this account's conductors, any workspace. |
 | Machines | `view.machines.user_list` | `/user/{user}/machines` | View (page display) | `view bb_machine` | view's own `access: type: perm` plus the `{user}` argument validator (`entity:user`, view). Sibling of Account in the user-area rail. Rows are this account's machines. |
-

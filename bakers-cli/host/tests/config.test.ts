@@ -195,7 +195,10 @@ it('check defaults to machine and connection outside a project and never imports
 });
 it('explains why a requested online check is skipped when offline errors block loading', async () => {
   seed();
-  writeFileSync(join(home, '.bakers/bakers.config.js'), 'export default {site:};');
+  writeFileSync(
+    join(home, '.bakers/bakers.config.js'),
+    'export default {site:};',
+  );
   const report = await run([
     'check',
     '--scope',
@@ -242,7 +245,10 @@ it('project initialization uses explicit path while shared prerequisites remain 
   const target = join(root, 'target');
   mkdirSync(target);
   const machine = readFileSync(join(home, '.bakers/machine.config.js'), 'utf8');
-  const connection = readFileSync(join(home, '.bakers/bakers.config.js'), 'utf8');
+  const connection = readFileSync(
+    join(home, '.bakers/bakers.config.js'),
+    'utf8',
+  );
   const report = await run([
     'init',
     '--scope',
@@ -539,9 +545,9 @@ it('interactive initialization asks for the selected scope and missing local ide
   await program.parseAsync(['config', 'init'], { from: 'user' });
   expect(output).toContain('bakers config init: ok');
   expect(questions).toHaveLength(3);
-  expect(readFileSync(join(home, '.bakers/machine.config.js'), 'utf8')).toContain(
-    'selected-host',
-  );
+  expect(
+    readFileSync(join(home, '.bakers/machine.config.js'), 'utf8'),
+  ).toContain('selected-host');
   expect(existsSync(join(home, '.bakers/bakers.config.js'))).toBe(false);
 });
 it('fresh interactive connection initialization collects OAuth inputs and verifies them', async () => {
@@ -953,7 +959,9 @@ it('a fresh device-code connection ends ok with sign-in named as the outstanding
   const second = await run(args);
   expect(second.result).toBe('ok');
   expect(second.changes).toEqual([]);
-  expect(readFileSync(join(home, '.bakers/bakers.config.js'), 'utf8')).toBe(before);
+  expect(readFileSync(join(home, '.bakers/bakers.config.js'), 'utf8')).toBe(
+    before,
+  );
 });
 
 it('re-running init over an existing device-code connection stays ok without a flag', async () => {

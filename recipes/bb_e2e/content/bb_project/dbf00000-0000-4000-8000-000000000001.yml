@@ -21,7 +21,7 @@ default:
       value: "bakers.build Platform"
   key:
     -
-      value: "bakers.build"
+      value: "BB"
   next_number:
     -
       value: 147

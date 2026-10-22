@@ -53,7 +53,7 @@ is a rounded **BORDER** frame with **no** fill (content scrolls inside);
 active/selection wash **237**, ordinary text / borders **245**, highlight /
 border emphasis **231**, active / selection fg **15** (full white). Header, tab bar and
 footer have **no** background fill. No cyan slots. Interactive TTY boots show a
-timed **bakers.build** ASCIIFont splash (`SPLASH_MS = 500`); piped / non-TTY runs never
+timed **bakers** ASCIIFont splash (`SPLASH_MS = 500`); piped / non-TTY runs never
 enter it, and injected-renderer harnesses skip it by default.
 
 Each ticket tab is an independent screen and route. Switching tabs performs

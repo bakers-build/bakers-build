@@ -70,23 +70,6 @@ trait AddonFixtureTrait {
   }
 
   /**
-   * Runs an update or post-update function the way Drupal's batch does.
-   *
-   * Passes a `$sandbox` and re-invokes until it reports `#finished` >= 1.
-   *
-   * @param string $function
-   *   The function name; its file must already be loaded.
-   */
-  protected function runUpdate(string $function): void {
-    assert(is_callable($function));
-    /** @var array<string, mixed> $sandbox */
-    $sandbox = [];
-    do {
-      $function($sandbox);
-    } while (($sandbox['#finished'] ?? 1) < 1);
-  }
-
-  /**
    * Stores an addon definition run by the given conductors.
    *
    * Without an explicit `$workspace_id`, the row's workspace is derived from

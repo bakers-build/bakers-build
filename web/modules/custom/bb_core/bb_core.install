@@ -7,17 +7,16 @@
 
 declare(strict_types=1);
 
+use Drupal\bb_core\Install\CliConsumer;
 use Drupal\bb_core\Install\DefaultWorkspace;
 
 /**
- * Creates the default workspace every product URL is scoped to.
+ * Creates the content every bakers.build site requires.
  *
- * Product URLs resolve only below a workspace slug, and no install path
- * guaranteed one existed. hook_install() is shared by all install paths; its
- * guard keeps it idempotent and a recipe-supplied workspace of the same uuid
- * intact.
+ * Every install path (recipe, existing-config, plain site install) runs
+ * hook_install(). Each ensure() is idempotent and keeps what exists.
  */
 function bb_core_install(): void {
   DefaultWorkspace::ensure();
+  CliConsumer::ensure();
 }
-

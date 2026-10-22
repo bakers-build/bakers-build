@@ -9,10 +9,10 @@ use Drupal\Core\Session\AccountInterface;
 /**
  * Defines the interface for bakers.build conductor entities.
  *
- * A conductor is an agent registration that can claim and execute bakers.build tickets.
- * Each conductor has a unique conductor_id registration key, a lifecycle
- * status, and one or more states that determine which tickets it may run.
- * Concurrent-run capacity is owned by the linked bb_machine.
+ * A conductor is an agent registration that can claim and execute bakers.build
+ * tickets. Each conductor has a unique conductor_id registration key, a
+ * lifecycle status, and one or more states that determine which tickets it may
+ * run. Concurrent-run capacity is owned by the linked bb_machine.
  */
 interface BbConductorInterface extends BbContentEntityInterface {
 

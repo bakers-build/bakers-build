@@ -345,9 +345,9 @@ final class MachineIdentityWriteSufficiencyTest extends KernelTestBase {
   private function discoverCliWrites(): array {
     $sources = $this->cliSourceFiles();
     // Two passes, because the entity type is not always a literal at the call
-    // site: bakers-ui writes through `client.create(TICKET_TYPE, …)`, and a scan
-    // that only understood literals would report the whole "New ticket" popup
-    // as issuing no write at all.
+    // site: bakers-ui writes through `client.create(TICKET_TYPE, …)`, and a
+    // scan that only understood literals would report the whole "New ticket"
+    // popup as issuing no write at all.
     $constants = $this->collectTypeConstants($sources);
     $found = [];
     foreach ($sources as $path) {

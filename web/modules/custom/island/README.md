@@ -48,8 +48,8 @@ Manage applications at `/admin/structure/island/apps` and their profiles at
 access provider; its profiles select an SDC layout and own stable placements.
 Use **Use this app for page layouts** on an app to select it for ordinary page
 composition. This writes `island.settings.page_app`; the standalone module
-leaves that setting empty. bakers.build's recipe selects its `bakers` app and the core
-`default` provider. Display Builder editor integration is independent.
+leaves that setting empty. bakers.build's recipe selects its `bakers` app and
+the core `default` provider. Display Builder editor integration is independent.
 
 An applicable page profile owns the complete page structure. Like Display
 Builder Page Layout, its page variant selects pass-through page and region
@@ -597,21 +597,20 @@ model. Class-level mapping:
 | SSE collaboration (`ApiSseController`, `htmx_sse`) | out of scope; the `getHtmlId()` convention leaves the door open for a later `island_sse` |
 
 An App identifies its owning integration and an Island Profile owns the SDC
-layout plus stable placement records. bakers.build's page app uses the standalone
-`default` provider, selected by `island.settings.page_app`. The optional
-`island_ui_patterns` submodule supplies component/source mapping; the base
-module remains usable without UI Patterns. Display Builder entity-view
+layout plus stable placement records. bakers.build's page app uses the
+standalone `default` provider, selected by `island.settings.page_app`. The
+optional `island_ui_patterns` submodule supplies component/source mapping; the
+base module remains usable without UI Patterns. Display Builder entity-view
 rendering remains available separately.
 
-`bb_core_update_8022()` invokes `island.profile_migrator` before deployment
-configuration import. The migrator reads legacy active configuration directly,
-validates the entire batch, and creates equivalent profiles in the `bakers` app.
-It preserves enabled state, priority, request paths, literal root props,
-component source trees, block settings, and stable source/wrapper identities.
-Leading blocks and controller content inside a legacy content wrapper become
-one Page Content placement with `prefix_blocks`, so tabs refresh together with
-the page body. Wrapper target references become placement references scoped to
-the rendered profile instance.
+`island.profile_migrator` migrates legacy page layouts. The migrator reads
+legacy active configuration directly, validates the entire batch, and creates
+equivalent profiles in the `bakers` app. It preserves enabled state, priority,
+request paths, literal root props, component source trees, block settings, and
+stable source/wrapper identities. Leading blocks and controller content inside a
+legacy content wrapper become one Page Content placement with `prefix_blocks`,
+so tabs refresh together with the page body. Wrapper target references become
+placement references scoped to the rendered profile instance.
 
 Unrecognised sources, missing dependencies, negated/unknown conditions, dynamic
 root mappings and conflicting destination profiles abort migration with the
@@ -625,8 +624,7 @@ Export the resulting configuration for subsequent normal deployments; after the
 legacy source configuration is gone, ordinary configuration import applies.
 
 Fresh recipe and CIM installations ship the same standalone app/profiles and
-no longer install the old page-layout module. Reproducible legacy shell/gate
-fixtures live under `tests/fixtures/legacy-layouts/` for upgrade verification.
+no longer install the old page-layout module.
 
 ## Testing
 

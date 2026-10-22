@@ -471,8 +471,8 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form_state->set('bb_onboarding_step', 3);
     $step3 = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
     $commands = $this->commandsFromForm($step3);
-    self::assertContains('/plugin marketplace add https://example.test/org/bakers.git', $commands);
-    self::assertContains('codex plugin marketplace add https://example.test/org/bakers.git', $commands);
+    self::assertContains('/plugin marketplace add https://example.test/org/bakers-build.git', $commands);
+    self::assertContains('codex plugin marketplace add https://example.test/org/bakers-build.git', $commands);
     self::assertNotContains('/plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git', $commands);
   }
 
@@ -604,8 +604,8 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   private function assertDocsLinks(array $form): void {
     $blob = serialize($form);
     self::assertStringContainsString('bb_theme:link-group', $blob);
-    self::assertStringContainsString('https://bb-539921.gitlab-pages.keytec.de/get-started/', $blob);
-    self::assertStringContainsString('https://bb-539921.gitlab-pages.keytec.de/get-started/install', $blob);
+    self::assertStringContainsString('https://bakers.build/docs/get-started/', $blob);
+    self::assertStringContainsString('https://bakers.build/docs/get-started/install', $blob);
     self::assertStringContainsString('skill-wizard-', $blob);
   }
 

@@ -14,8 +14,8 @@
 
 import type {
   AddonEntry,
-  DiscoveredContributions,
   BbPreset,
+  DiscoveredContributions,
 } from '@bakers-build/core';
 import type { HookListener } from './executor.js';
 import type { DiscoveredInbox, InboxMessages } from './message.js';

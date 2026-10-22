@@ -3,9 +3,9 @@
 // addon next to its paired executor, retiring the addon's old
 // `@bakers-build/core/plugins` import.
 import type {
+  BbWorkspace,
   ConductorFileConfig,
   EnsuredWorkspace,
-  BbWorkspace,
   WorkspacePlugin,
 } from '@bakers-build/conductor/contract';
 

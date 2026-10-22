@@ -25,7 +25,7 @@ Without a `model` it publishes two aliases: `opus` for demanding work and `sonne
 | `model` | string | none | Passed as `--model`. Replaces `opus` and `sonnet` with one custom candidate. |
 | `effort` | string | none | Passed as `--effort`. |
 | `skip_permissions` | boolean | `true` | Adds `--dangerously-skip-permissions`. `false` only omits that flag. |
-| `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. See [Claude profiles](/advanced/configuration/claude-profiles). |
+| `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Check it works

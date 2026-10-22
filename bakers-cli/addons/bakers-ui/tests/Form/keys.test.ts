@@ -142,13 +142,17 @@ it('BB-300 D2 — Del clears a clearable autocomplete; Backspace clears only an 
   expect(keyToIntent('delete', clearableAuto, { query: '' })).toEqual({
     kind: 'clear',
   });
-  expect(keyToIntent('delete', clearableAuto, { query: 'bakers.build' })).toEqual({
+  expect(
+    keyToIntent('delete', clearableAuto, { query: 'bakers.build' }),
+  ).toEqual({
     kind: 'clear',
   });
   expect(keyToIntent('backspace', clearableAuto, { query: '' })).toEqual({
     kind: 'clear',
   });
-  expect(keyToIntent('backspace', clearableAuto, { query: 'bakers.build' })).toEqual({
+  expect(
+    keyToIntent('backspace', clearableAuto, { query: 'bakers.build' }),
+  ).toEqual({
     kind: 'backspace',
   });
 });

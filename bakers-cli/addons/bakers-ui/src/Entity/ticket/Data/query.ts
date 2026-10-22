@@ -4,7 +4,7 @@ import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 export interface ParentCriterion {
   /** The parent's uuid — what the query filters by. */
   id: string;
-  /** `bakers.build-nnn` — what the summary names (AC-2), carried so no lookup is needed. */
+  /** `BB-nnn` — what the summary names (AC-2), carried so no lookup is needed. */
   identifier: string;
 }
 

@@ -23,7 +23,7 @@ use Drupal\views\EntityViewsData;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
- * Represents a bakers.build ticket template — a reusable recipe for creating tickets.
+ * Represents a ticket template — a reusable recipe for creating tickets.
  *
  * Instantiation (placeholder rendering, overrides, the initial
  * transition) is service-owned; this entity only stores the recipe.

@@ -3,9 +3,9 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.user.user.field_bb_background
     - field.field.user.user.field_developer_title
     - field.field.user.user.field_full_name
-    - field.field.user.user.field_bb_background
     - field.field.user.user.field_onboarding_completed
     - field.field.user.user.user_picture
     - image.style.avatar
@@ -24,6 +24,14 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_bb_background:
+    type: string_textarea
+    weight: 33
+    region: content
+    settings:
+      rows: 3
+      placeholder: ''
+    third_party_settings: {  }
   field_developer_title:
     type: string_textfield
     weight: -7
@@ -38,14 +46,6 @@ content:
     region: content
     settings:
       size: 60
-      placeholder: ''
-    third_party_settings: {  }
-  field_bb_background:
-    type: string_textarea
-    weight: 33
-    region: content
-    settings:
-      rows: 3
       placeholder: ''
     third_party_settings: {  }
   language:

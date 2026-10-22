@@ -16,7 +16,7 @@ use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\user\EntityOwnerInterface;
 
 /**
- * Defines the bakers.build term content entity — node-free taxonomy replacement.
+ * Defines the bakers.build term entity — node-free taxonomy replacement.
  *
  * Bundled by bb_vocabulary. Flat (no hierarchy). Used by bb_ticket.labels
  * and seeded with capability tags.
@@ -82,10 +82,8 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
       ->setDefaultValue(0);
 
     // The tenancy root this term belongs to. A verbatim copy of
-    // bb_group.workspace_id's shape, for the same reason: required as a
-    // validation constraint rather than a NOT NULL column, which is what makes
-    // the migration possible — the column can exist empty and be filled by
-    // bb_core_post_update_workspace_term_backfill() afterwards.
+    // bb_group.workspace_id's shape: required as a validation constraint
+    // rather than a NOT NULL column.
     //
     // BbWorkspaceScope is reused unchanged. The referenced value IS a
     // workspace, so the validator's identity short-circuit answers it without a

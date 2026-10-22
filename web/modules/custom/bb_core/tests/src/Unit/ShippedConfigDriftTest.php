@@ -74,9 +74,10 @@ final class ShippedConfigDriftTest extends UnitTestCase {
    * measurement of BB-396's tree and is now false: BB-415 built the landing
    * page. `/home` is `bb_core.home`, this product's own route, and it is the
    * only path that can be the front page of a MULTI-TENANT control plane. Every
-   * other candidate names one tenant — `/bakers/tickets` is a workspace's My work
-   * list and would be the wrong answer for everybody who is not in `bakers` — and
-   * `/user` reached a page that exists but is not the operator's work.
+   * other candidate names one tenant — `/bakers/tickets` is a workspace's My
+   * work list and would be the wrong answer for everybody who is not in
+   * `bakers` — and `/user` reached a page that exists but is not the operator's
+   * work.
    *
    * WHY IT CANNOT ROT, which is the property `/user` was chosen for and this
    * literal has to earn differently. `/user` could not rot because core owns
@@ -122,7 +123,7 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   }
 
   /**
-   * Both install paths sign mail with the same site name, and it is bakers.build.
+   * Both install paths sign mail with the same site name: bakers.build.
    */
   public function testBothInstallPathsAgreeOnTheSiteName(): void {
     self::assertSame('bakers.build', $this->parse('config/sync/system.site.yml')['name'] ?? NULL);
@@ -136,9 +137,9 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   /**
    * No shipped account mail asks for a password or a username.
    *
-   * A bakers.build account never has a password: sign-in is by mailed link or code,
-   * or Google. Core's stock templates say otherwise, so every template the
-   * recipe rewrites must match config/sync, and no body on either path may
+   * A bakers.build account never has a password: sign-in is by mailed link or
+   * code, or Google. Core's stock templates say otherwise, so every template
+   * the recipe rewrites must match config/sync, and no body on either path may
    * instruct a password again.
    */
   public function testNoAccountMailAsksForPassword(): void {

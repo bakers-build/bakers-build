@@ -313,7 +313,7 @@ export async function readMembershipPage(
  * page, no `links.next`, and reported `0` for every crew — a NUMBER, which this
  * function's whole contract reserves for a measurement. BB-391's server half
  * makes the rows filtered rather than omitted, so a current deployment never
- * sends that shape; a deployment without the `bb:session:view_bb_memberships`
+ * sends that shape; a deployment without the `bb:session:view_bakers_memberships`
  * child scope still does, and it must read as `—`.
  */
 export async function countActiveMembersByTeam(

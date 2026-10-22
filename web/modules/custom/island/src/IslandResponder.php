@@ -87,7 +87,6 @@ final class IslandResponder {
    * The single renderer for the mutation and boosted GET paths. Always a root
    * render: only the root pass replaces lazy-builder placeholders such as a
    * form's CSRF token and action; without it a submit silently fails once.
-   *.
    *
    * @param array<string, array{id: string, content: array, oob: bool, boost?: \Drupal\island\IslandBoost|null, events?: string[]}> $fragments
    *   Island fragments, keyed for render-array stability. Each carries the

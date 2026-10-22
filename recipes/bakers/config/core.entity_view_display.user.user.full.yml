@@ -3,9 +3,9 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.user.full
+    - field.field.user.user.field_bb_background
     - field.field.user.user.field_developer_title
     - field.field.user.user.field_full_name
-    - field.field.user.user.field_bb_background
     - field.field.user.user.field_onboarding_completed
     - field.field.user.user.user_picture
   module:
@@ -70,11 +70,10 @@ bundle: user
 mode: full
 content: {  }
 hidden:
+  field_bb_background: true
   field_developer_title: true
   field_full_name: true
-  field_bb_background: true
   field_onboarding_completed: true
   member_for: true
   search_api_excerpt: true
   user_picture: true
-

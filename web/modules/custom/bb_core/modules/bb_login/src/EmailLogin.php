@@ -272,7 +272,6 @@ final class EmailLogin {
    * The explicit transaction also covers `hook_entity_insert()` listeners,
    * which run after storage's own transaction commits. No password is set, by
    * design. Public because the OAuth door creates its accounts here too.
-   *.
    *
    * @param string $mail
    *   The address as typed, stored verbatim.

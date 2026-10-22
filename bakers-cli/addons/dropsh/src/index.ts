@@ -1,8 +1,8 @@
 import {
-  createBbConnectionContext,
-  discoverBbWorkspaces,
   type BbCommandHost,
   type BbCommandPlugin,
+  createBbConnectionContext,
+  discoverBbWorkspaces,
   loadBbConnectionBootstrap,
   loadReadyBbConnection,
   type WorkspaceRecoveryOptions,
@@ -154,7 +154,8 @@ export async function dispatchBbDropsh(
 const dropshCommandPlugin: BbCommandPlugin = {
   kind: 'command',
   name: 'dropsh',
-  describe: 'JSON:API shell (dropsh) bound to the bakers.build connection config',
+  describe:
+    'JSON:API shell (dropsh) bound to the bakers.build connection config',
   register(program: Command, host: BbCommandHost): void {
     program
       .command('dropsh')

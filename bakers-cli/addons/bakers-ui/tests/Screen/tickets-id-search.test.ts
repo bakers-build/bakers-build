@@ -14,7 +14,7 @@ import { renderTree } from '../render-tree.js';
 // So the defect is the CRITERIA, not the query: the shipped default hides closed
 // rows (`DEFAULT_TICKET_CRITERIA.closed === false`, BB-282 D1) and that
 // criterion ANDs with the search group. In project `bakers` 285 of 367 tickets are
-// closed, so an operator who types a known `bakers.build-N` lands on `No tickets.` about
+// closed, so an operator who types a known `BB-N` lands on `No tickets.` about
 // four times out of five — which is what "not usable as a ticket-id filter"
 // means.
 //
@@ -61,7 +61,7 @@ interface Row {
  */
 const WORLD: Row[] = [
   ...Array.from({ length: 20 }, (_, i) => ({
-    identifier: `bakers.build-${200 + i}`,
+    identifier: `BB-${200 + i}`,
     title: `an open ticket number ${200 + i}`,
     closed: false,
   })),

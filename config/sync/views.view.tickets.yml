@@ -5,9 +5,9 @@ dependencies:
   config:
     - search_api.index.bb_tickets
   module:
+    - bb_core
     - better_exposed_filters
     - facets_exposed_filters
-    - bb_core
     - search_api
     - views_filters_summary
 id: tickets

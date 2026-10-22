@@ -20,7 +20,7 @@ import type { ParentOption } from './create.js';
 const PARENT_QUERY_DEBOUNCE_MS = 150;
 
 /**
- * `bakers.build-nnn · <title>` — the picker label, composed HERE (BB-257 D5).
+ * `BB-nnn · <title>` — the picker label, composed HERE (BB-257 D5).
  *
  * The kernel filters candidates by a case-insensitive substring of
  * `Option.label` and knows nothing of identifiers or titles. AC-5's "matching

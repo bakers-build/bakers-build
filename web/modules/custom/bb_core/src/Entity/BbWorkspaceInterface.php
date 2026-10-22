@@ -35,8 +35,8 @@ interface BbWorkspaceInterface extends BbContentEntityInterface {
   /**
    * Returns the URL handle of this workspace.
    *
-   * The slug is the first path segment of every bakers.build product URL — `bakers` in
-   * `/bakers/tickets`. It is authored, not derived from the name.
+   * The slug is the first path segment of every bakers.build product URL —
+   * `bakers` in `/bakers/tickets`. It is authored, not derived from the name.
    *
    * The site root is NOT one of those URLs. `system.site.front` is `/home`,
    * a route that carries no workspace and resolves the reader's own; the slug

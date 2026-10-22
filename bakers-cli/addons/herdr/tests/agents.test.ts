@@ -221,7 +221,11 @@ describe('herdrAgentHost', () => {
     const h = fakeHerdr();
     await flush(); // home capture
     const host = herdrAgentHost(h.exec);
-    const a1 = await host.launch({ group: 'bakers', cwd: '/repo', command: 'a' });
+    const a1 = await host.launch({
+      group: 'bakers',
+      cwd: '/repo',
+      command: 'a',
+    });
     h.calls.length = 0;
     await host.hide('bakers');
     expect(h.calls).toContainEqual(['pane', 'zoom', a1.id, '--off']);

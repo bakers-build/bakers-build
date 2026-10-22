@@ -99,7 +99,7 @@ final class SquareImageWidget extends ImageWidget {
       // The thumbnail names the file; core's file link would repeat it.
       $element['file_' . $file->id()]['#access'] = FALSE;
     }
-    // image-widget--bakers-square-image.html.twig hands these and the widget's
+    // image-widget--bb-square-image.html.twig hands these and the widget's
     // children to `bb_theme:image_crop`; the hint replaces core's help text.
     $element['#element_validate'][] = [static::class, 'validateCrop'];
     $element['#theme'] = 'image_widget__bb_square_image';

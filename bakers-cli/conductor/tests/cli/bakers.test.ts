@@ -10,8 +10,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { claudeAgent } from '@bakers-build/addon-claude';
 import {
-  FakeExecutor,
   FakeBbRemote,
+  FakeExecutor,
   type FakeRemoteSeed,
   FakeWorkspace,
   fakeExecutor,
@@ -744,7 +744,9 @@ describe('bakers conductor start — herdr seam (BB-222)', () => {
   it('BB-477 FV-4: a non-conductor config file name selects nothing, falling back to the default command', async () => {
     const deps = makeDeps(
       {},
-      { config: makeConfig({ config_path: join(CHECKOUT, 'bakers.config.js') }) },
+      {
+        config: makeConfig({ config_path: join(CHECKOUT, 'bakers.config.js') }),
+      },
     );
     const herdr = deps.herdr as FakeHerdrHost;
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});

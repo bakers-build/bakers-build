@@ -83,14 +83,14 @@ final class BbOnboardingWizardForm extends FormBase {
   /**
    * Published manual origin. Wizard pages never fetch these URLs.
    */
-  private const string DOCS_BASE = 'https://bb-539921.gitlab-pages.keytec.de';
+  private const string DOCS_BASE = 'https://bakers.build/docs';
 
   /**
    * Fallback git-group prefix when settings have no plugin_source_base.
    *
    * Must match the shipped default in bb_core.settings.yml.
    */
-  private const string DEFAULT_PLUGIN_SOURCE_BASE = 'https://git.key-tec.de/keytec/';
+  private const string DEFAULT_PLUGIN_SOURCE_BASE = 'https://git.key-tec.de/bakers-build/';
 
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,
@@ -757,7 +757,7 @@ final class BbOnboardingWizardForm extends FormBase {
     if ($base === '') {
       $base = self::DEFAULT_PLUGIN_SOURCE_BASE;
     }
-    return rtrim($base, '/') . '/bakers.git';
+    return rtrim($base, '/') . '/bakers-build.git';
   }
 
   /**

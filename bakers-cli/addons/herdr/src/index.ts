@@ -1,8 +1,8 @@
 import { existsSync, rmSync } from 'node:fs';
 import type {
+  BbExecutor,
   ExecutorCapabilities,
   ExecutorPlugin,
-  BbExecutor,
   HookContext,
   HookName,
   HookResult,

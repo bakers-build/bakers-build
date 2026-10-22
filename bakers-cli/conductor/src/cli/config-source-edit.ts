@@ -1,4 +1,7 @@
-import { type ConfigSourceProperty, inspectConfigSource } from '@bakers-build/core';
+import {
+  type ConfigSourceProperty,
+  inspectConfigSource,
+} from '@bakers-build/core';
 
 /** Small span editor. Every operation re-parses so offsets never become stale. */
 export class ConfigSourceEditor {

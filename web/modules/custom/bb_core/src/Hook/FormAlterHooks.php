@@ -213,8 +213,8 @@ final class FormAlterHooks {
   /**
    * Implements hook_element_info_alter().
    *
-   * bakers.build text is Markdown in one format, so core's format help and guidelines
-   * below every text_format widget only mislead.
+   * All bakers.build text is Markdown in one format, so core's format help and
+   * guidelines below every text_format widget only mislead.
    *
    * @param array<string, array<string, mixed>> $info
    *   The element type defaults.

@@ -1,6 +1,6 @@
 import {
-  createBbConnectionClient,
   type BbCommandPlugin,
+  createBbConnectionClient,
   loadReadyBbConnection,
 } from '@bakers-build/core';
 import type { Command } from 'commander';

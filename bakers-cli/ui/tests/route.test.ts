@@ -308,8 +308,12 @@ describe('normalizeRepoUrl (AC-2, Decision 3)', () => {
   });
 
   it('bridges the measured real-world pair', () => {
-    expect(normalizeRepoUrl('git@git.key-tec.de:bakers-build/bakers-build.git')).toBe(
-      normalizeRepoUrl('ssh://git@git.key-tec.de/bakers-build/bakers-build.git'),
+    expect(
+      normalizeRepoUrl('git@git.key-tec.de:bakers-build/bakers-build.git'),
+    ).toBe(
+      normalizeRepoUrl(
+        'ssh://git@git.key-tec.de/bakers-build/bakers-build.git',
+      ),
     );
   });
 
@@ -339,7 +343,8 @@ describe('resolveHere — the ladder (AC-2, Decision 3)', () => {
   const base = {
     cwd: '/repos/bakers/.bakers-worktrees/feat/bb-223-x',
     readBranch: async () => 'feat/bb-223-bakers-ui-deep-lin',
-    readRemoteUrl: async () => 'git@git.key-tec.de:bakers-build/bakers-build.git',
+    readRemoteUrl: async () =>
+      'git@git.key-tec.de:bakers-build/bakers-build.git',
   };
 
   it('rung 1: a branch carrying an identifier yields that ticket, with fromBranch', async () => {
@@ -396,7 +401,8 @@ describe('resolveHere — the ladder (AC-2, Decision 3)', () => {
         ...base,
         cwd: '/a/fresh/clone',
         readBranch: async () => 'main',
-        readRemoteUrl: async () => 'ssh://git@git.key-tec.de/bakers-build/bakers-build.git',
+        readRemoteUrl: async () =>
+          'ssh://git@git.key-tec.de/bakers-build/bakers-build.git',
       }),
     ).resolves.toMatchObject({
       by: 'repo',

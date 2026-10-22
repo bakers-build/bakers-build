@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Every bakers.build content entity is workspace-anchored (workspace or project path).
+ * Every bakers.build content entity is anchored to a workspace or project path.
  *
  * Multi-workspace isolation requires a deterministic path from each row to a
  * workspace. Anchors are either:

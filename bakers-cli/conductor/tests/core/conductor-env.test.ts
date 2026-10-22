@@ -7,11 +7,11 @@ import {
   fakeWorkspace,
 } from '@bakers-build/addon-fake';
 import type {
-  ConductorFileConfig,
-  EnsuredWorkspace,
   BbAgent,
   BbExecutor,
   BbWorkspace,
+  ConductorFileConfig,
+  EnsuredWorkspace,
   HookContext,
   HookName,
   HookResult,

@@ -13,9 +13,7 @@ import { fakeClient, toResource } from '../test-support.js';
 
 const rows = () => ({
   user: [toResource({ id: 'u1', type: 'user--user', attributes: {} })],
-  bb_conductor: [
-    toResource({ id: 'c1', type: 'bb_conductor--bb_conductor' }),
-  ],
+  bb_conductor: [toResource({ id: 'c1', type: 'bb_conductor--bb_conductor' })],
 });
 const id = (r: Resource): string => r.id;
 

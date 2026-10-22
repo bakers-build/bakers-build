@@ -53,7 +53,7 @@ describe('publish staging copies files entries', () => {
     );
 
     expect(() => stagePackage({ dir }, '0.16.3')).toThrow(
-      /@bakers-ai\/test-empty-glob[\s\S]*missing\/\*\.json/,
+      /@bakers-build\/test-empty-glob[\s\S]*missing\/\*\.json/,
     );
   });
 });

@@ -293,9 +293,9 @@ it('AC-4: no `errors` key renders exactly what it rendered before', () => {
 /** 60 candidates, so the page cap and the display window are both reachable. */
 const manyParents = Array.from({ length: 60 }, (_, i) => ({
   id: `k${i}`,
-  identifier: `bakers.build-${100 + i}`,
+  identifier: `BB-${100 + i}`,
   title: `candidate number ${i}`,
-  label: `bakers.build-${100 + i} · candidate number ${i}`,
+  label: `BB-${100 + i} · candidate number ${i}`,
 }));
 
 const someParents = manyParents.slice(0, 3);
@@ -360,9 +360,7 @@ it('AC-5: the suggestions are the FILTERED list, marked with `›` at the cursor
   // bag would offer for an empty query, which is the point of filtering here.
   const suggestions = rows.filter((r) => r.includes('BB-10'));
   expect(suggestions.length).toBeGreaterThanOrEqual(3);
-  expect(rows.some((r) => r.includes('›') && r.includes('BB-101'))).toBe(
-    true,
-  );
+  expect(rows.some((r) => r.includes('›') && r.includes('BB-101'))).toBe(true);
   expect(rows.filter((r) => r.includes('›'))).toHaveLength(1);
 });
 
@@ -374,7 +372,7 @@ it('AC-5: a query matching nothing offers no suggestion rows', () => {
     parentQuery: 'zzzz',
   };
   const rows = parentRows(rowsOf(s, withParents, { width: 58 }));
-  expect(rows.some((r) => r.includes('bakers.build-'))).toBe(false);
+  expect(rows.some((r) => r.includes('BB-'))).toBe(false);
 });
 
 it('R3: at the page cap the list SAYS it is incomplete', () => {
@@ -388,7 +386,7 @@ it('R3: at the page cap the list SAYS it is incomplete', () => {
   expect(note).toBeDefined();
   expect(note).toMatch(/\+\d+ more — narrow the search/);
   // …and the drawn suggestions really are fewer than the matches.
-  expect(rows.filter((r) => r.includes('bakers.build-')).length).toBeLessThan(60);
+  expect(rows.filter((r) => r.includes('BB-')).length).toBeLessThan(60);
 });
 
 it('R3: a list that fits carries no `+N more` note', () => {
@@ -506,9 +504,9 @@ it('AC-8 (D2): the active marker and label cursor follow FIELDS, not literals', 
 /** Exactly one server page of candidates (`OffsetPage::SIZE_MAX`). */
 const cappedParents = Array.from({ length: 50 }, (_, i) => ({
   id: `c${i}`,
-  identifier: `bakers.build-${100 + i}`,
+  identifier: `BB-${100 + i}`,
   title: `candidate number ${i}`,
-  label: `bakers.build-${100 + i} · candidate number ${i}`,
+  label: `BB-${100 + i} · candidate number ${i}`,
 }));
 
 it('AC-17: a capped bag still says it may be incomplete once the filter narrows it', () => {
@@ -520,7 +518,7 @@ it('AC-17: a capped bag still says it may be incomplete once the filter narrows 
   };
   const rows = parentRows(rowsOf(s, withParents, { width: 58 }));
   // One match, so the render window hides nothing and `+N more` cannot fire…
-  expect(rows.filter((r) => /^ {3}[›\s]bakers.build-/.test(r))).toHaveLength(1);
+  expect(rows.filter((r) => /^ {3}[›\s]BB-/.test(r))).toHaveLength(1);
   expect(rows.some((r) => /\+\d+ more/.test(r))).toBe(false);
   // …and the incompleteness is still disclosed.
   expect(

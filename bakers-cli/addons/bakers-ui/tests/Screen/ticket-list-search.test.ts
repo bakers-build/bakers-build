@@ -210,7 +210,7 @@ describe.each(LISTS)('the `/` search on $name', (list) => {
     const shown = screen.present(context);
     expect([shown.status, shown.toast].join('\n')).toContain(REFUSAL);
     expect(JSON.stringify(shown)).not.toContain('HTTP 400');
-    expect(body(screen, context)).not.toContain('bakers.build-');
+    expect(body(screen, context)).not.toContain('BB-');
   });
 
   it('clears the refusal on the next successful search', async () => {

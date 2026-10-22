@@ -2,8 +2,8 @@ langcode: en
 status: true
 dependencies:
   config:
-    - core.entity_view_mode.bb_comment.teaser
     - bb_core.bb_comment_type.review
+    - core.entity_view_mode.bb_comment.teaser
   module:
     - display_builder
     - text

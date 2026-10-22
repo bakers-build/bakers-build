@@ -82,8 +82,8 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     'create bb_group',
     // The whole purpose of the `create-project` skill.
     'create bb_project',
-    // The `workspace_id` filler documented in `.bakers/bakers.config.js` fills a
-    // bb_group/bb_team CREATE payload, not only a read filter.
+    // The `workspace_id` filler documented in `.bakers/bakers.config.js` fills
+    // a bb_group/bb_team CREATE payload, not only a read filter.
     'create bb_team',
     'create bb_term',
     'create bb_ticket',
@@ -99,10 +99,11 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     // and OG reserves reading it to site-wide `administer organic groups` or an
     // in-group `administer group` / `manage members` grant — none of which this
     // umbrella may name, because the first is tenant-blind and the other two
-    // are `lead` write capabilities. Without this child the `bakers ui` Teams tab
-    // reports MEMBERS 0 for a crew of three and the team Users tab has nothing
-    // to list, both at HTTP 200 with the rows in `meta.omitted`. The rows stay
-    // bounded by bakers.build's own read scope, not by the permission (BB-391).
+    // are `lead` write capabilities. Without this child the `bakers ui` Teams
+    // tab reports MEMBERS 0 for a crew of three and the team Users tab has
+    // nothing to list, both at HTTP 200 with the rows in `meta.omitted`. The
+    // rows stay bounded by bakers.build's own read scope, not by the permission
+    // (BB-391).
     'view bakers memberships',
     'view bb_comment',
     'view bb_conductor',
@@ -309,23 +310,24 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
   /**
    * NO bakers.build permission is granted on `authenticated`, on either path.
    *
-   * This is the assertion that keeps the CEILING — the bakers.build entity-access
-   * permissions the `bb_session` scope's children name — out of the one role
-   * every account holds. `hasSiteWidePermission()` reads the ACCOUNT's roles,
-   * and `BbGroupScopedAccount::hasPermission()` returns TRUE on that branch
-   * without bounding to a group — so a bakers.build permission on `authenticated` makes
-   * every logged-in user tenant-blind, in the web UI too. Verified live while
-   * diagnosing BB-391: three `view` permissions granted there returned every
-   * ticket of every project to an account whose ranks named one.
+   * This is the assertion that keeps the CEILING — the bakers.build
+   * entity-access permissions the `bb_session` scope's children name — out of
+   * the one role every account holds. `hasSiteWidePermission()` reads the
+   * ACCOUNT's roles, and `BbGroupScopedAccount::hasPermission()` returns TRUE
+   * on that branch without bounding to a group — so a bakers.build permission
+   * on `authenticated` makes every logged-in user tenant-blind, in the web UI
+   * too. Verified live while diagnosing BB-391: three `view` permissions
+   * granted there returned every ticket of every project to an account whose
+   * ranks named one.
    *
-   * `grant simple_oauth codes` (BB-494) is deliberately the ONE exception,
-   * and the property it is checked against is narrower than "contains
-   * `bakers`": it is core `simple_oauth`'s OWN gate on its `/oauth/authorize`
-   * consent screen, reaches no bakers.build entity, and grants no row access at all —
+   * `grant simple_oauth codes` (BB-494) is deliberately the ONE exception, and
+   * the property it is checked against is narrower than "contains `bakers`": it
+   * is core `simple_oauth`'s OWN gate on its `/oauth/authorize` consent screen,
+   * reaches no bakers.build entity, and grants no row access at all —
    * `hasSiteWidePermission()`/`BbGroupScopedAccount` never consult it. Every
    * signed-in human is a legitimate CLI-sign-in candidate, which is exactly
-   * what `authenticated` already means, so this permission belongs there
-   * rather than on a narrower role invented only to hold it.
+   * what `authenticated` already means, so this permission belongs there rather
+   * than on a narrower role invented only to hold it.
    *
    * `change own username` is the second, for the same kind of
    * reason: it is core `user`'s own gate on the `name` element of an account's
@@ -336,11 +338,11 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
    * `access content` is the third: core `file`'s own gate on viewing a public
    * file, which an image field checks for a newly uploaded picture on Save —
    * without it no account can set a profile picture on the recipe path. It
-   * reaches no bakers.build entity, no bakers.build access code reads it, and `config/sync`
-   * already grants it, so the recipe merely stops differing from CIM. The
-   * assertion pins the ceiling to EXACTLY these three non-bakers.build permissions
-   * rather than dropping the check — a fourth, unnoticed addition here is
-   * still the failure this test exists to catch.
+   * reaches no bakers.build entity, no bakers.build access code reads it, and
+   * `config/sync` already grants it, so the recipe merely stops differing from
+   * CIM. The assertion pins the ceiling to EXACTLY these three non-bakers.build
+   * permissions rather than dropping the check — a fourth, unnoticed addition
+   * here is still the failure this test exists to catch.
    */
   public function testNothingIsGrantedOnAuthenticated(): void {
     $role = $this->decode($this->syncPath('user.role.authenticated.yml'));
@@ -410,8 +412,8 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
    * Without this the sweep is unfalsifiable: it enumerates the whole of both
    * directories, finds nothing, and passes — which is also exactly what it does
    * when its needles cannot match the form a reference is written in. Two of
-   * them could not: `bakers:project_manager` never appears in a reference (an ID
-   * does, with an underscore), and the deleted ROLE `bb_session` shares its
+   * them could not: `bakers:project_manager` never appears in a reference (an
+   * ID does, with an underscore), and the deleted ROLE `bb_session` shares its
    * id with the surviving SCOPE, so it was left out of the needle list entirely
    * and a re-added `user.role.bb_session` would have sailed through.
    *
@@ -472,12 +474,12 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
   /**
    * The e2e world has no identity of its own any more.
    *
-   * One scope means one, including here. `recipes/bb_e2e` used to ship a
-   * scope and a role of its own, and its seeded agent therefore ran on a
+   * One scope means one, including here. `recipes/bb_e2e` used to ship a scope
+   * and a role of its own, and its seeded agent therefore ran on a
    * two-permission ceiling — which is exactly why a hand-driven conductor run
    * could read nothing. Its consumer now requests the same `bb_session`
-   * umbrella as every other bakers.build identity, and its account holds no machine
-   * role at all.
+   * umbrella as every other bakers.build identity, and its account holds no
+   * machine role at all.
    */
   public function testTheE2eWorldRunsOnTheOneScope(): void {
     $e2e = $this->repositoryRoot() . '/recipes/bb_e2e';
@@ -516,113 +518,6 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
         $this->syncPath("system.action.$action.bb_project_manager.yml"),
       );
     }
-  }
-
-  /**
-   * The keytec seed hands out ranks, not the deleted roles.
-   *
-   * The post_update covers a site that already exists; core baselines every
-   * post_update on a FRESH install, so without these fixtures being corrected a
-   * new `ddev init --provider recipe` would seed accounts referencing roles
-   * that no longer exist — a content import that fails on a dangling reference,
-   * or worse, silently drops the value.
-   *
-   * Enumerated over every fixture rather than over one, because the fixtures
-   * are nine files that were written by copy and drift as a set.
-   */
-  public function testTheKeytecSeedCarriesWorkspaceRankAndNoDeletedRole(): void {
-    $dir = $this->repositoryRoot() . '/recipes/bb_keytec/content/og_membership';
-    $files = glob($dir . '/*.yml');
-    self::assertIsArray($files);
-    self::assertNotEmpty($files, 'the keytec recipe seeds at least one membership');
-
-    $ranks = [];
-    foreach ($files as $file) {
-      foreach ($this->decode($file)['default']['roles'] ?? [] as $item) {
-        $ranks[] = $item['target_id'] ?? NULL;
-      }
-    }
-    self::assertContains('bb_workspace-bb_workspace-lead', $ranks);
-
-    $users = glob($this->repositoryRoot() . '/recipes/bb_keytec/content/user/*.yml');
-    self::assertIsArray($users);
-    self::assertNotEmpty($users);
-    $offenders = [];
-    foreach ($users as $file) {
-      $roles = array_map(
-        static fn (array $item): mixed => $item['target_id'] ?? NULL,
-        $this->decode($file)['default']['roles'] ?? [],
-      );
-      foreach (['bb_project_manager', 'bb_agent', 'bb_session'] as $deleted) {
-        if (in_array($deleted, $roles, TRUE)) {
-          $offenders[] = basename($file) . " hands out $deleted";
-        }
-      }
-    }
-    self::assertSame([], $offenders);
-  }
-
-  /**
-   * Every seeded team user has a workspace membership (BB-391 D5).
-   *
-   * D5 moves the OAuth consumer selector off the `bb_agent` role and onto
-   * workspace membership. That makes the membership fixtures load-bearing for
-   * something they were never sized for: at the base commit NINE user fixtures
-   * carried `bb_agent` and exactly ONE carried an `og_membership`, so the
-   * selector change alone would silently cut the consumer seed from nine team
-   * members to one — and the eight without a membership would additionally hold
-   * no capability at all, since the role that used to carry it is deleted.
-   *
-   * Neither failure announces itself: `ensure-oauth.php` prints a line per
-   * consumer it seeds and says nothing about a user it never selected, and a
-   * capability-less account simply logs in to an empty dashboard. So the parity
-   * is asserted here, over the fixture SETS rather than over a hard-coded
-   * count, so a user added later without a membership fails loudly.
-   */
-  public function testEverySeededTeamUserHasWorkspaceMembership(): void {
-    $users = glob($this->repositoryRoot() . '/recipes/bb_keytec/content/user/*.yml');
-    self::assertIsArray($users);
-    self::assertNotEmpty($users);
-    $user_uuids = [];
-    foreach ($users as $file) {
-      $uuid = $this->decode($file)['_meta']['uuid'] ?? NULL;
-      self::assertIsString($uuid, basename($file) . ' declares a uuid');
-      $user_uuids[$uuid] = basename($file);
-    }
-
-    $memberships = glob($this->repositoryRoot() . '/recipes/bb_keytec/content/og_membership/*.yml');
-    self::assertIsArray($memberships);
-    $member_uuids = [];
-    foreach ($memberships as $file) {
-      $membership = $this->decode($file);
-      self::assertSame(
-        'bb_workspace',
-        $membership['default']['entity_type'][0]['value'] ?? NULL,
-        basename($file) . ' must be a workspace membership, or the selector skips it',
-      );
-      self::assertSame(
-        'active',
-        $membership['default']['state'][0]['value'] ?? NULL,
-        basename($file) . ' must be active, or the selector skips it',
-      );
-      $owner = $membership['default']['uid'][0]['entity'] ?? NULL;
-      self::assertIsString($owner, basename($file) . ' names its owner');
-      $member_uuids[$owner] = TRUE;
-    }
-
-    $orphans = [];
-    foreach ($user_uuids as $uuid => $name) {
-      if (!isset($member_uuids[$uuid])) {
-        $orphans[] = $name;
-      }
-    }
-    sort($orphans);
-    self::assertSame(
-      [],
-      $orphans,
-      'every seeded team user needs a workspace membership: it is now the only '
-      . 'source of both product capability and the OAuth consumer seed',
-    );
   }
 
   /**

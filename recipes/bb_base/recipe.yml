@@ -6,8 +6,7 @@ install:
   - gin
   # BB-683: retired the admin_toolbar/gin_toolbar/toolbar stack. The admin
   # theme (gin) renders without a toolbar; administrators navigate through the
-  # admin index pages directly. See bb_core_post_update_reduce_backend_surface()
-  # for the uninstall path on an existing site.
+  # admin index pages directly.
   # Core dynamic page cache (BB-683): anonymous/cacheable admin and product
   # responses are served from the page cache; personalised/uncacheable
   # responses are unaffected because they carry no cacheability that qualifies.

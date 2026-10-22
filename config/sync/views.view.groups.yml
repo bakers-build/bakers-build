@@ -3,8 +3,8 @@ langcode: en
 status: true
 dependencies:
   module:
-    - better_exposed_filters
     - bb_core
+    - better_exposed_filters
     - user
 id: groups
 label: Groups

@@ -20,7 +20,6 @@ Check the result with `bakers config check --scope all`. Add `--online` to also 
 | I want to | Go to |
 |---|---|
 | Choose agents and models, route states to agents | [Choose agents and models](/advanced/configuration/agents-and-models) |
-| Measure Claude runs and apply state settings | [Claude profiles](/advanced/configuration/claude-profiles) |
 | Run a command when a worktree is prepared or removed | [Add lifecycle hooks](/advanced/configuration/hooks) |
 | Share a running preview | [Ports](/addons/ports) |
 | Browse a run's local evidence | [Artifacts](/addons/bakers-ui-artifacts) |

@@ -10,7 +10,7 @@ use Drupal\bb_core\JsonApi\BbResourceTypeRepository;
 use Drupal\bb_core\Storage\PreviewSampleEntityGenerator;
 
 /**
- * Supplies bakers.build's optional JSON:API and UI Patterns service implementations.
+ * Supplies the optional JSON:API and UI Patterns service implementations.
  *
  * A class swap rather than a decorator, because the method that has to change
  * — ResourceTypeRepository::createResourceType() — is protected and a decorator

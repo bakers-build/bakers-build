@@ -172,9 +172,10 @@ final class RankPermissionContractTest extends KernelTestBase {
    */
   public function testCapabilityGrantingRanksAreNotEmptyAndNoneIsAdmin(): void {
     foreach ($this->shippedRanks() as $id => $rank) {
-      // No bakers.build rank declares is_admin: OgRole::getPermissions() returns []
-      // for one, so Layer A would project nothing from it, and OgAccess
-      // short-circuits on it so Layer B has nothing to compare (D2, Fact 18).
+      // No bakers.build rank declares is_admin: OgRole::getPermissions()
+      // returns [] for one, so Layer A would project nothing from it, and
+      // OgAccess short-circuits on it so Layer B has nothing to compare (D2,
+      // Fact 18).
       self::assertFalse((bool) ($rank['is_admin'] ?? FALSE), $id . ' must not declare is_admin');
       $permissions = $rank['permissions'] ?? [];
       if (in_array($id, self::EMPTY_BY_DECISION, TRUE)) {

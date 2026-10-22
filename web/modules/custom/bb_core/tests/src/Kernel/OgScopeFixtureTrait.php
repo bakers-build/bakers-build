@@ -15,11 +15,11 @@ use Drupal\user\UserInterface;
 /**
  * The OG registration and membership every read-scope-aware test needs.
  *
- * Since BB-318 a bakers.build collection query returns the rows of the account's OG
- * scope, so a kernel test whose actor expects rows must either hold the type's
- * admin permission or hold a membership. This trait is the second option: the
- * shipped role config, the shipped group registration and one membership
- * writer, so no test has to restate any of them.
+ * Since BB-318 a bakers.build collection query returns the rows of the
+ * account's OG scope, so a kernel test whose actor expects rows must either
+ * hold the type's admin permission or hold a membership. This trait is the
+ * second option: the shipped role config, the shipped group registration and
+ * one membership writer, so no test has to restate any of them.
  *
  * Both are read out of what the repository ships rather than restated, so a
  * wrong shape in the shipped config fails in a test instead of on the server.

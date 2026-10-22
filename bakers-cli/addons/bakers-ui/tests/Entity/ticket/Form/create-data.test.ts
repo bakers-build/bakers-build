@@ -258,7 +258,7 @@ const ticketDoc = {
   },
 };
 
-it('AC-5: each candidate is labelled `bakers.build-nnn · title`', async () => {
+it('AC-5: each candidate is labelled `BB-nnn · title`', async () => {
   // The composition IS how AC-5's "matching on identifier AND on title" is met:
   // the kernel applies one case-insensitive substring rule over `Option.label`,
   // and a label built from both halves makes that rule cover both (D5).

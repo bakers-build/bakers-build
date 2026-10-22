@@ -2,7 +2,7 @@
 #
 # Recipe-as-installer on the single (default) site: `drush site:install <profile>` (the recipe
 # path in INIT_PROFILE, fed into the container by config.keytec.yaml) then seed the playground
-# content (bb_keytec) via the in-container bakers-init-playground command. This is what you want
+# content (bb_seed) via the in-container bakers-init-playground command. This is what you want
 # for a schema reset or a freshly seeded playground. Selected with `ddev init --provider recipe`.
 #
 # The seed is invoked (not duplicated) so bakers-init-playground stays the single source of the

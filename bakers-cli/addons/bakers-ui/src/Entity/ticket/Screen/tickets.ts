@@ -278,7 +278,7 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
    *
    * THE DEFECT: the shipped default hides closed rows, that criterion ANDs onto
    * the `/` search group, and in a mature project most tickets are closed — so an
-   * operator who types a known `bakers.build-N` usually lands on `No tickets.`, which is
+   * operator who types a known `BB-N` usually lands on `No tickets.`, which is
    * the same four words the control plane shows for a ticket that does not exist.
    * The query was never wrong and neither was the server; what was missing was any
    * way to tell the two apart.

@@ -13,8 +13,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * A workspace admin sees every project of its workspace, holding none (V5).
  *
  * AC 3 and D11. OG has no group nesting and no inheritance, so this rule is
- * bakers.build's own — and the criterion says explicitly that it must live in the
- * filter rather than in stored memberships. The operational meaning of that
+ * bakers.build's own — and the criterion says explicitly that it must live in
+ * the filter rather than in stored memberships. The operational meaning of that
  * sentence is the assertion at the end of every case: not one bb_project
  * membership exists anywhere in this test, which the class checks by counting
  * them.

@@ -64,9 +64,7 @@ async function resolvedCapability(role?: string): Promise<boolean | undefined> {
 }
 
 it('exposes workspace lead membership as an explicit renderer capability', async () => {
-  expect(await resolvedCapability('bb_workspace-bb_workspace-lead')).toBe(
-    true,
-  );
+  expect(await resolvedCapability('bb_workspace-bb_workspace-lead')).toBe(true);
 });
 
 it('fails closed for an ordinary workspace member', async () => {

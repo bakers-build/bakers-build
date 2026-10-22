@@ -62,11 +62,11 @@ final class WorkspaceReadScopeFilterAccessTest extends KernelTestBase {
   /**
    * The contrib mapper cannot express a workspace scope, so it grants nothing.
    *
-   * This case used to be demonstrated on `bb_term`, the one bakers.build type that
-   * was deliberately NOT narrowed, and its own docblock warned that the trick
-   * only worked while such a type existed. BB-339 removed the last one — all
-   * eleven bakers.build content entity types are in scope now — so the "before" state
-   * is no longer reachable by choosing a type.
+   * This case used to be demonstrated on `bb_term`, the one bakers.build type
+   * that was deliberately NOT narrowed, and its own docblock warned that the
+   * trick only worked while such a type existed. BB-339 removed the last one —
+   * all eleven bakers.build content entity types are in scope now — so the
+   * "before" state is no longer reachable by choosing a type.
    *
    * Two seams replace it, and together they say more than the original did:
    *

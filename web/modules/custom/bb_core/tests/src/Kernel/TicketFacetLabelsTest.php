@@ -193,8 +193,9 @@ final class TicketFacetLabelsTest extends KernelTestBase {
     // `administer bakers` bypasses the read scope, so this fixture is about the
     // labels rather than about tenancy — which TicketIndexReadScopeTest owns.
     // It deliberately does NOT grant `access user profiles`: no role on a real
-    // bakers.build site has it, so a fixture that granted it would test a world that
-    // does not exist and would hide whether the assignee facet is readable.
+    // bakers.build site has it, so a fixture that granted it would test a world
+    // that does not exist and would hide whether the assignee facet is
+    // readable.
     $account = $this->createUser(['administer bakers', 'view bb_ticket']);
     self::assertInstanceOf(UserInterface::class, $account);
     $this->setCurrentUser($account);

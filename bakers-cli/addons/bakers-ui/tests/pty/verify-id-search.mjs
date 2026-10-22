@@ -42,11 +42,11 @@
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
 //   node verify-id-search.mjs --project bakers --closed-ticket BB-73
 //   node verify-id-search.mjs --project bakers --closed-ticket BB-73 \
-//     --out ../../../../../assets-ai/bakers.build-nnn/node/pty-id-search.txt
+//     --out ../../../../../assets-ai/BB-nnn/node/pty-id-search.txt
 //
 //   --project <name>          the project whose ticket list is walked
-//   --closed-ticket <bakers.build-N>  a CLOSED ticket of that project — the subject
-//   --open-ticket <bakers.build-N>    an OPEN ticket on the list's first page
+//   --closed-ticket <BB-N>  a CLOSED ticket of that project — the subject
+//   --open-ticket <BB-N>    an OPEN ticket on the list's first page
 //   --cols/--rows <n>         pty geometry (default 160x45)
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -126,7 +126,7 @@ const report = (label) => {
   ).trim();
   const empty = lines.find((line) => line.includes('No tickets.'));
   const rows = lines
-    .filter((line) => /^\s+bakers.build-\d+/.test(line))
+    .filter((line) => /^\s+BB-\d+/.test(line))
     .map((line) => line.trim().split(/\s+/)[0]);
   say('');
   say(`===== ${label} =====`);

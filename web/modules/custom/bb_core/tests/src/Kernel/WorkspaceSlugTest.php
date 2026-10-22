@@ -16,10 +16,10 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * The slug is the first path segment of every product URL (BB-350 D3), so it
  * has to be URL-safe, unique across the instance, and must not collide with a
- * path segment Drupal or bakers.build already owns. One constraint class enforces all
- * three; this test drives it through entity validation rather than calling the
- * validator directly, because entity validation is the boundary every write
- * actually passes through.
+ * path segment Drupal or bakers.build already owns. One constraint class
+ * enforces all three; this test drives it through entity validation rather than
+ * calling the validator directly, because entity validation is the boundary
+ * every write actually passes through.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -145,8 +145,9 @@ final class WorkspaceSlugTest extends KernelTestBase {
    * Every reserved word is rejected as a slug.
    *
    * The reserved list is what keeps a workspace from shadowing a path segment
-   * Drupal or bakers.build already owns. ReservedSlugCoverageTest guards the list
-   * against the live router; this guards that the list is actually enforced.
+   * Drupal or bakers.build already owns. ReservedSlugCoverageTest guards the
+   * list against the live router; this guards that the list is actually
+   * enforced.
    */
   public function testEveryReservedWordIsRejected(): void {
     foreach (BbWorkspaceSlugConstraint::RESERVED as $reserved) {

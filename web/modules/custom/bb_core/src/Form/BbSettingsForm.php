@@ -8,7 +8,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Configures bakers.build control-plane behaviour (lease + failed-run retry policy).
+ * Configures control-plane behaviour (lease + failed-run retry policy).
  *
  * One form, two vertical tabs backed by the bb_core.settings config object:
  * - bakers.build: the claim-lease bounds (default + max lease seconds).

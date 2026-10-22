@@ -38,9 +38,7 @@ describe('parseIdentifiers', () => {
   // carries the whole merged history, and prose tokens shaped like an
   // identifier are not identifiers.
   it('still finds the legacy bare identifier and matches no prose token', () => {
-    expect(parseIdentifiers('08db125 BB-375: TUI chrome')).toEqual([
-      'BB-375',
-    ]);
+    expect(parseIdentifiers('08db125 BB-375: TUI chrome')).toEqual(['BB-375']);
     expect(
       parseIdentifiers('body cites AC-1, UTF-8 and SHA-256 but no ticket'),
     ).toEqual([]);
@@ -55,9 +53,7 @@ describe('parseIdentifiers', () => {
   // six extra ones a mid-line anchor would drag in beside it.
   it('admits no key from a mid-line `Token:` beside a real trailer', () => {
     expect(
-      parseIdentifiers(
-        'a1 fix: x\n\n- AC-2: bullet\n(AC-5): line\n\nref:BB-1',
-      ),
+      parseIdentifiers('a1 fix: x\n\n- AC-2: bullet\n(AC-5): line\n\nref:BB-1'),
     ).toEqual(['BB-1']);
   });
 });

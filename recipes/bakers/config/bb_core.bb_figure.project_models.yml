@@ -5,7 +5,7 @@ dependencies:
     - bb_core.bb_measurement.run_tokens
 id: project_models
 label: 'Token spend by model'
-description: 'Token spend by model for this project. Date basis: run creation time. Attribution basis: the run''s ticket''s project. Token unit: consumption.'
+description: "Token spend by model for this project. Date basis: run creation time. Attribution basis: the run's ticket's project. Token unit: consumption."
 weight: 0
 widget: grouped_horizontal_bars
 measurements:
@@ -33,7 +33,7 @@ context_shape:
 conditions:
   project:
     id: bb_route_context
-    entity_type: bb_project
     negate: false
     context_mapping:
       entity: project
+    entity_type: bb_project

@@ -96,10 +96,7 @@ export function buildConductorRunQueryParams(
   params.addFilter('conductor_id.id', conductorId);
   params.addFilter('state', [...HELD_RUN_STATES], 'IN');
   params.addInclude(['ticket_id']);
-  params.addFields(
-    'bb_ticket--bb_ticket',
-    CONDUCTOR_RUN_TICKET_INCLUDE_FIELDS,
-  );
+  params.addFields('bb_ticket--bb_ticket', CONDUCTOR_RUN_TICKET_INCLUDE_FIELDS);
   params.addFields('bb_run--bb_run', RUN_LIST_FIELDS);
   params.addSort('started_at', 'DESC');
   params.addSort('drupal_internal__id', 'DESC');

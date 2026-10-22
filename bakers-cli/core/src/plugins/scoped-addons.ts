@@ -22,9 +22,9 @@ import {
 import type {
   AddonEntry,
   AddonScope,
-  DiscoveredContributions,
   BbPreset,
   BbSurface,
+  DiscoveredContributions,
 } from './preset.js';
 
 /** One scope's `addons[]` with the bases its entries resolve against. */

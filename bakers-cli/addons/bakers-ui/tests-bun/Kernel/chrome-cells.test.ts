@@ -20,7 +20,7 @@ const hasInverse = (
 // BB-340 Task 12 — THE CHROME IS CELLS, AND THIS IS WHERE THAT IS CHECKED.
 //
 // The header box, the status footer and the modal's header/status were the last
-// composed strings in the package: `'╭─ ╳ bakers.build ' + '─'.repeat(width - 11) + '╮'`,
+// composed strings in the package: `'╭─ ╳ bakers.build ' + '─'.repeat(width - 19) + '╮'`,
 // `'│ ' + fitLine(line, width - 4) + ' │'`, `ESC[7m + fitLine(hint + status,
 // width) + ESC[0m`. All three measured display columns, which is why
 // `lib/ansi.ts` and `lib/styled-text.ts` outlived the bridge.
@@ -78,11 +78,13 @@ describe('the header box is a border, not a template', () => {
     // title prop has to reproduce the prefix the template wrote — including the
     // single column `╳` occupies, which is what `displayWidth(prefix)` was for.
     const { rows } = await render(
-      chromeTree(input({ title: 'bakers.build dashboard', meta: 'a meta row' })),
+      chromeTree(
+        input({ title: 'bakers.build dashboard', meta: 'a meta row' }),
+      ),
       60,
     );
-    expect(rows[0]).toBe(`╭─ ╳ bakers.build ${'─'.repeat(49)}╮`);
-    expect(rows[1]).toBe(`│ bakers.build dashboard${' '.repeat(42)} │`);
+    expect(rows[0]).toBe(`╭─ ╳ bakers.build ${'─'.repeat(41)}╮`);
+    expect(rows[1]).toBe(`│ bakers.build dashboard${' '.repeat(34)} │`);
     expect(rows[2]).toBe(`│ a meta row${' '.repeat(46)} │`);
     expect(rows[3]).toBe(`╰${'─'.repeat(58)}╯`);
   });

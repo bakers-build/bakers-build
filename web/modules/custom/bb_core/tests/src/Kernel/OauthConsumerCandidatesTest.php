@@ -86,7 +86,7 @@ final class OauthConsumerCandidatesTest extends KernelTestBase {
   }
 
   /**
-   * Every rank counts, not just the one the keytec fixture happens to use.
+   * Every rank counts, not just the one a fixture happens to use.
    *
    * The seed's single existing membership carries `lead`; the eight added for
    * D5 carry `member`. A selector that keyed on a rank would seed one group and

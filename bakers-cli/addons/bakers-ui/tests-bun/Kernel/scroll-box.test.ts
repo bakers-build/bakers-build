@@ -71,7 +71,7 @@ const ticketListDoc = {
     id: `ticket-${index}`,
     type: 'bb_ticket--bb_ticket',
     attributes: {
-      identifier: `bakers.build-${200 + index}`,
+      identifier: `BB-${200 + index}`,
       title: `ticket number ${index}`,
       state: 'coding',
       derived_status: 'running',

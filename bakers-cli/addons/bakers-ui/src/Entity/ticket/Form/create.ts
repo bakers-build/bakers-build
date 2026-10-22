@@ -61,7 +61,7 @@ export interface CreateOptionErrors {
  * A kernel `Option` — so the autocomplete field filters it by `label` and knows
  * nothing more — that ALSO carries the two fields the payload needs. Carrying
  * them is what lets `toObject` yield the parent's own identifier and title
- * instead of parsing the composed `bakers.build-nnn · title` label back apart, which
+ * instead of parsing the composed `BB-nnn · title` label back apart, which
  * would make a separator character load-bearing across two modules.
  */
 export interface ParentOption extends Option {

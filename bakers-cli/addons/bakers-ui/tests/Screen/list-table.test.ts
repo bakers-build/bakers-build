@@ -303,7 +303,7 @@ it('a configuration may declare no header at all', () => {
 });
 
 it('the pipe surface is built from the same configuration', () => {
-  // BB-345 D7 — `bakers ui bakers.build-nnn | cat` has no layout, so it gets the same
+  // BB-345 D7 — `bakers ui BB-nnn | cat` has no layout, so it gets the same
   // list described as CELLS rather than rendered: each cell carries the value and
   // the column's own budget, and `lineText` joins them with one space. One
   // configuration therefore feeds both surfaces, which is what retires the last

@@ -16,11 +16,11 @@ use Symfony\Component\HttpKernel\KernelEvents;
 /**
  * Sends incomplete interactive HTML entry to the onboarding wizard.
  *
- * The decision is `OnboardingDestination::isComplete()` — the stored Boolean
- * — not optional profile fullness or workspace membership. JSON:API, OAuth,
- * bakers.build's own `/_bakers-api`, logout, the wizard itself, Drupal's AJAX endpoints
- * and static assets stay reachable so the guard cannot loop or intercept
- * non-browser work.
+ * The decision is `OnboardingDestination::isComplete()` — the stored Boolean —
+ * not optional profile fullness or workspace membership. JSON:API, OAuth,
+ * bakers.build's own `/_bakers-api`, logout, the wizard itself, Drupal's AJAX
+ * endpoints and static assets stay reachable so the guard cannot loop or
+ * intercept non-browser work.
  *
  * Responses are uncacheable (max-age 0) so one account's redirect cannot be
  * stored and served to another.

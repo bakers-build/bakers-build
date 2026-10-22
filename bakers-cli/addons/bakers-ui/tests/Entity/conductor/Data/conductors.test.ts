@@ -377,10 +377,7 @@ it('marks a row local only when its workspace exists on this machine', async () 
 it('marks a row `mine` only when its host_key matches THIS machine, never from a path (BB-450 B10)', async () => {
   const client = fakeClient({
     documents: {
-      'bb_conductor/bb_conductor': cockpitDoc(
-        {},
-        { host_key: 'cw-dev-box' },
-      ),
+      'bb_conductor/bb_conductor': cockpitDoc({}, { host_key: 'cw-dev-box' }),
     },
   });
   const [own] = (

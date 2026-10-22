@@ -239,15 +239,15 @@ scenes:
                       label: Guides
                       links:
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/
+                            https://bakers.build/docs/get-started/
                           title: bakers.build documentation
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/install
+                            https://bakers.build/docs/get-started/install
                           title: Install bakers.build
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/install#skill-wizard-%E2%80%94-recommended
+                            https://bakers.build/docs/get-started/install#skill-wizard-%E2%80%94-recommended
                           title: Skill wizard
                           kind: doc
                 actions:
@@ -355,15 +355,15 @@ scenes:
                       label: Guides
                       links:
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/
+                            https://bakers.build/docs/get-started/
                           title: bakers.build documentation
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/install
+                            https://bakers.build/docs/get-started/install
                           title: Install bakers.build
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/install#skill-wizard-%E2%80%94-recommended
+                            https://bakers.build/docs/get-started/install#skill-wizard-%E2%80%94-recommended
                           title: Skill wizard
                           kind: doc
                 actions:
@@ -471,15 +471,15 @@ scenes:
                       label: Guides
                       links:
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/
+                            https://bakers.build/docs/get-started/
                           title: bakers.build documentation
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/install
+                            https://bakers.build/docs/get-started/install
                           title: Install bakers.build
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/install#skill-wizard-%E2%80%94-recommended
+                            https://bakers.build/docs/get-started/install#skill-wizard-%E2%80%94-recommended
                           title: Skill wizard
                           kind: doc
                 actions:
@@ -536,15 +536,15 @@ scenes:
                       label: Guides
                       links:
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/
+                            https://bakers.build/docs/get-started/
                           title: bakers.build documentation
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/connect-a-project
+                            https://bakers.build/docs/get-started/connect-a-project
                           title: Connect your project
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/connect-a-project#skill-wizard-%E2%80%94-recommended
+                            https://bakers.build/docs/get-started/connect-a-project#skill-wizard-%E2%80%94-recommended
                           title: Initialize a project
                           kind: doc
                 actions:
@@ -609,15 +609,15 @@ scenes:
                       label: Guides
                       links:
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/
+                            https://bakers.build/docs/get-started/
                           title: bakers.build documentation
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/connect-a-project
+                            https://bakers.build/docs/get-started/connect-a-project
                           title: Connect your project
                           kind: doc
                         - url: >-
-                            https://bb-539921.gitlab-pages.keytec.de/get-started/connect-a-project#skill-wizard-%E2%80%94-recommended
+                            https://bakers.build/docs/get-started/connect-a-project#skill-wizard-%E2%80%94-recommended
                           title: Initialize a project
                           kind: doc
                 actions:

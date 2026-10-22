@@ -46,8 +46,7 @@ function fakeServices(): RendererServices & { paths: string[] } {
     collection,
     get: async (path: string) => {
       paths.push(path);
-      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`))
-        return ticketDoc;
+      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`)) return ticketDoc;
       if (path === 'bb_ticket/bb_ticket') return { data: [] };
       return { data: [] };
     },
@@ -130,8 +129,7 @@ describe('the tui renderer resolves the deep link in run() (AC-3)', () => {
       if (path === 'bb_ticket/bb_ticket') {
         return { data: [ticketDoc.data] };
       }
-      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`))
-        return ticketDoc;
+      if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`)) return ticketDoc;
       return { data: [] };
     };
 
@@ -184,9 +182,7 @@ describe('the tui renderer resolves the deep link in run() (AC-3)', () => {
     await rendererRun({})({}, {}, services);
 
     // Straight to the dashboard read; no ticket/project lookup happened.
-    expect(services.paths.some((p) => p.startsWith('bb_ticket/'))).toBe(
-      false,
-    );
+    expect(services.paths.some((p) => p.startsWith('bb_ticket/'))).toBe(false);
   });
 });
 

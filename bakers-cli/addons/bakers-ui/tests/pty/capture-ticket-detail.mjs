@@ -41,7 +41,7 @@
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install     # once: native deps
 //   node capture-ticket-detail.mjs --ticket BB-369
 //   node capture-ticket-detail.mjs --ticket BB-23 \
-//     --out ../../../../../assets-ai/bakers.build-nnn/node/pty-ticket-detail.txt
+//     --out ../../../../../assets-ai/BB-nnn/node/pty-ticket-detail.txt
 //
 //   --ticket <identifier>   the deep link to open (required)
 //   --expect-blocker <re>   a pattern the Related tab's Blocked by must show

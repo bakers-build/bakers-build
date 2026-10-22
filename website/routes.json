@@ -9,7 +9,6 @@
   "/configuration/agents-and-routes": "/advanced/configuration/agents-and-models",
   "/configuration/claude-connector": "/daily-work/claude-ai",
   "/configuration/claude-connector-limits": "/advanced/configuration/claude-connector-limits",
-  "/configuration/claude-profiles": "/advanced/configuration/claude-profiles",
   "/configuration/claude-project-instructions": "/advanced/configuration/claude-project-instructions",
   "/configuration/conductor": "/advanced/conductor-config",
   "/configuration/connections": "/advanced/connections",

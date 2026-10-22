@@ -3,13 +3,13 @@ status: true
 dependencies:
   config:
     - island.app.bakers
-  enforced:
-    config:
-      - island.app.bakers
   module:
     - system
   theme:
     - bb_theme
+  enforced:
+    config:
+      - island.app.bakers
 id: bb_onboarding
 label: 'bakers.build onboarding'
 app: bakers
@@ -39,5 +39,4 @@ conditions:
   request_path:
     id: request_path
     negate: false
-    pages: |-
-      /home/onboarding
+    pages: /home/onboarding

@@ -97,7 +97,7 @@ When(
     state.type = 'bb_group';
     state.workspace = workspace;
     state.name = `Identity group ${Date.now()}`;
-    state.form = 'dialog[open] form#bakers-group-create-form';
+    state.form = 'dialog[open] form#bb-group-create-form';
     expect((await page.goto(`/${workspace}/groups`))?.status()).toBe(200);
     const trigger = page.getByRole('link', { name: 'New group', exact: true });
     await expect.poll(() => trigger.evaluate((el) => !!(el as any)['htmx-internal-data'])).toBe(true);
@@ -124,7 +124,7 @@ When(
   async ({ page }, file: string) => {
     state.type = 'bb_workspace';
     state.name = `Identity workspace ${Date.now()}`;
-    state.form = 'form#bakers-workspace-create-form';
+    state.form = 'form#bb-workspace-create-form';
     expect((await page.goto('/home/new-workspace'))?.status()).toBe(200);
     await page.getByLabel('Workspace name', { exact: true }).fill(state.name);
     await descriptionField(form(page)).fill(WORKSPACE_DESCRIPTION);
@@ -195,7 +195,7 @@ Then(
 );
 
 When("I open that group's settings", async ({ page }) => {
-  state.form = 'form[id^="bakers-group-settings-form"]';
+  state.form = 'form[id^="bb-group-settings-form"]';
   expect((await page.goto(settingsPath()))?.status()).toBe(200);
   await expect(form(page)).toBeVisible();
 });
@@ -241,7 +241,7 @@ When('I open the settings of the project {string}', async ({ page }, name: strin
   );
   expect(state.id, `No project named ${name}`).not.toBe('');
   state.seeded = stored().description;
-  state.form = 'form[id^="bakers-project-settings-form"]';
+  state.form = 'form[id^="bb-project-settings-form"]';
   expect((await page.goto(settingsPath()))?.status()).toBe(200);
   await expect(form(page)).toBeVisible();
 });
@@ -323,7 +323,7 @@ Then(
     }
     const settings = await page.goto(`${path}/settings`);
     expect(settings?.status()).toBe(verdict === 'offered' ? 200 : 403);
-    const settingsForm = page.locator(`form[id^="bakers-${type}-settings-form"]`);
+    const settingsForm = page.locator(`form[id^="bb-${type}-settings-form"]`);
     if (verdict === 'offered') {
       await expect(descriptionField(settingsForm)).toBeVisible();
       // The widget shows either the upload input or the current image's Remove.
@@ -360,7 +360,7 @@ When('I open the settings of the workspace {string}', async ({ page }, slug: str
   expect(state.id, `No workspace ${slug}`).not.toBe('');
   state.seeded = stored().description;
   state.name = php(`print \\Drupal::entityTypeManager()->getStorage("bb_workspace")->load(${Number(state.id)})->label();`);
-  state.form = 'form[id^="bakers-workspace-settings-form"]';
+  state.form = 'form[id^="bb-workspace-settings-form"]';
   expect((await page.goto(settingsPath()))?.status()).toBe(200);
   await expect(form(page)).toBeVisible();
 });
@@ -433,7 +433,7 @@ Then(/^at a phone width "([^"]+)" does not scroll sideways$/, async ({ page }, p
 const PROJECT_FIELD_ORDER = ['group-id', 'teams', 'name', 'description', 'image', 'repository', 'owner-user-id', 'env-vars'];
 
 Then('the project form groups the Repository', async ({ page }) => {
-  const projectForm = page.locator('form#bakers-project-create-form:visible, form[id^="bakers-project-settings-form"]:visible').first();
+  const projectForm = page.locator('form#bb-project-create-form:visible, form[id^="bb-project-settings-form"]:visible').first();
   const repository = projectForm.getByRole('group', { name: 'Repository', exact: true });
   await expect(repository).toBeVisible();
   await expect(repository.getByRole('textbox', { name: 'URL', exact: true })).toBeVisible();
@@ -441,7 +441,7 @@ Then('the project form groups the Repository', async ({ page }) => {
 });
 
 Then('the project form lists Teams after Group and groups the Repository', async ({ page }) => {
-  const projectForm = page.locator('form#bakers-project-create-form:visible, form[id^="bakers-project-settings-form"]:visible').first();
+  const projectForm = page.locator('form#bb-project-create-form:visible, form[id^="bb-project-settings-form"]:visible').first();
   await expect(projectForm).toBeVisible();
   const order = await projectForm.evaluate((element, fields) => fields
     .map((field) => ({ field, node: element.querySelector(`[data-drupal-selector="edit-${field}-wrapper"]`) }))
@@ -457,7 +457,7 @@ Then('the project form lists Teams after Group and groups the Repository', async
 });
 
 Then('the project form offers Branch convention {string}', async ({ page }, offered: string) => {
-  const projectForm = page.locator('form#bakers-project-create-form:visible, form[id^="bakers-project-settings-form"]:visible').first();
+  const projectForm = page.locator('form#bb-project-create-form:visible, form[id^="bb-project-settings-form"]:visible').first();
   const field = projectForm.getByRole('group', { name: 'Repository', exact: true }).getByRole('textbox', { name: 'Branch convention', exact: true });
   await expect(field).toHaveCount(offered === 'yes' ? 1 : 0);
 });

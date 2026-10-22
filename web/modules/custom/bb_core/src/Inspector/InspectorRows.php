@@ -220,8 +220,8 @@ abstract class InspectorRows {
   /**
    * The labels of a reference field the viewer may be told, comma-joined.
    *
-   * `view label`, not `view`: no bakers.build role holds `access user profiles`, so
-   * `view` would blank every other person; see
+   * `view label`, not `view`: no bakers.build role holds
+   * `access user profiles`, so `view` would blank every other person; see
    * TicketReferenceCellFormatterBase. Every caller already varies per user.
    *
    * @param \Drupal\Core\Entity\FieldableEntityInterface $entity

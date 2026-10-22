@@ -19,10 +19,10 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * Supersedes `McpConnectorScopeEnforcementTest`, which proved a now-reverted
  * dedicated `bb_mcp_connector` scope. There is no dedicated connector
- * scope: a `claude-connector` consumer authenticates exactly like any other
+ * scope: an MCP client's consumer authenticates exactly like any other
  * `bb:session` client, with a permission-granularity scope. As
  * `EntityEditAccessTest::delegatedSessionAccount()` documents, such a token's
- * `TokenAuthUser::getRoles()` collapses to `authenticated` only, so bakers.build's
+ * `TokenAuthUser::getRoles()` collapses to `authenticated` only, so the
  * actual access boundary for ticket/comment/project/label operations is the
  * OG workspace rank chain (`BbRankEntityFence`), not a global Drupal role —
  * this test exercises exactly that chain with the shipped `contributor` role,

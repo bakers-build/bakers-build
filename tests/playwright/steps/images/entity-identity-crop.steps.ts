@@ -17,9 +17,9 @@ const FIXTURES = join(__dirname, '..', '..', 'fixtures');
 
 /** Who creates each subject, where, and through which forms. */
 const SUBJECT = {
-  project: { creator: 'admin', workspace: 'bakers', type: 'bb_project', create: 'dialog[data-dialog][open] form#bakers-project-create-form', settings: 'form[id^="bakers-project-settings-form"]' },
-  group: { creator: 'create-lead-b', workspace: 'create-b', type: 'bb_group', create: 'dialog[data-dialog][open] form#bakers-group-create-form', settings: 'form[id^="bakers-group-settings-form"]' },
-  workspace: { creator: 'create-lead-b', workspace: '', type: 'bb_workspace', create: 'form#bakers-workspace-create-form', settings: 'form[id^="bakers-workspace-settings-form"]' },
+  project: { creator: 'admin', workspace: 'bakers', type: 'bb_project', create: 'dialog[data-dialog][open] form#bb-project-create-form', settings: 'form[id^="bb-project-settings-form"]' },
+  group: { creator: 'create-lead-b', workspace: 'create-b', type: 'bb_group', create: 'dialog[data-dialog][open] form#bb-group-create-form', settings: 'form[id^="bb-group-settings-form"]' },
+  workspace: { creator: 'create-lead-b', workspace: '', type: 'bb_workspace', create: 'form#bb-workspace-create-form', settings: 'form[id^="bb-workspace-settings-form"]' },
 } as const;
 
 /** The subject this scenario created; one scenario at a time per worker. */
@@ -78,7 +78,7 @@ async function openSettingsForm(page: Page): Promise<void> {
 }
 
 async function pick(page: Page, label: string, option: string): Promise<void> {
-  const trigger = pickerTrigger(page, 'dialog[data-dialog]:has(form#bakers-project-create-form)', label);
+  const trigger = pickerTrigger(page, 'dialog[data-dialog]:has(form#bb-project-create-form)', label);
   await waitForPickerBehaviour(trigger);
   await trigger.click();
   await optionRow(page, pickerPanel(trigger), option).click();

@@ -59,7 +59,10 @@ trait InboxWorldTrait {
     $this->installEntitySchema('bb_inbox_message');
     $this->buildTwoWorkspaceWorld();
 
-    $this->conductorOwner = $this->createAccount('conductor-owner', ['register bakers conductor', 'claim bakers tickets']);
+    $this->conductorOwner = $this->createAccount('conductor-owner', [
+      'register bakers conductor',
+      'claim bakers tickets',
+    ]);
     $this->workspaceMember('a', $this->conductorOwner, 'contributor');
     $this->conductor = $this->createConductor('node-inbox', $this->conductorOwner);
     $ticket = $this->fixture('a', 'bb_ticket');

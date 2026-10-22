@@ -663,7 +663,7 @@ live_enumeration_is_non_vacuous() {
   for rel in \
     'config/sync/system.theme.yml' \
     'recipes/bakers/recipe.yml' \
-    'web/modules/custom/bb_core/bb_core.module' \
+    'web/modules/custom/bb_core/bb_core.install' \
     'web/themes/custom/bb_theme/bb_theme.info.yml'; do
     if [ -z "$(printf '%s\n' "$list" | grep -xF "$ROOT/$rel" || true)" ]; then
       printf '  live enumeration does not reach %s\n' "$rel"

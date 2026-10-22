@@ -14,14 +14,18 @@ describe('runUpdate', () => {
       async () => ({
         code: 0,
         stdout: JSON.stringify({
-          dependencies: { '@bakers-build/bakers': { version: versions.shift() } },
+          dependencies: {
+            '@bakers-build/bakers': { version: versions.shift() },
+          },
         }),
       }),
       {
         out: (line) => output.push(line),
       },
     );
-    expect(installs).toEqual([['install', '-g', '@bakers-build/bakers@latest']]);
+    expect(installs).toEqual([
+      ['install', '-g', '@bakers-build/bakers@latest'],
+    ]);
     expect(output).toEqual(['1.0.0 → 1.1.0']);
     expect(result).toEqual({ ok: true, before: '1.0.0', after: '1.1.0' });
   });
@@ -53,7 +57,9 @@ describe('runUpdate', () => {
       async () => ({
         code: 0,
         stdout: JSON.stringify({
-          dependencies: { '@bakers-build/bakers': { version: versions.shift() } },
+          dependencies: {
+            '@bakers-build/bakers': { version: versions.shift() },
+          },
         }),
       }),
       {

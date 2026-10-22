@@ -36,7 +36,8 @@ trait ConductorResolverTrait {
    *   The matching conductor entity.
    *
    * @throws \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException
-   *   When the current user does not have the 'claim bakers tickets' permission.
+   *   When the current user does not have the 'claim bakers tickets'
+   *   permission.
    * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
    *   When no conductor registration is found for the current user.
    */

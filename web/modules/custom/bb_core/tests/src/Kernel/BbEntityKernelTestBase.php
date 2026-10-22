@@ -113,15 +113,15 @@ abstract class BbEntityKernelTestBase extends KernelTestBase {
     BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
     BbVocabulary::create(['id' => 'bb_capability_tags', 'label' => 'bakers.build capability tags'])->save();
     \Drupal::service('entity_type.bundle.info')->clearCachedBundles();
-    // Since BB-305 every bakers.build entity declares a query_access handler, so a
-    // View executes an access-checked query and an account with no permissions
-    // sees an empty result. The dashboard's audience is the workspace `member`
-    // rank, which holds these since BB-359 replaced the bb_project_manager
-    // role with it; act as an equivalent account so these tests keep measuring
-    // filtering, paging and rendering rather than read access. Granting the
-    // permissions site-wide rather than through a rank is deliberate here — it
-    // keeps the fixture free of a tenancy these tests are not about.
-    // BbViewsAccessGuardTest is what pins the permission set itself.
+    // Since BB-305 every bakers.build entity declares a query_access handler,
+    // so a View executes an access-checked query and an account with no
+    // permissions sees an empty result. The dashboard's audience is the
+    // workspace `member` rank, which holds these since BB-359 replaced the
+    // bb_project_manager role with it; act as an equivalent account so these
+    // tests keep measuring filtering, paging and rendering rather than read
+    // access. Granting the permissions site-wide rather than through a rank is
+    // deliberate here — it keeps the fixture free of a tenancy these tests are
+    // not about. BbViewsAccessGuardTest is what pins the permission set itself.
     $this->setUpCurrentUser([], [
       'access bakers dashboard',
       'view bb_ticket',

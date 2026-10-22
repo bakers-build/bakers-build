@@ -37,7 +37,7 @@
 // USAGE
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
-//   node capture-agents.mjs --project bakers --out ../../../../../assets-ai/bakers.build-nnn/node/agents.txt
+//   node capture-agents.mjs --project bakers --out ../../../../../assets-ai/BB-nnn/node/agents.txt
 
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -70,17 +70,13 @@ const say = (line) => {
 /** One boot per width: Dashboard → Tab → Tickets → Tab → Ticket-Agents. */
 const walk = async (cols) => {
   const terminal = new Terminal({ cols, rows: 24, allowProposedApi: true });
-  const child = spawn(
-    process.execPath,
-    [BB_BIN, 'ui', '--project', project],
-    {
-      name: 'xterm-256color',
-      cols,
-      rows: 24,
-      cwd: REPO_ROOT,
-      env: { ...process.env, TERM: 'xterm-256color' },
-    },
-  );
+  const child = spawn(process.execPath, [BB_BIN, 'ui', '--project', project], {
+    name: 'xterm-256color',
+    cols,
+    rows: 24,
+    cwd: REPO_ROOT,
+    env: { ...process.env, TERM: 'xterm-256color' },
+  });
   child.onData((data) => terminal.write(data));
 
   // The screen with its right edge intact: the edge is the thing being read, so

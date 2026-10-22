@@ -47,7 +47,7 @@ const parent: FieldDecl = {
 const candidates = (count: number) =>
   Array.from({ length: count }, (_, i) => ({
     id: `k${i}`,
-    label: `bakers.build-${100 + i} · candidate ${i}`,
+    label: `BB-${100 + i} · candidate ${i}`,
   }));
 
 /** What the field's insertion-point widget declares, or nothing. */

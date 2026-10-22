@@ -47,7 +47,7 @@ const OVERLAY = 'bakers-overlay';
  *
  * THE HULL HAS NO ID OF ITS OWN ANY MORE, which is what this selector had to
  * change for. It used to be `dialog#bakers-ticket-create`, an id
- * `bakers-ticket-create.html.twig` wrote onto the hull it composed itself. Under
+ * `bb-ticket-create.html.twig` wrote onto the hull it composed itself. Under
  * the operator ruling of 2026-09-08 both create dialogs take `island`'s generic
  * hull, that template is deleted, and the generic hull is passed no `id` prop
  * (`WrappedRouteRenderer::hullProps()`) — so every route the `island_dialog`
@@ -67,7 +67,7 @@ const OVERLAY = 'bakers-overlay';
  * `bb_ticket_create_form`, because core keys its htmx-form handling on the
  * `-form` suffix of the rendered id (`FormBuilder.php:781-791`).
  */
-const TICKET_FORM = 'form#bakers-ticket-create-form';
+const TICKET_FORM = 'form#bb-ticket-create-form';
 const DIALOG = `dialog[data-dialog]:has(${TICKET_FORM})`;
 
 /**
@@ -493,7 +493,7 @@ Then('the dialog has exactly one submit and one cancel', async ({ page }) => {
  * hull is built by the wrapper format — a main-content renderer core selects
  * from `?_wrapper_format=island_dialog` — so it does not exist on a plain page
  * load, and the two controls render inside the form's own body there because
- * `bakers-create-dialog.html.twig` prints the action row into
+ * `bb-create-dialog.html.twig` prints the action row into
  * `bb_theme:form`'s `actions` slot whenever the row has not been lifted away.
  * On the htmx path the same two controls are in the hull's footer, which is
  * what the parity feature asserts.

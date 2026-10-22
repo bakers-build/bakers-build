@@ -5,7 +5,10 @@
 // (web/modules/custom/bb_core/modules/bb_dashboard/src/Dashboard/ConductorDeriver.php)
 // cannot drift into describing one conductor three ways. What stays here is the
 // one thing core cannot answer: whether a bb_conductor record exists at all.
-import { type ConductorLiveness, deriveConductorLiveness } from '@bakers-build/core';
+import {
+  type ConductorLiveness,
+  deriveConductorLiveness,
+} from '@bakers-build/core';
 
 /** The derived liveness state of a conductor. */
 export type ConductorStatus = ConductorLiveness | 'registry-only';

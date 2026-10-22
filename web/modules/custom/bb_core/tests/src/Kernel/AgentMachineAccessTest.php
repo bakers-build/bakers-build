@@ -21,17 +21,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * empty/403, capacity is null, and the shared host budget falls back to the
  * local activeRunCount only.
  *
- * BB-359 D6 moved WHERE that permission comes from, not whether it holds.
- * It used to sit on the site-wide `bb_agent` role, which was then reduced to
- * the two permissions forced to stay site-wide; the capability moved to the
- * workspace `app` rank the conductor's account used to be placed in by
- * _bb_core_ensure_conductor_workspace_membership().
- *
- * BB-462 D9 moves it a second time, and this time by REMOVAL rather than
- * relocation: `app` is gone,
- * `_bb_core_ensure_conductor_workspace_membership()` is gone, and a
- * conductor's read visibility is no longer a machine-specific
- * grant at all — a conductor's OAuth identity is bound to its OWNING USER's
+ * A conductor's read visibility is no machine-specific grant: a
+ * conductor's OAuth identity is bound to its OWNING USER's
  * account, and `view bb_machine` was already on that user's own product
  * rank (`contributor` inherits it from the former `member` set, `lead`/admin
  * carries it too). So the row-visibility half of this file's subject

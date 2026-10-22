@@ -87,11 +87,11 @@ final class BranchNameTest extends KernelTestBase {
    * The whole branch is capped at 30 chars; the title is truncated to fit.
    */
   public function testCapsBranchAtThirtyChars(): void {
-    $ticket = $this->createTicket('BB-42', 'A very long human readable ticket title');
+    $ticket = $this->createTicket('BB-4242', 'A very long human readable ticket title');
     $branch = (string) $ticket->get('branch_name')->value;
-    // feat/bb-42 = 12 chars, so 17 chars remain for "-<title>": the title
+    // feat/bb-4242 = 12 chars, so 17 chars remain for "-<title>": the title
     // slug is cut to those 17 chars ("a-very-long-human").
-    $this->assertSame('feat/bb-42-a-very-long-human', $branch);
+    $this->assertSame('feat/bb-4242-a-very-long-human', $branch);
     $this->assertSame(30, mb_strlen($branch));
   }
 
@@ -101,9 +101,9 @@ final class BranchNameTest extends KernelTestBase {
    * The identifier is still never truncated, even past 30 chars.
    */
   public function testLongIdentifierDropsTitle(): void {
-    $ticket = $this->createTicket('bb-1234567890abcdef1234', 'Some title');
-    // feat/bb-1234567890abcdef1234 = 30 chars, no room for a title.
-    $this->assertSame('feat/bb-1234567890abcdef1234', $ticket->get('branch_name')->value);
+    $ticket = $this->createTicket('bb-1234567890abcdef123456', 'Some title');
+    // feat/bb-1234567890abcdef123456 = 30 chars, no room for a title.
+    $this->assertSame('feat/bb-1234567890abcdef123456', $ticket->get('branch_name')->value);
   }
 
   /**
@@ -142,14 +142,14 @@ final class BranchNameTest extends KernelTestBase {
   public function testCapBranchNameProtectsIdentifier(): void {
     // Over budget: only the trailing title is cut to fit 30 chars.
     $this->assertSame(
-      'feat/bb-42-a-very-long-human',
-      BranchName::cap('feat/bb-42-a-very-long-human-readable-title', 'bb-42'),
+      'feat/bb-4242-a-very-long-human',
+      BranchName::cap('feat/bb-4242-a-very-long-human-readable-title', 'bb-4242'),
     );
     // The identifier alone fills the budget: the title is dropped and the
     // identifier is returned untruncated even past 30 chars.
     $this->assertSame(
-      'feat/bb-1234567890abcdef1234',
-      BranchName::cap('feat/bb-1234567890abcdef1234-some-title', 'bb-1234567890abcdef1234'),
+      'feat/bb-1234567890abcdef123456',
+      BranchName::cap('feat/bb-1234567890abcdef123456-some-title', 'bb-1234567890abcdef123456'),
     );
     // Under budget is returned unchanged.
     $this->assertSame(

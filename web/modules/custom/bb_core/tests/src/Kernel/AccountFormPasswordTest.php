@@ -61,9 +61,10 @@ final class AccountFormPasswordTest extends KernelTestBase {
   /**
    * Self-edit with a changed email produces no ProtectedUserField violation.
    *
-   * bakers.build removes current_pass from AccountForm, but the constraint on mail/pass
-   * still fires on self-edit. bb_core_form_alter() sets user_pass_reset in
-   * form_state so AccountForm::buildEntity() sets the skip flag to TRUE.
+   * The bakers.build account form drops current_pass from AccountForm, but the
+   * constraint on mail/pass still fires on self-edit. bb_core_form_alter() sets
+   * user_pass_reset in form_state so AccountForm::buildEntity() sets the skip
+   * flag to TRUE.
    */
   public function testSelfEditAllowsEmailChangeWithoutCurrentPassword(): void {
     $account = $this->createUser([], NULL, FALSE, ['mail' => 'original@example.com']);

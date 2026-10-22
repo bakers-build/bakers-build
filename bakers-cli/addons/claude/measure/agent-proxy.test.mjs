@@ -309,14 +309,7 @@ test('resolveLogDirectory requires a ticket identifier, not a UUID, and rejects 
   });
   assert.equal(
     resolved,
-    path.join(
-      cwd,
-      'assets-ai',
-      'BB-569',
-      'node',
-      'baseline',
-      'qualification',
-    ),
+    path.join(cwd, 'assets-ai', 'BB-569', 'node', 'baseline', 'qualification'),
   );
 });
 

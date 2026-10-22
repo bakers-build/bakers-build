@@ -92,7 +92,9 @@ describe('@bakers-build/addon-dropsh imports no engine (AC-2)', () => {
       dependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
     };
-    expect(Object.keys(pkg.peerDependencies ?? {})).toEqual(['@bakers-build/core']);
+    expect(Object.keys(pkg.peerDependencies ?? {})).toEqual([
+      '@bakers-build/core',
+    ]);
     const bakersDeps = Object.keys(pkg.dependencies ?? {}).filter((n) =>
       n.startsWith('@bakers-build/'),
     );

@@ -56,7 +56,10 @@ function fakeLoader(over: Partial<BbConnectionConfig> = {}): {
     load: async (_host, opts) => {
       calls.push(opts);
       return {
-        site: { base_url: 'https://bakers.example', jsonapi_prefix: '/jsonapi' },
+        site: {
+          base_url: 'https://bakers.example',
+          jsonapi_prefix: '/jsonapi',
+        },
         workspace_id: '00000000-0000-4000-8000-000000000000',
         plugins: [],
         config_path: '/resolved/bakers.config.js',
@@ -179,7 +182,9 @@ describe('cmdUi connection resolution (BB-219)', () => {
       },
     });
     expect(loader.calls).toEqual([{ cwd: tmp, explicit: undefined }]);
-    expect(opts?.connection.configPath).toBe('/home/cw/.bakers/bakers.config.js');
+    expect(opts?.connection.configPath).toBe(
+      '/home/cw/.bakers/bakers.config.js',
+    );
   });
 
   it('AC-3: the global connection is passed through', async () => {
@@ -742,7 +747,8 @@ describe('cmdUi deep-link entry seam (BB-223)', () => {
       here: true,
       cwd: '/a/fresh/clone',
       readBranch: async () => 'main',
-      readRemoteUrl: async () => 'git@git.key-tec.de:bakers-build/bakers-build.git',
+      readRemoteUrl: async () =>
+        'git@git.key-tec.de:bakers-build/bakers-build.git',
     });
     expect(called).toBe(true);
     expect(opts?.initialRoute).toMatchObject({

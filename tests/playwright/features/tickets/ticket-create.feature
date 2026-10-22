@@ -347,7 +347,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
   #
   # This scenario used to assert that the scriptless page carries the SAME
   # `<dialog>` the htmx path does, because the hull was composed by
-  # `bakers-ticket-create.html.twig` — the form's own template, which core's
+  # `bb-ticket-create.html.twig` — the form's own template, which core's
   # ordinary HTML renderer reaches whether or not the wrapper format is in
   # play. Under the ruling both create dialogs take `island`'s generic hull,
   # that template is deleted, and the hull is built by the WRAPPER FORMAT — a

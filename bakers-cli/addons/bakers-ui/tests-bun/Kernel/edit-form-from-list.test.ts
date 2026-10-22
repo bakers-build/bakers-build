@@ -428,7 +428,7 @@ it('AC-2: `e` edits the HIGHLIGHTED row, not the ambient `detail` (wrong-entity 
 // ---- AC-3: the row reflects the write, the selection does not move -----------
 
 /** The rendered table line of one identifier in the current frame. Matched per
- *  LINE, not by splitting the frame on `bakers.build-` — the Parent column holds an
+ *  LINE, not by splitting the frame on `BB-` — the Parent column holds an
  *  identifier too, and splitting there cut every row short of its own parent. */
 const rowLine = (tui: BootedTui, identifier: string): string =>
   tui
@@ -448,7 +448,7 @@ const selectedRowLine = (tui: BootedTui): string => {
         (span as { fg?: RGBA }).fg?.intent === 'indexed' &&
         (span as { fg?: RGBA }).fg?.slot === THEME_SLOTS.foregroundActive,
     );
-    if (active && /bakers.build-\d+/.test(text)) return text;
+    if (active && /BB-\d+/.test(text)) return text;
   }
   return '';
 };
@@ -500,7 +500,7 @@ it('AC-3: a late search debounce cannot repoint the row — it is keyed by id', 
   // Enter search mode and type, which arms the 200 ms debounce, then leave it
   // with Enter — which clears the flag but NOT the timer.
   await press('/');
-  await press('g');
+  await press('b');
   await press('\r');
   // The pending read will return the rows in the OTHER order, so the edited
   // ticket lands at a different index than the one it was opened at.
@@ -526,7 +526,7 @@ it('AC-3: a stale search that omitted the edited ticket cannot replace the mutat
   const h = harness();
   const { tui, press, quit } = await openList(h);
   await press('/');
-  await press('g');
+  await press('b');
   await press('\r');
   // The pending read filters the edited ticket OUT of the list entirely.
   h.setRows([T2]);
