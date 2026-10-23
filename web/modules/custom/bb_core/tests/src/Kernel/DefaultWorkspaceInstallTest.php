@@ -69,7 +69,21 @@ final class DefaultWorkspaceInstallTest extends KernelTestBase {
     $workspace = $this->loadDefaultWorkspace();
     self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
     self::assertSame(BbWorkspace::DEFAULT_SLUG, $workspace->getSlug());
-    self::assertNotSame('', $workspace->getName());
+    self::assertSame('bakers', $workspace->getName());
+  }
+
+  /**
+   * The name does not follow the site name.
+   *
+   * On `site:install --existing-config` this hook runs before system.site is
+   * imported, so the site is still called "Drupal" at that moment.
+   */
+  public function testTheDefaultWorkspaceNameIgnoresTheInterimSiteName(): void {
+    $this->config('system.site')->set('name', 'Drupal')->save();
+
+    bb_core_install();
+
+    self::assertSame('bakers', $this->loadDefaultWorkspace()->getName());
   }
 
   /**

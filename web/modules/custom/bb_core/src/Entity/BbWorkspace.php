@@ -89,12 +89,14 @@ final class BbWorkspace extends BbContentEntityBase implements BbWorkspaceInterf
   public const DEFAULT_UUID = '2a92d03c-c4c6-41dc-b194-31aa299ed064';
 
   /**
-   * The name the seeded default workspace falls back to.
+   * The name the seeded default workspace is created with.
    *
-   * Used when system.site.name is empty. Deliberately generic: bb_core is a
-   * product-neutral module and may carry no customer name.
+   * Fixed rather than the site name: on an --existing-config install the
+   * workspace is created before system.site is imported. Deliberately
+   * generic: bb_core is a product-neutral module and may carry no customer
+   * name.
    */
-  public const DEFAULT_NAME_FALLBACK = 'bakers.build';
+  public const DEFAULT_NAME = 'bakers';
 
   /**
    * The slug the seeded default workspace is pinned to.
