@@ -36,7 +36,7 @@ vi.mock('@bakers-build/core', async (orig) => {
         send: vi.fn(async () => ({ status: 200, headers: {}, body: '' })),
       },
       auth: { apply: async (r: unknown) => r },
-      baseUrl: 'https://bakers-develop.dev2.keytec.de',
+      baseUrl: 'https://develop.dev.bakers.build',
     })),
   };
 });
@@ -1604,7 +1604,7 @@ describe('drupalRemote.createRemote', () => {
     const { createBbConnectionContext } = await import('@bakers-build/core');
     const config = {
       site: {
-        base_url: 'https://bakers-develop.dev2.keytec.de',
+        base_url: 'https://develop.dev.bakers.build',
         jsonapi_prefix: '/jsonapi',
       },
       plugins: [{ id: 'p', authProvider: { id: 'p' } }],
@@ -1642,7 +1642,7 @@ describe('drupalRemote.createRemote', () => {
     };
     const config = {
       site: {
-        base_url: 'https://bakers-develop.dev2.keytec.de',
+        base_url: 'https://develop.dev.bakers.build',
         jsonapi_prefix: '/jsonapi',
       },
       plugins: [alteringPlugin],
@@ -1665,7 +1665,7 @@ describe('drupalRemote.createRemote', () => {
   it('wires a real fetchRunLog built from the connection context http/auth/baseUrl', async () => {
     const config = {
       site: {
-        base_url: 'https://bakers-develop.dev2.keytec.de',
+        base_url: 'https://develop.dev.bakers.build',
         jsonapi_prefix: '/jsonapi',
       },
       plugins: [],

@@ -64,12 +64,6 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
-      BB_GITLAB_TOKEN_KEYTEC: ${BB_GITLAB_TOKEN_KEYTEC:-}
-      # NOTE: OAuth consumer secrets are intentionally NOT passed here. The
-      # per-deploy consumer provisioning was removed (BB-111): a deploy must
-      # never re-provision a consumer, or it silently invalidates a developer's
-      # working secret. Consumers are seeded once by the deliberate `install`
-      # service (create-only) and managed via the consumers UI thereafter.
     volumes:
       - public_files:/var/www/html/web/sites/default/files
       - private_files:/var/www/html/private-files
@@ -77,7 +71,7 @@ services:
       - oauth_keys:/var/www/oauth-keys
     # One-shot UPDATE hook — no install branch, no bootstrap heuristic.
     #  UPDATE: drush deploy (updatedb → config:import → cache:rebuild → deploy:hook),
-    #          then the entity-schema tail, then the shared OAuth tail.
+    #          then the entity-schema tail, then the OAuth keys.
     #  On a not-yet-installed site `drush deploy` exits non-zero and no data is touched.
     # All of it runs here, in the one-shot container — Komodo offers no deploy lifecycle hook.
     command: |
@@ -99,9 +93,6 @@ services:
         echo "[deploy] OAuth keys"
         mkdir -p /var/www/oauth-keys
         [ -f /var/www/oauth-keys/private.key ] || $$DRUSH simple-oauth:generate-keys /var/www/oauth-keys
-        # OAuth consumers are NOT provisioned on deploy (BB-111): re-provisioning
-        # silently invalidated a working developer secret. They are seeded once by
-        # the install service (create-only) and managed via the consumers UI.
       '
     networks:
       - internal
@@ -112,9 +103,9 @@ services:
   # site:install DROPS and recreates the database — that is exactly why installing is a
   # separate, deliberate action and not wired into the auto deploy.
   #  INSTALL: site:install --existing-config (installs FROM config/sync, adopting the
-  #           config UUID so a later deploy config:import passes the UUID check), then the
-  #           optional content recipe (team users etc.), then deploy:hook, then the shared
-  #           OAuth tail.
+  #           config UUID so a later deploy config:import passes the UUID check), then
+  #           deploy:hook, then the OAuth keys. The public `bakers-cli` consumer comes with
+  #           the install; the first admin signs in once with `drush uli`.
   install:
     image: "${REGISTRY_IMAGE_PHP}"
     profiles: [install]
@@ -133,18 +124,6 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
-      # Content recipe applied after site:install (seeds team users etc.). Empty on prod.
-      DEPLOY_CONTENT_RECIPE: ${DEPLOY_CONTENT_RECIPE:-}
-      BB_GITLAB_TOKEN_KEYTEC: ${BB_GITLAB_TOKEN_KEYTEC:-}
-      BB_CONSUMER_SECRET_CW: ${BB_CONSUMER_SECRET_CW:-}
-      BB_CONSUMER_SECRET_PK: ${BB_CONSUMER_SECRET_PK:-}
-      BB_CONSUMER_SECRET_RS: ${BB_CONSUMER_SECRET_RS:-}
-      BB_CONSUMER_SECRET_PM: ${BB_CONSUMER_SECRET_PM:-}
-      BB_CONSUMER_SECRET_DS: ${BB_CONSUMER_SECRET_DS:-}
-      BB_CONSUMER_SECRET_MZ: ${BB_CONSUMER_SECRET_MZ:-}
-      BB_CONSUMER_SECRET_TM: ${BB_CONSUMER_SECRET_TM:-}
-      BB_CONSUMER_SECRET_PG: ${BB_CONSUMER_SECRET_PG:-}
-      BB_CONSUMER_SECRET_MS: ${BB_CONSUMER_SECRET_MS:-}
       BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
       BB_OAUTH_GOOGLE_CLIENT_SECRET: ${BB_OAUTH_GOOGLE_CLIENT_SECRET:-}
     volumes:
@@ -158,16 +137,10 @@ services:
         DRUSH=/var/www/html/vendor/bin/drush
         echo "[install] site:install --existing-config (DROPS + recreates the DB)"
         $$DRUSH -y site:install --existing-config
-        if [ -n "$${DEPLOY_CONTENT_RECIPE:-}" ]; then
-          echo "[install] content recipe: $${DEPLOY_CONTENT_RECIPE}"
-          $$DRUSH -y recipe "$${DEPLOY_CONTENT_RECIPE}"
-        fi
         $$DRUSH -y deploy:hook
         echo "[install] OAuth keys"
         mkdir -p /var/www/oauth-keys
         [ -f /var/www/oauth-keys/private.key ] || $$DRUSH simple-oauth:generate-keys /var/www/oauth-keys
-        echo "[install] seed oauth transport consumers (create-only, one-time bootstrap)"
-        $$DRUSH php:script /var/www/html/scripts/deploy/ensure-oauth.php
       '
     networks:
       - internal
@@ -198,7 +171,6 @@ services:
       DRUPAL_VERSION: "11"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
-      BB_GITLAB_TOKEN_KEYTEC: ${BB_GITLAB_TOKEN_KEYTEC:-}
       # Outbound SMTP: settings.komodo.php reads these at runtime (getenv). The
       # values are per-stack Komodo variables declared in komodo/bakers.toml; the
       # stack .env carries them, but Drupal only sees them if the runtime
@@ -239,15 +211,14 @@ services:
       - public_files:/var/www/html/web/sites/default/files
     # Ingress (router labels + the public-facing network) is NOT declared here:
     # it differs per host. Each environment layers exactly one ingress overlay via
-    # the Komodo stack's file_paths — docker-compose.traefik.yml (Traefik hosts,
-    # e.g. dev2) or docker-compose.caddy.yml (caddy-docker-proxy hosts, e.g. the
-    # coder/komodo control host). The base stays ingress-agnostic.
+    # the Komodo stack's file_paths — docker-compose.traefik.yml on dev2 and the
+    # prod server. The base stays ingress-agnostic.
     networks:
       - internal
 
   # MCP connector for Claude (BB-658 Task 3). Hosts the upstream
   # @dropsh/plugin-mcp Streamable HTTP server. No host port here: ingress
-  # (Traefik/Caddy overlay) is the only thing that reaches it, exactly like
+  # (Traefik overlay) is the only thing that reaches it, exactly like
   # nginx above. See docker/mcp/README.md for why this image runs two
   # processes (the MCP process binds loopback-only; nginx in the same
   # container proxies it out) and for the entity/operation policy's known gap.
@@ -314,5 +285,5 @@ volumes:
 
 networks:
   internal:
-  # The public-facing ingress network (traefik_proxy / caddy_net) is declared by
+  # The public-facing ingress network (traefik_proxy) is declared by
   # the per-environment ingress overlay, not here — see the nginx service note.

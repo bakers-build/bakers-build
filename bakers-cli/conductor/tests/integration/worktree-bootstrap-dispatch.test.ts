@@ -55,7 +55,7 @@ let server: IsolatedHerdr;
 const SENTINEL = '.bakers/.worktree-post-done';
 const LOCAL_CONFIG = '.bakers/conductor.config.local.js';
 const WORKTREE_URL = 'https://bb-237-int.ddev.site';
-const PARENT_URL = 'https://bakers-develop.dev2.keytec.de';
+const PARENT_URL = 'https://develop.dev.bakers.build';
 
 /** Walks up to the repo root (the dir holding WORKFLOW.md) — the real script. */
 function repoRoot(): string {

@@ -331,7 +331,7 @@ normalize_url() {
 # Is this URL's HOST a local DDEV site? The single gate between a test harness and
 # a real control plane, so it parses rather than pattern-matches: a glob over the
 # whole URL (`http://*.ddev.site`) admits
-# `http://bakers-develop.dev2.keytec.de/x.ddev.site`, because `*` matches `/` too.
+# `http://develop.dev.bakers.build/x.ddev.site`, because `*` matches `/` too.
 # So the host is cut out first — path, query, fragment and port removed — and
 # userinfo is refused outright rather than parsed, since `ddev describe` never
 # produces it and `http://x.ddev.site@remote.example.com` is the classic spoof.

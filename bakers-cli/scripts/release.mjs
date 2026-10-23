@@ -19,6 +19,10 @@
 //
 // Version precedence: positional arg → BB_PUBLISH_VERSION → dev version
 // (unless --require-version, which drops the dev fallback).
+//
+// `--tag <dist-tag>` publishes under that npm dist-tag instead of `latest`. CI's develop
+// job runs `release:semver <x.y.z>-next.<iid> --tag next`, so a test build never moves
+// `latest`; only the version-tag job publishes `latest`.
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -32,8 +36,16 @@ import {
 
 const args = process.argv.slice(2);
 const requireVersion = args.includes('--require-version');
+const tagIndex = args.indexOf('--tag');
+const distTag = tagIndex === -1 ? 'latest' : args[tagIndex + 1];
+if (!distTag || distTag.startsWith('--')) {
+  throw new Error('release: --tag needs a dist-tag name, e.g. `--tag next`');
+}
 const explicit =
-  args.find((a) => !a.startsWith('--')) ?? process.env.BB_PUBLISH_VERSION;
+  args.find(
+    (a, i) => !a.startsWith('--') && (tagIndex === -1 || i !== tagIndex + 1),
+  ) ??
+  process.env.BB_PUBLISH_VERSION;
 
 if (requireVersion && !explicit) {
   throw new Error(
@@ -52,8 +64,12 @@ for (const { dir } of TARGETS) {
   if (!existsSync(resolve(cwd, 'package.json'))) {
     throw new Error(`release: ${dir}/publish was not staged`);
   }
-  console.log(`release: npm publish ${dir}@${version}`);
+  console.log(`release: npm publish ${dir}@${version} --tag ${distTag}`);
   // shell:true so npm resolves via PATH (and npm.cmd on Windows) regardless of
   // how the parent process was launched.
-  execFileSync('npm', ['publish'], { cwd, stdio: 'inherit', shell: true });
+  execFileSync('npm', ['publish', '--tag', distTag], {
+    cwd,
+    stdio: 'inherit',
+    shell: true,
+  });
 }

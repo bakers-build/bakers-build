@@ -752,11 +752,14 @@ config_install:
       - ddev-db-config-install.log
 
 # --- Deploy (recipe: komodo, Resource-Sync model) ---
-# build:  docker build php+nginx -> push GitLab registry as :<branch>.
-# deploy: keytec-ai deployer deploy -> DeployStack + poll (fixed branches only).
+# build:  docker build php+nginx+mcp -> push GitLab registry as :<branch> (what the stacks
+#         pull) and :<commit-sha> (rollback: point the stack's REGISTRY_IMAGE_* at it).
+# deploy: keytec-ai deployer deploy -> DeployStack + poll (fixed branches only), then
+#         scripts/deploy/deploy-report.mjs prints the server's `deploy` service log and
+#         exit state and smoke-checks the host.
 # Stacks are declared in git (komodo/*.toml) and created by a Komodo Resource Sync.
-# Required CI/CD variables (group, masked): KOMODO_API_KEY, KOMODO_API_SECRET,
-#   and a group DOCKER_AUTH_CONFIG so runners can pull the private keytec-ai image.
+# Required CI/CD variables (project, masked): KOMODO_URL, KOMODO_API_KEY,
+#   KOMODO_API_SECRET; NPM_TOKEN for the publish jobs.
 build:
   stage: build
   # runner1 mounts the host Docker socket centrally for its jobs.
@@ -767,8 +770,8 @@ build:
   # functional suite, so it runs as soon as the commit lands rather than waiting on
   # (or being blocked by) the e2e stage.
   needs: []
-  # Serialize build+deploy per branch: the image tag is the moving `:<branch>` (no
-  # per-commit SHA), so parallel pushes would clobber it out of order and parallel
+  # Serialize build+deploy per branch: the stacks pull the moving `:<branch>` tag,
+  # so parallel pushes would clobber it out of order and parallel
   # deploys would interleave image↔DB state. Per-branch group (develop_deploy /
   # main_deploy) so develop and prod never block each other. One at a time, in order.
   resource_group: ${CI_COMMIT_REF_SLUG}_deploy
@@ -784,6 +787,12 @@ build:
     - docker push "$CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG"
     - docker push "$CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG"
     - docker push "$CI_REGISTRY_IMAGE/mcp:$CI_COMMIT_REF_SLUG"
+    # Per-commit tags for rollback; the job log names the deployed SHA.
+    - |
+      for image in php nginx mcp; do
+        docker tag "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_REF_SLUG" "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA"
+        docker push "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA"
+      done
   # develop -> dev2 (bakers-develop), main -> prod (bakers-prod). Both build + deploy.
   # $CI_PIPELINE_SOURCE != "schedule" excludes a schedule pointed at develop/main
   # (e.g. andock:cleanup's schedule briefly was, mid-review): GitLab sets
@@ -795,7 +804,7 @@ build:
 
 # Publish the conductor CLI to public npm as @bakers-build/bakers. Triggered ONLY by a
 # semver git tag (v*.*.*). The published version is the tag. Requires a masked
-# NPM_TOKEN CI/CD variable with publish rights to the @bakers-ai scope.
+# NPM_TOKEN CI/CD variable with publish rights to the npm org bakers-build.
 publish:npm:
   stage: publish
   image: node:22
@@ -857,17 +866,87 @@ deploy:
   # interruptible: a deploy in flight must finish (killing it mid-DeployStack leaves a
   # half-applied stack). keytec-ai deployer resolves the stack from the current branch
   # (develop -> bakers-develop, main -> bakers-prod) via komodo/bakers.toml.
+  # KOMODO_URL is a project CI/CD variable.
   resource_group: ${CI_COMMIT_REF_SLUG}_deploy
   interruptible: false
-  variables:
-    KOMODO_URL: "https://komodo.keytec.de"
   before_script: []
+  # The report runs even when the deploy call failed, so the job log always carries the
+  # server's own `deploy` output; either failure fails the job.
   script:
-    - npx -y -p keytec-ai-cli@0.4.0 keytec-ai deployer deploy
+    - |
+      status=0
+      npx -y -p keytec-ai-cli@0.4.0 keytec-ai deployer deploy || status=$?
+      node scripts/deploy/deploy-report.mjs "$DEPLOY_STACK" "$DEPLOY_URL" || status=1
+      exit $status
   # See the same guard on the build job above: excludes a schedule misdirected
   # at develop/main from triggering a real Komodo deploy.
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
+      variables:
+        DEPLOY_STACK: bakers-develop
+        DEPLOY_URL: https://develop.dev.bakers.build
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
+      variables:
+        DEPLOY_STACK: bakers-prod
+        DEPLOY_URL: https://app.bakers.build
+
+# Test build of the CLI for every develop deploy: the whole set under dist-tag `next`, at
+# <next patch after the latest v-tag>-next.<pipeline iid> (0.1.0-next.<iid> before the
+# first release), so `npm i -g @bakers-build/bakers@next` matches the commit on dev.
+# `latest` moves only through publish:npm on a version tag.
+publish:npm:next:
+  extends: publish:npm
+  needs:
+    - deploy
+  variables:
+    # The version derives from the release tags, which a shallow clone may miss.
+    GIT_DEPTH: "0"
+  # npm points `latest` at a package's very first publish whatever the dist-tag; before
+  # v0.1.0 nobody installs `latest`, and the first release moves it to 0.1.0.
+  script:
+    - cd bakers-cli
+    - pnpm install --frozen-lockfile
+    - pnpm run build:all
+    - pnpm run verify:package
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+    - |
+      last=$(git tag -l 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+      base=$( [ -n "$last" ] && echo "${last#v}" | awk -F. '{print $1"."$2"."$3+1}' || echo 0.1.0 )
+      pnpm run release:semver "${base}-next.${CI_PIPELINE_IID}" --tag next
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
+
+# Release on a main push after prod deployed: the top `## <version>` of CHANGELOG.md
+# (merged into develop beforehand as a normal MR) becomes tag v<version> and a GitLab
+# release carrying that entry; the tag pipeline then runs publish:npm (`latest`). A main
+# push whose CHANGELOG version is already tagged releases nothing. glab is the tool behind
+# GitLab's `release:` keyword, called directly because the keyword cannot be skipped.
+release:
+  stage: publish
+  image:
+    name: registry.gitlab.com/gitlab-org/cli:v1.123.0
+    entrypoint: [""]
+  tags:
+    - parallel
+  needs:
+    - deploy
+  interruptible: false
+  variables:
+    GIT_DEPTH: "0"
+    GLAB_ENABLE_CI_AUTOLOGIN: "true"
+  before_script: []
+  script:
+    - |
+      version=$(sed -n 's/^## \([0-9][0-9.]*\) .*/\1/p' CHANGELOG.md | head -1)
+      [ -n "$version" ] || { echo "CHANGELOG.md names no version"; exit 1; }
+      if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+        echo "v$version is already released; nothing to do."
+        exit 0
+      fi
+      awk -v v="$version" '/^## /{if(f)exit; if(index($0,"## " v " ")==1)f=1; next} f' CHANGELOG.md > release-notes.md
+      cat release-notes.md
+      glab release create "v$version" --ref "$CI_COMMIT_SHA" --name "v$version" --notes-file release-notes.md
+  rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
 
 # GitLab Pages: publish the VitePress docs site in /website.

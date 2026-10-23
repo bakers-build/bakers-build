@@ -1,5 +1,5 @@
 // Canonical conductor config for the bakers repo itself (dogfood). Targets the
-// deployed develop control-plane (bakers-develop.dev2.keytec.de). Auth is OAuth2
+// deployed develop control-plane (develop.dev.bakers.build). Auth is OAuth2
 // client_credentials against simple_oauth (consumer `bakers-agent`), exposed as
 // ONE default provider named `bakers` on ONE scope (`bb:session`) — see the
 // sibling bakers.config.js. BB-391 retired the two named profiles that used to

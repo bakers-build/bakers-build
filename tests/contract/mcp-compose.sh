@@ -4,14 +4,17 @@
 #
 #   bash tests/contract/mcp-compose.sh
 #
-# Renders docker-compose.yml + each ingress overlay with dummy environment
-# values (`docker compose config`, no real secrets, nothing started) and
-# asserts:
+# Renders docker-compose.yml + the Traefik ingress overlay with dummy
+# environment values (`docker compose config`, no real secrets, nothing
+# started) and asserts:
 #   - the mcp service is present
 #   - no plaintext secret leaks into the rendered output
 #   - the mcp service exposes no host port (ingress-only, like nginx)
 #   - the `install` profile (site:install, DROPS the DB) is not active on a
 #     normal render
+#   - Traefik is the only ingress overlay, and no removed keytec variable
+#     (content recipe, per-user consumer secrets, GitLab token) renders
+#   - `/oauth/register` is rate-limited in the baked nginx config
 #
 # The entity/operation allowlist itself lives in docker/mcp/dropsh.config.js,
 # baked into the image — see docker/mcp/README.md for why it is a documented
@@ -41,7 +44,15 @@ render() {
     docker compose -f docker-compose.yml -f "$overlay" config
 }
 
-for overlay in docker-compose.traefik.yml docker-compose.caddy.yml; do
+# Both stacks use the same Traefik overlay; a second ingress overlay is drift.
+overlays="$(ls docker-compose.*.yml)"
+[ "$overlays" = "docker-compose.traefik.yml" ] \
+  || fail "expected docker-compose.traefik.yml as the only ingress overlay, found: $overlays"
+grep -q 'docker-compose.traefik.yml' komodo/bakers.toml \
+  && ! grep -qE 'docker-compose\.[a-z]+\.yml' <(grep -v traefik komodo/bakers.toml) \
+  || fail "komodo/bakers.toml names an ingress overlay other than Traefik"
+
+for overlay in docker-compose.traefik.yml; do
   out="$(render "$overlay")"
 
   echo "$out" | grep -q '^  mcp:' \
@@ -69,8 +80,25 @@ for overlay in docker-compose.traefik.yml docker-compose.caddy.yml; do
   echo "$nginx_block" | grep -q 'NGINX_SERVER_EXTRA_CONF_FILEPATH: /etc/nginx/oauth-discovery.conf' \
     || fail "$overlay: nginx service is missing NGINX_SERVER_EXTRA_CONF_FILEPATH for OAuth discovery"
 
+  # Removed keytec leftovers must not come back through compose or the stacks.
+  removed='DEPLOY_CONTENT_RECIPE|BB_CONSUMER_SECRET_|BB_GITLAB_TOKEN_KEYTEC|ensure-oauth'
+  if echo "$out" | grep -E "$removed" || grep -E "$removed" komodo/bakers.toml; then
+    fail "$overlay: a removed variable or the consumer seed is still wired"
+  fi
+
   pass "$overlay renders mcp service with no host port and no leaked secret"
 done
+
+# Open dynamic client registration is rate-limited: the http-level zone is baked
+# into conf.d (Wodby includes conf.d/*.conf in http{}), the server-level extra conf
+# applies it to the exact /oauth/register location.
+grep -q 'COPY .*docker/nginx/oauth-register-zone.conf /etc/nginx/conf.d/' Dockerfile \
+  || fail "Dockerfile does not bake the /oauth/register limit zone into nginx conf.d"
+grep -q 'limit_req_zone .*zone=oauth_register:' docker/nginx/oauth-register-zone.conf \
+  || fail "oauth-register-zone.conf defines no oauth_register zone"
+awk '/location = \/oauth\/register/{f=1} f' docker/nginx/oauth-discovery.conf | grep -q 'limit_req zone=oauth_register' \
+  || fail "/oauth/register is not rate-limited in docker/nginx/oauth-discovery.conf"
+pass "/oauth/register rate limit wired"
 
 # The extra conf must parse in the pinned Wodby nginx (a syntax error is a full outage).
 # Skipped when docker or the image is unavailable locally.
@@ -79,9 +107,10 @@ if [ -n "$nginx_image" ] && docker image inspect "$nginx_image" >/dev/null 2>&1;
   docker run --rm --user root --add-host php:127.0.0.1 -e NGINX_BACKEND_HOST=php -e NGINX_VHOST_PRESET=drupal10 \
     -e NGINX_SERVER_EXTRA_CONF_FILEPATH=/etc/nginx/oauth-discovery.conf \
     -v "$PWD/docker/nginx/oauth-discovery.conf:/etc/nginx/oauth-discovery.conf:ro" \
+    -v "$PWD/docker/nginx/oauth-register-zone.conf:/etc/nginx/conf.d/oauth-register-zone.conf:ro" \
     "$nginx_image" nginx -t >/dev/null 2>&1 \
     && pass "nginx extra conf parses ($nginx_image)" \
-    || fail "nginx -t failed for docker/nginx/oauth-discovery.conf"
+    || fail "nginx -t failed for docker/nginx/oauth-discovery.conf + oauth-register-zone.conf"
 fi
 
 pass "mcp-compose.sh"
