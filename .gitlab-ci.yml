@@ -939,7 +939,8 @@ release:
   before_script: []
   script:
     - |
-      version=$(sed -n 's/^## \([0-9][0-9.]*\) .*/\1/p' CHANGELOG.md | head -1)
+      # No pipe: with pipefail, `sed | head -1` dies of SIGPIPE once CHANGELOG.md holds two versions.
+      version=$(awk '/^## [0-9]/ { print $2; exit }' CHANGELOG.md)
       [ -n "$version" ] || { echo "CHANGELOG.md names no version"; exit 1; }
       if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
         echo "v$version is already released; nothing to do."
