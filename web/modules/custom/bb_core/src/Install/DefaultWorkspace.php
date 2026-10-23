@@ -38,10 +38,9 @@ final class DefaultWorkspace {
       return $workspace;
     }
 
-    $name = (string) \Drupal::config('system.site')->get('name');
     $workspace = $storage->create([
       'uuid' => BbWorkspace::DEFAULT_UUID,
-      'name' => $name !== '' ? $name : BbWorkspace::DEFAULT_NAME_FALLBACK,
+      'name' => BbWorkspace::DEFAULT_NAME,
       'slug' => BbWorkspace::DEFAULT_SLUG,
       'owner_user_id' => 1,
     ]);
