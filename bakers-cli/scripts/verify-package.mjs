@@ -311,7 +311,7 @@ console.log(m[1]);
       const promptFile = resolve(
         proj,
         'node_modules',
-        '@bakers-ai',
+        '@bakers-build',
         'conductor',
         'dist',
         'src',
@@ -662,7 +662,7 @@ console.log(m[1]);
       fail('addon-form config resolution check failed');
     }
     if (
-      !/drupal remote resolves from @bakers-ai\/addon-remote-drupal/.test(out)
+      !/drupal remote resolves from @bakers-build\/addon-remote-drupal/.test(out)
     ) {
       fail(
         'the drupal remote did not resolve from @bakers-build/addon-remote-drupal',

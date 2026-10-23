@@ -61,12 +61,9 @@ Plugin authors can build against the API surface at `@bakers-build/bakers/plugin
 
 ## Releasing (maintainers)
 
-Publishing is automated: push a git tag matching `v*.*.*` on `main` and CI runs
-the `publish` job (`npm publish --access public`). The published version is the
-tag. Requirements:
-
-- an `NPM_TOKEN` masked CI/CD variable with publish rights to the `@bakers-ai` scope;
-- the `@bakers-ai` npm org/scope claimed (fallback `@bakers-build/bakers-build`).
+Publishing is automated: a `v*.*.*` tag publishes `latest`, and every develop
+deploy publishes a test build under `next`. Both need an `NPM_TOKEN` CI/CD
+variable (masked, protected) with publish rights to the `@bakers-build` scope.
 
 To reproduce the published artifact locally:
 
