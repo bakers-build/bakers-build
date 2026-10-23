@@ -48,7 +48,16 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
    bakers config check --scope connection --online
    ```
 
-   The default server is `https://app.bakers.build`; enter your team's URL if it runs its own. Details are in [Install the CLI](/advanced/cli/install).
+   `bakers init` asks four questions:
+
+   | Prompt | Answer |
+   |---|---|
+   | Machine identity | a name for this computer; the suggestion is fine |
+   | Local operator identifier | your short handle, for example `cw`; there is no default |
+   | Server base URL | keep `https://app.bakers.build`, or enter your team's URL if it runs its own |
+   | OAuth client identifier | keep `bakers-cli` |
+
+   It ends with `Offline: passed`. `bakers dropsh auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/advanced/cli/install).
 
 4. **Connect each project and register its oven.** In the project checkout:
 
