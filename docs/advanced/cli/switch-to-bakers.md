@@ -2,7 +2,12 @@
 
 bakers.build is driven by the `bakers` command from `@bakers-build/bakers`. The older `gaia` command from `@gaia-ai/gaia` does not work against a bakers.build server, and `bakers` reads none of its files. This page moves one machine from `gaia` to `bakers`.
 
-**You need:** [Node.js ≥ 20.19 with npm](/advanced/cli/node) and your team's bakers.build server URL.
+**You need:** [Node.js ≥ 20.19 with npm](/advanced/cli/node) and your team's bakers.build server URL, `https://app.bakers.build` unless your team runs its own.
+
+## Before you switch
+
+- **The new server starts empty.** Nothing is carried over from GAIA: no tickets, projects, workspaces or accounts. The first admin creates the workspace and invites you; you need that invitation before step 3 works.
+- **From the switch on, create tickets only in bakers.build.** The old system takes no new tickets. Finish or move open work by hand.
 
 ## What changes
 
@@ -55,6 +60,17 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
    `bakers oven once` registers the oven for this checkout and runs one cycle. Start it for good with `bakers oven start`. See [Connect a project by hand](/advanced/cli/connect-a-project) and [bakers oven](/advanced/cli/conductor).
 
 5. **Clean up.** Once `bakers oven status` shows the new oven, delete the old `~/.gaia` directory and each checkout's `.gaia` and `.gaia-worktrees`. Nothing reads them any more.
+
+## Try it on dev first
+
+The dev server `https://develop.dev.bakers.build` runs the latest `develop`. Every deploy there publishes a matching CLI under the npm dist-tag `next`:
+
+```sh
+npm install -g @bakers-build/bakers@next
+bakers init --base-url https://develop.dev.bakers.build
+```
+
+Data on dev is for testing and can be reset. Switch back to the release with `npm install -g @bakers-build/bakers@latest` and `bakers init` against your real server.
 
 ## Why the old client stops with an error
 

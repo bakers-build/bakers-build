@@ -48,7 +48,7 @@ afterEach(() => {
 /** A parent config whose exported object ends `,\n};\n` — the real shape. */
 const PARENT_CONFIG = `export default {
   machine_id: 'cw-framework',
-  base_url: 'https://bakers-develop.dev2.keytec.de',
+  base_url: 'https://develop.dev.bakers.build',
   oauth: {
     client_id: 'bakers-cw',
   },
@@ -138,7 +138,7 @@ describe('BB-237 worktree bootstrap completes (.ddev/worktree-post.sh)', () => {
     expect(
       copied.lastIndexOf('bb-237-fixture.ddev.site'),
       'the worktree URL must be the LAST base_url so it wins',
-    ).toBeGreaterThan(copied.lastIndexOf('bakers-develop.dev2.keytec.de'));
+    ).toBeGreaterThan(copied.lastIndexOf('develop.dev.bakers.build'));
   });
 
   it('is a cheap no-op on a second run: the sentinel short-circuits it', () => {
@@ -190,7 +190,7 @@ describe('BB-237 worktree bootstrap completes (.ddev/worktree-post.sh)', () => {
     expect(
       repaired.lastIndexOf('bb-237-fixture.ddev.site'),
       'the worktree URL must be the LAST base_url so it wins',
-    ).toBeGreaterThan(repaired.lastIndexOf('bakers-develop.dev2.keytec.de'));
+    ).toBeGreaterThan(repaired.lastIndexOf('develop.dev.bakers.build'));
     expect(repaired.trimEnd().endsWith('};')).toBe(true);
   });
 

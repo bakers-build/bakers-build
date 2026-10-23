@@ -76,3 +76,5 @@ USER root
 COPY --chown=root --from=php /var/www/html /var/www/html
 # BB-688: route /.well-known/oauth-* to Drupal (NGINX_SERVER_EXTRA_CONF_FILEPATH below).
 COPY --chown=root docker/nginx/oauth-discovery.conf /etc/nginx/oauth-discovery.conf
+# http-level rate-limit zone for /oauth/register (applied in oauth-discovery.conf).
+COPY --chown=root docker/nginx/oauth-register-zone.conf /etc/nginx/conf.d/oauth-register-zone.conf

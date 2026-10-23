@@ -11,7 +11,7 @@ import { toResource } from './test-support.js';
 const TICKET = 'ffffffff-0000-0000-0000-000000000001';
 const PROJECT = 'ffffffff-0000-0000-0000-000000000002';
 const RUN = 'ffffffff-0000-0000-0000-000000000003';
-const BASE = 'https://bakers-develop.dev2.keytec.de';
+const BASE = 'https://develop.dev.bakers.build';
 
 /** A client whose `get`/`collection` are driven by explicit fixtures. */
 function fakeClient(over: {

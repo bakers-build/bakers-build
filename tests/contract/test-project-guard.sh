@@ -119,7 +119,7 @@ trap 'rm -rf "${STUB_DIR}"' EXIT
 cat >"${STUB_DIR}/ddev" <<'STUB'
 #!/usr/bin/env bash
 if [ "$1" = 'describe' ]; then
-  echo '{"raw":{"name":"stub","status":"running","httpurl":"https://bakers-develop.dev2.keytec.de"}}'
+  echo '{"raw":{"name":"stub","status":"running","httpurl":"https://develop.dev.bakers.build"}}'
   exit 0
 fi
 echo "STUB-VIOLATION: 'ddev $*' was called after the guard should have refused" >&2
@@ -135,7 +135,7 @@ fi
 if grep -q 'STUB-VIOLATION' <<<"${guard_out}"; then
   fail "setup called ddev again after the guard should have refused"
 fi
-grep -q 'bakers-develop.dev2.keytec.de' <<<"${guard_out}" \
+grep -q 'develop.dev.bakers.build' <<<"${guard_out}" \
   || fail "the refusal does not name the resolved control plane"
 grep -q 'No entity was created' <<<"${guard_out}" \
   || fail "the refusal does not state that no entity was created"
@@ -143,7 +143,7 @@ grep -q 'No entity was created' <<<"${guard_out}" \
 # And the counter-direction, so the guard cannot be a blanket refusal: a local DDEV
 # host must get PAST it. The stub then blocks the next ddev call, which is the proof
 # the guard let the run continue.
-sed -i 's|https://bakers-develop.dev2.keytec.de|https://stub.ddev.site|' "${STUB_DIR}/ddev"
+sed -i 's|https://develop.dev.bakers.build|https://stub.ddev.site|' "${STUB_DIR}/ddev"
 local_out="$(cd "$ROOT" && PATH="${STUB_DIR}:$PATH" bash scripts/setup-test-project.sh 2>&1 || true)"
 grep -q 'http://stub.ddev.site' <<<"${local_out}" \
   || fail "setup refused a local .ddev.site control plane, which the guard must allow"
@@ -164,9 +164,9 @@ for ok_url in \
     || fail "is_local_ddev_host rejected the local DDEV URL '${ok_url}'"
 done
 for bad_url in \
-  'http://bakers-develop.dev2.keytec.de' \
-  'http://bakers-develop.dev2.keytec.de/x.ddev.site' \
-  'http://bakers-develop.dev2.keytec.de/?x=.ddev.site' \
+  'http://develop.dev.bakers.build' \
+  'http://develop.dev.bakers.build/x.ddev.site' \
+  'http://develop.dev.bakers.build/?x=.ddev.site' \
   'http://evil.ddev.site.example.com' \
   'http://user@evil.example.com' \
   ''; do

@@ -81,7 +81,7 @@ final class BbEnvironmentTest extends KernelTestBase {
 
     $env = BbEnvironment::create([
       'name' => 'dev2',
-      'base_url' => 'https://bakers-develop.dev2.keytec.de',
+      'base_url' => 'https://develop.dev.bakers.build',
       'tier' => 'development',
       'project_id' => $project->id(),
     ]);
@@ -91,7 +91,7 @@ final class BbEnvironmentTest extends KernelTestBase {
     $this->assertInstanceOf(BbEnvironmentInterface::class, $loaded);
     $this->assertSame('dev2', $loaded->getName());
     $this->assertSame('dev2', $loaded->label());
-    $this->assertSame('https://bakers-develop.dev2.keytec.de', $loaded->getBaseUrl());
+    $this->assertSame('https://develop.dev.bakers.build', $loaded->getBaseUrl());
     $this->assertSame('development', $loaded->getTier());
     $this->assertSame((int) $project->id(), (int) $loaded->getProject()->id());
   }
