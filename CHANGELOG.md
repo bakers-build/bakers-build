@@ -2,6 +2,20 @@
 
 One version covers the CLI (`@bakers-build/bakers`) and the server.
 
+## 0.1.1 — 2026-10-23
+
+The first version on npm: `0.1.0` was tagged but its npm publish failed, so `@bakers-build/bakers@latest` starts at `0.1.1`.
+
+### CLI
+
+No changes.
+
+### Server
+
+#### Fixes
+
+- Install the skill-eval packages before the release test run (!10)
+
 ## 0.1.0 — 2026-10-23
 
 ### CLI

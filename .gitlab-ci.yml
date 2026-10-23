@@ -818,9 +818,10 @@ publish:npm:
     PNPM_CONFIG_MINIMUM_RELEASE_AGE: "0"
     PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
   before_script:
-    # `pnpm run test` runs conductor/tests/cli/teardown-test-project.test.ts, which shells out to
-    # `jq`; the node:22 image ships none (the conductor test job installs it for the same reason).
-    - apt-get update && apt-get install -y --no-install-recommends jq
+    # `pnpm run test` needs what the conductor test job installs: `jq` and `python3` for the
+    # shell-out tests, and tests/skill-eval's packages (promptfoo) for the skill-eval replays.
+    - apt-get update && apt-get install -y --no-install-recommends jq python3
+    - npm ci --prefix tests/skill-eval --no-audit --no-fund
     - corepack enable pnpm
   script:
     - cd bakers-cli
