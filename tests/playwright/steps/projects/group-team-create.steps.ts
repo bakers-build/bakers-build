@@ -15,8 +15,10 @@ function context(page: Page): Context {
   if (!value) throw new Error('Open a shared create action first.');
   return value;
 }
-function rows(type: Subject, workspace: string): Array<{ name: string; owner: string; workspace: string }> {
-  return JSON.parse(php(`$s = \\Drupal::entityTypeManager()->getStorage("bb_${type}"); $w = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "${workspace}"])); $rows = []; foreach ($s->loadByProperties(["workspace_id" => $w->id()]) as $e) { $rows[] = ["name" => $e->label(), "owner" => (string) $e->get("owner_user_id")->target_id, "workspace" => $e->get("workspace_id")->entity->getSlug()]; } print json_encode($rows);`));
+// Scoped to one owner: the workspace is shared with every other scenario, so
+// only the rows this scenario's actor owns can be counted without racing them.
+function rows(type: Subject, workspace: string, owner: string): Array<{ name: string; owner: string; workspace: string }> {
+  return (JSON.parse(php(`$s = \\Drupal::entityTypeManager()->getStorage("bb_${type}"); $w = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "${workspace}"])); $rows = []; foreach ($s->loadByProperties(["workspace_id" => $w->id()]) as $e) { $rows[] = ["name" => $e->label(), "owner" => (string) $e->get("owner_user_id")->target_id, "workspace" => $e->get("workspace_id")->entity->getSlug()]; } print json_encode($rows);`)) as Array<{ name: string; owner: string; workspace: string }>).filter(row => row.owner === owner);
 }
 async function open(page: Page): Promise<void> {
   const state = context(page);
@@ -34,10 +36,10 @@ function listingPath(type: Subject, workspace: string): string {
 
 When('I open the {string} creation action in {string}', async ({ page }, type: Subject, workspace: string) => {
   expect(['group', 'team']).toContain(type);
-  expect(['create-a', 'create-b']).toContain(workspace);
+  expect(['bakers', 'other']).toContain(workspace);
   expect((await page.goto(listingPath(type, workspace)))?.status()).toBe(200);
   const owner = await page.evaluate(() => String((window as any).drupalSettings.user.uid));
-  contexts.set(page, { type, workspace, owner, initial: rows(type, workspace).length, names: [] });
+  contexts.set(page, { type, workspace, owner, initial: rows(type, workspace, owner).length, names: [] });
   await open(page);
 });
 // A group offers Name, Description and Image; a team offers Name alone.
@@ -91,11 +93,11 @@ When('I create two {string} entries through the shared dialog', async ({ page },
 });
 Then('the created entries have the current owner and workspace', async ({ page }) => {
   const state = context(page);
-  const stored = rows(state.type, state.workspace);
+  const stored = rows(state.type, state.workspace, state.owner);
   expect(stored).toHaveLength(state.initial + state.names.length);
   for (const name of state.names) {
     expect(stored.filter(row => row.name === name)).toEqual([{ name, owner: state.owner, workspace: state.workspace }]);
-    expect(rows(state.type, 'create-b').filter(row => row.name === name)).toHaveLength(0);
+    expect(rows(state.type, 'other', state.owner).filter(row => row.name === name)).toHaveLength(0);
   }
 });
 When('I submit invalid names and then a 255 character name', async ({ page }) => {
@@ -109,7 +111,7 @@ When('I submit invalid names and then a 255 character name', async ({ page }) =>
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page)).toContainText(value.length > 255 ? '255' : 'Enter a name.');
     await expect(nameField(page)).toHaveValue(value);
-    expect(rows(state.type, state.workspace)).toHaveLength(state.initial);
+    expect(rows(state.type, state.workspace, state.owner)).toHaveLength(state.initial);
   }
   const prefix = `Boundary ${Date.now()} `;
   await save(page, prefix + 'ä'.repeat(255 - prefix.length));
@@ -122,37 +124,38 @@ Then('cancel, close, and Escape each leave no new entry', async ({ page }) => {
     if (mode === 'close') await dialog(page).locator('[data-dialog-close]').click();
     if (mode === 'escape') await page.keyboard.press('Escape');
     await expect(dialog(page)).toHaveCount(0);
-    expect(rows(state.type, state.workspace)).toHaveLength(state.initial);
+    expect(rows(state.type, state.workspace, state.owner)).toHaveLength(state.initial);
     if (mode !== 'escape') await open(page);
   }
 });
 Then('both create actions and direct routes are denied in {string}', async ({ page }, workspace: string) => {
-  expect(workspace).toBe('create-a');
+  expect(workspace).toBe('bakers');
   expect((await page.goto(`/${workspace}/groups`))?.status()).toBe(200);
+  const owner = await page.evaluate(() => String((window as any).drupalSettings.user.uid));
   await expect(page.getByRole('link', { name: labels.group.title, exact: true })).toHaveCount(0);
   expect((await page.goto(`/${workspace}/projects`))?.status()).toBe(200);
   await expect(page.getByRole('link', { name: labels.team.title, exact: true })).toHaveCount(0);
   for (const type of ['group', 'team'] as const) {
-    const before = rows(type, workspace).length;
+    const before = rows(type, workspace, owner).length;
     for (const suffix of ['', '?_wrapper_format=island_dialog']) {
       const response = await page.request.get(`/${workspace}/${type}/create${suffix}`);
       expect(response.status()).toBe(403);
     }
     const response = await page.request.post(`/${workspace}/${type}/create`, { form: { 'name[0][value]': 'Forbidden', form_id: `bb_${type}_create_form` } });
     expect(response.status()).toBe(403);
-    expect(rows(type, workspace)).toHaveLength(before);
+    expect(rows(type, workspace, owner)).toHaveLength(before);
   }
 });
 Then('revoking the workspace lead rank prevents submission', async ({ page }) => {
   const state = context(page);
-  const mutate = (restore: boolean) => php(`$u = current(\\Drupal::entityTypeManager()->getStorage("user")->loadByProperties(["name" => "create-revocable"])); $w = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "create-a"])); $m = \\Drupal::service("og.membership_manager")->getMembership($w, $u); $r = \\Drupal::entityTypeManager()->getStorage("og_role")->load("bb_workspace-bb_workspace-lead"); $m->${restore ? 'addRole' : 'revokeRole'}($r)->save();`);
+  const mutate = (restore: boolean) => php(`$u = current(\\Drupal::entityTypeManager()->getStorage("user")->loadByProperties(["name" => "fixture-revocable"])); $w = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "bakers"])); $m = \\Drupal::service("og.membership_manager")->getMembership($w, $u); $r = \\Drupal::entityTypeManager()->getStorage("og_role")->load("bb_workspace-bb_workspace-lead"); $m->${restore ? 'addRole' : 'revokeRole'}($r)->save();`);
   await nameField(page).fill('Revoked creation');
   try {
     mutate(false);
     const response = page.waitForResponse(r => r.request().method() === 'POST' && r.url().includes(`/${state.type}/create`));
     await dialog(page).getByRole('button', { name: labels[state.type].submit, exact: true }).click();
     expect((await response).status()).toBe(403);
-    expect(rows(state.type, state.workspace)).toHaveLength(state.initial);
+    expect(rows(state.type, state.workspace, state.owner)).toHaveLength(state.initial);
   } finally {
     mutate(true);
   }

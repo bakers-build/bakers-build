@@ -1,0 +1,5 @@
+name: Example
+type: module
+description: Minimal custom module for keytec AI fixture tests.
+package: Keytec Test
+core_version_requirement: ^11

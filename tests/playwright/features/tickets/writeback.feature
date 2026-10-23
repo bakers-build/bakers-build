@@ -4,7 +4,7 @@ Feature: Ticket writeback through the JSON API
   boundaries remain enforced for real HTTP writes.
 
   Scenario: An allowed ticket transition survives a fresh read
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
       {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API workflow contract","workflow":"bb_bug"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
@@ -25,7 +25,7 @@ Feature: Ticket writeback through the JSON API
       """
 
   Scenario: An illegal transition is rejected without changing the stored state
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
       {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API invalid transition","workflow":"bb_bug"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
@@ -46,7 +46,7 @@ Feature: Ticket writeback through the JSON API
       """
 
   Scenario: A session actor cannot create a ticket in the foreign project
-    Given the API client is "api-session"
+    Given the API client is "fixture-api-session"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
       {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API forbidden create","workflow":"bb_feature"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.other}"}}}}}

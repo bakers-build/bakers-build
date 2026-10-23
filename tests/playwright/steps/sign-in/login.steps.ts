@@ -71,7 +71,7 @@ When('I open the landing route', async ({ page }) => {
  *
  * NOT `the browser uses recipe account`, and the difference is not stylistic:
  * that step resolves a uuid out of `contract-world.json`, which holds the
- * API-contract fixtures and none of the login accounts — `login-empty` and its
+ * API-contract fixtures and none of the login accounts — `no-bakery` and its
  * neighbours come from `recipes/bb_e2e/content/user/` and are addressed by
  * name. So this step looks the uid up by name and hands it to the same
  * uid-based provider every other suite uses.

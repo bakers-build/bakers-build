@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-session
+  - value: fixture-api-session
   mail:
-  - value: api-session@example.test
+  - value: fixture-api-session@example.test
   status:
   - value: true
   pass:

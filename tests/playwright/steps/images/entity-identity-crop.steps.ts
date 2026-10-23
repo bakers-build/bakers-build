@@ -18,8 +18,8 @@ const FIXTURES = join(__dirname, '..', '..', 'fixtures');
 /** Who creates each subject, where, and through which forms. */
 const SUBJECT = {
   project: { creator: 'admin', workspace: 'bakers', type: 'bb_project', create: 'dialog[data-dialog][open] form#bb-project-create-form', settings: 'form[id^="bb-project-settings-form"]' },
-  group: { creator: 'create-lead-b', workspace: 'create-b', type: 'bb_group', create: 'dialog[data-dialog][open] form#bb-group-create-form', settings: 'form[id^="bb-group-settings-form"]' },
-  workspace: { creator: 'create-lead-b', workspace: '', type: 'bb_workspace', create: 'form#bb-workspace-create-form', settings: 'form[id^="bb-workspace-settings-form"]' },
+  group: { creator: 'fixture-south-creator', workspace: 'other', type: 'bb_group', create: 'dialog[data-dialog][open] form#bb-group-create-form', settings: 'form[id^="bb-group-settings-form"]' },
+  workspace: { creator: 'fixture-south-creator', workspace: '', type: 'bb_workspace', create: 'form#bb-workspace-create-form', settings: 'form[id^="bb-workspace-settings-form"]' },
 } as const;
 
 /** The subject this scenario created; one scenario at a time per worker. */
@@ -93,7 +93,7 @@ async function enterIdentity(page: Page, description: string): Promise<void> {
   await field(page, 'name').fill(state.name);
   await field(page, 'description').fill(description);
   if (state.entity === 'project' && state.form === SUBJECT.project.create) {
-    await pick(page, 'Group', 'keytec');
+    await pick(page, 'Group', 'Bread');
     await pick(page, 'Teams', 'Platform Crew');
   }
 }

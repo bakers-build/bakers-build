@@ -12,7 +12,7 @@ Feature: A conductor owner edits and disables a conductor on its Overview
   afterwards.
 
   Scenario: The owner saves the label on the one card
-    Given I am logged in as the account "api-conductor-owner"
+    Given I am logged in as the account "fixture-conductor-owner"
     When I visit the fixture conductor "conductor.properties"
     Then there is no tab "Settings"
     And the first card is "Identity"
@@ -32,7 +32,7 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     And the fixture conductor "conductor.properties" serves the states "coding"
 
   Scenario: The owner disables and enables the conductor behind a confirmation
-    Given I am logged in as the account "api-conductor-owner"
+    Given I am logged in as the account "fixture-conductor-owner"
     When I visit the fixture conductor "conductor.properties"
     And I open "Disable conductor"
     Then a dialog asks "stops receiving new assignments"
@@ -46,7 +46,7 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     Then the fixture conductor "conductor.properties" is active
 
   Scenario: A peer reads the card and is refused the forms
-    Given I am logged in as the account "api-member"
+    Given I am logged in as the account "north-contributor"
     When I visit the fixture conductor "conductor.properties"
     Then the "Identity" card offers no Save and no inputs
     And the conductor offers no Disable or Enable
@@ -55,15 +55,15 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     And the fixture conductor "conductor.properties" answers 403 on "action"
 
   Scenario: Activities list only the claims of this conductor's runs a reader may inspect
-    Given I am logged in as the account "api-member"
+    Given I am logged in as the account "north-contributor"
     When I visit the fixture conductor "conductor.properties"
     Then the Activities list "APIH-1 started work in spec"
-    Given I am logged in as the account "api-conductor-owner"
+    Given I am logged in as the account "fixture-conductor-owner"
     When I visit the fixture conductor "conductor.properties"
     Then the Activities say "No activity yet."
 
   Scenario: The instance admin keeps the card and the administrative edit form
-    Given I am logged in as the account "login-admin"
+    Given I am logged in as the account "site-admin"
     When I visit the fixture conductor "conductor.properties"
     Then the "Identity" card offers "Label" with Save
     When I open "Disable conductor"
@@ -73,7 +73,7 @@ Feature: A conductor owner edits and disables a conductor on its Overview
 
   @nojs
   Scenario: Disable and enable work without JavaScript as pages
-    Given I am logged in as the account "api-conductor-owner"
+    Given I am logged in as the account "fixture-conductor-owner"
     When I visit the fixture conductor "conductor.properties-nojs"
     And I open "Disable conductor"
     Then the conductor confirmation is a page of its own

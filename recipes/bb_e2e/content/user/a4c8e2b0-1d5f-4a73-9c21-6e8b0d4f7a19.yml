@@ -7,9 +7,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-edit-team-lead
+  - value: fixture-team-lead
   mail:
-  - value: api-edit-team-lead@example.test
+  - value: fixture-team-lead@example.test
   status:
   - value: true
   pass:

@@ -26,8 +26,8 @@
  * `tests/playwright/features/workspace/workspace.feature` and
  * `rank-access.feature` already use for JSON:API-level coverage):
  *
- *   api-member  — member of ONLY "workspace.home" / "project.home".
- *   api-foreign — member of ONLY "workspace.other" / "project.other".
+ *   north-contributor  — member of ONLY "workspace.home" / "project.home".
+ *   south-contributor — member of ONLY "workspace.other" / "project.other".
  *
  * Both accounts and their fixed recipe-test password (`Bb-test-login-426!`)
  * are public, recipe-test-only credentials already committed in clear text by
@@ -40,7 +40,7 @@ import { HttpError } from 'dropsh/plugin';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createContextForAccount, type E2EContext } from './helpers.js';
 
-/** Fixed recipe-test password for every `api-*` account (never a real one). */
+/** Fixed recipe-test password for the seeded test accounts (never a real one). */
 const RECIPE_TEST_PASSWORD = 'Bb-test-login-426!';
 
 /**
@@ -67,8 +67,8 @@ function fixture(name: string): string {
 }
 
 describe('TUI cross-tenant read isolation (BB-315 AC2)', () => {
-  let home: E2EContext; // authenticated as api-member (workspace.home only)
-  let other: E2EContext; // authenticated as api-foreign (workspace.other only)
+  let home: E2EContext; // authenticated as north-contributor (workspace.home only)
+  let other: E2EContext; // authenticated as south-contributor (workspace.other only)
 
   const ticketHome = fixture('ticket.home');
   const ticketOther = fixture('ticket.other');
@@ -78,8 +78,14 @@ describe('TUI cross-tenant read isolation (BB-315 AC2)', () => {
   const userForeign = fixture('user.foreign');
 
   beforeAll(async () => {
-    home = await createContextForAccount('api-member', RECIPE_TEST_PASSWORD);
-    other = await createContextForAccount('api-foreign', RECIPE_TEST_PASSWORD);
+    home = await createContextForAccount(
+      'north-contributor',
+      RECIPE_TEST_PASSWORD,
+    );
+    other = await createContextForAccount(
+      'south-contributor',
+      RECIPE_TEST_PASSWORD,
+    );
   });
 
   describe('bb_ticket', () => {
@@ -163,7 +169,7 @@ describe('TUI cross-tenant read isolation (BB-315 AC2)', () => {
   describe('bakers/statistics', () => {
     // Composite discovery takes the named `?project_id=<uuid>` context and
     // discloses a figure only inside the group permission grants it in.
-    // `api-member` holds no membership of any kind on `project.other`,
+    // `north-contributor` holds no membership of any kind on `project.other`,
     // so the request still succeeds — a bare uuid is not itself privileged
     // information, and the item route's own FigureAccess already treats
     // "does not resolve" and "resolves but forbidden" identically for that

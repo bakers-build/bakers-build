@@ -8,11 +8,11 @@ Feature: Markdown output
 
   The fixtures (recipes/bb_e2e, tickets APIS-1..3 and their comments) are
   read-only for every other test, so their stored source can be compared before
-  and after the reads below. The reader is `api-member`, an ordinary member of
-  the API home workspace — never an administrator.
+  and after the reads below. The reader is `north-contributor`, an ordinary member of
+  Northside Bakery — never an administrator.
 
   Background:
-    Given I am logged in as the account "api-member"
+    Given I am logged in as the account "north-contributor"
 
   Scenario: Every body surface of the ticket uses the shared output component
     Given the stored Markdown of "APIS-1" and its comments is remembered
@@ -58,12 +58,12 @@ Feature: Markdown output
 
   Scenario: The output survives two island navigations
     Given I visit the ticket "APIS-1"
-    When I click the rail entry "API home"
+    When I click the rail entry "North Crew"
     Then the document was not reloaded
     When I go back
     Then the document was not reloaded
     And the About body has a table with the column headers "Check, Result, Notes"
-    When I click the rail entry "API home"
+    When I click the rail entry "North Crew"
     Then the document was not reloaded
     When I go back
     Then the document was not reloaded
@@ -72,8 +72,8 @@ Feature: Markdown output
 
   @tenancy
   Scenario: A reader outside the workspace cannot read the body
-    Given I am logged in as the account "api-stranger"
-    When I request the ticket "APIS-1" in the workspace "api-home"
+    Given I am logged in as the account "no-bakery"
+    When I request the ticket "APIS-1" in the workspace "bakers"
     Then the response status is 403
     And the page does not show "Release checks"
 

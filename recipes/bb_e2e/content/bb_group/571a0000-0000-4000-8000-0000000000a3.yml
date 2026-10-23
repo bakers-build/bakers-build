@@ -1,17 +1,16 @@
 # Listing-search fixture: matching Alpha text in another workspace. Lives in
-# the existing API-other workspace so the empty `other` workspace (no group,
-# project or ticket) stays that way for the TUI switcher check.
+# Southside Bakery, so a search in Northside must not list it.
 _meta:
   version: '1.0'
   entity_type: bb_group
   uuid: 571a0000-0000-4000-8000-0000000000a3
   default_langcode: en
   depends:
-    14e28539-bd41-58be-8f7f-f013035f69e5: bb_workspace
+    dbc60000-0000-4000-8000-000000000002: bb_workspace
 default:
   name:
     -
       value: "Alpha Other"
   workspace_id:
     -
-      entity: "14e28539-bd41-58be-8f7f-f013035f69e5"
+      entity: "dbc60000-0000-4000-8000-000000000002"

@@ -18,10 +18,10 @@ default:
       value: "en"
   name:
     -
-      value: "addon-reviewer"
+      value: north-guest
   mail:
     -
-      value: "addon-reviewer@example.com"
+      value: north-guest@example.test
   timezone:
     -
       value: "Europe/Berlin"

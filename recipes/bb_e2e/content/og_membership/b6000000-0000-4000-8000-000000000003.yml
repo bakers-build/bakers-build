@@ -1,0 +1,25 @@
+# guest of Southside Bakery: the south bakery's guest persona.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: b6000000-0000-4000-8000-000000000003
+  default_langcode: en
+  bundle: default
+  depends:
+    b6000000-0000-4000-8000-000000000002: user
+    dbc60000-0000-4000-8000-000000000002: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: dbc60000-0000-4000-8000-000000000002
+  state:
+  - value: active
+  uid:
+  - entity: b6000000-0000-4000-8000-000000000002
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-guest

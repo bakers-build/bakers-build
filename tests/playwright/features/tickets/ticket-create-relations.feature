@@ -1,13 +1,13 @@
 @feature:ticket-create-relations
 Feature: The create-ticket dialog relates a new ticket only within its project
   Parent and Blocked by offer and accept only tickets that are in the new
-  ticket's project and visible to the creator. "cwiedemann" reads both
+  ticket's project and visible to the creator. "north-lead" reads both
   "bakers.build Platform" and "bakers-e2e-project"; APIO-1 lies in a workspace that
   account cannot read; core's reference check refuses it first, naming only
   its id.
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
 
   Scenario: A dialog opened on a project offers only that project's tickets
     When I visit the ticket list of project "bakers.build Platform"

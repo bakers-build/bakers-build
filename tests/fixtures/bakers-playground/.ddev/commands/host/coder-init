@@ -1,0 +1,36 @@
+#!/bin/bash
+## Description: Coder one-time project bootstrap — start, composer install, DB seed (keytec-coder)
+## Usage: coder-init
+# keytec-coder:coder-init v1
+#
+# This is the entrypoint the drupal-ddev Coder template runs after cloning a repo
+# (preset sets `ddev_init_script=coder-init`). Commit it to the repo so the template's
+# auto-run works on workspace creation; keytec-coder also installs + runs it on `ensure`.
+set -euo pipefail
+
+APPROOT="${DDEV_APPROOT:-$(pwd)}"
+cd "${APPROOT}"
+
+# 1. Start the project (no-op if already running)
+ddev describe >/dev/null 2>&1 || ddev start
+
+# 2. Install PHP deps if missing (a fresh clone has no vendor/; drush is needed below)
+if [ ! -d vendor ]; then
+  echo "==> composer install"
+  ddev composer install
+fi
+
+# 3. Seed the main DB once via the doctor-managed `ddev init`.
+#    Use --fresh explicitly: the main checkout has no parent to snapshot from, so the
+#    project's snapshot default (used by per-issue worktrees) does not apply here.
+#    Idempotent: skip if the site already bootstraps.
+if ddev drush status --field=bootstrap 2>/dev/null | grep -qi successful; then
+  echo "✓ DB already seeded"
+elif [ -x .ddev/commands/host/init ]; then
+  ddev init --fresh
+else
+  echo "WARN: no 'ddev init' command — run 'keytec-drupal-doctor check-tools' to install it, then 'ddev coder-init' again." >&2
+  exit 1
+fi
+
+echo "✓ coder-init complete"

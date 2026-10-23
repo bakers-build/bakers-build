@@ -3,10 +3,10 @@ Feature: Parent and Blocked by are edited inline within the ticket's project
   The detail view's Properties block offers open, visible tickets of the
   ticket's own project as Parent and Blocked by, and a pick is saved like any
   other inline property. "BB-152" lies in "bakers.build Platform"; "GL-E2E-WFI" lies
-  in "bakers-e2e-project", which "cwiedemann" can read too.
+  in "bakers-e2e-project", which "north-lead" can read too.
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     And I visit the ticket "BB-152"
     And I remember the inline properties for cleanup
 

@@ -1,4 +1,4 @@
-# Contributor rank of the template-automation service account in the default
+# Contributor rank of the fixture-automation service account in the default
 # workspace: the rank a ticket trigger's execution account needs.
 _meta:
   version: '1.0'

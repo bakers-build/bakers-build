@@ -5,9 +5,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: create-lead-a
+  - value: fixture-north-creator
   mail:
-  - value: create-lead-a@example.com
+  - value: fixture-north-creator@example.test
   status:
   - value: true
   preferred_langcode:

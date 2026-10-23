@@ -3,7 +3,7 @@ Feature: Deployment and verification API contracts
   Release batches and verification targets survive a fresh resource read.
 
   Scenario: Deployment starts at pre_deployment with both referenced tickets
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "first"
     And the API client creates a "bb_feature" ticket in "home" as "second"
     And the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
@@ -20,7 +20,7 @@ Feature: Deployment and verification API contracts
       """
 
   Scenario: Verification starts at verifying with its parent and environment
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_deployment" ticket in "home" as "release"
     And the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
@@ -36,7 +36,7 @@ Feature: Deployment and verification API contracts
       """
 
   Scenario: Environment exposes its URL and branch to a project member
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client reads "/jsonapi/bb_environment/bb_environment/{environment.home}"
     Then the API response status is 200
     And the API document contains:
@@ -45,7 +45,7 @@ Feature: Deployment and verification API contracts
       """
 
   Scenario: Environment collection is filtered by deployment branch
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client reads "/jsonapi/bb_environment/bb_environment"
     Then the API response status is 200
     And the API collection contains "environment.home"

@@ -85,7 +85,7 @@ export async function createContext(): Promise<E2EContext> {
  * need more than one identity against the SAME seeded world — e.g. the
  * cross-tenant read-isolation check, which authenticates as two different
  * workspace members. The recipe-test accounts this is meant for
- * (`api-*`, see `recipes/bb_e2e/content/user/*.yml`) are public,
+ * (see `recipes/bb_e2e/content/user/*.yml`) are public,
  * recipe-test-only credentials already committed in clear text by
  * `tests/playwright/support/api-client.ts`.
  */

@@ -1,0 +1,31 @@
+stages:
+  - lint
+  - test
+
+image: php:8.3
+
+before_script:
+  - apt-get update && apt-get install -y git unzip libpng-dev
+  - docker-php-ext-install gd
+  - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+  - composer install --no-interaction --no-progress --prefer-dist
+
+phpcs:
+  stage: lint
+  script:
+    - ./vendor/bin/phpcs --standard=phpcs.xml.dist
+
+phpmd:
+  stage: lint
+  script:
+    - ./vendor/bin/phpmd web/modules/custom,web/themes/custom text phpmd.xml.dist --exclude 'tests/*,**/tests/*,**/node_modules/*'
+
+phpstan:
+  stage: lint
+  script:
+    - ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 512M
+
+phpunit:
+  stage: test
+  script:
+    - ./vendor/bin/phpunit --configuration=phpunit.xml

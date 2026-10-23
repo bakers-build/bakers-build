@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-stats-outsider
+  - value: fixture-api-stats-outsider
   mail:
-  - value: api-stats-outsider@example.test
+  - value: fixture-api-stats-outsider@example.test
   status:
   - value: true
   pass:

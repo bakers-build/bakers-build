@@ -32,7 +32,7 @@ async function fullPageAction(page: Page, name: string, path: string): Promise<v
 }
 
 Then('logout works from my account rail in {string}', async ({ page }, slug: string) => {
-  const account = slug === 'other' ? 'other-member' : 'login-multi';
+  const account = slug === 'other' ? 'south-contributor' : 'both-bakeries';
   const uid = uidOf(account);
   await page.goto(`/${slug}/tickets`);
   await expect(action(page, 'Log out')).toHaveCount(0);
@@ -84,14 +84,14 @@ Then('workspace settings expose the overview outside the menu', async ({ page })
   await expect(overview).toBeFocused();
   await overview.press('Enter');
   await expect(page).toHaveURL(/\/home$/);
-  await page.goto(`/user/${uidOf('login-multi')}`);
+  await page.goto(`/user/${uidOf('both-bakeries')}`);
   await expect(action(page, 'Log out')).toHaveCount(0);
 });
 
 Then('my profile retains the {string} origin through tabs and saving', async ({ page }, slug: string) => {
   await profileFrom(page, slug);
   const origin = workspaceUuid(slug);
-  const uid = uidOf('login-multi');
+  const uid = uidOf('both-bakeries');
   for (const tab of ['Edit', 'View', 'Edit']) {
     await page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: tab, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/user/${uid}${tab === 'Edit' ? '/edit' : ''}\\?workspace=${origin}$`));
@@ -130,7 +130,7 @@ Then('two profile tabs return to their own workspaces', async ({ page }) => {
 });
 
 Then('invalid account origins expose no workspace navigation', async ({ page }) => {
-  const uid = uidOf('other-member');
+  const uid = uidOf('south-contributor');
   for (const suffix of ['', '?workspace=bad', '?workspace[]=bad', '?workspace=https://example.com', '?workspace=00000000-0000-4000-8000-000000000001', `?workspace=${workspaceUuid('bakers')}`]) {
     for (const path of [`/user/${uid}`, `/user/${uid}/edit`]) {
       await page.goto(path + suffix);

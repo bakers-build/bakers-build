@@ -336,7 +336,7 @@ else. The 403 row needs an account that is a member of one workspace and not the
 a ticket of its own to prove the refusal is not simply "this account sees nothing" — so
 `Given the other workspace has a project, a ticket and a member` supplies exactly that,
 create-if-absent, through drush. It adds a `bb_group`, a `bb_project` keyed `OTHER`, the
-ticket `OTHER-1` and the account `other-member`; everything it depends on is the shipped
+ticket `OTHER-1` and the account `south-contributor`; everything it depends on is the shipped
 workspace, so it reproduces from a fresh provision and is idempotent across runs.
 
 **Known RED: the handoff `<details>`.** Two scenarios — the AC 7 pair, one of them the
@@ -424,8 +424,9 @@ in `features/deployments/`. `features/sign-in/auth-contract.feature`,
 `features/tickets/functional-forms.feature` and `features/workspace/ambient-forms.feature`
 cover the corresponding browser behavior.
 
-The recipe owns the fixed `API home` and `API other` workspaces, explicit rank memberships,
-public test accounts, and pagination rows. `support/contract-world.json` maps their stable
+The recipe owns the two bakeries (Northside Bakery, the home workspace, and Southside
+Bakery, the other one), explicit rank memberships, the public test accounts listed in
+`WORKFLOW.md` › *Test users*, and pagination rows. `support/contract-world.json` maps their stable
 UUIDs to readable aliases in feature documents. API actions create temporary resources;
 the scenario fixture deletes them in reverse order. Owner and session tests restore
 ordinary membership after conductor registration so automatic app rank cannot mask the

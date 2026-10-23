@@ -15,7 +15,7 @@ import { active, closedControl, facetRow, facetTrigger, listing, safe } from '..
 Given(
   'I am signed in as a member of the {string} workspace',
   async ({ page, authProvider }, slug: string) => {
-    const actors: Record<string, string> = { bakers: 'cwiedemann', other: 'other-member' };
+    const actors: Record<string, string> = { bakers: 'north-lead', other: 'south-contributor' };
     const actor = actors[slug];
     if (!actor) {
       throw new Error(`No recipe reader is defined for the "${slug}" workspace.`);

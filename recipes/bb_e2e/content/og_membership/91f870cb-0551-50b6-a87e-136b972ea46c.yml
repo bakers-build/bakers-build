@@ -1,4 +1,4 @@
-# bakers-e2e-agent's DEFAULT workspace membership — new, not a BB-462 role fix.
+# fixture-agent's DEFAULT workspace membership — new, not a BB-462 role fix.
 #
 # `bakers-e2e-project` deliberately sits on "Design Crew"
 # (dbc70000-…-000000000002), NOT the "Platform Crew" team this agent already

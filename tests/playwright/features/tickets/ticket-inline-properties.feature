@@ -37,7 +37,7 @@ Feature: Ticket properties persist inline on an explicit Save
 
     Examples:
       | property | value   | clear       |
-      | Assignee | sgruber | Unassigned  |
+      | Assignee | north-member | Unassigned  |
       | Priority | High    | No priority |
       | Labels   | bug     | No labels   |
 

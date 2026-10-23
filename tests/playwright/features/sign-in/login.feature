@@ -25,22 +25,22 @@ Feature: bakers.build sign-in
 
     Examples:
       | account      | path                |
-      | cwiedemann   | /bakers/tickets       |
-      | other-member | /other/tickets      |
-      | login-multi  | /                  |
-      | login-admin  | /                  |
+      | north-lead   | /bakers/tickets       |
+      | south-contributor | /other/tickets      |
+      | both-bakeries  | /                  |
+      | site-admin  | /                  |
       # Site root inbound-rewrites to the home route; empty overview, no 302.
-      | login-empty  | /                  |
+      | no-bakery  | /                  |
 
   Scenario: The overview stays reachable for an account with one workspace
-    Given I am signed in as "cwiedemann"
+    Given I am signed in as "north-lead"
     And I open the landing route
     Then the workspace chooser is present
     And the address is "/home"
     And the create action is present
 
   Scenario: Ordinary multiple memberships retain the chooser
-    Given I am signed in as "login-multi"
+    Given I am signed in as "both-bakeries"
     And I open the landing route
     Then the workspace chooser is present
     And the workspace chooser offers "/bakers/tickets"
@@ -49,7 +49,7 @@ Feature: bakers.build sign-in
     Then the application shell is present
 
   Scenario: The administrator keeps the read-scope bypass answer
-    Given I am signed in as "login-admin"
+    Given I am signed in as "site-admin"
     And I open the landing route
     Then the workspace chooser is present
     And the workspace chooser offers "/bakers/tickets"
@@ -57,12 +57,12 @@ Feature: bakers.build sign-in
 
   @functional
   Scenario: A completed account with no workspace reaches the overview
-    Given I am signed in as "login-empty"
+    Given I am signed in as "no-bakery"
     And I open the landing route
     Then the address is "/home"
 
   Scenario: The login form replaces the gate and both shell clicks keep the document
-    Given I am signed in as "cwiedemann"
+    Given I am signed in as "north-lead"
     And I open the site root
     Then the address is "/bakers/tickets"
     And the application shell is present
@@ -74,8 +74,8 @@ Feature: bakers.build sign-in
 
   Scenario Outline: Internal destinations retain access enforcement
     When I open anonymous login with destination "<destination>"
-    And I request an login link for "other-member@example.com"
-    And I follow the login link for "other-member@example.com"
+    And I request an login link for "south-contributor@example.test"
+    And I follow the login link for "south-contributor@example.test"
     Then the login destination is "<destination>" with status <status>
 
     Examples:
@@ -85,8 +85,8 @@ Feature: bakers.build sign-in
 
   Scenario Outline: External destinations cannot leave the origin
     When I open anonymous login with destination "<destination>"
-    And I request an login link for "cwiedemann@example.com"
-    And I follow the login link for "cwiedemann@example.com"
+    And I request an login link for "north-lead@example.test"
+    And I follow the login link for "north-lead@example.test"
     Then I am logged in
     And the address is "/home"
     And login navigation stayed on the test origin
@@ -99,8 +99,8 @@ Feature: bakers.build sign-in
   @functional
   Scenario: A true protected route returns through login while workspace URLs stay private
     When I open the anonymous protected login return route
-    And I request an login link for "login-admin@example.com"
-    And I follow the login link for "login-admin@example.com"
+    And I request an login link for "site-admin@example.test"
+    And I follow the login link for "site-admin@example.test"
     Then the address is "/admin/config"
     And I am logged in
 
@@ -134,8 +134,8 @@ Feature: bakers.build sign-in
   Scenario: A returning account signs in without JavaScript
     When I open anonymous login
     Then the login form is accessible
-    When I request an login link for "other-member@example.com"
-    And I follow the login link for "other-member@example.com"
+    When I request an login link for "south-contributor@example.test"
+    And I follow the login link for "south-contributor@example.test"
     Then I am logged in
     And the address is "/home"
     When I open the site root

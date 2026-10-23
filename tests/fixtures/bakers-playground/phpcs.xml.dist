@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Keytec Drupal Project">
+  <description>PHP CodeSniffer configuration for Drupal projects.</description>
+  <arg name="extensions" value="php,module,inc,install,test,profile,theme,css,info,txt,md,yml"/>
+  <arg name="colors"/>
+  <arg name="cache" value=".phpcs-cache"/>
+  <arg name="parallel" value="10"/>
+  <file>web/modules/custom</file>
+  <file>web/themes/custom</file>
+  <exclude-pattern>*/node_modules</exclude-pattern>
+  <exclude-pattern>*/vendor</exclude-pattern>
+  <exclude-pattern>*/dist</exclude-pattern>
+  <rule ref="Drupal"/>
+  <rule ref="DrupalPractice"/>
+</ruleset>

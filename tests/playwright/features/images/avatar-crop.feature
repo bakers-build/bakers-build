@@ -8,8 +8,8 @@
 Feature: Avatar crop
 
   Background:
-    Given I am logged in as the account "cwiedemann"
-    And the account "cwiedemann" has no profile picture
+    Given I am logged in as the account "north-lead"
+    And the account "north-lead" has no profile picture
 
   Scenario: Avatar crop — a dragged framing survives saving, and a second crop of the same file replaces it
     When I visit my profile settings

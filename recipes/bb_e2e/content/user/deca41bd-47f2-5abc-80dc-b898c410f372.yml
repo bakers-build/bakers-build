@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-roster
+  - value: fixture-api-roster
   mail:
-  - value: api-roster@example.test
+  - value: fixture-api-roster@example.test
   status:
   - value: true
   pass:

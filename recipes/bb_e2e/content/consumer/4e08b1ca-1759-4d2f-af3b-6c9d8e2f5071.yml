@@ -6,7 +6,7 @@ _meta:
   uuid: 4e08b1ca-1759-4d2f-af3b-6c9d8e2f5071
   default_langcode: en
   depends:
-    5606b91c-bcc5-5c3a-a564-e07886c30417: user
+    dbe50000-0000-4000-8000-000000000006: user
 default:
   owner_id:
     -
@@ -48,7 +48,7 @@ default:
       value: 1209600
   user_id:
     -
-      entity: 5606b91c-bcc5-5c3a-a564-e07886c30417
+      entity: dbe50000-0000-4000-8000-000000000006
   pkce:
     -
       value: false

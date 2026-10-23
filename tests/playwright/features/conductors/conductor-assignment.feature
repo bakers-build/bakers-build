@@ -3,7 +3,7 @@ Feature: Conductor assignment follows local authority
   Ordinary members, leads and apps can assign within their project. A lead
   grant in another workspace must not grant access to this workspace.
 
-  # BB-462 F5: `api-foreign-lead` used to pass here (201/200) because
+  # BB-462 F5: `fixture-foreign-lead` used to pass here (201/200) because
   # direct PROJECT membership (now retired, D7) carried the implicit
   # `member` rank's create/update rights. What is left of this account's
   # reach to "home" is TEAM membership alone, and D3 keeps a team's own
@@ -23,14 +23,14 @@ Feature: Conductor assignment follows local authority
 
     Examples:
       | actor            | status |
-      | api-lead         | 201    |
-      | api-app          | 201    |
-      | api-foreign-lead | 403    |
-      | api-member       | 201    |
-      | api-foreign-only | 403    |
+      | fixture-lead         | 201    |
+      | fixture-app          | 201    |
+      | fixture-foreign-lead | 403    |
+      | north-contributor       | 201    |
+      | south-lead | 403    |
 
   Scenario Outline: Reassigning an existing ticket checks the actor's local rank
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     Given the API client is "<actor>"
     When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
@@ -41,8 +41,8 @@ Feature: Conductor assignment follows local authority
 
     Examples:
       | actor            | status |
-      | api-lead         | 200    |
-      | api-app          | 200    |
-      | api-foreign-lead | 403    |
-      | api-member       | 200    |
-      | api-foreign-only | 403    |
+      | fixture-lead         | 200    |
+      | fixture-app          | 200    |
+      | fixture-foreign-lead | 403    |
+      | north-contributor       | 200    |
+      | south-lead | 403    |

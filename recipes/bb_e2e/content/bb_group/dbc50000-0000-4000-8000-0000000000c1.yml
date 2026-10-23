@@ -13,7 +13,7 @@ _meta:
 default:
   name:
     -
-      value: "keytec"
+      value: "Bread"
   description:
     -
       value: "The group every end-to-end project belongs to."

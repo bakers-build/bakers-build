@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Example custom module for keytec AI fixture tests.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function example_help($route_name, $route_match) {
+  if ($route_name === 'help.page.example') {
+    return '<p>Example module for testing.</p>';
+  }
+
+  return NULL;
+}

@@ -6,14 +6,14 @@ _meta:
   bundle: default
   depends:
     445bc635-cc04-5de3-bf29-1c5f88adae29: user
-    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   entity_type:
   - value: bb_workspace
   entity_bundle:
   - value: bb_workspace
   entity_id:
-  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
   state:
   - value: active
   uid:

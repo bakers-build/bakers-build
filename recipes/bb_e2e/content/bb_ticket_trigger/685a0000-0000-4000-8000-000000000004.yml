@@ -1,5 +1,5 @@
 # The AC-4 example: monthly on day 1 at 09:00 Europe/Berlin, enabled, run by
-# the template-automation service account. Saving computes next_run.
+# the fixture-automation service account. Saving computes next_run.
 _meta:
   version: '1.0'
   entity_type: bb_ticket_trigger

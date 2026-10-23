@@ -1,0 +1,6 @@
+{
+  "//": "Disables the globally enabled bakers@bakers marketplace plugin for this fixture. Measured: that plugin is pinned to a fixed directory (the main bakers.build checkout) and installed as a frozen snapshot, and it wins over anything a project links or re-registers -- so without this the agent runs the snapshot's skills instead of the branch under test, and `@bakers-build/<name>` is ambiguous between two sets. Committed rather than generated: the value is identical on every machine, and setup-test-project.sh only generates what changes with the host (the .claude/skills symlink, the DDEV overlay name, the connection config, machine_id). Ticket worktrees inherit it by checkout, so the after_create hook does not copy it.",
+  "enabledPlugins": {
+    "bakers@bakers": false
+  }
+}

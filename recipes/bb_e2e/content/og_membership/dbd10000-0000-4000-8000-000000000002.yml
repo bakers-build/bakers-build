@@ -1,6 +1,6 @@
 # The human workspace lead (BB-318 D10; renamed from `admin` by BB-359 D12).
 #
-# `cwiedemann` holds the `lead` rank, which is the fixture the workspace see-all
+# `north-lead` holds the `lead` rank, which is the fixture the workspace see-all
 # rule is observable against end to end rather than only in kernel tests:
 # the account holds no bb_project membership at all and still reaches every
 # project of the workspace (D4, D11).

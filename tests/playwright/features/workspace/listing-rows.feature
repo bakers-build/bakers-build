@@ -105,7 +105,7 @@ Feature: The workspace listings are list rows ordered by one sort dropdown
 
   # A project or group row leads with its avatar — the image, else initials —
   # and ends its text block with the description, which the seeded
-  # "bakers-e2e-project" and "keytec" carry and every other seeded row lacks.
+  # "bakers-e2e-project" and "Bread" carry and every other seeded row lacks.
   Scenario Outline: The <listing> rows lead with an avatar and end with a description
     When I open the "<listing>" row listing
     Then every row starts with its avatar
@@ -115,7 +115,7 @@ Feature: The workspace listings are list rows ordered by one sort dropdown
     Examples:
       | listing  | name             | fragment                                       |
       | Projects | bakers-e2e-project | The end-to-end world's own project             |
-      | Groups   | keytec           | The group every end-to-end project belongs to. |
+      | Groups   | Bread            | The group every end-to-end project belongs to. |
 
   # Projects count open, open-with-a-conductor and closed tickets; groups
   # count their projects. The badge title explains each number on hover.
@@ -147,8 +147,8 @@ Feature: The workspace listings are list rows ordered by one sort dropdown
       | listing  | width | name             |
       | Projects | 320   | bakers-e2e-project |
       | Projects | 390   | bakers-e2e-project |
-      | Groups   | 320   | keytec           |
-      | Groups   | 390   | keytec           |
+      | Groups   | 320   | Bread            |
+      | Groups   | 390   | Bread            |
 
   Scenario: The sort dropdown is operated with the keyboard, twice
     When I open the "Tickets" row listing

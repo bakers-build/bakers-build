@@ -5,8 +5,8 @@ Feature: Each account chooses which ticket activities reach it by email
   assigned to the account, reviews it is asked for and reviews it asked for.
 
   Scenario: The Notifications entry sits in my user area after Schedule
-    Given I am logged in as the account "api-dual-lead"
-    When I visit the user area of "api-dual-lead"
+    Given I am logged in as the account "fixture-settings"
+    When I visit the user area of "fixture-settings"
     And I follow "Notifications" in the user-area rail
     And I follow "Notifications" in the user-area rail
     Then the user-area rail lists "Notifications" directly after "Schedule"
@@ -28,25 +28,25 @@ Feature: Each account chooses which ticket activities reach it by email
 
     Examples:
       | account       |
-      | api-dual-lead |
+      | fixture-settings |
 
     @nojs
     Examples:
       | account          |
-      | time-contributor |
+      | fixture-time-contributor |
 
   Scenario: The mailed kinds are offered in one group
-    Given I am logged in as the account "api-dual-lead"
-    When I open the notification settings of "api-dual-lead"
+    Given I am logged in as the account "fixture-settings"
+    When I open the notification settings of "fixture-settings"
     Then the notification settings offer "Activity mails"
     And the notification settings do not offer "My tickets"
 
   Scenario: Another member cannot open my notification settings
-    Given I am logged in as the account "other-member"
-    When I open the notification settings of "api-dual-lead"
+    Given I am logged in as the account "south-contributor"
+    When I open the notification settings of "fixture-settings"
     Then the page is not found or forbidden
 
   Scenario: An administrator can open another account's notification settings
-    Given I am logged in as the account "login-admin"
-    When I open the notification settings of "api-dual-lead"
+    Given I am logged in as the account "site-admin"
+    When I open the notification settings of "fixture-settings"
     Then the notification settings form is inside the app shell

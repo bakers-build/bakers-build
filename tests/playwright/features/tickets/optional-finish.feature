@@ -3,7 +3,7 @@ Feature: Workflow-specific completion
   Bugs and chores may finish from coding. Features retain mandatory review.
 
   Scenario Outline: Completion from coding follows the selected workflow
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "<workflow>" ticket in "home" as "ticket"
     And the API client changes ticket "ticket" to state "<entry>"
     Then the API response status is 200

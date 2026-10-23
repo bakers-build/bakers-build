@@ -37,10 +37,10 @@ export class ApiClient {
     async identifyOAuth(account: string): Promise<void> {
         await this.context?.dispose();
         const clients: Record<string, string> = {
-            'api-lead': 'bakers-e2e-session-lead',
-            'api-member': 'bakers-e2e-session-member',
-            'api-stranger': 'bakers-e2e-session-stranger',
-            'api-conductor-owner': 'bakers-conductor-owner-e2e',
+            'fixture-lead': 'bakers-e2e-session-lead',
+            'north-contributor': 'bakers-e2e-session-member',
+            'no-bakery': 'bakers-e2e-session-stranger',
+            'fixture-conductor-owner': 'bakers-conductor-owner-e2e',
         };
         const clientId = clients[account];
         if (!clientId) {
@@ -202,7 +202,7 @@ export class ApiClient {
         if (!this.created.length) return;
         const cleanup = await this.playwright.request.newContext({
             baseURL: this.baseURL, ignoreHTTPSErrors: true,
-            httpCredentials: { username: 'login-admin', password: 'Bb-test-login-426!', send: 'always', origin: new URL(this.baseURL).origin },
+            httpCredentials: { username: 'site-admin', password: 'Bb-test-login-426!', send: 'always', origin: new URL(this.baseURL).origin },
         });
         const errors: unknown[] = [];
         try {

@@ -10,15 +10,15 @@ Feature: Employees maintain one personal weekday schedule
     Then the personal schedule shows Monday "2:00", Tuesday "3:00" and cap "6:00"
     When I change the personal Tuesday to "3:0x" and the cap to "6:00"
     Then the personal schedule rejects the input
-    Given I am logged in as the account "other-member"
+    Given I am logged in as the account "south-contributor"
     When I open the personal schedule of "<account>"
     Then the page is not found or forbidden
 
     Examples:
       | account      |
-      | api-dual-lead |
+      | fixture-settings |
 
     @nojs
     Examples:
       | account          |
-      | time-contributor |
+      | fixture-time-contributor |

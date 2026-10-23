@@ -10,7 +10,7 @@ Feature: A template schedules its own tickets
   runner tests; only function and visibility are asserted here.
 
   Scenario: The seeded monthly trigger is listed with its next run
-    Given I am logged in as the account "template-manager"
+    Given I am logged in as the account "north-lead"
     When I visit the template "Monthly Drupal update" by its address
     And I click the tab "Triggers"
     And I click the tab "Overview"
@@ -21,10 +21,10 @@ Feature: A template schedules its own tickets
     And the page header offers the action "Add trigger"
 
   Scenario: A lead adds, pauses and resumes a trigger
-    Given I am logged in as the account "template-manager"
+    Given I am logged in as the account "north-lead"
     When I visit the template "Monthly Drupal update" by its address
     And I click the tab "Triggers"
-    And I add an enabled monthly trigger on day "28" at "07:15" in "Europe/Berlin" run by "template-automation"
+    And I add an enabled monthly trigger on day "28" at "07:15" in "Europe/Berlin" run by "fixture-automation"
     Then the trigger "Monthly on day 28 at 07:15 (Europe/Berlin)" is listed as "Enabled"
     When I open "Pause" for the trigger "Monthly on day 28 at 07:15 (Europe/Berlin)" and close the dialog
     Then the trigger "Monthly on day 28 at 07:15 (Europe/Berlin)" is listed as "Enabled"
@@ -35,7 +35,7 @@ Feature: A template schedules its own tickets
     Then the trigger "Monthly on day 28 at 07:15 (Europe/Berlin)" is listed as "Enabled"
 
   Scenario: The schedule offers only the fields of its frequency
-    Given I am logged in as the account "template-manager"
+    Given I am logged in as the account "north-lead"
     When I visit the template "Monthly Drupal update" by its address
     And I click the tab "Triggers"
     And I open the Add trigger action and choose the frequency "Daily"
@@ -49,7 +49,7 @@ Feature: A template schedules its own tickets
     And the trigger form does not offer the field "Weekday"
 
   Scenario: The add dialog closes with Escape and its close button
-    Given I am logged in as the account "template-manager"
+    Given I am logged in as the account "north-lead"
     When I visit the template "Monthly Drupal update" by its address
     And I click the tab "Triggers"
     And I open the Add trigger action and press Escape
@@ -57,7 +57,7 @@ Feature: A template schedules its own tickets
     Then the tab "Triggers" is current
 
   Scenario: Enabling without a service account is refused
-    Given I am logged in as the account "template-manager"
+    Given I am logged in as the account "north-lead"
     When I visit the template "Monthly Drupal update" by its address
     And I click the tab "Triggers"
     And I add an enabled monthly trigger on day "27" at "06:00" in "Europe/Berlin" run by "- None -"
@@ -65,7 +65,7 @@ Feature: A template schedules its own tickets
     And no trigger "Monthly on day 27 at 06:00 (Europe/Berlin)" exists
 
   Scenario: A member of another workspace cannot open the triggers
-    Given I am logged in as the account "other-member"
+    Given I am logged in as the account "south-contributor"
     When I visit the triggers of the template "Monthly Drupal update" by their address
     Then the page heading is "403 — Access denied"
     And the page does not show "Monthly on day 1 at 09:00"

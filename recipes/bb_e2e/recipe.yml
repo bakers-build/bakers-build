@@ -15,6 +15,9 @@ install:
   # A stub OAuth provider for the browser suite (BB-476 AC-12) — e2e world
   # only, never in recipes/bakers.
   - bb_login_oauth_test
+  # One-click persona sign-in for local testing — e2e world only, never in
+  # recipes/bakers or config/sync.
+  - bb_login_persona_test
 config:
   import:
     consumers: '*'

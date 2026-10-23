@@ -1,4 +1,4 @@
-# api-conductor-owner's workspace membership — new, not a rename (F5).
+# fixture-conductor-owner's workspace membership — new, not a rename (F5).
 #
 # claims.feature calls `POST /jsonapi/bakers/claim-next` as this account, which
 # `ConductorResolverTrait::resolveConductor()` gates on the plain Drupal
@@ -18,14 +18,14 @@ _meta:
   bundle: default
   depends:
     db58173e-ed5d-50cf-af02-2943a2803c36: user
-    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   entity_type:
   - value: bb_workspace
   entity_bundle:
   - value: bb_workspace
   entity_id:
-  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
   state:
   - value: active
   uid:

@@ -1,0 +1,12 @@
+# keytec project config. Consumed by `keytec-ai config to-env` -> INIT_* env -> the
+# keytec-ddev-addon commands (`ddev init`, `ddev init-worktree`).
+#
+# This is a TEST FIXTURE: it has no production source and no anonymized-DB registry, so
+# `ddev init` provisions the site from scratch via the addon's `site-install` provider
+# (`drush site:install`) instead of pulling a dump. There is deliberately no `providers.registry`
+# and no `sanitize` block — `ddev sync-sanitize` is not part of this fixture.
+init:
+  default_sync_provider: site-install   # provider used by `ddev init` when no `--provider` is given
+  profile: minimal                      # install profile — consumed by the site-install provider (INIT_PROFILE)
+  build: "ddev composer install"        # BUILD phase — before the DB step (vendor/ + web/core are not committed)
+  deploy: "ddev drush cache:rebuild"    # DEPLOY phase — after the DB step (a fresh site:install needs no config import)

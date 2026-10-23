@@ -1,8 +1,32 @@
 import type { Page, Route } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { test, expect } from '../../bdd.fixtures';
+import { php } from '../../support/drush';
 
-const { When, Then } = createBdd(test);
+const { Given, When, Then, After } = createBdd(test);
+
+// Both seeded bakeries carry projects and groups, so an empty listing needs a
+// workspace of its own: slug `empty`, one throwaway member, removed afterwards.
+const EMPTY_SLUG = 'empty';
+const removeEmptyWorkspace = () => php(
+  `$etm = \\Drupal::entityTypeManager(); foreach ($etm->getStorage("bb_workspace")->loadByProperties(["slug" => "${EMPTY_SLUG}"]) as $w) { $w->delete(); }` +
+  ` foreach ($etm->getStorage("user")->loadByProperties(["name" => "${EMPTY_SLUG}-member"]) as $u) { $u->delete(); }`,
+);
+
+Given('I am signed in as a member of an empty workspace', async ({ page, authProvider }) => {
+  removeEmptyWorkspace();
+  const uid = php(
+    `$etm = \\Drupal::entityTypeManager(); $u = $etm->getStorage("user")->create(["name" => "${EMPTY_SLUG}-member", "status" => 1, "field_onboarding_completed" => TRUE]); $u->save();` +
+    ` $w = $etm->getStorage("bb_workspace")->create(["name" => "Empty bakery", "slug" => "${EMPTY_SLUG}", "owner_user_id" => 1]); $w->save();` +
+    ' \\Drupal\\og\\Og::createMembership($w, $u)->setRoles([$etm->getStorage("og_role")->load("bb_workspace-bb_workspace-contributor")])->save(); print $u->id();',
+  ).trim();
+  expect(Number(uid)).toBeGreaterThan(0);
+  await authProvider.login(page, uid);
+});
+
+After({ tags: '@feature:application-states' }, async () => {
+  removeEmptyWorkspace();
+});
 
 Then('the error screen is {int} with the {string} signpost', async ({ page }, status: number, icon: string) => {
   const title = status === 403 ? '403 — Access denied' : '404 — Page not found';
@@ -47,7 +71,7 @@ When('I follow the error recovery link twice from {string}', async ({ page }, mi
 
 let protectedResponse: { status: number; location: string };
 When('I request a protected ticket without following redirects', async ({ page, apiClient }) => {
-  const response = await page.request.get(apiClient.resolve('/api-home/ticket/{ticket.home}'), { maxRedirects: 0 });
+  const response = await page.request.get(apiClient.resolve('/bakers/ticket/{ticket.home}'), { maxRedirects: 0 });
   protectedResponse = { status: response.status(), location: response.headers().location ?? '' };
 });
 Then('the protected response is an authentication redirect', async () => {
@@ -70,7 +94,7 @@ Then('a delayed failed project filter keeps its populated rows', async ({ page }
   const count = await rows.count();
   expect(count).toBeGreaterThan(0);
   let pending: Route | undefined;
-  await page.route('**/api-home/projects?**', route => { pending = route; });
+  await page.route('**/bakers/projects?**', route => { pending = route; });
   await page.locator('input[name="title"]').fill('no-such-delayed-project');
   await page.locator('input[name="title"]').press('Enter');
   await expect.poll(() => Boolean(pending)).toBe(true);

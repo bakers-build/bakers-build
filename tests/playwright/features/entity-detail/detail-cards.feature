@@ -111,7 +111,7 @@ Feature: Entity detail pages save each card on its own
       | team    | Name  | name  |
 
   Scenario Outline: A reader sees the <card> card of <fixture> read-only and its POST is refused
-    Given I am logged in as the account "api-member"
+    Given I am logged in as the account "north-contributor"
     When I open the detail page of fixture "<fixture>"
     Then the "<card>" card offers no Save and no inputs
     And the "<card>" card shows "<row>" as "<value>"
@@ -122,14 +122,14 @@ Feature: Entity detail pages save each card on its own
     # A card without editable fields has no POST address at all.
     Examples:
       | fixture              | card          | operation     | row          | value                    | status |
-      | group.edit           | Properties    | properties    | Workspace    | API home                 | 404    |
+      | group.edit           | Properties    | properties    | Workspace    | Northside Bakery         | 404    |
       | group.edit           | Identity      | identity      | Description  | —                        | 404    |
       | project.edit         | Properties    | properties    | Key          | EDP1                     | 404    |
-      | team.home            | Identity      | identity      | Workspace    | API home                 | 403    |
+      | team.home            | Identity      | identity      | Workspace    | Northside Bakery         | 403    |
       | conductor.properties | Identity      | identity      | Conductor ID | bdd-properties-conductor | 403    |
 
   Scenario Outline: A reader of another workspace gets no detail page of <fixture>
-    Given I am logged in as the account "other-member"
+    Given I am logged in as the account "south-contributor"
     When I request the detail page of fixture "<fixture>"
     Then the detail page is refused and shows no cards
 
@@ -150,8 +150,8 @@ Feature: Entity detail pages save each card on its own
 
     Examples:
       | account             | fixture      |
-      | api-lead            | team.home    |
-      | api-conductor-owner | machine.edit |
+      | fixture-lead            | team.home    |
+      | fixture-conductor-owner | machine.edit |
 
   Scenario: A run's activities are listed on the conductor and machine of that run only
     Given I edit a disposable detail world

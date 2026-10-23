@@ -5,9 +5,9 @@ _meta:
   uuid: a5f6ffd1-70a9-50d2-95cb-0b82f93d4269
   default_langcode: en
   depends:
-    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   name:
   - value: API home
   workspace_id:
-  - entity: e10b39b4-52d8-5384-84ba-95286c10edd3
+  - entity: 2a92d03c-c4c6-41dc-b194-31aa299ed064

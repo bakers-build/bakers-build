@@ -91,7 +91,7 @@ Feature: The onboarding wizard before the workspace overview
     Then the identity step is present
     When I mark the authenticated login document
     And I record the wizard's requests
-    And I fill in the identity step with name "Eta" and nickname "create-lead-a"
+    And I fill in the identity step with name "Eta" and nickname "north-lead"
     And I press Next on the identity step
     Then the identity step shows the error "This nickname is already taken."
     And the document was not reloaded

@@ -6,7 +6,7 @@
 Feature: Self-service API keys in the user area
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
 
   Scenario: Creating a key in the dialog reveals the secret once and lists it without the secret
     When I visit my API keys page
@@ -19,8 +19,8 @@ Feature: Self-service API keys in the user area
     Given I have created my own API key named "CI" through the user area
     When that key's credentials are exchanged for an access token
     Then the token exchange succeeds
-    And a request bearing that token can read "cwiedemann"'s own workspace
-    And a request bearing that token is denied write access to a workspace "cwiedemann" is not a member of
+    And a request bearing that token can read "north-lead"'s own workspace
+    And a request bearing that token is denied write access to a workspace "north-lead" is not a member of
 
   @nojs
   Scenario: Creating a key without JavaScript works through the full-page form

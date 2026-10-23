@@ -2,16 +2,16 @@
 Feature: The project time view narrows each viewer's own authorized time
 
   Scenario: A team lead sees the team's hours on the project, a member only their own
-    Given I am logged in as the account "api-edit-team-lead"
+    Given I am logged in as the account "fixture-team-lead"
     When I open the project "API home"
     Then the page offers the "Time" tab
     When I open the project time view of "API home" at "mode=week&date=2026-12-08"
     Then the time scope reads "Recorded hours on API home"
     And the week total is "3:45"
     And the week strip shows "2:45" for "Tue 2026-12-08"
-    And the week grid row "api-member" shows "1:30" on "Tue 08"
-    And the week grid row "api-crew-mate" shows "0:30" on "Tue 08"
-    Given I am logged in as the account "api-member"
+    And the week grid row "north-contributor" shows "1:30" on "Tue 08"
+    And the week grid row "fixture-crew-mate" shows "0:30" on "Tue 08"
+    Given I am logged in as the account "north-contributor"
     When I open the project time view of "API home" at "mode=week&date=2026-12-08"
     Then the week total is "1:30"
     And the time view offers no person filter
@@ -20,7 +20,7 @@ Feature: The project time view narrows each viewer's own authorized time
     And the overview total is "0:00"
 
   Scenario: Record time from a project view returns to it
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     When I open the project time view of "Time capture" at "mode=day&date=2026-11-24"
     Then Record time carries "project" as "Time capture"
     And Record time carries "date" as "2026-11-24"

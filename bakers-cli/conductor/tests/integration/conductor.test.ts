@@ -8,7 +8,7 @@
  *   - project `bakers-e2e-project` (BB_E2E_PROJECT_UUID) with ticket
  *     GL-E2E-CONDUCTOR (BB_E2E_CONDUCTOR_TICKET_UUID) reset to state `coding`,
  *     with ALL its bb_run rows deleted → freshly claimable.
- *   - auth = static HTTP Basic `bakers-e2e-agent`; the conductor registers with
+ *   - auth = static HTTP Basic `fixture-agent`; the conductor registers with
  *     owner_user_id = api.me() (the same agent), so a run it claims is in the
  *     agent's write scope (BbWriteScope joins bb_run.conductor_id.owner ==
  *     current_user with run state ∈ {claimed,running} + live lease).

@@ -68,13 +68,13 @@ Feature: bakers.build sign-up
 
   Scenario: A known address gets the same answer and no second account
     When I open anonymous login
-    And I request an login link for "login-quiet@example.com"
+    And I request an login link for "fixture-mailbox@example.test"
     Then the login confirmation is present
-    And exactly one login mail was sent to "login-quiet@example.com"
+    And exactly one login mail was sent to "fixture-mailbox@example.test"
     And the login created no account
 
   Scenario: The answer never discloses whether an address has an account
-    Then the login answer is identical for "neu2@example.com" and "login-quiet@example.com"
+    Then the login answer is identical for "neu2@example.com" and "fixture-mailbox@example.test"
 
   Scenario: Following the link establishes a session and lands in the product
     Given no account exists for "landing@example.com"
@@ -177,7 +177,7 @@ Feature: bakers.build sign-up
 
   Scenario: The join confirm route refuses somebody else's invitation
     Given a lead has invited "not-me@example.com" to "other"
-    Given I am signed in as "login-empty"
+    Given I am signed in as "no-bakery"
     And I open the join confirm route for the invitation to "not-me@example.com"
     Then the join confirm route answers 403
     And the join provisioned no membership

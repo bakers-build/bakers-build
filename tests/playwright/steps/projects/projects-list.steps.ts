@@ -138,13 +138,13 @@ Given('I am logged in as a member of the listing fixture workspace', async ({ pa
     [
       '$etm = \\Drupal::entityTypeManager();',
       '$ws = current($etm->getStorage("bb_workspace")->loadByProperties(["slug" => "bakers"]));',
-      '$u = current($etm->getStorage("user")->loadByProperties(["name" => "cwiedemann"]));',
+      '$u = current($etm->getStorage("user")->loadByProperties(["name" => "north-lead"]));',
       'if ($ws && $u && (int) $u->id() > 1 && \\Drupal::service("og.membership_manager")->isMember($ws, $u->id())) {',
       'print $u->id(); }',
     ].join(' '),
   );
   if (!uid || uid === '0') {
-    throw new Error('Recipe reader "cwiedemann" must be a member of the "bakers" workspace.');
+    throw new Error('Recipe reader "north-lead" must be a member of the "bakers" workspace.');
   }
   await authProvider.login(page, uid);
 });

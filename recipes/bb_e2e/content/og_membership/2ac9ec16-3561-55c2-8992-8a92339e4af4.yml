@@ -5,7 +5,7 @@ _meta:
   default_langcode: en
   bundle: default
   depends:
-    11508d3f-6b95-5a25-9431-7eb0168840c7: bb_workspace
+    dbc60000-0000-4000-8000-000000000002: bb_workspace
     583baba2-c96c-5793-9261-639523f30955: user
 default:
   type:
@@ -15,7 +15,7 @@ default:
   entity_bundle:
   - value: bb_workspace
   entity_id:
-  - value: 11508d3f-6b95-5a25-9431-7eb0168840c7
+  - value: dbc60000-0000-4000-8000-000000000002
   uid:
   - entity: 583baba2-c96c-5793-9261-639523f30955
   state:

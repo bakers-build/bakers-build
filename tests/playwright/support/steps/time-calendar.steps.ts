@@ -243,7 +243,7 @@ Given(
   ({}, account: string, description: string, date: string) => {
     const result = php(
       `$user = current(\\Drupal::entityTypeManager()->getStorage("user")->loadByProperties(["name" => "${safe(account)}"]));` +
-        '$group = current(\\Drupal::entityTypeManager()->getStorage("bb_group")->loadByProperties(["name" => "keytec"]));' +
+        '$group = current(\\Drupal::entityTypeManager()->getStorage("bb_group")->loadByProperties(["name" => "Bread"]));' +
         'if (!$user || !$group) { print "missing"; } else {' +
         `$key = "DEL" . substr(md5("${safe(description)}"), 0, 5);` +
         // Project creation already seeds its own active Internal billing account.

@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-    - value: time-contributor
+    - value: fixture-time-contributor
   mail:
-    - value: time-contributor@example.com
+    - value: fixture-time-contributor@example.test
   status:
     - value: true
   pass:

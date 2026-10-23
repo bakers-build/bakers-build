@@ -1,5 +1,5 @@
 # Dedicated, recipe-owned statistics period fixture. Its two closed tickets
-# give cwiedemann one count in seven days and two in thirty days.
+# give north-lead one count in seven days and two in thirty days.
 _meta:
   version: '1.0'
   entity_type: bb_project

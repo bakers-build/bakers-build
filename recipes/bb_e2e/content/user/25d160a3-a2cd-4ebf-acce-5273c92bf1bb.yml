@@ -9,7 +9,10 @@ default:
       value: en
   name:
     -
-      value: bakers-e2e-agent
+      value: fixture-agent
+  mail:
+    -
+      value: fixture-agent@example.test
   pass:
     -
       value: $2y$12$oEc/bcRr0f2QFIiHTJLGFeRUYh5u9h37uo0HX0PARYjBsMZ9w0n.u

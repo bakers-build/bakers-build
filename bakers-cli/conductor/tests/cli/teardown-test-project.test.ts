@@ -119,6 +119,7 @@ describe('playground teardown ownership', () => {
       true,
     );
     write(join(workspace, '.bakers/conductor.config.js'), 'export default {};');
+    write(join(`${workspace}.git`, 'HEAD'), 'ref: refs/heads/develop\n');
     write(
       join(workspace, '.ddev/config.worktree.yaml'),
       `name: ${workspaceName}\n`,
@@ -142,6 +143,7 @@ describe('playground teardown ownership', () => {
     expect(remaining()).toEqual(['bakers-control']);
     expect(events().filter((event) => event.args[0] === 'delete')).toEqual([]);
     expect(existsSync(workspace)).toBe(false);
+    expect(existsSync(`${workspace}.git`)).toBe(false);
   });
 
   it('does not delete a harness name registered at a different application root', () => {
@@ -176,6 +178,7 @@ describe('playground teardown ownership', () => {
     expect(stop).toBeLessThan(deletion);
     expect(calls[deletion].args).toEqual(['delete', '-Oy', workspaceName]);
     expect(existsSync(workspace)).toBe(true);
+    expect(existsSync(`${workspace}.git`)).toBe(true);
   });
 
   it('reclaims nested branch worktrees and legacy siblings by their registered names', () => {

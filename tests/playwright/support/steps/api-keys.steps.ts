@@ -43,7 +43,7 @@ After(() => {
 });
 
 function ownerUid(): string {
-  return uidOf('cwiedemann');
+  return uidOf('north-lead');
 }
 
 When('I visit my API keys page', async ({ page }) => {
@@ -139,7 +139,7 @@ function ownWorkspaceUuid(): string {
 }
 
 function otherWorkspaceUuid(): string {
-  // `cwiedemann` is explicitly not a member of this workspace (the
+  // `north-lead` is explicitly not a member of this workspace (the
   // wrong-workspace fixture, `bb_workspace/dbc60000-…-000000000002`).
   return 'dbc60000-0000-4000-8000-000000000002';
 }
@@ -251,7 +251,7 @@ let anonymousUrl: string | undefined;
 
 When('another authenticated user visits my API keys page', async ({ page, authProvider }) => {
   const otherPage = await page.context().browser()!.newContext().then((context) => context.newPage());
-  await authProvider.login(otherPage, uidOf('other-member'));
+  await authProvider.login(otherPage, uidOf('south-contributor'));
   const response = await otherPage.goto(`/user/${ownerUid()}/api-keys`);
   otherResponseStatus = response?.status();
   await otherPage.close();

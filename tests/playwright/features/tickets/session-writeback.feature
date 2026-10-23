@@ -3,7 +3,7 @@ Feature: Session-scoped writeback contracts
   The actor has an active run and an ordinary membership, without app rank.
 
   Background:
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     Given the session actor owns a running lease for ticket "ticket"
 

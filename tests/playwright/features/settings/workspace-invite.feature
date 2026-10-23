@@ -14,14 +14,14 @@ Feature: Inviting workspace members from the Members settings screen
     When I open the workspace Members settings screen
     And I open the workspace Members settings screen again
     And I open the invite dialog
-    Then the invite dialog opens on the workspace role "Contributor" and the team "API home"
+    Then the invite dialog opens on the workspace role "Contributor" and the team "Automation Crew"
     And the workspace role "Admin" is explained as "Manages members and sees every project."
     When I enter two fresh, never-used e-mail addresses
     And I pick the workspace role "Admin"
     And I submit the invite dialog
     Then the invite dialog is closed
     And the Members screen confirms "Invited 2 people."
-    And each invited address is listed as pending with the role "Admin" and the team "API home"
+    And each invited address is listed as pending with the role "Admin" and the team "Automation Crew"
     And exactly one invitation mail reaches each invited address
     When I revoke the pending invitation of the first invited address
     Then the first invited address is no longer listed as a pending invitation
@@ -83,7 +83,7 @@ Feature: Inviting workspace members from the Members settings screen
   # JSON:API runs the same rule as the dialog: a lead of this workspace cannot
   # attach a team of another one.
   Scenario: The invitation API refuses a team of another workspace
-    Given the API client is "api-lead"
+    Given the API client is "fixture-lead"
     When the API client sends "POST" to "/jsonapi/bb_invite/bb_invite":
       """
       {"data":{"type":"bb_invite--bb_invite","attributes":{"email":"api-foreign-team@example.com"},"relationships":{"workspace_id":{"data":{"type":"bb_workspace--bb_workspace","id":"{workspace.home}"}},"team_id":{"data":{"type":"bb_team--bb_team","id":"{team.other}"}}}}}

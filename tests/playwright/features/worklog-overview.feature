@@ -2,7 +2,7 @@
 Feature: Employees review their own time in a workspace by day and week
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
 
   Scenario: My work offers My time with day and week navigation
     When I visit My work
@@ -43,7 +43,7 @@ Feature: Employees review their own time in a workspace by day and week
     And the overview lists "Overview A Q 0:30"
     And the overview does not list "Overview B P 9:00"
     And the overview does not list "Overview A P Monday 4:00"
-    When I filter the time by project "keytec · Time capture"
+    When I filter the time by project "Bread · Time capture"
     Then the overview total is "2:00"
     And the overview shows 2 rows
     When I visit "/bakers/time?mode=week&date=2026-11-03"
@@ -51,14 +51,14 @@ Feature: Employees review their own time in a workspace by day and week
     And the week strip shows "2:30" for "Tue 2026-11-03"
     And the week strip shows "2:00" for "Sun 2026-11-08"
     And the week total is "4:30"
-    And the week grid row "keytec · Time capture" shows "2:00" on "Tue 03"
-    And the week grid row "keytec · Time capture" shows "2:00" on "Sun 08"
-    And the week grid row "keytec · Time capture two" shows "0:30" on "Tue 03"
+    And the week grid row "Bread · Time capture" shows "2:00" on "Tue 03"
+    And the week grid row "Bread · Time capture" shows "2:00" on "Sun 08"
+    And the week grid row "Bread · Time capture two" shows "0:30" on "Tue 03"
     When I visit the overview "/bakers/time?mode=week&date=2026-11-03" for project "Time capture"
     Then the overview total is "4:00"
-    And the week grid row "keytec · Time capture" shows "4:00" on "Total"
-    And the week grid has no row "keytec · Time capture two"
-    When I open the week grid cell "keytec · Time capture" on "Tue 03"
+    And the week grid row "Bread · Time capture" shows "4:00" on "Total"
+    And the week grid has no row "Bread · Time capture two"
+    When I open the week grid cell "Bread · Time capture" on "Tue 03"
     Then the address includes "mode=day"
     And the address includes "date=2026-11-03"
     And the overview shows 2 rows
@@ -67,7 +67,7 @@ Feature: Employees review their own time in a workspace by day and week
     And the overview lists "Overview A P Monday 4:00"
 
   Scenario: Pagination does not change the unpaged total
-    Given the account "cwiedemann" has 26 one-minute entries dated "2026-08-18" on project "Time capture"
+    Given the account "north-lead" has 26 one-minute entries dated "2026-08-18" on project "Time capture"
     When I visit "/bakers/time?mode=day&date=2026-08-18"
     Then the overview shows 25 rows
     And the overview total is "0:26"
@@ -116,7 +116,7 @@ Feature: Employees review their own time in a workspace by day and week
     And the overview total is "0:00"
 
   Scenario: A peer and a guest never see another employee's overview
-    Given I am logged in as the account "sgruber"
+    Given I am logged in as the account "north-member"
     When I visit "/bakers/time?mode=week&date=2026-11-03"
     Then the overview total is "9:00"
     When I visit "/bakers/time?mode=day&date=2026-11-03"

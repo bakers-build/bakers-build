@@ -157,7 +157,7 @@ Feature: The ticket detail screen is one canvas inside the shell's island
   @tenancy
   Scenario: A member of only the other workspace is refused this workspace's ticket
     Given the other workspace has a project, a ticket and a member
-    And I am logged in as the account "other-member"
+    And I am logged in as the account "south-contributor"
     When I request the ticket "OTHER-1" in the workspace "other"
     Then the response status is 200
     And exactly one canvas is present in the document
@@ -166,7 +166,7 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     And the error screen is 403 with the "signpost-denied" signpost
 
   # The same ticket, the same account that CAN see it, under a slug that does
-  # not own it. This is the case the shipped `other workspace` fixture exists
+  # not own it. This is the case the shipped Southside Bakery fixture exists
   # for, and it answers 404 — the workspace check talking, not entity access.
   @tenancy
   Scenario: A ticket asked for under a workspace that does not own it is not found

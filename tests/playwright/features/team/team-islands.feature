@@ -234,14 +234,14 @@ Feature: The team screen's five tabs are routes inside one island
   # rail and the tab bar still being the nodes they were — presence would not
   # tell a survived node from a re-rendered one.
   #
-  # THE ADD TARGET IS `login-multi`, a seeded current-workspace member who is
+  # THE ADD TARGET IS `both-bakeries`, a seeded current-workspace member who is
   # not already on Platform Crew. The picker is limited to parent-workspace
   # members, so uid 1 is refused and the roster stays at 3.
   Scenario: Adding a member re-renders only the members island
-    Given the team "Platform Crew" has no member "login-multi"
+    Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     Then the members list has 3 rows
-    When I add the member "login-multi"
+    When I add the member "both-bakeries"
     Then the members list has 4 rows
     And the document was not reloaded
     And the rail was not part of the swap
@@ -271,11 +271,11 @@ Feature: The team screen's five tabs are routes inside one island
   # satisfied instantly whether or not the second submit had been processed at
   # all — the assertion was true of a request that had not happened yet.
   Scenario: Adding the same member twice grows no second row
-    Given the team "Platform Crew" has no member "login-multi"
+    Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
-    When I add the member "login-multi"
+    When I add the member "both-bakeries"
     Then the members list has 4 rows
-    When I add the member "login-multi"
+    When I add the member "both-bakeries"
     Then the members list has 4 rows
     And the document was not reloaded
 
@@ -296,16 +296,16 @@ Feature: The team screen's five tabs are routes inside one island
   # exactly ONCE and wait on that click's own POST response. A count read after a
   # refused token is the count before it.
   Scenario: A member added after a TAB CLICK lands on the first click
-    Given the team "Platform Crew" has no member "login-multi"
+    Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew"
     When I click the tab "Members"
     Then the document was not reloaded
     And the members list has 3 rows
-    When I add the member "login-multi"
+    When I add the member "both-bakeries"
     Then the members list has 4 rows
     And the document was not reloaded
     And the rail was not part of the swap
-    When I remove the member "login-multi"
+    When I remove the member "both-bakeries"
     Then the members list has 3 rows
 
   # THE SURFACE DOES NOT DIE AFTER ONE USE. Four actions in a row, each asserted
@@ -317,18 +317,18 @@ Feature: The team screen's five tabs are routes inside one island
   # Re-runnable by construction: it adds the member it needs, restores the rank it
   # changed, and removes what it added, so the world is as it found it.
   Scenario: Four actions after a tab click each take effect on their own first click
-    Given the team "Platform Crew" has no member "login-multi"
+    Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew"
     When I click the tab "Members"
     Then the members list has 3 rows
-    When I add the member "login-multi"
+    When I add the member "both-bakeries"
     Then the members list has 4 rows
-    When I pick the role "lead" for the member "login-multi"
-    Then the member "login-multi" shows the role "Lead"
-    When I pick the role "member" for the member "login-multi"
-    Then the member "login-multi" shows the role "Member"
-    When I remove the member "login-multi"
-    Then the members list has no member "login-multi"
+    When I pick the role "lead" for the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Lead"
+    When I pick the role "member" for the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Member"
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
     And the members list has 3 rows
     And the document was not reloaded
     And the rail was not part of the swap
@@ -343,13 +343,13 @@ Feature: The team screen's five tabs are routes inside one island
   # deleting the wrong one — which is exactly what the control did when this
   # scenario first reported green.
   Scenario: Removing a member re-renders only the members island
-    Given the team "Platform Crew" has no member "login-multi"
+    Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     And I note the members list
-    When I add the member "login-multi"
+    When I add the member "both-bakeries"
     Then the members list has one more row
-    When I remove the member "login-multi"
-    Then the members list has no member "login-multi"
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
     And the members list is back to the members I noted
     And the document was not reloaded
     And the rail was not part of the swap
@@ -399,18 +399,18 @@ Feature: The team screen's five tabs are routes inside one island
   # assertion names an account it chose. The pick is restored before the member is
   # removed, which keeps this scenario re-runnable like the pair above it.
   Scenario: A team member item carries a role control, and picking a role writes it
-    Given the team "Platform Crew" has no member "login-multi"
+    Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
-    When I add the member "login-multi"
-    Then the member "login-multi" shows the role "Member"
-    And the member "login-multi" shows their initial and joined date on the left, role and remove control right-aligned
-    When I pick the role "lead" for the member "login-multi"
-    Then the member "login-multi" shows the role "Lead"
+    When I add the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Member"
+    And the member "both-bakeries" shows their initial and joined date on the left, role and remove control right-aligned
+    When I pick the role "lead" for the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Lead"
     And the document was not reloaded
     And the rail was not part of the swap
     When I visit the team "Platform Crew" tab "Members"
-    Then the member "login-multi" shows the role "Lead"
-    When I pick the role "member" for the member "login-multi"
-    Then the member "login-multi" shows the role "Member"
-    When I remove the member "login-multi"
-    Then the members list has no member "login-multi"
+    Then the member "both-bakeries" shows the role "Lead"
+    When I pick the role "member" for the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Member"
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"

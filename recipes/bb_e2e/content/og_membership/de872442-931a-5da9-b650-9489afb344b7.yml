@@ -3,9 +3,9 @@
 # BB-462 D9: the workspace `app` role is gone — a conductor's OAuth
 # identity now sees exactly what its owning user sees, and this fixture's
 # account is that owning user. `lead` (the workspace admin tier) is kept
-# here, unlike the sibling `…/a5ed7878` fixture (api-app) F12 narrowed to
+# here, unlike the sibling `…/a5ed7878` fixture (fixture-app) F12 narrowed to
 # `contributor`: this account carries NO team membership fixture, and
-# `registration.feature`'s "api-machine-app registration returns 201"
+# `registration.feature`'s "fixture-api-machine-app registration returns 201"
 # scenario reads `project.home` through the `/jsonapi/bb_project`
 # collection filter before registering a conductor on it — a query only
 # `lead`'s workspace-wide see-all reach (or team membership, which this
@@ -20,14 +20,14 @@ _meta:
   bundle: default
   depends:
     6fb6743d-6419-561b-a8d5-ba7a8b4f10b9: user
-    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   entity_type:
   - value: bb_workspace
   entity_bundle:
   - value: bb_workspace
   entity_id:
-  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
   state:
   - value: active
   uid:

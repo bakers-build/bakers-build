@@ -70,12 +70,12 @@ Given('the account {string} has no context answers', async ({}, name: string) =>
 });
 
 When('I visit my user area', async ({ page }) => {
-  const uid = uidOf('cwiedemann');
+  const uid = uidOf('north-lead');
   await page.goto(`/user/${uid}`);
 });
 
 When('I visit my profile settings', async ({ page }) => {
-  const uid = uidOf('cwiedemann');
+  const uid = uidOf('north-lead');
   await page.goto(`/user/${uid}/edit`);
 });
 

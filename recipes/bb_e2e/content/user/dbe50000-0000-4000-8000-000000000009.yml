@@ -1,7 +1,7 @@
 # A known address that no feature file signs in as or follows a login link
 # for — only the signup suite's "known address" assertions read its mailbox.
 #
-# `cwiedemann@example.com` used to fill that role, but it is also the suite's
+# `north-lead@example.test` used to fill that role, but it is also the suite's
 # principal seeded actor: `login.feature`'s "External destinations cannot
 # leave the origin" requests a login link for it too, from a different
 # feature file and therefore a different worker. Two concurrent login-link
@@ -19,10 +19,10 @@ default:
       value: "en"
   name:
     -
-      value: "login-quiet"
+      value: fixture-mailbox
   mail:
     -
-      value: "login-quiet@example.com"
+      value: fixture-mailbox@example.test
   timezone:
     -
       value: "Europe/Berlin"

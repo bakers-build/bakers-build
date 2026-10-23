@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-workspace-only
+  - value: fixture-workspace-only
   mail:
-  - value: api-workspace-only@example.test
+  - value: fixture-workspace-only@example.test
   status:
   - value: true
   pass:

@@ -1,4 +1,4 @@
-# `other-member`'s ONLY membership: the `other` workspace (BB-415, R3).
+# `south-contributor`'s ONLY membership: the `other` workspace (BB-415, R3).
 #
 # This is the fixture acceptance criterion 4 is measured against — "/ lands a
 # member of a non-`bakers` workspace in THEIR workspace". `BbHomeController`

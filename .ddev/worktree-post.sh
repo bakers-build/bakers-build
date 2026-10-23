@@ -130,14 +130,12 @@ fi
 # of skipping. It runs AFTER the config copy and base_url rewrite above so the workspace inherits a
 # working auth context.
 #
-# PREREQUISITE, and it is NEW with BB-390 — provision it, do not discover it. `--workspace-only`
-# clones (or fetches) the fixture repo `git@git.key-tec.de:keytec-ai-test/bakers-playground.git` over
-# SSH, so this bootstrap now needs a key with read access to `keytec-ai-test/*` plus network reach
-# to that host; before BB-390 it needed only the npm registry. Combined with the hard-fail above,
-# a host without that access fails `ddev init-worktree` — and through `after_create` in
-# `.bakers/conductor.config.js`, fails conductor worktree creation and kills the run. Failing loudly
-# is the deliberate choice over a soft skip, because a skipped setup leaves a worktree that looks
-# provisioned and is not.
+# `--workspace-only` clones (or fetches) the fixture project from a local bare repository it seeds
+# from the committed `tests/fixtures/bakers-playground` tree, so it needs no SSH key or network.
+# Combined with the hard-fail above, any setup failure fails `ddev init-worktree` — and through
+# `after_create` in `.bakers/conductor.config.js`, fails conductor worktree creation and kills the
+# run. Failing loudly is the deliberate choice over a soft skip, because a skipped setup leaves a
+# worktree that looks provisioned and is not.
 if [ -f scripts/setup-test-project.sh ]; then
   echo "==> Setting up the test workspace (scripts/setup-test-project.sh --workspace-only)"
   if ! bash scripts/setup-test-project.sh --workspace-only; then

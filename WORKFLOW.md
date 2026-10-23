@@ -65,25 +65,66 @@ is blocked until it can.
 
 ### Test users
 
-The `recipe-test` world (recipe `bb_e2e`) seeds these accounts. Every one has the password
-**`Bb-test-login-426!`**; the passwordless login form is the product door, the password is for
-Playwright `httpCredentials`, JSON:API basic auth and manual `drush uli`-free sign-in.
+The `recipe-test` world (recipe `bb_e2e`) is two bakeries: **Northside Bakery** (the default
+workspace, slug `bakers`) and **Southside Bakery** (slug `other`). Every account but the service
+account `fixture-automation` (which may carry no address) lives on the reserved `@example.test` domain. Accounts with a password use **`Bb-test-login-426!`** (Playwright
+`httpCredentials`, JSON:API basic auth); the others are reached through the persona picker,
+Playwright's `authProvider` or a magic link.
 
-| User | Role | Use for |
+**Naming rule.** A persona is named `<bakery>-<rank>` or after the one property that makes it a
+persona (`site-admin`, `both-bakeries`, `no-bakery`); personas are shared and read-only, so
+parallel scenarios can use them together. An account a scenario modifies (its rank, its own
+settings or mailbox, or what it creates), or one that needs a site role or a team rank no persona
+carries, is a fixture account named `fixture-<purpose>`.
+
+**Persona picker.** On a `recipe-test` site, `/user/login` shows a *Test personas* section with one
+button per active, human `@example.test` account: one click signs in as that account and lands like
+a normal sign-in. The module (`bb_login_persona_test`) is installed by `bb_e2e` only, so the
+section is absent on every other site.
+
+| Persona | Bakery | Rank and teams | Use for |
+|---|---|---|---|
+| `north-lead` | Northside | lead; Design Crew | Default human persona: tickets, projects, machines, conductors, templates |
+| `north-contributor` | Northside | contributor; North Crew | Ordinary member reads and writes, project and team time |
+| `north-member` | Northside | member; Platform Crew (no password) | Crew member, reviewer and worklog author |
+| `north-guest` | Northside | guest (ticket view, no update, no conductor) | Guest and addon overlay access checks |
+| `south-lead` | Southside | lead | Lead of the other bakery only |
+| `south-contributor` | Southside | contributor; South Crew | Cross-workspace visibility checks |
+| `south-member` | Southside | member (no password) | Member of the other bakery |
+| `south-guest` | Southside | guest | Guest of the other bakery |
+| `site-admin` | — | site role `login_administrator` | Admin walks, JSON:API basic auth in the Playwright API client |
+| `both-bakeries` | both | member of each | Workspace chooser and switching |
+| `no-bakery` | none | no membership | Empty landing, refused and 403 paths |
+
+| Fixture account | Memberships or site role | Purpose |
 |---|---|---|
-| `login-admin` | `login_administrator` | Admin walks, JSON:API basic auth in the Playwright API client |
-| `cwiedemann` | member of the seeded `bakers` workspace | Default human persona: tickets, projects, machines, conductors |
-| `other-member` | member of another workspace | Cross-workspace visibility checks |
-| `addon-reviewer` | guest of the seeded `bakers` workspace (ticket view, no update, no conductor) | Addon overlay access checks |
-| `login-multi`, `login-empty`, `login-quiet`, `login-flood` | login fixtures (membership per name) | Sign-in landing rules, account navigation, shell |
-| `login-blocked` | blocked account | Blocked-login error path |
-| `api-operator`, `api-manager`, `api-session`, `api-roster`, `api-machine`, `api-machine-view`, `api-stats-outsider` | role of the same name | JSON:API permission matrix (`tests/playwright/features/api/**`) |
-| `template-manager` | lead of the default workspace | Ticket-template management and instantiation (`tests/playwright/features/**/ticket-templates.feature`), ticket triggers (`ticket-template-triggers.feature`) |
-| `template-automation` | Contributor service account of the default workspace (no password) | Execution identity of the seeded monthly trigger on *Monthly Drupal update* |
-| `api-member`, `api-lead`, `api-dual-lead`, `api-foreign*`, `api-crew-mate`, `api-conductor-owner`, `api-app`, `api-pagination-*` | membership fixtures, no extra role | Query-access and pagination scenarios |
+| `fixture-agent` | Northside lead, Platform Crew, Southside member | Conductor agent of `bakers-e2e-project` and the Conductor test setup |
+| `fixture-automation` | Northside contributor service account, Automation Crew (no password) | Execution identity of the seeded monthly trigger on *Monthly Drupal update* |
+| `fixture-app` | Northside lead, North Crew | Registers conductors, which grants it the app rank |
+| `fixture-lead` | Northside lead, North Crew | JSON:API lead matrix; lead of the disposable detail-card worlds |
+| `fixture-conductor-owner` | Northside contributor | Owns the JSON:API contract conductors and their machine |
+| `fixture-foreign-lead` | Northside member, North Crew, Southside lead | A lead rank in another workspace grants nothing here |
+| `fixture-api-machine` | site role `api_machine` | JSON:API machine registration matrix |
+| `fixture-api-machine-app` | site role `api_machine`, Northside lead | JSON:API machine registration matrix |
+| `fixture-api-machine-view` | site role `api_machine_view` | JSON:API machine registration matrix |
+| `fixture-api-pagination` | site role `api_machine`, Northside member | Run pagination of its own conductor |
+| `fixture-api-pagination-other` | site role `api_machine`, Southside member | Owns the foreign runs the pagination counts must exclude |
+| `fixture-api-manager` | site role `api_manager` | Entity administration form contracts (`recipe account "manager"`) |
+| `fixture-api-roster` | site role `api_roster`, Northside member | Crew roster query filtering |
+| `fixture-api-session` | site role `api_session`, Northside contributor, North Crew | Session writeback and comments over JSON:API |
+| `fixture-api-stats-outsider` | site role `api_statistics_outsider` | Statistics access matrix |
+| `fixture-crew-mate` | North Crew and South Crew, no workspace | Personal and team time across workspaces; scenarios grant it the team lead rank |
+| `fixture-team-lead` | Northside contributor, North Crew lead | Team-lead edit rights and team time |
+| `fixture-workspace-only` | Northside member, no team | Workspace membership without project authority |
+| `fixture-time-contributor` | Northside contributor, owner of Personal time crew | Personal time, work schedule and activity input; owns a crew, so it may read its own statistics |
+| `fixture-settings` | Northside lead, Southside lead | Writes its own notification settings and work schedule |
+| `fixture-north-creator` | Northside lead (no password) | Creates groups and teams in Northside |
+| `fixture-south-creator` | Southside lead, Northside member (no password) | Creates groups and workspaces; a foreign lead rank grants no creation |
+| `fixture-revocable` | Northside lead (no password) | Lead rank revoked mid-scenario |
+| `fixture-mailbox` | no membership | Sign-up mail count for a known address |
 
-`create-*` accounts and `sgruber` have no password and are reached through magic links only.
-Source of truth: `recipes/bb_e2e/content/user/*.yml` and `recipes/bb_e2e/config/user.role.*.yml`.
+Source of truth: `recipes/bb_e2e/content/user/*.yml` and `recipes/bb_e2e/config/user.role.*.yml`;
+`tests/contract/test-users.sh` fails when this section and the seeded accounts drift apart.
 
 ### Setup
 

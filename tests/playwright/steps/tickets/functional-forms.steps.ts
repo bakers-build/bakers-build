@@ -33,12 +33,12 @@ Then('the ticket routes resolve identifier, ID and UUID for {string}', async ({ 
     expect(apiClient.response!.status()).toBe(200);
     const { data } = await apiClient.response!.json();
     for (const key of [data.attributes.identifier.toLowerCase(), String(data.attributes.drupal_internal__id), data.id]) {
-        const response = await page.goto(`/api-home/ticket/${key}`);
+        const response = await page.goto(`/bakers/ticket/${key}`);
         expect(response?.status()).toBe(200);
         await expect(page.locator('body')).toContainText(data.attributes.title);
     }
     for (const suffix of ['/edit', '/delete']) {
-        const response = await page.goto(`/api-home/ticket/${data.id}${suffix}`);
+        const response = await page.goto(`/bakers/ticket/${data.id}${suffix}`);
         expect(response?.status()).toBe(200);
     }
     const old = await page.goto(`/admin/bakers/ticket/${data.attributes.drupal_internal__id}`);

@@ -34,8 +34,8 @@ init:
   # wires it to this checkout — building the CLI only when a dist artifact is missing or stale
   # (BB-390 moved the build out of the bootstrap and into its only consumer; a FRESH worktree has
   # no dist/ and therefore still builds once), starting no DDEV, and writing nothing to any control
-  # plane. It clones the fixture repo over SSH, so this bootstrap now REQUIRES a key with read
-  # access to keytec-ai-test/* — a host without one fails `ddev init-worktree` by design.
+  # plane. It clones the fixture project from a local bare repository seeded from the committed
+  # tests/fixtures/bakers-playground tree, so it needs no SSH key or network access.
   #
   # MUST be a script invocation, NOT inline shell: keytec-ai also surfaces this via `config to-env`
   # as INIT_WORKTREE_POST, which `ddev init` eval-loads under `set -u` — inline `$(...)`/`${var}`

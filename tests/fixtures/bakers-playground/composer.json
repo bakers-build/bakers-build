@@ -1,0 +1,69 @@
+{
+  "name": "keytec/drupal-11-simple-project",
+  "description": "Minimal Drupal 11 fixture project for keytec AI skill tests.",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "composer/installers": "^2.0",
+    "drupal/core-composer-scaffold": "^11.0",
+    "drupal/core-project-message": "^11.0",
+    "drupal/core-recommended": "^11.0",
+    "cweagans/composer-patches": "^2.0"
+  },
+  "require-dev": {
+    "drush/drush": "^13.0",
+    "squizlabs/php_codesniffer": "^3.7",
+    "drupal/coder": "^8.3.30",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
+    "phpmd/phpmd": "^2.15",
+    "phpstan/phpstan": "^2.2",
+    "mglaman/phpstan-drupal": "^2.0",
+    "phpstan/phpstan-deprecation-rules": "^2.0",
+    "phpstan/extension-installer": "^1.4",
+    "phpunit/phpunit": "^11",
+    "drupal/core-dev": "^11.3"
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true,
+      "drupal/core-composer-scaffold": true,
+      "drupal/core-project-message": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "cweagans/composer-patches": true,
+      "phpstan/extension-installer": true,
+      "php-http/discovery": true,
+      "symfony/runtime": true,
+      "tbachert/spi": true
+    },
+    "audit": {
+      "abandoned": "report"
+    },
+    "policy": {
+      "advisories": {
+        "block": false
+      }
+    }
+  },
+  "extra": {
+    "drupal-scaffold": {
+      "locations": {
+        "web-root": "web/"
+      }
+    },
+    "patches": {},
+    "installer-paths": {
+      "web/core": [
+        "type:drupal-core"
+      ],
+      "web/modules/contrib/{$name}": [
+        "type:drupal-module"
+      ],
+      "web/themes/contrib/{$name}": [
+        "type:drupal-theme"
+      ],
+      "web/profiles/contrib/{$name}": [
+        "type:drupal-profile"
+      ]
+    }
+  }
+}

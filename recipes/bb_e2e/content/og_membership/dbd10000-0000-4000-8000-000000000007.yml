@@ -1,12 +1,12 @@
-# sgruber's TEAM membership — a crew member who holds no Drupal role at all.
+# north-member's TEAM membership — a crew member who holds no Drupal role at all.
 #
-# `sgruber` deliberately carries no `user_role` (see its user fixture), so this
+# `north-member` deliberately carries no `user_role` (see its user fixture), so this
 # membership is the whole reason the account appears in a team at all. It is the
 # subject that shows a team is a crew for REPORTING and not an access carrier: the
 # account's ticket reach is unchanged by it, because that comes from …0004 /
 # …0005 (workspace + project), never from the team.
 #
-# Platform Crew, not Design Crew: sgruber already OWNS Design Crew
+# Platform Crew, not Design Crew: north-member already OWNS Design Crew
 # (…0002's `owner_user_id`) and `og.settings` has
 # `auto_add_group_owner_membership: true`, so a fixture naming that pair would
 # abort the import with "already a member in this group". Placing it here also

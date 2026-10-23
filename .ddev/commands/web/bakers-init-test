@@ -20,6 +20,13 @@ drush ${URI} status --fields=bootstrap --format=string 2>/dev/null | grep -q Suc
 echo "==> Applying bb_e2e recipe"
 drush ${URI} recipe /var/www/html/recipes/bb_e2e -y
 
+# The default workspace exists before the recipe runs (bb_core_install()), and
+# recipe content import skips an existing uuid, so its e2e name is set here.
+drush ${URI} ev '
+$ws = \Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["uuid" => \Drupal\bb_core\Entity\BbWorkspace::DEFAULT_UUID]);
+reset($ws)->set("name", "Northside Bakery")->save();
+'
+
 bb_enable_write_transport "${URI}"
 drush ${URI} cr >/dev/null
 
@@ -95,7 +102,7 @@ drush ${URI} config:set simple_oauth.settings private_key /var/www/oauth-keys/pr
 fixture_json="$(drush ${URI} ev '
 $etm = \Drupal::entityTypeManager();
 $first = static fn(array $r) => $r ? reset($r) : null;
-$user = $first($etm->getStorage("user")->loadByProperties(["name"=>"bakers-e2e-agent"]));
+$user = $first($etm->getStorage("user")->loadByProperties(["name"=>"fixture-agent"]));
 $ticket = $first($etm->getStorage("bb_ticket")->loadByProperties(["identifier"=>"GL-E2E-DROPSH"]));
 $conductor = $first($etm->getStorage("bb_conductor")->loadByProperties(["conductor_id"=>"bakers-e2e-node"]));
 $project = $first($etm->getStorage("bb_project")->loadByProperties(["name"=>"bakers-e2e-project"]));
@@ -119,7 +126,7 @@ jq -n \
   '$fixture + {base_url:$base_url}' \
   > "${ARTIFACT_DIR}/fixtures.json"
 
-basic_b64="$(printf '%s' 'bakers-e2e-agent:bakers-e2e-agent-secret' | base64 -w0)"
+basic_b64="$(printf '%s' 'fixture-agent:bakers-e2e-agent-secret' | base64 -w0)"
 
 cat > "${ARTIFACT_DIR}/env" << EOF
 export BB_E2E_BASE_URL="${base_url}"

@@ -9,7 +9,7 @@
 Feature: The user area is split into a view route and an edit route
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
 
   Scenario: Full name and developer title save and survive a reload
     When I visit my profile settings
@@ -46,7 +46,7 @@ Feature: The user area is split into a view route and an edit route
     Then the AI-use notice is shown before the context questions
 
   Scenario: The context answers save and survive a reload
-    Given the account "cwiedemann" has no context answers
+    Given the account "north-lead" has no context answers
     When I visit my profile settings
     And I answer the context questions with:
       | What should bakers.build know about your background? | Drupal developer |
@@ -56,13 +56,13 @@ Feature: The user area is split into a view route and an edit route
       | What should bakers.build know about your background? | Drupal developer |
 
   Scenario: A linked account sees its mail locked with a provenance note
-    Given the account "cwiedemann" is linked to an oauth provider
+    Given the account "north-lead" is linked to an oauth provider
     When I visit my profile settings
     Then the mail field is disabled
     And the mail field's description names the provider
 
   Scenario: An unlinked account can still change its mail address
-    Given the account "cwiedemann" is not linked to an oauth provider
+    Given the account "north-lead" is not linked to an oauth provider
     When I visit my profile settings
     Then the mail field is not disabled
 
@@ -75,15 +75,15 @@ Feature: The user area is split into a view route and an edit route
   # View and Edit links are core's local tasks. Both clicks are real header
   # links, so the second one proves the first left a working shell behind.
   Scenario: View and Edit keep the shell and show the same account
-    Given the account "cwiedemann" has full name "Ada Lovelace" and developer title "Backend engineer"
+    Given the account "north-lead" has full name "Ada Lovelace" and developer title "Backend engineer"
     When I visit my user area
     Then the user overview shows the name "Ada Lovelace" and the developer title "Backend engineer"
-    And the user overview does not disclose the mail of "cwiedemann"
+    And the user overview does not disclose the mail of "north-lead"
     When I click "Edit" in the page header
-    Then I am on the edit route of "cwiedemann"
+    Then I am on the edit route of "north-lead"
     And the profile form is inside the app shell
     When I click "View" in the page header
-    Then I am on the canonical route of "cwiedemann"
+    Then I am on the canonical route of "north-lead"
     And the user overview shows the name "Ada Lovelace" and the developer title "Backend engineer"
     And the page has no profile form
 
@@ -96,10 +96,10 @@ Feature: The user area is split into a view route and an edit route
     Then every tab fits within the viewport
     And exactly one tab is marked as the current page
     When I click "Edit" in the page header
-    Then I am on the edit route of "cwiedemann"
+    Then I am on the edit route of "north-lead"
     And exactly one tab is marked as the current page
     When I click "View" in the page header
-    Then I am on the canonical route of "cwiedemann"
+    Then I am on the canonical route of "north-lead"
     And exactly one tab is marked as the current page
     And every tab fits within the viewport
 
@@ -112,30 +112,30 @@ Feature: The user area is split into a view route and an edit route
   # An administrator holds `view the administration theme`; the edit route
   # must not fall back to the admin theme for them either.
   Scenario: An administrator's account edit keeps the shell
-    Given I am logged in as the account "login-admin"
-    When I visit the user area of "login-admin"
+    Given I am logged in as the account "site-admin"
+    When I visit the user area of "site-admin"
     And I click "Edit" in the page header
-    Then I am on the edit route of "login-admin"
+    Then I am on the edit route of "site-admin"
     And the profile form is inside the app shell
     When I reload the page
     Then the profile form is inside the app shell
     When I click "View" in the page header
-    Then I am on the canonical route of "login-admin"
+    Then I am on the canonical route of "site-admin"
 
   Scenario: An account without a full name or title falls back to its name
-    Given the account "login-empty" has no full name and no developer title
-    And I am logged in as the account "login-empty"
-    When I visit the user area of "login-empty"
-    Then the user overview shows the name "login-empty" and no developer title
+    Given the account "no-bakery" has no full name and no developer title
+    And I am logged in as the account "no-bakery"
+    When I visit the user area of "no-bakery"
+    Then the user overview shows the name "no-bakery" and no developer title
 
   Scenario: An administrator viewing another account sees that account
-    Given the account "cwiedemann" has full name "Ada Lovelace" and developer title "Backend engineer"
-    And I am logged in as the account "login-admin"
-    When I visit the user area of "cwiedemann"
+    Given the account "north-lead" has full name "Ada Lovelace" and developer title "Backend engineer"
+    And I am logged in as the account "site-admin"
+    When I visit the user area of "north-lead"
     Then the user overview shows the name "Ada Lovelace" and the developer title "Backend engineer"
 
   Scenario: Another account's view and edit routes are denied
-    Then the view and edit routes of "sgruber" are denied to me
+    Then the view and edit routes of "north-member" are denied to me
 
   Scenario: The edit form offers no password
     When I visit my profile settings
