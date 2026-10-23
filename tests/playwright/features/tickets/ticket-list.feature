@@ -227,9 +227,9 @@ Feature: The ticket list is the nav home
   Scenario: A single-select facet pick reaches the address
     Given I am signed in as a member of the "bakers" workspace
     When I visit the full ticket list of the "bakers" workspace
-    And I click "keytec" in the "Group" facet with a pointer
+    And I click "Bread" in the "Group" facet with a pointer
     Then the address carries "group="
-    And the active filters read "Group is keytec"
+    And the active filters read "Group is Bread"
 
   # THE HUMAN'S INSTRUCTION OF 2026-09-02: the summary must be clickable away
   # again. `active-filters` used to argue the opposite in its own documentation

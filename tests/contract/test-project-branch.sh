@@ -7,7 +7,7 @@ trap 'rm -rf "$TMP"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
 die() { echo "$*" >&2; exit 1; }
 say() { :; }
-for name in test_branch_name workspace_has_branch select_workspace_branch parent_branch_for; do
+for name in test_branch_name workspace_has_branch select_workspace_branch parent_branch_for seed_fixture_origin; do
   body="$(awk -v fn="$name" '$0 == fn "() {" { inside=1 } inside { print } inside && /^}/ { exit }' "$ROOT/scripts/setup-test-project.sh")"
   [ -n "$body" ] || fail "missing $name"
   eval "$body"
@@ -45,6 +45,18 @@ select_workspace_branch "$TMP/work" feat/shop-28-other feat/shop-29-missing
 ! git -C "$TMP/work" show-ref --verify --quiet refs/heads/shop-28 || fail 'missing current branch was created'
 [ "$(git -C "$TMP/work" rev-parse origin/main origin/develop)" = "$before" ] || fail 'shared branch moved'
 [ "$(git --git-dir="$TMP/remote.git" show develop:WORKFLOW.md)" = original ] || fail 'remote workflow overwritten'
+# The committed fixture tree becomes a local bare origin on develop, seeded once.
+FIXTURE_BRANCH=develop
+seed_fixture_origin "$ROOT/tests/fixtures/bakers-playground" "$TMP/fixture.git"
+seeded="$(git --git-dir="$TMP/fixture.git" rev-parse develop)"
+[ "$(git --git-dir="$TMP/fixture.git" symbolic-ref HEAD)" = refs/heads/develop ] || fail 'fixture origin HEAD is not develop'
+git --git-dir="$TMP/fixture.git" cat-file -e develop:.bakers/conductor.config.js || fail 'fixture origin lacks the conductor config'
+seed_fixture_origin "$ROOT/tests/fixtures/bakers-playground" "$TMP/fixture.git"
+[ "$(git --git-dir="$TMP/fixture.git" rev-parse develop)" = "$seeded" ] || fail 'reseeding moved develop'
+git clone -q -b develop "$TMP/fixture.git" "$TMP/playground"
+[ "$(git -C "$TMP/playground" remote get-url origin)" = "$TMP/fixture.git" ] || fail 'clone origin is not the bare repository'
+select_workspace_branch "$TMP/playground" feat/bakers-6-test ''
+[ "$(git -C "$TMP/playground" branch --show-current)" = develop ] || fail 'fixture clone did not fall back to develop'
 # Exercise the ticket lookup at its external command boundary.
 bakers() {
   [ "$*" = 'dropsh --format json search bb_ticket --bundle bb_ticket --filter identifier:SHOP-27' ] || return 99
@@ -56,4 +68,4 @@ LOOKUP_JSON='{"data":[{"attributes":{"base_branch":"develop"},"relationships":{"
 [ -z "$(parent_branch_for feat/shop-27-cart)" ] || fail 'root ticket invented a parent'
 LOOKUP_JSON='{"error":{"message":"offline"}}'
 if (parent_branch_for feat/shop-27-cart) >/dev/null 2>&1; then fail 'lookup error was treated as no parent'; fi
-echo 'PASS: dynamic names, current/parent/develop priority, no-parent case, preserved edits, lookup errors, no remote writes'
+echo 'PASS: fixture origin seeding, dynamic names, current/parent/develop priority, no-parent case, preserved edits, lookup errors, no remote writes'

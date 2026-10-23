@@ -10,7 +10,7 @@ function safe(value: string): string {
   return value.replace(/["'\\$]/g, '');
 }
 
-/** A label that ends with the given name, e.g. "keytec · Time capture" for "Time capture". */
+/** A label that ends with the given name, e.g. "Bread · Time capture" for "Time capture". */
 function endsWith(name: string): RegExp {
   return new RegExp(`(^|· )${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
 }

@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-    - value: login-admin
+    - value: site-admin
   mail:
-    - value: login-admin@example.com
+    - value: site-admin@example.test
   status:
     - value: true
   pass:

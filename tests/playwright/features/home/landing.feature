@@ -12,7 +12,7 @@ Feature: The site root lands the operator on their own My work
   survives the first click, so a one-click scenario cannot see the class of
   defect that broke this mechanism's first delivery.
 
-  # AC 1 and AC 2. `cwiedemann` holds exactly one membership — the default
+  # AC 1 and AC 2. `north-lead` holds exactly one membership — the default
   # workspace — so the site root must redirect rather than ask.
   #
   # THE SECOND ASSERTION IS THE CRITERION, not a restatement of the first: the
@@ -22,7 +22,7 @@ Feature: The site root lands the operator on their own My work
   # address tells the two apart.
   @landing
   Scenario: An operator with one workspace is taken to that workspace's My work
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     When I open the site root
     Then the address is "/bakers/tickets"
     And the address is not "/"
@@ -30,13 +30,13 @@ Feature: The site root lands the operator on their own My work
     And the application shell is present
 
   # AC 4, and the reason the seed grew an account for it (BB-415 R3). Before
-  # `other-member` existed, every seeded account's only workspace was the
+  # `south-contributor` existed, every seeded account's only workspace was the
   # default one — so a controller that returned `BbWorkspace::DEFAULT_SLUG`
   # unconditionally would have passed the scenario above and this file would
   # have proved nothing about tenancy.
   @landing @tenancy
   Scenario: A member of only the other workspace is taken to THAT workspace
-    Given I am logged in as the account "other-member"
+    Given I am logged in as the account "south-contributor"
     When I open the site root
     Then the address is "/other/tickets"
     And the address is not "/bakers/tickets"
@@ -88,7 +88,7 @@ Feature: The site root lands the operator on their own My work
   # precondition.
   @landing @island
   Scenario: The rail still boosts after arriving through the landing redirect
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     When I open the site root
     Then the address is "/bakers/tickets"
     When I click the rail entry "Projects"
@@ -118,6 +118,6 @@ Feature: The site root lands the operator on their own My work
 
   @landing
   Scenario: The create action stands apart from the empty state
-    Given I am logged in as the account "login-empty"
+    Given I am logged in as the account "no-bakery"
     When I open the site root
     Then the create action stands 20 pixels below the content above it

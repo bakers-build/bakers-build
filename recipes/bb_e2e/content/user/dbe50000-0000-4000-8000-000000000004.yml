@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-    - value: login-multi
+    - value: both-bakeries
   mail:
-    - value: login-multi@example.com
+    - value: both-bakeries@example.test
   status:
     - value: true
   pass:

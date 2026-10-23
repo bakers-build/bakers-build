@@ -7,7 +7,7 @@
 # the middle (the centred default) and blue with a yellow disc on the right.
 #
 # Subjects: a project in "bakers" (it needs that workspace's group and team), a
-# group in "create-b" (group-team-create counts the groups of "create-a"), and
+# group in "other" (group-team-create creates and counts in "bakers"), and
 # a workspace its own non-administrator owner creates.
 @feature:entity-identity-crop
 Feature: Cropped images and visible descriptions identify projects, groups and workspaces
@@ -73,16 +73,16 @@ Feature: Cropped images and visible descriptions identify projects, groups and w
     Given I am logged in as the <entity> creator
     And I have created a <entity> with a cropped image
     And its crop has not been generated yet
-    Then anonymous visitors and "api-stranger" cannot read its image or its crop
+    Then anonymous visitors and "no-bakery" cannot read its image or its crop
     And its crop is still not generated
     And its <member> can read its image and its crop
-    And anonymous visitors and "api-stranger" cannot read its image or its crop
+    And anonymous visitors and "no-bakery" cannot read its image or its crop
     And I delete the <entity>
 
     Examples:
       | entity    | member                |
-      | project   | member "cwiedemann"   |
-      | group     | member "create-owner" |
+      | project   | member "north-lead"   |
+      | group     | member "south-lead"   |
       | workspace | owner                 |
 
   # Review focus: a refused form keeps the saved crop, a cancelled edit keeps

@@ -481,7 +481,7 @@ Given('the other workspace has a project, a ticket and a member', async () => {
     // BB-462 D4/D5: project visibility comes from `teams`, not from the
     // workspace membership below — a project fixture with no team is
     // invisible to anyone but a workspace `lead`. This fixture needs
-    // `other-member` to see the project through TEAM membership instead.
+    // `south-contributor` to see the project through TEAM membership instead.
     '$tms = $etm->getStorage("bb_team");',
     '$tm = current($tms->loadByProperties(["name" => "other crew team"]));',
     'if (!$tm) { $tm = $tms->create(["name" => "other crew team", "workspace_id" => $ws->id()]); $tm->save(); }',
@@ -492,8 +492,8 @@ Given('the other workspace has a project, a ticket and a member', async () => {
     '$t = current($ts->loadByProperties(["identifier" => "OTHER-1"]));',
     'if (!$t) { $t = $ts->create(["project_id" => $p->id(), "title" => "Foreign workspace ticket", "workflow" => "bb_feature", "state" => "coding", "description" => ["value" => "A ticket that belongs to the other workspace.", "format" => "bb_rich"]]); $t->save(); }',
     '$us = $etm->getStorage("user");',
-    '$u = current($us->loadByProperties(["name" => "other-member"]));',
-    'if (!$u) { $u = $us->create(["name" => "other-member", "mail" => "other-member@example.com", "status" => 1]); $u->save(); }',
+    '$u = current($us->loadByProperties(["name" => "south-contributor"]));',
+    'if (!$u) { $u = $us->create(["name" => "south-contributor", "mail" => "south-contributor@example.test", "status" => 1]); $u->save(); }',
     // BB-462 D1: the implicit `member` rank grants nothing, so this
     // account needs the explicit `contributor` floor to reach anything at
     // all — the "ordinary member" this fixture models used to get that for

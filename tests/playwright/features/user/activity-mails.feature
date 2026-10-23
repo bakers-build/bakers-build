@@ -5,23 +5,23 @@ Feature: Activity mails reach the accounts that opted in
   and reviews offer a mail; the ticket event kinds offer none.
 
   Scenario: An account added as a reviewer gets one mail
-    Given the notification settings of "cwiedemann" are untouched
-    And a disposable ticket in state "coding" is owned by "cwiedemann"
-    And I am logged in as the account "cwiedemann"
-    When I open the notification settings of "cwiedemann"
+    Given the notification settings of "north-lead" are untouched
+    And a disposable ticket in state "coding" is owned by "north-lead"
+    And I am logged in as the account "north-lead"
+    When I open the notification settings of "north-lead"
     And I tick "Review requested" under "Activity mails"
     And I save the notification settings
-    And "cwiedemann" is added as a reviewer of the disposable ticket
-    Then "cwiedemann" receives exactly one activity mail for the disposable ticket
+    And "north-lead" is added as a reviewer of the disposable ticket
+    Then "north-lead" receives exactly one activity mail for the disposable ticket
     And that mail says "Your review was requested" and links to the disposable ticket
 
   Scenario: An account made the assignee gets one mail
-    Given the notification settings of "cwiedemann" are untouched
-    And a disposable ticket in state "coding" is owned by "cwiedemann"
-    And I am logged in as the account "cwiedemann"
-    When I open the notification settings of "cwiedemann"
+    Given the notification settings of "north-lead" are untouched
+    And a disposable ticket in state "coding" is owned by "north-lead"
+    And I am logged in as the account "north-lead"
+    When I open the notification settings of "north-lead"
     And I tick "Ticket assigned" under "Activity mails"
     And I save the notification settings
-    And "cwiedemann" is made the assignee of the disposable ticket
-    Then "cwiedemann" receives exactly one activity mail for the disposable ticket
+    And "north-lead" is made the assignee of the disposable ticket
+    Then "north-lead" receives exactly one activity mail for the disposable ticket
     And that mail says "You were assigned to this ticket" and links to the disposable ticket

@@ -1,6 +1,6 @@
 # The e2e machine identity's SECOND workspace membership (BB-472).
 #
-# `bakers-e2e-agent` (the `client_credentials` identity behind
+# `fixture-agent` (the `client_credentials` identity behind
 # `scripts/setup-test-project.sh`'s generated playground connection) was, before
 # this fixture, a member of exactly the default workspace only — reached
 # implicitly through the workspace `app` role `bb_core_bb_conductor_insert()`
@@ -8,7 +8,7 @@
 # `og_membership`. A single-workspace identity cannot exercise BB-472's
 # workspace list/switch at all: the picker has nothing to switch TO.
 #
-# This membership adds the "other workspace" (`dbc60000-…-000000000002`, the
+# This membership adds Southside Bakery (`dbc60000-…-000000000002`, the
 # BB-350/415 wrong-workspace fixture, see its own docblock) as a second,
 # ordinary membership — no bypass role, no project, no ticket, nothing else
 # reachable through it. The point is narrow: give the harness identity a second
@@ -16,14 +16,14 @@
 # picker (Task 5) and `--workspace` (Task 4) have a real second entry to select
 # against the SAME identity, with no second Drupal user/login involved.
 #
-# `other-member` (single-membership, `other` only) remains the negative
+# `south-contributor` (single-membership, `other` only) remains the negative
 # reference for "must not reach the default workspace"; this fixture is the
 # positive "can switch between two" counterpart for the machine identity rather
 # than a human login.
 #
 # No `roles` key: `member` is OG's structurally REQUIRED role.
 # OgMembership::preSave() revokes it as implicit and getRoles() re-adds it, so
-# naming it here is rejected outright — see the `other-member` fixture for the
+# naming it here is rejected outright — see the `south-contributor` fixture for the
 # same note in full.
 _meta:
   version: '1.0'

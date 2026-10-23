@@ -26,7 +26,7 @@ When('the browser creates a scoped {string} named {string}', async ({ page, enti
     try {
         await form.submit(backendTheme);
     } finally {
-        await apiClient.identify('login-admin');
+        await apiClient.identify('site-admin');
         await apiClient.read(`/jsonapi/${type}/${type}?filter[name]=${encodeURIComponent(name)}`);
         expect(apiClient.response!.status()).toBe(200);
         const document = await apiClient.response!.json();

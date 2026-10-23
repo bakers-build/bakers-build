@@ -9,7 +9,7 @@ Feature: Projects, groups and workspaces carry a description and an image over J
 
   Scenario Outline: An editor sets, rejects and clears a <entity>'s description
     Given the <entity> "<fixture>" has no description and no image
-    And the API client is "login-admin"
+    And the API client is "site-admin"
     When the API client sets the <entity> "<fixture>" description to 280 "é" characters
     Then the API response status is 200
     And the <entity> "<fixture>" description reads 280 "é" characters
@@ -31,13 +31,13 @@ Feature: Projects, groups and workspaces carry a description and an image over J
 
   Scenario Outline: An editor uploads, replaces and clears a <entity>'s image
     Given the <entity> "<fixture>" has no description and no image
-    And the API client is "login-admin"
+    And the API client is "site-admin"
     When the API client uploads "avatar-wide.png" as the <entity> "<fixture>" image
     Then the API response status is 200
     And the <entity> "<fixture>" image is a private file
-    And "login-admin" may download the <entity> "<fixture>" image
-    And "api-member" may download the <entity> "<fixture>" image
-    And "api-stranger" may not download the <entity> "<fixture>" image
+    And "site-admin" may download the <entity> "<fixture>" image
+    And "north-contributor" may download the <entity> "<fixture>" image
+    And "no-bakery" may not download the <entity> "<fixture>" image
     When the API client uploads a WebP as the <entity> "<fixture>" image
     Then the API response status is 200
     And the <entity> "<fixture>" image is a private file
@@ -53,7 +53,7 @@ Feature: Projects, groups and workspaces carry a description and an image over J
 
   Scenario Outline: A <entity> refuses <file> as its image
     Given the <entity> "<fixture>" has no description and no image
-    And the API client is "login-admin"
+    And the API client is "site-admin"
     When the API client uploads <file> as the <entity> "<fixture>" image
     Then the API response status is 422
     And the <entity> "<fixture>" has no image
@@ -71,14 +71,14 @@ Feature: Projects, groups and workspaces carry a description and an image over J
 
   Scenario Outline: Existing access decides who reads or changes a <entity>'s identity
     Given the <entity> "<fixture>" has no description and no image
-    And the API client is "api-member"
+    And the API client is "north-contributor"
     When the API client sets the <entity> "<fixture>" description to "Not yours to write"
     Then the API response is refused
     And the <entity> "<fixture>" description is empty
     When the API client uploads "avatar-wide.png" as the <entity> "<fixture>" image
     Then the API response is refused
     And the <entity> "<fixture>" has no image
-    Given the API client is "api-stranger"
+    Given the API client is "no-bakery"
     When the API client reads the <entity> "<fixture>"
     Then the API response is refused
 

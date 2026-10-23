@@ -957,7 +957,7 @@ Then('the ticket list screen is rendered', async ({ page }) => {
  * assumption that the READER's own workspace was itself ticket-less in this
  * fixture world — BB-462's own ticket-detail.steps.ts fixture ("the other
  * workspace has a project, a ticket and a member") gives that assumption up:
- * `other-member` now legitimately sees exactly one ticket of ITS OWN
+ * `south-contributor` now legitimately sees exactly one ticket of ITS OWN
  * workspace once that fixture has run, and asserting a hard 0 turned that
  * correct visibility into a false failure the moment both fixtures shared a
  * suite run. The row count is compared instead against how many tickets the

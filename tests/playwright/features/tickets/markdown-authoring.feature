@@ -8,7 +8,7 @@ Feature: A Markdown toolbar over every bb_rich body
   JavaScript the plain textarea still works.
 
   Scenario Outline: Each toolbar button applies its Markdown to the selection
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     And I open the create-ticket dialog from the ticket list
     Then the "Description" field has a Markdown toolbar
     When I write "<text>" in the "Description" field
@@ -31,7 +31,7 @@ Feature: A Markdown toolbar over every bb_rich body
       | Link          |                | [](url)                |
 
   Scenario: The saved description is exactly the Markdown in the box
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     And I open the create-ticket dialog from the ticket list
     When I type "Markdown stored as typed" into the title line
     And I write "## A\n\n<b>x</b> y\n\n" in the "Description" field
@@ -43,7 +43,7 @@ Feature: A Markdown toolbar over every bb_rich body
     And the newest ticket titled "Markdown stored as typed" stores the description "## A\n\n<b>x</b> **y**\n\n" in "bb_rich"
 
   Scenario: The toolbar survives a refused submit
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     And I open the create-ticket dialog from the ticket list
     When I write "Export" in the "Description" field
     And I submit the ticket dialog without browser validation
@@ -55,7 +55,7 @@ Feature: A Markdown toolbar over every bb_rich body
     Then the "Description" field reads "**Export**"
 
   Scenario Outline: The toolbar is reachable and operable with the keyboard alone
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     And I open the create-ticket dialog from the ticket list
     When I write "Export" in the "Description" field
     And I select "Export" in the "Description" field
@@ -73,26 +73,26 @@ Feature: A Markdown toolbar over every bb_rich body
       | Space |
 
   Scenario: Editing a ticket offers the toolbar on its description only
-    Given a disposable review ticket assigned to "cwiedemann" with reviewer "addon-reviewer"
-    And I am logged in as the account "cwiedemann"
+    Given a disposable review ticket assigned to "north-lead" with reviewer "north-guest"
+    And I am logged in as the account "north-lead"
     When I visit the disposable review ticket
     And I follow the "More settings" action
     Then the "Description" field has a Markdown toolbar
     And the "Environment variables" field has no Markdown toolbar
 
   Scenario: A review body has the toolbar while drafted and none once submitted
-    Given a disposable review ticket assigned to "cwiedemann" with reviewer "addon-reviewer"
-    And I am logged in as the account "addon-reviewer"
+    Given a disposable review ticket assigned to "north-lead" with reviewer "north-guest"
+    And I am logged in as the account "north-guest"
     When I visit the disposable review ticket
     And I start writing a review
     Then the "Body" field has a Markdown toolbar
-    Given "addon-reviewer" submitted the review "Ship it with the empty state"
-    And I am logged in as the account "cwiedemann"
-    When I open the review by "addon-reviewer" in its review form
+    Given "north-guest" submitted the review "Ship it with the empty state"
+    And I am logged in as the account "north-lead"
+    When I open the review by "north-guest" in its review form
     Then the "Body" field has no Markdown toolbar
 
   Scenario: A ticket template description has the toolbar
-    Given I am logged in as the account "template-manager"
+    Given I am logged in as the account "north-lead"
     When I visit the project "Template fixtures"
     And I click the tab "Templates"
     And I open the template "Web fixture template"
@@ -101,8 +101,8 @@ Feature: A Markdown toolbar over every bb_rich body
 
   @nojs
   Scenario: Without JavaScript the description is a plain textarea that saves as typed
-    Given a disposable review ticket assigned to "cwiedemann" with reviewer "addon-reviewer"
-    And I am logged in as the account "cwiedemann"
+    Given a disposable review ticket assigned to "north-lead" with reviewer "north-guest"
+    And I am logged in as the account "north-lead"
     When I visit the disposable review ticket
     And I follow the "More settings" action
     Then the "Description" field has no Markdown toolbar

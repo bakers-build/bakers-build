@@ -2,31 +2,31 @@
 Feature: AI proposals are reviewed before anything is booked
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
 
   Scenario: A proposal books nothing until the employee saves the week
     Given the AI proposes "1:30" on "2026-09-14" and "2:00" on "2026-09-15" for project "Time capture"
     When the AI sends the proposal again
     Then the repeated proposal answers 200
     When I open the proposal review link
-    Then the week grid row "keytec · Time capture" shows "1:30" on "Mon 14"
-    And the week grid row "keytec · Time capture" on "Mon 14" is marked Proposed
+    Then the week grid row "Bread · Time capture" shows "1:30" on "Mon 14"
+    And the week grid row "Bread · Time capture" on "Mon 14" is marked Proposed
     And the page shows "Proposed — not yet recorded: 3:30"
     And the overview total is "0:00"
-    And "cwiedemann" of "Time capture" on "2026-09-14" totals 0 seconds
-    When I type "1:15" into the week grid row "keytec · Time capture" on "Mon 14"
+    And "north-lead" of "Time capture" on "2026-09-14" totals 0 seconds
+    When I type "1:15" into the week grid row "Bread · Time capture" on "Mon 14"
     Then the week grid row "Proposed — not yet recorded" reads "1:15" on "Mon 14"
     And the week grid row "Proposed — not yet recorded" reads "3:15" on "Total"
-    And "cwiedemann" of "Time capture" on "2026-09-14" totals 0 seconds
+    And "north-lead" of "Time capture" on "2026-09-14" totals 0 seconds
     When I save the week
     Then the page shows "2 proposed entries recorded"
-    And the week grid row "keytec · Time capture" on "Mon 14" is not marked Proposed
-    And "cwiedemann" of "Time capture" on "2026-09-14" totals 4500 seconds
-    And "cwiedemann" of "Time capture" on "2026-09-15" totals 7200 seconds
+    And the week grid row "Bread · Time capture" on "Mon 14" is not marked Proposed
+    And "north-lead" of "Time capture" on "2026-09-14" totals 4500 seconds
+    And "north-lead" of "Time capture" on "2026-09-15" totals 7200 seconds
     And the proposal is "draft"
     And I see the Submit action
     When I save the week
-    Then "cwiedemann" of "Time capture" on "2026-09-14" totals 4500 seconds
+    Then "north-lead" of "Time capture" on "2026-09-14" totals 4500 seconds
 
   Scenario: A discarded proposal books nothing and cannot come back
     Given the AI proposes "1:00" on "2026-09-21" and "0:30" on "2026-09-22" for project "Time capture"
@@ -34,13 +34,13 @@ Feature: AI proposals are reviewed before anything is booked
     And I discard the proposal
     Then the proposal is "discarded"
     And no proposed entry of the proposal is left
-    And "cwiedemann" of "Time capture" on "2026-09-21" totals 0 seconds
+    And "north-lead" of "Time capture" on "2026-09-21" totals 0 seconds
     When the AI sends the proposal again
     Then the repeated proposal answers 409
 
   Scenario: Nobody else can see or open a proposal
     Given the AI proposes "1:00" on "2026-09-28" and "0:30" on "2026-09-29" for project "Time capture"
-    Given I am logged in as the account "sgruber"
+    Given I am logged in as the account "north-member"
     When I open the proposal review link
     Then I do not see the text "Proposed"
     When I open the proposed entry dated "2026-09-28"
@@ -63,7 +63,7 @@ Feature: AI proposals are reviewed before anything is booked
 
   Scenario: Another employee cannot open a submission canonical
     Given the AI proposes "1:00" on "2026-11-23" and "0:30" on "2026-11-24" for project "Time capture"
-    Given I am logged in as the account "sgruber"
+    Given I am logged in as the account "north-member"
     When I open the submission canonical
     Then the page is not found or forbidden
 

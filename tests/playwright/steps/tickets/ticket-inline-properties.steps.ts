@@ -471,9 +471,10 @@ Then('invalid inline property requests are rejected without changing the ticket'
     const { url, entries } = await formData(page);
     const cases: [string, string[]][] = [
         ['priority', ['99']], ['conductor_id', ['2147483647']],
-        ['conductor_id', [fixtureId('conductor.home')]],
+        // A conductor of another workspace; `conductor.home` shares the ticket's workspace now.
         ['conductor_id', [fixtureId('conductor.pagination-other')]],
-        ['labels', [fixtureId('term.label')]],
+        // A label of another workspace; `term.label` shares the ticket's workspace now.
+        ['labels', [fixtureId('term.other')]],
     ];
     for (const [field, selection] of cases) {
         const data = new URLSearchParams(entries);
@@ -512,7 +513,7 @@ Then('the inline save refuses missing CSRF tokens and users without update acces
     await page.reload();
     expect(await values(page)).toEqual(before);
     await page.context().clearCookies();
-    const login = await page.request.post('/user/login?_format=json', { data: { name: 'api-stranger', pass: 'Bb-test-login-426!' } });
+    const login = await page.request.post('/user/login?_format=json', { data: { name: 'no-bakery', pass: 'Bb-test-login-426!' } });
     expect(login.ok(), await login.text()).toBe(true);
     expect([403, 404]).toContain((await post(page, url, new URLSearchParams(entries))).status());
     await page.context().clearCookies();

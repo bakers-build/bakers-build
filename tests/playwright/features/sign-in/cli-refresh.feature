@@ -8,12 +8,12 @@ Feature: CLI device sessions can refresh
   the browser only approves the device code.
 
   Scenario: Two CLI processes keep the signed-in user's session after rotation
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     And a CLI device sign-in is waiting for this test site
     When I approve that CLI device sign-in
     And two persistent CLI clients load its saved session
     And the first client renews the session
     And the second client renews its original in-memory session
     Then both clients can read the same permitted workspaces
-    And the refreshed access token keeps the user "cwiedemann" and the bb:session scope
+    And the refreshed access token keeps the user "north-lead" and the bb:session scope
     And the original refresh token is rejected when replayed

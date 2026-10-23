@@ -7,7 +7,7 @@
 #
 # `by_team` is expanded in PHP from the per-ASSIGNEE counts
 # (TeamStatistics::byTeamFromUserCounts()), so a team only produces a row when one
-# of its members is an assignee of a counted row. `bakers-e2e-agent` owns a seeded
+# of its members is an assignee of a counted row. `fixture-agent` owns a seeded
 # `bb_run`, which is why it is this crew's member (…0006) rather than the other
 # one's.
 #
@@ -24,7 +24,7 @@
 # `auto_add_group_owner_membership: true` — so the owner receives an
 # og_membership on this team automatically, at insert. A fixture under
 # content/og_membership/ naming the SAME pair would then abort the whole import
-# with "The user cwiedemann is already a member in this group"; that is why the
+# with "The user north-lead is already a member in this group"; that is why the
 # membership fixtures below cover the other members only.
 _meta:
   version: '1.0'

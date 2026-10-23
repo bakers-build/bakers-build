@@ -83,7 +83,7 @@ Feature: Creating a project from the projects screen
     Then the project form groups the Repository
     And the project form offers Branch convention "no"
     When I fill in "Designbook" as the project name
-    And I pick the group "keytec"
+    And I pick the group "Bread"
     And I pick the team "Platform Crew"
     And I submit the create-project dialog
     Then the projects list contains "Designbook"
@@ -100,7 +100,7 @@ Feature: Creating a project from the projects screen
     And the listing sits in a single content frame
     When I open the create-project dialog
     And I fill in "Framed" as the project name
-    And I pick the group "keytec"
+    And I pick the group "Bread"
     And I pick the team "Platform Crew"
     And I submit the create-project dialog
     Then the projects list contains "Framed"
@@ -124,7 +124,7 @@ Feature: Creating a project from the projects screen
   Scenario: A project without a team is refused against the team field
     When I open the create-project dialog
     And I fill in "Teamless" as the project name
-    And I pick the group "keytec"
+    And I pick the group "Bread"
     And I submit the create-project dialog
     Then the dialog is still open
     And the message names the "Teams" field
@@ -182,7 +182,7 @@ Feature: Creating a project from the projects screen
     And the "Teams" field is blamed for the refusal
     And the project name still reads "Recovered"
     And the create-project dialog is still operable
-    When I pick the group "keytec"
+    When I pick the group "Bread"
     And I pick the team "Platform Crew"
     And I submit the create-project dialog
     Then the projects list contains "Recovered"
@@ -203,7 +203,7 @@ Feature: Creating a project from the projects screen
   Scenario: The group picker offers only groups that exist
     When I open the create-project dialog
     And I open the group picker
-    Then the panel lists "keytec"
+    Then the panel lists "Bread"
     And the panel offers no create row
     And the panel offers no clear row
 

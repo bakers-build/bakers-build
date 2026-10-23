@@ -4,12 +4,21 @@
 #                         needs, and nothing more.
 #
 #   scripts/setup-test-project.sh [--project <name>] [--workspace-only]
+#                                 [--fixture-repo <url>]
 #   scripts/teardown-test-project.sh          # gives it all back
 #
 #     --project <name>  the bb_project of the recipe-test world to wire up. It is
 #                       also what the conductor's machine_id is composed from, so
 #                       teardown must be given the SAME name or it purges nothing.
 #                       Default: bakers-e2e-project.
+#     --fixture-repo <url>
+#                       clone the fixture project from this remote instead of the
+#                       local bare repository, for a run that needs a real remote
+#                       (e.g. to see a merge request opened). Default: the local
+#                       bare repository `workspaces/bakers-playground.git`, created
+#                       on first run by committing tests/fixtures/bakers-playground
+#                       on branch develop. It is not re-seeded while it exists, so
+#                       run teardown first to pick up a changed fixture tree.
 #     Branch selection: current source branch, then its ticket parent's branch
 #                       (if any), then develop. Ticket branches use their lowercase
 #                       identifier, e.g. feat/shop-27-cart becomes shop-27.
@@ -44,7 +53,8 @@
 #     below goes through `ddev drush` here — which cannot reach dev2 or prod at
 #     all, so the wrong-control-plane class of bug is removed rather than guarded.
 #   * the WORK WORKSPACE is `workspaces/bakers-playground`, a clone of the fixture
-#     repo. It runs NO bakers Drupal of its own. It has a DDEV purely so the skill
+#     project (tests/fixtures/bakers-playground, via its local bare repository).
+#     It runs NO bakers Drupal of its own. It has a DDEV purely so the skill
 #     under test can issue real `ddev` commands, and it is the base the conductor
 #     creates per-ticket worktrees beside.
 #
@@ -129,7 +139,9 @@ PROJECT='bakers-e2e-project'
 # re-provision the world (.ddev/worktree-post.sh).
 WORKSPACE_ONLY='no'
 WORKSPACE_RELPATH='workspaces/bakers-playground'
-FIXTURE_REPO='git@git.key-tec.de:keytec-ai-test/bakers-playground.git'
+# Empty means the local bare repository seeded from FIXTURE_TREE_RELPATH (step 3).
+FIXTURE_REPO=''
+FIXTURE_TREE_RELPATH='tests/fixtures/bakers-playground'
 FIXTURE_BRANCH='develop'
 
 # The one credentialled identity the recipe-test world ships
@@ -260,6 +272,23 @@ parent_branch_for() {
     end' <<<"$response" || die "cannot resolve parent for $key"
 }
 
+# Create the local bare origin from the committed fixture tree, once. An existing
+# bare repository is left alone: runs push ticket branches to it.
+seed_fixture_origin() {
+  local tree="$1" bare="$2" index commit
+  [ -d "${bare}" ] && return 0
+  git init -q --bare "${bare}"
+  index="${bare}/seed-index"
+  commit="$(cd "${tree}" && export GIT_DIR="${bare}" GIT_WORK_TREE="${tree}" GIT_INDEX_FILE="${index}" \
+      GIT_AUTHOR_NAME='bakers.build fixture' GIT_AUTHOR_EMAIL='fixture@bakers.invalid' \
+      GIT_COMMITTER_NAME='bakers.build fixture' GIT_COMMITTER_EMAIL='fixture@bakers.invalid'
+    git add -A . && git commit-tree "$(git write-tree)" -m "Seed from ${tree##*/}")" \
+    || { rm -rf "${bare}"; die "cannot seed the fixture origin from ${tree}"; }
+  rm -f "${index}"
+  git --git-dir="${bare}" update-ref "refs/heads/${FIXTURE_BRANCH}" "${commit}"
+  git --git-dir="${bare}" symbolic-ref HEAD "refs/heads/${FIXTURE_BRANCH}"
+}
+
 select_workspace_branch() {
   local workspace="$1" source="$2" parent="$3" candidate branch='' current
   for candidate in "$source" "$parent" develop; do
@@ -288,6 +317,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --project) PROJECT="${2:?--project needs a value}"; shift 2 ;;
     --workspace-only) WORKSPACE_ONLY='yes'; shift ;;
+    --fixture-repo) FIXTURE_REPO="${2:?--fixture-repo needs a value}"; shift 2 ;;
     -h | --help) usage; exit 0 ;;
     *) die "unknown argument '$1' (try --help)" ;;
   esac
@@ -422,7 +452,7 @@ step "1. control plane — this checkout's own bakers DDEV"
 # -----------------------------------------------------------------------------
 # DESCRIBE ONLY, and in `--workspace-only` not even that is guaranteed to answer.
 # `ddev init-worktree` deliberately does NOT start the worktree it configures —
-# `ddev init` owns the start since KEYTECDDEV-29 — and this mode runs as its FINAL
+# `ddev init` owns the start — and this mode runs as its FINAL
 # step, in a worktree whose project is therefore neither running nor yet registered;
 # `ddev describe` then fails outright ("a project ... already exists for <parent>",
 # because the overlay is the only thing giving this checkout its own name).
@@ -547,7 +577,16 @@ fi
 # -----------------------------------------------------------------------------
 step "3. the work workspace — clone the fixture repo"
 # -----------------------------------------------------------------------------
+if [ -z "${FIXTURE_REPO}" ]; then
+  FIXTURE_REPO="${WORKSPACE}.git"
+  seed_fixture_origin "${ROOT}/${FIXTURE_TREE_RELPATH}" "${FIXTURE_REPO}"
+fi
+say "fixture origin: ${FIXTURE_REPO}"
 if [ -d "${WORKSPACE}/.git" ]; then
+  if [ "$(git -C "${WORKSPACE}" remote get-url origin)" != "${FIXTURE_REPO}" ]; then
+    git -C "${WORKSPACE}" remote set-url origin "${FIXTURE_REPO}"
+    say "origin of ${WORKSPACE} now points at ${FIXTURE_REPO}"
+  fi
   say "clone exists at ${WORKSPACE} — fetching"
   git -C "${WORKSPACE}" fetch --all --prune
 else

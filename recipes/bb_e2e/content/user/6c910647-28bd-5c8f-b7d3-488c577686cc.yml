@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-foreign-lead
+  - value: fixture-foreign-lead
   mail:
-  - value: api-foreign-lead@example.test
+  - value: fixture-foreign-lead@example.test
   status:
   - value: true
   pass:

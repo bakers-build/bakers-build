@@ -18,7 +18,7 @@ Then('the API document includes resource {string}', async ({ apiClient }, name: 
 
 Given('the session actor owns a running lease for ticket {string}', async ({ apiClient }, name: string) => {
     const ticket = apiClient.fixtureId(`saved.${name}`);
-    await apiClient.identify('login-admin');
+    await apiClient.identify('site-admin');
     await apiClient.send('POST', '/jsonapi/bb_conductor/bb_conductor', JSON.stringify({
         data: {
             type: 'bb_conductor--bb_conductor',
@@ -58,7 +58,7 @@ Given('the session actor owns a running lease for ticket {string}', async ({ api
     }));
     expect(apiClient.response!.status(), await apiClient.response!.text()).toBe(201);
     await apiClient.remember('session-run');
-    await apiClient.identify('api-session');
+    await apiClient.identify('fixture-api-session');
 });
 
 Then('the API document excludes included resource {string}', async ({ apiClient }, name: string) => {

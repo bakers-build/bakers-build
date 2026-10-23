@@ -15,30 +15,30 @@ Feature: Ticket reviewers persist as searchable chips
     And the Properties block exposes the people pickers
 
   Scenario: Two reviewers survive save and reload
-    When I select inline "Reviewers" option "sgruber"
-    And I select inline "Reviewers" option "cwiedemann"
+    When I select inline "Reviewers" option "north-member"
+    And I select inline "Reviewers" option "north-lead"
     And I save the inline properties
     Then the inline "Reviewers" save succeeds without navigation
     When I reload the page
-    Then the inline "Reviewers" selection includes "sgruber"
-    And the inline "Reviewers" selection includes "cwiedemann"
-    And the inline "Reviewers" chips are "sgruber, cwiedemann"
+    Then the inline "Reviewers" selection includes "north-member"
+    And the inline "Reviewers" selection includes "north-lead"
+    And the inline "Reviewers" chips are "north-member, north-lead"
 
   Scenario: Removing one chip keeps the other until Save
-    When I select inline "Reviewers" option "sgruber"
-    And I select inline "Reviewers" option "cwiedemann"
+    When I select inline "Reviewers" option "north-member"
+    And I select inline "Reviewers" option "north-lead"
     And I save the inline properties
     Then the inline "Reviewers" save succeeds without navigation
     When I reload the page
-    And I remove the inline "Reviewers" chip "sgruber"
-    Then the inline "Reviewers" chips are "cwiedemann"
+    And I remove the inline "Reviewers" chip "north-member"
+    Then the inline "Reviewers" chips are "north-lead"
     And I save the inline properties
     When I reload the page
-    Then the inline "Reviewers" selection includes "cwiedemann"
-    And the inline "Reviewers" chips are "cwiedemann"
+    Then the inline "Reviewers" selection includes "north-lead"
+    And the inline "Reviewers" chips are "north-lead"
 
   Scenario: Clearing all reviewers survives reload
-    When I select inline "Reviewers" option "sgruber"
+    When I select inline "Reviewers" option "north-member"
     And I save the inline properties
     Then the inline "Reviewers" save succeeds without navigation
     When I select inline "Reviewers" option "No reviewers"
@@ -49,36 +49,36 @@ Feature: Ticket reviewers persist as searchable chips
     And the inline "Reviewers" chips are ""
 
   Scenario: Leaving without Save discards a reviewers pick
-    Then picking inline "Reviewers" option "sgruber" writes nothing until Save
+    Then picking inline "Reviewers" option "north-member" writes nothing until Save
 
   Scenario: Saving another property preserves earlier reviewer changes
-    When I select inline "Reviewers" option "sgruber"
+    When I select inline "Reviewers" option "north-member"
     And I save the inline properties
     Then the inline "Reviewers" save succeeds without navigation
     When I select inline "Priority" option "High"
     And I save the inline properties
     Then the inline "Priority" save succeeds without navigation
     When I reload the page
-    Then the inline "Reviewers" selection includes "sgruber"
+    Then the inline "Reviewers" selection includes "north-member"
     And the inline "Priority" selection is "High"
 
   Scenario: Chips keep working after Save replaced the form
-    When I select inline "Reviewers" option "sgruber"
+    When I select inline "Reviewers" option "north-member"
     And I save the inline properties
     Then the inline "Reviewers" save succeeds without navigation
-    When I remove the inline "Reviewers" chip "sgruber"
+    When I remove the inline "Reviewers" chip "north-member"
     Then the inline "Reviewers" chips are ""
-    When I select inline "Reviewers" option "cwiedemann"
+    When I select inline "Reviewers" option "north-lead"
     And I save the inline properties
     Then the inline "Reviewers" save succeeds without navigation
     When I reload the page
-    Then the inline "Reviewers" chips are "cwiedemann"
+    Then the inline "Reviewers" chips are "north-lead"
 
   Scenario: Another editor's reviewer change survives my unrelated save
-    When another editor sets the reviewers of "BB-150" to "sgruber"
+    When another editor sets the reviewers of "BB-150" to "north-member"
     And I select inline "Priority" option "High"
     And I save the inline properties
     Then the inline "Priority" save succeeds without navigation
     When I reload the page
-    Then the inline "Reviewers" chips are "sgruber"
+    Then the inline "Reviewers" chips are "north-member"
     And the inline "Priority" selection is "High"

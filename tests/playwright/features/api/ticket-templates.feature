@@ -8,7 +8,7 @@ Feature: Ticket templates over JSON:API
   from the same world.
 
   Scenario: A lead reads the fixture template
-    Given the API client is "template-manager"
+    Given the API client is "north-lead"
     When the API client reads "/jsonapi/bb_ticket_template/bb_ticket_template/{template.fixture}"
     Then the API response status is 200
     And the API document contains:
@@ -17,7 +17,7 @@ Feature: Ticket templates over JSON:API
       """
 
   Scenario: Instantiating twice creates two tickets
-    Given the API client is "template-manager"
+    Given the API client is "north-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket_template/bb_ticket_template/{template.fixture}/instantiate":
       """
       {}
@@ -35,7 +35,7 @@ Feature: Ticket templates over JSON:API
     And the API resource is not "first"
 
   Scenario: A workspace template creates the ticket in the passed project
-    Given the API client is "template-manager"
+    Given the API client is "north-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket_template/bb_ticket_template/{template.workspace}/instantiate":
       """
       {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"Workspace probe"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.templates}"}}}}}
@@ -47,7 +47,7 @@ Feature: Ticket templates over JSON:API
       """
 
   Scenario: A workspace template without a project is rejected
-    Given the API client is "template-manager"
+    Given the API client is "north-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket_template/bb_ticket_template/{template.workspace}/instantiate":
       """
       {}
@@ -65,12 +65,12 @@ Feature: Ticket templates over JSON:API
 
     Examples:
       | actor          | status |
-      | other-member   | 404    |
-      | addon-reviewer | 403    |
+      | south-contributor   | 404    |
+      | north-guest | 403    |
       | anonymous      | 401    |
 
   Scenario: An unknown template is not found
-    Given the API client is "template-manager"
+    Given the API client is "north-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket_template/bb_ticket_template/11111111-2222-4333-8444-555555555555/instantiate":
       """
       {}

@@ -1,5 +1,5 @@
 # ORDERING, not a data reference (BB-350). This conductor's owner is
-# `cwiedemann`, and bb_core_bb_conductor_insert() gives that account a
+# `north-lead`, and bb_core_bb_conductor_insert() gives that account a
 # workspace membership with the `app` role as soon as the conductor is saved.
 # The workspace-admin fixture dbd10000-…-0002 wants a membership for the SAME
 # account in the SAME workspace, and OG allows only one — so whichever is

@@ -4,13 +4,13 @@ _meta:
   entity_type: bb_track_worklog
   uuid: 640a0000-0000-4000-8000-000000000007
   depends:
-    90083207-9a0b-5bf9-9f61-ca46635652ef: user
+    dbe50000-0000-4000-8000-000000000003: user
     edc03624-629b-5606-b650-0a1dbf8ea9ad: bb_project
     613c0000-0000-4000-8000-000000000005: bb_track_account
 default:
   owner_user_id:
     -
-      entity: "90083207-9a0b-5bf9-9f61-ca46635652ef"
+      entity: "dbe50000-0000-4000-8000-000000000003"
   work_date:
     -
       value: "2026-12-08"

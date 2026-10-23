@@ -77,7 +77,7 @@ export const MEMBERS_ISLAND = '[id^="island-"][id$="-members"]';
 /**
  * The autocomplete string Drupal's member picker parses: "Label (id)".
  *
- * Gherkin names a seed account (`login-multi`) rather than a uid, because the
+ * Gherkin names a seed account (`both-bakeries`) rather than a uid, because the
  * sequential id is insertion-order and the picker is limited to current-
  * workspace members. uid 1 is not on that list after the workspace-member
  * handler, so a hardcoded `admin (1)` never grows a row. A seed username is

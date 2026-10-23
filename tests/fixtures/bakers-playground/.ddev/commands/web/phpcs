@@ -1,0 +1,17 @@
+#!/bin/bash
+#ddev-generated
+## Description: Run phpcs against custom modules/themes (keytec)
+## Usage: phpcs [args...]
+## Example: "ddev phpcs" or "ddev phpcs web/modules/custom/foo"
+set -e
+if [ "${1:-}" = "--help-keytec" ]; then echo "keytec phpcs wrapper"; exit 0; fi
+# Resolve the binary from the Composer root so nested (monorepo) layouts work;
+# equals ${DDEV_APPROOT} for a root-level project. The ruleset itself lives at
+# the project root and encodes its own file paths.
+CR="${DDEV_COMPOSER_ROOT:-${DDEV_APPROOT:-/var/www/html}}"
+BIN="${CR}/vendor/bin/phpcs"
+if [ ! -x "${BIN}" ]; then
+  echo "phpcs not found at ${BIN}. Run: ddev qa-setup" >&2
+  exit 1
+fi
+exec "${BIN}" --standard="${DDEV_APPROOT}/phpcs.xml.dist" "$@"

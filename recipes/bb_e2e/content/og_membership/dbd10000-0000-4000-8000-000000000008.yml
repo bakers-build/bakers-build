@@ -1,6 +1,6 @@
-# cwiedemann's SECOND team membership — the dual-membership case (BB-321 D6).
+# north-lead's SECOND team membership — the dual-membership case (BB-321 D6).
 #
-# `cwiedemann` owns Platform Crew (…0001) and is therefore already an active
+# `north-lead` owns Platform Crew (…0001) and is therefore already an active
 # member of it through `og.settings`' `auto_add_group_owner_membership`. This
 # fixture adds Design Crew on top, so one account is an active member of two
 # crews at once.

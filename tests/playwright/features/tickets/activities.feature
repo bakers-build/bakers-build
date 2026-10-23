@@ -5,7 +5,7 @@ Feature: Ticket activity JSON:API contract
   Reads follow ticket access. Clients cannot write activities.
 
   Scenario: Creating a ticket records one created activity
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}"
     Then the API response status is 200
@@ -13,7 +13,7 @@ Feature: Ticket activity JSON:API contract
     And the activity collection has 0 status_changed rows
 
   Scenario: Activity persists for an accepted status write
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     And the API client changes ticket "ticket" to state "spec"
     Then the API response status is 200
@@ -29,7 +29,7 @@ Feature: Ticket activity JSON:API contract
     And the activity collection ids match "first-read"
 
   Scenario: A rejected transition adds no activity
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     And the API client changes ticket "ticket" to state "done"
     Then the API response status is 422
@@ -38,7 +38,7 @@ Feature: Ticket activity JSON:API contract
     And the API collection is empty
 
   Scenario: Ticket and project filters narrow already-authorized rows
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "one"
     And the API client changes ticket "one" to state "spec"
     And the API client creates a "bb_feature" ticket in "home" as "two"
@@ -54,7 +54,7 @@ Feature: Ticket activity JSON:API contract
     And the activity collection excludes tickets "sibling" and fixture "ticket.other"
 
   Scenario: A successful claim records one claimed activity
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
@@ -68,7 +68,7 @@ Feature: Ticket activity JSON:API contract
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"diagnose","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
       """
     Then the API response status is 200
-    Given the API client is "api-conductor-owner"
+    Given the API client is "fixture-conductor-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-{saved.ticket}","lease_seconds":600}}}
@@ -85,20 +85,20 @@ Feature: Ticket activity JSON:API contract
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-{saved.ticket}","lease_seconds":600}}}
       """
     Then the API response status is 409
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}&filter[kind]=claimed&include=run_id,conductor_id,actor"
     Then the API response status is 200
     And exactly one claimed activity matches run "run" conductor "conductor" step "diagnose" actor "user.conductor-owner"
     And the API document includes resource "saved.run"
     And the activity collection has 1 claimed row
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}&filter[kind]=claimed&include=run_id,conductor_id,actor"
     Then the API response status is 200
     And the claimed activity omits inaccessible related identities
     And the API document excludes included resource "user.conductor-owner"
 
   Scenario: A later claim of the same ticket adds no claimed activity
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
@@ -112,7 +112,7 @@ Feature: Ticket activity JSON:API contract
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"diagnose","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
       """
     Then the API response status is 200
-    Given the API client is "api-conductor-owner"
+    Given the API client is "fixture-conductor-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-later-{saved.ticket}","lease_seconds":600}}}
@@ -130,14 +130,14 @@ Feature: Ticket activity JSON:API contract
       """
     Then the API response status is 201
     When the API resource is remembered as "second-run"
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}&filter[kind]=claimed&sort=-drupal_internal__id"
     Then the API response status is 200
     And the activity collection has 1 claimed row
     And exactly one claimed activity references run "first-run" at step "diagnose"
 
   Scenario: A run that fails without moving the ticket records run_ended
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
@@ -151,7 +151,7 @@ Feature: Ticket activity JSON:API contract
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"diagnose","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
       """
     Then the API response status is 200
-    Given the API client is "api-conductor-owner"
+    Given the API client is "fixture-conductor-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-failed-{saved.ticket}","lease_seconds":600}}}
@@ -163,13 +163,13 @@ Feature: Ticket activity JSON:API contract
       {"data":{"type":"bb_run--bb_run","id":"{saved.run}","attributes":{"state":"failed","error_log":"setup failed"}}}
       """
     Then the API response status is 200
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}&filter[kind]=run_ended"
     Then the API response status is 200
     And exactly one run_ended activity references run "run" at step "diagnose"
 
   Scenario: Two simultaneous claims yield one success and one conflict
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     And the API client identifies as the bakers CLI "0.0.1"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
@@ -183,20 +183,20 @@ Feature: Ticket activity JSON:API contract
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"diagnose","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
       """
     Then the API response status is 200
-    When two API clients "api-conductor-owner" send "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim" at once:
+    When two API clients "fixture-conductor-owner" send "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim" at once:
       """
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-race-{saved.ticket}","lease_seconds":600}}}
       """
     Then the concurrent responses are 201 and 409
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}&filter[kind]=claimed"
     Then the API response status is 200
     And the activity collection has 1 claimed row
 
   Scenario: Two simultaneous status writes serialize predecessor and final state
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
-    When two API clients "api-member" send "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}" at once:
+    When two API clients "north-contributor" send "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}" at once:
       """
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"spec"}}}
       """
@@ -211,7 +211,7 @@ Feature: Ticket activity JSON:API contract
     And exactly one status_changed activity records "qualification" to "spec"
 
   Scenario: Activities of one ticket page without collapsing and sort by descending id
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     And the API client bounces ticket "ticket" between spec and qualification 21 times
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}&sort=-drupal_internal__id&page[limit]=20"
@@ -222,7 +222,7 @@ Feature: Ticket activity JSON:API contract
     Then those pages skip and duplicate nothing
 
   Scenario: Clients cannot create update or delete activities
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     And the API client changes ticket "ticket" to state "spec"
     Then the API response status is 200
@@ -244,7 +244,7 @@ Feature: Ticket activity JSON:API contract
       {}
       """
     Then the API response status is 403
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     When the API client sends "POST" to "/jsonapi/bb_activity/bb_activity":
       """
       {"data":{"type":"bb_activity--bb_activity","attributes":{"kind":"status_changed"},"relationships":{"ticket_id":{"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}"}}}}}
@@ -257,14 +257,14 @@ Feature: Ticket activity JSON:API contract
     Then the API response status is 403
 
   Scenario: A foreign member cannot read another workspace's activities
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     And the API client changes ticket "ticket" to state "spec"
     Then the API response status is 200
     When the API client reads "/jsonapi/bb_activity/bb_activity?filter[ticket_id.id]={saved.ticket}"
     Then the API response status is 200
     When the API collection row 0 is remembered as "activity"
-    Given the API client is "other-member"
+    Given the API client is "south-contributor"
     When the API client reads "/jsonapi/bb_activity/bb_activity/{saved.activity}"
     Then the API response status is 403
     When the API client reads "/jsonapi/bb_activity/bb_activity/{saved.activity}?include=actor,run_id,conductor_id"
@@ -275,7 +275,7 @@ Feature: Ticket activity JSON:API contract
     When the API client reads "/jsonapi/bb_activity/bb_activity"
     Then the API response status is 200
     And the activity collection excludes resource "activity"
-    Given the API client is "api-foreign"
+    Given the API client is "south-contributor"
     When the API client creates a "bb_feature" ticket in "other" as "theirs"
     And the API client changes ticket "theirs" to state "spec"
     Then the API response status is 200
@@ -286,7 +286,7 @@ Feature: Ticket activity JSON:API contract
     Then the API response status is 403
 
   Scenario: Anonymous cannot read a persisted activity
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     And the API client changes ticket "ticket" to state "spec"
     Then the API response status is 200

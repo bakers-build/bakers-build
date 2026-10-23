@@ -20,7 +20,7 @@ Given('the API client uses a session token for {string}', async ({ apiClient }, 
 });
 
 Given('the API client uses the owner client-credentials session token', async ({ apiClient }) => {
-    await apiClient.identifyOAuth('api-conductor-owner');
+    await apiClient.identifyOAuth('fixture-conductor-owner');
 });
 
 When('the API client reads {string}', async ({ apiClient }, path: string) => {

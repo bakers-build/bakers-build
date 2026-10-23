@@ -27,7 +27,7 @@ Feature: A group is reachable from the Groups listing and has a Settings tab
     And the group detail shows its owner and workspace
 
   Scenario: A view-only member sees the detail but not the settings
-    Given I am logged in as the account "api-member"
+    Given I am logged in as the account "north-contributor"
     When I visit the group "API home"
     Then the group detail shows its owner and workspace
     And there is no tab "Settings"

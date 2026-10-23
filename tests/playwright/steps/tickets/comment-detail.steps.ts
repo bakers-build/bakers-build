@@ -67,7 +67,7 @@ function createComment(
   const output = lastLine([
     '$etm = \\Drupal::entityTypeManager();',
     `$t = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket", "${ticket}");`,
-    '$u = current($etm->getStorage("user")->loadByProperties(["name" => "cwiedemann"]));',
+    '$u = current($etm->getStorage("user")->loadByProperties(["name" => "north-lead"]));',
     'if (!$t || !$u) { print "NO_HOST"; return; }',
     `$c = $etm->getStorage("bb_comment")->create(["ticket_id" => $t->id(), "author" => $u->id(), "type" => "${type}", "body" => ["value" => "${body}", "format" => "bb_rich"]]);`,
     createdPhp,
@@ -111,7 +111,7 @@ Given('another ticket has a comment between those times', async ({ page }) => {
     '$etm = \\Drupal::entityTypeManager();',
     `$home = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket", "${ticket}");`,
     '$p = $home ? $home->get("project_id")->entity : NULL;',
-    '$u = current($etm->getStorage("user")->loadByProperties(["name" => "cwiedemann"]));',
+    '$u = current($etm->getStorage("user")->loadByProperties(["name" => "north-lead"]));',
     'if (!$p || !$u) { print "NO_FOREIGN"; return; }',
     '$f = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "Foreign comment host", "workflow" => "bb_feature", "state" => "coding"]);',
     '$f->save();',
@@ -135,7 +135,7 @@ Given(
     const output = lastLine([
       '$etm = \\Drupal::entityTypeManager();',
       `$t = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket", "${ticket}");`,
-      '$u = current($etm->getStorage("user")->loadByProperties(["name" => "cwiedemann"]));',
+      '$u = current($etm->getStorage("user")->loadByProperties(["name" => "north-lead"]));',
       'if (!$t || !$u) { print "NO_HOST"; return; }',
       `$body = "| H | V |\\n| --- | --- |\\n| Wide | Cell |\\n\\n" . str_repeat("x", 32768) . "\\n\\n${marker}";`,
       '$c = $etm->getStorage("bb_comment")->create(["ticket_id" => $t->id(), "author" => $u->id(), "type" => "handoff-v3", "body" => ["value" => $body, "format" => "bb_rich"]]);',

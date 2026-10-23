@@ -1,6 +1,6 @@
-# sgruber's WORKSPACE membership — the rank half of BB-359's browser evidence.
+# north-member's WORKSPACE membership — the rank half of BB-359's browser evidence.
 #
-# `sgruber` deliberately holds NO Drupal role at all (see its user fixture), so
+# `north-member` deliberately holds NO Drupal role at all (see its user fixture), so
 # everything this account can do in the browser comes from this membership and
 # its Platform Crew team membership (…0007). That is the subject AC 1 asks for:
 # "a user with a rank and no product Drupal role".
@@ -10,7 +10,7 @@
 # …0007's team membership already gives this account team-scoped project reach
 # through bakers.build Platform's `teams` field, so nothing was lost by dropping it.
 #
-# `member`, not `lead`: the lead subject already exists (cwiedemann, …0002) and
+# `member`, not `lead`: the lead subject already exists (north-lead, …0002) and
 # a second one would prove nothing new. What is missing from the seeded world is
 # the ordinary contributor.
 #

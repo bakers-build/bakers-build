@@ -22,8 +22,8 @@ above clones without credentials; if you prefer SSH, use `git@git.key-tec.de:bak
 
 **Not shipped:** the manual skill-testing wiring, `scripts/setup-test-project.sh` and
 `scripts/teardown-test-project.sh`. Neither is a skill — they are two shell scripts, and they stay
-repo-local because they drive this checkout's own DDEV control plane and clone a fixture repo only
-this project uses.
+repo-local because they drive this checkout's own DDEV control plane and clone the fixture project
+committed under `tests/fixtures/bakers-playground`.
 
 ## Single source of truth
 

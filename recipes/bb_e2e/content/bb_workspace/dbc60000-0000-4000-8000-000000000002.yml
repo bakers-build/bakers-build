@@ -3,14 +3,14 @@
 #
 # It owns no group, no project and no ticket. It is no longer memberless: the
 # docblock used to state that nobody is a member of it, and
-# `og_membership/dbd10000-…-000000000009` makes `other-member` one, holding
+# `og_membership/dbd10000-…-000000000009` makes `south-contributor` one, holding
 # nothing else. That account is the subject of BB-415's fourth acceptance
 # criterion — a member of a non-`bakers` workspace must land in THEIRS — which
 # is unobservable in a world where every account's only workspace is the
 # default one.
 #
 # ITS ORIGINAL JOB IS UNCHANGED, and that is measured rather than assumed: the
-# wrong-workspace 404 scenario's actor is still `cwiedemann`, and `cwiedemann`
+# wrong-workspace 404 scenario's actor is still `north-lead`, and `north-lead`
 # is still not a member of this workspace, so `/other/ticket/BB-142` still
 # reaches the workspace check and still answers 404. The new membership belongs
 # to a different account and adds a landing subject without removing a refusal
@@ -37,7 +37,7 @@ _meta:
 default:
   name:
     -
-      value: "other workspace"
+      value: "Southside Bakery"
   slug:
     -
       value: "other"

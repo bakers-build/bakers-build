@@ -5,9 +5,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-pagination-other
+  - value: fixture-api-pagination-other
   mail:
-  - value: api-pagination-other@example.test
+  - value: fixture-api-pagination-other@example.test
   status:
   - value: true
   pass:

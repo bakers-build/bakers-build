@@ -16,7 +16,7 @@ Feature: Managing a project's billing accounts
     And I am on the projects screen
     When I open the create-project dialog
     And I fill in "Default ledger" as the project name
-    And I pick the group "keytec"
+    And I pick the group "Bread"
     And I pick the team "Platform Crew"
     And I submit the create-project dialog
     Then the projects list contains "Default ledger"
@@ -94,7 +94,7 @@ Feature: Managing a project's billing accounts
     Then the tab "Billing" is offered
     When I request the billing route for the project "Guarded ledger"
     Then the billing route answers 200
-    Given I am logged in as the account "addon-reviewer"
+    Given I am logged in as the account "north-guest"
     When I visit the project "Guarded ledger"
     Then there is no tab "Billing"
     When I request the billing route for the project "Guarded ledger"

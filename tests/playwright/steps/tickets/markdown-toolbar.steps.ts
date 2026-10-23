@@ -13,7 +13,7 @@ import { safe } from '../../support/listing';
 const { When, Then, After } = createBdd(test);
 
 // The saved-value scenario creates a real ticket; left behind it would fill
-// cwiedemann's lists that ticket-list counts.
+// north-lead's lists that ticket-list counts.
 const CREATED_TITLE = 'Markdown stored as typed';
 
 After({ tags: '@feature:markdown-authoring' }, async () => {

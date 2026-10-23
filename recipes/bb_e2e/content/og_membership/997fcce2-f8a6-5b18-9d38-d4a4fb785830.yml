@@ -5,7 +5,7 @@ _meta:
   default_langcode: en
   bundle: default
   depends:
-    4d04df27-6ca5-5acf-b43c-4810986e1ee5: bb_workspace
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
     041722e4-7284-5860-9cea-ca96905bc726: user
 default:
   type:
@@ -15,7 +15,7 @@ default:
   entity_bundle:
   - value: bb_workspace
   entity_id:
-  - value: 4d04df27-6ca5-5acf-b43c-4810986e1ee5
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
   uid:
   - entity: 041722e4-7284-5860-9cea-ca96905bc726
   state:

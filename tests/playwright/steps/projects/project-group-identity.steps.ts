@@ -33,7 +33,7 @@ async function contextFor(playwright: { request: { newContext: (options: object)
 
 /** The stored resource, with its image file included, read as the administrator. */
 async function stored(playwright: never, baseURL: string, subject: Subject, id: string): Promise<{ data: any; included?: any[] }> {
-  const admin = await contextFor(playwright, baseURL, 'login-admin');
+  const admin = await contextFor(playwright, baseURL, 'site-admin');
   try {
     const response = await admin.get(`${resource(subject).path}/${id}?include=image`, { maxRedirects: 0 });
     expect(response.status(), await response.text()).toBe(200);
@@ -57,7 +57,7 @@ Given(
   /^the (project|group|workspace) "([^"]+)" has no description and no image$/,
   async ({ playwright, baseURL, apiClient }, subject: Subject, fixture: string) => {
     const id = apiClient.fixtureId(fixture);
-    const admin = await contextFor(playwright as never, baseURL!, 'login-admin');
+    const admin = await contextFor(playwright as never, baseURL!, 'site-admin');
     try {
       const response = await admin.fetch(`${resource(subject).path}/${id}`, {
         method: 'PATCH',

@@ -5,7 +5,7 @@ Feature: Ticket review comments stay private until accepted
   ordinary timeline; rejection and drafts stay off it.
 
   Background:
-    Given the API client is "api-member"
+    Given the API client is "north-contributor"
     When the API client creates a "bb_feature" ticket in "home" as "ticket"
     Given the session actor owns a running lease for ticket "ticket"
     And the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
@@ -146,6 +146,6 @@ Feature: Ticket review comments stay private until accepted
     Given the API client is "anonymous"
     When the API client reads "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}?include=reviewers"
     Then the API response status is 401
-    Given the API client is "api-foreign"
+    Given the API client is "south-contributor"
     When the API client reads "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}?include=reviewers"
     Then the API response status is 403

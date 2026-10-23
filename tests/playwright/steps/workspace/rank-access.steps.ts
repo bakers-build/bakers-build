@@ -16,5 +16,5 @@ Then('the API collection has no omitted rows', async ({ apiClient }) => {
 
 Then('the foreign account exposes only its display name', async ({ apiClient }) => {
     const document = await apiClient.response!.json();
-    expect(document.data.attributes).toEqual({ display_name: 'api-foreign' });
+    expect(document.data.attributes).toEqual({ display_name: 'south-contributor' });
 });

@@ -5,7 +5,7 @@
 // support/steps/detail-cards.steps.ts.
 //
 // Every editing scenario builds its own workspace, group, team, project,
-// machine and conductor, edited by the recipe's `api-lead` (workspace and
+// machine and conductor, edited by the recipe's `fixture-lead` (workspace and
 // team lead, owner of the machine and conductor), and removes them in an
 // After hook, so no seeded name changes under a concurrent worker.
 import { randomUUID } from 'node:crypto';

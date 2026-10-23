@@ -1,4 +1,4 @@
-# The template-automation service account in its own team on "Template
+# The fixture-automation service account in its own team on "Template
 # fixtures": a project's tickets are reachable through its teams, so without
 # this the trigger's activation gate rejects the account.
 _meta:

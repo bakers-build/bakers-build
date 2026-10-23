@@ -12,4 +12,4 @@ Feature: Public resource schemas
     Examples:
       | account     |
       | anonymous   |
-      | login-empty |
+      | no-bakery |

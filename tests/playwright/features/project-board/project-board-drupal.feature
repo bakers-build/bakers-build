@@ -24,6 +24,6 @@ Feature: Project Board Drupal
     Then the Board shows the marker "Cancelled"
 
   Scenario: The machine account cannot open the Board
-    Given I am signed in as "api-app"
+    Given I am signed in as "fixture-api-machine"
     When I visit the project board for "bakers.build Platform"
     Then the project board denies access

@@ -133,10 +133,10 @@ function writeDropshConfig(base: string, account: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'bakers-edit-dropsh-'));
   const config = join(dir, 'bakers.config.js');
   const clients: Record<string, string> = {
-    'api-lead': 'bakers-e2e-session-lead',
-    'api-member': 'bakers-e2e-session-member',
-    'api-stranger': 'bakers-e2e-session-stranger',
-    'api-conductor-owner': 'bakers-conductor-owner-e2e',
+    'fixture-lead': 'bakers-e2e-session-lead',
+    'north-contributor': 'bakers-e2e-session-member',
+    'no-bakery': 'bakers-e2e-session-stranger',
+    'fixture-conductor-owner': 'bakers-conductor-owner-e2e',
   };
   const clientId = clients[account];
   if (!clientId) {
@@ -209,7 +209,7 @@ After({ tags: '@feature:entity-edit-access' }, async ({ apiClient }) => {
     dropshHome = '';
     dropshConfig = '';
   }
-  await apiClient.identify('login-admin');
+  await apiClient.identify('site-admin');
   const restores: Array<{ path: string; document: object }> = [
     {
       path: '/jsonapi/bb_workspace/bb_workspace/{workspace.home}',

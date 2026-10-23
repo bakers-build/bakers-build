@@ -5,7 +5,7 @@ Feature: Device sign-in consent and result
 
   Scenario: An approved device code returns the account to its work
     Given the viewport is 360 pixels wide
-    And I am logged in as the account "cwiedemann"
+    And I am logged in as the account "north-lead"
     And a device code was requested by the CLI
     When I open the device verification page for that code
     Then the consent names the requesting client
@@ -18,7 +18,7 @@ Feature: Device sign-in consent and result
     Then the address is "/bakers/tickets"
 
   Scenario: A denied device code offers no success action
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
     And a device code was requested by the CLI
     When I open the device verification page for that code
     Then the consent names the requesting client
@@ -31,7 +31,7 @@ Feature: Device sign-in consent and result
     Given a device code was requested by the CLI
     When I open the device verification page for that code
     Then the address is "/user/login"
-    When I request an login link for "cwiedemann@example.com"
+    When I request an login link for "north-lead@example.test"
     And I sign in with the code from the mail
     Then the address is "/oauth/device"
     And the consent shows that device code

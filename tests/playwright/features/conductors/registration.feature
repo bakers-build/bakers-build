@@ -1,8 +1,8 @@
 @functional @api
 Feature: Machine registration requires workspace rank
 
-  Scenario: api-machine registration returns 422
-    Given the API client is "api-machine"
+  Scenario: fixture-api-machine registration returns 422
+    Given the API client is "fixture-api-machine"
     When the API client reads "/jsonapi/bb_project/bb_project?filter[name]=API%20home"
     Then the API response status is 200
     And the API collection is empty
@@ -12,8 +12,8 @@ Feature: Machine registration requires workspace rank
       """
     Then the API response status is 422
 
-  Scenario: api-machine-view registration returns 422
-    Given the API client is "api-machine-view"
+  Scenario: fixture-api-machine-view registration returns 422
+    Given the API client is "fixture-api-machine-view"
     When the API client reads "/jsonapi/bb_project/bb_project?filter[name]=API%20home"
     Then the API response status is 200
     And the API collection is empty
@@ -23,8 +23,8 @@ Feature: Machine registration requires workspace rank
       """
     Then the API response status is 422
 
-  Scenario: api-machine-app registration returns 201
-    Given the API client is "api-machine-app"
+  Scenario: fixture-api-machine-app registration returns 201
+    Given the API client is "fixture-api-machine-app"
     When the API client reads "/jsonapi/bb_project/bb_project?filter[name]=API%20home"
     Then the API response status is 200
     And the API collection contains "project.home"

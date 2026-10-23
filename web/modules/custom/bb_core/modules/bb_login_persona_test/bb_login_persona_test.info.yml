@@ -1,0 +1,8 @@
+name: bakers.build Login Persona Test
+type: module
+description: 'A one-click persona picker on the sign-in page for active @example.test accounts, enabled only in the e2e world.'
+package: Testing
+core_version_requirement: ^11
+hidden: true
+dependencies:
+  - bb_core:bb_login

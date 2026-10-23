@@ -2,7 +2,7 @@
 Feature: Employees record and correct their own time
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
 
   Scenario: My time offers Record time
     When I visit "/bakers/time"
@@ -111,7 +111,7 @@ Feature: Employees record and correct their own time
     Then exactly 1 time entry described as "Double click" exists
 
   Scenario: A suggestion I cannot use is dropped
-    When I visit Record time suggesting the project "API home" and the date "2026-10-09"
+    When I visit Record time suggesting the project "API other" and the date "2026-10-09"
     Then the page shows "The suggested project is not available."
     And the time form shows date "2026-10-09"
 
@@ -123,7 +123,7 @@ Feature: Employees record and correct their own time
     And no time entry is stored with description "Bad duration"
 
   Scenario: A peer cannot open another employee's entry
-    Given I am logged in as the account "sgruber"
+    Given I am logged in as the account "north-member"
     When I visit the time entry described as "Seeded proposed time"
     Then the page is not found or forbidden
 

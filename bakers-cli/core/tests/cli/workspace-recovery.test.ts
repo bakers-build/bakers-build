@@ -141,30 +141,30 @@ describe('resolveWorkspaceSelector', () => {
     );
   });
 
-  // Models the BB-472 manual fixture (recipes/bb_e2e/content/): `login-multi`
-  // reaches exactly these two workspaces (the default 'keytec' and 'other
-  // workspace'), while `other-member` reaches only 'other workspace'. A raw
+  // Models the BB-472 manual fixture (recipes/bb_e2e/content/): `both-bakeries`
+  // reaches exactly these two workspaces ('Northside Bakery' and
+  // 'Southside Bakery'), while `south-contributor` reaches only 'Southside Bakery'. A raw
   // uuid selector is accepted here unconditionally (line 59 above) — actual
   // membership is enforced server-side by the JSON:API request that follows —
   // so the boundary this pure function DOES enforce, and the one the manual
   // switch test relies on for a NAME selector, is refusing a name that is not
-  // among the identity's own reachable choices. `other-member` selecting the
-  // default workspace by its name ('keytec') is exactly that case: the name is
-  // only ever offered to `login-multi`, never to `other-member`.
+  // among the identity's own reachable choices. `south-contributor` selecting the
+  // default workspace by its name ('Northside Bakery') is exactly that case: the name is
+  // only ever offered to `both-bakeries`, never to `south-contributor`.
   it('refuses a workspace name the identity is not a member of, naming only the reachable ones', () => {
-    // What `other-member` actually reaches: 'other workspace' only.
+    // What `south-contributor` actually reaches: 'Southside Bakery' only.
     const otherMemberChoices = [
-      { id: 'dbc60000-0000-4000-8000-000000000002', name: 'other workspace' },
+      { id: 'dbc60000-0000-4000-8000-000000000002', name: 'Southside Bakery' },
     ];
-    // The default workspace's name — reachable by `login-multi`, not by
-    // `other-member` — selected as a name rather than a uuid.
-    const foreignWorkspaceName = 'keytec';
+    // The default workspace's name — reachable by `both-bakeries`, not by
+    // `south-contributor` — selected as a name rather than a uuid.
+    const foreignWorkspaceName = 'Northside Bakery';
 
     expect(() =>
       recovery.resolveWorkspaceSelector(
         otherMemberChoices,
         foreignWorkspaceName,
       ),
-    ).toThrow(/other workspace/);
+    ).toThrow(/Southside Bakery/);
   });
 });

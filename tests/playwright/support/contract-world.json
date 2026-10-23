@@ -1,6 +1,6 @@
 {
   "workspace.home": {
-    "uuid": "e10b39b4-52d8-5384-84ba-95286c10edd3",
+    "uuid": "2a92d03c-c4c6-41dc-b194-31aa299ed064",
     "entityType": "bb_workspace"
   },
   "group.home": {
@@ -16,7 +16,7 @@
     "entityType": "bb_project"
   },
   "workspace.other": {
-    "uuid": "14e28539-bd41-58be-8f7f-f013035f69e5",
+    "uuid": "dbc60000-0000-4000-8000-000000000002",
     "entityType": "bb_workspace"
   },
   "group.other": {
@@ -44,11 +44,11 @@
     "entityType": "user"
   },
   "user.stranger": {
-    "uuid": "5606b91c-bcc5-5c3a-a564-e07886c30417",
+    "uuid": "dbe50000-0000-4000-8000-000000000006",
     "entityType": "user"
   },
   "user.foreign": {
-    "uuid": "90083207-9a0b-5bf9-9f61-ca46635652ef",
+    "uuid": "dbe50000-0000-4000-8000-000000000003",
     "entityType": "user"
   },
   "user.app": {
@@ -77,10 +77,6 @@
   },
   "user.roster": {
     "uuid": "deca41bd-47f2-5abc-80dc-b898c410f372",
-    "entityType": "user"
-  },
-  "user.operator": {
-    "uuid": "787b9031-219e-520d-bad3-8c0b4b9aa790",
     "entityType": "user"
   },
   "user.stats-outsider": {
@@ -156,7 +152,7 @@
     "entityType": "og_membership"
   },
   "membership.foreign.workspace.other": {
-    "uuid": "1abc8c51-8a45-5961-a07a-a449c37132be",
+    "uuid": "dbd10000-0000-4000-8000-000000000009",
     "entityType": "og_membership"
   },
   "membership.foreign-lead.workspace.other": {
@@ -245,6 +241,10 @@
   },
   "term.label": {
     "uuid": "c50729c6-23c9-5d1e-9f91-87018765953e",
+    "entityType": "bb_term"
+  },
+  "term.other": {
+    "uuid": "b6000000-0000-4000-8000-000000000004",
     "entityType": "bb_term"
   },
   "user.dual-lead": {

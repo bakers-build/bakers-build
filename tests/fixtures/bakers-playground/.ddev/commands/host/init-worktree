@@ -1,0 +1,306 @@
+#!/bin/bash
+#ddev-generated
+## Description: Initialize DDEV for a git worktree
+## Usage: init-worktree [--name <name>]
+## Example: "ddev init-worktree --name my-feature"
+
+set -e
+
+# Optional explicit project name; overrides the branch-derived identifier below.
+NAME_OVERRIDE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --name)   NAME_OVERRIDE="${2:?--name requires a value}"; shift 2 ;;
+    --name=*) NAME_OVERRIDE="${1#--name=}"; shift ;;
+    *) echo "usage: init-worktree [--name <name>]" >&2; exit 1 ;;
+  esac
+done
+
+PARENT_PATH=$(git worktree list | head -1 | awk '{print $1}')
+
+if [ -z "$PARENT_PATH" ]; then
+  echo "ERROR: Could not determine parent worktree path"
+  exit 1
+fi
+
+PARENT_PROJECT=$(grep '^name:' "${PARENT_PATH}/.ddev/config.yaml" | awk '{print $2}')
+
+if [ -z "$PARENT_PROJECT" ]; then
+  echo "ERROR: Could not read DDEV project name from ${PARENT_PATH}/.ddev/config.yaml"
+  exit 1
+fi
+
+BRANCH=$(git branch --show-current)
+
+# Feature overlay (env-only): derive a safe feature name from the branch and, when a
+# matching keytec-ai feature overlay exists, persist it as KEYTEC_AI_FEATURE in
+# .ddev/.env. DDEV injects .ddev/.env into the web container (web_environment) AND the
+# host commands (init, sync-sanitize) source it — so BOTH the container and the host
+# resolve the feature overlay (review bounce Critical #1: web_environment alone is
+# web-container-only and never reaches the host commands). Portable derivation:
+# `tr -s '-'` collapses runs of dashes (GNU-only `sed 's/-\+/-/g'` is a no-op on
+# BSD/macOS sed). keytec-ai throws on a missing overlay, so only set it when the
+# file is present; otherwise clear any stale value and fall back to the base config.
+FEATURE=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | tr -s '-')
+FEATURE="${FEATURE#-}"; FEATURE="${FEATURE%-}"
+REPO_ROOT=$(git rev-parse --show-toplevel)
+mkdir -p .ddev
+ENV_FILE=.ddev/.env
+# Rewrite .ddev/.env without any prior KEYTEC_AI_FEATURE line first — never clobber
+# other keys (secrets), and drop a stale feature so a re-run on a non-feature branch
+# does not leave the old overlay active.
+if [ -f "${ENV_FILE}" ]; then
+  grep -v '^KEYTEC_AI_FEATURE=' "${ENV_FILE}" > "${ENV_FILE}.tmp" || true
+  mv "${ENV_FILE}.tmp" "${ENV_FILE}"
+fi
+if [ -n "${FEATURE}" ] && [ -f "${REPO_ROOT}/.keytec-ai/features/${FEATURE}.yml" ]; then
+  echo "Feature overlay '${FEATURE}' found; persisting KEYTEC_AI_FEATURE into .ddev/.env"
+  echo "KEYTEC_AI_FEATURE=${FEATURE}" >> "${ENV_FILE}"
+else
+  echo "No feature overlay for branch '${BRANCH}' (looked for .keytec-ai/features/${FEATURE}.yml); using base config"
+fi
+
+# Test seam: verify feature wiring without spinning up DDEV.
+[ "${INIT_WORKTREE_DRY_RUN:-0}" = "1" ] && { echo "worktree dry-run: feature=${FEATURE}"; exit 0; }
+
+# DDEV project name (= the worktree's base url <name>.ddev.site). Precedence:
+#   1. explicit --name (sanitised),
+#   2. the bakers.build ticket identifier embedded in the branch — READABLE url
+#      (keytecddev-6.ddev.site) with no bakers CLI, no ticket-id env, no network: strip the
+#      branch prefix up to the last '/', keep the leading <project>-<number> token,
+#   3. fallback <parent40>-wt-<branch-hash> (branch carries no identifier).
+# The name is lowercase [a-z0-9-] and sits under Docker's 63-char DNS label limit.
+sanitise_name() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | cut -c1-63 | sed 's/^-*//; s/-*$//'; }
+WT_NAME=""
+if [ -n "${NAME_OVERRIDE}" ]; then
+  WT_NAME=$(sanitise_name "$NAME_OVERRIDE")
+fi
+if [ -z "${WT_NAME}" ]; then
+  # Identifier = the leading dash-segments up to and INCLUDING the first all-numeric
+  # segment: <project>-<number>. The project key may itself contain dashes
+  # (my-project-5), and slug numbers after the ticket number are ignored
+  # (keytecddev-6-issue-42 -> keytecddev-6). No numeric segment -> empty -> fallback.
+  CAND=$(printf '%s' "$BRANCH" | sed -E 's#.*/##' | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-')
+  WT_NAME=$(printf '%s' "$CAND" | awk -F- '{
+    out=$1;
+    for (i=2; i<=NF; i++) { out=out"-"$i; if ($i ~ /^[0-9]+$/) { print out; exit } }
+  }' | cut -c1-63)
+fi
+if [ -z "${WT_NAME}" ]; then
+  # Fallback: full parent (bounded) + a short branch hash. Never truncate the
+  # distinguishing hash (that collides) and never end on a dash.
+  BASE=$(printf '%s' "$PARENT_PROJECT" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | cut -c1-40 | sed 's/-*$//')
+  HASH=$(printf '%s' "$BRANCH" | git hash-object --stdin | cut -c1-7)
+  WT_NAME="${BASE}-wt-${HASH}"
+fi
+
+# Overlay, not clobber. DDEV deep-merges .ddev/config.yaml with every
+# .ddev/config.*.yaml (later file wins on scalars, lists merge). So instead of
+# rewriting the tracked config (which discarded hooks/web_environment/services and
+# broke multi-service projects), write a small git-ignored overlay carrying ONLY the
+# keys that must differ per worktree: name + templated additional_fqdns. The tracked
+# config — with its hooks, env, service compose refs — survives untouched, so
+# `ddev start` fires the project's own post-start hooks (solr core creation, etc.).
+PARENT_CFG="${PARENT_PATH}/.ddev/config.yaml"
+P_DOCROOT=$(awk '$1=="docroot:"{v=$2; gsub(/^"|"$/,"",v); print v; exit}' "${PARENT_CFG}")
+P_DOCROOT="${P_DOCROOT:-web}"
+
+# Per-site worktree fqdn scheme, configurable via init.worktree_fqdn (flows through
+# `keytec-ai config to-env` as INIT_WORKTREE_FQDN — generic, no keytec-ai-cli change).
+# Default {site}.{project}.ddev.site = today's hardcoded scheme, so existing projects
+# are unchanged. Resolve the same way `init` does; skipped when already set (tests) or
+# when the CLI is absent.
+if [ -z "${INIT_WORKTREE_FQDN+set}" ]; then
+  if [ -f .ddev/.env ]; then set -a; . .ddev/.env; set +a; fi
+  if [ -z "${INIT_WORKTREE_FQDN+set}" ]; then
+    if command -v keytec-ai >/dev/null 2>&1; then eval "$(keytec-ai config to-env 2>/dev/null)" || true
+    elif command -v npx >/dev/null 2>&1; then eval "$(npx -y keytec-ai-cli config to-env 2>/dev/null)" || true; fi
+  fi
+fi
+# NB: the default cannot ride the ${VAR:-…} form — its literal braces would be
+# mis-parsed as the parameter-expansion close. Set it explicitly instead.
+FQDN_TMPL="${INIT_WORKTREE_FQDN:-}"
+[ -n "${FQDN_TMPL}" ] || FQDN_TMPL='{site}.{project}.ddev.site'
+
+# Effective host-length budget for the ASSEMBLED FQDN (KEYTECDDEV-24). Rides the SAME
+# init.*→INIT_* resolution above as INIT_WORKTREE_FQDN (no new branch, no keytec-ai-cli
+# change). Unset ⇒ 62 — keeps the project name ≤ 52, safely under DDEV's real limit: the
+# container hostname `<name>-web` at the kernel HOST_NAME_MAX of 64 (see README, AC-13).
+# `62` carries no braces, so the ${VAR:-…} default form is safe here (unlike FQDN_TMPL).
+BUDGET="${INIT_WORKTREE_FQDN_MAX:-62}"
+
+# Multisite: route each site under this worktree via the fqdn template.
+# Site = a dir under <docroot>/sites except all/default. Single-site → no fqdns.
+# Computed HERE (before the name: write) because the clamp below needs the full host
+# list to size the fixed cost.
+SITES=$(find "${P_DOCROOT}/sites" -mindepth 1 -maxdepth 1 -type d \
+  ! -name all ! -name default ! -name simpletest -exec basename {} \; 2>/dev/null | sort)
+
+# Host-label site list = the named sites, plus the default site under a logical name
+# when init.default_site is set (INIT_DEFAULT_SITE flows in via `keytec-ai config
+# to-env`, resolved above alongside INIT_WORKTREE_FQDN). Prepend so the default site
+# leads the list. This list drives ONLY the two host-label loops below (the
+# additional_fqdns writer + the .env.ddev PLAYWRIGHT_BASE_URL_<SITE> writer) — it is
+# deliberately kept OUT of SITES so the on-demand DB tip and the "Multisite detected"
+# log never advertise the default site as a `ddev init --site` DB target. Host/label
+# only: `ddev init` DB semantics are untouched (they key off KEYTEC_AI_SITE, never this).
+HOST_SITES="${SITES}"
+if [ -n "${INIT_DEFAULT_SITE:-}" ]; then
+  HOST_SITES=$(printf '%s\n%s' "${INIT_DEFAULT_SITE}" "${SITES}")
+fi
+
+# --- Budget-aware FQDN clamp (KEYTECDDEV-24) ---------------------------------------
+# Measure the FINISHED host across EVERY host this command emits and never write or
+# start a worktree carrying an over-budget host. Runs BEFORE the first overlay write
+# and before `ddev start`, so an abort leaves no partial state and no broken domain.
+
+# Template sanity: {project} must occur EXACTLY once. Zero routes every worktree onto
+# one host; more than one breaks the `fixed + len(name)` arithmetic. Either aborts
+# early (before any write). {site} is unconstrained (a template may legitimately omit
+# it). grep exits non-zero on zero matches, so the pipeline's status is wc's (0) — fine.
+PROJ_COUNT=$(printf '%s' "${FQDN_TMPL}" | grep -o '{project}' | wc -l | tr -d '[:space:]')
+if [ "${PROJ_COUNT}" != "1" ]; then
+  echo "ERROR: init.worktree_fqdn template '${FQDN_TMPL}' must contain exactly one {project} placeholder (found ${PROJ_COUNT})." >&2
+  exit 1
+fi
+
+# Fixed cost = max host length over every emitted host with {project} emptied:
+#   fixed_i = len(TMPL with {site}→site, {project}→"")   for each HOST_SITES entry
+#   fixed   = max(10, max_i fixed_i)   # the always-emitted bare <project>.ddev.site floors it
+# max_name = BUDGET − fixed is the largest name that keeps EVERY host ≤ BUDGET.
+FIXED=10                               # len(".ddev.site") — the bare PLAYWRIGHT_BASE_URL host
+OFFENDING_SITE="<project>.ddev.site"
+if [ -n "${HOST_SITES}" ]; then
+  while IFS= read -r site; do
+    [ -z "$site" ] && continue
+    probe="${FQDN_TMPL//\{site\}/$site}"; probe="${probe//\{project\}/}"
+    if [ "${#probe}" -gt "${FIXED}" ]; then FIXED="${#probe}"; OFFENDING_SITE="$site"; fi
+  done <<< "$HOST_SITES"
+fi
+MAX_NAME=$(( BUDGET - FIXED ))
+
+# The ladder: fits → keep · shorten → readable+hash7 · degrade → wt-hash7 · else abort.
+# hash7 is over the ORIGINAL derived name (same idiom as the fallback above) so a re-run
+# is byte-identical (determinism → after_create never mints a fresh project) and two long
+# prefix-sharing names diverge in the hash instead of merging onto one project.
+if [ "${#WT_NAME}" -le "${MAX_NAME}" ]; then
+  :                                    # fits → byte-identical passthrough
+elif [ "${MAX_NAME}" -ge 12 ]; then
+  ORIG_NAME="${WT_NAME}"
+  HASH7=$(printf '%s' "${WT_NAME}" | git hash-object --stdin | cut -c1-7)
+  READABLE=$(printf '%s' "${WT_NAME:0:$(( MAX_NAME - 8 ))}" | sed 's/-*$//')   # rstrip trailing dash(es)
+  WT_NAME="${READABLE}-${HASH7}"
+  echo "init-worktree: FQDN budget ${BUDGET}, fixed cost ${FIXED} (site '${OFFENDING_SITE}'); shortened name '${ORIG_NAME}' -> '${WT_NAME}'"
+elif [ "${MAX_NAME}" -ge 10 ]; then
+  ORIG_NAME="${WT_NAME}"
+  HASH7=$(printf '%s' "${WT_NAME}" | git hash-object --stdin | cut -c1-7)
+  WT_NAME="wt-${HASH7}"
+  echo "init-worktree: FQDN budget ${BUDGET}, fixed cost ${FIXED} (site '${OFFENDING_SITE}'); degraded name '${ORIG_NAME}' -> '${WT_NAME}'"
+else
+  echo "ERROR: init-worktree cannot fit the worktree name within the FQDN budget ${BUDGET}: measured fixed cost ${FIXED} (offending site '${OFFENDING_SITE}') leaves only ${MAX_NAME} chars for the name, below the 10-char minimum (wt-<hash7>). Shorten the init.worktree_fqdn template (or raise init.worktree_fqdn_max)." >&2
+  exit 1
+fi
+# --- end clamp ---------------------------------------------------------------------
+
+echo "Creating DDEV worktree environment: ${WT_NAME}"
+
+mkdir -p .ddev
+printf 'name: %s\n' "${WT_NAME}" > .ddev/config.worktree.yaml
+
+if [ -n "${HOST_SITES}" ]; then
+  echo "additional_fqdns:" >> .ddev/config.worktree.yaml
+  while IFS= read -r site; do
+    [ -z "$site" ] && continue
+    fqdn="${FQDN_TMPL//\{site\}/$site}"
+    fqdn="${fqdn//\{project\}/$WT_NAME}"
+    echo "  - ${fqdn}" >> .ddev/config.worktree.yaml
+  done <<< "$HOST_SITES"
+fi
+# "Multisite detected" reflects genuine multisite (named site dirs) only — never the
+# host-label-only default site.
+if [ -n "${SITES}" ]; then
+  echo "Multisite detected; routed: $(echo ${SITES} | tr '\n' ' ')"
+fi
+
+# The overlay is per-worktree (names a worktree-unique project) — never commit it.
+# Dedicated filename (not config.local.yaml) to avoid colliding with a project's own
+# local override. Ensure .ddev/.gitignore ignores it, appending if absent.
+touch .ddev/.gitignore
+grep -qxF '/config.worktree.yaml' .ddev/.gitignore || echo '/config.worktree.yaml' >> .ddev/.gitignore
+
+# Host-run Playwright (KEYTECDDEV-10): emit a git-ignored .env.ddev at the worktree
+# root so playwright.config (and any other host tool) gets the worktree's baseURL(s)
+# with no `ddev describe` at test time and no container dependency. Primary URL = the
+# bare DDEV project host (not templated); per-site URLs reuse the additional_fqdns
+# template + loop. <SITE> key = upper-cased site dir with any non-alnum mapped to '_'.
+E2E_ENV="${REPO_ROOT}/.env.ddev"
+{
+  # Persist the worktree DDEV project name so host dotenv consumers (Playwright
+  # fixtures, other tooling) read it directly — not only the project post step, which
+  # additionally receives it via export below. Primary URL stays derivable (and is
+  # emitted as PLAYWRIGHT_BASE_URL); the bare name is the first-class handle.
+  printf 'DDEV_WORKTREE_NAME=%s\n' "${WT_NAME}"
+  printf 'PLAYWRIGHT_BASE_URL=https://%s.ddev.site\n' "${WT_NAME}"
+  if [ -n "${HOST_SITES}" ]; then
+    while IFS= read -r site; do
+      [ -z "$site" ] && continue
+      fqdn="${FQDN_TMPL//\{site\}/$site}"; fqdn="${fqdn//\{project\}/$WT_NAME}"
+      key=$(printf '%s' "$site" | tr '[:lower:]' '[:upper:]' | tr -c 'A-Z0-9' '_')
+      printf 'PLAYWRIGHT_BASE_URL_%s=https://%s\n' "${key}" "${fqdn}"
+    done <<< "$HOST_SITES"
+  fi
+} > "${E2E_ENV}"
+
+# Per-worktree generated file — never commit. Ensure the worktree-root .gitignore ignores it.
+touch "${REPO_ROOT}/.gitignore"
+grep -qxF '/.env.ddev' "${REPO_ROOT}/.gitignore" || echo '/.env.ddev' >> "${REPO_ROOT}/.gitignore"
+
+# Project-owned pre step (init.worktree_pre). The mirror of init.worktree_post below: a
+# project prepares its worktree BEFORE the containers come up — copy secrets or a parent
+# config into .ddev/.env, drop a docker-compose.*.yaml service override, seed a mount
+# source — without forking this generic command. Same contract as the post step: it flows
+# in as INIT_WORKTREE_PRE via the same `init.*`→`INIT_*` resolution above (INIT_WORKTREE_FQDN
+# / INIT_DEFAULT_SITE / INIT_WORKTREE_POST). Run verbatim in the worktree root (this
+# command's CWD) with the worktree DDEV project name exported as DDEV_WORKTREE_NAME (primary
+# URL derivable as https://${DDEV_WORKTREE_NAME}.ddev.site). Positioned AFTER every generated
+# file is written (config.worktree.yaml, .ddev/.env, .ddev/.gitignore, .env.ddev, root
+# .gitignore) and BEFORE `ddev start`, so it can still influence how the containers come up.
+# Empty/unset skips cleanly (mirrors init's `if [ -n "${INIT_BUILD:-}" ]`); under `set -e` a
+# non-zero pre step aborts init-worktree with that status before `ddev start` runs, so no
+# half-provisioned worktree is left started.
+if [ -n "${INIT_WORKTREE_PRE:-}" ]; then
+  echo "Running project pre step (init.worktree_pre)"
+  export DDEV_WORKTREE_NAME="${WT_NAME}"
+  bash -c "${INIT_WORKTREE_PRE}"
+fi
+
+ddev start
+
+# DB provisioning is a SEPARATE, on-demand task — deliberately NOT done here. This
+# command (called by the bakers.build conductor) only builds the worktree's DDEV env: config,
+# the feature env (.ddev/.env), multisite routing, and `ddev start`. Populate a site's
+# DB when you actually need it with `ddev init` (default) or `ddev init --site <name>`.
+if [ -x .ddev/commands/host/init ]; then
+  if [ -n "${SITES}" ]; then
+    echo "Tip: provision a site's DB on demand: 'ddev init' (default) or 'ddev init --site <name>' for: $(echo ${SITES} | tr '\n' ' ')"
+  else
+    echo "Tip: provision the DB on demand with 'ddev init'."
+  fi
+else
+  echo "Tip: run 'keytec-drupal-doctor check-tools' to add 'ddev init' (on-demand DB provisioning)."
+fi
+
+# Project-owned post step (init.worktree_post). A project re-homes its own worktree
+# bootstrap here — e.g. build a CLI, copy a parent config — without forking this generic
+# command. It flows in as INIT_WORKTREE_POST via the same `init.*`→`INIT_*` resolution
+# above (INIT_WORKTREE_FQDN / INIT_DEFAULT_SITE). Run verbatim as the FINAL step, in the
+# worktree root (this command's CWD), with the worktree DDEV project name exported as
+# DDEV_WORKTREE_NAME (primary URL derivable as https://${DDEV_WORKTREE_NAME}.ddev.site);
+# empty/unset skips cleanly (mirrors init's `if [ -n "${INIT_BUILD:-}" ]`).
+if [ -n "${INIT_WORKTREE_POST:-}" ]; then
+  echo "Running project post step (init.worktree_post)"
+  export DDEV_WORKTREE_NAME="${WT_NAME}"
+  bash -c "${INIT_WORKTREE_POST}"
+fi
+
+echo "DDEV worktree environment ready: ${WT_NAME}"

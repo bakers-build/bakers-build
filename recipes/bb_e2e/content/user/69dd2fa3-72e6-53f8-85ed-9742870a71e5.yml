@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-dual-lead
+  - value: fixture-settings
   mail:
-  - value: api-dual-lead@example.test
+  - value: fixture-settings@example.test
   status:
   - value: true
   pass:

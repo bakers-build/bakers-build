@@ -3,7 +3,7 @@
 # `by_team` is not read from a field on the ticket: `bb_ticket` has no
 # `team_id` (BB-321 rejected one), so TeamStatistics::byTeamFromUserCounts()
 # expands the per-ASSIGNEE counts onto every team each assignee belongs to. In
-# the seeded world `bakers-e2e-agent` is the only account that owns a counted row
+# the seeded world `fixture-agent` is the only account that owns a counted row
 # (a `bb_run`), so this is the membership that turns `runs.by_team` from `[]`
 # into a row. Move it to another crew and the observable moves with it.
 #

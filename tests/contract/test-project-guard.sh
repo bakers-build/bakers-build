@@ -342,7 +342,7 @@ for own in 'bakers-pg-1a2b3c4d' 'bakers-pg-1a2b3c4d-feat-x'; do
 done
 # The three that must never be deleted: the fixture's committed name, a real bakers
 # checkout, and a project whose name could not be read at all.
-for foreign in 'bakers-playground' 'bb-273' ''; do
+for foreign in 'drupal-11-simple' 'bb-273' ''; do
   ddev_named "${foreign}"
   [ "$(name_verdict)" = 'foreign' ] \
     || fail "harness_ddev_name claimed ownership of the ddev project '${foreign}'"

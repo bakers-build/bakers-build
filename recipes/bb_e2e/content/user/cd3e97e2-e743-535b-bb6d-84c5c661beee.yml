@@ -5,9 +5,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: create-revocable
+  - value: fixture-revocable
   mail:
-  - value: create-revocable@example.com
+  - value: fixture-revocable@example.test
   status:
   - value: true
   preferred_langcode:

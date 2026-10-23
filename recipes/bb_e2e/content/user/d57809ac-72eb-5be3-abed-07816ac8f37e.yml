@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-crew-mate
+  - value: fixture-crew-mate
   mail:
-  - value: api-crew-mate@example.test
+  - value: fixture-crew-mate@example.test
   status:
   - value: true
   pass:

@@ -27,7 +27,7 @@
  * stack are not isolated by this helper.
  *
  * Ticket birth + conductor_id assignment + terminal state are done via
- * `ddev drush ev`: the bakers-e2e-agent identity has neither `create bb_ticket`
+ * `ddev drush ev`: the fixture-agent identity has neither `create bb_ticket`
  * nor `assign bakers conductor` permission, so these setup writes cannot go
  * through the API. The lifecycle (claim/dispatch/markRunning/close/teardown) is
  * all real API + real executor.

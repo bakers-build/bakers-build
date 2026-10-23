@@ -44,7 +44,7 @@ async function searchUserConductors(page: Page, query: string): Promise<void> {
 }
 
 When('I visit my conductors listing', async ({ page }) => {
-  const response = await page.goto(`/user/${uidOf('cwiedemann')}/conductors`);
+  const response = await page.goto(`/user/${uidOf('north-lead')}/conductors`);
   expect(response?.status() ?? 0, 'The user Conductors listing did not render').toBeLessThan(400);
   await expect(page.locator(USER_LIST_FORM)).toBeAttached({ timeout: 10000 });
   await expect(userList(page).locator(SEARCH_TOOLBAR)).toBeVisible({ timeout: 10000 });

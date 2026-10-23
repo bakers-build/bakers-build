@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-member
+  - value: north-contributor
   mail:
-  - value: api-member@example.test
+  - value: north-contributor@example.test
   status:
   - value: true
   pass:

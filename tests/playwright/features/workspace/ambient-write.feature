@@ -2,7 +2,7 @@
 Feature: Ambient workspace validation over JSON API
 
   Scenario: Workspace lead creating bb_group in home gets 201
-    Given the API client is "api-lead"
+    Given the API client is "fixture-lead"
     When the API client sends "POST" to "/jsonapi/bb_group/bb_group":
       """
       {"data":{"type":"bb_group--bb_group","attributes":{"name":"API ambient contract"},"relationships":{"workspace_id":{"data":{"type":"bb_workspace--bb_workspace","id":"{workspace.home}"}}}}}
@@ -17,7 +17,7 @@ Feature: Ambient workspace validation over JSON API
       """
 
   Scenario: Workspace lead creating bb_group in other gets 422
-    Given the API client is "api-lead"
+    Given the API client is "fixture-lead"
     When the API client sends "POST" to "/jsonapi/bb_group/bb_group":
       """
       {"data":{"type":"bb_group--bb_group","attributes":{"name":"API ambient contract"},"relationships":{"workspace_id":{"data":{"type":"bb_workspace--bb_workspace","id":"{workspace.other}"}}}}}
@@ -27,7 +27,7 @@ Feature: Ambient workspace validation over JSON API
     And the API error mentions "not one of yours"
 
   Scenario: Workspace lead creating bb_ticket in home gets 201
-    Given the API client is "api-lead"
+    Given the API client is "fixture-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
       {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API ambient contract","workflow":"bb_feature"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
@@ -42,7 +42,7 @@ Feature: Ambient workspace validation over JSON API
       """
 
   Scenario: Workspace lead creating bb_ticket in other gets 422
-    Given the API client is "api-lead"
+    Given the API client is "fixture-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
       {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API ambient contract","workflow":"bb_feature"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.other}"}}}}}

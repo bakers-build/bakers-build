@@ -5,9 +5,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: create-owner
+  - value: south-member
   mail:
-  - value: create-owner@example.com
+  - value: south-member@example.test
   status:
   - value: true
   preferred_langcode:

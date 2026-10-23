@@ -3,14 +3,14 @@
 #
 # IT EXISTS FOR ONE ACCEPTANCE CRITERION: "a member of a non-`bakers` workspace
 # lands in theirs". Before this fixture the seeded world could not express it —
-# exactly one account held exactly one membership (`cwiedemann`, in the default
+# exactly one account held exactly one membership (`north-lead`, in the default
 # workspace), so every landing the browser suite could observe was the `bakers`
 # one, and a controller that hard-coded the default slug would have passed.
 #
-# THE ALTERNATIVE WAS REJECTED ON THE RECORD. Giving `cwiedemann` a second
+# THE ALTERNATIVE WAS REJECTED ON THE RECORD. Giving `north-lead` a second
 # membership would have been one line, and it would have given that account TWO
 # workspaces — so `/` would answer with the CHOOSER for it, and every existing
-# scenario whose actor is `cwiedemann` would land on a page it does not expect.
+# scenario whose actor is `north-lead` would land on a page it does not expect.
 # A new account with one membership changes nothing that already passes.
 #
 # It carries NO `user_role`, deliberately: everything it can do comes from the
@@ -33,10 +33,10 @@ default:
       value: "en"
   name:
     -
-      value: "other-member"
+      value: south-contributor
   mail:
     -
-      value: "other-member@example.com"
+      value: south-contributor@example.test
   timezone:
     -
       value: "Europe/Berlin"

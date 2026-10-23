@@ -11,7 +11,7 @@
  *
  * Fixture contract (`ddev init --test`):
  *   BB_E2E_TICKET_UUID     ticket GL-E2E-DROPSH (has a run owned by the
- *                            bakers-e2e-agent's conductor)
+ *                            fixture-agent's conductor)
  *   BB_E2E_CONDUCTOR_UUID  the bakers-e2e-node conductor entity
  *   BB_E2E_PROJECT_UUID    the bakers-e2e-project
  */

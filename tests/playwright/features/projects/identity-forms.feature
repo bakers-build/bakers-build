@@ -9,16 +9,16 @@ Feature: Projects and groups get a description and an image in their forms
 
   Scenario: A group created with a description and an image shows both, then edits and clears them
     Given I am logged in as "Administrator"
-    # create-b: group-team-create counts the groups of create-a in parallel.
-    When I create a group in "create-b" with a description and the image "avatar-wide.png"
+    # "other": group-team-create creates and counts in "bakers" in parallel.
+    When I create a group in "other" with a description and the image "avatar-wide.png"
     Then the created group stores that description and an image
-    And the "create-b" groups row of that group shows its image and description
+    And the "other" groups row of that group shows its image and description
     When I open that group's settings
     And I replace its description with "Edited once,\nthen reloaded." and remove its image
     And I reload that group's settings
     Then the settings form reads "Edited once,\nthen reloaded." and holds no image
-    And the "create-b" groups row of that group shows its initials and "Edited once,\nthen reloaded."
-    And at a phone width "/create-b/groups" does not scroll sideways
+    And the "other" groups row of that group shows its initials and "Edited once,\nthen reloaded."
+    And at a phone width "/other/groups" does not scroll sideways
 
   Scenario: A project's settings set, refuse, replace and clear its identity
     Given I am logged in as "Administrator"
@@ -41,23 +41,23 @@ Feature: Projects and groups get a description and an image in their forms
 
   # A workspace carries the same identity: set in its Settings, shown as the
   # switcher's mark and entries; its description appears on /home only.
-  # "create-a" is a workspace no other scenario reads the switcher of.
+  # "other" (Southside): its seeded description is restored before the end.
   Scenario: A workspace's settings set its identity, and the switcher and chooser show it
     Given I am logged in as "Administrator"
-    When I open the settings of the workspace "create-a"
+    When I open the settings of the workspace "other"
     And I submit a 281 character description
     Then the form names the Description field's 280 character limit
-    When I set the description "Where create-a\nships." and upload "avatar-wide.png"
+    When I set the description "Where Southside\nships." and upload "avatar-wide.png"
     And I reload the workspace's settings
-    Then the settings form reads "Where create-a\nships." and holds an image
-    And the switcher of "create-a" shows its image
-    And the switcher entry of "create-a" shows its image without "Where create-a\nships."
-    And the chooser row of "create-a" shows its image and "Where create-a\nships."
+    Then the settings form reads "Where Southside\nships." and holds an image
+    And the switcher of "other" shows its image
+    And the switcher entry of "other" shows its image without "Where Southside\nships."
+    And the chooser row of "other" shows its image and "Where Southside\nships."
     And at a phone width "/home" does not scroll sideways
     When I restore the workspace's seeded description and remove its image
     And I reload the workspace's settings
     Then the settings form reads the seeded description and holds no image
-    And the switcher of "create-a" shows its initials
+    And the switcher of "other" shows its initials
 
   # The create form renders the same settings display, so what it asks for
   # must reach the provisioned workspace. The workspace is removed afterwards.
@@ -80,11 +80,11 @@ Feature: Projects and groups get a description and an image in their forms
 
     Examples:
       | account            | entity  | path                  | settings | listing             | listing_state                 |
-      | api-lead           | group   | /api-home/group/API home | offered  | /api-home/groups    | offers "New group"            |
-      | api-lead           | project | /api-home/project/apih |offered  | /api-home/projects  | offers "New project"          |
-      | api-member         | group   | /api-home/group/API home | refused  | /api-home/groups    | offers "New group"            |
-      | api-member         | project | /api-home/project/apih |refused  | /api-home/projects  | offers "New project"          |
-      | api-workspace-only | group   | /api-home/group/API home | refused  | /api-home/groups    | is refused                    |
-      | api-workspace-only | project | /api-home/project/apih |refused  | /api-home/projects  | is refused                    |
-      | api-stranger       | group   | /api-home/group/API home | refused  | /api-home/groups    | is refused                    |
-      | api-stranger       | project | /api-home/project/apih |refused  | /api-home/projects  | is refused                    |
+      | fixture-lead           | group   | /bakers/group/API home | offered  | /bakers/groups    | offers "New group"            |
+      | fixture-lead           | project | /bakers/project/apih |offered  | /bakers/projects  | offers "New project"          |
+      | north-contributor         | group   | /bakers/group/API home | refused  | /bakers/groups    | offers "New group"            |
+      | north-contributor         | project | /bakers/project/apih |refused  | /bakers/projects  | offers "New project"          |
+      | fixture-workspace-only | group   | /bakers/group/API home | refused  | /bakers/groups    | is refused                    |
+      | fixture-workspace-only | project | /bakers/project/apih |refused  | /bakers/projects  | is refused                    |
+      | no-bakery       | group   | /bakers/group/API home | refused  | /bakers/groups    | is refused                    |
+      | no-bakery       | project | /bakers/project/apih |refused  | /bakers/projects  | is refused                    |

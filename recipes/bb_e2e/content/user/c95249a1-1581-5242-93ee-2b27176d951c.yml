@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-machine
+  - value: fixture-api-machine
   mail:
-  - value: api-machine@example.test
+  - value: fixture-api-machine@example.test
   status:
   - value: true
   pass:

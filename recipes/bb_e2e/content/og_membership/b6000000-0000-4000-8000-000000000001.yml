@@ -1,0 +1,24 @@
+# member of Southside Bakery: the south bakery's member persona.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: b6000000-0000-4000-8000-000000000001
+  default_langcode: en
+  bundle: default
+  depends:
+    01abe152-4ecc-5f00-be81-adedb3e00ad1: user
+    dbc60000-0000-4000-8000-000000000002: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: dbc60000-0000-4000-8000-000000000002
+  state:
+  - value: active
+  uid:
+  - entity: 01abe152-4ecc-5f00-be81-adedb3e00ad1
+  type:
+  - target_id: default
+

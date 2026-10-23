@@ -1,0 +1,131 @@
+#!/bin/bash
+#ddev-generated
+## Description: Fast DB acquisition — restore a registry DDEV snapshot (host, cache-first). Internal: init dispatches to it.
+## Usage: snapshot-acquire [--site <name>]
+## Example: "ddev snapshot-acquire --site shopde"
+#
+# The host-side counterpart of sync-sanitize's `[2.5] snapshot_publish`: it ACQUIRES and restores
+# the physical DDEV snapshot artifact so a DB comes up by volume-swap (near-instant) instead of a
+# logical SQL replay. `init` dispatches to this command and, on any non-zero exit, falls back to the
+# SQL provider — so everything registry/cache/snapshot lives HERE, and `init` stays a dumb
+# dispatcher. Snapshot restore is a HOST volume op (it manipulates the DB container/volume), which
+# a DDEV in-container pull provider physically cannot do; that is why this is a host command and
+# not a provider yaml.
+#
+# Exit contract (consumed by init):
+#   0        → the DB was brought up from a snapshot; the caller must NOT run the SQL provider.
+#   non-zero → no snapshot / download / corrupt-cache / restore failure (or no registry configured);
+#              the caller falls back to `ddev pull <sql-provider>`. Best-effort: never a hard error.
+#
+# One "current" snapshot per package at a FIXED coordinate (<pkg>-current.snapshot.tgz) — no version
+# history, no version lookup (must match sync-sanitize). No DB-engine gate: the registry package
+# identity already encodes the engine (a distinct engine = its own package_suffix = its own
+# package), so a package's artifacts are engine-consistent by construction; an operator-misconfig
+# mismatch is caught by the restore-fails → non-zero → SQL fallback below.
+set -euo pipefail
+APPROOT="${DDEV_APPROOT:-$(pwd)}"
+
+# --- args ---
+SITE="${KEYTEC_AI_SITE:-default}"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --site)   SITE="${2:?--site requires a value}"; shift 2 ;;
+    --site=*) SITE="${1#--site=}"; shift ;;
+    *) echo "usage: snapshot-acquire [--site <name>]" >&2; exit 2 ;;
+  esac
+done
+[ -n "${SITE}" ] || SITE=default
+export KEYTEC_AI_SITE="${SITE}"
+
+# --- config: source .ddev/.env (feature + secrets) then resolve the registry coordinate.
+# Self-contained — never depends on the caller's shell state. Skipped when a base_url is already
+# set (tests) or the keytec-ai CLI is absent. Mirrors sync-sanitize's load_config / init.
+if [ -f "${APPROOT}/.ddev/.env" ]; then set -a; . "${APPROOT}/.ddev/.env"; set +a; fi
+# Fallback: a read token configured only in ddev global web_environment reaches the web container
+# but never this host shell — read it back from the running container. Assign-if-unset keeps an
+# explicit .ddev/.env / host-env value in precedence; the `:` builtin always succeeds, so a
+# stopped/absent container (init may dispatch here before start) masks to empty under set -e and
+# degrades to the caller's SQL fallback.
+: "${KEYTEC_REGISTRY_TOKEN:=$(ddev exec printenv KEYTEC_REGISTRY_TOKEN 2>/dev/null)}"
+if [ -z "${REGISTRY_BASE_URL+set}${PROVIDERS_REGISTRY_BASE_URL+set}" ]; then
+  if command -v keytec-ai >/dev/null 2>&1; then eval "$(keytec-ai config to-env 2>/dev/null)" || true
+  elif command -v npx >/dev/null 2>&1; then eval "$(npx -y keytec-ai-cli config to-env 2>/dev/null)" || true; fi
+fi
+
+# Prefer PROVIDERS_REGISTRY_*, fall back to legacy REGISTRY_*. Effective package = base + suffix
+# (suffix = package_suffix if set, else -<site> for a named site) — IDENTICAL to sync-sanitize so
+# init restores exactly what sync-sanitize published.
+_r_base="${PROVIDERS_REGISTRY_BASE_URL:-${REGISTRY_BASE_URL:-}}"
+_r_proj="${PROVIDERS_REGISTRY_PROJECT_PATH:-${REGISTRY_PROJECT_PATH:-}}"
+_r_pkg="${PROVIDERS_REGISTRY_PACKAGE_NAME:-${REGISTRY_PACKAGE_NAME:-}}"
+_r_suffix="${PROVIDERS_REGISTRY_PACKAGE_SUFFIX:-${REGISTRY_PACKAGE_SUFFIX:-}}"
+# No package configured → nothing to acquire; let the caller do SQL. (Exits before any curl.)
+[ -n "${_r_pkg}" ] || exit 3
+if [ -n "${_r_suffix}" ]; then _pkg="${_r_pkg}${_r_suffix}"
+elif [ "${SITE}" != "default" ]; then _pkg="${_r_pkg}-${SITE}"
+else _pkg="${_r_pkg}"; fi
+
+_snap_ver=current
+_snap="${_pkg}-${_snap_ver}.snapshot.tgz"
+_hdr="PRIVATE-TOKEN: ${KEYTEC_REGISTRY_TOKEN:-}"
+_proj_enc="$(printf '%s' "${_r_proj}" | sed 's:/:%2F:g')"
+_api="${_r_base}/api/v4/projects/${_proj_enc}"
+_snap_url="${_api}/packages/generic/${_pkg}/${_snap_ver}/${_snap}"
+
+# Machine-global cache: default XDG dir, overridable via INIT_DB_CACHE_DIR (init.db_cache_dir),
+# keyed by the exact artifact filename and shared across all projects/worktrees. A cache HIT needs
+# neither the read token nor the network (the zero-network warm-cache win); a MISS downloads once
+# and stores. Note: the "current" coordinate is stable, so a warm cache serves whatever it holds
+# until evicted — clear the cache dir to force a re-pull of a refreshed DB.
+_cachedir="${INIT_DB_CACHE_DIR:-${XDG_CACHE_HOME:-${HOME}/.cache}/keytec-ai/db}"
+_cached="${_cachedir}/${_snap}"
+
+_have=""
+if [ -f "${_cached}" ]; then
+  _have=1                                                 # warm cache — no token, no network
+elif [ -n "${KEYTEC_REGISTRY_TOKEN:-}" ] && [ -n "${_r_base}" ]; then
+  # cold cache — ONE guarded download. No separate HEAD probe: a registry that rejects HEAD would
+  # falsely skip a real snapshot, and every failure mode (404/no snapshot, mid-transfer error) is
+  # handled identically — return non-zero so the caller does SQL. Guarded so set -e can't abort.
+  mkdir -p "${_cachedir}"
+  # Download into a temp INSIDE the cache dir so the `mv` below is a same-filesystem ATOMIC rename.
+  # A default mktemp ($TMPDIR, often tmpfs) would make `mv` a cross-fs copy-then-unlink — not
+  # atomic — letting a concurrent worktree init observe (and `tar`-fail + delete) a half-written
+  # cache file. The dir is mkdir -p'd just above, so the template dir always exists.
+  _tmp="$(mktemp "${_cachedir}/.dl.XXXXXX")"
+  if curl -fsSL --header "${_hdr}" "${_snap_url}" -o "${_tmp}"; then
+    mv -f "${_tmp}" "${_cached}"
+    # keep-N eviction (newest by mtime). Only artifact files are pruned — never other contents of a
+    # shared cache dir. keep>=1 so the just-stored artifact is never itself evicted before extract.
+    # `|| true` on the ls AND the whole pipeline: an unmatched glob (ls) or a failing rm would make
+    # pipefail propagate a non-zero that set -e turns into an abort — neutralise so eviction stays
+    # best-effort and never kills the (already successful) store.
+    _keep="${INIT_DB_CACHE_KEEP:-5}"; [ "${_keep}" -ge 1 ] 2>/dev/null || _keep=1
+    { ls -1t "${_cachedir}"/*.snapshot.tgz "${_cachedir}"/*.sql.gz 2>/dev/null || true; } \
+      | tail -n "+$((_keep + 1))" | while IFS= read -r _f; do
+        [ -n "${_f}" ] && rm -f "${_f}"
+      done || true
+    _have=1
+  else
+    echo "!! snapshot download failed — SQL fallback" >&2
+    rm -f "${_tmp}"
+  fi
+fi
+
+# No snapshot available (cold cache, no token, or download failed) → let the caller do SQL.
+[ -n "${_have}" ] || exit 3
+
+echo "==> fast DB acquisition: snapshot ${_snap}"
+mkdir -p "${APPROOT}/.ddev/db_snapshots"
+# Guard the extract: a corrupt/truncated cached tarball drops the bad artifact and returns non-zero
+# (caller does SQL), never aborts under set -e. A restore failure (e.g. an engine mismatch) is
+# distinct — the artifact is intact, so keep it and just return non-zero.
+if ! tar xzf "${_cached}" -C "${APPROOT}/.ddev/db_snapshots" 2>/dev/null; then
+  echo "!! snapshot extract failed (corrupt cache?) — dropping it, SQL fallback" >&2
+  rm -f "${_cached}"; exit 3
+fi
+if ddev snapshot restore "${_pkg}-${_snap_ver}"; then
+  exit 0
+fi
+echo "!! snapshot restore failed — SQL fallback" >&2
+exit 3

@@ -15,7 +15,7 @@
 Feature: My work carries Tickets and Stats as tabs
 
   Background:
-    Given I am logged in as the account "cwiedemann"
+    Given I am logged in as the account "north-lead"
 
   # Tickets stays the page My work opens on: the tab row was added to the
   # existing address rather than moving anyone to a new one.

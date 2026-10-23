@@ -6,9 +6,9 @@ _meta:
   default_langcode: en
 default:
   name:
-    - value: login-empty
+    - value: no-bakery
   mail:
-    - value: login-empty@example.com
+    - value: no-bakery@example.test
   status:
     - value: true
   pass:

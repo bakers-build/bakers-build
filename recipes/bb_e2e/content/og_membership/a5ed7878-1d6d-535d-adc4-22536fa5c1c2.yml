@@ -10,7 +10,7 @@
 # `conductor_id` is an `update`, which needs `update any bb_ticket`, a
 # permission only the workspace `lead` (admin) tier carries — `contributor`
 # has no update-any right at all. Measured by running the full suite: the
-# narrowed version failed `Reassigning an existing ticket…` for `api-app`
+# narrowed version failed `Reassigning an existing ticket…` for `fixture-app`
 # with 403. `lead` is therefore justified here, not merely convenient — the
 # same admin-parity `app` always had — and this fixture stays on it.
 _meta:
@@ -21,14 +21,14 @@ _meta:
   bundle: default
   depends:
     f8b12b48-2ec7-5b06-9578-fdc42070a60d: user
-    e10b39b4-52d8-5384-84ba-95286c10edd3: bb_workspace
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   entity_type:
   - value: bb_workspace
   entity_bundle:
   - value: bb_workspace
   entity_id:
-  - value: e10b39b4-52d8-5384-84ba-95286c10edd3
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
   state:
   - value: active
   uid:

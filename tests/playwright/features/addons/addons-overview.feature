@@ -11,7 +11,7 @@ Feature: Workspace addon overview
     And the probe addon has a newer version "1.1.0"
 
   Scenario: A workspace lead sees the addon with its versions and conductor
-    Given I am signed in as "cwiedemann"
+    Given I am signed in as "north-lead"
     When I open the workspace settings of "bakers"
     And I click the tab "Addons"
     And I click the tab "Addons"
@@ -22,11 +22,11 @@ Feature: Workspace addon overview
     And the rail has no entry "Addons"
 
   Scenario: A lead of another workspace does not see the first workspace's addon
-    Given I am signed in as "api-foreign-lead"
-    When I open the addon overview of "api-other"
+    Given I am signed in as "fixture-foreign-lead"
+    When I open the addon overview of "other"
     Then the addon overview does not list the probe addon
 
   Scenario: A member who does not lead the workspace cannot open the tab
-    Given I am signed in as "other-member"
+    Given I am signed in as "south-contributor"
     When I request the addon overview of "other"
     Then access to the addon overview is denied

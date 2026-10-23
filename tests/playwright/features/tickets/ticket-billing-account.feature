@@ -46,7 +46,7 @@ Feature: A ticket's billing account in the inspector
     And the project "Billing viewer" has the billing account "Kunde X"
     And the project "Billing viewer" has the epic "Billed epic" with the child "Billed child"
     And the ticket titled "Billed epic" is linked to the billing account "Kunde X"
-    And I am logged in as the account "addon-reviewer"
+    And I am logged in as the account "north-guest"
     When I open the ticket titled "Billed epic"
     Then the ticket billing reads "Kunde X" from "linked"
     And the ticket billing offers no picker

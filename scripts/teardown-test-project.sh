@@ -10,7 +10,8 @@
 #                       different name identifies a different conductor and purges
 #                       nothing. Default: bakers-e2e-project.
 #     --keep-clone      reclaim the DDEV projects and the control-plane entities but
-#                       LEAVE the clone at workspaces/bakers-playground on disk. For
+#                       LEAVE the clone at workspaces/bakers-playground and its local
+#                       origin workspaces/bakers-playground.git on disk. For
 #                       driving another run against the same generated configs
 #                       without paying for a fresh clone and a cold `ddev start`.
 #
@@ -234,8 +235,11 @@ fi
 # -----------------------------------------------------------------------------
 step "3. the local half"
 # -----------------------------------------------------------------------------
+# The local bare origin setup seeds from tests/fixtures/bakers-playground.
+FIXTURE_ORIGIN="${WORKSPACE}.git"
 if [ ! -d "${WORKSPACE}" ]; then
   say "no workspace at ${WORKSPACE} — nothing local to reclaim"
+  [ "${KEEP_CLONE}" = 'yes' ] || rm -rf "${FIXTURE_ORIGIN}"
   echo; echo "teardown complete"; exit 0
 fi
 
@@ -280,8 +284,8 @@ if [ "${KEEP_CLONE}" = 'yes' ]; then
   say "--keep-clone: leaving ${WORKSPACE} in place"
 else
   [ -d "${WORKSPACE}/.git" ] && { git -C "${WORKSPACE}" worktree prune || true; }
-  rm -rf "${WORKSPACE}-worktrees" "${WORKSPACE}"
-  say "${WORKSPACE} is gone"
+  rm -rf "${WORKSPACE}-worktrees" "${WORKSPACE}" "${FIXTURE_ORIGIN}"
+  say "${WORKSPACE} and ${FIXTURE_ORIGIN} are gone"
 fi
 
 echo

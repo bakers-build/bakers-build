@@ -1,0 +1,261 @@
+#!/bin/bash
+#ddev-generated
+## Description: Pull raw prod DB via a provider, sanitize, publish anon dump to GitLab Registry (keytec)
+## Usage: sync-sanitize [--site <name>] [--provider <name>] [--yes] [--keep-local]
+## Example: "ddev sync-sanitize"
+#
+# Publish flow:  [1/4] pull raw prod → local DB   [2/4] sanitize
+#                [3/4] publish (push provider)    [4/4] drop local DB
+#
+# Dumb dispatcher: [1/4] hands the RAW pull to `ddev pull <pull_provider>` and [3/4] hands the
+# publish to `ddev push <push_provider>` — each provider owns its own per-site work (drush --uri),
+# reached via KEYTEC_AI_SITE. No source/sink knowledge lives here; adding a raw source or a sink
+# needs only a provider yaml (sanitize.pull_provider / sanitize.push_provider).
+# Anonymization is done by [2/4] (drush sql:sanitize + scrub rules + optional extra_sql).
+# Start reading at main() (bottom) — it is the table of contents.
+set -euo pipefail
+APPROOT="${DDEV_APPROOT:-$(pwd)}"
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+# ── config & secrets ─────────────────────────────────────────────────────────
+
+load_secrets() {
+  # DDEV injects .ddev/.env only into the web container; this is a HOST command,
+  # so publisher secrets (write token, PLATFORM_*) must be sourced here.
+  if [ -f "${APPROOT}/.ddev/.env" ]; then set -a; . "${APPROOT}/.ddev/.env"; set +a; fi
+  # Fallback: a token configured only in ddev global web_environment reaches the web container
+  # but never this host shell — read it back from the running container. Assign-if-unset, so an
+  # explicit .ddev/.env / host-env value keeps precedence; the outer `:` builtin always succeeds,
+  # so a stopped/absent ddev (or CI, where there is no container) masks to empty under set -e.
+  : "${KEYTEC_REGISTRY_WRITE_TOKEN:=$(ddev exec printenv KEYTEC_REGISTRY_WRITE_TOKEN 2>/dev/null)}"
+}
+
+load_config() {
+  # .keytec-ai.yml → PROVIDERS_REGISTRY_*/REGISTRY_*/SANITIZE_* env vars via keytec-ai-cli.
+  # Skipped when a registry base_url is already set (tests) or the CLI is absent.
+  if [ -z "${REGISTRY_BASE_URL+set}" ] && [ -z "${PROVIDERS_REGISTRY_BASE_URL+set}" ]; then
+    if command -v keytec-ai >/dev/null 2>&1; then eval "$(keytec-ai config to-env 2>/dev/null)" || true
+    elif command -v npx >/dev/null 2>&1; then eval "$(npx -y keytec-ai-cli config to-env 2>/dev/null)" || true; fi
+  fi
+  # Prefer PROVIDERS_REGISTRY_*, fall back to legacy REGISTRY_*.
+  BASE="${PROVIDERS_REGISTRY_BASE_URL:-${REGISTRY_BASE_URL:-}}"
+  PROJ="${PROVIDERS_REGISTRY_PROJECT_PATH:-${REGISTRY_PROJECT_PATH:-}}"
+  local pkg_base suffix
+  pkg_base="${PROVIDERS_REGISTRY_PACKAGE_NAME:-${REGISTRY_PACKAGE_NAME:-}}"
+  suffix="${PROVIDERS_REGISTRY_PACKAGE_SUFFIX:-${REGISTRY_PACKAGE_SUFFIX:-}}"
+  # Effective package = base + suffix; suffix = package_suffix if set, else -<site> for a named site.
+  if [ -n "${suffix}" ]; then PKG="${pkg_base}${suffix}"
+  elif [ -n "${KEYTEC_AI_SITE:-}" ] && [ "${KEYTEC_AI_SITE}" != "default" ]; then PKG="${pkg_base}-${KEYTEC_AI_SITE}"
+  else PKG="${pkg_base}"; fi
+  PULL_PROVIDER="${SANITIZE_PULL_PROVIDER:-}"
+  PUSH_PROVIDER="${SANITIZE_PUSH_PROVIDER:-}"
+  EXTRA_SQL="${SANITIZE_EXTRA_SQL:-}"
+  S_EMAIL="${SANITIZE_DRUSH_EMAIL:-}"; S_PASS="${SANITIZE_DRUSH_PASSWORD:-}"
+}
+
+require_publish_config() {
+  # Host-side fail-fast: refuse BEFORE the destructive raw pull if the publish can't succeed.
+  # The push provider re-checks the same token/coords in the container at [3/4].
+  TOKEN="${CI_JOB_TOKEN:-${KEYTEC_REGISTRY_WRITE_TOKEN:-}}"
+  [ -n "${TOKEN}" ] || die "no write token (set CI_JOB_TOKEN or KEYTEC_REGISTRY_WRITE_TOKEN)"
+  [ -n "${BASE}" ] && [ -n "${PROJ}" ] && [ -n "${PKG}" ] \
+    || die "REGISTRY_* missing (run the start feed / keytec-ai config to-env)"
+  refuse_changeme "${PROJ}" "${PKG}"
+}
+
+refuse_changeme() {  # required fields must be filled in (project_path / package_name)
+  case "$*" in *CHANGEME*)
+    die ".keytec-ai.yml still contains a CHANGEME placeholder — set real project_path / package_name" ;;
+  esac
+  return 0
+}
+
+# ── publish steps ────────────────────────────────────────────────────────────
+
+_CLEAN=0; _DB_TOUCHED=0
+cleanup() {
+  # Shred the raw/anon dump ddev delivered into .ddev/.downloads on EVERY exit — a clean run OR a
+  # mid-flow failure. Raw prod at rest is the trust boundary; DDEV keeps .ddev/.downloads as a
+  # cache (it wipes it only at the START of the next pull, never after import), and finish() sets
+  # _CLEAN before this trap fires without shredding itself — so the shred MUST run here, ahead of
+  # the _CLEAN early-return, or a successful publish would leave the raw dump at rest. (This is the
+  # spec's "[5/5] shred": cleanup shreds the RAW state, not just the end artifact.)
+  rm -f "${APPROOT}/.ddev/.downloads/"*.sql.gz "${APPROOT}/.ddev/.downloads/"*.sql.gz.part 2>/dev/null || true
+  [ "${_CLEAN}" = 1 ] && return 0
+  echo "!! mid-flow failure — raw/anon dump files shredded" >&2
+  # Drop the local DB only once the raw pull has TOUCHED it (see pull_raw): a pull that fails at
+  # download (bad/unreachable alias, no delivered file) leaves the developer's existing DB intact,
+  # while a pull that delivered its dump — so ddev began importing — or any later failure (sanitize,
+  # publish) drops the now-raw/partial DB.
+  if [ "${_DB_TOUCHED}" = 1 ]; then
+    echo "!! local DB may contain raw prod data — dropping it" >&2
+    ddev drush ${URI_ARG:-} sql:drop -y >/dev/null 2>&1 || true
+  fi
+}
+
+pull_raw() {  # [1/4] fetch raw prod via the provider; DDEV imports it into the site's DB
+  echo "==> [1/4] raw pull (${PULL_PROVIDER})"
+  [ -n "${PULL_PROVIDER}" ] || die "no pull provider — set sanitize.pull_provider"
+  local rc
+  # Import is never skipped: the provider fetches, DDEV imports. _DB_TOUCHED gates the destructive
+  # DB drop by the delivered dump: a pull that failed at DOWNLOAD (no delivered file) leaves the DB
+  # intact; a clean pull, or a pull that delivered its dump before failing mid-import, touched it.
+  if ddev pull "${PULL_PROVIDER}" -y --environment="KEYTEC_AI_SITE=${SITE}"; then
+    _DB_TOUCHED=1   # raw prod now in the (possibly per-site) local DB
+  else
+    rc=$?
+    if ls "${APPROOT}/.ddev/.downloads/"*.sql.gz >/dev/null 2>&1; then
+      _DB_TOUCHED=1   # dump was delivered → ddev began importing → DB is raw/partial
+    fi
+    return "${rc}"
+  fi
+}
+
+sanitize_local_db() {  # [2/4] drush sanitize + scrub rules + optional extra SQL — THIS anonymizes the data
+  echo "==> [2/4] sanitize"
+  local san=(sql:sanitize -y) rule tc val tbl col pre post
+  [ -n "${S_EMAIL}" ] && san+=("--sanitize-email=${S_EMAIL}")
+  [ -n "${S_PASS}" ]  && san+=("--sanitize-password=${S_PASS}")
+  ddev drush ${URI_ARG} "${san[@]}"
+  # scrub array: each "table.column=value" becomes an UPDATE ({uid} expands per row).
+  # This is where a project declares WHAT to anonymize beyond drush's built-ins.
+  IFS=',' read -ra _SCRUB <<< "${SANITIZE_SCRUB:-}"
+  for rule in "${_SCRUB[@]}"; do
+    [ -n "${rule}" ] || continue
+    tc="${rule%%=*}"; val="${rule#*=}"; tbl="${tc%%.*}"; col="${tc#*.}"
+    if printf '%s' "${val}" | grep -q '{uid}'; then
+      pre="${val%%\{uid\}*}"; post="${val#*\{uid\}}"
+      ddev drush ${URI_ARG} sql:query "UPDATE ${tbl} SET ${col} = CONCAT('${pre}', uid, '${post}') WHERE uid > 0;"
+    else
+      ddev drush ${URI_ARG} sql:query "UPDATE ${tbl} SET ${col} = '${val}';"
+    fi
+  done
+  if [ -n "${EXTRA_SQL}" ] && [ -f "${APPROOT}/${EXTRA_SQL}" ]; then
+    # `drush sql:query --file` resolves a RELATIVE path against the Drupal root (e.g. docroot/ on an
+    # Acquia/BLT layout), NOT the project root where ${EXTRA_SQL} lives — a project-relative value is
+    # then "File(s) not found" and aborts the run under set -e. DDEV mounts the project root at
+    # /var/www/html, so pass the file's in-container absolute path; resolves on any webroot layout.
+    echo "    applying ${EXTRA_SQL}"; ddev drush ${URI_ARG} sql:query --file="/var/www/html/${EXTRA_SQL}"
+  fi
+}
+
+snapshot_publish() {  # [2.5] host snapshot of the sanitized DB + registry upload (best-effort)
+  # Physical DDEV snapshot restored by volume-swap (near-instant) — a HOST volume op, so it lives
+  # here and NOT in the in-container push provider. Best-effort: any failure warns and returns 0,
+  # so the mandatory SQL fallback in publish() always runs. Reuses the host-loaded coords/token.
+  # A single "current" snapshot per package (no version history — one current DB), overwritten each
+  # run, so `init` restores it from a fixed coordinate with no version lookup (must match init).
+  echo "==> [2.5] snapshot publish"
+  local snap_ver=current name snapdir tgz proj_enc api hdr
+  name="${PKG}-${snap_ver}.snapshot.tgz"
+  snapdir="${APPROOT}/.ddev/db_snapshots"
+  # DDEV refuses to recreate a snapshot whose name already exists — and (verified on DDEV v1.25.2)
+  # it prints "snapshot <name> already exists" but STILL EXITS 0, so the `if ! ddev snapshot` guard
+  # below can NEVER catch this. Left unhandled, a prior run's "${PKG}-current" snapshot would make
+  # the re-create a silent no-op, then tar would pack the STALE entry and upload it — the registry
+  # snapshot frozen at the first run while the SQL dump keeps updating. So clearing our own
+  # "${PKG}-current"* entry first is mandatory, not just tidy: it guarantees the create is a real
+  # refresh. Only OUR entry is removed (a manual raw pre-sanitize snapshot must survive), which also
+  # bounds local db_snapshots/ growth to the single current entry. (Regression-guarded in test.bats.)
+  rm -rf "${snapdir}/${PKG}-${snap_ver}"* 2>/dev/null || true
+  # NAMED snapshot only — no bare `ddev snapshot` fallback. A bare snapshot is auto-named
+  # (*_<timestamp>); uploading it to the fixed "${PKG}-current" coord yields an artifact `init`
+  # cannot restore by name (worse than none, and it clobbers the stable coord). On failure warn
+  # and return 0 — the mandatory SQL dump in publish() still runs.
+  if ! ddev snapshot -n "${PKG}-${snap_ver}" >/dev/null 2>&1; then
+    echo "!! ddev snapshot failed — snapshot artifact skipped (SQL fallback still published)" >&2; return 0
+  fi
+  [ -d "${snapdir}" ] || { echo "!! no snapshot produced — skipped" >&2; return 0; }
+  tgz="$(mktemp)"
+  # Pack ONLY the snapshot just created (name prefix "${PKG}-${snap_ver}"), never the whole
+  # db_snapshots/ dir: other snapshots (prior runs, DDEV auto-snapshots, or a manual raw
+  # pre-sanitize snapshot on the prod-access publisher) must never be tarred and uploaded to
+  # the shared registry — that would leak un-anonymized data. DDEV appends a "-<dbtype>_<ver>"
+  # suffix to the entry, so glob the prefix. Guard the tar (best-effort: a failure skips the
+  # artifact, SQL fallback still publishes).
+  if ! ( cd "${snapdir}" && tar czf "${tgz}" "${PKG}-${snap_ver}"* ); then
+    echo "!! snapshot tar failed — snapshot artifact skipped (SQL fallback still published)" >&2
+    rm -f "${tgz}"; return 0
+  fi
+  # inline registry upload (mirrors the push provider's inline curl; reuses host-loaded coords/token)
+  if [ -n "${CI_JOB_TOKEN:-}" ]; then hdr="JOB-TOKEN: ${CI_JOB_TOKEN}"; else hdr="PRIVATE-TOKEN: ${KEYTEC_REGISTRY_WRITE_TOKEN:-}"; fi
+  proj_enc="$(printf '%s' "${PROJ}" | sed 's:/:%2F:g')"
+  api="${BASE}/api/v4/projects/${proj_enc}"
+  if curl -fsSL --header "${hdr}" --upload-file "${tgz}" \
+       "${api}/packages/generic/${PKG}/${snap_ver}/${name}" >/dev/null; then
+    echo "    uploaded ${name}"
+  else
+    echo "!! snapshot upload failed — SQL fallback still published" >&2
+  fi
+  rm -f "${tgz}"
+}
+
+publish() {  # [3/4] hand the sanitized DB to the push provider (self-export + versioned upload + prune)
+  echo "==> [3/4] publish (${PUSH_PROVIDER})"
+  [ -n "${PUSH_PROVIDER}" ] || die "no push provider — set sanitize.push_provider"
+  # The provider self-exports the (per-site) DB via drush and owns the registry upload/retention.
+  # --skip-files: DB only. KEYTEC_AI_SITE reaches the container command via --environment.
+  ddev push "${PUSH_PROVIDER}" -y --skip-files --environment="KEYTEC_AI_SITE=${SITE}"
+}
+
+finish() {  # [4/4] drop the local DB (unless --keep-local)
+  echo "==> [4/4] cleanup"
+  [ "${KEEP}" = 1 ] || ddev drush ${URI_ARG:-} sql:drop -y || true
+  _CLEAN=1
+  echo "sync-sanitize complete"
+}
+
+# ── main — the flow, top to bottom ───────────────────────────────────────────
+
+main() {
+  YES=0; KEEP=0; SITE="${KEYTEC_AI_SITE:-default}"; PROVIDER=""
+  while [ $# -gt 0 ]; do case "$1" in
+    --yes)             YES=1;   shift ;;
+    --keep-local)      KEEP=1;  shift ;;
+    --site)            SITE="${2:?--site requires a value}"; shift 2 ;;
+    --site=*)          SITE="${1#--site=}"; shift ;;
+    --provider)        PROVIDER="${2:?--provider requires a value}"; shift 2 ;;
+    --provider=*)      PROVIDER="${1#--provider=}"; shift ;;
+    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+  esac; done
+  [ -n "${SITE}" ] || SITE=default
+
+  # Export before load_config so keytec-ai resolves the per-site (+feature) overlay:
+  # SANITIZE_*/REGISTRY_* then come from base <- sites/<site> <- features/<feature>.
+  export KEYTEC_AI_SITE="${SITE}"
+
+  # Per-site targeting for the drush-driven sanitize + drop: default site has no --uri; a named
+  # site uses --uri=<site>. (The per-site physical DB is targeted inside the providers.)
+  URI_ARG=""
+  if [ "${SITE}" != "default" ]; then URI_ARG="--uri=${SITE}"; fi
+
+  # load_secrets sources .ddev/.env -> KEYTEC_AI_FEATURE (persisted by init-worktree)
+  # is visible to the HOST here, so load_config's keytec-ai resolves the feature
+  # overlay too. load_config must run after the export.
+  load_secrets
+  load_config
+
+  # --provider overrides the configured raw source (sanitize.pull_provider).
+  [ -n "${PROVIDER}" ] && PULL_PROVIDER="${PROVIDER}"
+
+  # Test seam: report the resolved site/feature/pull-provider without touching source/DB.
+  # After load_secrets+load_config so it reflects the .env feature + the effective source.
+  [ "${SANITIZE_DRY_RUN:-0}" = "1" ] && { echo "site=${SITE} feature=${KEYTEC_AI_FEATURE:-} provider=${PULL_PROVIDER} pkg=${PKG}"; exit 0; }
+
+  require_publish_config
+
+  if [ "${YES}" != 1 ]; then
+    echo "This OVERWRITES the local DB with RAW production data (${PULL_PROVIDER}), sanitizes it, and publishes the result via ${PUSH_PROVIDER}."
+    read -r -p "Continue? [y/N] " a; [ "${a}" = "y" ] || { echo "Aborted."; exit 1; }
+  fi
+
+  trap cleanup EXIT
+  pull_raw            # [1/4] raw prod → local DB
+  sanitize_local_db   # [2/4] drush sanitize + scrub
+  snapshot_publish    # [2.5]  host snapshot + registry upload (best-effort; SQL is the fallback)
+  publish             # [3/4] ddev push <push_provider>
+  finish              # [4/4] drop local DB
+}
+
+main "$@"

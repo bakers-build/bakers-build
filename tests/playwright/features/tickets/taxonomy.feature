@@ -3,7 +3,7 @@ Feature: Label relationships and conductor states
   Normalized labels and state lists survive independent API reads.
 
   Scenario: Label references and conductor states are writable and persisted
-    Given the API client is "login-admin"
+    Given the API client is "site-admin"
     When the API client creates a "bb_bug" ticket in "home" as "ticket"
     And the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """

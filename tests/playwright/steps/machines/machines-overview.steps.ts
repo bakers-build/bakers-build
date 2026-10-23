@@ -44,7 +44,7 @@ async function searchUserMachines(page: Page, query: string): Promise<void> {
 }
 
 When('I visit my machines listing', async ({ page }) => {
-  const response = await page.goto(`/user/${uidOf('cwiedemann')}/machines`);
+  const response = await page.goto(`/user/${uidOf('north-lead')}/machines`);
   expect(response?.status() ?? 0, 'The user Machines listing did not render').toBeLessThan(400);
   await expect(page.locator(USER_LIST_FORM)).toBeAttached({ timeout: 10000 });
   await expect(userList(page).locator(SEARCH_TOOLBAR)).toBeVisible({ timeout: 10000 });

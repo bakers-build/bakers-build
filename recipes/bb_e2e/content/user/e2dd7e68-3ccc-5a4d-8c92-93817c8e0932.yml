@@ -5,9 +5,9 @@ _meta:
   default_langcode: en
 default:
   name:
-  - value: api-foreign-only
+  - value: south-lead
   mail:
-  - value: api-foreign-only@example.test
+  - value: south-lead@example.test
   status:
   - value: true
   pass:
