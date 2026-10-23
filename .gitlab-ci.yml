@@ -910,7 +910,8 @@ publish:npm:next:
     - pnpm run verify:package
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
     - |
-      last=$(git tag -l 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+      # `|| true`: before the first release grep matches nothing, and GitLab runs with pipefail.
+      last=$(git tag -l 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
       base=$( [ -n "$last" ] && echo "${last#v}" | awk -F. '{print $1"."$2"."$3+1}' || echo 0.1.0 )
       pnpm run release:semver "${base}-next.${CI_PIPELINE_IID}" --tag next
   rules:
