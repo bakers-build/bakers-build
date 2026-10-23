@@ -90,18 +90,39 @@ async function smoke() {
         !/Drupal/.test(r.headers.get('x-generator') ?? ''),
     ],
   ];
+  const results = [];
   for (const [name, path, ok] of probes) {
     try {
       const res = await get(path);
-      check(name, ok(res), `HTTP ${res.status}`);
+      results.push([name, ok(res), `HTTP ${res.status}`]);
     } catch (err) {
-      check(name, false, err.cause?.code ?? err.cause?.message ?? err.message);
+      results.push([
+        name,
+        false,
+        err.cause?.code ?? err.cause?.message ?? err.message,
+      ]);
     }
   }
+  return results;
+}
+
+// Right after a deploy the containers are starting, and a new host has no certificate
+// yet (Traefik serves its self-signed default until Let's Encrypt answers): retry the
+// round until it passes or SMOKE_WAIT_SECONDS (default 180) run out, then report it.
+async function smokeWithRetry() {
+  const deadline =
+    Date.now() + Number(process.env.SMOKE_WAIT_SECONDS ?? 180) * 1000;
+  let results = await smoke();
+  while (results.some(([, ok]) => !ok) && Date.now() < deadline) {
+    console.log('[smoke] not ready yet, retrying in 10 s');
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    results = await smoke();
+  }
+  for (const [name, ok, detail] of results) check(name, ok, detail);
 }
 
 if (!smokeOnly) await reportDeployService();
-await smoke();
+await smokeWithRetry();
 if (failures.length) {
   console.error(
     `deploy-report: ${failures.length} check(s) failed: ${failures.join('; ')}`,
