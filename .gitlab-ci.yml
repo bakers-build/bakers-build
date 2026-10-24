@@ -758,7 +758,7 @@ config_install:
 #         scripts/deploy/deploy-report.mjs prints the server's `deploy` service log and
 #         exit state and smoke-checks the host.
 # Stacks are declared in git (komodo/*.toml) and created by a Komodo Resource Sync.
-# Required CI/CD variables (project, masked): KOMODO_URL, KOMODO_API_KEY,
+# Required CI/CD variables (project, masked and protected): KOMODO_URL, KOMODO_API_KEY,
 #   KOMODO_API_SECRET; NPM_TOKEN for the publish jobs.
 build:
   stage: build
@@ -803,8 +803,8 @@ build:
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
 
 # Publish the conductor CLI to public npm as @bakers-build/bakers. Triggered ONLY by a
-# semver git tag (v*.*.*). The published version is the tag. Requires a masked
-# NPM_TOKEN CI/CD variable with publish rights to the npm org bakers-build.
+# semver git tag (v*.*.*). The published version is the tag. Requires a masked and
+# protected NPM_TOKEN CI/CD variable with publish rights to the npm org bakers-build.
 publish:npm:
   stage: publish
   image: node:22
@@ -902,8 +902,6 @@ publish:npm:next:
   variables:
     # The version derives from the release tags, which a shallow clone may miss.
     GIT_DEPTH: "0"
-  # npm points `latest` at a package's very first publish whatever the dist-tag; before
-  # v0.1.0 nobody installs `latest`, and the first release moves it to 0.1.0.
   script:
     - cd bakers-cli
     - pnpm install --frozen-lockfile

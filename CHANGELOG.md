@@ -15,6 +15,7 @@ No changes.
 #### Fixes
 
 - Install the skill-eval packages before the release test run (!10)
+- Read the release version without a pipe (!13)
 
 ## 0.1.0 — 2026-10-23
 

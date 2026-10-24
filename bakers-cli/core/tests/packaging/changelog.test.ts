@@ -131,6 +131,40 @@ describe('release changelog entry', () => {
     ]);
   });
 
+  it('starts after the newest version tag even when that tag sits on a release merge outside develop', async () => {
+    const dir = repo();
+    const git = (...args: string[]) =>
+      execFileSync('git', args, { cwd: dir, stdio: 'pipe' });
+    commit(dir, 'First release work', ['bakers-cli/a.ts']);
+    git('tag', 'v0.1.0');
+    commit(dir, 'Second release work', ['bakers-cli/b.ts']);
+    // The release merges develop into main and is tagged there, not on develop.
+    git('checkout', '-q', '-b', 'main', 'v0.1.0');
+    git('merge', '-q', '--no-ff', '-m', 'Release 0.1.1', 'develop');
+    git('tag', 'v0.1.1');
+    git('checkout', '-q', 'develop');
+    commit(dir, 'After the release', ['bakers-cli/c.ts']);
+
+    const mr = (iid: number, title: string) => ({
+      iid,
+      title,
+      labels: ['feature'],
+    });
+    const result = await changelogEntry({
+      cwd: dir,
+      version: '0.1.2',
+      date: '2026-10-23',
+      mergeRequestOf: mergeRequests({
+        'First release work': mr(1, 'First release work'),
+        'Second release work': mr(2, 'Second release work'),
+        'After the release': mr(3, 'After the release'),
+      }),
+    });
+
+    expect(result.entry).toContain('- After the release (!3)');
+    expect(result.entry).not.toContain('Second release work');
+  });
+
   it('reads the whole history before the first release and names an empty side', async () => {
     const dir = repo();
     commit(dir, 'First server feature', ['config/sync/x.yml']);
