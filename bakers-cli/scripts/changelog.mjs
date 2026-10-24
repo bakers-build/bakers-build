@@ -27,19 +27,14 @@ function git(cwd, ...args) {
   return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' });
 }
 
+// The newest tag, not `git describe`: release tags sit on main's merge commits, which are
+// not ancestors of develop. Same rule as the `publish:npm:next` job.
 function lastVersionTag(cwd) {
-  try {
-    return git(
-      cwd,
-      'describe',
-      '--tags',
-      '--abbrev=0',
-      '--match',
-      'v[0-9]*',
-    ).trim();
-  } catch {
-    return null; // before the first release: the whole history
-  }
+  return (
+    git(cwd, 'tag', '--list', 'v*', '--sort=-v:refname')
+      .split('\n')
+      .find((tag) => /^v\d+\.\d+\.\d+$/.test(tag)) ?? null // none: the whole history
+  );
 }
 
 function commitsSince(cwd, tag) {
@@ -89,7 +84,14 @@ export function gitlabMergeRequestOf(cwd, token) {
         `changelog: GitLab answered HTTP ${res.status} for commit ${sha}`,
       );
     const merged = (await res.json()).filter((mr) => mr.state === 'merged');
-    return merged[0] ?? null;
+    // A release MR into main contains the commit too; prefer the MR that produced it.
+    return (
+      merged.find(
+        (mr) => mr.squash_commit_sha === sha || mr.merge_commit_sha === sha,
+      ) ??
+      merged[0] ??
+      null
+    );
   };
 }
 

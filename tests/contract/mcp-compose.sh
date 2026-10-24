@@ -48,9 +48,8 @@ render() {
 overlays="$(ls docker-compose.*.yml)"
 [ "$overlays" = "docker-compose.traefik.yml" ] \
   || fail "expected docker-compose.traefik.yml as the only ingress overlay, found: $overlays"
-grep -q 'docker-compose.traefik.yml' komodo/bakers.toml \
-  && ! grep -qE 'docker-compose\.[a-z]+\.yml' <(grep -v traefik komodo/bakers.toml) \
-  || fail "komodo/bakers.toml names an ingress overlay other than Traefik"
+[ "$(grep -oE 'docker-compose\.[a-z]+\.yml' komodo/bakers.toml | sort -u)" = "docker-compose.traefik.yml" ] \
+  || fail "komodo/bakers.toml must name docker-compose.traefik.yml as its only ingress overlay"
 
 for overlay in docker-compose.traefik.yml; do
   out="$(render "$overlay")"

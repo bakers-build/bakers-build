@@ -76,8 +76,10 @@ The dev server `https://develop.dev.bakers.build` runs the latest `develop`. Eve
 
 ```sh
 npm install -g @bakers-build/bakers@next
-bakers init --base-url https://develop.dev.bakers.build
+bakers init
 ```
+
+At the *Server base URL* prompt, enter `https://develop.dev.bakers.build`.
 
 Data on dev is for testing and can be reset. Switch back to the release with `npm install -g @bakers-build/bakers@latest` and `bakers init` against your real server.
 
