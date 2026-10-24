@@ -13,7 +13,7 @@ use Drupal\bb_login\Form\BbLoginForm;
  * REPLACES `OauthButtonTest` (`Functional`, `BrowserTestBase`). This
  * repository's `phpunit.xml` runs only `tests/src/Unit` and
  * `tests/src/Kernel`, and no CI job runs PHPUnit Functional tests at all —
- * `e2e_api` runs Playwright instead. A `BrowserTestBase` assertion here never
+ * `e2e` runs Playwright instead. A `BrowserTestBase` assertion here never
  * executed anywhere (BB-476 review, round four, finding 2).
  *
  * ASSERTS ON THE RENDERED MARKUP, NOT THE BUILD ARRAY. A first version of

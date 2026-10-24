@@ -178,46 +178,38 @@ mechanism is fine.
 
 ## CI
 
-The suite runs as a **blocking** step of the `e2e_api` job in `.gitlab-ci.yml`, reusing that
-job's DDEV site. There is **no `ddev bakers-test-e2e` wrapper** — BB-378 deleted that command
-and it was not restored; the job invokes `npm test` directly.
+The suite runs in the `e2e` job of the merge gate (`.gitlab-ci.yml`), against a compose stack of
+the gate's own `php`, `nginx` and `mcp` images with MariaDB and Mailpit — the images that ship,
+not a DDEV site. There is **no `ddev bakers-test-e2e` wrapper**; the job invokes `npm test`
+directly.
 
-It runs **inside the web container**, not on the CI runner host, and that is forced rather
-than preferred: the job image `ghcr.io/ddev/ddev-gitlab-ci:stable` is Alpine and carries no
-`node`, `npm` or `npx` at all, and Playwright publishes no musl browser build. The DDEV web
-container is Debian 13 with node 24, so the suite runs there and reaches the site through
-`$DDEV_PRIMARY_URL`.
+It runs in the **e2e runner image** (`docker/e2e/Dockerfile`): the official Playwright image
+matching `@playwright/test`, with this suite and a built bakers-cli inside. It reaches the site
+as `http://nginx` and Mailpit as `http://mailpit:8025` on the stack network
+(`PLAYWRIGHT_BASE_URL`, `MAILPIT_BASE_URL`); its `drush` (`docker/e2e/drush`) runs drush in the
+stack's php container, which is where the Drush helpers' snippets execute.
 
-Two details in that one command are load-bearing:
+**Two shards**, `--shard=<i>/2` with six workers each, every shard on its own stack. Playwright
+splits by spec file, and a feature file is one spec file (see `fullyParallel` in the config), so
+a feature never spans two shards.
 
-- **Install and run are a single `ddev exec`.** `playwright install` writes the browser into
-  `$HOME/.cache/ms-playwright`, so a run under a different user finds nothing.
-- **System deps as root, the browser as the run user.** `sudo npx playwright install-deps`
-  needs root; fetching the *browser* under `sudo` puts it in `/root/.cache` where the test
-  user cannot see it.
-
-**Ordering is a correctness constraint, not a preference.** The step sits after
-`ddev init --provider recipe-test` (which creates the world) and before
-`ddev bakers-test-integration` (which mutates the bb_e2e seed so the conductor can claim a
-ticket). BB-378 retired that constraint when it deleted the suite; BB-396 reinstated it.
-The step before it builds bakers-cli, because the CLI-refresh scenario imports the built
-workspace and `ddev bakers-test-integration`'s own build runs only afterwards.
+**Ordering is a correctness constraint, not a preference.** The world is created first
+(`scripts/e2e/seed-test-world.sh` after the recipe install), and shard 1 runs the conductor
+integration suite (`scripts/e2e/run-integration.sh`) only after the browser suite, because it
+mutates the bb_e2e seed so the conductor can claim a ticket.
 `ddev bakers-test-functional` is now an alias for the `@functional` BDD subset. CI runs
 the full suite, including these contracts, with `--retries=1`: only failed tests retry once.
 Local runs default to zero retries. Tests passing on retry appear as flaky in the HTML report;
-failed-attempt traces are retained, and a second failure still fails CI. One Playwright JUnit
-report covers the run.
+failed-attempt traces are retained, and a second failure still fails CI.
 
 Results surface in the MR two ways:
 
-- **JUnit** (`tests/playwright/junit-playwright.xml`) → the MR "Tests" widget. It is its own
-  file on purpose: a report shared between two suites has already been overwritten once in
-  this repository, which is how a suite's evidence disappears with nothing going red.
-- **`playwright-report/` and `test-results/`** → collected as job artifacts. A browser failure
-  is close to undiagnosable from a JUnit line alone, and the local evidence directory is
-  gitignored, so the artifact is the only durable copy a reviewer can open. They are *not*
-  `expose_as`-linked: GitLab allows one `expose_as` per job and `e2e_api` already spends it on
-  the DDEV test reports.
+- **JUnit** (`e2e-reports/junit-playwright.xml`, one per shard) → the MR "Tests" widget. It is
+  its own file on purpose: a report shared between two suites has already been overwritten once
+  in this repository, which is how a suite's evidence disappears with nothing going red.
+- **`playwright-report/`, `test-results/` and the stack's container log** → `e2e-reports/`,
+  exposed as the job's *e2e reports* artifact. A browser failure is close to undiagnosable from
+  a JUnit line alone, so the artifact is the only durable copy a reviewer can open.
 
 ## Writing scenarios: a navigating scenario clicks TWICE
 

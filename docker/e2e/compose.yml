@@ -1,0 +1,60 @@
+# CI e2e overlay — the merge gate's `e2e` job only, never a deployed stack.
+# Layered on docker-compose.yml with the gate's images in REGISTRY_IMAGE_* and REGISTRY_IMAGE_E2E:
+#   docker compose -f docker-compose.yml -f docker/e2e/compose.yml --profile e2e ...
+# No ingress and no published ports: the runner reaches nginx and Mailpit on the stack network.
+services:
+  init-perms:
+    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys /bakers-test && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
+    volumes:
+      - bakers_test:/bakers-test
+
+  # The recipe-test world instead of config/sync: the recipe installer, then the bb_e2e seed.
+  install:
+    profiles: [e2e]
+    environment:
+      DRUSH_OPTIONS_URI: http://nginx
+      ARTIFACT_DIR: /bakers-test
+      BASE_URL: http://nginx
+    volumes:
+      - bakers_test:/bakers-test
+    command: |
+      sh -c '
+        set -e
+        /var/www/html/vendor/bin/drush -y site:install /var/www/html/recipes/bakers
+        bash /var/www/html/scripts/e2e/seed-test-world.sh
+      '
+
+  # `drush deploy` imports config/sync, which must never reach the recipe world.
+  deploy:
+    command: "true"
+
+  # DDEV runs no cron either; a cron pass mid-run would change what scenarios read.
+  cron:
+    profiles: [cron]
+
+  php:
+    environment:
+      DRUSH_OPTIONS_URI: http://nginx
+      MAIL_SMTP_DSN: smtp://mailpit:1025
+
+  mailpit:
+    image: axllent/mailpit:v1.27.0
+    networks:
+      - internal
+
+  runner:
+    image: "${REGISTRY_IMAGE_E2E}"
+    profiles: [e2e]
+    environment:
+      PLAYWRIGHT_BASE_URL: http://nginx
+      MAILPIT_BASE_URL: http://mailpit:8025
+      # docker/e2e/drush runs drush in this container.
+      PHP_CONTAINER: "${COMPOSE_PROJECT_NAME}-php-1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - bakers_test:/bakers-test
+    networks:
+      - internal
+
+volumes:
+  bakers_test:

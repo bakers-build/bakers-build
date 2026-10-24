@@ -123,3 +123,4 @@ node_modules/
 /.bakers/*.frozen.json
 # BB-569: Claude measure settings copied into the worktree for the run
 /.bakers/claude-measure.settings.json
+/phpunit.shard.xml

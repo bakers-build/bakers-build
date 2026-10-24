@@ -146,6 +146,11 @@ final class BbOnboardingWizardForm extends FormBase {
       ->swap('outerHTML')
       ->encoding()
       ->applyTo($form);
+    // NEVER CACHED, and set after applyTo(), which overwrites #cache: the step
+    // and the prefilled values are this account's, from user.data, which
+    // carries no cache tag. Cached, Dynamic Page Cache served one account's
+    // step to the next new account.
+    $form['#cache']['max-age'] = 0;
 
     // THE COPY IS THE STEP'S, so it is built here and handed to the chrome by
     // the presenter template as props. It travels in the same fragment the

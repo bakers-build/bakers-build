@@ -45,6 +45,7 @@ Ticket-specific functional checks apply separately. For other documentation, rep
 | PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/mcp-compose.sh` |
+| `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |
 | Web UI implementation, or `tests/contract/**` | `bash tests/contract/token-discipline.sh && bash tests/contract/run-detail-overlay.sh && bash tests/contract/island-links.sh && node tests/contract/appearance.mjs && node tests/contract/icon-storybook.mjs` |
@@ -53,10 +54,16 @@ Ticket-specific functional checks apply separately. For other documentation, rep
 
 ### Before merge
 
-PHPUnit and browser E2E are **not** per-revision checks. They run **once, manually, in the runner**
-(the dispatched worktree's DDEV environment) immediately before the merge request is merged, never
-after each revision. Both must be runnable by hand there; if either cannot be started, the merge
-is blocked until it can.
+PHPUnit and browser E2E are **not** per-revision checks. They run **once, in the CI merge gate**,
+immediately before the merge request is merged, against the images that deploy. The merge step:
+
+1. Brings the branch up to date with its target (rebase or merge), pushes, and waits for the fast checks.
+2. Plays the manual `gate` job of the newest merge request pipeline. `build` builds the images once;
+   `phpunit`, `e2e` and `config_install` run against them in parallel.
+3. Merges only when the whole pipeline is green; GitLab blocks the merge until it is. A red gate
+   job is a failed check: fix it on the branch and play the gate again on the new pipeline.
+
+Local runs are for debugging a failure or selecting affected tests, never a substitute for the gate:
 
 | When | Command |
 |---|---|
@@ -143,7 +150,7 @@ assertions, independent scenarios and both JS/no-JS consumers when affected.
 
 For PHPUnit, list and run the affected classes by explicit path, never `--filter` or `--group`:
 these can report `No tests executed!` with exit 0. An empty discovery is a failed selection, not
-PASS. Use discovery output for counts; CI owns the full `unit-kernel` suite. A full local run, when
+PASS. Use discovery output for counts; the CI merge gate owns the full `unit-kernel` suite. A full local run, when
 required by impact or the ticket's verification plan, uses ParaTest with **four workers** and one
 path or suite (never a path list):
 `ddev exec ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 4`
@@ -157,7 +164,7 @@ exporting it on the host silently keeps sqlite.
 Browser E2E uses Playwright, never PHPUnit. Navigation scenarios click twice. List the affected
 selection first and require a non-empty list matching the executed report. The
 [suite README](tests/playwright/README.md#install--run) shows generated paths and shared-helper
-selection. Full CI runs include `@functional` already; do not launch that subset again.
+selection. The merge gate's `e2e` job runs the full suite, `@functional` included; do not launch that subset again.
 Ad-hoc browser walks use `@bakers-build/verify-playwright-cli`; the existing suite remains a separate gate.
 Changed skill behavior requires a real worker example selected in the ticket.
 

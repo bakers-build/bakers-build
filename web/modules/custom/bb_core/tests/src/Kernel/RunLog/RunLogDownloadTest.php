@@ -27,7 +27,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Converted from a Functional (`BrowserTestBase`) class by BB-556 review
  * finding C2: `.gitlab-ci.yml`'s `phpunit` job runs only
- * `--testsuite unit-kernel`, and `e2e_api` runs Playwright BDD plus
+ * `--testsuite unit-kernel`, and `e2e` runs Playwright BDD plus
  * `bakers-test-integration`, not PHPUnit Functional — so the Functional class
  * executed in no gate anywhere, ever, and the whole AC3 denial set went
  * unobserved. Requests go through the real `http_kernel`, so the router, the
