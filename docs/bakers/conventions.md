@@ -41,8 +41,8 @@ deleting a component directory amends `TARGET_COMPONENT_COUNT` in
 
 ## Tests before the merge, not per revision
 
-PHPUnit and the Playwright browser suite run once, manually, in the runner's DDEV before the
-merge request is merged (`WORKFLOW.md` › *Before merge*). CI runs both in full; every script
+PHPUnit and the Playwright browser suite run once, in the CI merge gate, before the merge
+request is merged (`WORKFLOW.md` › *Before merge*), against the images that deploy. Every script
 under `tests/contract/` runs in CI, and a script nothing in CI runs is not committed.
 
 ## `bakers ui` for a human: playground, herdr tab, always

@@ -8,7 +8,7 @@ inputs:
   release.prompt:
     description: Project release naming, freeze/promote topology, required jobs, merge target and commit signature.
     default: |
-      Release branch `release/<date>-<bakers.build-nnn>`: first deploy freezes origin/develop; later deployments reuse it byte-identically. After branch creation, verify its exact SHA pipeline and required manual `e2e_api`, `bakers-test-e2e`, `phpunit` jobs via `glab ci status`; untriggered is not green. Merge develop-cut → staging, promote → main; commit `release: <env> <date> — <n> tickets`.
+      Release branch `release/<date>-<bakers.build-nnn>`: first deploy freezes origin/develop; later deployments reuse it byte-identically. After branch creation, open its merge request and verify the gate in that merge request's pipeline on the exact SHA: a played, green `gate` with its `build`, `phpunit`, `e2e` and `config_install` jobs, via `glab ci status`; an unplayed gate is not green. Merge develop-cut → staging, promote → main; commit `release: <env> <date> — <n> tickets`.
 ---
 
 # Prepare deployment

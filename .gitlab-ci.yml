@@ -1,8 +1,9 @@
 stages:
   - lint
   - test
-  - e2e
+  - gate
   - build
+  - e2e
   - deploy
   - publish
 
@@ -66,8 +67,8 @@ before_script:
 # dependency, CI-config or DDEV change re-triggers the whole relevant suite
 # rather than silently skipping it — YAML cannot concatenate lists, so the net
 # is repeated per group on purpose. config_sync is deliberately NOT filtered
-# (BB-407: it must stay an every-push gate); build/deploy/pages/publish run on
-# branch/tag and are never filtered.
+# (BB-407: it must stay an every-push gate); gate/build run in every merge request
+# pipeline and promote/deploy/pages/publish on branch/tag, never filtered.
 .changes_php: &changes_php
   - web/modules/custom/**/*
   - web/themes/custom/**/*
@@ -75,6 +76,8 @@ before_script:
   - phpmd.xml.dist
   - phpstan.neon.dist
   - phpunit.xml
+  - scripts/ci/**/*
+  - Dockerfile
   - composer.json
   - composer.lock
   - patches/**/*
@@ -97,12 +100,17 @@ before_script:
   - tests/contract/**/*
   - tests/playwright/**/*
   - .gitlab-ci.yml
-.changes_e2e_api: &changes_e2e_api
+.changes_e2e: &changes_e2e
   - web/modules/**/*
   - web/themes/**/*
   - config/sync/**/*
   - recipes/**/*
   - tests/**/*
+  - scripts/e2e/**/*
+  - bakers-cli/**/*
+  - Dockerfile
+  - docker/**/*
+  - docker-compose.yml
   - composer.json
   - composer.lock
   - patches/**/*
@@ -112,6 +120,8 @@ before_script:
   - config/sync/**/*
   - recipes/**/*
   - web/modules/**/*
+  - Dockerfile
+  - docker-compose.yml
   - composer.json
   - composer.lock
   - patches/**/*
@@ -126,7 +136,7 @@ before_script:
   - .gitlab-ci.yml
 
 # Linters run only in merge request pipelines, not on branch pushes (e.g.
-# develop). Keeps develop pushes fast (build + deploy only).
+# develop). Keeps develop pushes fast (promote + deploy only).
 phpcs:
   stage: lint
   tags:
@@ -239,23 +249,30 @@ compose_render:
   script:
     - bash tests/contract/mcp-compose.sh
 
+# Merge gate: the unit-kernel suite inside the gate's `php-test` image — the shipped `php` image
+# plus dev dependencies — so it tests the shipped code and PHP runtime. Two shards
+# (scripts/ci/phpunit-shard.sh deals the test files round-robin), one junit file each.
 phpunit:
-  stage: test
-  timeout: 2h
+  stage: e2e
+  timeout: 1h
+  # runner1's second runner, not `parallel`: that tag lands on the deploy runner, whose four
+  # slots the gate needs for build, both e2e stacks and config_install.
   tags:
-    - parallel
-  # Icon API discovers symbols from the built sprite, including in kernel tests.
+    - runner1-dind
   needs:
-    - job: web_ui
+    - job: build
       artifacts: true
-  # Manual, run once before the merge (WORKFLOW.md › Before merge). `allow_failure: false`
-  # on a manual job leaves the pipeline *blocked* rather than passed until someone starts
-  # it, so the merge still waits for a green run instead of skipping the suite.
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *changes_php
-      when: manual
-      allow_failure: false
+  parallel: 2
+  # GATE_TREE comes from build's dotenv report. Keep the image's entrypoint: it renders wodby's
+  # php.ini, without which Xdebug stays loaded and zend.assertions is off, and tests fail.
+  # Root, because the suite writes into the image's code tree.
+  image:
+    name: $CI_REGISTRY_IMAGE/php-test:tree-$GATE_TREE
+    docker:
+      user: root
   # No `services:` and no MariaDB wait. The suite runs on sqlite `:memory:`,
   # which is what lets it parallelise: every paratest worker opens a private
   # in-memory database, so there is no table-prefix collision and no shared
@@ -264,15 +281,18 @@ phpunit:
   # global one at the top of this file is the MariaDB URL.
   variables:
     SIMPLETEST_DB: "sqlite://localhost/:memory:"
+  before_script: []
   script:
-    # `--testsuite unit-kernel` instead of seven hand-listed directories. That
+    # The code under test is the image's own (/var/www/html), not the checkout.
+    # `--testsuite unit-kernel` instead of hand-listed directories. That
     # list was the BB-396 hazard in the open: `island` had sat in NO job at
     # all — 98 Unit + Kernel tests ungated while the module carried the whole
     # boost mechanism — because adding a module meant remembering to add a
     # directory here. The suite is a glob over `*/tests/src/{Unit,Kernel}`
-    # (phpunit.xml), so a new module is gated by existing, not by memory. It
-    # resolved to the same 221 classes the seven directories did.
-    - ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 8 --log-junit junit-phpunit.xml
+    # (phpunit.xml), so a new module is gated by existing, not by memory.
+    - cd /var/www/html
+    - bash scripts/ci/phpunit-shard.sh "$CI_NODE_INDEX" "$CI_NODE_TOTAL"
+    - ./vendor/bin/paratest --configuration=phpunit.shard.xml --testsuite unit-kernel --processes 8 --log-junit "$CI_PROJECT_DIR/junit-phpunit.xml"
   artifacts:
     when: always
     expire_in: 1 week
@@ -386,7 +406,9 @@ tui_musl:
   stage: test
   tags:
     - parallel
-  needs: [tui]
+  # Beside `tui`, not after it: the two share no artifact, and in series they were the
+  # slowest path of the fast checks.
+  needs: []
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *changes_cli
@@ -483,7 +505,7 @@ tui_musl:
     - OPENTUI_LIBC=musl pnpm run test:tui
 
 # The web UI's host-side gates (BB-378, amended by BB-396): the Storybook build and every theme
-# contract under tests/contract/. The Playwright-BDD suite is the third gate and runs in e2e_api,
+# contract under tests/contract/. The Playwright-BDD suite is the third gate and runs in e2e,
 # which has the Drupal site it needs. This job stays host-side and fast: the Storybook build needs
 # no Drupal, no database and no DDEV, and the contracts read repository content and the built theme.
 #
@@ -498,8 +520,6 @@ web_ui:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *changes_theme
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes: *changes_php
   image: node:22
   # BB-389's suite reads YAML structure (which slot a scene node sits in, a row's cell
   # map keys) that grep cannot answer, so it shells out to `python3 -c 'import yaml'`.
@@ -533,148 +553,186 @@ web_ui:
       - web/themes/custom/bb_theme/storybook-static/
       - web/themes/custom/bb_theme/dist/
 
-e2e_api:
-  stage: e2e
-  # DAG: start the (slow) DDEV boot at pipeline begin, in parallel with lint +
-  # phpunit + conductor, instead of waiting for the whole test stage to finish.
+# --- Merge gate ---
+# Every merge request push runs only the fast checks above. Before the merge, the merge step
+# plays `gate` (WORKFLOW.md › Before merge): `build` builds the images once, then `phpunit`,
+# `e2e` and `config_install` test those images in parallel. A blocked manual job with
+# `allow_failure: false` keeps the pipeline unfinished, and the project setting "Pipelines must
+# succeed" blocks the merge until the gate is green.
+#
+# Image identity is the git TREE, not the commit: the squash and merge commits of a branch that
+# contains its target have the branch head's tree, and so does the develop → main merge. So the
+# images the gate tested are found again after the merge (`promote`), with no rebuild.
+#   :tree-<tree>          gate images (php, php-test, nginx, mcp, e2e); tree-* tags expire
+#   :<branch>, :<sha>     promote, what the stacks pull and roll back to
+#   :<version>, :latest   release_images, on a v<semver> tag
+
+# The gate tests the merged state only when merging the target into the branch changes nothing;
+# this instance has no merged-results pipelines. A tree check, not ancestry: main holds release
+# merge commits develop never receives, with no content develop lacks. Rebase or merge the
+# target in, push, play again.
+gate:
+  stage: gate
+  image: alpine:3.22
+  tags:
+    - parallel
   needs: []
+  variables:
+    GIT_DEPTH: "0"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes: *changes_e2e_api
-  tags:
-    - runner1-dind
-  image: ghcr.io/ddev/ddev-gitlab-ci:stable
-  services:
-    # Pin to docker 26 (runc 1.1.x): newer dind ships runc 1.2.x whose tmpfs
-    # /proc masking fails on the runner's EOL kernel 5.4 ("can't mask dir
-    # /proc/acpi ... invalid argument"). Drop the pin after a host HWE-kernel
-    # upgrade (>= 5.15).
-    - name: docker:26-dind
-  variables:
-    FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: 1
-    FF_NETWORK_PER_BUILD: 0
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DDEV_NONINTERACTIVE: "true"
-  before_script: []
+      when: manual
+      allow_failure: false
+  before_script:
+    - apk add --no-cache git
   script:
-    - ddev --version
-    - docker version
-    - ddev start
-    # codeload.github.com intermittently 400s on dist downloads; retry then
-    # fall back to --prefer-source (git host).
+    # A job-private ref, as bb_skill_version_gate does: jobs on one runner share a working copy.
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME:refs/gate/target" --force
+    - |
+      merged="$(git merge-tree --write-tree refs/gate/target HEAD)" || merged=conflict
+      if [ "$merged" != "$(git rev-parse 'HEAD^{tree}')" ]; then
+        echo "The branch is not up to date with the current $CI_MERGE_REQUEST_TARGET_BRANCH_NAME ($(git rev-parse refs/gate/target))."
+        echo "Rebase it or merge $CI_MERGE_REQUEST_TARGET_BRANCH_NAME into it, push, and play the gate again."
+        exit 1
+      fi
+    - echo "GATE_TREE=$(git rev-parse 'HEAD^{tree}')" | tee gate.env
+  artifacts:
+    reports:
+      dotenv: gate.env
+
+# Builds the deployed images once per tree, on the deploy runner's host Docker daemon and its
+# layer cache. A tree that already has gate images (a re-played gate, the develop → main release
+# MR) is not rebuilt, so main ships the digest develop tested.
+build:
+  stage: build
+  # runner1 mounts the host Docker socket centrally for its jobs.
+  image: docker:26
+  tags:
+    - deploy
+  needs:
+    - job: gate
+      artifacts: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  interruptible: true
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
     - |
       set -e
-      for attempt in 1 2 3 4 5; do
-        echo "ddev composer install attempt $attempt/5"
-        if ddev composer install --no-interaction --no-progress --prefer-dist; then
-          break
-        fi
-        if [ "$attempt" = 5 ]; then
-          echo "dist downloads kept failing; falling back to --prefer-source"
-          ddev composer install --no-interaction --no-progress --prefer-source
-          break
-        fi
-        sleep 10
-      done
-    # Build the theme frontend (vite dist/ is gitignored). The addon `ddev init`
-    # build phase would do this from .keytec-ai.yml init.build, but that value is
-    # surfaced by `keytec-ai config to-env`, which needs `npx` on the HOST — the
-    # ddev-gitlab-ci runner image has none, so INIT_BUILD arrives empty and the
-    # theme goes unbuilt, and an unstyled site is not what the functional and
-    # integration suites are meant to exercise.
-    # Build it explicitly here, just as composer install above is run manually.
-    - ddev exec 'cd web/themes/custom/bb_theme && pnpm install --frozen-lockfile && pnpm build'
-    - ddev init --provider recipe-test
-    # BB-496: the RFC 8628 device flow's guards (a decided code cannot be
-    # re-decided, flood control, per-caller scope validation) were originally
-    # exercised here by a PHPUnit Functional test — BB-550's comment, since
-    # removed, explained why that needed a file-backed sqlite DSN. The
-    # Functional class was converted to Kernel
-    # (`web/modules/custom/bb_oauth_device/tests/src/Kernel/DeviceAuthorizationFlowTest.php`)
-    # because a Functional test serves HTTP from a second process that cannot
-    # see this repository's `:memory:` test database at all — see
-    # `phpunit.xml`'s own `unit-kernel` testsuite comment. The Kernel class
-    # needs no bespoke invocation: it runs with everything else the `phpunit`
-    # job's `unit-kernel` testsuite already collects.
-    # BB-396: the browser suite is back, and with it the ordering constraint
-    # BB-378 retired. It reads the PRISTINE bb_e2e seed — the team "Platform
-    # Crew" and its three seeded members — and `ddev bakers-test-integration`
-    # mutates that seed so the conductor can claim a ticket. So this runs AFTER
-    # `ddev init` (which creates the world) and BEFORE integration (which
-    # changes it). API contracts and browser contracts now share this BDD run.
-    #
-    # IT RUNS INSIDE THE WEB CONTAINER, and that is forced rather than chosen.
-    # The job image `ghcr.io/ddev/ddev-gitlab-ci:stable` is Alpine with no node,
-    # npm or npx (measured 2026-09-01), and Playwright publishes no browser
-    # build for musl — `npx playwright install` cannot succeed on that host at
-    # all. The DDEV web container is Debian 13 and ships node 24, so the suite
-    # runs there and reaches the site through $DDEV_PRIMARY_URL.
-    #
-    # Install and run are ONE `ddev exec`, deliberately: `playwright install`
-    # writes the browser into $HOME/.cache/ms-playwright, so a run under a
-    # different user finds nothing. System deps need root (`sudo`, present in
-    # the web container); the browser itself must NOT be fetched as root, or it
-    # lands in /root/.cache and the test user cannot see it.
-    # `test:unit` is the baseURL resolver's own vitest test — pure, no browser,
-    # and it covers the one piece of logic that decides WHICH site the suite
-    # talks to. It runs first so a resolver regression is named as one instead
-    # of surfacing as every scenario failing to connect.
-    # NO baseURL IS PASSED HERE, deliberately. `resolve-base-url.ts` resolves it:
-    # from the worktree's `.env.ddev` when the addon's `init-worktree` wrote one,
-    # and otherwise from `DDEV_PRIMARY_URL`, which DDEV exports inside this
-    # container. Passing `PLAYWRIGHT_BASE_URL` here would take precedence over
-    # the worktree's own statement and leave the resolver's worktree path
-    # untested in the one place it runs most.
-    # `typecheck` runs before the browser is even fetched. Playwright transpiles
-    # the steps with esbuild, which strips types without checking them, so an
-    # import of a helper that no longer exists survives the build and surfaces
-    # 13 minutes later as `TypeError: … is not a function` inside a scenario.
-    # That is exactly how BB-552's `clearMailbox` → `clearMailboxFor` rename
-    # reached develop with two callers unconverted. `tsc --noEmit` names it in
-    # seconds, at the import.
-    # The CLI-refresh scenario forks bakers-cli's shared-session worker, which
-    # imports the BUILT bakers-cli core, so the workspace is built here with the
-    # same commands `ddev bakers-test-integration` uses — that later build comes
-    # too late for the BDD run.
-    - ddev exec 'cd bakers-cli && export CI=true PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS=true && npx --yes pnpm install --frozen-lockfile --store-dir /var/www/html/bakers-cli/.pnpm-store && npx --yes pnpm run build:all'
-    - ddev exec 'cd tests/playwright && npm ci --no-audit --no-fund && npm run typecheck && npm run test:unit && sudo npx playwright install-deps chromium && npx playwright install chromium && npm test -- --retries=1'
-    - ddev bakers-test-integration
+      tag="tree-$GATE_TREE"
+      if docker manifest inspect "$CI_REGISTRY_IMAGE/e2e:$tag" >/dev/null 2>&1; then
+        echo "Images for tree $GATE_TREE exist; nothing to build."
+      else
+        label="--label org.opencontainers.image.revision=$CI_COMMIT_SHA"
+        docker build $label --target php      -t "$CI_REGISTRY_IMAGE/php:$tag" .
+        docker build $label --target php-test -t "$CI_REGISTRY_IMAGE/php-test:$tag" .
+        docker build $label --target nginx    -t "$CI_REGISTRY_IMAGE/nginx:$tag" .
+        # MCP connector (BB-658 Task 3) — own Dockerfile, own image.
+        docker build $label -f docker/mcp/Dockerfile -t "$CI_REGISTRY_IMAGE/mcp:$tag" .
+        docker build $label -f docker/e2e/Dockerfile -t "$CI_REGISTRY_IMAGE/e2e:$tag" .
+        # e2e last: its tag is the "all images exist" marker checked above.
+        for image in php php-test nginx mcp e2e; do
+          docker push "$CI_REGISTRY_IMAGE/$image:$tag"
+        done
+      fi
+    # The test jobs read the tree from this job (dotenv does not pass through two needs).
+    - echo "GATE_TREE=$GATE_TREE" > gate.env
+  artifacts:
+    reports:
+      dotenv: gate.env
+
+# The stack the e2e and config_install jobs start on the deploy runner's host daemon: the
+# deployed compose file, the gate's images, a per-job project name and no published ports.
+# The secrets are dummies; the stack lives for one job. `down -v` always runs; a job killed
+# before it leaves a stack that the next e2e job's prune removes after two hours.
+.gate_stack:
+  stage: e2e
+  image: docker:26
+  tags:
+    - deploy
+  needs:
+    - job: build
+      artifacts: true
+  variables:
+    DOMAIN: nginx
+    STACK_NAME: gate
+    DB_NAME: db
+    DB_USER: db
+    DB_PASSWORD: db
+    DB_ROOT_PASSWORD: root
+    # simple_oauth refuses a salt shorter than 32 characters.
+    DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
+    REGISTRY_IMAGE_PHP: $CI_REGISTRY_IMAGE/php:tree-$GATE_TREE
+    REGISTRY_IMAGE_NGINX: $CI_REGISTRY_IMAGE/nginx:tree-$GATE_TREE
+    REGISTRY_IMAGE_MCP: $CI_REGISTRY_IMAGE/mcp:tree-$GATE_TREE
+    REGISTRY_IMAGE_E2E: $CI_REGISTRY_IMAGE/e2e:tree-$GATE_TREE
+  before_script:
+    - apk add --no-cache bash
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - bash scripts/ci/prune-gate-stacks.sh
+
+# The Playwright-BDD suite (browser and API contracts) and the conductor integration suite,
+# against a stack of the gate's php, nginx and mcp images with MariaDB and Mailpit. The runner
+# image (docker/e2e) holds the suites and reaches the site on the stack network; its `drush`
+# runs in the php container. Two shards, split by feature file; shard 1 also runs the
+# integration suite, after the browser suite, because it mutates the pristine bb_e2e seed.
+e2e:
+  extends: .gate_stack
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: *changes_e2e
+  parallel: 2
+  timeout: 45m
+  variables:
+    COMPOSE_PROJECT_NAME: e2e-$CI_JOB_ID
+    COMPOSE_FILE: docker-compose.yml:docker/e2e/compose.yml
+    COMPOSE_PROFILES: e2e
+  script:
+    - docker compose pull -q
+    # The recipe-test world: the bakers recipe installer, then scripts/e2e/seed-test-world.sh.
+    - docker compose run --rm install
+    - docker compose up -d --no-build --wait php nginx mailpit mcp
+    # `typecheck` and `test:unit` first: Playwright strips types without checking them, and the
+    # baseURL resolver's own test names a resolver regression as one.
+    - >
+      docker compose run --name "$COMPOSE_PROJECT_NAME-runner" --no-deps
+      -e SHARD="$CI_NODE_INDEX/$CI_NODE_TOTAL" -e INTEGRATION="$([ "$CI_NODE_INDEX" = 1 ] && echo 1)"
+      runner bash -c '
+      cd tests/playwright && npm run typecheck && npm run test:unit || exit 1;
+      status=0;
+      npm test -- --retries=1 --shard="$SHARD" --workers=6 || status=$?;
+      if [ -n "$INTEGRATION" ]; then bash /repo/scripts/e2e/run-integration.sh /bakers-test/env || status=1; fi;
+      exit $status'
   after_script:
-    - ddev status || true
-    - ddev logs -s web > ddev-web.log 2>&1 || true
-    - ddev logs -s db > ddev-db.log 2>&1 || true
+    - |
+      runner="$COMPOSE_PROJECT_NAME-runner"
+      mkdir -p e2e-reports
+      for path in tests/playwright/junit-playwright.xml tests/playwright/playwright-report tests/playwright/test-results .ddev/.bakers-test/junit-integration.xml; do
+        docker cp "$runner:/repo/$path" e2e-reports/ 2>/dev/null || true
+      done
+      docker compose logs --no-color > e2e-reports/stack.log 2>&1 || true
+      docker rm -f "$runner" >/dev/null 2>&1 || true
+      docker compose down -v --remove-orphans || true
   artifacts:
     when: always
     expire_in: 1 week
     reports:
       junit:
-        - .ddev/.bakers-test/junit-integration.xml
-        # BB-396: its own file. junit-vitest.xml has already been overwritten
-        # by a second suite in this repository once, which is how a suite's
-        # evidence disappears with nothing going red.
-        - tests/playwright/junit-playwright.xml
-        # BB-550: the device-flow Functional suite, the one PHPUnit class
-        # that needs a file-backed sqlite DSN shared with the web container
-        # instead of paratest's sqlite `:memory:` default.
-        - junit-phpunit-functional.xml
-    expose_as: 'DDEV test reports'
+        - e2e-reports/junit-playwright.xml
+        - e2e-reports/junit-integration.xml
+    expose_as: 'e2e reports'
     paths:
-      - .ddev/.bakers-test/
-      - ddev-web.log
-      - ddev-db.log
-      # Keep reports and failed-attempt traces even when the CI retry passes.
-      - tests/playwright/playwright-report/
-      - tests/playwright/test-results/
-
+      # Reports and failed-attempt traces, kept even when the CI retry passes.
+      - e2e-reports/
 
 # --- The final Drupal check: the config/sync install path ---
 # WORKFLOW.md > Setup > Drupal checks ("recipe first, config/sync last")
 # makes this a SECOND install path rather than a variation of
 # the first, and it has to be its own job for this reason: the
 # recipe world must not have config/sync imported into it, because that would
-# hide missing recipe configuration. So `e2e_api` owns `recipe-test` and this
-# job owns `existing-config`, on the same commit, which is what the note means
+# hide missing recipe configuration. So `e2e` owns `recipe-test` and this
+# job owns `existing-config`, on the same image, which is what the note means
 # by "the final Drupal check must pass at the same revision".
 #
 # WHAT ONLY THIS PATH CAN CATCH. A recipe installs a module but takes only its
@@ -682,118 +740,80 @@ e2e_api:
 # config entity therefore needs both homes, and a world built from the recipe
 # cannot tell you whether the sync copy is present, current, or importable.
 # This job installs from `config/sync` alone and then re-imports, so a missing
-# or drifted entry is a red job instead of a surprise on a server.
-#
-# NO THEME BUILD AND NO BROWSER SUITE, deliberately. `e2e_api` documents why
-# the theme has to be built by hand on this runner image; an unstyled site
-# still answers the question this job asks, which is whether the configuration
-# installs and re-imports. Browser behaviour is `e2e_api`'s, on the seeded
-# recipe world — this provider seeds no accounts or content at all.
+# or drifted entry is a red job instead of a surprise on a server. The install is the
+# deployed compose file's own `install` service, the one a new environment runs.
 config_install:
-  stage: e2e
-  # DAG, exactly as e2e_api: the DDEV boot is the slow part and has no reason
-  # to wait for lint or phpunit.
-  needs: []
+  extends: .gate_stack
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *changes_config_install
-  tags:
-    - runner1-dind
-  image: ghcr.io/ddev/ddev-gitlab-ci:stable
-  services:
-    # The docker 26 pin is e2e_api's, for the same runner kernel reason.
-    - name: docker:26-dind
   variables:
-    FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: 1
-    FF_NETWORK_PER_BUILD: 0
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DDEV_NONINTERACTIVE: "true"
-  before_script: []
+    COMPOSE_PROJECT_NAME: config-install-$CI_JOB_ID
+    COMPOSE_PROFILES: install
   script:
-    - ddev --version
-    - ddev start
-    # codeload.github.com intermittently 400s on dist downloads; retry then
-    # fall back to --prefer-source, exactly as e2e_api does.
-    - |
-      set -e
-      for attempt in 1 2 3 4 5; do
-        echo "ddev composer install attempt $attempt/5"
-        if ddev composer install --no-interaction --no-progress --prefer-dist; then
-          break
-        fi
-        if [ "$attempt" = 5 ]; then
-          echo "dist downloads kept failing; falling back to --prefer-source"
-          ddev composer install --no-interaction --no-progress --prefer-source
-          break
-        fi
-        sleep 10
-      done
-    # ALWAYS NAME THE PROVIDER: a plain `ddev init` defaults to
-    # `existing-config`, so an unnamed provider would make the two install-path
-    # jobs indistinguishable. `--fresh` because a change to installation config
-    # is exactly what this job exists to catch.
-    - ddev init --provider existing-config --fresh
+    - docker compose pull -q install
+    - docker compose run --rm install
     # The re-import is the second half of the check. An entry that installed but
     # does not round-trip — a hand-authored file differing from the saved form —
     # shows up here and nowhere else.
-    - ddev drush cim -y
-    - ddev drush cr
-    - ddev drush status
+    - |
+      set -e
+      drush() { docker compose run --rm --no-deps --entrypoint /var/www/html/vendor/bin/drush php "$@"; }
+      drush -y cim
+      drush cr
+      drush status
   after_script:
-    - ddev status || true
-    - ddev logs -s web > ddev-web-config-install.log 2>&1 || true
-    - ddev logs -s db > ddev-db-config-install.log 2>&1 || true
+    - docker compose logs --no-color > config-install-stack.log 2>&1 || true
+    - docker compose down -v --remove-orphans || true
   artifacts:
     when: always
     expire_in: 1 week
     paths:
-      - ddev-web-config-install.log
-      - ddev-db-config-install.log
+      - config-install-stack.log
 
 # --- Deploy (recipe: komodo, Resource-Sync model) ---
-# build:  docker build php+nginx+mcp -> push GitLab registry as :<branch> (what the stacks
-#         pull) and :<commit-sha> (rollback: point the stack's REGISTRY_IMAGE_* at it).
-# deploy: keytec-ai deployer deploy -> DeployStack + poll (fixed branches only), then
-#         scripts/deploy/deploy-report.mjs prints the server's `deploy` service log and
-#         exit state and smoke-checks the host.
+# promote: re-tag the gate's :tree-<tree> images as :<branch> (what the stacks pull) and
+#          :<commit-sha> (rollback: point the stack's REGISTRY_IMAGE_* at it). Same digests,
+#          nothing is built after the merge.
+# deploy:  keytec-ai deployer deploy -> DeployStack + poll (fixed branches only), then
+#          scripts/deploy/deploy-report.mjs prints the server's `deploy` service log and
+#          exit state and smoke-checks the host.
 # Stacks are declared in git (komodo/*.toml) and created by a Komodo Resource Sync.
 # Required CI/CD variables (project, masked and protected): KOMODO_URL, KOMODO_API_KEY,
 #   KOMODO_API_SECRET; NPM_TOKEN for the publish jobs.
-build:
+promote:
   stage: build
-  # runner1 mounts the host Docker socket centrally for its jobs.
-  image: docker:26
+  image: alpine:3.22
   tags:
-    - deploy
-  # Decoupled from lint/test/e2e: the deploy build is independent of the ddev-based
-  # functional suite, so it runs as soon as the commit lands rather than waiting on
-  # (or being blocked by) the e2e stage.
+    - parallel
   needs: []
-  # Serialize build+deploy per branch: the stacks pull the moving `:<branch>` tag,
-  # so parallel pushes would clobber it out of order and parallel
+  # Serialize promote+deploy per branch: the stacks pull the moving `:<branch>` tag,
+  # so parallel pushes would move it out of order and parallel
   # deploys would interleave image↔DB state. Per-branch group (develop_deploy /
   # main_deploy) so develop and prod never block each other. One at a time, in order.
   resource_group: ${CI_COMMIT_REF_SLUG}_deploy
-  # A newer commit on the same branch cancels this build if it has not finished yet.
+  # A newer commit on the same branch cancels this job if it has not finished yet.
   interruptible: true
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - apk add --no-cache crane git
+    - crane auth login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
   script:
-    - docker build --target php   -t "$CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG"   .
-    - docker build --target nginx -t "$CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG" .
-    # MCP connector (BB-658 Task 3) — own Dockerfile, own image, same :<branch> tag.
-    - docker build -f docker/mcp/Dockerfile -t "$CI_REGISTRY_IMAGE/mcp:$CI_COMMIT_REF_SLUG" .
-    - docker push "$CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG"
-    - docker push "$CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG"
-    - docker push "$CI_REGISTRY_IMAGE/mcp:$CI_COMMIT_REF_SLUG"
-    # Per-commit tags for rollback; the job log names the deployed SHA.
     - |
+      set -e
+      tree="$(git rev-parse 'HEAD^{tree}')"
       for image in php nginx mcp; do
-        docker tag "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_REF_SLUG" "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA"
-        docker push "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA"
+        if ! crane digest "$CI_REGISTRY_IMAGE/$image:tree-$tree" >/dev/null; then
+          echo "No tested image $image:tree-$tree for $CI_COMMIT_SHA: the merge gate did not run for this tree."
+          echo "Merge only through the gate; to ship this commit anyway, open a merge request for it and play its gate."
+          exit 1
+        fi
       done
-  # develop -> dev2 (bakers-develop), main -> prod (bakers-prod). Both build + deploy.
+      for image in php nginx mcp; do
+        crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_REF_SLUG"
+        crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_SHA"
+        echo "$image: $(crane digest "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA")"
+      done
+  # develop -> dev2 (bakers-develop), main -> prod (bakers-prod). Both promote + deploy.
   # $CI_PIPELINE_SOURCE != "schedule" excludes a schedule pointed at develop/main
   # (e.g. andock:cleanup's schedule briefly was, mid-review): GitLab sets
   # $CI_COMMIT_BRANCH for a scheduled pipeline against a branch ref just like a
@@ -801,6 +821,35 @@ build:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
+
+# A release's images: the tag commit's :<sha> images (promoted on main) get :<version> and
+# :latest with the OCI version and revision labels. `crane mutate` rewrites only the image
+# config, so the layers are identical; the new config gives :<version> its own digest.
+release_images:
+  stage: publish
+  image: alpine:3.22
+  tags:
+    - parallel
+  needs: []
+  interruptible: false
+  before_script:
+    - apk add --no-cache crane
+    - crane auth login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+  script:
+    - |
+      set -e
+      version="${CI_COMMIT_TAG#v}"
+      for image in php nginx mcp; do
+        crane mutate "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA" \
+          --label "org.opencontainers.image.version=$version" \
+          --label "org.opencontainers.image.revision=$CI_COMMIT_SHA" \
+          -t "$CI_REGISTRY_IMAGE/$image:$version"
+        crane tag "$CI_REGISTRY_IMAGE/$image:$version" latest
+        echo "$image:$version $(crane digest "$CI_REGISTRY_IMAGE/$image:$version")"
+      done
+  # Same tag rule and schedule guard as publish:npm.
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+([-+].+)?$/ && $CI_PIPELINE_SOURCE != "schedule"'
 
 # Publish the conductor CLI to public npm as @bakers-build/bakers. Triggered ONLY by a
 # semver git tag (v*.*.*). The published version is the tag. Requires a masked and
@@ -848,7 +897,7 @@ publish:npm:
     # wires it into staging AND publishing, no per-package line to forget here.
     - pnpm run release:semver "$CI_COMMIT_TAG"
   # $CI_PIPELINE_SOURCE != "schedule" excludes a schedule pointed at a tag ref,
-  # same reasoning as build/deploy/pages above: GitLab sets $CI_COMMIT_TAG for a
+  # same reasoning as promote/deploy/pages above: GitLab sets $CI_COMMIT_TAG for a
   # scheduled pipeline against a tag just like it sets $CI_COMMIT_BRANCH for one
   # against a branch, so without this a misdirected schedule would trigger a
   # real publish to public npm.
@@ -862,8 +911,8 @@ deploy:
   tags:
     - deploy
   needs:
-    - build
-  # Same per-branch group as build → deploys never interleave within a branch. NOT
+    - promote
+  # Same per-branch group as promote → deploys never interleave within a branch. NOT
   # interruptible: a deploy in flight must finish (killing it mid-DeployStack leaves a
   # half-applied stack). keytec-ai deployer resolves the stack from the current branch
   # (develop -> bakers-develop, main -> bakers-prod) via komodo/bakers.toml.
@@ -879,7 +928,7 @@ deploy:
       npx -y -p keytec-ai-cli@0.4.0 keytec-ai deployer deploy || status=$?
       node scripts/deploy/deploy-report.mjs "$DEPLOY_STACK" "$DEPLOY_URL" || status=1
       exit $status
-  # See the same guard on the build job above: excludes a schedule misdirected
+  # See the same guard on the promote job above: excludes a schedule misdirected
   # at develop/main from triggering a real Komodo deploy.
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
@@ -993,7 +1042,7 @@ pages:
   artifacts:
     paths:
       - public
-  # Same guard as build/deploy: a develop push publishes; a schedule misdirected at
+  # Same guard as promote/deploy: a develop push publishes; a schedule misdirected at
   # develop does not (GitLab sets $CI_COMMIT_BRANCH for a scheduled pipeline too).
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'

@@ -1,0 +1,4 @@
+#!/bin/sh
+# The Playwright helpers and the conductor integration suite call `drush` from PATH.
+# In the CI e2e stack the site lives in the php container, so run it there.
+exec docker exec -i -u wodby -w /var/www/html "${PHP_CONTAINER:?}" /var/www/html/vendor/bin/drush "$@"

@@ -78,3 +78,9 @@ COPY --chown=root --from=php /var/www/html /var/www/html
 COPY --chown=root docker/nginx/oauth-discovery.conf /etc/nginx/oauth-discovery.conf
 # http-level rate-limit zone for /oauth/register (applied in oauth-discovery.conf).
 COPY --chown=root docker/nginx/oauth-register-zone.conf /etc/nginx/conf.d/oauth-register-zone.conf
+
+# --- PHPUnit stage (CI merge gate only, never deployed) ---
+# The shipped `php` image plus the dev dependencies, so the gate's `phpunit` job runs
+# the unit and kernel tests on the shipped code and PHP runtime.
+FROM php AS php-test
+RUN composer install --no-interaction --no-progress --prefer-dist

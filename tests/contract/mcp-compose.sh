@@ -15,6 +15,8 @@
 #   - Traefik is the only ingress overlay, and no removed keytec variable
 #     (content recipe, per-user consumer secrets, GitLab token) renders
 #   - `/oauth/register` is rate-limited in the baked nginx config
+#   - the merge gate's e2e overlay (docker/e2e/compose.yml) renders, publishes
+#     no port, keeps config/sync out of its recipe world and leaks no secret
 #
 # The entity/operation allowlist itself lives in docker/mcp/dropsh.config.js,
 # baked into the image — see docker/mcp/README.md for why it is a documented
@@ -34,14 +36,14 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 pass() { echo "ok: $*"; }
 
 render() {
-  local overlay="$1"
+  local overlay="$1"; shift
   DOMAIN=dummy.example.test \
   STACK_NAME=dummy-stack \
   DB_NAME=dummy DB_USER=dummy DB_PASSWORD=dummy-pw DB_ROOT_PASSWORD=dummy-root-pw \
   DRUPAL_HASH_SALT=dummy-salt \
   REGISTRY_IMAGE_PHP=dummy/php:dummy REGISTRY_IMAGE_NGINX=dummy/nginx:dummy \
-  REGISTRY_IMAGE_MCP=dummy/mcp:dummy \
-    docker compose -f docker-compose.yml -f "$overlay" config
+  REGISTRY_IMAGE_MCP=dummy/mcp:dummy REGISTRY_IMAGE_E2E=dummy/e2e:dummy \
+    docker compose -f docker-compose.yml -f "$overlay" "$@" config
 }
 
 # Both stacks use the same Traefik overlay; a second ingress overlay is drift.
@@ -87,6 +89,21 @@ for overlay in docker-compose.traefik.yml; do
 
   pass "$overlay renders mcp service with no host port and no leaked secret"
 done
+
+# The merge gate's e2e overlay: no host port anywhere, the recipe world never runs
+# `drush deploy` (it imports config/sync), and the runner is opt-in by profile.
+out="$(render docker/e2e/compose.yml --profile e2e)"
+echo "$out" | grep -qE '^\s+(ports|published):' && fail "e2e overlay publishes a host port"
+for service in install runner mailpit; do
+  echo "$out" | grep -q "^  $service:" || fail "e2e overlay renders no $service service"
+done
+deploy_block="$(echo "$out" | awk '/^  deploy:/{f=1} f && /^  [a-z]/ && !/^  deploy:/{f=0} f')"
+echo "$deploy_block" | grep -q 'drush' && fail "e2e overlay still runs drush deploy on the recipe world"
+if echo "$out" | grep -E 'DB_PASSWORD|DB_ROOT_PASSWORD|DRUPAL_HASH_SALT' | grep -Ev 'dummy'; then
+  fail "e2e overlay: a secret-bearing line rendered without the injected dummy value"
+fi
+render docker/e2e/compose.yml | grep -q '^  runner:' && fail "e2e runner is active without the e2e profile"
+pass "docker/e2e/compose.yml renders the gate stack with no host port"
 
 # Open dynamic client registration is rate-limited: the http-level zone is baked
 # into conf.d (Wodby includes conf.d/*.conf in http{}), the server-level extra conf

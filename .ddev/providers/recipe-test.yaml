@@ -1,11 +1,11 @@
 # bakers.build recipe-as-installer provider (BB-142) — e2e/test world.
 #
 # Same recipe-as-installer as `recipe`, but seeds the e2e/test content (bb_e2e) via the
-# in-container bakers-init-test command instead of the playground. This is what CI uses to bring
-# up the seeded site for the Playwright e2e suite. Selected with `ddev init --provider recipe-test`.
+# in-container bakers-init-test command instead of the playground: the local world of the
+# Playwright e2e suite. Selected with `ddev init --provider recipe-test`.
 #
-# The seed is invoked (not duplicated) so bakers-init-test stays the single source of the e2e
-# fixtures. Nothing to fetch -> NO db_pull_command. Honours KEYTEC_AI_SITE (--uri).
+# The seed is invoked (not duplicated): bakers-init-test runs scripts/e2e/seed-test-world.sh, the
+# single source of the e2e fixtures that the CI merge gate's `e2e` job runs too. Nothing to fetch -> NO db_pull_command. Honours KEYTEC_AI_SITE (--uri).
 # Project-owned (this file carries no addon marker) — `ddev add-on get` never touches it.
 #
 # PROFILE resolution + import logging live in the shared .ddev/providers/recipe-install.sh

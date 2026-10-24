@@ -9,7 +9,7 @@ init:
   #   ddev init                        -> existing-config  (site:install --existing-config; mirrors
   #                                                          the server's CIM-from-config/sync install)
   #   ddev init --provider recipe      -> recipe-as-installer + bakers-init-playground (playground world)
-  #   ddev init --provider recipe-test -> recipe-as-installer + bakers-init-test (e2e/test world; CI)
+  #   ddev init --provider recipe-test -> recipe-as-installer + bakers-init-test (e2e/test world)
   default_sync_provider: existing-config
   # Recipe-as-Installer profile for the recipe/recipe-test providers (surfaced to the container as
   # INIT_PROFILE by config.keytec.yaml). The recipe imports its modules + config but NOT content;
