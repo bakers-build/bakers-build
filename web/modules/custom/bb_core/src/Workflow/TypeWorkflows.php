@@ -27,7 +27,7 @@ final class TypeWorkflows {
    * A phase answers ONE question — who is on the hook right now — and it is a
    * fact about the WORK rather than about any screen. It exists because a
    * caller that wants "is this executing" must not have to know that
-   * `coding`, `verifying`, `running`, `post_deployment` and `summary` are five
+   * `working`, `verifying`, `running`, `post_deployment` and `summary` are five
    * names for it across five workflows.
    *
    * The list is a closed vocabulary on purpose: `phase()` rejects a value
@@ -42,7 +42,7 @@ final class TypeWorkflows {
    * Returns the metadata for a state as defined in the workflow definition.
    *
    * @param string $workflow_id
-   *   The workflow plugin ID (e.g. 'bb_feature').
+   *   The workflow plugin ID (e.g. 'bb_work').
    * @param string $state
    *   The workflow state machine name.
    *

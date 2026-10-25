@@ -50,14 +50,16 @@ it('pages 20 rows and offsets by the page index (AC-3)', () => {
 it('keeps every criterion on every page (AC-4)', () => {
   const criteria = {
     query: 'bakers.build',
-    state: 'coding',
+    state: 'working',
     closed: true,
     parent: PARENT,
   };
   for (const index of [0, 1, 7]) {
     const s = qs('P1', criteria, { page: { size: 15, index } });
     expect(s).toMatch(/project_id\.id/);
-    expect(s).toMatch(/filter\[state\]\[value\]=coding|filter\[state\]=coding/);
+    expect(s).toMatch(
+      /filter\[state\]\[value\]=working|filter\[state\]=working/,
+    );
     expect(s).toMatch(/filter\[closed\]=1/);
     expect(s).toMatch(/parent_id\.id/);
     expect(s).toMatch(/filter\[search\]=bakers.build/);
@@ -101,7 +103,7 @@ it('sideloads parent_id + conductor_id for empty and active criteria (AC-5)', ()
   expect(
     qs('P1', {
       query: 'x',
-      state: 'coding',
+      state: 'working',
       closed: false,
       parent: null,
       who: null,
@@ -127,13 +129,13 @@ it('search-only: the typed line goes to the server verbatim as filter[search]', 
 it('state-only: equality filter on state, no CONTAINS', () => {
   const s = qs('P1', {
     query: '',
-    state: 'coding',
+    state: 'working',
     closed: false,
     parent: null,
     who: null,
   });
   expect(s).toMatch(/state/);
-  expect(s).toMatch(/coding/);
+  expect(s).toMatch(/working/);
   expect(s).not.toMatch(/CONTAINS/);
 });
 
@@ -218,14 +220,14 @@ it('parent-only: top-level parent_id.id filter, no CONTAINS group (AC-1)', () =>
 it('all criteria: parent ANDs with state; the search OR group is unchanged (AC-5)', () => {
   const s = qs('P1', {
     query: 'foo',
-    state: 'spec',
+    state: 'plan',
     closed: null,
     parent: PARENT,
     who: null,
   });
   // Top-level equality filters, ANDed with the project filter.
   expect(s).toMatch(/filter\[parent_id\.id\]=uuid-parent/);
-  expect(s).toMatch(/filter\[state\]=spec/);
+  expect(s).toMatch(/filter\[state\]=plan/);
   // BB-299 AC-3 — no `type` criterion exists, so no workflow filter is built
   // (narrowed from a bare /workflow/: the attribute stays in the fieldset).
   expect(s).not.toMatch(/filter\[workflow\]/);
@@ -280,12 +282,12 @@ it('hasActiveCriteria / describeCriteria', () => {
   expect(
     describeCriteria({
       query: 'x',
-      state: 'spec',
+      state: 'plan',
       closed: null,
       parent: null,
       who: null,
     }),
-  ).toMatch(/search:"x".*status:spec/);
+  ).toMatch(/search:"x".*status:plan/);
 });
 
 // BB-299 AC-3 — with the `type` criterion gone, `describeCriteria` cannot
@@ -294,7 +296,7 @@ it('describeCriteria cannot produce a type: segment (BB-299 AC-3)', () => {
   expect(
     describeCriteria({
       query: 'x',
-      state: 'spec',
+      state: 'plan',
       closed: true,
       parent: PARENT,
       who: null,
@@ -372,16 +374,18 @@ it('hasActiveCriteria / describeCriteria with a parent: identifier, never the uu
   expect(
     describeCriteria({
       query: 'x',
-      state: 'spec',
+      state: 'plan',
       closed: null,
       parent: PARENT,
       who: null,
     }),
-  ).toBe('search:"x" · status:spec · parent:BB-273');
+  ).toBe('search:"x" · status:plan · parent:BB-273');
 });
 
 it('constants are non-empty and include the known values', () => {
-  expect(STATE_FILTER_VALUES).toContain('coding');
+  expect(STATE_FILTER_VALUES).toContain('plan');
+  expect(STATE_FILTER_VALUES).toContain('working');
+  expect(STATE_FILTER_VALUES).not.toContain('coding');
 });
 
 const WHO = { id: 'u-1', label: 'cw' };
@@ -403,14 +407,14 @@ it('who-only: top-level assignee_user_id.id filter, no CONTAINS group (BB-299 AC
 it('who ANDs top-level with state/closed/parent; the search OR group is unchanged (BB-299 AC-4)', () => {
   const s = qs('P1', {
     query: 'foo',
-    state: 'spec',
+    state: 'plan',
     closed: null,
     parent: PARENT,
     who: WHO,
   });
   expect(s).toMatch(/filter\[assignee_user_id\.id\]=u-1/);
   expect(s).toMatch(/filter\[parent_id\.id\]=uuid-parent/);
-  expect(s).toMatch(/filter\[state\]=spec/);
+  expect(s).toMatch(/filter\[state\]=plan/);
   // The free-text search is the typed line, which the server resolves.
   expect(s).toMatch(/filter\[search\]=foo/);
   expect(s).not.toMatch(/CONTAINS/);

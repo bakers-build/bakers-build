@@ -1,0 +1,12 @@
+- id: '8'
+  name: ddev-drupal
+  description: Drupal code work in a DDEV worktree.
+  weight: 0
+  __designbook:
+    section: bb_ticket
+- id: '9'
+  name: docs-authoring
+  description: Documentation and agent-instruction work.
+  weight: 1
+  __designbook:
+    section: bb_ticket

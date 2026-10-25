@@ -108,12 +108,15 @@ export function ticketHeaderTree(
   lastRow: readonly VNode[],
   labels?: AssignmentLabels,
 ): VNode {
-  // One compact meta line — state · assignee · labels — under the title. The
+  // One compact meta line — state · assignee · type · recipe · labels — under
+  // the title. The
   // full set (created by, branch, …) lives in the Overview sidebar, so the
   // header stays two lines rather than five. Empty fields drop out.
   const meta = [
     headerState(document),
     headerAssignee(document, labels),
+    termName(document, 'ticket_type', 'bb_term--type'),
+    termName(document, 'recipe', 'bb_term--recipe'),
     headerLabels(document),
   ]
     .filter((part) => part !== '' && part !== '—')
@@ -716,10 +719,23 @@ function typedCommentLines(
 function labelNames(document: TicketDetailDocument): string[] {
   return toManyIds(document, 'labels').map(
     (id) =>
-      asString(
-        included(document, 'bb_term--bb_labels', id)?.attributes?.name,
-      ) ?? id,
+      asString(included(document, 'bb_term--label', id)?.attributes?.name) ??
+      id,
   );
+}
+
+/**
+ * A single-valued `bb_term` relationship's name (BAKERS-17 `ticket_type` /
+ * `recipe`), resolved include → uuid like the labels; `''` when unset.
+ */
+function termName(
+  document: TicketDetailDocument,
+  name: string,
+  type: string,
+): string {
+  const id = relId(document, name);
+  if (id === null) return '';
+  return asString(included(document, type, id)?.attributes?.name) ?? id;
 }
 
 /**
@@ -888,6 +904,15 @@ export function detailSections(
   sections.push({
     heading: 'Labels',
     lines: labelNames(document).length ? labelNames(document) : ['No labels.'],
+  });
+  // BAKERS-17: Type and Recipe sit beside Labels, for the same reason.
+  sections.push({
+    heading: 'Type',
+    lines: [termName(document, 'ticket_type', 'bb_term--type') || 'No type.'],
+  });
+  sections.push({
+    heading: 'Recipe',
+    lines: [termName(document, 'recipe', 'bb_term--recipe') || 'No recipe.'],
   });
 
   // BB-678: the upstream ticket this one was imported from — above `Parent`,

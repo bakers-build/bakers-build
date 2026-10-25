@@ -77,7 +77,7 @@ final class ConductorAssignFieldAccessTest extends KernelTestBase {
    */
   private function createTicket(): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-CA-1', 'workflow' => 'bb_feature', 'title' => 'CA']);
+      ->create(['identifier' => 'GL-CA-1', 'workflow' => 'bb_work', 'title' => 'CA']);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;
@@ -93,7 +93,7 @@ final class ConductorAssignFieldAccessTest extends KernelTestBase {
     $admin = $this->createUser('bakers-admin', ['administer bakers']);
     $saved = $this->createTicket();
     $new = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['workflow' => 'bb_feature', 'title' => 'Unsaved assignment']);
+      ->create(['workflow' => 'bb_work', 'title' => 'Unsaved assignment']);
 
     foreach ([$saved, $new] as $ticket) {
       self::assertInstanceOf(BbTicketInterface::class, $ticket);

@@ -14,7 +14,7 @@ default:
   kind:
   - value: claimed
   step:
-  - value: spec
+  - value: plan
   run_id:
   - entity: e85bbe83-c582-4ed8-8d2d-5076d98ddc54
   conductor_id:

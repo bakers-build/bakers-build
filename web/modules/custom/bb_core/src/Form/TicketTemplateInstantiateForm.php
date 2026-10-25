@@ -168,7 +168,7 @@ class TicketTemplateInstantiateForm extends BbTicketCreateForm {
     foreach (array_keys($this->getFormDisplay($form_state)->getComponents()) as $field) {
       $overrides[$field] = match ($field) {
         'labels' => array_column($ticket->get('labels')->getValue(), 'target_id'),
-        'project_id', 'conductor_id' => $ticket->get($field)->target_id,
+        'project_id', 'conductor_id', 'ticket_type', 'recipe' => $ticket->get($field)->target_id,
         default => (string) $ticket->get($field)->value,
       };
     }

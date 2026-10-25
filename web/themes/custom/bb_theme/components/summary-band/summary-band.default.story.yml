@@ -6,11 +6,11 @@ slots:
       component: bb_theme:state-flow
       props:
         states:
-          - spec
-          - coding
+          - plan
+          - working
           - review
           - done
-        current: coding
+        current: working
         label: Workflow state flow
   summary:
     - type: component

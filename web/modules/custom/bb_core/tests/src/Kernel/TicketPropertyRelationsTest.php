@@ -208,7 +208,7 @@ final class TicketPropertyRelationsTest extends KernelTestBase {
   private function ticket(string $title, string $project, bool $closed = FALSE): string {
     return (string) $this->createEntity('bb_ticket', [
       'title' => $title,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project,
       'closed' => $closed,
     ])->id();

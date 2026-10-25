@@ -15,7 +15,7 @@ default:
   kind:
   - value: claimed
   step:
-  - value: coding
+  - value: working
   run_id:
   - entity: dbb00000-0000-4000-8000-000000000002
   conductor_id:

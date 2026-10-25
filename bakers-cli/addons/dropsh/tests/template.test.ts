@@ -33,7 +33,7 @@ describe('bakers dropsh template run', () => {
       title: 't',
       project_id: 'p',
       labels: ['a', 'b'],
-      target_state: 'spec',
+      target_state: 'plan',
     });
     expect(post).toHaveBeenCalledWith(
       `bb_ticket_template/bb_ticket_template/${UUID}/instantiate`,
@@ -47,13 +47,13 @@ describe('bakers dropsh template run', () => {
             },
             labels: {
               data: [
-                { type: 'bb_term--bb_labels', id: 'a' },
-                { type: 'bb_term--bb_labels', id: 'b' },
+                { type: 'bb_term--label', id: 'a' },
+                { type: 'bb_term--label', id: 'b' },
               ],
             },
           },
         },
-        meta: { target_state: 'spec' },
+        meta: { target_state: 'plan' },
       },
     );
   });
@@ -144,8 +144,8 @@ describe('registerTemplateCommand', () => {
             },
             labels: {
               data: [
-                { type: 'bb_term--bb_labels', id: 'a' },
-                { type: 'bb_term--bb_labels', id: 'b' },
+                { type: 'bb_term--label', id: 'a' },
+                { type: 'bb_term--label', id: 'b' },
               ],
             },
           },

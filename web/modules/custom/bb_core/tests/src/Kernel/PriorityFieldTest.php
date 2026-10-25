@@ -88,7 +88,7 @@ final class PriorityFieldTest extends KernelTestBase {
     $values = [
       'title' => 'Priority ticket',
       'project_id' => $project_id,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ];
     if ($priority !== NULL) {
       $values['priority'] = $priority;

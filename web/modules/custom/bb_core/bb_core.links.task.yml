@@ -164,7 +164,7 @@ bb_core.bb_team.members:
   weight: 4
 
 
-# --- Workspace settings: Settings, Members, Addons, Templates ---
+# --- Workspace settings: Settings, Members, Addons, Templates, Types, Recipes, Labels ---
 # Settings is the default tab on its own route (same shape as project/team
 # Overview). Members is the invite-and-roster face.
 
@@ -192,3 +192,22 @@ bb_core.bb_workspace.templates:
   route_name: view.bb_ticket_templates.workspace_list
   base_route: bb_core.bb_workspace.settings
   weight: 4
+
+# The workspace vocabulary, one tab per term bundle, after Templates.
+bb_core.bb_workspace.types:
+  title: Types
+  route_name: view.bb_terms.types
+  base_route: bb_core.bb_workspace.settings
+  weight: 5
+
+bb_core.bb_workspace.recipes:
+  title: Recipes
+  route_name: view.bb_terms.recipes
+  base_route: bb_core.bb_workspace.settings
+  weight: 6
+
+bb_core.bb_workspace.labels:
+  title: Labels
+  route_name: view.bb_terms.labels
+  base_route: bb_core.bb_workspace.settings
+  weight: 7

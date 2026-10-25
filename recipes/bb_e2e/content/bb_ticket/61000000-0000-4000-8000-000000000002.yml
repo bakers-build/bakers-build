@@ -6,6 +6,7 @@ _meta:
   uuid: 61000000-0000-4000-8000-000000000002
   default_langcode: en
   depends:
+    db1a0000-0000-4000-8000-000000000020: bb_term
     ead793be-b1f3-5f56-a716-392b8c878a16: bb_project
     fb355227-fe83-5482-819f-51f8011a78eb: bb_team
 default:
@@ -16,7 +17,9 @@ default:
   title:
   - value: "Markdown output safety"
   workflow:
-  - value: bb_feature
+  - value: bb_work
+  ticket_type:
+  - entity: db1a0000-0000-4000-8000-000000000020
   description:
   - value: "Safe text before.\n\n<script>window.__markdownXss = true;</script>\n\n<img src=\"x\" onerror=\"window.__markdownXss = true\">\n\n[unsafe link](javascript:window.__markdownXss=true)\n\n```html\n<b>literal HTML in code</b>\n```\n"
     format: bb_rich

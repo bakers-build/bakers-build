@@ -75,7 +75,7 @@ final class EntitySchemaTest extends KernelTestBase {
     }
     $this->installSchema('file', ['file_usage']);
     $this->setSetting('file_private_path', $this->siteDirectory . '/private');
-    $this->ensureVocabulary('bb_labels', 'bakers.build labels');
+    $this->ensureVocabulary('label', 'bakers.build labels');
   }
 
   /**
@@ -210,14 +210,14 @@ final class EntitySchemaTest extends KernelTestBase {
    */
   public function testTicketPersistsSpecFields(): void {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
-    $parent = $storage->create(['identifier' => 'GL-100', 'workflow' => 'bb_feature', 'title' => 'Parent']);
+    $parent = $storage->create(['identifier' => 'GL-100', 'workflow' => 'bb_work', 'title' => 'Parent']);
     $parent->save();
-    $blocker = $storage->create(['identifier' => 'GL-101', 'workflow' => 'bb_chore', 'title' => 'Blocker']);
+    $blocker = $storage->create(['identifier' => 'GL-101', 'workflow' => 'bb_work', 'title' => 'Blocker']);
     $blocker->save();
 
     $ticket = $storage->create([
       'identifier' => 'GL-102',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'Child',
       'assignee_user_id' => 1,
       'priority' => 2,
@@ -253,7 +253,7 @@ final class EntitySchemaTest extends KernelTestBase {
    */
   public function testCommentPersistsAsEntity(): void {
     $ticket_storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
-    $ticket = $ticket_storage->create(['identifier' => 'GL-COM', 'workflow' => 'bb_bug', 'title' => 'With comment']);
+    $ticket = $ticket_storage->create(['identifier' => 'GL-COM', 'workflow' => 'bb_work', 'title' => 'With comment']);
     $ticket->save();
 
     $comment = $this->container->get('entity_type.manager')->getStorage('bb_comment')->create([
@@ -318,8 +318,8 @@ final class EntitySchemaTest extends KernelTestBase {
    */
   public function testTicketIdentifierUnique(): void {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
-    $storage->create(['identifier' => 'GL-DUP', 'workflow' => 'bb_bug', 'title' => 'A'])->save();
-    $second = $storage->create(['identifier' => 'GL-DUP', 'workflow' => 'bb_bug', 'title' => 'B']);
+    $storage->create(['identifier' => 'GL-DUP', 'workflow' => 'bb_work', 'title' => 'A'])->save();
+    $second = $storage->create(['identifier' => 'GL-DUP', 'workflow' => 'bb_work', 'title' => 'B']);
     $this->assertInstanceOf(BbTicketInterface::class, $second);
     $violations = $second->validate();
     $this->assertGreaterThan(0, count($violations->getByField('identifier')));
@@ -347,7 +347,7 @@ final class EntitySchemaTest extends KernelTestBase {
       ->create(['name' => 'GL-200 project', 'group_id' => $group->id()]);
     $project->save();
     $ticket = $etm->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-200', 'workflow' => 'bb_bug', 'title' => 'X', 'project_id' => $project->id()]);
+      ->create(['identifier' => 'GL-200', 'workflow' => 'bb_work', 'title' => 'X', 'project_id' => $project->id()]);
     $ticket->save();
 
     $run = $etm->getStorage('bb_run')->create([
@@ -419,7 +419,7 @@ final class EntitySchemaTest extends KernelTestBase {
 
     $etm = $this->container->get('entity_type.manager');
     $ticket = $etm->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-FP', 'workflow' => 'bb_bug', 'title' => 'Footprint']);
+      ->create(['identifier' => 'GL-FP', 'workflow' => 'bb_work', 'title' => 'Footprint']);
     $ticket->save();
     $run = $etm->getStorage('bb_run')->create([
       'ticket_id' => $ticket->id(),
@@ -470,7 +470,7 @@ final class EntitySchemaTest extends KernelTestBase {
 
     $etm = $this->container->get('entity_type.manager');
     $ticket = $etm->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-RT', 'workflow' => 'bb_bug', 'title' => 'Runtime']);
+      ->create(['identifier' => 'GL-RT', 'workflow' => 'bb_work', 'title' => 'Runtime']);
     $ticket->save();
     $run = $etm->getStorage('bb_run')->create([
       'ticket_id' => $ticket->id(),
@@ -500,7 +500,7 @@ final class EntitySchemaTest extends KernelTestBase {
   public function testUnwrittenRuntimeFieldsAreNull(): void {
     $etm = $this->container->get('entity_type.manager');
     $ticket = $etm->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-RT2', 'workflow' => 'bb_bug', 'title' => 'No runtime']);
+      ->create(['identifier' => 'GL-RT2', 'workflow' => 'bb_work', 'title' => 'No runtime']);
     $ticket->save();
     $run = $etm->getStorage('bb_run')->create([
       'ticket_id' => $ticket->id(),
@@ -529,7 +529,7 @@ final class EntitySchemaTest extends KernelTestBase {
 
     $etm = $this->container->get('entity_type.manager');
     $ticket = $etm->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-HB', 'workflow' => 'bb_bug', 'title' => 'Heartbeat']);
+      ->create(['identifier' => 'GL-HB', 'workflow' => 'bb_work', 'title' => 'Heartbeat']);
     $ticket->save();
 
     $run = $etm->getStorage('bb_run')->create([
@@ -560,7 +560,7 @@ final class EntitySchemaTest extends KernelTestBase {
     $this->assertSame('timestamp', $fields['cleaned_up_date']->getType());
 
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
-    $ticket = $storage->create(['workflow' => 'bb_bug', 'title' => 'cleaned-up-date-field']);
+    $ticket = $storage->create(['workflow' => 'bb_work', 'title' => 'cleaned-up-date-field']);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     $this->assertNull($ticket->getCleanedUpDate());

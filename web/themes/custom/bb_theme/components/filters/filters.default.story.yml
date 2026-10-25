@@ -12,12 +12,12 @@ slots:
         name: state
         label: State
         icon: board
-        aria_label: Filter by state. Currently coding and review.
+        aria_label: Filter by state. Currently working and review.
         id: story-filter-state
         open: false
         multiple: true
         value_labels:
-          - coding
+          - working
           - review
       slots:
         options:
@@ -28,8 +28,8 @@ slots:
               clearable: true
               clear_label: Any state
               options:
-                - value: coding
-                  label: coding
+                - value: working
+                  label: working
                   selected: true
                 - value: review
                   label: review

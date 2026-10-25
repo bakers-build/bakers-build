@@ -24,13 +24,13 @@ final class ProjectOverviewTickets {
    * Epic tickets of one project, identifier order.
    *
    * @return list<\Drupal\bb_core\Entity\BbTicketInterface>
-   *   Every `bb_epic` ticket of the project the account may view.
+   *   Every ticket of type `epic` in the project the account may view.
    */
   public function epicTickets(BbProjectInterface $project): array {
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $ids = $storage->getQuery()->accessCheck(TRUE)
       ->condition('project_id', $project->id())
-      ->condition('workflow', 'bb_epic')
+      ->condition('ticket_type.entity:bb_term.name', 'epic')
       ->sort('identifier')
       ->execute();
     if ($ids === []) {

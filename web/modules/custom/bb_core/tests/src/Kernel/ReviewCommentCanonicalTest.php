@@ -119,7 +119,7 @@ final class ReviewCommentCanonicalTest extends KernelTestBase {
     $this->addMembership($team, $reviewer, ['member']);
     $ticket = $etm->getStorage('bb_ticket')->create([
       'title' => 'review-canonical',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'state' => 'review',
       'project_id' => $project->id(),
       'number' => 7,

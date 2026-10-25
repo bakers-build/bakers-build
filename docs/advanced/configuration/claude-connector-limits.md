@@ -34,14 +34,15 @@ it's a permission problem.
 
 - No shell or filesystem access — the connector cannot infer a branch, read a local checkout, or
   run commands. It can only read/write through the four MCP tools (`search`, `read`, `create`, `update`).
-- No conductor assignment, no coding/review/done transitions, no bug-ticket workflow. The
-  connector's instructions stop at `spec` (feature/chore) by design — see the
+- No conductor assignment, no working/review/done transitions, no bug tickets. The
+  connector's instructions stop at `plan` (feature/chore) by design — see the
   [instructions bundle](/advanced/configuration/claude-project-instructions)'s "What this bundle deliberately drops" section for the full list and why. **This is an
   instructions-level policy, not a server-enforced one**: the MCP server itself exposes the same
   `update` tool bakers.build's JSON:API would accept from any `bb:session` client, so it would technically
   let a state/conductor write through if asked to make one. Nothing in this setup should be relied
   on to block that beyond Claude following the instructions and your own account's permissions.
-- No label/term creation — a missing `work:*`/`method:*` label blocks qualification until someone
-  with CLI access creates it.
+- No label/term creation — a missing `work:*`/`method:*` label or ticket type blocks qualification
+  until a workspace contributor or lead adds it in the workspace settings, or someone with CLI access
+  creates it.
 - `search` returns at most 100 results per call with no offset/pagination; narrow with `filters`
   rather than expecting to page through a large result set.

@@ -8,7 +8,9 @@ import {
 import { describe, expect, it } from 'vitest';
 import { nameRefsPlugin } from '../src/index.js';
 
-const LABELS_TYPE = 'bb_term--bb_labels';
+const LABELS_TYPE = 'bb_term--label';
+const TYPES_TYPE = 'bb_term--type';
+const RECIPES_TYPE = 'bb_term--recipe';
 const ENVS_TYPE = 'bb_environment--bb_environment';
 const PROJECT_TYPE = 'bb_project--bb_project';
 
@@ -74,7 +76,7 @@ function collection(type: string, rows: Row[], next?: string) {
  * a resolution actually cost.
  */
 function contextFor(
-  handler: (url: string) => unknown,
+  handler: (url: string, req: HttpRequest) => unknown,
   operation = 'create',
   status = 200,
 ): { ctx: RequestContext; urls: string[] } {
@@ -85,7 +87,7 @@ function contextFor(
       return {
         status,
         headers: {},
-        body: JSON.stringify(handler(req.url)),
+        body: JSON.stringify(handler(req.url, req)),
       };
     },
   };
@@ -312,7 +314,7 @@ describe('nameRefsPlugin — alterRequest, labels (globally unique names)', () =
         }),
         ctx,
       ),
-    ).rejects.toThrow(/work:cod.*bb_labels.*work:code/s);
+    ).rejects.toThrow(/work:cod.*bb_term\/label.*work:code/s);
   });
 
   it('passes a read straight through without touching a vocabulary', async () => {
@@ -489,9 +491,44 @@ describe('nameRefsPlugin — alterRequest, environments (names unique per projec
   it('resolves both synthetic fields on one write, one round trip each', async () => {
     const { ctx, urls } = contextFor((url) => {
       if (url.includes('bb_term')) {
-        return collection(LABELS_TYPE, [
-          { id: 'uuid-code', name: 'work:code' },
-        ]);
+        return {
+          data: [
+            {
+              type: LABELS_TYPE,
+              id: 'uuid-code',
+              attributes: { name: 'work:code' },
+              relationships: {
+                workspace_id: {
+                  data: { type: 'bb_workspace--bb_workspace', id: 'ws' },
+                },
+              },
+            },
+          ],
+          links: {},
+        };
+      }
+      // The label's workspace: project → group → workspace in one read.
+      if (url.includes('bb_project')) {
+        return {
+          data: {
+            type: PROJECT_TYPE,
+            id: 'project-bakers',
+            relationships: {
+              group_id: { data: { type: 'bb_group--bb_group', id: 'g' } },
+            },
+          },
+          included: [
+            {
+              type: 'bb_group--bb_group',
+              id: 'g',
+              relationships: {
+                workspace_id: {
+                  data: { type: 'bb_workspace--bb_workspace', id: 'ws' },
+                },
+              },
+            },
+          ],
+        };
       }
       if (url.includes('bb_environment')) return collection(ENVS_TYPE, envs);
       throw new Error(`unexpected URL ${url}`);
@@ -520,7 +557,7 @@ describe('nameRefsPlugin — alterRequest, environments (names unique per projec
     expect(doc.data.relationships.environments.data).toEqual([
       { type: ENVS_TYPE, id: 'env-bakers-prod' },
     ]);
-    expect(urls).toHaveLength(2);
+    expect(urls).toHaveLength(3);
   });
 });
 
@@ -581,7 +618,7 @@ describe('nameRefsPlugin -- alterRequest, labels workspace-scoped (BB-531)', () 
     const projectUrl =
       'https://bakers.test/jsonapi/bb_project/bb_project/project-b';
     const { ctx, urls } = contextFor((url) => {
-      if (url.includes('bb_term/bb_labels')) return labelsCollection();
+      if (url.includes('bb_term/label')) return labelsCollection();
       if (url === projectUrl || url.startsWith(`${projectUrl}?`))
         return projectWithChain('group-b', 'ws-b');
       throw new Error(`unexpected URL ${url}`);
@@ -606,7 +643,7 @@ describe('nameRefsPlugin -- alterRequest, labels workspace-scoped (BB-531)', () 
 
   it('narrows by the workspace derived from project_id on an UPDATE that omits project_id', async () => {
     const { ctx } = contextFor((url) => {
-      if (url.includes('bb_term/bb_labels')) return labelsCollection();
+      if (url.includes('bb_term/label')) return labelsCollection();
       if (url.startsWith(`${TICKET_URL}/ticket-1`))
         return projectWithChain('group-b', 'ws-b');
       throw new Error(`unexpected URL ${url}`);
@@ -628,7 +665,7 @@ describe('nameRefsPlugin -- alterRequest, labels workspace-scoped (BB-531)', () 
 
   it('throws naming the candidate workspaces when the write carries no project_id to chain from', async () => {
     const { ctx } = contextFor((url) => {
-      if (url.includes('bb_term/bb_labels')) return labelsCollection();
+      if (url.includes('bb_term/label')) return labelsCollection();
       throw new Error(`unexpected URL ${url}`);
     });
     const promise = nameRefsPlugin().alterRequest?.(
@@ -738,7 +775,7 @@ describe('nameRefsPlugin — the failure modes a live vocabulary can produce', (
         }),
         ctx,
       ),
-    ).rejects.toThrow(/403.*bb_term\/bb_labels/s);
+    ).rejects.toThrow(/403.*bb_term\/label/s);
   });
 
   it('names token expiry as a cause, because the plugin cannot renew one', async () => {
@@ -850,7 +887,7 @@ describe('nameRefsPlugin — the JSON:API prefix is normalised', () => {
       { ...ctx, jsonapiPrefix: 'jsonapi' } as never,
     );
     expect(urls[0]).toMatch(
-      /^https:\/\/bakers\.test\/jsonapi\/bb_term\/bb_labels\?/,
+      /^https:\/\/bakers\.test\/jsonapi\/bb_term\/label\?/,
     );
   });
 
@@ -868,7 +905,216 @@ describe('nameRefsPlugin — the JSON:API prefix is normalised', () => {
       { ...ctx, jsonapiPrefix: '/jsonapi/' } as never,
     );
     expect(urls[0]).toMatch(
-      /^https:\/\/bakers\.test\/jsonapi\/bb_term\/bb_labels\?/,
+      /^https:\/\/bakers\.test\/jsonapi\/bb_term\/label\?/,
     );
+  });
+});
+
+// Type, recipe and label names are ticket vocabulary an agent sets by name.
+// A known name is reused in the ticket's workspace; an unknown one is created
+// there first. Type and recipe hold one value, so a name replaces the old one.
+describe('nameRefsPlugin — term names: workspace lookup, lazy create, single values', () => {
+  const GROUP_TYPE = 'bb_group--bb_group';
+  const WORKSPACE_TYPE = 'bb_workspace--bb_workspace';
+  const PROJECT_URL =
+    'https://bakers.test/jsonapi/bb_project/bb_project/project-b';
+
+  /** A single-valued relationship declaration, as jsonapi_schema emits it. */
+  const single = (type: string) => ({
+    properties: { data: { properties: { type: { enum: [type] } } } },
+  });
+
+  type Term = { id: string; name: string; workspaceId: string };
+
+  /**
+   * One fake site: term collections per bundle, the project chain to ws-b,
+   * and a term POST that answers with a new uuid. `posts` records each create.
+   */
+  function site(terms: Record<string, Term[]>, operation = 'create') {
+    const posts: { url: string; body: any }[] = [];
+    const { ctx, urls } = contextFor((url, req) => {
+      if (req.method === 'POST') {
+        const body = JSON.parse(String(req.body));
+        posts.push({ url, body });
+        return {
+          data: { ...body.data, id: `new-${body.data.attributes.name}` },
+        };
+      }
+      const bundle = /bb_term\/(\w+)\?/.exec(url)?.[1];
+      if (bundle !== undefined) {
+        return {
+          data: (terms[bundle] ?? []).map((t) => ({
+            type: `bb_term--${bundle}`,
+            id: t.id,
+            attributes: { name: t.name },
+            relationships: {
+              workspace_id: {
+                data: { type: WORKSPACE_TYPE, id: t.workspaceId },
+              },
+            },
+          })),
+          links: {},
+        };
+      }
+      if (
+        url.startsWith(PROJECT_URL) ||
+        url.startsWith(`${TICKET_URL}/ticket-1`)
+      ) {
+        return {
+          data: {
+            type: PROJECT_TYPE,
+            id: 'project-b',
+            relationships: {
+              group_id: { data: { type: GROUP_TYPE, id: 'group-b' } },
+            },
+          },
+          included: [
+            {
+              type: GROUP_TYPE,
+              id: 'group-b',
+              relationships: {
+                workspace_id: { data: { type: WORKSPACE_TYPE, id: 'ws-b' } },
+              },
+            },
+          ],
+        };
+      }
+      throw new Error(`unexpected URL ${url}`);
+    }, operation);
+    return { ctx, urls, posts };
+  }
+
+  const createWith = (attributes: Record<string, string>, relationships = {}) =>
+    post({
+      data: {
+        type: 'bb_ticket--bb_ticket',
+        attributes,
+        relationships: {
+          project_id: { data: { type: PROJECT_TYPE, id: 'project-b' } },
+          ...relationships,
+        },
+      },
+    });
+
+  it('offers type_names and recipe_names where the single-valued relationships exist', async () => {
+    const attrs = (
+      await extend(
+        schemaWith({
+          ticket_type: single(TYPES_TYPE),
+          recipe: single(RECIPES_TYPE),
+          labels: rel(LABELS_TYPE),
+        }),
+      )
+    ).properties.data.properties.attributes.properties;
+    expect(attrs.type_names.type).toBe('string');
+    expect(attrs.recipe_names.type).toBe('string');
+    expect(attrs.label_names.type).toBe('string');
+  });
+
+  it('reuses a known name of the ticket workspace and sets one value', async () => {
+    const { ctx, posts } = site({
+      type: [
+        { id: 'bug-a', name: 'bug', workspaceId: 'ws-a' },
+        { id: 'bug-b', name: 'bug', workspaceId: 'ws-b' },
+      ],
+    });
+    const out = await nameRefsPlugin().alterRequest?.(
+      createWith({ type_names: 'bug' }),
+      ctx,
+    );
+    expect(bodyOf(out as HttpRequest).data.relationships.ticket_type).toEqual({
+      data: { type: TYPES_TYPE, id: 'bug-b' },
+    });
+    expect(posts).toEqual([]);
+  });
+
+  it('creates an unknown name in the ticket workspace, then links it', async () => {
+    const { ctx, posts } = site({
+      recipe: [{ id: 'matt-a', name: 'matt', workspaceId: 'ws-a' }],
+    });
+    const out = await nameRefsPlugin().alterRequest?.(
+      createWith({ recipe_names: 'matt' }),
+      ctx,
+    );
+    expect(posts).toHaveLength(1);
+    expect(posts[0]?.url).toBe('https://bakers.test/jsonapi/bb_term/recipe');
+    expect(posts[0]?.body.data).toEqual({
+      type: RECIPES_TYPE,
+      attributes: { name: 'matt' },
+      relationships: {
+        workspace_id: { data: { type: WORKSPACE_TYPE, id: 'ws-b' } },
+      },
+    });
+    expect(bodyOf(out as HttpRequest).data.relationships.recipe).toEqual({
+      data: { type: RECIPES_TYPE, id: 'new-matt' },
+    });
+  });
+
+  it('replaces the type the payload or ticket already carries', async () => {
+    const { ctx } = site(
+      { type: [{ id: 'feature-b', name: 'feature', workspaceId: 'ws-b' }] },
+      'update',
+    );
+    const out = await nameRefsPlugin().alterRequest?.(
+      patch({
+        data: {
+          type: 'bb_ticket--bb_ticket',
+          id: 'ticket-1',
+          attributes: { type_names: 'feature' },
+          relationships: {
+            ticket_type: { data: { type: TYPES_TYPE, id: 'bug-b' } },
+          },
+        },
+      }),
+      ctx,
+    );
+    expect(bodyOf(out as HttpRequest).data.relationships.ticket_type).toEqual({
+      data: { type: TYPES_TYPE, id: 'feature-b' },
+    });
+  });
+
+  it('refuses two names for a single-valued field before any round trip', async () => {
+    const { ctx, urls } = site({});
+    await expect(
+      nameRefsPlugin().alterRequest?.(
+        createWith({ type_names: 'bug,feature' }),
+        ctx,
+      ),
+    ).rejects.toThrow(/type_names.*one name/s);
+    expect(urls).toEqual([]);
+  });
+
+  it('creates a missing label and appends it to the existing labels', async () => {
+    const { ctx, posts } = site({ label: [] });
+    const out = await nameRefsPlugin().alterRequest?.(
+      createWith(
+        { label_names: 'x' },
+        { labels: { data: [{ type: LABELS_TYPE, id: 'old' }] } },
+      ),
+      ctx,
+    );
+    expect(posts).toHaveLength(1);
+    expect(bodyOf(out as HttpRequest).data.relationships.labels.data).toEqual([
+      { type: LABELS_TYPE, id: 'old' },
+      { type: LABELS_TYPE, id: 'new-x' },
+    ]);
+  });
+
+  it('creates a name given twice only once', async () => {
+    const { ctx, posts } = site({ label: [] });
+    await nameRefsPlugin().alterRequest?.(
+      createWith({ label_names: 'x,x' }),
+      ctx,
+    );
+    expect(posts).toHaveLength(1);
+  });
+
+  it('resolves all three fields with one workspace lookup', async () => {
+    const { ctx, urls } = site({ type: [], recipe: [], label: [] });
+    await nameRefsPlugin().alterRequest?.(
+      createWith({ type_names: 'bug', recipe_names: 'matt', label_names: 'x' }),
+      ctx,
+    );
+    expect(urls.filter((u) => u.startsWith(PROJECT_URL))).toHaveLength(1);
   });
 });

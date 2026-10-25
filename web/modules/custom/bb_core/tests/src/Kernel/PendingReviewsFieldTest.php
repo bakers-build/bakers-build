@@ -137,7 +137,7 @@ final class PendingReviewsFieldTest extends KernelTestBase {
       $this->addMembership($team, $account, ['member']);
     }
     $ticket = $etm->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'T',
       'state' => 'todo',
       'project_id' => $project->id(),

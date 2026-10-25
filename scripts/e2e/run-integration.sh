@@ -38,7 +38,7 @@ foreach ($run_storage->loadMultiple($run_ids) as $run) {
 }
 
 // Reset ticket to claimable state.
-$ticket->set("state", "coding");
+$ticket->set("state", "working");
 $ticket->save();
 print $ticket->uuid();
 ' 2>/dev/null)"

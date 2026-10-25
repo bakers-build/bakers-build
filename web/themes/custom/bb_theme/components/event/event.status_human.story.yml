@@ -9,7 +9,7 @@ props:
   role: human
   tag: status
   timestamp: 2 h ago
-  statement: qualification → spec
+  statement: qualification → plan
   links:
     - title: Summary
       url: '#summary'

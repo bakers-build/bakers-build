@@ -20,7 +20,7 @@ content:
       icon: user
       searchable: false
       selected_chips: false
-      clear_label: 'Unassigned'
+      clear_label: Unassigned
       create_label: ''
       context_parameter: ''
       default_value: ''
@@ -120,6 +120,24 @@ content:
       note_prefix: ''
       note_suffix: ''
     third_party_settings: {  }
+  recipe:
+    type: bb_picker
+    weight: 4
+    region: content
+    settings:
+      picker_region: pills
+      label: Recipe
+      icon: tag
+      searchable: false
+      selected_chips: false
+      clear_label: 'No recipe'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
   reviewers:
     type: bb_picker
     weight: 1
@@ -131,6 +149,24 @@ content:
       searchable: true
       selected_chips: true
       clear_label: 'No reviewers'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  ticket_type:
+    type: bb_picker
+    weight: 4
+    region: content
+    settings:
+      picker_region: pills
+      label: Type
+      icon: tag
+      searchable: false
+      selected_chips: false
+      clear_label: 'No type'
       create_label: ''
       context_parameter: ''
       default_value: ''

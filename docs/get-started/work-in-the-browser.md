@@ -8,7 +8,7 @@
 
 | Window | What you do there |
 |---|---|
-| **Your chat:** claude.ai, Claude Desktop or Cowork with the bakers.build connector | Describe what you need. Claude writes the ticket, checks for duplicates, qualifies it and takes it to `spec`. |
+| **Your chat:** claude.ai, Claude Desktop or Cowork with the bakers.build connector | Describe what you need. Claude writes the ticket, checks for duplicates, qualifies it and takes it to `plan`. |
 | **bakers.build on the web:** your team's bakers.build address, for example `https://app.bakers.build` | See every ticket and its progress, read summaries, freeze or cancel, record your verdict, record time. |
 
 The building happens elsewhere: your team's agents pick the ticket up and leave a `summary` after every step. You read, decide and continue.
@@ -20,7 +20,7 @@ The building happens elsewhere: your team's agents pick the ticket up and leave 
 3. Open the ticket on the web. Watch its state and read each `summary`.
 4. When the work is ready, [accept it](/daily-work/accept-results) with **Accept** or **Reject** on the ticket.
 
-**Done when:** your ticket is in `spec` and you can open it on the web.
+**Done when:** your ticket is in `plan` and you can open it on the web.
 
 ## Finding your way around
 

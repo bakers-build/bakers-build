@@ -814,7 +814,7 @@ final class WorklogTest extends KernelTestBase {
       ->create([
         'title' => $title,
         'project_id' => $project->id(),
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
       ]);
     $ticket->save();
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

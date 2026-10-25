@@ -232,7 +232,7 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     ]);
     $project->save();
     $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'Rendered ticket',
       'project_id' => $project->id(),
       'assignee_user_id' => $account->id(),
@@ -335,7 +335,7 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     // current-day bucket): it must land in exactly that one bucket, not the
     // previous day's.
     $entityTypeManager->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'Boundary ticket',
       'project_id' => $project->id(),
       'assignee_user_id' => $account->id(),
@@ -429,7 +429,7 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     // `testActivityMatrixCountsExactDailyAndMonthlyBucketsAtBoundaries`.
     $account = $this->account('ratio-viewer', ['view bakers figure user_overview_ratio']);
     $ticket = $entityTypeManager->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'Ratio ticket',
       'project_id' => $project->id(),
       'assignee_user_id' => $account->id(),
@@ -478,7 +478,7 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     // ratio is unavailable (NULL), not a misleading zero.
     $barren = $this->account('barren-viewer', ['view bakers figure user_overview_ratio']);
     $barrenTicket = $entityTypeManager->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'Open ticket',
       'project_id' => $project->id(),
       'assignee_user_id' => $barren->id(),
@@ -564,7 +564,7 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     // `testActivityMatrixCountsExactDailyAndMonthlyBucketsAtBoundaries`.
     $account = $this->account('token-viewer', ['view bakers figure user_tokens_trend', 'view bakers figure user_models']);
     $ticket = $entityTypeManager->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'Token ticket',
       'project_id' => $project->id(),
       'assignee_user_id' => $account->id(),

@@ -54,9 +54,9 @@ final class BbTermWorkspaceScopeTest extends KernelTestBase {
     $this->installEntitySchema('bb_term');
     $this->installConfig(['user']);
     $this->installOgScopeFixture();
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     // A bundle created after the container booted leaves the typed-data
-    // derivative `entity:bb_term:bb_labels` undiscovered, and ->validate()
+    // derivative `entity:bb_term:label` undiscovered, and ->validate()
     // is the caller that needs it — without this the validation cases error on
     // PluginNotFoundException instead of asserting anything.
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
@@ -86,7 +86,7 @@ final class BbTermWorkspaceScopeTest extends KernelTestBase {
    * column (D1).
    */
   public function testWorkspacelessTermIsInvalidButStorable(): void {
-    $term = BbTerm::create(['vid' => 'bb_labels', 'name' => 'unscoped']);
+    $term = BbTerm::create(['vid' => 'label', 'name' => 'unscoped']);
 
     self::assertGreaterThan(0, $term->validate()->count());
 
@@ -107,10 +107,11 @@ final class BbTermWorkspaceScopeTest extends KernelTestBase {
   /**
    * A term bound to a workspace the writer belongs to validates.
    *
-   * The actor is a plain member rather than uid 1, because the two rules this
-   * case has to clear are both account-sensitive and a bypassing actor would
-   * clear them without exercising either: BbWorkspaceScope asks whether the
-   * writer belongs to the workspace, and the reference field's own
+   * The actor is a contributor rather than uid 1, because the rules this case
+   * has to clear are account-sensitive and a bypassing actor would clear them
+   * without exercising any: BbWorkspaceScope asks whether the writer belongs
+   * to the workspace, BbGroupScope asks for `create bb_term` there (which the
+   * plain member rank does not carry), and the reference field's own
    * ValidReference asks the selection handler with accessCheck(TRUE), which
    * needs `view bb_workspace`. Asserting the negative half is
    * BbWorkspaceScope's own suite, not this one.
@@ -120,11 +121,11 @@ final class BbTermWorkspaceScopeTest extends KernelTestBase {
     $workspace->save();
     $member = $this->createUser(['view bb_workspace']);
     self::assertInstanceOf(UserInterface::class, $member);
-    $this->addMembership($workspace, $member, ['member']);
+    $this->addMembership($workspace, $member, ['contributor']);
     $this->setCurrentUser($member);
 
     $term = BbTerm::create([
-      'vid' => 'bb_labels',
+      'vid' => 'label',
       'name' => 'scoped',
       'workspace_id' => $workspace->id(),
     ]);

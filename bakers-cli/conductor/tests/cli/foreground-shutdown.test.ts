@@ -106,7 +106,7 @@ describe('bakers oven start --foreground shutdown', () => {
       workspace: fakeWorkspace(),
       label: 'foreground test',
       project: 'bakers',
-      states: ['coding'],
+      states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5,

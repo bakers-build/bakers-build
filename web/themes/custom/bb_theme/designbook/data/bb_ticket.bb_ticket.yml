@@ -3,14 +3,16 @@
   changed: '2026-06-30T16:45:00+00:00'
   project_id: '1'
   identifier: BB-142
-  workflow: bb_feature
+  workflow: bb_work
   title: Add designbook entity view-mode for bb_ticket
   description: >-
     <p>We need a <strong>full</strong> view-mode render for
     <code>bb_ticket</code> so designers can preview ticket detail layouts
     without hitting live Drupal data.</p><p>Scope includes the state-flow bar,
     comment timeline, and reference chips for labels, parent, and blockers.</p>
-  state: coding
+  state: working
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '1'
     - '2'
@@ -93,13 +95,15 @@
   project_id: '1'
   identifier: BB-100
   number: 100
-  workflow: bb_feature
+  workflow: bb_work
   title: Designbook coverage for core bakers.build entities
   description: >-
     <p>Umbrella ticket tracking design-entity workflows across ticket, project,
     comment, and term bundles. Hierarchy rides on parent_id/sub_tickets; there
     is no epic workflow.</p>
   state: qualification
+  ticket_type: '7'
+  recipe: '8'
   labels:
     - '1'
   assignee_user_id: '2'
@@ -120,12 +124,14 @@
   project_id: '1'
   identifier: BB-110
   number: 110
-  workflow: bb_feature
+  workflow: bb_work
   title: Ship data-model schema for bb_ticket bundle
   description: >-
     <p>Formalize the field list and reference targets for <em>bb_ticket</em>
     in <code>designbook/data-model.yml</code>.</p>
   state: qualification
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '1'
   assignee_user_id: '1'
@@ -146,12 +152,14 @@
   project_id: '1'
   identifier: BB-118
   number: 118
-  workflow: bb_feature
+  workflow: bb_work
   title: Draft ticket_detail component spec
   description: >-
     <p>Write the SDC spec for the ticket detail full-view component, covering
     slots for state bar and comment timeline.</p>
-  state: spec
+  state: plan
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '2'
   assignee_user_id: '2'
@@ -172,13 +180,15 @@
   project_id: '1'
   identifier: BB-105
   number: 105
-  workflow: bb_feature
+  workflow: bb_work
   title: Review comment-event rendering for typed comments
   description: >-
     <p>Confirm <code>spec</code>, <code>summary</code>, and plain
     <code>comment</code> types each render with distinct visual treatment in the
     timeline.</p>
   state: review
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '2'
     - '3'
@@ -205,12 +215,14 @@
   project_id: '1'
   identifier: BB-90
   number: 90
-  workflow: bb_feature
+  workflow: bb_work
   title: Bootstrap bb_theme SDC scaffolding
   description: >-
     <p>Initial scaffolding for the theme's single-directory components used by
     designbook.</p>
   state: done
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '3'
   assignee_user_id: '2'
@@ -231,10 +243,12 @@
   project_id: '1'
   identifier: BB-145
   number: 145
-  workflow: bb_feature
+  workflow: bb_work
   title: Comment feed region in ticket_detail
   description: <p>Render the ticket comment timeline inside the full view-mode.</p>
-  state: coding
+  state: working
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '2'
   assignee_user_id: '1'
@@ -255,12 +269,14 @@
   project_id: '1'
   identifier: BB-146
   number: 146
-  workflow: bb_feature
+  workflow: bb_work
   title: Runs, sub-tickets and footprint sections
   description: >-
     <p>Add reverse/aggregate regions (runs, sub-tickets, footprint) to the full
     view-mode.</p>
   state: review
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '2'
     - '3'
@@ -287,12 +303,14 @@
   project_id: '2'
   identifier: NWS-80
   number: 80
-  workflow: bb_feature
+  workflow: bb_work
   title: Checkout address step rewrite
   description: >-
     <p>Rebuild the address step of the checkout flow so it validates postcodes
     per country and keeps entered data on a failed submit.</p>
-  state: coding
+  state: working
+  ticket_type: '4'
+  recipe: '8'
   labels:
     - '2'
   assignee_user_id: '3'
@@ -337,12 +355,14 @@
   project_id: '2'
   identifier: NWS-81
   number: 81
-  workflow: bb_bug
+  workflow: bb_work
   title: Cart total ignores per-item discounts
   description: >-
     <p>The cart summary sums list prices, so a per-item discount is applied at
     payment but never shown in the total the customer sees.</p>
   state: review
+  ticket_type: '5'
+  recipe: '8'
   labels:
     - '3'
   assignee_user_id: '4'
@@ -364,12 +384,14 @@
   project_id: '2'
   identifier: NWS-82
   number: 82
-  workflow: bb_chore
+  workflow: bb_work
   title: Move the staging deploy onto the shared runner
   description: >-
     <p>Staging still builds on the retired dedicated runner. Move the pipeline
     to the shared runner pool and drop the runner-specific cache paths.</p>
   state: qualification
+  ticket_type: '6'
+  recipe: '9'
   labels:
     - '1'
   assignee_user_id: '3'

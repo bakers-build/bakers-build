@@ -20,8 +20,8 @@ final class RunClosureFieldsTest extends ClaimKernelTestBase {
    * A freshly seeded run is not closed and has no closed date.
    */
   public function testRunStartsUnclosed(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'running');
+    $ticket = $this->seedAssignedTicket(state: 'working');
+    $run = $this->seedRun($ticket, stateAtStart: 'working', state: 'running');
     self::assertFalse($this->reloadRun($run)->isClosed());
     self::assertNull($this->reloadRun($run)->getClosedDate());
   }
@@ -30,8 +30,8 @@ final class RunClosureFieldsTest extends ClaimKernelTestBase {
    * Persists the closed flag and date across a reload via markClosed().
    */
   public function testMarkClosedSetsFlagAndDate(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'done');
+    $ticket = $this->seedAssignedTicket(state: 'working');
+    $run = $this->seedRun($ticket, stateAtStart: 'working', state: 'done');
     $run->markClosed(1_700_000_000)->save();
     $reloaded = $this->reloadRun($run);
     self::assertTrue($reloaded->isClosed());
@@ -46,8 +46,8 @@ final class RunClosureFieldsTest extends ClaimKernelTestBase {
    * actually ran.
    */
   public function testAgentFieldRoundTrips(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'running');
+    $ticket = $this->seedAssignedTicket(state: 'working');
+    $run = $this->seedRun($ticket, stateAtStart: 'working', state: 'running');
     $run->set('agent', 'claude')->save();
     self::assertSame('claude', $this->reloadRun($run)->get('agent')->value);
   }

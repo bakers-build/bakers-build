@@ -2,44 +2,44 @@
 
 **Every ticket follows one workflow. Each state has a clear job and a clear owner.**
 
-In every state except `done` and `cancelled`, the ticket's conductor may start a run (an epic is the exception). `done` and `cancelled` are final: follow-up work gets a new ticket. Any open ticket can be cancelled. The owners below are those for `work:code`; `work:docs` uses `docs-authoring` for spec, diagnose, coding and review.
+Every work ticket follows the workflow `bb_work`. In every state except `done` and `cancelled`, the ticket's conductor may start a run. `done` and `cancelled` are final: follow-up work gets a new ticket. Any open ticket can be cancelled. The kind of work is [ticket data](#ticket-type-recipe-and-labels), not a workflow. The owners below are those for `work:code`; `work:docs` uses `docs-authoring` for plan, working and review.
 
-## bb_feature
-
-| State | Owner | What happens | Next |
-|---|---|---|---|
-| `qualification` | `qualify-ticket` | prior-art search, criteria, classification, `work:*` labels; you confirm | `spec` |
-| `spec` | `create-spec` | publishes `spec`, `plan`, `test`; you approve one scope | `coding` |
-| `coding` | `ddev-drupal-feature` | builds in the worktree, runs checks, opens the merge request; you confirm | `review` |
-| `review` | `ddev-drupal-feature` | independent `OK` or `Not OK`; `OK` merges once you authorize | `done`, or `coding` |
-
-A feature always passes review: only `review` finishes. `requalify` sends `spec` or `coding` back to `qualification` when the handoff is missing, stale or contradictory. A fully specified intake goes from `qualification` straight to `coding`.
-
-## bb_bug
+## bb_work
 
 | State | Owner | What happens | Next |
 |---|---|---|---|
-| `qualification` | `qualify-ticket` | as for a feature | `diagnose` |
-| `diagnose` | `ddev-drupal-bug` | reproduces the defect, names the cause, plans the regression test; you approve | `coding` |
-| `coding` | `ddev-drupal-bug` | fixes, runs checks, opens the merge request; you confirm | `review` or `done` |
-| `review` | `ddev-drupal-bug` | as for a feature | `done`, or `coding` |
+| `qualification` | `qualify-ticket` | prior-art search, criteria, classification, `work:*` labels; you confirm | `plan`, or `working` |
+| `plan` | `create-spec`; `ddev-drupal-bug` for a bug | publishes `spec`, `plan`, `test`, or for a bug reproduces the defect, names the cause and plans the regression test; you approve one scope | `working` |
+| `working` | `ddev-drupal-feature`; `ddev-drupal-bug` for a bug | builds in the worktree, runs checks, opens the merge request; you confirm | `review` or `done` |
+| `review` | the owner of `working` | independent `OK` or `Not OK`; `OK` merges once you authorize | `done`, or `working` |
 
-Review is optional: `finish` leaves `coding` through the merge gate. `to_diagnose` returns `coding` to `diagnose` when the diagnosis itself failed.
+The transitions:
 
-## bb_chore
+| Transition | From | To |
+|---|---|---|
+| `qualify` | `qualification` | `plan` |
+| `requalify` | `plan`, `working` | `qualification` |
+| `to_working` | `qualification`, `plan`, `review` | `working` |
+| `to_plan` | `working` | `plan` |
+| `to_review` | `working` | `review` |
+| `finish` | `working`, `review` | `done` |
+| `cancel` | every state except `done` and `cancelled` | `cancelled` |
 
-| State | Owner | What happens | Next |
+A fully specified intake goes from `qualification` straight to `working`. `requalify` returns to `qualification` when the handoff is missing, stale or contradictory; `to_plan` redoes a missing or wrong plan. Review is optional: `finish` leaves `working` or `review`.
+
+## Ticket type, recipe and labels
+
+A ticket and a ticket template carry three term fields, each from a vocabulary of the ticket's workspace:
+
+| Field | Vocabulary | Values | Example |
 |---|---|---|---|
-| `qualification` | `qualify-ticket` | as for a feature | `spec` |
-| `spec` | `create-spec` | as for a feature | `coding` |
-| `coding` | `ddev-drupal-feature` | as for a feature | `review` or `done` |
-| `review` | `ddev-drupal-feature` | as for a feature | `done`, or `coding` |
+| `ticket_type` | `type` | one | `feature`, `bug`, `chore`, `epic`, `deployment`, `verification` |
+| `recipe` | `recipe` | one | a recipe name |
+| `labels` | `label` | several | `work:code`, `method:<set>`, `agent:<alias>` |
 
-Review is optional, as for a bug.
+The field is called `ticket_type` because JSON:API reserves `type`. Type and recipe are independent of each other. Workspace contributors and leads manage the terms under the workspace's settings, on the tabs Types, Recipes and Labels; guests may only view them. A term has no page of its own and cannot be deleted. Agents set the fields by name with [`bakers dropsh`](/advanced/cli/dropsh#targets-and-envelopes).
 
-## bb_epic
-
-An epic groups child tickets and does no work itself: no state starts a run. It moves `qualification` → `spec` → `active` → `review` → `done` as people move it; the children do the work on their own tickets.
+An epic is a ticket of type `epic`. It groups child tickets, which do the work; the project overview lists epics by type.
 
 ## Deployment, verification and ticket relations
 

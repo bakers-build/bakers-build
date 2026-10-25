@@ -40,7 +40,6 @@ permissions:
   - 'view bb_conductor'
   - 'view bb_environment'
   - 'view bb_group'
-  - 'view bb_labels bb_term'
   - 'view bb_machine'
   - 'view bb_project'
   - 'view bb_run'

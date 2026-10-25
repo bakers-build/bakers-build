@@ -4,6 +4,7 @@ _meta:
   entity_type: bb_ticket
   uuid: 14cb8733-7f19-55c1-a955-1fe226a5f996
   depends:
+    db1a0000-0000-4000-8000-000000000021: bb_term
     262258a2-080f-4ab9-af1b-9028cef388da: bb_project
     47c3cd82-2979-5c62-9635-548b7a4983f5: bb_conductor
     25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
@@ -11,7 +12,9 @@ default:
   title:
   - value: Claim capacity occupant
   workflow:
-  - value: bb_bug
+  - value: bb_work
+  ticket_type:
+  - entity: db1a0000-0000-4000-8000-000000000021
   state:
   - value: review
   closed:

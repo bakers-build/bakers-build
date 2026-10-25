@@ -123,7 +123,7 @@ final class TicketTemplateWorkspaceListTest extends KernelTestBase {
       'enabled' => TRUE,
       'title_pattern' => 'From the workspace',
       'description' => ['value' => 'Body', 'format' => 'plain_text'],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'workspace_id' => $this->fixture($side, 'bb_workspace')->id(),
       'owner_user_id' => $this->worldOwner->id(),

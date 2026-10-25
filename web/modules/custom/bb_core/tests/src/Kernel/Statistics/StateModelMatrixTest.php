@@ -165,7 +165,7 @@ final class StateModelMatrixTest extends KernelTestBase {
    */
   private function createTicket(): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'ticket-' . mt_rand(),
       'project_id' => $this->project->id(),
     ]);

@@ -2,9 +2,9 @@ component: bb_theme:state-flow
 name: Default
 props:
   states:
-    - spec
-    - coding
+    - plan
+    - working
     - review
     - done
-  current: coding
+  current: working
   label: Workflow state flow

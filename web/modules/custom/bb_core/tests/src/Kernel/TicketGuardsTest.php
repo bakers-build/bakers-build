@@ -85,7 +85,7 @@ final class TicketGuardsTest extends KernelTestBase {
    */
   private function createTicket(string $identifier, array $values = []): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create($values + ['identifier' => $identifier, 'workflow' => 'bb_bug', 'title' => $identifier]);
+      ->create($values + ['identifier' => $identifier, 'workflow' => 'bb_work', 'title' => $identifier]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;
@@ -136,7 +136,7 @@ final class TicketGuardsTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'identifier' => 'GL-H',
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'title' => 'X',
         'assignee_user_id' => $user->id(),
       ]);

@@ -68,9 +68,10 @@ ui_requirements: >
     emits no header (BB-378 — `designbook/design-system/layout.md` §2); `created`, `changed` and
     `owner_user_id` are deliberately not on screen. So the screen authors its own `page_header` and
     places no workspace node. The mapping file says why, so nobody puts the header back.
-  - `bb_term.bb_labels` — Labels field group on the settings screen. One
-  vocabulary since
-    `bb_capability_tags` was retired.
+  - `bb_term.label` — Labels field group on the settings screen. Since
+  BAKERS-17 the product has
+    three term vocabularies (`type`, `recipe`, `label`) on tabs Types, Recipes and Labels;
+    the capability-tags vocabulary is gone. This scene still shows the Labels group only (follow-up).
   - `bb_team.bb_team` — the Overview tab's **body**, `full` view mode: the
   Projects relation
     only (BB-484 dropped the Members zone from this mapping — BB-435 already delivers
@@ -216,7 +217,8 @@ scenes:
       which is what `zone`'s `direction: row` is for, and what `section`'s
       `justify_items: start` was working around before BB-378. Optional “New
       label” affordance is present; term description/weight have no surface yet.
-      `bb_capability_tags` is retired by decision.
+      The capability-tags vocabulary no longer exists; `type` and `recipe` are sibling
+      vocabularies (product tabs Types and Recipes, not yet in this scene).
 
       THE SHELL IS INHERITED, NOT RETYPED (BB-378 D1): this scene starts with
       `scene: "design-system:shell"` and fills its `content` with exactly one

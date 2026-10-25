@@ -40,7 +40,7 @@ final class ActivityConfigContractTest extends UnitTestCase {
   }
 
   /**
-   * The display reaches bb_ticket.labels and enforces its bundle config.
+   * The display reaches bb_ticket and enforces its term bundle configs.
    */
   public function testDisplayEnforcesTheTicketLabelsBundleDependency(): void {
     $recipe = Yaml::parseFile($this->repositoryRoot() . '/recipes/bakers/config/' . self::DISPLAY . '.yml');
@@ -49,7 +49,9 @@ final class ActivityConfigContractTest extends UnitTestCase {
       $recipe['dependencies']['config'] ?? [],
       $recipe['dependencies']['enforced']['config'] ?? [],
     );
-    self::assertContains('bb_core.bb_vocabulary.bb_labels', $declared);
+    foreach (['label', 'recipe', 'type'] as $vid) {
+      self::assertContains("bb_core.bb_vocabulary.$vid", $declared);
+    }
   }
 
   /**

@@ -17,13 +17,13 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * (StateItem::dispatchTransitionEvent → findTransition(original, new)). An
  * agent's raw `--state done` JSON:API/dropsh write — frequently `--no-validate`
  * — can land the ticket in a terminal state via an edge the workflow does not
- * define (e.g. feature coding → done; feature remains review-mandatory), so no
+ * define (e.g. bb_work plan → done; only working/review may finish), so no
  * event fires and the last run would stay running/claimed forever. The
  * bb_ticket entity_update safety net closes it regardless, independent of
  * the transition event.
  *
- * Bug/chore may finish from coding (BB-354); feature still has no coding →
- * done edge, so these tests seed bb_feature for the undefined-edge path.
+ * bb_work has no plan → done edge, so these tests seed `plan` for the
+ * undefined-edge path.
  *
  * @group bb_core
  */
@@ -35,9 +35,9 @@ final class TicketTerminalStateRetiresRunTest extends ClaimKernelTestBase {
    * A raw jump to done with no resolved transition still retires the run.
    */
   public function testTerminalJumpWithoutTransitionRetiresRun(): void {
-    // Feature: coding → done is undefined (review is mandatory).
-    $ticket = $this->seedAssignedTicket(state: 'coding', workflow: 'bb_feature');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'running');
+    // bb_work: plan → done is undefined (finish leaves working or review).
+    $ticket = $this->seedAssignedTicket(state: 'plan', workflow: 'bb_work');
+    $run = $this->seedRun($ticket, stateAtStart: 'plan', state: 'running');
     $run->set('log', 'real transcript')->save();
 
     // Undefined edge: state_machine dispatches no post_transition event
@@ -56,8 +56,8 @@ final class TicketTerminalStateRetiresRunTest extends ClaimKernelTestBase {
    * and TicketTransitionSubscriber retires the run as for a normal cancel.
    */
   public function testClosingNonTerminalTicketRetiresOpenRun(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding', workflow: 'bb_bug');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'running');
+    $ticket = $this->seedAssignedTicket(state: 'working', workflow: 'bb_work');
+    $run = $this->seedRun($ticket, stateAtStart: 'working', state: 'running');
 
     $ticket->set('closed', TRUE)->save();
 
@@ -72,10 +72,10 @@ final class TicketTerminalStateRetiresRunTest extends ClaimKernelTestBase {
    * A raw jump to cancelled with no resolved transition retires the run too.
    */
   public function testCancelledJumpWithoutTransitionRetiresRun(): void {
-    $ticket = $this->seedAssignedTicket(state: 'review', workflow: 'bb_feature');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'claimed');
+    $ticket = $this->seedAssignedTicket(state: 'review', workflow: 'bb_work');
+    $run = $this->seedRun($ticket, stateAtStart: 'working', state: 'claimed');
 
-    // The run's start-state is stale (coding), so a raw terminal write must
+    // The run's start-state is stale (working), so a raw terminal write must
     // retire it. review → cancelled is defined here; the assertion is that any
     // non-current active run is closed when the ticket reaches a terminal
     // state.

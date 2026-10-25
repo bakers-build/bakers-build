@@ -270,7 +270,7 @@ final class MeasurementCompletenessTest extends KernelTestBase {
    */
   private function createTicket(BbProjectInterface $project, UserInterface $assignee): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'ticket-' . mt_rand(),
       'project_id' => $project->id(),
       'assignee_user_id' => $assignee->id(),

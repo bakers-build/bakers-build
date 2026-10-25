@@ -42,7 +42,7 @@ export function createDisposableTicket(
     '$t->save();',
     '$runUuid = ""; $runId = "";',
     withRun
-      ? '$c = current($etm->getStorage("bb_conductor")->loadMultiple()); if (!$c) { print "NO_CONDUCTOR"; return; } $r = $etm->getStorage("bb_run")->create(["ticket_id" => $t->id(), "conductor_id" => $c->id(), "state" => "running", "state_at_start" => "coding", "started_at" => time()]); $r->save(); $runUuid = $r->uuid(); $runId = $r->id();'
+      ? '$c = current($etm->getStorage("bb_conductor")->loadMultiple()); if (!$c) { print "NO_CONDUCTOR"; return; } $r = $etm->getStorage("bb_run")->create(["ticket_id" => $t->id(), "conductor_id" => $c->id(), "state" => "running", "state_at_start" => "working", "started_at" => time()]); $r->save(); $runUuid = $r->uuid(); $runId = $r->id();'
       : '',
     'print $t->uuid() . "|" . $t->toUrl()->toString() . "|" . $runUuid . "|" . $runId . "|" . $t->getIdentifier() . "|" . $t->label();',
   ].join(' '));

@@ -199,7 +199,7 @@ final class BbEnvironmentTest extends KernelTestBase {
 
     $ticket = BbTicket::create([
       'title' => 'Deploy something',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'environments' => [$env->id()],
     ]);
     $ticket->save();
@@ -226,7 +226,7 @@ final class BbEnvironmentTest extends KernelTestBase {
 
     $ticket = BbTicket::create([
       'title' => 'Deploy something',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'environments' => [$dev->id(), $prod->id()],
     ]);
     $ticket->save();

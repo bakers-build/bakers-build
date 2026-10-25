@@ -9,7 +9,7 @@ Feature: A comment has a ticket-framed canonical page
     Given I am signed in as a member of the "bakers" workspace
 
   Scenario: Read a handoff and return to its ticket
-    Given a disposable "bb_feature" ticket in state "coding"
+    Given a disposable "bb_work" ticket in state "working"
     And the disposable ticket has a spec handoff whose body contains a table and "BB-657-END-MARKER"
     When I visit the disposable ticket
     And I open the handoff stream
@@ -24,7 +24,7 @@ Feature: A comment has a ticket-framed canonical page
     And the page shows the comment author
     And the page shows the comment time
     And the page shows the disposable ticket identifier
-    And the page shows "coding"
+    And the page shows "working"
     When I go back
     And I open the handoff stream
     And I open the comment link "Open spec comment"
@@ -36,7 +36,7 @@ Feature: A comment has a ticket-framed canonical page
     Then the page shows "Open spec comment"
 
   Scenario: Browse only this ticket's visible comments
-    Given a disposable "bb_feature" ticket in state "coding"
+    Given a disposable "bb_work" ticket in state "working"
     And the disposable ticket has older spec, current plan and newer test comments
     And another ticket has a comment between those times
     When I visit the current comment
@@ -50,7 +50,7 @@ Feature: A comment has a ticket-framed canonical page
     And the document was not reloaded
 
   Scenario: Read through a long handoff
-    Given a disposable "bb_feature" ticket in state "coding"
+    Given a disposable "bb_work" ticket in state "working"
     And the disposable ticket has a 32 KiB handoff-v3 body ending with "BB-657-END-MARKER"
     When I visit that long comment
     Then the page heading is "Open handoff-v3 comment"
@@ -60,7 +60,7 @@ Feature: A comment has a ticket-framed canonical page
 
   @nojs
   Scenario: The handoff canonical link works with JavaScript disabled
-    Given a disposable "bb_feature" ticket in state "coding"
+    Given a disposable "bb_work" ticket in state "working"
     And the disposable ticket has a spec handoff whose body contains a table and "BB-657-END-MARKER"
     When I visit the disposable ticket
     And I open the handoff stream

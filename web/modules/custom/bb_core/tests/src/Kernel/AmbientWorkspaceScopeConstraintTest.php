@@ -330,7 +330,7 @@ final class AmbientWorkspaceScopeConstraintTest extends KernelTestBase {
     $values = match ($type) {
       'bb_group', 'bb_team' => ['name' => 'probe'],
       'bb_project' => ['name' => 'probe'],
-      'bb_ticket' => ['title' => 'probe', 'workflow' => 'bb_feature'],
+      'bb_ticket' => ['title' => 'probe', 'workflow' => 'bb_work'],
       default => self::fail("No probe values for type $type."),
     };
     $values[$field] = $referenced->id();

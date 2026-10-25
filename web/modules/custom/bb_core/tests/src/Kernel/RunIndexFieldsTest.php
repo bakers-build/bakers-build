@@ -52,7 +52,7 @@ final class RunIndexFieldsTest extends KernelTestBase {
     }
     $this->installSchema('search_api', ['search_api_item']);
     $this->installConfig(['user', 'search_api']);
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     $this->container->get('config.installer')
@@ -143,8 +143,8 @@ final class RunIndexFieldsTest extends KernelTestBase {
     ]);
     $ticket = $this->create('bb_ticket', [
       'title' => 'First ticket',
-      'state' => 'coding',
-      'workflow' => 'bb_feature',
+      'state' => 'working',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
     ]);
     $conductor = $this->create('bb_conductor', [

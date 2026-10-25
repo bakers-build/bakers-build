@@ -6,7 +6,7 @@ Feature: Ticket review comments stay private until accepted
 
   Background:
     Given the API client is "north-contributor"
-    When the API client creates a "bb_feature" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     Given the session actor owns a running lease for ticket "ticket"
     And the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
       """

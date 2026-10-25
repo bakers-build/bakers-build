@@ -14,9 +14,9 @@ export interface WorkflowKind {
 
 /** The single source of truth, in the create form picker's order. */
 export const WORKFLOW_KINDS: readonly WorkflowKind[] = [
-  { id: 'bb_feature', label: 'feature' },
-  { id: 'bb_bug', label: 'bug' },
-  { id: 'bb_chore', label: 'chore' },
+  // BAKERS-17: one workflow for every work ticket; feature/bug/chore is the
+  // ticket's `ticket_type` term now, not its workflow.
+  { id: 'bb_work', label: 'work' },
 ];
 
 /** The picker's `{id, label}` list — what the create form's `workflow` field offers. */

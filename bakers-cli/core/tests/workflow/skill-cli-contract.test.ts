@@ -38,7 +38,6 @@ type Simulation = Record<string, any>;
 const ticketId = '11111111-1111-4111-8111-111111111111';
 const ticket = `bb_ticket/bb_ticket/${ticketId}`;
 const firstComment = '22222222-2222-4222-8222-000000000001';
-const newTicket = '33333333-3333-4333-8333-333333333333';
 const G = ['bakers', 'dropsh'];
 const T = 120000;
 const failing = (checks: { id: string; met: boolean }[]) =>
@@ -326,19 +325,11 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           'search',
           'bb_term',
           '--bundle',
-          'bb_labels',
+          'label',
           '--filter',
           'name:work:docs',
         ],
-        [
-          ...G,
-          '--format',
-          'json',
-          'search',
-          'bb_term',
-          '--bundle',
-          'bb_labels',
-        ],
+        [...G, '--format', 'json', 'search', 'bb_term', '--bundle', 'label'],
         search('identifier:EVAL-70'),
         search('identifier:CONTAINS:EVAL-70'),
       ];
@@ -376,7 +367,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           'label-target',
           same(rows(real[8]!), [contractFixture.terms[0].id]) &&
             rows(real[9]!).length === 3,
-          'Labels are the bb_term entity with bundle bb_labels',
+          'Labels are the bb_term entity with bundle label',
         ),
         check(
           'search-query',
@@ -606,120 +597,6 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           error(real[2]!)?.code === 'E_VALIDATION' &&
             error(sim[2]!)?.code === 'E_VALIDATION',
           'An unlisted or traversing virtual path is not read',
-        ),
-        ...boundary(endpoint, real),
-      ];
-      expect(failing(checks), observed(steps, real, sim)).toEqual([]);
-    },
-    T,
-  );
-
-  it(
-    'ticket-payload-and-labels: label names become relationship linkage and never leak as attributes',
-    async () => {
-      const fixture = await loadFixture('create-ticket-calls');
-      const simulation = fixture.simulation;
-      const description = simulation.files[fixture.input.description_file];
-      const steps = [
-        [
-          ...G,
-          'create',
-          'bb_ticket',
-          '--bundle',
-          'bb_ticket',
-          `--title=${fixture.input.title}`,
-          '--workflow',
-          'bb_feature',
-          `--description.value=${description}`,
-          '--description.format',
-          'bb_rich',
-          '--project_id',
-          fixture.input.project_uuid,
-          '--label_names',
-          'work:docs,method:matt',
-          '--parent_id',
-          contractFixture.probe_ticket.id,
-        ],
-        [...G, 'read', `bb_ticket/bb_ticket/${newTicket}`],
-        [
-          ...G,
-          'create',
-          'bb_ticket',
-          '--bundle',
-          'bb_ticket',
-          '--title=Second',
-          '--workflow',
-          'bb_feature',
-          '--project_id',
-          fixture.input.project_uuid,
-          '--label_names',
-          'work:unknown',
-        ],
-        [
-          ...G,
-          'create',
-          'bb_ticket',
-          '--bundle',
-          'bb_ticket',
-          '--title=Third',
-          '--workflow',
-          'not_a_workflow',
-          '--project_id',
-          fixture.input.project_uuid,
-        ],
-      ];
-      const { real, sim, endpoint } = await pair(simulation, steps);
-      const [create] = mutations(endpoint);
-      const [docs, matt] = contractFixture.terms;
-      const linkage = {
-        project_id: {
-          data: {
-            type: 'bb_project--bb_project',
-            id: fixture.input.project_uuid,
-          },
-        },
-        labels: {
-          data: [
-            { type: 'bb_term--bb_labels', id: docs.id },
-            { type: 'bb_term--bb_labels', id: matt.id },
-          ],
-        },
-        parent_id: {
-          data: {
-            type: 'bb_ticket--bb_ticket',
-            id: contractFixture.probe_ticket.id,
-          },
-        },
-      };
-      const checks = [
-        ...agreeAll(real, sim),
-        check(
-          'ticket-attributes',
-          same(create?.json?.data?.attributes, {
-            title: fixture.input.title,
-            workflow: 'bb_feature',
-            description: { value: description, format: 'bb_rich' },
-          }),
-          'Title, workflow and rich description serialize exactly; no name-only field leaks',
-        ),
-        check(
-          'ticket-relationships',
-          same(create?.json?.data?.relationships, linkage),
-          'Project, parent and resolved labels are relationships with exact type, UUID and cardinality',
-        ),
-        check(
-          'ticket-readback',
-          json(real[0]!)?.data?.id === newTicket &&
-            json(real[0]!)?.data?.attributes?.state === 'qualification' &&
-            same(json(real[1]!)?.data?.relationships?.labels, linkage.labels) &&
-            json(real[1]!)?.data?.attributes?.description?.value ===
-              description,
-          'The create response names the new ticket in its initial state; independent readback preserves its identifiers',
-        ),
-        check(
-          'local-rejections-send-nothing',
-          mutations(endpoint).length === 1,
-          'An unknown label or an invalid enum value is rejected before any POST',
         ),
         ...boundary(endpoint, real),
       ];

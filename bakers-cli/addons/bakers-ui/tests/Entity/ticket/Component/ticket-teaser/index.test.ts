@@ -23,7 +23,7 @@ const full: TicketDetailDocument = {
       claim_machine: 'cw-framework',
       assignee_name: 'Christian Wiedemann',
       assignee_initials: 'CW',
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
       priority: 2,
     },
   },
@@ -59,7 +59,7 @@ describe('ticketTeaserLines — the `teaser` field set', () => {
   it('does NOT render the board_card-only fields', () => {
     // `type` (workflow) and `priority` belong to the board_card display, not the
     // teaser one — the field sets are read off two different YAML files.
-    expect(lines.join('\n')).not.toContain('bb_feature');
+    expect(lines.join('\n')).not.toContain('bb_work');
   });
 
   it('renders no tab bar (it replaces the tabbed detail, not decorates it)', () => {
@@ -77,7 +77,7 @@ describe('ticketTeaserLines — the `board_card` field set', () => {
 
   it.each([
     ['state', 'coding'],
-    ['type', 'bb_feature'],
+    ['type', 'bb_work'],
     ['derived status', 'running'],
     ['priority', '2'],
     ['claim machine (the footer slot)', 'cw-framework'],

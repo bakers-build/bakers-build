@@ -42,9 +42,9 @@
      settings screen then places this view mode in `canvas.main` beneath its `page_header`, exactly as
      the ticket detail and the team screen do. Until then there is nothing to display.
 
-     Note what does NOT belong here: the Labels field group on the settings screen is
-     `bb_term.bb_labels`, a second entity administered on the same surface, not a field of the
-     workspace. It stays a sibling in `canvas.main`.
+     Note what does NOT belong here: the Types, Recipes and Labels tabs of the settings screen are
+     `bb_term.type`, `bb_term.recipe` and `bb_term.label`, entities administered on the same surface,
+     not fields of the workspace. It stays a sibling in `canvas.main`.
 
      THE WORKSPACE ENTITY DOES NOT EXIST IN CODE. No `BbWorkspace.php` exists at any ref of this
      repository — it is owned by BB-316 on a branch that is not on develop — and the screen renders

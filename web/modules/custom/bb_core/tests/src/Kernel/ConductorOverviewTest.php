@@ -975,8 +975,8 @@ final class ConductorOverviewTest extends KernelTestBase {
   private function ticketOn(ContentEntityInterface $project, string $title): BbTicketInterface {
     $ticket = $this->create('bb_ticket', [
       'title' => $title,
-      'state' => 'coding',
-      'workflow' => 'bb_feature',
+      'state' => 'working',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

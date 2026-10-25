@@ -126,7 +126,7 @@ final class RecipientProfileTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create($values + [
         'title' => 'Recipient profile ticket',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->projectId,
       ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -221,7 +221,7 @@ final class RecipientProfileTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create([
         'title' => 'Long recipient profile ticket',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->projectId,
         'assignee_user_id' => $user->id(),
       ]);

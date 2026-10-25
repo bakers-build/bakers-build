@@ -49,14 +49,14 @@ final class ReferencedTicketsFieldTest extends KernelTestBase {
     $project->save();
 
     $a = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'A',
       'state' => 'done',
       'project_id' => $project->id(),
     ]);
     $a->save();
     $b = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'B',
       'state' => 'done',
       'project_id' => $project->id(),

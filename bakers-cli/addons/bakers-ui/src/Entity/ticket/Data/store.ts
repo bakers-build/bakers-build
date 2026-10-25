@@ -35,8 +35,12 @@ const ticketKey = (id: string) => dataKey<TicketDetailDocument>(`ticket/${id}`);
  * `includes` (`ticket-detail.ts:23`) without joining this list. Every include
  * a screen's `includes` can name belongs here too.
  */
+// What the header box reads on every tab (labels, and BAKERS-17's type and
+// recipe), so every ticket view loads it whatever its own includes.
+const headerIncludes = ['labels', 'ticket_type', 'recipe'];
+
 const allIncludes = [
-  'labels',
+  ...headerIncludes,
   'parent_id',
   'blocked_by',
   'conductor_id',
@@ -117,7 +121,9 @@ export function ticketLoaded(
 ): boolean {
   const id = context.params?.ticketId;
   return (
-    !!id && (context.store?.has(ticketKey(id), [...includes, 'labels']) ?? true)
+    !!id &&
+    (context.store?.has(ticketKey(id), [...includes, ...headerIncludes]) ??
+      true)
   );
 }
 
@@ -141,7 +147,7 @@ export function loadTicketView(
   if (supplied && !store.get(key)) store.set(key, supplied, allIncludes);
   return store.load(
     key,
-    [...includes, 'labels'],
+    [...includes, ...headerIncludes],
     async (missing) => {
       if (!context.services) {
         if (supplied) return supplied;

@@ -152,7 +152,7 @@ const ticketDoc: TicketDetailDocument = {
       title: 'no top tabs on the ticket screen',
       state: 'coding',
       derived_status: 'idle',
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
       description:
         'The ticket description body, quoting Ticket-Agents and Runs on purpose.',
     },

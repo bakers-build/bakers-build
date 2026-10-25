@@ -53,7 +53,7 @@ const rich: TicketDetailDocument = {
   },
   included: [
     {
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       id: 'term-1',
       attributes: { name: 'boundary' },
     },
@@ -181,7 +181,7 @@ const markdown: TicketDetailDocument = {
   },
   included: [
     {
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       id: 'term-md',
       attributes: { name: '__x__' },
     },

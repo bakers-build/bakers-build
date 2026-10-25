@@ -12,14 +12,14 @@ props:
       cards:
         - identifier: GL-143
           title: Implement the lease renewal backoff
-    - name: coding
+    - name: working
       count: 1
       dot: running
       cards:
         - identifier: GL-138
           title: Refactor the workflow state machine
           status: running
-          state: coding
+          state: working
     - name: cancelled
       count: 0
 slots:

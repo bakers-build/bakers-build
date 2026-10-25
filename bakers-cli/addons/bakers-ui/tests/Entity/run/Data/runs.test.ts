@@ -200,7 +200,7 @@ it('ticketRunRows ignores non-run includes and yields [] when there are none', (
     data: { id: 't1', attributes: {}, relationships: {} },
     included: [
       { id: 'c1', type: 'bb_comment--bb_comment', attributes: {} },
-      { id: 'l1', type: 'bb_term--bb_labels', attributes: { name: 'x' } },
+      { id: 'l1', type: 'bb_term--label', attributes: { name: 'x' } },
     ],
   };
   expect(ticketRunRows(doc)).toEqual([]);

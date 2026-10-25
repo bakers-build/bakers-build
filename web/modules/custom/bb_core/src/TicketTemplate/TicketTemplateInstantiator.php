@@ -38,7 +38,7 @@ final class TicketTemplateInstantiator {
    * @var array<string>
    */
   public const OVERRIDABLE = [
-    'title', 'description', 'workflow', 'labels', 'project_id', 'conductor_id', 'target_state',
+    'title', 'description', 'workflow', 'ticket_type', 'recipe', 'labels', 'project_id', 'conductor_id', 'target_state',
   ];
 
   public function __construct(
@@ -205,6 +205,8 @@ final class TicketTemplateInstantiator {
       'title' => $template->getTitlePattern(),
       'description' => $template->getDescriptionPattern(),
       'workflow' => $template->getWorkflow(),
+      'ticket_type' => $template->get('ticket_type')->target_id,
+      'recipe' => $template->get('recipe')->target_id,
       'labels' => array_column($template->get('labels')->getValue(), 'target_id'),
       'project_id' => $template->get('project_id')->target_id,
       'conductor_id' => $template->get('conductor_id')->target_id,
@@ -215,6 +217,8 @@ final class TicketTemplateInstantiator {
       'title' => $this->renderPattern((string) $values['title']),
       'description' => ['value' => $this->renderPattern((string) $values['description']), 'format' => 'bb_rich'],
       'workflow' => $values['workflow'],
+      'ticket_type' => $values['ticket_type'],
+      'recipe' => $values['recipe'],
       'labels' => array_map(static fn ($id): array => ['target_id' => $id], array_values((array) $values['labels'])),
       'project_id' => $values['project_id'],
       'conductor_id' => $values['conductor_id'],

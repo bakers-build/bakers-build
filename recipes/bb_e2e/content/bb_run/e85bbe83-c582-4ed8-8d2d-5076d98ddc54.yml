@@ -23,7 +23,7 @@ default:
       value: done
   state_at_start:
     -
-      value: spec
+      value: plan
   started_at:
     -
       value: 1790000000

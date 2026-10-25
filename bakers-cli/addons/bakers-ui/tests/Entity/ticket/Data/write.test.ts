@@ -21,6 +21,8 @@ const emptyForm = {
   spent: '',
   parent: null as string | null,
   parentQuery: '',
+  ticketType: null as string | null,
+  recipe: null as string | null,
   labels: new Set<string>(),
   reviewers: new Set<string>(),
   reviewersLoaded: false,
@@ -48,6 +50,8 @@ it('AC-2/AC-3: calls update with the exact (type, id, body) triple', async () =>
           conductor_id: {
             data: { type: 'bb_conductor--bb_conductor', id: COND },
           },
+          ticket_type: { data: null },
+          recipe: { data: null },
           labels: { data: [] },
           parent_id: { data: null },
         },
@@ -72,6 +76,8 @@ it('AC-4: a cleared field goes over the wire as data: null', async () => {
     relationships: {
       assignee_user_id: { data: null },
       conductor_id: { data: null },
+      ticket_type: { data: null },
+      recipe: { data: null },
       labels: { data: [] },
       parent_id: { data: null },
     },
@@ -108,13 +114,17 @@ it('no write client is a NAMED error, never a silent no-op', async () => {
 const PROJECT = 'dddddddd-0000-0000-0000-000000000001';
 const LABEL = 'eeeeeeee-0000-0000-0000-000000000001';
 const PARENT = 'ffffffff-0000-0000-0000-000000000001';
+const TYPE = 'eeeeeeee-0000-0000-0000-000000000002';
+const RECIPE = 'eeeeeeee-0000-0000-0000-000000000003';
 
 const payload = (over: Partial<CreateFormPayload> = {}): CreateFormPayload => ({
   title: 'Add a direct create',
   description: 'line one\n\nline two',
-  workflow: { id: 'bb_feature', label: 'feature' },
+  workflow: { id: 'bb_work', label: 'work' },
   assignee: { id: USER, label: 'cw' },
   conductor: { id: COND, label: 'cw-framework' },
+  ticketType: { id: TYPE, label: 'feature' },
+  recipe: { id: RECIPE, label: 'drupal-feature' },
   labels: [{ id: LABEL, label: 'work:code' }],
   reviewers: [],
   parent: { id: PARENT, identifier: 'BB-1', title: 'Parent' },
@@ -126,7 +136,7 @@ it('AC-3/AC-4: the body carries the typed text verbatim and every picked value',
     attributes: {
       title: 'Add a direct create',
       description: { value: 'line one\n\nline two', format: 'bb_rich' },
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
     },
     relationships: {
       project_id: {
@@ -136,7 +146,9 @@ it('AC-3/AC-4: the body carries the typed text verbatim and every picked value',
       conductor_id: {
         data: { type: 'bb_conductor--bb_conductor', id: COND },
       },
-      labels: { data: [{ type: 'bb_term--bb_labels', id: LABEL }] },
+      ticket_type: { data: { type: 'bb_term--type', id: TYPE } },
+      recipe: { data: { type: 'bb_term--recipe', id: RECIPE } },
+      labels: { data: [{ type: 'bb_term--label', id: LABEL }] },
       parent_id: { data: { type: 'bb_ticket--bb_ticket', id: PARENT } },
     },
   });
@@ -173,6 +185,8 @@ it('D8: an unpicked relationship is OMITTED, never sent as null', () => {
     payload({
       assignee: null,
       conductor: null,
+      ticketType: null,
+      recipe: null,
       labels: [],
       reviewers: [],
       parent: null,

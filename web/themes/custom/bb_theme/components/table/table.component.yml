@@ -215,7 +215,7 @@ props:
                   title: Working
                   description: >-
                     A `status` cell: TRUE draws a filled disc (the row is in
-                    coding), FALSE or absent draws an empty dashed ring. The
+                    working), FALSE or absent draws an empty dashed ring. The
                     cell's `label` (the exact state) is its tooltip and
                     accessible name. The rail, not this glyph, carries occupancy
                     and review.

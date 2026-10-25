@@ -56,6 +56,9 @@ final class BbGroupScopeConstraint extends SymfonyConstraint {
     'bb_project' => 'teams',
     'bb_group' => 'workspace_id',
     'bb_team' => 'workspace_id',
+    // The rank policy pools `create bb_term` across workspaces, and
+    // BbWorkspaceScope only asks for membership, which a guest has.
+    'bb_term' => 'workspace_id',
   ];
 
   /**

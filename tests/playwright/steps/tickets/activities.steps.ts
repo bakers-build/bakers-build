@@ -46,15 +46,15 @@ When('the API collection row {int} is remembered as {string}', async ({ apiClien
     await apiClient.rememberCollectionRow(name, index);
 });
 
-When('the API client bounces ticket {string} between spec and qualification {int} times', async ({ apiClient }, name: string, count: number) => {
-    let next = 'spec';
+When('the API client bounces ticket {string} between plan and qualification {int} times', async ({ apiClient }, name: string, count: number) => {
+    let next = 'plan';
     for (let i = 0; i < count; i++) {
         const id = apiClient.fixtureId(`saved.${name}`);
         await apiClient.send('PATCH', `/jsonapi/bb_ticket/bb_ticket/${id}`, JSON.stringify({
             data: { type: 'bb_ticket--bb_ticket', id, attributes: { state: next } },
         }));
         expect(apiClient.response!.status(), await apiClient.response!.text()).toBe(200);
-        next = next === 'spec' ? 'qualification' : 'spec';
+        next = next === 'plan' ? 'qualification' : 'plan';
     }
 });
 

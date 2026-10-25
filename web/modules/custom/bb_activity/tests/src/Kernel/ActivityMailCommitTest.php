@@ -39,7 +39,7 @@ final class ActivityMailCommitTest extends ActivityMailKernelTestBase {
    */
   public function testTheMailWaitsForTheOutermostCommit(): void {
     $transaction = $this->container->get('database')->startTransaction();
-    $this->ticket('a')->set('state', 'spec')->save();
+    $this->ticket('a')->set('state', 'plan')->save();
     self::assertCount(0, $this->mailsTo($this->watcher), 'Nothing is sent while the write is open.');
     $transaction->commitOrRelease();
     unset($transaction);
@@ -51,7 +51,7 @@ final class ActivityMailCommitTest extends ActivityMailKernelTestBase {
    */
   public function testRolledBackWriteSendsNothing(): void {
     $transaction = $this->container->get('database')->startTransaction();
-    $this->ticket('a')->set('state', 'spec')->save();
+    $this->ticket('a')->set('state', 'plan')->save();
     $transaction->rollBack();
     unset($transaction);
     self::assertSame(0, $this->transport->attempts);
@@ -71,7 +71,7 @@ final class ActivityMailCommitTest extends ActivityMailKernelTestBase {
     $database = $this->container->get('database');
     $outer = $database->startTransaction();
     $inner = $database->startTransaction();
-    $this->ticket('a')->set('state', 'spec')->save();
+    $this->ticket('a')->set('state', 'plan')->save();
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_activity');
     $ids = $storage->getQuery()->accessCheck(FALSE)->condition('kind', 'test_ticket_event')->execute();
     self::assertCount(1, $ids);

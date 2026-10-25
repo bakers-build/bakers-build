@@ -3,6 +3,7 @@ _meta:
   entity_type: bb_ticket
   uuid: f1d0e5c2-9a47-4b31-8e6d-2c7a5b904f18
   depends:
+    db1a0000-0000-4000-8000-000000000021: bb_term
     dbc70000-0000-4000-8000-000000000002: bb_team
     262258a2-080f-4ab9-af1b-9028cef388da: bb_project
 default:
@@ -17,7 +18,10 @@ default:
       value: 4
   workflow:
     -
-      value: bb_bug
+      value: bb_work
+  ticket_type:
+    -
+      entity: db1a0000-0000-4000-8000-000000000021
   title:
     -
       value: 'assignee derivation E2E ticket'

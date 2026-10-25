@@ -24,6 +24,8 @@ final class TicketInspectorRows extends InspectorRows {
     'reviewers' => 'Reviewers',
     'conductor_id' => 'Conductor',
     'priority' => 'Priority',
+    'ticket_type' => 'Type',
+    'recipe' => 'Recipe',
     'labels' => 'Labels',
     'owner_user_id' => 'Created by',
     'time_estimate' => 'Estimate',
@@ -52,7 +54,7 @@ final class TicketInspectorRows extends InspectorRows {
    * Builds the rail's `items` array.
    *
    * @return array<string, array<string, mixed>>
-   *   Seventeen `list` items, in the order the scene fixes.
+   *   Nineteen `list` items, in the order the scene fixes.
    */
   public function build(BbTicketInterface $ticket): array {
     return $this->buildRows($ticket, self::FIELDS);
@@ -114,6 +116,8 @@ final class TicketInspectorRows extends InspectorRows {
       'reviewers',
       'conductor_id',
       'priority',
+      'ticket_type',
+      'recipe',
       'labels',
       'parent_id',
       'blocked_by',

@@ -36,7 +36,7 @@ props:
       cells:
         phase:
           kind: status
-          label: coding
+          label: working
           working: true
         identifier:
           kind: mono
@@ -51,7 +51,7 @@ props:
           emphasis: faint
         state:
           kind: badge
-          label: coding
+          label: working
           tone: neutral
         claim:
           kind: badge

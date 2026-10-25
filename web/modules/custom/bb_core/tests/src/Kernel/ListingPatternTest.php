@@ -114,14 +114,14 @@ final class ListingPatternTest extends KernelTestBase {
     ]);
     $this->createEntity('bb_ticket', [
       'title' => 'Open with a conductor',
-      'workflow' => 'bb_feature',
-      'state' => 'coding',
+      'workflow' => 'bb_work',
+      'state' => 'working',
       'project_id' => $project->id(),
       'conductor_id' => $conductor->id(),
     ]);
     $this->createEntity('bb_ticket', [
       'title' => 'Closed with a conductor',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'state' => 'done',
       'closed' => TRUE,
       'project_id' => $project->id(),
@@ -129,13 +129,13 @@ final class ListingPatternTest extends KernelTestBase {
     ]);
     $this->createEntity('bb_ticket', [
       'title' => 'Open one',
-      'workflow' => 'bb_feature',
-      'state' => 'coding',
+      'workflow' => 'bb_work',
+      'state' => 'working',
       'project_id' => $project->id(),
     ]);
     $this->createEntity('bb_ticket', [
       'title' => 'Closed one',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'state' => 'done',
       'closed' => TRUE,
       'project_id' => $project->id(),
@@ -173,7 +173,7 @@ final class ListingPatternTest extends KernelTestBase {
       // later rows and fields of the same request read the cache.
       $this->createEntity('bb_ticket', [
         'title' => 'Created after counting',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $project->id(),
       ]);
       self::assertSame($first[$project->id()], $counter->count('bb_ticket', 'project_id', [$project->id()])[$project->id()]);
@@ -216,8 +216,8 @@ final class ListingPatternTest extends KernelTestBase {
 
     $this->createEntity('bb_ticket', [
       'title' => 'Added after the first render',
-      'workflow' => 'bb_feature',
-      'state' => 'coding',
+      'workflow' => 'bb_work',
+      'state' => 'working',
       'project_id' => $project->id(),
     ]);
     $this->startNewRequest();

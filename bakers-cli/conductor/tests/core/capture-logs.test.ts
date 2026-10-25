@@ -35,7 +35,7 @@ function makeConfig(
     label: 'test label',
     conductor_id: 'bakers-test-conductor',
     project: 'bakers',
-    states: ['todo', 'coding'],
+    states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
     max_parallel: 2,
     poll_interval_ms: 5000,

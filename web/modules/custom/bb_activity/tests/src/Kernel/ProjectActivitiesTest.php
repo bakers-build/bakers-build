@@ -75,7 +75,7 @@ final class ProjectActivitiesTest extends KernelTestBase {
     $away = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'title' => 'Away',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $other->id(),
       ]);
     self::assertInstanceOf(BbTicketInterface::class, $away);
@@ -136,7 +136,7 @@ final class ProjectActivitiesTest extends KernelTestBase {
       $away = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
         ->create([
           'title' => 'Away ' . $i,
-          'workflow' => 'bb_feature',
+          'workflow' => 'bb_work',
           'project_id' => $other->id(),
         ]);
       self::assertInstanceOf(BbTicketInterface::class, $away);
@@ -186,7 +186,7 @@ final class ProjectActivitiesTest extends KernelTestBase {
   }
 
   /**
-   * A classified feature ticket in qualification.
+   * A classified work ticket in qualification.
    *
    * @param string $title
    *   Ticket title.
@@ -194,7 +194,7 @@ final class ProjectActivitiesTest extends KernelTestBase {
    *   Extra field values.
    */
   private function workTicket(string $title, array $values = []): BbTicketInterface {
-    return $this->ticket($title, $values + ['workflow' => 'bb_feature']);
+    return $this->ticket($title, $values + ['workflow' => 'bb_work']);
   }
 
   /**

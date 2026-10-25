@@ -1,11 +1,11 @@
 # bb_ticket_templates
 
 Example `bb_ticket_template` definitions. Today: **Drupal update**
-(`bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30`), a `bb_chore` with label `work:code` whose
+(`bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30`), a `bb_work` ticket of type `chore` whose
 description points to the `keytec-drupal-update` skill. It ships **disabled**; its monthly
 schedule is a trigger you add on the template (see *Monthly trigger* below).
 
-The recipe applies `bb_seed` for the `work:*` labels. It creates **no template**, because a
+The recipe applies `bb_seed` for the `chore` type term. It creates **no template**, because a
 template belongs to a project and only the target workspace knows it. The definition lives in
 `templates/<uuid>.yml`, outside `content/`, so applying the recipe never loads its placeholders.
 
@@ -22,8 +22,8 @@ Run as a user who may create `bb_ticket_template` in the project (workspace lead
 
 2. Only on `404`: create it with that UUID. Take the field values from
    `templates/bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30.yml`, substitute the project (its UUID in the
-   target workspace), the owner and the `work:code` label (the target workspace's own term;
-   a label of another workspace fails validation), keep `enabled: false`, and POST the JSON:API document (with
+   target workspace), the owner and the `chore` type term (`ticket_type`: the target workspace's own term;
+   a term of another workspace fails validation), keep `enabled: false`, and POST the JSON:API document (with
    `data.id` set to the UUID) from a file:
 
    ```bash

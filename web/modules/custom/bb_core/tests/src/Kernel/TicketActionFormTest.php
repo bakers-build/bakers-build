@@ -83,20 +83,19 @@ final class TicketActionFormTest extends KernelTestBase {
   }
 
   /**
-   * States of the five ticket workflows, open or terminal.
+   * States of the three ticket workflows, open or terminal.
    *
    * @return array<string, array{string, string, bool}>
    *   Workflow, state and whether the ticket can still be cancelled.
    */
   public static function everyState(): array {
     return [
-      'feature qualification' => ['bb_feature', 'qualification', TRUE],
-      'feature coding' => ['bb_feature', 'coding', TRUE],
-      'feature review' => ['bb_feature', 'review', TRUE],
-      'feature done' => ['bb_feature', 'done', FALSE],
-      'feature cancelled' => ['bb_feature', 'cancelled', FALSE],
-      'bug diagnose' => ['bb_bug', 'diagnose', TRUE],
-      'chore coding' => ['bb_chore', 'coding', TRUE],
+      'work qualification' => ['bb_work', 'qualification', TRUE],
+      'work plan' => ['bb_work', 'plan', TRUE],
+      'work working' => ['bb_work', 'working', TRUE],
+      'work review' => ['bb_work', 'review', TRUE],
+      'work done' => ['bb_work', 'done', FALSE],
+      'work cancelled' => ['bb_work', 'cancelled', FALSE],
       'deployment pre' => ['bb_deployment', 'pre_deployment', TRUE],
       'deployment post' => ['bb_deployment', 'post_deployment', TRUE],
       'verification summary' => ['bb_verification', 'summary', TRUE],
@@ -108,8 +107,8 @@ final class TicketActionFormTest extends KernelTestBase {
    * Settings offer no workflow transition at all: the AI drives the workflow.
    */
   public function testSettingsOfferNoTransition(): void {
-    foreach (['qualification', 'spec', 'coding', 'review'] as $state) {
-      $form = $this->settingsForm($this->ticket('bb_feature', $state));
+    foreach (['qualification', 'plan', 'working', 'review'] as $state) {
+      $form = $this->settingsForm($this->ticket('bb_work', $state));
       $transitions = preg_grep('/^bb_transition_/', array_keys($this->buttonLabels($form)));
       self::assertSame([], $transitions, $state);
     }
@@ -119,7 +118,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * Update access without state edit access offers no Cancel.
    */
   public function testNoTransitionWithoutStateEditAccess(): void {
-    $ticket = $this->ticket('bb_bug', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $this->container->get('state')->set('bb_property_access_test.denied', ['edit' => ['state']]);
 
     self::assertFalse(TicketInterventions::mayCancelTicket($ticket));
@@ -131,10 +130,10 @@ final class TicketActionFormTest extends KernelTestBase {
    *
    * A write sets the target state before validating it. Freezing on that
    * in-memory state would forbid `state` edits and let the field-access
-   * filter swallow the violation, so coding → done on a feature would pass.
+   * filter swallow the violation, so plan → done would pass.
    */
   public function testAnIllegalTransitionIsStillRejected(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'plan');
     $ticket->set('state', 'done');
     self::assertTrue($ticket->get('state')->access('edit'), 'An unsaved terminal state freezes nothing.');
     $violations = $ticket->validate()->filterByFieldAccess();
@@ -145,7 +144,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * Settings of a closed ticket offer no editable field and no transition.
    */
   public function testSettingsOfClosedTicketsAreReadOnly(): void {
-    $ticket = $this->ticket('bb_feature', 'done');
+    $ticket = $this->ticket('bb_work', 'done');
     $form = $this->settingsForm($ticket);
     foreach (['title', 'description', 'env_vars'] as $field) {
       self::assertArrayHasKey($field, $form, $field . ' is on the form.');
@@ -158,7 +157,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * Settings keep the description compact: no format help or guidelines.
    */
   public function testSettingsHideTheDescriptionFormatHelp(): void {
-    $format = $this->settingsForm($this->ticket('bb_feature', 'coding'))['description']['widget'][0]['format'];
+    $format = $this->settingsForm($this->ticket('bb_work', 'working'))['description']['widget'][0]['format'];
     self::assertFalse($format['help']['#access']);
     self::assertFalse($format['guidelines']['#access']);
   }
@@ -167,11 +166,11 @@ final class TicketActionFormTest extends KernelTestBase {
    * Opening the confirmation writes nothing; confirming cancels the ticket.
    */
   public function testCancelTicketIsConfirmed(): void {
-    $ticket = $this->ticket('bb_feature', 'spec');
+    $ticket = $this->ticket('bb_work', 'plan');
     $this->actionForm($ticket);
-    self::assertSame('spec', $this->reload($ticket)->getState()->getId(), 'The confirmation page writes nothing.');
+    self::assertSame('plan', $this->reload($ticket)->getState()->getId(), 'The confirmation page writes nothing.');
 
-    $this->submit('action', $ticket, $this->postedState('bb_confirm', 'spec'));
+    $this->submit('action', $ticket, $this->postedState('bb_confirm', 'plan'));
     self::assertSame('cancelled', $this->reload($ticket)->getState()->getId());
   }
 
@@ -179,9 +178,9 @@ final class TicketActionFormTest extends KernelTestBase {
    * A confirmation rendered in another state writes nothing.
    */
   public function testStaleConfirmationWritesNothing(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
-    $this->submit('action', $ticket, $this->postedState('bb_confirm', 'spec'));
-    self::assertSame('coding', $this->reload($ticket)->getState()->getId());
+    $ticket = $this->ticket('bb_work', 'working');
+    $this->submit('action', $ticket, $this->postedState('bb_confirm', 'plan'));
+    self::assertSame('working', $this->reload($ticket)->getState()->getId());
     self::assertNotEmpty($this->container->get('messenger')->messagesByType('error'));
   }
 
@@ -189,19 +188,19 @@ final class TicketActionFormTest extends KernelTestBase {
    * A button that is not on the page never falls back to another action.
    */
   public function testAnAbsentButtonDoesNotTriggerTheFirstOne(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     // A forged or stale button name; Drupal would fall back to the first one.
-    $this->submit('action', $ticket, $this->postedState('bb_transition_finish', 'coding'));
-    self::assertSame('coding', $this->reload($ticket)->getState()->getId());
+    $this->submit('action', $ticket, $this->postedState('bb_transition_finish', 'working'));
+    self::assertSame('working', $this->reload($ticket)->getState()->getId());
   }
 
   /**
    * Cancel run changes only the named run and leaves the ticket state.
    */
   public function testCancelRunCancelsOnlyThatRun(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $run = $this->createRun($ticket, 'running');
-    $other = $this->createRun($this->ticket('bb_feature', 'coding'), 'running');
+    $other = $this->createRun($this->ticket('bb_work', 'working'), 'running');
 
     $this->askAboutRun($run);
     $form = $this->actionForm($ticket);
@@ -215,14 +214,14 @@ final class TicketActionFormTest extends KernelTestBase {
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
     self::assertSame('cancelled', $this->reloadRun($run)->getRunState());
     self::assertSame('running', $this->reloadRun($other)->getRunState());
-    self::assertSame('coding', $this->reload($ticket)->getState()->getId(), 'Cancel run leaves the ticket state.');
+    self::assertSame('working', $this->reload($ticket)->getState()->getId(), 'Cancel run leaves the ticket state.');
   }
 
   /**
    * A confirmation for a run that ended never cancels its replacement.
    */
   public function testReplacedRunIsNotCancelled(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $old = $this->createRun($ticket, 'claimed');
     $this->askAboutRun($old);
     $state = $old->get('state')->first();
@@ -234,27 +233,27 @@ final class TicketActionFormTest extends KernelTestBase {
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
     self::assertSame('claimed', $this->reloadRun($replacement)->getRunState());
     self::assertSame('expired', $this->reloadRun($old)->getRunState());
-    self::assertSame('coding', $this->reload($ticket)->getState()->getId(), 'Nor does it fall back to cancelling the ticket.');
+    self::assertSame('working', $this->reload($ticket)->getState()->getId(), 'Nor does it fall back to cancelling the ticket.');
   }
 
   /**
    * Another ticket's run cannot be cancelled through this ticket.
    */
   public function testForeignRunIsRefused(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
-    $foreign = $this->createRun($this->ticket('bb_feature', 'coding'), 'running');
+    $ticket = $this->ticket('bb_work', 'working');
+    $foreign = $this->createRun($this->ticket('bb_work', 'working'), 'running');
     $this->askAboutRun($foreign);
     self::assertFalse(TicketInterventions::mayCancelRun($foreign, $ticket));
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
     self::assertSame('running', $this->reloadRun($foreign)->getRunState());
-    self::assertSame('coding', $this->reload($ticket)->getState()->getId());
+    self::assertSame('working', $this->reload($ticket)->getState()->getId());
   }
 
   /**
    * An account without ticket or run update access cancels nothing.
    */
   public function testNoCancelWithoutUpdateAccess(): void {
-    $ticket = $this->ticket('bb_bug', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $run = $this->createRun($ticket, 'running');
     $viewer = $this->createUser();
     self::assertNotFalse($viewer);
@@ -264,16 +263,16 @@ final class TicketActionFormTest extends KernelTestBase {
     self::assertFalse(TicketInterventions::mayCancelRun($this->reloadRun($run), $this->reload($ticket)));
     $this->askAboutRun($run);
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
-    $this->submit('action', $ticket, $this->postedState('bb_confirm', 'coding'));
+    $this->submit('action', $ticket, $this->postedState('bb_confirm', 'working'));
     self::assertSame('running', $this->reloadRun($run)->getRunState());
-    self::assertSame('coding', $this->reload($ticket)->getState()->getId());
+    self::assertSame('working', $this->reload($ticket)->getState()->getId());
   }
 
   /**
    * Only claimed and running runs can be cancelled.
    */
   public function testOnlyActiveRunsCanBeCancelled(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     self::assertTrue(TicketInterventions::mayCancelRun($this->createRun($ticket, 'claimed'), $ticket));
     self::assertTrue(TicketInterventions::mayCancelRun($this->createRun($ticket, 'running'), $ticket));
     foreach (['done', 'failed', 'expired', 'cancelled'] as $state) {
@@ -300,7 +299,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * An open ticket with update access offers freeze.
    */
   public function testOpenTicketOffersFreeze(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     self::assertTrue(TicketInterventions::mayFreeze($ticket));
     self::assertFalse(TicketInterventions::mayUnfreeze($ticket));
   }
@@ -309,7 +308,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * A frozen ticket offers unfreeze instead of freeze.
    */
   public function testFrozenTicketOffersUnfreeze(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $ticket->setFrozen(TRUE)->save();
     $ticket = $this->reload($ticket);
     self::assertFalse(TicketInterventions::mayFreeze($ticket));
@@ -320,7 +319,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * Opening the freeze confirmation writes nothing; confirming freezes it.
    */
   public function testFreezeTicketIsConfirmed(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $this->askFreeze(TRUE);
     $this->actionForm($ticket);
     self::assertFalse($this->reload($ticket)->isFrozen(), 'The confirmation page writes nothing.');
@@ -333,7 +332,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * Confirming unfreeze clears frozen.
    */
   public function testUnfreezeTicketIsConfirmed(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $ticket->setFrozen(TRUE)->save();
     $this->askFreeze(FALSE);
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
@@ -344,7 +343,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * Two identical freeze posts leave the ticket frozen.
    */
   public function testFreezeIsIdempotent(): void {
-    $ticket = $this->ticket('bb_feature', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $this->askFreeze(TRUE);
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
@@ -355,7 +354,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * An account without ticket update access freezes nothing.
    */
   public function testNoFreezeWithoutUpdateAccess(): void {
-    $ticket = $this->ticket('bb_bug', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
     $viewer = $this->createUser();
     self::assertNotFalse($viewer);
     $this->setCurrentUser($viewer);
@@ -399,7 +398,7 @@ final class TicketActionFormTest extends KernelTestBase {
    * Parent and blocked-by are real, enabled widgets on the built form.
    */
   public function testParentAndBlockedByAreEditableOnTheSettingsForm(): void {
-    $ticket = $this->ticket('bb_bug', 'coding');
+    $ticket = $this->ticket('bb_work', 'working');
 
     $form = $this->settingsForm($ticket);
 

@@ -3,6 +3,6 @@ name: Blocked
 props:
   identifier: BOARD-04
   title: Waiting for a dependency
-  state: spec
+  state: plan
   status: idle
   blocked: true

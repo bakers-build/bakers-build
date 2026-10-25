@@ -158,27 +158,27 @@ describe('ticket chrome helpers', () => {
         [
           {
             id: 'l-1',
-            type: 'bb_term--bb_labels',
+            type: 'bb_term--label',
             attributes: { name: 'work:code' },
           },
           {
             id: 'l-2',
-            type: 'bb_term--bb_labels',
+            type: 'bb_term--label',
             attributes: { name: 'priority:high' },
           },
           {
             id: 'l-3',
-            type: 'bb_term--bb_labels',
+            type: 'bb_term--label',
             attributes: { name: 'area:tui' },
           },
           {
             id: 'l-4',
-            type: 'bb_term--bb_labels',
+            type: 'bb_term--label',
             attributes: { name: 'needs:review' },
           },
           {
             id: 'l-5',
-            type: 'bb_term--bb_labels',
+            type: 'bb_term--label',
             attributes: { name: 'blocked' },
           },
         ],

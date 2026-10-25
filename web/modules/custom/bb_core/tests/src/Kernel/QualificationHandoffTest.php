@@ -73,43 +73,43 @@ final class QualificationHandoffTest extends KernelTestBase {
     $this->assertTrue($ticket->get('state')->isEmpty());
 
     // Qualification hand-off: classify the ticket.
-    $ticket->set('workflow', 'bb_bug');
-    $ticket->set('state', 'diagnose');
+    $ticket->set('workflow', 'bb_work');
+    $ticket->set('state', 'plan');
     $ticket->save();
 
     // Reload from storage to confirm persistence.
     $storage->resetCache([$ticket->id()]);
     $reloaded = $storage->load($ticket->id());
     $this->assertInstanceOf(BbTicketInterface::class, $reloaded);
-    $this->assertSame('bb_bug', (string) $reloaded->get('workflow')->value);
-    $this->assertSame('diagnose', $reloaded->get('state')->value);
+    $this->assertSame('bb_work', (string) $reloaded->get('workflow')->value);
+    $this->assertSame('plan', $reloaded->get('state')->value);
   }
 
   /**
-   * Verifies that the bb_feature workflow can also be assigned on hand-off.
+   * Verifies that a non-work workflow can also be assigned on hand-off.
    *
-   * Ensures that qualification is not limited to bb_bug — any registered
+   * Ensures that qualification is not limited to bb_work — any registered
    * workflow can be initially assigned.
    */
-  public function testHandoffWorksForFeatureWorkflow(): void {
+  public function testHandoffWorksForVerificationWorkflow(): void {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
 
     $ticket = $storage->create([
       'identifier' => 'GL-H2',
-      'title' => 'Feature request',
+      'title' => 'Verification request',
     ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
 
-    $ticket->set('workflow', 'bb_feature');
-    $ticket->set('state', 'spec');
+    $ticket->set('workflow', 'bb_verification');
+    $ticket->set('state', 'verifying');
     $ticket->save();
 
     $storage->resetCache([$ticket->id()]);
     $reloaded = $storage->load($ticket->id());
     $this->assertInstanceOf(BbTicketInterface::class, $reloaded);
-    $this->assertSame('bb_feature', (string) $reloaded->get('workflow')->value);
-    $this->assertSame('spec', $reloaded->get('state')->value);
+    $this->assertSame('bb_verification', (string) $reloaded->get('workflow')->value);
+    $this->assertSame('verifying', $reloaded->get('state')->value);
   }
 
 }

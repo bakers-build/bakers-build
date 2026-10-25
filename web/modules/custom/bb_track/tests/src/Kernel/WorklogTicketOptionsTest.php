@@ -36,7 +36,7 @@ final class WorklogTicketOptionsTest extends WorkTimeTestBase {
       $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
         'title' => sprintf('Search target %02d', $n),
         'project_id' => $this->project->id(),
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
       ])->save();
     }
     $first_page = $this->labels(['project' => (string) $this->project->id()]);

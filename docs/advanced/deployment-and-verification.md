@@ -20,7 +20,7 @@ A person creates it with the target environment set.
 
 | State | Owner | What happens | Next |
 |---|---|---|---|
-| `verifying` | `verify-on-environment` | re-verifies the subject and its linked tickets on the environment; files a `bb_bug` per failed check | `summary` |
+| `verifying` | `verify-on-environment` | re-verifies the subject and its linked tickets on the environment; files a ticket of type `bug` per failed check | `summary` |
 | `summary` | `summarize-verification` | publishes the pass or fail per ticket; you confirm closing | `done` |
 
 ## Blockers, parents and branches

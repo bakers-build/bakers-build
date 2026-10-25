@@ -311,7 +311,7 @@ final class BbTicketReviewsSourceTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create([
         'title' => 'review-source',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'state' => 'todo',
         'project_id' => $project->id(),
         'owner_user_id' => $owner->id(),

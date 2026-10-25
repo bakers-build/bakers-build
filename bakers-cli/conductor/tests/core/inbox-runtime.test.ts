@@ -67,7 +67,7 @@ async function demoInbox(
 beforeEach(() => {
   worktree = mkdtempSync(join(tmpdir(), 'bakers-inbox-v2-'));
   remote = new FakeBbRemote({
-    tickets: { 't-1': { identifier: 'BB-1', title: 'T', state: 'coding' } },
+    tickets: { 't-1': { identifier: 'BB-1', title: 'T', state: 'working' } },
   });
 });
 

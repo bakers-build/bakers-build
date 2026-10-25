@@ -8,7 +8,9 @@ dependencies:
     - display_builder
   enforced:
     config:
-      - bb_core.bb_vocabulary.bb_labels
+      - bb_core.bb_vocabulary.label
+      - bb_core.bb_vocabulary.recipe
+      - bb_core.bb_vocabulary.type
 third_party_settings:
   display_builder:
     profile: default

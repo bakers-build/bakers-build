@@ -42,7 +42,7 @@ props:
         identifier: { kind: mono, value: BB-142 }
         title: { kind: text, value: Lease expired, nobody assigned }
         project: { kind: text, value: bakers, emphasis: faint }
-        state: { kind: badge, label: coding, tone: neutral }
+        state: { kind: badge, label: working, tone: neutral }
         claim: { kind: text, value: '—', emphasis: faint }
         status: { kind: badge, label: needs_input, tone: wait, dot: true }
         age: { kind: text, value: 3h, emphasis: faint }
@@ -54,7 +54,7 @@ props:
         identifier: { kind: mono, value: BB-110 }
         title: { kind: text, value: Ship data-model schema for the ticket bundle }
         project: { kind: text, value: bakers, emphasis: faint }
-        state: { kind: badge, label: coding, tone: neutral }
+        state: { kind: badge, label: working, tone: neutral }
         claim: { kind: badge, label: srv01-bakers, tone: lease, mono: true, icon: lock }
         status: { kind: badge, label: running, tone: running, dot: true, suffix: 12m }
         age: { kind: text, value: 12m, emphasis: faint }

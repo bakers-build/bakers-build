@@ -34,7 +34,7 @@ final class WeekSheetTest extends WorkTimeTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Grid ticket',
       'project_id' => $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     $ticket->save();
     assert($ticket instanceof BbTicketInterface);

@@ -124,7 +124,7 @@ Observed CLI contract, as modeled by the simulator:
 | Lost response | Exit 5, `E_HTTP`, `details.status` 0: the outcome is uncertain, not rejected |
 | Unknown label name | Exit 6, `E_PLUGIN` from `bakers-name-refs` |
 
-Labels are `bb_term` with bundle `bb_labels`. `--label_names` resolves to `labels` linkage and never reaches the wire as an attribute. A PATCH replaces a whole field, so a body correction restates `body.format`. `--format md` drops trailing newlines from multi-line values; verify exact text with JSON. The CLI retries a read after a network failure but sends a write once, so a lost response never submits a create twice; `lost-response-applied` checks that.
+Labels are `bb_term` with bundle `label`. `--label_names` resolves to `labels` linkage and never reaches the wire as an attribute. A PATCH replaces a whole field, so a body correction restates `body.format`. `--format md` drops trailing newlines from multi-line values; verify exact text with JSON. The CLI retries a read after a network failure but sends a write once, so a lost response never submits a create twice; `lost-response-applied` checks that.
 
 | Boundary | Proves | Does not prove |
 |---|---|---|

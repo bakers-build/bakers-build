@@ -2,7 +2,7 @@
   /* The epics view mode is the PROJECT OVERVIEW INSPECTOR EPICS LIST.
 
      The project `full` mapping places this mapping in the trailing inspector,
-     below Properties. The list is this project's `bb_epic` tickets as the normal
+     below Properties. The list is this project's tickets whose type term is `epic`, as the normal
      ticket list row. An empty list uses `empty-state`
      (“No epics in this project.”). The inspector zone heading names the face,
      so this mapping emits no extra heading. */
@@ -13,7 +13,7 @@
         {
           "identifier": "BB-90",
           "title": "Ticket detail overhaul",
-          "state": "active",
+          "state": "working",
           "created": "2 weeks ago",
           "assignee_user_id": "1",
           "priority": 2,
@@ -22,7 +22,7 @@
         {
           "identifier": "BB-91",
           "title": "First-time setup",
-          "state": "spec",
+          "state": "plan",
           "created": "1 month ago",
           "assignee_user_id": "2",
           "priority": 2,
@@ -56,10 +56,10 @@
           $prio := $t.priority ? "p" & $string($t.priority) : undefined;
           {
             "url": $t.url,
-            "accent": $t.state = "active" ? "running" : "idle",
+            "accent": $t.state = "working" ? "running" : "idle",
             "cells": $merge([
               {
-                "state": { "kind": "status", "label": $t.state, "working": $t.state = "active" },
+                "state": { "kind": "status", "label": $t.state, "working": $t.state = "working" },
                 "title": { "kind": "link", "value": $t.title, "url": $t.url },
                 "identifier": { "kind": "link", "value": $t.identifier, "url": $t.url, "mono": true },
                 "created": { "kind": "rendered", "markup": $t.created },

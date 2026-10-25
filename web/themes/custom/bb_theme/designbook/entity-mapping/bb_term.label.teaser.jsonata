@@ -3,11 +3,10 @@
      "with the labels I see badges rather than the rows." So no row component exists for a term at
      all.
 
-     ONE VOCABULARY, NOT TWO. This mapping and the labels screen used to carry `bb_capability_tags`
-     beside `bb_labels`; that bundle is RETIRED BY DECISION at BB-338's second coding gate, its
-     mapping deleted and its entry in `data-model.yml` replaced by a note recording the retirement.
-     Removing the actual Drupal bundle is `config/sync` + recipe work and is deliberately not part of
-     this ticket (C11), so the config object and the fixture file are both left standing.
+     THREE VOCABULARIES SINCE BAKERS-17: `type`, `recipe` and `label` (the old labels vocabulary id was
+     renamed to `label`; capability tags are gone). Every one of them renders as this same badge.
+     Renamed by hand from the old bundle's name: the `design-entity` workflow regenerates a mapping
+     as a plain field-map and cannot carry the constant `tone`/`list_item` props below.
 
      THERE IS NO VARIANT ANY MORE, AND THAT ANSWERED THE QUESTION THIS PARAGRAPH USED TO ARGUE.
      `badge` carried four variants — `state`, `token`, `label`, `priority` — and this mapping picked
@@ -43,10 +42,9 @@
      than left promising three fields. Whoever gives these pickers an endpoint owns the term edit
      surface along with it.
 
-     The `designbook/sync/` generator bound to `core.entity_view_display.bb_term.bb_labels.full`
-     is left exactly as it is, and that is a decision rather than an oversight: repairing it is a
-     Drupal config change, which this ticket does not make. It is now a generator for a view mode
-     this mapping no longer claims. */
+     The `designbook/sync/` generator for the term `full` display is left as it is, and that is a
+     decision rather than an oversight: repairing it is a Drupal config change, which this ticket
+     does not make. It is a generator for a view mode this mapping no longer claims. */
   [
     {
       "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:badge",

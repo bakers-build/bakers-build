@@ -8,11 +8,11 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * BB-469 D3/AC-4: coding can route back to diagnose without re-qualifying.
+ * BB-469 D3/AC-4: working can route back to plan without re-qualifying.
  *
- * Recovering from a missing or invalid diagnosis used to force `requalify`
- * (`coding → qualification`), dropping an intact qualification handoff to
- * recover a diagnosis alone. `to_diagnose` adds the missing edge; `requalify`
+ * Recovering from a missing or invalid plan used to force `requalify`
+ * (`working → qualification`), dropping an intact qualification handoff to
+ * recover a plan alone. `to_plan` adds the missing edge; `requalify`
  * stays available for the case that genuinely needs it.
  *
  * @group bb_core
@@ -22,10 +22,10 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 final class TicketCodingRouteBackTest extends ClaimKernelTestBase {
 
   /**
-   * AC-4: coding routes back to diagnose without re-qualifying the ticket.
+   * AC-4: working routes back to plan without re-qualifying the ticket.
    */
-  public function testCodingCanRouteBackToDiagnose(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+  public function testWorkingCanRouteBackToPlan(): void {
+    $ticket = $this->seedAssignedTicket(state: 'working');
 
     $transitions = array_keys($ticket->getState()->getTransitions());
     $targets = [];
@@ -34,24 +34,24 @@ final class TicketCodingRouteBackTest extends ClaimKernelTestBase {
     }
 
     self::assertContains(
-      'diagnose',
+      'plan',
       $targets,
-      'coding must offer a route back to diagnose; available: ' . implode(', ', $transitions),
+      'working must offer a route back to plan; available: ' . implode(', ', $transitions),
     );
   }
 
   /**
-   * AC-4: the new route back to diagnose does not drop `requalify`.
+   * AC-4: the route back to plan does not drop `requalify`.
    */
-  public function testCodingStillOffersRequalify(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+  public function testWorkingStillOffersRequalify(): void {
+    $ticket = $this->seedAssignedTicket(state: 'working');
 
     $transitions = array_keys($ticket->getState()->getTransitions());
 
     self::assertContains(
       'requalify',
       $transitions,
-      'the new to_diagnose edge must be additive, not a replacement for requalify.',
+      'the to_plan edge must be additive, not a replacement for requalify.',
     );
   }
 

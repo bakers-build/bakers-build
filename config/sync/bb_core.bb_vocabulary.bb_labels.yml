@@ -1,9 +1,0 @@
-uuid: c8dd7951-0a14-4462-b785-addbfdee598d
-langcode: en
-status: true
-dependencies: {  }
-_core:
-  default_config_hash: RWTYcHzPbGf3v4xz-EhJRTUJOzPOkt5AUy2dGmHAIo0
-id: bb_labels
-label: 'bakers.build labels'
-description: ''

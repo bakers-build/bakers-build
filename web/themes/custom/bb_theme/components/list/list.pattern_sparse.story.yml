@@ -32,7 +32,7 @@ props:
           dot: true
         state_at_start:
           kind: mono
-          value: coding
+          value: working
         conductor_id:
           kind: text
           value: cw-framework
@@ -80,7 +80,7 @@ props:
           dot: true
         state_at_start:
           kind: mono
-          value: spec
+          value: plan
         started_at:
           kind: text
           value: 2026-10-01 08:00

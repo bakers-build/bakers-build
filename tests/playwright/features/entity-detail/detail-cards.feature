@@ -157,32 +157,32 @@ Feature: Entity detail pages save each card on its own
     Given I edit a disposable detail world
     And the world has a second machine with its own conductor
     And a ticket of the world project moved on without a run
-    And the ticket was claimed at "spec" by a run of the first conductor
+    And the ticket was claimed at "plan" by a run of the first conductor
     When I open the second machine detail page
     Then the Activities say "No activity yet."
-    Given a run of the second conductor failed at "spec"
+    Given a run of the second conductor failed at "plan"
     And the ticket is assigned to the second conductor
     When I refresh the Activities
-    Then the Activities list the ticket "run failed in spec"
+    Then the Activities list the ticket "run failed in plan"
     And the document was not reloaded
-    And the Activities do not list the ticket "started work in spec"
-    And the Activities do not list the ticket "qualification → spec"
+    And the Activities do not list the ticket "started work in plan"
+    And the Activities do not list the ticket "qualification → plan"
     When I open the second conductor detail page
-    Then the Activities list the ticket "run failed in spec"
-    And the Activities do not list the ticket "started work in spec"
-    And the Activities do not list the ticket "qualification → spec"
+    Then the Activities list the ticket "run failed in plan"
+    And the Activities do not list the ticket "started work in plan"
+    And the Activities do not list the ticket "qualification → plan"
     When I open the machine detail page
-    Then the Activities list the ticket "started work in spec"
-    And the Activities do not list the ticket "run failed in spec"
-    And the Activities do not list the ticket "qualification → spec"
+    Then the Activities list the ticket "started work in plan"
+    And the Activities do not list the ticket "run failed in plan"
+    And the Activities do not list the ticket "qualification → plan"
     When I open the conductor detail page
-    Then the Activities list the ticket "started work in spec"
-    And the Activities do not list the ticket "run failed in spec"
-    And the Activities do not list the ticket "qualification → spec"
+    Then the Activities list the ticket "started work in plan"
+    And the Activities do not list the ticket "run failed in plan"
+    And the Activities do not list the ticket "qualification → plan"
     When I open the project detail page
-    Then the Activities list the ticket "started work in spec"
-    And the Activities list the ticket "run failed in spec"
-    And the Activities list the ticket "qualification → spec"
+    Then the Activities list the ticket "started work in plan"
+    And the Activities list the ticket "run failed in plan"
+    And the Activities list the ticket "qualification → plan"
 
   # Without JavaScript a Save is a native POST of that one card; unsent input
   # in other cards is not promised to survive the page change.

@@ -37,7 +37,7 @@ const opts: CreateFormOptions = {
     { id: 'l1', label: 'bug' },
     { id: 'l2', label: 'ui' },
   ],
-  workflows: [{ id: 'bb_feature', label: 'feature' }],
+  workflows: [{ id: 'bb_work', label: 'work' }],
 };
 
 it('renders every field with the active marker and current values', () => {
@@ -48,7 +48,7 @@ it('renders every field with the active marker and current values', () => {
   expect(lines).toMatch(/Assignee:\s+< cw >/);
   expect(lines).toMatch(/Reviewers:/);
   expect(lines).toMatch(/Conductor:\s+< cw-framework >/);
-  expect(lines).toMatch(/Workflow:\s+< feature >/);
+  expect(lines).toMatch(/Workflow:\s+< work >/);
   expect(lines).toMatch(/\[ Create with agent \]/);
   expect(lines).toMatch(/\[ Create directly \]/);
   expect(lines).toMatch(/\[ \] bug/);

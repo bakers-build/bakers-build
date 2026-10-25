@@ -86,7 +86,7 @@ function makeConfig(configPath: string): ConductorFileConfig {
     label: 'bb-237-bootstrap-dispatch',
     machine_id: 'bb-237-int-node',
     project: 'bb-237-int',
-    states: ['coding'],
+    states: ['working'],
     prompt: '',
     max_parallel: 1,
     poll_interval_ms: 1000,
@@ -186,7 +186,7 @@ let nextRunId = 1;
  * the marker token. The private daemon lives for the whole `describe`, so its
  * `tab list` / `pane list` are GLOBAL — two fixtures sharing an identifier +
  * state + run id would produce the byte-identical tab label
- * `BB-237I · coding #1`, and the failure case's "the run still started"
+ * `BB-237I · working #1`, and the failure case's "the run still started"
  * assertion would then be satisfied by the SUCCESS case's leftover tab. That is
  * not hypothetical: it made this file survive an `if (!provisioning.ok) return;`
  * inserted before `startRun` — the exact regression AC-6 forbids. Uniqueness is
@@ -200,7 +200,7 @@ async function makeFixture(slug: string, hook: string): Promise<Fixture> {
   const runId = nextRunId++;
   const runUuid = `r-${slug}`;
   const branch = `bakers/bb-237-${slug}`;
-  const state = 'coding';
+  const state = 'working';
   const workspace = new ObservingWorkspace({
     root: repo,
     open: {
@@ -415,7 +415,7 @@ describe.skipIf(!HAS_HERDR)(
 
       // AC-6 — the run still started; a hook cannot wedge dispatch. Asserted on
       // THIS fixture's own tab label, in THIS fixture's own workspace: both are
-      // unique (`BB-237-FAIL · coding #2`), so the success case's leftover tab
+      // unique (`BB-237-FAIL · working #2`), so the success case's leftover tab
       // cannot satisfy it. Mutation-checked — `if (!provisioning.ok) return;`
       // before `startRun` turns this line red.
       expect(tabLabelsOf(fx)).toContain(fx.tabLabel);

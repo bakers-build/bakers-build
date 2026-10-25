@@ -6,6 +6,7 @@ _meta:
   uuid: 61000000-0000-4000-8000-000000000001
   default_langcode: en
   depends:
+    db1a0000-0000-4000-8000-000000000020: bb_term
     ead793be-b1f3-5f56-a716-392b8c878a16: bb_project
     fb355227-fe83-5482-819f-51f8011a78eb: bb_team
 default:
@@ -16,7 +17,9 @@ default:
   title:
   - value: "Markdown output corpus"
   workflow:
-  - value: bb_feature
+  - value: bb_work
+  ticket_type:
+  - entity: db1a0000-0000-4000-8000-000000000020
   description:
   - value: "## Release checks\n\n| Check | Result | Notes |\n| --- | --- | --- |\n| **Build** | Passed | See [details](/home). |\n| Parser | Pending | Preserve `a\\|b` and Grüße. |\n| Empty | | A deliberately empty middle cell. |\n\nText after the table must remain visible.\n\n### Wide table\n\n| Environment | Service | Revision | Command | Observed result | Owner |\n| --- | --- | --- | --- | --- | --- |\n| recipe-test | web | `abcbb87ae0c8b08369389e919da236b7f4d7fb97` | `ddev init --provider recipe-test --fresh` | Installed from the recipe and answered every route. | Conductor |\n\n| Only | Header | Row |\n| --- | --- | --- |\n\n#### Formatting\n\nA paragraph with **strong**, *emphasis*, `inline code` and a [link](https://example.test/a/very/long/path/that/has/to/wrap/inside/the/body).\n\n- Outer item\n  - Nested item\n1. First\n2. Second\n\n> A quiet quote.\n\n---\n\n```html\n<script>alert(\"literal\")</script>\n```\n"
     format: bb_rich

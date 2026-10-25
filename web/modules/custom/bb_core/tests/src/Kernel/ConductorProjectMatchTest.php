@@ -98,7 +98,7 @@ final class ConductorProjectMatchTest extends KernelTestBase {
   public function testConductorWithoutTicketProjectViolates(): void {
     $projectId = $this->createProject('bound');
     $conductor = $this->createConductor('bound', $projectId);
-    $ticket = BbTicket::create(['title' => 'Needs project', 'workflow' => 'bb_feature']);
+    $ticket = BbTicket::create(['title' => 'Needs project', 'workflow' => 'bb_work']);
     $ticket->setConductor($conductor);
 
     self::assertGreaterThan(0, $ticket->validate()->getByField('conductor_id')->count());
@@ -160,7 +160,7 @@ final class ConductorProjectMatchTest extends KernelTestBase {
   private function createTicket(int $projectId): BbTicket {
     $ticket = BbTicket::create([
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $projectId,
     ]);
     $ticket->save();

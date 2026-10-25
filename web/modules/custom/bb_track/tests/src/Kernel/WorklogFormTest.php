@@ -422,7 +422,7 @@ final class WorklogFormTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Billed apart',
       'project_id' => $this->projectP->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     $ticket->save();
     $other = $assignments->saveAccount((int) $this->projectP->id(), [
@@ -1466,7 +1466,7 @@ final class WorklogFormTest extends KernelTestBase {
       ->create([
         'title' => $title,
         'project_id' => $project->id(),
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
       ]);
     $ticket->save();
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

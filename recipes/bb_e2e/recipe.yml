@@ -3,7 +3,7 @@ description: 'bakers.build plus deterministic config and content fixtures for E2
 type: 'Site'
 recipes:
   - bakers
-  # bb_seed ships the bb_labels terms (backend / ui / bug) that the
+  # bb_seed ships the `label` terms (backend / ui / bug) and the `type` terms that the
   # designbook-mirrored tickets reference; apply it before this recipe's own
   # content so those cross-recipe entity refs resolve.
   - bb_seed

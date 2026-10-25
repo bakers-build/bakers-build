@@ -22,7 +22,7 @@ const overview: TicketDetailDocument = {
   included: [
     {
       id: 'label',
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: 'work:code' },
     },
     {
@@ -73,7 +73,7 @@ it('retains header labels across a narrow response and loads only missing includ
     ),
   ).toBe(true);
   expect(queries).toEqual([
-    'bb_ticket/bb_ticket/t1?include=comments,labels',
+    'bb_ticket/bb_ticket/t1?include=comments,labels,recipe,ticket_type',
     'bb_ticket/bb_ticket/t1?include=runs',
   ]);
 });

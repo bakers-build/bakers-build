@@ -14,7 +14,7 @@ _meta:
   uuid: bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30
   default_langcode: en
   depends:
-    db1a0000-0000-4000-8000-000000000010: bb_term
+    db1a0000-0000-4000-8000-000000000022: bb_term
 default:
   name:
     -
@@ -31,14 +31,14 @@ default:
       format: bb_rich
   workflow:
     -
-      value: "bb_chore"
+      value: "bb_work"
+  # Replace before import: the target workspace's own `chore` type term.
+  ticket_type:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000022"
   target_state:
     -
       value: "qualification"
-  # Replace before import: the target workspace's own `work:code` label.
-  labels:
-    -
-      entity: "db1a0000-0000-4000-8000-000000000010"
   # Replace both before import: the project (its UUID in the target
   # workspace) and the owner (a user UUID of that workspace).
   project_id:

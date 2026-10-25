@@ -16,7 +16,7 @@ final class TicketFrozenFieldTest extends ClaimKernelTestBase {
    * A fresh ticket is not frozen, and the flag round-trips through storage.
    */
   public function testFrozenDefaultsToFalseAndRoundTrips(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     self::assertFalse($ticket->isFrozen(), 'A new ticket is not frozen.');
     self::assertNull($ticket->getFrozenAt(), 'A new ticket has no freeze stamp.');
 
@@ -43,7 +43,7 @@ final class TicketFrozenFieldTest extends ClaimKernelTestBase {
    * A raw frozen write still stamps, because JSON:API never calls setFrozen().
    */
   public function testFrozenWriteThroughTheFieldStampsFrozenAt(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $ticket->set('frozen', TRUE)->save();
     $reloaded = $this->reloadTicket($ticket);
     self::assertTrue($reloaded->isFrozen());

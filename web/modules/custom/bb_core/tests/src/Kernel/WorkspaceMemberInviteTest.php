@@ -667,7 +667,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $project->save();
     $ticket = BbTicket::create([
       'title' => 'Owned by the removed member',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
       'owner_user_id' => $member->id(),
     ]);

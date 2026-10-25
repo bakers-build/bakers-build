@@ -47,7 +47,7 @@ import { bootTui, settle } from '../tui-harness.js';
 const USER = 'aaaaaaaa-0000-0000-0000-000000000001';
 const COND = 'bbbbbbbb-0000-0000-0000-000000000001';
 const LABEL_A = 'cccccccc-0000-0000-0000-000000000001';
-const LABEL_BUNDLE = 'bb_term/bb_labels';
+const LABEL_BUNDLE = 'bb_term/label';
 const PROJECT = 'dddddddd-0000-0000-0000-000000000001';
 const PROJECT_B = 'dddddddd-0000-0000-0000-000000000002';
 
@@ -90,7 +90,7 @@ const rows = () => ({
   [LABEL_BUNDLE]: [
     toResource({
       id: LABEL_A,
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: 'bug' },
     }),
   ],
@@ -275,7 +275,7 @@ it('AC-2/AC-3/AC-4: Ctrl+D creates exactly one ticket and launches no agent', as
   expect(created?.body.attributes).toMatchObject({
     title: 'Direct',
     description: { value: 'Body', format: 'bb_rich' },
-    workflow: 'bb_feature',
+    workflow: 'bb_work',
   });
   expect(created?.body.relationships).toMatchObject({
     project_id: { data: { type: 'bb_project--bb_project', id: PROJECT } },
@@ -396,10 +396,10 @@ it('AC-6: Ctrl+S from a non-action field is unchanged and creates nothing', asyn
 it('D7: Ctrl+S standing ON the direct row fires the direct row, not the agent', async () => {
   const d = await openForm({ route: PROJECT_ROUTE });
   await fill(d);
-  // Description → parent → assignee → reviewers → conductor → labels →
-  // workflow → template → agent → direct. Standing on the cheap action, the
+  // Description → parent → assignee → reviewers → conductor → type →
+  // recipe → labels → workflow → template → agent → direct. Standing on the cheap action, the
   // save key must not launch an agent.
-  for (let i = 0; i < 9; i += 1) await d.press('\x1b[B');
+  for (let i = 0; i < 11; i += 1) await d.press('\x1b[B');
   await d.press('\x13');
 
   expect(d.agents.launches).toEqual([]);
@@ -410,7 +410,7 @@ it('D7: Ctrl+S standing ON the direct row fires the direct row, not the agent', 
 it('D7: Enter on the agent row hands it to the agent', async () => {
   const d = await openForm({ route: PROJECT_ROUTE });
   await fill(d);
-  for (let i = 0; i < 8; i += 1) await d.press('\x1b[B');
+  for (let i = 0; i < 10; i += 1) await d.press('\x1b[B');
   await d.press('\r');
 
   expect(d.agents.launches).toHaveLength(1);
@@ -421,7 +421,7 @@ it('D7: Enter on the agent row hands it to the agent', async () => {
 it('D7: Enter on the direct row writes the ticket itself', async () => {
   const d = await openForm({ route: PROJECT_ROUTE });
   await fill(d);
-  for (let i = 0; i < 9; i += 1) await d.press('\x1b[B');
+  for (let i = 0; i < 11; i += 1) await d.press('\x1b[B');
   await d.press('\r');
 
   expect(d.agents.launches).toEqual([]);

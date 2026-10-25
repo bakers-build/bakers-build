@@ -33,18 +33,18 @@ The BB-658 policy is:
 | bb_ticket/bb_ticket | search, read, create, update |
 | bb_comment/bb_comment | create, search |
 | bb_project/bb_project | search, read |
-| bb_term/bb_labels | search |
+| bb_term/type, bb_term/recipe, bb_term/label | search |
 
 `@dropsh/plugin-mcp`'s config (`src/options.ts`) only supports two
 independent global arrays, `bundles` and `operations`, ANDed together
 (`isToolEnabled`). There is no per-bundle operation set and no wildcard. The
 closest safe superset is `operations: [search, read, create, update]` ×
-`bundles` restricted to the four rows above — which means the dropsh-config
+`bundles` restricted to the rows above — which means the dropsh-config
 layer does **not** block:
 
 - `bb_comment update`
 - `bb_project create` / `bb_project update`
-- `bb_term/bb_labels create` / `bb_term/bb_labels update`
+- `bb_term create` / `bb_term update` (all three term bundles)
 
 This config layer is defense-in-depth only. **The real enforcement boundary
 is the authorizing human's own Drupal permissions and workspace rank**, under
@@ -64,13 +64,8 @@ Drupal's own 401 surfaces as an ordinary JSON-RPC tool error over HTTP 200.
 There is no token audience binding. Accepted as-is (BB-658 review N2); see
 `docs/daily-work/claude-ai.md`.
 
-A bundle-scoped `view bb_labels bb_term` permission was added
-(`bb_core.permissions.yml`) because `bb_term`'s two vocabularies,
-`bb_labels` and `bb_capability_tags`, otherwise share one entity-wide
-`view bb_term` permission; the generic `entity` module access/query
-handlers already honour an "<op> <bundle> <entity_type>" permission string
-regardless of the entity type's declared permission granularity, so no
-access-control code change was needed.
+Term search uses the entity-wide `view bb_term` permission: every term bundle
+(`type`, `recipe`, `label`) is ordinary ticket vocabulary.
 
 `search` has no offset/pagination — only `limit` (≤ 100, default 25). The
 project instructions tell Claude to narrow with `filters` rather than expect

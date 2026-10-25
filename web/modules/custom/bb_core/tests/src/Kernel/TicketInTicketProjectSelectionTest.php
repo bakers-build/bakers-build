@@ -180,7 +180,7 @@ final class TicketInTicketProjectSelectionTest extends KernelTestBase {
   private function host(?string $project): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'New ticket',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project !== NULL ? $this->projects[$project] : NULL,
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -193,7 +193,7 @@ final class TicketInTicketProjectSelectionTest extends KernelTestBase {
   private function ticket(string $title, string $project): string {
     return (string) $this->createEntity('bb_ticket', [
       'title' => $title,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->projects[$project],
     ])->id();
   }

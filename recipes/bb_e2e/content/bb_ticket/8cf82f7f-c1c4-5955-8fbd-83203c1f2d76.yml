@@ -5,6 +5,7 @@ _meta:
   uuid: 8cf82f7f-c1c4-5955-8fbd-83203c1f2d76
   default_langcode: en
   depends:
+    db1a0000-0000-4000-8000-000000000020: bb_term
     b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
     fb355227-fe83-5482-819f-51f8011a78eb: bb_team
 default:
@@ -15,8 +16,10 @@ default:
   title:
   - value: API home contract
   workflow:
-  - value: bb_feature
+  - value: bb_work
+  ticket_type:
+  - entity: db1a0000-0000-4000-8000-000000000020
   state:
-  - value: spec
+  - value: plan
   project_id:
   - entity: b76b40df-436c-5d3d-9bf1-5745fa621a7a

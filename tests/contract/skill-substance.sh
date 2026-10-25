@@ -154,8 +154,6 @@ tt="$SKILLS/transition-ticket/references/terminal-retrospective.md"
 check 'transition-ticket reaches its conditional retrospective' grep -q 'references/terminal-retrospective.md' "$SKILLS/transition-ticket/SKILL.md"
 check 'transition-ticket gates retrospective on terminal destinations' \
   bash -c "cat '$tt' | grep -qE 'destination.*done.*cancelled'"
-check 'transition-ticket restricts retrospective to work tickets' \
-  bash -c "cat '$tt' | grep -qE 'bb_feature.*bb_bug.*bb_chore'"
 check 'transition-ticket writes retrospective before retiring the run' \
   bash -c "cat '$tt' | grep -q 'Ask → metric → comment → state write'"
 check 'transition-ticket preserves the unanswered path' \

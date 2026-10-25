@@ -173,7 +173,7 @@ final class AssignedActivityTest extends KernelTestBase {
       'owner_user_id' => $this->people['second']->id(),
       'status' => 'online',
       'project_id' => $this->projectId,
-      'states' => ['coding'],
+      'states' => ['working'],
       'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
     ]);
     $conductor->save();
@@ -247,8 +247,8 @@ final class AssignedActivityTest extends KernelTestBase {
   private function ticket(?string $assignee): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'assigned-activity',
-      'workflow' => 'bb_feature',
-      'state' => 'coding',
+      'workflow' => 'bb_work',
+      'state' => 'working',
       'project_id' => $this->projectId,
       'owner_user_id' => $this->people['owner']->id(),
       'assignee_user_id' => $assignee === NULL ? NULL : $this->people[$assignee]->id(),

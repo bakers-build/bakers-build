@@ -610,7 +610,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
    */
   private function createUnassignedTicket(BbProjectInterface $project, int $closedDate): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'unassigned-' . mt_rand(),
       'project_id' => $project->id(),
       'created' => $closedDate,
@@ -627,7 +627,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
    */
   private function createTicket(BbProjectInterface $project, UserInterface $assignee, int $closedDate): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'ticket-' . mt_rand(),
       'project_id' => $project->id(),
       'assignee_user_id' => $assignee->id(),
@@ -645,7 +645,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
    */
   private function createOpenTicket(BbProjectInterface $project, UserInterface $assignee, int $created): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'open-' . mt_rand(),
       'project_id' => $project->id(),
       'assignee_user_id' => $assignee->id(),

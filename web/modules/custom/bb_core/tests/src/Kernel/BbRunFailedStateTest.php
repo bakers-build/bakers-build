@@ -139,7 +139,7 @@ final class BbRunFailedStateTest extends KernelTestBase {
       ->create(['name' => 'error-log project', 'group_id' => $group->id()]);
     $project->save();
     $ticket = $etm->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-ERR', 'workflow' => 'bb_bug', 'title' => 'X', 'project_id' => $project->id()]);
+      ->create(['identifier' => 'GL-ERR', 'workflow' => 'bb_work', 'title' => 'X', 'project_id' => $project->id()]);
     $ticket->save();
     $run = $etm->getStorage('bb_run')
       ->create(['state' => 'claimed', 'ticket_id' => $ticket->id()]);

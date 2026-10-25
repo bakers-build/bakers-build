@@ -29,18 +29,18 @@ slots:
         label: Workflow
         icon: board
         picker_id: story-form-workflow
-        aria_label: Change workflow. Currently bb_feature.
-        value_label: bb_feature
+        aria_label: Change workflow. Currently bb_work.
+        value_label: bb_work
         values:
-          - bb_feature
+          - bb_work
         options:
-          - value: bb_feature
-            label: bb_feature
-            description: Feature work — spec before coding
+          - value: bb_work
+            label: bb_work
+            description: Work ticket — plan before working
             selected: true
-          - value: bb_bug
-            label: bb_bug
-            description: Defect work — diagnose before coding
+          - value: bb_deployment
+            label: bb_deployment
+            description: Release — prepare, deploy, then verify
             selected: false
   # Grammar 1 and 2: no visible labels; the identity of a line is its
   # placeholder. BB-420 Task 31 retired `text_line` (everything through

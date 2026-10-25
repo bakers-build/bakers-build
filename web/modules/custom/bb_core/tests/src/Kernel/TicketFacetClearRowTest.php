@@ -121,7 +121,7 @@ final class TicketFacetClearRowTest extends KernelTestBase {
     }
     $this->installSchema('search_api', ['search_api_item']);
     $this->installConfig(['user', 'search_api']);
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     $this->container->get('config.installer')
@@ -157,7 +157,7 @@ final class TicketFacetClearRowTest extends KernelTestBase {
     foreach (['coding', 'review', 'spec'] as $i => $state) {
       $this->create('bb_ticket', [
         'title' => 'Ticket ' . $state,
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'state' => $state,
         'priority' => $i + 1,
         'project_id' => $project->id(),

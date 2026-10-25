@@ -1,6 +1,6 @@
 langcode: en
 status: true
 dependencies: {}
-id: bb_labels
-label: 'bakers.build labels'
+id: recipe
+label: 'bakers.build recipes'
 description: ''

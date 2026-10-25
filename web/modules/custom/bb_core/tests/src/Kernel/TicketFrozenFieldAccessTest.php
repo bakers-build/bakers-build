@@ -57,7 +57,7 @@ final class TicketFrozenFieldAccessTest extends KernelTestBase {
     $admin = $this->createUser('bakers-admin', ['administer bakers']);
     $saved = $this->createTicket();
     $new = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['workflow' => 'bb_feature', 'title' => 'Unsaved freeze']);
+      ->create(['workflow' => 'bb_work', 'title' => 'Unsaved freeze']);
 
     foreach ([$saved, $new] as $ticket) {
       self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -104,7 +104,7 @@ final class TicketFrozenFieldAccessTest extends KernelTestBase {
    */
   private function createTicket(): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-PA-1', 'workflow' => 'bb_feature', 'title' => 'PA']);
+      ->create(['identifier' => 'GL-PA-1', 'workflow' => 'bb_work', 'title' => 'PA']);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;

@@ -46,7 +46,7 @@ const ticketDoc = {
       since_label: '3h',
       assignee_name: 'Christian Wiedemann',
       claim_machine: 'cw-framework',
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
       description: 'The deep-link description body.',
     },
     relationships: { runs: { data: [{ id: 'r1' }, { id: 'r2' }] } },
@@ -623,7 +623,7 @@ describe('kernel boot — a ticket route (AC-3)', () => {
       ticketId: TICKET,
       view: 'board_card',
     });
-    expect(text).toContain('bb_feature');
+    expect(text).toContain('bb_work');
     expect(text).not.toContain('Christian Wiedemann');
   });
 });

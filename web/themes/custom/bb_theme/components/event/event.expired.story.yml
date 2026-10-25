@@ -9,7 +9,7 @@ props:
   subject_url: '#subject'
   tag: expired
   timestamp: 40 min ago
-  statement: run expired in coding
+  statement: run expired in working
   facts:
     - cw-framework
     - 30 min

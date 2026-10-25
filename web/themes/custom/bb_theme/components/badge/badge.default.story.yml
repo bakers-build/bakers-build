@@ -1,5 +1,5 @@
 component: bb_theme:badge
 name: Default
 props:
-  label: coding
+  label: working
   tone: neutral

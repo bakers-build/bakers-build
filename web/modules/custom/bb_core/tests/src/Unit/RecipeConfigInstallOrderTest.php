@@ -25,7 +25,7 @@ use Symfony\Component\Yaml\Yaml;
  * `initInstanceIfMissing()`, which asks ui_patterns' `SampleEntityGenerator`
  * for a sample entity of the displayed type — and the generator recurses
  * through every entity-reference field, so a sample `bb_ticket` needs the
- * `bb_labels` bundle to EXIST. If the display sorts before the vocabulary
+ * term bundles to EXIST. If the display sorts before the vocabulary
  * that declares that bundle, the save throws `Missing entity bundle` and the
  * whole recipe aborts, so `ddev init --provider recipe-test` fails on the
  * FIRST application.
@@ -49,7 +49,7 @@ use Symfony\Component\Yaml\Yaml;
  * bundles of EVERY entity type in one pass. So a form display sorting before
  * the vocabulary freezes `bb_term`'s bundle list, and a LATER view display's
  * sample entity reads the frozen answer and aborts with `Missing entity
- * bundle. The "bb_labels" bundle does not exist` — at the view display, with
+ * bundle. The "label" bundle does not exist` — at the view display, with
  * nothing in the trace pointing at the form display. Measured then: adding the
  * create-project pair put `core.entity_form_display.bb_project.bb_project
  * .create` at index 5 and the vocabulary at 8, and `ddev init --provider
@@ -75,13 +75,13 @@ use Symfony\Component\Yaml\Yaml;
  * path. The whole functional suite reported 96 errors, every one of them
  * `UnmetDependenciesException: Configuration objects provided by bb_core have
  * unmet dependencies: core.entity_form_display.bb_project.bb_project.create
- * (bb_core.bb_vocabulary.bb_labels)`. `BbVocabulary extends
+ * (bb_core.bb_vocabulary.label)`. `BbVocabulary extends
  * ConfigEntityBundleBase` made the edge unnecessary and it was deleted from
  * both copies of both files; `ModuleConfigInstallDependencyTest` is what stops
  * it — or anything like it — coming back.
  *
  * So a VIEW display still needs the edge and this class still pins it: its
- * sample entity needs the `bb_labels` bundle to EXIST at its own save time,
+ * sample entity needs the term bundles to EXIST at its own save time,
  * which no cache invalidation can supply. A FORM display needs nothing: it
  * primes the cache, and the vocabulary's own save now clears whatever it
  * primed, wherever the two sort relative to each other.
@@ -99,21 +99,17 @@ final class RecipeConfigInstallOrderTest extends UnitTestCase {
   /**
    * Config that must exist before any sample entity is generated.
    *
-   * ONE name, measured rather than assumed symmetric. The ticket display and
-   * every display whose entity carries a `ticket_id` reference (`bb_run`,
-   * `bb_comment`) reach `bb_ticket`, and `bb_ticket`'s
-   * `labels` field is the only reference in the whole chain that restricts
-   * `target_bundles`, to `bb_labels`.
-   *
-   * `bb_core.bb_vocabulary.bb_capability_tags` is the recipe's other
-   * vocabulary and is deliberately NOT listed: no base field anywhere targets
-   * that bundle, so `EntityReferenceItem::generateSampleValue()` never asks
-   * for it. Adding it would be two keys in six files buying nothing.
+   * The ticket display and every display whose entity carries a `ticket_id`
+   * reference (`bb_run`, `bb_comment`) reach `bb_ticket`, whose
+   * `ticket_type`, `recipe` and `labels` fields restrict `target_bundles` to
+   * `type`, `recipe` and `label`.
    *
    * @var array<string>
    */
   private const BUNDLE_CONFIG_NAMES = [
-    'bb_core.bb_vocabulary.bb_labels',
+    'bb_core.bb_vocabulary.label',
+    'bb_core.bb_vocabulary.recipe',
+    'bb_core.bb_vocabulary.type',
   ];
 
   /**
@@ -142,7 +138,7 @@ final class RecipeConfigInstallOrderTest extends UnitTestCase {
   ];
 
   /**
-   * The displays whose sample entity actually reaches `bb_labels`.
+   * The displays whose sample entity actually reaches the term bundles.
    *
    * NOT every `core.entity_view_display.*` needs the enforced edge, and
    * BB-484 is the measurement that proved it: `core.entity_view_mode.bb_
@@ -152,7 +148,7 @@ final class RecipeConfigInstallOrderTest extends UnitTestCase {
    * turn references `bb_group`, `bb_team`, `bb_environment` and `user`
    * — never `bb_ticket`. The recursion the class docblock describes simply
    * never reaches `bb_ticket.labels`, so the sample generator never asks
-   * for the `bb_labels` bundle, and `ddev init --provider recipe-test`
+   * for the term bundles, and `ddev init --provider recipe-test`
    * measured the display building without the edge. Enforcing it anyway
    * would assert a dependency that costs nothing but describes nothing true,
    * which is exactly the kind of unmeasured edge BB-421's docblock warns
@@ -170,13 +166,13 @@ final class RecipeConfigInstallOrderTest extends UnitTestCase {
     'core.entity_view_display.bb_run.bb_run.overlay',
     'core.entity_view_display.bb_run.bb_run.teaser',
     'core.entity_view_display.bb_ticket.bb_ticket.full',
-    // A template's labels target bb_labels, as a ticket's do.
+    // A template's term fields target the term bundles, as a ticket's do.
     'core.entity_form_display.bb_ticket_template.bb_ticket_template.default',
     'core.entity_view_display.bb_ticket_template.bb_ticket_template.default',
   ];
 
   /**
-   * The displays whose sample entity is measured NOT to reach `bb_labels`.
+   * The displays whose sample entity is measured NOT to reach the term bundles.
    *
    * Exempt from the order assertion below, for the reason
    * `DISPLAYS_REACHING_TICKET_LABELS` gives for exempting the team display
@@ -300,11 +296,13 @@ final class RecipeConfigInstallOrderTest extends UnitTestCase {
       $data[$name]['dependencies']['config'] ?? [],
       $data[$name]['dependencies']['enforced']['config'] ?? [],
     );
-    self::assertNotContains(
-      'bb_core.bb_vocabulary.bb_labels',
-      $declared,
-      "$name's sample entity never reaches bb_ticket.labels, so it must not carry an edge that describes nothing measured.",
-    );
+    foreach (self::BUNDLE_CONFIG_NAMES as $bundle_config) {
+      self::assertNotContains(
+        $bundle_config,
+        $declared,
+        "$name's sample entity never reaches bb_ticket, so it must not carry an edge that describes nothing measured.",
+      );
+    }
   }
 
   /**

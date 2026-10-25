@@ -74,7 +74,7 @@ final class ActivityFeedLineTest extends KernelTestBase {
     $project = $this->entity('bb_project', ['name' => 'Project', 'key' => 'FEED', 'group_id' => $group->id()]);
     $ticket = $this->entity('bb_ticket', [
       'title' => 'Feed lines',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -86,14 +86,14 @@ final class ActivityFeedLineTest extends KernelTestBase {
       'owner_user_id' => 1,
       'status' => 'online',
       'machine' => $machine->id(),
-      'states' => ['coding'],
+      'states' => ['working'],
     ]);
     $run = $this->entity('bb_run', [
       'ticket_id' => $ticket->id(),
       'conductor_id' => $this->conductor->id(),
       'owner_user_id' => 1,
       'state' => 'claimed',
-      'state_at_start' => 'coding',
+      'state_at_start' => 'working',
       'duration_s' => 125,
     ]);
     self::assertInstanceOf(BbRunInterface::class, $run);
@@ -106,7 +106,7 @@ final class ActivityFeedLineTest extends KernelTestBase {
   public function testCreatedRowNamesWorkflowAndFirstState(): void {
     $props = $this->line(['kind' => 'created', 'new_state' => 'qualification']);
     self::assertSame('created', $props['tag']);
-    self::assertSame('created (feature, qualification)', $props['statement']);
+    self::assertSame('created (work, qualification)', $props['statement']);
     self::assertArrayNotHasKey('role', $props);
   }
 
@@ -116,13 +116,13 @@ final class ActivityFeedLineTest extends KernelTestBase {
   public function testStatusRowWithRunShowsAgentRoleDurationAndRunLink(): void {
     $props = $this->line([
       'kind' => 'status_changed',
-      'previous_state' => 'coding',
+      'previous_state' => 'working',
       'new_state' => 'review',
       'run_id' => $this->run->id(),
       'conductor_id' => $this->conductor->id(),
     ]);
     self::assertSame('status', $props['tag']);
-    self::assertSame('coding → review', $props['statement']);
+    self::assertSame('working → review', $props['statement']);
     self::assertSame('agent', $props['role']);
     self::assertContains('feed-node', $props['facts']);
     self::assertContains($this->interval(125), $props['facts']);
@@ -133,9 +133,9 @@ final class ActivityFeedLineTest extends KernelTestBase {
    * A status row without a run is a person's change, without facts.
    */
   public function testStatusRowWithoutRunIsHuman(): void {
-    $props = $this->line(['kind' => 'status_changed', 'previous_state' => 'qualification', 'new_state' => 'spec']);
+    $props = $this->line(['kind' => 'status_changed', 'previous_state' => 'qualification', 'new_state' => 'plan']);
     self::assertSame('human', $props['role']);
-    self::assertSame('qualification → spec', $props['statement']);
+    self::assertSame('qualification → plan', $props['statement']);
     self::assertArrayNotHasKey('facts', $props);
   }
 
@@ -145,12 +145,12 @@ final class ActivityFeedLineTest extends KernelTestBase {
   public function testClaimRowStartsWorkWithoutDuration(): void {
     $props = $this->line([
       'kind' => 'claimed',
-      'step' => 'coding',
+      'step' => 'working',
       'run_id' => $this->run->id(),
       'conductor_id' => $this->conductor->id(),
     ]);
     self::assertSame('started', $props['tag']);
-    self::assertSame('started work in coding', $props['statement']);
+    self::assertSame('started work in working', $props['statement']);
     self::assertSame('agent', $props['role']);
     self::assertSame(['feed-node'], $props['facts']);
   }
@@ -162,12 +162,12 @@ final class ActivityFeedLineTest extends KernelTestBase {
     $this->run->setRunState('cancelled')->save();
     $props = $this->line([
       'kind' => 'run_ended',
-      'step' => 'coding',
+      'step' => 'working',
       'run_id' => $this->run->id(),
       'conductor_id' => $this->conductor->id(),
     ]);
     self::assertSame('cancelled', $props['tag']);
-    self::assertSame('run cancelled in coding', $props['statement']);
+    self::assertSame('run cancelled in working', $props['statement']);
     self::assertContains($this->interval(125), $props['facts']);
   }
 
@@ -192,7 +192,7 @@ final class ActivityFeedLineTest extends KernelTestBase {
   private function line(array $values): array {
     $activity = $this->entity('bb_activity', $values + [
       'ticket_id' => $this->ticket->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'actor' => 1,
       'created' => $this->container->get('datetime.time')->getCurrentTime(),
     ]);

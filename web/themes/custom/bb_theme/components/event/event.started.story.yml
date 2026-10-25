@@ -9,7 +9,7 @@ props:
   subject_url: '#subject'
   tag: started
   timestamp: 2 h ago
-  statement: started work in spec
+  statement: started work in plan
   facts:
     - cw-framework
   links:

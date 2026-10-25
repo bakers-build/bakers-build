@@ -598,7 +598,7 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
   private function ticket(?BbTicketInterface $parent, string $state, ?UserInterface $assignee, bool $closed = FALSE, ?int $priority = NULL): BbTicketInterface {
     $ticket = $this->createEntity('bb_ticket', [
       'title' => 'board facet ticket',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'state' => $state,
       'closed' => $closed,
       'priority' => $priority,

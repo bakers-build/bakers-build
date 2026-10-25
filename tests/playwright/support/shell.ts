@@ -2,10 +2,28 @@
 // whose steps observe the shell: the document mark that tells a boosted swap
 // from a full load, the island selectors, and seed-account lookups.
 import { Drush } from '@key-tec/playwright-core';
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /** The shell heading island (title, tabs, create actions). */
 export const PAGE_HEADER_ISLAND = '[id$="-shell_page_header"]';
+
+/**
+ * Clicks a create action of the page header: with JavaScript it opens its form
+ * in the overlay dialog, without it navigates to the form page.
+ */
+export async function clickHeaderAction(page: Page, label: string): Promise<void> {
+  const trigger = page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: label, exact: true });
+  await expect(trigger).toBeVisible();
+  // Page scripts are off in the no-JS project, so htmx never loads there.
+  if (await page.evaluate(() => 'htmx' in window)) {
+    // The trigger has a real href; clicked before htmx owns it, it navigates
+    // to the page form instead of fetching the dialog.
+    await expect
+      .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']))
+      .toBe(true);
+  }
+  await trigger.click();
+}
 
 /** The shell's content placement, scoped independently of its encoded host ID. */
 export const CONTENT_ISLAND = '[id$="-shell_content_island"]';

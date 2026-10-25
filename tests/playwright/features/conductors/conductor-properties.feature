@@ -29,7 +29,7 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     Then the "Identity" card says "saved."
     And the page heading is "Owner renamed conductor"
     And the fixture conductor "conductor.properties" has the label "Owner renamed conductor"
-    And the fixture conductor "conductor.properties" serves the states "coding"
+    And the fixture conductor "conductor.properties" serves the states "working"
 
   Scenario: The owner disables and enables the conductor behind a confirmation
     Given I am logged in as the account "fixture-conductor-owner"
@@ -57,7 +57,7 @@ Feature: A conductor owner edits and disables a conductor on its Overview
   Scenario: Activities list only the claims of this conductor's runs a reader may inspect
     Given I am logged in as the account "north-contributor"
     When I visit the fixture conductor "conductor.properties"
-    Then the Activities list "APIH-1 started work in spec"
+    Then the Activities list "APIH-1 started work in plan"
     Given I am logged in as the account "fixture-conductor-owner"
     When I visit the fixture conductor "conductor.properties"
     Then the Activities say "No activity yet."

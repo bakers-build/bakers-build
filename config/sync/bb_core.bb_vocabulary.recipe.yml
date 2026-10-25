@@ -1,0 +1,7 @@
+uuid: 09fa09e4-4e7b-44e3-859a-4376fddb9349
+langcode: en
+status: true
+dependencies: {  }
+id: recipe
+label: 'bakers.build recipes'
+description: ''

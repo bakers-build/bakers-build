@@ -25,9 +25,9 @@ default:
       entity: 262258a2-080f-4ab9-af1b-9028cef388da
   states:
     -
-      value: diagnose
+      value: plan
     -
-      value: coding
+      value: working
   last_seen:
     -
       value: 1781278580

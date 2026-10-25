@@ -136,7 +136,7 @@ final class ClaimActivityTest extends KernelTestBase {
   private function createConductor(
     UserInterface $owner,
     string $machine_id,
-    array $states = ['diagnose', 'coding'],
+    array $states = ['plan', 'working'],
     ?int $project_id = NULL,
     ?int $last_seen = NULL,
     string $status = 'online',
@@ -156,10 +156,10 @@ final class ClaimActivityTest extends KernelTestBase {
   }
 
   /**
-   * Creates and saves a BbTicket in its claimable entry state ('diagnose').
+   * Creates and saves a BbTicket in its claimable entry state ('plan').
    *
-   * The bb_bug workflow starts in the 'diagnose' entry state, so a freshly
-   * created ticket is immediately claimable without an explicit activation.
+   * The bb_work workflow enters 'qualification'; the helper qualifies the
+   * ticket into 'plan' so it is claimable without an explicit activation.
    *
    * @param string $identifier
    *   Human-readable ticket identifier.
@@ -173,14 +173,14 @@ final class ClaimActivityTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create($values + [
         'identifier' => $identifier,
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'title' => $identifier,
         'project_id' => $this->projectId,
       ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
-    // The bb_bug workflow now enters 'qualification' first (BB-196);
-    // advance to 'diagnose', the claimable work state the default conductor
+    // The bb_work workflow enters 'qualification' first (BB-196);
+    // advance to 'plan', the claimable work state the default conductor
     // states cover.
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
@@ -229,7 +229,7 @@ final class ClaimActivityTest extends KernelTestBase {
 
     $run = $this->claim()->claim($ticket, $conductor, 600);
     $this->assertSame('claimed', $run->getRunState());
-    $this->assertSame('diagnose', $run->get('state_at_start')->value);
+    $this->assertSame('plan', $run->get('state_at_start')->value);
     $this->assertGreaterThan(
       $this->container->get('datetime.time')->getRequestTime(),
       $run->getClaimExpiresAt(),
@@ -240,7 +240,7 @@ final class ClaimActivityTest extends KernelTestBase {
     $this->assertInstanceOf(BbActivity::class, $activity);
     $this->assertSame((string) $run->id(), (string) $activity->get('run_id')->target_id);
     $this->assertSame((string) $conductor->id(), (string) $activity->get('conductor_id')->target_id);
-    $this->assertSame('diagnose', $activity->get('step')->value);
+    $this->assertSame('plan', $activity->get('step')->value);
     $this->assertSame((string) $owner->id(), (string) $activity->get('actor')->target_id);
   }
 

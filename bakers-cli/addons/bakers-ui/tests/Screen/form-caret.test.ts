@@ -70,7 +70,7 @@ describe('the New-ticket popup carries its insertion point as a node', () => {
           }),
         ],
         bb_conductor: [],
-        'taxonomy_term/bb_labels': [],
+        'taxonomy_term/label': [],
       },
     });
     const screen = new CreateTicketFormScreen();

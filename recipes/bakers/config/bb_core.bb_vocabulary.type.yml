@@ -1,0 +1,6 @@
+langcode: en
+status: true
+dependencies: {}
+id: type
+label: 'bakers.build ticket types'
+description: ''

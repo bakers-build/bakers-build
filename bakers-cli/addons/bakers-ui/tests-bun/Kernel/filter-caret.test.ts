@@ -31,7 +31,7 @@ const TICKETS = 'bb_ticket/bb_ticket';
 const ticket = (id: string, identifier: string, title: string) => ({
   type: 'bb_ticket--bb_ticket',
   id,
-  attributes: { identifier, title, state: 'todo', workflow: 'bb_feature' },
+  attributes: { identifier, title, state: 'todo', workflow: 'bb_work' },
 });
 
 const clientOptions = (): FakeClientOptions => ({

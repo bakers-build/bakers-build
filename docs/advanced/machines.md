@@ -34,7 +34,7 @@ export default {
     disabled: ['sonnet'],
     default_agent: 'codex',
     routes: {
-      default: { coding: 'codex', review: 'opus', '*': 'codex' },
+      default: { working: 'codex', review: 'opus', '*': 'codex' },
       careful: { '*': 'opus' },
     },
   },
@@ -181,18 +181,18 @@ export default {
     enabled: ['codex', 'opus'],
     default_agent: 'codex',
     routes: {
-      default: { coding: 'codex', review: 'opus', '*': 'codex' },
+      default: { working: 'codex', review: 'opus', '*': 'codex' },
       careful: { '*': 'opus' },
     },
   },
 };
 ```
 
-| Ticket labels | Coding | Review | Other states |
+| Ticket labels | Working | Review | Other states |
 |---|---|---|---|
 | none | `codex` | `opus` | `codex` |
 | `agent:careful` | `opus` | `opus` | `opus` |
-| `agent:opus@coding` | `opus` | `opus` (default route) | `codex` |
+| `agent:opus@working` | `opus` | `opus` (default route) | `codex` |
 | `agent:codex` | `codex` | `codex` | `codex` |
 
 ## Old keys and verification

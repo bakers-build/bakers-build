@@ -1,7 +1,7 @@
 # BB-334 D4 — the card precises the column instead of repeating it.
 #
 # A board column is a PHASE (Intake, Prepare, Work, Accept), so the column alone cannot say whether
-# a card in Prepare is in `spec`, `diagnose` or `pre_deployment`. The card names its exact state as
+# a card in Prepare is in `plan` or `pre_deployment`. The card names its exact state as
 # TEXT in a badge; the badge's dot and the card's accent edge keep encoding derived_status.
 #
 # This is the footer composition the two pre-existing card stories do not cover — both used to end in

@@ -173,7 +173,7 @@ def operation_schema(key, operation):
         resource['attributes']['required'] = []
         resource['relationships']['required'] = []
     if 'labels' in resource['relationships']['properties']:
-        resource['attributes']['properties']['label_names'] = {'type': 'string', 'title': 'Label names (comma-separated bb_labels names; unique only within workspace_id — resolved to labels on the live write)'}
+        resource['attributes']['properties']['label_names'] = {'type': 'string', 'title': "Label names (comma-separated label term names; resolved in the ticket's workspace and created there when missing, on the live write)"}
     return resource
 
 
@@ -347,12 +347,12 @@ class Simulation:
         sources = [self.config.get('ticket'), self.config.get('prior_art'), CONTRACT['probe_ticket']]
         self.tickets = {s['id']: record_from(ticket, s) for s in sources if s}
         self.comments = {}
-        self.terms = {t['id']: record_from('bb_term--bb_labels', t) for t in CONTRACT['terms']}
+        self.terms = {t['id']: record_from('bb_term--label', t) for t in CONTRACT['terms']}
         self.lost = False
         self.merge_completed = False
 
     def store(self, key):
-        return {'bb_ticket/bb_ticket': self.tickets, 'bb_comment/bb_comment': self.comments, 'bb_term/bb_labels': self.terms}.get(key)
+        return {'bb_ticket/bb_ticket': self.tickets, 'bb_comment/bb_comment': self.comments, 'bb_term/label': self.terms}.get(key)
 
     def emit(self, document, program):
         fmt = program.get('--format', 'json')
@@ -485,11 +485,11 @@ class Simulation:
         ids = []
         for name in [n.strip() for n in names.split(',') if n.strip()]:
             if name not in by_name:
-                cause = f"Error: label name '{name}' does not exist in the bb_term/bb_labels vocabulary. Known names: {', '.join(by_name)}"
+                cause = f"Error: label name '{name}' does not exist in the bb_term/label vocabulary. Known names: {', '.join(by_name)}"
                 raise Fail('E_PLUGIN', "plugin 'bakers-name-refs' failed in alterRequest", {'pluginId': 'bakers-name-refs', 'hook': 'alterRequest', 'cause': cause})
             ids.append(by_name[name])
         existing = data.get('relationships', {}).get('labels', {}).get('data', [])
-        merged = list({r['id']: r for r in existing + [{'type': 'bb_term--bb_labels', 'id': i} for i in ids]}.values())
+        merged = list({r['id']: r for r in existing + [{'type': 'bb_term--label', 'id': i} for i in ids]}.values())
         if merged:
             data.setdefault('relationships', {})['labels'] = {'data': merged}
 

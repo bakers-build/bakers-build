@@ -61,16 +61,9 @@ final class WorkspaceReadScopeViewsTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installReadScopeEnvironment();
-    // The recipe owns these vocabularies, so a kernel test creates them itself:
     // ui_patterns builds a sample bb_ticket while resolving the View's row
-    // plugin, and that sample references a bb_term bundle. `bb_labels` is
-    // not in this list because installReadScopeEnvironment() now owns it — the
-    // fixture builds a term per side and needs the bundle first (BB-339).
-    foreach (['bb_capability_tags'] as $vid) {
-      $this->container->get('entity_type.manager')->getStorage('bb_vocabulary')
-        ->create(['id' => $vid, 'label' => $vid])->save();
-    }
-    $this->container->get('entity_type.bundle.info')->clearCachedBundles();
+    // plugin, and that sample references bb_term bundles; the recipe owns
+    // them, and installReadScopeEnvironment() creates type/recipe/label.
     $this->buildTwoWorkspaceWorld();
   }
 

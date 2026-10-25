@@ -50,14 +50,14 @@ is how a single-step action stays honest.
 |---|---|---|
 | Create, conductor cleared | no | reversible |
 | Create, conductor set | no, named | chosen at the field |
-| Inline edit (assignee, priority, labels) | no | reversible |
+| Inline edit (assignee, priority, type, recipe, labels) | no | reversible |
 | Inline edit, conductor set | no, named | chosen at the field |
-| Transition `spec` to `coding` | yes | dispatches an agent run |
+| Transition `plan` to `working` | yes | dispatches an agent run |
 | Transition to `done` | yes | terminal, no rollback |
 | Cancel ticket | yes | discards the ticket |
 
 Three rows need their nuance spelled out. The transition row covers every
-sibling transition, not only `spec` to `coding`, because each of them
+sibling transition, not only `plan` to `working`, because each of them
 dispatches an agent run server-side; the confirmation names that run. The
 `done` row confirms because `done` is terminal and there is no rollback,
 so the confirmation names the terminality rather than the run. The two
@@ -70,7 +70,7 @@ run starts. So the create dialog names it beneath the pill row, and an
 Every other inline field is reversible and names nothing.
 
 A confirmation names the concrete effect and never asks "are you sure?".
-"Move BB-332 to `coding`? This dispatches an agent run on
+"Move BB-332 to `working`? This dispatches an agent run on
 `cw-framework`." tells the operator what will happen. "Are you sure?"
 tells them only that something will.
 
@@ -164,8 +164,10 @@ surface uses it without variation.
    it gets **its own row above the text lines**, separated from the body,
    and is rendered heavier (`prominent`). On the create dialog that
    property is **workflow**: it decides the ticket's whole state flow, so
-   choosing `bb_feature` rather than `bb_bug` decides which states the
-   ticket will pass through, and reversing it later is not a cheap edit.
+   choosing `bb_work` rather than `bb_deployment` decides which states the
+   ticket will pass through (the kind of work — feature, bug, chore, epic —
+   is the separate `ticket_type` property, a pill like the others), and
+   reversing it later is not a cheap edit.
    Making it merely the first pill was tried and was not enough — first in
    a row still reads as "the first of these", and it is not one of these.
    At most one property per surface earns this; a surface where everything

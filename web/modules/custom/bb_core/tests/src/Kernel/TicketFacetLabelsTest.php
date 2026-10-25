@@ -147,7 +147,7 @@ final class TicketFacetLabelsTest extends KernelTestBase {
     $this->installConfig(['user', 'search_api', 'views']);
     // The label vocabulary belongs to the recipe, which a Kernel test does not
     // apply, so the fixture creates it.
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     // The display builder profile the view's extender names. It lives in
@@ -215,15 +215,15 @@ final class TicketFacetLabelsTest extends KernelTestBase {
       'group_id' => $this->group->id(),
     ]);
     $this->label = $this->create('bb_term', [
-      'vid' => 'bb_labels',
+      'vid' => 'label',
       'name' => 'bug',
       'workspace_id' => $workspace->id(),
     ]);
 
     $tickets = [
-      ['state' => 'coding', 'workflow' => 'bb_feature', 'priority' => 1],
-      ['state' => 'review', 'workflow' => 'bb_bug', 'priority' => 2],
-      ['state' => 'spec', 'workflow' => 'bb_feature', 'priority' => 3],
+      ['state' => 'working', 'workflow' => 'bb_work', 'priority' => 1],
+      ['state' => 'review', 'workflow' => 'bb_work', 'priority' => 2],
+      ['state' => 'plan', 'workflow' => 'bb_work', 'priority' => 3],
     ];
     foreach ($tickets as $i => $values) {
       $this->create('bb_ticket', $values + [
@@ -521,7 +521,7 @@ final class TicketFacetLabelsTest extends KernelTestBase {
       $this->renderedRows('label'),
       'Resolving the display label must not move the label into the URL.',
     );
-    self::assertArrayHasKey('coding', $this->renderedRows('state'));
+    self::assertArrayHasKey('working', $this->renderedRows('state'));
   }
 
   /**
@@ -647,11 +647,11 @@ final class TicketFacetLabelsTest extends KernelTestBase {
    * `$filter->value`, which only the exposed FORM populates — and in this
    * harness only the FIRST `renderExposedForm()` of a PHP process does so: a
    * second screen comes back with `value=[]` and no strip at all, while
-   * `exposed_data` is correctly `{"state":{"coding":"coding"}}` and the option
-   * rows are right. Measured on 2026-09-04, first iteration green and second
-   * iteration empty. One render sidesteps it, and it is the stronger claim
-   * anyway: all seven facets are asserted to agree with their own rows at the
-   * same time, on the same document a reader would be looking at.
+   * `exposed_data` is correctly `{"state":{"working":"working"}}` and the
+   * option rows are right. Measured on 2026-09-04, first iteration green and
+   * second iteration empty. One render sidesteps it, and it is the stronger
+   * claim anyway: all seven facets are asserted to agree with their own rows at
+   * the same time, on the same document a reader would be looking at.
    *
    * THE SEVEN VALUES ARE ONE TICKET'S, which is what keeps every facet's result
    * set non-empty: `min_count: 1` means a facet offers only what still yields a
@@ -660,8 +660,8 @@ final class TicketFacetLabelsTest extends KernelTestBase {
    */
   public function testEveryChipReadsWhatItsOptionRowReads(): void {
     $chosen = [
-      'state' => 'coding',
-      'workflow' => 'bb_feature',
+      'state' => 'working',
+      'workflow' => 'bb_work',
       'priority' => '1',
       'assignee' => (string) $this->assignee->id(),
       'project' => (string) $this->project->id(),

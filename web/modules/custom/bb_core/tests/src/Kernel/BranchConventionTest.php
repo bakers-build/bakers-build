@@ -53,7 +53,7 @@ final class BranchConventionTest extends KernelTestBase {
   private function ticketOn(ContentEntityInterface $project, string $title = 'Sub Ticket Branch'): ContentEntityInterface {
     $t = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'state' => 'todo',
         'title' => $title,
         'project_id' => $project->id(),

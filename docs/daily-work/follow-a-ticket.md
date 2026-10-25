@@ -12,7 +12,7 @@
 
    Every step ends with a `summary` comment: what happened and what comes next.
 
-2. **Check the state.** A ticket moves through `qualification`, `spec` (`diagnose` for a bug), `coding`, `review` and `done`. [Workflows and states](/skills-and-workflows/workflows-and-states) explains each one.
+2. **Check the state.** A ticket moves through `qualification`, `plan`, `working`, `review` and `done`; a fully specified ticket may skip `plan`, and review is optional. [Workflows and states](/skills-and-workflows/workflows-and-states) explains each one.
 
 3. **Answer questions.** See [Where you answer](#where-you-answer) below.
 

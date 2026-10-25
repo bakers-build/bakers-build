@@ -73,7 +73,7 @@ final class ActivityMailAssignedTest extends ActivityMailKernelTestBase {
 
     $this->createEntity('bb_ticket', [
       'title' => 'fresh-assigned',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
       'owner_user_id' => $assignee->id(),
       'assignee_user_id' => $assignee->id(),

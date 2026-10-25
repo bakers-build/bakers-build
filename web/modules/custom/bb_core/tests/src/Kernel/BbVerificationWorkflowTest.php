@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Group;
  * Verifies the bb_verification post-deployment review workflow (BB-148).
  *
  * The bb_verification workflow re-verifies a subject ticket (parent_id) and
- * its linked tickets on a target environment (environments), filing bb_bugs
+ * its linked tickets on a target environment (environments), filing bug tickets
  * (referenced_tickets) per regression. States: verifying -> summary -> done.
  * The state is a string, so the YAML alone registers the workflow — no PHP, no
  * schema hook.

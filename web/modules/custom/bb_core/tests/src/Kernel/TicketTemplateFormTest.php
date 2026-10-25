@@ -130,8 +130,8 @@ final class TicketTemplateFormTest extends KernelTestBase {
    * The target state is a picker of the chosen workflow's legal targets.
    */
   public function testTargetStateOptionsFollowTheWorkflow(): void {
-    $form = $this->buildAddForm('bb_bug', []);
-    self::assertSame(['qualification', 'diagnose', 'coding'], $this->pickerOptions($form, 'target_state'));
+    $form = $this->buildAddForm('bb_work', []);
+    self::assertSame(['qualification', 'plan', 'working'], $this->pickerOptions($form, 'target_state'));
     // The workflow picker fires `change` from its own root, inside the field
     // wrapper; the wrapper posts the form back as triggered by the workflow.
     $refresh = $form['workflow']['#attributes'];
@@ -142,28 +142,28 @@ final class TicketTemplateFormTest extends KernelTestBase {
     // No workflow yet: the picker opens on the default workflow, and the
     // targets are that workflow's.
     $form = $this->buildAddForm('', []);
-    self::assertSame(['bb_feature'], $form['workflow']['widget']['#default_value']);
-    self::assertSame(['qualification', 'spec', 'coding'], $this->pickerOptions($form, 'target_state'));
+    self::assertSame(['bb_work'], $form['workflow']['widget']['#default_value']);
+    self::assertSame(['qualification', 'plan', 'working'], $this->pickerOptions($form, 'target_state'));
   }
 
   /**
    * The properties are one pill row, target state right of the workflow.
    */
   public function testTargetStateSitsRightOfTheWorkflow(): void {
-    $form = $this->buildAddForm('bb_feature', []);
+    $form = $this->buildAddForm('bb_work', []);
     self::assertSame('bb_create_dialog', $form['#theme'] ?? NULL);
     $pills = array_values(array_filter(
       Element::children($form, TRUE),
       static fn (string $name): bool => ($form[$name]['#picker_region'] ?? NULL) === 'pills',
     ));
-    self::assertSame(['workflow', 'target_state', 'labels', 'conductor_id'], $pills);
+    self::assertSame(['workflow', 'target_state', 'labels', 'recipe', 'ticket_type', 'conductor_id'], $pills);
   }
 
   /**
    * The pattern fields read "Title" and "Description".
    */
   public function testPatternFieldsReadTitleAndDescription(): void {
-    $form = $this->buildAddForm('bb_feature', []);
+    $form = $this->buildAddForm('bb_work', []);
     self::assertSame('Title', (string) $form['title_pattern']['widget'][0]['value']['#title']);
     self::assertSame('Description', (string) $form['description']['widget'][0]['#title']);
   }
@@ -172,8 +172,8 @@ final class TicketTemplateFormTest extends KernelTestBase {
    * On a page the form posts natively: a save redirects and shows its message.
    */
   public function testPageFormIsNotBoosted(): void {
-    self::assertSame('false', $this->buildAddForm('bb_feature', [])['#attributes']['data-hx-boost'] ?? NULL);
-    self::assertArrayNotHasKey('data-hx-boost', $this->buildAddForm('bb_feature', [], TRUE)['#attributes'] ?? []);
+    self::assertSame('false', $this->buildAddForm('bb_work', [])['#attributes']['data-hx-boost'] ?? NULL);
+    self::assertArrayNotHasKey('data-hx-boost', $this->buildAddForm('bb_work', [], TRUE)['#attributes'] ?? []);
   }
 
   /**
@@ -200,7 +200,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
    * Workflow, target state, conductor and labels use the ticket form's picker.
    */
   public function testPropertiesArePickers(): void {
-    $form = $this->buildAddForm('bb_feature', []);
+    $form = $this->buildAddForm('bb_work', []);
     foreach (['workflow', 'target_state', 'conductor_id', 'labels'] as $field) {
       self::assertSame('bb_picker_value', $form[$field]['widget']['#type'] ?? NULL, $field);
     }
@@ -211,7 +211,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
    */
   public function testPickersFallBackWithoutJavaScriptOnThePage(): void {
     foreach ([FALSE => TRUE, TRUE => FALSE] as $htmx => $expected) {
-      $form = $this->buildAddForm('bb_feature', [], (bool) $htmx);
+      $form = $this->buildAddForm('bb_work', [], (bool) $htmx);
       foreach (['workflow', 'target_state', 'conductor_id', 'labels'] as $field) {
         $element = $form[$field]['widget'];
         foreach ($element['#pre_render'] as $callback) {
@@ -226,7 +226,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
    * Both pattern fields name the placeholders they accept.
    */
   public function testBothPatternsExplainTheirPlaceholders(): void {
-    $form = $this->buildAddForm('bb_feature', []);
+    $form = $this->buildAddForm('bb_work', []);
     foreach ([
       (string) $form['title_pattern']['widget'][0]['value']['#description'],
       (string) $form['description']['widget'][0]['#description'],
@@ -256,14 +256,14 @@ final class TicketTemplateFormTest extends KernelTestBase {
       // What core's htmx-assets.js adds for the element that fired.
       '_triggering_element_name' => 'workflow',
       'name' => [['value' => 'Refreshed only']],
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
     ]);
     $form = $this->container->get('form_builder')->buildForm($form_object, $form_state);
 
     self::assertSame('workflow', $form_state->getTriggeringElement()['#name'] ?? NULL, 'The refresh was processed as triggered by the workflow.');
     self::assertFalse($form_state->isSubmitted());
     self::assertSame([], $form_state->getErrors(), 'A half-filled form reports nothing on refresh.');
-    self::assertSame(['qualification', 'diagnose', 'coding'], $this->pickerOptions($form, 'target_state'));
+    self::assertSame(['qualification', 'plan', 'working'], $this->pickerOptions($form, 'target_state'));
     self::assertSame([], $storage->getQuery()->accessCheck(FALSE)->condition('name', 'Refreshed only')->execute());
   }
 
@@ -271,7 +271,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
    * The description offers no text format help, without a per-form opt-out.
    */
   public function testDescriptionShowsNoFormatHelp(): void {
-    $format = $this->buildAddForm('bb_feature', [])['description']['widget'][0]['format'];
+    $format = $this->buildAddForm('bb_work', [])['description']['widget'][0]['format'];
     self::assertFalse($format['help']['#access']);
     self::assertFalse($format['guidelines']['#access']);
   }
@@ -347,7 +347,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
 
     self::assertMatchesRegularExpression('/^Report \d{4}-\d{2}-\d{2}$/', (string) $form['title']['widget'][0]['value']['#default_value']);
     self::assertSame('Body', trim((string) $form['description']['widget'][0]['#default_value']));
-    self::assertSame(['bb_feature'], (array) $form['workflow']['widget']['#default_value']);
+    self::assertSame(['bb_work'], (array) $form['workflow']['widget']['#default_value']);
     self::assertSame([(string) $label], array_map('strval', (array) $form['labels']['widget']['#default_value']));
   }
 
@@ -384,7 +384,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
   public function testSubmitCreatesAndLandsOnTicket(): void {
     $state = $this->submitDialog($this->template(), [
       'title' => [['value' => 'Edited title']],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
 
     self::assertSame([], array_map('strval', $state->getErrors()));
@@ -407,7 +407,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
     $project = (string) $this->fixture('a', 'bb_project')->id();
     $state = $this->submitDialog($this->workspaceTemplate(), [
       'title' => [['value' => 'Picked project']],
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'project_id' => $project,
     ]);
 
@@ -417,7 +417,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
     $ticket = reset($tickets);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     self::assertSame('Picked project', $ticket->label());
-    self::assertSame('bb_bug', $ticket->get('workflow')->value);
+    self::assertSame('bb_work', $ticket->get('workflow')->value);
     self::assertSame($project, (string) $ticket->get('project_id')->target_id);
   }
 
@@ -426,12 +426,12 @@ final class TicketTemplateFormTest extends KernelTestBase {
    */
   public function testDialogOffersTargetStateOfTheWorkflow(): void {
     $template = $this->template();
-    $template->set('target_state', 'spec')->save();
+    $template->set('target_state', 'plan')->save();
 
     $form = $this->buildDialog($template);
 
-    self::assertSame(['qualification', 'spec', 'coding'], $this->pickerOptions($form, 'target_state'));
-    self::assertSame(['spec'], (array) $form['target_state']['widget']['#default_value']);
+    self::assertSame(['qualification', 'plan', 'working'], $this->pickerOptions($form, 'target_state'));
+    self::assertSame(['plan'], (array) $form['target_state']['widget']['#default_value']);
     $refresh = $form['workflow']['#attributes'] ?? [];
     self::assertArrayHasKey('data-hx-post', $refresh, 'Changing the workflow refreshes the target states.');
     self::assertStringContainsString('"_triggering_element_name":"workflow"', (string) ($refresh['data-hx-vals'] ?? ''));
@@ -444,10 +444,10 @@ final class TicketTemplateFormTest extends KernelTestBase {
     $request = Request::create('/instantiate');
     $request->setSession(new Session(new MockArraySessionStorage()));
     $this->container->get('request_stack')->push($request);
-    $state = (new FormState())->addBuildInfo('args', [$this->template()])->setUserInput(['workflow' => 'bb_bug']);
+    $state = (new FormState())->addBuildInfo('args', [$this->template()])->setUserInput(['workflow' => 'bb_work']);
     $form = $this->container->get('form_builder')->buildForm(TicketTemplateInstantiateForm::class, $state);
 
-    self::assertSame(['qualification', 'diagnose', 'coding'], $this->pickerOptions($form, 'target_state'));
+    self::assertSame(['qualification', 'plan', 'working'], $this->pickerOptions($form, 'target_state'));
   }
 
   /**
@@ -455,12 +455,12 @@ final class TicketTemplateFormTest extends KernelTestBase {
    */
   public function testChangedWorkflowCreatesInPickedTargetState(): void {
     $template = $this->template();
-    $template->set('target_state', 'spec')->save();
+    $template->set('target_state', 'plan')->save();
 
     $state = $this->submitDialog($template, [
-      'title' => [['value' => 'Bug instead']],
-      'workflow' => 'bb_bug',
-      'target_state' => 'diagnose',
+      'title' => [['value' => 'Verification instead']],
+      'workflow' => 'bb_verification',
+      'target_state' => 'summary',
     ]);
 
     self::assertSame([], array_map('strval', $state->getErrors()));
@@ -468,8 +468,8 @@ final class TicketTemplateFormTest extends KernelTestBase {
     self::assertCount(1, $tickets);
     $ticket = reset($tickets);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
-    self::assertSame('bb_bug', $ticket->get('workflow')->value);
-    self::assertSame('diagnose', $ticket->get('state')->value);
+    self::assertSame('bb_verification', $ticket->get('workflow')->value);
+    self::assertSame('summary', $ticket->get('state')->value);
   }
 
   /**
@@ -477,13 +477,14 @@ final class TicketTemplateFormTest extends KernelTestBase {
    */
   public function testRebuildKeepsEditedValues(): void {
     $template = $this->template();
-    $template->set('target_state', 'spec')->save();
+    $template->set('target_state', 'plan')->save();
 
-    // `spec` is unreachable in bb_bug, so the instantiation is refused.
+    // `plan` is unreachable in bb_verification, so the instantiation is
+    // refused.
     $state = $this->submitDialog($template, [
       'title' => [['value' => 'Kept title']],
-      'workflow' => 'bb_bug',
-      'target_state' => 'spec',
+      'workflow' => 'bb_verification',
+      'target_state' => 'plan',
     ]);
 
     self::assertSame([], $this->templateTickets());
@@ -581,7 +582,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
       'name' => [['value' => $name]],
       'title_pattern' => [['value' => 'From the form']],
       'description' => [['value' => 'Body', 'format' => 'bb_rich']],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'op' => 'Save',
     ]);
@@ -663,7 +664,7 @@ final class TicketTemplateFormTest extends KernelTestBase {
       'enabled' => TRUE,
       'title_pattern' => 'From the workspace',
       'description' => ['value' => 'Body', 'format' => 'bb_rich'],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'workspace_id' => $this->fixture($side, 'bb_workspace')->id(),
       'owner_user_id' => $this->worldOwner->id(),

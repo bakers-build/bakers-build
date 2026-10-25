@@ -17,7 +17,7 @@ Feature: Conductor assignment follows local authority
     Given the API client is "<actor>"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
-      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"Assigned API ticket","workflow":"bb_feature"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{conductor.home}"}}}}}
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"Assigned API ticket","workflow":"bb_work"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{conductor.home}"}}}}}
       """
     Then the conductor assignment outcome is <status>
 
@@ -31,7 +31,7 @@ Feature: Conductor assignment follows local authority
 
   Scenario Outline: Reassigning an existing ticket checks the actor's local rank
     Given the API client is "north-contributor"
-    When the API client creates a "bb_feature" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     Given the API client is "<actor>"
     When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
       """

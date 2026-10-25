@@ -4,7 +4,8 @@
 // this module knows both sides and therefore owns the mapping to `Option` and this
 // popup's policy: read write-client-first for users/conductors, drop Anonymous, filter
 // conductors to the ticket's project, put liveness in the label, load the
-// `bb_labels` vocabulary for the Labels multi-select, and reorder ONLY the
+// `label` vocabulary for the Labels multi-select (and `type`/`recipe` for the
+// Type and Recipe selects), and reorder ONLY the
 // conductor ring owner-first (BB-460) — the assignee ring is unordered because
 // the popup preselects the ticket's current assignee. Each rule has exactly one
 // user, so each is written once, here, beside the create adapter it differs from.
@@ -37,7 +38,10 @@ export interface EditFormHints {
 }
 
 /** The vocabulary this popup offers as its labels (BB-360 D9 / D11). */
-const LABEL_VOCABULARY = 'bb_labels';
+const LABEL_VOCABULARY = 'label';
+/** The vocabularies of the single-valued `ticket_type` / `recipe` (BAKERS-17). */
+const TYPE_VOCABULARY = 'type';
+const RECIPE_VOCABULARY = 'recipe';
 
 /**
  * uid 0 is Drupal's Anonymous and never a valid human assignee. A row whose uid never
@@ -69,16 +73,17 @@ export async function loadEditFormOptions(
   clients: EditFormClients,
   hints: EditFormHints = {},
 ): Promise<EditFormOptions> {
-  // Labels have no write-preferring helper: terms are not write-gated the way
+  // Terms have no write-preferring helper: they are not write-gated the way
   // assignees/conductors are. Fail-open to [] when the read client is absent or
   // the vocabulary throws (D11).
-  const labelsPromise = clients.read
-    ? listTerms(clients.read, LABEL_VOCABULARY).then(
-        (outcome) =>
-          outcome.rows.map((t) => ({ id: t.id, label: t.label })) as Option[],
-        () => [] as Option[],
-      )
-    : Promise.resolve([] as Option[]);
+  const termsPromise = (vocabulary: string): Promise<Option[]> =>
+    clients.read
+      ? listTerms(clients.read, vocabulary).then(
+          (outcome) =>
+            outcome.rows.map((t) => ({ id: t.id, label: t.label })) as Option[],
+          () => [] as Option[],
+        )
+      : Promise.resolve([] as Option[]);
 
   const reviewerClient = clients.write ?? clients.read;
   const reviewersPromise = reviewerClient
@@ -88,12 +93,15 @@ export async function loadEditFormOptions(
         error: 'no client — reviewers cannot be loaded',
       });
 
-  const [users, conductors, labels, reviewers] = await Promise.all([
-    listUsersPreferringWrite(clients),
-    listConductorsPreferringWrite(clients),
-    labelsPromise,
-    reviewersPromise,
-  ]);
+  const [users, conductors, ticketTypes, recipes, labels, reviewers] =
+    await Promise.all([
+      listUsersPreferringWrite(clients),
+      listConductorsPreferringWrite(clients),
+      termsPromise(TYPE_VOCABULARY),
+      termsPromise(RECIPE_VOCABULARY),
+      termsPromise(LABEL_VOCABULARY),
+      reviewersPromise,
+    ]);
   return {
     users: excludeAnonymous(users).map((u) => ({ id: u.id, label: u.label })),
     reviewers: reviewers.options,
@@ -102,6 +110,8 @@ export async function loadEditFormOptions(
       (c) =>
         hints.ownerUserId !== undefined && c.ownerUserId === hints.ownerUserId,
     ).map(withStatusSuffix),
+    ticketTypes,
+    recipes,
     labels,
     ...(reviewers.error === undefined
       ? {}

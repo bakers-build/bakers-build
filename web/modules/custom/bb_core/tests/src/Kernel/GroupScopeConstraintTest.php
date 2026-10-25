@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\og\Entity\OgRole;
@@ -78,7 +79,7 @@ final class GroupScopeConstraintTest extends KernelTestBase {
     $ticket = $this->newTicket([
       'identifier' => 'T-OK',
       'title' => 'in own workspace',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('b', 'bb_project')->id(),
     ]);
 
@@ -92,7 +93,7 @@ final class GroupScopeConstraintTest extends KernelTestBase {
     $ticket = $this->newTicket([
       'identifier' => 'T-NO',
       'title' => 'in a foreign workspace',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
     ]);
 
@@ -109,7 +110,7 @@ final class GroupScopeConstraintTest extends KernelTestBase {
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => 'T-MOVE',
       'title' => 'starts at home',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('b', 'bb_project')->id(),
       'owner_user_id' => $this->worldOwner->id(),
     ]);
@@ -239,6 +240,75 @@ final class GroupScopeConstraintTest extends KernelTestBase {
   }
 
   /**
+   * A guest rank here plus a lead rank elsewhere grants no term create here.
+   *
+   * `create bb_term` is pooled across the actor's workspaces by the rank
+   * policy, and BbWorkspaceScope only asks for membership, which a guest has.
+   * The anchor is what binds the right to the term's own workspace; the
+   * positive half shows the same actor still creates in workspace B.
+   */
+  public function testGuestHereWithLeadElsewhereCannotCreateTermHere(): void {
+    $guest_role = OgRole::load('bb_workspace-bb_workspace-guest');
+    self::assertNotNull($guest_role);
+    Og::createMembership($this->fixture('a', 'bb_workspace'), $this->actor)
+      ->addRole($guest_role)
+      ->setState(OgMembershipInterface::STATE_ACTIVE)
+      ->save();
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_term');
+
+    $here = $storage->create([
+      'vid' => 'label',
+      'name' => 'g-a',
+      'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
+    ]);
+    $there = $storage->create([
+      'vid' => 'label',
+      'name' => 'g-b',
+      'workspace_id' => $this->fixture('b', 'bb_workspace')->id(),
+    ]);
+    self::assertInstanceOf(FieldableEntityInterface::class, $here);
+    self::assertInstanceOf(FieldableEntityInterface::class, $there);
+
+    self::assertSame(['workspace_id'], $this->violationsAs($here, $this->actor));
+    self::assertSame([], $this->violationsAs($there, $this->actor));
+  }
+
+  /**
+   * The term add form reports the hidden workspace's tenancy violation.
+   *
+   * The form has no workspace widget, and core drops violations of fields a
+   * form does not edit, so the entity constraint alone never reaches it.
+   */
+  public function testTermAddFormRefusesTermInWorkspaceWithoutRank(): void {
+    $guest_role = OgRole::load('bb_workspace-bb_workspace-guest');
+    self::assertNotNull($guest_role);
+    Og::createMembership($this->fixture('a', 'bb_workspace'), $this->actor)
+      ->addRole($guest_role)
+      ->setState(OgMembershipInterface::STATE_ACTIVE)
+      ->save();
+    $manager = $this->container->get('entity_type.manager');
+    $storage = $manager->getStorage('bb_term');
+    $this->container->get('current_user')->setAccount($this->actor);
+
+    foreach (['a' => 1, 'b' => 0] as $workspace => $expected_errors) {
+      $form = $manager->getFormObject('bb_term', 'add');
+      $form->setEntity($storage->create([
+        'vid' => 'type',
+        'workspace_id' => $this->fixture($workspace, 'bb_workspace')->id(),
+      ]));
+      $state = (new FormState())->setValues([
+        'name' => [['value' => 'form-' . $workspace]],
+        'op' => 'Save',
+      ]);
+      $this->container->get('form_builder')->submitForm($form, $state);
+
+      $errors = array_filter($state->getErrors(), static fn ($error) => str_contains((string) $error, 'tenancy'));
+      self::assertCount($expected_errors, $errors, "Workspace $workspace");
+      self::assertCount(1 - $expected_errors, $storage->loadByProperties(['name' => 'form-' . $workspace]), "Workspace $workspace");
+    }
+  }
+
+  /**
    * A site-wide administrator is not scoped by the constraint.
    *
    * The constraint bounds a rank, and `administer bakers` is instance-wide by
@@ -250,7 +320,7 @@ final class GroupScopeConstraintTest extends KernelTestBase {
     $ticket = $this->newTicket([
       'identifier' => 'T-ADM',
       'title' => 'anywhere',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
     ]);
 
@@ -273,6 +343,7 @@ final class GroupScopeConstraintTest extends KernelTestBase {
       'bb_project' => 'teams',
       'bb_group' => 'workspace_id',
       'bb_team' => 'workspace_id',
+      'bb_term' => 'workspace_id',
     ];
     $field_manager = $this->container->get('entity_field.manager');
 

@@ -67,14 +67,14 @@ final class AdminViewsFilterTest extends KernelTestBase {
     BbTicket::create([
       'identifier' => 'BB-9001',
       'title' => 'Alpha ticket',
-      'workflow' => 'bb_feature',
-      'state' => 'spec',
+      'workflow' => 'bb_work',
+      'state' => 'plan',
     ])->save();
     BbTicket::create([
       'identifier' => 'BB-9002',
       'title' => 'Beta ticket',
-      'workflow' => 'bb_chore',
-      'state' => 'coding',
+      'workflow' => 'bb_deployment',
+      'state' => 'pre_deployment',
     ])->save();
   }
 
@@ -113,8 +113,8 @@ final class AdminViewsFilterTest extends KernelTestBase {
     return [
       'identifier' => ['identifier', 'BB-9001'],
       'title' => ['title', 'Alpha'],
-      'workflow' => ['workflow', 'bb_feature'],
-      'state' => ['state', 'spec'],
+      'workflow' => ['workflow', 'bb_work'],
+      'state' => ['state', 'plan'],
     ];
   }
 
@@ -124,11 +124,11 @@ final class AdminViewsFilterTest extends KernelTestBase {
   public function testFiltersCombine(): void {
     self::assertSame(
       ['BB-9001'],
-      $this->identifiersFor(['workflow' => 'bb_feature', 'state' => 'spec']),
+      $this->identifiersFor(['workflow' => 'bb_work', 'state' => 'plan']),
     );
     self::assertSame(
       [],
-      $this->identifiersFor(['workflow' => 'bb_feature', 'state' => 'coding']),
+      $this->identifiersFor(['workflow' => 'bb_work', 'state' => 'pre_deployment']),
       'A contradictory filter pair returned rows.',
     );
   }

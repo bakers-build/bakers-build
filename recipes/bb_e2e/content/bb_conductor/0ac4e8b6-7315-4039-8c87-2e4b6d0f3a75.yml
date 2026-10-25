@@ -24,4 +24,4 @@ default:
   machine:
   - entity: f9b3d7a5-6204-4f28-eb76-1d3a5c9e2f64
   states:
-  - value: coding
+  - value: working

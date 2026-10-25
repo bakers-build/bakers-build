@@ -173,7 +173,7 @@ function makeConfig(
     // BB-450 D5 removing the directory-derived id fallback.
     conductor_id: 'bakers-test-conductor',
     project: 'bakers',
-    states: ['todo', 'coding'],
+    states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
     max_parallel: 2,
     poll_interval_ms: 5000,
@@ -1017,7 +1017,7 @@ describe('Conductor', () => {
         't-1': {
           identifier: 'BB-1',
           title: 'One',
-          state: 'coding',
+          state: 'working',
           baseBranch: 'feat/p-1-parent',
         },
       },
@@ -1026,7 +1026,7 @@ describe('Conductor', () => {
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const conductor = await startedConductor(
@@ -1209,17 +1209,17 @@ describe('Conductor', () => {
     expect(calls.some((c) => c.msg === 'dispatched run')).toBe(true);
   });
 
-  it('dispatch: classified ticket (state="diagnose") with WORKFLOW.md → state prompt + release instruction', async () => {
+  it('dispatch: classified ticket (state="plan") with WORKFLOW.md → state prompt + release instruction', async () => {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'diagnose' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'plan' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'diagnose',
+      stateAtStart: 'plan',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -1240,9 +1240,9 @@ describe('Conductor', () => {
 
     expect(executor.started).toHaveLength(1);
     const command = executor.started[0]?.command ?? '';
-    expect(command).toContain('current state: diagnose');
+    expect(command).toContain('current state: plan');
     expect(command).toContain('./WORKFLOW.md');
-    expect(command).toContain("that skill's diagnose section");
+    expect(command).toContain("that skill's plan section");
     expect(command).not.toContain('ticket:run');
     expect(command).toContain('Do not start or prepare a later state');
     expect(command).not.toContain('bakers run release');
@@ -1251,14 +1251,14 @@ describe('Conductor', () => {
   it('dispatch renders the configured prompt template with ticket, state, and run values', async () => {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'diagnose' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'plan' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'diagnose',
+      stateAtStart: 'plan',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -1284,20 +1284,20 @@ describe('Conductor', () => {
     await conductor.tick();
 
     const command = executor.started[0]?.command ?? '';
-    expect(command).toContain('Custom BB-1 diagnose r-1');
+    expect(command).toContain('Custom BB-1 plan r-1');
   });
 
   it('dispatch uses the embed-free default prompt: step-0 read command, no ticket body/comments (BB-112)', async () => {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -1738,7 +1738,7 @@ describe('Conductor', () => {
         {
           runUuid: 'codex-r-1',
           ticketUuid: 't-1',
-          stateAtStart: 'coding',
+          stateAtStart: 'working',
           state: 'done',
           worktreePath: '/wt/codex-r-1',
           agent: 'codex',
@@ -2518,7 +2518,7 @@ describe('Conductor', () => {
         't-2': {
           identifier: 'BB-2',
           title: 'Two',
-          state: 'coding',
+          state: 'working',
           branchName: 'bakers/bb-2',
         },
       },
@@ -2853,7 +2853,7 @@ describe('Conductor', () => {
   });
 
   // BB-243 — a CANCELLED ticket is wound up like a done one. `cancel` reaches
-  // every non-terminal state of every workflow, `coding` and `review` included,
+  // every non-terminal state of every workflow, `working` and `review` included,
   // so a worktree certainly exists; before this it was never on the work list at
   // all and — unlike the unverified-teardown case — never retried either,
   // because a retry only happens for tickets that ARE on the list.
@@ -2881,8 +2881,8 @@ describe('Conductor', () => {
         {
           runUuid: 'r-1',
           ticketUuid: 't-1',
-          // Cancelled out of coding — the realistic case, worktree present.
-          stateAtStart: 'coding',
+          // Cancelled out of working — the realistic case, worktree present.
+          stateAtStart: 'working',
           state: 'done',
           worktreePath: PRESENT_WORKTREE,
           closed: true,
@@ -3322,14 +3322,14 @@ describe('Conductor', () => {
   it('dispatch runs after_create (fresh worktree) then before_run through the executor, then startRun', async () => {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -3375,14 +3375,14 @@ describe('Conductor', () => {
     // convergent — and safe — behaviour.
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -3418,14 +3418,14 @@ describe('Conductor', () => {
     // log.txt — durable. Boundedness stays with the existing circuit breaker.
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -3471,14 +3471,14 @@ describe('Conductor', () => {
     const order: string[] = [];
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     class OrderedExecutor extends RecordingExecutor {
@@ -3566,14 +3566,14 @@ describe('Conductor', () => {
   ): Promise<void> {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid,
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const workspace = new FakeWorkspace();
@@ -3681,7 +3681,7 @@ describe('Conductor', () => {
       await conductor.start();
       await conductor.reap();
 
-      // The ticket is reopened (e.g. back to `coding`) and dispatched into
+      // The ticket is reopened (e.g. back to `working`) and dispatched into
       // the SAME surviving worktree, which `after_done` tore down.
       await dispatchOnce(path, 'r-reopened', false, executor);
 
@@ -3698,14 +3698,14 @@ describe('Conductor', () => {
   it('dispatch warns (naming ticket + workspace) when WORKFLOW.md is missing, but still starts the run', async () => {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -3742,14 +3742,14 @@ describe('Conductor', () => {
   it('dispatch does not warn about WORKFLOW.md when it is present', async () => {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -3856,17 +3856,17 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         't-1': {
           identifier: 'BB-1',
           title: 'One',
-          state: 'coding',
+          state: 'working',
           effectiveEnvVars: `DB_PASSWORD=${SECRET}`,
         },
-        't-2': { identifier: 'BB-2', title: 'Two', state: 'coding' },
+        't-2': { identifier: 'BB-2', title: 'Two', state: 'working' },
       },
     });
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     return remote;
@@ -3934,7 +3934,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     // Run-scoped context: the claimed run, its start state, the resolved ticket.
     expect(bBefore?.ctx).toMatchObject({
       worktreePath: '/fake/BB-1',
-      state: 'coding',
+      state: 'working',
       run: { uuid: 'r-1', id: 1 },
       ticket: { uuid: 't-1', identifier: 'BB-1' },
     });
@@ -3994,7 +3994,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
       runUuid: 'r-2',
       runId: 2,
       ticketUuid: 't-2',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new EventExecutor([]);
@@ -4188,7 +4188,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
           runUuid: 'r-1',
           id: 11,
           ticketUuid: 't-1',
-          stateAtStart: 'coding',
+          stateAtStart: 'working',
           state: 'done',
           worktreePath: PRESENT_WORKTREE,
         },
@@ -4278,7 +4278,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     ).toEqual([
       {
         run: { uuid: 'r-1', id: 11 },
-        state: 'coding',
+        state: 'working',
         ticket: 'BB-1',
         envRun: 'r-1',
       },
@@ -4563,7 +4563,7 @@ describe('qualification gate orchestration (step-owning skills)', () => {
 describe('Conductor poll loop — reaped checkout', () => {
   it('stops instead of claiming when its own checkout is gone', async () => {
     const remote = new FakeBbRemote({
-      runs: [{ runUuid: 'r-1', ticketUuid: 't-1', stateAtStart: 'coding' }],
+      runs: [{ runUuid: 'r-1', ticketUuid: 't-1', stateAtStart: 'working' }],
     });
     const { log, calls } = spyLogger();
     const conductor = new Conductor(
@@ -4627,14 +4627,14 @@ describe('Conductor — freeze hooks', () => {
   } {
     return {
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
-        't-2': { identifier: 'BB-2', title: 'Two', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+        't-2': { identifier: 'BB-2', title: 'Two', state: 'working' },
       },
       runs: [
         {
           runUuid: 'r-1',
           ticketUuid: 't-1',
-          stateAtStart: 'coding',
+          stateAtStart: 'working',
           state: 'done',
           worktreePath: PRESENT_WORKTREE,
           closed: true,
@@ -4642,7 +4642,7 @@ describe('Conductor — freeze hooks', () => {
         {
           runUuid: 'r-2',
           ticketUuid: 't-2',
-          stateAtStart: 'coding',
+          stateAtStart: 'working',
           state: 'done',
           worktreePath: PRESENT_WORKTREE,
           closed: true,
@@ -4942,7 +4942,7 @@ describe('action queue', () => {
         {
           identifier: `bakers.build-${k + 1}`,
           title: `T${k + 1}`,
-          state: 'coding',
+          state: 'working',
         },
       ]),
     );

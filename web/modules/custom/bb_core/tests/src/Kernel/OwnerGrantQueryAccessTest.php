@@ -267,7 +267,7 @@ final class OwnerGrantQueryAccessTest extends KernelTestBase {
     $project = $this->createProjectMemberOf($reader);
     $ticket = $entity_type_manager->getStorage('bb_ticket')->create([
       'identifier' => 'GL-OG',
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'GL-OG',
       'project_id' => $project->id(),
     ]);

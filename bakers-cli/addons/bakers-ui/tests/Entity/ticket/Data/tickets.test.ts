@@ -69,13 +69,13 @@ it('mapTicketData maps a raw JSON:API entry incl. type', () => {
       priority: 2,
       assignee_initials: 'CW',
       derived_status: 'running',
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
     },
     relationships: { labels: { data: [] } },
   });
   expect(row.id).toBe('u1');
   expect(row.identifier).toBe('BB-1');
-  expect(row.type).toBe('bb_feature');
+  expect(row.type).toBe('bb_work');
   expect(row.state).toBe('spec');
   expect(row.labels).toEqual([]);
   expect(row.parent).toBe(null);
@@ -147,7 +147,7 @@ it('mapTicketDocument maps a detail-shaped document to a row, parent included (B
         state: 'coding',
         assignee_initials: 'CW',
         derived_status: 'running',
-        workflow: 'bb_feature',
+        workflow: 'bb_work',
       },
       relationships: {
         labels: { data: [] },
@@ -332,7 +332,7 @@ it('a resource carrying exactly the fieldset maps to a row with no fallback valu
     owner_initials: 'AL',
     derived_status: 'running',
     stall_reason: 'failing',
-    workflow: 'bb_feature',
+    workflow: 'bb_work',
     closed: false,
     frozen: false,
   };
@@ -370,7 +370,7 @@ it('a resource carrying exactly the fieldset maps to a row with no fallback valu
     derivedStatus: 'running',
     stallReason: 'failing',
     labels: ['uuid-label'],
-    type: 'bb_feature',
+    type: 'bb_work',
     parent: 'BB-0',
     conductor: 'cw-framework',
     assigneeId: 'uuid-user',

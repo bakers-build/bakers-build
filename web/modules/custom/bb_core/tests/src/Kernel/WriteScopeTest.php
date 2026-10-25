@@ -66,7 +66,7 @@ final class WriteScopeTest extends KernelTestBase {
    */
   private function createTicket(string $identifier, array $values = []): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create($values + ['identifier' => $identifier, 'workflow' => 'bb_bug', 'title' => $identifier]);
+      ->create($values + ['identifier' => $identifier, 'workflow' => 'bb_work', 'title' => $identifier]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;
@@ -377,17 +377,17 @@ final class WriteScopeTest extends KernelTestBase {
     ])->save();
 
     $in_scope = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-52', 'workflow' => 'bb_chore', 'title' => 'Sub', 'parent_id' => $claimed->id()]);
+      ->create(['identifier' => 'GL-52', 'workflow' => 'bb_work', 'title' => 'Sub', 'parent_id' => $claimed->id()]);
     $this->assertInstanceOf(BbTicketInterface::class, $in_scope);
     $this->assertCount(0, $in_scope->validate()->getByField('parent_id'));
 
     $out_of_scope = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-53', 'workflow' => 'bb_chore', 'title' => 'Sub', 'parent_id' => $foreign->id()]);
+      ->create(['identifier' => 'GL-53', 'workflow' => 'bb_work', 'title' => 'Sub', 'parent_id' => $foreign->id()]);
     $this->assertInstanceOf(BbTicketInterface::class, $out_of_scope);
     $this->assertCount(0, $out_of_scope->validate()->getByField('parent_id'));
 
     $no_parent = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-54', 'workflow' => 'bb_chore', 'title' => 'Orphan']);
+      ->create(['identifier' => 'GL-54', 'workflow' => 'bb_work', 'title' => 'Orphan']);
     $this->assertInstanceOf(BbTicketInterface::class, $no_parent);
     $this->assertCount(0, $no_parent->validate()->getByField('parent_id'));
   }

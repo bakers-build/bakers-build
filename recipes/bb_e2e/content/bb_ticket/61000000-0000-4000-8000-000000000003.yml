@@ -6,6 +6,7 @@ _meta:
   uuid: 61000000-0000-4000-8000-000000000003
   default_langcode: en
   depends:
+    db1a0000-0000-4000-8000-000000000020: bb_term
     ead793be-b1f3-5f56-a716-392b8c878a16: bb_project
     fb355227-fe83-5482-819f-51f8011a78eb: bb_team
 default:
@@ -16,6 +17,8 @@ default:
   title:
   - value: "Markdown output without description"
   workflow:
-  - value: bb_feature
+  - value: bb_work
+  ticket_type:
+  - entity: db1a0000-0000-4000-8000-000000000020
   project_id:
   - entity: ead793be-b1f3-5f56-a716-392b8c878a16
