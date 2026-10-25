@@ -131,7 +131,8 @@ back when the form closes.
 
 The `✎ Edit ticket` popup edits assignee, conductor, estimate, spent, **Parent**
 (project-scoped autocomplete, clearable, never offering the open ticket as its
-own parent) and **Labels** (multi-select from `bb_labels`). Ordinary **Save**
+own parent), **Type** and **Recipe** (clearable single selects from the `type` /
+`recipe` vocabularies) and **Labels** (multi-select from `label`). Ordinary **Save**
 (`Ctrl+S`, or Enter on `[ Save ]`) PATCHes those fields and never writes
 `state`. **Cancel ticket** is a second action on non-terminal tickets only
 (`done` / `cancelled` omit it); activating it PATCHes only `state: cancelled`
@@ -221,7 +222,10 @@ ticket body by almost one viewport when no modal is open. Wheel scrolling is
 unchanged.
 
 The header box keeps identifier, title, labels, state, **Assigned** and
-**Created by** on screen while the body scrolls. Creator has no authoritative
+**Created by** on screen while the body scrolls. The ticket's **type** and
+**recipe** names sit on its meta line beside the labels, and the piped render
+lists them as `Type` / `Recipe` sections after `Labels` (`No type.` /
+`No recipe.` when unset). Creator has no authoritative
 ticket field, so ordinary records show `Created by: unknown`.
 
 **Relationships** lists the parent too, and a **Blocked by** section between sub-tickets
@@ -407,7 +411,9 @@ the rows on screen.
 `n` opens a centered popup (a real modal overlay drawn on top of the current
 screen) with, top to bottom, a **Title**, a multiline **Description**, a
 searchable **Parent**, and live-loaded **Assignee** (users), **Conductor**,
-**Labels** (multi-select) and **Workflow** type selects. The operator's own user
+**Type** and **Recipe** (single terms from the `type` / `recipe` vocabularies,
+opened empty and clearable), **Labels** (multi-select) and **Workflow** (the
+one `bb_work` workflow) selects. The operator's own user
 (by username) and own conductor (by `machine_id`, from the machine context /
 config) are preselected as defaults. **Title** comes first because
 `bb_ticket.title` is required server-side — nothing derives it from the
@@ -441,7 +447,7 @@ take.
 - **Create directly** (`Ctrl+D`) writes the ticket itself — one POST, no agent,
   no qualification handoff. The typed text becomes the ticket's description
   verbatim (format `bb_rich`), the picked workflow, assignee, conductor,
-  labels and parent are written as they stand, and everything the server owns
+  type, recipe, labels and parent are written as they stand, and everything the server owns
   (`state`, `identifier`, `number`, `branch_name`, `base_branch`) is left to the
   server, so the ticket lands in the workflow's first state. It needs a
   **project**, because a ticket without one draws no number and gets no
@@ -468,7 +474,7 @@ take.
 
 The **Description** soft-wraps to the popup's inner width (measured in display
 columns), so a long line is readable inside the frame instead of clipped at it,
-and **Labels** are read from the `bb_labels` vocabulary. When an option list
+and **Labels** are read from the `label` vocabulary. When an option list
 cannot be loaded the popup says so per list (`⚠ Labels could not be loaded: …`)
 rather than presenting an empty one — an empty list means the read succeeded and
 there is nothing to offer.

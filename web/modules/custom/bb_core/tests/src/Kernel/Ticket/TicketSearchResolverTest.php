@@ -231,13 +231,13 @@ final class TicketSearchResolverTest extends KernelTestBase {
     $first->set('origin', 'https://git.key-tec.de/bakers-build/bakers-build/-/issues/20')->save();
     $second = $this->createEntity('bb_ticket', [
       'title' => 'second on issue 20',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->project('a')->id(),
       'origin' => 'https://git.key-tec.de/bakers-build/bakers-build/issues/20/',
     ]);
     $this->createEntity('bb_ticket', [
       'title' => 'on issue 200',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->project('a')->id(),
       'origin' => 'https://git.key-tec.de/bakers-build/bakers-build/-/issues/200',
     ]);
@@ -257,7 +257,7 @@ final class TicketSearchResolverTest extends KernelTestBase {
   public function testTicketIdsMatchIdentifierAndTitleOnTheIndex(): void {
     $ticket = $this->createEntity('bb_ticket', [
       'title' => 'Theme tokens for the rail',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->project('a')->id(),
     ]);
     $ticket->set('identifier', 'BB-544')->save();

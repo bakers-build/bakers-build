@@ -90,8 +90,8 @@ When(
  * AC 5's first half: the filter set is IN the address.
  *
  * Read off `location.search` DECODED, because the assertion is about the
- * parameter Drupal reads — `state[]=coding` — and the browser stores it as
- * `state%5B%5D=coding`. Asserting the encoded form would make the step track
+ * parameter Drupal reads — `state[]=working` — and the browser stores it as
+ * `state%5B%5D=working`. Asserting the encoded form would make the step track
  * URLSearchParams' escaping rules instead of the query contract.
  */
 Then('the address carries {string}', async ({ page }, parameter: string) => {

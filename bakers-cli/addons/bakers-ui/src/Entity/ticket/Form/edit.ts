@@ -22,6 +22,8 @@ export type EditFieldId =
   | 'estimate'
   | 'spent'
   | 'parent'
+  | 'ticketType'
+  | 'recipe'
   | 'labels'
   | 'submit'
   | 'cancelTicket';
@@ -36,10 +38,10 @@ export type EditFieldId =
  * `STATE_FILTER_VALUES` in `Data/query.ts`, hardcoded for the same reason.
  *
  * One constant serves every ticket workflow because in ALL of them
- * (`bb_feature`, `bb_bug`, `bb_chore`, `bb_deployment`,
- * `bb_verification`) `cancel.from` is exactly the set of non-terminal states —
- * so "non-terminal" and "the workflow permits cancelling" are the same
- * predicate, and no workflow id is needed to tell them apart.
+ * (`bb_work`, `bb_deployment`, `bb_verification`) `cancel.from` is exactly
+ * the set of non-terminal states — so "non-terminal" and "the workflow permits
+ * cancelling" are the same predicate, and no workflow id is needed to tell
+ * them apart.
  */
 export const CANCELLED_STATE = 'cancelled';
 
@@ -55,7 +57,7 @@ export const CANCEL_TICKET_ACTION_ID = 'cancelTicket';
  * The states no transition leaves, in every ticket workflow.
  *
  * The server's own definition (`TypeWorkflows::isTerminal` — "a state no
- * transition leaves") evaluates to exactly this pair for all five workflows.
+ * transition leaves") evaluates to exactly this pair for all three workflows.
  */
 export const TERMINAL_TICKET_STATES: ReadonlySet<string> = new Set([
   'done',
@@ -67,6 +69,10 @@ export interface EditFormOptions {
   users: Option[];
   reviewers: Option[];
   conductors: Option[];
+  /** The `type` vocabulary, for the single-valued `ticket_type` (BAKERS-17). */
+  ticketTypes: Option[];
+  /** The `recipe` vocabulary, for the single-valued `recipe` (BAKERS-17). */
+  recipes: Option[];
   labels: Option[];
   errors?: { reviewers?: string | undefined } | undefined;
   /**
@@ -92,6 +98,8 @@ interface EditValues {
   /** The PICKED parent's uuid, or null. `parentQuery` holds what was typed. */
   parent: string | null;
   parentQuery: string;
+  ticketType: string | null;
+  recipe: string | null;
   labels: ReadonlySet<string>;
 }
 
@@ -107,7 +115,7 @@ const linkage = (
 const labelsLinkage = (
   ids: ReadonlySet<string>,
 ): { data: { type: string; id: string }[] } => ({
-  data: [...ids].map((id) => ({ type: 'bb_term--bb_labels', id })),
+  data: [...ids].map((id) => ({ type: 'bb_term--label', id })),
 });
 
 /** The payload of the ordinary Save PATCH (BB-233 Decision 2). */
@@ -116,6 +124,8 @@ export interface EditFormPayload {
   relationships: {
     assignee_user_id: { data: { type: string; id: string } | null };
     conductor_id: { data: { type: string; id: string } | null };
+    ticket_type: { data: { type: string; id: string } | null };
+    recipe: { data: { type: string; id: string } | null };
     labels: { data: { type: string; id: string }[] };
     parent_id: { data: { type: string; id: string } | null };
     reviewers?: { data: { type: string; id: string }[] };
@@ -163,7 +173,8 @@ const timeAttributes = (v: EditValues): Record<string, number | null> => {
  *
  * BOTH assignment selects are `clearable`: AC-4 requires REMOVING an assignment,
  * not only changing it, so `null` is a real position in each cycle. Parent is
- * clearable for the same reason (D7). Labels always PATCH the full selected set,
+ * clearable for the same reason (D7), and so are Type and Recipe. Labels
+ * always PATCH the full selected set,
  * including empty.
  *
  * Ordinary Save NEVER includes `attributes.state` — a self-transition is not a
@@ -194,6 +205,8 @@ const declareEditForm = (savable: boolean, cancellable: boolean) =>
         absentNote: '(no project context — open a project to pick a parent)',
         pageSize: PARENT_PAGE_SIZE,
       }),
+      f.select('ticketType', 'Type', { from: 'ticketTypes', clearable: true }),
+      f.select('recipe', 'Recipe', { from: 'recipes', clearable: true }),
       f.multi('labels', 'Labels', { from: 'labels' }),
       ...(savable ? [f.action('Save', 'submit')] : []),
       ...(cancellable
@@ -206,6 +219,8 @@ const declareEditForm = (savable: boolean, cancellable: boolean) =>
       relationships: {
         assignee_user_id: linkage('user--user', v.assignee),
         conductor_id: linkage('bb_conductor--bb_conductor', v.conductor),
+        ticket_type: linkage('bb_term--type', v.ticketType),
+        recipe: linkage('bb_term--recipe', v.recipe),
         labels: labelsLinkage(v.labels),
         parent_id: linkage('bb_ticket--bb_ticket', v.parent),
         ...(v.reviewersLoaded || v.reviewers.size > 0
@@ -278,6 +293,8 @@ export const EMPTY_EDIT_FORM_OPTIONS: EditFormOptions = {
   users: [],
   reviewers: [],
   conductors: [],
+  ticketTypes: [],
+  recipes: [],
   labels: [],
 };
 
@@ -360,6 +377,8 @@ export function initialEditForm(document: TicketDetailDocument): EditFormState {
     spent: timeValue(document, 'time_spent'),
     parent,
     parentQuery: parentQueryFromDocument(document, parent),
+    ticketType: relId(document, 'ticket_type'),
+    recipe: relId(document, 'recipe'),
     labels: labelIds(document),
   });
 }

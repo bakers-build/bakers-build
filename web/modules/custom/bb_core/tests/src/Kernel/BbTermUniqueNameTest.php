@@ -71,11 +71,8 @@ final class BbTermUniqueNameTest extends KernelTestBase {
     $this->installEntitySchema('bb_team');
     $this->installConfig(['user']);
     $this->installOgScopeFixture();
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
-    BbVocabulary::create([
-      'id' => 'bb_capability_tags',
-      'label' => 'bakers.build capability tags',
-    ])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'recipe', 'label' => 'bakers.build recipes'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     // Uid 1 bypasses every access check, so it must not be the actor.
@@ -131,10 +128,10 @@ final class BbTermUniqueNameTest extends KernelTestBase {
    */
   public function testDuplicateInSameWorkspaceAndVocabularyIsRejected(): void {
     $workspace = $this->workspace('a');
-    $this->term($workspace, 'bb_labels', 'work:code');
+    $this->term($workspace, 'label', 'work:code');
 
     $duplicate = BbTerm::create([
-      'vid' => 'bb_labels',
+      'vid' => 'label',
       'name' => 'work:code',
       'workspace_id' => $workspace->id(),
     ]);
@@ -145,7 +142,7 @@ final class BbTermUniqueNameTest extends KernelTestBase {
   }
 
   /**
-   * The live `codex` pair — one label, one capability tag — stays valid.
+   * The live `codex` pair — one label, one recipe — stays valid.
    *
    * This is the fact that put `vid` in the key: on the deployed instance
    * `codex` exists in both vocabularies, so a (workspace_id, name) constraint
@@ -153,10 +150,10 @@ final class BbTermUniqueNameTest extends KernelTestBase {
    */
   public function testTheCodexPairAcrossVocabulariesIsValid(): void {
     $workspace = $this->workspace('a');
-    $this->term($workspace, 'bb_labels', 'codex');
+    $this->term($workspace, 'label', 'codex');
 
     $tag = BbTerm::create([
-      'vid' => 'bb_capability_tags',
+      'vid' => 'recipe',
       'name' => 'codex',
       'workspace_id' => $workspace->id(),
     ]);
@@ -169,10 +166,10 @@ final class BbTermUniqueNameTest extends KernelTestBase {
    * The same name in another workspace is valid — that is the whole point.
    */
   public function testTheSameNameInAnotherWorkspaceIsValid(): void {
-    $this->term($this->workspace('a'), 'bb_labels', 'work:code');
+    $this->term($this->workspace('a'), 'label', 'work:code');
 
     $other = BbTerm::create([
-      'vid' => 'bb_labels',
+      'vid' => 'label',
       'name' => 'work:code',
       'workspace_id' => $this->workspace('b')->id(),
     ]);
@@ -185,7 +182,7 @@ final class BbTermUniqueNameTest extends KernelTestBase {
    * Re-validating an unchanged saved term does not collide with itself.
    */
   public function testTermDoesNotCollideWithItself(): void {
-    $term = $this->term($this->workspace('a'), 'bb_labels', 'work:docs');
+    $term = $this->term($this->workspace('a'), 'label', 'work:docs');
 
     $violations = $term->validate();
     self::assertCount(0, $violations, $this->renderViolations($violations));
@@ -199,10 +196,10 @@ final class BbTermUniqueNameTest extends KernelTestBase {
    * colliding with each other.
    */
   public function testWorkspacelessTermsDoNotCollideWithEachOther(): void {
-    $first = BbTerm::create(['vid' => 'bb_labels', 'name' => 'unscoped']);
+    $first = BbTerm::create(['vid' => 'label', 'name' => 'unscoped']);
     $first->save();
 
-    $second = BbTerm::create(['vid' => 'bb_labels', 'name' => 'unscoped']);
+    $second = BbTerm::create(['vid' => 'label', 'name' => 'unscoped']);
     $violations = $second->validate();
 
     self::assertGreaterThan(0, $violations->count(), 'The required field still reports.');

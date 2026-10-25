@@ -158,7 +158,7 @@ final class BbRunWorkflowTest extends KernelTestBase {
       ->create(['name' => 'PROJ-1', 'group_id' => $group->id()]);
     $project->save();
     $ticket = $etm->getStorage('bb_ticket')
-      ->create(['identifier' => 'PROJ-1', 'workflow' => 'bb_bug', 'title' => 'X', 'project_id' => $project->id()]);
+      ->create(['identifier' => 'PROJ-1', 'workflow' => 'bb_work', 'title' => 'X', 'project_id' => $project->id()]);
     $ticket->save();
     $run = BbRun::create([
       'ticket_id' => $ticket->id(),

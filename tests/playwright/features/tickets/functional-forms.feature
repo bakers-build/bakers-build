@@ -32,7 +32,7 @@ Feature: Entity administration form contracts
 
   Scenario: Ticket Settings offer only the exception fields and keep the identifier
     Given the API client is "north-contributor"
-    When the API client creates a "bb_bug" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     And the contract browser opens "/bakers/ticket/{saved.ticket}/edit" with status 200
     Then the contract field "title[0][value]" is visible
     And the contract field "description[0][value]" is visible
@@ -52,7 +52,7 @@ Feature: Entity administration form contracts
 
   Scenario: Ticket routes accept all three identities and refuse unknown UUIDs
     Given the API client is "north-contributor"
-    When the API client creates a "bb_bug" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     Then the ticket routes resolve identifier, ID and UUID for "ticket"
     When the contract browser opens "/bakers/ticket/00000000-0000-4000-8000-000000000000" with status 404
 
@@ -62,7 +62,7 @@ Feature: Entity administration form contracts
 
   Scenario: The ticket page lists comment bodies and free-text comment types
     Given the API client is "north-contributor"
-    When the API client creates a "bb_feature" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     And the API client sends "POST" to "/jsonapi/bb_comment/bb_comment":
       """
       {"data":{"type":"bb_comment--bb_comment","attributes":{"body":{"value":"BDD diagnosis text body","format":"bb_rich"},"bb_comment_type":"debug_diagnose"},"relationships":{"ticket_id":{"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}"}}}}}

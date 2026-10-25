@@ -122,8 +122,8 @@ final class CommentCanonicalTest extends KernelTestBase {
       'project_id' => $project->id(),
       'number' => 142,
       'identifier' => 'BB-142',
-      'workflow' => 'bb_feature',
-      'state' => 'coding',
+      'workflow' => 'bb_work',
+      'state' => 'working',
     ]);
     $ticket->save();
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -191,7 +191,7 @@ final class CommentCanonicalTest extends KernelTestBase {
     self::assertStringContainsString('BB-657-END-MARKER', $html);
     self::assertStringContainsString('<td', $html);
     self::assertStringContainsString('BB-142', $html);
-    self::assertStringContainsString('coding', $html);
+    self::assertStringContainsString('working', $html);
     self::assertStringContainsString($this->ticket->toUrl()->toString(), $html);
     self::assertStringContainsString('data-component-id="bb_theme:canvas"', $html);
     self::assertStringContainsString('data-canvas-region="main"', $html);

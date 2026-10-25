@@ -10,12 +10,12 @@ props:
   clear_label: Any state
   clear_url: "?priority[]=2"
   options:
-    - value: coding
-      label: coding
+    - value: working
+      label: working
       selected: true
     - value: review
       label: review
       selected: false
-    - value: spec
-      label: spec
+    - value: plan
+      label: plan
       selected: false

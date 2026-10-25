@@ -162,6 +162,8 @@ export class CreateTicketFormScreen extends AsyncModalScreen<CreateFormOptions> 
       users: [],
       reviewers: [],
       conductors: [],
+      ticketTypes: [],
+      recipes: [],
       labels: [],
       workflows: [],
       errors: {
@@ -208,13 +210,16 @@ export class CreateTicketFormScreen extends AsyncModalScreen<CreateFormOptions> 
     this.startOptionLoader();
   }
   /**
-   * A new ticket's form. The template is forced to none: a select opens on its
-   * first option, and a template must be chosen, never preselected.
+   * A new ticket's form. The template, type and recipe are forced to none: a
+   * select opens on its first option, and each must be chosen, never
+   * preselected.
    */
   private freshForm(options: CreateFormOptions): CreateFormState {
     return this.declaration().initial(options, {
       ...(this.remembered ?? {}),
       template: null,
+      ticketType: null,
+      recipe: null,
     });
   }
   /** The template picked in the form, or null. */

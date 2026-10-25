@@ -93,7 +93,7 @@ final class TicketEnvVarsFieldAccessTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'identifier' => 'GL-EV-1',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'title' => 'EV',
         'env_vars' => "DB_DSN=mysql://user:pass@h/db",
       ]);

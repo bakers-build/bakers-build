@@ -5,18 +5,18 @@
 _meta:
   version: '1.0'
   entity_type: bb_term
-  uuid: a45c7aa0-2e9e-42e1-8767-10385f56c85b
-  bundle: bb_capability_tags
+  uuid: db1a0000-0000-4000-8000-000000000021
+  bundle: type
   default_langcode: en
   depends:
     2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   name:
     -
-      value: drupal11
+      value: "bug"
   weight:
     -
-      value: 0
+      value: 1
   workspace_id:
     -
       entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"

@@ -67,8 +67,8 @@ Given(
       [
         projectNamed(project),
         '$s = \\Drupal::entityTypeManager()->getStorage("bb_ticket");',
-        `$e = $s->create(["title" => "${safe(epic)}", "project_id" => $p->id(), "workflow" => "bb_feature"]); $e->save();`,
-        `$c = $s->create(["title" => "${safe(child)}", "project_id" => $p->id(), "parent_id" => $e->id(), "workflow" => "bb_feature"]); $c->save();`,
+        `$e = $s->create(["title" => "${safe(epic)}", "project_id" => $p->id(), "workflow" => "bb_work"]); $e->save();`,
+        `$c = $s->create(["title" => "${safe(child)}", "project_id" => $p->id(), "parent_id" => $e->id(), "workflow" => "bb_work"]); $c->save();`,
         'print $e->id() . "," . $c->id();',
       ].join(' '),
     );

@@ -46,8 +46,8 @@ final class ClaimCapacityResponseTest extends ClaimKernelTestBase {
     $sibling->set('conductor_id', 'offline-sibling')->set('status', 'offline')->save();
     $target = $this->seedAssignedTicket('review', 'CAPACITY-TARGET');
     for ($i = 0; $i < 9; $i++) {
-      $ticket = $this->seedAssignedTicket('coding', 'CAPACITY-' . $i);
-      $run = $this->seedRun($ticket, 'coding', 'running', 1);
+      $ticket = $this->seedAssignedTicket('working', 'CAPACITY-' . $i);
+      $run = $this->seedRun($ticket, 'working', 'running', 1);
       if ($i >= 7) {
         $ticket->set('conductor_id', $sibling->id())->save();
         $run->set('conductor_id', $sibling->id())->save();

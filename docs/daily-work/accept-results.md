@@ -20,8 +20,8 @@
 
    | Cause | Meaning | Next |
    |---|---|---|
-   | `implementation` | the change falls short | back to `coding` |
-   | `evidence` | the change may work, but nothing shows it | back to `coding` |
+   | `implementation` | the change falls short | back to `working` |
+   | `evidence` | the change may work, but nothing shows it | back to `working` |
    | `criterion` | the criterion cannot be met as written | you decide on a rewrite |
 
    Requirement changed? Ask your agent to use `scope-change`.

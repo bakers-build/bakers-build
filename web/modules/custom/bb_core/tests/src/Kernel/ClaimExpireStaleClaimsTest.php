@@ -25,9 +25,9 @@ final class ClaimExpireStaleClaimsTest extends ClaimKernelTestBase {
    * A stale claimed run is expired and its ticket re-claimed via claimNext.
    */
   public function testClaimNextExpiresStaleClaimAndReclaims(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+    $ticket = $this->seedAssignedTicket(state: 'working');
     $now = $this->container->get('datetime.time')->getRequestTime();
-    $zombie = $this->seedRun($ticket, stateAtStart: 'coding', state: 'claimed', claimExpiresAt: $now - 10);
+    $zombie = $this->seedRun($ticket, stateAtStart: 'working', state: 'claimed', claimExpiresAt: $now - 10);
 
     $run = $this->claimService->claimNext($this->conductor);
 
@@ -42,9 +42,9 @@ final class ClaimExpireStaleClaimsTest extends ClaimKernelTestBase {
    */
   public function testClaimNextExpiresStaleClaimsAcrossTickets(): void {
     $now = $this->container->get('datetime.time')->getRequestTime();
-    $a = $this->seedAssignedTicket(state: 'coding');
+    $a = $this->seedAssignedTicket(state: 'working');
     $b = $this->seedAssignedTicket(state: 'review');
-    $za = $this->seedRun($a, stateAtStart: 'coding', state: 'claimed', claimExpiresAt: $now - 10);
+    $za = $this->seedRun($a, stateAtStart: 'working', state: 'claimed', claimExpiresAt: $now - 10);
     $zb = $this->seedRun($b, stateAtStart: 'review', state: 'claimed', claimExpiresAt: $now - 10);
 
     $this->claimService->claimNext($this->conductor);
@@ -57,9 +57,9 @@ final class ClaimExpireStaleClaimsTest extends ClaimKernelTestBase {
    * A running run is never expired, even with a lapsed lease.
    */
   public function testClaimNextLeavesRunningRun(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+    $ticket = $this->seedAssignedTicket(state: 'working');
     $now = $this->container->get('datetime.time')->getRequestTime();
-    $running = $this->seedRun($ticket, stateAtStart: 'coding', state: 'running', claimExpiresAt: $now - 10);
+    $running = $this->seedRun($ticket, stateAtStart: 'working', state: 'running', claimExpiresAt: $now - 10);
 
     $run = $this->claimService->claimNext($this->conductor);
 
@@ -72,9 +72,9 @@ final class ClaimExpireStaleClaimsTest extends ClaimKernelTestBase {
    * A claimed run whose lease is still live is never expired.
    */
   public function testClaimNextLeavesLiveLeaseClaim(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+    $ticket = $this->seedAssignedTicket(state: 'working');
     $now = $this->container->get('datetime.time')->getRequestTime();
-    $live = $this->seedRun($ticket, stateAtStart: 'coding', state: 'claimed', claimExpiresAt: $now + 600);
+    $live = $this->seedRun($ticket, stateAtStart: 'working', state: 'claimed', claimExpiresAt: $now + 600);
 
     $run = $this->claimService->claimNext($this->conductor);
 
@@ -86,8 +86,8 @@ final class ClaimExpireStaleClaimsTest extends ClaimKernelTestBase {
    * A claimed run with no lease set (0) is never reaped.
    */
   public function testClaimNextIgnoresClaimWithoutLease(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
-    $noLease = $this->seedRun($ticket, stateAtStart: 'coding', state: 'claimed', claimExpiresAt: 0);
+    $ticket = $this->seedAssignedTicket(state: 'working');
+    $noLease = $this->seedRun($ticket, stateAtStart: 'working', state: 'claimed', claimExpiresAt: 0);
 
     $this->claimService->claimNext($this->conductor);
 

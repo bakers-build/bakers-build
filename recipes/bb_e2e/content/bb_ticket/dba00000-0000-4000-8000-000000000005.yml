@@ -3,6 +3,7 @@ _meta:
   entity_type: bb_ticket
   uuid: dba00000-0000-4000-8000-000000000005
   depends:
+    db1a0000-0000-4000-8000-000000000020: bb_term
     dbc70000-0000-4000-8000-000000000001: bb_team
     dbf00000-0000-4000-8000-000000000001: bb_project
     dbe50000-0000-4000-8000-000000000001: user
@@ -27,7 +28,10 @@ default:
       value: 105
   workflow:
     -
-      value: "bb_feature"
+      value: "bb_work"
+  ticket_type:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000020"
   title:
     -
       value: "Review comment-event rendering for typed comments"

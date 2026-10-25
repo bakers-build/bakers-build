@@ -263,7 +263,7 @@ describe('workspacePlugin — bb_term (BB-339)', () => {
   it('injects workspace_id into a bb_term create', async () => {
     const out = await alter(plugin())(
       req(createBody('bb_term')),
-      ctx('create', 'bb_term', 'bb_labels'),
+      ctx('create', 'bb_term', 'label'),
     );
     const doc = JSON.parse(out.body as string);
     expect(doc.data.relationships.workspace_id).toEqual({
@@ -275,7 +275,7 @@ describe('workspacePlugin — bb_term (BB-339)', () => {
     const body = createBody('bb_term');
     const out = await alter(plugin())(
       req(body, 'PATCH'),
-      ctx('update', 'bb_term', 'bb_labels'),
+      ctx('update', 'bb_term', 'label'),
     );
     expect(out.body).toBe(body);
   });

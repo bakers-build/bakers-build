@@ -5,18 +5,18 @@
 _meta:
   version: '1.0'
   entity_type: bb_term
-  uuid: b9d224f3-06bf-45e4-a115-2c2f7b8f4620
-  bundle: bb_capability_tags
+  uuid: db1a0000-0000-4000-8000-000000000025
+  bundle: type
   default_langcode: en
   depends:
     2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   name:
     -
-      value: codex
+      value: "verification"
   weight:
     -
-      value: 0
+      value: 5
   workspace_id:
     -
       entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"

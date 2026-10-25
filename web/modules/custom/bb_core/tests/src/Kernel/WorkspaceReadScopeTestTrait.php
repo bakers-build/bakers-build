@@ -107,11 +107,13 @@ trait WorkspaceReadScopeTestTrait {
       $this->installEntitySchema($entity_type_id);
     }
     $this->installConfig(['user']);
-    // The bb_labels bundle is owned by the recipe, which a kernel test does
-    // not apply, so the fixture creates it itself.
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    // The term bundles are owned by the recipe, which a kernel test does
+    // not apply, so the fixture creates them itself.
+    foreach (['type', 'recipe', 'label'] as $vid) {
+      BbVocabulary::create(['id' => $vid, 'label' => $vid])->save();
+    }
     // A bundle created after the container booted leaves the typed-data
-    // derivative `entity:bb_term:bb_labels` undiscovered, and ->validate()
+    // derivative `entity:bb_term:label` undiscovered, and ->validate()
     // is the caller that needs it — without this a user of this trait errors on
     // PluginNotFoundException instead of asserting anything, exactly as the
     // three BbTerm* suites record. installOgScopeFixture() below happens to
@@ -179,7 +181,7 @@ trait WorkspaceReadScopeTestTrait {
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => 'T-' . strtoupper($side),
       'title' => "ticket-$side",
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
       'owner_user_id' => $owner_id,
     ]);
@@ -188,7 +190,7 @@ trait WorkspaceReadScopeTestTrait {
       'enabled' => TRUE,
       'title_pattern' => "template-$side",
       'description' => ['value' => 'Body', 'format' => 'plain_text'],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'project_id' => $project->id(),
       'owner_user_id' => $owner_id,
@@ -206,7 +208,7 @@ trait WorkspaceReadScopeTestTrait {
     // One label per side, so cross-workspace term isolation and the ticket's
     // own label rule are both observable in this world (BB-339 D7, D6).
     $term = $this->createEntity('bb_term', [
-      'vid' => 'bb_labels',
+      'vid' => 'label',
       'name' => "label-$side",
       'workspace_id' => $workspace->id(),
       'owner_user_id' => $owner_id,

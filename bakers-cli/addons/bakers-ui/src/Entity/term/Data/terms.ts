@@ -8,8 +8,8 @@
 // not a bundle — dropsh's `resolveType` expands the single-segment shorthand to
 // `bb_term/bb_term`, which does not exist and 404s (F2). Making the bundle a
 // required argument means a future consumer must state which vocabulary it wants
-// (`bb_capability_tags` is the other one on this entity type) instead of getting a
-// 404; and it keeps the POLICY "this popup offers bb_labels" in the adapter, where
+// (`type` and `recipe` are the others on this entity type) instead of getting a
+// 404; and it keeps the POLICY "this popup offers label" in the adapter, where
 // every other create-popup policy lives, rather than here.
 import type { DropshClient, Resource } from '../../../types.js';
 import { type ListOutcome, listOutcome } from '../../transport.js';

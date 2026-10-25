@@ -54,7 +54,7 @@ final class WorkActivityTest extends WorkTimeTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Billed apart',
       'project_id' => $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     $ticket->save();
     $other = \Drupal::service('bb_track.assignments')->saveAccount((int) $this->project->id(), [

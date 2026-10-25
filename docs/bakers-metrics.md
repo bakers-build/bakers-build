@@ -26,7 +26,7 @@ timestamp); an absent key is the correct shape.
 | name                 | unit    | meaning                                                        | who writes it | when                          |
 |----------------------|---------|----------------------------------------------------------------|---------------|-------------------------------|
 | `ac_pass_rate`       | ratio   | fraction of acceptance criteria passing in the review fresh run | agent (review) | at review, from the AC matrix |
-| `review_bounces`     | count   | number of review→coding loops before done                      | agent/conductor | incremented on each Not-OK bounce |
+| `review_bounces`     | count   | number of review→working loops before done                      | agent/conductor | incremented on each Not-OK bounce |
 | `time_to_done_h`     | h       | wall-clock hours from spec entry to done                       | conductor      | at done                       |
 | `rework_followups`   | count   | follow-up bugs that reference this ticket after done           | conductor/human | post-done, ongoing            |
 | `human_interventions`| count   | manual human corrections/edits per run on this ticket          | conductor/human | during/after a run            |

@@ -120,7 +120,7 @@ final class MachineBudgetClaimTest extends KernelTestBase {
         'owner_user_id' => $owner->id(),
         'status' => 'online',
         'project_id' => $this->projectId,
-        'states' => ['diagnose', 'coding'],
+        'states' => ['plan', 'working'],
         'machine' => $machine->id(),
         'reported_load' => 0,
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
@@ -137,7 +137,7 @@ final class MachineBudgetClaimTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'identifier' => $identifier,
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'title' => $identifier,
         'project_id' => $this->projectId,
       ]);
@@ -321,7 +321,7 @@ final class MachineBudgetClaimTest extends KernelTestBase {
       'owner_user_id' => $owner->id(),
       'state' => 'claimed',
       'claim_expires_at' => $now - 10,
-      'state_at_start' => 'coding',
+      'state_at_start' => 'working',
       'started_at' => $now - 100,
     ])->save();
 

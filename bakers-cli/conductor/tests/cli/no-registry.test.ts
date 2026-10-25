@@ -210,7 +210,7 @@ describe('the local conductor registry is gone', () => {
       workspace: fakeWorkspace(),
       label: 'registry test',
       project: 'bakers',
-      states: ['coding'],
+      states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5000,

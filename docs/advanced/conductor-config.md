@@ -130,7 +130,7 @@ The agent command is executed by non-interactive `/bin/sh`, so the harness binar
 
 ```js
 // Fragment: add inside the exported object.
-states: ['coding', 'review'],
+states: ['working', 'review'],
 poll_interval_ms: 10000,
 label: 'Demo development worker',
 ```

@@ -4,8 +4,8 @@ Feature: Deployment and verification API contracts
 
   Scenario: Deployment starts at pre_deployment with both referenced tickets
     Given the API client is "north-contributor"
-    When the API client creates a "bb_feature" ticket in "home" as "first"
-    And the API client creates a "bb_feature" ticket in "home" as "second"
+    When the API client creates a "bb_work" ticket in "home" as "first"
+    And the API client creates a "bb_work" ticket in "home" as "second"
     And the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
       {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API release","workflow":"bb_deployment"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"referenced_tickets":{"data":[{"type":"bb_ticket--bb_ticket","id":"{saved.first}"},{"type":"bb_ticket--bb_ticket","id":"{saved.second}"}]}}}}

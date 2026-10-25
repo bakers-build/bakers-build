@@ -1558,7 +1558,7 @@ scenes:
                                     emphasis: faint
                                   from:
                                     kind: mono
-                                    value: coding
+                                    value: working
                                   conductor:
                                     kind: badge
                                     label: srv02-bakers

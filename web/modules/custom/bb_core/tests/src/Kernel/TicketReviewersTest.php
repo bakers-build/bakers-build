@@ -226,7 +226,7 @@ final class TicketReviewersTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create($values + [
         'title' => 'reviewers-ticket',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
       ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();

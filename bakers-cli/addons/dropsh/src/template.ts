@@ -24,7 +24,7 @@ export interface TemplateOverrides {
 const RELATIONSHIP_TYPES = {
   project_id: 'bb_project--bb_project',
   conductor_id: 'bb_conductor--bb_conductor',
-  labels: 'bb_term--bb_labels',
+  labels: 'bb_term--label',
 } as const;
 
 /** The instantiate body: `{}` without overrides, else a ticket document. */
@@ -144,7 +144,7 @@ export function registerTemplateCommand(
       '--description <text>',
       'ticket description; {{date}} and {{month}} are rendered',
     )
-    .option('--workflow <id>', 'ticket workflow, e.g. bb_feature')
+    .option('--workflow <id>', 'ticket workflow, e.g. bb_work')
     .option('--labels <uuid...>', 'label uuids, replacing the template labels')
     .option('--conductor_id <uuid>', 'conductor of the ticket project')
     .option('--target_state <id>', 'state the new ticket is moved to')

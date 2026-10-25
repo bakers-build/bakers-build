@@ -5,18 +5,18 @@
 _meta:
   version: '1.0'
   entity_type: bb_term
-  uuid: 043d8a3b-bd6a-4680-8515-de9e8079edb4
-  bundle: bb_capability_tags
+  uuid: db1a0000-0000-4000-8000-000000000022
+  bundle: type
   default_langcode: en
   depends:
     2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   name:
     -
-      value: ddev
+      value: "chore"
   weight:
     -
-      value: 0
+      value: 2
   workspace_id:
     -
       entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"

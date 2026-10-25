@@ -16,7 +16,6 @@ permissions:
   - 'use text format bb_rich'
   - 'view bb_comment'
   - 'view bb_group'
-  - 'view bb_labels bb_term'
   - 'view bb_project'
   - 'view bb_team'
   - 'view bb_term'

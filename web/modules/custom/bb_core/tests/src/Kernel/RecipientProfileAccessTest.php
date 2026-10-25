@@ -80,7 +80,7 @@ final class RecipientProfileAccessTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'identifier' => 'GL-RP-1',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'title' => 'Recipient profile access',
         'assignee_user_id' => $assignee->id(),
       ]);

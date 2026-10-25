@@ -225,8 +225,9 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'island.profile.bb_onboarding',
     'island.profile.bb_shell',
     'island.settings',
-    'bb_core.bb_vocabulary.bb_capability_tags',
-    'bb_core.bb_vocabulary.bb_labels',
+    'bb_core.bb_vocabulary.label',
+    'bb_core.bb_vocabulary.recipe',
+    'bb_core.bb_vocabulary.type',
     'search_api.index.bb_runs',
     // The three admin listings under /admin/bakers (BB-471). They used to
     // reach the recipe path through bb_dashboard's own `config: import:`
@@ -355,7 +356,7 @@ final class ConfigCopyDriftTest extends UnitTestCase {
    *
    * They join this list on BB-421, and the reason is a failure rather than
    * tidiness. Both displays briefly carried
-   * `dependencies.enforced.config: [bb_core.bb_vocabulary.bb_labels]` to
+   * `dependencies.enforced.config` on the term bundles to
    * force a recipe install order, and the vocabulary is not shippable from this
    * module — so `ConfigInstaller::checkConfigurationToInstall()` refused, and
    * the functional suite reported 96 `UnmetDependenciesException` errors. The

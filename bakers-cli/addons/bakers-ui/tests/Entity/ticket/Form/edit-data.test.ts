@@ -39,7 +39,7 @@ const label = (
 ): ReturnType<typeof toResource> =>
   toResource({
     id,
-    type: 'bb_term--bb_labels',
+    type: 'bb_term--label',
     attributes: attrs,
   });
 
@@ -54,9 +54,23 @@ const rows = () => ({
     conductor('c2', { label: 'tom', status: 'offline' }),
     conductor('c3', { label: 'elsewhere', status: 'running' }, OTHER_PROJECT),
   ],
-  'bb_term/bb_labels': [
+  'bb_term/label': [
     label(LABEL, { name: 'work:code' }),
     label('llllllll-0000-0000-0000-000000000002', { name: 'work:docs' }),
+  ],
+  'bb_term/type': [
+    toResource({
+      id: 't1',
+      type: 'bb_term--type',
+      attributes: { name: 'bug' },
+    }),
+  ],
+  'bb_term/recipe': [
+    toResource({
+      id: 'r1',
+      type: 'bb_term--recipe',
+      attributes: { name: 'drupal-bug' },
+    }),
   ],
 });
 
@@ -121,8 +135,12 @@ it('loads users + conductors through the WRITE client', async () => {
   expect(opts.users.map((u) => u.label)).toEqual(['cw', 'tm']);
   // The read client is never consulted while the write client answers — `pm`
   // sees the FULL conductor set and decides what a write may reference.
-  // Labels ride the read client (terms have no write-preferring helper).
-  expect(read.collections).toEqual(['bb_term/bb_labels']);
+  // Terms ride the read client (they have no write-preferring helper).
+  expect(read.collections).toEqual([
+    'bb_term/type',
+    'bb_term/recipe',
+    'bb_term/label',
+  ]);
   expect(write.collections.sort()).toEqual([
     'bb_conductor/bb_conductor',
     'user/user',
@@ -136,7 +154,7 @@ it('AC-7: a throwing collection yields an empty list, the popup still opens', as
   });
   const read = fakeClient({
     rows: rows(),
-    failingCollections: ['bb_conductor', 'user', 'bb_term/bb_labels'],
+    failingCollections: ['bb_conductor', 'user', 'bb_term/label'],
   });
   const opts = await loadEditFormOptions(
     { write, read },
@@ -176,7 +194,9 @@ it('AC-7: a failing WRITE list falls back to the read client, per list', async (
   expect(opts.conductors).toHaveLength(2);
   expect(read.collections.sort()).toEqual([
     'bb_conductor/bb_conductor',
-    'bb_term/bb_labels',
+    'bb_term/label',
+    'bb_term/recipe',
+    'bb_term/type',
   ]);
   // …while users still came from the write client (per-list, not all-or-nothing).
   expect(opts.users).toHaveLength(2);
@@ -188,7 +208,9 @@ it('with no write client it reads through the read client alone', async () => {
   expect(opts.users).toHaveLength(2);
   expect(read.collections.sort()).toEqual([
     'bb_conductor/bb_conductor',
-    'bb_term/bb_labels',
+    'bb_term/label',
+    'bb_term/recipe',
+    'bb_term/type',
     'user/user',
   ]);
 });
@@ -268,7 +290,7 @@ it('a conductor with no status gets a bare label — nothing to add, nothing add
   expect(opts.conductors).toEqual([{ id: 'c9', label: 'bare' }]);
 });
 
-it('BB-360: the loaded bag carries labels from bb_labels and no stateTargets', async () => {
+it('BB-360: the loaded bag carries labels from label and no stateTargets', async () => {
   const write = fakeClient({ rows: rows() });
   const read = fakeClient({ rows: rows() });
   const opts = await loadEditFormOptions(
@@ -281,14 +303,25 @@ it('BB-360: the loaded bag carries labels from bb_labels and no stateTargets', a
   ]);
   expect(opts.labels.map((l) => l.label)).toEqual(['work:code', 'work:docs']);
   expect(opts).not.toHaveProperty('stateTargets');
+  // BAKERS-17: Type and Recipe read their own vocabularies the same way.
+  expect(opts.ticketTypes).toEqual([{ id: 't1', label: 'bug' }]);
+  expect(opts.recipes).toEqual([{ id: 'r1', label: 'drupal-bug' }]);
 
   const broken = fakeClient({
     rows: rows(),
-    failingCollections: ['bb_conductor', 'user', 'bb_term/bb_labels'],
+    failingCollections: [
+      'bb_conductor',
+      'user',
+      'bb_term/label',
+      'bb_term/type',
+      'bb_term/recipe',
+    ],
   });
   const failed = await loadEditFormOptions({ write: broken, read: broken });
   expect(failed.conductors).toEqual([]);
   expect(failed.labels).toEqual([]);
+  expect(failed.ticketTypes).toEqual([]);
+  expect(failed.recipes).toEqual([]);
   expect(failed).not.toHaveProperty('stateTargets');
 });
 

@@ -4,7 +4,7 @@
 
 | Label | Set by | Effect |
 |---|---|---|
-| `work:<type>` | qualification | declares a sub-work; `<type>` is the work type that selects the skill owning spec, diagnose, coding and review |
+| `work:<type>` | qualification | declares a sub-work; `<type>` is the work type that selects the skill owning plan, working and review |
 | `method:<set>` | qualification | the engineering method chosen from `## Skill set` in `WORKFLOW.md`; at most one per ticket |
 | `agent:<alias>` or `agent:<route>` | you, or qualification after you confirm | the coding agent for every state |
 | `agent:<alias>@<state>` or `agent:<route>@<state>` | the same | the coding agent for that state only |

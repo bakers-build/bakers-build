@@ -5,21 +5,18 @@
 _meta:
   version: '1.0'
   entity_type: bb_term
-  uuid: db1a0000-0000-4000-8000-000000000013
-  bundle: bb_labels
+  uuid: db1a0000-0000-4000-8000-000000000023
+  bundle: type
   default_langcode: en
   depends:
     2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
 default:
   name:
     -
-      value: "work:docs"
-  description:
-    -
-      value: "Sub-work: documentation / skill-instruction change validated by proportional doc/frontmatter/workflow checks — no runtime surface."
+      value: "epic"
   weight:
     -
-      value: 0
+      value: 3
   workspace_id:
     -
       entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"

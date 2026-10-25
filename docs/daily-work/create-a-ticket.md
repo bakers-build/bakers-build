@@ -30,7 +30,7 @@ Everything else, such as workflow, labels, identifier and branch, your agent and
 
 | Created by | Ticket starts in |
 |---|---|
-| Your agent with `create-ticket` | `spec` (feature, chore) or `diagnose` (bug), already qualified |
+| Your agent with `create-ticket` | `plan`, already qualified |
 | **New ticket** on the web | `qualification` |
 
 **Done when:** the ticket has an identifier and your criteria. Next: [Follow a ticket](/daily-work/follow-a-ticket).

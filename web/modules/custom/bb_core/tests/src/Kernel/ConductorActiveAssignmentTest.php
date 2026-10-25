@@ -46,8 +46,8 @@ final class ConductorActiveAssignmentTest extends ClaimKernelTestBase {
    * approved refinement has to keep writable.
    */
   public function testUnchangedInactiveReferenceStillValidates(): void {
-    $ticket = $this->seedAssignedTicket('coding');
-    $this->seedRun($ticket, 'coding', 'running');
+    $ticket = $this->seedAssignedTicket('working');
+    $this->seedRun($ticket, 'working', 'running');
     $this->conductor->set('active', FALSE)->save();
     $reloaded = $this->reloadTicket($ticket);
     self::assertSame((int) $this->conductor->id(), (int) $reloaded->get('conductor_id')->target_id);

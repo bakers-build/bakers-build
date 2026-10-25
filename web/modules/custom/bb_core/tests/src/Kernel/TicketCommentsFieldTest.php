@@ -51,7 +51,7 @@ final class TicketCommentsFieldTest extends KernelTestBase {
     $project->save();
 
     $ticket = $etm->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'T',
       'state' => 'todo',
       'project_id' => $project->id(),
@@ -59,7 +59,7 @@ final class TicketCommentsFieldTest extends KernelTestBase {
     $ticket->save();
 
     $other = $etm->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'Other',
       'state' => 'todo',
       'project_id' => $project->id(),
@@ -112,7 +112,7 @@ final class TicketCommentsFieldTest extends KernelTestBase {
     $project = $etm->getStorage('bb_project')->create(['name' => 'p']);
     $project->save();
     $ticket = $etm->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'T',
       'state' => 'todo',
       'project_id' => $project->id(),
@@ -156,7 +156,7 @@ final class TicketCommentsFieldTest extends KernelTestBase {
     $project = $etm->getStorage('bb_project')->create(['name' => 'p']);
     $project->save();
     $ticket = $etm->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'T',
       'state' => 'todo',
       'project_id' => $project->id(),

@@ -89,6 +89,40 @@ content:
       note_suffix: ''
       selection_handler: bb_ticket_in_ticket_project
     third_party_settings: {  }
+  recipe:
+    type: bb_picker
+    weight: 9
+    region: content
+    settings:
+      picker_region: pills
+      label: Recipe
+      icon: tag
+      searchable: false
+      clear_label: 'No recipe'
+      create_label: recipe
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  ticket_type:
+    type: bb_picker
+    weight: 9
+    region: content
+    settings:
+      picker_region: pills
+      label: Type
+      icon: tag
+      searchable: false
+      clear_label: 'No type'
+      create_label: type
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
   title:
     type: string_textfield
     weight: 2
@@ -109,7 +143,7 @@ content:
       clear_label: ''
       create_label: ''
       context_parameter: ''
-      default_value: bb_feature
+      default_value: bb_work
       note_lead: ''
       note_prefix: ''
       note_suffix: ''

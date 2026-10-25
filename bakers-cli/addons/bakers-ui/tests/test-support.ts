@@ -56,7 +56,7 @@ export function toResource(obj: RawResource): Resource {
  * `collection('bb_term')` addresses the bundle `bb_term/bb_term`. Keying
  * fixtures by the raw string hid that expansion, and with it the whole
  * bundle-path class of defect — BB-257 F2 (`bb_term/bb_term` does not
- * exist and 404s; the vocabulary is `bb_term/bb_labels`) sat in the tree
+ * exist and 404s; the vocabulary is `bb_term/label`) sat in the tree
  * with a green suite precisely because no fake ever resolved the spec (F2b).
  */
 export function resolveCollectionPath(spec: string): string {
@@ -119,7 +119,7 @@ export interface FakeClient extends DropshClient {
   /**
    * Every `collection()` call in order, as the RESOLVED `entity/bundle` path —
    * what dropsh would put on the wire, not the shorthand the caller wrote. That
-   * is the thing worth asserting: `bb_term` and `bb_term/bb_labels` are
+   * is the thing worth asserting: `bb_term` and `bb_term/label` are
    * two different requests and only one of them exists (BB-257 F2).
    */
   readonly collections: string[];
@@ -133,7 +133,7 @@ export interface FakeClientOptions {
   /**
    * Rows per collection; a missing collection yields an empty list. A key may
    * be written in EITHER form — the shorthand (`user`), the path
-   * (`bb_term/bb_labels`) or the type (`user--user`) — because it is
+   * (`bb_term/label`) or the type (`user--user`) — because it is
    * compared after resolution, exactly as the request is.
    */
   rows?: Record<string, Resource[]>;

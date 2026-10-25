@@ -3,7 +3,7 @@ _meta:
   version: '1.0'
   entity_type: bb_term
   uuid: b6000000-0000-4000-8000-000000000004
-  bundle: bb_labels
+  bundle: label
   default_langcode: en
   depends:
     dbc60000-0000-4000-8000-000000000002: bb_workspace

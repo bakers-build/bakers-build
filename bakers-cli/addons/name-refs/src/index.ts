@@ -1,5 +1,5 @@
 // BB-403: resolve entity NAMES into the relationship that references them, so
-// a skill writes `--label_names work:code` or `--environment_names staging`
+// a skill writes `--type_names bug` or `--environment_names staging`
 // instead of searching the collection, pulling a UUID out with jq, and
 // hand-building the linkage.
 //
@@ -19,12 +19,12 @@
 // committed config already has is unchanged. It contributes no preset
 // accumulator, so it is a plain sibling edge in `PERMITTED_SIBLINGS`.
 //
-// Adding a target is one RESOLVERS entry. The one thing that differs between
-// them is whether a name is unique on its own: `bb_term` names are, so a name
-// identifies a term outright. `bb_environment` names are unique only WITHIN A
-// PROJECT (BbEnvironmentUniquePerProject), so the same name legitimately
-// exists several times and picking one would be luck rather than resolution —
-// hence `scopeField`, and the narrowing it drives.
+// Adding a target is one RESOLVERS entry. Both kinds of name are unique only
+// within a parent. `bb_environment` names are unique WITHIN A PROJECT
+// (BbEnvironmentUniquePerProject), which the write carries directly — hence
+// `scopeField`. `bb_term` names (ticket type, recipe, label) are unique within
+// the ticket's WORKSPACE, reached through `scopeChain`; a term name missing
+// there is created there, so an agent never needs a lead to add vocabulary.
 
 import type { DropSHPlugin, HttpRequest, RequestContext } from 'dropsh/plugin';
 
@@ -62,25 +62,38 @@ interface NameRef {
    * to reach the workspace uuid in one round trip.
    */
   scopeChain?: string;
+  /** The relationship holds one value: a name replaces it instead of appending. */
+  single?: boolean;
 }
 
+/** A term resolver: workspace-scoped, created on first use. */
+const term = (
+  field: string,
+  noun: string,
+  relationship: string,
+  vid: string,
+  single: boolean,
+): NameRef => ({
+  field,
+  noun,
+  relationship,
+  type: `bb_term--${vid}`,
+  path: `bb_term/${vid}`,
+  title:
+    `${noun[0]?.toUpperCase()}${noun.slice(1)} names (comma-separated ${vid} term names` +
+    `${single ? '; one name' : ''}; resolved in the ticket's workspace and ` +
+    'created there when missing, on the live write)',
+  scopeField: 'workspace_id',
+  scopeChain: 'project_id.group_id.workspace_id',
+  single,
+});
+
+const WORKSPACE_TYPE = 'bb_workspace--bb_workspace';
+
 const RESOLVERS: NameRef[] = [
-  {
-    field: 'label_names',
-    noun: 'label',
-    relationship: 'labels',
-    type: 'bb_term--bb_labels',
-    path: 'bb_term/bb_labels',
-    title:
-      'Label names (comma-separated bb_labels names; ' +
-      'unique only within workspace_id — resolved to labels on the live write)',
-    // BB-531: bb_term names are unique within (workspace_id, vid), so the
-    // same name legitimately exists in several workspaces and a bare index
-    // would silently pick one. The workspace is reached from the payload via
-    // the chain project_id → group_id → workspace_id.
-    scopeField: 'workspace_id',
-    scopeChain: 'project_id.group_id.workspace_id',
-  },
+  term('type_names', 'ticket type', 'ticket_type', 'type', true),
+  term('recipe_names', 'recipe', 'recipe', 'recipe', true),
+  term('label_names', 'label', 'labels', 'label', false),
   {
     field: 'environment_names',
     noun: 'environment',
@@ -107,7 +120,7 @@ const MAX_PAGES = 10;
 /** Rows this resolver will walk before it refuses to resolve at all. */
 const MAX_ROWS = PAGE_LIMIT * MAX_PAGES;
 /**
- * How many known names an error may list. `bb_labels` is small; a future
+ * How many known names an error may list. A term bundle is small; a future
  * target need not be, and an error nobody can read is an error nobody reads.
  */
 const NAME_LIST_CAP = 20;
@@ -248,9 +261,9 @@ async function resolveChainScope(
 
 /**
  * Does this operation schema declare this resolver's relationship over its
- * target type? Only the multi-valued (`items`) shape is recognised: both
- * targets are unlimited-cardinality, and the merge below writes an array, so
- * matching a single-valued relationship here would produce an invalid payload.
+ * target type, in the cardinality the resolver writes? A single resolver
+ * writes one object, a multi-valued one an array; matching the other shape
+ * would produce an invalid payload.
  */
 function declares(schema: unknown, ref: NameRef): boolean {
   const targets = at(
@@ -263,7 +276,7 @@ function declares(schema: unknown, ref: NameRef): boolean {
     ref.relationship,
     'properties',
     'data',
-    'items',
+    ...(ref.single ? [] : ['items']),
     'properties',
     'type',
     'enum',
@@ -293,11 +306,25 @@ async function fetchDoc(
   url: string,
   what: string,
 ): Promise<unknown> {
+  return sendDoc(ctx, { method: 'GET', url }, `could not read ${what}`);
+}
+
+/** Send one JSON:API request and parse its document, or fail by name. */
+async function sendDoc(
+  ctx: RequestContext,
+  req: HttpRequest,
+  failure: string,
+): Promise<unknown> {
+  const url = req.url;
   const res = await ctx.http.send(
     await ctx.auth.apply({
-      method: 'GET',
-      url,
-      headers: { Accept: 'application/vnd.api+json' },
+      ...req,
+      headers: {
+        Accept: 'application/vnd.api+json',
+        ...(req.body === undefined
+          ? {}
+          : { 'Content-Type': 'application/vnd.api+json' }),
+      },
     }),
   );
   if (res.status < 200 || res.status >= 300) {
@@ -307,17 +334,49 @@ async function fetchDoc(
           'and, unlike dropsh’s JSON:API client, cannot renew one, so an expired ' +
           'token surfaces here instead of being refreshed. Re-authenticate and retry.'
         : '';
-    throw new Error(
-      `could not read ${what}: HTTP ${res.status} from ${url}.${expiry}`,
-    );
+    throw new Error(`${failure}: HTTP ${res.status} from ${url}.${expiry}`);
   }
   try {
     return JSON.parse(res.body);
   } catch (cause) {
     throw new Error(
-      `could not read ${what}: ${url} answered ${res.status} but not JSON (${String(cause)})`,
+      `${failure}: ${url} answered ${res.status} but not JSON (${String(cause)})`,
     );
   }
+}
+
+/** Create a term in a workspace and return its uuid. */
+async function createTerm(
+  ctx: RequestContext,
+  ref: NameRef,
+  name: string,
+  workspaceId: string,
+): Promise<string> {
+  const prefix = normalisePrefix(ctx.jsonapiPrefix);
+  const doc = await sendDoc(
+    ctx,
+    {
+      method: 'POST',
+      url: `${ctx.baseUrl.replace(/\/+$/, '')}${prefix}/${ref.path}`,
+      body: JSON.stringify({
+        data: {
+          type: ref.type,
+          attributes: { name },
+          relationships: {
+            workspace_id: { data: { type: WORKSPACE_TYPE, id: workspaceId } },
+          },
+        },
+      }),
+    },
+    `could not create ${ref.noun} '${name}' in workspace '${workspaceId}'`,
+  );
+  const id = at(doc, 'data', 'id');
+  if (typeof id !== 'string') {
+    throw new Error(
+      `could not create ${ref.noun} '${name}': the response carries no id`,
+    );
+  }
+  return id;
 }
 
 /**
@@ -389,15 +448,146 @@ function describe(candidates: Candidate[]): string {
     .join(', ');
 }
 
+/**
+ * One term name → its uuid in the ticket's workspace, created there when
+ * missing. Without a workspace (a create naming no project) nothing can be
+ * created and only an unambiguous existing name resolves.
+ */
+async function resolveTerm(
+  ctx: RequestContext,
+  ref: NameRef,
+  byName: Map<string, Candidate[]>,
+  name: string,
+  workspaceId: string | undefined,
+): Promise<string> {
+  const candidates = byName.get(name) ?? [];
+  if (workspaceId === undefined) {
+    const [only, ...rivals] = candidates;
+    if (only === undefined) {
+      throw new Error(
+        `${ref.noun} name '${name}' does not exist in the ${ref.path} ` +
+          `vocabulary, and this write names no project_id whose workspace it ` +
+          `could be created in. Known names: ${knownNames(byName)}`,
+      );
+    }
+    if (rivals.length > 0) {
+      throw new Error(
+        `${ref.noun} name '${name}' is ambiguous — ${candidates.length} ` +
+          `entries in ${ref.path} share it. Candidates: ${describe(candidates)}. ` +
+          `Pass the uuid directly on the ${ref.relationship} relationship instead.`,
+      );
+    }
+    return only.id;
+  }
+  const [match, ...extra] = candidates.filter((c) => c.scopeId === workspaceId);
+  if (extra.length > 0 && match !== undefined) {
+    throw new Error(
+      `${ref.noun} name '${name}' is ambiguous even within workspace_id ` +
+        `'${workspaceId}': ${describe([match, ...extra])}. Pass the uuid ` +
+        `directly on the ${ref.relationship} relationship instead.`,
+    );
+  }
+  if (match !== undefined) return match.id;
+  const id = await createTerm(ctx, ref, name, workspaceId);
+  byName.set(name, [...candidates, { id, scopeId: workspaceId }]);
+  return id;
+}
+
+/**
+ * One name → its uuid within the parent the write carries (`scopeField`),
+ * read off the entity under update when the payload omits it.
+ */
+async function resolveScoped(
+  req: HttpRequest,
+  ctx: RequestContext,
+  ref: NameRef,
+  data: unknown,
+  byName: Map<string, Candidate[]>,
+  name: string,
+  scopes: Map<string, Promise<string | undefined>>,
+): Promise<string> {
+  const candidates = byName.get(name) ?? [];
+  const [only, ...rivals] = candidates;
+  if (only === undefined) {
+    throw new Error(
+      `${ref.noun} name '${name}' does not exist in the ${ref.path} ` +
+        `vocabulary. Known names: ${knownNames(byName)}`,
+    );
+  }
+  const scopeField = ref.scopeField;
+  if (scopeField === undefined) {
+    if (rivals.length > 0) {
+      throw new Error(
+        `${ref.noun} name '${name}' is ambiguous — ${candidates.length} ` +
+          `entries in ${ref.path} share it. Candidates: ${describe(candidates)}. ` +
+          `Pass the uuid directly on the ${ref.relationship} relationship instead.`,
+      );
+    }
+    return only.id;
+  }
+
+  // A scoped resolver ALWAYS establishes a scope — including for a name that
+  // is unique across the whole collection today. Uniqueness is a property of
+  // the current rows, not of the name: `staging` is unique right up to the
+  // moment a second project creates one, and until then an unscoped write
+  // would attach another project's environment and report success. The scope
+  // the payload carries is free; otherwise it is read off the entity being
+  // updated (memoised: one read per write, however many names were given). A
+  // create has no entity yet, hence `undefined`.
+  let scopeId = relationshipId(data, scopeField);
+  if (scopeId === undefined) {
+    let pending = scopes.get(scopeField);
+    if (pending === undefined) {
+      pending =
+        ctx.operation === 'update'
+          ? fetchScope(req, ctx, scopeField)
+          : Promise.resolve(undefined);
+      scopes.set(scopeField, pending);
+    }
+    scopeId = await pending;
+  }
+  if (scopeId === undefined) {
+    throw new Error(
+      rivals.length > 0
+        ? `${ref.noun} name '${name}' is ambiguous — ${candidates.length} ` +
+            `entries in ${ref.path} share it and the write carries no ` +
+            `${scopeField} to narrow them. Candidates: ${describe(candidates)}. ` +
+            `Pass the uuid directly on the ${ref.relationship} relationship instead.`
+        : `${ref.noun} name '${name}' cannot be resolved: ${ref.path} names are ` +
+            `unique only within ${scopeField}, and this write carries no ` +
+            `${scopeField} to narrow it — being the only '${name}' that exists ` +
+            `today does not make it this write's. Candidate: ${describe(candidates)}. ` +
+            `Name the ${scopeField}, or pass the uuid directly on the ` +
+            `${ref.relationship} relationship instead.`,
+    );
+  }
+
+  const [match, ...extra] = candidates.filter((c) => c.scopeId === scopeId);
+  if (match === undefined) {
+    const elsewhere = candidates.map((c) => c.scopeId ?? '(none)').join(', ');
+    throw new Error(
+      `${ref.noun} name '${name}' does not exist in ${scopeField} ` +
+        `'${scopeId}'. It exists in: ${elsewhere}.`,
+    );
+  }
+  if (extra.length > 0) {
+    throw new Error(
+      `${ref.noun} name '${name}' is ambiguous even within ${scopeField} ` +
+        `'${scopeId}': ${describe([match, ...extra])}. Pass the uuid directly ` +
+        `on the ${ref.relationship} relationship instead.`,
+    );
+  }
+  return match.id;
+}
+
 export function nameRefsPlugin(): DropSHPlugin {
   // Per-instance, not module-level: one CLI invocation performs one write, so
   // these guard against a second lookup, and they keep tests isolated.
   const indexes = new Map<string, Promise<Map<string, Candidate[]>>>();
   const scopes = new Map<string, Promise<string | undefined>>();
   /**
-   * Chain-scope resolutions, keyed by the resolver field (not by `scopeField`):
-   * several resolvers could share a scopeField but differ in their chain, and
-   * a chain resolution is a round trip we want to pay once per write.
+   * Chain-scope resolutions, keyed by the chain: the three term resolvers share
+   * one, and a chain resolution is a round trip we want to pay once per write.
    */
   const chainScopes = new Map<string, Promise<string | undefined>>();
   /**
@@ -486,6 +676,23 @@ export function nameRefsPlugin(): DropSHPlugin {
 
       const declaredHere = offered.get(bundleKey(ctx.entityType, ctx.bundle));
 
+      const namesOf = (ref: NameRef) => [
+        ...new Set(
+          String(attributes[ref.field])
+            .split(',')
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0),
+        ),
+      ];
+      // Before any round trip: a single-valued field takes one name.
+      for (const ref of active) {
+        if (ref.single && namesOf(ref).length > 1) {
+          throw new Error(
+            `'${ref.field}' takes one name: ${ref.relationship} holds a single ${ref.noun}.`,
+          );
+        }
+      }
+
       for (const ref of active) {
         // A name field on a bundle that has no such relationship. Reachable by
         // a hand-built body or `--no-validate`, since the flag itself only
@@ -500,10 +707,7 @@ export function nameRefsPlugin(): DropSHPlugin {
           );
         }
         delete nextAttributes[ref.field];
-        const names = String(attributes[ref.field])
-          .split(',')
-          .map((name) => name.trim())
-          .filter((name) => name.length > 0);
+        const names = namesOf(ref);
         if (names.length === 0) continue;
 
         let index = indexes.get(ref.field);
@@ -513,141 +717,36 @@ export function nameRefsPlugin(): DropSHPlugin {
         }
         const byName = await index;
 
-        const scopeField = ref.scopeField;
-        // The scope the payload already carries. Free — no round trip — so it
-        // narrows EVERY name, including an unambiguous one: a name that is
-        // unique across the whole collection can still belong to a different
-        // parent than the entity being written, and attaching it silently would
-        // be worse than the round trip we are saving. This shortcut only
-        // applies when the payload carries the SAME relationship the target's
-        // `scopeField` names; a chain resolver reaches the scope via a fetch
-        // and never gets a free read here.
-        const payloadScope =
-          scopeField === undefined || ref.scopeChain !== undefined
-            ? undefined
-            : relationshipId(data, scopeField);
-
         const resolved: string[] = [];
-        for (const name of names) {
-          const candidates = byName.get(name) ?? [];
-          const [only, ...rivals] = candidates;
-          if (only === undefined) {
-            throw new Error(
-              `${ref.noun} name '${name}' does not exist in the ${ref.path} ` +
-                `vocabulary. Known names: ${knownNames(byName)}`,
+        if (ref.scopeChain !== undefined) {
+          // A term always belongs to the ticket's workspace: one fetch walks
+          // project → group → workspace, shared by all term fields of the write.
+          let pending = chainScopes.get(ref.scopeChain);
+          if (pending === undefined) {
+            pending = resolveChainScope(req, ctx, ref, data);
+            chainScopes.set(ref.scopeChain, pending);
+          }
+          const workspaceId = await pending;
+          for (const name of names) {
+            resolved.push(
+              await resolveTerm(ctx, ref, byName, name, workspaceId),
             );
           }
-
-          if (scopeField === undefined) {
-            if (rivals.length > 0) {
-              throw new Error(
-                `${ref.noun} name '${name}' is ambiguous — ${candidates.length} ` +
-                  `entries in ${ref.path} share it. Candidates: ${describe(candidates)}. ` +
-                  `Pass the uuid directly on the ${ref.relationship} relationship instead.`,
-              );
-            }
-            resolved.push(only.id);
-            continue;
-          }
-
-          // A scoped resolver ALWAYS establishes a scope — including for a name
-          // that is unique across the whole collection today. Uniqueness is a
-          // property of the current rows, not of the name: `staging` is unique
-          // right up to the moment a second project creates one, and until then
-          // an unscoped write would attach another project's environment and
-          // report success. A chain resolver reaches the scope via a single
-          // fetch (project + group + workspace in one round trip); a direct
-          // resolver reads the scope off the entity being updated (also
-          // memoised: one read per write, however many names were given). A
-          // create has no entity yet, hence `undefined`.
-          //
-          // A chain resolver fetches ONLY when there is something to narrow
-          // (multiple candidates). A single candidate needs no workspace check
-          // and skips the round trip — the unscoped-path fallback below
-          // resolves it directly. That keeps a write with one label and a
-          // `project_id` on the payload at one URL per resolver, matching the
-          // pre-fix cost.
-          let scopeId: string | undefined;
-          if (ref.scopeChain !== undefined) {
-            if (rivals.length > 0) {
-              let pending = chainScopes.get(ref.field);
-              if (pending === undefined) {
-                pending = resolveChainScope(req, ctx, ref, data);
-                chainScopes.set(ref.field, pending);
-              }
-              scopeId = await pending;
-            }
-          } else {
-            scopeId = payloadScope;
-            if (scopeId === undefined) {
-              let pending = scopes.get(scopeField);
-              if (pending === undefined) {
-                pending =
-                  ctx.operation === 'update'
-                    ? fetchScope(req, ctx, scopeField)
-                    : Promise.resolve(undefined);
-                scopes.set(scopeField, pending);
-              }
-              scopeId = await pending;
-            }
-          }
-
-          // No scope at all is a hard error for a direct resolver (an
-          // environment name must belong to a project — never guess). A
-          // chain resolver falls back to the unscoped path instead: when no
-          // `project_id` can be derived, a single candidate resolves
-          // (backward-compatible with pre-fix writes) and multiple
-          // candidates raise the same "ambiguous" error an unscoped resolver
-          // would, with the candidate workspaces named via `describe()`.
-          if (scopeId === undefined) {
-            if (ref.scopeChain !== undefined) {
-              if (rivals.length > 0) {
-                throw new Error(
-                  `${ref.noun} name '${name}' is ambiguous — ${candidates.length} ` +
-                    `entries in ${ref.path} share it. Candidates: ${describe(candidates)}. ` +
-                    `Pass the uuid directly on the ${ref.relationship} relationship instead.`,
-                );
-              }
-              resolved.push(only.id);
-              continue;
-            }
-            throw new Error(
-              rivals.length > 0
-                ? `${ref.noun} name '${name}' is ambiguous — ${candidates.length} ` +
-                    `entries in ${ref.path} share it and the write carries no ` +
-                    `${scopeField} to narrow them. Candidates: ${describe(candidates)}. ` +
-                    `Pass the uuid directly on the ${ref.relationship} relationship instead.`
-                : `${ref.noun} name '${name}' cannot be resolved: ${ref.path} names are ` +
-                    `unique only within ${scopeField}, and this write carries no ` +
-                    `${scopeField} to narrow it — being the only '${name}' that exists ` +
-                    `today does not make it this write's. Candidate: ${describe(candidates)}. ` +
-                    `Name the ${scopeField}, or pass the uuid directly on the ` +
-                    `${ref.relationship} relationship instead.`,
+        } else {
+          for (const name of names) {
+            resolved.push(
+              await resolveScoped(req, ctx, ref, data, byName, name, scopes),
             );
           }
-
-          const [match, ...extra] = candidates.filter(
-            (c) => c.scopeId === scopeId,
-          );
-          if (match === undefined) {
-            const elsewhere = candidates
-              .map((c) => c.scopeId ?? '(none)')
-              .join(', ');
-            throw new Error(
-              `${ref.noun} name '${name}' does not exist in ${scopeField} ` +
-                `'${scopeId}'. It exists in: ${elsewhere}.`,
-            );
-          }
-          if (extra.length > 0) {
-            throw new Error(
-              `${ref.noun} name '${name}' is ambiguous even within ${scopeField} ` +
-                `'${scopeId}': ${describe([match, ...extra])}. Pass the uuid directly ` +
-                `on the ${ref.relationship} relationship instead.`,
-            );
-          }
-          resolved.push(match.id);
         }
 
+        if (ref.single) {
+          const [id] = resolved;
+          if (id !== undefined) {
+            relationships[ref.relationship] = { data: { type: ref.type, id } };
+          }
+          continue;
+        }
         const current = at(relationships, ref.relationship, 'data');
         const existing = Array.isArray(current)
           ? current

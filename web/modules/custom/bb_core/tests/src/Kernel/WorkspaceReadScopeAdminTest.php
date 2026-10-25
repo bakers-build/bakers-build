@@ -68,7 +68,7 @@ final class WorkspaceReadScopeAdminTest extends KernelTestBase {
     $this->createEntity('bb_ticket', [
       'identifier' => 'T-A2',
       'title' => 'ticket-a-2',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->secondProjectId,
     ]);
   }

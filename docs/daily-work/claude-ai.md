@@ -4,7 +4,7 @@
 
 | In the chat you can | For the rest |
 |---|---|
-| Create feature and chore tickets, check for duplicates, qualify them and take them to `spec` | Follow, answer, accept: the bakers.build web UI ([Work in the browser](/get-started/work-in-the-browser)) |
+| Create feature and chore tickets, check for duplicates, qualify them and take them to `plan` | Follow, answer, accept: the bakers.build web UI ([Work in the browser](/get-started/work-in-the-browser)) |
 | Search and read tickets, comments and projects | Bug tickets, coding, review, merge: your team's agents |
 
 **You need:** a bakers.build account with access to the workspace, and an MCP client with OAuth support, for example claude.ai, Claude Desktop, ChatGPT or Cursor.
@@ -30,13 +30,13 @@ On a claude.ai Team or Enterprise plan an organization owner can add the connect
 Create a bakers.build ticket for <what you need and why>.
 ```
 
-Claude searches for similar tickets, asks what is missing and qualifies the ticket. It asks you to confirm at each important point: a similar ticket, the qualification and the move to `spec`.
+Claude searches for similar tickets, asks what is missing and qualifies the ticket. It asks you to confirm at each important point: a similar ticket, the qualification and the move to `plan`.
 
-**Done when:** your ticket appears in bakers.build in state `spec`.
+**Done when:** your ticket appears in bakers.build in state `plan`.
 
 ## If it stops working
 
 1. **A tool call fails with a permission message:** your account lacks that right. Ask your workspace lead.
 2. **Tools fail or disappear without a clear reason:** in your client's connector settings, disconnect the bakers.build connector and connect it again. That renews your sign-in.
-3. **Claude cannot find a label it needs:** a teammate with the CLI creates it; qualification continues afterwards.
+3. **Claude cannot find a label or ticket type it needs:** a workspace contributor or lead adds it under the workspace's settings, on the Labels or Types tab; qualification continues afterwards.
 4. **Still stuck:** [claude.ai limits and errors](/advanced/configuration/claude-connector-limits) lists every known case.

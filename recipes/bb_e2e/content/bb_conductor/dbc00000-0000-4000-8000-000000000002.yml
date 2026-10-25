@@ -41,9 +41,9 @@ default:
       entity: "dbf00000-0000-4000-8000-000000000001"
   states:
     -
-      value: "diagnose"
+      value: "plan"
     -
-      value: "coding"
+      value: "working"
   last_seen:
     -
       value: 1782837900

@@ -9,7 +9,7 @@ props:
   timestamp: 2 min ago
   subject_label: BB-650
   subject_url: '#subject'
-  statement: run failed in coding
+  statement: run failed in working
   facts:
     - cw-framework
     - 40 min

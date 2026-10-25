@@ -482,7 +482,7 @@ final class RankEntityAccessTest extends KernelTestBase {
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => 'T-BOB',
       'title' => 'bob-ticket',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
       'owner_user_id' => $this->worldOwner->id(),
     ]);
@@ -513,7 +513,7 @@ final class RankEntityAccessTest extends KernelTestBase {
       ->create([
         'identifier' => 'T-NEW-' . strtoupper($side),
         'title' => "new-ticket-$side",
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->fixture($side, 'bb_project')->id(),
         'conductor_id' => $this->fixture($side, 'bb_conductor')->id(),
       ]);

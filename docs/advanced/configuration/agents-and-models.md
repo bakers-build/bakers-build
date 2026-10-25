@@ -26,7 +26,7 @@ Decide which AI harnesses a machine can run, which one handles each ticket state
        enabled: ['codex', 'opus'],
        default_agent: 'codex',
        routes: {
-         default: { coding: 'codex', review: 'opus', '*': 'codex' },
+         default: { working: 'codex', review: 'opus', '*': 'codex' },
          careful: { '*': 'opus' },
        },
      },
@@ -41,7 +41,7 @@ Decide which AI harnesses a machine can run, which one handles each ticket state
    |---|---|
    | `agent:careful` | Route `careful`: Opus in every state |
    | `agent:opus` | Alias `opus` in every state |
-   | `agent:opus@coding` | Alias `opus`, only while the ticket is in `coding` |
+   | `agent:opus@working` | Alias `opus`, only while the ticket is in `working` |
 
    A direct alias beats a route, whatever the label order. The route must exist on the machine that actually runs the ticket. The full precedence list is in [Machines](/advanced/machines#which-agent-runs-a-state).
 

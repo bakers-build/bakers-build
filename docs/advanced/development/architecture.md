@@ -6,8 +6,8 @@ bakers.build has three parts with fixed boundaries: a Drupal control plane that 
 
 The control plane is a Drupal application. Its code lives in `web/modules/custom/bb_core`, and it is the only authority for a ticket's state.
 
-- **Entities.** Workspaces, teams, projects, tickets, comments, runs, conductors, machines, environments, measurements and label terms.
-- **State machines.** They are defined in code, in `bb_core.workflows.yml`: five ticket workflows (`bb_feature`, `bb_bug`, `bb_chore`, `bb_deployment`, `bb_verification`) and one for runs. A state marked `claimable` may be picked up by a conductor. `done` and `cancelled` are never claimable. [Workflows and states](/skills-and-workflows/workflows-and-states) lists them.
+- **Entities.** Workspaces, teams, projects, tickets, comments, runs, conductors, machines, environments, measurements and the terms of the type, recipe and label vocabularies.
+- **State machines.** They are defined in code, in `bb_core.workflows.yml`: three ticket workflows (`bb_work` for every work ticket, `bb_deployment`, `bb_verification`) and one for runs. The kind of work is ticket data: a type, a recipe and labels. A state marked `claimable` may be picked up by a conductor. `done` and `cancelled` are never claimable. [Workflows and states](/skills-and-workflows/workflows-and-states) lists them.
 - **Access.** Everything goes through JSON:API, authenticated with OAuth. Agents, `bakers ui` and `bakers dropsh` all write through the same API; nothing writes behind it.
 
 ### Claims

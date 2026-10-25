@@ -146,7 +146,7 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
         site: { base_url: 'https://legacy.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
         project: 'demo',
         machine_id: 'm',
-        states: ['coding'],
+        states: ['working'],
         plugins: [{ id: 'legacy-session' }],
       };\n`,
     );

@@ -9,7 +9,7 @@ problems:
     solution: A monitoring dashboard/board shows ticket state, active runs and conductor load.
 features:
   - Ticket import from multiple ticket systems into a canonical model
-  - Per-ticket workflow state machine (qualification, spec, diagnose, coding, review, done)
+  - Per-ticket workflow state machine (bb_work: qualification, plan, working, review, done, cancelled)
   - bakers.build conductor pulls and dispatches tickets to AI agents
   - AI agents work off issues end-to-end
   - Monitoring dashboard and board for tickets, runs and conductors

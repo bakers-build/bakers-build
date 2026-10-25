@@ -51,7 +51,7 @@ final class SubTicketsPriorityOrderTest extends KernelTestBase {
     $storage = $etm->getStorage('bb_ticket');
 
     $parent = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'Parent',
       'state' => 'todo',
       'project_id' => $project->id(),
@@ -61,7 +61,7 @@ final class SubTicketsPriorityOrderTest extends KernelTestBase {
 
     // Created out of priority order to prove sorting is by priority.
     $mid = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'B',
       'state' => 'todo',
       'project_id' => $project->id(),
@@ -70,7 +70,7 @@ final class SubTicketsPriorityOrderTest extends KernelTestBase {
     ]);
     $mid->save();
     $first = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'A',
       'state' => 'todo',
       'project_id' => $project->id(),

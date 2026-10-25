@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_activity\Kernel;
 
+use Drupal\bb_core\Entity\BbTerm;
+use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -70,7 +72,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group',
       'bb_project', 'bb_environment', 'bb_conductor', 'bb_ticket',
-      'bb_run', 'bb_comment', 'bb_activity', 'bb_notification_setting', 'file',
+      'bb_run', 'bb_comment', 'bb_activity', 'bb_notification_setting', 'file', 'bb_term',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -139,7 +141,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    * Activities lists one structured row per event and skips the empty copy.
    */
   public function testFullViewModeShowsActivityEvents(): void {
-    $ticket = $this->featureTicket('Shipped search');
+    $ticket = $this->workTicket('Shipped search');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
     $this->epicTicket('Hidden epic', 'done');
@@ -147,8 +149,8 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $html = $this->renderMode('full');
     $link = '<a href="' . $ticket->toUrl()->toString() . '" class="font-semibold">' . $ticket->getIdentifier() . '</a>';
     self::assertStringContainsString('Activities', $html);
-    self::assertStringContainsString($link . ' qualification → spec', $html);
-    self::assertStringContainsString($link . ' created (feature, qualification)', $html);
+    self::assertStringContainsString($link . ' qualification → plan', $html);
+    self::assertStringContainsString($link . ' created (work, qualification)', $html);
     self::assertStringContainsString('data-tag="status"', $html);
     self::assertStringContainsString('>human<', $html);
     self::assertStringNotContainsString('No activity yet.', $html);
@@ -159,11 +161,11 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    * A state change that closed a run names the agent, its run and summary.
    */
   public function testAgentStatusRowShowsModelDurationAndLinks(): void {
-    $ticket = $this->featureTicket('Agent work');
+    $ticket = $this->workTicket('Agent work');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
     $conductor = $this->conductor('overview-conductor');
-    $run = $this->createRun($ticket, $conductor, 'spec', 'running', [
+    $run = $this->createRun($ticket, $conductor, 'plan', 'running', [
       'model' => 'claude-opus-5-5',
       'harness' => 'claude',
       'started_at' => (int) $this->container->get('datetime.time')->getCurrentTime() - 840,
@@ -176,11 +178,11 @@ final class ProjectActivityFeedTest extends KernelTestBase {
       'created' => $this->container->get('datetime.time')->getCurrentTime(),
     ]);
     $summary->save();
-    $ticket->getState()->applyTransitionById('to_coding');
+    $ticket->getState()->applyTransitionById('to_working');
     $ticket->save();
 
     $html = $this->renderMode('full');
-    self::assertStringContainsString('spec → coding', $html);
+    self::assertStringContainsString('plan → working', $html);
     self::assertStringContainsString('claude-opus-5-5', $html);
     self::assertStringContainsString('>agent<', $html);
     self::assertStringContainsString('overview-conductor · 14 min', $html);
@@ -192,14 +194,14 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    * An agent row stays an agent row when its run is hidden or deleted.
    */
   public function testAgentRoleSurvivesHiddenAndDeletedRun(): void {
-    $ticket = $this->featureTicket('Hidden run');
+    $ticket = $this->workTicket('Hidden run');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
-    $run = $this->createRun($ticket, $this->conductor('hidden-conductor'), 'spec', 'running', [
+    $run = $this->createRun($ticket, $this->conductor('hidden-conductor'), 'plan', 'running', [
       'model' => 'claude-opus-5-5',
       'harness' => 'claude',
     ]);
-    $ticket->getState()->applyTransitionById('to_coding');
+    $ticket->getState()->applyTransitionById('to_working');
     $ticket->save();
     // A workspace guest reads tickets but not runs.
     $this->installOgScopeFixture();
@@ -215,14 +217,14 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $this->setCurrentUser($member);
     self::assertFalse($run->access('view'));
 
-    $row = $this->row($this->renderMode('full'), 'spec → coding');
+    $row = $this->row($this->renderMode('full'), 'plan → working');
     self::assertStringContainsString('>agent<', $row);
     self::assertStringNotContainsString('>human<', $row);
     self::assertStringNotContainsString('Run</a>', $row);
     self::assertStringNotContainsString('claude-opus-5-5', $row);
 
     $run->delete();
-    $row = $this->row($this->renderMode('full'), 'spec → coding');
+    $row = $this->row($this->renderMode('full'), 'plan → working');
     self::assertStringContainsString('>agent<', $row);
     self::assertStringNotContainsString('Run</a>', $row);
   }
@@ -231,17 +233,17 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    * An agent row names the harness besides the model.
    */
   public function testAgentRowNamesHarnessAndModel(): void {
-    $ticket = $this->featureTicket('Harness work');
+    $ticket = $this->workTicket('Harness work');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
-    $this->createRun($ticket, $this->conductor('harness-conductor'), 'spec', 'running', [
+    $this->createRun($ticket, $this->conductor('harness-conductor'), 'plan', 'running', [
       'model' => 'claude-opus-5-5',
       'harness' => 'claude-code',
     ]);
-    $ticket->getState()->applyTransitionById('to_coding');
+    $ticket->getState()->applyTransitionById('to_working');
     $ticket->save();
 
-    $row = $this->row($this->renderMode('full'), 'spec → coding');
+    $row = $this->row($this->renderMode('full'), 'plan → working');
     self::assertStringContainsString('claude-opus-5-5', $row);
     self::assertStringContainsString('claude-code · harness-conductor', $row);
   }
@@ -250,10 +252,10 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    * A created row names the workflow and first state and carries no role.
    */
   public function testCreatedRowNamesWorkflowWithoutRole(): void {
-    $this->featureTicket('Fresh ticket');
+    $this->workTicket('Fresh ticket');
 
     $row = $this->row($this->renderMode('full'), 'created');
-    self::assertStringContainsString('created (feature, qualification)', $row);
+    self::assertStringContainsString('created (work, qualification)', $row);
     self::assertStringNotContainsString('>agent<', $row);
     self::assertStringNotContainsString('>human<', $row);
   }
@@ -262,32 +264,32 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    * Expired and cancelled runs show their outcome as the tag.
    */
   public function testExpiredAndCancelledRunsShowTheirOutcome(): void {
-    $ticket = $this->featureTicket('Abandoned work');
+    $ticket = $this->workTicket('Abandoned work');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
     $conductor = $this->conductor('abandon-conductor');
-    $this->createRun($ticket, $conductor, 'spec', 'claimed', [])->setRunState('expired')->save();
-    $this->createRun($ticket, $conductor, 'spec', 'claimed', [])->setRunState('cancelled')->save();
+    $this->createRun($ticket, $conductor, 'plan', 'claimed', [])->setRunState('expired')->save();
+    $this->createRun($ticket, $conductor, 'plan', 'claimed', [])->setRunState('cancelled')->save();
 
     $html = $this->renderMode('full');
-    self::assertStringContainsString('data-tag="expired"', $this->row($html, 'run expired in spec'));
-    self::assertStringContainsString('data-tag="cancelled"', $this->row($html, 'run cancelled in spec'));
+    self::assertStringContainsString('data-tag="expired"', $this->row($html, 'run expired in plan'));
+    self::assertStringContainsString('data-tag="cancelled"', $this->row($html, 'run cancelled in plan'));
   }
 
   /**
    * A failed run shows its outcome as the tag and its first error line.
    */
   public function testFailedRunRowShowsOutcomeAndFirstErrorLine(): void {
-    $ticket = $this->featureTicket('Failing work');
+    $ticket = $this->workTicket('Failing work');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
-    $run = $this->createRun($ticket, $this->conductor('failing-conductor'), 'spec', 'claimed', []);
+    $run = $this->createRun($ticket, $this->conductor('failing-conductor'), 'plan', 'claimed', []);
     $run->set('error_log', "\nsetup: worktree missing\nstack line");
     $run->setRunState('failed')->save();
 
     $html = $this->renderMode('full');
     self::assertStringContainsString('data-tag="failed"', $html);
-    self::assertStringContainsString('run failed in spec', $html);
+    self::assertStringContainsString('run failed in plan', $html);
     self::assertStringContainsString('<code>setup: worktree missing</code>', $html);
     self::assertStringNotContainsString('stack line', $html);
   }
@@ -296,20 +298,20 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    * A claim row written before rows referenced runs still renders, roleless.
    */
   public function testLegacyClaimRowRendersWithoutAgentDetails(): void {
-    $ticket = $this->featureTicket('Old claim');
+    $ticket = $this->workTicket('Old claim');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
     $conductor = $this->conductor('legacy-conductor');
     $this->container->get('entity_type.manager')->getStorage('bb_activity')->create([
       'ticket_id' => $ticket->id(),
       'kind' => 'claimed',
-      'step' => 'spec',
+      'step' => 'plan',
       'conductor_id' => $conductor->id(),
       'actor' => 1,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ])->save();
 
-    $row = $this->row($this->renderMode('full'), 'started work in spec');
+    $row = $this->row($this->renderMode('full'), 'started work in plan');
     self::assertStringContainsString('data-tag="started"', $row);
     self::assertStringContainsString('legacy-conductor', $row);
     self::assertStringNotContainsString('>agent<', $row);
@@ -323,7 +325,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $actor = $this->createUser([], 'Ada Overview');
     self::assertInstanceOf(UserInterface::class, $actor);
     $this->setCurrentUser($actor);
-    $ticket = $this->featureTicket('Named actor');
+    $ticket = $this->workTicket('Named actor');
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
 
@@ -366,13 +368,13 @@ final class ProjectActivityFeedTest extends KernelTestBase {
   }
 
   /**
-   * A feature ticket on the fixture project.
+   * A work ticket on the fixture project.
    */
-  private function featureTicket(string $title): BbTicketInterface {
+  private function workTicket(string $title): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'title' => $title,
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->project->id(),
       ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -390,7 +392,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
       'owner_user_id' => 1,
       'status' => 'online',
       'project_id' => $this->project->id(),
-      'states' => ['spec'],
+      'states' => ['plan'],
     ]);
     self::assertInstanceOf(BbConductorInterface::class, $conductor);
     $conductor->save();
@@ -427,11 +429,17 @@ final class ProjectActivityFeedTest extends KernelTestBase {
   /**
    * An epic ticket on the fixture project.
    */
-  private function epicTicket(string $title, string $state = 'active'): BbTicketInterface {
+  private function epicTicket(string $title, string $state = 'working'): BbTicketInterface {
+    if (!BbVocabulary::load('type')) {
+      BbVocabulary::create(['id' => 'type', 'label' => 'type'])->save();
+    }
+    $epic = BbTerm::create(['vid' => 'type', 'name' => 'epic']);
+    $epic->save();
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'title' => $title,
-        'workflow' => 'bb_epic',
+        'workflow' => 'bb_work',
+        'ticket_type' => $epic->id(),
         'state' => $state,
         'project_id' => $this->project->id(),
       ]);

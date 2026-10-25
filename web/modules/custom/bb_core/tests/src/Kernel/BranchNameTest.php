@@ -59,7 +59,7 @@ final class BranchNameTest extends KernelTestBase {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
     $ticket = $storage->create([
       'identifier' => $identifier,
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => $title,
     ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);

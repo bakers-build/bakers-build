@@ -404,7 +404,7 @@ Then(
           type: 'bb_ticket--bb_ticket',
           attributes: {
             title: 'E2E incident',
-            workflow: 'bb_bug',
+            workflow: 'bb_work',
             description: { value: 'Scheduled run failed.', format: 'bb_rich' },
           },
           relationships: {

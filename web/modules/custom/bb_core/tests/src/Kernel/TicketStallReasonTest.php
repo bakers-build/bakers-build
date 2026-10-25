@@ -37,7 +37,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * A healthy assigned ticket is not standing still.
    */
   public function testAssignedTicketHasNoReason(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     self::assertSame('', $this->reasons->reasonFor($ticket));
   }
 
@@ -61,7 +61,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * Open blockers are named.
    */
   public function testBlockedTicket(): void {
-    $ticket = $this->seedBlockedTicket($this->seedAssignedTicket('coding', 'GL-STALL-BLOCKER'));
+    $ticket = $this->seedBlockedTicket($this->seedAssignedTicket('working', 'GL-STALL-BLOCKER'));
     self::assertSame('blocked', $this->reasons->reasonFor($ticket));
   }
 
@@ -69,7 +69,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * A tripped circuit breaker is named.
    */
   public function testBreakerTicket(): void {
-    $ticket = $this->seedAssignedTicket('diagnose');
+    $ticket = $this->seedAssignedTicket('plan');
     $this->tripTheBreaker($ticket);
     self::assertSame('failing', $this->reasons->reasonFor($this->reloadTicket($ticket)));
   }
@@ -116,7 +116,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * Freeze wins over every other reason.
    */
   public function testFrozenWinsOverBlocked(): void {
-    $ticket = $this->seedBlockedTicket($this->seedAssignedTicket('coding', 'GL-STALL-P-BLOCKER'));
+    $ticket = $this->seedBlockedTicket($this->seedAssignedTicket('working', 'GL-STALL-P-BLOCKER'));
     $ticket->setFrozen(TRUE)->save();
     self::assertSame('frozen', $this->reasons->reasonFor($ticket));
   }
@@ -125,7 +125,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * Open blockers win over a missing conductor.
    */
   public function testBlockedWinsOverUnassigned(): void {
-    $blocker = $this->seedAssignedTicket('coding', 'GL-STALL-B-U-BLOCKER');
+    $blocker = $this->seedAssignedTicket('working', 'GL-STALL-B-U-BLOCKER');
     $ticket = $this->seedBlockedTicket($blocker, $this->seedUnassignedTicket());
     self::assertSame('blocked', $this->reasons->reasonFor($ticket));
   }
@@ -143,7 +143,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * A ticket with an active run is not standing still at all.
    */
   public function testTicketWithActiveRunHasNoReason(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $this->claimService->claim($ticket, $this->conductor);
     self::assertSame('', $this->reasons->reasonFor($this->reloadTicket($ticket)));
   }
@@ -156,7 +156,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * itself is untouched (AC-5, asserted by ClaimFrozenTest).
    */
   public function testFrozenWinsOverAnActiveRun(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $this->claimService->claim($ticket, $this->conductor);
     $ticket = $this->reloadTicket($ticket);
     $ticket->setFrozen(TRUE)->save();
@@ -167,10 +167,10 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * A LAPSED claimed run does not hide the reason the ticket is standing still.
    */
   public function testLapsedClaimedRunDoesNotHideTheReason(): void {
-    $blocker = $this->seedAssignedTicket('coding', 'GL-STALL-LAPSED-BLOCKER');
+    $blocker = $this->seedAssignedTicket('working', 'GL-STALL-LAPSED-BLOCKER');
     $ticket = $this->seedBlockedTicket($blocker);
     $expired = $this->container->get('datetime.time')->getRequestTime() - 60;
-    $this->seedRun($ticket, 'coding', 'claimed', $expired);
+    $this->seedRun($ticket, 'working', 'claimed', $expired);
     self::assertSame('blocked', $this->reasons->reasonFor($this->reloadTicket($ticket)));
   }
 
@@ -178,9 +178,9 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * A run whose lease still holds keeps the short circuit intact.
    */
   public function testUnexpiredRunStillShortCircuits(): void {
-    $blocker = $this->seedAssignedTicket('coding', 'GL-STALL-LIVE-BLOCKER');
+    $blocker = $this->seedAssignedTicket('working', 'GL-STALL-LIVE-BLOCKER');
     $ticket = $this->seedBlockedTicket($blocker);
-    $this->seedRun($ticket, 'coding', 'running');
+    $this->seedRun($ticket, 'working', 'running');
     self::assertSame('', $this->reasons->reasonFor($this->reloadTicket($ticket)));
   }
 
@@ -188,10 +188,10 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    * A running run is live even when its lease has lapsed.
    */
   public function testRunningWithLapsedLeaseStillShortCircuits(): void {
-    $blocker = $this->seedAssignedTicket('coding', 'GL-STALL-RUNNING-LAPSED-BLOCKER');
+    $blocker = $this->seedAssignedTicket('working', 'GL-STALL-RUNNING-LAPSED-BLOCKER');
     $ticket = $this->seedBlockedTicket($blocker);
     $expired = $this->container->get('datetime.time')->getRequestTime() - 60;
-    $this->seedRun($ticket, 'coding', 'running', $expired);
+    $this->seedRun($ticket, 'working', 'running', $expired);
     self::assertSame('', $this->reasons->reasonFor($this->reloadTicket($ticket)));
   }
 
@@ -249,7 +249,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'identifier' => $identifier,
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'state' => $state,
         'title' => $identifier,
         'project_id' => (int) $this->conductor->get('project_id')->target_id,
@@ -290,7 +290,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
    *   The saved blocked ticket.
    */
   private function seedBlockedTicket(BbTicketInterface $blocker, ?BbTicketInterface $ticket = NULL): BbTicketInterface {
-    $ticket ??= $this->seedAssignedTicket('coding');
+    $ticket ??= $this->seedAssignedTicket('working');
     $ticket->set('blocked_by', [$blocker->id()]);
     $ticket->save();
     return $ticket;
@@ -305,7 +305,7 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
   private function tripTheBreaker(BbTicketInterface $ticket): void {
     $changed = $this->container->get('datetime.time')->getRequestTime() - 600;
     for ($i = 0; $i < 3; $i++) {
-      $run = $this->seedRun($ticket, 'diagnose', 'failed');
+      $run = $this->seedRun($ticket, 'plan', 'failed');
       $this->container->get('database')->update('bb_run')
         ->fields(['changed' => $changed])
         ->condition('id', $run->id())

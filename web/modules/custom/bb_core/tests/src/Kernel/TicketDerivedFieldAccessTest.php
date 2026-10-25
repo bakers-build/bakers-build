@@ -92,7 +92,7 @@ final class TicketDerivedFieldAccessTest extends KernelTestBase {
    */
   private function createTicket(): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-RO-1', 'workflow' => 'bb_feature', 'title' => 'RO']);
+      ->create(['identifier' => 'GL-RO-1', 'workflow' => 'bb_work', 'title' => 'RO']);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;
@@ -132,7 +132,7 @@ final class TicketDerivedFieldAccessTest extends KernelTestBase {
   public function testBranchNameIsWritableAtCreateOnly(): void {
     $updater = $this->createBbUser('create-updater', ['update bb_ticket', 'create bb_ticket']);
     $new = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => 'GL-RO-2', 'workflow' => 'bb_feature', 'title' => 'RO2']);
+      ->create(['identifier' => 'GL-RO-2', 'workflow' => 'bb_work', 'title' => 'RO2']);
     $this->assertInstanceOf(BbTicketInterface::class, $new);
 
     $this->assertTrue(

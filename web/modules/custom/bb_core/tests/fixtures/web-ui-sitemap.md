@@ -40,7 +40,7 @@ with real content is a named follow-up, created after this ticket merges.
 | Settings | `bb_core.bb_workspace.settings` | `/{ws}/settings` | Controller | `bb_workspace.update` (→ `update any bb_workspace`) | `_entity_access` |
 | Teams | `entity.bb_team.canonical` (one row per team) | `/{ws}/team/{id}` | — (rows added by `BbMenuSource` under the Teams heading) | `bb_team.view` | An `accessCheck(TRUE)` team query, scoped to the ambient workspace |
 
-## Workspace settings — four tabs, Settings default
+## Workspace settings — seven tabs, Settings default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
@@ -48,8 +48,11 @@ with real content is a named follow-up, created after this ticket merges.
 | Members | `bb_core.bb_workspace.members` | `/{ws}/settings/members` | Controller (island) | `bb_workspace.update` | `_entity_access` |
 | Addons | `view.addons.settings` | `/{ws}/settings/addons` | View (page display) | `bb_workspace.update` | `_entity_access`, set on the Views route by `BbWorkspaceRouteSubscriber` (the display's own access is `none`) |
 | Templates | `view.bb_ticket_templates.workspace_list` | `/{ws}/settings/templates` | View (page display) | `view bb_ticket_template` in this workspace | `_bb_workspace_permission` instead of its sibling tabs' lead gate, so contributors may list and use workspace templates and a guest may not, whatever rank it holds elsewhere; they see no Settings entry and reach the tab by its address. Lists the workspace templates of this workspace only. Its *Add template* header action opens `entity.bb_ticket_template.add_for_workspace`, gated by `_bb_workspace_create` (the create right in this workspace); its optional project makes a project template. |
+| Types | `view.bb_terms.types` | `/{ws}/settings/types` | View (page display) | `bb_workspace.update` | `_entity_access`, set on the Views route by `BbWorkspaceRouteSubscriber` (the display's own access is `view bb_term`). Lists the `type` terms of this workspace. |
+| Recipes | `view.bb_terms.recipes` | `/{ws}/settings/recipes` | View (page display) | `bb_workspace.update` | As Types, for the `recipe` terms. |
+| Labels | `view.bb_terms.labels` | `/{ws}/settings/labels` | View (page display) | `bb_workspace.update` | As Types, for the `label` terms. |
 
-The `bb_api_key` submodule adds a fourth tab, **Service accounts**
+The `bb_api_key` submodule adds a further tab, **Service accounts**
 (`view.bb_service_accounts.settings`, `/{ws}/settings/service-accounts`), when
 it is enabled; see service accounts.
 

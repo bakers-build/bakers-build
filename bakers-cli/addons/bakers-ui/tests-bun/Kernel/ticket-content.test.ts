@@ -859,7 +859,7 @@ describe('100-visit cleanup', () => {
       title: TITLE,
       state: 'coding',
       derived_status: 'idle',
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
     },
     relationships: { labels: { data: [] } },
   };

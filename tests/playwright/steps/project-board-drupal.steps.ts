@@ -39,7 +39,7 @@ Then('the Board shows no Conductor filter', async ({ page }) => {
 
 // The suite shares one world, and this project lands in the "bakers" workspace.
 // Its open tickets therefore stay in `qualification`: `ticket-list` asserts that
-// the "Coding" facet narrows a full page, and two more open `coding` tickets
+// the "Working" facet narrows a full page, and two more open `working` tickets
 // fill that page. The Blocked marker reads `blocked_by`, not the state.
 Given('a dedicated Board project has a blocked ticket and a cancelled ticket', () => {
   php(
@@ -58,11 +58,11 @@ Given('a dedicated Board project has a blocked ticket and a cancelled ticket', (
       '$ts = $etm->getStorage("bb_ticket");',
       'if (!current($ts->loadByProperties(["project_id" => $project->id(), "title" => "Board blocked"]))) {',
       '$team = $project->get("teams")->target_id;',
-      '$peer = $ts->create(["project_id" => $project->id(), "title" => "Board peer", "workflow" => "bb_feature", "state" => "qualification", "team" => $team]);',
+      '$peer = $ts->create(["project_id" => $project->id(), "title" => "Board peer", "workflow" => "bb_work", "state" => "qualification", "team" => $team]);',
       '$peer->save();',
-      '$blocked = $ts->create(["project_id" => $project->id(), "title" => "Board blocked", "workflow" => "bb_feature", "state" => "qualification", "team" => $team]);',
+      '$blocked = $ts->create(["project_id" => $project->id(), "title" => "Board blocked", "workflow" => "bb_work", "state" => "qualification", "team" => $team]);',
       '$blocked->set("blocked_by", [$peer->id()])->save();',
-      '$cancelled = $ts->create(["project_id" => $project->id(), "title" => "Board cancelled", "workflow" => "bb_feature", "state" => "cancelled", "closed" => 1, "team" => $team]);',
+      '$cancelled = $ts->create(["project_id" => $project->id(), "title" => "Board cancelled", "workflow" => "bb_work", "state" => "cancelled", "closed" => 1, "team" => $team]);',
       '$cancelled->save();',
       '}',
       'print $project->id();',

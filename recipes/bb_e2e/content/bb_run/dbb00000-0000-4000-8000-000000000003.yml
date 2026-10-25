@@ -23,7 +23,7 @@ default:
       value: 1798761600
   state_at_start:
     -
-      value: "coding"
+      value: "working"
   started_at:
     -
       value: 1782834600

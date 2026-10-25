@@ -76,7 +76,7 @@ function makeConfig(
     label: 'test label',
     project: 'bakers',
     machine_id: 'test-machine',
-    states: ['todo', 'coding'],
+    states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
     max_parallel: 2,
     poll_interval_ms: 5000,
@@ -162,12 +162,12 @@ describe('bakers oven once', () => {
         {
           runUuid: 'run-1',
           ticketUuid: 'tkt-1',
-          stateAtStart: 'coding',
+          stateAtStart: 'working',
           handler: 'code',
         },
       ],
       tickets: {
-        'tkt-1': { identifier: 'BB-1', title: 'T', state: 'coding' },
+        'tkt-1': { identifier: 'BB-1', title: 'T', state: 'working' },
       },
     });
     await runConductorCli(['oven', 'once'], deps);

@@ -123,7 +123,7 @@ final class HandoffCommentsFieldTest extends KernelTestBase {
     $project = $etm->getStorage('bb_project')->create(['name' => 'p']);
     $project->save();
     $ticket = $etm->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'T',
       'state' => 'todo',
       'project_id' => $project->id(),

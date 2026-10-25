@@ -129,7 +129,7 @@ final class WorkspaceReadScopeIsolationTest extends KernelTestBase {
       'enabled' => TRUE,
       'title_pattern' => 'workspace-template-a',
       'description' => ['value' => 'Body', 'format' => 'plain_text'],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
       'owner_user_id' => $this->worldOwner->id(),

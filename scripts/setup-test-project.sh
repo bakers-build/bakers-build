@@ -1193,7 +1193,7 @@ The ticket is yours. Three steps, and the last one spends real agent money.
 
        bakers dropsh --format md search bb_project --bundle bb_project --filter 'name:${PROJECT}'
        bakers dropsh --format md search bb_conductor --bundle bb_conductor --filter 'conductor_id:${MACHINE_ID}'
-       bakers dropsh create bb_ticket --bundle bb_ticket --title 'Conductor verification' --workflow bb_feature --label_names work:docs --project_id <project-uuid> --conductor_id <conductor-uuid>
+       bakers dropsh create bb_ticket --bundle bb_ticket --title 'Conductor verification' --workflow bb_work --label_names work:docs --project_id <project-uuid> --conductor_id <conductor-uuid>
 
      Substitute the UUIDs returned by the searches. Existing tickets can be assigned:
 

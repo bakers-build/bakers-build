@@ -7,10 +7,10 @@ props:
     - field: Project
       values:
         - bakers.build Platform
-      remove_url: '?state[0]=coding&label[0]=backend'
+      remove_url: '?state[0]=working&label[0]=backend'
     - field: State
       values:
-        - coding
+        - working
         - review
       remove_url: '?project[0]=1&label[0]=backend'
     - field: Labels

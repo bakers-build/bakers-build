@@ -79,7 +79,7 @@ final class TicketCreateFormTest extends KernelTestBase {
     }
     // `bb_core`'s own config, for the one file this suite cannot do
     // without: `core.entity_form_display.bb_ticket.bb_ticket.create`,
-    // which IS the dialog now — the eight fields, their widgets, their
+    // which IS the dialog now — the nine fields, their widgets, their
     // regions and the 37 names it hides.
     $this->installConfig(['system', 'user', 'filter', 'bb_core']);
     // Uid 1 bypasses every access check, so it must not be an actor.
@@ -105,7 +105,7 @@ final class TicketCreateFormTest extends KernelTestBase {
         'owner_user_id' => 0,
         'status' => 'online',
         'project_id' => $this->project->id(),
-        'states' => ['coding'],
+        'states' => ['working'],
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
       ]);
     $conductor->save();
@@ -116,12 +116,12 @@ final class TicketCreateFormTest extends KernelTestBase {
   /**
    * AC2, structural — and it moved, because the thing it pins moved.
    */
-  public function testTheDisplayHoldsExactlyTheEightFieldsInGrammarOrder(): void {
+  public function testTheDisplayHoldsExactlyTheNineFieldsInGrammarOrder(): void {
     $components = $this->createDisplay()->getComponents();
     uasort($components, static fn (array $a, array $b): int => $a['weight'] <=> $b['weight']);
 
     self::assertSame(
-      ['workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels'],
+      ['workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
       array_keys($components),
     );
   }
@@ -150,9 +150,9 @@ final class TicketCreateFormTest extends KernelTestBase {
   /**
    * AC2, on the request side: no server-owned name reaches the built form.
    *
-   * Asserted by EQUALITY against the seven field names, not only by
+   * Asserted by EQUALITY against the nine field names, not only by
    * `assertNotContains()` over the known-bad names: a substring-style check
-   * cannot catch a surprise eighth field (an `assignee` pill, a `state`
+   * cannot catch a surprise tenth field (an `assignee` pill, a `state`
    * pill under another name), and it would pass vacuously if
    * `submittedNamesOfBuiltForm()` ever collected nothing at all.
    * `assertEqualsCanonicalizing()` rather than `assertSame()` because the
@@ -167,9 +167,9 @@ final class TicketCreateFormTest extends KernelTestBase {
     $names = $this->submittedNamesOfBuiltForm(fn (): array => $this->buildFormOpenedOnProject((string) $this->project->id()));
 
     self::assertEqualsCanonicalizing(
-      ['workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels'],
+      ['workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
       $names,
-      'A project-bound request emits exactly these seven names and no others.',
+      'A project-bound request emits exactly these nine names and no others.',
     );
     // Documentation only from here — the equality assertion above already
     // rules every one of these out; named individually so a reader sees
@@ -218,7 +218,7 @@ final class TicketCreateFormTest extends KernelTestBase {
   public function testSetBlockedByIsStoredOnTheTicket(): void {
     $blocking = $this->container->get('entity_type.manager')
       ->getStorage('bb_ticket')
-      ->create(['title' => 'Blocking ticket', 'workflow' => 'bb_feature', 'project_id' => $this->project->id()]);
+      ->create(['title' => 'Blocking ticket', 'workflow' => 'bb_work', 'project_id' => $this->project->id()]);
     self::assertInstanceOf(BbTicketInterface::class, $blocking);
     $blocking->save();
 
@@ -233,7 +233,7 @@ final class TicketCreateFormTest extends KernelTestBase {
    * AC1: the ticket lands in its workflow's first state.
    */
   public function testTheTicketLandsInItsWorkflowsFirstState(): void {
-    $ticket = $this->submit(['title' => $this->line('A ticket'), 'workflow' => 'bb_feature']);
+    $ticket = $this->submit(['title' => $this->line('A ticket'), 'workflow' => 'bb_work']);
     self::assertSame('qualification', $ticket->get('state')->value);
   }
 
@@ -401,7 +401,7 @@ final class TicketCreateFormTest extends KernelTestBase {
 
     $state = $this->postForm([
       'project_id' => (string) $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => $this->line('Cleared the conductor'),
     ]);
 
@@ -581,7 +581,7 @@ final class TicketCreateFormTest extends KernelTestBase {
 
     $state = $this->postForm([
       'project_id' => (string) $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => $this->line('Written by a real POST'),
     ]);
 
@@ -603,7 +603,7 @@ final class TicketCreateFormTest extends KernelTestBase {
 
     $state = $this->postForm([
       'project_id' => (string) $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => $this->line(''),
       'description' => $this->line('Typed, and worth keeping.'),
     ]);
@@ -733,7 +733,7 @@ final class TicketCreateFormTest extends KernelTestBase {
   public function testSuccessfulDialogSubmitAuthorsItsOwnNavigation(): void {
     $response = $this->postInDialogFormat([
       'project_id' => (string) $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => $this->line('Filed through the dialog format'),
     ]);
 
@@ -750,7 +750,7 @@ final class TicketCreateFormTest extends KernelTestBase {
   public function testSuccessfulPlainSubmitRedirectsToTheDestination(): void {
     $response = $this->postInDialogFormat([
       'project_id' => (string) $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => $this->line('Filed from a standalone page'),
     ], FALSE);
 

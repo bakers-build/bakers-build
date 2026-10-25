@@ -1,0 +1,6 @@
+langcode: en
+status: true
+dependencies: {}
+id: label
+label: 'bakers.build labels'
+description: ''

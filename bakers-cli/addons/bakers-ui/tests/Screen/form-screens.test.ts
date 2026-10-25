@@ -56,7 +56,7 @@ describe('form screens own their complete interaction', () => {
           }),
         ],
         bb_conductor: [],
-        'taxonomy_term/bb_labels': [],
+        'taxonomy_term/label': [],
       },
     });
     const screen = new CreateTicketFormScreen();
@@ -311,16 +311,30 @@ async function popup() {
           attributes: { label: 'cw-framework' },
         }),
       ],
-      'bb_term/bb_labels': [
+      'bb_term/label': [
         toResource({
           id: 'l1',
-          type: 'bb_term--bb_labels',
+          type: 'bb_term--label',
           attributes: { name: 'bug' },
         }),
         toResource({
           id: 'l2',
-          type: 'bb_term--bb_labels',
+          type: 'bb_term--label',
           attributes: { name: 'ui' },
+        }),
+      ],
+      'bb_term/type': [
+        toResource({
+          id: 'ty1',
+          type: 'bb_term--type',
+          attributes: { name: 'feature' },
+        }),
+      ],
+      'bb_term/recipe': [
+        toResource({
+          id: 'r1',
+          type: 'bb_term--recipe',
+          attributes: { name: 'drupal-feature' },
         }),
       ],
     },
@@ -344,8 +358,8 @@ async function popup() {
  * Every choice here differs from what a fresh form derives, which is what makes
  * "remembered" an observation rather than a coincidence: the assignee is the
  * second user (not `ownFirst`'s), the conductor is CLEARED (not the
- * preselection), a label is ticked, a parent is picked, and the workflow is the
- * second one.
+ * preselection), a type and a recipe are picked (not the empty default), a
+ * label is ticked, a parent is picked, and the workflow is cycled.
  */
 function fill(screen: CreateTicketFormScreen, ctx: ScreenContext): void {
   // BB-326 — a named key is one press; a word is one press PER CHARACTER,
@@ -364,10 +378,14 @@ function fill(screen: CreateTicketFormScreen, ctx: ScreenContext): void {
   key('down'); //                        reviewers: leave empty
   key('backspace'); //                         conductor: clear (it is `clearable`)
   key('down');
+  key('right'); //                       type: none → `feature`
+  key('down');
+  key('right'); //                       recipe: none → `drupal-feature`
+  key('down');
   key('right'); //                       labels: cursor onto `ui`
   key(' '); //                            …and tick it
   key('down');
-  key('right'); //                       workflow: cycle to the second option
+  key('right'); //                       workflow: cycle
 }
 
 /** What every reopen must show, whatever closed the popup. */
@@ -403,7 +421,10 @@ function expectReopenedFrame(body: VNode) {
   expect(rowFor(rows, 'Conductor')).toContain('— none —');
   expect(rows.join('\n')).toContain('[x] ui');
 
-  // Re-defaulted: the workflow is back on the FIRST option (D5).
+  // Re-defaulted: type and recipe open empty again (BAKERS-17), and the
+  // workflow is back on the FIRST option (D5).
+  expect(rowFor(rows, 'Type')).toContain('— none —');
+  expect(rowFor(rows, 'Recipe')).toContain('— none —');
   expect(rowFor(rows, 'Workflow')).toContain(
     `< ${WORKFLOW_OPTIONS[0]?.label} >`,
   );
@@ -417,6 +438,14 @@ describe('BB-314: the New ticket popup opens on empty content', () => {
     expect(screen.handleInput('ctrl+d', ctx)).toBe(true); // Ctrl+D — direct create
     await tick();
     expect(api.creates).toHaveLength(1);
+    // The picked type and recipe reached the write, so the reopen below shows
+    // a real re-default rather than a field that was never set.
+    expect(api.creates[0]?.body.relationships?.ticket_type).toEqual({
+      data: { type: 'bb_term--type', id: 'ty1' },
+    });
+    expect(api.creates[0]?.body.relationships?.recipe).toEqual({
+      data: { type: 'bb_term--recipe', id: 'r1' },
+    });
 
     screen.leave();
     screen.enter(ctx);

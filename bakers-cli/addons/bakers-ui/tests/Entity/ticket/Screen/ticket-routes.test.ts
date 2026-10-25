@@ -134,7 +134,7 @@ describe('ticket routes', () => {
   it.each([
     [
       'overview',
-      'labels,parent_id,blocked_by,conductor_id,assignee_user_id,comments,owner_user_id,sub_tickets,referenced_tickets,reviewers,pending_reviews',
+      'labels,ticket_type,recipe,parent_id,blocked_by,conductor_id,assignee_user_id,comments,owner_user_id,sub_tickets,referenced_tickets,reviewers,pending_reviews',
     ],
     ['planning', 'comments,labels'],
     ['comments', 'comments'],

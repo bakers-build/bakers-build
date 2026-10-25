@@ -115,7 +115,7 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
     }
     $this->installSchema('search_api', ['search_api_item']);
     $this->installConfig(['user', 'search_api']);
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     $this->container->get('config.installer')
@@ -156,9 +156,9 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
     // exactly one ticket, so a facet that has not narrowed is visible as more
     // than one value rather than as a wrong count.
     $tickets = [
-      ['state' => 'coding', 'workflow' => 'bb_feature', 'priority' => 1],
-      ['state' => 'review', 'workflow' => 'bb_bug', 'priority' => 2],
-      ['state' => 'spec', 'workflow' => 'bb_feature', 'priority' => 3],
+      ['state' => 'working', 'workflow' => 'bb_work', 'priority' => 1],
+      ['state' => 'review', 'workflow' => 'bb_work', 'priority' => 2],
+      ['state' => 'plan', 'workflow' => 'bb_work', 'priority' => 3],
     ];
     foreach ($tickets as $i => $values) {
       $this->create('bb_ticket', $values + [
@@ -297,12 +297,12 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
    */
   public function testTheFacetOffersOnlyValuesThatYieldHits(): void {
     self::assertSame(
-      ['coding'],
+      ['working'],
       $this->renderedValues('state', ['priority' => ['1']]),
       'Only the priority-1 ticket is left, and it is the only state with a hit.',
     );
     self::assertSame(
-      ['bb_feature'],
+      ['bb_work'],
       $this->renderedValues('workflow', ['priority' => ['1']]),
     );
   }

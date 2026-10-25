@@ -100,7 +100,7 @@ final class TicketTimeFieldsTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')
       ->getStorage('bb_ticket')->create([
         'title' => 'Time fields',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'state' => 'qualification',
         'project_id' => $project->id(),
       ]);

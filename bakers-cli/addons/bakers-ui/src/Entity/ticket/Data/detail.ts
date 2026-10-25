@@ -19,8 +19,10 @@ import type { DropshClient, TicketDetailDocument } from '../../../types.js';
  * BB-255 added `parent_id,labels` for the same reason: the Parent row (AC-3)
  * and the header box's labels row (AC-8) would otherwise be raw uuids. Both were
  * re-measured live on BB-255 — `labels` sideloads
- * `bb_term--bb_labels` carrying `name`, and `parent_id` is `{data: null}` on
- * a parentless ticket. The `runs` include already ships each run's FULL attribute
+ * `bb_term--label` carrying `name`, and `parent_id` is `{data: null}` on
+ * a parentless ticket. BAKERS-17 added `ticket_type,recipe` for the header's
+ * type and recipe names, sideloading `bb_term--type` / `bb_term--recipe`.
+ * The `runs` include already ships each run's FULL attribute
  * set, which is why the Runs tab and the run detail screen add no request at all.
  *
  * `parent_id` serves BB-252 as well: after a save from the ticket list, this
@@ -59,6 +61,8 @@ export function loadTicketDetail(
     'assignee_user_id',
     'parent_id',
     'labels',
+    'ticket_type',
+    'recipe',
     'blocked_by',
     'owner_user_id',
     'reviewers',

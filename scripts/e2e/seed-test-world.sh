@@ -115,7 +115,7 @@ $user = $first($etm->getStorage("user")->loadByProperties(["name"=>"fixture-agen
 $ticket = $first($etm->getStorage("bb_ticket")->loadByProperties(["identifier"=>"GL-E2E-DROPSH"]));
 $conductor = $first($etm->getStorage("bb_conductor")->loadByProperties(["conductor_id"=>"bakers-e2e-node"]));
 $project = $first($etm->getStorage("bb_project")->loadByProperties(["name"=>"bakers-e2e-project"]));
-$labels = array_values($etm->getStorage("bb_term")->loadByProperties(["vid"=>"bb_labels"]));
+$labels = array_values($etm->getStorage("bb_term")->loadByProperties(["vid"=>"label"]));
 $runs = array_values($etm->getStorage("bb_run")->loadMultiple());
 $fixture = [
   "user_uuid" => $user?->uuid(), "ticket_uuid" => $ticket?->uuid(),

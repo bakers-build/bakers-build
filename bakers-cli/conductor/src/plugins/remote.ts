@@ -78,7 +78,7 @@ export interface Ticket {
    */
   workspaceId?: string;
   workspaceName?: string;
-  /** Ticket label term names (bb_labels vocab), sideloaded for agent selection. Empty when none. */
+  /** Ticket label term names (`label` bundle), sideloaded for agent selection. Empty when none. */
   labels: string[];
   /** Ticket environments (bb_environment refs), each as name + tier, sideloaded for agent selection. Empty when none. */
   environments: { name: string; tier: string }[];

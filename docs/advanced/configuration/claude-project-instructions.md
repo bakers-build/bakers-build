@@ -3,7 +3,7 @@
 Copy the content of the block below into a claude.ai Project's **Project instructions** (or
 upload it as Project knowledge). It replaces the `bakers dropsh` CLI the six bakers.build skills normally run with the four MCP tools the hosted
 bakers.build connector exposes, for the one workflow slice the connector supports: take a feature or chore
-request from prior-art search through qualification to `spec`. See
+request from prior-art search through qualification to `plan`. See
 [Connect Claude.ai to bakers.build](/daily-work/claude-ai) for how to install the connector and
 this bundle.
 
@@ -16,9 +16,10 @@ file; do not hand-edit it out of sync with them.
 
 - Agent routing (`qualify-ticket` › *Propose an agent*) — needs `bakers agents`, a local CLI command;
   no MCP tool exposes it. The connector never proposes or writes an `agent:*` label.
-- The `coding`-shortcut path in `create-ticket` ("a fully specified intake goes straight to
-  `coding`") — out of scope; this bundle never transitions past `spec`/`diagnose`.
-- Bug workflow and diagnosis — out of scope; this bundle handles `bb_feature`/`bb_chore` only.
+- The `working`-shortcut path in `create-ticket` ("a fully specified intake goes straight to
+  `working`") — out of scope; this bundle never transitions past `plan`.
+- Bug tickets and diagnosis — out of scope; this bundle handles tickets of type `feature` or
+  `chore` only.
 - Terminal retrospective (`done`/`cancelled` job rating + `bb_metric` write) — `record-measurement`
   writes a `bb_metric` entity the connector's allowlist does not expose. A duplicate-ticket
   cancellation still needs a reason comment and a state write; skip the rating/metric step and say
@@ -41,11 +42,11 @@ filesystem, or the `bakers` CLI. Every example below is an MCP tool call, not a 
 
 ## What you can do
 
-Take a feature or chore request from a prior-art check through qualification to the `spec` state.
+Take a feature or chore request from a prior-art check through qualification to the `plan` state.
 That is the entire supported path. If a user asks for anything else — start coding, move a ticket
 to `review`/`done`, assign a conductor, run tests, create or triage a bug ticket, infer a branch or
 local checkout, or anything needing a shell — **say plainly that this connector only covers
-ticket intake through qualification to `spec`, and that the rest has to happen in the user's own
+ticket intake through qualification to `plan`, and that the rest has to happen in the user's own
 bakers.build checkout.** Do not attempt a workaround.
 
 ## Tool shapes (exact — match these or calls fail validation)
@@ -68,23 +69,25 @@ bakers.build checkout.** Do not attempt a workaround.
 
 Allowlisted bundles (from `docker/mcp/dropsh.config.js`): `bb_ticket/bb_ticket` (search, read,
 create, update), `bb_comment/bb_comment` (search, create — never update), `bb_project/
-bb_project` (search, read), `bb_term/bb_labels` (search only — **no create**, see below).
+bb_project` (search, read), `bb_term/type`, `bb_term/recipe` and `bb_term/label` (search only —
+**no create**, see below).
 
 ## Hard limitation: no label/term creation
 
-The connector's `bb_term/bb_labels` entry is **search-only**. Resolve a label's UUID with
-`search` first — `{"entityType":"bb_term","bundle":"bb_labels","filters":["name:=:work:code"]}`
+The connector's `bb_term` entries are **search-only**. Resolve a label's UUID with
+`search` first — `{"entityType":"bb_term","bundle":"label","filters":["name:=:work:code"]}`
 — then attach it to a ticket as
-`"relationships": {"labels": {"data": [{"type": "bb_term--bb_labels", "id": "<term UUID>"}]}}`
-(repeat the object per label; there is no `label_names` shorthand here). If `qualify-ticket`'s
-work-type classification or label resolution needs a `work:*`, `method:*`, or other label term that
-does not already exist, **stop and tell the user exactly which label is missing and that it must be
+`"relationships": {"labels": {"data": [{"type": "bb_term--label", "id": "<term UUID>"}]}}`
+(repeat the object per label; there is no `label_names` shorthand here). A ticket type resolves the same way in bundle `type`
+and attaches as the single object `"ticket_type": {"data": {"type": "bb_term--type", "id": "<term UUID>"}}`. If `qualify-ticket`'s
+work-type classification or label resolution needs a `work:*`, `method:*`, or other label term, or a
+ticket type term, that does not already exist, **stop and tell the user exactly which label is missing and that it must be
 created in their own bakers.build checkout** (or by someone with CLI access) before qualification can
 complete. Do not invent a label, do not silently omit it, and do not substitute a different existing
 label.
 
 This also means: never attempt the `method-context` label-write ("Persist one `method:<set>` label")
-unless `search` confirms that exact label term already exists in the workspace's `bb_labels`
+unless `search` confirms that exact label term already exists in the workspace's `label`
 vocabulary.
 
 ## Markdown formatting — unchanged from the source skills
@@ -148,12 +151,13 @@ input schema for `bb_ticket/bb_ticket` to confirm current field names — there 
       "type": "bb_ticket--bb_ticket",
       "attributes": {
         "title": "<verbatim title>",
-        "workflow": "bb_feature",
+        "workflow": "bb_work",
         "description": { "value": "<Markdown>", "format": "bb_rich" }
       },
       "relationships": {
         "project_id": { "data": { "type": "bb_project--bb_project", "id": "<project UUID>" } },
-        "labels": { "data": [{ "type": "bb_term--bb_labels", "id": "<work label UUID>" }] }
+        "ticket_type": { "data": { "type": "bb_term--type", "id": "<feature type UUID>" } },
+        "labels": { "data": [{ "type": "bb_term--label", "id": "<work label UUID>" }] }
       }
     }
   }
@@ -163,7 +167,7 @@ input schema for `bb_ticket/bb_ticket` to confirm current field names — there 
 (`labels.data` takes one array entry per label — repeat the `{ "type": ..., "id": ... }` object for
 each resolved label UUID; the single entry above is illustrative, not a limit.)
 
-(Use `bb_chore` for chore requests. Adjust the attribute/relationship names to whatever the
+(Use the `chore` type term for chore requests. Adjust the attribute/relationship names to whatever the
 `create` tool's input schema actually names if it differs — that live schema wins over this
 example.)
 
@@ -195,7 +199,7 @@ as of this bundle's authoring — ask the user to confirm it is still current if
 
 Only the qualification/specification rows matter for this connector's scope. Record the chosen set
 as a `method:<set>` label in the ticket's `labels` relationship **only if that exact label term
-already exists** (`search` `bb_term/bb_labels` for it first, same shape as above) — otherwise
+already exists** (`search` `bb_term/label` for it first, same shape as above) — otherwise
 tell the user the label is missing and continue qualification without writing it.
 
 Build the qualification handoff with every required field:
@@ -244,7 +248,7 @@ is not needed, only this one `summary` plus the `qualification` comment above).
 **Route only after both comment UUIDs are confirmed.** If either failed, leave the ticket in
 `qualification`, report the failure, and stop — do not transition.
 
-## 5. Transition to `spec` (feature/chore) — or `cancelled` for a prior-art duplicate
+## 5. Transition to `plan` (feature/chore) — or `cancelled` for a prior-art duplicate
 
 Before writing state, re-`read` the ticket to confirm its current state is still `qualification`
 (catches a concurrent change). Then:
@@ -258,14 +262,14 @@ Before writing state, re-`read` the ticket to confirm its current state is still
     "data": {
       "type": "bb_ticket--bb_ticket",
       "id": "<ticket UUID>",
-      "attributes": { "state": "spec" }
+      "attributes": { "state": "plan" }
     }
   }
 }
 ```
 
-Never write `base_branch`, never invent a destination state beyond `spec` (feature/chore) — this
-bundle does not cover `diagnose` (bug). For a confirmed duplicate-close instead: ask the user for a
+Never write `base_branch`, never invent a destination state beyond `plan` (feature/chore) — this
+bundle does not cover bug tickets. For a confirmed duplicate-close instead: ask the user for a
 one-line cancellation reason, publish it as a `bb_comment` (there is no dedicated `retro` type
 requirement here — a plain comment explaining the cancellation is sufficient; the full job-rating
 retrospective needs `bb_metric`, which this connector cannot write, so skip it and say so), then
@@ -278,6 +282,6 @@ different destination state. If the write seems to have gone through but the res
 ## 6. Final readback
 
 `read` the ticket one last time and confirm to the user: identifier, title, final state
-(`spec`/`cancelled`), and a one-line summary of what was recorded. Stop there — this bundle creates
+(`plan`/`cancelled`), and a one-line summary of what was recorded. Stop there — this bundle creates
 no implementation plan, no code, and performs no further transition.
 ````

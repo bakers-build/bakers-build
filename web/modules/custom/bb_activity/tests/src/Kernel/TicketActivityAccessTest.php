@@ -234,7 +234,7 @@ final class TicketActivityAccessTest extends KernelTestBase {
     $ticket = $this->fixture('a', 'bb_ticket');
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     $run = $this->fixture('a', 'bb_run');
-    $run->set('state_at_start', 'spec')->save();
+    $run->set('state_at_start', 'plan')->save();
     $summary = $this->createEntity('bb_comment', [
       'ticket_id' => $ticket->id(),
       'author' => $this->memberA->id(),
@@ -242,7 +242,7 @@ final class TicketActivityAccessTest extends KernelTestBase {
       'type' => 'summary',
       'created' => $this->container->get('datetime.time')->getCurrentTime(),
     ]);
-    $ticket->set('state', 'coding')->save();
+    $ticket->set('state', 'working')->save();
     $status = $this->activitiesOnSide('a', 'status_changed');
     $row = $this->container->get('entity_type.manager')
       ->getStorage('bb_activity')
@@ -303,7 +303,7 @@ final class TicketActivityAccessTest extends KernelTestBase {
       foreach (['a', 'b'] as $side) {
         $ticket = $this->fixture($side, 'bb_ticket');
         self::assertInstanceOf(BbTicketInterface::class, $ticket);
-        $ticket->set('state', 'spec')->save();
+        $ticket->set('state', 'plan')->save();
         $run = $this->fixture($side, 'bb_run');
         $conductor = $this->fixture($side, 'bb_conductor');
         self::assertInstanceOf(BbRunInterface::class, $run);

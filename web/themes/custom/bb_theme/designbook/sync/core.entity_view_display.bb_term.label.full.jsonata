@@ -1,5 +1,5 @@
 /*
- * sync-to generator — core.entity_view_display.bb_term.bb_labels.full
+ * sync-to generator — core.entity_view_display.bb_term.label.full
  *
  * Emitted by the designbook `sync-to` workflow (bb-8a9979fd). The static
  * config below is the transform output for this unit — a display_builder
@@ -34,7 +34,7 @@
                 "title": {
                   "sources": [
                     {
-                      "source_id": "field_formatter:bb_term:bb_labels:name",
+                      "source_id": "field_formatter:bb_term:label:name",
                       "source": {
                         "type": "string",
                         "settings": {},
@@ -53,9 +53,9 @@
       ]
     }
   },
-  "id": "bb_term.bb_labels.full",
+  "id": "bb_term.label.full",
   "targetEntityType": "bb_term",
-  "bundle": "bb_labels",
+  "bundle": "label",
   "mode": "full",
   "content": {},
   "hidden": {}

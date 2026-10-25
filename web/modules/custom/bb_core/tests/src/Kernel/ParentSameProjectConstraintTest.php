@@ -153,7 +153,7 @@ final class ParentSameProjectConstraintTest extends KernelTestBase {
   private function ticket(string $title, string $project, ?BbTicketInterface $parent = NULL, bool $save = TRUE): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => $title,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->projects[$project],
       'parent_id' => $parent?->id(),
     ]);

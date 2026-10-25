@@ -124,16 +124,13 @@ final class TicketCellFormattersTest extends KernelTestBase {
    * The running phase is the filled disc; every other open state is the
    * empty ring.
    *
-   * Feature `coding` and epic `active` are both the running phase.
+   * `working` is the running phase of bb_work.
    */
-  public function testTheStateIconIsFilledOnlyWhileCoding(): void {
+  public function testTheStateIconIsFilledOnlyWhileWorking(): void {
     $cases = [
-      ['bb_feature', 'coding', TRUE],
-      ['bb_feature', 'review', FALSE],
-      ['bb_feature', 'spec', FALSE],
-      ['bb_epic', 'active', TRUE],
-      ['bb_epic', 'spec', FALSE],
-      ['bb_epic', 'review', FALSE],
+      ['bb_work', 'working', TRUE],
+      ['bb_work', 'review', FALSE],
+      ['bb_work', 'plan', FALSE],
     ];
     foreach ($cases as [$workflow, $state, $working]) {
       $ticket = $this->ticket(['workflow' => $workflow, 'state' => $state]);
@@ -195,22 +192,22 @@ final class TicketCellFormattersTest extends KernelTestBase {
    * The state badge reads the workflow's own label, not the raw state id.
    *
    * Asserted against `StateItemInterface::getLabel()` rather than against a
-   * hand-typed 'Coding': that method is the mapping `bb_state_label` reads,
+   * hand-typed 'Working': that method is the mapping `bb_state_label` reads,
    * and a second state vocabulary in this formatter is exactly the defect
    * spec D12 argues against for the facets.
    */
   public function testTheStateBadgeReadsTheWorkflowsOwnLabel(): void {
-    $ticket = $this->ticket(['state' => 'coding']);
+    $ticket = $this->ticket(['state' => 'working']);
     $html = $this->cell($ticket, 'state', 'bb_ticket_state_cell');
 
     $item = $ticket->get('state')->first();
     self::assertInstanceOf(StateItemInterface::class, $item);
     $label = (string) $item->getLabel();
 
-    self::assertSame('Coding', $label, 'The workflow definition is the source of the label.');
+    self::assertSame('Working', $label, 'The workflow definition is the source of the label.');
     self::assertStringContainsString('data-badge-label', $html);
     self::assertStringContainsString($label, $html);
-    self::assertStringNotContainsString('>coding<', $html);
+    self::assertStringNotContainsString('>working<', $html);
   }
 
   /**
@@ -449,8 +446,8 @@ final class TicketCellFormattersTest extends KernelTestBase {
   private function ticket(array $values = []): BbTicketInterface {
     $ticket = $this->create('bb_ticket', $values + [
       'title' => 'Wire the ticket list',
-      'workflow' => 'bb_feature',
-      'state' => 'coding',
+      'workflow' => 'bb_work',
+      'state' => 'working',
       'project_id' => $this->project->id(),
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

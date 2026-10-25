@@ -58,15 +58,8 @@ final class ActivityViewReadScopeTest extends KernelTestBase {
     $this->installEntitySchema('bb_notification_setting');
     $this->installReadScopeEnvironment();
     $this->installEntitySchema('bb_activity');
-    // The recipe owns these vocabularies, so a kernel test creates them itself:
-    // ui_patterns builds a sample bb_ticket while resolving the View's row
-    // plugin, and that sample references a bb_term bundle. `bb_labels` is
-    // not in this list because installReadScopeEnvironment() now owns it — the
-    // fixture builds a term per side and needs the bundle first (BB-339).
-    foreach (['bb_capability_tags'] as $vid) {
-      $this->container->get('entity_type.manager')->getStorage('bb_vocabulary')
-        ->create(['id' => $vid, 'label' => $vid])->save();
-    }
+    // installReadScopeEnvironment() creates the recipe-owned type/recipe/label
+    // vocabularies the View's sample bb_ticket references (BB-339).
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->buildTwoWorkspaceWorld();
   }
@@ -78,7 +71,7 @@ final class ActivityViewReadScopeTest extends KernelTestBase {
     $this->importFixtureView('bb_activities');
     $pm = $this->createScopedProjectManager();
     foreach (['a', 'b'] as $side) {
-      $this->fixture($side, 'bb_ticket')->set('state', 'spec')->save();
+      $this->fixture($side, 'bb_ticket')->set('state', 'plan')->save();
     }
 
     $ids = $this->executeViewAs('bb_activities', $pm);

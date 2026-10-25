@@ -13,7 +13,7 @@ use Symfony\Component\Validator\Constraint as SymfonyConstraint;
  *
  * Applied to bb_term.name. The key is (workspace_id, vid, name)
  * and not (workspace_id, name), because `codex` exists on the live instance as
- * both a bb_labels term and a bb_capability_tags term: the narrower key
+ * both a label term and a term of another bundle: the narrower key
  * would have failed on real data and forced a merge of two terms that mean
  * different things.
  */

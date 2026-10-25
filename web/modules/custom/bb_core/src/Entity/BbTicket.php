@@ -308,12 +308,27 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
       ->setDisplayOptions('form', ['type' => 'state_machine_buttons', 'weight' => 5])
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayOptions('view', ['type' => 'bb_state_label', 'weight' => 5]);
+    // Named ticket_type, not type: JSON:API reserves `type`.
+    $fields['ticket_type'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(new TranslatableMarkup('Ticket type'))
+      ->setSetting('target_type', 'bb_term')
+      ->setSetting('handler_settings', ['target_bundles' => ['type' => 'type']])
+      ->addConstraint('BbTicketLabelWorkspace')
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+    $fields['recipe'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(new TranslatableMarkup('Recipe'))
+      ->setSetting('target_type', 'bb_term')
+      ->setSetting('handler_settings', ['target_bundles' => ['recipe' => 'recipe']])
+      ->addConstraint('BbTicketLabelWorkspace')
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
     $fields['labels'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Labels'))
       ->setSetting('target_type', 'bb_term')
-      ->setSetting('handler_settings', ['target_bundles' => ['bb_labels' => 'bb_labels']])
+      ->setSetting('handler_settings', ['target_bundles' => ['label' => 'label']])
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
-      // A label must belong to the ticket's own workspace. The
+      // A term must belong to the ticket's own workspace. The
       // read scope narrows what a term collection returns and does not stop a
       // write, so the rule needs its own constraint.
       ->addConstraint('BbTicketLabelWorkspace')

@@ -22,6 +22,9 @@ import { parse as parseYaml } from 'yaml';
 /** The workflow states an agent works — the legal `step` values. */
 export const WORKFLOW_STEPS = [
   'qualification',
+  'plan',
+  'working',
+  // shortcut: spec/diagnose/coding stay until the skills move to plan/working, then remove them.
   'spec',
   'diagnose',
   'coding',
@@ -132,7 +135,7 @@ export interface SkillContract {
 
 /**
  * A concrete `(work_type, workflow, step)` the project can produce. `work_type`
- * is `null` for a non-work-typed step (qualification, spec, deployment,
+ * is `null` for a non-work-typed step (qualification, plan, deployment,
  * verification), a `work:*` label (without the prefix) otherwise.
  */
 export interface Triple {
@@ -588,9 +591,7 @@ export const WORKFLOW_CLAIMABLE_STATES: Record<
   string,
   readonly WorkflowStep[]
 > = {
-  bb_feature: ['qualification', 'spec', 'coding', 'review'],
-  bb_bug: ['qualification', 'diagnose', 'coding', 'review'],
-  bb_chore: ['qualification', 'spec', 'coding', 'review'],
+  bb_work: ['qualification', 'plan', 'working', 'review'],
   bb_deployment: ['pre_deployment', 'post_deployment'],
   bb_verification: ['verifying', 'summary'],
 };
@@ -603,10 +604,10 @@ export const WORKFLOW_CLAIMABLE_STATES: Record<
  *
  * A **work type** exists for the project because some loaded **owner** declares it;
  * its participating steps are the union of `when.step` across every owner declaring
- * it. Those steps are then crossed against **all five** workflows — not merely the
+ * it. Those steps are then crossed against **every** workflow — not merely the
  * ones the declaring skill happens to list — because that is what makes a coverage
  * gap real rather than tautological: a project that can route `work:code` at
- * `coding` must be able to route it at `coding` in every workflow that claims there.
+ * `working` must be able to route it at `working` in every workflow that claims there.
  *
  * A step no work type participates in carries a `null` work type (qualification,
  * the deployment and verification steps). An owner whose `when.work_type` is `*` or
@@ -617,8 +618,8 @@ export const WORKFLOW_CLAIMABLE_STATES: Record<
  * project.** Because a work type exists here only if some loaded owner declares it,
  * deleting the last owner of a work type does not open a coverage gap — it shrinks
  * the triple set, and the validation stays green. Removing `- @bakers-build/docs-authoring`
- * from this repository's own `WORKFLOW.md` yields `9 → 8` owners and `24 → 16`
- * triples, all covered, although every `work:docs` ticket would then reach `coding`
+ * from this repository's own `WORKFLOW.md` drops one owner and its triples, all
+ * still covered, although every `work:docs` ticket would then reach `working`
  * with no owner at all. The set of work types a project's tickets can actually
  * carry lives in the ticket store's `work:*` vocabulary, which this function cannot
  * see; closing the gap means feeding that vocabulary in, which is its own change.
@@ -718,7 +719,7 @@ export function expandLoad(
   // BB-436: a `## Loaded skills` section that yields no load site at all is its
   // own defect and needs its own message. Expanding it into an empty skill set
   // let the failure surface much later as `no skill matches triple (—,
-  // bb_feature, qualification) — coverage gap`, which sends the author looking
+  // bb_work, qualification) — coverage gap`, which sends the author looking
   // for a missing work-type skill when the real cause is almost always that their
   // list is indented — the one shape the indent-0 anchor turns into nothing.
   //

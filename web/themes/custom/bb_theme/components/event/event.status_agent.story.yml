@@ -9,7 +9,7 @@ props:
   subject_url: '#subject'
   tag: status
   timestamp: 1 h ago
-  statement: spec → coding
+  statement: plan → working
   facts:
     - claude-code
     - cw-framework

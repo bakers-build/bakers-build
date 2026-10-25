@@ -33,7 +33,7 @@ const T_POPUP = 'tttttttt-0000-0000-0000-000000000003';
 const ticket = (id: string, identifier: string, title: string) => ({
   type: 'bb_ticket--bb_ticket',
   id,
-  attributes: { identifier, title, state: 'todo', workflow: 'bb_feature' },
+  attributes: { identifier, title, state: 'todo', workflow: 'bb_work' },
 });
 
 /**
@@ -336,10 +336,12 @@ it('S7: submitting without touching Parent yields `parent: null`', async () => {
     is_new: true,
     title: '',
     description: 'A new ticket',
-    workflow: { id: 'bb_feature', label: 'feature' },
+    workflow: { id: 'bb_work', label: 'work' },
     assignee: null,
     reviewers: [],
     conductor: null,
+    ticketType: null,
+    recipe: null,
     labels: [],
     parent: null,
   });
@@ -390,6 +392,8 @@ it('S8: ↓ steps through every field in turn, marking exactly one', async () =>
     'Assignee:',
     'Reviewers:',
     'Conductor:',
+    'Type:',
+    'Recipe:',
     'Labels:',
     'Workflow:',
     'Template:',
@@ -419,6 +423,8 @@ it('S8: Tab walks the same order as ↓, the new field included', async () => {
     'Assignee:',
     'Reviewers:',
     'Conductor:',
+    'Type:',
+    'Recipe:',
     'Labels:',
     'Workflow:',
     'Template:',

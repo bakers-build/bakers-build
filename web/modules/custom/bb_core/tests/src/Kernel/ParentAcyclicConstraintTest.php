@@ -104,7 +104,7 @@ final class ParentAcyclicConstraintTest extends KernelTestBase {
   private function createTicket(string $title): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')
       ->getStorage('bb_ticket')
-      ->create(['title' => $title, 'workflow' => 'bb_feature', 'project_id' => $this->project->id()]);
+      ->create(['title' => $title, 'workflow' => 'bb_work', 'project_id' => $this->project->id()]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;

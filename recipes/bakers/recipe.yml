@@ -480,12 +480,12 @@ config:
       # THE SAMPLE-ENTITY EDGE IS NOW DECLARED, and the warning that stood here
       # was collected on. It said: the order inside the recipe's one config batch
       # is whatever `ConfigDependencyManager::sortAll()` produces; the displays
-      # declare no edge to `bb_core.bb_vocabulary.bb_labels` — they cannot,
+      # declare no edge to the term vocabularies — they cannot,
       # because the vocabulary is a dependency of the SAMPLE entity ui_patterns
       # builds while saving them, not of the displays; measured over the then
       # 54-name storage the vocabulary landed at 11 and the display at 16, so it
       # was a MEASUREMENT and not an invariant, and if a `ddev init` ever aborted
-      # with "Missing entity bundle" for `bb_labels`, `dependencies.enforced`
+      # with "Missing entity bundle" for a term bundle, `dependencies.enforced`
       # was the lever.
       #
       # It aborted on BB-413, on the FIRST application, because that ticket
@@ -497,7 +497,9 @@ config:
       #   dependencies:
       #     enforced:
       #       config:
-      #         - bb_core.bb_vocabulary.bb_labels
+      #         - bb_core.bb_vocabulary.label
+      #         - bb_core.bb_vocabulary.recipe
+      #         - bb_core.bb_vocabulary.type
       #
       # in BOTH copies, which turns the adjacency into an invariant — `enforced`
       # survives `calculateDependencies()` (`ConfigEntityBase.php:385`) and
@@ -505,10 +507,8 @@ config:
       # (`ConfigEntityDependency.php:38-42`). All four need it, not just the
       # ticket display: `bb_run`, `bb_comment` and `bb_activity` each
       # carry a `ticket_id` reference, so their samples reach
-      # `bb_ticket.labels` one hop later.
-      # `bb_core.bb_vocabulary.bb_capability_tags` is deliberately NOT
-      # enforced — no base field anywhere sets it as a `target_bundles`, so the
-      # generator never asks for it. `RecipeConfigInstallOrderTest` pins both the
+      # `bb_ticket`'s term fields one hop later.
+      # `RecipeConfigInstallOrderTest` pins both the
       # order and the edge.
       - core.entity_view_mode.bb_ticket.full
       - core.entity_view_mode.bb_run.teaser

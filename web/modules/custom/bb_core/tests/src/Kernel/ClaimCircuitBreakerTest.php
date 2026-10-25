@@ -24,7 +24,7 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
    * Seeds a failed run whose `changed` timestamp is set to $changed.
    */
   private function seedFailedRun(BbTicketInterface $ticket, int $changed): BbRunInterface {
-    $run = $this->seedRun($ticket, 'diagnose', 'failed');
+    $run = $this->seedRun($ticket, 'plan', 'failed');
     // `changed` is set to request-time on save; override it directly so the
     // test controls the circuit-breaker window without touching the clock.
     $this->container->get('database')->update('bb_run')
@@ -45,7 +45,7 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
    * Cap consecutive failures inside the window → the ticket is parked.
    */
   public function testParkedAfterCapFailuresInsideWindow(): void {
-    $ticket = $this->seedAssignedTicket('diagnose');
+    $ticket = $this->seedAssignedTicket('plan');
     for ($i = 0; $i < 3; $i++) {
       $this->seedFailedRun($ticket, $this->now() - 600);
     }
@@ -57,7 +57,7 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
    * Newest failure older than the window → the ticket is claimable again.
    */
   public function testClaimableWhenNewestFailurePastWindow(): void {
-    $ticket = $this->seedAssignedTicket('diagnose');
+    $ticket = $this->seedAssignedTicket('plan');
     // All three failed, but the newest is > 7200s old (default window).
     for ($i = 0; $i < 3; $i++) {
       $this->seedFailedRun($ticket, $this->now() - 10800);
@@ -70,7 +70,7 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
    * Fewer than cap failures → the ticket stays claimable.
    */
   public function testClaimableBelowCap(): void {
-    $ticket = $this->seedAssignedTicket('diagnose');
+    $ticket = $this->seedAssignedTicket('plan');
     // Only two failed runs (cap is 3).
     $this->seedFailedRun($ticket, $this->now() - 300);
     $this->seedFailedRun($ticket, $this->now() - 300);
@@ -82,9 +82,9 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
    * A non-failed run among the most-recent cap → claimable (progress was made).
    */
   public function testClaimableWithMixedRecentRuns(): void {
-    $ticket = $this->seedAssignedTicket('diagnose');
+    $ticket = $this->seedAssignedTicket('plan');
     // A done run, then two failures — the newest three are not all failed.
-    $done = $this->seedRun($ticket, 'diagnose', 'done');
+    $done = $this->seedRun($ticket, 'plan', 'done');
     $this->container->get('database')->update('bb_run')
       ->fields(['changed' => $this->now() - 200])
       ->condition('id', $done->id())
@@ -100,7 +100,7 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
    */
   public function testConfigOverrideRaisesCap(): void {
     $this->config('bb_core.settings')->set('failed_retry_cap', 5)->save();
-    $ticket = $this->seedAssignedTicket('diagnose');
+    $ticket = $this->seedAssignedTicket('plan');
     // Three failures inside the window: below the raised cap of 5 → claimable.
     for ($i = 0; $i < 3; $i++) {
       $this->seedFailedRun($ticket, $this->now() - 600);

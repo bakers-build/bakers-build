@@ -91,10 +91,14 @@ export function buildTicketCreateBody(
   if (assignee) relationships.assignee_user_id = assignee;
   const conductor = one('bb_conductor--bb_conductor', payload.conductor?.id);
   if (conductor) relationships.conductor_id = conductor;
+  const ticketType = one('bb_term--type', payload.ticketType?.id);
+  if (ticketType) relationships.ticket_type = ticketType;
+  const recipe = one('bb_term--recipe', payload.recipe?.id);
+  if (recipe) relationships.recipe = recipe;
   if (payload.labels.length > 0) {
     relationships.labels = {
       data: payload.labels.map((l) => ({
-        type: 'bb_term--bb_labels',
+        type: 'bb_term--label',
         id: l.id,
       })),
     };

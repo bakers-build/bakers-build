@@ -30,7 +30,7 @@ Feature: Ambient workspace validation over JSON API
     Given the API client is "fixture-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
-      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API ambient contract","workflow":"bb_feature"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API ambient contract","workflow":"bb_work"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "created"
@@ -38,14 +38,14 @@ Feature: Ambient workspace validation over JSON API
     Then the API response status is 200
     And the API document contains:
       """
-      {"data":{"attributes":{"title":"API ambient contract","workflow":"bb_feature"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
+      {"data":{"attributes":{"title":"API ambient contract","workflow":"bb_work"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
       """
 
   Scenario: Workspace lead creating bb_ticket in other gets 422
     Given the API client is "fixture-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
-      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API ambient contract","workflow":"bb_feature"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.other}"}}}}}
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API ambient contract","workflow":"bb_work"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.other}"}}}}}
       """
     Then the API response status is 422
     And the API error mentions "project_id"

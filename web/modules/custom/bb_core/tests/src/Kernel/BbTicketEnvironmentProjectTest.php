@@ -153,7 +153,7 @@ final class BbTicketEnvironmentProjectTest extends KernelTestBase {
       ->create([
         'identifier' => 'T-NOPROJECT',
         'title' => 'no project',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'environments' => [$environment->id()],
       ]);
     self::assertInstanceOf(FieldableEntityInterface::class, $ticket);

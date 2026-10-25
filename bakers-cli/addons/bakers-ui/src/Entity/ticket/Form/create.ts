@@ -40,6 +40,8 @@ export interface CreateOptionErrors {
   users?: string | undefined;
   reviewers?: string | undefined;
   conductors?: string | undefined;
+  ticketTypes?: string | undefined;
+  recipes?: string | undefined;
   labels?: string | undefined;
   parents?: string | undefined;
   workflows?: string | undefined;
@@ -73,6 +75,10 @@ export interface CreateFormOptions {
   users: Option[];
   reviewers: Option[];
   conductors: Option[];
+  /** The `type` vocabulary, for the single-valued `ticket_type` (BAKERS-17). */
+  ticketTypes: Option[];
+  /** The `recipe` vocabulary, for the single-valued `recipe` (BAKERS-17). */
+  recipes: Option[];
   labels: Option[];
   workflows: Option[];
   /**
@@ -130,6 +136,8 @@ export type CreateFieldId =
   | 'assignee'
   | 'reviewers'
   | 'conductor'
+  | 'ticketType'
+  | 'recipe'
   | 'labels'
   | 'workflow'
   | 'template'
@@ -164,6 +172,8 @@ export interface CreateValues {
   assignee: string | null;
   reviewers: ReadonlySet<string>;
   conductor: string | null;
+  ticketType: string | null;
+  recipe: string | null;
   labels: ReadonlySet<string>;
   workflow: string | null;
   /** The picked ticket template's uuid, or null. Never remembered. */
@@ -186,6 +196,8 @@ export interface CreateFormPayload {
   assignee: Option | null;
   reviewers: Option[];
   conductor: Option | null;
+  ticketType: Option | null;
+  recipe: Option | null;
   labels: Option[];
   /**
    * The ticket the new one goes under, or null when none was picked (AC-7).
@@ -256,6 +268,10 @@ const sharedFields = (
   // from `listOf(options)[0]` regardless of `clearable`, and `ownFirst` in
   // `create-data.ts` puts the machine's own conductor there.
   f.select('conductor', 'Conductor', { from: 'conductors', clearable: true }),
+  // Clearable and opened EMPTY by the screen, like the template: a type or
+  // recipe is chosen, never preselected.
+  f.select('ticketType', 'Type', { from: 'ticketTypes', clearable: true }),
+  f.select('recipe', 'Recipe', { from: 'recipes', clearable: true }),
   f.multi('labels', 'Labels', { from: 'labels' }),
   f.select('workflow', 'Workflow', { from: 'workflows' }),
   // A template replaces the ordinary create, so it sits right above
@@ -278,15 +294,17 @@ const toCreatePayload = (
   assignee: optionFor(o.users, v.assignee),
   reviewers: (o.reviewers ?? []).filter((x) => v.reviewers.has(x.id)),
   conductor: optionFor(o.conductors, v.conductor),
+  ticketType: optionFor(o.ticketTypes, v.ticketType),
+  recipe: optionFor(o.recipes, v.recipe),
   labels: o.labels.filter((x) => v.labels.has(x.id)),
   parent: parentFor(o.parents ?? [], v.parent),
 });
 
 /**
  * The declaration used whenever a project is already in scope (unchanged,
- * BB-664 AC-8). No field carries a function. Exactly ONE select is
- * `clearable` — the conductor (BB-309 D2); every other one cycles over real
- * options only, exactly as before BB-233.
+ * BB-664 AC-8). No field carries a function. The `clearable` selects are the
+ * conductor (BB-309 D2) and the template, type and recipe, which open empty;
+ * every other one cycles over real options only, exactly as before BB-233.
  */
 export const CREATE_FORM = declareForm<
   CreateValues,
@@ -344,9 +362,10 @@ export type CreateFormState = FormState<CreateValues>;
  * value shape, so renaming a field breaks the build instead of silently
  * dropping it out of the memory.
  *
- * `workflow` is NOT here, deliberately. A ticket type is a per-ticket decision,
- * and a silently retained `bb_bug` on the next feature ticket is a wrong
- * value nobody looks at (D5). The parent contributes BOTH of its keys, because
+ * `workflow`, `ticketType` and `recipe` are NOT here, deliberately. They are
+ * per-ticket decisions, and a silently retained `bug` type on the next feature
+ * ticket is a wrong value nobody looks at (D5). The parent contributes BOTH
+ * of its keys, because
  * an autocomplete owns two and `apply` never produces one without the other
  * (D4).
  */
@@ -424,6 +443,8 @@ const NO_OPTIONS: CreateFormOptions = {
   users: [],
   reviewers: [],
   conductors: [],
+  ticketTypes: [],
+  recipes: [],
   labels: [],
   workflows: [],
 };

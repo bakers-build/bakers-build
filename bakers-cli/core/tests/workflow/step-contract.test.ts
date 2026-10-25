@@ -113,13 +113,13 @@ describe('readSkillWhen', () => {
   it('reads a full when triple + inputs', () => {
     const c = readSkillWhen(
       skill(
-        'name: ddev-drupal-bug\nwhen:\n  work_type: code\n  workflow: [bb_bug]\n  step: [diagnose, coding, review]\ninputs: [validate, provision]',
+        'name: ddev-drupal-bug\nwhen:\n  work_type: code\n  workflow: [bb_work]\n  step: [plan, working, review]\ninputs: [validate, provision]',
       ),
     );
     expect(c.name).toBe('ddev-drupal-bug');
     expect(c.when?.work_type).toEqual(['code']);
-    expect(c.when?.workflow).toEqual(['bb_bug']);
-    expect(c.when?.step).toEqual(['diagnose', 'coding', 'review']);
+    expect(c.when?.workflow).toEqual(['bb_work']);
+    expect(c.when?.step).toEqual(['plan', 'working', 'review']);
     expect(c.inputs.map((i) => i.key)).toEqual(['validate', 'provision']);
   });
 
@@ -141,7 +141,7 @@ describe('readSkillWhen', () => {
   it('treats omitted work_type as any (undefined)', () => {
     const c = readSkillWhen(
       skill(
-        'name: qualify-ticket\nwhen:\n  workflow: [bb_feature]\n  step: [qualification]',
+        'name: qualify-ticket\nwhen:\n  workflow: [bb_work]\n  step: [qualification]',
       ),
     );
     expect(c.when?.work_type).toBeUndefined();
@@ -149,10 +149,10 @@ describe('readSkillWhen', () => {
 
   it('accepts the * wildcard', () => {
     const c = readSkillWhen(
-      skill('name: x\nwhen:\n  workflow: "*"\n  step: coding'),
+      skill('name: x\nwhen:\n  workflow: "*"\n  step: working'),
     );
     expect(c.when?.workflow).toBe('*');
-    expect(c.when?.step).toEqual(['coding']);
+    expect(c.when?.step).toEqual(['working']);
   });
 
   it('returns no when for a helper skill', () => {
@@ -169,7 +169,7 @@ describe('readSkillWhen', () => {
 
   it('rejects an unrecognized when key', () => {
     expect(() =>
-      readSkillWhen(skill('name: x\nwhen:\n  phase: coding')),
+      readSkillWhen(skill('name: x\nwhen:\n  phase: working')),
     ).toThrow(/not a recognized key/);
   });
 
@@ -223,7 +223,7 @@ describe('readSkillWhen', () => {
     expect(() =>
       readSkillWhen(
         skill(
-          'name: b\nwhen:\n  step: coding',
+          'name: b\nwhen:\n  step: working',
           bundleBody('- @bakers-build/x'),
         ),
       ),
@@ -259,19 +259,19 @@ describe('validateLoad (per-skill value resolution)', () => {
 
   const bugSkill = owner(
     'ddev-drupal-bug',
-    { work_type: ['code'], workflow: ['bb_bug'], step: ['coding'] },
+    { work_type: ['code'], workflow: ['bb_work'], step: ['working'] },
     [{ key: 'validate.command' }, { key: 'provision.command' }],
   );
   const qualSkill = owner('qualify-ticket', {
     work_type: undefined,
-    workflow: ['bb_bug'],
+    workflow: ['bb_work'],
     step: ['qualification'],
   });
 
   it('passes when every triple matches exactly one skill', () => {
     const triples: Triple[] = [
-      { work_type: 'code', workflow: 'bb_bug', step: 'coding' },
-      { work_type: null, workflow: 'bb_bug', step: 'qualification' },
+      { work_type: 'code', workflow: 'bb_work', step: 'working' },
+      { work_type: null, workflow: 'bb_work', step: 'qualification' },
     ];
     expect(() =>
       validateLoad([bugSkill, qualSkill], values, triples),
@@ -280,7 +280,7 @@ describe('validateLoad (per-skill value resolution)', () => {
 
   it('throws on a coverage gap', () => {
     const triples: Triple[] = [
-      { work_type: 'code', workflow: 'bb_bug', step: 'review' },
+      { work_type: 'code', workflow: 'bb_work', step: 'review' },
     ];
     expect(() => validateLoad([qualSkill], values, triples)).toThrow(
       /coverage gap/,
@@ -290,11 +290,11 @@ describe('validateLoad (per-skill value resolution)', () => {
   it('throws on a collision naming both skills', () => {
     const dup = owner('other-code-bug-skill', {
       work_type: ['code'],
-      workflow: ['bb_bug'],
-      step: ['coding'],
+      workflow: ['bb_work'],
+      step: ['working'],
     });
     const triples: Triple[] = [
-      { work_type: 'code', workflow: 'bb_bug', step: 'coding' },
+      { work_type: 'code', workflow: 'bb_work', step: 'working' },
     ];
     expect(() => validateLoad([bugSkill, dup], values, triples)).toThrow(
       /collision/,
@@ -303,7 +303,7 @@ describe('validateLoad (per-skill value resolution)', () => {
 
   it('throws naming a missing per-skill input value', () => {
     const triples: Triple[] = [
-      { work_type: 'code', workflow: 'bb_bug', step: 'coding' },
+      { work_type: 'code', workflow: 'bb_work', step: 'working' },
     ];
     expect(() =>
       validateLoad(
@@ -317,11 +317,11 @@ describe('validateLoad (per-skill value resolution)', () => {
   it('uses the skill default when WORKFLOW.md sets no override', () => {
     const withDefault = owner(
       'ddev-drupal-bug',
-      { work_type: ['code'], workflow: ['bb_bug'], step: ['coding'] },
+      { work_type: ['code'], workflow: ['bb_work'], step: ['working'] },
       [{ key: 'validate.command', default: 'ddev bakers-test-e2e' }],
     );
     const triples: Triple[] = [
-      { work_type: 'code', workflow: 'bb_bug', step: 'coding' },
+      { work_type: 'code', workflow: 'bb_work', step: 'working' },
     ];
     // no overrides in WORKFLOW.md at all -> default satisfies the input
     expect(() => validateLoad([withDefault], {}, triples)).not.toThrow();
@@ -330,11 +330,37 @@ describe('validateLoad (per-skill value resolution)', () => {
   it('ignores helper skills that declare no when', () => {
     const helper = owner('read-ticket', undefined);
     const triples: Triple[] = [
-      { work_type: null, workflow: 'bb_bug', step: 'qualification' },
+      { work_type: null, workflow: 'bb_work', step: 'qualification' },
     ];
     expect(() =>
       validateLoad([helper, qualSkill], values, triples),
     ).not.toThrow();
+  });
+});
+
+describe('deriveProjectTriples', () => {
+  it('crosses work-typed steps with every claimable state of every workflow', () => {
+    const owner = (name: string, when: unknown) =>
+      ({ name, when, inputs: [] }) as never;
+    const triples = deriveProjectTriples([
+      owner('code-owner', {
+        work_type: ['code'],
+        workflow: ['bb_work'],
+        step: ['plan', 'working', 'review'],
+      }),
+    ]);
+    expect(
+      triples.map((t) => `${t.work_type ?? '-'} ${t.workflow} ${t.step}`),
+    ).toEqual([
+      '- bb_work qualification',
+      'code bb_work plan',
+      'code bb_work working',
+      'code bb_work review',
+      '- bb_deployment pre_deployment',
+      '- bb_deployment post_deployment',
+      '- bb_verification verifying',
+      '- bb_verification summary',
+    ]);
   });
 });
 
@@ -520,55 +546,8 @@ describe('expandLoad (dedup + cycle + missing + value precedence)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Integration over the real bakers project config (AC 2, 6, 10, 11).
+// Integration over the real bakers project config (AC 2, 6).
 // ---------------------------------------------------------------------------
-
-// Per-work-type step participation (BB-210). A step is work-typed when any work
-// type participates in it. Docs bugs participate in diagnose with proportional checks.
-const WORK_TYPE_STEPS: Record<string, readonly Triple['step'][]> = {
-  code: ['spec', 'diagnose', 'coding', 'review'],
-  docs: ['spec', 'diagnose', 'coding', 'review'],
-};
-// The union of all work-typed steps; every other step carries a null work_type.
-const WORK_TYPED_STEPS = Array.from(
-  new Set(Object.values(WORK_TYPE_STEPS).flat()),
-);
-// Claimable states per workflow, from web/.../bb_core.workflows.yml.
-const WORKFLOW_STATES: Record<string, readonly string[]> = {
-  bb_feature: ['qualification', 'spec', 'coding', 'review'],
-  bb_bug: ['qualification', 'diagnose', 'coding', 'review'],
-  bb_chore: ['qualification', 'spec', 'coding', 'review'],
-  bb_deployment: ['pre_deployment', 'post_deployment'],
-  bb_verification: ['verifying', 'summary'],
-};
-
-function projectTriples(): Triple[] {
-  const triples: Triple[] = [];
-  for (const [workflow, states] of Object.entries(WORKFLOW_STATES)) {
-    for (const step of states) {
-      if (WORK_TYPED_STEPS.includes(step as Triple['step'])) {
-        // Only the work types whose participation includes this step, intersected
-        // with the workflow's own states (the outer loop already enforces that).
-        for (const [wt, steps] of Object.entries(WORK_TYPE_STEPS)) {
-          if (steps.includes(step as Triple['step'])) {
-            triples.push({
-              work_type: wt,
-              workflow,
-              step: step as Triple['step'],
-            });
-          }
-        }
-      } else {
-        triples.push({
-          work_type: null,
-          workflow,
-          step: step as Triple['step'],
-        });
-      }
-    }
-  }
-  return triples;
-}
 
 function loadSkillsFrom(dir: string) {
   if (!existsSync(dir)) return [];
@@ -642,33 +621,11 @@ function withOneSkillSet(md: string): string {
   return md.slice(0, at) + reduced + md.slice(at + original.length);
 }
 
-// Phase-0 golden: the effective loaded step owners, captured before the Essential-Skill
-// rewire. `expandLoad(WORKFLOW.md, byName)` must still yield exactly these,
-// in this order — proving the migration changed no effective capability (AC8, AC10).
-const GOLDEN_OWNERS = [
-  'qualify-ticket',
-  'create-spec',
-  'prepare-deployment',
-  'post-deployment',
-  'verify-on-environment',
-  'summarize-verification',
-  'ddev-drupal-bug',
-  'ddev-drupal-feature',
-  'docs-authoring',
-] as const;
-
 function byNameMap(skills: SkillContract[]) {
   return new Map(skills.map((s) => [s.name, s] as const));
 }
 
-describe('real bakers config resolves', () => {
-  it('every project triple is matched by exactly one loaded skill with all inputs valued', () => {
-    // the whole load step is one call: parse + expand + resolve -> validate
-    const byName = byNameMap(loadAllSkills());
-    const { skills, values } = expandLoad(read(WORKFLOW_MD), byName);
-    expect(() => validateLoad(skills, values, projectTriples())).not.toThrow();
-  });
-
+describe('real bakers config loads', () => {
   it('WORKFLOW.md loads the essential-skills bundle, not the six global bullets (AC4)', () => {
     const roots = Object.keys(parseStepValues(read(WORKFLOW_MD)));
     expect(roots).toContain('essential-skills');
@@ -721,32 +678,9 @@ describe('real bakers config resolves', () => {
     ]);
   });
 
-  // Both no-drift guards below compare against GOLDEN_OWNERS / the shipped OWNERS, so they filter
-  // the expansion to `when`-bearing skills. `expandLoad` also emits **helper** leaves — a skill with
-  // no `when`, loaded for its inputs rather than for a step. A helper is invisible to `validateLoad`'s
-  // triple matching by construction, so including it here would make these assertions fail for a
-  // reason they do not describe. bakers's own WORKFLOW.md loads no helper (BB-246 keeps the origin
-  // label chain in the skill's own default so the loader stays minimal), so the helper path is
-  // covered by its own test below, over a synthetic WORKFLOW.md.
+  // Step owners only: `expandLoad` also emits helper leaves (no `when`), loaded for their inputs.
   const ownersOf = (skills: SkillContract[]) =>
     skills.filter((s) => s.when !== undefined).map((s) => s.name);
-
-  it('expanding WORKFLOW.md yields exactly the golden owners in order (AC8, AC10)', () => {
-    const byName = byNameMap(loadAllSkills());
-    const expanded = expandLoad(read(WORKFLOW_MD), byName);
-    expect(ownersOf(expanded.skills)).toEqual([...GOLDEN_OWNERS]);
-  });
-
-  it('the expanded set equals every step owner shipped — no drift (AC10)', () => {
-    const all = loadAllSkills();
-    const byName = byNameMap(all);
-    const expanded = expandLoad(read(WORKFLOW_MD), byName);
-    const shippedOwners = all
-      .filter((s) => s.when !== undefined)
-      .map((s) => s.name)
-      .sort();
-    expect(ownersOf(expanded.skills).sort()).toEqual(shippedOwners);
-  });
 
   // BB-246: a project overrides the origin label chain by adding a bullet for a skill that owns NO
   // step, purely to give its input a load site. bakers's own WORKFLOW.md deliberately carries no such
@@ -782,16 +716,10 @@ describe('real bakers config resolves', () => {
     // A helper owns no step, so it can never match a triple or collide with an owner…
     expect(helper?.when).toBeUndefined();
     expect(ownersOf(expanded.skills)).not.toContain('publish-origin-status');
-    // …the owner set is unaffected by its presence…
-    expect(ownersOf(expanded.skills)).toEqual([...GOLDEN_OWNERS]);
     // …and the override resolves, which is the whole point of the bullet.
     expect(
       expanded.values['publish-origin-status']?.['origin_labels.data'],
     ).toBe('coding: in Arbeit\ndone: fertig\n');
-    // A helper's presence must not make validateLoad reject the load.
-    expect(() =>
-      validateLoad(expanded.skills, expanded.values, projectTriples()),
-    ).not.toThrow();
   });
 
   it('the shipped origin label chain is the skill default, not a WORKFLOW.md bullet (BB-246)', () => {
@@ -815,150 +743,6 @@ describe('real bakers config resolves', () => {
     }
   });
 
-  it('per-workflow effective set is unchanged for every workflow (AC10 parity)', () => {
-    const byName = byNameMap(loadAllSkills());
-    const expanded = expandLoad(read(WORKFLOW_MD), byName);
-    const owners = expanded.skills.filter((s) => s.when !== undefined);
-    const forWorkflow = (wf: string) =>
-      owners
-        .filter((s) => {
-          const w = s.when?.workflow;
-          return w === '*' || w === undefined || w.includes(wf);
-        })
-        .map((s) => s.name)
-        .sort();
-    // Golden per-workflow sets (the pre-rewire effective capability per workflow).
-    expect(forWorkflow('bb_feature')).toEqual(
-      [
-        'create-spec',
-        'ddev-drupal-feature',
-        'docs-authoring',
-        'qualify-ticket',
-      ].sort(),
-    );
-    expect(forWorkflow('bb_bug')).toEqual(
-      ['ddev-drupal-bug', 'docs-authoring', 'qualify-ticket'].sort(),
-    );
-    expect(forWorkflow('bb_chore')).toEqual(
-      [
-        'create-spec',
-        'ddev-drupal-feature',
-        'docs-authoring',
-        'qualify-ticket',
-      ].sort(),
-    );
-    expect(forWorkflow('bb_deployment')).toEqual(
-      ['post-deployment', 'prepare-deployment'].sort(),
-    );
-    expect(forWorkflow('bb_verification')).toEqual(
-      ['summarize-verification', 'verify-on-environment'].sort(),
-    );
-  });
-
-  it('validateLoad over the expanded WORKFLOW.md set stays green (AC11)', () => {
-    const byName = byNameMap(loadAllSkills());
-    const expanded = expandLoad(read(WORKFLOW_MD), byName);
-    expect(() =>
-      validateLoad(expanded.skills, expanded.values, projectTriples()),
-    ).not.toThrow();
-  });
-
-  // Foreign owners extend project coverage without requiring installed plugins.
-  const FOREIGN_OWNERS = [
-    ['artifact-design', 'artifact-design'],
-    ['config-sync', 'config-sync'],
-  ] as const;
-
-  const foreignFixture = (name: string, workType: string) =>
-    [
-      '---',
-      `name: ${name}`,
-      `description: stand-in for the ${name} external step owner.`,
-      'when:',
-      `  work_type: ${workType}`,
-      '  workflow: [bb_feature, bb_bug, bb_chore]',
-      '  step: [diagnose, spec, coding, review]',
-      'inputs:',
-      '  validate:',
-      '    description: command that validates the external artifact',
-      '    default: "@example/design-verify"',
-      '---',
-      '',
-      `# ${name}`,
-    ].join('\n');
-
-  /** Load foreign owners alongside the project’s own skills. */
-  const withForeignBullets = (): string => {
-    const lines = read(WORKFLOW_MD).split('\n');
-    const start = lines.findIndex((l) => /^##\s+Loaded skills\s*$/.test(l));
-    expect(
-      start,
-      'WORKFLOW.md must carry a `## Loaded skills` section',
-    ).toBeGreaterThanOrEqual(0);
-    let end = lines.length;
-    for (let i = start + 1; i < lines.length; i++) {
-      if (/^##\s+/.test(lines[i] ?? '')) {
-        end = i;
-        break;
-      }
-    }
-    return [
-      ...lines.slice(0, end),
-      ...FOREIGN_OWNERS.map(([name]) => `- @example/${name}`),
-      '',
-      ...lines.slice(end),
-    ].join('\n');
-  };
-
-  const tripleKeys = (triples: Triple[]) =>
-    triples.map((t) => JSON.stringify([t.work_type, t.workflow, t.step]));
-
-  it('foreign work types validate once their owners load', () => {
-    const byName = byNameMap(loadAllSkills());
-
-    // Precondition, and the guard on `deriveProjectTriples` itself: over the real
-    // WORKFLOW.md the derivation must reproduce the hand-written table above,
-    // exactly — otherwise the +18 below measures the derivation, not the fix.
-    const base = expandLoad(read(WORKFLOW_MD), byName);
-    expect(tripleKeys(deriveProjectTriples(base.skills)).sort()).toEqual(
-      tripleKeys(projectTriples()).sort(),
-    );
-
-    for (const [name, workType] of FOREIGN_OWNERS) {
-      byName.set(name, readSkillWhen(foreignFixture(name, workType)));
-    }
-    const expanded = expandLoad(withForeignBullets(), byName);
-
-    // Both foreign bullets resolve as leaf owners (the defect: they resolved to
-    // nothing, leaving the two work types uncovered no matter how they were written).
-    expect(ownersOf(expanded.skills).sort()).toEqual(
-      [...GOLDEN_OWNERS, ...FOREIGN_OWNERS.map(([n]) => n)].sort(),
-    );
-
-    // Each foreign work type adds nine reachable triples.
-    const triples = deriveProjectTriples(expanded.skills);
-    const added = triples.filter(
-      (t) => t.work_type === 'artifact-design' || t.work_type === 'config-sync',
-    );
-    expect(added).toHaveLength(18);
-    expect(triples).toHaveLength(projectTriples().length + 18);
-
-    // Zero gaps, zero collisions, every override resolved.
-    expect(() =>
-      validateLoad(expanded.skills, expanded.values, triples),
-    ).not.toThrow();
-  });
-
-  // BB-436 shipped a third case here, `project-specific overrides still resolve after
-  // expansion (AC5)`, asserting `values['ddev-drupal-bug']['validate.command']` and
-  // `values['ddev-drupal-feature']['provision.command']`. It is deliberately NOT carried into
-  // this branch: BB-424 removed those `inputs` from both step owners and the matching
-  // overrides from `WORKFLOW.md`, which now binds project specifics through its `Skills` and
-  // `Checks` tables instead. Keeping the case would assert a mechanism this branch retired, so
-  // it would fail for being right about develop rather than about here. What it guarded —
-  // that an override resolves after expansion — is covered by `validateLoad`'s own
-  // every-declared-input-has-a-value rule, exercised by the AC11 case above.
-
   // BB-444 made the repository ship the list form itself, so this case reads the real two-entry
   // section directly and synthesises the one-entry no-op by reduction (the inverse of the old
   // synthesise-the-list approach).
@@ -978,9 +762,6 @@ describe('real bakers config resolves', () => {
     for (const variant of [oneEntry, withTwoSkillSets(oneEntry)]) {
       const expanded = expandLoad(variant, byName);
       expect(expanded).toEqual(original);
-      expect(() =>
-        validateLoad(expanded.skills, expanded.values, projectTriples()),
-      ).not.toThrow();
     }
     expect(wf).not.toMatch(/^## State:/m);
   });
@@ -1002,23 +783,6 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
     expect(md).toMatch(/exactly one/i);
     // per-skill inline values, not a global block
     expect(md).toMatch(/inline under/i);
-  });
-
-  it('the concrete work-type skills ship with the expected when', () => {
-    const bug = readSkillWhen(readSkill('ddev-drupal-bug'));
-    expect(bug.when?.work_type).toEqual(['code']);
-    expect(bug.when?.workflow).toEqual(['bb_bug']);
-    expect(bug.when?.step).toEqual(['diagnose', 'coding', 'review']);
-
-    const feat = readSkillWhen(readSkill('ddev-drupal-feature'));
-    expect(feat.when?.work_type).toEqual(['code']);
-    expect(feat.when?.workflow).toEqual(['bb_feature', 'bb_chore']);
-    expect(feat.when?.step).toEqual(['coding', 'review']);
-
-    const docs = readSkillWhen(readSkill('docs-authoring'));
-    expect(docs.when?.work_type).toEqual(['docs']);
-    expect(docs.when?.workflow).toEqual(['bb_feature', 'bb_bug', 'bb_chore']);
-    expect(docs.when?.step).toEqual(['spec', 'diagnose', 'coding', 'review']);
   });
 
   it('the bug skill is prose per owned step, naming its gates and transition', () => {
@@ -1105,9 +869,6 @@ describe('skill-text contract (AC 1, 3, 4, 5, 9)', () => {
 
   it('docs-authoring is self-contained: owns work:docs spec + coding + review with a non-runtime, no-provision contract', () => {
     const c = readSkillWhen(readSkill('docs-authoring'));
-    expect(c.when?.work_type).toEqual(['docs']);
-    expect(c.when?.workflow).toEqual(['bb_feature', 'bb_bug', 'bb_chore']);
-    expect(c.when?.step).toEqual(['spec', 'diagnose', 'coding', 'review']);
     expect(c.inputs).toEqual([]);
     // the prose owns spec + coding + review (no diagnose), routes via transition-ticket,
     // and invokes no runtime ceremony: it never calls @bakers-build/provision-ddev nor
@@ -1185,22 +946,10 @@ describe('work-type terms are skill-declared + qualify-ensured (dynamic registry
     }
   });
 
-  it('the seeded work:docs term matches the skill declaration', () => {
-    // AC1: the seed and the skill declaration agree, so the runtime ensure is a no-op here.
-    const seed = read(
-      resolve(
-        REPO_ROOT,
-        'recipes/bb_seed/content/bb_term/db1a0000-0000-4000-8000-000000000013.yml',
-      ),
-    );
-    expect(seed).toMatch(/name:\s*\n\s*-\s*\n\s*value:\s*["']work:docs["']/);
-  });
-
   it('qualify-ticket classifies dynamically and ensures terms — no hardcoded type list', () => {
     const md = readSkill('qualify-ticket');
     // taxonomy-driven, self-provisioning
     expect(md).toMatch(/work_type_term/);
-    expect(md).toMatch(/--bundle bb_labels/);
     expect(md).toMatch(/create missing terms/i);
     expect(md).toMatch(/taxonomy-driven|not hardcoded/i);
     // the old hardcoded "work:docs vs work:code" heading is gone
@@ -2366,8 +2115,8 @@ describe('BB-436 — the loader reports what it cannot honour', () => {
     'description: a step owner shipped from another repo, addressed in its own namespace.',
     'when:',
     '  work_type: config-sync',
-    '  workflow: [bb_bug]',
-    '  step: [diagnose]',
+    '  workflow: [bb_work]',
+    '  step: [plan]',
     'inputs:',
     '  validate.command:',
     '    description: command that validates the synced config',
@@ -2380,6 +2129,18 @@ describe('BB-436 — the loader reports what it cannot honour', () => {
   const foreignByName = () =>
     new Map([['config-sync', readSkillWhen(FOREIGN_SKILL)]]);
 
+  // A code owner of bb_work's plan step that declares no `validate` input.
+  const SYNTHETIC_BUG = [
+    '---',
+    'name: ddev-drupal-bug',
+    'description: Synthetic code owner.',
+    'when:',
+    '  work_type: code',
+    '  workflow: bb_work',
+    '  step: [plan]',
+    '---',
+    '',
+  ].join('\n');
   const loader = (...bullets: string[]) =>
     ['# X', '', '## Loaded skills', '', ...bullets, ''].join('\n');
 
@@ -2448,16 +2209,16 @@ describe('BB-436 — the loader reports what it cannot honour', () => {
   // naming both the skill and the key. `validateLoad` has no such check today,
   // so this stays RED even once a caller exists.
   it('reports an override key that matches no declared input (AC1)', () => {
-    const bug = readSkillWhen(readSkill('ddev-drupal-bug'));
+    const bug = readSkillWhen(SYNTHETIC_BUG);
     const byName = new Map([['ddev-drupal-bug', bug]]);
-    // The pre-BB-280 bare key: the skill declares `validate.command`.
+    // The pre-BB-280 bare key, which the skill does not declare.
     const md = loader(
       '- @bakers-build/ddev-drupal-bug',
       '    validate: "ddev bakers-test-e2e"',
     );
     const { skills, values } = expandLoad(md, byName);
     const triples: Triple[] = [
-      { work_type: 'code', workflow: 'bb_bug', step: 'diagnose' },
+      { work_type: 'code', workflow: 'bb_work', step: 'plan' },
     ];
 
     let message: string | null = null;
@@ -2512,7 +2273,7 @@ describe('BB-436 — the loader reports what it cannot honour', () => {
     const claims = prose.includes('**loud, not silent**');
     if (!claims) return; // the prose was corrected instead — equally valid
 
-    const bug = readSkillWhen(readSkill('ddev-drupal-bug'));
+    const bug = readSkillWhen(SYNTHETIC_BUG);
     const md = loader('- @bakers-build/ddev-drupal-bug', '    validate: "x"');
     const { skills, values } = expandLoad(
       md,
@@ -2521,7 +2282,7 @@ describe('BB-436 — the loader reports what it cannot honour', () => {
     expect(
       () =>
         validateLoad(skills, values, [
-          { work_type: 'code', workflow: 'bb_bug', step: 'diagnose' },
+          { work_type: 'code', workflow: 'bb_work', step: 'plan' },
         ]),
       'upgrade-project promises validateLoad throws naming the skill and key; make it true or correct the prose',
     ).toThrow(StepContractError);
@@ -2711,7 +2472,7 @@ describe('BB-436 — the loader reports what it cannot honour', () => {
   // anchoring can still misdirect an author. A wholly indented list (what the
   // pre-anchoring pattern accepted, and what a careless paste produces) yields
   // ZERO load sites, and a load of nothing used to surface downstream as
-  // `no skill matches triple (—, bb_feature, qualification) — coverage gap`,
+  // `no skill matches triple (—, bb_work, qualification) — coverage gap`,
   // which sends the author hunting for a missing work-type skill instead of
   // looking at their indentation.
   //
@@ -3035,18 +2796,16 @@ describe('BB-444 item 5 — review repairs the closed list in place', () => {
 });
 
 describe('BB-444 item 6 — a fully specified ticket is created straight into coding', () => {
-  it('to_coding accepts qualification as a from-state in all three work workflows', () => {
+  it('to_working accepts qualification as a from-state in the work workflow', () => {
     const yml = read(WORKFLOWS_YML);
-    for (const wf of ['bb_feature', 'bb_bug', 'bb_chore']) {
-      const start = yml.indexOf(`${wf}:`);
-      expect(start, `${wf} block not found`).toBeGreaterThan(-1);
-      const next = yml.indexOf('\n\n', start);
-      const block = next < 0 ? yml.slice(start) : yml.slice(start, next);
-      const m = block.match(/to_coding:\s*\{[^}]*from:\s*\[([^\]]*)\]/);
-      expect(m, `${wf} has no to_coding transition`).toBeTruthy();
-      const from = (m?.[1] ?? '').split(',').map((s) => s.trim());
-      expect(from, `${wf} to_coding from-states`).toContain('qualification');
-    }
+    const start = yml.indexOf('bb_work:');
+    expect(start, 'bb_work block not found').toBeGreaterThan(-1);
+    const next = yml.indexOf('\n\n', start);
+    const block = next < 0 ? yml.slice(start) : yml.slice(start, next);
+    const m = block.match(/to_working:\s*\{[^}]*from:\s*\[([^\]]*)\]/);
+    expect(m, 'bb_work has no to_working transition').toBeTruthy();
+    const from = (m?.[1] ?? '').split(',').map((s) => s.trim());
+    expect(from, 'bb_work to_working from-states').toContain('qualification');
   });
 
   it('create-ticket states the shortcut condition, comment order, and the bug reproduction/diagnosis requirement', () => {

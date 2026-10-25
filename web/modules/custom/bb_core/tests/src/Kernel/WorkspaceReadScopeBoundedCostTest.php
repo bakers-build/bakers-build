@@ -101,7 +101,7 @@ final class WorkspaceReadScopeBoundedCostTest extends KernelTestBase {
       $this->createEntity('bb_ticket', [
         'identifier' => 'T-BULK-' . $i,
         'title' => 'bulk-' . $i,
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->fixture('a', 'bb_project')->id(),
       ]);
     }

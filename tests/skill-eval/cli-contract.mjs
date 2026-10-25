@@ -19,7 +19,7 @@ const inside = path => !relative(repoRoot, path).startsWith('..');
 
 const ticketType = 'bb_ticket--bb_ticket';
 const commentType = 'bb_comment--bb_comment';
-const labelType = 'bb_term--bb_labels';
+const labelType = 'bb_term--label';
 // Synthetic jsonapi_schema resource-object documents shared with the simulator. They define this
 // contract's fixture, not the live Drupal schema, whose freshness remains outside this boundary.
 export const contractFixture = JSON.parse(readFileSync(join(here, 'contract-fixture.json'), 'utf8'));
@@ -147,7 +147,7 @@ export async function startEndpoint(seed = {}) {
         try { return reply(200, { data: rows.filter(r => matches(r, filtersFrom(url.searchParams))).map(r => resource(rowType, r)), links: {} }); }
         catch (error) { if (error.status !== 400) throw error; return reply(400, { errors: [{ status: '400', detail: error.message }] }); }
       };
-      if (key === 'bb_term/bb_labels' && req.method === 'GET' && parts.length === 2) return search(state.terms, labelType);
+      if (key === 'bb_term/label' && req.method === 'GET' && parts.length === 2) return search(state.terms, labelType);
       if (!store) { unknown.push(record); return reply(404, { errors: [{ status: '404', detail: 'unmodeled fixture route' }] }); }
       if (req.method === 'GET' && parts.length === 2) return search(Object.values(store), type);
       if (req.method === 'GET' && parts.length === 3) {

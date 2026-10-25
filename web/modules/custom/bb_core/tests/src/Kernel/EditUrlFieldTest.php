@@ -42,7 +42,7 @@ final class EditUrlFieldTest extends BbEntityKernelTestBase {
     $project->save();
     $ticket = BbTicket::create([
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
     ]);
     $ticket->save();
@@ -61,7 +61,7 @@ final class EditUrlFieldTest extends BbEntityKernelTestBase {
     self::assertInstanceOf(AccountInterface::class, $nobody);
     $this->setCurrentUser($nobody);
 
-    $ticket = BbTicket::create(['title' => 'T', 'workflow' => 'bb_feature']);
+    $ticket = BbTicket::create(['title' => 'T', 'workflow' => 'bb_work']);
     $ticket->save();
 
     self::assertTrue($ticket->get('edit_url')->isEmpty());

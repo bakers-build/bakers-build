@@ -252,6 +252,33 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
       ],
     ])->save();
 
+    // The workspace vocabulary tabs, one page display per term bundle, with
+    // the shipped display access; the route subscriber adds the lead gate.
+    $term_displays = [
+      'default' => [
+        'id' => 'default',
+        'display_title' => 'Default',
+        'display_plugin' => 'default',
+        'position' => 0,
+        'display_options' => ['access' => ['type' => 'perm', 'options' => ['perm' => 'view bb_term']]],
+      ],
+    ];
+    foreach (['types', 'recipes', 'labels'] as $position => $display_id) {
+      $term_displays[$display_id] = [
+        'id' => $display_id,
+        'display_title' => ucfirst($display_id),
+        'display_plugin' => 'page',
+        'position' => $position + 1,
+        'display_options' => ['path' => '_workspace/%bb_workspace/settings/' . $display_id],
+      ];
+    }
+    View::create([
+      'id' => 'bb_terms',
+      'label' => 'bb_terms',
+      'base_table' => 'users_field_data',
+      'display' => $term_displays,
+    ])->save();
+
     View::create([
       'id' => 'project_board',
       'label' => 'project_board',
@@ -667,18 +694,18 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * The workspace settings tab row is Settings, Members, Addons, Templates.
+   * Workspace settings tabs: Settings … Templates, Types, Recipes, Labels.
    */
   public function testWorkspaceSettingsTabRowMatchesTheAgreedOrder(): void {
     self::assertCount(
-      4,
+      7,
       $this->tabOrder['Workspace settings'],
-      'The sitemap file must parse exactly four Workspace settings tab rows.',
+      'The sitemap file must parse exactly seven Workspace settings tab rows.',
     );
     self::assertSame(
       $this->tabOrder['Workspace settings'],
       $this->tabRoutesOn('bb_core.bb_workspace.settings', $this->accounts['lead']),
-      'The workspace settings tab row is Settings, Members, Addons, Templates.',
+      'The workspace settings tab row is Settings, Members, Addons, Templates, Types, Recipes, Labels.',
     );
   }
 
@@ -848,7 +875,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
       $tab_tables = [
         'Project detail — eight tabs, Overview default' => 'Project detail',
         'Team detail — five tabs, Overview default' => 'Team detail',
-        'Workspace settings — four tabs, Settings default' => 'Workspace settings',
+        'Workspace settings — seven tabs, Settings default' => 'Workspace settings',
         'Group detail — two tabs, Overview default' => 'Group detail',
         'Conductor detail — one tab, Overview default' => 'Conductor detail',
         'Machine detail — one tab, View default' => 'Machine detail',
@@ -866,7 +893,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // table.
     self::assertCount(8, $order['Project detail'] ?? [], 'The sitemap file must declare exactly eight Project detail tabs.');
     self::assertCount(5, $order['Team detail'] ?? [], 'The sitemap file must declare exactly five Team detail tabs.');
-    self::assertCount(4, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly four Workspace settings tabs.');
+    self::assertCount(7, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly seven Workspace settings tabs.');
     self::assertCount(2, $order['Group detail'] ?? [], 'The sitemap file must declare exactly two Group detail tabs.');
     self::assertCount(1, $order['Conductor detail'] ?? [], 'The sitemap file must declare exactly one Conductor detail tab.');
     self::assertCount(1, $order['Machine detail'] ?? [], 'The sitemap file must declare exactly one Machine detail tab.');
@@ -927,6 +954,9 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.bb_workspace.settings' => 403,
     'bb_core.bb_workspace.members' => 403,
     'view.addons.settings' => 403,
+    'view.bb_terms.types' => 403,
+    'view.bb_terms.recipes' => 403,
+    'view.bb_terms.labels' => 403,
     'bb_core.workspace_invite' => 403,
     'entity.bb_project.canonical' => 403,
     'view.project_board.project_board' => 403,
@@ -986,6 +1016,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.bb_workspace.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'bb_core.bb_workspace.members' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'view.addons.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    // Every rank reads terms; the settings lead gate is what narrows them.
+    'view.bb_terms.types' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    'view.bb_terms.recipes' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    'view.bb_terms.labels' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'bb_core.workspace_invite' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     // Overview is a VIEW surface as of finding 3 (`bb_project.view`), so
     // every ranked account here — lead, contributor and guest all carry

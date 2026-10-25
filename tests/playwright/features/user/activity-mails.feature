@@ -6,7 +6,7 @@ Feature: Activity mails reach the accounts that opted in
 
   Scenario: An account added as a reviewer gets one mail
     Given the notification settings of "north-lead" are untouched
-    And a disposable ticket in state "coding" is owned by "north-lead"
+    And a disposable ticket in state "working" is owned by "north-lead"
     And I am logged in as the account "north-lead"
     When I open the notification settings of "north-lead"
     And I tick "Review requested" under "Activity mails"
@@ -17,7 +17,7 @@ Feature: Activity mails reach the accounts that opted in
 
   Scenario: An account made the assignee gets one mail
     Given the notification settings of "north-lead" are untouched
-    And a disposable ticket in state "coding" is owned by "north-lead"
+    And a disposable ticket in state "working" is owned by "north-lead"
     And I am logged in as the account "north-lead"
     When I open the notification settings of "north-lead"
     And I tick "Ticket assigned" under "Activity mails"

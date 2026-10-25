@@ -132,9 +132,9 @@ final class RunAttributionTest extends KernelTestBase {
     $this->container->get('current_user')->setAccount($acting);
     $ticket = $this->create('bb_ticket', [
       'title' => 'attribution',
-      'type' => 'bb_feature',
+      'type' => 'bb_work',
       'project_id' => $this->projectId,
-      'state' => 'coding',
+      'state' => 'working',
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
 

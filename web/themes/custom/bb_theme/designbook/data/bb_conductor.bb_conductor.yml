@@ -9,8 +9,8 @@
   project_id: '1'
   states:
     - qualification
-    - spec
-    - coding
+    - plan
+    - working
     - review
   workspace_root: /home/cw/projects/bakers
   max_parallel: 2
@@ -31,7 +31,7 @@
   status: offline
   project_id: '2'
   states:
-    - coding
+    - working
     - review
   workspace_root: /home/mvd/projects/northwind
   max_parallel: 1

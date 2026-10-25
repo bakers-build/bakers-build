@@ -106,7 +106,7 @@ describe('DrupalBbRemote', () => {
     const rows = [
       fakeResource(
         'run-1',
-        { state: 'running', state_at_start: 'coding' },
+        { state: 'running', state_at_start: 'working' },
         { ticket_id: 'tic-1' },
       ),
       fakeResource(
@@ -122,7 +122,7 @@ describe('DrupalBbRemote', () => {
       if (id === 'run-1')
         return fakeResource(
           'run-1',
-          { state_at_start: 'coding' },
+          { state_at_start: 'working' },
           { ticket_id: 'tic-1' },
         );
       if (id === 'run-2')
@@ -162,7 +162,7 @@ describe('DrupalBbRemote', () => {
         ticketIdentifier: 'BB-1',
         branchName: 'bakers/bb-1',
         state: 'running',
-        stateAtStart: 'coding',
+        stateAtStart: 'working',
         worktreePath: '',
       },
       {
@@ -390,7 +390,7 @@ describe('DrupalBbRemote', () => {
       post: vi.fn(async () => ({
         data: {
           id: 'run-9',
-          attributes: { state_at_start: 'coding', drupal_internal__id: 9 },
+          attributes: { state_at_start: 'working', drupal_internal__id: 9 },
           relationships: { ticket_id: { data: { id: 'tic-9' } } },
         },
       })),
@@ -415,8 +415,8 @@ describe('DrupalBbRemote', () => {
       runUuid: 'run-9',
       runId: 9,
       ticketUuid: 'tic-9',
-      stateAtStart: 'coding',
-      handler: 'coding',
+      stateAtStart: 'working',
+      handler: 'working',
     });
   });
 
@@ -425,7 +425,7 @@ describe('DrupalBbRemote', () => {
       post: vi.fn(async () => ({
         data: {
           id: 'run-bad',
-          attributes: { state_at_start: 'coding' },
+          attributes: { state_at_start: 'working' },
           relationships: { ticket_id: { data: { id: 'tic-bad' } } },
         },
       })),
@@ -441,7 +441,7 @@ describe('DrupalBbRemote', () => {
       post: vi.fn(async () => ({
         data: {
           id: 'run-uuid-1',
-          attributes: { state_at_start: 'coding', drupal_internal__id: 12 },
+          attributes: { state_at_start: 'working', drupal_internal__id: 12 },
           relationships: { ticket_id: { data: { id: 'ticket-uuid-1' } } },
         },
       })),
@@ -514,7 +514,7 @@ describe('DrupalBbRemote', () => {
         attributes: {
           identifier: 'GL-1',
           title: 'Title',
-          state: 'coding',
+          state: 'working',
           branch_name: 'bakers/gl-1',
           origin: 'https://gitlab/issue/1',
         },
@@ -534,7 +534,7 @@ describe('DrupalBbRemote', () => {
       uuid: 'tic-1',
       identifier: 'GL-1',
       title: 'Title',
-      state: 'coding',
+      state: 'working',
       branchName: 'bakers/gl-1',
       issueUrl: 'https://gitlab/issue/1',
       labels: [],
@@ -547,12 +547,12 @@ describe('DrupalBbRemote', () => {
     const get = vi.fn(async () => ({
       data: {
         id: 'tic-7',
-        attributes: { identifier: 'GL-7', title: 'Sel', state: 'coding' },
+        attributes: { identifier: 'GL-7', title: 'Sel', state: 'working' },
         relationships: {
           labels: {
             data: [
-              { type: 'taxonomy_term--bb_labels', id: 'lbl-1' },
-              { type: 'taxonomy_term--bb_labels', id: 'lbl-2' },
+              { type: 'bb_term--label', id: 'lbl-1' },
+              { type: 'bb_term--label', id: 'lbl-2' },
             ],
           },
           environments: {
@@ -562,12 +562,12 @@ describe('DrupalBbRemote', () => {
       },
       included: [
         {
-          type: 'taxonomy_term--bb_labels',
+          type: 'bb_term--label',
           id: 'lbl-1',
           attributes: { name: 'infra' },
         },
         {
-          type: 'taxonomy_term--bb_labels',
+          type: 'bb_term--label',
           id: 'lbl-2',
           attributes: { name: 'urgent' },
         },
@@ -591,7 +591,7 @@ describe('DrupalBbRemote', () => {
     const get = vi.fn(async () => ({
       data: {
         id: 'tic-11',
-        attributes: { identifier: 'GL-11', title: 'Chain', state: 'coding' },
+        attributes: { identifier: 'GL-11', title: 'Chain', state: 'working' },
         relationships: {
           project_id: {
             data: { type: 'bb_project--bb_project', id: 'proj-1' },
@@ -638,7 +638,7 @@ describe('DrupalBbRemote', () => {
         attributes: {
           identifier: 'GL-12',
           title: 'No project',
-          state: 'coding',
+          state: 'working',
         },
       },
     }));
@@ -670,7 +670,7 @@ describe('DrupalBbRemote', () => {
         attributes: {
           identifier: 'P-2',
           title: 'X',
-          state: 'coding',
+          state: 'working',
           branch_name: 'feat/p-2-x',
           base_branch: 'feat/p-1-parent',
         },
@@ -688,7 +688,7 @@ describe('DrupalBbRemote', () => {
         attributes: {
           identifier: 'P-9',
           title: 'Env',
-          state: 'coding',
+          state: 'working',
           effective_env_vars: 'A=1\nB=2',
         },
       },
@@ -1132,14 +1132,14 @@ describe('DrupalBbRemote', () => {
       list: [
         fakeResource(
           'run-1',
-          { drupal_internal__id: 7, state_at_start: 'coding' },
+          { drupal_internal__id: 7, state_at_start: 'working' },
           { ticket_id: 'tic-1' },
         ),
       ],
     });
     const remote = new DrupalBbRemote(fakeClient({ collection: () => col }));
     const [run] = await remote.fetchFinalizableRuns('machine-1');
-    expect(run).toMatchObject({ ticketUuid: 'tic-1', stateAtStart: 'coding' });
+    expect(run).toMatchObject({ ticketUuid: 'tic-1', stateAtStart: 'working' });
   });
 
   it('fetchFinalizableRuns asks for both done and cancelled runs', async () => {

@@ -129,7 +129,7 @@ describe('bakersEssentials — the request path carries no ambient workspace (BB
 
   it('a create is identical whether or not workspace_id is configured, and names no workspace', async () => {
     const request = createReq('bb_term');
-    const context = ctx('create', 'bb_term', 'bb_labels');
+    const context = ctx('create', 'bb_term', 'label');
     const withoutWorkspace = await alterThroughEssentials(request, context, {});
     const withWorkspace = await alterThroughEssentials(request, context, {
       workspace_id: WS,

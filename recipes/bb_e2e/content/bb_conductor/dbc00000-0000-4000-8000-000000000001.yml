@@ -38,9 +38,9 @@ default:
       entity: "dbf00000-0000-4000-8000-000000000001"
   states:
     -
-      value: "diagnose"
+      value: "plan"
     -
-      value: "coding"
+      value: "working"
   # Heartbeat column (timestamp_ago); kept on the conductor, not the machine.
   last_seen:
     -

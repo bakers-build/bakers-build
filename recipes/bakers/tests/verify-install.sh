@@ -33,7 +33,7 @@ if [ "$(drush config:get system.theme admin --format=string)" != "gin" ]; then
 fi
 
 # Vocabulary bundles ship as bb_vocabulary config (recipes/bakers/config).
-for v in bb_labels bb_capability_tags; do
+for v in type recipe label; do
   got="$(drush ev "print \Drupal::entityTypeManager()->getStorage('bb_vocabulary')->load('$v') ? 'yes' : 'no';")"
   if [ "$got" != "yes" ]; then
     echo "FAIL: bb_vocabulary '$v' missing"; fail=1

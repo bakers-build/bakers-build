@@ -1288,7 +1288,7 @@ for mapping in sorted(glob.glob(f'{theme}/designbook/entity-mapping/*.jsonata'))
         # second, stronger statement, and six mappings this ticket never touches do not satisfy it:
         #
         #   bb_team.bb_team.full        bb_workspace.bb_workspace.full
-        #   bb_term.bb_labels.teaser    og_membership.default.teaser
+        #   bb_term.label.teaser    og_membership.default.teaser
         #   bb_ticket.bb_ticket.full    user.user.compact
         #
         # A generator-less mapping is a REAL, PRE-EXISTING gap: those view modes render in Storybook
@@ -1487,6 +1487,8 @@ check "B9 the prose selectors appear in rich-text.twig and in no other template"
 #      generic". The arranging groups are chrome, and their nouns are affordances the spec keeps by
 #      name: `sidebar` declares a `workspace` slot and `account_switcher` IS the workspace switcher
 #      filling it (BB-503 retired the `workspace_switcher` component, not the affordance).
+#   8. The bundles of `bb_term` are dropped: `type`, `recipe` and `label` name vocabularies a user
+#      fills, and `label`/`type` are the props of any display component. `term` itself stays.
 #
 # Surfaces: the directory name, prop and slot names, the declared `title:` of a prop or slot (that is
 # the CONTRACT, and it is where `board-card` says "Ticket identifier" four times), and the template
@@ -1508,7 +1510,8 @@ model = yaml.safe_load(open(data_model)) or {}
 nouns = set()
 for entity_type, bundles in (model.get('content') or {}).items():
     for bundle in bundles:
-        for machine in (entity_type, bundle):
+        # Rule 8: term bundles (`type`, `recipe`, `label`) are vocabulary values, not concepts.
+        for machine in (entity_type,) if entity_type == 'bb_term' else (entity_type, bundle):
             nouns.add(machine)
             if machine.startswith('bb_'):
                 nouns.add(machine[len('bb_'):])

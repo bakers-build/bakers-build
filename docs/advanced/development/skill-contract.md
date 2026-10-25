@@ -17,8 +17,8 @@ The whole selection surface is three keys in the frontmatter.
 ```yaml
 when:
   work_type: code
-  workflow: [bb_bug]
-  step: [diagnose, coding, review]
+  workflow: [bb_work]
+  step: [plan, working, review]
 inputs:
   validate.command:
     description: the command that runs the test suite
@@ -28,12 +28,12 @@ inputs:
 | Key | Meaning |
 |---|---|
 | `work_type` | The ticket's `work:*` label without the prefix, such as `code` or `docs` |
-| `workflow` | `bb_feature`, `bb_bug`, `bb_chore`, `bb_deployment` or `bb_verification` |
+| `workflow` | `bb_work`, `bb_deployment` or `bb_verification` |
 | `step` | The workflow states this skill owns |
 
-Each key takes one string, a list of strings, `*` for any value, or nothing, which also means any. An empty list is an error. Only `step` values are checked against a known list: `qualification`, `spec`, `diagnose`, `coding`, `review`, `pre_deployment`, `post_deployment`, `verifying` and `summary`. A key other than these three is an error.
+Each key takes one string, a list of strings, `*` for any value, or nothing, which also means any. An empty list is an error. Only `step` values are checked against a known list: `qualification`, `plan`, `working`, `review`, `pre_deployment`, `post_deployment`, `verifying` and `summary`. The old names `spec`, `diagnose` and `coding` still pass until the shipped skills move. A key other than these three is an error.
 
-Qualification runs before the sub-works are known, so a ticket in it has no work type. Only a skill whose `work_type` is omitted or `*` can match such a step. From `spec` on, the qualification handoff has set the `work:*` labels and the work type selects the owner.
+Qualification runs before the sub-works are known, so a ticket in it has no work type. Only a skill whose `work_type` is omitted or `*` can match such a step. From `plan` on, the qualification handoff has set the `work:*` labels and the work type selects the owner.
 
 ## Exactly one match
 
@@ -43,8 +43,7 @@ The validator does not know your work types. It derives the triples from the loa
 
 | Workflow | Claimable steps |
 |---|---|
-| `bb_feature`, `bb_chore` | `qualification`, `spec`, `coding`, `review` |
-| `bb_bug` | `qualification`, `diagnose`, `coding`, `review` |
+| `bb_work` | `qualification`, `plan`, `working`, `review` |
 | `bb_deployment` | `pre_deployment`, `post_deployment` |
 | `bb_verification` | `verifying`, `summary` |
 

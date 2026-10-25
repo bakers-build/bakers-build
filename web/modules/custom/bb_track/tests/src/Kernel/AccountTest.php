@@ -595,14 +595,14 @@ final class AccountTest extends WorkTimeTestBase {
     $epic = $storage->create([
       'title' => 'Epic',
       'project_id' => $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     $epic->save();
     $child = $storage->create([
       'title' => 'Child',
       'project_id' => $this->project->id(),
       'parent_id' => $epic->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     $child->save();
     assert($epic instanceof ContentEntityInterface);

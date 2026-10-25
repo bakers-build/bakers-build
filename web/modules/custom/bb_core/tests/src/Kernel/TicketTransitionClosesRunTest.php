@@ -22,8 +22,8 @@ final class TicketTransitionClosesRunTest extends ClaimKernelTestBase {
    * An intermediate transition closes the prior-state run.
    */
   public function testTransitionClosesPriorStateRun(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'running');
+    $ticket = $this->seedAssignedTicket(state: 'working');
+    $run = $this->seedRun($ticket, stateAtStart: 'working', state: 'running');
     $run->set('log', 'real transcript')->save();
 
     $ticket->set('state', 'review')->save();
@@ -36,10 +36,10 @@ final class TicketTransitionClosesRunTest extends ClaimKernelTestBase {
    * A run started in the NEW state is not retired (it is the current run).
    */
   public function testSameStateRunSurvives(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+    $ticket = $this->seedAssignedTicket(state: 'working');
     $run = $this->seedRun($ticket, stateAtStart: 'review', state: 'running');
 
-    // spec→coding→review path is not needed; move straight to review so the
+    // plan→working→review path is not needed; move straight to review so the
     // run's start-state (review) equals the new ticket state.
     $ticket->set('state', 'review')->save();
 
@@ -50,8 +50,8 @@ final class TicketTransitionClosesRunTest extends ClaimKernelTestBase {
    * A non-state ticket save retires nothing (no transition dispatched).
    */
   public function testNonStateSaveRetiresNothing(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
-    $run = $this->seedRun($ticket, stateAtStart: 'coding', state: 'running');
+    $ticket = $this->seedAssignedTicket(state: 'working');
+    $run = $this->seedRun($ticket, stateAtStart: 'working', state: 'running');
 
     $ticket->setTitle('renamed')->save();
 

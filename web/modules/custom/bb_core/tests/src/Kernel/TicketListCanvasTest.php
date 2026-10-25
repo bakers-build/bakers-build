@@ -161,7 +161,7 @@ final class TicketListCanvasTest extends KernelTestBase {
     $this->installConfig(['user', 'search_api', 'views']);
     $this->installOgScopeFixture();
     $this->enableTheShippedDisplayExtender();
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     // The display builder profile the view's extender names. It lives in
@@ -675,7 +675,7 @@ final class TicketListCanvasTest extends KernelTestBase {
       $this->create('bb_ticket', [
         'title' => 'Ticket ' . $state,
         'state' => $state,
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'priority' => 2,
         'project_id' => $project->id(),
       ]);

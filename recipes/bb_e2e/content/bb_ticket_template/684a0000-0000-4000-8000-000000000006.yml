@@ -7,9 +7,9 @@ _meta:
   uuid: 684a0000-0000-4000-8000-000000000006
   default_langcode: en
   depends:
+    db1a0000-0000-4000-8000-000000000022: bb_term
     2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
     dbe50000-0000-4000-8000-000000000001: user
-    db1a0000-0000-4000-8000-000000000010: bb_term
 default:
   name:
     -
@@ -26,13 +26,13 @@ default:
       format: bb_rich
   workflow:
     -
-      value: "bb_chore"
+      value: "bb_work"
+  ticket_type:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000022"
   target_state:
     -
       value: "qualification"
-  labels:
-    -
-      entity: "db1a0000-0000-4000-8000-000000000010"
   workspace_id:
     -
       entity: "2a92d03c-c4c6-41dc-b194-31aa299ed064"

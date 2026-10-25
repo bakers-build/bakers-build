@@ -1,0 +1,15 @@
+# The Southside Bakery `feature` type: its own workspace's term, since a
+# ticket's type must belong to the ticket's workspace.
+_meta:
+  version: '1.0'
+  entity_type: bb_term
+  uuid: b6000000-0000-4000-8000-000000000005
+  bundle: type
+  default_langcode: en
+  depends:
+    dbc60000-0000-4000-8000-000000000002: bb_workspace
+default:
+  name:
+  - value: feature
+  workspace_id:
+  - entity: dbc60000-0000-4000-8000-000000000002

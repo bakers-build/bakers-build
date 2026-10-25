@@ -16,11 +16,11 @@ A step skill owns one or more workflow steps for one work type: it reads the tic
    ```yaml
    ---
    name: node-feature
-   description: Own spec, coding and review for Node services.
+   description: Own plan, working and review for Node services.
    when:
      work_type: node
-     workflow: [bb_feature, bb_chore]
-     step: [spec, coding, review]
+     workflow: [bb_work]
+     step: [plan, working, review]
    work_type_term:
      name: "work:node"
      description: "Sub-work: a Node service change validated by its test suite."

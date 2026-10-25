@@ -54,7 +54,7 @@ const listRow = (
     priority: 2,
     assignee_initials: initials,
     derived_status: 'idle',
-    workflow: 'bb_feature',
+    workflow: 'bb_work',
   },
   relationships: {
     labels: { data: [] },
@@ -102,7 +102,7 @@ const detailDoc = (
       description: 'The description body.',
       assignee_initials: initials,
       derived_status: 'idle',
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
     },
     relationships: {
       labels: { data: [] },

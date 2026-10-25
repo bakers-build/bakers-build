@@ -2,7 +2,7 @@
   /* THE TICKETS LISTING, AS A VIEW THAT RENDERS ONE LIST ROW PER TICKET (BB-592). A ticket is read as
      one thing with a few facts, not compared down columns. The mapping emits ONE `list` node whose
      `pattern` is the `bb_list` Views style's own pattern for `views.view.tickets`: avatar: the state
-     as a `status` glyph (filled disc while coding, empty ring otherwise; its exact label is the
+     as a `status` glyph (filled disc while working, empty ring otherwise; its exact label is the
      tooltip and accessible name); headline: title and priority (when set); meta: identifier,
      "Created … ago", "by" the owner (the creator), the conductor lease (when present), the stall
      reason as a `wait` badge with a dot when the ticket stands still (frozen, blocked, no conductor,
@@ -25,12 +25,12 @@
   };
   $conductor_names := { "1": "cw-framework", "2": "mvd-thinkpad" };
   $rows := [
-    { "id": "1", "identifier": "BB-142", "title": "Add designbook entity view-mode for bb_ticket", "state": "coding", "priority": 2, "owner_user_id": "1", "assignee_user_id": "1", "conductor_id": "1", "created": "3 days ago", "runs": 3 },
-    { "id": "4", "identifier": "BB-118", "title": "Draft ticket_detail component spec", "state": "spec", "priority": 2, "owner_user_id": "1", "assignee_user_id": "2", "created": "3 weeks ago", "stall_reason": "no conductor" },
+    { "id": "1", "identifier": "BB-142", "title": "Add designbook entity view-mode for bb_ticket", "state": "working", "priority": 2, "owner_user_id": "1", "assignee_user_id": "1", "conductor_id": "1", "created": "3 days ago", "runs": 3 },
+    { "id": "4", "identifier": "BB-118", "title": "Draft ticket_detail component spec", "state": "plan", "priority": 2, "owner_user_id": "1", "assignee_user_id": "2", "created": "3 weeks ago", "stall_reason": "no conductor" },
     { "id": "5", "identifier": "BB-105", "title": "Review comment-event rendering for typed comments", "state": "review", "priority": 2, "owner_user_id": "2", "assignee_user_id": "1", "created": "1 week ago" },
-    { "id": "7", "identifier": "BB-145", "title": "Comment feed region in ticket_detail", "state": "coding", "priority": 2, "owner_user_id": "1", "assignee_user_id": "1", "created": "2 days ago", "stall_reason": "frozen", "frozen_at": "2 hours ago" },
+    { "id": "7", "identifier": "BB-145", "title": "Comment feed region in ticket_detail", "state": "working", "priority": 2, "owner_user_id": "1", "assignee_user_id": "1", "created": "2 days ago", "stall_reason": "frozen", "frozen_at": "2 hours ago" },
     { "id": "8", "identifier": "BB-146", "title": "Runs, sub-tickets and footprint sections", "state": "review", "priority": 3, "owner_user_id": "4", "assignee_user_id": "2", "created": "4 days ago", "runs": 2 },
-    { "id": "9", "identifier": "NWS-80", "title": "Checkout address step rewrite", "state": "coding", "priority": 1, "owner_user_id": "3", "assignee_user_id": "3", "conductor_id": "2", "created": "5 hours ago", "runs": 1 },
+    { "id": "9", "identifier": "NWS-80", "title": "Checkout address step rewrite", "state": "working", "priority": 1, "owner_user_id": "3", "assignee_user_id": "3", "conductor_id": "2", "created": "5 hours ago", "runs": 1 },
     { "id": "10", "identifier": "NWS-81", "title": "Cart total ignores per-item discounts", "state": "review", "priority": 1, "owner_user_id": "3", "created": "6 days ago" },
     { "id": "11", "identifier": "NWS-82", "title": "Move the staging deploy onto the shared runner", "state": "qualification", "priority": 3, "owner_user_id": "3", "assignee_user_id": "3", "created": "1 week ago" }
   ];
@@ -57,7 +57,7 @@
               "accent": $accent($t),
               "cells": $merge([
                 {
-                  "state": { "kind": "status", "label": $t.state, "working": $t.state = "coding" },
+                  "state": { "kind": "status", "label": $t.state, "working": $t.state = "working" },
                   "title": { "kind": "text", "value": $t.title, "emphasis": "strong" },
                   "identifier": { "kind": "mono", "value": $t.identifier },
                   /* `rendered`, as the Drupal path delivers it (Views output), so the value runs on

@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
  * Base class for Kernel tests that need the whole bakers.build entity graph.
  *
  * Installs every bakers entity schema and the bb_core config, then acts as an
- * account inside a workspace. The bb_labels / bb_capability_tags
+ * account inside a workspace. The type / recipe / label
  * vocabularies are created explicitly because the bakers recipe — not bb_core —
  * owns them in production.
  *
@@ -108,10 +108,11 @@ abstract class BbEntityKernelTestBase extends KernelTestBase {
     $this->installEntitySchema('bb_environment');
     $this->installConfig(['bb_core']);
     // bb_core no longer ships these vocabularies (the bakers recipe owns them);
-    // create the bundles the bb_ticket label reference needs before the
-    // dashboard Views config (which generates a sample bb_ticket) installs.
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
-    BbVocabulary::create(['id' => 'bb_capability_tags', 'label' => 'bakers.build capability tags'])->save();
+    // create the bundles the bb_ticket type/recipe/label references need before
+    // the dashboard Views config (which generates a sample bb_ticket) installs.
+    foreach (['type', 'recipe', 'label'] as $vid) {
+      BbVocabulary::create(['id' => $vid, 'label' => $vid])->save();
+    }
     \Drupal::service('entity_type.bundle.info')->clearCachedBundles();
     // Since BB-305 every bakers.build entity declares a query_access handler,
     // so a View executes an access-checked query and an account with no

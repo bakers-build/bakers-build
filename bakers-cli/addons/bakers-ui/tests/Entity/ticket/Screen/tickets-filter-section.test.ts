@@ -157,7 +157,7 @@ describe('Tickets filter section (BB-375 A′)', () => {
 
     screen.previewCriteria({
       query: 'foo',
-      state: 'coding',
+      state: 'working',
       closed: false,
       parent: { id: 'p1', identifier: 'SHOP-42' },
       who: { id: 'u1', label: 'cw' },
@@ -165,7 +165,7 @@ describe('Tickets filter section (BB-375 A′)', () => {
       project: null,
     });
     expect(chip('search')).toBe('/ search: foo');
-    expect(chip('state')).toBe('s state: coding');
+    expect(chip('state')).toBe('s state: working');
     expect(chip('who')).toBe('w who: cw');
     expect(chip('owner')).toBe('o owner: pm');
     expect(chip('parent')).toBe('p parent: SHOP-42');

@@ -170,10 +170,10 @@ describe('bakers validate — host layer (BB-436)', () => {
       const out = formatReport(report).join('\n');
 
       expect(report.ok, report.error).toBe(true);
-      // 4 + 4 + 4 + 2 + 2 claimable states across the five workflows.
-      expect(report.tripleCount).toBe(16);
+      // 4 + 2 + 2 claimable states across the three workflows.
+      expect(report.tripleCount).toBe(8);
       expect(out).toContain('OK — 1 step owner(s) + 1 helper(s)');
-      expect(out).toContain('cover all 16 project triple(s)');
+      expect(out).toContain('cover all 8 project triple(s)');
       expect(out).toContain('owners: owner');
       expect(out).toContain('helpers: helper');
     });

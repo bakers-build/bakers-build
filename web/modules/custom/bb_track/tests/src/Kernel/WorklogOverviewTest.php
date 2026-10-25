@@ -985,7 +985,7 @@ final class WorklogOverviewTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Grid ticket',
       'project_id' => $this->projectP->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     $ticket->save();
     $form = $this->weekForm();

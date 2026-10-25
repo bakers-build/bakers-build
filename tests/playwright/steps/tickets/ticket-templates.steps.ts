@@ -6,7 +6,7 @@ import { createBdd } from 'playwright-bdd';
 import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
 import { php } from '../../support/drush';
-import { PAGE_HEADER_ISLAND } from '../../support/shell';
+import { clickHeaderAction } from '../../support/shell';
 import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
 
 const { When, Then, After } = createBdd(test);
@@ -38,27 +38,16 @@ async function addForm(page: Page): Promise<Locator> {
   return (await dialog.count()) > 0 ? dialog : page.locator('main');
 }
 
-async function openAddAction(page: Page, scripted: boolean): Promise<Locator> {
-  const trigger = page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'Add template', exact: true });
-  await expect(trigger).toBeVisible();
-  if (scripted) {
-    // The trigger has a real href; clicked before htmx owns it, it navigates
-    // to the page form instead of fetching the dialog.
-    await expect
-      .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']))
-      .toBe(true);
-  }
-  await trigger.click();
+async function openAddAction(page: Page): Promise<Locator> {
+  await clickHeaderAction(page, 'Add template');
   return addForm(page);
 }
 
 When('I open the Add template action twice', async ({ page }) => {
-  // Page scripts are off in the no-JS project, so htmx never loads there.
-  const scripted = await page.evaluate(() => 'htmx' in window);
-  const form = await openAddAction(page, scripted);
+  const form = await openAddAction(page);
   await form.getByRole('link', { name: 'Cancel', exact: true }).click();
   await expect(page.locator('dialog[open]')).toHaveCount(0);
-  await openAddAction(page, scripted);
+  await openAddAction(page);
 });
 
 When(
@@ -77,11 +66,11 @@ When(
       await expect(form.locator('.form__properties [data-template-target-state]')).toHaveCount(1);
       await expect(optionRow(page, pickerPanel(target), targetState)).toHaveCount(1);
       await pick(page, scope, 'Target state', targetState);
-      await pick(page, scope, 'Labels', 'work:code');
+      await pick(page, scope, 'Labels', 'backend');
     } else {
       // A pill needs JavaScript to open; a full page also renders its rows as
       // plain controls.
-      for (const [role, label] of [['radio', workflow], ['radio', targetState], ['checkbox', 'work:code']] as const) {
+      for (const [role, label] of [['radio', workflow], ['radio', targetState], ['checkbox', 'backend']] as const) {
         await form.locator('label.option-list__control').filter({ has: page.getByRole(role, { name: label, exact: true }) }).click();
         await expect(form.getByRole(role, { name: label, exact: true })).toBeChecked();
       }

@@ -79,7 +79,7 @@ Every figure is read at render time from `/jsonapi/bakers/statistics`, which cou
 
 The header box keeps the identifier, title, labels, state, **Assigned** and **Created by** (the ticket's owner, `unknown` without one) on screen while the body scrolls.
 
-The ticket's **labels** and its **state** are full-width rows of the header box, in that order under the title (`Labels: work:code`, `State: coding`). Each is its own row rather than appended to the title, because a too-narrow terminal truncates a shared row and they would appear or vanish by terminal width.
+The ticket's **labels** and its **state** are full-width rows of the header box, in that order under the title (`Labels: work:code`, `State: working`). Each is its own row rather than appended to the title, because a too-narrow terminal truncates a shared row and they would appear or vanish by terminal width.
 
 A piped render has no header box, so State and Labels are sections of their own there.
 

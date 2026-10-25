@@ -131,7 +131,7 @@ function makeConductor(
       site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
       label: 'identity test',
       project: 'bakers',
-      states: ['coding'],
+      states: ['working'],
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,

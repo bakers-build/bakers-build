@@ -12,12 +12,12 @@ A ticket whose `origin` is a GitLab issue gets its progress mirrored as one labe
 | `qualification`, `spec`, `coding`, `review` | `doing` |
 | `done` | `review` |
 
-Other states write nothing. To use your customer's words, add a bullet to `## Loaded skills`. A `<workflow>:<state>` key such as `bb_feature:done` wins over the bare state, and the map's values are the label family bakers.build owns:
+Other states write nothing. To use your customer's words, add a bullet to `## Loaded skills`. A `<workflow>:<state>` key such as `bb_verification:done` wins over the bare state, and the map's values are the label family bakers.build owns:
 
 ```md
 - @bakers-build/publish-origin-status
     origin_labels.data: |
-      coding: in progress
+      working: in progress
       review: in progress
       done: ready for review
 ```

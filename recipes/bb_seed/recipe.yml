@@ -1,5 +1,5 @@
 name: 'bakers.build Seed'
-description: 'Applies bakers, then imports bb_term seed content (capability tags). Apply as a second pass after the bb_term bundles exist.'
+description: 'Applies bakers, then imports bb_term seed content (labels and ticket types). Apply as a second pass after the bb_term bundles exist.'
 type: 'Site'
 recipes:
   - bakers
@@ -9,7 +9,7 @@ recipes:
 # bb_dashboard shipped (bb_ticket board_card/full/teaser, bb_run full,
 # bb_comment full, bb_project full, bb_term full, and the matching
 # displays). They were imported HERE rather than in the `bakers` recipe because
-# the displays' display_builder sample generation needs the `bb_labels`
+# the displays' display_builder sample generation needs the labels
 # vocabulary bundle, which the `bakers` recipe's own `config/` creates only after
 # its `config.import` runs — so this recipe applied `bakers` first and imported
 # them afterwards.
@@ -30,5 +30,5 @@ recipes:
 # all it took to bind them again. Neither half of that is true now.)
 #
 # What this recipe still does: apply `bakers`, then install its own
-# `content/bb_term/**` seed (the capability tags and labels), which is picked
+# `content/bb_term/**` seed (the labels and ticket types), which is picked
 # up from the content directory and needs no config action.

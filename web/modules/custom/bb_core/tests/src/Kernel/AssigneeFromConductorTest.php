@@ -89,7 +89,7 @@ final class AssigneeFromConductorTest extends KernelTestBase {
         'owner_user_id' => $owner?->id() ?? 0,
         'status' => 'online',
         'project_id' => $this->projectId,
-        'states' => ['coding'],
+        'states' => ['working'],
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
       ]);
     $this->assertInstanceOf(BbConductorInterface::class, $conductor);
@@ -108,7 +108,7 @@ final class AssigneeFromConductorTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create($values + [
         'title' => 'Derivation ticket',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->projectId,
       ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -228,7 +228,7 @@ final class AssigneeFromConductorTest extends KernelTestBase {
 
     $ticket = $this->createTicket([
       'conductor_id' => $conductor->id(),
-      'state' => 'coding',
+      'state' => 'working',
     ]);
     $ticket->save();
     $this->assertFalse($ticket->get('assignee_user_id')->isEmpty());

@@ -81,7 +81,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * A second save does not move `closed_date` (AC idempotent).
    */
   public function testSecondSaveDoesNotMoveClosedDate(): void {
-    $ticket = $this->createTicket('bb_feature', 'done');
+    $ticket = $this->createTicket('bb_work', 'done');
     $first_date = $ticket->getClosedDate();
 
     $ticket->set('title', 'renamed')->save();
@@ -98,7 +98,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * "state changed to terminal in this save".
    */
   public function testHandClearedClosedIsRepairedOnNextSave(): void {
-    $ticket = $this->createTicket('bb_bug', 'done');
+    $ticket = $this->createTicket('bb_work', 'done');
     self::assertTrue($ticket->isClosed());
 
     $this->container->get('database')->update('bb_ticket')
@@ -119,7 +119,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * A non-terminal state stores neither `closed` nor `closed_date` (AC).
    */
   public function testNonTerminalStateStoresNeither(): void {
-    $ticket = $this->createTicket('bb_feature', 'coding');
+    $ticket = $this->createTicket('bb_work', 'coding');
     self::assertFalse($ticket->isClosed());
     self::assertNull($ticket->getClosedDate());
   }
@@ -168,7 +168,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * A closed terminal ticket whose date was cleared is dated on the next save.
    */
   public function testClosedTerminalWithNullDateIsStampedOnSave(): void {
-    $ticket = $this->createTicket('bb_bug', 'done');
+    $ticket = $this->createTicket('bb_work', 'done');
     self::assertTrue($ticket->isClosed());
 
     $this->container->get('database')->update('bb_ticket')
@@ -197,10 +197,10 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * terminal invariant cancels the non-terminal landing state.
    */
   public function testLeavingTerminalStateByRawWriteKeepsClosed(): void {
-    $ticket = $this->createTicket('bb_feature', 'done');
+    $ticket = $this->createTicket('bb_work', 'done');
     self::assertTrue($ticket->isClosed());
 
-    $ticket->set('state', 'coding')->save();
+    $ticket->set('state', 'working')->save();
 
     $reloaded = $this->reload($ticket);
     self::assertSame('cancelled', (string) $reloaded->get('state')->value);
@@ -211,7 +211,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * Flipping `cleaned_up` stamps a date; a second save leaves it alone.
    */
   public function testFlippingCleanedUpStampsDateOnce(): void {
-    $ticket = $this->createTicket('bb_bug', 'coding');
+    $ticket = $this->createTicket('bb_work', 'coding');
     self::assertNull($ticket->getCleanedUpDate());
 
     $ticket->markCleanedUp()->save();
@@ -231,7 +231,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * side.
    */
   public function testClosedTicketWithoutCleanupHasNullCleanedUpDate(): void {
-    $ticket = $this->createTicket('bb_feature', 'done');
+    $ticket = $this->createTicket('bb_work', 'done');
     self::assertTrue($ticket->isClosed());
     self::assertNull($ticket->getCleanedUpDate());
   }
@@ -240,7 +240,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * A cleanup that runs after a close leaves `closed`/`closed_date` untouched.
    */
   public function testCleanupAfterCloseLeavesClosedFieldsByteIdentical(): void {
-    $ticket = $this->createTicket('bb_feature', 'done');
+    $ticket = $this->createTicket('bb_work', 'done');
     $closed_date = $ticket->getClosedDate();
 
     $ticket->markCleanedUp()->save();
@@ -258,7 +258,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * difference this turns on, so the assertion reads the column directly.
    */
   public function testExplicitNullCleanedUpStoresZeroOnCreate(): void {
-    $ticket = $this->createTicket('bb_bug', 'coding');
+    $ticket = $this->createTicket('bb_work', 'coding');
     self::assertSame(0, $this->readCleanedUpColumn($ticket));
   }
 
@@ -266,7 +266,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * An explicit NULL on `cleaned_up` stores 0 on update too.
    */
   public function testExplicitNullCleanedUpStoresZeroOnUpdate(): void {
-    $ticket = $this->createTicket('bb_bug', 'coding');
+    $ticket = $this->createTicket('bb_work', 'coding');
     $ticket->markCleanedUp()->save();
     self::assertSame(1, $this->readCleanedUpColumn($ticket));
 
@@ -279,7 +279,7 @@ final class TerminalTicketAutoCloseTest extends KernelTestBase {
    * A written TRUE survives the NULL-coercion branch.
    */
   public function testWrittenTrueSurvivesCoercion(): void {
-    $ticket = $this->createTicket('bb_bug', 'coding');
+    $ticket = $this->createTicket('bb_work', 'coding');
     $ticket->markCleanedUp()->save();
 
     $reloaded = $this->reload($ticket);

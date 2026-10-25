@@ -42,7 +42,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
     $ticket->set('owner_user_id', $owner->id())->save();
     $this->tick($owner, ['test_ticket_event']);
 
-    $ticket->set('state', 'spec')->save();
+    $ticket->set('state', 'plan')->save();
 
     $mails = $this->mailsTo($owner);
     self::assertCount(1, $mails);
@@ -62,7 +62,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
     $this->tick($owner, ['test_ticket_event']);
     $this->container->get('state')->set('bb_activity_test.feed_only', TRUE);
 
-    $ticket->set('state', 'spec')->save();
+    $ticket->set('state', 'plan')->save();
 
     self::assertCount(1, $this->container->get('entity_type.manager')->getStorage('bb_activity')
       ->loadByProperties(['ticket_id' => $ticket->id(), 'kind' => 'test_ticket_event']));
@@ -82,7 +82,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
     $this->tick($owner, ['test_ticket_event']);
     $this->container->get('account_switcher')->switchTo($owner);
     try {
-      $ticket->set('state', 'spec')->save();
+      $ticket->set('state', 'plan')->save();
     }
     finally {
       $this->container->get('account_switcher')->switchBack();
@@ -98,7 +98,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
     $quiet = $this->recipient('a', 'quiet-a');
     $this->tick($watcher, ['test_ticket_event']);
 
-    $this->ticket('a')->set('state', 'spec')->save();
+    $this->ticket('a')->set('state', 'plan')->save();
 
     self::assertCount(1, $this->mailsTo($watcher));
     self::assertCount(0, $this->mailsTo($quiet));
@@ -111,7 +111,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
     $outsider = $this->recipient('b', 'outsider-b');
     $this->tick($outsider, ['test_ticket_event']);
 
-    $this->ticket('a')->set('state', 'spec')->save();
+    $this->ticket('a')->set('state', 'plan')->save();
 
     self::assertCount(0, $this->mailsTo($outsider));
   }
@@ -127,7 +127,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
     ]);
 
     $ticket = $this->freshTicket('a', $owner, $assignee);
-    $ticket->set('state', 'spec')->save();
+    $ticket->set('state', 'plan')->save();
     [$run, $conductor] = $this->claimedRun($ticket);
     $this->claimed($ticket, $run, $conductor);
     $run->set('state', 'failed')->save();
@@ -143,7 +143,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
   private function freshTicket(string $side, UserInterface $owner, ?UserInterface $assignee = NULL): BbTicketInterface {
     $ticket = $this->createEntity('bb_ticket', [
       'title' => "fresh-$side",
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture($side, 'bb_project')->id(),
       'owner_user_id' => $owner->id(),
       'assignee_user_id' => $assignee?->id(),
@@ -153,7 +153,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
   }
 
   /**
-   * A claimed run of the ticket on its side's conductor, started in coding.
+   * A claimed run of the ticket on its side's conductor, started in working.
    *
    * @return array{0: \Drupal\bb_core\Entity\BbRunInterface, 1: \Drupal\bb_core\Entity\BbConductorInterface}
    *   The run and its conductor.
@@ -165,7 +165,7 @@ final class ActivityMailRecipientsTest extends ActivityMailKernelTestBase {
       'conductor_id' => $conductor->id(),
       'ticket_id' => $ticket->id(),
       'state' => 'claimed',
-      'state_at_start' => 'coding',
+      'state_at_start' => 'working',
       'claim_expires_at' => 2147483000,
     ]);
     self::assertInstanceOf(BbRunInterface::class, $run);

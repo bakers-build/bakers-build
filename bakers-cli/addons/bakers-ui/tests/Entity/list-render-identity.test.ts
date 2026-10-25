@@ -90,7 +90,7 @@ const TICKET: TicketRow = {
   ownerInitials: 'JD',
   derivedStatus: 'running',
   labels: ['work:code'],
-  type: 'bb_chore',
+  type: 'bb_work',
   parent: 'BB-292',
   conductor: 'cw-framework',
   closed: false,

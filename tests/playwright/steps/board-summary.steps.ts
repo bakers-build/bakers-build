@@ -5,7 +5,7 @@
 // depends on another's leftovers and the shared recipe world keeps its counts.
 // Project and account names carry a per-scenario suffix because the JS and
 // no-JS Playwright projects run at the same time against one database. Its tickets stay in `qualification` and hold no conductor, for
-// the reason `project-board-drupal.steps.ts` records: open `coding` tickets in
+// the reason `project-board-drupal.steps.ts` records: open `working` tickets in
 // this workspace would change what `ticket-list` measures. No conductor also
 // means nothing here can ever be dispatched.
 import { Given, When, Then, test } from '@key-tec/playwright-core/bdd';
@@ -88,7 +88,7 @@ Given(
         '$ts = $etm->getStorage("bb_ticket");',
         '$team = $project->get("teams")->target_id;',
         '$make = function ($title, $parent, $assignee) use ($ts, $project, $team) {',
-        '$t = $ts->create(["project_id" => $project->id(), "title" => $title, "workflow" => "bb_feature", "state" => "qualification", "team" => $team, "parent_id" => $parent, "assignee_user_id" => $assignee]);',
+        '$t = $ts->create(["project_id" => $project->id(), "title" => $title, "workflow" => "bb_work", "state" => "qualification", "team" => $team, "parent_id" => $parent, "assignee_user_id" => $assignee]);',
         '$t->save(); return $t; };',
         '$parent = $make("Focus parent", NULL, NULL);',
         `for ($i = 0; $i < ${aliceCount}; $i++) { $make("Focus child", $parent->id(), $a->id()); }`,

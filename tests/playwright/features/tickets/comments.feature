@@ -5,7 +5,7 @@ Feature: Ticket comment relationships and writeback
 
   Scenario Outline: A comment's type and body survive insertion and a fresh ticket read
     Given the API client is "north-contributor"
-    When the API client creates a "bb_bug" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     Given the session actor owns a running lease for ticket "ticket"
     When the API client reads "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}?include=comments"
     Then the API response status is 200
@@ -48,7 +48,7 @@ Feature: Ticket comment relationships and writeback
 
   Scenario: Deleting a comment invalidates a previously read ticket relationship
     Given the API client is "north-contributor"
-    When the API client creates a "bb_bug" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     And the API client sends "POST" to "/jsonapi/bb_comment/bb_comment":
       """
       {"data":{"type":"bb_comment--bb_comment","attributes":{"body":{"value":"API comment to delete","format":"bb_rich"}},"relationships":{"ticket_id":{"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}"}}}}}

@@ -74,10 +74,12 @@ hidden:
   owner_user_id: true
   priority: true
   project_id: true
+  recipe: true
   referenced_tickets: true
   reviewers: true
   stall_reason: true
   state: true
+  ticket_type: true
   time_estimate: true
   time_spent: true
   workflow: true

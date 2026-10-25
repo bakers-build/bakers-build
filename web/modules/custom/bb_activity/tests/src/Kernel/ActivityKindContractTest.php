@@ -91,7 +91,7 @@ final class ActivityKindContractTest extends ActivityEntityKernelTestBase {
   }
 
   /**
-   * A saved feature ticket.
+   * A saved work ticket.
    */
   private function ticket(): BbTicketInterface {
     $group = BbGroup::create(['name' => 'Contract group', 'workspace_id' => $this->hostWorkspace->id()]);
@@ -101,7 +101,7 @@ final class ActivityKindContractTest extends ActivityEntityKernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Contract',
       'project_id' => $project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     $ticket->save();
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

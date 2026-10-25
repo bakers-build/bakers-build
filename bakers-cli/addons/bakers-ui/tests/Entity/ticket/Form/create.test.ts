@@ -32,13 +32,18 @@ const opts: CreateFormOptions = {
     { id: 'u2', label: 'agent' },
   ],
   conductors: [{ id: 'c1', label: 'cw-framework' }],
+  ticketTypes: [
+    { id: 't1', label: 'feature' },
+    { id: 't2', label: 'bug' },
+  ],
+  recipes: [{ id: 'r1', label: 'drupal-feature' }],
   labels: [
     { id: 'l1', label: 'bug' },
     { id: 'l2', label: 'ui' },
   ],
   workflows: [
-    { id: 'bb_feature', label: 'feature' },
-    { id: 'bb_bug', label: 'bug' },
+    { id: 'bb_work', label: 'work' },
+    { id: 'bb_deployment', label: 'deployment' },
   ],
 };
 
@@ -62,7 +67,7 @@ it('initial defaults to first option per select, empty description/labels/review
   expect(s.description).toBe('');
   expect(s.assignee).toBe('u1');
   expect(s.conductor).toBe('c1');
-  expect(s.workflow).toBe('bb_feature');
+  expect(s.workflow).toBe('bb_work');
   expect(s.labels.size).toBe(0);
   expect(s.reviewers.size).toBe(0);
   expect(s.active).toBe(0);
@@ -100,7 +105,7 @@ it('cycle rotates the active select value (wraps)', () => {
 it('cycle only touches the active field', () => {
   s = { ...s, active: idx('workflow') };
   s = cycle(s, opts, 1);
-  expect(s.workflow).toBe('bb_bug');
+  expect(s.workflow).toBe('bb_deployment');
   expect(s.assignee).toBe('u1'); // untouched
 });
 
@@ -128,9 +133,32 @@ it('serialize resolves ids to options', () => {
   expect(payload.description).toBe('A bug');
   expect(payload.assignee).toEqual({ id: 'u1', label: 'cw' });
   expect(payload.conductor).toEqual({ id: 'c1', label: 'cw-framework' });
-  expect(payload.workflow).toEqual({ id: 'bb_feature', label: 'feature' });
+  expect(payload.workflow).toEqual({ id: 'bb_work', label: 'work' });
   expect(payload.labels).toEqual([{ id: 'l1', label: 'bug' }]);
   expect(payload.reviewers).toEqual([]);
+  // BAKERS-17: the kernel preselects a select's first option; the SCREEN opens
+  // type and recipe empty (asserted in `tests/Screen/form-screens.test.ts`).
+  expect(payload.ticketType).toEqual({ id: 't1', label: 'feature' });
+  expect(payload.recipe).toEqual({ id: 'r1', label: 'drupal-feature' });
+});
+
+it('BAKERS-17: type and recipe are clearable single selects over their own bags', () => {
+  for (const [id, label, from] of [
+    ['ticketType', 'Type', 'ticketTypes'],
+    ['recipe', 'Recipe', 'recipes'],
+  ]) {
+    expect(FIELDS.find((f) => f.id === id)).toMatchObject({
+      kind: 'select',
+      label,
+      from,
+      clearable: true,
+    });
+  }
+  s = { ...s, active: idx('ticketType') };
+  s = cycle(s, opts, 1);
+  expect(serialize(s, opts).ticketType).toEqual({ id: 't2', label: 'bug' });
+  s = cycle(s, opts, 1);
+  expect(serialize(s, opts).ticketType).toBeNull(); // the clearable null
 });
 
 // `shortName`'s two assertions moved with the function itself to
@@ -201,17 +229,20 @@ it('AC-9: fieldAt/nextActive clamp against the PASSED field list', () => {
   expect(fieldAt(three, 99).id).toBe('a');
   // The create form's own helpers keep clamping against FIELDS, unchanged.
   expect(moveField(s, 99).active).toBe(FIELDS.length - 1);
-  // Nine fields plus two action rows (BB-309 Title + direct action, then
-  // Reviewers after Assignee, Template).
-  expect(FIELDS).toHaveLength(11);
+  // Eleven fields plus two action rows (BB-309 Title + direct action, then
+  // Reviewers after Assignee, Template, BAKERS-17 Type and Recipe).
+  expect(FIELDS).toHaveLength(13);
   // The guard this line has always been — "no select became clearable by
   // accident" — with the ONE deliberate exception named. BB-309 D2 makes the
   // conductor clearable on purpose: a set conductor starts a run at the next
   // poll, so leaving it unset has to be expressible. Every other select still
   // cycles over real options only, which is what BB-233 AC-9 pinned.
-  // The template is the second one — "no template" is the default.
+  // The template is another one — "no template" is the default — and so are
+  // BAKERS-17's type and recipe, which are chosen, never preselected.
   expect(FIELDS.filter((f) => f.clearable === true).map((f) => f.id)).toEqual([
     'conductor',
+    'ticketType',
+    'recipe',
     'template',
   ]);
 });
@@ -267,6 +298,8 @@ it('AC-5: `parent` is declared between the description and the assignee', () => 
     'assignee',
     'reviewers',
     'conductor',
+    'ticketType',
+    'recipe',
     'labels',
     'workflow',
     'template',
@@ -292,9 +325,11 @@ it('AC-7: nothing picked yields `parent: null`, and nothing else moves', () => {
   expect(payload).toEqual({
     title: '',
     description: '',
-    workflow: { id: 'bb_feature', label: 'feature' },
+    workflow: { id: 'bb_work', label: 'work' },
     assignee: { id: 'u1', label: 'cw' },
     conductor: { id: 'c1', label: 'cw-framework' },
+    ticketType: { id: 't1', label: 'feature' },
+    recipe: { id: 'r1', label: 'drupal-feature' },
     labels: [],
     reviewers: [],
     parent: null,
@@ -401,7 +436,7 @@ const filled = (): CreateFormState => ({
   assignee: 'u2',
   conductor: null,
   labels: new Set(['l2']),
-  workflow: 'bb_bug',
+  workflow: 'bb_deployment',
 });
 
 it('BB-314 D2: rememberedValues carries the routing keys and no content key', () => {
@@ -420,9 +455,9 @@ it('BB-314 D1/D5: a prefilled form empties the content and re-defaults the workf
 
   expect(next.title).toBe('');
   expect(next.description).toBe('');
-  // NOT `bb_bug`: a ticket type is a per-ticket decision, so the field falls
+  // NOT `bb_deployment`: a workflow is a per-ticket decision, so the field falls
   // back through the kernel's own select rule to the first option (D5).
-  expect(next.workflow).toBe('bb_feature');
+  expect(next.workflow).toBe('bb_work');
 
   expect(next.assignee).toBe('u2');
   // An explicit `null` sticks (`Object.hasOwn`, F6): a conductor the operator

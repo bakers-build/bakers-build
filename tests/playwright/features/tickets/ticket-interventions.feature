@@ -11,20 +11,20 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
     Given I am logged in as "Administrator"
 
   Scenario: Cancel ticket asks first and keeping it changes nothing
-    Given a disposable "bb_feature" ticket in state "coding"
+    Given a disposable "bb_work" ticket in state "working"
     When I visit the disposable ticket
     Then the ticket page offers no workflow step
     When I open "Cancel ticket"
     Then a dialog asks "Cancel"
     When I choose "Keep the ticket" in the dialog
-    Then the disposable ticket is in state "coding"
+    Then the disposable ticket is in state "working"
     When I open "Cancel ticket"
     And I choose "Cancel ticket" in the dialog
     Then the disposable ticket is in state "cancelled"
     And the page says "is now Cancelled"
 
   Scenario: Freeze ticket asks first and names the stall
-    Given a disposable "bb_feature" ticket in state "coding"
+    Given a disposable "bb_work" ticket in state "working"
     When I visit the disposable ticket
     Then the ticket page offers "Freeze ticket"
     When I open "Freeze ticket"
@@ -41,7 +41,7 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
 
   @nojs
   Scenario: Freeze ticket works without JavaScript as a page
-    Given a disposable "bb_chore" ticket in state "review"
+    Given a disposable "bb_work" ticket in state "review"
     When I visit the disposable ticket
     And I open "Freeze ticket"
     Then the confirmation is a page of its own
@@ -49,23 +49,23 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
     Then the page says "is frozen"
 
   Scenario: A closed ticket is read-only
-    Given a disposable "bb_feature" ticket in state "done"
+    Given a disposable "bb_work" ticket in state "done"
     When I visit the disposable ticket
     Then the Properties block offers no picker
     And the ticket page offers no intervention
 
   Scenario: Cancel run stops only that run and leaves the ticket's state
-    Given a disposable "bb_bug" ticket in state "coding" with a running run
+    Given a disposable "bb_work" ticket in state "working" with a running run
     When I visit the disposable ticket
     And I open "Cancel run" on the disposable run's own row
     Then the dialog names the disposable run and that the conductor may start another run
     And the dialog's first choice is "Keep the run"
     When I choose "Cancel run" in the dialog
     Then the disposable run is "cancelled"
-    And the disposable ticket is in state "coding"
+    And the disposable ticket is in state "working"
 
   Scenario: Settings open inside the app and offer only the exception fields
-    Given a disposable "bb_feature" ticket in state "spec"
+    Given a disposable "bb_work" ticket in state "plan"
     When I visit the disposable ticket
     And I open "More settings"
     Then the Settings screen renders inside the app shell
@@ -76,7 +76,7 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
 
   @nojs
   Scenario: Cancel ticket works without JavaScript as a page
-    Given a disposable "bb_chore" ticket in state "review"
+    Given a disposable "bb_work" ticket in state "review"
     When I visit the disposable ticket
     And I open "Cancel ticket"
     Then the confirmation is a page of its own

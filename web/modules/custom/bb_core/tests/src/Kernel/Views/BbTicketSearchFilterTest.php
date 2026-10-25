@@ -174,7 +174,7 @@ final class BbTicketSearchFilterTest extends KernelTestBase {
   private function ticketOn(string $side, string $title, string $origin = ''): BbTicketInterface {
     $ticket = $this->createEntity('bb_ticket', [
       'title' => $title,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture($side, 'bb_project')->id(),
       'origin' => $origin,
     ]);
