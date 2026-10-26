@@ -7,7 +7,7 @@ description: Add a recipe skill that brings your engineering method to plan, wor
 
 **Your team works with a different method? Write a recipe, and qualification can choose it for your tickets.**
 
-A recipe owns `plan`, `working` and `review` for one engineering method. It runs inside the frame skill `bb-workflow`, which reads the ticket, provisions the runtime, runs the project's checks and moves the ticket on. The shipped example is `bb-recipe-matt`. Stack-specific knowledge does not belong in a recipe: put it in a runtime guide or in the project's `WORKFLOW.md` hints.
+A recipe brings one engineering method to `plan`, `working` and `review`. It adds slots to the state × phase grid of the frame skill `bb-workflow`, whose state files read the ticket, provision the runtime, run the project's checks and move the ticket on. The shipped example is `bb-recipe-matt`. Stack-specific knowledge does not belong in a recipe: put it in a runtime guide or in the project's `WORKFLOW.md` hints.
 
 **You need:** a repository connected to bakers.build and its skills under `.claude/skills` or `.agents/skills`.
 
@@ -20,11 +20,19 @@ A recipe owns `plan`, `working` and `review` for one engineering method. It runs
    ---
    ```
 
-2. **Write one section per work state.** `## plan`, `## working` and `## review`, each naming the method's original skills. Add a `### <type>` subsection only where a type behaves differently, for example `### bug` under `## plan`. Leave inputs, comments, gates and transitions to the frame: a recipe calls no other bakers.build skill, so it keeps working when those change. Keep the whole file under 500 words.
+2. **Write one section per state, one slot per phase.** `## bb-state-plan`, `## bb-state-working` and `## bb-state-review`, each with a `### bb-phase-<phase>` slot only where your method adds something, usually `### bb-phase-work`, naming the method's original skills. Add a `## <type>:bb-state-<state>` section only where a type behaves differently, for example `## bug:bb-state-plan`; per phase its slot wins over the general one. Leave inputs, comments, gates and transitions to the state files: a recipe links no `bb-workflow` reference and calls no other bakers.build skill, so it keeps working when those change. Keep the whole file under 500 words.
+
+   ```md
+   ## bb-state-plan
+
+   ### bb-phase-work
+
+   Follow `brainstorming`, then `writing-plans`.
+   ```
 
 3. **Install it** in the repository or in any plugin, so the agent can discover it. `WORKFLOW.md` does not list recipes.
 
-4. **Prove it on a ticket.** Create a small ticket of a type your recipe covers, let qualification choose your recipe, or set it with `--recipe_names <method>`, and let it run. The run log shows `bb-recipe-<method>` loaded in each state, and the handoff comments show whether your sections hold.
+4. **Prove it on a ticket.** Create a small ticket of a type your recipe covers, let qualification choose your recipe, or set it with `--recipe_names <method>`, and let it run. The run log shows `bb-recipe-<method>` loaded in each state, and the handoff comments show whether your slots hold.
 
 **Done when:** one ticket has passed through `plan`, `working` and `review` with your recipe loaded, as the run log shows.
 

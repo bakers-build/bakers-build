@@ -2,7 +2,7 @@
   "synthetic": true,
   "profile": "missing-account",
   "id": "missing-account",
-  "skill": "bb-resolve-environment",
+  "skill": "bb-workflow/references/provision.md",
   "references": [
     "bb-workflow/references/results.md"
   ],
@@ -12,10 +12,12 @@
     "project_adapter": "DDEV Drupal via bb-runtime-ddev",
     "environment": "https://billing-preview.example.invalid",
     "revision": "b11ce02",
-    "required_actor": {
-      "role": "auditor",
-      "identity_requirement": "persisted uid with only auditor access"
-    },
+    "test_as": [
+      {
+        "persona": "auditor",
+        "sees": "invoices, but no Approve action"
+      }
+    ],
     "observations": [
       "DDEV environment is reachable.",
       "Configured account lookup returned no auditor account.",

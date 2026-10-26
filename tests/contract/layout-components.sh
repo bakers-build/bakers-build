@@ -467,7 +467,7 @@ yaml_block_keys() {
 # --- The scene model ----------------------------------------------------------------------------
 #
 # Extracted to `lib/scenes.sh` by BB-396, whose check D needs the same per-scene line range this
-# suite needs. Sourced rather than copied, for the reason `lib/writers.sh` states: a definition two
+# suite needs. Sourced rather than copied: a definition two
 # gates share and each keeps its own copy of is a definition that drifts in one of them.
 . "$(dirname "${BASH_SOURCE[0]}")/lib/scenes.sh"
 # --- 0. The enumeration is non-vacuous ----------------------------------------------------------

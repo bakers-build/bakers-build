@@ -2,10 +2,10 @@ import { calls, check, commonChecks, data, succeeded, uuid, validateTools, value
 import { nonempty, requireValue } from '../validation.mjs';
 
 export function validate(f) {
-  requireValue(['bb-qualify-ticket', 'bb-merge-mr'].includes(f.skill), 'Expected qualification or merge skill');
+  requireValue(['bb-workflow/references/qualification.md', 'bb-workflow/references/merge.md'].includes(f.skill), 'Expected the qualification or merge reference');
   validateTools(f, f.skill);
   const s = f.simulation;
-  requireValue(['negative', 'hit', 'error'].includes(s.outcome) && s.checkpoint === (f.skill === 'bb-qualify-ticket' ? 'qualify' : 'merge'), 'Expected prior-art checkpoint/outcome');
+  requireValue(['negative', 'hit', 'error'].includes(s.outcome) && s.checkpoint === (f.skill === 'bb-workflow/references/qualification.md' ? 'qualify' : 'merge'), 'Expected prior-art checkpoint/outcome');
   requireValue(uuid(f.input.ticket_uuid) && nonempty(f.input.base_branch) && nonempty(f.input.created) &&
     Array.isArray(f.input.terms) && f.input.terms.length === 2 && new Set(f.input.terms).size === 2 && f.input.terms.every(nonempty) &&
     Array.isArray(f.input.paths) && f.input.paths.length && f.input.paths.every(nonempty) && nonempty(f.input.probe) &&

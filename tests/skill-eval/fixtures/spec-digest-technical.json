@@ -1,12 +1,11 @@
 {
   "id": "spec-digest-technical",
-  "skill": "bb-run-outtake",
+  "skill": "bb-workflow/references/outtake.md",
   "references": [
     "bb-workflow/references/results.md",
     "bb-workflow/references/boundaries.md",
     "bb-workflow/references/evidence.md",
-    "bb-recipe-matt/SKILL.md",
-    "bb-run-outtake/references/spec-digest.md"
+    "bb-workflow/references/outtake/plan.md"
   ],
   "outtake": true,
   "input": {

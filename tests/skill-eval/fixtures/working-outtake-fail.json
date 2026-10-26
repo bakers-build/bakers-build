@@ -1,0 +1,150 @@
+{
+  "id": "working-outtake-fail",
+  "synthetic": true,
+  "profile": "state-outtake",
+  "skill": "bb-workflow/references/outtake.md",
+  "references": [
+    "bb-workflow/references/outtake/working.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/evidence.md"
+  ],
+  "input": {
+    "ticket": "EVAL-40: Export invoices as CSV",
+    "state": "working",
+    "recipe": "probe",
+    "ticket_type": "feature",
+    "gate": "RED",
+    "task": "Render the outtake for this published coding handoff. Printing and publishing are the caller's.",
+    "checks": [
+      {
+        "id": "export-button",
+        "ac_ids": [
+          "AC-1"
+        ],
+        "purpose": "functional",
+        "mode": "automated",
+        "test_path": "test/invoices.test.ts",
+        "command_or_steps": "npm test -- test/invoices.test.ts",
+        "expected": "Export CSV button renders for the lead",
+        "coverage": "permanent"
+      },
+      {
+        "id": "csv-columns",
+        "ac_ids": [
+          "AC-2"
+        ],
+        "purpose": "functional",
+        "mode": "automated",
+        "test_path": "test/export.test.ts",
+        "command_or_steps": "npm test -- test/export.test.ts",
+        "expected": "Columns number, date, customer, total",
+        "coverage": "permanent"
+      }
+    ],
+    "results": [
+      {
+        "check_id": "export-button",
+        "status": "passed",
+        "revision": "f00dfeed00000000000000000000000000000001",
+        "observed": "4 tests passed",
+        "evidence": "npm test -- test/invoices.test.ts: 4 passed at f00dfee"
+      },
+      {
+        "check_id": "csv-columns",
+        "status": "failed",
+        "revision": "f00dfeed00000000000000000000000000000001",
+        "observed": "expected column \"total\", got \"amount\"",
+        "evidence": "npm test -- test/export.test.ts: 1 failed: expected column \"total\", got \"amount\" at f00dfee"
+      }
+    ],
+    "handoff": {
+      "scope": {
+        "spec": "77777777-7777-4777-8777-000000000011",
+        "plan": "77777777-7777-4777-8777-000000000012",
+        "test": "77777777-7777-4777-8777-000000000013"
+      },
+      "base": "1111111aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "head": "f00dfeed00000000000000000000000000000001",
+      "mr": "https://git.example.invalid/team/app/-/merge_requests/40",
+      "checks": [
+        {
+          "id": "export-button",
+          "ac_ids": [
+            "AC-1"
+          ],
+          "purpose": "functional",
+          "mode": "automated",
+          "test_path": "test/invoices.test.ts",
+          "command_or_steps": "npm test -- test/invoices.test.ts",
+          "expected": "Export CSV button renders for the lead",
+          "coverage": "permanent"
+        },
+        {
+          "id": "csv-columns",
+          "ac_ids": [
+            "AC-2"
+          ],
+          "purpose": "functional",
+          "mode": "automated",
+          "test_path": "test/export.test.ts",
+          "command_or_steps": "npm test -- test/export.test.ts",
+          "expected": "Columns number, date, customer, total",
+          "coverage": "permanent"
+        }
+      ],
+      "results": [
+        {
+          "check_id": "export-button",
+          "status": "passed",
+          "revision": "f00dfeed00000000000000000000000000000001",
+          "observed": "4 tests passed",
+          "evidence": "npm test -- test/invoices.test.ts: 4 passed at f00dfee"
+        },
+        {
+          "check_id": "csv-columns",
+          "status": "failed",
+          "revision": "f00dfeed00000000000000000000000000000001",
+          "observed": "expected column \"total\", got \"amount\"",
+          "evidence": "npm test -- test/export.test.ts: 1 failed: expected column \"total\", got \"amount\" at f00dfee"
+        }
+      ],
+      "test_as": [
+        {
+          "persona": "north-lead",
+          "sees": "the Export CSV button",
+          "login_url": "https://eval-40.example.invalid/user/reset/41/1791072000/lead-token/login"
+        },
+        {
+          "persona": "north-guest",
+          "sees": "denied, no Export CSV button",
+          "login_url": "https://eval-40.example.invalid/user/reset/42/1791072000/guest-token/login"
+        }
+      ],
+      "environment": "https://eval-40.example.invalid",
+      "coverage": "87%"
+    }
+  },
+  "expect": {
+    "criteria": true,
+    "problems": [
+      "AC-2"
+    ],
+    "next_fix": true,
+    "markers": [
+      "Probe-working: 2"
+    ]
+  },
+  "rubric": [
+    {
+      "id": "fail-visible",
+      "criterion": "AC-2 shows FAIL in Success and its expected versus observed column under Problems."
+    },
+    {
+      "id": "fix-next",
+      "criterion": "The next action is the fix; it does not offer to move to review."
+    }
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ]
+}

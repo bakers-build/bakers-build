@@ -1,77 +1,63 @@
 ---
 name: bb-workflow
-description: Use when executing or authoring bakers.build lifecycle steps — the six phases, state routing, recipe resolution, binding and stop rules.
+description: Use when executing or authoring bakers.build lifecycle steps — the seven phases, state routing, recipe slots, binding and stop rules.
 ---
 
 # Running a state
 
-Every state run passes six phases: **read, provision, work, validate, deliver, transition**. At
-each phase, read the same-named sections of the recipe, loaded guides and `WORKFLOW.md`; they refine
-bindingly. To author a recipe, runtime guide or hint, read [authoring](references/authoring.md).
+A state run passes seven phases in order: **read, provision, work, validate, deliver, outtake,
+transition**. Its state file holds one section per phase and is the only description of its flow.
+To author a recipe, runtime guide or hint, read [authoring](references/authoring.md).
 
-## read
+## Slots
 
-Read context through `@bakers-build/bb-read-ticket`, then route by state:
+At each phase, run the state file's section. It always runs and owns gates, publication and
+transitions. Beside it, read the matching **slots**; they supply the method inside it, bindingly:
 
-| State | Owner |
-|---|---|
-| `qualification` | `@bakers-build/bb-qualify-ticket` |
-| `plan`, `working`, `review` | the ticket's recipe |
-| `pre_deployment` / `post_deployment` | `@bakers-build/bb-prepare-deployment` / `@bakers-build/bb-post-deployment` |
-| `verifying` / `summary` | `@bakers-build/bb-verify-on-environment` / `@bakers-build/bb-summarize-verification` |
+- the recipe's `<type>:bb-state-<state>` › `### bb-phase-<phase>`, where `<type>` is the ticket's
+  `ticket_type`; when that slot is absent, its `bb-state-<state>` › `### bb-phase-<phase>`; else none;
+- `WORKFLOW.md` and every loaded runtime guide: `## bb-phase-<phase>`.
 
-`plan` and `working` first run `@bakers-build/bb-ensure-qualification`, continuing only on `qualified`.
-A recipe state invokes `bb-recipe-<name>` from the ticket's `recipe` field; empty means the installed
-recipe declaring itself project default. Execute its section named after the state; `ticket_type`
-selects the type subsection.
+## Routing
+
+1. Read complete context through [read ticket](references/read-ticket.md).
+2. Route by state:
+
+   | State | State file |
+   |---|---|
+   | `qualification` | [qualification](references/qualification.md) |
+   | `plan` | [plan](references/plan.md) |
+   | `working` | [working](references/working.md) |
+   | `review` | [review](references/review.md) |
+
+   Any other state, or a state file that cannot be read: stop and name it.
+3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field; empty — always at
+   qualification — means the installed recipe declaring itself project default. Read its slots for
+   this state.
+4. Apply *Stop rule*, then render [the intake](references/intake.md) once and start the state
+   file's `## read`.
 
 ## Required skills
 
-Recipe sections, matching hint rows and `.prompt` values are **binding**: load every skill they
-require before doing the work it governs. **Load** means invoke the skill and read its **complete**
-`SKILL.md`, then announce what you loaded. Equivalent reasoning, paraphrasing the method, or naming
-a skill afterwards does **not** count. A hint may mark a skill **advisory**; that one may be
-skipped, and you say so in the outtake. A required skill is replaced only when the user explicitly
-asks; the outtake names the replacement and its reason.
+Slots, matching hint rows and `.prompt` values are **binding**: load every skill they require before
+doing the work it governs. **Load** means invoke the skill and read its **complete** `SKILL.md`,
+then announce what you loaded. Equivalent reasoning, paraphrasing the method, or naming a skill
+afterwards does **not** count. A hint may mark a skill **advisory**; that one may be skipped, and
+the outtake says so. A required skill is replaced only when the user explicitly asks; the outtake
+names the replacement and its reason.
 
-**If the recipe, its state section, the ticket's type among the recipe's declared types, or a
-required skill is missing** — it cannot be resolved or read — **stop and report the exact
+## Stop rule
+
+**If the recipe, its section for this state, the ticket's type among the recipe's declared types,
+or a required skill is missing** — it cannot be resolved or read — **stop and report the exact
 identifier that failed**. Stop *before* editing a file, committing, publishing a comment, asking for
 confirmation, or transitioning the ticket. Say plainly that you cannot do the work because it is
 unavailable; do not substitute your own method for it.
 
-## provision
-
-Lazy: before the first action needing the runtime, provision through
-`@bakers-build/bb-resolve-environment` and the adapter the `## provision` hint names. No hint and no
-need → skip silently.
-
-## work
-
-Apply [boundaries](references/boundaries.md). Before building, run the [remote base check](references/prior-art-build.md).
-Each recipe state follows its flow: [plan](references/plan.md), [working](references/coding.md),
-[review](references/review.md).
-
-## validate
-
-Run each matching `## validate` row once per revision; record [results](references/results.md).
-
-## deliver
-
-Follow [delivery](references/delivery.md). Merge only with explicit authorization, through `@bakers-build/bb-merge-mr`.
-
-## transition
-
-Complete authorized work → publish typed evidence and one `summary` → print it
-(`@bakers-build/bb-run-outtake`) → required confirmation → optional measurements → authorized origin
-publication → `@bakers-build/bb-transition-ticket` state write and readback → STOP. Deployment states
-and verification `summary` keep complete evidence in their single summary; `verifying` adds
-per-ticket results and a tested-set handoff.
-
 ## Rules
 
-- Helpers route nothing, except `@bakers-build/bb-ensure-qualification` (recovery) and
-  `@bakers-build/bb-create-ticket` (initial routing).
+- References route nothing, except [ensure qualification](references/ensure-qualification.md)
+  (recovery); `@bakers-build/bb-create-ticket` routes a new ticket once.
 - Before creation and every qualification, run [prior-art search](references/prior-art-search.md);
   a hit needs a human decision.
 - Before writing a ticket, comment or relationship, read [ticket writes](references/ticket-writes.md).

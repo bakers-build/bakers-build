@@ -1,4 +1,4 @@
-# Test the run-outtake presentation
+# Test the coding outtake
 
 Check a coding handoff's exact login URL, review resources and presentation using the shared skill runner.
 
@@ -12,9 +12,9 @@ Check a coding handoff's exact login URL, review resources and presentation usin
      --output "$eval_dir/outtake" --model sonnet --timeout 180
    ```
 
-   The fixture supplies member uid:73, an absent Invite control, a direct invitation route returning 403, passed checks, pending human review and an issued login URL. All identities and URLs are synthetic. The worker reads the current `bb-run-outtake/SKILL.md` and its maintained references. It does not receive the rubric.
+   The fixture supplies member uid:73, an absent Invite control, a direct invitation route returning 403, passed checks, pending human review and an issued login URL. All identities and URLs are synthetic. The worker applies the current `bb-workflow/references/outtake.md`, with the frame as context, plus `outtake/working.md` and the maintained references. It does not receive the rubric.
 
-2. Follow the shared guide to replay the attempt twice and request a separate semantic judgment. The profile checks required headings, absence of a passed-AC list, the unchanged issued login URL exactly once, supplied MR/evidence/paths, account/role/environment, descriptive links and one final action paragraph.
+2. Follow the shared guide to replay the attempt twice and request a separate semantic judgment. The profile checks required headings, one Success line per criterion with PASS/FAIL and revision (`criterion-lines`), the unchanged issued login URL exactly once, supplied MR/evidence/paths, account/role/environment, descriptive links and one final action paragraph.
 
    A reviewing agent also checks meaning: pending human review must not invent a failed AC or a prerequisite for entering review. The fictional feature's human review stays pending regardless of the model verdict.
 
@@ -40,6 +40,6 @@ Check a coding handoff's exact login URL, review resources and presentation usin
      --output "$eval_dir/invalid-result.json"
    ```
 
-**Done when:** two unchanged replays agree, the negative control fails `issued-login-url` with exit 1, and semantic findings are recorded. Other link checks may also fail after removing the URL. Preserve observed renderer defects instead of weakening assertions or modifying the skill to make the evaluation green.
+**Done when:** two unchanged replays agree, the negative control fails `issued-login-url` with exit 1, and semantic findings are recorded. Other link checks may also fail after removing the URL. Preserve observed renderer defects instead of weakening assertions or modifying the reference to make the evaluation green.
 
-The old `run-outtake.mjs` command and saved version 1 attempts remain supported. For other skill cases, use the same operations with another fixture. See [Add a skill test](/advanced/development/add-skill-test) for the profile contract and [HTTP result sharing](/advanced/development/test-skills#share-results-over-http) for tunnel links.
+The old `run-outtake.mjs` command and saved version 1 attempts remain supported. The other states' outtakes (`qualify-outtake`, `review-outtake-findings`, the `outtake-extension-*` cases for the recipe slot) use the `state-outtake` profile with the same operations. See [Add a skill test](/advanced/development/add-skill-test) for the profile contract and [HTTP result sharing](/advanced/development/test-skills#share-results-over-http) for tunnel links.

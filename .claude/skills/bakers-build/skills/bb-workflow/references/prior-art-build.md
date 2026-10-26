@@ -1,7 +1,6 @@
 ## Prior art — re-check the base branch before building
 
-A sibling can deliver the ask between lifecycle checkpoints; each invocation needs a fresh
-remote snapshot.
+A sibling can deliver the ask between checkpoints; each invocation needs a fresh remote snapshot.
 Inputs: ticket UUID/identifier, creation date, ask, resolved `base_branch` and relevant paths.
 At qualification derive paths from the ask and repository; no implementation plan is required.
 Search the remote and never the local branch:
@@ -13,10 +12,8 @@ git grep -nEi '<domain-noun>|<second spelling>' "origin/<base_branch>" -- <relev
 git grep -c '<term you know is there>' "origin/<base_branch>" -- <same paths>   # probe, for an empty grep
 ```
 
-Inspect the fetch result before running further commands. If fetch fails, return `error` and
-stop the operation. Successful local log/grep/probe calls cannot repair a failed fetch: they
-can only describe a stale snapshot, never a verified negative. Retry fetch successfully before
-restarting the check.
+Inspect the fetch result first. A failed fetch returns `error` and stops the operation: later
+local calls only describe a stale snapshot, never a verified negative.
 
 An error is not a negative. `git grep` reports `unable to resolve revision` with exit 128;
 exit **1** means no match. `git log` exits **0** even with no commits. Read each command's
@@ -27,11 +24,10 @@ An empty search needs its probe. Record the checked revision with
 prove delivery; a reverted change is not delivered behavior. Exclude
 this ticket's own ticket/commit from sibling prior art; inspect other candidates normally.
 
-Candidate ticket lookup is part of this check during merge too: read-only tracker access is
-within scope even though the merge helper publishes nothing.
+Candidate ticket lookup is part of this check during merge too.
 
 Resolve a candidate commit to its ticket through the `ref:` trailer the delivery convention
-requires. The trailer carries an identifier, not a UUID, and `@bakers-build/bb-read-ticket` owns that
+requires. The trailer carries an identifier, not a UUID, and [read ticket](read-ticket.md) owns that
 resolution and the read — take the title, state and assignee from it rather than improvising a read
 here:
 
@@ -42,8 +38,8 @@ git log -1 <candidate-sha> --format='%h %s%n%b'
 git log "origin/<base_branch>" --grep='^ref:' -i --format='%h %s%n%b' -20
 ```
 
-Keep `%b`: the ticket's `ref:` trailer is in the body, often on the squash commit below a merge.
-Search bare `ref:`, not one project key. Resolve the candidate to identifier, title, state and assignee.
+Keep `%b`: the `ref:` trailer is in the body. Search bare `ref:`, not one project key. Resolve the
+candidate to identifier, title, state and assignee.
 
 Missing trailer or candidate metadata cannot turn observed delivered behavior into a negative:
 report the available evidence and unresolved identity as a blocking candidate.
@@ -54,11 +50,10 @@ This context reports the outcome and takes **no confirmation of its own**.
 
 ## Check evidence
 
-Outcomes are `negative`, `prior_art_hit`, `error` or `not_run`. `negative`, `prior_art_hit` and `error` each report
-checkpoint, `origin/<base_branch>`, exact searched terms and path scope, command statuses, probe
-result and the full checked revision when resolved before any error. `not_run` reports only the checkpoint
-and why its gate was not reached.
-A negative requires successful searches, candidate inspection and the positive probe when empty.
-Errors block the invoking operation; `not_run` never means absence.
-Include candidate identity, merge/MR and reasoning when applicable. This check publishes nothing.
-A fresh check is a snapshot, not an atomic lock against later remote movement.
+Outcomes are `negative`, `prior_art_hit`, `error` or `not_run`. `negative`, `prior_art_hit` and
+`error` each report checkpoint, `origin/<base_branch>`, exact searched terms and path scope, command
+statuses, probe result and the full checked revision when resolved before any error. `not_run`
+reports only the checkpoint and why its gate was not reached. A negative requires successful
+searches, candidate inspection and the positive probe when empty. Errors block the invoking
+operation; `not_run` never means absence. Include candidate identity, merge/MR and
+reasoning. This check publishes nothing.

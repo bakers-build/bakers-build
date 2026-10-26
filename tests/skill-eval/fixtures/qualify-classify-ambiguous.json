@@ -1,0 +1,58 @@
+{
+  "id": "qualify-classify-ambiguous",
+  "synthetic": true,
+  "profile": "classify",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow/references/classify.md",
+  "references": [
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/ticket-writes.md"
+  ],
+  "recipes": [
+    "bb-recipe-probe",
+    "bb-recipe-pair"
+  ],
+  "input": {
+    "task": "Apply classify to this ticket in qualification: both prior-art checks already came back negative. Choose the recipe and type and write them. A human answers questions in this session; ask when the choice is theirs. Stop after classification; publish nothing and transition nothing.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "installed_skills": "Installed recipes are readable with read_file at skills/<name>/SKILL.md. Installed: bb-recipe-probe, bb-recipe-pair. No other skill file is installed.",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555"
+  },
+  "expect": {
+    "write": false,
+    "question": [
+      "bb-recipe-probe",
+      "bb-recipe-pair"
+    ]
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-40",
+      "title": "Export invoices as CSV",
+      "state": "qualification",
+      "workflow": "bb_feature",
+      "description": {
+        "value": "Operators export the invoice list as CSV. The PM wants to shape the column set together with the agent while building, and has no preference between the installed methods: either the probe or the pair method would do.",
+        "format": "bb_rich"
+      },
+      "created": "2026-01-01",
+      "base_branch": "develop",
+      "changed": "fixture-revision-1"
+    },
+    "files": {
+      "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
+    }
+  },
+  "rubric": [
+    {
+      "id": "asks",
+      "criterion": "Asks the human to choose between bb-recipe-probe and bb-recipe-pair and waits."
+    },
+    {
+      "id": "no-write",
+      "criterion": "Writes no recipe or type before the answer."
+    }
+  ]
+}

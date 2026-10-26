@@ -1,0 +1,152 @@
+{
+  "id": "outtake-extension-unrecorded",
+  "synthetic": true,
+  "profile": "state-outtake",
+  "skill": "bb-workflow/references/outtake.md",
+  "references": [
+    "bb-workflow/references/outtake/working.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/evidence.md"
+  ],
+  "input": {
+    "ticket": "EVAL-40: Export invoices as CSV",
+    "state": "working",
+    "recipe": "probe",
+    "ticket_type": "feature",
+    "gate": "GREEN",
+    "task": "Render the outtake for this published coding handoff. Printing and publishing are the caller's.",
+    "checks": [
+      {
+        "id": "export-button",
+        "ac_ids": [
+          "AC-1"
+        ],
+        "purpose": "functional",
+        "mode": "automated",
+        "test_path": "test/invoices.test.ts",
+        "command_or_steps": "npm test -- test/invoices.test.ts",
+        "expected": "Export CSV button renders for the lead",
+        "coverage": "permanent"
+      },
+      {
+        "id": "csv-columns",
+        "ac_ids": [
+          "AC-2"
+        ],
+        "purpose": "functional",
+        "mode": "automated",
+        "test_path": "test/export.test.ts",
+        "command_or_steps": "npm test -- test/export.test.ts",
+        "expected": "Columns number, date, customer, total",
+        "coverage": "permanent"
+      }
+    ],
+    "results": [
+      {
+        "check_id": "export-button",
+        "status": "passed",
+        "revision": "f00dfeed00000000000000000000000000000001",
+        "observed": "4 tests passed",
+        "evidence": "npm test -- test/invoices.test.ts: 4 passed at f00dfee"
+      },
+      {
+        "check_id": "csv-columns",
+        "status": "passed",
+        "revision": "f00dfeed00000000000000000000000000000001",
+        "observed": "3 tests passed",
+        "evidence": "npm test -- test/export.test.ts: 3 passed at f00dfee"
+      }
+    ],
+    "handoff": {
+      "scope": {
+        "spec": "77777777-7777-4777-8777-000000000011",
+        "plan": "77777777-7777-4777-8777-000000000012",
+        "test": "77777777-7777-4777-8777-000000000013"
+      },
+      "base": "1111111aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "head": "f00dfeed00000000000000000000000000000001",
+      "mr": "https://git.example.invalid/team/app/-/merge_requests/40",
+      "checks": [
+        {
+          "id": "export-button",
+          "ac_ids": [
+            "AC-1"
+          ],
+          "purpose": "functional",
+          "mode": "automated",
+          "test_path": "test/invoices.test.ts",
+          "command_or_steps": "npm test -- test/invoices.test.ts",
+          "expected": "Export CSV button renders for the lead",
+          "coverage": "permanent"
+        },
+        {
+          "id": "csv-columns",
+          "ac_ids": [
+            "AC-2"
+          ],
+          "purpose": "functional",
+          "mode": "automated",
+          "test_path": "test/export.test.ts",
+          "command_or_steps": "npm test -- test/export.test.ts",
+          "expected": "Columns number, date, customer, total",
+          "coverage": "permanent"
+        }
+      ],
+      "results": [
+        {
+          "check_id": "export-button",
+          "status": "passed",
+          "revision": "f00dfeed00000000000000000000000000000001",
+          "observed": "4 tests passed",
+          "evidence": "npm test -- test/invoices.test.ts: 4 passed at f00dfee"
+        },
+        {
+          "check_id": "csv-columns",
+          "status": "passed",
+          "revision": "f00dfeed00000000000000000000000000000001",
+          "observed": "3 tests passed",
+          "evidence": "npm test -- test/export.test.ts: 3 passed at f00dfee"
+        }
+      ],
+      "test_as": [
+        {
+          "persona": "north-lead",
+          "sees": "the Export CSV button",
+          "login_url": "https://eval-40.example.invalid/user/reset/41/1791072000/lead-token/login"
+        },
+        {
+          "persona": "north-guest",
+          "sees": "denied, no Export CSV button",
+          "status": "missing"
+        }
+      ],
+      "environment": "https://eval-40.example.invalid"
+    }
+  },
+  "expect": {
+    "criteria": true,
+    "logins": [
+      "https://eval-40.example.invalid/user/reset/41/1791072000/lead-token/login"
+    ],
+    "missing": [
+      "north-guest"
+    ],
+    "markers": [
+      "Probe-working: 2"
+    ],
+    "not_recorded": "Probe-coverage"
+  },
+  "rubric": [
+    {
+      "id": "not-invented",
+      "criterion": "Probe-coverage is shown as not recorded; no coverage value is invented."
+    },
+    {
+      "id": "missing-persona",
+      "criterion": "north-guest stays listed as missing; no other account replaces it."
+    }
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ]
+}

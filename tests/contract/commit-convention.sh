@@ -16,7 +16,7 @@ set -euo pipefail
 # made on that agent's machine with that machine's credentials — there is no code path to unit-test,
 # and a mocked substitute would assert nothing about the real one. What CAN drift is the prose, and
 # it can drift silently: the rule lives in THREE sources that must agree (`docs/bakers/git-and-delivery.md`,
-# `@bakers-build/bb-workflow`, `@bakers-build/bb-merge-mr`), and the failure it guards against produces no error
+# the `bb-workflow` state flows and its `references/merge.md`), and the failure it guards against produces no error
 # anywhere — `bakers deployment tickets` reports only identifiers it found but could not resolve, so a
 # merged commit carrying no ticket identifier yields no entry at all and the ticket just disappears
 # from the release batch. So the gate is a contract over the three prose sources plus two ties to
@@ -31,14 +31,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # The convention text moved out of WORKFLOW.md (whose Standards section is pointers only) into
 # docs/bakers/git-and-delivery.md; that note is now the stated source this contract binds.
 WF="$ROOT/docs/bakers/git-and-delivery.md"
-MERGE="$ROOT/.claude/skills/bakers-build/skills/bb-merge-mr/SKILL.md"
-IMPL="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/SKILL.md"
+MERGE="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/merge.md"
+IMPL="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/working.md"
 DEPLOY="$ROOT/bakers-cli/addons/deployment/src/deployment.ts"
-# The recipe must leave the merge-mr call to the frame's single call sites, because the trailer
+# The recipe must leave the merge call to the frame's single call sites, because the trailer
 # input added below is **required**: a call site that names only the MR link leaves the skill to
 # guess, and the failure mode this whole ticket exists to prevent is a silent one.
 RECIPE="$ROOT/.claude/skills/bakers-build/skills/bb-recipe-matt/SKILL.md"
-REVIEW="$ROOT/.claude/skills/bakers-build/skills/bb-review-ticket/SKILL.md"
 failures=0
 
 check() {
@@ -92,33 +91,18 @@ no_has() { ! grep -qF -- "$2" "$1"; }
 # revert to `--message` cannot pass by also happening to mention the right flag in prose.
 squash_flag_not_message() { ! printf '%s' "$MERGE_COMMAND" | grep -E -- '(^| )(-m|--message)( |$)' >/dev/null; }
 
-# EVERY `@bakers-build/bb-merge-mr` invocation in a call site must name the ticket's `identifier` FIELD right
-# at the call — before any other `@bakers-build/…` mention, which is what `[^@]*` bounds. The field is what
-# the needle pins, in merge-mr's own words, because "the ticket's bakers.build identifier" — what these call
-# sites used to say — reads as the fixed prefix `bakers.build-` plus a number, the very composition merge-mr
-# forbids. A call site phrased that way hands the skill the ambiguity the trailer rule exists to
-# remove, so the two sources have to state it the same way. Counting both sides is the point: a file
-# with two call sites cannot pass on the strength of one updated call.
-calls_name_identifier() {
-  local flat total named
-  flat="$(flatten "$1")"
-  total="$(printf '%s' "$flat" | grep -oF '@bakers-build/bb-merge-mr' | wc -l | tr -d ' ')"
-  named="$(printf '%s' "$flat" | grep -oE '@bakers-build/bb-merge-mr[^@]*`identifier` field' | wc -l | tr -d ' ')"
-  [ "$total" -gt 0 ] && [ "$total" = "$named" ]
-}
-
 check 'WORKFLOW.md exists' test -f "$WF"
-check 'the merge-mr skill exists' test -f "$MERGE"
-check 'the bb-workflow skill exists' test -f "$IMPL"
+check 'the merge reference exists' test -f "$MERGE"
+check 'the working state file exists' test -f "$IMPL"
 check 'the deployment addon source exists' test -f "$DEPLOY"
 
 WF_FLAT="$(flatten "$WF")"
 MERGE_FLAT="$(flatten "$MERGE")"
 MERGE_COMMAND="$({ awk '/^glab mr merge / { f = 1 } f && /^```/ { exit } f { print }' "$MERGE" | tr '\n' ' ' | tr -s ' '; } 2>/dev/null || true)"
-for reference in coding review delivery; do
-  check "bb-workflow discloses $reference" grep -qF "(references/$reference.md)" "$IMPL"
+for reference in coding-gate delivery; do
+  check "the working state discloses $reference" grep -qF "($reference.md)" "$IMPL"
 done
-IMPL_FLAT="$(for reference in coding review delivery; do flatten "$(dirname "$IMPL")/references/$reference.md"; done)"
+IMPL_FLAT="$(for reference in coding-gate review delivery; do flatten "$(dirname "$IMPL")/$reference.md"; done)"
 WF_PLAIN="$(plain "$WF")"
 IMPL_PLAIN="$(plain "$IMPL")"
 MERGE_PLAIN="$(plain "$MERGE")"
@@ -213,14 +197,14 @@ check 'AC-3 merge-mr says convention, never the word the skill guard forbids' \
 # The coding-side merge-mr call site lives once in the frame's Coding gate; the recipe references
 # the gate instead of calling merge-mr, so assert the gate's own call site.
 check 'AC-3 the recipe does not call merge-mr directly (single-sourced in Coding gate)' \
-  no_has "$RECIPE" '@bakers-build/bb-merge-mr'
+  no_has "$RECIPE" 'merge.md'
 check 'AC-3 the Coding gate merge-mr call names the ticket `identifier` field' \
-  hasre "$IMPL_FLAT" 'runs .@bakers-build/bb-merge-mr. with the ticket.s .identifier. field'
+  hasre "$IMPL_FLAT" 'runs \[merge\]\(merge\.md\) with the ticket.s .identifier. field'
 # BB-444: the review merge-mr call site moved out of review-ticket into the shared
 # bb-workflow › Review flow (review-ticket is the credential-less verdict helper and calls no
 # merge). Assert the flow's call site names the `identifier` field.
 check 'AC-3 the Review flow merge-mr call names the ticket `identifier` field' \
-  hasre "$IMPL_FLAT" 'merge gate .@bakers-build/bb-merge-mr. with the ticket.s .identifier. once'
+  hasre "$IMPL_FLAT" 'run \[merge\]\(merge\.md\) with the ticket.s .identifier. field once'
 
 # --- AC-4 — shared coding context reaches the project convention ------------------------------
 

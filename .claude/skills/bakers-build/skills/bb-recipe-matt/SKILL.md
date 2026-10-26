@@ -5,28 +5,49 @@ description: Recipe for tickets of type feature, bug or chore — the Matt metho
 
 # Matt method
 
-One section per work state names the method's skills; `@bakers-build/bb-workflow` supplies inputs,
-publication, gates and transitions. A type subsection governs tickets of that `ticket_type`. Domain and runtime come from the project's hints and natively
+Each section names the method's skills for one state; `@bakers-build/bb-workflow` supplies inputs,
+publication, gates and transitions. Domain and runtime come from the project's hints and natively
 matching skills, never from here. The skills are the originals from `mattpocock/skills`, as the
 agent environment provides them.
 
-## plan
+## bb-state-qualification
+
+### bb-phase-work
+
+Ask only what the acceptance gate cannot decide; `grilling` builds the shared understanding at
+plan.
+
+## bb-state-plan
+
+### bb-phase-work
 
 Follow `grilling` until shared understanding, then `to-spec`.
 
-### bug
+## bug:bb-state-plan
+
+### bb-phase-work
 
 Follow `diagnosing-bugs` with the existing tests, the reported failure and the ticket.
 
-## working
+## bb-state-working
+
+### bb-phase-work
 
 Follow `implement`; work test-first at the agreed seams with `tdd`.
 
-### bug
+### bb-phase-transition
 
-Start from the confirmed diagnosis: RED on the reproduced condition, then GREEN.
+Review is mandatory for a feature. A bug or chore may reach `done` from `working` through the
+merge gate, only with explicit authorization.
 
-## review
+## bug:bb-state-working
 
-Review with `code-review`. Review is mandatory for a feature; a bug or chore may reach `done` from
-`working` through the Coding gate's merge gate, only with explicit authorization.
+### bb-phase-work
+
+Start from the confirmed diagnosis: RED on the reproduced condition with `tdd`, then GREEN.
+
+## bb-state-review
+
+### bb-phase-work
+
+Review with `code-review`.

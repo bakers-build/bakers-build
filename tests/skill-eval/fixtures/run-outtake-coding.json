@@ -1,10 +1,11 @@
 {
   "id": "run-outtake-coding",
-  "skill": "bb-run-outtake",
+  "skill": "bb-workflow/references/outtake.md",
   "references": [
     "bb-workflow/references/results.md",
     "bb-workflow/references/boundaries.md",
-    "bb-workflow/references/evidence.md"
+    "bb-workflow/references/evidence.md",
+    "bb-workflow/references/outtake/working.md"
   ],
   "outtake": true,
   "input": {

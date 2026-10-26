@@ -3,9 +3,8 @@
   "synthetic": true,
   "profile": "transition-ticket-calls",
   "execution": "simulated-tools",
-  "skill": "bb-transition-ticket",
+  "skill": "bb-workflow/references/transition-ticket.md",
   "references": [
-    "bb-workflow/SKILL.md",
     "bb-workflow/references/evidence.md"
   ],
   "input": {

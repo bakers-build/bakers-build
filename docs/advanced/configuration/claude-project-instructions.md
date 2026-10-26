@@ -1,30 +1,30 @@
 # Claude Project instructions (connector bundle)
 
 Copy the content of the block below into a claude.ai Project's **Project instructions** (or
-upload it as Project knowledge). It replaces the `bakers dropsh` CLI the six bakers.build skills normally run with the four MCP tools the hosted
+upload it as Project knowledge). It replaces the `bakers dropsh` CLI the bakers.build skills normally run with the four MCP tools the hosted
 bakers.build connector exposes, for the one workflow slice the connector supports: take a feature or chore
 request from prior-art search through qualification to `plan`. See
 [Connect Claude.ai to bakers.build](/daily-work/claude-ai) for how to install the connector and
 this bundle.
 
-**Source of truth.** This bundle derives from `.claude/skills/bakers-build/skills/{create-ticket,
-read-ticket, publish-comment, transition-ticket, qualify-ticket, bb-workflow}/SKILL.md` and their
-`bb-workflow` and `bb-ensure-qualification` references. When those skills change, re-derive this
-file; do not hand-edit it out of sync with them.
+**Source of truth.** This bundle derives from `.claude/skills/bakers-build/skills/{bb-create-ticket,
+bb-workflow}/SKILL.md` and the `bb-workflow` references `read-ticket.md`, `publish-comment.md`,
+`transition-ticket.md`, `qualification.md` and `ensure-qualification.md`. When those files change,
+re-derive this file; do not hand-edit it out of sync with them.
 
 **What this bundle deliberately drops** from the source skills, and why:
 
-- Agent routing (`bb-qualify-ticket` › *Propose an agent*) — needs `bakers agents`, a local CLI command;
+- Agent routing (`bb-workflow` › `references/agent-choice.md`) — needs `bakers agents`, a local CLI command;
   no MCP tool exposes it. The connector never proposes or writes an `agent:*` label.
 - The `working`-shortcut path in `bb-create-ticket` ("a fully specified intake goes straight to
   `working`") — out of scope; this bundle never transitions past `plan`.
 - Bug tickets and diagnosis — out of scope; this bundle handles tickets of type `feature` or
   `chore` only.
-- Terminal retrospective (`done`/`cancelled` job rating + `bb_metric` write) — `bb-record-measurement`
+- Terminal retrospective (`done`/`cancelled` job rating + `bb_metric` write) — `bb-workflow` › `references/measurement.md`
   writes a `bb_metric` entity the connector's allowlist does not expose. A duplicate-ticket
   cancellation still needs a reason comment and a state write; skip the rating/metric step and say
   so.
-- `bb-read-ticket`'s `--format md` renderer and its troubleshooting reference — connector-side JSON:API
+- `references/read-ticket.md`'s `--format md` renderer and its troubleshooting reference — connector-side JSON:API
   responses are already structured JSON; there is no separate Markdown renderer to fall back from.
 - `baseline` creation (`bb-create-ticket/references/baseline.md`) — niche, scope-free ticket variant;
   can be handled ad hoc by following the general create flow if ever asked for.

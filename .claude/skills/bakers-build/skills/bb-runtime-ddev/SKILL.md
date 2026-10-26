@@ -5,11 +5,12 @@ description: Runtime guide for DDEV projects — bringing the environment up, lo
 
 # Working in DDEV
 
-This is the DDEV adapter for `@bakers-build/bb-resolve-environment`. The caller supplies the selected
-worktree, the setup commands/provider the project's `## provision` hint names, and the ticket's `test_as` personas.
-Return an unresolved prerequisite when setup is missing.
+This is the DDEV adapter for the frame's [provision](../bb-workflow/references/provision.md). The
+caller supplies the selected worktree, the setup commands/provider the project's
+`## bb-phase-provision` hint names, and the ticket's `test_as` personas. Return an unresolved
+prerequisite when setup is missing.
 
-## provision
+## bb-phase-provision
 
 First inspect `ddev describe` from the worktree root and check the selected site's readiness.
 A live stack serving the required site/fixtures is a successful no-op; never blindly re-init
@@ -25,24 +26,26 @@ the DB/site up and never runs `init-worktree` or invents a replacement setup hoo
 
 Return the live base URL and readiness, or explicit failures and their reasons.
 
-## work
+## bb-phase-work
 
 Everything runs in the container: `ddev exec …`. Lint commands come from the keytec-ddev-addon
 (`ddev phpcs`, `ddev phpmd`, `ddev phpstan`).
 
-## validate
+## bb-phase-validate
 
 Before running or writing ANY test in DDEV, read [testing](references/testing.md) — it prevents
 the silent sqlite/MariaDB and empty-discovery traps.
 
-## transition
+## bb-phase-outtake
 
-Every manual-review step names its persona from `test_as`. Read [login links](references/logins.md),
-issue one link per persona in the worktree, and hand each to `@bakers-build/bb-run-outtake` ›
-*Manual review* with the persona, its role and the environment.
+Before the outtake renders, every manual-review step names its persona from `test_as`. Read
+[login links](references/logins.md), issue one link per persona in the worktree, and add each to
+the handoff with the persona, its role and the environment; a persona that does not exist is
+recorded as **missing**.
 
 ## Boundaries
 
 Before sharing URLs, apply [preview links](../bb-workflow/references/preview-links.md). Publish no ticket
-comments, choose no workflow state, and leave handoff rendering to `@bakers-build/bb-run-outtake` under
-the [shared records contract](../bb-workflow/references/results.md).
+comments, choose no workflow state, and leave handoff rendering to the
+[outtake](../bb-workflow/references/outtake.md) under the
+[shared records contract](../bb-workflow/references/results.md).

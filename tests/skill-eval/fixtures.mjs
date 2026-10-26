@@ -1,6 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { requireValue, slug, validateEnvelope } from './validation.mjs';
+import { recipeName, reference, requireValue, slug, validateEnvelope } from './validation.mjs';
 
 const directory = new URL('./fixtures/', import.meta.url);
 const json = async path => JSON.parse(await readFile(path, 'utf8'));
@@ -21,8 +21,31 @@ export async function loadFixture(idOrPath) {
       requireValue(fixture, `Unknown fixture: ${idOrPath}`);
     }
   } else fixture = await json(resolve(idOrPath));
+  await installRecipes(fixture);
+  await installReferences(fixture);
   await loadProfile(fixture);
   return fixture;
+}
+
+/** Tool fixtures read a recipe as a virtual file (a trace event); text fixtures receive it as input. */
+async function installRecipes(fixture) {
+  if (fixture.recipes === undefined) return;
+  requireValue(Array.isArray(fixture.recipes) && fixture.recipes.every(recipeName), 'Expected recipes as bb-recipe-<name> list');
+  for (const name of fixture.recipes) {
+    const content = await readFile(new URL(`./recipes/${name}.md`, import.meta.url), 'utf8');
+    if (fixture.execution === 'simulated-tools') (fixture.simulation.files ??= {})[`skills/${name}/SKILL.md`] = content;
+    else (fixture.input.installed_recipes ??= {})[name] = content;
+  }
+}
+
+/** Tool fixtures may serve frame references as virtual files, so the trace counts each read. */
+async function installReferences(fixture) {
+  if (fixture.virtual_references === undefined) return;
+  requireValue(fixture.execution === 'simulated-tools' && Array.isArray(fixture.virtual_references) &&
+    fixture.virtual_references.every(reference), 'Expected virtual_references as frame reference paths of a tool fixture');
+  for (const path of fixture.virtual_references) {
+    fixture.simulation.files[`skills/${path}`] = await readFile(new URL(`../../.claude/skills/bakers-build/skills/${path}`, import.meta.url), 'utf8');
+  }
 }
 
 export async function loadProfile(fixture) {

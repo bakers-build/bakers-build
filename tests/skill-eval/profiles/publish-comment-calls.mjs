@@ -1,7 +1,7 @@
 import { calls, check, commentMatches, commonChecks, data, discoveryBefore, firstEvidence, readRecovery, succeeded, uncertain, uuid, validateTools, value, writes } from '../call-utils.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 export function validate(f) {
-  validateTools(f, 'bb-publish-comment');
+  validateTools(f, 'bb-workflow/references/publish-comment.md');
   requireValue(uuid(f.input.ticket_uuid) && nonempty(f.input.comment_type) && nonempty(f.simulation.files?.[f.input.body_file]), 'Expected caller UUID, comment type and virtual Markdown file');
 }
 function analyze(f, context) {

@@ -19,7 +19,9 @@ tool fixtures can take multiple model turns.
 replay makes none and needs no model authentication. Default model: `sonnet`. All fixtures are
 synthetic; no application URL is contacted, account provisioned or live ticket mutated.
 
-`fixtures/*.json` supplies facts and a semantic rubric. `profiles/*.mjs` validates each case and
+`fixtures/*.json` supplies facts and a semantic rubric. A fixture's `skill` is a skill or one
+`bb-workflow` reference (applied with the frame as context); `recipes` installs test recipes from
+`recipes/`, which never ship. `profiles/*.mjs` validates each case and
 checks decidable output properties. Adding a case requires no shared runner edit. Missing-account
 retains the required auditor and distinguishes unavailable access from an administrator substitute;
 run-outtake-coding checks the issued URL and coding presentation. Semantic meaning is checked by a

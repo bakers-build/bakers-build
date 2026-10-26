@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 // BB-267 — the commit-message convention lives in three prose sources that must agree:
-// docs/bakers/git-and-delivery.md, @bakers-build/bb-workflow and @bakers-build/bb-merge-mr. The assertions are a file contract
+// docs/bakers/git-and-delivery.md and the bb-workflow references. The assertions are a file contract
 // (tests/contract/commit-convention.sh, the BB-246 shape); that suite is run by
 // nothing on its own, so this test runs it — which is what makes `pnpm run test`, hence CI,
 // fail when the convention drifts out of any of the three.

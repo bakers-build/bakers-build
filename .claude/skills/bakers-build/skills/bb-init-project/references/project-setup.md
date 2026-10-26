@@ -10,7 +10,8 @@ Apply only for `project` or `all` initialization, before writing configuration t
    or command. Omitting both writes no `hooks` key. Unattended: write no hooks and report this.
 3. Preserve existing `WORKFLOW.md` and additions; create an absent file from
    [WORKFLOW.template.md](WORKFLOW.template.md). Keep its entry line verbatim.
-4. Fill the `## provision`, `## work`, `## validate` and `## deliver` hints from repository
+4. Fill the `## bb-phase-provision`, `## bb-phase-work`, `## bb-phase-validate`, `## bb-phase-deliver`
+   and `## bb-phase-outtake` hints from repository
    requirements; delete a section that stays empty. Verify named skills and commands through the
    agent environment's installation/discovery facilities; report missing skills by name. Report
    the installed `bb-recipe-*` skills and which declares itself project default.

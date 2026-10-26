@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { sha256 } from '../../../../tests/skill-eval/artifacts.mjs';
+import { sourcePaths } from '../../../../tests/skill-eval/validation.mjs';
 
 export function savedAttempt(
   selected: { skill: string; references: string[] },
@@ -7,22 +8,20 @@ export function savedAttempt(
   toolTrace?: Array<{ tool: string; arguments: unknown; result: unknown }>,
 ) {
   const fixtureSource = JSON.stringify(selected);
-  const sources = [`${selected.skill}/SKILL.md`, ...selected.references].map(
-    (path) => {
-      const content = readFileSync(
-        new URL(
-          `../../../../.claude/skills/bakers-build/skills/${path}`,
-          import.meta.url,
-        ),
-        'utf8',
-      );
-      return {
-        path: `.claude/skills/bakers-build/skills/${path}`,
-        content,
-        sha256: sha256(content),
-      };
-    },
-  );
+  const sources = sourcePaths(selected).map((path) => {
+    const content = readFileSync(
+      new URL(
+        `../../../../.claude/skills/bakers-build/skills/${path}`,
+        import.meta.url,
+      ),
+      'utf8',
+    );
+    return {
+      path: `.claude/skills/bakers-build/skills/${path}`,
+      content,
+      sha256: sha256(content),
+    };
+  });
   return {
     version: 1,
     output,

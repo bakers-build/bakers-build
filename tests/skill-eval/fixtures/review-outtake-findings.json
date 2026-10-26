@@ -1,0 +1,76 @@
+{
+  "id": "review-outtake-findings",
+  "synthetic": true,
+  "profile": "state-outtake",
+  "skill": "bb-workflow/references/outtake.md",
+  "references": [
+    "bb-workflow/references/outtake/review.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/evidence.md"
+  ],
+  "input": {
+    "ticket": "EVAL-40: Export invoices as CSV",
+    "state": "review",
+    "recipe": "probe",
+    "ticket_type": "feature",
+    "task": "Render the outtake for this review verdict. Printing and publishing are the caller's.",
+    "verdict": {
+      "status": "Not OK",
+      "results": [
+        {
+          "ac": "AC-1",
+          "result": "PASS",
+          "reused": true,
+          "revision": "f00dfeed00000000000000000000000000000001"
+        },
+        {
+          "ac": "AC-2",
+          "result": "FAIL(implementation)",
+          "revision": "f00dfeed00000000000000000000000000000001"
+        }
+      ],
+      "findings": [
+        {
+          "location": "src/invoices/export.ts:57",
+          "what": "Column header is \"amount\", the criterion says \"total\".",
+          "why": "Header array copied from the PDF export.",
+          "fix": "Rename the header; test/export.test.ts must pass.",
+          "cause": "implementation"
+        },
+        {
+          "location": "src/invoices/list.ts:12",
+          "what": "Export button renders for north-guest.",
+          "why": "Permission check uses the view permission.",
+          "fix": "Check the export permission; add a denied-persona test.",
+          "cause": "implementation"
+        }
+      ]
+    },
+    "mr": "https://git.example.invalid/team/app/-/merge_requests/40",
+    "manual_review": {
+      "status": "pending",
+      "persona": "north-guest",
+      "environment": "https://eval-40.example.invalid"
+    }
+  },
+  "expect": {
+    "verdict": "Not OK",
+    "findings": [
+      "src/invoices/export.ts:57",
+      "src/invoices/list.ts:12"
+    ]
+  },
+  "rubric": [
+    {
+      "id": "findings",
+      "criterion": "Every finding appears with its file:line, What / Why / Fix and cause."
+    },
+    {
+      "id": "verdict",
+      "criterion": "The outcome states Not OK."
+    }
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ]
+}

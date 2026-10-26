@@ -7,13 +7,15 @@
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-read-ticket/SKILL.md",
-    "bb-publish-comment/SKILL.md",
-    "bb-transition-ticket/SKILL.md",
-    "bb-qualify-ticket/SKILL.md",
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/transition-ticket.md",
+    "bb-workflow/references/qualification.md",
     "bb-workflow/references/boundaries.md",
     "bb-workflow/references/results.md",
-    "bb-run-outtake/SKILL.md"
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/classify.md",
+    "bb-workflow/references/agent-choice.md"
   ],
   "input": {
     "task": "Create the new confirmed feature intake using actual fixture tools, perform the required prior-art search, publish qualification and summary, and route it once. No confirmed design, implementation or test plan exists. Stop after initial routing.",

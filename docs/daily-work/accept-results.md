@@ -9,7 +9,7 @@
 2. **Check it yourself.** Try the walkthrough where the summary offers one. Or ask your agent:
 
    ```text
-   Use bb-read-ticket for <identifier> and walk me through the review, criterion by criterion.
+   Read <identifier> as bb-workflow's references/read-ticket.md describes and walk me through the review, criterion by criterion.
    ```
 
    A criterion counts when you can repeat its evidence.
