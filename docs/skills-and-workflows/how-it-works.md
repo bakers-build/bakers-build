@@ -6,7 +6,7 @@
 
 1. **A conductor picks up the ticket** when the ticket names it, its blockers are closed and a slot is free.
 2. **It prepares a workspace** on the ticket's branch and starts an agent there.
-3. **The agent reads the ticket** and every comment, then loads the one skill that owns this state.
+3. **The agent reads the ticket** and every comment, then follows `bb-workflow`, which names the one skill that owns this state.
 4. **The skill does the work** and asks you whenever a decision is yours.
 5. **It leaves a handoff and a `summary`**, then moves the ticket to the next state. That ends the run; the next state starts a new one.
 
@@ -14,9 +14,14 @@ The ticket's state is the progress. [Follow a ticket](/daily-work/follow-a-ticke
 
 ## What your project decides
 
-`WORKFLOW.md` loads skills and gives them your rules: method, extra skills, checks, setup and standards. Change your way of working with a text edit; no migration needed.
+Every run passes the same six phases: read, provision, work, validate, deliver, transition. Four kinds of guidance plug into them:
 
-Every step-owning skill names the work type, workflow and step it owns. For each combination your project can produce, exactly one loaded skill must match. The work type comes from the ticket's `work:*` label ([Labels and work types](/skills-and-workflows/labels-and-work-types)). A ticket with several work types gets one owner per type; they run in load order and the last one moves the ticket.
+- **The frame**, `bb-workflow`, routes the state to its owner and holds the rules every run keeps.
+- **The recipe** owns `plan`, `working` and `review`. It is the engineering method, chosen per ticket at qualification ([Ticket type, recipe and labels](/skills-and-workflows/labels-and-work-types)).
+- **A runtime guide**, such as `bb-runtime-ddev`, says how to provision, run, lint and test in one technology. It is provisioned only when the work needs it.
+- **Your hints** in `WORKFLOW.md` add your runtime, extra skills, checks and merge rules, each under the phase it refines.
+
+Change your way of working with a text edit; no migration needed.
 
 ## What bakers.build decides
 
@@ -27,9 +32,9 @@ The states and transitions themselves belong to the bakers.build server. `WORKFL
 Ask your agent:
 
 ```text
-Check that this project's WORKFLOW.md is valid and name the owner of every step.
+Check that this project's WORKFLOW.md starts with the bb-workflow entry line, that every skill it names is installed, and name the installed recipes.
 ```
 
-It reports `OK` with the owners, or the first thing to fix: a step without an owner, two owners for one step, or an unknown setting. The command behind it: [`bakers validate`](/advanced/cli/#other-setup-commands).
+A missing recipe, recipe section or required skill stops a run before it changes anything, naming what is missing.
 
-The rules for writing your own step skill are in the [skill contract](/advanced/development/skill-contract).
+The rules for writing your own recipe or runtime guide are in the [skill contract](/advanced/development/skill-contract).

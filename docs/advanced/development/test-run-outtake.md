@@ -12,7 +12,7 @@ Check a coding handoff's exact login URL, review resources and presentation usin
      --output "$eval_dir/outtake" --model sonnet --timeout 180
    ```
 
-   The fixture supplies member uid:73, an absent Invite control, a direct invitation route returning 403, passed checks, pending human review and an issued login URL. All identities and URLs are synthetic. The worker reads the current `run-outtake/SKILL.md` and its maintained references. It does not receive the rubric.
+   The fixture supplies member uid:73, an absent Invite control, a direct invitation route returning 403, passed checks, pending human review and an issued login URL. All identities and URLs are synthetic. The worker reads the current `bb-run-outtake/SKILL.md` and its maintained references. It does not receive the rubric.
 
 2. Follow the shared guide to replay the attempt twice and request a separate semantic judgment. The profile checks required headings, absence of a passed-AC list, the unchanged issued login URL exactly once, supplied MR/evidence/paths, account/role/environment, descriptive links and one final action paragraph.
 

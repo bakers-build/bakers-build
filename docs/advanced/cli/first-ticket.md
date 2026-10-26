@@ -20,7 +20,7 @@ Open a bakers.build project checkout, create a small ticket, let a conductor wor
 
    It must resolve the project in the intended workspace. If two workspaces hold a project of that name, the committed `bakers.workspace` in `.bakers/conductor.config.js` decides.
 
-4. Create a small ticket with clear acceptance criteria. Ask your AI to use the `create-ticket` skill, or press `n` in the terminal cockpit:
+4. Create a small ticket with clear acceptance criteria. Ask your AI to use the `bb-create-ticket` skill, or press `n` in the terminal cockpit:
 
    ```sh
    bakers ui
@@ -55,7 +55,7 @@ Open a bakers.build project checkout, create a small ticket, let a conductor wor
 **Done when:** a run for your ticket appears, finishes, and the ticket carries a `summary` comment.
 
 ::: tip Ask your AI
-"Use create-ticket to write a small documentation ticket for this project, then show me how to follow it."
+"Use bb-create-ticket to write a small documentation ticket for this project, then show me how to follow it."
 :::
 
 ## If nothing starts

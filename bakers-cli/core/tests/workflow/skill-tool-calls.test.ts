@@ -7,6 +7,7 @@ import {
   readAttempt,
   sha256,
 } from '../../../../tests/skill-eval/artifacts.mjs';
+import { runSimulator } from '../../../../tests/skill-eval/cli-contract.mjs';
 import {
   loadFixture,
   loadProfile,
@@ -446,6 +447,114 @@ describe('skill call contracts', () => {
       await rm(dir, { recursive: true, force: true });
     }
   }, 60000);
+});
+
+describe('recipe and type on ticket creation', () => {
+  // The calls a created-and-qualified ticket makes, run through the simulator so the graded
+  // results (resolved terms, included names, routed state) are the simulator's, not hand-written.
+  async function creationTrace(createFlags: string[], destination = 'plan') {
+    const { fixture, profile } = await fixtureData('create-ticket-calls');
+    const target = 'bb_ticket/bb_ticket/33333333-3333-4333-8333-333333333333';
+    const comment = (type: string, body: string) => [
+      'create',
+      'bb_comment',
+      '--bundle',
+      'bb_comment',
+      `--body.value=${body}`,
+      '--body.format',
+      'bb_rich',
+      '--bb_comment_type',
+      type,
+      '--ticket_id',
+      '33333333-3333-4333-8333-333333333333',
+    ];
+    const qualification = [
+      `- ${fixture.input.acceptance_criterion}`,
+      ...[
+        'test_as',
+        'out_of_scope',
+        'handoff_version',
+        'provenance',
+        'reproduction',
+        'scenario_required',
+      ].map((field) => `- ${field}: recorded`),
+    ].join('\n');
+    const argvs = [
+      ['create', 'bb_ticket', '--bundle', 'bb_ticket', '--fields'],
+      [
+        'create',
+        'bb_ticket',
+        '--bundle',
+        'bb_ticket',
+        '--title',
+        fixture.input.title,
+        '--workflow',
+        'bb_work',
+        `--description.value=${fixture.simulation.files[fixture.input.description_file]}`,
+        '--description.format',
+        'bb_rich',
+        '--project_id',
+        fixture.input.project_uuid,
+        ...createFlags,
+      ],
+      ['read', target, '--include', 'comments,labels,ticket_type,recipe'],
+      comment('qualification', qualification),
+      comment('summary', 'Created and qualified.'),
+      ['update', target, '--fields'],
+      ['update', target, '--state', destination],
+      ['read', target],
+    ].map((argv) => ['bakers', 'dropsh', ...argv]);
+    const results = await runSimulator(
+      fixture.simulation,
+      argvs.map((argv) => ({ name: 'bakers', arguments: { argv } })),
+    );
+    const trace = argvs.map((argv, i) => ({
+      tool: 'bakers',
+      arguments: { argv },
+      result: results[i],
+    }));
+    const grade = (rows: unknown[]) =>
+      failing(profile.checkOutput(fixture, 'Created', { tool_trace: rows }));
+    return { grade, trace };
+  }
+  const named = [
+    'ticket-create',
+    'no-work-or-method-labels',
+    'ticket-readback',
+    'single-initial-route',
+  ];
+
+  it('writes recipe and type by name, reads them back and routes to plan', async () => {
+    const { grade, trace } = await creationTrace([
+      '--recipe_names',
+      'matt',
+      '--type_names',
+      'feature',
+    ]);
+    expect(grade(trace).filter((id) => named.includes(id))).toEqual([]);
+  });
+
+  it('rejects work:* / method:* labels in place of the recipe and type', async () => {
+    const { grade, trace } = await creationTrace([
+      '--label_names',
+      'work:docs,method:matt',
+    ]);
+    expect(grade(trace)).toEqual(
+      expect.arrayContaining([
+        'ticket-create',
+        'no-work-or-method-labels',
+        'ticket-readback',
+      ]),
+    );
+  });
+
+  it('rejects routing to a retired state', async () => {
+    const { grade, trace } = await creationTrace(
+      ['--recipe_names', 'matt', '--type_names', 'feature'],
+      'spec',
+    );
+    expect(grade(trace)).toContain('single-initial-route');
+  });
 });
 
 describe('remote base call evidence', () => {

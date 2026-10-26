@@ -55,7 +55,7 @@ export const SIDEBAR = {
       ['How it works', '/skills-and-workflows/how-it-works'],
       ['Configure your workflow', '/skills-and-workflows/write-workflow-md'],
       ['Workflows and states', '/skills-and-workflows/workflows-and-states'],
-      ['Labels and work types', '/skills-and-workflows/labels-and-work-types'],
+      ['Ticket type, recipe and labels', '/skills-and-workflows/labels-and-work-types'],
     ]),
   ],
   '/addons/': [
@@ -163,7 +163,7 @@ export const SIDEBAR = {
       ['Overview', '/advanced/development/'],
       ['Build from source', '/advanced/development/build-from-source'],
       ['Skill contract', '/advanced/development/skill-contract'],
-      ['Write a step skill', '/advanced/development/write-a-step-skill'],
+      ['Write a recipe', '/advanced/development/write-a-step-skill'],
       ['Test a skill', '/advanced/development/test-skills'],
       ['Test skill tool calls', '/advanced/development/test-skill-tools'],
       ['Add a skill test', '/advanced/development/add-skill-test'],

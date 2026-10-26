@@ -13,15 +13,15 @@ A person creates it with the target environment set.
 
 | State | Owner | What happens | Next |
 |---|---|---|---|
-| `pre_deployment` | `prepare-deployment` | needs a green pipeline, freezes or promotes the release branch, merges onto the environment, records the delivered tickets | `post_deployment` |
-| `post_deployment` | `post-deployment` | waits for a successful deploy and a passing health check, stamps the environment on the delivered tickets; otherwise stays | `done` |
+| `pre_deployment` | `bb-prepare-deployment` | needs a green pipeline, freezes or promotes the release branch, merges onto the environment, records the delivered tickets | `post_deployment` |
+| `post_deployment` | `bb-post-deployment` | waits for a successful deploy and a passing health check, stamps the environment on the delivered tickets; otherwise stays | `done` |
 
 ## bb_verification
 
 | State | Owner | What happens | Next |
 |---|---|---|---|
-| `verifying` | `verify-on-environment` | re-verifies the subject and its linked tickets on the environment; files a ticket of type `bug` per failed check | `summary` |
-| `summary` | `summarize-verification` | publishes the pass or fail per ticket; you confirm closing | `done` |
+| `verifying` | `bb-verify-on-environment` | re-verifies the subject and its linked tickets on the environment; files a ticket of type `bug` per failed check | `summary` |
+| `summary` | `bb-summarize-verification` | publishes the pass or fail per ticket; you confirm closing | `done` |
 
 ## Blockers, parents and branches
 

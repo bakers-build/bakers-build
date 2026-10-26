@@ -7,7 +7,7 @@
 1. **Read the latest summary.** Open the ticket in your browser or ask your agent:
 
    ```text
-   Use read-ticket for <identifier> and tell me where it stands.
+   Use bb-read-ticket for <identifier> and tell me where it stands.
    ```
 
    Every step ends with a `summary` comment: what happened and what comes next.

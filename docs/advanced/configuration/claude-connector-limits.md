@@ -41,7 +41,7 @@ it's a permission problem.
   `update` tool bakers.build's JSON:API would accept from any `bb:session` client, so it would technically
   let a state/conductor write through if asked to make one. Nothing in this setup should be relied
   on to block that beyond Claude following the instructions and your own account's permissions.
-- No label/term creation — a missing `work:*`/`method:*` label or ticket type blocks qualification
+- No label/term creation — a missing recipe or ticket type term blocks qualification
   until a workspace contributor or lead adds it in the workspace settings, or someone with CLI access
   creates it.
 - `search` returns at most 100 results per call with no offset/pagination; narrow with `filters`

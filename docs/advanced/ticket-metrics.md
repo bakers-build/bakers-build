@@ -24,19 +24,19 @@ Leave `unit` and `recorded` out when they are empty. Never send `recorded` as an
 
 Names are a convention, not a schema, so agreeing on them keeps metrics comparable. The convention is a namespace: a measurement definition has an `id` and a fixed, ordered set of numeric values, and each value becomes one row named `<id>.<value>`. The namespace keeps `spec_quality.score` and `review_quality.score` apart and makes a re-measure replace its own rows deterministically.
 
-The definitions live beside the `review-ticket` skill in `.claude/skills/bakers-build/skills/review-ticket/measurements/definitions/`, and `schema.json` there validates a definition. Three ship:
+The definitions live beside the `bb-review-ticket` skill in `.claude/skills/bakers-build/skills/bb-review-ticket/measurements/definitions/`, and `schema.json` there validates a definition. Three ship:
 
 | Definition | Rows | Written |
 |---|---|---|
 | `job_rating` | `job_rating.score`, the human's integer rating of the delivered work, 1 to 5, higher is better | When a human closes a feature, bug or chore ticket as done and gives a rating, just before the terminal state write. No answer means no row, never zero. The ticket also gets the `retro` label. |
-| `review_quality` | `score` (0 to 5), `defects_found` (count), `rework_bounces` (count), `coverage_delta` (ratio) | By the credentialed parent of a review, before the verdict transition; `review-ticket` itself only returns values. |
+| `review_quality` | `score` (0 to 5), `defects_found` (count), `rework_bounces` (count), `coverage_delta` (ratio) | By the credentialed parent of a review, before the verdict transition; `bb-review-ticket` itself only returns values. |
 | `spec_quality` | `score` (0 to 5), `ac_coverage` (ratio), `risk_clarity` (0 to 5), `open_questions` (count) | Defined as a worked example; nothing in the shipped workflow writes it yet. |
 
 A definition may name a `label_term`, an existing label added to the ticket as visible provenance; one without it adds no label. To add a definition, drop a JSON file that matches `schema.json` with exactly one value named `score`, unique value names, and an existing `label_term` if you name one. No code changes are needed.
 
 ## Write a measurement
 
-The `record-measurement` skill owns the write, and workflows call it instead of patching the field themselves. It checks that the rows match the chosen definition (every declared value present, each numeric, none undeclared) and never writes a violation. It then reads the ticket, drops every current row whose name starts with `<id>.`, appends the fresh set, keeps foreign rows and existing labels, and sends one update. Record the measurement before any state write: a transition retires the run, and a retired run loses its write scope.
+The `bb-record-measurement` skill owns the write, and workflows call it instead of patching the field themselves. It checks that the rows match the chosen definition (every declared value present, each numeric, none undeclared) and never writes a violation. It then reads the ticket, drops every current row whose name starts with `<id>.`, appends the fresh set, keeps foreign rows and existing labels, and sends one update. Record the measurement before any state write: a transition retires the run, and a retired run loses its write scope.
 
 The same shape from a shell looks like this. The field is a multi-value array, so a write replaces the whole array and you must send the rows you want to keep:
 

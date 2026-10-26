@@ -84,7 +84,7 @@ node_modules/
 
 # per-developer conductor overrides (Kürzel consumer + secret) — never commit
 *.config.local.js
-# The operator's own audience declaration (`@bakers-build/method-context` › Audience and register).
+# The operator's own audience declaration (`@bakers-build/bb-workflow` › boundaries › Audience and register).
 # Written by the person the handoffs address, never committed: a preference about how someone
 # wants to be spoken to is theirs, not the repository's. `*.config.local.js` above does not
 # match a `.md`, so this rule is stated rather than inherited.

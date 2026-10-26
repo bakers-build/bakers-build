@@ -65,7 +65,7 @@ if [ -n "${PARENT_PATH}" ] && [ -f "${PARENT_BB_LOCAL}" ]; then
     echo "Copied conductor client config from parent (.bakers/conductor.config.local.js)"
   fi
 
-  # The operator's declared audience (`@bakers-build/method-context` › Audience and register) is
+  # The operator's declared audience (`@bakers-build/bb-workflow` › boundaries › Audience and register) is
   # uncommitted by design, so a fresh worktree would start without it and every dispatched
   # run there would fall back to the neutral default. Same copy-when-missing rule as above:
   # a worktree that already carries one has been set up deliberately and is left alone.

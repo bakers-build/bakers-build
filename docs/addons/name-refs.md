@@ -14,7 +14,7 @@ No options.
 
 ## Check it works
 
-A write with `--type_names bug`, `--recipe_names <recipe>`, `--label_names work:code` or `--environment_names staging` sets the matching relationship.
+A write with `--type_names bug`, `--recipe_names <recipe>`, `--label_names agent:claude` or `--environment_names staging` sets the matching relationship.
 
 ## Good to know
 

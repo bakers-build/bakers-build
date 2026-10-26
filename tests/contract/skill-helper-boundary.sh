@@ -4,8 +4,8 @@
 #
 #   bash tests/contract/skill-helper-boundary.sh
 #
-# `@bakers-build/workflow-step` states the rule: a capability skill declares no `when`,
-# produces one outcome, and routes nothing — with `@bakers-build/ensure-qualification`
+# `@bakers-build/bb-workflow` states the rule: a capability skill declares no `when`,
+# produces one outcome, and routes nothing — with `@bakers-build/bb-ensure-qualification`
 # as the one documented exception (its recovery route back to `qualification`).
 #
 # WHY THIS FILE EXISTS, and what it replaces. The suite used to assert this rule
@@ -42,30 +42,24 @@ check() {
   if "$@"; then printf 'PASS %s\n' "$label"; else printf 'FAIL %s\n' "$label"; failures=$((failures + 1)); fi
 }
 
-# A capability skill: no `when:` (that would make it a step owner) and no
-# `## Loaded skills` section (that would make it a bundle).
-#
-# The `when:` test reads the FRONTMATTER only, not the file. `@bakers-build/workflow-step`
-# documents the `when` triple with a YAML example whose `when:` sits at column 0
-# inside a fenced block; a file-wide grep reads that as a step-owner declaration
-# and silently drops the canonical contract from the checked set.
-frontmatter() { awk '/^---$/{n++; next} n==1{print} n>=2{exit}' "$1"; }
+# A capability skill is neither a step owner nor the frame. Step owners are the core skills the
+# frame's routing table names and every `bb-recipe-*` skill.
+STEP_OWNERS='bb-(qualify-ticket|prepare-deployment|post-deployment|verify-on-environment|summarize-verification|recipe-[a-z-]+)'
 
-# A third exclusion, and it is not a hack: `workflow-step` is a CONTRACT DOCUMENT.
+# A third exclusion, and it is not a hack: `bb-workflow` is a CONTRACT DOCUMENT.
 # It has no `when` and no bundle section, so it lands in the capability set by the
 # structural test — but it does not execute anything; it describes what a step
 # owner does, and doing so it must write the sentence "choose the transition
-# destination and invoke `@bakers-build/transition-ticket`". That is syntactically
+# destination and invoke `@bakers-build/bb-transition-ticket`". That is syntactically
 # identical to an instruction, so no regex separates them. Naming the document is
 # honest where a cleverer needle would only hide the ambiguity.
-CONTRACT_DOCS='workflow-step'
+CONTRACT_DOCS='bb-workflow'
 
 capabilities() {
   local d n
   for d in "$SKILLS"/*/; do
     n="$(basename "$d")"
-    frontmatter "$d/SKILL.md" | grep -q '^when:' && continue
-    grep -q '^## Loaded skills' "$d/SKILL.md" && continue
+    grep -qxE "$STEP_OWNERS" <<<"$n" && continue
     grep -qx "$n" <<<"$CONTRACT_DOCS" && continue
     printf '%s\n' "$n"
   done
@@ -83,20 +77,20 @@ invokes() {
 # have explicit routing contracts; ordinary work helpers do not choose a next state.
 routers=()
 while IFS= read -r name; do
-  case "$name" in ensure-qualification|create-ticket) continue ;; esac
-  invokes "$SKILLS/$name/SKILL.md" 'transition-ticket' && routers+=("$name")
+  case "$name" in bb-ensure-qualification|bb-create-ticket) continue ;; esac
+  invokes "$SKILLS/$name/SKILL.md" 'bb-transition-ticket' && routers+=("$name")
 done < <(capabilities)
 check 'no capability invokes the transition outside qualification recovery and ticket intake' \
   bash -c "test ${#routers[@]} -eq 0 || { echo \"    routers: ${routers[*]:-}\" >&2; false; }"
 
 check 'the documented exception still routes its recovery' \
-  bash -c "grep -qiE 'invoke .@bakers-build/transition-ticket. with destination .qualification.' '$SKILLS/ensure-qualification/SKILL.md'"
+  bash -c "grep -qiE 'invoke .@bakers-build/bb-transition-ticket. with destination .qualification.' '$SKILLS/bb-ensure-qualification/SKILL.md'"
 
 # --- I2: a capability starts no phase work ---------------------------------
 #
-# The step owners drive spec/diagnose/coding; a helper that invoked one would be
-# doing a neighbouring step's work — the failure `@bakers-build/workflow-step` calls out.
-PHASE_SKILLS='(create-spec|qualify-ticket|docs-authoring|ddev-drupal-bug|ddev-drupal-feature)'
+# The step owners drive qualification and the recipe states; a helper that invoked one would be
+# doing a neighbouring step's work — the failure `@bakers-build/bb-workflow` calls out.
+PHASE_SKILLS='bb-(qualify-ticket|recipe-[a-z-]+)'
 starters=()
 while IFS= read -r name; do
   grep -qiE "(invoke|invokes|invoking)[^.]{0,40}@bakers-build/$PHASE_SKILLS" "$SKILLS/$name/SKILL.md" \
@@ -107,28 +101,28 @@ check 'no capability invokes a phase owner' \
 
 # --- I3: only the renderer formats links ------------------------------------
 #
-# `@bakers-build/run-outtake` owns presentation, so it owns the written form of a link. A
+# `@bakers-build/bb-run-outtake` owns presentation, so it owns the written form of a link. A
 # step hands over artifact PATHS; the outtake decides they come out as absolute
 # durable `https://` URLs. The rule had drifted into four places — three copies
 # in two step owners plus the bundle — which is how a formatting rule ends up
 # restated slightly differently in each and enforced in none.
 # The needle is the backticked `Links` SECTION near a formatting word — not any
-# sentence about links. `@bakers-build/essential-skills` still states the global rule
+# sentence about links. `bb-workflow/references/evidence.md` still states the global rule
 # ("External links are absolute https:// URLs") for output that never passes
 # through an outtake, such as an audit report; a broader needle swallows that too
 # and would push a legitimate cross-cutting rule out of the one place it belongs.
 formatters=()
 while IFS= read -r f; do
-  [ "$(basename "$(dirname "$f")")" = 'run-outtake' ] && continue
+  [ "$(basename "$(dirname "$f")")" = 'bb-run-outtake' ] && continue
   grep -qE '`Links`[^.]{0,80}absolute' "$f" \
     && formatters+=("$(basename "$(dirname "$f")")")
 done < <(find "$SKILLS" -name SKILL.md)
-check 'only run-outtake states the link rendering rule' \
+check 'only bb-run-outtake states the link rendering rule' \
   bash -c "test ${#formatters[@]} -eq 0 || { echo \"    also formatting: ${formatters[*]:-}\" >&2; false; }"
 
-check 'run-outtake actually states it' \
-  bash -c "grep -qiE 'durable.*https://|absolute .https://. URL' '$SKILLS/run-outtake/SKILL.md' \
-    && ! grep -qiE 'absolute .file://. URL' '$SKILLS/run-outtake/SKILL.md'"
+check 'bb-run-outtake actually states it' \
+  bash -c "grep -qiE 'durable.*https://|absolute .https://. URL' '$SKILLS/bb-run-outtake/SKILL.md' \
+    && ! grep -qiE 'absolute .file://. URL' '$SKILLS/bb-run-outtake/SKILL.md'"
 
 # --- Coverage note ----------------------------------------------------------
 #

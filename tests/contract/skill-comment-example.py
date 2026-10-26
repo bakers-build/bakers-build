@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 
 root = Path(__file__).resolve().parents[2]
-skill = root / '.claude/skills/bakers-build/skills/publish-comment/SKILL.md'
+skill = root / '.claude/skills/bakers-build/skills/bb-publish-comment/SKILL.md'
 source = Path(os.environ.get('COMMENT_SKILL', skill)).read_text()
 block = re.search(r'```bash\n(.*?)```', source, re.S).group(1)
 # The caller supplies these values; execute every guard and the actual command.

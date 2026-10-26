@@ -75,11 +75,11 @@ flowchart TB
 
 What each package owns:
 
-- **`core`** holds the surface-agnostic kernel: configuration loading and path resolution, addon discovery, the workflow step contract behind `bakers validate`, logging and small utilities.
+- **`core`** holds the surface-agnostic kernel: configuration loading and path resolution, addon discovery, logging and small utilities.
 - **`conductor`** holds the run engine, the `conductor` command and the conductor contract, exposed to addons as `@bakers-build/conductor/contract`. The contract lives here, not in `core`, so the kernel stays free of engine types.
 - **`addons/*`** hold every mountable capability, one package each. [Addon contracts](/addons/build/contracts) describes them.
 - **`ui`** is the `bakers ui` command. It is an application, not an addon, so it may depend on addons.
-- **`host`**, published as `@bakers-build/bakers`, is the `bakers` binary. It registers `version`, `config`, `init`, `update` and `validate` itself, and builds the rest of its command list from the light presets of the command addons. A command's module is imported only when that command runs, so `bakers --help` imports none of them. The environment variable `BB_COMMANDS`, a JSON array of command descriptors, replaces the whole list.
+- **`host`**, published as `@bakers-build/bakers`, is the `bakers` binary. It registers `version`, `config`, `init` and `update` itself, and builds the rest of its command list from the light presets of the command addons. A command's module is imported only when that command runs, so `bakers --help` imports none of them. The environment variable `BB_COMMANDS`, a JSON array of command descriptors, replaces the whole list.
 
 The guard `bakers-cli/scripts/assert-acyclic.mjs` enforces this and fails with the offending edge. It checks that:
 

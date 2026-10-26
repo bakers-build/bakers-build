@@ -55,7 +55,7 @@ done
 check 'no skill teaches `schema --for create` as the discovery step' \
   bash -c "! grep -rn -- 'schema .*--for create' '$SKILLS'"
 
-for name in create-ticket publish-comment create-project; do
+for name in bb-create-ticket bb-publish-comment bb-create-project; do
   check "$name: names --fields as its discovery step" \
     grep -q -- '--fields' "$SKILLS/$name/SKILL.md"
 done
@@ -69,7 +69,7 @@ done
 # -F, not -q: `.` is a regex wildcard, so the old `--$field.value` pattern also
 # matched `--descriptionXvalue` — and, more to the point, said something other
 # than what it meant.
-for pair in 'create-ticket:description' 'publish-comment:body'; do
+for pair in 'bb-create-ticket:description' 'bb-publish-comment:body'; do
   name="${pair%%:*}"; field="${pair##*:}"
   f="$SKILLS/$name/SKILL.md"
   check "$name: the rich text is passed as --$field.value= from a file" \
@@ -80,8 +80,8 @@ done
 
 # --- 4. --label_names replaces UUID resolution -----------------------------
 check 'record-measurement resolves its label by NAME, not by a searched uuid' \
-  bash -c "grep -q -- '--label_names' '$SKILLS/record-measurement/SKILL.md' \
-    && ! grep -q 'TERM_UUID' '$SKILLS/record-measurement/SKILL.md'"
+  bash -c "grep -q -- '--label_names' '$SKILLS/bb-record-measurement/SKILL.md' \
+    && ! grep -q 'TERM_UUID' '$SKILLS/bb-record-measurement/SKILL.md'"
 check 'no skill teaches a bb_term search to resolve a label' \
   bash -c "! grep -rn 'search bb_term' '$SKILLS'"
 
@@ -92,7 +92,7 @@ check 'no skill teaches a bb_term search to resolve a label' \
 # `dryRun` branch (`create.js`/`update.js`), so the live write validates
 # identically — and `alterRequest` lives inside the JSON:API client, so a
 # `--label_names` dry-run prints a payload that is not the one sent. It survives
-# only as a named escape hatch, documented once, in `workflow-step`.
+# only as a named escape hatch, documented once, in `bb-workflow`.
 check 'no skill still quotes "file → envelope → dry-run"' \
   bash -c "! grep -rn 'envelope → dry-run' '$SKILLS'"
 check 'no skill still quotes the dry-run step in the canonical phrase' \
@@ -102,8 +102,8 @@ check 'the canonical phrase is "body file → field parameters → live"' \
 
 # The live path validates once; no mandatory dry-run is part of this contract.
 check 'normal validation and uncertain-write reconciliation remain mandatory' \
-  bash -c "grep -q 'outgoing schema validation enabled' '$SKILLS/workflow-step/SKILL.md' \
-    && grep -q 'never blindly repeat the create' '$SKILLS/workflow-step/SKILL.md'"
+  bash -c "grep -q 'outgoing schema validation enabled' '$SKILLS/bb-workflow/references/ticket-writes.md' \
+    && grep -q 'never blindly repeat the create' '$SKILLS/bb-workflow/references/ticket-writes.md'"
 
 # --- 6. No recipe instructs an auth profile --------------------------------
 #

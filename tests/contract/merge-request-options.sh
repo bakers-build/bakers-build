@@ -15,7 +15,7 @@ set -euo pipefail
 #     gets whatever the MR already stores, set at creation time or by a forge project setting;
 #   * without the squash a ticket's branch lands as its own string of commits rather than as the one
 #     commit the convention asks for — and with it, the per-commit `ref:<identifier>` trailers are
-#     discarded, so the squash body `@bakers-build/merge-mr` writes is what carries the reference across;
+#     discarded, so the squash body `@bakers-build/bb-merge-mr` writes is what carries the reference across;
 #   * an unguarded "delete the source branch" is destructive rather than merely wrong: this project
 #     protects NO branch, so `main` is deletable and `develop` is spared only by being the default.
 #
@@ -35,11 +35,11 @@ set -euo pipefail
 # no test may mutate.
 ROOT="${CONTRACT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 # BB-424 retired `implement-ticket` — the step owner calls the selected implementation method
-# directly — so the MR instruction it used to carry now lives in `method-context`, the context
-# every coding owner applies. Same three properties, same region shape, different home.
-IMPL_ROOT="$ROOT/.claude/skills/bakers-build/skills/method-context/SKILL.md"
-IMPL="$ROOT/.claude/skills/bakers-build/skills/method-context/references/delivery.md"
-MERGE="$ROOT/.claude/skills/bakers-build/skills/merge-mr/SKILL.md"
+# directly — so the MR instruction it used to carry now lives in `bb-workflow`, the context
+# every `working` run applies. Same three properties, same region shape, different home.
+IMPL_ROOT="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/SKILL.md"
+IMPL="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/delivery.md"
+MERGE="$ROOT/.claude/skills/bakers-build/skills/bb-merge-mr/SKILL.md"
 # `WORKFLOW.md` › `## Standards` declares itself the SOURCE of the merge-request convention, so it
 # is part of this contract even though the two skills are what an agent executes. A convention whose
 # stated source is silent about one of its own options is the drift this ticket exists to remove —
@@ -69,7 +69,7 @@ has() { printf '%s' "$1" | grep -F -- "$2" >/dev/null; }
 hasi() { printf '%s' "$1" | grep -iF -- "$2" >/dev/null; }
 hasre() { printf '%s' "$1" | grep -E -- "$2" >/dev/null; }
 
-# The MR-instruction REGION of method-context: the paragraph that opens the MR,
+# The MR-instruction REGION of bb-workflow: the paragraph that opens the MR,
 # plus the block that follows it, ending at the next `##` heading. Isolating the region is what
 # makes "AT the point where it instructs the subagent to open the MR" checkable — a mention
 # anywhere else in the file must not satisfy it. Neither bound is a line number or a column, so
@@ -104,8 +104,8 @@ gates_section() {
 gate_count() { gates_section | grep -c '^[0-9][0-9]*\. ' || true; }
 four_gates() { [ "$(gate_count)" = "4" ]; }
 
-check 'method-context discloses the delivery instructions' grep -qF '(references/delivery.md)' "$IMPL_ROOT"
-check 'the method-context delivery instructions exist' test -f "$IMPL"
+check 'bb-workflow discloses the delivery instructions' grep -qF '(references/delivery.md)' "$IMPL_ROOT"
+check 'the bb-workflow delivery instructions exist' test -f "$IMPL"
 check 'the merge-mr skill exists' test -f "$MERGE"
 check 'WORKFLOW.md exists' test -f "$WF"
 
@@ -117,7 +117,7 @@ MERGE_INPUT="$({ awk '/^## Input/ { f = 1; next } f && /^## / { exit } f { print
 MERGE_COMMAND="$({ awk '/^glab mr merge / { f = 1 } f && /^```/ { exit } f { print }' "$MERGE" | flat; } 2>/dev/null || true)"
 WF_FLAT="$({ flat < "$WF"; } 2>/dev/null || true)"
 
-check 'the MR-instruction region of method-context is non-empty' test -n "$IMPL_MR"
+check 'the MR-instruction region of bb-workflow is non-empty' test -n "$IMPL_MR"
 check 'the ## Merge section of merge-mr is non-empty' test -n "$MERGE_MR"
 
 # --- AC 1 — implement-ticket states target, squash and delete AT the MR instruction --------------
@@ -248,17 +248,17 @@ check 'AC-3 unchanged: the merge result is still verified' \
 # convention, and it fails precisely in the release-branch case, where the name LOOKS short-lived
 # but the branch must survive its own merge to be promoted.
 
-check 'AC-8 method-context ties the deletion to the ticket own branch_name' \
+check 'AC-8 bb-workflow ties the deletion to the ticket own branch_name' \
   hasre "$IMPL_MR" 'the source is this ticket.{0,3}s own `branch_name`'
-check 'AC-8 method-context calls the deletion the only conditional property' \
+check 'AC-8 bb-workflow calls the deletion the only conditional property' \
   hasi "$IMPL_MR" 'the only conditional property'
-check 'AC-8 method-context names a long-lived or shared branch as failing the condition' \
+check 'AC-8 bb-workflow names a long-lived or shared branch as failing the condition' \
   hasi "$IMPL_MR" 'long-lived or shared branch'
-check 'AC-8 method-context names a reused release branch as failing the condition' \
+check 'AC-8 bb-workflow names a reused release branch as failing the condition' \
   hasi "$IMPL_MR" 'release branch a later promote reuses'
-check 'AC-8 method-context names a branch other open MRs target as failing the condition' \
+check 'AC-8 bb-workflow names a branch other open MRs target as failing the condition' \
   hasi "$IMPL_MR" 'other open MRs still target as their base'
-check 'AC-8 method-context says why it is nevertheless always set here' \
+check 'AC-8 bb-workflow says why it is nevertheless always set here' \
   hasi "$IMPL_MR" "from the ticket's own branch"
 
 check 'AC-8 merge-mr states the positive condition for deleting the source' \
@@ -291,7 +291,7 @@ check 'AC-8 merge-mr retains squash when source deletion is disabled' \
 # (`git log --format=%x1e%H %s%n%b <since>..<to>`, no `--first-parent`, `deployment.ts`), so an
 # UNsquashed merge leaves every branch commit's own `ref:<identifier>` trailer inside the delta and
 # the ticket IS in the batch. The squash is what discards those trailers, which is precisely why
-# `@bakers-build/merge-mr` has to re-write one into the squash body. The same sentence also called the squash
+# `@bakers-build/bb-merge-mr` has to re-write one into the squash body. The same sentence also called the squash
 # body "the only commit message a squash-merge puts on the target branch", which `merge-mr`'s own
 # `--squash-message` paragraph contradicts for this project: `merge_method: merge` writes two. The
 # corrected reason is stated as what the convention actually asks for — the branch lands as ONE commit
@@ -324,7 +324,7 @@ check 'source: WORKFLOW.md carries the positive condition for the deletion' \
 check 'source: WORKFLOW.md names a reused release branch as failing the condition' \
   hasi "$WF_FLAT" 'release branch a later promote reuses'
 check 'source: WORKFLOW.md points at the two skills that own the rule operationally' \
-  hasre "$WF_FLAT" '`@bakers-build/method-context` and `@bakers-build/merge-mr` own that rule'
+  hasre "$WF_FLAT" '`@bakers-build/bb-workflow` and `@bakers-build/bb-merge-mr` own that rule'
 
 # --- Result -------------------------------------------------------------------------------------
 

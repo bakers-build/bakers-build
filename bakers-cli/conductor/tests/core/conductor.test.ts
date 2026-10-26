@@ -96,9 +96,9 @@ function repoRoot(): string {
 }
 
 /**
- * Reads the project's real WORKFLOW.md. Under BB-204 this file is a pure loader
- * (a loaded-skills list + one values block); ordering + stop/continue routing now
- * live in each step-owning skill, so the guard's Scenarios are asserted there.
+ * Reads the project's real WORKFLOW.md: the entry line plus phase-named hints;
+ * ordering + stop/continue routing live in the frame skill, so the guard's
+ * Scenarios are asserted there.
  */
 function readProjectWorkflow(): string {
   return readFileSync(join(repoRoot(), 'WORKFLOW.md'), 'utf8');
@@ -4474,88 +4474,54 @@ describe('Conductor — addon lifecycle hook listeners', () => {
   });
 });
 
-describe('qualification gate orchestration (step-owning skills)', () => {
+describe('qualification gate orchestration (the frame)', () => {
   const wf = readProjectWorkflow();
-  const guardedSteps: Array<[string, string, string]> = [
-    ['create-spec', 'spec', 'Invoke the selected specification method'],
-    ['ddev-drupal-bug', 'diagnose', '@bakers-build/diagnose-ticket'],
-    ['ddev-drupal-bug', 'coding', 'calls the original implementation'],
-    ['ddev-drupal-feature', 'coding', 'calls the original implementation'],
-    ['docs-authoring', 'spec', 'Invoke the selected specification method'],
-    ['docs-authoring', 'coding', 'calls the original implementation'],
-  ];
+  // The guard runs once, in the frame's read phase, before any recipe state section.
+  const read = mdSection(readSkill('bb-workflow'), 'read');
 
-  function guardedInstructions(skill: string, step: string): string {
-    const owner = mdSection(readSkill(skill), step);
-    if (step !== 'coding') return owner;
-    expect(owner).toContain('`@bakers-build/method-context` › *Coding flow*');
-    expect(readSkill('method-context')).toContain('(references/coding.md)');
-    return mdSection(
-      readFileSync(
-        join(
-          repoRoot(),
-          '.claude/skills/bakers-build/skills/method-context/references/coding.md',
-        ),
-        'utf8',
-      ),
-      'Coding flow',
+  it('unqualified path: plan and working invoke the guard before the recipe', () => {
+    const guardIdx = read.indexOf('@bakers-build/bb-ensure-qualification');
+    expect(guardIdx, 'frame read phase missing guard').toBeGreaterThanOrEqual(
+      0,
     );
-  }
-
-  it('unqualified path: each protected step invokes the guard before its selected method', () => {
-    for (const [skill, step, marker] of guardedSteps) {
-      const md = guardedInstructions(skill, step);
-      const guardIdx = md.indexOf('@bakers-build/ensure-qualification');
-      expect(guardIdx, `${skill}/${step} missing guard`).toBeGreaterThanOrEqual(
-        0,
-      );
-      const markerIdx = md.indexOf(marker);
-      expect(
-        markerIdx,
-        `${skill}/${step}: ${marker} after guard`,
-      ).toBeGreaterThan(guardIdx);
-      expect(md).not.toContain('@bakers-build/implement-ticket');
-    }
-    // Recovery and its stop condition belong to the shared guard, not each owner.
-    const guard = readSkill('ensure-qualification');
+    expect(read.slice(0, guardIdx)).toMatch(/`plan` and `working`/);
+    expect(read.indexOf('`bb-recipe-<name>`')).toBeGreaterThan(guardIdx);
+    // Recovery and its stop condition belong to the shared guard, not the frame.
+    const guard = readSkill('bb-ensure-qualification');
     expect(guard).toContain('returned_to_qualification');
     expect(guard).toMatch(/then stop/);
     expect(guard).toMatch(
-      /@bakers-build\/transition-ticket.*destination `qualification`/,
+      /@bakers-build\/bb-transition-ticket.*destination `qualification`/,
     );
   });
 
-  it('qualified path: the current state continues with its phase skill', () => {
-    for (const [skill, step, marker] of guardedSteps) {
-      const md = guardedInstructions(skill, step);
-      const continuation = /[Cc]ontinue\s+only\s+on\s+`qualified`/.exec(md);
-      expect(
-        continuation,
-        `${skill}/${step} qualified-only continuation`,
-      ).not.toBeNull();
-      expect(continuation?.index).toBeGreaterThan(
-        md.indexOf('@bakers-build/ensure-qualification'),
-      );
-      expect(continuation?.index).toBeLessThan(md.indexOf(marker));
-    }
+  it('qualified path: the state continues with its recipe', () => {
+    const continuation = /[Cc]ontinu\w*\s+only\s+on\s+`qualified`/.exec(read);
+    expect(continuation).not.toBeNull();
+    expect(continuation?.index).toBeGreaterThan(
+      read.indexOf('@bakers-build/bb-ensure-qualification'),
+    );
+    expect(continuation?.index).toBeLessThan(
+      read.indexOf('`bb-recipe-<name>`'),
+    );
   });
 
-  it('guard exclusion: the review step and deployment steps do not invoke the guard', () => {
-    // review lives in ddev-drupal-bug: its "## review" section runs without the guard.
-    const reviewSection = mdSection(readSkill('ddev-drupal-bug'), 'review');
-    expect(reviewSection).not.toBe('');
-    expect(reviewSection).not.toContain('@bakers-build/ensure-qualification');
-    // deployment step skills carry no guard at all
-    for (const skill of ['prepare-deployment', 'post-deployment']) {
+  it('guard exclusion: review and the deployment steps do not invoke the guard', () => {
+    const review = mdSection(readSkill('bb-recipe-matt'), 'review');
+    expect(review).not.toBe('');
+    expect(readSkill('bb-recipe-matt')).not.toContain(
+      '@bakers-build/bb-ensure-qualification',
+    );
+    for (const skill of ['bb-prepare-deployment', 'bb-post-deployment']) {
       expect(readSkill(skill)).not.toContain(
-        '@bakers-build/ensure-qualification',
+        '@bakers-build/bb-ensure-qualification',
       );
     }
   });
 
-  it('WORKFLOW.md is a pure loader — loads the essential-skills bundle, no state sections', () => {
-    expect(wf).toContain('## Loaded skills');
-    expect(wf).toContain('@bakers-build/essential-skills');
+  it('WORKFLOW.md is the entry line plus phase hints — no loader, no state sections', () => {
+    expect(wf).toContain('Invoke `bakers:bb-workflow`');
+    expect(wf).not.toContain('## Loaded skills');
     expect(wf).not.toContain('## State:');
   });
 });

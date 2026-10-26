@@ -3,9 +3,9 @@
   "synthetic": true,
   "profile": "publish-comment-calls",
   "execution": "simulated-tools",
-  "skill": "publish-comment",
+  "skill": "bb-publish-comment",
   "references": [
-    "workflow-step/SKILL.md"
+    "bb-workflow/SKILL.md"
   ],
   "input": {
     "task": "Publish the caller-authored Markdown comment now using the supplied skill, then return the verified comment identifier or a concrete failure. The payload fields have not yet been discovered. Tool calls are authorized only in this synthetic fixture.",

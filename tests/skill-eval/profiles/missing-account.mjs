@@ -3,7 +3,7 @@ import { nonempty, requireValue } from '../validation.mjs';
 
 export function validate(fixture) {
   const i = fixture.input;
-  requireValue(fixture.skill === 'resolve-environment' && nonempty(i.required_actor?.role) &&
+  requireValue(fixture.skill === 'bb-resolve-environment' && nonempty(i.required_actor?.role) &&
     nonempty(i.required_actor.identity_requirement) && nonempty(i.ticket) && nonempty(i.task) &&
     nonempty(i.project_adapter) && nonempty(i.revision) && Array.isArray(i.observations) &&
     i.observations.length > 0 && i.observations.every(nonempty), 'Expected missing-account input and required actor');

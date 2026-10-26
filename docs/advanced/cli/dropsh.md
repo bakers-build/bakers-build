@@ -32,7 +32,7 @@ An **envelope** is a JSON:API document whose `data.type` is `<entity>--<bundle>`
 
 bakers.build adds name fields to writes, resolved on the live write (a dry run shows them unresolved):
 
-- `--type_names bug`, `--recipe_names <name>` and `--label_names work:code` set the ticket's `ticket_type`, `recipe` and `labels` from term names in the ticket's workspace. An unknown name is created in that workspace first, then linked; a create that names no project cannot create one and fails. `--type_names` and `--recipe_names` take one name and replace the previous value; `--label_names` adds to any `--labels` in the same write.
+- `--type_names bug`, `--recipe_names <name>` and `--label_names agent:claude` set the ticket's `ticket_type`, `recipe` and `labels` from term names in the ticket's workspace. An unknown name is created in that workspace first, then linked; a create that names no project cannot create one and fails. `--type_names` and `--recipe_names` take one name and replace the previous value; `--label_names` adds to any `--labels` in the same write.
 - `--environment_names staging` sets the environment; an unknown name fails before anything is sent.
 
 ## Verbs

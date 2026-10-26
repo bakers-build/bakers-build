@@ -47,7 +47,7 @@ Prepare a checkout to change bakers.build, run the checks that fit your change, 
 
 Run PHPUnit classes by path, for example `ddev exec ./vendor/bin/phpunit --configuration=phpunit.xml <path/to/ChangedTest.php>`, not with `--filter` or `--group`, which can report success when no test ran. The full suite is the CI job's work.
 
-Drupal runtime checks run on the `recipe-test` world first and on the `existing-config` install last. A plain `ddev init` defaults to `existing-config`, so always name the provider with `ddev init --provider recipe-test`. `WORKFLOW.md` › *Setup* gives the order. For the CLI's own tests, see [build from source](/advanced/development/build-from-source).
+Drupal runtime checks run on the `recipe-test` world first and on the `existing-config` install last. A plain `ddev init` defaults to `existing-config`, so always name the provider with `ddev init --provider recipe-test`. `WORKFLOW.md` › *provision* gives the order. For the CLI's own tests, see [build from source](/advanced/development/build-from-source).
 
 ## Rules that catch most mistakes
 
@@ -62,8 +62,8 @@ Drupal runtime checks run on the `recipe-test` world first and on the `existing-
 - [Build from source](/advanced/development/build-from-source) takes a clone to a working `bakers` and the rebuild loop.
 - [Addon contracts](/addons/build/contracts) describes the addon kinds and how to write one.
 - [Addon actions](/addons/build/actions) builds an addon whose messages appear on a ticket.
-- [Skill contract](/advanced/development/skill-contract) states how a skill owns a ticket step.
-- [Write a step skill](/advanced/development/write-a-step-skill) adds an owner for your stack's steps.
+- [Skill contract](/advanced/development/skill-contract) states how the frame, recipes, runtime guides and hints fit together.
+- [Write a recipe](/advanced/development/write-a-step-skill) adds an engineering method for `plan`, `working` and `review`.
 - [Architecture](/advanced/development/architecture) describes the current boundaries.
 - [Write the docs](/advanced/development/write-docs) gives the page rules and the checks the site build enforces.
 

@@ -9,7 +9,7 @@
 2. **Check it yourself.** Try the walkthrough where the summary offers one. Or ask your agent:
 
    ```text
-   Use read-ticket for <identifier> and walk me through the review, criterion by criterion.
+   Use bb-read-ticket for <identifier> and walk me through the review, criterion by criterion.
    ```
 
    A criterion counts when you can repeat its evidence.
@@ -24,7 +24,7 @@
    | `evidence` | the change may work, but nothing shows it | back to `working` |
    | `criterion` | the criterion cannot be met as written | you decide on a rewrite |
 
-   Requirement changed? Ask your agent to use `scope-change`.
+   Requirement changed? Ask your agent to use `bb-scope-change`.
 
 4. **Merge on purpose.** You authorize review, merge and deployment separately; a verdict authorizes none of them. bakers.build merges only with a linked merge request, a green pipeline and a clean merge, then moves the ticket to `done`. Deployment is its own ticket.
 

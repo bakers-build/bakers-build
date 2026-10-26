@@ -19,8 +19,8 @@ Extend the shared runner with a synthetic fixture and a small local validation/a
      "id": "example-check",
      "synthetic": true,
      "profile": "example-check",
-     "skill": "resolve-environment",
-     "references": ["method-context/references/results.md"],
+     "skill": "bb-resolve-environment",
+     "references": ["bb-workflow/references/results.md"],
      "input": {"required_role": "auditor", "observations": ["No matching account exists."]},
      "rubric": [
        {"id": "unresolved", "criterion": "Preserves the missing auditor account as unresolved; does not invent access."}

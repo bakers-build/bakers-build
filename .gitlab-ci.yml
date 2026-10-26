@@ -555,7 +555,7 @@ web_ui:
 
 # --- Merge gate ---
 # Every merge request push runs only the fast checks above. Before the merge, the merge step
-# plays `gate` (WORKFLOW.md › Before merge): `build` builds the images once, then `phpunit`,
+# plays `gate` (WORKFLOW.md › deliver): `build` builds the images once, then `phpunit`,
 # `e2e` and `config_install` test those images in parallel. A blocked manual job with
 # `allow_failure: false` keeps the pipeline unfinished, and the project setting "Pipelines must
 # succeed" blocks the merge until the gate is green.
@@ -727,7 +727,7 @@ e2e:
       - e2e-reports/
 
 # --- The final Drupal check: the config/sync install path ---
-# WORKFLOW.md > Setup > Drupal checks ("recipe first, config/sync last")
+# WORKFLOW.md > provision ("recipe first, config/sync last")
 # makes this a SECOND install path rather than a variation of
 # the first, and it has to be its own job for this reason: the
 # recipe world must not have config/sync imported into it, because that would

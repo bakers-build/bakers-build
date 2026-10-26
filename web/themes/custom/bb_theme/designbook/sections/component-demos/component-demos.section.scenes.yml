@@ -275,7 +275,7 @@ scenes:
             - component: bb_theme:setup_command
               props:
                 command: >-
-                  Use `bakers:init` to guide me through installing and setting up
+                  Use `bakers:bb-init` to guide me through installing and setting up
                   bakers.build.
                 label: Copy the skill wizard prompt
   - name: inline add row

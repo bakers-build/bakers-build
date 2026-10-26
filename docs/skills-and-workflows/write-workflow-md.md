@@ -7,49 +7,72 @@
 ## Let your agent write it
 
 ```text
-Use bakers:init-project to create WORKFLOW.md for this repository and check that it is valid.
+Use bakers:bb-init-project to create WORKFLOW.md for this repository.
 ```
 
-`init-project` starts from the plugin's template; `upgrade-project` updates a file you already have.
+`bb-init-project` starts from the plugin's template; `bb-upgrade-project` updates a file you already have, including one in the old `## Loaded skills` layout.
 
 ## What goes in
 
-| Section | Job |
-|---|---|
-| `## Loaded skills` | The skills that own your steps, one `- @<namespace>/<skill>` bullet each, in load order. The only section bakers.build's loader reads. |
-| `## Skill set` | Your engineering method, such as Superpowers. The first entry is the default; with several, qualification asks and records a `method:*` label. |
-| `## Skills` | Extra skills when a change matches, for example a Drupal skill for `web/modules/`. |
-| `## Checks` | Commands to run for matching changes, with a `### Setup` table. |
-| `## Required skills` | Makes the named skills binding: load first, stop if missing. |
-| `## Standards` | Links to the conventions that apply. |
-
-## Two examples
-
-Same states, different work. A Drupal code project:
+One entry line, then optional sections named after the phases of a run:
 
 ```md
-## Loaded skills
+# Project — WORKFLOW
 
-- @bakers-build/essential-skills
-- @bakers-build/method-context
-- @bakers-build/ddev-drupal-bug
-- @bakers-build/ddev-drupal-feature
+Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
+
+## provision
+## work
+## validate
+## deliver
 ```
 
-A documentation project swaps the code owners for `@bakers-build/docs-authoring` and lists its prose checks under `## Checks`. A repository with both loads all of them; each `work:*` label then gets its own owner.
+| Section | Job |
+|---|---|
+| `## provision` | The runtime guide and setup that bring the environment up, for example `@bakers-build/bb-runtime-ddev`. Leave it out when no work needs a runtime. |
+| `## work` | A `\| When \| Skill \|` table: extra skills for matching changes, for example a Drupal skill for `web/modules/`. |
+| `## validate` | A `\| When \| Command \|` table: the checks for matching changes. |
+| `## deliver` | How a merge request is merged: the merge gate and what runs in it. |
 
-`@bakers-build/essential-skills` brings qualification, spec, deployment and verification. The Drupal skills are examples; load your own skills for other stacks.
+A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. The engineering method is not in this file; each ticket carries a [recipe](/skills-and-workflows/labels-and-work-types). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
+
+## Example
+
+A Drupal project on DDEV:
+
+```md
+## provision
+
+Runtime: DDEV through `@bakers-build/bb-runtime-ddev`.
+
+## work
+
+| When | Skill |
+|---|---|
+| `web/modules/custom/`, `config/` | `keytec-drupal:keytec-drupal-developer` |
+
+## validate
+
+| When | Command |
+|---|---|
+| PHP implementation | `ddev phpcs && ddev phpstan` |
+```
+
+The skills and commands are examples; name your own for other stacks.
 
 ## Adjust one skill
 
-Indent a YAML map under a skill's bullet to change one of its declared inputs, for example the health check after a deployment:
+Some core skills declare inputs with a default. To change one, name the skill and the key in the section of the phase where the skill runs, for example the origin label map, which is written at the end of a run:
 
 ```md
-- @bakers-build/post-deployment
-    health.prompt: |
-      Expect HTTP 200 from /user/login after the deploy.
+## transition
+
+`@bakers-build/bb-publish-origin-status` `origin_labels.data`:
+
+    working: in progress
+    done: ready for review
 ```
 
-Declared inputs: `release.prompt` (`prepare-deployment`), `health.prompt` (`post-deployment`), `verify.prompt` (`verify-on-environment`), `origin_labels.data` (`publish-origin-status`). An unknown input fails the check. Every list item at indent 0 under `## Loaded skills` is a real load, so keep examples elsewhere.
+Declared inputs: `release.prompt` (`bb-prepare-deployment`), `health.prompt` (`bb-post-deployment`), `verify.prompt` (`bb-verify-on-environment`), `origin_labels.data` (`bb-publish-origin-status`).
 
-**Done when:** your agent reports the file as valid. [How it works](/skills-and-workflows/how-it-works) explains the check.
+**Done when:** the file starts with the entry line and every skill it names is installed for the agent. [How it works](/skills-and-workflows/how-it-works) explains how a run reads it.

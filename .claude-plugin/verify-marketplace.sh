@@ -45,11 +45,11 @@ SRC="$(python3 -c 'import json;print(json.load(open(".claude-plugin/marketplace.
 ok "source ./.claude/skills/bakers-build is the project skill bundle dir"
 
 echo "Scenario: after install the named bakers skills resolve"
-# One step owner and the contract skill every owner references: if the bundle layout moves,
+# The default recipe and the frame every state runs through: if the bundle layout moves,
 # these two break before an installed project silently loses its workflow skills.
-[ -f "$SRC/skills/create-spec/SKILL.md" ] || fail "skills/create-spec/SKILL.md missing"
-[ -f "$SRC/skills/workflow-step/SKILL.md" ] || fail "skills/workflow-step/SKILL.md missing"
-ok "skills/create-spec/SKILL.md + skills/workflow-step/SKILL.md resolve"
+[ -f "$SRC/skills/bb-recipe-matt/SKILL.md" ] || fail "skills/bb-recipe-matt/SKILL.md missing"
+[ -f "$SRC/skills/bb-workflow/SKILL.md" ] || fail "skills/bb-workflow/SKILL.md missing"
+ok "skills/bb-recipe-matt/SKILL.md + skills/bb-workflow/SKILL.md resolve"
 
 echo "Scenario: the shipped skill set is exactly bakers"
 # BB-273 narrowed to TWO SHELL SCRIPTS AND THEIR DOCUMENTATION AND NO SKILL: the

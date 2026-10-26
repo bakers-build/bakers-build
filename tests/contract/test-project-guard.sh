@@ -419,20 +419,16 @@ for opt in '--project' '--workspace-only'; do
 done
 pass "both --help windows print their whole header and nothing but it"
 
-# === 8. WORKFLOW.md ========================================================
+# === 8. Testing docs =======================================================
 
-WF="$ROOT/WORKFLOW.md"
+WF="$ROOT/docs/bakers/testing.md"
 
 # It must name the scripts rather than a skill …
 grep -q 'scripts/setup-test-project.sh' "${WF}" \
-  || fail "WORKFLOW.md does not name scripts/setup-test-project.sh"
+  || fail "docs/bakers/testing.md does not name scripts/setup-test-project.sh"
 grep -q 'scripts/teardown-test-project.sh' "${WF}" \
-  || fail "WORKFLOW.md does not name scripts/teardown-test-project.sh"
-# Lifecycle loading, required-skill delivery and collection switching are covered
-# by the maintained core contract. Per-owner build.prompt overrides were retired.
-(cd "$ROOT/bakers-cli" && pnpm exec vitest run --root . core/tests/workflow/step-contract.test.ts) \
-  || fail "the current workflow contract failed"
-pass "the workflow loads and validates through the maintained contract"
+  || fail "docs/bakers/testing.md does not name scripts/teardown-test-project.sh"
+pass "the testing docs name both scripts"
 
 # === 9. What only a live run found, guarded ==================================
 #
@@ -466,13 +462,12 @@ grep -q 'for attempt in 1 2 3' "${SETUP}" \
 grep -qxF '/workspaces/' "$ROOT/.gitignore" \
   || fail ".gitignore no longer ignores /workspaces/, so the generated clone becomes committable"
 
-# The completion summary has to name the ONE sub-work the generated loader covers.
-# An operator who creates a bug or a work:code ticket burns a real dispatch on a
-# configuration error, and the summary is the last thing read before they do it.
+# The completion summary has to name the recipe and type the fixture ticket is created with:
+# the summary is the last thing an operator reads before spending a real dispatch.
 summary="$(awk '/^cat <<SUMMARY$/ { inside = 1; next } inside && /^SUMMARY$/ { exit } inside { print }' "${SETUP}")"
 [ -n "${summary}" ] || fail "setup's completion summary could not be located"
-grep -q 'work:docs' <<<"${summary}" \
-  || fail "setup's completion summary does not say the generated loader covers work:docs only"
+grep -q -- '--type_names chore --recipe_names matt' <<<"${summary}" \
+  || fail "setup's completion summary does not create the ticket with its type and recipe"
 # The committed bakers-playground conductor config owns the claim hook. The setup script
 # generates only the machine-local connection config now, so this contract must not assert
 # implementation details from a different repository against its source text.

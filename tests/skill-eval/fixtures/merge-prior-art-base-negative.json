@@ -3,12 +3,12 @@
   "synthetic": true,
   "profile": "prior-art-base",
   "execution": "simulated-tools",
-  "skill": "merge-mr",
+  "skill": "bb-merge-mr",
   "references": [
-    "method-context/references/prior-art-build.md",
-    "workflow-step/references/prior-art-search.md",
-    "read-ticket/SKILL.md",
-    "publish-comment/SKILL.md"
+    "bb-workflow/references/prior-art-build.md",
+    "bb-workflow/references/prior-art-search.md",
+    "bb-read-ticket/SKILL.md",
+    "bb-publish-comment/SKILL.md"
   ],
   "input": {
     "task": "Run the explicitly authorized merge capability only. Return merged or blocked with evidence. Publish no comments or state changes.",

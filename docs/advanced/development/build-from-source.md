@@ -111,7 +111,7 @@ Run these from `bakers-cli/`.
 | `pnpm lint` | The Biome check |
 | `pnpm run typecheck` | Builds every package, then type-checks it |
 
-For one file, use vitest directly, for example `pnpm exec vitest run core/tests/workflow/step-contract.test.ts`.
+For one file, use vitest directly, for example `pnpm exec vitest run core/tests/workflow/repository-contracts.test.ts`.
 
 ## Check the publish shape
 

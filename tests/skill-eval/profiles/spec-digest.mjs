@@ -11,7 +11,7 @@ const REASON =
 export function validate(fixture) {
   const i = fixture?.input;
   requireValue(
-    fixture.skill === 'run-outtake' && i?.state === 'spec',
+    fixture.skill === 'bb-run-outtake' && i?.state === 'plan',
     'Expected a run-outtake spec fixture',
   );
   requireValue(
