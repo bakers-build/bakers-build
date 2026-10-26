@@ -124,7 +124,6 @@ describe('claude-measure launch wrapper', () => {
     ['qualification', 'plan'],
     ['diagnose', 'plan'],
     ['review', 'review'],
-    ['pre_deployment', 'ops'],
     ['summary', 'ops'],
   ])('maps %s onto the %s settings', async (state, group) => {
     const out = await measured(await worktree(true), state);

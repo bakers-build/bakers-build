@@ -1,6 +1,6 @@
 # Authoring recipes, runtime guides and hints
 
-Read when writing a recipe, a runtime guide, a project's `WORKFLOW.md`, or an input.
+Read when writing a recipe, a runtime guide or a project's `WORKFLOW.md`.
 `tests/contract/skill-references.py` checks every heading named below.
 
 ## The grid
@@ -22,8 +22,9 @@ A recipe is one normal skill named `bb-recipe-<method>`, domain-free and runtime
 - **Sections** are `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`;
   each holds `### bb-phase-<phase>` slots, only where the method adds something.
 - Per slot the type section wins; a phase it lacks falls back to the general section, else none.
-  A slot supplies method, never gates, publication or transitions; a transition slot only picks
-  among the gate's destinations.
+  A slot supplies method; where it names its own deliverable, comment, merge or check, that replaces
+  the state file's default. Approval, the coding gate, the verdict and readbacks stay; a transition
+  slot only picks among the gate's destinations.
 - Name the method's original skills; leave domain, runtime and project commands to guides and
   hints. A recipe may live in any plugin: it links no `bb-workflow` reference and calls no other
   `@bakers-build/*` skill.
@@ -49,25 +50,14 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 ## bb-phase-validate
 ## bb-phase-deliver
 ## bb-phase-outtake
+## bb-phase-transition
 ```
 
 `bb-phase-work` and `bb-phase-validate` hold `| When | Skill |` and `| When | Command |` tables; a
 run applies every matching row. `bb-phase-outtake` names the test-user list and how personas get
-logins. Conventions and test lore belong in repository docs.
-
-## Inputs
-
-A lifecycle parameter of a reference is a declared **input** `<role>.<kind>` with a short
-`description` and a `default`, so it runs with no project config:
-
-| kind | contract |
-|---|---|
-| `.command` | a shell command, **run verbatim** |
-| `.prompt` | an instruction, **followed verbatim**, never paraphrased |
-| `.data` | structured data, **looked up** — neither executed nor followed |
-
-A project overrides a value in the `WORKFLOW.md` section of the phase where it is used, naming the
-reference and the key.
+logins. `bb-phase-transition` holds the origin-label table, `| State | Origin label |`, read only
+by [origin status](origin-status.md); no table means no label is ever written. Conventions and test
+lore belong in repository docs.
 
 ## Size
 

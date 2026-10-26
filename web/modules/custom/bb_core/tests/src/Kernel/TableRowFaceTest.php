@@ -147,21 +147,15 @@ final class TableRowFaceTest extends KernelTestBase {
    * WHAT IT IS and the mapping from phase to accent lives in
    * `views-view-table.html.twig`, where presentation belongs.
    *
-   * The cases are chosen to cross workflow boundaries, because a per-state map
-   * would pass a `bb_work`-only table and fail here: `verifying` and
-   * `post_deployment` are `running` in workflows that have no `working`
-   * state at all, and the deleted `ACCENTS` map answered NULL for both.
+   * Every `bb_work` state is listed, the only ticket workflow; a further
+   * workflow adds its states here.
    */
   public function testTheTicketReportsItsPhaseAcrossEveryWorkflow(): void {
     foreach ([
       ['bb_work', 'working', 'running'],
-      ['bb_verification', 'verifying', 'running'],
-      ['bb_verification', 'summary', 'running'],
-      ['bb_deployment', 'post_deployment', 'running'],
       ['bb_work', 'review', 'review'],
       ['bb_work', 'qualification', 'prepare'],
       ['bb_work', 'plan', 'prepare'],
-      ['bb_deployment', 'pre_deployment', 'prepare'],
       ['bb_work', 'done', 'done'],
       ['bb_work', 'cancelled', 'cancelled'],
     ] as [$workflow, $state, $phase]) {

@@ -564,7 +564,7 @@ function buildConfigCommand(
       // off `--auth-type`: a repeat `bakers init` supplies no flag and writes
       // nothing, and keying on the input would leave exactly that run — the
       // one an operator uses as a diagnostic — reporting a failure again. A
-      // read that fails falls through to verifying, so a broken file is
+      // read that fails falls through to the check, so a broken file is
       // reported rather than quietly skipped.
       let connectionGrant: unknown;
       if (operation === 'init' && planning.connectionPath)

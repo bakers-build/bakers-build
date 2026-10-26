@@ -103,7 +103,7 @@ Then('the page says {string}', async ({ page }, text: string) => {
 
 Then('the ticket page offers no workflow step', async ({ page }) => {
   await expect(page.locator('[name^="bb_transition_"]')).toHaveCount(0);
-  for (const name of ['Qualify', 'Start work', 'Redo plan', 'Request review', 'Done', 'Deploy', 'Summarize', 'Requalify']) {
+  for (const name of ['Qualify', 'Start work', 'Redo plan', 'Request review', 'Done', 'Requalify']) {
     await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
   await expect(page.getByRole('link', { name: 'Freeze ticket', exact: true })).toBeVisible();

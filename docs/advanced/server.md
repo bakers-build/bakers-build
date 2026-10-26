@@ -92,19 +92,14 @@ Give users the server URL and their login method through a private channel. They
 
 ## Release
 
-CLI and server share one version. A release is the merge of `develop` into `main`:
+CLI and server share one version, held in the repository's `VERSION` file. A release is the prod deployment of a `deploy-and-release` ticket ([Release](/advanced/cli/deployment#release)):
 
-1. On `develop`, generate the entry and open it as a normal merge request:
+1. `commit-and-tag-version` on a release branch `release/<date>-<ticket>` derives the version from the Conventional Commits merge request titles since the last version tag, writes the `## [0.2.0]` section into `CHANGELOG.md` and commits `chore(release): 0.2.0`.
+2. The release branch merges into `main` through a merge request, its gate and a merge commit; the gate builds and tests the images of the branch's tree. The pipeline promotes them and deploys prod; then the `release` job tags `v0.2.0` on the `chore(release)` commit and creates the GitLab release with that section. A `main` push whose CHANGELOG version is already tagged releases nothing.
+3. The tag pipeline's `publish:npm` publishes `@bakers-build/bakers` and its packages as `latest`, and `release_images` tags that commit's `:tree-<tree>` images `php`, `nginx` and `mcp` as `:0.2.0` and `:latest`. Never publish by hand.
+4. The release branch merges back into `develop` the same way. `main` is never merged into `develop`.
 
-   ```sh
-   GITLAB_TOKEN=$(glab config get token --host <gitlab host>) node bakers-cli/scripts/changelog.mjs 0.2.0
-   ```
-
-   It prepends `## 0.2.0` to `CHANGELOG.md`: one line per merge request since the last version tag, split into **CLI** (touched `bakers-cli/`) and **Server**, grouped by the label `breaking`, `feature`, `bug` or `maintenance`. Unlabelled MRs are left out and listed; label them and run it again if they belong in the notes. Correct the wording in the merge request.
-2. Merge `develop` into `main` through a merge request and its gate; the gate finds the images `develop` tested and builds nothing. The pipeline promotes them and deploys prod; then the `release` job tags `v0.2.0` and creates the GitLab release with that entry. A `main` push whose CHANGELOG version is already tagged releases nothing.
-3. The tag pipeline's `publish:npm` publishes `@bakers-build/bakers` and its packages as `latest`, and `release_images` tags the commit's `php`, `nginx` and `mcp` images `:0.2.0` and `:latest`. Never publish by hand.
-
-`php:0.2.0` is the server of `@bakers-build/bakers@0.2.0`. Release images carry the labels `org.opencontainers.image.version` and `org.opencontainers.image.revision`: the layers equal `:<commit-sha>`, the digest differs. `docker inspect --format '{{json .Config.Labels}}' <image>` shows what a host runs. The registry cleanup policy deletes `tree-*` tags after 30 days.
+`php:0.2.0` is the server of `@bakers-build/bakers@0.2.0`. Release images carry the labels `org.opencontainers.image.version` and `org.opencontainers.image.revision`: the layers equal the deployed `:<commit-sha>`, the digest differs. `docker inspect --format '{{json .Config.Labels}}' <image>` shows what a host runs. The registry cleanup policy deletes `tree-*` tags after 30 days.
 
 Every `develop` deploy also publishes the CLI under the dist-tag `next` (`<next patch>-next.<pipeline number>`), matching the commit on dev.
 

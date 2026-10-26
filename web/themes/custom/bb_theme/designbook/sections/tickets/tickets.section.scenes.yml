@@ -599,10 +599,6 @@ scenes:
                                     label: bb_work
                                     description: Work — plan before working
                                     selected: false
-                                  - value: bb_deployment
-                                    label: bb_deployment
-                                    description: Release work — pre_deployment before post_deployment
-                                    selected: false
                         - component: bb_theme:option_picker
                           props:
                             variant: facet
@@ -4210,10 +4206,6 @@ scenes:
                                 label: bb_work
                                 description: Work — plan before working
                                 selected: true
-                              - value: bb_deployment
-                                label: bb_deployment
-                                description: Release work — pre_deployment before post_deployment
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:
@@ -4471,10 +4463,6 @@ scenes:
                                 label: bb_work
                                 description: Work — plan before working
                                 selected: true
-                              - value: bb_deployment
-                                label: bb_deployment
-                                description: Release work — pre_deployment before post_deployment
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:
@@ -4697,10 +4685,6 @@ scenes:
                                 label: bb_work
                                 description: Work — plan before working
                                 selected: true
-                              - value: bb_deployment
-                                label: bb_deployment
-                                description: Release work — pre_deployment before post_deployment
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:
@@ -4972,10 +4956,6 @@ scenes:
                                 label: bb_work
                                 description: Work — plan before working
                                 selected: true
-                              - value: bb_deployment
-                                label: bb_deployment
-                                description: Release work — pre_deployment before post_deployment
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:

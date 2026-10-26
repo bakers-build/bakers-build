@@ -10,12 +10,13 @@ Start from `skills/bb-init-project/references/WORKFLOW.template.md`. No CLI read
 skills; the agent environment's native skill mechanism loads them.
 
 **Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
-field, a provision hint or a subagent start selects. Exactly eleven ship:
+field, a provision hint or a subagent start selects. Exactly thirteen ship:
 
 | Skill | Job |
 |---|---|
 | `@bakers-build/bb-workflow` | The frame of every state run: seven phases — `read, provision, work, validate, deliver, outtake, transition` — the state files, routing, binding, replacement and stop rules. |
-| `@bakers-build/bb-recipe-matt` | The shipped recipe and project default, selected by the ticket's `recipe` field. |
+| `@bakers-build/bb-recipe-matt` | The project-default recipe for feature, bug and chore tickets, selected by the ticket's `recipe` field. |
+| `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
 | `@bakers-build/bb-runtime-ddev` | Runtime guide: provision, run, lint, test and persona logins in DDEV; named in a `## bb-phase-provision` hint. |
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
 | `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
@@ -25,14 +26,17 @@ field, a provision hint or a subagent start selects. Exactly eleven ship:
 state file under `skills/bb-workflow/references/` with exactly seven `## <phase>` sections, which
 always run and own gates, publication and transitions. A recipe adds slots
 (`## [<type>:]bb-state-<state>` › `### bb-phase-<phase>`; the type slot wins per phase), and
-`WORKFLOW.md` and runtime guides add `## bb-phase-<phase>` sections. Any other state stops the run.
+`WORKFLOW.md` and runtime guides add `## bb-phase-<phase>` sections. Every state but `qualification`
+runs the recipe's section inside its state file; a state without a state file stops the run. Where a
+slot names its own comment, check or merge, it replaces the state file's default.
 
 **References route nothing.** Everything only read — reading a ticket, publishing a comment,
 provisioning, verification, the browser surface, intake, outtake, measurement, merge and the state
 write — is a reference under `skills/bb-workflow/references/`, not a skill, and cannot be invoked.
 Each has one observable result and never chooses a destination; **a reference owns the command it
 performs**. `references/ensure-qualification.md` keeps its guard exception — its only route is the
-recovery back to `qualification`. Lifecycle parameters use declared `inputs`.
+recovery back to `qualification`. Project parameters are `WORKFLOW.md` hint tables, such as the
+origin-label table under `## bb-phase-transition`.
 
 For authoring recipes, guides and hints, read `skills/bb-workflow/references/authoring.md`.
 

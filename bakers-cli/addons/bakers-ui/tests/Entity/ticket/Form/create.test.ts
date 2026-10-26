@@ -43,7 +43,7 @@ const opts: CreateFormOptions = {
   ],
   workflows: [
     { id: 'bb_work', label: 'work' },
-    { id: 'bb_deployment', label: 'deployment' },
+    { id: 'bb_other', label: 'other' },
   ],
 };
 
@@ -105,7 +105,7 @@ it('cycle rotates the active select value (wraps)', () => {
 it('cycle only touches the active field', () => {
   s = { ...s, active: idx('workflow') };
   s = cycle(s, opts, 1);
-  expect(s.workflow).toBe('bb_deployment');
+  expect(s.workflow).toBe('bb_other');
   expect(s.assignee).toBe('u1'); // untouched
 });
 
@@ -436,7 +436,7 @@ const filled = (): CreateFormState => ({
   assignee: 'u2',
   conductor: null,
   labels: new Set(['l2']),
-  workflow: 'bb_deployment',
+  workflow: 'bb_other',
 });
 
 it('BB-314 D2: rememberedValues carries the routing keys and no content key', () => {
@@ -455,7 +455,7 @@ it('BB-314 D1/D5: a prefilled form empties the content and re-defaults the workf
 
   expect(next.title).toBe('');
   expect(next.description).toBe('');
-  // NOT `bb_deployment`: a workflow is a per-ticket decision, so the field falls
+  // NOT `bb_other`: a workflow is a per-ticket decision, so the field falls
   // back through the kernel's own select rule to the first option (D5).
   expect(next.workflow).toBe('bb_work');
 

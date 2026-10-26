@@ -550,10 +550,6 @@ content:
               - plan
               - working
               - review
-              - pre_deployment
-              - post_deployment
-              - verifying
-              - summary
         workspace_root:
           type: string
           title: Workspace root
@@ -746,8 +742,6 @@ content:
           settings:
             allowed_values:
               - bb_work
-              - bb_deployment
-              - bb_verification
         title:
           type: string
           title: Title
@@ -772,10 +766,6 @@ content:
               - plan
               - working
               - review
-              - pre_deployment
-              - post_deployment
-              - verifying
-              - summary
               - done
               - cancelled
         ticket_type:

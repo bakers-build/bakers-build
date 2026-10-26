@@ -1,12 +1,12 @@
 # BB-334 D4 — the card precises the column instead of repeating it.
 #
 # A board column is a PHASE (Intake, Prepare, Work, Accept), so the column alone cannot say whether
-# a card in Prepare is in `plan` or `pre_deployment`. The card names its exact state as
+# a card in Work is in `working` or another running state. The card names its exact state as
 # TEXT in a badge; the badge's dot and the card's accent edge keep encoding derived_status.
 #
 # This is the footer composition the two pre-existing card stories do not cover — both used to end in
-# a bare dot, which showed the run status in colour alone and never named it. The state shown here,
-# `pre_deployment`, is deliberately one no state-column board ever had a column for.
+# a bare dot, which showed the run status in colour alone and never named it. The card here is a
+# deployment ticket: its type says what kind of work it is, the badge names its state.
 component: bb_theme:board-card
 name: State pill
 props:
@@ -14,8 +14,8 @@ props:
   title: Release 2.4 to production
   status: running
   priority: p1
-  type: bb_deployment
-  state: pre_deployment
+  type: deployment
+  state: working
 slots:
   footer:
     - type: component
@@ -33,7 +33,7 @@ slots:
     - type: component
       component: bb_theme:badge
       props:
-        label: pre_deployment
+        label: working
         tone: running
         dot: true
     - type: component

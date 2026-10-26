@@ -24,8 +24,6 @@
                   "type": "string",
                   "title": "Workflow",
                   "enum": [
-                    "bb_deployment",
-                    "bb_verification",
                     "bb_work"
                   ]
                 },

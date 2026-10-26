@@ -451,16 +451,16 @@ final class TicketTemplateFormTest extends KernelTestBase {
   }
 
   /**
-   * After a workflow change the ticket lands in the target state picked for it.
+   * The ticket lands in the target state picked in the dialog.
    */
-  public function testChangedWorkflowCreatesInPickedTargetState(): void {
+  public function testCreatesInPickedTargetState(): void {
     $template = $this->template();
     $template->set('target_state', 'plan')->save();
 
     $state = $this->submitDialog($template, [
-      'title' => [['value' => 'Verification instead']],
-      'workflow' => 'bb_verification',
-      'target_state' => 'summary',
+      'title' => [['value' => 'Working instead']],
+      'workflow' => 'bb_work',
+      'target_state' => 'working',
     ]);
 
     self::assertSame([], array_map('strval', $state->getErrors()));
@@ -468,8 +468,8 @@ final class TicketTemplateFormTest extends KernelTestBase {
     self::assertCount(1, $tickets);
     $ticket = reset($tickets);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
-    self::assertSame('bb_verification', $ticket->get('workflow')->value);
-    self::assertSame('summary', $ticket->get('state')->value);
+    self::assertSame('bb_work', $ticket->get('workflow')->value);
+    self::assertSame('working', $ticket->get('state')->value);
   }
 
   /**
@@ -479,12 +479,12 @@ final class TicketTemplateFormTest extends KernelTestBase {
     $template = $this->template();
     $template->set('target_state', 'plan')->save();
 
-    // `plan` is unreachable in bb_verification, so the instantiation is
+    // `review` is more than one transition away, so the instantiation is
     // refused.
     $state = $this->submitDialog($template, [
       'title' => [['value' => 'Kept title']],
-      'workflow' => 'bb_verification',
-      'target_state' => 'plan',
+      'workflow' => 'bb_work',
+      'target_state' => 'review',
     ]);
 
     self::assertSame([], $this->templateTickets());

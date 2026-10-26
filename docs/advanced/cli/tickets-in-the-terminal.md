@@ -77,4 +77,4 @@ A ticket without a worktree on that machine gets no hook and no marker. The cond
 - **Parent.** A sub-ticket's base branch is its parent's branch; otherwise it is the project's default branch. It is computed, never set.
 - **Carrier ticket.** To base several tickets on a long-lived branch, create one ticket whose `branch_name` is that branch (writable only at creation) and hang the real tickets under it.
 
-The server also defines the workflows `bb_deployment` and `bb_verification`. bakers.build skills do not run them: a run on a ticket in one of their states stops and names the state.
+Every ticket runs the one workflow `bb_work`. A deployment or a verification is a ticket with the type `deployment` or `verification` and its recipe.

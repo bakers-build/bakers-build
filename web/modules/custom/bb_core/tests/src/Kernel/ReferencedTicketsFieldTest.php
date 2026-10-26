@@ -11,8 +11,9 @@ use PHPUnit\Framework\Attributes\Group;
 /**
  * Verifies the referenced_tickets base field on bb_ticket (BB-140).
  *
- * A bb_deployment ticket stores its release batch here. The getter returns
- * the referenced BbTicket entities; an empty field yields an empty array.
+ * A deployment ticket (type `deployment`) stores its release batch here. The
+ * getter returns the referenced BbTicket entities; an empty field yields an
+ * empty array.
  */
 #[Group('bb_core')]
 final class ReferencedTicketsFieldTest extends KernelTestBase {
@@ -64,9 +65,9 @@ final class ReferencedTicketsFieldTest extends KernelTestBase {
     $b->save();
 
     $deployment = $storage->create([
-      'workflow' => 'bb_deployment',
+      'workflow' => 'bb_work',
       'title' => 'Release',
-      'state' => 'pre_deployment',
+      'state' => 'plan',
       'project_id' => $project->id(),
       'referenced_tickets' => [$a->id(), $b->id()],
     ]);
@@ -89,9 +90,9 @@ final class ReferencedTicketsFieldTest extends KernelTestBase {
     $project = $this->container->get('entity_type.manager')->getStorage('bb_project')->create(['name' => 'p']);
     $project->save();
     $deployment = $storage->create([
-      'workflow' => 'bb_deployment',
+      'workflow' => 'bb_work',
       'title' => 'Release',
-      'state' => 'pre_deployment',
+      'state' => 'plan',
       'project_id' => $project->id(),
     ]);
     $this->assertInstanceOf(BbTicketInterface::class, $deployment);
