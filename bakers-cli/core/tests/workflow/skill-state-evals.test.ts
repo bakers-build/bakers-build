@@ -454,3 +454,175 @@ describe('create-ticket profile on the Markdown readback', () => {
     ).toContain('ticket-readback');
   });
 });
+
+describe('recipe run profile', () => {
+  const sha = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+  const cmd = (argv: string[], stdout = '') => ({
+    tool: argv[0],
+    arguments: { argv },
+    result: ok(stdout),
+  });
+  const merge = (mr: string, squash = 'false') =>
+    cmd([
+      'glab',
+      'api',
+      '-X',
+      'PUT',
+      `projects/:id/merge_requests/${mr}/merge`,
+      '-F',
+      `squash=${squash}`,
+      '-F',
+      'should_remove_source_branch=false',
+    ]);
+  it('accepts a plan comment with SHA, batch, version and changelog, stopping uncut', async () => {
+    const plan = `Frozen ${sha}; batch EVAL-41, EVAL-42; version 0.2.0\n### Features\n### Bug Fixes`;
+    expect(
+      await judge('deploy-plan', 'Approve?', [
+        readTicket(),
+        cmd(['git', 'rev-parse', 'origin/develop'], sha),
+        comment('plan', plan),
+        comment('summary'),
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('deploy-plan', 'Done.', [
+        readTicket(),
+        cmd(['git', 'checkout', '-b', 'release/x']),
+        comment('plan', 'Batch EVAL-41'),
+        comment('summary'),
+        bakers(['update', target, '--state', 'working']),
+      ]),
+    ).toEqual(['no-transition', 'plan-content', 'no-branch']);
+  });
+  it('blocks every merge on an unplayed gate', async () => {
+    const summary = comment(
+      'summary',
+      'MR 51: gate not played; nothing merged.',
+    );
+    expect(
+      await judge('deploy-working-gate-red', 'Blocked.', [
+        readTicket(),
+        summary,
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('deploy-working-gate-red', 'Merged.', [
+        readTicket(),
+        merge('51'),
+        summary,
+      ]),
+    ).toEqual(['merges']);
+  });
+  it('merges into main, then back into develop, by merge commit only', async () => {
+    const summary = comment('summary', 'chore(release): 0.2.0 tagged v0.2.0');
+    expect(
+      await judge('deploy-working-release', 'Released.', [
+        readTicket(),
+        merge('51'),
+        merge('52'),
+        summary,
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('deploy-working-release', 'Released.', [
+        readTicket(),
+        file('skills/bb-workflow/references/merge.md'),
+        merge('51', 'true'),
+        merge('52'),
+        summary,
+      ]),
+    ).toEqual(['merges', 'frame-merge-unused']);
+  });
+  it('wants one result per ticket, one searched regression and the missing persona', async () => {
+    const search = bakers([
+      'search',
+      'bb_ticket',
+      '--bundle',
+      'bb_ticket',
+      '--filter',
+      'title:CONTAINS:totals',
+    ]);
+    const bug = bakers([
+      'create',
+      'bb_ticket',
+      '--bundle',
+      'bb_ticket',
+      '--type_names',
+      'bug',
+    ]);
+    const good = [
+      readTicket(),
+      comment('result', 'EVAL-60: 3 passed'),
+      comment(
+        'result',
+        'EVAL-61: guest totals failed\nsouth-auditor: missing, not run',
+      ),
+      search,
+      bug,
+      comment('summary'),
+    ];
+    expect(await judge('verify-working', 'Stopped in working.', good)).toEqual(
+      [],
+    );
+    expect(
+      await judge(
+        'verify-working',
+        'Ran the audit path as admin: /user/reset/1/abc',
+        [
+          readTicket(),
+          comment('result', 'EVAL-60 and EVAL-61'),
+          bug,
+          comment('summary'),
+        ],
+      ),
+    ).toEqual(['per-ticket-results', 'regressions', 'missing-persona']);
+  });
+});
+
+describe('origin map profile', () => {
+  const workflow = file('WORKFLOW.md');
+  const write = (label: string, remove: string) => ({
+    tool: 'glab',
+    arguments: {
+      argv: [
+        'glab',
+        'issue',
+        'update',
+        'https://git.example.invalid/acme/shop/-/issues/7',
+        '--label',
+        label,
+        '--unlabel',
+        remove,
+      ],
+    },
+    result: ok('updated'),
+  });
+  it('writes the table label and removes the rest of its family', async () => {
+    expect(
+      await judge('origin-map', 'in progress', [
+        readTicket(),
+        workflow,
+        write('in progress', 'ready for review'),
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map', 'doing', [
+        readTicket(),
+        workflow,
+        write('doing', 'review'),
+      ]),
+    ).toEqual(['label-write']);
+  });
+  it('writes nothing without a table', async () => {
+    expect(
+      await judge('origin-map-absent', 'No table.', [readTicket(), workflow]),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map-absent', 'doing', [
+        readTicket(),
+        workflow,
+        write('in progress', 'ready for review'),
+      ]),
+    ).toEqual(['no-write']);
+  });
+});

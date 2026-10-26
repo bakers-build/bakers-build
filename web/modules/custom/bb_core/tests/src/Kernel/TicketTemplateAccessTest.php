@@ -615,27 +615,12 @@ final class TicketTemplateAccessTest extends KernelTestBase {
   public function testUnreachableTargetStateFailsTemplateValidation(): void {
     self::assertSame([], $this->violationPathsAs($this->newTemplate('a', ['target_state' => 'plan']), $this->insider));
     self::assertSame([], $this->violationPathsAs($this->newTemplate('a', ['target_state' => '']), $this->insider));
-    // `verifying` belongs to the verification workflow; `cancelled` is
-    // terminal; `review` is more than one transition away.
-    foreach (['verifying', 'cancelled', 'review'] as $state) {
+    // `triage` is no bb_work state; `cancelled` is terminal; `review` is
+    // more than one transition away.
+    foreach (['triage', 'cancelled', 'review'] as $state) {
       $paths = $this->violationPathsAs($this->newTemplate('a', ['target_state' => $state]), $this->insider);
       self::assertContains('target_state', $paths, "Target state $state is rejected for bb_work.");
     }
-  }
-
-  /**
-   * Changing only the workflow still trips an unreachable target state.
-   *
-   * JSON:API keeps only violations of the fields a PATCH names, so the
-   * violation must surface on `workflow` too.
-   */
-  public function testWorkflowChangeAloneRejectsAnUnreachableTargetState(): void {
-    $template = $this->template('a');
-    $template->set('target_state', 'plan')->save();
-    $template->set('workflow', 'bb_verification');
-    $violations = $template->validate();
-    $violations->filterByFields(array_diff(array_keys($template->getFieldDefinitions()), ['workflow']));
-    self::assertGreaterThan(0, $violations->count(), 'A PATCH of the workflow alone reports the unreachable target state.');
   }
 
   /**

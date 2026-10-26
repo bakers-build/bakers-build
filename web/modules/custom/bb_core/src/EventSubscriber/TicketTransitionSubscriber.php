@@ -33,7 +33,7 @@ final class TicketTransitionSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents(): array {
     // Group-level event: fires for every transition in the bb_ticket
-    // workflow group (bb_work, bb_deployment and bb_verification share it).
+    // workflow group (bb_work is its only workflow).
     return ['bb_ticket.post_transition' => 'onTransition'];
   }
 

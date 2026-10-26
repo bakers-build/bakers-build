@@ -356,9 +356,11 @@ class Simulation:
         # Seeded comments model earlier states' handoffs; created ones are numbered after them.
         self.comments = {c['id']: record_from('bb_comment--bb_comment', c) for c in self.config.get('comments', [])}
         self.terms = {t['id']: record_from('bb_term--label', t) for t in CONTRACT['terms']}
+        # A fixture adds the type and recipe terms its workspace already holds (terms are created lazily).
+        extra = self.config.get('terms', {})
         self.vocabularies = {'label': self.terms,
-                             'type': {t['id']: record_from('bb_term--type', t) for t in CONTRACT['type_terms']},
-                             'recipe': {t['id']: record_from('bb_term--recipe', t) for t in CONTRACT['recipe_terms']}}
+                             'type': {t['id']: record_from('bb_term--type', t) for t in CONTRACT['type_terms'] + extra.get('type', [])},
+                             'recipe': {t['id']: record_from('bb_term--recipe', t) for t in CONTRACT['recipe_terms'] + extra.get('recipe', [])}}
         self.lost = False
         self.merge_completed = False
 

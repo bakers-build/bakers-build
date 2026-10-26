@@ -62,19 +62,22 @@ Runtime: DDEV through `@bakers-build/bb-runtime-ddev`.
 
 The skills and commands are examples; name your own for other stacks.
 
-## Adjust an input
+## Map states to origin labels
 
-Some `bb-workflow` references declare inputs with a default. To change one, name the reference and the key in the section of the phase where it is used, for example the origin label map, which is written at the end of a run:
+A ticket whose origin is an issue gets a customer-facing label on that issue at every transition. The labels come from one table in `## bb-phase-transition`, and from nowhere else:
 
 ```md
 ## bb-phase-transition
 
-`@bakers-build/bb-workflow` › `references/origin-status.md` `origin_labels.data`:
-
-    working: in progress
-    done: ready for review
+| State | Origin label |
+|---|---|
+| qualification | doing |
+| plan | doing |
+| working | doing |
+| review | doing |
+| done | review |
 ```
 
-`origin_labels.data` is the one declared input.
+This is the default table the project template ships. Change the labels to your customer's vocabulary. A state without a row writes nothing, and a file without the table writes no origin label at all. The labels in the table form the family bakers.build owns: exactly one of them is on the issue at a time, and labels outside the table are never touched.
 
 **Done when:** the file starts with the entry line and every skill it names is installed for the agent. [How it works](/skills-and-workflows/how-it-works) explains how a run reads it.

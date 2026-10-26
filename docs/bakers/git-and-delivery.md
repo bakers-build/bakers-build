@@ -62,6 +62,10 @@ merge call that omits `squash` or `should_remove_source_branch` inherits whateve
 stores — including the `force_remove_source_branch` a forge project setting puts there — so a
 property left unstated is decided somewhere else entirely.
 
+`main` is the exception: it is never squashed. Only a release branch reaches it, by merge commit,
+so the `release` job finds the `chore(release)` commit as the merge's second parent and `develop`
+contains the tagged commit ([deployment](../advanced/cli/deployment.md)).
+
 ## Ticket identifiers by surface
 
 The bakers.build identifier is a pointer into the tracker, and where

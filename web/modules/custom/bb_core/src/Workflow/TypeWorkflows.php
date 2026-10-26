@@ -27,8 +27,8 @@ final class TypeWorkflows {
    * A phase answers ONE question — who is on the hook right now — and it is a
    * fact about the WORK rather than about any screen. It exists because a
    * caller that wants "is this executing" must not have to know that
-   * `working`, `verifying`, `running`, `post_deployment` and `summary` are five
-   * names for it across five workflows.
+   * `working` and `running` are two
+   * names for it across two workflows.
    *
    * The list is a closed vocabulary on purpose: `phase()` rejects a value
    * outside it, so a typo in `bb_core.workflows.yml` is a failure and not a

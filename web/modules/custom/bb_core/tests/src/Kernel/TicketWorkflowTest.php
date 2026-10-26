@@ -49,7 +49,7 @@ final class TicketWorkflowTest extends KernelTestBase {
   }
 
   /**
-   * Every work ticket runs bb_work; the old per-type workflows are gone.
+   * Every ticket runs bb_work; it is the only ticket workflow.
    *
    * States and transitions are asserted exactly, so a new route cannot
    * arrive unnoticed.
@@ -60,7 +60,7 @@ final class TicketWorkflowTest extends KernelTestBase {
       $manager->getDefinitions(),
       static fn (array $definition): bool => $definition['group'] === 'bb_ticket',
     ));
-    $this->assertSame(['bb_work', 'bb_deployment', 'bb_verification'], $ticket_workflows);
+    $this->assertSame(['bb_work'], $ticket_workflows);
     $work = $manager->createInstance('bb_work');
     $this->assertInstanceOf(WorkflowInterface::class, $work);
     $this->assertSame(
@@ -186,12 +186,7 @@ final class TicketWorkflowTest extends KernelTestBase {
    */
   public function testCancelledHasNoOutgoingTransitions(): void {
     $manager = $this->container->get('plugin.manager.workflow');
-    $ticket_workflows = [
-      'bb_work',
-      'bb_deployment',
-      'bb_verification',
-    ];
-    foreach ($ticket_workflows as $id) {
+    foreach (['bb_work'] as $id) {
       $this->assertTrue($manager->hasDefinition($id), "workflow $id missing");
       $workflow = $manager->createInstance($id);
       $this->assertInstanceOf(WorkflowInterface::class, $workflow);

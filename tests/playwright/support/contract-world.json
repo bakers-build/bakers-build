@@ -247,6 +247,14 @@
     "uuid": "b6000000-0000-4000-8000-000000000004",
     "entityType": "bb_term"
   },
+  "term.deployment": {
+    "uuid": "db1a0000-0000-4000-8000-000000000024",
+    "entityType": "bb_term"
+  },
+  "term.verification": {
+    "uuid": "db1a0000-0000-4000-8000-000000000025",
+    "entityType": "bb_term"
+  },
   "user.dual-lead": {
     "uuid": "69dd2fa3-72e6-53f8-85ed-9742870a71e5",
     "entityType": "user"

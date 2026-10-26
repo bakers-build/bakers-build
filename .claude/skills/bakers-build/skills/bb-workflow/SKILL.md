@@ -23,14 +23,12 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
 1. Read complete context through [read ticket](references/read-ticket.md).
 2. Route by state:
 
-   | State | State file |
+   | State | Flow |
    |---|---|
    | `qualification` | [qualification](references/qualification.md) |
-   | `plan` | [plan](references/plan.md) |
-   | `working` | [working](references/working.md) |
-   | `review` | [review](references/review.md) |
+   | every other state | the recipe's `bb-state-<state>` section, run in the state file of that name: [plan](references/plan.md), [working](references/working.md), [review](references/review.md) |
 
-   Any other state, or a state file that cannot be read: stop and name it.
+   A state without such a file, or a file that cannot be read: stop and name it, reading no recipe.
 3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field; empty — always at
    qualification — means the installed recipe declaring itself project default. Read its slots for
    this state.
@@ -39,8 +37,9 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
 
 ## Required skills
 
-Slots, matching hint rows and `.prompt` values are **binding**: load every skill they require before
-doing the work it governs. **Load** means invoke the skill and read its **complete** `SKILL.md`,
+Recipe sections and hint rows are **binding**: load every skill they require before doing the work
+it governs, and where a slot names its own deliverable, comment, merge or check, it replaces the
+state file's default for that phase. Approval, the coding gate, the verdict and every readback stay. **Load** means invoke the skill and read its **complete** `SKILL.md`,
 then announce what you loaded. Equivalent reasoning, paraphrasing the method, or naming a skill
 afterwards does **not** count. A hint may mark a skill **advisory**; that one may be skipped, and
 the outtake says so. A required skill is replaced only when the user explicitly asks; the outtake

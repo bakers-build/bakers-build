@@ -6,12 +6,14 @@ bakers.build ships no workflow engine and no loader. It ships skills, which are 
 
 ## Skills and references
 
-A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships eleven:
+A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships thirteen:
 
 | Skill | Chosen by |
 |---|---|
 | `bb-workflow` | the `WORKFLOW.md` entry line; the frame of every state run |
-| `bb-recipe-matt` | the ticket's `recipe` field; the shipped recipe and project default |
+| `bb-recipe-matt` | the ticket's `recipe` field; the project default, for `feature`, `bug` and `chore` tickets |
+| `bb-recipe-deploy-and-release` | the ticket's `recipe` field; for `deployment` tickets |
+| `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
 | `bb-runtime-ddev` | the project's `bb-phase-provision` hint |
 | `bb-verdict` | the review state, as its subagent's start |
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
@@ -27,13 +29,22 @@ A run is **state × phase**. Every state run passes seven phases in order: `read
 
 ## The frame
 
-`bb-workflow` is the single entry point. A project's `WORKFLOW.md` starts with one line that invokes it. It reads the ticket through `references/read-ticket.md`, routes the state to `references/<state>.md`, resolves the recipe, renders the intake (`references/intake.md`) once and starts the state file's `## read`. Any other state, such as a ticket in a deployment or verification workflow, stops the run and names the state.
+`bb-workflow` is the single entry point. A project's `WORKFLOW.md` starts with one line that invokes it. It reads the ticket through `references/read-ticket.md` and routes by state. The routing table has two rows:
+
+| State | Flow |
+|---|---|
+| `qualification` | `references/qualification.md` |
+| every other state | the recipe's `bb-state-<state>` section, run inside the state file of that name (`plan`, `working`, `review`) |
+
+It then resolves the recipe, renders the intake (`references/intake.md`) once and starts the state file's `## read`. A state without a state file stops the run and names the state.
+
+Every ticket runs the one workflow `bb_work`: `qualification → plan → working → review → done`. A deployment and a verification are tickets of type `deployment` and `verification` whose recipes, `bb-recipe-deploy-and-release` and `bb-recipe-verify`, say what `plan`, `working` and `review` mean for them.
 
 `plan`, `working` and `review` first apply `references/ensure-qualification.md` and continue only on `qualified`. Provisioning is lazy: the runtime is brought up before the first action that needs it, and skipped when nothing does.
 
 ## Recipes
 
-A recipe is one skill named `bb-recipe-<method>` per engineering method, free of domain and runtime. Its description names the method, the ticket types it covers and, on at most one installed recipe, `Project default`; qualification chooses from descriptions alone. Its sections are `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`; each holds `### bb-phase-<phase>` slots only where the method adds something. Per phase the type slot wins, then the general one, else none. A slot supplies method, never gates, publication or transitions. A recipe names the method's original skills, links no `bb-workflow` reference, calls no other bakers.build skill, and leaves domain, runtime and project commands to guides and hints. A recipe may live in any plugin. The shipped recipe is `bb-recipe-matt`.
+A recipe is one skill named `bb-recipe-<method>` per engineering method, free of domain and runtime. Its description names the method, the ticket types it covers and, on at most one installed recipe, `Project default`; qualification chooses from descriptions alone. Its sections are `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`; each holds `### bb-phase-<phase>` slots only where the method adds something. Per phase the type slot wins, then the general one, else none. A slot supplies method; where it names its own deliverable, comment, merge or check, that replaces the state file's default. Approval, the coding gate, the verdict and every readback stay, and a transition slot only picks among the gate's destinations. A recipe names the method's original skills, links no `bb-workflow` reference, calls no other bakers.build skill, and leaves domain, runtime and project commands to guides and hints. A recipe may live in any plugin. The shipped recipes are `bb-recipe-matt` (project default), `bb-recipe-deploy-and-release` and `bb-recipe-verify`.
 
 The ticket's `recipe` field names the recipe, without the `bb-recipe-` prefix; empty means the project default. Its `ticket_type` field selects the type slots.
 
@@ -43,17 +54,13 @@ A runtime guide is one skill named `bb-runtime-<tech>` that says how to provisio
 
 ## Project hints
 
-`WORKFLOW.md` is the entry line plus optional `## bb-phase-<phase>` sections and nothing else. `## bb-phase-work` holds a `| When | Skill |` table and `## bb-phase-validate` a `| When | Command |` table; a run applies every matching row. `## bb-phase-outtake` names the test-user list and how personas get logins. Repository conventions and test lore belong in repository docs that `CLAUDE.md` points to.
+`WORKFLOW.md` is the entry line plus optional `## bb-phase-<phase>` sections and nothing else. `## bb-phase-work` holds a `| When | Skill |` table and `## bb-phase-validate` a `| When | Command |` table; a run applies every matching row. `## bb-phase-outtake` names the test-user list and how personas get logins. `## bb-phase-transition` holds the origin-label table (`| State | Origin label |`), the only source `references/origin-status.md` reads; without the table no origin label is ever written. Repository conventions and test lore belong in repository docs that `CLAUDE.md` points to.
 
 ## Binding and stop rules
 
-Slots, matching hint rows and `.prompt` values are binding: the agent loads every skill they require, reading its complete `SKILL.md`, before the work it governs, and announces what it loaded. A hint may mark a skill advisory. A required skill is replaced only when the user explicitly asks, and the outtake names the replacement.
+Recipe sections and hint rows are binding: the agent loads every skill they require, reading its complete `SKILL.md`, before the work it governs, and announces what it loaded. A hint may mark a skill advisory. A required skill is replaced only when the user explicitly asks, and the outtake names the replacement.
 
 If the recipe, its state section, the ticket's type among the recipe's declared types or a required skill cannot be resolved, the run stops and reports the exact identifier, before it edits a file, commits, publishes a comment, asks for confirmation or transitions the ticket.
-
-## Inputs
-
-Lifecycle parameters of references are declared inputs. A key has the form `<role>.<kind>`: `.command` runs verbatim, `.prompt` is followed verbatim, and `.data` is looked up and neither run nor followed. Each input carries a `description` and a `default`, so it works with no project configuration. A project overrides a value in the `WORKFLOW.md` section of the phase where it is used, naming the reference and the key; the override wins over the default. The one declared input today is `origin_labels.data` (`references/origin-status.md`, at `bb-phase-transition`).
 
 ## References route nothing
 
@@ -80,7 +87,7 @@ records. The summary gives brief successes, actionable problems and persona-spec
 Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` permits 500 whitespace-separated words, including frontmatter and code; `references/retrospective.md` is the listed exception.
 `python3 tests/contract/skill-size.py` enforces this in CI. Remove repetition instead of moving entire instructions elsewhere.
 
-`python3 tests/contract/skill-references.py` is the one structure check: links resolve, retired skill names are absent, grid headings are valid, every state file has the seven phases, `WORKFLOW.md` holds only `## bb-phase-*` sections, recipes link no frame reference, and exactly the eleven skills exist. No skill check asserts a sentence.
+`python3 tests/contract/skill-references.py` is the one structure check: links resolve, retired skill names are absent, grid headings are valid, every state file has the seven phases, `WORKFLOW.md` holds only `## bb-phase-*` sections, recipes link no frame reference and call no other bakers.build skill, no skill declares an input, and exactly the thirteen skills exist. No skill check asserts a sentence.
 
 [Test a skill](/advanced/development/test-skills) covers isolated generation and offline replay.
 These evaluations use synthetic facts, without live integration.

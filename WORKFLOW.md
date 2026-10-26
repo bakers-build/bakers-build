@@ -58,6 +58,14 @@ merged, against the images that deploy:
 Local runs are for debugging a failure or selecting affected tests, never a substitute for the gate
 ([testing](docs/bakers/testing.md)).
 
+### Before merge
+
+The merge request title is the squash subject, verbatim, and the release changelog is generated
+from it: a Conventional Commits subject `type(scope)!: subject`, with `type` one of `feat`, `fix`,
+`chore`, `docs`, `refactor`, `test`, `ci`, `build`, `perf`, an optional scope (`cli`, `server`, a
+module) and `!` for a breaking change (`feat(stats): new vs. done flow chart`). The title lint job
+and the merge refuse any other title; retitle the merge request before playing the gate.
+
 ## bb-phase-outtake
 
 `test_as` personas come from [testing › Test users](docs/bakers/testing.md#test-users): the one
@@ -65,3 +73,13 @@ whose rank and team the change needs (default `north-lead`), plus every persona 
 to be denied (e.g. `north-guest`, `no-bakery`). Manual review gives each a one-time login link
 (`@bakers-build/bb-runtime-ddev` › `bb-phase-outtake`); on a `recipe-test` site the *Test personas* buttons on
 `/user/login` are the fallback.
+
+## bb-phase-transition
+
+| State | Origin label |
+|---|---|
+| qualification | doing |
+| plan | doing |
+| working | doing |
+| review | doing |
+| done | review |

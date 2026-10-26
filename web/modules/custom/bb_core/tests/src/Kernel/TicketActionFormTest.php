@@ -83,7 +83,7 @@ final class TicketActionFormTest extends KernelTestBase {
   }
 
   /**
-   * States of the three ticket workflows, open or terminal.
+   * States of the ticket workflow, open or terminal.
    *
    * @return array<string, array{string, string, bool}>
    *   Workflow, state and whether the ticket can still be cancelled.
@@ -96,10 +96,6 @@ final class TicketActionFormTest extends KernelTestBase {
       'work review' => ['bb_work', 'review', TRUE],
       'work done' => ['bb_work', 'done', FALSE],
       'work cancelled' => ['bb_work', 'cancelled', FALSE],
-      'deployment pre' => ['bb_deployment', 'pre_deployment', TRUE],
-      'deployment post' => ['bb_deployment', 'post_deployment', TRUE],
-      'verification summary' => ['bb_verification', 'summary', TRUE],
-      'verification done' => ['bb_verification', 'done', FALSE],
     ];
   }
 

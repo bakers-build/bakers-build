@@ -85,31 +85,4 @@ final class QualificationHandoffTest extends KernelTestBase {
     $this->assertSame('plan', $reloaded->get('state')->value);
   }
 
-  /**
-   * Verifies that a non-work workflow can also be assigned on hand-off.
-   *
-   * Ensures that qualification is not limited to bb_work — any registered
-   * workflow can be initially assigned.
-   */
-  public function testHandoffWorksForVerificationWorkflow(): void {
-    $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
-
-    $ticket = $storage->create([
-      'identifier' => 'GL-H2',
-      'title' => 'Verification request',
-    ]);
-    $this->assertInstanceOf(BbTicketInterface::class, $ticket);
-    $ticket->save();
-
-    $ticket->set('workflow', 'bb_verification');
-    $ticket->set('state', 'verifying');
-    $ticket->save();
-
-    $storage->resetCache([$ticket->id()]);
-    $reloaded = $storage->load($ticket->id());
-    $this->assertInstanceOf(BbTicketInterface::class, $reloaded);
-    $this->assertSame('bb_verification', (string) $reloaded->get('workflow')->value);
-    $this->assertSame('verifying', $reloaded->get('state')->value);
-  }
-
 }

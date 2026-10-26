@@ -14,7 +14,7 @@ use Drupal\state_machine\Plugin\Workflow\WorkflowInterface;
  *
  * Reads the entity's `state` field workflow (resolved per entity via the
  * field's workflow / workflow_callback setting — bb_ticket picks bb_work,
- * bb_deployment or bb_verification, bb_run is fixed to bb_run) and emits its
+ * bb_run is fixed to bb_run) and emits its
  * states in definition order, minus the terminal `cancelled` side-exit,
  * comma-joined. This keeps every state-flow presentation (ticket_detail,
  * run_row) sourced from bb_core.workflows.yml instead of a hard-coded list.

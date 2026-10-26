@@ -37,11 +37,10 @@ export type EditFieldId =
  * `cancelled`, so no served fact carries the cancel edge. The precedent is
  * `STATE_FILTER_VALUES` in `Data/query.ts`, hardcoded for the same reason.
  *
- * One constant serves every ticket workflow because in ALL of them
- * (`bb_work`, `bb_deployment`, `bb_verification`) `cancel.from` is exactly
- * the set of non-terminal states — so "non-terminal" and "the workflow permits
- * cancelling" are the same predicate, and no workflow id is needed to tell
- * them apart.
+ * One constant serves every ticket workflow because in the ticket workflow
+ * (`bb_work`) `cancel.from` is exactly the set of non-terminal states — so
+ * "non-terminal" and "the workflow permits cancelling" are the same
+ * predicate, and no workflow id is needed to tell them apart.
  */
 export const CANCELLED_STATE = 'cancelled';
 
@@ -57,7 +56,7 @@ export const CANCEL_TICKET_ACTION_ID = 'cancelTicket';
  * The states no transition leaves, in every ticket workflow.
  *
  * The server's own definition (`TypeWorkflows::isTerminal` — "a state no
- * transition leaves") evaluates to exactly this pair for all three workflows.
+ * transition leaves") evaluates to exactly this pair for `bb_work`.
  */
 export const TERMINAL_TICKET_STATES: ReadonlySet<string> = new Set([
   'done',

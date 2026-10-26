@@ -38,10 +38,6 @@ slots:
             label: bb_work
             description: Work ticket — plan before working
             selected: true
-          - value: bb_deployment
-            label: bb_deployment
-            description: Release — prepare, deploy, then verify
-            selected: false
   # Grammar 1 and 2: no visible labels; the identity of a line is its
   # placeholder. BB-420 Task 31 retired `text_line` (everything through
   # form elements) for `bb_theme:form_input` / `bb_theme:form_textarea` — real

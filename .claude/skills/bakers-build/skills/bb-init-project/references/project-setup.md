@@ -12,7 +12,9 @@ Apply only for `project` or `all` initialization, before writing configuration t
    [WORKFLOW.template.md](WORKFLOW.template.md). Keep its entry line verbatim.
 4. Fill the `## bb-phase-provision`, `## bb-phase-work`, `## bb-phase-validate`, `## bb-phase-deliver`
    and `## bb-phase-outtake` hints from repository
-   requirements; delete a section that stays empty. Verify named skills and commands through the
+   requirements; delete a section that stays empty. `## bb-phase-transition` carries the default
+   origin-label table; show it to the operator, apply their vocabulary, or delete it when the
+   project writes no origin labels. Verify named skills and commands through the
    agent environment's installation/discovery facilities; report missing skills by name. Report
    the installed `bb-recipe-*` skills and which declares itself project default.
 5. Ensure `.gitignore` contains `/assets-ai/` with a short explanatory comment

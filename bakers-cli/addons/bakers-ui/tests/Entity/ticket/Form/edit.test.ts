@@ -468,13 +468,7 @@ describe('BB-360 — Cancel ticket and terminal declaration', () => {
     doc({ assignee: USER, conductor: COND }, { attributes: { state } });
 
   it('non-terminal declaration has parent, labels, Save and Cancel ticket — no State', () => {
-    for (const state of [
-      'qualification',
-      'plan',
-      'working',
-      'review',
-      'verifying',
-    ])
+    for (const state of ['qualification', 'plan', 'working', 'review'])
       expect(editFormFor(withState(state)).fields.map((f) => f.id)).toEqual([
         'assignee',
         'reviewers',

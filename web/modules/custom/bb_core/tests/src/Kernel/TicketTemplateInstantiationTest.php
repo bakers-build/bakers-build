@@ -401,15 +401,15 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
   }
 
   /**
-   * A workflow override re-checks the template's target state against it.
+   * A target state override is checked against the workflow.
    */
-  public function testWorkflowOverrideRevalidatesTargetState(): void {
+  public function testTargetStateOverrideIsRevalidated(): void {
     $this->freezeTime(1773057600);
-    // `plan` is reachable in bb_work, not in bb_deployment.
+    // `review` is more than one transition from the start of bb_work.
     $template = $this->createTemplate(['target_state' => 'plan']);
 
     try {
-      $this->instantiator()->instantiate($template->uuid(), $this->actor, ['workflow' => 'bb_deployment']);
+      $this->instantiator()->instantiate($template->uuid(), $this->actor, ['target_state' => 'review']);
       $this->fail('A validation exception was expected.');
     }
     catch (TicketTemplateValidationException) {
@@ -417,10 +417,10 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
     $this->assertSame(0, $this->ticketCount());
 
     $result = $this->instantiator()->instantiate($template->uuid(), $this->actor, [
-      'workflow' => 'bb_deployment',
-      'target_state' => 'post_deployment',
+      'workflow' => 'bb_work',
+      'target_state' => 'working',
     ]);
-    $this->assertSame('post_deployment', (string) $this->ticketOf($result)->get('state')->value);
+    $this->assertSame('working', (string) $this->ticketOf($result)->get('state')->value);
   }
 
   /**

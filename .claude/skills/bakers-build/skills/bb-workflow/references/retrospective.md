@@ -1,9 +1,8 @@
 ## Terminal retrospective
 
-When the destination is `done` or `cancelled` and the workflow is
-`bb_work`, apply this gate before the state write.
-`bb_deployment` bundles other tickets; `bb_verification` evaluates an environment.
-Neither receives a job rating. A nonterminal transition follows the state-write section directly.
+When the destination is `done` or `cancelled`, apply this gate before the state write, except for
+a ticket of type `deployment` or `verification`: one bundles other tickets, the other evaluates an
+environment, and neither receives a job rating. A nonterminal transition follows the state-write section directly.
 
 **Ask → metric → comment → state write is mandatory.** A transition retires the run and can
 remove its write scope. Resolve the retrospective before issuing the update below.

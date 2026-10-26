@@ -21,7 +21,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * no state item and no workflow — `State::getWorkflows()` dereferences NULL.
  *
  * This filter instead lists every workflow in a fixed group (the `bb_ticket`
- * group holds bb_work, bb_deployment, bb_verification) and merges their
+ * group holds bb_work) and merges their
  * states, so the exposed select offers the full union of ticket states
  * without touching an entity. The group id comes from the views data filter
  * definition (`workflow_group`).

@@ -15,7 +15,7 @@ use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 /**
  * Working vs not: filled disc while the phase is running, empty ring otherwise.
  *
- * Work `working` and deployment `post_deployment` are both the running phase.
+ * The phase, not the state name, decides: `working` is the running phase.
  * Same label source as TicketStateCellFormatter, so the icon and the badge
  * never name a state differently. The tooltip is the workflow's own label.
  */

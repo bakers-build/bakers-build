@@ -2,9 +2,8 @@
 # new workflow declares its own phases. `TypeWorkflows::phase()` reads it and
 # throws for a missing or unknown phase; there is no default.
 #
-#   prepare    being shaped: qualification, plan, pre_deployment,
-#              a claimed but unstarted run
-#   running    executing: working, verifying, running, post_deployment, summary
+#   prepare    being shaped: qualification, plan, a claimed but unstarted run
+#   running    executing: working, running
 #   review     somebody has to look at it
 #   done       finished (also bb_run `expired`/`failed`: nobody is on the
 #              hook; success versus failure is what `state` says)
@@ -31,34 +30,6 @@ bb_work:
     # Optional review: finish may leave working or review.
     finish: { label: Done, from: [working, review], to: done }
     cancel: { label: Cancel, from: [qualification, plan, working, review], to: cancelled }
-
-bb_deployment:
-  id: bb_deployment
-  group: bb_ticket
-  label: 'bakers.build deployment'
-  states:
-    pre_deployment: { label: 'Pre-deployment', claimable: true, phase: prepare }
-    post_deployment: { label: 'Post-deployment', claimable: true, phase: running }
-    done: { label: Done, phase: done }
-    cancelled: { label: Cancelled, phase: cancelled }
-  transitions:
-    deploy: { label: Deploy, from: [pre_deployment], to: post_deployment }
-    finish: { label: Done, from: [post_deployment], to: done }
-    cancel: { label: Cancel, from: [pre_deployment, post_deployment], to: cancelled }
-
-bb_verification:
-  id: bb_verification
-  group: bb_ticket
-  label: 'bakers.build verification'
-  states:
-    verifying: { label: Verifying, claimable: true, phase: running }
-    summary: { label: Summary, claimable: true, phase: running }
-    done: { label: Done, phase: done }
-    cancelled: { label: Cancelled, phase: cancelled }
-  transitions:
-    to_summary: { label: Summarize, from: [verifying], to: summary }
-    finish: { label: Done, from: [summary], to: done }
-    cancel: { label: Cancel, from: [verifying, summary], to: cancelled }
 
 bb_run:
   id: bb_run

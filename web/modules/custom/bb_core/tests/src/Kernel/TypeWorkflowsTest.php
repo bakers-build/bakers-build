@@ -91,9 +91,7 @@ final class TypeWorkflowsTest extends KernelTestBase {
   public function testTerminalTicketStatesPairsEachWorkflowWithItsTerminalStates(): void {
     $terminal = TypeWorkflows::terminalTicketStates();
 
-    foreach ([
-      'bb_work', 'bb_deployment', 'bb_verification',
-    ] as $workflow_id) {
+    foreach (['bb_work'] as $workflow_id) {
       $this->assertArrayHasKey($workflow_id, $terminal);
       $states = $terminal[$workflow_id];
       sort($states);
@@ -136,12 +134,12 @@ final class TypeWorkflowsTest extends KernelTestBase {
     $manager = $this->container->get('plugin.manager.workflow');
     $definitions = $manager->getDefinitions();
 
-    // The five workflows this tree defines (three ticket workflows, bb_run
-    // and the review comment's bb_review).
-    // Asserted so that a sixth cannot arrive unnoticed: the phase table
+    // The three workflows this tree defines (the ticket workflow bb_work,
+    // bb_run and the review comment's bb_review).
+    // Asserted so that a fourth cannot arrive unnoticed: the phase table
     // below would then be incomplete and this count is what says so first.
     $this->assertSame([
-      'bb_work', 'bb_deployment', 'bb_verification', 'bb_run', 'bb_review',
+      'bb_work', 'bb_run', 'bb_review',
     ], array_values(array_map('strval', array_keys($definitions))));
 
     $phases = [];
@@ -167,18 +165,6 @@ final class TypeWorkflowsTest extends KernelTestBase {
         'plan' => 'prepare',
         'working' => 'running',
         'review' => 'review',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_deployment' => [
-        'pre_deployment' => 'prepare',
-        'post_deployment' => 'running',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_verification' => [
-        'verifying' => 'running',
-        'summary' => 'running',
         'done' => 'done',
         'cancelled' => 'cancelled',
       ],

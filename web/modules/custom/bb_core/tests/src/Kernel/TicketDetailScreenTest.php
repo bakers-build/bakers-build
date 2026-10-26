@@ -496,10 +496,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
   /**
    * The flow is the ticket's OWN workflow, with its current state marked.
    *
-   * Never a hard-coded list — the component says so of itself, and the reason
-   * is that several workflows share this screen. A verification ticket runs
-   * through `verifying` where work runs through `plan`, and a literal list
-   * here would show every verification the wrong chain.
+   * Never a hard-coded list — the component says so of itself: the chain is
+   * read from the workflow definition, so a state added there shows here.
    */
   public function testTheFlowIsTheTicketsWorkflowWithItsCurrentState(): void {
     $flow = $this->stateFlowOf($this->band());
@@ -511,25 +509,6 @@ final class TicketDetailScreenTest extends KernelTestBase {
       'The states are bb_work\'s, in the order the workflow declares them.',
     );
     self::assertSame('working', $flow['#props']['current']);
-  }
-
-  /**
-   * The negative control: another workflow yields another chain.
-   *
-   * Without it the assertion above passes against a hard-coded work chain,
-   * which is the exact mistake the component warns about.
-   */
-  public function testAnotherWorkflowYieldsAnotherFlow(): void {
-    $this->ticket->set('workflow', 'bb_verification')->set('state', 'summary');
-    $this->ticket->save();
-    $band = $this->band();
-
-    $flow = $this->stateFlowOf($band);
-    self::assertSame(
-      ['verifying', 'summary', 'done', 'cancelled'],
-      $flow['#props']['states'],
-    );
-    self::assertSame('summary', $flow['#props']['current']);
   }
 
   /**

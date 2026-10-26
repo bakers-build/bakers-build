@@ -31,7 +31,8 @@ bakers dropsh create bb_ticket --bundle bb_ticket --fields
 bakers dropsh create bb_ticket --bundle bb_ticket   --title="$TITLE" --workflow "$WORKFLOW"   --description.value="$(cat "$DESC_FILE")" --description.format bb_rich   --project_id "$PROJECT_UUID" --recipe_names "$RECIPE" --type_names "$TYPE"
 ```
 
-Choose `RECIPE` and `TYPE` under [classify](../bb-workflow/references/classify.md). Retain the returned UUID immediately as `TICKET_UUID`;
+Choose `RECIPE` and `TYPE` under [classify](../bb-workflow/references/classify.md); a deployment
+takes `deploy-and-release` and `deployment`, a verification `verify` and `verification`. Retain the returned UUID immediately as `TICKET_UUID`;
 read it back through [read ticket](../bb-workflow/references/read-ticket.md) and verify project, title, description, recipe, type and initial state.
 On uncertain creation reconcile the known UUID or uniquely matching context before retrying;
 ambiguous results remain unresolved. Preserve schema validation and exact field names.

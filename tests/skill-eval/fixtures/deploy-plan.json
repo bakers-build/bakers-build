@@ -1,0 +1,168 @@
+{
+  "id": "deploy-plan",
+  "synthetic": true,
+  "profile": "recipe-run",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow",
+  "references": [
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/intake.md",
+    "bb-workflow/references/ensure-qualification.md",
+    "bb-workflow/references/boundaries.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/ticket-writes.md",
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/origin-status.md",
+    "bb-workflow/references/transition-ticket.md",
+    "bb-workflow/references/plan.md",
+    "bb-workflow/references/outtake/plan.md",
+    "bb-recipe-deploy-and-release/SKILL.md"
+  ],
+  "input": {
+    "task": "Run the ticket's current state end to end. No approval has been given yet. The ticket has no origin. This is unattended.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555",
+    "installed_skills": "The installed recipe bb-recipe-deploy-and-release is supplied above. No other skill file is installed.",
+    "observations": [
+      "The qualification handoff's provenance matches the current ticket revision fixture-revision-1; it is current and complete.",
+      "The ticket's environments entry is production: branch main, base_url https://shop.example.invalid. Its base_branch is develop.",
+      "Git, glab and other shell commands are available only as the declared fixture commands; every other result below was observed earlier in this run.",
+      "git fetch origin succeeded; origin/develop is 4b825dc642cb6eb9a060e54bf8d69288fbee4904. No release branch exists yet.",
+      "bakers deployment tickets --since origin/main --to 4b825dc642cb6eb9a060e54bf8d69288fbee4904: resolved EVAL-41 (feat(stats): new vs. done flow chart) and EVAL-42 (fix(cli): keep the port when re-linking); unresolved none.",
+      "glab ci status for 4b825dc642cb6eb9a060e54bf8d69288fbee4904: build, lint and tests passed; the manual gate has not been played.",
+      "pnpm --dir bakers-cli run bump --dry-run (VERSION 0.1.1, last tag v0.1.1) printed: bumping version in VERSION from 0.1.1 to 0.2.0, and this CHANGELOG.md section:\n\n## [0.2.0] (2026-10-26)\n\n### Features\n\n* **stats:** new vs. done flow chart\n\n### Bug Fixes\n\n* **cli:** keep the port when re-linking",
+      "No commit of the batch is breaking."
+    ]
+  },
+  "expect": {
+    "comments": [
+      "plan",
+      "summary"
+    ],
+    "transition": null,
+    "no_branch": true,
+    "includes": {
+      "plan": [
+        "4b825dc",
+        "EVAL-41",
+        "EVAL-42",
+        "0.2.0",
+        "Features",
+        "Bug Fixes"
+      ]
+    }
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-50",
+      "title": "Deploy develop to production",
+      "state": "plan",
+      "workflow": "bb_work",
+      "description": {
+        "value": "Deploy the current develop batch to production and release it.",
+        "format": "bb_rich"
+      },
+      "created": "2026-10-26",
+      "base_branch": "develop",
+      "changed": "fixture-revision-1",
+      "relationships": {
+        "recipe": {
+          "data": {
+            "type": "bb_term--recipe",
+            "id": "88888888-8888-4888-8888-000000000205"
+          }
+        },
+        "ticket_type": {
+          "data": {
+            "type": "bb_term--type",
+            "id": "88888888-8888-4888-8888-000000000104"
+          }
+        }
+      }
+    },
+    "terms": {
+      "type": [
+        {
+          "id": "88888888-8888-4888-8888-000000000104",
+          "name": "deployment"
+        },
+        {
+          "id": "88888888-8888-4888-8888-000000000105",
+          "name": "verification"
+        }
+      ],
+      "recipe": [
+        {
+          "id": "88888888-8888-4888-8888-000000000205",
+          "name": "deploy-and-release"
+        },
+        {
+          "id": "88888888-8888-4888-8888-000000000206",
+          "name": "verify"
+        }
+      ]
+    },
+    "files": {
+      "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n"
+    },
+    "comments": [
+      {
+        "id": "77777777-7777-4777-8777-000000000001",
+        "bb_comment_type": "qualification",
+        "body": {
+          "value": "## Qualification handoff\n\n### Acceptance\n\n- **AC-1** The batch merged since the last production deployment reaches production (`main`) through a release branch with a played gate.\n- **AC-2** The release is versioned and its changelog generated from the Conventional Commits of the batch.\n\nTally: 2 passed, 0 rewritten.\n\n### Out of scope\n\nHotfixes.\n\n### Handoff metadata\n\n- `recipe`: deploy-and-release\n- `ticket_type`: deployment\n- `reproduction`: not_required\n- `scenario_required`: false\n- `test_as`: no login needed\n- prior art: negative\n- `handoff_version`: 1\n- `provenance`: fixture-revision-1\n",
+          "format": "bb_rich"
+        },
+        "relationships": {
+          "ticket_id": {
+            "data": {
+              "type": "bb_ticket--bb_ticket",
+              "id": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        }
+      }
+    ],
+    "commands": {
+      "git": [
+        {
+          "argv": [
+            "git",
+            "fetch",
+            "origin"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "rev-parse",
+            "origin/develop"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "4b825dc642cb6eb9a060e54bf8d69288fbee4904\n",
+            "stderr": ""
+          }
+        }
+      ]
+    }
+  },
+  "rubric": [
+    {
+      "id": "plan-content",
+      "criterion": "The plan comment names the target, the frozen SHA, the batch EVAL-41 and EVAL-42, the gate status, version 0.2.0 and the changelog draft with Features and Bug Fixes."
+    },
+    {
+      "id": "stops-at-approval",
+      "criterion": "Publishes plan and summary, cuts or pushes no branch and stops at the approval without transitioning."
+    }
+  ]
+}

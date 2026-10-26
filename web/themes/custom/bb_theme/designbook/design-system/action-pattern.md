@@ -164,10 +164,10 @@ surface uses it without variation.
    it gets **its own row above the text lines**, separated from the body,
    and is rendered heavier (`prominent`). On the create dialog that
    property is **workflow**: it decides the ticket's whole state flow, so
-   choosing `bb_work` rather than `bb_deployment` decides which states the
-   ticket will pass through (the kind of work — feature, bug, chore, epic —
-   is the separate `ticket_type` property, a pill like the others), and
-   reversing it later is not a cheap edit.
+   the workflow chosen decides which states the ticket will pass through
+   (every ticket runs `bb_work` today; the kind of work — feature, bug,
+   chore, epic — is the separate `ticket_type` property, a pill like the
+   others), and reversing it later is not a cheap edit.
    Making it merely the first pill was tried and was not enough — first in
    a row still reads as "the first of these", and it is not one of these.
    At most one property per surface earns this; a surface where everything

@@ -8,8 +8,8 @@ import tempfile
 repo = Path(__file__).resolve().parents[2]
 root = repo / '.claude/skills/bakers-build'
 SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-prepare-time',
-          'bb-recipe-matt', 'bb-runtime-ddev', 'bb-scope-change', 'bb-upgrade-project', 'bb-verdict',
-          'bb-workflow')
+          'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-verify', 'bb-runtime-ddev',
+          'bb-scope-change', 'bb-upgrade-project', 'bb-verdict', 'bb-workflow')
 STATES = ('qualification', 'plan', 'working', 'review')
 PHASES = ('read', 'provision', 'work', 'validate', 'deliver', 'outtake', 'transition')
 # Skills that became bb-workflow references or were deleted; none may be named anywhere.
@@ -67,6 +67,9 @@ def check(scan):
             count += 1
         for name in re.findall(r'(?<![\w-])(' + '|'.join(UNPREFIXED) + r')(?![\w-])', text):
             errors.append((source.relative_to(installed), name))
+        # Inputs are retired: lifecycle parameters are recipe prose or WORKFLOW.md hint tables.
+        if re.search(r'^inputs:', text, re.M) or re.search(r'\b[a-z_]+\.(?:prompt|command)\b', text):
+            errors.append((source.relative_to(installed), 'declares an input'))
     texts = [*installed.rglob('*.md'), *(scan / 'docs').rglob('*.md'), *(scan / 'fixtures').rglob('*.json'),
              scan / 'README.md', scan / 'WORKFLOW.md', scan / 'fixtures.json', scan / 'manual.mjs']
     for source in texts:
@@ -76,7 +79,7 @@ def check(scan):
         text = recipe.read_text()
         errors += grid_errors(recipe.relative_to(scan), text, recipe=True)
         # A recipe may live in any plugin: it links no frame reference and calls no other skill.
-        if re.search(r'\]\([^)]*bb-workflow/', text) or re.search(r'@bakers-build/(?!bb-workflow\b)', text):
+        if re.search(r'\]\([^)]*bb-workflow/', text) or re.search(r'@bakers-build/bb-(?!workflow\b)', text):
             errors.append((recipe.relative_to(scan), 'links a bakers.build reference or skill'))
     for guide in installed.glob('bb-runtime-*/SKILL.md'):
         errors += grid_errors(guide.relative_to(installed), guide.read_text())

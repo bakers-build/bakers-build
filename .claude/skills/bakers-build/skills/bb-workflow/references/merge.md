@@ -1,9 +1,8 @@
 # Merge the MR (gated)
 
-Read at review's `transition` on `OK`, or the coding gate's authorized `done`. Run in the parent for
-review's `OK → done` or authorized bug/chore coding skip-review. Subagents hold no credentials. The
-merge writes no ticket state, runs no tests and publishes no comments. `Not OK` and non-`done`
-destinations leave the MR unmerged.
+Read at review's `transition` on `OK`, or the coding gate's authorized `done`; run in the parent.
+Subagents hold no credentials. The merge writes no ticket state, runs no tests and publishes no
+comments. `Not OK` and non-`done` destinations leave the MR unmerged.
 
 ## Input
 
@@ -15,7 +14,9 @@ destinations leave the MR unmerged.
 
 ## Gates (each a hard block on `done`)
 
-1. Resolvable MR link present.
+1. Resolvable MR link present. Its title is a Conventional Commits subject `type(scope)!: subject`,
+   `^(feat|fix|chore|docs|refactor|test|ci|build|perf)(\([a-z0-9._/-]+\))?!?: \S.*`; any other title
+   blocks, naming this rule and a conforming retitle (`feat(stats): …`).
 2. **Pipeline green:** latest MR pipeline succeeded, including required manual jobs.
    Red, running or pending required jobs block.
 3. No merge conflict; MR mergeable against its target.
@@ -25,7 +26,7 @@ destinations leave the MR unmerged.
    `prior_art_hit` or an unresolved check error returns `blocked`.
 4. Merge call succeeds, followed by verified results below.
 
-Evaluate preconditions before merging. Report the first failed gate with its reason and remedy.
+Report the first failed gate with its reason and remedy.
 
 ## Merge
 
@@ -50,7 +51,8 @@ For retained sources, use the API to send `should_remove_source_branch: false`; 
 can omit the field. A stored `force_remove_source_branch: true` overrides this negative: block
 until the branch owner decides to clear it before merge. Keep squash enabled.
 
-`<subject>` comes from the MR title, which carries no bakers.build reference. Squash discards individual
+`<subject>` comes from the MR title, which carries no bakers.build reference: the validated title,
+verbatim. Squash discards individual
 commit trailers, so put `Merged-by: bakers.build` and final-line `ref:<identifier>` in the squash body;
 otherwise release measurement silently loses the ticket. Use `--squash-message`:
 `-m`/`--message` sets the merge commit, not the squash commit representing the change.
