@@ -59,3 +59,26 @@ it('a UI-only addon does not make a conductor config opaque', () => {
   const remote = plan.report.findings.find((f) => f.key === 'remote');
   expect(remote?.code).toBe('missing_required_key');
 });
+
+it('one Orca addon entry fills both the executor and the workspace slot', () => {
+  const w = world();
+  writeFileSync(
+    w.engine,
+    `export default {
+  bakers: { project: 'demo' },
+  conductor_id: 'my-worker',
+  addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-orca'],
+};\n`,
+  );
+
+  const plan = service.planConfig({
+    ...w,
+    operation: 'check',
+    scope: 'project',
+  });
+
+  const slots = plan.report.findings.filter((f) =>
+    ['remote', 'executor', 'workspace'].includes(f.key ?? ''),
+  );
+  expect(slots).toEqual([]);
+});

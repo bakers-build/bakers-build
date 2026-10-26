@@ -20,6 +20,7 @@ import { ConfigSourceEditor } from './config-source-edit.js';
 export const CONDUCTOR_ADDON_SLOTS: Record<string, string[]> = {
   '@bakers-build/addon-remote-drupal': ['remote'],
   '@bakers-build/addon-herdr': ['executor', 'workspace'],
+  '@bakers-build/addon-orca': ['executor', 'workspace'],
   '@bakers-build/addon-fake': ['remote', 'executor', 'workspace'],
   '@bakers-build/addon-workspace-git': ['workspace'],
   '@bakers-build/addon-claude': ['agent'],

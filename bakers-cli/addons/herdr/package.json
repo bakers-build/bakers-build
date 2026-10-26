@@ -6,7 +6,8 @@
   "license": "MIT",
   "exports": {
     ".": "./dist/src/index.js",
-    "./preset": "./dist/src/preset.js"
+    "./preset": "./dist/src/preset.js",
+    "./shared": "./dist/src/shared.js"
   },
   "files": [
     "dist/src"
