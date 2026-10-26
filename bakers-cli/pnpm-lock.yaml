@@ -8,21 +8,15 @@ importers:
 
   .:
     devDependencies:
-      '@biomejs/biome':
-        specifier: ^2.4.0
-        version: 2.5.3
-      '@dropsh/plugin-jsonapi-schema':
-        specifier: ^0.7.1
-        version: 0.7.1(dropsh@0.7.5)
-      '@dropsh/plugin-oauth2':
-        specifier: ^0.7.5
-        version: 0.7.5(dropsh@0.7.5)
       '@bakers-build/addon-agents':
         specifier: workspace:^
         version: link:addons/agents
       '@bakers-build/addon-auth-basic':
         specifier: workspace:^
         version: link:addons/auth-basic
+      '@bakers-build/addon-bakers-ui':
+        specifier: workspace:^
+        version: link:addons/bakers-ui
       '@bakers-build/addon-claude':
         specifier: workspace:^
         version: link:addons/claude
@@ -35,9 +29,6 @@ importers:
       '@bakers-build/addon-fake':
         specifier: workspace:^
         version: link:addons/fake
-      '@bakers-build/addon-bakers-ui':
-        specifier: workspace:^
-        version: link:addons/bakers-ui
       '@bakers-build/addon-grok':
         specifier: workspace:^
         version: link:addons/grok
@@ -50,6 +41,9 @@ importers:
       '@bakers-build/addon-opencode':
         specifier: workspace:^
         version: link:addons/opencode
+      '@bakers-build/addon-orca':
+        specifier: workspace:^
+        version: link:addons/orca
       '@bakers-build/addon-pi':
         specifier: workspace:^
         version: link:addons/pi
@@ -62,6 +56,15 @@ importers:
       '@bakers-build/addon-workspace-git':
         specifier: workspace:^
         version: link:addons/workspace-git
+      '@biomejs/biome':
+        specifier: ^2.4.0
+        version: 2.5.3
+      '@dropsh/plugin-jsonapi-schema':
+        specifier: ^0.7.1
+        version: 0.7.1(dropsh@0.7.5)
+      '@dropsh/plugin-oauth2':
+        specifier: ^0.7.5
+        version: 0.7.5(dropsh@0.7.5)
       '@types/node':
         specifier: ^20.19.0
         version: 20.19.43
@@ -96,6 +99,52 @@ importers:
 
   addons/auth-basic:
     devDependencies:
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+
+  addons/bakers-ui:
+    dependencies:
+      '@opentui/core':
+        specifier: 0.5.1
+        version: 0.5.1(typescript@5.9.3)(web-tree-sitter@0.25.10)
+      bun:
+        specifier: 1.4.0
+        version: 1.4.0
+      drupal-jsonapi-params:
+        specifier: ^3.0.1
+        version: 3.0.1
+      zustand:
+        specifier: ^5.0.15
+        version: 5.0.15
+    devDependencies:
+      '@bakers-build/addon-workspace':
+        specifier: workspace:^
+        version: link:../workspace
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      '@bakers-build/message':
+        specifier: workspace:^
+        version: link:../../message
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+
+  addons/bakers-ui-artifacts:
+    devDependencies:
+      '@bakers-build/addon-bakers-ui':
+        specifier: workspace:^
+        version: link:../bakers-ui
       '@bakers-build/core':
         specifier: workspace:^
         version: link:../../core
@@ -207,15 +256,15 @@ importers:
 
   addons/essentials:
     dependencies:
+      '@bakers-build/addon-name-refs':
+        specifier: workspace:^
+        version: link:../name-refs
       '@dropsh/plugin-jsonapi-schema':
         specifier: ^0.7.1
         version: 0.7.1(dropsh@0.7.5)
       '@dropsh/plugin-markdown':
         specifier: ^0.7.1
         version: 0.7.1(dropsh@0.7.5)
-      '@bakers-build/addon-name-refs':
-        specifier: workspace:^
-        version: link:../name-refs
       dropsh:
         specifier: ^0.7.5
         version: 0.7.5
@@ -244,52 +293,6 @@ importers:
       typescript:
         specifier: ^5.9.0
         version: 5.9.3
-
-  addons/bakers-ui:
-    dependencies:
-      '@opentui/core':
-        specifier: 0.5.1
-        version: 0.5.1(typescript@5.9.3)(web-tree-sitter@0.25.10)
-      bun:
-        specifier: 1.4.0
-        version: 1.4.0
-      drupal-jsonapi-params:
-        specifier: ^3.0.1
-        version: 3.0.1
-      zustand:
-        specifier: ^5.0.15
-        version: 5.0.15
-    devDependencies:
-      '@bakers-build/addon-workspace':
-        specifier: workspace:^
-        version: link:../workspace
-      '@bakers-build/core':
-        specifier: workspace:^
-        version: link:../../core
-      '@bakers-build/message':
-        specifier: workspace:^
-        version: link:../../message
-      typescript:
-        specifier: ^5.9.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.1.0
-        version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
-
-  addons/bakers-ui-artifacts:
-    devDependencies:
-      '@bakers-build/addon-bakers-ui':
-        specifier: workspace:^
-        version: link:../bakers-ui
-      '@bakers-build/core':
-        specifier: workspace:^
-        version: link:../../core
-      typescript:
-        specifier: ^5.9.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.1.0
-        version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
 
   addons/grok:
     devDependencies:
@@ -370,6 +373,25 @@ importers:
         version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
 
   addons/opencode:
+    devDependencies:
+      '@bakers-build/conductor':
+        specifier: workspace:^
+        version: link:../../conductor
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  addons/orca:
+    dependencies:
+      '@bakers-build/addon-herdr':
+        specifier: workspace:^
+        version: link:../herdr
+      '@bakers-build/addon-workspace-git':
+        specifier: workspace:^
+        version: link:../workspace-git
     devDependencies:
       '@bakers-build/conductor':
         specifier: workspace:^
@@ -534,18 +556,18 @@ importers:
 
   conductor:
     dependencies:
-      '@dropsh/plugin-jsonapi-schema':
-        specifier: ^0.7.1
-        version: 0.7.1(dropsh@0.7.5)
-      '@dropsh/plugin-oauth2':
-        specifier: ^0.7.5
-        version: 0.7.5(dropsh@0.7.5)
       '@bakers-build/core':
         specifier: workspace:^
         version: link:../core
       '@bakers-build/message':
         specifier: workspace:^
         version: link:../message
+      '@dropsh/plugin-jsonapi-schema':
+        specifier: ^0.7.1
+        version: 0.7.1(dropsh@0.7.5)
+      '@dropsh/plugin-oauth2':
+        specifier: ^0.7.5
+        version: 0.7.5(dropsh@0.7.5)
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -605,6 +627,12 @@ importers:
       '@bakers-build/addon-auth-basic':
         specifier: workspace:^
         version: link:../addons/auth-basic
+      '@bakers-build/addon-bakers-ui':
+        specifier: workspace:^
+        version: link:../addons/bakers-ui
+      '@bakers-build/addon-bakers-ui-artifacts':
+        specifier: workspace:^
+        version: link:../addons/bakers-ui-artifacts
       '@bakers-build/addon-claude':
         specifier: workspace:^
         version: link:../addons/claude
@@ -620,12 +648,6 @@ importers:
       '@bakers-build/addon-essentials':
         specifier: workspace:^
         version: link:../addons/essentials
-      '@bakers-build/addon-bakers-ui':
-        specifier: workspace:^
-        version: link:../addons/bakers-ui
-      '@bakers-build/addon-bakers-ui-artifacts':
-        specifier: workspace:^
-        version: link:../addons/bakers-ui-artifacts
       '@bakers-build/addon-grok':
         specifier: workspace:^
         version: link:../addons/grok
@@ -641,6 +663,9 @@ importers:
       '@bakers-build/addon-opencode':
         specifier: workspace:^
         version: link:../addons/opencode
+      '@bakers-build/addon-orca':
+        specifier: workspace:^
+        version: link:../addons/orca
       '@bakers-build/addon-pi':
         specifier: workspace:^
         version: link:../addons/pi

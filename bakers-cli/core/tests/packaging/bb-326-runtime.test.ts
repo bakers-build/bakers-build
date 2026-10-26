@@ -86,7 +86,9 @@ describe('BB-326 runtime packaging', () => {
     // reference implementation), `@bakers-build/addon-ports-frp` and
     // `@bakers-build/addon-ports-cloudflare-quick`. None sets `engines`, so none
     // raises the Node floor.
-    expect(dirs).toHaveLength(31);
+    // 32 since `@bakers-build/addon-orca` (the Orca executor + workspace host)
+    // joined the published set; it sets no `engines`.
+    expect(dirs).toHaveLength(32);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)

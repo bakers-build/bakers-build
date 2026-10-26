@@ -38,6 +38,7 @@
     "@bakers-build/addon-herdr": "workspace:^",
     "@bakers-build/addon-kimi": "workspace:^",
     "@bakers-build/addon-opencode": "workspace:^",
+    "@bakers-build/addon-orca": "workspace:^",
     "@bakers-build/addon-pi": "workspace:^",
     "@bakers-build/addon-remote-drupal": "workspace:^",
     "@bakers-build/addon-workspace": "workspace:^",

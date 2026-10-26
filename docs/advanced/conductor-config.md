@@ -1,6 +1,6 @@
 ---
 title: Conductor configuration
-description: The committed .bakers/conductor.config.js - project identity, engine wiring, served states, scheduling, herdr and git workspace options, named variants and explicit composition.
+description: The committed .bakers/conductor.config.js - project identity, engine wiring, served states, scheduling, herdr, Orca and git workspace options, named variants and explicit composition.
 ---
 
 # Conductor configuration
@@ -86,6 +86,7 @@ A slot entry `{ plugin, export, with }` names an installed package. `plugin` res
 |---|---|---|
 | `@bakers-build/addon-remote-drupal` | The remote for a bakers.build control plane | None; it uses the connection and engine context. |
 | `@bakers-build/addon-herdr` | Executor and workspace from one `addons` entry; the same `with` goes to both | See below. |
+| `@bakers-build/addon-orca` | Executor and workspace hosted in [Orca](https://www.onorca.dev/), from one `addons` entry; the same `with` goes to both | See [Orca options](#orca-options). |
 | `@bakers-build/addon-workspace-git` | A workspace only, without a terminal executor | `branchPrefix`, `branchTemplate` |
 
 ## herdr options
@@ -121,6 +122,42 @@ addons: [
 Layout fields: `tabLabel` (default `{identifier} · {titleSlug}`, must contain `{identifier}`), `workspaceLabel` (`{repoName}`), `panelLabel` (`{title}`) and `panes`, extra splits that are not the agent command (`direction` is `right` or `down`, plus `command` and optional `focus`). A `panes` array replaces the previous one. Labels accept `{identifier}`, `{title}`, `{titleSlug}`, `{runUuid}`, `{repoName}` and `{workspacePath}`; `open` commands also accept `{branch}` and `{worktreePath}`. The open layout runs once, after `after_create`, for a freshly created worktree. Top-level `states` chooses what is served, while `with.states` only lays out panes.
 
 The agent command is executed by non-interactive `/bin/sh`, so the harness binary must resolve through `PATH`. A shell alias or function is not loaded.
+
+## Orca options
+
+[Orca](https://www.onorca.dev/) can host the ticket worktrees instead of herdr. Each ticket's worktree then appears in Orca, with its diff review, browser and mobile monitoring, and each run's agent runs in an Orca terminal of that worktree. Dispatch, claims and status stay with the conductor. List Orca once in `addons` to wire both slots, in place of herdr:
+
+```js
+addons: [
+  '@bakers-build/addon-remote-drupal',
+  {
+    use: '@bakers-build/addon-orca',
+    with: {
+      worktreeDir: '.bakers-worktrees',
+      states: { review: { tabLabel: '{identifier} review' } },
+    },
+  },
+],
+```
+
+| Option under `with` | Meaning and default |
+|---|---|
+| `root` | Main clone path; derived from Git's common directory when omitted. |
+| `worktreeDir` | Worktree directory relative to the root, default `.bakers-worktrees`. |
+| `baseBranch` | Base ref for new branches; default the remote-tracking branch of the checked-out branch. |
+| `command` | Fallback agent command when the agent addons supply none, default `claude`. |
+| `default`, `states.<state>` | `tabLabel`, the agent terminal's title, default `{identifier} · {titleSlug}`; it must contain `{identifier}`. ` #<run id>` is always appended, and the title is set as the terminal's manual name (`orca terminal rename`). The agent can still change the title shown for the terminal itself; the run's terminal is found again by the renamed tab title in the Orca app, or by the terminal title with `orca serve`. |
+| `open` | Overview terminal of a fresh worktree. Omitted runs `bakers ui --ticket {identifier}` titled `{identifier} · {title}`; `{}` opens none. Keys: `command`, `title`. |
+| `launchWatch` | As for herdr: `startTimeoutMs` (default 60000) and `timeoutMs` (default 4000). |
+| `adoptTimeoutMs` | How long to wait for Orca to pick up a new worktree, default 35000. |
+
+Requirements and behaviour:
+
+- Orca 1.4 or later, with the `orca` CLI enabled in Orca's settings and on the `PATH` of the `bakers oven` process.
+- **`bakers oven` and Orca run on the same machine.** The CLI talks to the local Orca runtime. Orca is not a multi-user server: it has no accounts or roles and keeps credentials on its host, so a shared team Orca is not supported.
+- If no Orca runtime answers (`orca status`), the run fails at once with `Orca runtime not reachable (state: …)`. Start the desktop app or `orca serve` and the next dispatch succeeds. bakers.build never starts Orca itself.
+- The worktree is created with git on the exact ticket branch and Orca adopts it, which can take up to 30 seconds. The addon registers the repository with Orca and makes its git worktrees visible in the sidebar.
+- `stopRun` does nothing; the run's terminal closes when the run is cleaned up, also after an Orca restart. Removing a worktree goes through `orca worktree rm`, or through git when Orca does not know it.
 
 ## Git-only workspace
 

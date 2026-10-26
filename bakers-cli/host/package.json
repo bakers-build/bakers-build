@@ -40,6 +40,7 @@
     "@bakers-build/addon-info": "workspace:^",
     "@bakers-build/addon-kimi": "workspace:^",
     "@bakers-build/addon-opencode": "workspace:^",
+    "@bakers-build/addon-orca": "workspace:^",
     "@bakers-build/addon-pi": "workspace:^",
     "@bakers-build/addon-ports": "workspace:^",
     "@bakers-build/addon-ports-cloudflare": "workspace:^",
