@@ -1,6 +1,6 @@
 # Repository conventions
 
-Repository-internal rules for working in the bakers.build repository. `WORKFLOW.md` › *Standards* points
+Repository-internal rules for working in the bakers.build repository. `CLAUDE.md` points
 here; every entry binds.
 
 ## English only
@@ -28,7 +28,7 @@ Never hand-patch a live server with `drush`. Fix config in both `config/sync/**`
 recipe `config/**`; entity displays, form displays and page layouts live in exactly those two
 places and never in a module's `config/install` or `config/optional`. Test the recipe first,
 check `config/sync` last at the same revision, and always name the `ddev init` provider
-(`WORKFLOW.md` › *Setup* › Drupal checks).
+(`WORKFLOW.md` › *provision*).
 
 ## Designbook owns the theme's artifacts
 
@@ -42,7 +42,7 @@ deleting a component directory amends `TARGET_COMPONENT_COUNT` in
 ## Tests before the merge, not per revision
 
 PHPUnit and the Playwright browser suite run once, in the CI merge gate, before the merge
-request is merged (`WORKFLOW.md` › *Before merge*), against the images that deploy. Every script
+request is merged (`WORKFLOW.md` › *deliver*), against the images that deploy. Every script
 under `tests/contract/` runs in CI, and a script nothing in CI runs is not committed.
 
 ## `bakers ui` for a human: playground, herdr tab, always

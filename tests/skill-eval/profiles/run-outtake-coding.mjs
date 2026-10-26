@@ -1,9 +1,9 @@
 import { check, visibleMarkdown, outtakeChecks } from '../outtake-checks.mjs';
 import { requireValue, nonempty } from '../validation.mjs';
-export const SOURCES = ['method-context/references/results.md', 'method-context/SKILL.md', 'essential-skills/SKILL.md'];
+export const SOURCES = ['bb-workflow/references/results.md', 'bb-workflow/references/boundaries.md', 'bb-workflow/references/evidence.md'];
 export function validate(fixture) {
   const i = fixture?.input;
-  requireValue(fixture?.synthetic === true && fixture.skill === 'run-outtake' && i?.state === 'coding',
+  requireValue(fixture?.synthetic === true && fixture.skill === 'bb-run-outtake' && i?.state === 'working',
     'Expected a synthetic run-outtake coding fixture');
   for (const field of ['ticket', 'outcome', 'gate', 'evidence', 'next_action', 'mr', 'revision']) {
     requireValue(nonempty(i[field]), `Missing fixture input.${field}`);

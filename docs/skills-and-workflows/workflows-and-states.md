@@ -2,16 +2,16 @@
 
 **Every ticket follows one workflow. Each state has a clear job and a clear owner.**
 
-Every work ticket follows the workflow `bb_work`. In every state except `done` and `cancelled`, the ticket's conductor may start a run. `done` and `cancelled` are final: follow-up work gets a new ticket. Any open ticket can be cancelled. The kind of work is [ticket data](#ticket-type-recipe-and-labels), not a workflow. The owners below are those for `work:code`; `work:docs` uses `docs-authoring` for plan, working and review.
+Every work ticket follows the workflow `bb_work`. In every state except `done` and `cancelled`, the ticket's conductor may start a run. `done` and `cancelled` are final: follow-up work gets a new ticket. Any open ticket can be cancelled. The kind of work is [ticket data](#ticket-type-recipe-and-labels), not a workflow. `plan`, `working` and `review` follow the ticket's [recipe](/skills-and-workflows/labels-and-work-types#recipes).
 
 ## bb_work
 
 | State | Owner | What happens | Next |
 |---|---|---|---|
-| `qualification` | `qualify-ticket` | prior-art search, criteria, classification, `work:*` labels; you confirm | `plan`, or `working` |
-| `plan` | `create-spec`; `ddev-drupal-bug` for a bug | publishes `spec`, `plan`, `test`, or for a bug reproduces the defect, names the cause and plans the regression test; you approve one scope | `working` |
-| `working` | `ddev-drupal-feature`; `ddev-drupal-bug` for a bug | builds in the worktree, runs checks, opens the merge request; you confirm | `review` or `done` |
-| `review` | the owner of `working` | independent `OK` or `Not OK`; `OK` merges once you authorize | `done`, or `working` |
+| `qualification` | `bb-qualify-ticket` | prior-art search, criteria, recipe and ticket type; you confirm | `plan`, or `working` |
+| `plan` | the ticket's recipe | publishes `spec`, `plan`, `test`, or for a bug reproduces the defect, names the cause and plans the regression test; you approve one scope | `working` |
+| `working` | the ticket's recipe | builds in the worktree, runs checks, opens the merge request; you confirm | `review` or `done` |
+| `review` | the ticket's recipe | independent `OK` or `Not OK`; `OK` merges once you authorize | `done`, or `working` |
 
 The transitions:
 
@@ -35,9 +35,9 @@ A ticket and a ticket template carry three term fields, each from a vocabulary o
 |---|---|---|---|
 | `ticket_type` | `type` | one | `feature`, `bug`, `chore`, `epic`, `deployment`, `verification` |
 | `recipe` | `recipe` | one | a recipe name |
-| `labels` | `label` | several | `work:code`, `method:<set>`, `agent:<alias>` |
+| `labels` | `label` | several | `agent:<alias>`, plain tags |
 
-The field is called `ticket_type` because JSON:API reserves `type`. Type and recipe are independent of each other. Workspace contributors and leads manage the terms under the workspace's settings, on the tabs Types, Recipes and Labels; guests may only view them. A term has no page of its own and cannot be deleted. Agents set the fields by name with [`bakers dropsh`](/advanced/cli/dropsh#targets-and-envelopes).
+The field is called `ticket_type` because JSON:API reserves `type`. The type selects the recipe's variant. Workspace contributors and leads manage the terms under the workspace's settings, on the tabs Types, Recipes and Labels; guests may only view them. A term has no page of its own and cannot be deleted. Agents set the fields by name with [`bakers dropsh`](/advanced/cli/dropsh#targets-and-envelopes).
 
 An epic is a ticket of type `epic`. It groups child tickets, which do the work; the project overview lists epics by type.
 

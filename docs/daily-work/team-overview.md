@@ -16,7 +16,7 @@
 ## Ask your agent
 
 ```text
-Use read-ticket on the open tickets of this project and tell me which ones wait for a person.
+Use bb-read-ticket on the open tickets of this project and tell me which ones wait for a person.
 ```
 
 ## Reading the numbers

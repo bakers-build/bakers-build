@@ -41,4 +41,4 @@ Every identifier in the log whose key was admitted that way is then collected, i
 
 ## Where it is used
 
-The `prepare-deployment` skill runs it during the deployment workflow and writes `resolved[].uuid` to the deployment ticket's `referenced_tickets`, recording any `unresolved` identifiers in its summary. The `bb_deployment` workflow itself is described in [Workflows and states](/skills-and-workflows/workflows-and-states).
+The `bb-prepare-deployment` skill runs it during the deployment workflow and writes `resolved[].uuid` to the deployment ticket's `referenced_tickets`, recording any `unresolved` identifiers in its summary. The `bb_deployment` workflow itself is described in [Workflows and states](/skills-and-workflows/workflows-and-states).

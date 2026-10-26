@@ -2,7 +2,7 @@
 
 **Collects your runs, activities and booked time per day, to prepare time entries.**
 
-For employees who prepare their time with the `prepare-time` skill.
+For employees who prepare their time with the `bb-prepare-time` skill.
 
 ## Enable it
 

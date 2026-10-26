@@ -16,6 +16,7 @@ const CONTRACTS: Array<[string, string]> = [
   ['bash', 'test-project-branch.sh'],
   ['bash', 'test-project-guard.sh'],
   ['bash', 'test-users.sh'],
+  ['bash', 'workflow-frame.sh'],
   ['python3', 'skill-comment-example.py'],
   ['python3', 'skill-references.py'],
   ['python3', 'skill-size.py'],

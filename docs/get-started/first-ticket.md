@@ -13,7 +13,7 @@
 2. **Create the ticket.**
 
    ```text
-   Use create-ticket to write a small documentation ticket for this project, and set my conductor to run it.
+   Use bb-create-ticket to write a small documentation ticket for this project, and set my conductor to run it.
    ```
 
    Your agent asks for anything missing, checks for duplicates and creates the ticket. Your conductor picks it up within seconds.

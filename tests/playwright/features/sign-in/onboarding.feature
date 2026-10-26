@@ -167,16 +167,16 @@ Feature: The onboarding wizard before the workspace overview
     And the document was not reloaded
     And the command "/plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git" is shown
     And the command "/plugin install bakers@bakers" is shown
-    And the command "Use `bakers:init` to guide me through installing and setting up bakers.build." is shown
+    And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
     When I choose the "Codex" agent filter
     Then the command "codex plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git" is shown
     And the command "codex plugin add bakers@bakers" is shown
-    And the command "Use `bakers:init` to guide me through installing and setting up bakers.build." is shown
+    And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
     And the setup page links to the documentation and Claude skills
     And the account "onboarding-setup@example.com" has not completed onboarding
     When I continue from the setup step
     Then the project step is present
-    And the command "Use `bakers:init-project` to connect this checkout as a bakers.build project." is shown
+    And the command "Use `bakers:bb-init-project` to connect this checkout as a bakers.build project." is shown
     And the project page links to init-project
     And both finish actions are offered
     And the account "onboarding-setup@example.com" has not completed onboarding
@@ -213,15 +213,15 @@ Feature: The onboarding wizard before the workspace overview
     And the document was not reloaded
     When I set the viewport to 390 by 844
     And clipboard writes fail
-    And I copy the command "Use `bakers:init` to guide me through installing and setting up bakers.build."
-    Then the copy status for "Use `bakers:init` to guide me through installing and setting up bakers.build." is "Copy failed. Select the command and copy it yourself."
+    And I copy the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build."
+    Then the copy status for "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is "Copy failed. Select the command and copy it yourself."
     And the address is "/home/onboarding"
     And the setup installation step is present
     When I set the viewport to 1280 by 800
     And clipboard writes succeed
-    And I copy the command "Use `bakers:init` to guide me through installing and setting up bakers.build." with the keyboard
-    Then the copy status for "Use `bakers:init` to guide me through installing and setting up bakers.build." is "Copied"
-    And the clipboard holds "Use `bakers:init` to guide me through installing and setting up bakers.build."
+    And I copy the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." with the keyboard
+    Then the copy status for "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is "Copied"
+    And the clipboard holds "Use `bakers:bb-init` to guide me through installing and setting up bakers.build."
     And the address is "/home/onboarding"
 
   Scenario: Copy reports failure when the clipboard API is unavailable
@@ -234,8 +234,8 @@ Feature: The onboarding wizard before the workspace overview
     And I continue from the about-you step
     Then the setup installation step is present
     When the clipboard API is unavailable
-    And I copy the command "Use `bakers:init` to guide me through installing and setting up bakers.build."
-    Then the copy status for "Use `bakers:init` to guide me through installing and setting up bakers.build." is "Copy failed. Select the command and copy it yourself."
+    And I copy the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build."
+    Then the copy status for "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is "Copy failed. Select the command and copy it yourself."
     And the address is "/home/onboarding"
     And the setup installation step is present
 
@@ -298,10 +298,10 @@ Feature: The onboarding wizard before the workspace overview
     Then the about-you step is present
     When I continue from the about-you step
     Then the setup installation step is present
-    And the command "Use `bakers:init` to guide me through installing and setting up bakers.build." is shown
+    And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
     When I continue from the setup step
     Then the project step is present
-    And the command "Use `bakers:init-project` to connect this checkout as a bakers.build project." is shown
+    And the command "Use `bakers:bb-init-project` to connect this checkout as a bakers.build project." is shown
     When I finish the setup guide
     Then the address is "/home"
     And the home overview empty state is present

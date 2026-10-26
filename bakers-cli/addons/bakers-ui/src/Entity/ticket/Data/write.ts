@@ -71,7 +71,7 @@ const one = (
  *   1. NOTHING server-owned is written — no `state` (the server lands the
  *      ticket in the workflow's first state), no `identifier`, no `number`, no
  *      `branch_name`, no `base_branch`. Acceptance criterion 5 is satisfied by
- *      OMISSION, which is also what `@bakers-build/create-ticket` does.
+ *      OMISSION, which is also what `@bakers-build/bb-create-ticket` does.
  *   2. A relationship with nothing picked is OMITTED, not sent as an explicit
  *      `null`. A create has nothing to unset, so `null` would carry no
  *      information a missing key does not — the exact opposite of the PATCH in

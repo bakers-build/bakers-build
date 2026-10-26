@@ -8,26 +8,26 @@ request from prior-art search through qualification to `plan`. See
 this bundle.
 
 **Source of truth.** This bundle derives from `.claude/skills/bakers-build/skills/{create-ticket,
-read-ticket, publish-comment, transition-ticket, qualify-ticket, workflow-step}/SKILL.md` and their
-`method-context` and `ensure-qualification` references. When those skills change, re-derive this
+read-ticket, publish-comment, transition-ticket, qualify-ticket, bb-workflow}/SKILL.md` and their
+`bb-workflow` and `bb-ensure-qualification` references. When those skills change, re-derive this
 file; do not hand-edit it out of sync with them.
 
 **What this bundle deliberately drops** from the source skills, and why:
 
-- Agent routing (`qualify-ticket` › *Propose an agent*) — needs `bakers agents`, a local CLI command;
+- Agent routing (`bb-qualify-ticket` › *Propose an agent*) — needs `bakers agents`, a local CLI command;
   no MCP tool exposes it. The connector never proposes or writes an `agent:*` label.
-- The `working`-shortcut path in `create-ticket` ("a fully specified intake goes straight to
+- The `working`-shortcut path in `bb-create-ticket` ("a fully specified intake goes straight to
   `working`") — out of scope; this bundle never transitions past `plan`.
 - Bug tickets and diagnosis — out of scope; this bundle handles tickets of type `feature` or
   `chore` only.
-- Terminal retrospective (`done`/`cancelled` job rating + `bb_metric` write) — `record-measurement`
+- Terminal retrospective (`done`/`cancelled` job rating + `bb_metric` write) — `bb-record-measurement`
   writes a `bb_metric` entity the connector's allowlist does not expose. A duplicate-ticket
   cancellation still needs a reason comment and a state write; skip the rating/metric step and say
   so.
-- `read-ticket`'s `--format md` renderer and its troubleshooting reference — connector-side JSON:API
+- `bb-read-ticket`'s `--format md` renderer and its troubleshooting reference — connector-side JSON:API
   responses are already structured JSON; there is no separate Markdown renderer to fall back from.
-- `baseline` creation (`create-ticket/references/baseline.md`) — niche, scope-free ticket variant;
-  can be handled ad hoc by following the general create flow with no work labels if ever asked for.
+- `baseline` creation (`bb-create-ticket/references/baseline.md`) — niche, scope-free ticket variant;
+  can be handled ad hoc by following the general create flow if ever asked for.
 
 ---
 
@@ -74,21 +74,16 @@ bb_project` (search, read), `bb_term/type`, `bb_term/recipe` and `bb_term/label`
 
 ## Hard limitation: no label/term creation
 
-The connector's `bb_term` entries are **search-only**. Resolve a label's UUID with
-`search` first — `{"entityType":"bb_term","bundle":"label","filters":["name:=:work:code"]}`
-— then attach it to a ticket as
-`"relationships": {"labels": {"data": [{"type": "bb_term--label", "id": "<term UUID>"}]}}`
-(repeat the object per label; there is no `label_names` shorthand here). A ticket type resolves the same way in bundle `type`
-and attaches as the single object `"ticket_type": {"data": {"type": "bb_term--type", "id": "<term UUID>"}}`. If `qualify-ticket`'s
-work-type classification or label resolution needs a `work:*`, `method:*`, or other label term, or a
-ticket type term, that does not already exist, **stop and tell the user exactly which label is missing and that it must be
-created in their own bakers.build checkout** (or by someone with CLI access) before qualification can
-complete. Do not invent a label, do not silently omit it, and do not substitute a different existing
-label.
-
-This also means: never attempt the `method-context` label-write ("Persist one `method:<set>` label")
-unless `search` confirms that exact label term already exists in the workspace's `label`
-vocabulary.
+The connector's `bb_term` entries are **search-only**. Resolve a term's UUID with `search` first —
+`{"entityType":"bb_term","bundle":"recipe","filters":["name:=:matt"]}` — then attach it to a ticket.
+A recipe attaches as the single object `"recipe": {"data": {"type": "bb_term--recipe", "id": "<term UUID>"}}`,
+a ticket type the same way in bundle `type` as `"ticket_type": {"data": {"type": "bb_term--type", "id": "<term UUID>"}}`,
+and labels as `"labels": {"data": [{"type": "bb_term--label", "id": "<term UUID>"}]}` (repeat the object
+per label). There is no `recipe_names`, `type_names` or `label_names` shorthand here. If qualification
+needs a recipe, ticket type or label term that does not already exist, **stop and tell the user
+exactly which term is missing and that it must be created in their own bakers.build checkout** (or
+by someone with CLI access) before qualification can complete. Do not invent a term, do not silently
+omit it, and do not substitute a different existing term.
 
 ## Markdown formatting — unchanged from the source skills
 
@@ -157,15 +152,12 @@ input schema for `bb_ticket/bb_ticket` to confirm current field names — there 
       "relationships": {
         "project_id": { "data": { "type": "bb_project--bb_project", "id": "<project UUID>" } },
         "ticket_type": { "data": { "type": "bb_term--type", "id": "<feature type UUID>" } },
-        "labels": { "data": [{ "type": "bb_term--label", "id": "<work label UUID>" }] }
+        "recipe": { "data": { "type": "bb_term--recipe", "id": "<recipe UUID>" } }
       }
     }
   }
 }
 ```
-
-(`labels.data` takes one array entry per label — repeat the `{ "type": ..., "id": ... }` object for
-each resolved label UUID; the single entry above is illustrative, not a limit.)
 
 (Use the `chore` type term for chore requests. Adjust the attribute/relationship names to whatever the
 `create` tool's input schema actually names if it differs — that live schema wins over this
@@ -181,37 +173,22 @@ risk a duplicate.
 
 ## 4. Qualify
 
-Resolve the engineering method the project's `WORKFLOW.md` names under "Skill set" — ask the user
-to paste the relevant `WORKFLOW.md` section if you cannot read the repository, since you have no
-file access. When it is `superpowers`/`matt`-style, this is the summary (there is no file-reading
-tool to fetch the live reference, so use this table from `method-context/references/superpowers.md`
-as of this bundle's authoring — ask the user to confirm it is still current if in doubt):
-
-| Work step or condition | Skill |
-|---|---|
-| Qualification: unresolved requirements | `brainstorming` |
-| Specification | `brainstorming`, then `writing-plans` |
-| Coding from the approved plan | `executing-plans` |
-| Diagnosis | `systematic-debugging` |
-| Test-first work at agreed seams | `test-driven-development` |
-| Review | `requesting-code-review` |
-| Writing reusable skills | `writing-skills` |
-
-Only the qualification/specification rows matter for this connector's scope. Record the chosen set
-as a `method:<set>` label in the ticket's `labels` relationship **only if that exact label term
-already exists** (`search` `bb_term/label` for it first, same shape as above) — otherwise
-tell the user the label is missing and continue qualification without writing it.
+Choose the recipe, the ticket's engineering method, then a type that recipe covers. You cannot read
+the installed `bb-recipe-*` skills, so ask the user which recipe the project uses when the request does
+not make it clear; `matt` (the shipped `bb-recipe-matt`, covering feature, bug and chore) is the default.
+Resolve both terms with `search` (same shape as above) and write `recipe` and `ticket_type` on the
+ticket in one `update`, then `read` it back.
 
 Build the qualification handoff with every required field:
 
-- `acceptance_criteria` — exhaustive, actor-named, checkable conditions.
+- `acceptance_criteria` — exhaustive, role-named, checkable conditions.
 - `out_of_scope` — an explicit boundary, including a reasoned "none".
-- `ticket_type`, `workflow`, applicable `work:*` labels (same missing-label rule as above).
+- `recipe` and `ticket_type`, with the reason for the recipe choice (same missing-term rule as above).
 - `reproduction` — bug condition; for feature/chore this is `not_required`.
 - `scenario_required` — whether confirmed behavior needs a browser path.
-- `review_actors` — ask the user: target environment, intended role/account, expected permissions,
-  and whether denied/anonymous paths matter. Record the answer and mark it `confirmed`; an
-  unanswered question is `unresolved`, never defaulted to a convenient administrator.
+- `test_as` — the test personas who check the change and what each should see (including any
+  that must be denied), or `no login needed`. Ask the user when the right persona is unclear;
+  never pick an administrator for convenience.
 - `handoff_version` — `1` for a first qualification, incremented on any requalification.
 - `provenance` — note what the acceptance criteria were derived from (title/description as read).
 

@@ -1,9 +1,9 @@
 {
   "synthetic": true,
   "profile": "artifact",
-  "skill": "prepare-time",
+  "skill": "bb-prepare-time",
   "references": [
-    "prepare-time/references/daily-evidence.md"
+    "bb-prepare-time/references/daily-evidence.md"
   ],
   "id": "prepare-time-unattended",
   "input": {

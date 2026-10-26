@@ -1,56 +1,33 @@
 ---
-title: Write a step skill
-description: Add a skill that owns workflow steps for your stack, load it in WORKFLOW.md and check the load.
+title: Write a recipe
+description: Add a recipe skill that brings your engineering method to plan, working and review.
 ---
 
-# Write a step skill
+# Write a recipe
 
-**Your stack has no step skill yet? Write one, load it, and bakers.build runs your tickets with it.**
+**Your team works with a different method? Write a recipe, and qualification can choose it for your tickets.**
 
-A step skill owns one or more workflow steps for one work type: it reads the ticket, does the step, publishes the handoff and moves the ticket on. The shipped examples are `ddev-drupal-feature`, `ddev-drupal-bug` and `docs-authoring`.
+A recipe owns `plan`, `working` and `review` for one engineering method. It runs inside the frame skill `bb-workflow`, which reads the ticket, provisions the runtime, runs the project's checks and moves the ticket on. The shipped example is `bb-recipe-matt`. Stack-specific knowledge does not belong in a recipe: put it in a runtime guide or in the project's `WORKFLOW.md` hints.
 
 **You need:** a repository connected to bakers.build and its skills under `.claude/skills` or `.agents/skills`.
 
-1. **Claim your steps.** Create `.claude/skills/<namespace>/skills/<name>/SKILL.md` with a `when` block. A `work_type_term` lets qualification create the matching `work:*` label.
+1. **Describe it.** Create `.claude/skills/<namespace>/skills/bb-recipe-<method>/SKILL.md`. Qualification chooses from the description alone, so name the method, the ticket types it covers and when it fits. Add `Project default` to at most one installed recipe.
 
    ```yaml
    ---
-   name: node-feature
-   description: Own plan, working and review for Node services.
-   when:
-     work_type: node
-     workflow: [bb_work]
-     step: [plan, working, review]
-   work_type_term:
-     name: "work:node"
-     description: "Sub-work: a Node service change validated by its test suite."
-   inputs:
-     validate.command:
-       description: the command that runs the test suite
-       default: npm test
+   name: bb-recipe-lean
+   description: Recipe for tickets of type feature or chore — a short plan, then test-first implementation and a code review. For small, well-specified work.
    ---
    ```
 
-2. **Write one section per step.** Each section says what the step reads, what it builds or checks, which handoff comment it publishes and which state it writes. Reuse the shared helpers instead of restating them: `@bakers-build/read-ticket`, `@bakers-build/method-context` (coding flow and gate), `@bakers-build/verify-tests`, `@bakers-build/run-outtake`, `@bakers-build/transition-ticket`. Keep the whole file under 500 words; put long material in `references/`.
+2. **Write one section per work state.** `## plan`, `## working` and `## review`, each naming the method's original skills. Add a `### <type>` subsection only where a type behaves differently, for example `### bug` under `## plan`. Leave inputs, comments, gates and transitions to the frame: a recipe calls no other bakers.build skill, so it keeps working when those change. Keep the whole file under 500 words.
 
-3. **Keep project specifics as inputs.** Everything a project might change, a command, a prompt, a data map, is an `inputs` key with a description and a default. A project overrides it under your skill's bullet in `WORKFLOW.md`.
+3. **Install it** in the repository or in any plugin, so the agent can discover it. `WORKFLOW.md` does not list recipes.
 
-4. **Load it.** Add `- @<namespace>/<name>` to `## Loaded skills` in `WORKFLOW.md`.
+4. **Prove it on a ticket.** Create a small ticket of a type your recipe covers, let qualification choose your recipe, or set it with `--recipe_names <method>`, and let it run. The run log shows `bb-recipe-<method>` loaded in each state, and the handoff comments show whether your sections hold.
 
-5. **Check the load.** Ask your agent to validate `WORKFLOW.md`, or run it yourself:
+**Done when:** one ticket has passed through `plan`, `working` and `review` with your recipe loaded, as the run log shows.
 
-   ::: details Per CLI
-   ```sh
-   bakers validate --skills .claude/skills
-   ```
-   :::
+## The rules
 
-   `OK` lists the owner of every step. A collision means another loaded skill claims one of your triples; a gap means a step nobody owns.
-
-6. **Prove it on a ticket.** Create a small `work:node` ticket and let it run. The run log and the handoff comments show whether your sections hold.
-
-**Done when:** `bakers validate` prints `OK` with your skill as owner, and one ticket has passed through its steps.
-
-## Rules the loader enforces
-
-The exact `when` grammar, the exactly-one-match rule, inputs and bundles: [Skill contract](/advanced/development/skill-contract). Testing a skill's wording against a worker: [Test a skill](/advanced/development/test-skills).
+Phases, routing, recipe resolution and the stop rules: [Skill contract](/advanced/development/skill-contract). Runtime guides and hints are covered in `bb-workflow/references/authoring.md`. Testing a skill's wording against a worker: [Test a skill](/advanced/development/test-skills).

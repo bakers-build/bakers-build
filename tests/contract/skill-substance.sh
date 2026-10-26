@@ -6,7 +6,7 @@
 #
 # WHY. A mutation test (blank a skill, see what notices) found that 12 of 34 skills were checked by NOTHING. Their entire
 # contents could be deleted and the suite stayed green — including the canonical
-# contract `workflow-step`, the state write `transition-ticket`, the ticket read
+# contract `bb-workflow`, the state write `transition-ticket`, the ticket read
 # `read-ticket`, and the merge gate `merge-mr`. 489 passing checks, silent on the
 # four skills that carry the most consequence.
 #
@@ -35,7 +35,7 @@ frontmatter() { awk '/^---$/{n++; next} n==1{print} n>=2{exit}' "$1"; }
 # Read the BODY, never the frontmatter. A check that greps the whole file can be
 # satisfied by the `description:` line — which is how two of these checks first
 # shipped useless: `create-project`'s description already contains "validated"
-# and `provision-ddev`'s contains "base URL", so both stayed green against an
+# and `bb-runtime-ddev`'s contains "base URL", so both stayed green against an
 # emptied body. The mutation test caught it; it is the failure mode to watch for
 # in every substance check.
 body() { awk '/^---$/{n++; next} n>=2' "$1"; }
@@ -56,7 +56,7 @@ export -f frontmatter body
 # prints a payload that is not the one sent. The check is inverted rather than
 # deleted so the rule keeps a guard: a recipe that grows the second call back
 # fails here. Where the dry-run legitimately survives — one named escape hatch
-# on `create`, documented once in `workflow-step` — is asserted by
+# on `create`, documented once in `bb-workflow` — is asserted by
 # tests/contract/skill-field-writes.sh, which owns that rule.
 #
 # BB-391 INVERTED the auth-profile half of this pair. It used to require an
@@ -84,22 +84,16 @@ done
 #
 # The inverse of the helper rule: an owner that stopped transitioning would strand
 # its ticket, and nothing else in the suite reads `summarize-verification` or
-# `verify-on-environment` at all.
+# `verify-on-environment` at all. The owners are the ones the frame's routing table names.
 owners() {
-  local d
-  for d in "$SKILLS"/*/; do
-    frontmatter "$d/SKILL.md" | grep -q '^when:' && printf '%s\n' "$(basename "$d")"
-  done
+  awk '/^\| State \| Owner \|/{t=1; next} t && !/^\|/{exit} t' "$SKILLS/bb-workflow/SKILL.md" |
+    grep -oE '@bakers-build/bb-[a-z-]+' | sed 's|@bakers-build/||' | sort -u
 }
 
+check 'the frame routes at least one owner' test -n "$(owners)"
 for name in $(owners); do
-  f="$SKILLS/$name/SKILL.md"
-  instructions="$(body "$f")"
-  if [[ "$instructions" == *'`@bakers-build/method-context` › *Coding flow*'* ]]; then
-    instructions+="$(cat "$SKILLS/method-context/references/coding.md")"
-  fi
-  check "$name: owns a transition" grep -q '@bakers-build/transition-ticket' <<< "$instructions"
-  check "$name: declares its owned steps" bash -c "frontmatter '$f' | grep -qE '^[[:space:]]+step:'"
+  instructions="$(body "$SKILLS/$name/SKILL.md")"
+  check "$name: owns a transition" grep -q '@bakers-build/bb-transition-ticket' <<< "$instructions"
   check "$name: stops after its step" grep -qiE '\bstop\b' <<< "$instructions"
 done
 
@@ -109,49 +103,48 @@ done
 # the skill exists to do must still be in the file.
 
 # read-ticket owns the canonical pm markdown read.
-rt="$SKILLS/read-ticket/SKILL.md"
+rt="$SKILLS/bb-read-ticket/SKILL.md"
 check 'read-ticket carries the pm read with the markdown renderer' \
   bash -c "grep -qE '^[[:space:]]*bakers dropsh .*--format md .*read bb_ticket' '$rt'"
 check 'read-ticket keeps comments in the read' grep -q -- '--include comments' "$rt"
 
 # merge-mr owns the merge gate that stands between review and done.
-mm="$SKILLS/merge-mr/SKILL.md"
+mm="$SKILLS/bb-merge-mr/SKILL.md"
 check 'merge-mr carries the merge call' bash -c "grep -qE '^[[:space:]]*glab mr merge' '$mm'"
 for gate in 'pipeline' 'conflict' 'squash'; do
   check "merge-mr keeps its $gate gate" grep -qi "$gate" "$mm"
 done
 
-# workflow-step is the canonical contract: the triple and the three input kinds.
-ws="$SKILLS/workflow-step/references/authoring.md"
-check 'workflow-step reaches its authoring contract' grep -q 'references/authoring.md' "$SKILLS/workflow-step/SKILL.md"
-for key in 'work_type' 'workflow' 'step'; do
-  check "workflow-step documents the \`$key\` selector" grep -q "$key" "$ws"
+# bb-workflow's authoring contract: recipes, runtime guides, hints and the three input kinds.
+ws="$SKILLS/bb-workflow/references/authoring.md"
+check 'bb-workflow reaches its authoring contract' grep -q 'references/authoring.md' "$SKILLS/bb-workflow/SKILL.md"
+for key in '## Recipes' '## Runtime guides' '## Project hints'; do
+  check "bb-workflow documents $key" grep -qx "$key" "$ws"
 done
 for kind in command prompt data; do
-  check "workflow-step documents the \`.$kind\` kind" grep -qE "\`\.$kind\`" "$ws"
+  check "bb-workflow documents the \`.$kind\` kind" grep -qE "\`\.$kind\`" "$ws"
 done
-check 'workflow-step states the exactly-one-match invariant' grep -qi 'exactly one' "$ws"
 
 # The remaining previously-unchecked skills: one substance assertion each.
-check 'provision-ddev checks for a live stack before starting one' \
-  bash -c "body '$SKILLS/provision-ddev/SKILL.md' | grep -q 'ddev describe'"
-check 'provision-ddev verifies the base URL responds' \
-  bash -c "body '$SKILLS/provision-ddev/SKILL.md' | grep -qi 'base URL actually responds\|verify the base URL'"
+check 'bb-runtime-ddev checks for a live stack before starting one' \
+  bash -c "body '$SKILLS/bb-runtime-ddev/SKILL.md' | grep -q 'ddev describe'"
+check 'bb-runtime-ddev verifies the base URL responds' \
+  bash -c "body '$SKILLS/bb-runtime-ddev/SKILL.md' | grep -qi 'base URL actually responds\|verify the base URL'"
 # BB-391 forbids the auth profile (one identity on one scope — see section A);
 # BB-403 replaced the schema dump with --fields as the discovery step.
 check 'create-project lists the settable fields and names no auth profile' \
-  bash -c "body '$SKILLS/create-project/SKILL.md' | grep -q -- '--fields' \
-    && ! body '$SKILLS/create-project/SKILL.md' | grep -q -- '--auth-profile'"
+  bash -c "body '$SKILLS/bb-create-project/SKILL.md' | grep -q -- '--fields' \
+    && ! body '$SKILLS/bb-create-project/SKILL.md' | grep -q -- '--auth-profile'"
 check 'publish-origin-feedback posts a note to the origin issue' \
-  bash -c "body '$SKILLS/publish-origin-feedback/SKILL.md' | grep -q 'glab issue note'"
+  bash -c "body '$SKILLS/bb-publish-origin-feedback/SKILL.md' | grep -q 'glab issue note'"
 check 'record-measurement replaces only its own namespace' \
-  bash -c "body '$SKILLS/record-measurement/SKILL.md' | grep -qi 'namespace'"
+  bash -c "body '$SKILLS/bb-record-measurement/SKILL.md' | grep -qi 'namespace'"
 check 'publish-comment names the bb_rich storage format' \
-  bash -c "body '$SKILLS/publish-comment/SKILL.md' | grep -q 'bb_rich'"
+  bash -c "body '$SKILLS/bb-publish-comment/SKILL.md' | grep -q 'bb_rich'"
 
 # Terminal retrospective: keep the gate and its write scope ordering observable.
-tt="$SKILLS/transition-ticket/references/terminal-retrospective.md"
-check 'transition-ticket reaches its conditional retrospective' grep -q 'references/terminal-retrospective.md' "$SKILLS/transition-ticket/SKILL.md"
+tt="$SKILLS/bb-transition-ticket/references/terminal-retrospective.md"
+check 'transition-ticket reaches its conditional retrospective' grep -q 'references/terminal-retrospective.md' "$SKILLS/bb-transition-ticket/SKILL.md"
 check 'transition-ticket gates retrospective on terminal destinations' \
   bash -c "cat '$tt' | grep -qE 'destination.*done.*cancelled'"
 check 'transition-ticket writes retrospective before retiring the run' \

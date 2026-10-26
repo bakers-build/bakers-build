@@ -195,25 +195,3 @@ export {
 // BB-194 AC-2: the agent-host contract (`AgentLaunchHost` / `HostedAgent` /
 // `supportsAgentHost`) is likewise NOT here — it is the TUI renderer's own plugin
 // seam (`@bakers-build/addon-bakers-ui`), and herdr types its impl locally.
-export {
-  deriveProjectTriples,
-  type EmptyLoaderShape,
-  type ExpandedLoad,
-  expandLoad,
-  type IndentedLoadSite,
-  type InputDecl,
-  measureEmptyLoader,
-  parseStepValues,
-  readSkillWhen,
-  type SkillContract,
-  type SkillWhen,
-  StepContractError,
-  type StepContractErrorCode,
-  type StepValues,
-  type Triple,
-  validateLoad,
-  type WhenValue,
-  WORKFLOW_CLAIMABLE_STATES,
-  WORKFLOW_STEPS,
-  type WorkflowStep,
-} from './workflow/step-contract.js';

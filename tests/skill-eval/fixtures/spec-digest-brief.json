@@ -1,17 +1,17 @@
 {
   "id": "spec-digest-brief",
-  "skill": "run-outtake",
+  "skill": "bb-run-outtake",
   "references": [
-    "method-context/references/results.md",
-    "method-context/SKILL.md",
-    "essential-skills/SKILL.md",
-    "create-spec/SKILL.md",
-    "run-outtake/references/spec-digest.md"
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/boundaries.md",
+    "bb-workflow/references/evidence.md",
+    "bb-recipe-matt/SKILL.md",
+    "bb-run-outtake/references/spec-digest.md"
   ],
   "outtake": true,
   "input": {
     "ticket": "EVAL-7: Customers can export their invoices as CSV",
-    "state": "spec",
+    "state": "plan",
     "outcome": "Spec, plan and test plan for the invoice CSV export are proposed and published; nothing is implemented.",
     "spec": {
       "what": "A customer opens Account > Invoices and downloads all invoices of a chosen year as one CSV file.",

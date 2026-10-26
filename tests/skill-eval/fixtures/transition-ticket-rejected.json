@@ -3,10 +3,10 @@
   "synthetic": true,
   "profile": "transition-ticket-calls",
   "execution": "simulated-tools",
-  "skill": "transition-ticket",
+  "skill": "bb-transition-ticket",
   "references": [
-    "workflow-step/SKILL.md",
-    "essential-skills/SKILL.md"
+    "bb-workflow/SKILL.md",
+    "bb-workflow/references/evidence.md"
   ],
   "input": {
     "task": "Execute the caller-authorized transition from coding to review with the supplied links, respecting any server rejection.",

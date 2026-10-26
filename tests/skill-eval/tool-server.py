@@ -15,6 +15,10 @@ import sys
 HERE = Path(__file__).resolve().parent
 CONTRACT = json.loads((HERE / 'contract-fixture.json').read_text())
 SCHEMAS = CONTRACT['schemas']
+# The name-refs addon's term resolvers, in its order: (flag, noun, relationship, vocabulary, single).
+NAME_REFS = [('type_names', 'ticket type', 'ticket_type', 'type', True),
+             ('recipe_names', 'recipe', 'recipe', 'recipe', True),
+             ('label_names', 'label', 'labels', 'label', False)]
 
 TOOLS = [
     {'name': 'bakers', 'description': 'Invoke the synthetic bakers.build CLI. Supply the complete argv array beginning with bakers dropsh, with each flag/value as a separate token (or --field=value). Values are literal: no shell expansion. Discover command syntax with argv ["bakers", "dropsh", "--help"] or an action followed by --help. argv ["bakers", "info"] returns the project and workspace context. Returns exit_code, stdout and stderr as text, like the real CLI. State exists only in this fixture server.',
@@ -172,8 +176,11 @@ def operation_schema(key, operation):
     if operation == 'update':
         resource['attributes']['required'] = []
         resource['relationships']['required'] = []
-    if 'labels' in resource['relationships']['properties']:
-        resource['attributes']['properties']['label_names'] = {'type': 'string', 'title': "Label names (comma-separated label term names; resolved in the ticket's workspace and created there when missing, on the live write)"}
+    for field, noun, relationship, vid, single in NAME_REFS:
+        if relationship in resource['relationships']['properties']:
+            resource['attributes']['properties'][field] = {'type': 'string', 'title': (
+                f"{noun[0].upper()}{noun[1:]} names (comma-separated {vid} term names{'; one name' if single else ''}; "
+                "resolved in the ticket's workspace and created there when missing, on the live write)")}
     return resource
 
 
@@ -348,11 +355,18 @@ class Simulation:
         self.tickets = {s['id']: record_from(ticket, s) for s in sources if s}
         self.comments = {}
         self.terms = {t['id']: record_from('bb_term--label', t) for t in CONTRACT['terms']}
+        self.vocabularies = {'label': self.terms,
+                             'type': {t['id']: record_from('bb_term--type', t) for t in CONTRACT['type_terms']},
+                             'recipe': {t['id']: record_from('bb_term--recipe', t) for t in CONTRACT['recipe_terms']}}
         self.lost = False
         self.merge_completed = False
 
     def store(self, key):
-        return {'bb_ticket/bb_ticket': self.tickets, 'bb_comment/bb_comment': self.comments, 'bb_term/label': self.terms}.get(key)
+        return {'bb_ticket/bb_ticket': self.tickets, 'bb_comment/bb_comment': self.comments,
+                **{f'bb_term/{vid}': store for vid, store in self.vocabularies.items()}}.get(key)
+
+    def term(self, identifier):
+        return next((store[identifier] for store in self.vocabularies.values() if identifier in store), None)
 
     def emit(self, document, program):
         fmt = program.get('--format', 'json')
@@ -416,7 +430,7 @@ class Simulation:
                                        'comments': {'data': [{'type': c['type'], 'id': c['id']} for c in self.comments.values() if c['relationships']['ticket_id']['data']['id'] == identifier]}}
         if includes:
             refs = [r for name in includes for r in ([record.get('relationships', {}).get(name, {}).get('data')] if isinstance(record.get('relationships', {}).get(name, {}).get('data'), dict) else record.get('relationships', {}).get(name, {}).get('data') or [])]
-            document['included'] = [copy.deepcopy((self.comments.get(r['id']) or self.terms.get(r['id']))) for r in refs if self.comments.get(r['id']) or self.terms.get(r['id'])]
+            document['included'] = [copy.deepcopy((self.comments.get(r['id']) or self.term(r['id']))) for r in refs if self.comments.get(r['id']) or self.term(r['id'])]
         return self.emit(document, program)
 
     def search(self, entity, program, options, _extra):
@@ -476,22 +490,35 @@ class Simulation:
         return document
 
     def resolve_labels(self, data):
-        names = data.get('attributes', {}).pop('label_names', None)
+        """Label names must exist; type and recipe names are created on first use, like the addon."""
+        attributes = data.get('attributes', {})
+        names = {field: attributes.pop(field) for field, *_ in NAME_REFS if field in attributes}
         if not data.get('attributes'):
             data.pop('attributes', None)
-        if names is None:
-            return
-        by_name = {t['attributes']['name']: t['id'] for t in self.terms.values()}
-        ids = []
-        for name in [n.strip() for n in names.split(',') if n.strip()]:
-            if name not in by_name:
-                cause = f"Error: label name '{name}' does not exist in the bb_term/label vocabulary. Known names: {', '.join(by_name)}"
-                raise Fail('E_PLUGIN', "plugin 'bakers-name-refs' failed in alterRequest", {'pluginId': 'bakers-name-refs', 'hook': 'alterRequest', 'cause': cause})
-            ids.append(by_name[name])
-        existing = data.get('relationships', {}).get('labels', {}).get('data', [])
-        merged = list({r['id']: r for r in existing + [{'type': 'bb_term--label', 'id': i} for i in ids]}.values())
-        if merged:
-            data.setdefault('relationships', {})['labels'] = {'data': merged}
+        for field, noun, relationship, vid, single in NAME_REFS:
+            if field not in names:
+                continue
+            store = self.vocabularies[vid]
+            by_name = {t['attributes']['name']: t['id'] for t in store.values()}
+            ids = []
+            for name in [n.strip() for n in names[field].split(',') if n.strip()]:
+                if name not in by_name and not single:
+                    cause = f"Error: {noun} name '{name}' does not exist in the bb_term/{vid} vocabulary. Known names: {', '.join(by_name)}"
+                    raise Fail('E_PLUGIN', "plugin 'bakers-name-refs' failed in alterRequest", {'pluginId': 'bakers-name-refs', 'hook': 'alterRequest', 'cause': cause})
+                if name not in by_name:
+                    identifier = f'88888888-8888-4888-8888-{len(store) + 900:012d}'
+                    store[identifier] = record_from(f'bb_term--{vid}', {'id': identifier, 'name': name})
+                    by_name[name] = identifier
+                ids.append(by_name[name])
+            if single:
+                if len(ids) != 1:
+                    raise Fail('E_VALIDATION', f'--{field} takes one name')
+                data.setdefault('relationships', {})[relationship] = {'data': {'type': f'bb_term--{vid}', 'id': ids[0]}}
+                continue
+            existing = data.get('relationships', {}).get(relationship, {}).get('data', [])
+            merged = list({r['id']: r for r in existing + [{'type': f'bb_term--{vid}', 'id': i} for i in ids]}.values())
+            if merged:
+                data.setdefault('relationships', {})[relationship] = {'data': merged}
 
     def create(self, entity, program, options, extra):
         bundle = options['--bundle'][-1]

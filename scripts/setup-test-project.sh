@@ -99,14 +99,12 @@
 #     reachable exactly where it was not needed and absent where it was.
 #     This script still calls the CLI through `${BB_BIN}` for the invocations it
 #     makes BEFORE the marker exists; you do not have to.
-#  6. THE FIXTURE'S COMMITTED LOADER CARRIES BOTH SUB-WORKS. It loads
-#     `@bakers-build/essential-skills`, `@bakers-build/docs-authoring`, `@bakers-build/ddev-drupal-feature`
-#     and `@bakers-build/ddev-drupal-bug`, so `work:docs` and `work:code` are both covered
-#     across feature, chore and bug. It was `work:docs` only while the workspace was
-#     assumed to host no application; it does host a Drupal site, provisioned by
-#     step 2. Read `workspaces/bakers-playground/WORKFLOW.md` before creating a ticket:
-#     a triple no loaded skill owns burns a real dispatch on a configuration error,
-#     and that file — not this script — is now where the answer lives.
+#  6. THE FIXTURE'S COMMITTED WORKFLOW IS THE ENTRY LINE PLUS ONE VALIDATE ROW. Every
+#     state runs through `@bakers-build/bb-workflow`, and `plan`/`working`/`review` run
+#     the ticket's recipe (`bb-recipe-matt` by default). Read
+#     `workspaces/bakers-playground/WORKFLOW.md` before creating a ticket: its
+#     `## validate` row is the check a `working` run must report, and that file — not
+#     this script — is where the answer lives.
 #  7. RE-DRIVING THE SAME TICKET NEEDS ITS RUN DELETED, not released. A `bb_run`
 #     whose `state_at_start` equals the ticket's current state blocks re-claiming
 #     even once it is released or terminal, so clearing `conductor_id` alone leaves
@@ -120,8 +118,8 @@
 #     (marketplaces in `~/.codex/config.toml`) and has no project-local override,
 #     so a Codex dispatch loads the machine's installed skills and not this branch
 #     — silently, with a normal-looking run to show for it. Measured on BB-525:
-#     a dispatch loaded `~/.codex/skills/bakers-method-context →
-#     ~/.agents/skills/method-context`, which carried none of the branch's changes.
+#     a dispatch loaded a globally installed bakers skill symlinked from
+#     `~/.agents/skills/`, which carried none of the branch's changes.
 #     Step 6 warns when `~/.codex/skills` exists. When the SKILLS are what is under
 #     test, dispatch with a Claude-family agent; otherwise the harness is a
 #     false-negative machine and reports nothing about it.
@@ -1026,22 +1024,10 @@ JS
 # copy into each ticket worktree — a worktree cut from `origin/<base_branch>` now
 # simply checks the file out.
 #
-# Two traps that cost real runs, kept here because the file this script no longer
-# writes still has to satisfy them:
-#
-#   - THE OVERRIDE KEY IS `validate.command`, NOT `validate`. BB-280 renamed every
-#     key to `<role>.<kind>`, and getting it wrong still drops the override: the
-#     project falls back to a default naming checks it does not have. What changed
-#     is that it no longer happens in silence. Until BB-436 `validateLoad` read
-#     overrides only through each skill's DECLARED inputs, so a stale key was
-#     matched by nothing and reported by nothing (every input carries a default, so
-#     the load looked clean); it now sweeps for an override key no loaded skill
-#     declares and names both skill and key. Run `bakers validate` after editing this
-#     file — that command is where the check surfaces.
-#   - `## Required skills` must exist. BB-280 writes the load-or-stop rule once per
-#     project, and every `.prompt` default points at that heading instead of
-#     restating it. Without the section a run is sent to a heading that does not
-#     exist and the rule is lost in silence.
+# One trap that costs real runs, kept here because the file this script no longer
+# writes still has to satisfy it: a hint section is read only under its exact phase
+# name (`provision`, `work`, `validate`, `deliver`). A `## Checks` table is never read,
+# so a run reports no project check at all.
 say "generated .bakers/bakers.config.js and .bakers/conductor.config.local.js"
 say "machine_id: ${MACHINE_ID}"
 say ".bakers/conductor.config.js is COMMITTED in the fixture repo — not written here"
@@ -1178,7 +1164,7 @@ setup complete
 
 The ticket is yours. Three steps, and the last one spends real agent money.
 
-  Create a representative work:docs ticket after reading the fixture's committed
+  Create a representative docs ticket after reading the fixture's committed
   WORKFLOW.md. Assignment uses the normal worker connection and ticket edit access.
 
   1. Register the conductor, because it has no record and therefore no uuid until
@@ -1186,14 +1172,14 @@ The ticket is yours. Three steps, and the last one spends real agent money.
 
        cd ${WORKSPACE} && bakers oven once
 
-  2. Create a work:docs ticket in project '${PROJECT}' and set its conductor_id to
+  2. Create a chore ticket (recipe matt) in project '${PROJECT}' and set its conductor_id to
      the conductor carrying machine_id '${MACHINE_ID}'. The claim keys on that
      field, so without it nothing is ever claimed. Use the same connection as
      registration; no separate assignment permission or auth profile is needed.
 
        bakers dropsh --format md search bb_project --bundle bb_project --filter 'name:${PROJECT}'
        bakers dropsh --format md search bb_conductor --bundle bb_conductor --filter 'conductor_id:${MACHINE_ID}'
-       bakers dropsh create bb_ticket --bundle bb_ticket --title 'Conductor verification' --workflow bb_work --label_names work:docs --project_id <project-uuid> --conductor_id <conductor-uuid>
+       bakers dropsh create bb_ticket --bundle bb_ticket --title 'Conductor verification' --workflow bb_work --type_names chore --recipe_names matt --project_id <project-uuid> --conductor_id <conductor-uuid>
 
      Substitute the UUIDs returned by the searches. Existing tickets can be assigned:
 

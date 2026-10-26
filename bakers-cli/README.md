@@ -60,8 +60,8 @@ touch any `bakers-cli/` package or addon).
 ```
 bakers-cli/
 ├── core/       # @bakers-build/core      — the surface-AGNOSTIC kernel: host contract, split-config
-│               #                      helpers, conductor registry, utils, workflow step-contract,
-│               #                      and the generic preset/discovery machinery. NO plugin
+│               #                      helpers, conductor registry, utils, and the generic
+│               #                      preset/discovery machinery. NO plugin
 │               #                      implementations, no conductor-surface interfaces, no
 │               #                      config contract. Zero @bakers-build/* edges.
 ├── conductor/  # @bakers-build/conductor — the run engine + the `conductor` command plugin + the

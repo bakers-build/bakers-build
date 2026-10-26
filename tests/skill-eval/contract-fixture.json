@@ -24,9 +24,9 @@
                   "type": "string",
                   "title": "Workflow",
                   "enum": [
-                    "bb_bug",
-                    "bb_chore",
-                    "bb_feature"
+                    "bb_deployment",
+                    "bb_verification",
+                    "bb_work"
                   ]
                 },
                 "description": {
@@ -88,6 +88,54 @@
                           "type": "string",
                           "enum": [
                             "bb_project--bb_project"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                },
+                "ticket_type": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bb_term--type"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                },
+                "recipe": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "bb_term--recipe"
                           ]
                         },
                         "id": {
@@ -279,5 +327,25 @@
     },
     "assignee": "fixture-reader",
     "links": []
-  }
+  },
+  "type_terms": [
+    {
+      "id": "88888888-8888-4888-8888-000000000101",
+      "name": "feature"
+    },
+    {
+      "id": "88888888-8888-4888-8888-000000000102",
+      "name": "bug"
+    },
+    {
+      "id": "88888888-8888-4888-8888-000000000103",
+      "name": "chore"
+    }
+  ],
+  "recipe_terms": [
+    {
+      "id": "88888888-8888-4888-8888-000000000201",
+      "name": "matt"
+    }
+  ]
 }

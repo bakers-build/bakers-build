@@ -196,7 +196,7 @@ describe('outtake evaluation', () => {
       await expect(validateFixture(bad), key).rejects.toThrow();
     }
     await expect(
-      validateFixture({ ...coding, skill: 'qualify-ticket' }),
+      validateFixture({ ...coding, skill: 'bb-qualify-ticket' }),
     ).rejects.toThrow();
     await expect(
       validateFixture({

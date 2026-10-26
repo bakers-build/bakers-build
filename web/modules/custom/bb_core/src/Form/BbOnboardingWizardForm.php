@@ -510,7 +510,7 @@ final class BbOnboardingWizardForm extends FormBase {
             (string) $this->t('Then paste this into your agent:'),
           ),
           'init_prompt' => $this->commandElement(
-            'Use `bakers:init` to guide me through installing and setting up bakers.build.',
+            'Use `bakers:bb-init` to guide me through installing and setting up bakers.build.',
             (string) $this->t('Copy the skill wizard prompt'),
           ),
         ],
@@ -534,7 +534,7 @@ final class BbOnboardingWizardForm extends FormBase {
       (string) $this->t('Paste this into your agent:'),
     );
     $form['fields']['init_prompt'] = $this->commandElement(
-      'Use `bakers:init-project` to connect this checkout as a bakers.build project.',
+      'Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.',
       (string) $this->t('Copy the init-project prompt'),
     );
     $this->attachDocsLinks($form, [

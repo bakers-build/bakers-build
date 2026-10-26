@@ -418,7 +418,7 @@ cover the corresponding browser behavior.
 
 The recipe owns the two bakeries (Northside Bakery, the home workspace, and Southside
 Bakery, the other one), explicit rank memberships, the public test accounts listed in
-`WORKFLOW.md` › *Test users*, and pagination rows. `support/contract-world.json` maps their stable
+`docs/bakers/testing.md` › *Test users*, and pagination rows. `support/contract-world.json` maps their stable
 UUIDs to readable aliases in feature documents. API actions create temporary resources;
 the scenario fixture deletes them in reverse order. Owner and session tests restore
 ordinary membership after conductor registration so automatic app rank cannot mask the

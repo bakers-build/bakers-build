@@ -6,7 +6,7 @@ bakers.build keeps tickets, states and the rules in your repository. Everything 
 
 | Your machine | bakers.build | Your project |
 |---|---|---|
-| Your agent and its subscription. Your workspace manager, which keeps agent sessions open. | Tickets, states, skills, runs. Stays the same whatever you plug in. | Your stack, your checks and standards in `WORKFLOW.md`, the step skills that fit your stack. |
+| Your agent and its subscription. Your workspace manager, which keeps agent sessions open. | Tickets, states, skills, runs. Stays the same whatever you plug in. | Your stack, your checks and standards in `WORKFLOW.md`, the skills that fit your stack. |
 
 ## What works today
 
@@ -15,10 +15,10 @@ bakers.build keeps tickets, states and the rules in your repository. Everything 
 | Agent | Claude Code, Codex, Grok, Kimi, OpenCode, Pi | | an [agent addon](/addons/) |
 | Workspace manager | herdr | tuios | an [executor addon](/addons/build/contracts) |
 | Development environment | DDEV, Docker Compose; anything your project's hooks can start | | [hooks](/advanced/configuration/hooks) per project |
-| Step skills | Drupal with DDEV, documentation | | [a step skill](/advanced/development/write-a-step-skill) for your stack |
+| Recipes and runtimes | the Matt method; DDEV | | [a recipe](/advanced/development/write-a-step-skill) for your method |
 | Sharing previews | Cloudflare and frp tunnels | | a [transport addon](/addons/ports) |
 
-Your stack has no step skill yet? Your project still works for documentation tickets and everything that needs no build checks, and a developer writes the missing skill once.
+Your stack needs no dedicated skill: `WORKFLOW.md` names the skills and checks for it, and a developer writes a recipe only for a different engineering method.
 
 ## Where things run and what is stored
 

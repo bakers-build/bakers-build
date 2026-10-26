@@ -1,30 +1,29 @@
-# Labels and work types
+# Ticket type, recipe and labels
 
-**Labels choose the skill, the method and the agent for a ticket, and can mirror progress to GitLab.**
+**The recipe chooses the method, the type chooses its variant, and labels choose the agent and can mirror progress to GitLab.**
+
+| Field | Set by | Effect |
+|---|---|---|
+| `recipe` | qualification | the recipe skill that owns `plan`, `working` and `review`, such as `matt` for `bb-recipe-matt`; empty means the installed recipe that declares itself project default |
+| `ticket_type` | qualification | `feature`, `bug`, `chore` and so on; selects the recipe's subsection for that type |
+| `labels` | you, or qualification | agent choice and plain tags, see below |
+
+The fields and their vocabularies are listed under [Ticket type, recipe and labels](/skills-and-workflows/workflows-and-states#ticket-type-recipe-and-labels).
+
+## Recipes
+
+A recipe is a skill named `bb-recipe-<method>`, one per engineering method, with one section per work state. bakers.build ships `bb-recipe-matt`, the project default. Qualification reads the descriptions of the installed recipes, picks the one that fits the ask, then a type that recipe declares, and writes both on the ticket. It asks only when the choice is genuinely unclear. A later change follows the `bb-scope-change` skill.
+
+A run stops before doing any work when the recipe, its section for the current state, or the ticket's type within that recipe is missing. To write your own: [Write a recipe](/advanced/development/write-a-step-skill).
+
+## Labels
 
 | Label | Set by | Effect |
 |---|---|---|
-| `work:<type>` | qualification | declares a sub-work; `<type>` is the work type that selects the skill owning plan, working and review |
-| `method:<set>` | qualification | the engineering method chosen from `## Skill set` in `WORKFLOW.md`; at most one per ticket |
 | `agent:<alias>` or `agent:<route>` | you, or qualification after you confirm | the coding agent for every state |
 | `agent:<alias>@<state>` or `agent:<route>@<state>` | the same | the coding agent for that state only |
 
 Anything else is a plain tag for people and filters.
-
-## Work types
-
-A skill that owns a step declares its work type, and qualification creates any missing `work:*` term from that declaration.
-
-| Label | Owned by | Validated by |
-|---|---|---|
-| `work:code` | `create-spec`, `ddev-drupal-feature`, `ddev-drupal-bug` | the project's checks, and a browser scenario where one applies |
-| `work:docs` | `docs-authoring` | proportional documentation, frontmatter and workflow checks |
-
-A project adds a work type by loading a skill that declares one ([Write WORKFLOW.md](/skills-and-workflows/write-workflow-md)). A ticket may carry several `work:*` labels: each sub-work gets its own owner, they run in load order, and the last makes the single transition. `qualification` runs before the sub-works are known, so it carries no work type.
-
-## Method labels
-
-The `method:<set>` value is the file name of a set listed under `## Skill set`. With one entry nothing is asked; with several, qualification asks and records the choice. A later change follows the `scope-change` skill.
 
 ## Agent labels
 

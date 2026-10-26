@@ -9,13 +9,13 @@
 Paste this prompt:
 
 ```text
-Use `bakers:init-project` to connect this checkout as a bakers.build project.
+Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.
 ```
 
 Your agent:
 
 - **Connects:** finds the bakers.build project or creates it with you.
-- **Asks:** which step skills fit your stack (Drupal with DDEV and documentation ship today; [write your own](/advanced/development/write-a-step-skill) for another stack), which method and which hooks your project uses.
+- **Asks:** which hooks your project uses, and fills the skills and checks for your stack into `WORKFLOW.md`. The Matt method ships as the default recipe and DDEV as a runtime guide; [write your own recipe](/advanced/development/write-a-step-skill) for another method.
 - **Prepares:** adds `WORKFLOW.md` and a short onboarding note to the README.
 - **Checks:** confirms access and a valid workflow.
 

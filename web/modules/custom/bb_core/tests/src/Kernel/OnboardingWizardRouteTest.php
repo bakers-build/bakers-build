@@ -390,9 +390,9 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     self::assertNotContains('https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
     self::assertContains('codex plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
     self::assertContains('codex plugin add bakers@bakers', $step3Commands);
-    self::assertContains('Use `bakers:init` to guide me through installing and setting up bakers.build.', $step3Commands);
+    self::assertContains('Use `bakers:bb-init` to guide me through installing and setting up bakers.build.', $step3Commands);
     $pluginInstall = array_search('/plugin install bakers@bakers', $step3Commands, TRUE);
-    $initPrompt = array_search('Use `bakers:init` to guide me through installing and setting up bakers.build.', $step3Commands, TRUE);
+    $initPrompt = array_search('Use `bakers:bb-init` to guide me through installing and setting up bakers.build.', $step3Commands, TRUE);
     self::assertIsInt($pluginInstall);
     self::assertIsInt($initPrompt);
     self::assertLessThan($initPrompt, $pluginInstall);
@@ -415,7 +415,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     foreach ($step4Commands as $command) {
       self::assertContains($command, $connect, $command . ' must be a complete line in connect-a-project.md.');
     }
-    self::assertContains('Use `bakers:init-project` to connect this checkout as a bakers.build project.', $step4Commands);
+    self::assertContains('Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.', $step4Commands);
     self::assertNotContains('bakers init', $step4Commands);
     self::assertNotContains('bakers dropsh auth login', $step4Commands);
     self::assertNotContains('herdr --version', $step4Commands);

@@ -1,1 +1,0 @@
-../skills/init-project/references/WORKFLOW.template.md
