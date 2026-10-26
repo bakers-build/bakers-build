@@ -1,0 +1,75 @@
+{
+  "id": "qualify-outtake",
+  "synthetic": true,
+  "profile": "state-outtake",
+  "skill": "bb-workflow/references/outtake.md",
+  "references": [
+    "bb-workflow/references/outtake/qualification.md",
+    "bb-workflow/references/results.md"
+  ],
+  "input": {
+    "ticket": "EVAL-41: Export invoices as CSV",
+    "state": "qualification",
+    "task": "Render the outtake for this published qualification handoff. Printing and publishing are the caller's.",
+    "handoff": {
+      "acceptance_criteria": [
+        {
+          "id": "AC-1",
+          "text": "As an operator, I want an Export CSV button on the invoice list, so that I can download the visible invoices."
+        },
+        {
+          "id": "AC-2",
+          "text": "As an operator, I want the export of 500 invoices to finish within 5 seconds, so that I can export a full page without waiting.",
+          "previous_wording": "The export should be fast."
+        },
+        {
+          "id": "AC-3",
+          "text": "As an operator, I want number, date, customer and total per invoice in the CSV, so that accounting can import it."
+        },
+        {
+          "id": "AC-4",
+          "text": "The change passes every matching bb-phase-validate row of WORKFLOW.md."
+        }
+      ],
+      "tally": "3 passed, 1 rewritten",
+      "out_of_scope": "PDF export; scheduled exports.",
+      "recipe": "probe",
+      "ticket_type": "feature",
+      "recipe_reason": "Project default; the ask is under-specified about columns.",
+      "reproduction": "not_required",
+      "scenario_required": true,
+      "test_as": [
+        {
+          "persona": "north-lead",
+          "sees": "the Export CSV button"
+        },
+        {
+          "persona": "north-guest",
+          "sees": "denied, no Export CSV button"
+        }
+      ],
+      "prior_art": "Ticket search for invoice/invoices and CSV: negative. Remote base check on origin/develop aaaaaaa: negative.",
+      "handoff_version": 1,
+      "provenance": "fixture-revision-1"
+    }
+  },
+  "expect": {
+    "ac_ids": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "question": true
+  },
+  "rubric": [
+    {
+      "id": "lists-all",
+      "criterion": "Lists every criterion of the handoff with its ID and nothing outside the handoff."
+    },
+    {
+      "id": "asks-fit",
+      "criterion": "Ends by asking whether the criteria fit."
+    }
+  ]
+}

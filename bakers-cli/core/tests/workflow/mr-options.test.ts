@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 
 // BB-274 — how a merge request is opened and merged (target, squash commits, delete source
 // branch) is prose in three sources that must agree: docs/bakers/git-and-delivery.md, which WORKFLOW.md names as the source
-// of the convention, plus @bakers-build/implement-ticket and @bakers-build/bb-merge-mr, which own it operationally.
+// of the convention, plus the bb-workflow delivery and merge references, which own it operationally.
 // The deletion additionally carries a safety condition.
 // The assertions are a file contract (tests/contract/merge-request-options.sh, the
 // BB-246 shape); no CI job runs this script directly, so without this runner it would be a
@@ -53,11 +53,12 @@ describe('BB-274 merge-request options', () => {
   it('accepts valid gate text longer than a pipe buffer without hiding missing gates', () => {
     const root = mkdtempSync(join(tmpdir(), 'bakers-mr-contract-'));
     const source = resolve(dirname(SCRIPT), '../..');
-    const mergePath = '.claude/skills/bakers-build/skills/bb-merge-mr/SKILL.md';
+    const mergePath =
+      '.claude/skills/bakers-build/skills/bb-workflow/references/merge.md';
     try {
       for (const path of [
         'docs/bakers/git-and-delivery.md',
-        '.claude/skills/bakers-build/skills/bb-workflow/SKILL.md',
+        '.claude/skills/bakers-build/skills/bb-workflow/references/working.md',
         '.claude/skills/bakers-build/skills/bb-workflow/references/delivery.md',
         mergePath,
       ]) {
@@ -87,7 +88,7 @@ describe('BB-274 merge-request options', () => {
     }
   });
 
-  it('the file contract over WORKFLOW.md + implement-ticket + merge-mr passes', () => {
+  it('the file contract over the convention doc + delivery + merge passes', () => {
     const out = runContract();
     expect(out).toContain('all checks passed');
     expect(out).not.toContain('FAIL');

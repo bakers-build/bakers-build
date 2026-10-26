@@ -1,77 +1,74 @@
 # Authoring recipes, runtime guides and hints
 
-Read when writing or changing a recipe, a runtime guide, a project's `WORKFLOW.md`, or a core
-skill's inputs. No CLI reads or validates these files; the native skill mechanism loads them and
-`@bakers-build/bb-workflow` binds them.
+Read when writing a recipe, a runtime guide, a project's `WORKFLOW.md`, or an input.
+`tests/contract/skill-references.py` checks every heading named below.
 
-## The six phases
+## The grid
 
-`read, provision, work, validate, deliver, transition` are stable names. Every kind of guidance
-puts its content under the phase it refines, so a run reads exactly the matching sections at each
-phase. Keep the names verbatim; a section under another name is never read.
+A run is **state × phase**. States with a state file: `qualification`, `plan`, `working`,
+`review`. Phases: `read`, `provision`, `work`, `validate`, `deliver`, `outtake`, `transition`.
+Each state file holds exactly these seven `## <phase>` sections and always runs. Guidance adds a
+**slot** to a cell under a prefixed heading; everything else is free text.
+
+**Two-file rule:** what state X does for type Y reads from X's state file plus the recipe's slots
+for X. A slot that needs a third file to make sense belongs in the state file or its reference.
 
 ## Recipes
 
-A recipe is one normal skill named `bb-recipe-<method>` per engineering method, domain-free and
-runtime-free.
+A recipe is one normal skill named `bb-recipe-<method>`, domain-free and runtime-free.
 
-- **Description** names the method, the ticket types it covers, and `Project default` on at most
-  one installed recipe. Qualification chooses from descriptions alone.
-- **Sections** are named after the work states: `## plan`, `## working`, `## review`. A
-  `### <type>` subsection appears only where that type behaves differently.
+- **Description** names the method, the ticket types it declares as `for tickets of type X, Y or
+  Z`, and `Project default` on at most one installed recipe. Qualification chooses from descriptions alone.
+- **Sections** are `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`;
+  each holds `### bb-phase-<phase>` slots, only where the method adds something.
+- Per slot the type section wins; a phase it lacks falls back to the general section, else none.
+  A slot supplies method, never gates, publication or transitions; a transition slot only picks
+  among the gate's destinations.
 - Name the method's original skills; leave domain, runtime and project commands to guides and
-  hints.
-- A recipe may live in any plugin. It calls no other `@bakers-build/*` skill: inputs,
-  publication, gates and transitions come from the frame's [plan](plan.md), [coding](coding.md)
-  and [review](review.md) flows.
-
-A ticket's `recipe` field names the recipe; its `ticket_type` field selects subsections. A
-missing recipe, state section or uncovered type stops the run (`@bakers-build/bb-workflow` ›
-*Required skills*).
+  hints. A recipe may live in any plugin: it links no `bb-workflow` reference and calls no other
+  `@bakers-build/*` skill.
 
 ## Runtime guides
 
-A runtime guide is one normal skill named `bb-runtime-<tech>` that says how to provision, execute,
-lint and test in one technology, under `## provision`, `## work` and `## validate`. Lore that only
-some runs need sits in a reference behind a sharp conditional pointer. A project names its guide in
-its `## provision` hint.
+A runtime guide is one normal skill named `bb-runtime-<tech>`: how to provision, execute, lint,
+test and hand over logins in one technology, under `## bb-phase-<phase>` sections. Lore only some
+runs need sits behind a conditional pointer. A project names its guide in its
+`## bb-phase-provision` hint.
 
 ## Project hints
 
-`WORKFLOW.md` is the entry line plus optional phase-named sections:
+`WORKFLOW.md` is the entry line plus optional `## bb-phase-<phase>` sections and nothing else:
 
 ```markdown
 # <project> — WORKFLOW
 
 Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
-## provision
-## work
-## validate
-## deliver
+## bb-phase-provision
+## bb-phase-work
+## bb-phase-validate
+## bb-phase-deliver
+## bb-phase-outtake
 ```
 
-`## work` and `## validate` hold `| When | Skill |` and `| When | Command |` tables; a run applies
-every matching row. Repository conventions and test lore belong in repository docs that
-`CLAUDE.md` points to, not in hints.
+`bb-phase-work` and `bb-phase-validate` hold `| When | Skill |` and `| When | Command |` tables; a
+run applies every matching row. `bb-phase-outtake` names the test-user list and how personas get
+logins. Conventions and test lore belong in repository docs.
 
-## Inputs — description + default, overridden per project
+## Inputs
 
-Lifecycle-specific parameters of core skills, such as release procedures, are declared
-**inputs**. An input key is **`<role>.<kind>`**; the kind is a closed set:
+A lifecycle parameter of a reference is a declared **input** `<role>.<kind>` with a short
+`description` and a `default`, so it runs with no project config:
 
 | kind | contract |
 |---|---|
 | `.command` | a shell command, **run verbatim** |
-| `.prompt` | an instruction, **followed verbatim** — never paraphrased, summarised, or replaced by equivalent reasoning of your own |
+| `.prompt` | an instruction, **followed verbatim**, never paraphrased |
 | `.data` | structured data, **looked up** — neither executed nor followed |
 
-Each input carries a short `description` and a `default`, so a skill runs with no project config.
-A project overrides a value in the `WORKFLOW.md` section of the phase where the skill runs, naming
-the skill and the key. The effective value is the override if present, otherwise the default.
+A project overrides a value in the `WORKFLOW.md` section of the phase where it is used, naming the
+reference and the key.
 
-## Skill size
+## Size
 
-Every bakers.build `SKILL.md` has at most 500 whitespace-separated words, including frontmatter and
-examples (`tests/contract/skill-size.py`). References have explicit loading conditions; remove
-duplication before moving text.
+Each `SKILL.md` and reference stays within 500 words (`tests/contract/skill-size.py`).

@@ -2,21 +2,25 @@
 
 Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
-## provision
+## bb-phase-provision
 
 <!-- The runtime guide and setup that bring the environment up, e.g. `@bakers-build/bb-runtime-ddev`
      and its provider. Leave empty when no work needs a runtime. -->
 
-## work
+## bb-phase-work
 
 | When | Skill |
 |---|---|
 
-## validate
+## bb-phase-validate
 
 | When | Command |
 |---|---|
 
-## deliver
+## bb-phase-deliver
 
 <!-- How a merge request is merged: the merge gate and what runs in it. -->
+
+## bb-phase-outtake
+
+<!-- Where the test-user list lives and how each `test_as` persona gets its login for manual review. -->

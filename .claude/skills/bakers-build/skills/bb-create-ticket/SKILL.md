@@ -6,13 +6,13 @@ description: Use when creating a bakers.build ticket from an intake or resuming 
 # Create a ticket
 
 Read supplied `$BB_NEW_TICKET_INPUT` first. For an existing or resumed ticket (`is_new: false`),
-resolve its UUID and use `@bakers-build/bb-read-ticket`; do not create a replacement. Collect title, project,
+resolve its UUID and use [read ticket](../bb-workflow/references/read-ticket.md); do not create a replacement. Collect title, project,
 workflow, Markdown description, scope and optional assignment/relationships from the intake.
 
 ## Prior art — search before the live create
 
-Execute [prior-art search](../bb-workflow/references/prior-art-search.md). On a hit, stop before
-writing; report identifier, title, state, assignee and available MR/merge, then obtain the decision.
+Execute [prior-art search](../bb-workflow/references/prior-art-search.md) completely — every
+spelling in both fields — before judging it. On a hit, stop before writing; report identifier, title, state, assignee and available MR/merge, then obtain the decision.
 Retain searched terms and evidence. An error is not a negative.
 
 ## Propose the branch's ticket as `parent_id`
@@ -31,26 +31,26 @@ bakers dropsh create bb_ticket --bundle bb_ticket --fields
 bakers dropsh create bb_ticket --bundle bb_ticket   --title="$TITLE" --workflow "$WORKFLOW"   --description.value="$(cat "$DESC_FILE")" --description.format bb_rich   --project_id "$PROJECT_UUID" --recipe_names "$RECIPE" --type_names "$TYPE"
 ```
 
-Choose `RECIPE` and `TYPE` under bb-qualify-ticket's *Choose recipe and type*. Retain the returned UUID immediately as `TICKET_UUID`;
-read it back through `@bakers-build/bb-read-ticket` and verify project, title, description, recipe, type and initial state.
+Choose `RECIPE` and `TYPE` under [classify](../bb-workflow/references/classify.md). Retain the returned UUID immediately as `TICKET_UUID`;
+read it back through [read ticket](../bb-workflow/references/read-ticket.md) and verify project, title, description, recipe, type and initial state.
 On uncertain creation reconcile the known UUID or uniquely matching context before retrying;
 ambiguous results remain unresolved. Preserve schema validation and exact field names.
 
 ## Qualify and route in the same action
 
 Creation intake is the qualification confirmation; avoid a second human qualify pass.
-Apply bb-qualify-ticket's *Propose an agent*.
-Publish exactly `qualification` through `@bakers-build/bb-publish-comment`, using every required field from
-`@bakers-build/bb-qualify-ticket`, including `test_as`, `out_of_scope`, `handoff_version`, provenance,
+Apply [agent choice](../bb-workflow/references/agent-choice.md).
+Publish exactly `qualification` through [publish comment](../bb-workflow/references/publish-comment.md), using every required field from
+[qualification](../bb-workflow/references/qualification.md) › *outtake*, including `test_as`, `out_of_scope`, `handoff_version`, provenance,
 reproduction, `scenario_required`, recipe choice and prior-art evidence. Follow
 [result records](../bb-workflow/references/results.md) for missing user/environment questions.
 Use explicit `not_required`/`false` where applicable.
 
-Publish one outtake `summary` the same way. Each returns a confirmed UUID or a concrete failure.
+Publish one [outtake](../bb-workflow/references/outtake.md) `summary` the same way. Each returns a confirmed UUID or a concrete failure.
 **Route only after both UUIDs are confirmed.** Otherwise leave the ticket in `qualification`,
 report the failure and STOP.
 
-Then publish authorized origin status and transition once through `@bakers-build/bb-transition-ticket`
+Then publish authorized origin status and transition once through [transition ticket](../bb-workflow/references/transition-ticket.md)
 to `plan`. Verify readback and STOP.
 Create no phase artifacts or implementation unless the shortcut below applies.
 

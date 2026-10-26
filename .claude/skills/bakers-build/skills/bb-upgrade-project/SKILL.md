@@ -21,8 +21,8 @@ CLI owns inventory, migrations and missing-layer repair. Blank installations use
 3. Run `bakers config check --scope <scope> --format json`; retain `--path <directory>` for project
    root and `--machine-path <file>` / `--config <file>` for shared targets. Project checks both
    prerequisites without changing shared files.
-4. Snapshot affected workflow/policy files outside the repository; protect secrets. CLI backs up
-   configuration during validated apply. Preserve unrelated changes. Obtain missing inputs via
+4. Snapshot affected workflow/policy files outside the repository; protect secrets. Preserve
+   unrelated changes. Obtain missing inputs via
    help options, `--secret-env <name>` for secrets, explicit identities/workspaces. Missing project
    identity needs supplied `--project <name>`. Files/schema markers alone prove no readiness.
 5. Run `bakers config upgrade --scope <scope>` with selected inputs/paths. Preserve supported values
@@ -37,11 +37,13 @@ CLI owns inventory, migrations and missing-layer repair. Blank installations use
 ## Preserve project policy
 
 For selected projects, follow [WORKFLOW.template.md](../bb-init-project/references/WORKFLOW.template.md);
-create absent workflows. Move an old loader's sections: the entry line replaces `## Loaded skills`
-and `## Skill set` (tickets carry a recipe); `## Skills` → `## work`; `## Checks` → `## validate`;
-`### Setup` → `## provision`; before-merge rules → `## deliver`; input overrides → the phase where
-the skill runs; drop `## Required skills`; `## Standards` and test lore → `CLAUDE.md` pointers and
-repository docs. Keep every command and its applicability. Resolve ambiguity with the user, reusing authorization.
+create absent workflows. Rename phase hints to `## bb-phase-<phase>`: `## provision`, `## work`,
+`## validate` and `## deliver` keep their phase; `## transition` → `## bb-phase-outtake`, except an
+origin-label override → `## bb-phase-transition`. Move an old loader's sections: the entry line
+replaces `## Loaded skills` and `## Skill set`; `## Skills` → `## bb-phase-work`; `## Checks` →
+`## bb-phase-validate`; `### Setup` → `## bb-phase-provision`; before-merge rules →
+`## bb-phase-deliver`; input overrides → the phase where they are used; drop `## Required skills`;
+`## Standards` and test lore → `CLAUDE.md` pointers and repository docs. Keep every command and its applicability; resolve ambiguity with the user.
 
 Ensure `/assets-ai/` ignored; remove retired `/issues/` ignore. Verify `git check-ignore -v assets-ai/probe`
 and every generated secret-bearing override, including `.bakers/conductor.config.local.js`.
@@ -51,8 +53,7 @@ readers before proposing deletion. Surviving readers need decisions. Authorized 
 decision records into the project's decision-record directory and repoints readers. Ambiguous/destructive
 replacements require explicit approval; retain snapshots through verification.
 
-Verify plugin metadata/skill references through supported discovery; report unavailable names.
-Upgrade installs no skills. Read configured project; confirm its `WORKFLOW.md`
-starts with the entry line and names only installed skills.
+Verify skill references through supported discovery; report unavailable names. Upgrade installs
+no skills. Confirm `WORKFLOW.md` starts with the entry line and names only installed skills.
 Report configuration/workflow changes, deleted/rescued paths, validation, online readiness and follow-up
 separately. Stop; rotate no secrets or start ticket work.

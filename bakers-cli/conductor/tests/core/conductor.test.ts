@@ -112,6 +112,18 @@ function readSkill(name: string): string {
   );
 }
 
+/** Reads a bb-workflow reference: a state file or a mechanic. */
+function readReference(name: string): string {
+  return readFileSync(
+    join(
+      repoRoot(),
+      '.claude/skills/bakers-build/skills/bb-workflow/references',
+      name,
+    ),
+    'utf8',
+  );
+}
+
 /** Returns the body of a `## <heading>` section up to the next `## ` header. */
 function mdSection(md: string, heading: string): string {
   const lines = md.split('\n');
@@ -4476,47 +4488,37 @@ describe('Conductor — addon lifecycle hook listeners', () => {
 
 describe('qualification gate orchestration (the frame)', () => {
   const wf = readProjectWorkflow();
-  // The guard runs once, in the frame's read phase, before any recipe state section.
-  const read = mdSection(readSkill('bb-workflow'), 'read');
+  const guardLink = '[ensure qualification](ensure-qualification.md)';
 
-  it('unqualified path: plan and working invoke the guard before the recipe', () => {
-    const guardIdx = read.indexOf('@bakers-build/bb-ensure-qualification');
-    expect(guardIdx, 'frame read phase missing guard').toBeGreaterThanOrEqual(
-      0,
-    );
-    expect(read.slice(0, guardIdx)).toMatch(/`plan` and `working`/);
-    expect(read.indexOf('`bb-recipe-<name>`')).toBeGreaterThan(guardIdx);
-    // Recovery and its stop condition belong to the shared guard, not the frame.
-    const guard = readSkill('bb-ensure-qualification');
+  it('unqualified path: plan and working invoke the guard in their read phase', () => {
+    for (const state of ['plan.md', 'working.md']) {
+      const read = mdSection(readReference(state), 'read');
+      expect(read, `${state} read phase missing guard`).toContain(guardLink);
+    }
+    // Recovery and its stop condition belong to the shared guard, not the state files.
+    const guard = readReference('ensure-qualification.md');
     expect(guard).toContain('returned_to_qualification');
     expect(guard).toMatch(/then stop/);
     expect(guard).toMatch(
-      /@bakers-build\/bb-transition-ticket.*destination `qualification`/,
+      /\[transition ticket\]\(transition-ticket\.md\).*destination `qualification`/,
     );
   });
 
-  it('qualified path: the state continues with its recipe', () => {
-    const continuation = /[Cc]ontinu\w*\s+only\s+on\s+`qualified`/.exec(read);
-    expect(continuation).not.toBeNull();
-    expect(continuation?.index).toBeGreaterThan(
-      read.indexOf('@bakers-build/bb-ensure-qualification'),
-    );
-    expect(continuation?.index).toBeLessThan(
-      read.indexOf('`bb-recipe-<name>`'),
-    );
-  });
-
-  it('guard exclusion: review and the deployment steps do not invoke the guard', () => {
-    const review = mdSection(readSkill('bb-recipe-matt'), 'review');
-    expect(review).not.toBe('');
-    expect(readSkill('bb-recipe-matt')).not.toContain(
-      '@bakers-build/bb-ensure-qualification',
-    );
-    for (const skill of ['bb-prepare-deployment', 'bb-post-deployment']) {
-      expect(readSkill(skill)).not.toContain(
-        '@bakers-build/bb-ensure-qualification',
-      );
+  it('qualified path: the state continues after the guard', () => {
+    for (const state of ['plan.md', 'working.md']) {
+      const read = mdSection(readReference(state), 'read');
+      const continuation = /[Cc]ontinu\w*\s+only\s+on\s+`qualified`/.exec(read);
+      expect(continuation).not.toBeNull();
+      expect(continuation?.index).toBeGreaterThan(read.indexOf(guardLink));
     }
+  });
+
+  it('guard exclusion: review and the recipe do not invoke the guard', () => {
+    expect(mdSection(readSkill('bb-recipe-matt'), 'bb-state-review')).not.toBe(
+      '',
+    );
+    expect(readSkill('bb-recipe-matt')).not.toContain('ensure-qualification');
+    expect(readReference('review.md')).not.toContain('ensure-qualification');
   });
 
   it('WORKFLOW.md is the entry line plus phase hints — no loader, no state sections', () => {

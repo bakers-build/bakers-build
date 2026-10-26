@@ -10,5 +10,5 @@ Each ticket follows a workflow: a fixed series of states such as `plan`, `workin
 - [Ticket type, recipe and labels](/skills-and-workflows/labels-and-work-types): the method, its variant and the agent for a ticket.
 
 ::: tip Ask your agent
-Explain which skill owns each state of this project's workflows, and check that every skill its WORKFLOW.md names is installed.
+Explain which state file and recipe run each state of this project's workflow, and check that every skill its WORKFLOW.md names is installed.
 :::

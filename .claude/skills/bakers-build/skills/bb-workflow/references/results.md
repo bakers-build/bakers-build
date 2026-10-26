@@ -22,7 +22,7 @@ Qualification names who tests, as a short list:
 - `north-guest`: denied, no Export button
 ```
 
-Personas come from the project's test-user list, which the `WORKFLOW.md` `## transition` hint
+Personas come from the project's test-user list, which the `WORKFLOW.md` `bb-phase-outtake` hint
 names; include `anonymous` and denied personas when the criteria need them. A change without a web
 surface records `no login needed`. Ask only when the right persona is unclear, and never pick an
 administrator for convenience. A persona that does not exist on the environment stays in the list
@@ -41,8 +41,10 @@ reuse reason; it does not claim a fresh execution. Failed/blocked/not-run checks
 PASS. A missing required check blocks its AC. A pending human invitation alone does not fail an
 AC already established by other confirmed evidence, unless the plan requires human acceptance.
 
-Retain complete acceptance evidence. Record each AC's PASS/FAIL/RED/PENDING and concise reasoning with complete durable evidence in the
-typed handoff. A bare verdict is a defect. Review uses `FAIL(<cause>)` or `RED(<cause>)` at the result position.
-An uncovered criterion without justification is `FAIL(evidence)`. `@bakers-build/bb-review-ticket` › *The verdict*
-owns the cause set. Retain each finding's **What / Why / Fix** and success check. Keep all related resources
-available to manual review without repeating passing ACs or full logs in the visible summary.
+Retain complete acceptance evidence. Record each AC's PASS/FAIL/RED/PENDING and concise reasoning
+with complete durable evidence in the typed handoff. A bare verdict is a defect. Review uses
+`FAIL(<cause>)` or `RED(<cause>)` at the result position. An uncovered criterion without
+justification is `FAIL(evidence)`. `@bakers-build/bb-verdict` › *The verdict* owns the cause set.
+Retain each finding's **What / Why / Fix** and success check. Keep all related resources available
+to manual review, without full logs in the visible summary; it lists criteria only where the
+state's outtake section asks for them.

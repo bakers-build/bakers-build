@@ -353,7 +353,8 @@ class Simulation:
         ticket = 'bb_ticket--bb_ticket'
         sources = [self.config.get('ticket'), self.config.get('prior_art'), CONTRACT['probe_ticket']]
         self.tickets = {s['id']: record_from(ticket, s) for s in sources if s}
-        self.comments = {}
+        # Seeded comments model earlier states' handoffs; created ones are numbered after them.
+        self.comments = {c['id']: record_from('bb_comment--bb_comment', c) for c in self.config.get('comments', [])}
         self.terms = {t['id']: record_from('bb_term--label', t) for t in CONTRACT['terms']}
         self.vocabularies = {'label': self.terms,
                              'type': {t['id']: record_from('bb_term--type', t) for t in CONTRACT['type_terms']},

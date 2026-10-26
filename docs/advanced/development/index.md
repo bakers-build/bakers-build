@@ -4,7 +4,7 @@ Prepare a checkout to change bakers.build, run the checks that fit your change, 
 
 **You need:** repository access; Node 20.19 or later and pnpm for the CLI; DDEV for Drupal work.
 
-1. Read [`WORKFLOW.md`](https://git.key-tec.de/bakers-build/bakers-build/-/blob/develop/WORKFLOW.md) in full. Its *Standards* section holds the binding rules for the repository. `WORKFLOW.md` loads the skills that run a ticket and lists the checks by area.
+1. Read [`WORKFLOW.md`](https://git.key-tec.de/bakers-build/bakers-build/-/blob/develop/WORKFLOW.md) in full, and the repository conventions `CLAUDE.md` points to. `WORKFLOW.md` invokes `bb-workflow` and holds the phase hints: the runtime, the extra skills and the checks by area under `## bb-phase-validate`.
 2. Build the CLI if your change touches `bakers-cli/`.
 
    ```sh

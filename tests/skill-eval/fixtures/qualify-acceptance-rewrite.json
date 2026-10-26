@@ -1,0 +1,49 @@
+{
+  "id": "qualify-acceptance-rewrite",
+  "synthetic": true,
+  "profile": "acceptance-rewrite",
+  "skill": "bb-workflow/references/acceptance.md",
+  "references": [
+    "bb-workflow/references/results.md"
+  ],
+  "input": {
+    "ticket": "EVAL-41: Export invoices as CSV",
+    "task": "Gate each PM-seeded criterion and return the complete acceptance list as the draft acceptance comment body. Publication is not authorized in this evaluation.",
+    "criteria": [
+      {
+        "id": "AC-1",
+        "text": "As an operator, I want an Export CSV button on the invoice list, so that I can download the visible invoices."
+      },
+      {
+        "id": "AC-2",
+        "text": "The export should be fast."
+      },
+      {
+        "id": "AC-3",
+        "text": "As an operator, I want the CSV to contain number, date, customer and total per invoice, so that accounting can import it."
+      }
+    ],
+    "observations": [
+      "The invoice list shows at most 500 invoices per filter.",
+      "No performance target was stated by the PM."
+    ]
+  },
+  "expect": {
+    "rewritten": "AC-2",
+    "previous": "The export should be fast.",
+    "kept": [
+      "AC-1",
+      "AC-3"
+    ]
+  },
+  "rubric": [
+    {
+      "id": "rewrite-specific",
+      "criterion": "AC-2 is rewritten into a role-named, observable condition and its previous wording is reported."
+    },
+    {
+      "id": "passing-kept",
+      "criterion": "AC-1 and AC-3 keep their wording exactly."
+    }
+  ]
+}

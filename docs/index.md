@@ -8,7 +8,7 @@
 | Work without installing anything | [Work in the browser](/get-started/work-in-the-browser) | - |
 | Decide whether bakers.build fits your team | [Is bakers.build right for us?](/get-started/is-bakers-right-for-us) | - |
 | Connect a project | [Connect your project](/get-started/connect-a-project) | `bb-init-project` |
-| Create, follow and accept tickets | [Daily work](/daily-work/) | `bb-create-ticket`, `bb-read-ticket`, `bb-acceptance` |
+| Create, follow and accept tickets | [Daily work](/daily-work/) | `bb-create-ticket`, `bb-scope-change` |
 | Understand skills, `WORKFLOW.md` and states | [Skills & Workflows](/skills-and-workflows/) | `bb-workflow` |
 | Extend bakers.build | [Addons](/addons/) | - |
 | Configure, operate or use the CLI | [Advanced](/advanced/) | `bb-upgrade-project` |

@@ -15,7 +15,7 @@ set -euo pipefail
 #     gets whatever the MR already stores, set at creation time or by a forge project setting;
 #   * without the squash a ticket's branch lands as its own string of commits rather than as the one
 #     commit the convention asks for — and with it, the per-commit `ref:<identifier>` trailers are
-#     discarded, so the squash body `@bakers-build/bb-merge-mr` writes is what carries the reference across;
+#     discarded, so the squash body `references/merge.md` writes is what carries the reference across;
 #   * an unguarded "delete the source branch" is destructive rather than merely wrong: this project
 #     protects NO branch, so `main` is deletable and `develop` is spared only by being the default.
 #
@@ -31,15 +31,15 @@ set -euo pipefail
 
 # CONTRACT_ROOT exists for FALSIFICATION (AC 4). A contract that cannot fail asserts nothing, so the
 # root is overridable and the falsification runs against a throwaway MIRROR of all three sources
-# asserted below — both `SKILL.md` files and `WORKFLOW.md` — never against the working tree, which
+# asserted below — the frame's state file and references and the convention doc — never against the working tree, which
 # no test may mutate.
 ROOT="${CONTRACT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 # BB-424 retired `implement-ticket` — the step owner calls the selected implementation method
 # directly — so the MR instruction it used to carry now lives in `bb-workflow`, the context
 # every `working` run applies. Same three properties, same region shape, different home.
-IMPL_ROOT="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/SKILL.md"
+IMPL_ROOT="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/working.md"
 IMPL="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/delivery.md"
-MERGE="$ROOT/.claude/skills/bakers-build/skills/bb-merge-mr/SKILL.md"
+MERGE="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/merge.md"
 # `WORKFLOW.md` › `## Standards` declares itself the SOURCE of the merge-request convention, so it
 # is part of this contract even though the two skills are what an agent executes. A convention whose
 # stated source is silent about one of its own options is the drift this ticket exists to remove —
@@ -104,9 +104,9 @@ gates_section() {
 gate_count() { gates_section | grep -c '^[0-9][0-9]*\. ' || true; }
 four_gates() { [ "$(gate_count)" = "4" ]; }
 
-check 'bb-workflow discloses the delivery instructions' grep -qF '(references/delivery.md)' "$IMPL_ROOT"
+check 'the working state discloses the delivery instructions' grep -qF '(delivery.md)' "$IMPL_ROOT"
 check 'the bb-workflow delivery instructions exist' test -f "$IMPL"
-check 'the merge-mr skill exists' test -f "$MERGE"
+check 'the merge reference exists' test -f "$MERGE"
 check 'WORKFLOW.md exists' test -f "$WF"
 
 IMPL_MR="$(impl_mr_region)"
@@ -291,7 +291,7 @@ check 'AC-8 merge-mr retains squash when source deletion is disabled' \
 # (`git log --format=%x1e%H %s%n%b <since>..<to>`, no `--first-parent`, `deployment.ts`), so an
 # UNsquashed merge leaves every branch commit's own `ref:<identifier>` trailer inside the delta and
 # the ticket IS in the batch. The squash is what discards those trailers, which is precisely why
-# `@bakers-build/bb-merge-mr` has to re-write one into the squash body. The same sentence also called the squash
+# `references/merge.md` has to re-write one into the squash body. The same sentence also called the squash
 # body "the only commit message a squash-merge puts on the target branch", which `merge-mr`'s own
 # `--squash-message` paragraph contradicts for this project: `merge_method: merge` writes two. The
 # corrected reason is stated as what the convention actually asks for — the branch lands as ONE commit
@@ -323,8 +323,8 @@ check 'source: WORKFLOW.md carries the positive condition for the deletion' \
   hasi "$WF_FLAT" "the source is the ticket's own short-lived work branch"
 check 'source: WORKFLOW.md names a reused release branch as failing the condition' \
   hasi "$WF_FLAT" 'release branch a later promote reuses'
-check 'source: WORKFLOW.md points at the two skills that own the rule operationally' \
-  hasre "$WF_FLAT" '`@bakers-build/bb-workflow` and `@bakers-build/bb-merge-mr` own that rule'
+check 'source: WORKFLOW.md points at the two references that own the rule operationally' \
+  hasre "$WF_FLAT" '`references/delivery.md` and `references/merge.md` own that rule'
 
 # --- Result -------------------------------------------------------------------------------------
 

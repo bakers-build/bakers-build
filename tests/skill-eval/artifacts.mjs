@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 
 import { loadProfile } from './fixtures.mjs';
-import { requireValue, nonempty } from './validation.mjs';
+import { requireValue, nonempty, sourcePaths } from './validation.mjs';
 export const sha256 = text => createHash('sha256').update(text).digest('hex');
 export async function validateFixture(fixture) { await loadProfile(fixture); return fixture; }
 
@@ -16,7 +16,7 @@ export async function readAttempt(path) {
     JSON.stringify(JSON.parse(g.fixture_source)) === JSON.stringify(g.fixture), 'Recorded fixture hash/content mismatch');
   requireValue(nonempty(g.worker?.model) && g.worker.isolation_confirmed === true && /^[a-f0-9]{40}$/.test(g.revision),
     'Missing original generation model, isolation or commit');
-  const expectedSources = [`${g.fixture.skill}/SKILL.md`, ...g.fixture.references];
+  const expectedSources = sourcePaths(g.fixture);
   requireValue(Array.isArray(g.sources) && g.sources.length === expectedSources.length &&
     g.sources.every((s, index) => s.path === `.claude/skills/bakers-build/skills/${expectedSources[index]}` &&
       sha256(s.content) === s.sha256), 'Recorded skill snapshot path/hash mismatch');

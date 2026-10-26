@@ -2,7 +2,7 @@
 
 Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
-## provision
+## bb-phase-provision
 
 Runtime: DDEV through `@bakers-build/bb-runtime-ddev`. Drupal checks start from a verified
 `recipe-test` environment (`ddev init --provider recipe-test`; installation-config changes need
@@ -10,7 +10,7 @@ Runtime: DDEV through `@bakers-build/bb-runtime-ddev`. Drupal checks start from 
 same revision. Core tests, Playwright, conductor and skill-behavior setup:
 [testing](docs/bakers/testing.md#setup).
 
-## work
+## bb-phase-work
 
 Apply all matching rows.
 
@@ -24,7 +24,7 @@ Apply all matching rows.
 | Design tokens under `web/themes/custom/bb_theme/` | `designbook:tokens` |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
 
-## validate
+## bb-phase-validate
 
 Apply all matching rows to the plan and final diff. Run each distinct command once per revision and
 environment; reuse covered results, and do not separately rerun repository contracts already
@@ -44,7 +44,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | Playwright configuration, fixtures, steps or helpers | `cd tests/playwright && npm run typecheck && npm run test:unit` |
 | Adding or removing component directories | `bash tests/contract/data-display-components.sh` |
 
-## deliver
+## bb-phase-deliver
 
 PHPUnit and browser E2E run once, in the CI merge gate, immediately before the merge request is
 merged, against the images that deploy:
@@ -58,10 +58,10 @@ merged, against the images that deploy:
 Local runs are for debugging a failure or selecting affected tests, never a substitute for the gate
 ([testing](docs/bakers/testing.md)).
 
-## transition
+## bb-phase-outtake
 
 `test_as` personas come from [testing › Test users](docs/bakers/testing.md#test-users): the one
 whose rank and team the change needs (default `north-lead`), plus every persona the criteria expect
 to be denied (e.g. `north-guest`, `no-bakery`). Manual review gives each a one-time login link
-(`@bakers-build/bb-runtime-ddev` › *transition*); on a `recipe-test` site the *Test personas* buttons on
+(`@bakers-build/bb-runtime-ddev` › `bb-phase-outtake`); on a `recipe-test` site the *Test personas* buttons on
 `/user/login` are the fallback.

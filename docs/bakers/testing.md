@@ -50,7 +50,7 @@ Browser E2E uses Playwright, never PHPUnit. Navigation scenarios click twice. Li
 selection first and require a non-empty list matching the executed report. The
 [suite README](../../tests/playwright/README.md#install--run) shows generated paths and shared-helper
 selection. The merge gate's `e2e` job runs the full suite, `@functional` included; do not launch that subset again.
-Ad-hoc browser walks use `@bakers-build/bb-verify-playwright-cli`; the existing suite remains a separate gate.
+Ad-hoc browser walks follow `@bakers-build/bb-workflow` › `references/browser.md`; the existing suite remains a separate gate.
 Changed skill behavior requires a real worker example selected in the ticket.
 
 ## Test users

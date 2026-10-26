@@ -12,12 +12,12 @@ A ticket whose `origin` is a GitLab issue gets its progress mirrored as one labe
 | `qualification`, `plan`, `working`, `review` | `doing` |
 | `done` | `review` |
 
-Other states write nothing. To use your customer's words, override the map in the `## transition` section of `WORKFLOW.md`. A `<workflow>:<state>` key such as `bb_verification:done` wins over the bare state, and the map's values are the label family bakers.build owns:
+Other states write nothing. To use your customer's words, override the map in the `## bb-phase-transition` section of `WORKFLOW.md`. A `<workflow>:<state>` key such as `bb_verification:done` wins over the bare state, and the map's values are the label family bakers.build owns:
 
 ```md
-## transition
+## bb-phase-transition
 
-`@bakers-build/bb-publish-origin-status` `origin_labels.data`:
+`@bakers-build/bb-workflow` › `references/origin-status.md` `origin_labels.data`:
 
     qualification: in progress
     plan: in progress

@@ -8,8 +8,8 @@ Read before running a check, writing a test, capturing output or writing ticket 
 Missing any part leaves verification incomplete. Keep complete evidence in typed ticket comments;
 retain the MR and permanent regression test as reproducible deliverables.
 
-Transient reports, logs, screenshots and probes live under `assets-ai/<bakers.build-nnn>/`, gitignored and
-removed with the worktree. They are not durable ticket links.
+Transient reports, logs, screenshots and probes live under `assets-ai/<bakers.build-nnn>/`,
+gitignored and removed with the worktree. They are not durable ticket links.
 
 Before writing a test, choose permanent regression coverage or a throwaway probe. Permanent tests
 belong in the project suite, named for behavior without ticket IDs. Ticket-named probes remain in
@@ -27,4 +27,4 @@ the ignored root. Review new, changed and untracked tests before staging.
 The MR is the first-class ticket link. Pipeline URLs are never written to `links`; pipeline status
 remains a merge/review gate. Preserve human-added links. Outside the outtake, local clickable
 artifacts use absolute `file://` URLs; external links use absolute URLs. Owners supply raw
-artifacts to `@bakers-build/bb-run-outtake`, which alone formats the visible handoff.
+artifacts to [outtake](outtake.md), which alone formats the visible handoff.

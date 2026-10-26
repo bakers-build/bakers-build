@@ -1,12 +1,11 @@
 ## Coding and review handoff
 
-Commit and push the scoped change, then create or update its MR with explicit
-`--target-branch <base_branch>`. Follow project commit and MR conventions. Immediately persist
-the resolved MR URL in the ticket's `links` through `@bakers-build/bb-transition-ticket`'s *Links-only write*:
-pass the ticket UUID and MR, with no destination. Preserve existing links, deduplicate by URI,
-and verify the saved MR before publishing the coding handoff, even when remaining in `working`.
-A link in a comment alone does not satisfy this step. Publish a coding
-handoff containing confirmed scope IDs, MR, base and head SHAs, and per-criterion evidence.
+Commit and push the scoped change, then create or update its MR with explicit `--target-branch
+<base_branch>`. Follow project commit and MR conventions. Immediately persist the resolved MR URL in
+the ticket's `links` through [transition ticket](transition-ticket.md)'s *Links-only write*: pass
+the ticket UUID and MR, with no destination. Preserve existing links, deduplicate by URI, and verify
+the saved MR before publishing the coding handoff, even when remaining in `working`. A link in a
+comment alone does not satisfy this step. Working's `outtake` then publishes the coding handoff.
 Resolve all applicable coding checks before reporting GREEN.
 
 **How the MR is opened.** Three properties are set **on the MR itself**, never left to a client
@@ -30,9 +29,10 @@ properties are the instruction, and any client that sets all three conforms. Tha
 `glab` is absent on some machines: an agent holding only the API is conforming from the left column
 alone.
 
-The branch lands as one commit. Squash discards the branch commit trailers; `@bakers-build/bb-merge-mr` preserves the ticket reference in the
-squash body. The MR title and description carry no bakers.build reference. Explicit target and deletion
-properties protect parent/shared branches and keep short-lived work branches from accumulating.
+The branch lands as one commit. Squash discards the branch commit trailers; [merge](merge.md)
+preserves the ticket reference in the squash body. The MR title and description carry no
+bakers.build reference. Explicit target and deletion properties protect parent/shared branches and
+keep short-lived work branches from accumulating.
 
 At review, supply the original review method with that confirmed ticket content, pinned base and
 head, purpose-built diff context, and recorded evidence. No repository spec file is needed.

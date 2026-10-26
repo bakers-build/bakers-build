@@ -3,7 +3,7 @@
     "synthetic": true,
     "profile": "artifact",
     "id": "qualification-confirmed-actors",
-    "skill": "bb-qualify-ticket",
+    "skill": "bb-workflow/references/qualification.md",
     "references": ["bb-workflow/references/results.md"],
     "input": {
       "ticket": "EVAL-0: Owner invites project members",
@@ -29,7 +29,7 @@
     "synthetic": true,
     "profile": "artifact",
     "id": "multiple-actors-denied",
-    "skill": "bb-scenario",
+    "skill": "bb-workflow/references/browser.md",
     "references": ["bb-workflow/references/results.md"],
     "input": {
       "ticket": "EVAL-1: Project invite permissions",
@@ -53,7 +53,7 @@
     "synthetic": true,
     "profile": "artifact",
     "id": "cli-non-ddev",
-    "skill": "bb-resolve-environment",
+    "skill": "bb-workflow/references/provision.md",
     "references": ["bb-workflow/references/results.md"],
     "input": {
       "ticket": "EVAL-3: CLI reports invalid manifest",
@@ -72,7 +72,7 @@
     "synthetic": true,
     "profile": "artifact",
     "id": "test-created-not-executed",
-    "skill": "bb-verify-tests",
+    "skill": "bb-workflow/references/verify.md",
     "references": ["bb-workflow/references/results.md"],
     "input": {
       "ticket": "EVAL-4: Reject empty export destination",
@@ -91,8 +91,8 @@
     "synthetic": true,
     "profile": "outtake",
     "id": "reused-evidence",
-    "skill": "bb-run-outtake",
-    "references": ["bb-workflow/references/results.md"],
+    "skill": "bb-workflow/references/outtake.md",
+    "references": ["bb-workflow/references/results.md", "bb-workflow/references/outtake/review.md"],
     "outtake": true,
     "input": {
       "ticket": "EVAL-5: Member cannot invite colleagues",
@@ -117,8 +117,8 @@
     "synthetic": true,
     "profile": "outtake",
     "id": "pending-human-review",
-    "skill": "bb-run-outtake",
-    "references": ["bb-workflow/references/results.md"],
+    "skill": "bb-workflow/references/outtake.md",
+    "references": ["bb-workflow/references/results.md", "bb-workflow/references/outtake/working.md"],
     "outtake": true,
     "input": {
       "ticket": "EVAL-6: Export command respects team scope",

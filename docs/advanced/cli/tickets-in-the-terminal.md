@@ -70,3 +70,11 @@ rows = [["state_icon", "workspace", "$bb_frozen"], ["branch", "git_status"]]
 A ticket without a worktree on that machine gets no hook and no marker. The conductor records the frozen tickets it has seen in `.bakers/<config name>.frozen.json` beside its config, so a restart or a one-shot `bakers oven once` does not repeat `on_freeze`, and a ticket unfrozen while the conductor was down gets its `on_resume` on the next poll.
 
 `on_resume` runs whenever a ticket leaves the conductor's frozen list, so closing or reassigning a frozen ticket whose worktree still exists runs it too. A conductor follows its first 50 frozen tickets; any beyond that get no hooks. The server records the freeze time in `frozen_at`; clients cannot write it.
+
+## Blockers, parents and branches
+
+- **Blocked by.** A ticket is not dispatched while any ticket in `blocked_by` is open.
+- **Parent.** A sub-ticket's base branch is its parent's branch; otherwise it is the project's default branch. It is computed, never set.
+- **Carrier ticket.** To base several tickets on a long-lived branch, create one ticket whose `branch_name` is that branch (writable only at creation) and hang the real tickets under it.
+
+The server also defines the workflows `bb_deployment` and `bb_verification`. bakers.build skills do not run them: a run on a ticket in one of their states stops and names the state.

@@ -42,7 +42,10 @@ def main():
         if args.operation in {'generate', 'prepare'}:
             fixture = data
             sources = run.snapshot(fixture, directory)
-            prompt = run.encode({'skill': fixture['skill'], 'sources': sources, 'ticket': fixture['input']})
+            unit = {'skill': fixture['skill']}
+            if fixture['skill'].endswith('.md'):
+                unit['apply'] = 'this reference directly, at the phase the ticket names; bb-workflow/SKILL.md is context, not routing'
+            prompt = run.encode({**unit, 'sources': sources, 'ticket': fixture['input']})
             record.update(fixture=fixture, fixture_source=raw, fixture_sha256=digest(raw),
                           sources=sources, prompt=prompt, prompt_sha256=digest(prompt))
             if fixture.get('execution') == 'simulated-tools':

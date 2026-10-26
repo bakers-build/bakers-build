@@ -9,29 +9,30 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 Start from `skills/bb-init-project/references/WORKFLOW.template.md`. No CLI reads or validates these
 skills; the agent environment's native skill mechanism loads them.
 
-**The frame.** `@bakers-build/bb-workflow` tells every run how a state goes, in six phases —
-`read, provision, work, validate, deliver, transition` — and owns the binding, replacement and stop
-rules. It routes `qualification` to `@bakers-build/bb-qualify-ticket`, `pre_deployment` /
-`post_deployment` to `@bakers-build/bb-prepare-deployment` / `@bakers-build/bb-post-deployment`, and
-`verifying` / `summary` to `@bakers-build/bb-verify-on-environment` /
-`@bakers-build/bb-summarize-verification`. Lifecycle parameters of these core skills use declared
-`inputs`.
+**Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
+field, a provision hint or a subagent start selects. Exactly eleven ship:
 
-**Recipes.** `plan`, `working` and `review` run the ticket's recipe: one skill per engineering
-method, selected by the ticket's `recipe` field. `@bakers-build/bb-recipe-matt` ships here and is the
-project default.
+| Skill | Job |
+|---|---|
+| `@bakers-build/bb-workflow` | The frame of every state run: seven phases — `read, provision, work, validate, deliver, outtake, transition` — the state files, routing, binding, replacement and stop rules. |
+| `@bakers-build/bb-recipe-matt` | The shipped recipe and project default, selected by the ticket's `recipe` field. |
+| `@bakers-build/bb-runtime-ddev` | Runtime guide: provision, run, lint, test and persona logins in DDEV; named in a `## bb-phase-provision` hint. |
+| `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
+| `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
+| `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, change its scope, prepare time proposals. |
 
-**Runtime guides.** `@bakers-build/bb-runtime-ddev` says how to provision, run, lint and test in DDEV;
-a project names it in its `## provision` hint.
+**The grid.** A run is state × phase. `qualification`, `plan`, `working` and `review` each have a
+state file under `skills/bb-workflow/references/` with exactly seven `## <phase>` sections, which
+always run and own gates, publication and transitions. A recipe adds slots
+(`## [<type>:]bb-state-<state>` › `### bb-phase-<phase>`; the type slot wins per phase), and
+`WORKFLOW.md` and runtime guides add `## bb-phase-<phase>` sections. Any other state stops the run.
 
-**Helper/capability skills route nothing.** Skills a step invokes (`@bakers-build/bb-read-ticket`,
-`@bakers-build/bb-verify-tests`, `@bakers-build/bb-verify-playwright-cli`, `@bakers-build/bb-run-intake`, `@bakers-build/bb-run-outtake`,
-`@bakers-build/bb-publish-comment`, `@bakers-build/bb-record-measurement`, `@bakers-build/bb-transition-ticket`,
-`@bakers-build/bb-publish-origin-status`, …) each have one observable result
-and never choose a destination. **A capability owns the command it performs** — the write recipes
-live there, not in a step owner, a contract document, or a prose resource.
-`@bakers-build/bb-ensure-qualification` keeps its guard exception — its only route is the recovery back to
-`qualification`.
+**References route nothing.** Everything only read — reading a ticket, publishing a comment,
+provisioning, verification, the browser surface, intake, outtake, measurement, merge and the state
+write — is a reference under `skills/bb-workflow/references/`, not a skill, and cannot be invoked.
+Each has one observable result and never chooses a destination; **a reference owns the command it
+performs**. `references/ensure-qualification.md` keeps its guard exception — its only route is the
+recovery back to `qualification`. Lifecycle parameters use declared `inputs`.
 
 For authoring recipes, guides and hints, read `skills/bb-workflow/references/authoring.md`.
 
@@ -53,7 +54,7 @@ Initialization and upgrade are human-initiated capabilities. Neither starts tick
 
 ## Shared writes and skill delivery
 
-`@bakers-build/bb-workflow` owns validated writes and uncertain-outcome reconciliation. Capabilities
+`@bakers-build/bb-workflow` owns validated writes and uncertain-outcome reconciliation. References
 retain returned UUIDs for readback and follow-up work; `@bakers-build/bb-create-ticket` owns the ticket-create
 recipe. Normal outgoing validation stays enabled for every write.
 
@@ -66,17 +67,17 @@ Refresh only the selected environment; preserve unrelated global skill libraries
 
 ## Review records and skill size
 
-Every bakers.build `SKILL.md` is limited to 500 whitespace-separated words, including frontmatter,
-tables and examples. `python3 tests/contract/skill-size.py` enforces this in the core CI suite.
-References are loaded for named conditions; copying the whole skill into an always-loaded
-reference is not a reduction.
+Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` is limited to 500
+whitespace-separated words, including frontmatter, tables and examples (`references/retrospective.md`
+excepted). `python3 tests/contract/skill-size.py` enforces this in the core CI suite;
+`python3 tests/contract/skill-references.py` checks links, grid headings and the skill set.
 
 Qualification records intended test users and environments. The shared contract in
 `bb-workflow/references/results.md` separates automated checks, agent inspection and human
-review, with observed status, identity, environment and evidence. One `bb-run-outtake` summary is
-rendered per state.
+review, with observed status, identity, environment and evidence. One outtake summary
+(`references/outtake.md`) is rendered per state.
 
-`bb-resolve-environment` looks up confirmed project instructions, configured environments and
+`references/provision.md` looks up confirmed project instructions, configured environments and
 existing scripts/fixtures before asking for missing choices. `bb-runtime-ddev` is a selected
 adapter, not a universal lifecycle prerequisite.
 

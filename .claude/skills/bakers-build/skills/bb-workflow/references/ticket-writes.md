@@ -6,8 +6,9 @@ Read before writing a ticket, comment or relationship.
 
 Store Markdown source in `body.value` or a ticket's `description.value` with `format: bb_rich`.
 Inspect headings, lists, links and tables before writing. Raw HTML is stripped. `bb_comment_type`
-is separate from the text format. Verify exact stored text and format on readback;
-`@bakers-build/bb-publish-comment` confirms comments by their create response.
+is separate from the text format, which is always `bb_rich` and set by the write. Verify the exact
+stored text on readback;
+[publish comment](publish-comment.md) confirms comments by their create response.
 
 ## Validated writes and uncertain outcomes
 
