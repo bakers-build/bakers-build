@@ -474,7 +474,7 @@ describe('recipe run profile', () => {
       '-F',
       'should_remove_source_branch=false',
     ]);
-  it('accepts a plan comment with SHA, batch, version and changelog, stopping uncut', async () => {
+  it('accepts a plan comment with SHA, batch, version and release notes, stopping uncut', async () => {
     const plan = `Frozen ${sha}; batch EVAL-41, EVAL-42; version 0.2.0\n### Features\n### Bug Fixes`;
     expect(
       await judge('deploy-plan', 'Approve?', [
@@ -513,8 +513,15 @@ describe('recipe run profile', () => {
       ]),
     ).toEqual(['merges']);
   });
-  it('merges into main, then back into develop, by merge commit only', async () => {
+  it('merges once into main by merge commit, nothing back into develop', async () => {
     const summary = comment('summary', 'chore(release): 0.2.0 tagged v0.2.0');
+    expect(
+      await judge('deploy-working-release', 'Released.', [
+        readTicket(),
+        merge('51'),
+        summary,
+      ]),
+    ).toEqual([]);
     expect(
       await judge('deploy-working-release', 'Released.', [
         readTicket(),
@@ -522,13 +529,12 @@ describe('recipe run profile', () => {
         merge('52'),
         summary,
       ]),
-    ).toEqual([]);
+    ).toEqual(['merges']);
     expect(
       await judge('deploy-working-release', 'Released.', [
         readTicket(),
         file('skills/bb-workflow/references/merge.md'),
         merge('51', 'true'),
-        merge('52'),
         summary,
       ]),
     ).toEqual(['merges', 'frame-merge-unused']);

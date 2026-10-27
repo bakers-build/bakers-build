@@ -85,8 +85,6 @@ before_script:
   - .gitlab-ci.yml
 .changes_cli: &changes_cli
   - bakers-cli/**/*
-  # The release-version test reads the release tool's configuration.
-  - .versionrc.cjs
   # The conductor job tests the code of this guide.
   - docs/addons/build/actions.md
   # The repository contracts the conductor job runs through vitest read these.
@@ -219,9 +217,9 @@ docs_pages:
   script:
     - node website/scripts/check-pages.mjs
 
-# The MR title becomes the squash subject, from which the release tool derives version and
-# changelog. GitLab reads the title when the pipeline is created: after fixing a title, run a new
-# pipeline. A `Draft: ` prefix is GitLab's own and leaves the title when the MR is marked ready.
+# The MR title becomes the squash subject, from which `release:version` derives version and
+# release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a
+# new pipeline. A `Draft: ` prefix is GitLab's own and leaves the title when the MR is marked ready.
 mr_title:
   stage: lint
   image: alpine:3.22
@@ -236,8 +234,9 @@ mr_title:
     - bash tests/contract/mr-title.test.sh
     - 'bash tests/contract/mr-title.sh "${CI_MERGE_REQUEST_TITLE#Draft: }"'
 
-# main is never squashed: `release` tags the merge's second parent, and develop must contain that
-# commit. GitLab cannot forbid squash per target branch, so this job refuses it before the merge.
+# main is never squashed: `release` tags the merge's second parent, the frozen develop commit, and
+# develop must contain it. GitLab cannot forbid squash per target branch, so this job refuses it
+# before the merge.
 # shortcut: the flag is read when the pipeline is created; ticking squash later needs a new pipeline to be caught.
 mr_main_merge_commit:
   stage: lint
@@ -857,9 +856,9 @@ promote:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
 
-# A release's images: the gate-built :tree-<tree> images of the tagged chore(release) commit get
-# :<version> and :latest with the OCI version and revision labels. The tag sits on the release
-# branch's commit, not on main's merge commit, so it has no :<sha> image; main's merge keeps that
+# A release's images: the gate-built :tree-<tree> images of the tagged develop commit get
+# :<version> and :latest with the OCI version and revision labels. The tag sits on the merge's
+# second parent, not on main's merge commit, so it has no :<sha> image; main's merge keeps that
 # tree, so these are the digests prod runs. `crane mutate` rewrites only the image config, so the
 # layers are identical; the new config gives :<version> its own digest.
 release_images:
@@ -1003,14 +1002,13 @@ publish:npm:next:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
 
-# Release on a main push after prod deployed: the top `## [<version>]` of CHANGELOG.md, written
-# by commit-and-tag-version on the release branch, becomes tag v<version> and a GitLab release
-# carrying that entry. The tag goes on the merge's second parent, the `chore(release)` commit,
-# which develop also contains through the back-merge, so the next release ranges from it. The
-# tag pipeline then runs publish:npm (`latest`) and release_images. A main push whose CHANGELOG
-# version is already tagged releases nothing; `## <version>` (the hand-written 0.1.x headings)
-# is still read. glab is the tool behind GitLab's `release:` keyword, called directly because the
-# keyword cannot be skipped.
+# Release on a main push after prod deployed: `release:version` computes the next version from the
+# Conventional Commits between the last reachable v* tag and the merge's second parent, the frozen
+# develop commit. That commit gets tag v<version> and a GitLab release whose generated notes are
+# the only changelog; develop contains it, so the next release ranges from it. The tag pipeline
+# then runs publish:npm (`latest`) and release_images. A tagged second parent or a range without
+# feat, fix or breaking commit releases nothing. glab is the tool behind GitLab's `release:`
+# keyword, called directly because the keyword cannot be skipped.
 release:
   stage: publish
   image:
@@ -1024,20 +1022,13 @@ release:
   variables:
     GIT_DEPTH: "0"
     GLAB_ENABLE_CI_AUTOLOGIN: "true"
-  before_script: []
+  before_script:
+    - apk add --no-cache nodejs git
   script:
     - |
-      # No pipe: with pipefail, `sed | head -1` dies of SIGPIPE once CHANGELOG.md holds two versions.
-      version=$(awk '/^## \[?[0-9]/ { v = $2; sub(/^\[/, "", v); sub(/\].*/, "", v); print v; exit }' CHANGELOG.md)
-      [ -n "$version" ] || { echo "CHANGELOG.md names no version"; exit 1; }
-      if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
-        echo "v$version is already released; nothing to do."
-        exit 0
-      fi
-      release_commit=$(git rev-parse -q --verify 'HEAD^2') || { echo "$CI_COMMIT_SHA is not a merge; a release reaches main through its release branch's merge commit."; exit 1; }
-      subject=$(git log -1 --format=%s "$release_commit")
-      [ "$subject" = "chore(release): $version" ] || { echo "HEAD^2 ($release_commit) is \"$subject\", not \"chore(release): $version\"."; exit 1; }
-      awk -v v="$version" '/^## /{if(f)exit; if(index($0,"## [" v "]")==1 || index($0,"## " v " ")==1)f=1; next} f' CHANGELOG.md > release-notes.md
+      release_commit=$(git rev-parse -q --verify 'HEAD^2') || { echo "$CI_COMMIT_SHA is not a merge; a release reaches main through the merge commit of its merge request."; exit 1; }
+      version=$(node bakers-cli/scripts/release-version.mjs "$release_commit" --notes release-notes.md)
+      [ -n "$version" ] || { echo "Nothing to release since the last v* tag."; exit 0; }
       cat release-notes.md
       glab release create "v$version" --ref "$release_commit" --name "v$version" --notes-file release-notes.md
   rules:
