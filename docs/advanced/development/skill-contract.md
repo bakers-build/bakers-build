@@ -12,6 +12,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 |---|---|
 | `bb-workflow` | the `WORKFLOW.md` entry line; the frame of every state run |
 | `bb-recipe-matt` | the ticket's `recipe` field; the project default, for `feature`, `bug` and `chore` tickets |
+| `bb-recipe-superpowers` | the ticket's `recipe` field; the superpowers method for the same types |
 | `bb-recipe-deploy-and-release` | the ticket's `recipe` field; for `deployment` tickets |
 | `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
 | `bb-runtime-ddev` | the project's `bb-phase-provision` hint |
