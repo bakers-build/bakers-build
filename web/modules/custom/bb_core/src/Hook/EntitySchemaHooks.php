@@ -212,7 +212,7 @@ final class EntitySchemaHooks {
       ];
       $data['search_api_index_bb_tickets']['stall_reason'] = [
         'title' => 'Stall reason',
-        'help' => new TranslatableMarkup('Why this ticket is standing still: frozen, blocked, no conductor, or failing.'),
+        'help' => new TranslatableMarkup('Why this ticket is standing still: frozen, blocked, no conductor, conductor no access, or failing.'),
         'field' => [
           'id' => 'bb_stall_reason',
         ],
@@ -491,7 +491,7 @@ final class EntitySchemaHooks {
         ->setDisplayConfigurable('view', TRUE);
       $fields['stall_reason'] = BaseFieldDefinition::create('string')
         ->setLabel(new TranslatableMarkup('Stall reason'))
-        ->setDescription(new TranslatableMarkup('Why this ticket is standing still: frozen, blocked, no conductor, or failing.'))
+        ->setDescription(new TranslatableMarkup('Why this ticket is standing still: frozen, blocked, no conductor, conductor no access, or failing.'))
         ->setComputed(TRUE)
         ->setClass(StallReasonItemList::class)
         ->setDisplayConfigurable('view', TRUE);

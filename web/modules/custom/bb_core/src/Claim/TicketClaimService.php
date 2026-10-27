@@ -9,6 +9,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Lock\LockBackendInterface;
+use Drupal\bb_core\Conductor\ConductorOwnerAccess;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -59,6 +60,8 @@ final class TicketClaimService {
    *   The failed-run re-claim circuit breaker.
    * @param \Symfony\Contracts\EventDispatcher\EventDispatcherInterface $dispatcher
    *   Announces a successful claim inside this transaction.
+   * @param \Drupal\bb_core\Conductor\ConductorOwnerAccess $ownerAccess
+   *   Whether the conductor's owner may work in the ticket's project.
    */
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
@@ -68,6 +71,7 @@ final class TicketClaimService {
     private readonly ConfigFactoryInterface $configFactory,
     private readonly FailedRunCircuitBreaker $circuitBreaker,
     private readonly EventDispatcherInterface $dispatcher,
+    private readonly ConductorOwnerAccess $ownerAccess,
   ) {
   }
 
@@ -216,7 +220,7 @@ final class TicketClaimService {
     }
     $states = $conductor->getStates();
     $project_id = $conductor->get('project_id')->target_id;
-    if (!is_numeric($project_id)) {
+    if (!is_numeric($project_id) || !$this->ownerAccess->ownerHasAccess($conductor, (int) $project_id)) {
       return new ClaimNextResult();
     }
 
@@ -322,8 +326,8 @@ final class TicketClaimService {
    * Throws ClaimConflictException when the conductor is ineligible for ticket.
    *
    * Check order: claimable state (+ optional per-conductor state list), project
-   * match, conductor assignment, open blockers, then retire-or-conflict on
-   * active runs.
+   * match, conductor assignment, owner access, open blockers, then
+   * retire-or-conflict on active runs.
    *
    * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
    *   The freshly reloaded ticket to validate.
@@ -339,6 +343,9 @@ final class TicketClaimService {
     $this->assertClaimableState($ticket, $conductor);
     $this->assertProjectMatch($ticket, $conductor);
     $this->assertConductorAssignment($ticket, $conductor);
+    if (!$this->ownerAccess->ownerHasAccess($conductor, (int) $ticket->get('project_id')->target_id)) {
+      throw new ClaimConflictException('claim_conflict: conductor owner has no access to the project.');
+    }
     if ($ticket->hasOpenBlockers()) {
       throw new ClaimConflictException('claim_conflict: ticket has open blockers.');
     }

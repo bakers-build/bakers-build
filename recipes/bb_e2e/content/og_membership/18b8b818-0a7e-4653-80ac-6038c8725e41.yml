@@ -1,0 +1,29 @@
+# fixture-claim-owner's membership in "API home"'s team.
+#
+# A conductor is assigned and claims work only while its owner can access the
+# project. claims.feature and activities.feature register this account's
+# conductors in project.home. fixture-conductor-owner stays without a team:
+# conductor-properties.feature needs a conductor owner who cannot inspect
+# that project's runs.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 18b8b818-0a7e-4653-80ac-6038c8725e41
+  default_langcode: en
+  bundle: default
+  depends:
+    7710d75c-ed4e-4e99-85b8-d1a306c2e3cf: user
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+default:
+  entity_type:
+  - value: bb_team
+  entity_bundle:
+  - value: bb_team
+  entity_id:
+  - value: fb355227-fe83-5482-819f-51f8011a78eb
+  state:
+  - value: active
+  uid:
+  - entity: 7710d75c-ed4e-4e99-85b8-d1a306c2e3cf
+  type:
+  - target_id: default

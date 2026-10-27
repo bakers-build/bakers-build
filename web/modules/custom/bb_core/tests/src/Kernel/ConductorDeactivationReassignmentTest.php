@@ -121,6 +121,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
       $this->container->get('entity_type.manager'),
       $logger,
       $this->container->get('datetime.time'),
+      $this->container->get('bb_core.conductor_owner_access'),
     );
 
     $reassigner->reassign($this->conductor);
@@ -148,6 +149,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
       $this->container->get('entity_type.manager'),
       $logger,
       $this->container->get('datetime.time'),
+      $this->container->get('bb_core.conductor_owner_access'),
     );
 
     $reassigner->reassign($this->conductor);
@@ -169,6 +171,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
       $this->container->get('entity_type.manager'),
       $logger,
       $this->container->get('datetime.time'),
+      $this->container->get('bb_core.conductor_owner_access'),
     );
 
     $reassigner->reassign($this->conductor);
@@ -200,6 +203,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
       $this->container->get('entity_type.manager'),
       $this->container->get('logger.factory')->get('bb_core'),
       $this->container->get('datetime.time'),
+      $this->container->get('bb_core.conductor_owner_access'),
     );
 
     Database::startLog('conductor_deactivation_narrowing');
@@ -295,6 +299,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
       $entityTypeManager,
       $logger,
       $this->container->get('datetime.time'),
+      $this->container->get('bb_core.conductor_owner_access'),
     );
 
     $reassigner->reassign($this->conductor);
