@@ -13,7 +13,7 @@ filters:
     status: true
     weight: 10
     settings:
-      allowed_html: '<br> <p> <strong> <em> <ul> <ol> <li> <a href hreflang title> <code> <pre> <h1 id> <h2 id> <h3 id> <h4 id> <blockquote> <hr> <table> <thead> <tbody> <tr> <th> <td>'
+      allowed_html: '<br> <p> <strong> <em> <ul> <ol> <li> <a href hreflang title> <code> <pre> <h1 id> <h2 id> <h3 id> <h4 id> <blockquote> <hr> <table> <thead> <tbody> <tr> <th class="markdown-align-left markdown-align-center markdown-align-right"> <td class="markdown-align-left markdown-align-center markdown-align-right">'
       filter_html_help: false
       filter_html_nofollow: false
   markdown_easy:
@@ -23,4 +23,3 @@ filters:
     weight: 0
     settings:
       flavor: github
-      tips: ''

@@ -10,20 +10,23 @@ description: >-
   it is the only component carrying a prose declaration list (asserted by the
   data-display contract, B9). The bb_rich format is GitHub-flavoured Markdown
   that strips raw HTML and keeps p, br, strong, em, h1-h4, ul, ol, li, a,
-  blockquote, hr, code, pre and table/thead/tbody/tr/th/td; each of those is
-  styled here with semantic tokens: a heading hierarchy, list markers,
-  underlined links with a focus ring, quiet quotes and dividers, inline and
-  block code without a doubled inset, and tables with a distinct header surface,
-  cell padding and row separators. A body containing a TABLE is never
-  line-clamped and becomes a keyboard-focusable, named horizontal scroll region,
-  so a wide table scrolls inside the component instead of widening the page
-  while its native table semantics stay intact. The region's accessible name is
-  the optional `label` prop (default "Formatted content") so callers can tie it
-  to the content context. `body` is a PROP and not a slot, because a processed
-  field value is one field's value rather than composed structure, and it is
-  printed WITHOUT `|raw`: Drupal's autoescape passes the filter's Markup object
-  through and escapes a plain string. Markdown is never parsed here; detecting a
-  table only reads the processed string.
+  blockquote, hr, code, pre and table/thead/tbody/tr/th/td (th/td with only the
+  alignment classes); each of those is styled here with semantic tokens: a
+  heading hierarchy, list markers, underlined links with a focus ring, quiet
+  quotes and dividers, inline and block code without a doubled inset, and tables
+  with a distinct header surface, cell padding and row separators. A column
+  aligned in Markdown (`:---`, `:---:`, `---:`) arrives with a
+  `markdown-align-left|center|right` class on its th/td and is aligned left,
+  center or right; an unaligned column keeps the left default. A body containing
+  a TABLE is never line-clamped and becomes a keyboard-focusable, named
+  horizontal scroll region, so a wide table scrolls inside the component instead
+  of widening the page while its native table semantics stay intact. The
+  region's accessible name is the optional `label` prop (default "Formatted
+  content") so callers can tie it to the content context. `body` is a PROP and
+  not a slot, because a processed field value is one field's value rather than
+  composed structure, and it is printed WITHOUT `|raw`: Drupal's autoescape
+  passes the filter's Markup object through and escapes a plain string. Markdown
+  is never parsed here; detecting a table only reads the processed string.
 provider: bb_theme
 props:
   type: object
