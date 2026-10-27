@@ -134,6 +134,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team',
       'bb_project', 'bb_invite', 'bb_conductor', 'bb_machine', 'bb_ticket_template',
+      // Project › Stats lists the project's epics and assignees.
+      'bb_ticket', 'bb_term',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -950,6 +952,9 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // resolve — the same 404 the sibling My work row gets, and for the same
     // reason: no entity in the path to admit the existence of.
     'bb_core.my_work.stats' => 404,
+    // Gated on the workspace's own figure permission, which denies neutrally,
+    // so the workspace boundary's 404 wins; no entity to admit exists.
+    'bb_core.workspace.insights' => 404,
     // Gated on `_entity_access` — 403, and each one admits the entity exists.
     'bb_core.bb_workspace.settings' => 403,
     'bb_core.bb_workspace.members' => 403,
@@ -1038,6 +1043,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // here reaches the page. What varies is which figures it renders, and
     // that is the disclosure service's answer rather than the route's.
     'bb_core.my_work.stats' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
+    // Insights carries the workspace figures, disclosed to the lead alone.
+    'bb_core.workspace.insights' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     // Guest carries no `view bb_run` in any shipped workspace rank.
     'view.runs.project_runs' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
     'view.runs.team_runs' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],

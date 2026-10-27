@@ -1,8 +1,43 @@
-$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
 name: Option List
 status: stable
 group: Action
-description: 'The shared checkable option list — one panel markup with two consumers: the property pills inside a create or edit dialog, and the inline edit control on a detail screen. Without input_name it is presentational and accessible only: a listbox whose rows carry aria-selected, with the check icon as the selected marker, holding no form state and emitting no input — the hidden inputs of the form-bound case belong to option_picker, because only the picker knows whether the pick writes now or when the form does. WITH input_name every row carries a real form control of that name at the marker''s own position, checked from the same selected data, so the list SELECTS rather than only displaying a selection; that control is what makes a facet operable with JavaScript disabled, the same standard the panel''s native <details> is held to. Clearing is the FIRST ROW of this list, marked when nothing else is, rather than a button above it or a native option — so "no conductor" reads as a value the operator chose. It is the one row that carries NO form control: an empty submitted value is a constraint a search backend matches nothing against rather than the absence of one, so clearing is an ADDRESS (clear_url, rendered as a link) and not a value. Without clear_url the row is the presentational marker only, which is the right reading when nothing is chosen. Creating is its mirror image and therefore the LAST row: clearing picks a value, creating performs an action, which is also why the create row is a button in a presentational row rather than a listbox option. WITH submit_name every row IS a named submit trigger of the enclosing form instead, which is the third mode and the one an inline edit control needs: the inline picker emits no hidden inputs because the pick is the write, so there is no later submit for a carried value to reach, and the row therefore submits now. The three modes are exclusive and submit_name wins. The selected marker sits on the RIGHT of each row, so every label starts at the same left edge and a scanned list stays calm. Part of the pattern written in designbook/design-system/action-pattern.md.'
+description: >-
+  The shared checkable option list — one panel markup with two consumers: the
+  property pills inside a create or edit dialog, and the inline edit control on
+  a detail screen. Without input_name it is presentational and accessible only:
+  a listbox whose rows carry aria-selected, with the check icon as the selected
+  marker, holding no form state and emitting no input — the hidden inputs of the
+  form-bound case belong to option_picker, because only the picker knows whether
+  the pick writes now or when the form does. WITH input_name every row carries a
+  real form control of that name at the marker's own position, checked from the
+  same selected data, so the list SELECTS rather than only displaying a
+  selection; that control is what makes a facet operable with JavaScript
+  disabled, the same standard the panel's native <details> is held to. Clearing
+  is the FIRST ROW of this list, marked when nothing else is, rather than a
+  button above it or a native option — so "no conductor" reads as a value the
+  operator chose. It is the one row that carries NO form control: an empty
+  submitted value is a constraint a search backend matches nothing against
+  rather than the absence of one, so clearing is an ADDRESS (clear_url, rendered
+  as a link) and not a value. Without clear_url the row is the presentational
+  marker only, which is the right reading when nothing is chosen. Creating is
+  its mirror image and therefore the LAST row: clearing picks a value, creating
+  performs an action, which is also why the create row is a button in a
+  presentational row rather than a listbox option. WITH submit_name every row IS
+  a named submit trigger of the enclosing form instead, which is the third mode
+  and the one an inline edit control needs: the inline picker emits no hidden
+  inputs because the pick is the write, so there is no later submit for a
+  carried value to reach, and the row therefore submits now. The three modes are
+  exclusive and submit_name wins. The selected marker sits on the RIGHT of each
+  row, so every label starts at the same left edge and a scanned list stays
+  calm. Part of the pattern written in
+  designbook/design-system/action-pattern.md. A filter panel adds per-row
+  counts, team groups and person marks, a Select all / Clear row, a live `<k> of
+  <m> selected` summary and an Apply submit (Figma 95:1096, 95:1947); every
+  addition is a presentational row inside the listbox, like the create row. The
+  summary row (`<k> of <m> selected`, with Apply) is pinned to the bottom of a
+  scrolling panel, so it stays visible however long the list is.
 provider: bb_theme
 props:
   type: object
@@ -10,50 +45,109 @@ props:
     clearable:
       type: boolean
       title: Clearable
-      description: Prepend the clear row as the first row of the list. It carries the same marker as every other row and shows the checkmark when nothing else is selected, which is what makes "cleared" a value the operator picks rather than an absence they have to produce.
+      description: >-
+        Prepend the clear row as the first row of the list. It carries the same
+        marker as every other row and shows the checkmark when nothing else is
+        selected, which is what makes "cleared" a value the operator picks
+        rather than an absence they have to produce.
     clear_label:
       type: string
       title: Clear row label
-      description: 'Label of the clear row. Defaults to an em-dashed none marker: — none —. Name the field''s own empty state where it reads better ("No conductor").'
+      description: >-
+        Label of the clear row. Defaults to an em-dashed none marker: — none —.
+        Name the field's own empty state where it reads better ("No conductor").
     clear_url:
       type: string
       title: Clear row address
-      description: 'The address this list would be at with nothing chosen. Given one, the clear row becomes a LINK to it — which is how a facet is reset without submitting anything. The row carries no form control of its own, deliberately: an empty submitted value in a GET query is a real constraint to a search backend rather than the absence of one, so a control here narrowed the result set to nothing instead of widening it. Omit it where clearing is a no-op, i.e. where nothing is chosen; the row then stays the presentational marker that says so. A caller that holds no address renders no link rather than a dead one.'
+      description: >-
+        The address this list would be at with nothing chosen. Given one, the
+        clear row becomes a LINK to it — which is how a facet is reset without
+        submitting anything. The row carries no form control of its own,
+        deliberately: an empty submitted value in a GET query is a real
+        constraint to a search backend rather than the absence of one, so a
+        control here narrowed the result set to nothing instead of widening it.
+        Omit it where clearing is a no-op, i.e. where nothing is chosen; the row
+        then stays the presentational marker that says so. A caller that holds
+        no address renders no link rather than a dead one.
     clear_control:
       type: boolean
       title: Clear row is a form control
-      description: 'Default false. When true on a single-value control list with `clearable` and no `clear_url`, the clear row is a radio of the same name posting "", so a form can empty the field. Opt-in, because for a facet an empty value matches nothing. Ignored for a multi-value list.'
+      description: >-
+        Default false. When true on a single-value control list with `clearable`
+        and no `clear_url`, the clear row is a radio of the same name posting
+        "", so a form can empty the field. Opt-in, because for a facet an empty
+        value matches nothing. Ignored for a multi-value list.
     creatable:
       type: boolean
-      description: Append a create row as the LAST row of the panel, so a picker can offer to create the thing being looked for without leaving the dialog. It is a button in a presentational row rather than a listbox option, because an action is not a value. Rendered and reachable; it writes nothing here.
+      description: >-
+        Append a create row as the LAST row of the panel, so a picker can offer
+        to create the thing being looked for without leaving the dialog. It is a
+        button in a presentational row rather than a listbox option, because an
+        action is not a value. Rendered and reachable; it writes nothing here.
       title: Creatable
     create_label:
       type: string
       title: Create row noun
-      description: 'The thing being created, as it reads in the invitation: "label" gives "+ New label". The disclosure handler replaces the invitation with the typed query when there is one.'
+      description: >-
+        The thing being created, as it reads in the invitation: "label" gives "+
+        New label". The disclosure handler replaces the invitation with the
+        typed query when there is one.
     input_name:
       type: string
       title: Form control name
-      description: When set, every row carries a real form control of this name, so the list SELECTS rather than merely displaying a selection. Without it the rows stay presentational, which is what every caller before the facets needed. The control is what makes a facet operable with JavaScript disabled — the same standard the panel's native <details> is held to.
+      description: >-
+        When set, every row carries a real form control of this name, so the
+        list SELECTS rather than merely displaying a selection. Without it the
+        rows stay presentational, which is what every caller before the facets
+        needed. The control is what makes a facet operable with JavaScript
+        disabled — the same standard the panel's native <details> is held to.
     submit_name:
       type: string
       title: Submit trigger name
-      description: 'When set, every option row IS a named submit trigger of the enclosing form — `<button type="submit">` carrying this name and the row''s own value — so picking a value and submitting it are one act. This is the shape an `option_picker` in its `inline` variant needs, and it is what makes that variant''s contract honest instead of worked around: the inline variant emits no hidden inputs "because the pick is the write", so there is no later submit for a value-carrying input to reach. On the server the `name=value` pair identifies which row was pressed — several controls sharing one name and distinguished by value, which is the mechanism a form''s ordinary buttons already use — so reading the pick back needs nothing new. Exclusive with `input_name`, and this one wins: a row cannot be both a value to carry and the submission of that value, and a caller stating both has stated the write-now intention too. Every submit row carries `formnovalidate`, because this control submits ONE field''s value while sitting in a form that may hold another field''s constraint, and the browser refuses a submit for an empty required field before any script sees the event. The clear row and the create row are untouched by this mode: clearing is an ADDRESS and carries no control at all, and creating is already a real button.'
+      description: >-
+        When set, every option row IS a named submit trigger of the enclosing
+        form — `<button type="submit">` carrying this name and the row's own
+        value — so picking a value and submitting it are one act. This is the
+        shape an `option_picker` in its `inline` variant needs, and it is what
+        makes that variant's contract honest instead of worked around: the
+        inline variant emits no hidden inputs "because the pick is the write",
+        so there is no later submit for a value-carrying input to reach. On the
+        server the `name=value` pair identifies which row was pressed — several
+        controls sharing one name and distinguished by value, which is the
+        mechanism a form's ordinary buttons already use — so reading the pick
+        back needs nothing new. Exclusive with `input_name`, and this one wins:
+        a row cannot be both a value to carry and the submission of that value,
+        and a caller stating both has stated the write-now intention too. Every
+        submit row carries `formnovalidate`, because this control submits ONE
+        field's value while sitting in a form that may hold another field's
+        constraint, and the browser refuses a submit for an empty required field
+        before any script sees the event. The clear row and the create row are
+        untouched by this mode: clearing is an ADDRESS and carries no control at
+        all, and creating is already a real button.
     input_type:
       type: string
       enum:
         - checkbox
         - radio
       title: Control kind
-      description: 'Follows the field, not the styling: `checkbox` for a field that holds several values, `radio` for one. Paired with `multiple`, which is the ARIA half of the same fact.'
+      description: >-
+        Follows the field, not the styling: `checkbox` for a field that holds
+        several values, `radio` for one. Paired with `multiple`, which is the
+        ARIA half of the same fact.
     multiple:
       type: boolean
       title: Multiple
-      description: Mark the listbox multi-selectable. It paints no marker box; in every mode unselected rows show no marker at all and selected rows show only the checkmark, while the marker keeps its fixed space so labels never shift.
+      description: >-
+        Mark the listbox multi-selectable. It paints no marker box; in every
+        mode unselected rows show no marker at all and selected rows show only
+        the checkmark, while the marker keeps its fixed space so labels never
+        shift.
     name:
       type: string
       title: Field name
-      description: The field this list belongs to. Carried as a data attribute so the disclosure handler and a later write can find the rows of one field.
+      description: >-
+        The field this list belongs to. Carried as a data attribute so the
+        disclosure handler and a later write can find the rows of one field.
     options:
       type: array
       title: Options
@@ -69,19 +163,92 @@ props:
             type: boolean
           description:
             type: string
+          count:
+            type: string
+            title: Count
+            description: >-
+              A preformatted figure shown at the row's trailing edge, e.g. the
+              tickets an entry stands for (`214`).
+          group:
+            type: string
+            title: Group
+            description: >-
+              The heading the row is listed under. A heading row is drawn
+              whenever the group differs from the previous row's, so rows of one
+              group must be adjacent.
+          initials:
+            type: string
+            title: Initials
+            description: >-
+              Up to two letters for a person mark in front of the label; the row
+              of a person.
+          color:
+            type: string
+            enum:
+              - running
+              - attention
+              - unassigned
+              - lease
+              - offline
+            title: Mark colour
+            description: The person mark's colour key, as `person` declares them.
+    bulk_actions:
+      type: boolean
+      title: Bulk actions
+      description: >-
+        A control list with several values gets a `Select all` and a `Clear`
+        action above its rows. Both act on the rows still visible after a
+        search, change only the checkboxes and submit nothing; the enclosing
+        form applies them.
+    summary:
+      type: boolean
+      title: Summary
+      description: >-
+        A control list with several values ends with `<k> of <m> selected`, kept
+        current as rows are checked.
+    apply_label:
+      type: string
+      title: Apply label
+      description: >-
+        When set, the list ends with a primary submit button of this label for
+        the enclosing form, so nothing changes before it is pressed.
+    auto_apply:
+      type: boolean
+      title: Auto apply
+      description: >-
+        The enclosing form applies every change by itself when scripting runs
+        (e.g. an htmx GET on change), so the Apply button is only rendered for a
+        visitor without JavaScript; with scripting it is removed. The summary
+        row stays pinned to the bottom of a scrolling panel in every mode.
 variants:
   single:
     title: Single
-    description: One selectable value — the shape the inline edit of a single-valued field uses.
+    description: >-
+      One selectable value — the shape the inline edit of a single-valued field
+      uses.
   multiple:
     title: Multiple
-    description: Several selectable values with checkable rows — the shape the labels field uses.
+    description: >-
+      Several selectable values with checkable rows — the shape the labels field
+      uses.
   form:
     title: Form
-    description: 'Rows carrying a real form control, named for the field they belong to — the shape an exposed facet filter uses, and one of the two shapes that can be operated without JavaScript. The clear row is the one exception and carries no control: clearing is an ADDRESS (clear_url), not a value, because an empty submitted value is a constraint a search backend matches nothing against rather than the absence of one.'
+    description: >-
+      Rows carrying a real form control, named for the field they belong to —
+      the shape an exposed facet filter uses, and one of the two shapes that can
+      be operated without JavaScript. The clear row is the one exception and
+      carries no control: clearing is an ADDRESS (clear_url), not a value,
+      because an empty submitted value is a constraint a search backend matches
+      nothing against rather than the absence of one.
   submit:
     title: Submit
-    description: 'Rows that ARE named submit triggers of the enclosing form — the shape an inline edit control uses, where the pick IS the write and there is no later submit for a value to travel to. Distinguished from `form` by when the write happens rather than by how the row looks: `form` carries a value the enclosing form submits later, this one submits now. Also operable without JavaScript, because a submit button needs none.'
+    description: >-
+      Rows that ARE named submit triggers of the enclosing form — the shape an
+      inline edit control uses, where the pick IS the write and there is no
+      later submit for a value to travel to. Distinguished from `form` by when
+      the write happens rather than by how the row looks: `form` carries a value
+      the enclosing form submits later, this one submits now. Also operable
+      without JavaScript, because a submit button needs none.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

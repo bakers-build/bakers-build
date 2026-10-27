@@ -79,15 +79,9 @@ export abstract class StatisticsScreen<T> extends AsyncScreen<T> {
     return filters;
   }
 
-  /**
-   * Maps a preset's raw period value to the granularity legible label
-   * (BB-548 scope change 7): `7`/`30` are daily buckets, `365` is monthly.
-   */
-  private static rangeLabel(value: string): string {
-    return value === '365' ? '1y·monthly' : `${value}d·daily`;
-  }
-
-  private periodFilter(): { value: string; options: string[] } | undefined {
+  private periodFilter():
+    | { value: string; label: string; options: string[] }
+    | undefined {
     const result =
       this.readyValue === undefined
         ? undefined
@@ -99,7 +93,13 @@ export abstract class StatisticsScreen<T> extends AsyncScreen<T> {
         if (filter)
           return {
             value: filter.value,
-            options: filter.options.map((option) => option.value),
+            label:
+              filter.options.find((option) => option.value === filter.value)
+                ?.label ?? filter.value,
+            // Custom needs start and end dates, which this screen cannot supply.
+            options: filter.options
+              .map((option) => option.value)
+              .filter((value) => value !== 'custom'),
           };
       }
     }
@@ -107,7 +107,7 @@ export abstract class StatisticsScreen<T> extends AsyncScreen<T> {
   }
 
   /**
-   * One boxed filter chip cycling the three fixed period+granularity presets
+   * One boxed filter chip cycling the period kinds
    * (BB-548 scope change 7, replacing the former two independent
    * period/granularity chips of addendum 4). Rendered via
    * `filterBadgeStrip` inside `renderReady`, below Overview — see the
@@ -119,7 +119,7 @@ export abstract class StatisticsScreen<T> extends AsyncScreen<T> {
     return [
       {
         id: 'period',
-        label: `t Range(${StatisticsScreen.rangeLabel(period.value)})`,
+        label: `t Range(${period.label})`,
       },
     ];
   }

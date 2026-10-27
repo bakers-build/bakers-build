@@ -159,3 +159,13 @@ bb_track.worklog_evidence:
     _user_is_logged_in: 'TRUE'
   options:
     _auth: ['basic_auth', 'oauth2', 'cookie']
+
+# Insights › Billing report: the same lead-only check as Insights › Overview,
+# so a lead elsewhere meets the workspace boundary (404) and a member a 403.
+bb_track.workspace.insights_billing:
+  path: '/_workspace/{bb_workspace}/insights/billing'
+  defaults:
+    _controller: '\Drupal\bb_track\Controller\BillingReportController::page'
+    _title: 'Insights'
+  requirements:
+    _bb_workspace_permission: 'view bakers figure workspace_overview'

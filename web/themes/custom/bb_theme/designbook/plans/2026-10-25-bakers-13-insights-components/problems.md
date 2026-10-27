@@ -1,0 +1,6 @@
+# Execution problems — design-component
+
+| When | Step | Task | Title | Why | Attempted correction |
+|---|---|---|---|---|---|
+| 2026-10-25T16:05:00Z | validate | validate | insights overview (scene) | The sealed scene composition is wrong in two places, measured in the browser: (1) the page-level zones use `direction: fill`, which lays their children out in ONE row (header beside the tiles, the bar lists squeezed into ~276 px, the pager to the right of the table, the footnote beside the People table, the empty-state button stretched); Figma 84:13 stacks them vertically, which is zone's default `column`. (2) "Previous" is a `button` with both `href` and `disabled`; an anchor ignores `disabled`, so the first-page Previous is not disabled (criterion "Previous disabled"). Render itself is clean: storybook check ok, no console errors. | None possible inside this plan: the scene items are sealed params of the write-scene task. Fixed by a follow-up plan that rewrites only this scene (direction column, Previous without href) and re-validates it. Checkbox left pending. |
+| 2026-10-25T16:20:00Z | validate | validate | insights overview (scene) | Superseded: fixed and validated by plan 2026-10-25-bakers-13-insights-scene-fix. | — |

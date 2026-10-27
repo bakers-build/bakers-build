@@ -1,0 +1,62 @@
+uuid: eb263899-faad-4e0f-b86f-09575b2ff3a7
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_measurement.run_tokens
+id: workspace_models
+label: 'AI usage by model'
+description: "Run tokens per model. Date basis: run creation time. Attribution basis: the run's ticket's project in this workspace. Not a billable quantity."
+weight: 2
+widget: bars
+measurements:
+  - run_tokens
+categories:
+  type: dimension
+  dimension: model
+series: {  }
+ratio: {  }
+filters:
+  period:
+    label: Period
+    default: month
+    options:
+      -
+        value: week
+        label: Week
+      -
+        value: month
+        label: Month
+      -
+        value: quarter
+        label: Quarter
+      -
+        value: year
+        label: Year
+      -
+        value: all
+        label: 'All time'
+      -
+        value: custom
+        label: Custom
+  project:
+    label: Project
+    type: entities
+    binding: project
+  team:
+    label: Team
+    type: entities
+    binding: team
+  user:
+    label: Person
+    type: entities
+    binding: user
+context_shape:
+  - workspace
+conditions:
+  workspace:
+    id: bb_route_context
+    negate: false
+    context_mapping:
+      entity: workspace
+    entity_type: bb_workspace

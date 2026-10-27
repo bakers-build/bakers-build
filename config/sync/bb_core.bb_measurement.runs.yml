@@ -15,6 +15,9 @@ operation:
   type: count
 predicates: {}
 bindings:
+  epic:
+    field: ticket_id
+    resolver: epic_subtree
   project:
     field: ticket_id.entity.project_id
     resolver: entity_id
@@ -34,3 +37,6 @@ dimensions:
   user:
     field: ticket_id.entity.assignee_user_id
     entity_type: user
+  ticket:
+    field: ticket_id
+    entity_type: bb_ticket

@@ -578,6 +578,7 @@ web_ui:
     - bash tests/contract/run-detail-overlay.sh
     - bash tests/contract/island-links.sh
     - node tests/contract/appearance.mjs
+    - node tests/contract/period-range.mjs
     - node tests/contract/icon-storybook.mjs
   artifacts:
     when: always

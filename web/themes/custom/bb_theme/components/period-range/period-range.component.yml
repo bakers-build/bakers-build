@@ -1,0 +1,102 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Period Range
+status: stable
+group: Data Display
+description: >-
+  Harvest-style period switch for a statistics page: a kind dropdown (Week,
+  Month, Quarter, Year, All time, Custom), previous/next buttons around the
+  period label that opens a picker popover, an optional "Return to this <kind>"
+  link, and the comparison text "vs. <previous period>". A GET form carrying
+  hidden <name>[period|date|start|end] inputs; with `action` set every
+  navigation submits it, without `action` (Storybook) it only updates in place.
+  Date math and labels come from the pure functions exported by
+  period-range.src.js (periodOf, shift, comparisonOf, labelOf); the Alpine
+  component `periodRange` from the same file drives the markup. The component
+  formats nothing on the server and fetches nothing.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    kind:
+      type: string
+      enum:
+        - week
+        - month
+        - quarter
+        - year
+        - all
+        - custom
+      title: Period kind
+    date:
+      type: string
+      pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+      title: Anchor date
+      description: >-
+        Any day inside the selected week/month/quarter/year (YYYY-MM-DD).
+        Defaults to today.
+    start:
+      type: string
+      pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+      title: Custom start
+      description: First day of a custom range (YYYY-MM-DD), inclusive.
+    end:
+      type: string
+      pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+      title: Custom end
+      description: Last day of a custom range (YYYY-MM-DD), inclusive.
+    today:
+      type: string
+      pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+      title: Today
+      description: >-
+        The day treated as today (YYYY-MM-DD). Fixed in stories for
+        deterministic output; defaults to the real UTC today.
+    action:
+      type: string
+      title: Form action
+      description: >-
+        URL the GET form submits to. Empty: no submit, the control only updates
+        itself (Storybook).
+    name:
+      type: string
+      title: Parameter prefix
+      default: filter
+      description: >-
+        Prefix of the hidden inputs: <name>[period], <name>[date],
+        <name>[start], <name>[end].
+    params:
+      type: array
+      title: Kept parameters
+      description: >-
+        Further query parameters the form submits unchanged, e.g. other
+        filters of the page, as hidden inputs.
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+          value:
+            type: string
+        required:
+          - name
+          - value
+    open:
+      type: string
+      enum:
+        - none
+        - kind
+        - picker
+        - from
+        - to
+      default: none
+      title: Initially open popover
+      description: >-
+        Which popover renders open on first paint; stories use it to show a
+        picker. Runtime state after that.
+  required:
+    - kind
+  additionalProperties: false
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

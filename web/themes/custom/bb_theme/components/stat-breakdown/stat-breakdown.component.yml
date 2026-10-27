@@ -9,7 +9,9 @@ description: >-
   answers where a single total came from, for a figure whose one number hides a
   distribution. It emits no table markup of its own: it composes the existing
   table component, which is the only template in this theme permitted to render
-  a table row.
+  a table row. The bars display shows the same entries as parts of one total,
+  each with value, share label and a share bar, as the Insights AI-usage lists
+  do.
 provider: bb_theme
 props:
   type: object
@@ -54,6 +56,31 @@ props:
             type: object
             title: Counts
             description: The row's values, keyed by the column keys.
+          value:
+            type: string
+            title: Value
+            description: The row's preformatted figure in the bars display (`17.9 B`).
+          share:
+            type: number
+            minimum: 0
+            maximum: 100
+            title: Share
+            description: >-
+              The row's share of the whole in percent, drawn as the bar length
+              in the bars display.
+          share_label:
+            type: string
+            title: Share label
+            description: >-
+              The preformatted share (`63 %`), so the bar is never the only
+              carrier of the number.
+          exact:
+            type: string
+            title: Exact value
+            description: >-
+              The unabbreviated value and its calculation in the bars display.
+              Shown when the value is hovered or focused, dismissed with Escape;
+              the value becomes focusable when set.
         required:
           - label
           - counts
@@ -67,7 +94,25 @@ props:
       type: string
       title: Source
       description: >-
-        Where the figure is read from, available in a native Data source disclosure.
+        Where the figure is read from, available in a native Data source
+        disclosure.
+    display:
+      type: string
+      enum:
+        - table
+        - bars
+      default: table
+      title: Display
+      description: >-
+        `table` keeps the per-period columns. `bars` lists each entry with its
+        value, its share label and a share bar (Figma 84:452), for a figure
+        split into parts of one total; `columns` is then ignored.
+    caption:
+      type: string
+      title: Caption
+      description: >-
+        One line under the heading naming what is counted and over which period
+        (`Tokens, 1 – 19 Oct. Not a billable quantity.`).
   required:
     - label
     - columns

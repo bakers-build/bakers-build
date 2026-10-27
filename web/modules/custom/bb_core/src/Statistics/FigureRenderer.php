@@ -6,14 +6,23 @@ namespace Drupal\bb_core\Statistics;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Statistics\Figure\FigureCollection;
+use Drupal\bb_core\Statistics\Render\FigureFormat;
+use Drupal\bb_core\Statistics\Render\FigureTable;
+use Drupal\bb_core\Statistics\Render\InsightTiles;
+use Drupal\bb_core\Statistics\Render\PeopleDirectory;
+use Drupal\bb_core\Statistics\Render\TicketDirectory;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Renders the same grouped atomic figure payload exposed by the API.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 final class FigureRenderer {
 
@@ -28,6 +37,8 @@ final class FigureRenderer {
     private readonly FigureCollection $collection,
     private readonly TimeInterface $time,
     private readonly RequestStack $requestStack,
+    private readonly PeopleDirectory $people,
+    private readonly TicketDirectory $tickets,
   ) {}
 
   /**
@@ -37,13 +48,19 @@ final class FigureRenderer {
    *   Named entity contexts.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The requesting account.
-   * @param array<string, string> $filters
+   * @param array<string, string|list<string>> $filters
    *   Selected filter values.
+   * @param array{controls?: bool, layout?: string, subtitles?: array<string, string>} $options
+   *   `controls` FALSE leaves out the period buttons, for a page that places
+   *   its own period range. `layout` `insights` drops the group heading and
+   *   the figure descriptions (the tiles' info carries what is counted) and
+   *   lays the tiles out in one row. `subtitles` puts a line under a figure's
+   *   heading, keyed by figure id, in place of its description.
    *
    * @return array<string, mixed>
    *   The statistics render array.
    */
-  public function build(array $contexts, AccountInterface $account, array $filters = []): array {
+  public function build(array $contexts, AccountInterface $account, array $filters = [], array $options = []): array {
     $groups = $this->collection->groups($contexts, $account, $filters, $this->time->getRequestTime());
     $content = [];
     // Every figure declares the same filters and FigureCollection applies a
@@ -51,18 +68,19 @@ final class FigureRenderer {
     // each figure. Built per figure it appeared once per card while still
     // changing the whole page — several identical switches for one effect.
     $controls = [];
+    $insights = ($options['layout'] ?? '') === 'insights';
     foreach ($groups as $group) {
       $figures = [];
       foreach ($group['figures'] as $figure) {
         $controls += $this->filters($figure);
-        $figures[$figure['id']] = $this->figure($figure);
+        $figures[$figure['id']] = $this->figure($figure, $contexts, $insights ? 'insights' : '', $options['subtitles'][$figure['id']] ?? NULL);
       }
       $content[$group['id']] = [
         '#type' => 'component',
         '#component' => 'bb_theme:zone',
         '#props' => ['inset' => 'none'],
         '#slots' => [
-          'heading' => count($group['figures']) > 1 ? ['#plain_text' => $group['label']] : '',
+          'heading' => count($group['figures']) > 1 && !$insights ? ['#plain_text' => $group['label']] : '',
           'content' => $figures,
         ],
       ];
@@ -78,7 +96,7 @@ final class FigureRenderer {
       '#type' => 'component',
       '#component' => 'bb_theme:zone',
       '#props' => ['inset' => 'lg'],
-      '#slots' => ['actions' => $controls ?: '', 'content' => $content],
+      '#slots' => ['actions' => ($options['controls'] ?? TRUE) && $controls ? $controls : '', 'content' => $content],
     ];
     $metadata = (new CacheableMetadata())
       ->setCacheMaxAge(0)
@@ -96,12 +114,19 @@ final class FigureRenderer {
    *
    * @param array<string, mixed> $figure
    *   One evaluated figure.
+   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   *   The named contexts, for widgets that name the context's people.
+   * @param string $layout
+   *   The layout; `insights` leaves out the description line, which the
+   *   tiles' info carries instead.
+   * @param string|null $subtitle
+   *   The line under the heading in place of the description, if any.
    *
    * @return array<string, mixed>
    *   The figure render array.
    */
-  private function figure(array $figure): array {
-    $widgets = $this->widget($figure);
+  private function figure(array $figure, array $contexts = [], string $layout = '', ?string $subtitle = NULL): array {
+    $widgets = $this->widget($figure, $contexts);
     if (($figure['empty']['is_empty'] ?? FALSE) && $figure['categories'] !== []) {
       $widgets['empty'] = [
         '#type' => 'component',
@@ -117,14 +142,16 @@ final class FigureRenderer {
       '#component' => 'bb_theme:zone',
       '#props' => [
         'inset' => 'none',
-        'description' => $figure['description'],
+        'description' => $subtitle ?? ($layout === 'insights' ? '' : $figure['description']),
         'attributes' => [
           'data-statistics-widget' => $figure['widget'],
           'data-statistics-figure' => $figure['id'],
         ],
       ],
       '#slots' => [
-        'heading' => isset($widgets['breakdown']) ? '' : ['#plain_text' => $figure['label']],
+        // The breakdown and the flow chart carry their own heading; tiles name
+        // themselves.
+        'heading' => isset($widgets['breakdown']) || in_array($figure['widget'], ['flow', 'tiles'], TRUE) ? '' : ['#plain_text' => $figure['label']],
         'content' => [
           '#type' => 'component',
           '#component' => 'bb_theme:zone',
@@ -132,7 +159,7 @@ final class FigureRenderer {
             'inset' => 'none',
             // A chart spans the full content width; sharing a two-column
             // zone would halve the plot for the default seven-day period.
-            'columns' => $this->isWindows($figure) ? 2 : 1,
+            'columns' => $figure['widget'] === 'tiles' ? 4 : ($this->isWindows($figure) ? 2 : 1),
           ],
           '#slots' => ['content' => $widgets],
         ],
@@ -146,8 +173,17 @@ final class FigureRenderer {
   private function filters(array $figure): array {
     $filters = [];
     foreach ($figure['filters'] as $key => $filter) {
+      // Entity filters select from popovers the page places, not buttons.
+      if (($filter['type'] ?? '') === 'entities') {
+        continue;
+      }
       $options = [];
       foreach ($filter['options'] as $option) {
+        // A button cannot supply the two dates a custom range needs; the
+        // period-range component offers Custom where it is placed.
+        if ($key === 'period' && $option['value'] === 'custom') {
+          continue;
+        }
         $attributes = [
           'data-filter-name' => $key,
           'data-filter-value' => $option['value'],
@@ -177,24 +213,65 @@ final class FigureRenderer {
   }
 
   /**
+   * The request query the page's own links carry forward.
+   *
+   * An htmx request adds its asset state and wrapper format; a copied link
+   * carrying them would load a page that believes its CSS and JS are present.
+   *
+   * @return array<string, mixed>
+   *   The query without htmx request parameters.
+   */
+  private function query(): array {
+    $query = $this->requestStack->getCurrentRequest()?->query->all() ?? [];
+    unset($query['ajax_page_state'], $query['_wrapper_format'], $query['_triggering_element_name'], $query['_triggering_element_value']);
+    return $query;
+  }
+
+  /**
    * Builds a URL that changes one figure filter and retains request context.
    */
   private function filterUrl(string $key, string $value): Url {
     $request = $this->requestStack->getCurrentRequest();
-    $query = $request?->query->all() ?? [];
+    $query = $this->query();
     $query['filter'] = array_merge((array) ($query['filter'] ?? []), [$key => $value]);
     return Url::fromUserInput($request?->getPathInfo() ?? '/', ['query' => $query]);
   }
 
   /**
    * Maps the API payload to the same SDC contracts used by Storybook.
+   *
+   * @param array<string, mixed> $figure
+   *   One evaluated figure.
+   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   *   The named contexts.
+   *
+   * @return array<string, mixed>
+   *   The widget render arrays.
    */
-  private function widget(array $figure): array {
+  private function widget(array $figure, array $contexts = []): array {
     if ($this->isWindows($figure)) {
       return $this->windows($figure);
     }
+    if ($figure['widget'] === 'tiles') {
+      return InsightTiles::build($figure, self::inflow($figure));
+    }
+    if ($figure['widget'] === 'table') {
+      return $this->table($figure, $contexts);
+    }
+    if ($figure['widget'] === 'bars') {
+      // Without any value the figure's own empty state says so; zero rows
+      // beside it would contradict it.
+      $values = $figure['measurements'][0]['values'] ?? [];
+      return array_sum(array_filter($values, static fn($value): bool => $value !== NULL)) > 0 ? ['breakdown' => $this->bars($figure)] : [];
+    }
+    if (array_column($figure['categories'], 'key') === ['total']) {
+      return $this->tiles($figure);
+    }
     if ($figure['widget'] === 'line') {
       return ['chart' => $this->comparisonChart($figure)];
+    }
+    if ($figure['widget'] === 'flow') {
+      return ['chart' => $this->flowChart($figure)];
     }
     return ['breakdown' => $this->breakdown($figure)];
   }
@@ -278,6 +355,61 @@ final class FigureRenderer {
   }
 
   /**
+   * Maps a `flow` figure's new, done and open measurements onto a flow chart.
+   *
+   * The measurements are positional — new, done, open — as BbFigure enforces.
+   * Only formatting happens here; the chart draws and the evaluator counts.
+   *
+   * @param array<string, mixed> $figure
+   *   One evaluated figure.
+   *
+   * @return array<string, mixed>
+   *   The `bb_theme:flow-chart` render array.
+   */
+  private function flowChart(array $figure): array {
+    [$new, $done, $open] = $figure['measurements'] + [[], [], []];
+    $sections = [];
+    $running = NULL;
+    foreach ($figure['categories'] as $category) {
+      $key = $category['key'];
+      $sections[] = [
+        'label' => $category['label'],
+        'new' => $new['values'][$key] ?? 0,
+        'done' => $done['values'][$key] ?? 0,
+        'open' => $open['values'][$key] ?? NULL,
+        'running' => !empty($category['partial']),
+        'cut' => !empty($category['cut']),
+      ];
+      if (!empty($category['partial'])) {
+        $running = $category['label'];
+      }
+    }
+    // Monthly buckets are keyed `Y-m`, daily ones `Y-m-d`.
+    $monthly = preg_match('/^\d{4}-\d{2}$/', (string) ($figure['categories'][0]['key'] ?? '')) === 1;
+    $caption = $monthly ? (string) $this->t('Per month, UTC') : (string) $this->t('Per day, UTC');
+    if ($running !== NULL) {
+      $caption .= ' · ' . $this->t('@section is still running', ['@section' => $running]);
+    }
+    $ratio = $figure['ratio'] ?? NULL;
+    return [
+      '#type' => 'component',
+      '#component' => 'bb_theme:flow-chart',
+      '#props' => [
+        'chart' => [
+          'state' => ($figure['empty']['is_empty'] ?? FALSE) ? 'empty' : 'ready',
+          'label' => $figure['label'],
+          'caption' => $caption,
+          'ratio' => $ratio === NULL ? NULL : (string) $ratio,
+          'ratio_label' => (string) $this->t('done : new'),
+          'totals' => ['new' => (string) ($new['total'] ?? 0), 'done' => (string) ($done['total'] ?? 0)],
+          'open_at' => $running === NULL ? NULL : gmdate('H:i', (int) strtotime($figure['generated'])) . ' UTC',
+          'sections' => $sections,
+        ],
+      ],
+    ];
+  }
+
+  /**
    * Maps three-period measurements to totals components.
    */
   private function windows(array $figure): array {
@@ -299,11 +431,191 @@ final class FigureRenderer {
   }
 
   /**
+   * Maps a total figure to one tile per measurement with its comparison.
+   *
+   * @param array<string, mixed> $figure
+   *   One evaluated `total` figure.
+   *
+   * @return array<string, array<string, mixed>>
+   *   The `bb_theme:stat-tile` render arrays keyed by measurement id.
+   */
+  private function tiles(array $figure): array {
+    $tiles = [];
+    foreach ($figure['measurements'] as $measurement) {
+      $value = $measurement['values']['total'] ?? NULL;
+      $props = [
+        'value' => $value === NULL ? '—' : (string) $value,
+        'label' => $measurement['label'],
+        'source' => 'bb_measurement.' . strstr($measurement['id'] . ':', ':', TRUE),
+        'window' => $figure['period']['label'] ?? '',
+      ];
+      $comparison = $measurement['comparison'] ?? NULL;
+      if (is_array($comparison)) {
+        $previous = $comparison['values']['total'] ?? NULL;
+        $props['comparison'] = [
+          'value' => $previous === NULL ? '—' : (string) $previous,
+          'label' => (string) $this->t('vs. @period', ['@period' => $comparison['labels']['total'] ?? '']),
+        ] + FigureFormat::percentChange($value, $previous);
+      }
+      $tiles[$measurement['id']] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:stat-tile',
+        '#props' => $props,
+      ];
+    }
+    return $tiles;
+  }
+
+  /**
    * The totals components have a strict three-period contract.
    */
   private function isWindows(array $figure): bool {
     return $figure['widget'] === 'matrix'
       && array_column($figure['categories'], 'key') === ['day', 'week', 'month'];
+  }
+
+  /**
+   * Maps a `bars` figure onto share bars: each entry's part of the whole.
+   *
+   * @param array<string, mixed> $figure
+   *   One evaluated `bars` figure.
+   *
+   * @return array<string, mixed>
+   *   The `bb_theme:stat-breakdown` render array.
+   */
+  private function bars(array $figure): array {
+    $measurement = $figure['measurements'][0] ?? ['id' => '', 'label' => '', 'values' => []];
+    $total = array_sum(array_filter($measurement['values'], static fn($value): bool => $value !== NULL));
+    $entries = [];
+    foreach ($figure['categories'] as $category) {
+      $value = $measurement['values'][$category['key']] ?? 0;
+      $share = $total > 0 ? round($value / $total * 100) : 0.0;
+      $entries[] = [
+        'label' => $category['label'],
+        'value' => FigureFormat::abbreviate($value),
+        'share' => (float) $share,
+        'share_label' => (int) $share . ' %',
+        'counts' => [$measurement['id'] => FigureFormat::abbreviate($value)],
+      ] + ($measurement['id'] === 'run_tokens' ? ['exact' => FigureFormat::exactTokens($value)] : []);
+    }
+    return [
+      '#type' => 'component',
+      '#component' => 'bb_theme:stat-breakdown',
+      '#props' => [
+        'label' => $figure['label'],
+        'caption' => (string) $this->t('Tokens, @period. Not a billable quantity.', ['@period' => $figure['period']['label'] ?? '']),
+        'display' => 'bars',
+        'columns' => [['key' => $measurement['id'], 'label' => $measurement['label']]],
+        'entries' => $entries,
+        'empty' => $figure['empty']['message'] ?? (string) $this->t('No data for this selection.'),
+      ],
+    ];
+  }
+
+  /**
+   * Maps a `table` figure onto a sortable, paged table with its footnotes.
+   *
+   * @param array<string, mixed> $figure
+   *   One evaluated `table` figure.
+   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   *   The named contexts; the workspace, or the project's, names the people's
+   *   teams.
+   *
+   * @return array<string, mixed>
+   *   The table, pager and footnote render arrays.
+   */
+  private function table(array $figure, array $contexts): array {
+    $people = ($figure['categories'][0]['key'] ?? '') !== '' && str_ends_with((string) $figure['id'], '_people');
+    $built = $this->tableOf($figure, $people, $this->peopleWorkspace($contexts));
+    $widgets = [
+      'table' => ['#type' => 'component', '#component' => 'bb_theme:table', '#props' => $built['table']],
+    ];
+    if ($built['pager'] !== NULL) {
+      $widgets['pager'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:zone',
+        '#props' => ['inset' => 'none', 'direction' => 'row', 'gap' => 'sm', 'align' => 'center'],
+        '#slots' => [
+          'content' => [
+            [
+              '#type' => 'component',
+              '#component' => 'bb_theme:collection-position',
+              '#props' => $built['pager']['position'],
+            ],
+            $this->pagerButton((string) $this->t('Previous'), $built['pager']['previous']),
+            $this->pagerButton((string) $this->t('Next'), $built['pager']['next']),
+          ],
+        ],
+      ];
+    }
+    $footnotes = $built['footnotes'];
+    if ($people) {
+      $footnotes[] = (string) $this->t('Values belong to the current assignee.');
+    }
+    if ($footnotes !== []) {
+      $lead = implode(' ', array_map(static fn(string $note): string => rtrim($note, '.') . '.', $footnotes));
+      $widgets['footnotes'] = ['#type' => 'component', '#component' => 'bb_theme:note', '#props' => ['lead' => $lead]];
+    }
+    return $widgets;
+  }
+
+  /**
+   * The workspace whose teams name the people: the context's, or the project's.
+   *
+   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   *   The named contexts.
+   */
+  private function peopleWorkspace(array $contexts): ?EntityInterface {
+    $project = $contexts['project'] ?? NULL;
+    return $contexts['workspace'] ?? ($project instanceof BbProjectInterface ? $project->getGroup()?->getWorkspace() : NULL);
+  }
+
+  /**
+   * What a tiles figure calls its created tickets: one's own are assigned.
+   */
+  private static function inflow(array $figure): string {
+    return str_starts_with((string) $figure['id'], 'user_') ? 'assigned' : 'created';
+  }
+
+  /**
+   * The sortable, paged table description for one `table` figure.
+   *
+   * @param array<string, mixed> $figure
+   *   One evaluated `table` figure.
+   * @param bool $people
+   *   Whether the rows are people.
+   * @param \Drupal\Core\Entity\EntityInterface|null $workspace
+   *   The workspace whose teams name the people.
+   *
+   * @return array<string, mixed>
+   *   The FigureTable result.
+   */
+  private function tableOf(array $figure, bool $people, ?EntityInterface $workspace): array {
+    if ($figure['id'] === 'user_tickets') {
+      // Runs and tokens also group tickets that did not close in the period.
+      $closed = array_column($figure['measurements'], 'values', 'id')['closed_tickets'] ?? [];
+      $figure['categories'] = array_values(array_filter($figure['categories'], static fn(array $category): bool => ($closed[$category['key']] ?? 0) > 0));
+      return FigureTable::build($figure, FigureTable::ticketColumns(), $this->query(), NULL, 'tickets', $this->tickets->cells(array_column($figure['categories'], 'key')), 'tokens', 'desc');
+    }
+    if ($people) {
+      $cells = $workspace === NULL ? [] : $this->people->cells($workspace, array_column($figure['categories'], 'key'));
+      return FigureTable::build($figure, FigureTable::peopleColumns(), $this->query(), NULL, 'people', $cells);
+    }
+    if ($figure['id'] === 'user_projects') {
+      return FigureTable::build($figure, FigureTable::myProjectColumns(), $this->query(), NULL, 'projects');
+    }
+    return FigureTable::build($figure, FigureTable::projectColumns(), $this->query(), (string) $this->t('All projects'), 'projects');
+  }
+
+  /**
+   * A pager button; without a target it is disabled, not a dead link.
+   */
+  private function pagerButton(string $label, ?string $url): array {
+    return [
+      '#type' => 'component',
+      '#component' => 'bb_theme:button',
+      '#props' => $url === NULL ? ['label' => $label, 'disabled' => TRUE] : ['label' => $label, 'href' => $url],
+    ];
   }
 
   /**

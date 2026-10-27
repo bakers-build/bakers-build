@@ -1,0 +1,15 @@
+decided_at: '2026-10-25T14:20:06.694Z'
+fingerprint: 1b7e92f790b098735e7697cec928d72c195ac041447f3b6820ff4e3691ac9453
+note: 'Approved by cw (BAKERS-13). Suitability: yes — Insights components and scene.'
+scope:
+  states:
+    - default
+  subjects:
+    - insights-overview
+    - popover-project
+    - popover-person
+    - filter-active
+    - insights-states
+  views:
+    - desktop
+status: approved

@@ -1,0 +1,6 @@
+component: bb_theme:period-range
+name: Month (past)
+props:
+  kind: month
+  date: '2026-08-01'
+  today: '2026-10-24'

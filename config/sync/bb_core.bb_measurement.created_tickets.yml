@@ -1,0 +1,37 @@
+uuid: 031c73d5-c441-4b07-b4cc-0041326365e6
+langcode: en
+status: true
+dependencies: {}
+id: created_tickets
+label: Created tickets
+value_type: integer
+unit: tickets
+source:
+  entity_type: bb_ticket
+  time_field: created
+operation:
+  type: count
+predicates: []
+bindings:
+  epic:
+    field: id
+    resolver: epic_subtree
+  project:
+    field: project_id
+    resolver: entity_id
+  user:
+    field: assignee_user_id
+    resolver: entity_id
+  team:
+    field: project_id
+    resolver: team_projects
+  workspace:
+    field: project_id
+    resolver: workspace_projects
+dimensions:
+  project:
+    field: project_id
+    entity_type: bb_project
+  user:
+    field: assignee_user_id
+    entity_type: user

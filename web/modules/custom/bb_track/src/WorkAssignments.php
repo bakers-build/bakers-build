@@ -180,9 +180,14 @@ final class WorkAssignments {
 
   /**
    * The project's active default account, or NULL when none is active.
+   *
+   * @param int $project_id
+   *   The project.
+   * @param array<int, \Drupal\bb_track\Entity\Account>|null $accounts
+   *   Its active accounts when the caller already loaded them.
    */
-  public function defaultAccount(int $project_id): ?Account {
-    foreach ($this->activeAccounts($project_id) as $billing_account) {
+  public function defaultAccount(int $project_id, ?array $accounts = NULL): ?Account {
+    foreach ($accounts ?? $this->activeAccounts($project_id) as $billing_account) {
       if ($billing_account->get('is_default')->value) {
         return $billing_account;
       }
@@ -222,19 +227,70 @@ final class WorkAssignments {
    *   the ticket itself, an ancestor, or NULL for the project default.
    */
   public function resolution(int $project_id, ?int $ticket_id): array {
-    $by_ticket = [];
     $accounts = $this->activeAccounts($project_id);
-    foreach ($accounts as $billing_account) {
-      foreach (self::linkedTickets($billing_account) as $linked) {
-        $by_ticket[$linked] ??= $billing_account;
-      }
-    }
+    $by_ticket = self::linkMap($accounts);
     foreach ($this->ancestry($project_id, $ticket_id) as $target) {
       if (isset($by_ticket[$target])) {
         return [$by_ticket[$target], $target];
       }
     }
-    return [$this->defaultAccount($project_id), NULL];
+    return [$this->defaultAccount($project_id, $accounts), NULL];
+  }
+
+  /**
+   * The account that applies to each of many tickets of one project.
+   *
+   * The same rule as resolution(), with the project's accounts loaded once.
+   * A ticket whose ancestry is inconsistent falls back to the project
+   * default, so a report over many tickets never fails on one of them.
+   *
+   * @param int $project_id
+   *   The project.
+   * @param list<int> $ticket_ids
+   *   Tickets of that project.
+   *
+   * @return array<int, ?\Drupal\bb_track\Entity\Account>
+   *   The account per ticket id, NULL when none is configured.
+   */
+  public function resolutions(int $project_id, array $ticket_ids): array {
+    $accounts = $this->activeAccounts($project_id);
+    $by_ticket = self::linkMap($accounts);
+    $default = $this->defaultAccount($project_id, $accounts);
+    $result = [];
+    foreach ($ticket_ids as $ticket_id) {
+      $result[$ticket_id] = $default;
+      try {
+        foreach ($this->ancestry($project_id, $ticket_id) as $target) {
+          if (isset($by_ticket[$target])) {
+            $result[$ticket_id] = $by_ticket[$target];
+            break;
+          }
+        }
+      }
+      catch (\DomainException) {
+        // Inconsistent ancestry: the project default applies.
+      }
+    }
+    return $result;
+  }
+
+  /**
+   * The active account linking each ticket of a project, first by id.
+   *
+   * @param array<int, \Drupal\bb_track\Entity\Account> $accounts
+   *   Active accounts of one project.
+   *
+   * @return array<int, \Drupal\bb_track\Entity\Account>
+   *   Accounts keyed by the ticket id they link.
+   */
+  private static function linkMap(array $accounts): array {
+    $by_ticket = [];
+    foreach ($accounts as $billing_account) {
+      foreach (self::linkedTickets($billing_account) as $linked) {
+        $by_ticket[$linked] ??= $billing_account;
+      }
+    }
+    return $by_ticket;
   }
 
   /**

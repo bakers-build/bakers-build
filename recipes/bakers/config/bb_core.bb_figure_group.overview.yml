@@ -2,13 +2,9 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_figure.project_overview
   - bb_core.bb_figure.team_user_overview
-  - bb_core.bb_figure.user_overview
 id: overview
 label: Overview
 weight: 0
 figures:
-- project_overview
-- user_overview
 - team_user_overview

@@ -1,0 +1,67 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.job_rating
+    - bb_core.bb_measurement.rated_tickets
+    - bb_core.bb_measurement.run_tokens
+    - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.runs_per_ticket
+id: project_people
+label: People
+description: "Closed tickets, runs per closed ticket, job rating and run tokens per person. Date basis: ticket closed_date and run creation time. Attribution basis: the ticket's current assignee, for tickets of this project."
+weight: 5
+widget: table
+measurements:
+  - closed_tickets
+  - runs
+  - runs_per_ticket
+  - job_rating
+  - rated_tickets
+  - run_tokens
+categories:
+  type: dimension
+  dimension: user
+series: {  }
+ratio: {  }
+filters:
+  period:
+    label: Period
+    default: month
+    options:
+      -
+        value: week
+        label: Week
+      -
+        value: month
+        label: Month
+      -
+        value: quarter
+        label: Quarter
+      -
+        value: year
+        label: Year
+      -
+        value: all
+        label: 'All time'
+      -
+        value: custom
+        label: Custom
+  epic:
+    label: Epic
+    type: entities
+    binding: epic
+  user:
+    label: Person
+    type: entities
+    binding: user
+context_shape:
+  - project
+conditions:
+  project:
+    id: bb_route_context
+    negate: false
+    context_mapping:
+      entity: project
+    entity_type: bb_project

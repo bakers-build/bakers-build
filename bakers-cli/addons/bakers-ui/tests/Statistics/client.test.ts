@@ -33,13 +33,14 @@ const FIGURE = {
   filters: {
     period: {
       label: 'Period',
-      value: '30',
+      value: 'month',
       options: [
-        { value: '7', label: '7 days' },
-        { value: '30', label: '30 days' },
+        { value: 'week', label: 'Week' },
+        { value: 'month', label: 'Month' },
       ],
     },
   },
+  period: { grouping: 'day' },
   categories: [
     { key: '2026-09-19', label: 'Sep 19' },
     { key: '2026-09-20', label: 'Sep 20', partial: true },
@@ -79,14 +80,14 @@ it('reads ordered, atomic groups in one request with named contexts and filters'
   const result = await loadGroupStatistics(
     client,
     { team: 'team-1', user: 'user-1' },
-    { period: '30' },
+    { period: 'month' },
   );
 
   expect(calls).toHaveLength(1);
   expect(calls[0]?.path).toBe('bakers/statistics');
   expect(query(calls[0]?.params)).toContain('team_id=team-1');
   expect(query(calls[0]?.params)).toContain('user_id=user-1');
-  expect(query(calls[0]?.params)).toContain('filter[period]=30');
+  expect(query(calls[0]?.params)).toContain('filter[period]=month');
   expect(result).toEqual({
     kind: 'ok',
     groups: [{ id: 'activity', label: 'Activity', figures: [FIGURE] }],
@@ -166,4 +167,57 @@ it('distinguishes an absent endpoint from a JSON:API error', async () => {
     { user: 'u1' },
   );
   expect(failed).toEqual({ kind: 'error', message: 'Unknown user.' });
+});
+
+it('skips figures with a widget the CLI cannot draw', async () => {
+  const matrix = { ...FIGURE, id: 'project_matrix', widget: 'matrix' };
+  // tiles, flow and table draw through the bars fallback; an unknown widget does not.
+  const tiles = { ...FIGURE, id: 'tiles', widget: 'tiles' };
+  const { client } = fakeClient({
+    data: {
+      attributes: {
+        groups: [
+          {
+            id: 'a',
+            label: 'A',
+            figures: [matrix, { ...FIGURE, id: 'heat', widget: 'heatmap' }],
+          },
+          {
+            id: 'b',
+            label: 'B',
+            figures: [{ ...FIGURE, id: 'heat_b', widget: 'heatmap' }, tiles],
+          },
+          // A group left without a drawable figure disappears.
+          {
+            id: 'c',
+            label: 'C',
+            figures: [{ ...FIGURE, id: 'heat_c', widget: 'heatmap' }],
+          },
+        ],
+      },
+    },
+  });
+
+  const result = await loadGroupStatistics(client, { project: 'project-1' });
+
+  expect(result).toEqual({
+    kind: 'ok',
+    groups: [
+      { id: 'a', label: 'A', figures: [matrix] },
+      { id: 'b', label: 'B', figures: [tiles] },
+    ],
+  });
+});
+
+it('still rejects a drawable figure with a malformed row', async () => {
+  const { cache: _cache, ...broken } = FIGURE;
+  const { client } = fakeClient({
+    data: {
+      attributes: {
+        groups: [{ id: 'a', label: 'A', figures: [broken] }],
+      },
+    },
+  });
+  const result = await loadGroupStatistics(client, { project: 'project-1' });
+  expect(result.kind).toBe('error');
 });

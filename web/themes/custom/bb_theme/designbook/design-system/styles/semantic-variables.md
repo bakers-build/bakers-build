@@ -44,7 +44,7 @@ comment for the exact classification rule.
 | `semantic.radius.sm` | layout | Small corner-radius role |
 | `semantic.radius.xs` | layout | Smallest corner-radius role |
 
-## Style axis (66)
+## Style axis (70)
 
 | Name | Axis | Purpose |
 | --- | --- | --- |
@@ -56,6 +56,10 @@ comment for the exact classification rule.
 | `semantic.color.border` | style | Default border colour |
 | `semantic.color.border-2` | style | Secondary (lighter) border colour |
 | `semantic.color.canvas` | style | Drawing/board canvas background colour |
+| `semantic.color.chart-flow-done` | style | Color role: chart-flow-done |
+| `semantic.color.chart-flow-grows` | style | Color role: chart-flow-grows |
+| `semantic.color.chart-flow-new` | style | Color role: chart-flow-new |
+| `semantic.color.chart-flow-shrinks` | style | Color role: chart-flow-shrinks |
 | `semantic.color.chart-series-a` | style | Color role: chart-series-a |
 | `semantic.color.chart-series-b` | style | Color role: chart-series-b |
 | `semantic.color.chart-series-c` | style | Color role: chart-series-c |

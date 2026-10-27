@@ -85,7 +85,8 @@
         <h1 class="text-display font-bold text-title {{ editable ? editable_classes : 'truncate' }}">{{ editable ? heading_content : title }}</h1>
       {% endif %}
       {%- if description %}
-        <p class="truncate text-caption text-text-faint">{{ description }}</p>
+        {#- One page header per page: the fixed id lets an htmx swap refresh the line out of band. #}
+        <p id="page-header-description" class="truncate text-caption text-text-faint">{{ description }}</p>
       {% endif %}
     </div>
     </div>

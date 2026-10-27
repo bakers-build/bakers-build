@@ -7,7 +7,11 @@ namespace Drupal\bb_core\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Statistics\FigureRenderer;
+use Drupal\bb_core\Statistics\InsightsPage;
+use Drupal\bb_core\Statistics\MyWorkStatsPage;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -20,13 +24,21 @@ final class BbStatsController extends ControllerBase {
 
   public const BODY_ATTRIBUTE = 'data-bakers-tab-body';
 
-  public function __construct(private readonly FigureRenderer $renderer) {}
+  public function __construct(
+    private readonly FigureRenderer $renderer,
+    private readonly InsightsPage $insightsPage,
+    private readonly MyWorkStatsPage $myWorkPage,
+  ) {}
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): static {
-    return new static($container->get('bb_core.figure_renderer'));
+    return new static(
+      $container->get('bb_core.figure_renderer'),
+      $container->get('bb_core.insights_page'),
+      $container->get('bb_core.my_work_stats_page'),
+    );
   }
 
   /**
@@ -42,6 +54,39 @@ final class BbStatsController extends ControllerBase {
       '#attributes' => [self::BODY_ATTRIBUTE => 'stats'],
       'content' => $this->renderer->build($this->contextsOf($route_match), $this->currentUser(), array_map('strval', $filters)),
     ];
+  }
+
+  /**
+   * Builds the workspace Insights › Overview page.
+   */
+  public function insights(RouteMatchInterface $route_match, Request $request): array {
+    $workspace = $this->contextsOf($route_match)['workspace'] ?? NULL;
+    if (!$workspace instanceof BbWorkspaceInterface) {
+      throw new NotFoundHttpException('No workspace in the current route.');
+    }
+    return $this->insightsPage->build($workspace, $this->currentUser(), $request);
+  }
+
+  /**
+   * Builds a project's Stats tab: the Insights page for one project.
+   */
+  public function projectStats(RouteMatchInterface $route_match, Request $request): array {
+    $project = $route_match->getParameter('bb_project');
+    if (!$project instanceof BbProjectInterface) {
+      throw new NotFoundHttpException('No project in the current route.');
+    }
+    return $this->insightsPage->build($project, $this->currentUser(), $request);
+  }
+
+  /**
+   * Builds the My work › Stats page: the signed-in account's own figures.
+   */
+  public function myWork(RouteMatchInterface $route_match, Request $request): array {
+    $workspace = $route_match->getParameter('bb_workspace');
+    if (!$workspace instanceof BbWorkspaceInterface) {
+      throw new NotFoundHttpException('No workspace in the current route.');
+    }
+    return $this->myWorkPage->build($workspace, $this->currentUser(), $request);
   }
 
   /**

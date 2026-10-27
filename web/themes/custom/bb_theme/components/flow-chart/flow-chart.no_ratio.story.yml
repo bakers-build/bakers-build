@@ -1,0 +1,32 @@
+component: bb_theme:flow-chart
+name: No ratio
+props:
+  chart:
+    state: ready
+    label: New vs. done
+    caption: Per day, UTC
+    ratio: null
+    ratio_label: 'done : new'
+    totals:
+      new: '9'
+      done: '0'
+    open_at: null
+    sections:
+      - label: Mon 12
+        new: 5
+        done: 0
+        open: 5
+        running: false
+        cut: false
+      - label: Tue 13
+        new: 3
+        done: 0
+        open: 8
+        running: false
+        cut: false
+      - label: Wed 14
+        new: 1
+        done: 0
+        open: 9
+        running: false
+        cut: false

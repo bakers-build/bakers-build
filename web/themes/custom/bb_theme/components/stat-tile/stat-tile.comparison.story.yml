@@ -1,0 +1,12 @@
+component: bb_theme:stat-tile
+name: Comparison
+props:
+  value: '42'
+  label: Closed tickets
+  source: bb_measurement.closed_tickets
+  window: Q4 2026
+  comparison:
+    value: '37'
+    label: vs. Q3 2026
+    delta: +14 %
+    direction: up

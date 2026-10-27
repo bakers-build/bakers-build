@@ -1,0 +1,50 @@
+component: bb_theme:table
+name: Exact value
+props:
+  variant: ''
+  columns:
+    - key: label
+      label: Project
+    - key: closed
+      label: Closed
+      num: true
+    - key: tokens
+      label: AI tokens
+      num: true
+  rows:
+    - cells:
+        label:
+          kind: text
+          value: atlas
+        closed:
+          kind: text
+          value: '58'
+        tokens:
+          kind: text
+          value: 17.9 B
+          exact: 17,912,004,330 tokens — Sum of run tokens by run start, UTC
+    - cells:
+        label:
+          kind: text
+          value: pfiff
+        closed:
+          kind: text
+          value: '12'
+        tokens:
+          kind: text
+          value: 8.7 B
+          exact: 8,701,220,118 tokens — Sum of run tokens by run start, UTC
+    - cells:
+        label:
+          kind: text
+          value: All projects
+          emphasis: strong
+        closed:
+          kind: text
+          value: '70'
+          emphasis: strong
+        tokens:
+          kind: text
+          value: 26.6 B
+          emphasis: strong
+          exact: 26,613,224,448 tokens — Sum of run tokens by run start, UTC

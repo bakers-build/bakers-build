@@ -309,7 +309,21 @@ DELETED_ALLOWLIST=''
 # `rich-text` only displays processed HTML. Neither can grow a toolbar without
 # changing what every other caller renders. Form (snake_case), sibling of
 # `form_textarea`. 64 + 1 = 65.
-TARGET_COMPONENT_COUNT=65
+# 66 SINCE BAKERS-12: `flow-chart`, tickets created ("new") against tickets
+# closed ("done") per section, the area between the two lines tinted by which
+# one is larger. No existing component fits: `stat-comparison` draws up to six
+# independent lines but has no area between two series, no running or cut
+# section marks (dashed last interval, hollow points) and no ratio; `stat-series`
+# and `stat-ratio` show one value shape each. Generic by B10's test: it knows
+# sections, two counts, an optional open count and a prepared ratio, nothing
+# about tickets. Data Display (kebab-case), sibling of `stat-comparison`.
+# 65 + 1 = 66.
+# 67 SINCE BAKERS-11: `period-range`, the shared statistics period switch — a
+# kind dropdown, previous/next around a calendar picker and the "vs."
+# comparison text, with its own date math. No existing component offers a period: `option_picker`
+# picks values a server rendered, and `week-strip` shows days, it does not
+# choose a range. Data Display (kebab-case). 66 + 1 = 67.
+TARGET_COMPONENT_COUNT=67
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'

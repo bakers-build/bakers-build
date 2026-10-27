@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\BbFigureGroupInterface;
 use Drupal\bb_core\Statistics\FigureDiscovery;
+use Drupal\bb_core\Statistics\Period\PeriodResolver;
 
 /**
  * Builds ordered, titled groups of complete figure payloads.
@@ -27,7 +28,7 @@ final class FigureCollection {
    *   Named entity contexts.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The requesting account.
-   * @param array<string, string> $filters
+   * @param array<string, string|list<string>> $filters
    *   Selected filter values.
    * @param int $now
    *   The request timestamp.
@@ -42,7 +43,7 @@ final class FigureCollection {
     }
     $knownFilters = [];
     foreach ($disclosed as $figure) {
-      $knownFilters += array_fill_keys(array_keys($figure->getFilters()), TRUE);
+      $knownFilters += $this->acceptedFilters($figure->getFilters());
     }
     $unknownFilters = array_diff_key($filters, $knownFilters);
     if ($unknownFilters !== []) {
@@ -66,7 +67,7 @@ final class FigureCollection {
       $figures = [];
       foreach ($group->getFigures() as $figureId) {
         if (isset($disclosed[$figureId])) {
-          $selected = array_intersect_key($filters, $disclosed[$figureId]->getFilters());
+          $selected = array_intersect_key($filters, $this->acceptedFilters($disclosed[$figureId]->getFilters()));
           $figures[] = $this->evaluator
             ->evaluate($disclosed[$figureId], $contexts, $selected, $now)
             ->toArray();
@@ -81,6 +82,23 @@ final class FigureCollection {
       }
     }
     return $result;
+  }
+
+  /**
+   * The request keys a figure accepts: its filters and the period companions.
+   *
+   * @param array<string, array<string, mixed>> $filters
+   *   The figure filter configuration.
+   *
+   * @return array<string, true>
+   *   The accepted keys.
+   */
+  private function acceptedFilters(array $filters): array {
+    $accepted = array_fill_keys(array_keys($filters), TRUE);
+    if (isset($filters['period'])) {
+      $accepted += array_fill_keys(PeriodResolver::COMPANIONS, TRUE);
+    }
+    return $accepted;
   }
 
 }

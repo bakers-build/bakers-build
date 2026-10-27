@@ -27,12 +27,21 @@ interface FigureInput {
   }>;
   filters?: Record<
     string,
-    {
-      label: string;
-      value: string;
-      options: Array<{ value: string; label: string }>;
-    }
+    | {
+        label: string;
+        value: string;
+        options: Array<{ value: string; label: string }>;
+      }
+    | {
+        label: string;
+        type: 'entities';
+        binding: string;
+        value: string[];
+        entities: Array<{ value: string; label: string }>;
+        unassigned: boolean;
+      }
   >;
+  period?: { grouping: 'day' | 'week' | 'month' | 'quarter' };
   empty?: { is_empty: boolean; message: string | null };
 }
 
@@ -43,6 +52,7 @@ const figure = (input: FigureInput) => ({
   description: input.description ?? '',
   generated: '2026-09-21T00:00:00Z',
   filters: input.filters ?? {},
+  ...(input.period ? { period: input.period } : {}),
   categories: input.categories ?? [
     { key: 'day', label: 'Last 24 hours' },
     { key: 'week', label: 'Last 7 days' },
@@ -227,14 +237,18 @@ describe('atomic statistics in the running cockpit', () => {
         filters: {
           period: {
             label: 'Period',
-            value: '7',
+            value: 'year',
             options: [
-              { value: '7', label: '7 days' },
-              { value: '30', label: '30 days' },
-              { value: '365', label: '1 year' },
+              { value: 'week', label: 'Week' },
+              { value: 'month', label: 'Month' },
+              { value: 'quarter', label: 'Quarter' },
+              { value: 'year', label: 'Year' },
+              { value: 'all', label: 'All time' },
+              { value: 'custom', label: 'Custom' },
             ],
           },
         },
+        period: { grouping: 'day' },
       }),
     ]);
     const tui = await bootTui({
@@ -250,20 +264,20 @@ describe('atomic statistics in the running cockpit', () => {
       // text header, and no longer two independent
       // chips.
       expect(tui.frame()).toContain('╭');
-      expect(tui.frame()).toContain('t Range(7d·daily)');
-      // Cycling the single chip through its three presets sends the three
-      // combined values in turn — the server's response drives what the
-      // chip renders next (it is static in this mock, which is why only the
-      // request's filter value is asserted past the first press).
+      expect(tui.frame()).toContain('t Range(Year)');
+      // Cycling the single chip sends the next kind in turn — the server's
+      // response drives what the chip renders next (it is static in this
+      // mock, which is why only the request's filter value is asserted past
+      // the first press). Custom needs dates, so the chip skips it.
       await tui.press('t');
       expect(world.reads()).toBe(2);
-      expect(world.queries.at(-1)).toContain('filter[period]=30');
+      expect(world.queries.at(-1)).toContain('filter[period]=all');
       await tui.press('t');
       expect(world.reads()).toBe(3);
-      expect(world.queries.at(-1)).toContain('filter[period]=365');
+      expect(world.queries.at(-1)).toContain('filter[period]=week');
       await tui.press('t');
       expect(world.reads()).toBe(4);
-      expect(world.queries.at(-1)).toContain('filter[period]=7');
+      expect(world.queries.at(-1)).toContain('filter[period]=month');
     } finally {
       tui.mockInput.pressKey('q');
       await tui.running;
@@ -446,7 +460,7 @@ describe('atomic statistics in the running cockpit', () => {
 
   it.each([
     80, 120,
-  ])('names the partial caption by the active period preset and shows the figure description at %i columns', async (columns) => {
+  ])('names the partial caption by the period grouping and shows the figure description at %i columns', async (columns) => {
     const world = statisticsServices([
       figure({
         id: 'monthly',
@@ -467,14 +481,18 @@ describe('atomic statistics in the running cockpit', () => {
         filters: {
           period: {
             label: 'Period',
-            value: '365',
+            value: 'year',
             options: [
-              { value: '7', label: '7 days' },
-              { value: '30', label: '30 days' },
-              { value: '365', label: '1 year' },
+              { value: 'week', label: 'Week' },
+              { value: 'month', label: 'Month' },
+              { value: 'quarter', label: 'Quarter' },
+              { value: 'year', label: 'Year' },
+              { value: 'all', label: 'All time' },
+              { value: 'custom', label: 'Custom' },
             ],
           },
         },
+        period: { grouping: 'month' },
       }),
     ]);
     const tui = await bootTui({
@@ -622,10 +640,10 @@ describe('atomic statistics in the running cockpit', () => {
       filters: {
         period: {
           label: 'Period',
-          value: '7',
+          value: 'week',
           options: [
-            { value: '7', label: '7 days' },
-            { value: '30', label: '30 days' },
+            { value: 'week', label: 'Week' },
+            { value: 'month', label: 'Month' },
           ],
         },
       },
@@ -657,7 +675,7 @@ describe('atomic statistics in the running cockpit', () => {
         line.includes('Account overview'),
       );
       const chipLine = lines.findIndex((line) =>
-        line.includes('t Range(7d·daily)'),
+        line.includes('t Range(Week)'),
       );
       const tabLine = lines.findIndex((line) => line.includes('[Tickets]'));
       if (overviewLine < 0 || chipLine < 0 || tabLine < 0) {
@@ -672,7 +690,7 @@ describe('atomic statistics in the running cockpit', () => {
       // chip renders above its own content — only one chip strip total,
       // appearing once, below Overview.
       const chipOccurrences = lines.filter((line) =>
-        line.includes('t Range(7d·daily)'),
+        line.includes('t Range(Week)'),
       ).length;
       expect(chipOccurrences).toBe(1);
     } finally {
@@ -842,6 +860,119 @@ describe('atomic statistics in the running cockpit', () => {
     try {
       expect(tui.frame()).toContain('No activity');
       expect(tui.frame()).toContain('Nothing recorded yet.');
+    } finally {
+      tui.mockInput.pressKey('q');
+      await tui.running;
+      await tui.stop();
+    }
+  });
+  it('renders tiles and table user figures without throwing', async () => {
+    const tickets = Array.from({ length: 25 }, (_, n) => ({
+      key: `ticket-${n}`,
+      label: `Ticket ${n}`,
+    }));
+    const byTicket = (value: (n: number) => number | null) =>
+      Object.fromEntries(tickets.map((ticket, n) => [ticket.key, value(n)]));
+    // Every user figure carries the web UI's project picker.
+    const filters = {
+      project: {
+        label: 'Project',
+        type: 'entities' as const,
+        binding: 'project',
+        value: [],
+        entities: [],
+        unassigned: false,
+      },
+    };
+    const overview = figure({
+      id: 'user_overview',
+      label: 'Overview',
+      widget: 'tiles',
+      filters,
+      categories: [{ key: 'total', label: 'Total' }],
+      measurements: [
+        { id: 'closed_tickets', label: 'Closed tickets', values: { total: 3 } },
+        {
+          id: 'runs_per_ticket',
+          label: 'Runs per ticket',
+          values: { total: null },
+        },
+        { id: 'job_rating', label: 'Job rating', values: { total: null } },
+        {
+          id: 'run_tokens',
+          label: 'Run tokens',
+          values: { total: 8_900_000_000 },
+        },
+      ],
+    });
+    const flow = figure({
+      id: 'user_flow',
+      label: 'New vs. done',
+      widget: 'flow',
+      filters,
+      period: { grouping: 'day' },
+      categories: [
+        { key: '2026-10-01', label: 'Oct 1' },
+        { key: '2026-10-02', label: 'Oct 2' },
+      ],
+      measurements: [
+        {
+          id: 'created_tickets',
+          label: 'Created tickets',
+          values: { '2026-10-01': 2, '2026-10-02': 0 },
+        },
+        {
+          id: 'closed_tickets',
+          label: 'Closed tickets',
+          values: { '2026-10-01': 1, '2026-10-02': 3 },
+        },
+      ],
+    });
+    const closed = figure({
+      id: 'user_tickets',
+      label: 'My closed tickets',
+      widget: 'table',
+      filters,
+      categories: tickets,
+      measurements: [
+        {
+          id: 'closed_tickets',
+          label: 'Closed tickets',
+          values: byTicket(() => 1),
+        },
+        { id: 'runs', label: 'Runs', values: byTicket((n) => n) },
+        {
+          id: 'job_rating',
+          label: 'Job rating',
+          values: byTicket((n) => (n % 2 ? null : 4)),
+        },
+        {
+          id: 'run_tokens',
+          label: 'Run tokens',
+          values: byTicket((n) => n * 1000),
+        },
+      ],
+    });
+    const world = statisticsServices(
+      [],
+      [{ id: 'my_work', label: 'My work', figures: [overview, flow, closed] }],
+    );
+    const tui = await bootTui({
+      services: world.services,
+      columns: 80,
+      rows: 40,
+    });
+    try {
+      await tui.renderOnce();
+      expect(
+        tui.renderer.root.findDescendantById('figure-user_overview'),
+      ).toBeTruthy();
+      expect(
+        tui.renderer.root.findDescendantById('figure-user_flow'),
+      ).toBeTruthy();
+      expect(
+        tui.renderer.root.findDescendantById('figure-user_tickets'),
+      ).toBeTruthy();
     } finally {
       tui.mockInput.pressKey('q');
       await tui.running;

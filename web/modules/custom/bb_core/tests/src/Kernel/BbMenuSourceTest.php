@@ -26,7 +26,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * My work and Settings are absent here: My work's route belongs to the
  * tickets view, which `BbRailMyWorkTest` installs, and Settings is fenced
- * to the workspace's own lead, which uid 1 is not.
+ * to the workspace's own lead, which uid 1 is not. Insights is present: its
+ * workspace permission check honours the super user, as core does.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -92,7 +93,7 @@ final class BbMenuSourceTest extends KernelTestBase {
     $by_title = array_column($this->emitted(), NULL, 'title');
     self::assertSame('/acme/groups', $by_title['Groups']['url']);
     self::assertSame('/acme/projects', $by_title['Projects']['url']);
-    self::assertSame(['Groups', 'Projects', 'Teams'], array_keys($by_title));
+    self::assertSame(['Groups', 'Projects', 'Insights', 'Teams'], array_keys($by_title));
   }
 
   /**
@@ -195,10 +196,10 @@ final class BbMenuSourceTest extends KernelTestBase {
    * The entry whose page the request is on is current, and only that one.
    */
   public function testGroupsIsTheActiveEntryOnItsOwnRoute(): void {
-    self::assertSame(['Groups' => TRUE, 'Projects' => FALSE, 'Teams' => FALSE], array_column($this->emitted(), 'in_active_trail', 'title'));
+    self::assertSame(['Groups' => TRUE, 'Projects' => FALSE, 'Insights' => FALSE, 'Teams' => FALSE], array_column($this->emitted(), 'in_active_trail', 'title'));
 
     $this->visit('view.projects.workspace_list', ['bb_workspace' => 'acme']);
-    self::assertSame(['Groups' => FALSE, 'Projects' => TRUE, 'Teams' => FALSE], array_column($this->emitted(), 'in_active_trail', 'title'));
+    self::assertSame(['Groups' => FALSE, 'Projects' => TRUE, 'Insights' => FALSE, 'Teams' => FALSE], array_column($this->emitted(), 'in_active_trail', 'title'));
   }
 
   /**
@@ -219,26 +220,26 @@ final class BbMenuSourceTest extends KernelTestBase {
   }
 
   /**
-   * Groups, Projects, then the Teams heading.
+   * Groups, Projects, Insights, then the Teams heading.
    */
   public function testTheRowsComeOutInTheAgreedOrder(): void {
     $this->createTeam('Platform Crew');
 
     $items = $this->emitted();
 
-    self::assertSame(['Groups', 'Projects', 'Teams'], array_column($items, 'title'));
+    self::assertSame(['Groups', 'Projects', 'Insights', 'Teams'], array_column($items, 'title'));
     self::assertArrayNotHasKey('heading', $items[0]);
-    self::assertTrue($items[2]['heading']);
-    self::assertTrue($items[2]['open']);
-    self::assertArrayNotHasKey('url', $items[2]);
-    self::assertSame('team', $items[2]['icon']);
+    self::assertTrue($items[3]['heading']);
+    self::assertTrue($items[3]['open']);
+    self::assertArrayNotHasKey('url', $items[3]);
+    self::assertSame('team', $items[3]['icon']);
   }
 
   /**
    * Destination rows carry the icon the collapsed rail keeps.
    */
   public function testDestinationRowsCarryTheCollapsedRailIcons(): void {
-    self::assertSame(['Groups' => 'dashboard', 'Projects' => 'project', 'Teams' => 'team'], array_column($this->emitted(), 'icon', 'title'));
+    self::assertSame(['Groups' => 'dashboard', 'Projects' => 'project', 'Insights' => 'report', 'Teams' => 'team'], array_column($this->emitted(), 'icon', 'title'));
   }
 
   /**
@@ -348,10 +349,10 @@ final class BbMenuSourceTest extends KernelTestBase {
    */
   public function testWorkspaceWithoutTeamsOffersCreation(): void {
     $items = $this->emitted();
-    self::assertSame(['Groups', 'Projects', 'Teams'], array_column($items, 'title'));
-    self::assertSame([], $items[2]['below']);
-    self::assertSame('New team', $items[2]['action']['label']);
-    self::assertSame('plus', $items[2]['action']['icon']);
+    self::assertSame(['Groups', 'Projects', 'Insights', 'Teams'], array_column($items, 'title'));
+    self::assertSame([], $items[3]['below']);
+    self::assertSame('New team', $items[3]['action']['label']);
+    self::assertSame('plus', $items[3]['action']['icon']);
   }
 
   /**
@@ -375,6 +376,27 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->createTeam('Theirs Crew', $this->rival);
 
     self::assertSame(['Ours Crew'], array_column($this->teamsGroup()['below'], 'title'));
+  }
+
+  /**
+   * Insights sits between Projects and Settings, for the workspace lead only.
+   */
+  public function testInsightsRailEntryOnlyForLeads(): void {
+    $this->installOgScopeFixture();
+    $lead = $this->setUpCurrentUser(['name' => 'acme-lead']);
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $titles = array_column($this->emitted(), 'title');
+    self::assertSame(['Insights', 'Settings'], array_values(array_intersect($titles, ['Insights', 'Settings'])));
+    $insights = array_column($this->emitted(), NULL, 'title')['Insights'];
+    self::assertSame('/acme/insights', $insights['url']);
+    self::assertFalse($insights['in_active_trail']);
+
+    $this->visit('bb_core.workspace.insights', ['bb_workspace' => 'acme']);
+    self::assertTrue(array_column($this->emitted(), NULL, 'title')['Insights']['in_active_trail']);
+
+    $contributor = $this->setUpCurrentUser(['name' => 'acme-contributor']);
+    $this->addMembership($this->workspace, $contributor, ['contributor']);
+    self::assertNotContains('Insights', array_column($this->emitted(), 'title'));
   }
 
   /**

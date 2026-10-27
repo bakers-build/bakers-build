@@ -3,23 +3,15 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_figure.project_models_trend
-  - bb_core.bb_figure.project_tokens_trend
   - bb_core.bb_figure.team_models_trend
   - bb_core.bb_figure.team_tokens_trend
   - bb_core.bb_figure.team_user_tokens_trend
-  - bb_core.bb_figure.user_models_trend
-  - bb_core.bb_figure.user_tokens_trend
 _core:
   default_config_hash: bakers551_tokens
 id: tokens
 label: Tokens
 weight: 20
 figures:
-- user_tokens_trend
-- user_models_trend
 - team_user_tokens_trend
 - team_tokens_trend
 - team_models_trend
-- project_tokens_trend
-- project_models_trend

@@ -1,0 +1,700 @@
+{
+  "format": "designbook-observations",
+  "capture": {
+    "role": "reference",
+    "source": {
+      "kind": "figma",
+      "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv?node-id=83-1226",
+      "revision": null
+    },
+    "scope": [
+      {
+        "subject": "period-range-month",
+        "view": "desktop",
+        "state": "period-range-month-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:187"
+        }
+      },
+      {
+        "subject": "period-range-kind-dropdown",
+        "view": "desktop",
+        "state": "period-range-kind-dropdown-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "150:13728"
+        }
+      },
+      {
+        "subject": "period-range-month-picker",
+        "view": "desktop",
+        "state": "period-range-month-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "153:1694"
+        }
+      },
+      {
+        "subject": "period-range-week-picker",
+        "view": "desktop",
+        "state": "period-range-week-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1669"
+        }
+      },
+      {
+        "subject": "period-range-quarter-picker",
+        "view": "desktop",
+        "state": "period-range-quarter-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1841"
+        }
+      },
+      {
+        "subject": "period-range-year-picker",
+        "view": "desktop",
+        "state": "period-range-year-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1925"
+        }
+      },
+      {
+        "subject": "period-range-past-period",
+        "view": "desktop",
+        "state": "period-range-past-period-return",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "161:2567"
+        }
+      },
+      {
+        "subject": "period-range-custom",
+        "view": "desktop",
+        "state": "period-range-custom-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:15016"
+        }
+      },
+      {
+        "subject": "stat-tile",
+        "view": "desktop",
+        "state": "stat-tile-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:226"
+        }
+      }
+    ]
+  },
+  "state": "period-range-year-picker-open",
+  "captured_at": "2026-10-25T07:15:07.493990+00:00",
+  "extract": {
+    "subjects": [
+      {
+        "id": "period-range-year-picker",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1925"
+        },
+        "samples": [
+          {
+            "view": "desktop",
+            "state": "period-range-year-picker-open",
+            "structure": {
+              "roots": [
+                "155:1925"
+              ],
+              "nodes": [
+                {
+                  "id": "155:1925",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1925"
+                  },
+                  "children": [
+                    "155:1926",
+                    "155:1984"
+                  ]
+                },
+                {
+                  "id": "155:1926",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1926"
+                  },
+                  "children": [
+                    "155:1927",
+                    "155:1928"
+                  ]
+                },
+                {
+                  "id": "155:1927",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1927"
+                  },
+                  "children": [
+                    "I155:1927;150:13581",
+                    "I155:1927;150:13585"
+                  ]
+                },
+                {
+                  "id": "I155:1927;150:13581",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13581"
+                  },
+                  "children": [
+                    "I155:1927;150:13582",
+                    "I155:1927;150:13583"
+                  ]
+                },
+                {
+                  "id": "I155:1927;150:13582",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13582"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1927;150:13583",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13583"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1927;150:13585",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13585"
+                  },
+                  "children": [
+                    "I155:1927;150:13586",
+                    "I155:1927;150:13589",
+                    "I155:1927;150:13594"
+                  ]
+                },
+                {
+                  "id": "I155:1927;150:13586",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13586"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1927;150:13589",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13589"
+                  },
+                  "children": [
+                    "I155:1927;150:13590",
+                    "I155:1927;150:13593"
+                  ]
+                },
+                {
+                  "id": "I155:1927;150:13590",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13590"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1927;150:13593",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13593"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1927;150:13594",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13594"
+                  },
+                  "children": [
+                    "I155:1927;150:13595"
+                  ]
+                },
+                {
+                  "id": "I155:1927;150:13595",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1927;150:13595"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1928",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1928"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1984",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1984"
+                  },
+                  "children": [
+                    "155:1985",
+                    "155:1989",
+                    "155:1992",
+                    "155:1995",
+                    "155:1998"
+                  ]
+                },
+                {
+                  "id": "155:1985",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1985"
+                  },
+                  "children": [
+                    "155:1986"
+                  ]
+                },
+                {
+                  "id": "155:1986",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1986"
+                  },
+                  "children": [
+                    "155:1987",
+                    "155:1988"
+                  ]
+                },
+                {
+                  "id": "155:1987",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1987"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1988",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1988"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1989",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1989"
+                  },
+                  "children": [
+                    "155:1990"
+                  ]
+                },
+                {
+                  "id": "155:1990",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1990"
+                  },
+                  "children": [
+                    "155:1991"
+                  ]
+                },
+                {
+                  "id": "155:1991",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1991"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1992",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1992"
+                  },
+                  "children": [
+                    "155:1993"
+                  ]
+                },
+                {
+                  "id": "155:1993",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1993"
+                  },
+                  "children": [
+                    "155:1994"
+                  ]
+                },
+                {
+                  "id": "155:1994",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1994"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1995",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1995"
+                  },
+                  "children": [
+                    "155:1996"
+                  ]
+                },
+                {
+                  "id": "155:1996",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1996"
+                  },
+                  "children": [
+                    "155:1997"
+                  ]
+                },
+                {
+                  "id": "155:1997",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1997"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1998",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1998"
+                  },
+                  "children": [
+                    "155:1999"
+                  ]
+                },
+                {
+                  "id": "155:1999",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1999"
+                  },
+                  "children": [
+                    "155:2000"
+                  ]
+                },
+                {
+                  "id": "155:2000",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:2000"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "155:1926",
+                "width": 354,
+                "height": 32,
+                "display": "flex",
+                "direction": "row",
+                "align": "center",
+                "gap": "8px",
+                "frame": "155:1925",
+                "frame_size": [
+                  760,
+                  520
+                ],
+                "frame_style": {
+                  "fill": "var(--color-app,#f1f0ea)",
+                  "padding": "24px",
+                  "direction": "column"
+                },
+                "popover": {
+                  "node": "155:1984",
+                  "role": "picker-popover",
+                  "position": "absolute",
+                  "left": "114px",
+                  "top": "62px",
+                  "width": "240px",
+                  "padding": "12px",
+                  "gap": "6px",
+                  "radius": "8px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "1px var(--color-border,#d6d3ca)",
+                  "shadow": "0px 6px 18px 0px rgba(0,0,0,0.12)"
+                }
+              },
+              "typography": [
+                {
+                  "node": "I155:1927;150:13582",
+                  "text": "Year",
+                  "font_family": "SF Pro",
+                  "font_style": "Medium",
+                  "font_weight": 510,
+                  "font_size": "13px",
+                  "line_height": "1.45",
+                  "color": "var(--color-title,#14171a)",
+                  "text_style": "bb/body-strong"
+                },
+                {
+                  "node": "I155:1927;150:13593",
+                  "text": "This year · 2026",
+                  "font_family": "SF Pro",
+                  "font_style": "Medium",
+                  "font_weight": 510,
+                  "font_size": "13px",
+                  "line_height": "1.45",
+                  "color": "var(--color-title,#14171a)",
+                  "text_style": "bb/body-strong"
+                },
+                {
+                  "node": "155:1928",
+                  "text": "vs. 2025",
+                  "font_family": "SF Pro",
+                  "font_style": "Regular",
+                  "font_weight": 400,
+                  "font_size": "12px",
+                  "line_height": "16px",
+                  "color": "var(--color-text-light,#5b6169)",
+                  "text_style": "vorschlag/meta"
+                }
+              ],
+              "content": [
+                {
+                  "node": "I155:1927;150:13582",
+                  "text": "Year"
+                },
+                {
+                  "node": "I155:1927;150:13593",
+                  "text": "This year · 2026"
+                },
+                {
+                  "node": "155:1928",
+                  "text": "vs. 2025"
+                },
+                {
+                  "node": "155:1986",
+                  "text": "2022 first ticket"
+                },
+                {
+                  "node": "155:1990",
+                  "text": "2023"
+                },
+                {
+                  "node": "155:1993",
+                  "text": "2024"
+                },
+                {
+                  "node": "155:1996",
+                  "text": "2025"
+                },
+                {
+                  "node": "155:1999",
+                  "text": "2026"
+                }
+              ],
+              "interactions": [
+                {
+                  "node": "I155:1927;150:13585",
+                  "kind": "picker-trigger",
+                  "state": "open",
+                  "border": "2px var(--color-focus-ring,#494fe5)"
+                },
+                {
+                  "node": "155:1999",
+                  "kind": "cell",
+                  "state": "selected",
+                  "text": "2026"
+                }
+              ],
+              "properties": {
+                "kind": {
+                  "node": "I155:1927;150:13581",
+                  "role": "kind-select",
+                  "label": "Year",
+                  "height": "32px",
+                  "padding_x": "10px",
+                  "gap": "6px",
+                  "radius": "6px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "1px var(--color-control-border,#707888)",
+                  "icon": "icon/chevron-down 14px"
+                },
+                "range": {
+                  "node": "I155:1927;150:13585",
+                  "role": "range-stepper",
+                  "label": "This year · 2026",
+                  "height": "32px",
+                  "padding_x": "4px",
+                  "gap": "4px",
+                  "radius": "6px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "2px var(--color-focus-ring,#494fe5)",
+                  "previous": "28x28 icon/arrow-left 14px radius 4px",
+                  "label_icon": "icon/calendar 14px",
+                  "label_padding_x": "10px",
+                  "next": "28x28 icon/arrow-right 14px radius 4px"
+                },
+                "picker": {
+                  "list": "single column, gap 6px, cell px 6px py 7px radius 6px, 13px/1.45 Regular; first year shows 12px 'first ticket' hint",
+                  "selected": {
+                    "fill": "var(--color-primary,#494fe5)",
+                    "text_color": "var(--color-on-primary,white)",
+                    "font_weight": 510
+                  }
+                }
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [
+                "https://www.figma.com/api/mcp/asset/3a140805-59d7-4547-90dc-10c86db00fd1.svg",
+                "https://www.figma.com/api/mcp/asset/75e7eb28-806e-40a9-abfc-e3a37227691c.svg",
+                "https://www.figma.com/api/mcp/asset/035170ae-8b80-4787-bf69-20f39671727c.svg",
+                "https://www.figma.com/api/mcp/asset/4d2fc44c-301e-4bb8-a94f-8358e3bb61ac.svg"
+              ],
+              "font_families": [
+                "SF Pro"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "source.revision",
+                "reason": "Figma MCP tools (get_metadata, get_design_context, get_screenshot) return no file version id",
+                "required": false
+              },
+              {
+                "property": "fonts.SF Pro.files",
+                "reason": "Figma tools expose no font binaries for SF Pro (Apple-licensed); only family/style/weight are observed",
+                "required": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parents": [],
+    "images": [
+      {
+        "url": "https://www.figma.com/api/mcp/asset/75e7eb28-806e-40a9-abfc-e3a37227691c.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-arrow-left.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/3a140805-59d7-4547-90dc-10c86db00fd1.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-chevron-down.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/035170ae-8b80-4787-bf69-20f39671727c.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-calendar.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/4d2fc44c-301e-4bb8-a94f-8358e3bb61ac.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-arrow-right.svg"
+      }
+    ],
+    "fonts": [
+      {
+        "family": "SF Pro",
+        "source": "other",
+        "weights": [
+          400,
+          510,
+          590,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": []
+      }
+    ],
+    "captures": [
+      {
+        "subject": "period-range-year-picker",
+        "view": "desktop",
+        "state": "period-range-year-picker-open",
+        "path": "desktop--period-range-year-picker--period-range-year-picker-open.png",
+        "width": 760,
+        "height": 520
+      }
+    ]
+  }
+}

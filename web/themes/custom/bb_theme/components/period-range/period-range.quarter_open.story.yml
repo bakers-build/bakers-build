@@ -1,0 +1,7 @@
+component: bb_theme:period-range
+name: Quarter (picker open)
+props:
+  kind: quarter
+  date: '2026-10-24'
+  today: '2026-10-24'
+  open: picker

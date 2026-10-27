@@ -54,3 +54,9 @@ services:
     class: Drupal\bb_track\Routing\TimeRouteSubscriber
     tags:
       - { name: event_subscriber }
+  bb_track.billing_report:
+    class: Drupal\bb_track\Statistics\BillingReport
+    arguments: ['@entity_type.manager', '@bb_track.assignments']
+  bb_track.billing_report_page:
+    class: Drupal\bb_track\Statistics\BillingReportPage
+    arguments: ['@bb_track.billing_report', '@bb_core.insights_filter_options', '@entity.repository', '@datetime.time', '@form_builder']

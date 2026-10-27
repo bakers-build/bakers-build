@@ -1,0 +1,111 @@
+{
+ "source": {
+  "kind": "figma",
+  "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv",
+  "revision": null
+ },
+ "role": "reference",
+ "elements": [
+  {
+   "id": "insights-overview",
+   "locator": {
+    "kind": "figma-node",
+    "value": "84:13"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 1440,
+     "height": 1815
+    }
+   ]
+  },
+  {
+   "id": "popover-project",
+   "locator": {
+    "kind": "figma-node",
+    "value": "95:1096"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 324,
+     "height": 317
+    }
+   ]
+  },
+  {
+   "id": "popover-person",
+   "locator": {
+    "kind": "figma-node",
+    "value": "95:1947"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 324,
+     "height": 459
+    }
+   ]
+  },
+  {
+   "id": "filter-active",
+   "locator": {
+    "kind": "figma-node",
+    "value": "95:2782"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 1440,
+     "height": 640
+    }
+   ]
+  },
+  {
+   "id": "insights-states",
+   "locator": {
+    "kind": "figma-node",
+    "value": "90:1066"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 2372,
+     "height": 439
+    }
+   ]
+  }
+ ],
+ "assets_dir": "assets"
+}

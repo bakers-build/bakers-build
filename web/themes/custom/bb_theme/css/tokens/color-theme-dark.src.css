@@ -16,6 +16,10 @@
     --color-chart-series-d: var(--color-indigo-300);
     --color-chart-series-e: var(--color-red-400);
     --color-chart-series-f: var(--color-neutral-400);
+    --color-chart-flow-new: var(--color-violet-400);
+    --color-chart-flow-done: var(--color-teal-400);
+    --color-chart-flow-grows: var(--color-red-800);
+    --color-chart-flow-shrinks: var(--color-teal-800);
     --color-control-border: var(--color-neutral-400);
     --color-on-primary: var(--color-neutral-900);
     --color-border: var(--color-neutral-600);

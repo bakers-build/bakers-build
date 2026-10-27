@@ -1,0 +1,56 @@
+component: bb_theme:flow-chart
+name: Default
+props:
+  chart:
+    state: ready
+    label: New vs. done
+    caption: Per day, UTC
+    ratio: '1.01'
+    ratio_label: 'done : new'
+    totals:
+      new: '77'
+      done: '78'
+    open_at: null
+    sections:
+      - label: Mon 12
+        new: 14
+        done: 12
+        open: 50
+        running: false
+        cut: false
+      - label: Tue 13
+        new: 22
+        done: 10
+        open: 62
+        running: false
+        cut: false
+      - label: Wed 14
+        new: 11
+        done: 13
+        open: 60
+        running: false
+        cut: false
+      - label: Thu 15
+        new: 9
+        done: 18
+        open: 51
+        running: false
+        cut: false
+      - label: Fri 16
+        new: 15
+        done: 21
+        open: 45
+        running: false
+        cut: false
+      - label: Sat 17
+        new: 4
+        done: 3
+        open: 46
+        running: false
+        cut: false
+      - label: Sun 18
+        new: 2
+        done: 1
+        open: 47
+        running: false
+        cut: false

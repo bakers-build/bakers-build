@@ -11,19 +11,19 @@ Feature: Composite statistics figures selected by named contexts
     When the API client reads "/jsonapi/bakers/statistics?user_id={user.crew-mate}"
     Then the API response status is 200
     And the statistics discovery lists "user_overview"
-    And the statistics discovery lists "user_tickets_trend"
+    And the statistics discovery lists "user_flow"
     When the API client reads "/jsonapi/bakers/statistics/user_overview?user_id={user.crew-mate}"
     Then the API response status is 200
     And the figure value carries categories and measurements
     Given membership "membership.crew-mate.team.home" holds no extra role
 
-  Scenario: Self identity does not replace a figure permission
+  Scenario: Every account reads its own figures without a rank
     Given the API client is "north-contributor"
     When the API client reads "/jsonapi/bakers/statistics?user_id={user.member}"
     Then the API response status is 200
-    And the statistics discovery omits "user_overview"
+    And the statistics discovery lists "user_overview"
     When the API client reads "/jsonapi/bakers/statistics/user_overview?user_id={user.member}"
-    Then the API response status is 403
+    Then the API response status is 200
 
   Scenario: A member cannot read another account's figures
     Given the API client is "north-contributor"
@@ -69,13 +69,31 @@ Feature: Composite statistics figures selected by named contexts
     When the API client reads "/jsonapi/bakers/statistics?team_id={team.home}"
     Then the API response status is 200
     And the statistics discovery lists "team_members"
-    When the API client reads "/jsonapi/bakers/statistics/team_members?team_id={team.home}&filter[period]=30"
+    When the API client reads "/jsonapi/bakers/statistics/team_members?team_id={team.home}&filter[period]=month"
     Then the API response status is 200
     And the figure value carries categories and measurements
     Given membership "membership.crew-mate.team.home" holds no extra role
     When the API client reads "/jsonapi/bakers/statistics?team_id={team.home}"
     Then the API response status is 200
     And the statistics discovery omits "team_members"
+
+  Scenario: A workspace lead reads the workspace Insights figures
+    Given the API client is "fixture-lead"
+    When the API client reads "/jsonapi/bakers/statistics?workspace_id={workspace.home}"
+    Then the API response status is 200
+    And the statistics discovery lists "workspace_overview"
+    And the statistics discovery lists "workspace_people"
+    When the API client reads "/jsonapi/bakers/statistics/workspace_overview?workspace_id={workspace.home}"
+    Then the API response status is 200
+    And the figure value carries categories and measurements
+
+  Scenario: A workspace contributor cannot read the workspace Insights figures
+    Given the API client is "north-contributor"
+    When the API client reads "/jsonapi/bakers/statistics?workspace_id={workspace.home}"
+    Then the API response status is 200
+    And the statistics discovery omits "workspace_overview"
+    When the API client reads "/jsonapi/bakers/statistics/workspace_overview?workspace_id={workspace.home}"
+    Then the API response status is 403
 
   Scenario Outline: An account with no membership is disclosed no figures
     Given the API client is "<account>"
@@ -85,6 +103,9 @@ Feature: Composite statistics figures selected by named contexts
     When the API client reads "/jsonapi/bakers/statistics?team_id={team.home}"
     Then the API response status is 200
     And the statistics discovery omits "team_projects"
+    When the API client reads "/jsonapi/bakers/statistics?workspace_id={workspace.home}"
+    Then the API response status is 200
+    And the statistics discovery omits "workspace_overview"
 
     Examples:
       | account            |

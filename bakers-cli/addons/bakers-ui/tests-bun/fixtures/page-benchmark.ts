@@ -122,9 +122,12 @@ export const benchTicketDocument = () => {
 };
 
 const PERIODS = [
-  { value: '7', label: 'Last 7 days' },
-  { value: '30', label: 'Last 30 days' },
-  { value: '365', label: 'Last year' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'year', label: 'Year' },
+  { value: 'all', label: 'All time' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 const days = (count: number) =>
@@ -166,14 +169,13 @@ const statFigure = (
 });
 
 const statisticsGroups = (period: string) => {
-  const span = period === '365' ? 12 : Number(period);
   const categories =
-    period === '365'
+    period === 'year' || period === 'all'
       ? Array.from({ length: 12 }, (_, index) => {
           const key = `2025-${String(index + 1).padStart(2, '0')}`;
           return { key, label: key };
         })
-      : days(span);
+      : days(period === 'week' ? 7 : 30);
   const series = (seed: number) =>
     Object.fromEntries(
       categories.map((category, index) => [
@@ -327,7 +329,7 @@ export function benchWorld(): BenchWorld {
             )?.getQueryString?.() ?? '',
           ),
         );
-        const period = /filter\[period\]=(\d+)/.exec(query)?.[1] ?? '7';
+        const period = /filter\[period\]=(\w+)/.exec(query)?.[1] ?? 'week';
         return { data: { attributes: { groups: statisticsGroups(period) } } };
       }
       return { data: [] };
@@ -541,7 +543,7 @@ const GROUP: InputAction = {
       await wheel(tui, 0, size).then(() => tui.renderOnce());
   },
 };
-const RANGE_LABELS = ['30d·daily', '1y·monthly', '7d·daily'];
+const RANGE_LABELS = ['Month', 'Quarter', 'Year', 'All time', 'Week'];
 const RANGE: InputAction = {
   name: 'range',
   dispatch: key('t'),

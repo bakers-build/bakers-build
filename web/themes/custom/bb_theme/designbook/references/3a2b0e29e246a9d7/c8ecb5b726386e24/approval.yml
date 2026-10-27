@@ -1,0 +1,14 @@
+decided_at: '2026-10-24T14:40:15.176Z'
+fingerprint: 7ead878b98b691598742536ef7c98dfe3e6c914bd7c6b029a2a1af671a792676
+note: Approved by cw 2026-10-24; suitability yes for flow-chart (fill wherever lines differ, AC-5)
+scope:
+  states:
+    - default
+    - hover
+  subjects:
+    - flow-chart-week
+    - flow-chart-month
+    - flow-chart-tooltip
+  views:
+    - desktop
+status: approved

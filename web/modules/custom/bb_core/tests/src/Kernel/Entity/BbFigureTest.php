@@ -111,6 +111,38 @@ final class BbFigureTest extends KernelTestBase {
   }
 
   /**
+   * A ratio may divide only measurements the figure itself evaluates.
+   */
+  public function testRatioMustReferenceFigureMeasurements(): void {
+    $this->measurement('closed_tickets', []);
+    $this->measurement('runs', []);
+    $figure = $this->figure([
+      'measurements' => ['closed_tickets'],
+      'ratio' => ['numerator' => 'closed_tickets', 'denominator' => 'runs'],
+    ]);
+
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('ratio');
+    $figure->save();
+  }
+
+  /**
+   * A flow figure reads exactly three measurements: new, done and open.
+   */
+  public function testFlowFigureNeedsNewDoneAndOpen(): void {
+    $this->measurement('closed_tickets', []);
+    $this->measurement('runs', []);
+    $figure = $this->figure([
+      'widget' => 'flow',
+      'measurements' => ['closed_tickets', 'runs'],
+    ]);
+
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('exactly three measurements');
+    $figure->save();
+  }
+
+  /**
    * Figures accept only category strategies implemented by the evaluator.
    */
   public function testFigureRejectsUnknownCategoryType(): void {
@@ -135,10 +167,10 @@ final class BbFigureTest extends KernelTestBase {
       'filters' => [
         'period' => [
           'label' => 'Period',
-          'default' => '14',
+          'default' => 'quarter',
           'options' => [
-            ['value' => '7', 'label' => '7 days'],
-            ['value' => '30', 'label' => '30 days'],
+            ['value' => 'week', 'label' => 'Week'],
+            ['value' => 'month', 'label' => 'Month'],
           ],
         ],
       ],
@@ -159,10 +191,10 @@ final class BbFigureTest extends KernelTestBase {
       'filters' => [
         'period' => [
           'label' => 'Period',
-          'default' => '7',
+          'default' => 'week',
           'options' => [
-            ['value' => '7', 'label' => 'First week'],
-            ['value' => '7', 'label' => 'Duplicate week'],
+            ['value' => 'week', 'label' => 'First week'],
+            ['value' => 'week', 'label' => 'Duplicate week'],
           ],
         ],
       ],
@@ -170,6 +202,117 @@ final class BbFigureTest extends KernelTestBase {
 
     $this->expectException(\InvalidArgumentException::class);
     $this->expectExceptionMessage('unique non-empty options');
+    $figure->save();
+  }
+
+  /**
+   * An entity filter must bind epic, project, team or user outside the context.
+   */
+  public function testEntityFilterRequiresKnownBinding(): void {
+    $this->measurement('closed_tickets', []);
+    $valid = $this->figure([
+      'context_shape' => ['workspace'],
+      'filters' => ['project' => ['label' => 'Project', 'type' => 'entities', 'binding' => 'project']],
+    ]);
+    $valid->save();
+    self::assertSame('project', $valid->getFilters()['project']['binding']);
+
+    $epic = $this->figure([
+      'id' => 'epic_binding_figure',
+      'context_shape' => ['project'],
+      'filters' => ['epic' => ['label' => 'Epic', 'type' => 'entities', 'binding' => 'epic']],
+    ]);
+    $epic->save();
+    self::assertSame('epic', $epic->getFilters()['epic']['binding']);
+
+    $unknown = $this->figure([
+      'id' => 'unknown_binding_figure',
+      'context_shape' => ['workspace'],
+      'filters' => ['machine' => ['label' => 'Machine', 'type' => 'entities', 'binding' => 'machine']],
+    ]);
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('binding');
+    $unknown->save();
+  }
+
+  /**
+   * Tiles show one total per measurement.
+   */
+  public function testTilesWidgetRequiresTotalCategories(): void {
+    $this->measurement('closed_tickets', ['project' => ['field' => 'project_id', 'entity_type' => 'bb_project']]);
+    $this->figure(['widget' => 'tiles', 'categories' => ['type' => 'total']])->save();
+
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('tiles');
+    $this->figure([
+      'id' => 'tiles_by_project',
+      'widget' => 'tiles',
+      'categories' => ['type' => 'dimension', 'dimension' => 'project'],
+    ])->save();
+  }
+
+  /**
+   * A table shows one row per dimension value.
+   */
+  public function testTableWidgetRequiresDimensionCategories(): void {
+    $this->measurement('closed_tickets', ['project' => ['field' => 'project_id', 'entity_type' => 'bb_project']]);
+    $this->figure([
+      'widget' => 'table',
+      'categories' => ['type' => 'dimension', 'dimension' => 'project', 'fill' => TRUE],
+    ])->save();
+
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('table');
+    $this->figure(['id' => 'table_total', 'widget' => 'table', 'categories' => ['type' => 'total']])->save();
+  }
+
+  /**
+   * The rolling presets are gone; every calendar kind is accepted.
+   */
+  public function testFigureAcceptsOnlyCalendarPeriodKinds(): void {
+    $this->measurement('closed_tickets', []);
+    $kinds = ['week', 'month', 'quarter', 'year', 'all', 'custom'];
+    $figure = $this->figure([
+      'categories' => ['type' => 'days'],
+      'filters' => [
+        'period' => [
+          'label' => 'Period',
+          'default' => 'week',
+          'options' => array_map(static fn(string $kind): array => ['value' => $kind, 'label' => $kind], $kinds),
+        ],
+      ],
+    ]);
+    $figure->save();
+    self::assertSame($kinds, array_column($figure->getFilters()['period']['options'], 'value'));
+
+    $legacy = $this->figure([
+      'id' => 'legacy_period_figure',
+      'categories' => ['type' => 'days'],
+      'filters' => [
+        'period' => [
+          'label' => 'Period',
+          'default' => '7',
+          'options' => [['value' => '7', 'label' => '7 days']],
+        ],
+      ],
+    ]);
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('supports only');
+    $legacy->save();
+  }
+
+  /**
+   * A total is one number, so it cannot be split into series.
+   */
+  public function testTotalFigureRejectsSeries(): void {
+    $this->measurement('closed_tickets', ['user' => ['field' => 'uid']]);
+    $figure = $this->figure([
+      'categories' => ['type' => 'total'],
+      'series' => ['dimension' => 'user', 'limit' => 5],
+    ]);
+
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('total');
     $figure->save();
   }
 

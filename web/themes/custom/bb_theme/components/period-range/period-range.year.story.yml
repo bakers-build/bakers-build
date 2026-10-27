@@ -1,0 +1,6 @@
+component: bb_theme:period-range
+name: Year
+props:
+  kind: year
+  date: '2026-10-24'
+  today: '2026-10-24'

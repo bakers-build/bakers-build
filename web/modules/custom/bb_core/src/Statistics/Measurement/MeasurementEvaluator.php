@@ -14,7 +14,7 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
 
   private const SERIES_UNATTRIBUTED = '_unattributed';
   private const SERIES_MISSING = '_missing';
-  private const SERIES_OTHER = '_other';
+  public const SERIES_OTHER = '_other';
 
   private const WINDOWS = [
     'day' => ['label' => '24 hours', 'seconds' => 86400],
@@ -25,6 +25,7 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly MeasurementQuery $query,
+    private readonly ContextBindingResolver $bindingResolver,
   ) {}
 
   /**
@@ -36,8 +37,7 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
     }
     return match ($categoryDefinition['type'] ?? '') {
       'windows' => $this->windows($measurement, $contexts, $categoryDefinition, $now),
-      'days' => $this->days($measurement, $contexts, $categoryDefinition, $now),
-      'months' => $this->months($measurement, $contexts, $now),
+      'days', 'weeks', 'months', 'quarters', 'total' => $this->buckets($measurement, $contexts, $categoryDefinition, $now),
       'dimension' => $this->dimension($measurement, $contexts, $categoryDefinition, $now),
       default => throw new \InvalidArgumentException(sprintf('Unsupported measurement category type "%s".', $categoryDefinition['type'] ?? '')),
     };
@@ -61,88 +61,16 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
   }
 
   /**
-   * Evaluates daily buckets.
+   * Evaluates calendar buckets, oldest first; future buckets stay zero.
    */
-  private function days(BbMeasurementInterface $measurement, array $contexts, array $definition, int $now): MeasurementResult {
+  private function buckets(BbMeasurementInterface $measurement, array $contexts, array $definition, int $now): MeasurementResult {
     $categories = [];
     $values = [];
-    foreach ($this->timeBuckets($definition, $now) as $bucket) {
+    foreach (TimeBuckets::cut($definition, $now) as $bucket) {
       $categories[] = $bucket['category'];
-      $values[$bucket['category']['key']] = $this->measure($measurement, $contexts, $bucket['from'], $bucket['to']);
+      $values[$bucket['category']['key']] = $bucket['from'] > $now ? 0 : $this->measure($measurement, $contexts, $bucket['from'], $bucket['to']);
     }
     return $this->result($measurement, $categories, $values);
-  }
-
-  /**
-   * Evaluates twelve trailing calendar months, oldest first.
-   *
-   * Real month boundaries via gmmktime rather than 30-day slices: February and
-   * a 31-day month are different widths, and a fixed slice would drift a run
-   * into the wrong bucket. The current month is marked partial, matching the
-   * daily bucket's own today marker.
-   */
-  private function months(BbMeasurementInterface $measurement, array $contexts, int $now): MeasurementResult {
-    $categories = [];
-    $values = [];
-    foreach ($this->timeBuckets(['type' => 'months'], $now) as $bucket) {
-      $categories[] = $bucket['category'];
-      $values[$bucket['category']['key']] = $this->measure($measurement, $contexts, $bucket['from'], $bucket['to']);
-    }
-    return $this->result($measurement, $categories, $values);
-  }
-
-  /**
-   * Computes the ordered time bucket boundaries for a `days`/`months` category.
-   *
-   * Shared by the single-series evaluators above and by `evaluateSeries()`,
-   * so a bucket boundary is computed once regardless of how many series it
-   * queries.
-   *
-   * @param array<string, mixed> $definition
-   *   The category configuration; `type` selects `days` or `months`.
-   * @param int $now
-   *   The evaluation timestamp.
-   *
-   * @return array<int, array{category: array{key: string, label: string, partial?: bool}, from: int, to: int}>
-   *   The ordered buckets, oldest first.
-   */
-  private function timeBuckets(array $definition, int $now): array {
-    if (($definition['type'] ?? '') === 'months') {
-      $month = (int) gmdate('n', $now);
-      $year = (int) gmdate('Y', $now);
-      $buckets = [];
-      for ($offset = 11; $offset >= 0; $offset--) {
-        $from = gmmktime(0, 0, 0, $month - $offset, 1, $year);
-        $next = gmmktime(0, 0, 0, $month - $offset + 1, 1, $year);
-        assert($from !== FALSE && $next !== FALSE);
-        $key = gmdate('Y-m', $from);
-        /** @var array{key: string, label: string, partial?: bool} $category */
-        $category = ['key' => $key, 'label' => gmdate('M Y', $from)];
-        if ($offset === 0) {
-          $category['partial'] = TRUE;
-        }
-        $buckets[] = ['category' => $category, 'from' => $from, 'to' => min($next - 1, $now)];
-      }
-      return $buckets;
-    }
-    $period = (int) ($definition['period'] ?? 7);
-    if (!in_array($period, [7, 30], TRUE)) {
-      throw new \InvalidArgumentException('Daily measurement periods must be 7 or 30 days.');
-    }
-    $today = gmmktime(0, 0, 0, (int) gmdate('n', $now), (int) gmdate('j', $now), (int) gmdate('Y', $now));
-    assert($today !== FALSE);
-    $buckets = [];
-    for ($offset = $period - 1; $offset >= 0; $offset--) {
-      $from = $today - ($offset * 86400);
-      $key = gmdate('Y-m-d', $from);
-      /** @var array{key: string, label: string, partial?: bool} $category */
-      $category = ['key' => $key, 'label' => gmdate('D j', $from)];
-      if ($offset === 0) {
-        $category['partial'] = TRUE;
-      }
-      $buckets[] = ['category' => $category, 'from' => $from, 'to' => min($from + 86399, $now)];
-    }
-    return $buckets;
   }
 
   /**
@@ -160,7 +88,7 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
     if ($dimension === NULL) {
       throw new \InvalidArgumentException(sprintf('Measurement "%s" does not define dimension "%s".', $measurement->id(), $dimensionKey));
     }
-    $buckets = $this->timeBuckets($categoryDefinition, $now);
+    $buckets = TimeBuckets::cut($categoryDefinition, $now);
     $categories = array_column($buckets, 'category');
 
     // One grouped query per bucket; accumulate per-group values keyed by
@@ -169,7 +97,7 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
     $totalsByGroup = [];
     foreach ($buckets as $bucket) {
       $bucketKey = $bucket['category']['key'];
-      $grouped = $this->measureGrouped($measurement, $contexts, $bucket['from'], $bucket['to'], $dimension['field']);
+      $grouped = $bucket['from'] > $now ? [] : $this->measureGrouped($measurement, $contexts, $bucket['from'], $bucket['to'], $dimension['field']);
       foreach ($grouped as $groupValue => $value) {
         $groupValue = (string) $groupValue;
         $valuesByGroup[$groupValue][$bucketKey] = $value;
@@ -296,6 +224,27 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function earliest(BbMeasurementInterface $measurement, array $contexts, int $now): ?int {
+    $operation = $measurement->getOperation();
+    if (($operation['type'] ?? '') !== 'divide') {
+      return $this->query->earliest($measurement, $contexts, $now);
+    }
+    $storage = $this->entityTypeManager->getStorage('bb_measurement');
+    $times = [];
+    foreach ([$operation['numerator'], $operation['denominator']] as $id) {
+      $dependency = $storage->load($id);
+      if (!$dependency instanceof BbMeasurementInterface) {
+        throw new \InvalidArgumentException(sprintf('Derived measurement "%s" references an unknown dependency.', $measurement->id()));
+      }
+      $times[] = $this->earliest($dependency, $contexts, $now);
+    }
+    $times = array_filter($times, static fn(?int $time): bool => $time !== NULL);
+    return $times === [] ? NULL : min($times);
+  }
+
+  /**
    * Evaluates a configured dimension — an entity reference or a scalar value.
    */
   private function dimension(BbMeasurementInterface $measurement, array $contexts, array $definition, int $now): MeasurementResult {
@@ -304,11 +253,14 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
     if ($dimension === NULL) {
       throw new \InvalidArgumentException(sprintf('Measurement "%s" does not define dimension "%s".', $measurement->id(), $dimensionKey));
     }
-    $period = (int) ($definition['period'] ?? 30);
-    $counts = $this->measureGrouped($measurement, $contexts, $now - ($period * 86400), $now, $dimension['field']);
+    [$from, $to] = TimeBuckets::range($definition);
+    $counts = $from > $now ? [] : $this->measureGrouped($measurement, $contexts, $from, min($to, $now), $dimension['field']);
     $rows = ($dimension['entity_type'] ?? '') === ''
       ? $this->scalarDimensionRows($counts)
       : $this->entityDimensionRows($counts, (string) $dimension['entity_type']);
+    if (!empty($definition['fill']) && ($dimension['entity_type'] ?? '') === 'bb_project') {
+      $rows = $this->fillProjects($rows, $contexts, ($measurement->getOperation()['type'] ?? '') === 'avg' ? NULL : 0);
+    }
     // Rank by measured value, descending, exactly as evaluateSeries() already
     // ranks its series: the row a reader wants first is the biggest one, not
     // the alphabetically first one. The label is the tie-break so equal values
@@ -328,15 +280,37 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
   }
 
   /**
+   * Adds a row for every project in scope that has no value yet.
+   *
+   * @param array<int, array{key: string, label: string, value: int|float|null}> $rows
+   *   The measured rows.
+   * @param array<string, mixed> $contexts
+   *   The named contexts and restrictions.
+   * @param int|null $fill
+   *   The value of a project without data.
+   *
+   * @return array<int, array{key: string, label: string, value: int|float|null}>
+   *   The rows, one per project in scope.
+   */
+  private function fillProjects(array $rows, array $contexts, ?int $fill): array {
+    $rows = array_column($rows, NULL, 'key');
+    foreach ($this->entityTypeManager->getStorage('bb_project')->loadMultiple($this->bindingResolver->projectsInScope($contexts)) as $project) {
+      $key = (string) $project->uuid();
+      $rows[$key] ??= ['key' => $key, 'label' => (string) $project->label(), 'value' => $fill];
+    }
+    return array_values($rows);
+  }
+
+  /**
    * Rows for a scalar dimension: a grouped value is its own key and label.
    *
    * A run's model or state has no entity behind it, so nothing is loaded and
    * nothing can fail to resolve; the empty group is the unattributed row.
    *
-   * @param array<string, int> $counts
+   * @param array<string, int|float> $counts
    *   The grouped values keyed by the raw field value.
    *
-   * @return array<int, array{key: string, label: string, value: int}>
+   * @return array<int, array{key: string, label: string, value: int|float}>
    *   The dimension rows.
    */
   private function scalarDimensionRows(array $counts): array {
@@ -353,12 +327,12 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
   /**
    * Rows for an entity dimension: a grouped id resolves to its uuid and label.
    *
-   * @param array<string, int> $counts
+   * @param array<string, int|float> $counts
    *   The grouped values keyed by the referenced entity id.
    * @param string $entityTypeId
    *   The entity type the grouped field references.
    *
-   * @return array<int, array{key: string, label: string, value: int}>
+   * @return array<int, array{key: string, label: string, value: int|float}>
    *   The dimension rows.
    */
   private function entityDimensionRows(array $counts, string $entityTypeId): array {
@@ -404,29 +378,32 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
   }
 
   /**
-   * Measures one window under the measurement's operation (count or sum).
+   * Measures one window under the measurement's operation.
    *
    * @param \Drupal\bb_core\BbMeasurementInterface $measurement
    *   The measurement configuration.
-   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   * @param array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>> $contexts
    *   The named context entities.
    * @param int $from
    *   The inclusive lower timestamp.
    * @param int $to
    *   The inclusive upper timestamp.
    */
-  private function measure(BbMeasurementInterface $measurement, array $contexts, int $from, int $to): int {
-    return ($measurement->getOperation()['type'] ?? '') === 'sum'
-      ? $this->query->sum($measurement, $contexts, $from, $to)
-      : $this->query->count($measurement, $contexts, $from, $to);
+  private function measure(BbMeasurementInterface $measurement, array $contexts, int $from, int $to): int|float|null {
+    return match ($measurement->getOperation()['type'] ?? '') {
+      'sum' => $this->query->sum($measurement, $contexts, $from, $to),
+      'avg' => $this->query->avg($measurement, $contexts, $from, $to),
+      'count_over' => $this->query->countOver($measurement, $contexts, $from, $to)[''] ?? 0,
+      default => $this->query->count($measurement, $contexts, $from, $to),
+    };
   }
 
   /**
-   * Measures one grouped window under the operation (count or sum).
+   * Measures one grouped window under the measurement's operation.
    *
    * @param \Drupal\bb_core\BbMeasurementInterface $measurement
    *   The measurement configuration.
-   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   * @param array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>> $contexts
    *   The named context entities.
    * @param int $from
    *   The inclusive lower timestamp.
@@ -435,13 +412,16 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
    * @param string $field
    *   The source field used for grouping.
    *
-   * @return array<string, int>
+   * @return array<string, int|float>
    *   Values keyed by source field value.
    */
   private function measureGrouped(BbMeasurementInterface $measurement, array $contexts, int $from, int $to, string $field): array {
-    return ($measurement->getOperation()['type'] ?? '') === 'sum'
-      ? $this->query->sumGrouped($measurement, $contexts, $from, $to, $field)
-      : $this->query->grouped($measurement, $contexts, $from, $to, $field);
+    return match ($measurement->getOperation()['type'] ?? '') {
+      'sum' => $this->query->sumGrouped($measurement, $contexts, $from, $to, $field),
+      'avg' => $this->query->avgGrouped($measurement, $contexts, $from, $to, $field),
+      'count_over' => $this->query->countOver($measurement, $contexts, $from, $to, $field),
+      default => $this->query->grouped($measurement, $contexts, $from, $to, $field),
+    };
   }
 
   /**

@@ -30,13 +30,28 @@ export interface StatisticFilter {
   options: StatisticFilterOption[];
 }
 
+const GROUPINGS = ['day', 'week', 'month', 'quarter'] as const;
+
+const WIDGETS = [
+  'matrix',
+  'line',
+  'grouped_horizontal_bars',
+  'bars',
+  'tiles',
+  'flow',
+  'table',
+] as const;
+
 export interface StatisticFigure {
   id: string;
   label: string;
   description: string;
-  widget: 'matrix' | 'line' | 'grouped_horizontal_bars';
+  /** `tiles`, `flow`, `table` and `bars` render through the bars fallback. */
+  widget: (typeof WIDGETS)[number];
   generated: string;
   filters: Record<string, StatisticFilter>;
+  /** Bucket size of the selected period; absent on `windows` figures. */
+  period?: { grouping: (typeof GROUPINGS)[number] };
   categories: StatisticCategory[];
   measurements: StatisticMeasurement[];
   empty: { is_empty: boolean; message: string | null };
@@ -177,9 +192,7 @@ function figureOf(value: unknown): StatisticFigure | undefined {
     typeof row.id !== 'string' ||
     typeof row.label !== 'string' ||
     typeof row.description !== 'string' ||
-    !['matrix', 'line', 'grouped_horizontal_bars'].includes(
-      String(row.widget),
-    ) ||
+    !(WIDGETS as readonly string[]).includes(String(row.widget)) ||
     typeof row.generated !== 'string' ||
     !Array.isArray(row.categories) ||
     !Array.isArray(row.measurements) ||
@@ -198,8 +211,14 @@ function figureOf(value: unknown): StatisticFigure | undefined {
   if (categories.includes(undefined) || measurements.includes(undefined))
     return undefined;
 
+  const grouping = recordOf(row.period)?.grouping;
+  const period = GROUPINGS.find((item) => item === grouping);
+
   const parsedFilters: Record<string, StatisticFilter> = {};
   for (const [key, item] of Object.entries(filters)) {
+    // An entity filter (project, team, person) picks UUIDs in the web UI; the
+    // cockpit offers no picker for it, so it is left out, not refused.
+    if (recordOf(item)?.type === 'entities') continue;
     const parsed = filterOf(item);
     if (!parsed) return undefined;
     parsedFilters[key] = parsed;
@@ -212,6 +231,7 @@ function figureOf(value: unknown): StatisticFigure | undefined {
     widget: row.widget as StatisticFigure['widget'],
     generated: row.generated,
     filters: parsedFilters,
+    ...(period ? { period: { grouping: period } } : {}),
     categories: categories as StatisticCategory[],
     measurements: measurements as StatisticMeasurement[],
     empty: {
@@ -235,7 +255,12 @@ function groupOf(value: unknown): StatisticFigureGroup | undefined {
     !Array.isArray(row.figures)
   )
     return undefined;
-  const figures = row.figures.map(figureOf);
+  // A figure whose widget the CLI cannot draw is skipped, not malformed.
+  const figures = row.figures
+    .filter((figure) =>
+      (WIDGETS as readonly string[]).includes(String(recordOf(figure)?.widget)),
+    )
+    .map(figureOf);
   if (figures.includes(undefined)) return undefined;
   return {
     id: row.id,
@@ -276,5 +301,10 @@ export async function loadGroupStatistics(
   const groups = source.map(groupOf);
   if (groups.includes(undefined))
     return { kind: 'error', message: 'malformed statistics document' };
-  return { kind: 'ok', groups: groups as StatisticFigureGroup[] };
+  return {
+    kind: 'ok',
+    groups: (groups as StatisticFigureGroup[]).filter(
+      (group) => group.figures.length > 0,
+    ),
+  };
 }

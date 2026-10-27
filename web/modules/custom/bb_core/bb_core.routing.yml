@@ -158,10 +158,23 @@ bb_core.conductor_offline:
 bb_core.my_work.stats:
   path: '/_workspace/{bb_workspace}/stats'
   defaults:
-    _controller: '\Drupal\bb_core\Controller\BbStatsController::stats'
+    _controller: '\Drupal\bb_core\Controller\BbStatsController::myWork'
     _title: 'Stats'
   requirements:
     _user_is_logged_in: 'TRUE'
+
+# Insights › Overview: the workspace figures, for the workspace's leads only.
+# The permission is checked in this workspace (not the OG union), so a lead
+# elsewhere is refused; the workspace boundary answers 404 to an outsider.
+bb_core.workspace.insights:
+  path: '/_workspace/{bb_workspace}/insights'
+  defaults:
+    _controller: '\Drupal\bb_core\Controller\BbStatsController::insights'
+    _title: 'Insights'
+    _bb_stats_contexts:
+      workspace: bb_workspace
+  requirements:
+    _bb_workspace_permission: 'view bakers figure workspace_overview'
 
 bb_core.statistics.index:
   path: '/%jsonapi%/bakers/statistics'

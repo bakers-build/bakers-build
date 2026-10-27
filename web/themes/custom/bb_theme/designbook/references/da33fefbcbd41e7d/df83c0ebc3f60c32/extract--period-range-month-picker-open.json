@@ -1,0 +1,870 @@
+{
+  "format": "designbook-observations",
+  "capture": {
+    "role": "reference",
+    "source": {
+      "kind": "figma",
+      "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv?node-id=83-1226",
+      "revision": null
+    },
+    "scope": [
+      {
+        "subject": "period-range-month",
+        "view": "desktop",
+        "state": "period-range-month-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:187"
+        }
+      },
+      {
+        "subject": "period-range-kind-dropdown",
+        "view": "desktop",
+        "state": "period-range-kind-dropdown-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "150:13728"
+        }
+      },
+      {
+        "subject": "period-range-month-picker",
+        "view": "desktop",
+        "state": "period-range-month-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "153:1694"
+        }
+      },
+      {
+        "subject": "period-range-week-picker",
+        "view": "desktop",
+        "state": "period-range-week-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1669"
+        }
+      },
+      {
+        "subject": "period-range-quarter-picker",
+        "view": "desktop",
+        "state": "period-range-quarter-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1841"
+        }
+      },
+      {
+        "subject": "period-range-year-picker",
+        "view": "desktop",
+        "state": "period-range-year-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1925"
+        }
+      },
+      {
+        "subject": "period-range-past-period",
+        "view": "desktop",
+        "state": "period-range-past-period-return",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "161:2567"
+        }
+      },
+      {
+        "subject": "period-range-custom",
+        "view": "desktop",
+        "state": "period-range-custom-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:15016"
+        }
+      },
+      {
+        "subject": "stat-tile",
+        "view": "desktop",
+        "state": "stat-tile-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:226"
+        }
+      }
+    ]
+  },
+  "state": "period-range-month-picker-open",
+  "captured_at": "2026-10-25T07:15:07.493990+00:00",
+  "extract": {
+    "subjects": [
+      {
+        "id": "period-range-month-picker",
+        "locator": {
+          "kind": "figma-node",
+          "value": "153:1694"
+        },
+        "samples": [
+          {
+            "view": "desktop",
+            "state": "period-range-month-picker-open",
+            "structure": {
+              "roots": [
+                "153:1694"
+              ],
+              "nodes": [
+                {
+                  "id": "153:1694",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1694"
+                  },
+                  "children": [
+                    "153:1695",
+                    "153:1714"
+                  ]
+                },
+                {
+                  "id": "153:1695",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1695"
+                  },
+                  "children": [
+                    "153:1696",
+                    "153:1713"
+                  ]
+                },
+                {
+                  "id": "153:1696",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1696"
+                  },
+                  "children": [
+                    "I153:1696;150:13581",
+                    "I153:1696;150:13585"
+                  ]
+                },
+                {
+                  "id": "I153:1696;150:13581",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13581"
+                  },
+                  "children": [
+                    "I153:1696;150:13582",
+                    "I153:1696;150:13583"
+                  ]
+                },
+                {
+                  "id": "I153:1696;150:13582",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13582"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I153:1696;150:13583",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13583"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I153:1696;150:13585",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13585"
+                  },
+                  "children": [
+                    "I153:1696;150:13586",
+                    "I153:1696;150:13589",
+                    "I153:1696;150:13594"
+                  ]
+                },
+                {
+                  "id": "I153:1696;150:13586",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13586"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I153:1696;150:13589",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13589"
+                  },
+                  "children": [
+                    "I153:1696;150:13590",
+                    "I153:1696;150:13593"
+                  ]
+                },
+                {
+                  "id": "I153:1696;150:13590",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13590"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I153:1696;150:13593",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13593"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I153:1696;150:13594",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13594"
+                  },
+                  "children": [
+                    "I153:1696;150:13595"
+                  ]
+                },
+                {
+                  "id": "I153:1696;150:13595",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I153:1696;150:13595"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1713",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1713"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1714",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1714"
+                  },
+                  "children": [
+                    "153:1715",
+                    "153:1721",
+                    "153:1728",
+                    "153:1735",
+                    "153:1742"
+                  ]
+                },
+                {
+                  "id": "153:1715",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1715"
+                  },
+                  "children": [
+                    "153:1716",
+                    "153:1718",
+                    "153:1719"
+                  ]
+                },
+                {
+                  "id": "153:1716",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1716"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1718",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1718"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1719",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1719"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1721",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1721"
+                  },
+                  "children": [
+                    "153:1722",
+                    "153:1724",
+                    "153:1726"
+                  ]
+                },
+                {
+                  "id": "153:1722",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1722"
+                  },
+                  "children": [
+                    "153:1723"
+                  ]
+                },
+                {
+                  "id": "153:1723",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1723"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1724",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1724"
+                  },
+                  "children": [
+                    "153:1725"
+                  ]
+                },
+                {
+                  "id": "153:1725",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1725"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1726",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1726"
+                  },
+                  "children": [
+                    "153:1727"
+                  ]
+                },
+                {
+                  "id": "153:1727",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1727"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1728",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1728"
+                  },
+                  "children": [
+                    "153:1729",
+                    "153:1731",
+                    "153:1733"
+                  ]
+                },
+                {
+                  "id": "153:1729",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1729"
+                  },
+                  "children": [
+                    "153:1730"
+                  ]
+                },
+                {
+                  "id": "153:1730",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1730"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1731",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1731"
+                  },
+                  "children": [
+                    "153:1732"
+                  ]
+                },
+                {
+                  "id": "153:1732",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1732"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1733",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1733"
+                  },
+                  "children": [
+                    "153:1734"
+                  ]
+                },
+                {
+                  "id": "153:1734",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1734"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1735",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1735"
+                  },
+                  "children": [
+                    "153:1736",
+                    "153:1738",
+                    "153:1740"
+                  ]
+                },
+                {
+                  "id": "153:1736",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1736"
+                  },
+                  "children": [
+                    "153:1737"
+                  ]
+                },
+                {
+                  "id": "153:1737",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1737"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1738",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1738"
+                  },
+                  "children": [
+                    "153:1739"
+                  ]
+                },
+                {
+                  "id": "153:1739",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1739"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1740",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1740"
+                  },
+                  "children": [
+                    "153:1741"
+                  ]
+                },
+                {
+                  "id": "153:1741",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1741"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1742",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1742"
+                  },
+                  "children": [
+                    "153:1743",
+                    "153:1745",
+                    "153:1747"
+                  ]
+                },
+                {
+                  "id": "153:1743",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1743"
+                  },
+                  "children": [
+                    "153:1744"
+                  ]
+                },
+                {
+                  "id": "153:1744",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1744"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1745",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1745"
+                  },
+                  "children": [
+                    "153:1746"
+                  ]
+                },
+                {
+                  "id": "153:1746",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1746"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "153:1747",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1747"
+                  },
+                  "children": [
+                    "153:1748"
+                  ]
+                },
+                {
+                  "id": "153:1748",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "153:1748"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "153:1695",
+                "width": 430,
+                "height": 32,
+                "display": "flex",
+                "direction": "row",
+                "align": "center",
+                "gap": "8px",
+                "frame": "153:1694",
+                "frame_size": [
+                  760,
+                  520
+                ],
+                "frame_style": {
+                  "fill": "var(--color-app,#f1f0ea)",
+                  "padding": "24px",
+                  "direction": "column"
+                },
+                "popover": {
+                  "node": "153:1714",
+                  "role": "picker-popover",
+                  "position": "absolute",
+                  "left": "114px",
+                  "top": "62px",
+                  "width": "280px",
+                  "padding": "12px",
+                  "gap": "8px",
+                  "radius": "8px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "1px var(--color-border,#d6d3ca)",
+                  "shadow": "0px 6px 18px 0px rgba(0,0,0,0.12)"
+                }
+              },
+              "typography": [
+                {
+                  "node": "I153:1696;150:13582",
+                  "text": "Month",
+                  "font_family": "SF Pro",
+                  "font_style": "Medium",
+                  "font_weight": 510,
+                  "font_size": "13px",
+                  "line_height": "1.45",
+                  "color": "var(--color-title,#14171a)",
+                  "text_style": "bb/body-strong"
+                },
+                {
+                  "node": "I153:1696;150:13593",
+                  "text": "This month · Oct 2026",
+                  "font_family": "SF Pro",
+                  "font_style": "Medium",
+                  "font_weight": 510,
+                  "font_size": "13px",
+                  "line_height": "1.45",
+                  "color": "var(--color-title,#14171a)",
+                  "text_style": "bb/body-strong"
+                },
+                {
+                  "node": "153:1713",
+                  "text": "vs. Sep 2026",
+                  "font_family": "SF Pro",
+                  "font_style": "Regular",
+                  "font_weight": 400,
+                  "font_size": "12px",
+                  "line_height": "16px",
+                  "color": "var(--color-text-light,#5b6169)",
+                  "text_style": "vorschlag/meta"
+                }
+              ],
+              "content": [
+                {
+                  "node": "I153:1696;150:13582",
+                  "text": "Month"
+                },
+                {
+                  "node": "I153:1696;150:13593",
+                  "text": "This month · Oct 2026"
+                },
+                {
+                  "node": "153:1713",
+                  "text": "vs. Sep 2026"
+                },
+                {
+                  "node": "153:1718",
+                  "text": "2026"
+                },
+                {
+                  "node": "153:1714",
+                  "text": "Jan Feb Mar / Apr May Jun / Jul Aug Sep / Oct Nov Dec"
+                }
+              ],
+              "interactions": [
+                {
+                  "node": "I153:1696;150:13585",
+                  "kind": "picker-trigger",
+                  "state": "open",
+                  "border": "2px var(--color-focus-ring,#494fe5)"
+                },
+                {
+                  "node": "153:1743",
+                  "kind": "cell",
+                  "state": "selected",
+                  "text": "Oct"
+                },
+                {
+                  "node": "153:1745",
+                  "kind": "cell",
+                  "state": "future-disabled",
+                  "opacity": 0.5,
+                  "text": "Nov"
+                },
+                {
+                  "node": "153:1747",
+                  "kind": "cell",
+                  "state": "future-disabled",
+                  "opacity": 0.5,
+                  "text": "Dec"
+                }
+              ],
+              "properties": {
+                "kind": {
+                  "node": "I153:1696;150:13581",
+                  "role": "kind-select",
+                  "label": "Month",
+                  "height": "32px",
+                  "padding_x": "10px",
+                  "gap": "6px",
+                  "radius": "6px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "1px var(--color-control-border,#707888)",
+                  "icon": "icon/chevron-down 14px"
+                },
+                "range": {
+                  "node": "I153:1696;150:13585",
+                  "role": "range-stepper",
+                  "label": "This month · Oct 2026",
+                  "height": "32px",
+                  "padding_x": "4px",
+                  "gap": "4px",
+                  "radius": "6px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "2px var(--color-focus-ring,#494fe5)",
+                  "previous": "28x28 icon/arrow-left 14px radius 4px",
+                  "label_icon": "icon/calendar 14px",
+                  "label_padding_x": "10px",
+                  "next": "28x28 icon/arrow-right 14px radius 4px"
+                },
+                "picker": {
+                  "header": "arrow-left 14px · year 13px Medium centered · arrow-right 14px",
+                  "grid": "4 rows x 3 cols, gap 6px, cell py 8px radius 6px, text 13px Regular var(--color-text,#2c3137)",
+                  "selected": {
+                    "fill": "var(--color-primary,#494fe5)",
+                    "text_color": "var(--color-on-primary,white)",
+                    "font_weight": 510
+                  }
+                }
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [
+                "https://www.figma.com/api/mcp/asset/3a140805-59d7-4547-90dc-10c86db00fd1.svg",
+                "https://www.figma.com/api/mcp/asset/75e7eb28-806e-40a9-abfc-e3a37227691c.svg",
+                "https://www.figma.com/api/mcp/asset/035170ae-8b80-4787-bf69-20f39671727c.svg",
+                "https://www.figma.com/api/mcp/asset/4d2fc44c-301e-4bb8-a94f-8358e3bb61ac.svg"
+              ],
+              "font_families": [
+                "SF Pro"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "source.revision",
+                "reason": "Figma MCP tools (get_metadata, get_design_context, get_screenshot) return no file version id",
+                "required": false
+              },
+              {
+                "property": "fonts.SF Pro.files",
+                "reason": "Figma tools expose no font binaries for SF Pro (Apple-licensed); only family/style/weight are observed",
+                "required": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parents": [],
+    "images": [
+      {
+        "url": "https://www.figma.com/api/mcp/asset/75e7eb28-806e-40a9-abfc-e3a37227691c.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-arrow-left.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/3a140805-59d7-4547-90dc-10c86db00fd1.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-chevron-down.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/035170ae-8b80-4787-bf69-20f39671727c.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-calendar.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/4d2fc44c-301e-4bb8-a94f-8358e3bb61ac.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-arrow-right.svg"
+      }
+    ],
+    "fonts": [
+      {
+        "family": "SF Pro",
+        "source": "other",
+        "weights": [
+          400,
+          510,
+          590,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": []
+      }
+    ],
+    "captures": [
+      {
+        "subject": "period-range-month-picker",
+        "view": "desktop",
+        "state": "period-range-month-picker-open",
+        "path": "desktop--period-range-month-picker--period-range-month-picker-open.png",
+        "width": 760,
+        "height": 520
+      }
+    ]
+  }
+}
