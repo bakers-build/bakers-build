@@ -29,11 +29,9 @@ permissions:
   - 'view bakers figure team_user_runs_trend'
   - 'view bakers figure team_user_tickets_trend'
   - 'view bakers figure team_user_tokens_trend'
-  - 'view bakers figure user_models_trend'
+  - 'view bakers figure user_flow'
   - 'view bakers figure user_overview'
   - 'view bakers figure user_projects'
-  - 'view bakers figure user_runs_trend'
-  - 'view bakers figure user_tickets_trend'
-  - 'view bakers figure user_tokens_trend'
+  - 'view bakers figure user_tickets'
   - 'view team worklogs'
 role_type: standard

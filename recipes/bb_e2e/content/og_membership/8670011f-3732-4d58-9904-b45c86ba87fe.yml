@@ -1,0 +1,26 @@
+# fixture-claim-owner's workspace rank: contributor carries
+# `claim bakers tickets`, the working rank a conductor owner needs.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 8670011f-3732-4d58-9904-b45c86ba87fe
+  default_langcode: en
+  bundle: default
+  depends:
+    7710d75c-ed4e-4e99-85b8-d1a306c2e3cf: user
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+default:
+  entity_type:
+  - value: bb_workspace
+  entity_bundle:
+  - value: bb_workspace
+  entity_id:
+  - value: 2a92d03c-c4c6-41dc-b194-31aa299ed064
+  state:
+  - value: active
+  uid:
+  - entity: 7710d75c-ed4e-4e99-85b8-d1a306c2e3cf
+  type:
+  - target_id: default
+  roles:
+  - target_id: bb_workspace-bb_workspace-contributor

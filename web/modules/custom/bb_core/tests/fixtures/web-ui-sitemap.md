@@ -37,6 +37,7 @@ with real content is a named follow-up, created after this ticket merges.
 | My work › Stats | `bb_core.my_work.stats` | `/{ws}/stats` | Controller | authenticated | `_user_is_logged_in` (BB-481; a user's own figures are always disclosed to them, so this route adds no permission of its own and the figures still filter themselves) |
 | Groups | `view.groups.workspace_list` | `/{ws}/groups` | View (page display) | `view bb_group` | `_permission` (the display's own access) |
 | Projects | `view.projects.workspace_list` | `/{ws}/projects` | View (page display) | `view bb_project` | `_permission` (the display's own access) |
+| Insights | `bb_core.workspace.insights` | `/{ws}/insights` | Controller | `view bakers figure workspace_overview` in this workspace (workspace lead) | `_bb_workspace_permission` (the workspace figures, all projects of the workspace; contributors, members and guests are refused, an outsider meets the workspace boundary's 404) |
 | Settings | `bb_core.bb_workspace.settings` | `/{ws}/settings` | Controller | `bb_workspace.update` (→ `update any bb_workspace`) | `_entity_access` |
 | Teams | `entity.bb_team.canonical` (one row per team) | `/{ws}/team/{id}` | — (rows added by `BbMenuSource` under the Teams heading) | `bb_team.view` | An `accessCheck(TRUE)` team query, scoped to the ambient workspace |
 
@@ -72,7 +73,7 @@ table above.
 |---|---|---|---|---|---|
 | Overview (default) | `entity.bb_project.canonical` | `/{ws}/project/{id}` | `_entity_view` (`bb_project.full`) | `bb_project.view` | `_entity_access` |
 | Board | `view.project_board.project_board` | `/{ws}/project/{id}/board` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
-| Stats | `bb_core.bb_project.stats` | `/{ws}/project/{id}/stats` | Controller | `bb_project.view` | `_entity_access` |
+| Stats | `bb_core.bb_project.stats` | `/{ws}/project/{id}/stats` | Controller (`BbStatsController::projectStats`: the Insights period, tiles, New vs. done and People for this project, with Epic and Person filters) | `bb_project.view` | `_entity_access` |
 | Tickets | `view.tickets.project_tickets` | `/{ws}/project/{id}/tickets` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
 | Runs | `view.runs.project_runs` | `/{ws}/project/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Conductors | `view.conductors.project_list` | `/{ws}/project/{id}/conductors` | View (page display) | `view bb_conductor` | view's own `access: type: perm`. Rows are this project's conductors, any owner. |

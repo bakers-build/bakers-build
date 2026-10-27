@@ -68,6 +68,11 @@ services:
     class: Drupal\bb_core\EventSubscriber\BbWorkspaceNotFoundSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.my_work_sign_in_subscriber:
+    class: Drupal\bb_core\EventSubscriber\MyWorkSignInSubscriber
+    arguments: ['@current_user']
+    tags:
+      - { name: event_subscriber }
   bb_core.client_version_subscriber:
     class: Drupal\bb_core\EventSubscriber\ClientVersionSubscriber
     arguments: ['@config.factory', '@session_configuration', '@page_cache_kill_switch']
@@ -104,17 +109,22 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@config.factory']
   bb_core.ticket_stall_reason:
     class: Drupal\bb_core\Claim\TicketStallReason
-    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Claim\TicketStallReason:
     alias: bb_core.ticket_stall_reason
   bb_core.ticket_claim:
     class: Drupal\bb_core\Claim\TicketClaimService
-    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@config.factory', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher']
+    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@config.factory', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher', '@bb_core.conductor_owner_access']
   bb_core.conductor_deactivation_reassigner:
     class: Drupal\bb_core\Conductor\ConductorDeactivationReassigner
-    arguments: ['@entity_type.manager', '@logger.channel.bb_core', '@datetime.time']
+    arguments: ['@entity_type.manager', '@logger.channel.bb_core', '@datetime.time', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Conductor\ConductorDeactivationReassigner:
     alias: bb_core.conductor_deactivation_reassigner
+  bb_core.conductor_owner_access:
+    class: Drupal\bb_core\Conductor\ConductorOwnerAccess
+    arguments: ['@entity_type.manager', '@bb_core.workspace_read_scope', '@bb_core.rank_capability', '@bb_core.workspace_resolver']
+  Drupal\bb_core\Conductor\ConductorOwnerAccess:
+    alias: bb_core.conductor_owner_access
   bb_core.ticket_transition_subscriber:
     class: Drupal\bb_core\EventSubscriber\TicketTransitionSubscriber
     arguments: ['@bb_core.ticket_claim']
@@ -277,11 +287,11 @@ services:
 
   bb_core.measurement_query:
     class: Drupal\bb_core\Statistics\Measurement\MeasurementQuery
-    arguments: ['@entity_type.manager', '@bb_core.measurement_context_binding_resolver']
+    arguments: ['@entity_type.manager', '@bb_core.measurement_context_binding_resolver', '@entity_field.manager', '@database']
 
   bb_core.measurement_evaluator:
     class: Drupal\bb_core\Statistics\Measurement\MeasurementEvaluator
-    arguments: ['@entity_type.manager', '@bb_core.measurement_query']
+    arguments: ['@entity_type.manager', '@bb_core.measurement_query', '@bb_core.measurement_context_binding_resolver']
 
   Drupal\bb_core\Statistics\Measurement\MeasurementEvaluatorInterface:
     alias: bb_core.measurement_evaluator
@@ -306,8 +316,16 @@ services:
     class: Drupal\bb_core\Statistics\FigureDiscovery
     arguments: ['@entity_type.manager', '@bb_core.figure_disclosure']
 
+  bb_core.workspace_filter_scope:
+    class: Drupal\bb_core\Statistics\Figure\WorkspaceFilterScope
+    arguments: ['@entity_type.manager', '@?og.membership_manager']
+
   bb_core.figure_filter_resolver:
     class: Drupal\bb_core\Statistics\Figure\FigureFilterResolver
+    arguments: ['@entity.repository', '@bb_core.workspace_filter_scope']
+
+  bb_core.period_resolver:
+    class: Drupal\bb_core\Statistics\Period\PeriodResolver
 
   bb_core.figure_evaluator:
     class: Drupal\bb_core\Statistics\Figure\FigureEvaluator
@@ -315,6 +333,7 @@ services:
       - '@entity_type.manager'
       - '@bb_core.measurement_evaluator'
       - '@bb_core.figure_filter_resolver'
+      - '@bb_core.period_resolver'
 
   bb_core.figure_collection:
     class: Drupal\bb_core\Statistics\Figure\FigureCollection
@@ -325,7 +344,40 @@ services:
 
   bb_core.figure_renderer:
     class: Drupal\bb_core\Statistics\FigureRenderer
-    arguments: ['@bb_core.figure_collection', '@datetime.time', '@request_stack']
+    arguments: ['@bb_core.figure_collection', '@datetime.time', '@request_stack', '@bb_core.people_directory', '@bb_core.ticket_directory']
+
+  bb_core.my_work_stats_page:
+    class: Drupal\bb_core\Statistics\MyWorkStatsPage
+    arguments:
+      - '@bb_core.figure_renderer'
+      - '@bb_core.figure_evaluator'
+      - '@bb_core.figure_filter_resolver'
+      - '@bb_core.insights_filter_options'
+      - '@entity_type.manager'
+      - '@datetime.time'
+      - '@form_builder'
+  bb_core.insights_page:
+    class: Drupal\bb_core\Statistics\InsightsPage
+    arguments:
+      - '@bb_core.figure_renderer'
+      - '@bb_core.figure_evaluator'
+      - '@bb_core.figure_filter_resolver'
+      - '@bb_core.insights_filter_options'
+      - '@entity_type.manager'
+      - '@datetime.time'
+      - '@form_builder'
+      - '@entity.repository'
+
+  bb_core.insights_filter_options:
+    class: Drupal\bb_core\Statistics\InsightsFilterOptions
+    arguments: ['@entity_type.manager', '@bb_core.measurement_evaluator', '@bb_core.period_resolver', '@datetime.time', '@bb_core.project_overview_tickets']
+
+  bb_core.ticket_directory:
+    class: Drupal\bb_core\Statistics\Render\TicketDirectory
+    arguments: ['@entity_type.manager']
+  bb_core.people_directory:
+    class: Drupal\bb_core\Statistics\Render\PeopleDirectory
+    arguments: ['@entity.repository', '@entity_type.manager', '@?og.membership_manager']
 
   # Derivers behind the computed fields on bb_ticket, bb_comment, bb_run
   # and bb_conductor. They are JSON:API surface read by bakers-cli.

@@ -1,0 +1,60 @@
+uuid: 058f0b43-91f6-4e83-a563-2c5630ac9fe2
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.job_rating
+    - bb_core.bb_measurement.run_tokens
+    - bb_core.bb_measurement.runs
+id: user_tickets
+label: 'My closed tickets'
+description: "Your tickets closed in the period with their runs, job rating and run tokens. Date basis: ticket closed_date for the ticket, run creation time for runs and tokens. Attribution basis: the ticket's current assignee, in every workspace."
+weight: 3
+widget: table
+measurements:
+  - closed_tickets
+  - runs
+  - job_rating
+  - run_tokens
+categories:
+  type: dimension
+  dimension: ticket
+series: {  }
+ratio: {  }
+filters:
+  period:
+    label: Period
+    default: month
+    options:
+      -
+        value: week
+        label: Week
+      -
+        value: month
+        label: Month
+      -
+        value: quarter
+        label: Quarter
+      -
+        value: year
+        label: Year
+      -
+        value: all
+        label: 'All time'
+      -
+        value: custom
+        label: Custom
+  project:
+    label: Project
+    type: entities
+    binding: project
+context_shape:
+  - user
+conditions:
+  user:
+    id: bb_route_context
+    negate: false
+    context_mapping:
+      entity: user
+    entity_type: user

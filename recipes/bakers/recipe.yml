@@ -741,6 +741,12 @@ config:
         # referenced file on Save — without it a profile picture upload is
         # refused. `config/sync/user.role.authenticated.yml` grants it too.
         - 'access content'
+        # My work › Stats: everyone reads their own figures. FigureDisclosure
+        # still refuses another account's figures without a rank over them.
+        - 'view bakers figure user_flow'
+        - 'view bakers figure user_overview'
+        - 'view bakers figure user_projects'
+        - 'view bakers figure user_tickets'
     # The account overview on `/user/{user}` renders `user.user.full`, which
     # Drupal only uses while the `full` mode is enabled. The `user` module
     # creates the mode disabled from its own config/install at site install,

@@ -4,35 +4,53 @@ status: true
 dependencies:
   config:
     - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.job_rating
+    - bb_core.bb_measurement.rated_tickets
+    - bb_core.bb_measurement.run_tokens
     - bb_core.bb_measurement.runs
-_core:
-  default_config_hash: 7Xg-dNvZt3EYUxk5cx9AguL9fPm2dxQav5izYquUGsg
 id: user_projects
-label: Projects
-description: "Closed tickets and runs by project. Date basis: ticket closed_date for closed tickets, run creation time for runs. Attribution basis: the ticket's current assignee."
-weight: 0
-widget: grouped_horizontal_bars
+label: 'My projects'
+description: "Closed tickets, runs per closed ticket, job rating and run tokens per project. Date basis: ticket closed_date and run creation time. Attribution basis: the ticket's current assignee, in every workspace."
+weight: 2
+widget: table
 measurements:
   - closed_tickets
   - runs
+  - job_rating
+  - rated_tickets
+  - run_tokens
 categories:
   type: dimension
   dimension: project
 series: {  }
+ratio: {  }
 filters:
   period:
     label: Period
-    default: '7'
+    default: month
     options:
       -
-        value: '7'
-        label: '7 days'
+        value: week
+        label: Week
       -
-        value: '30'
-        label: '30 days'
+        value: month
+        label: Month
       -
-        value: '365'
-        label: '1 year'
+        value: quarter
+        label: Quarter
+      -
+        value: year
+        label: Year
+      -
+        value: all
+        label: 'All time'
+      -
+        value: custom
+        label: Custom
+  project:
+    label: Project
+    type: entities
+    binding: project
 context_shape:
   - user
 conditions:

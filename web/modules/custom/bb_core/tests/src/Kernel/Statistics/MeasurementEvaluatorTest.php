@@ -11,6 +11,7 @@ use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Statistics\Measurement\MeasurementEvaluatorInterface;
 use Drupal\bb_core\Statistics\Measurement\MeasurementResult;
+use Drupal\Core\Config\FileStorage;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\user\UserInterface;
@@ -88,6 +89,57 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
   }
 
   /**
+   * New tickets are bucketed by creation, whether closed, open or unassigned.
+   */
+  public function testCreatedTicketsCountsByCreatedRegardlessOfClosed(): void {
+    $this->installShippedMeasurement('created_tickets');
+    $project = $this->createProject('created');
+    $user = $this->createAccount('alice-created');
+    $day = self::NOW - 2 * self::DAY;
+    $this->createTicketAt($project, $user, $day, $day + self::DAY);
+    $this->createTicketAt($project, $user, $day, NULL);
+    $this->createTicketAt($project, NULL, $day, $day);
+    $this->createTicketAt($project, $user, $day - self::DAY, NULL);
+
+    $values = $this->evaluate('created_tickets', ['project' => $project], [
+      'type' => 'days',
+      ...self::lastDays(7),
+    ])->getValues();
+
+    self::assertSame(3, $values[gmdate('Y-m-d', $day)]);
+    self::assertSame(1, $values[gmdate('Y-m-d', $day - self::DAY)]);
+    self::assertSame(0, $values[gmdate('Y-m-d', $day + self::DAY)]);
+  }
+
+  /**
+   * Open tickets are counted at each section end; the running day at now.
+   */
+  public function testOpenTicketsAtSectionEnd(): void {
+    $this->installShippedMeasurement('open_tickets');
+    $project = $this->createProject('open');
+    $user = $this->createAccount('alice-open');
+    $today = self::NOW - self::NOW % self::DAY;
+    $day = $today - 2 * self::DAY;
+    $endOfDay = $day + self::DAY - 1;
+    $this->createTicketAt($project, $user, $day - 2 * self::DAY, NULL);
+    // Closed exactly at the section end: closed, not open, at that end.
+    $this->createTicketAt($project, $user, $day - self::DAY, $endOfDay);
+    $this->createTicketAt($project, NULL, $day - self::DAY, $day + self::DAY);
+    $this->createTicketAt($project, $user, $day + self::DAY, NULL);
+    // Created later today, after the evaluation time.
+    $this->createTicketAt($project, $user, self::NOW + self::HOUR, NULL);
+
+    $values = $this->evaluate('open_tickets', ['project' => $project], [
+      'type' => 'days',
+      ...self::lastDays(7),
+    ])->getValues();
+
+    self::assertSame(3, $values[gmdate('Y-m-d', $day - self::DAY)]);
+    self::assertSame(2, $values[gmdate('Y-m-d', $day)]);
+    self::assertSame(2, $values[gmdate('Y-m-d', $today)]);
+  }
+
+  /**
    * Daily categories are oldest first and include explicit zeroes.
    */
   public function testDailyCategoriesCoverTheSelectedPeriod(): void {
@@ -98,7 +150,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
 
     $result = $this->evaluate('closed_tickets', ['project' => $project], [
       'type' => 'days',
-      'period' => 7,
+      ...self::lastDays(7),
     ]);
 
     self::assertCount(7, $result->getCategories());
@@ -126,7 +178,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $projects = $this->evaluate('closed_tickets', ['team' => $team], [
       'type' => 'dimension',
       'dimension' => 'project',
-      'period' => 30,
+      ...self::lastDays(30),
     ]);
     self::assertSame(['alpha', 'beta'], array_column($projects->getCategories(), 'label'));
     self::assertSame(2, $projects->getValues()[$alpha->uuid()]);
@@ -135,7 +187,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $users = $this->evaluate('closed_tickets', ['team' => $team], [
       'type' => 'dimension',
       'dimension' => 'user',
-      'period' => 30,
+      ...self::lastDays(30),
     ]);
     self::assertSame(2, $users->getValues()[$alice->uuid()]);
     self::assertSame(1, $users->getValues()[$bob->uuid()]);
@@ -164,7 +216,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $result = $this->evaluate('closed_tickets', ['team' => $team], [
       'type' => 'dimension',
       'dimension' => 'project',
-      'period' => 30,
+      ...self::lastDays(30),
     ]);
 
     self::assertSame(
@@ -238,7 +290,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $result = $this->evaluate('tickets_per_run', ['team' => $team], [
       'type' => 'dimension',
       'dimension' => 'project',
-      'period' => 30,
+      ...self::lastDays(30),
     ]);
 
     self::assertSame([
@@ -268,7 +320,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $results = $this->evaluator()->evaluateSeries(
       $measurement,
       ['project' => $project],
-      ['type' => 'days', 'period' => 7],
+      ['type' => 'days', ...self::lastDays(7)],
       'user',
       1,
       self::NOW,
@@ -308,7 +360,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
 
     $measurement = BbMeasurement::load('closed_tickets');
     self::assertNotNull($measurement);
-    $categories = ['type' => 'days', 'period' => 7];
+    $categories = ['type' => 'days', ...self::lastDays(7)];
     $contexts = ['project' => $project];
     $series = $this->evaluator()->evaluateSeries(
       $measurement,
@@ -343,7 +395,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $results = $this->evaluator()->evaluateSeries(
       $measurement,
       ['project' => $project],
-      ['type' => 'days', 'period' => 7],
+      ['type' => 'days', ...self::lastDays(7)],
       'user',
       5,
       self::NOW,
@@ -378,7 +430,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $results = $this->evaluator()->evaluateSeries(
       $measurement,
       ['project' => $project],
-      ['type' => 'days', 'period' => 7],
+      ['type' => 'days', ...self::lastDays(7)],
       'user',
       5,
       self::NOW,
@@ -420,7 +472,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
     $results = $this->evaluator()->evaluateSeries(
       $measurement,
       ['project' => $project],
-      ['type' => 'days', 'period' => 7],
+      ['type' => 'days', ...self::lastDays(7)],
       'model',
       2,
       self::NOW,
@@ -448,7 +500,245 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
 
     $this->expectException(\InvalidArgumentException::class);
     $this->expectExceptionMessage('does not define dimension');
-    $this->evaluator()->evaluateSeries($measurement, [], ['type' => 'days', 'period' => 7], 'nonexistent', 5, self::NOW);
+    $this->evaluator()->evaluateSeries($measurement, [], ['type' => 'days', ...self::lastDays(7)], 'nonexistent', 5, self::NOW);
+  }
+
+  /**
+   * ISO-week buckets are clipped to the quarter and add up to its total.
+   */
+  public function testWeekBucketsClipToQuarter(): void {
+    $project = $this->createProject('weeks');
+    $user = $this->createAccount('alice-weeks');
+    $this->createTicket($project, $user, self::at(2026, 10, 1, 12));
+    $this->createTicket($project, $user, self::at(2026, 11, 15, 12));
+    $this->createTicket($project, $user, self::at(2026, 12, 31, 12));
+    $this->createTicket($project, $user, self::at(2027, 1, 1, 12));
+    $measurement = BbMeasurement::load('closed_tickets');
+    self::assertNotNull($measurement);
+    $range = ['from' => self::at(2026, 10, 1), 'to' => self::at(2026, 12, 31, 23, 59, 59)];
+    $now = self::at(2027, 1, 10);
+
+    $weeks = $this->evaluator()->evaluate($measurement, ['project' => $project], ['type' => 'weeks'] + $range, $now);
+    $total = $this->evaluator()->evaluate($measurement, ['project' => $project], ['type' => 'total'] + $range, $now);
+
+    $keys = array_column($weeks->getCategories(), 'key');
+    self::assertCount(14, $keys);
+    self::assertSame('2026-W40', $keys[0]);
+    self::assertSame('2026-W53', $keys[13]);
+    self::assertSame('W40', $weeks->getCategories()[0]['label']);
+    self::assertSame(1, $weeks->getValues()['2026-W40']);
+    self::assertSame(1, $weeks->getValues()['2026-W53']);
+    self::assertSame(3, array_sum($weeks->getValues()));
+    self::assertSame(['total' => 3], $total->getValues());
+  }
+
+  /**
+   * Quarter buckets carry stable keys and mark the running quarter partial.
+   */
+  public function testQuarterBuckets(): void {
+    $project = $this->createProject('quarters');
+    $user = $this->createAccount('alice-quarters');
+    $this->createTicket($project, $user, self::at(2024, 2, 10, 12));
+    $this->createTicket($project, $user, self::at(2026, 10, 2, 12));
+    $measurement = BbMeasurement::load('closed_tickets');
+    self::assertNotNull($measurement);
+
+    $result = $this->evaluator()->evaluate($measurement, ['project' => $project], [
+      'type' => 'quarters',
+      'from' => self::at(2024, 1, 1),
+      'to' => self::at(2026, 10, 24, 23, 59, 59),
+    ], self::at(2026, 10, 24, 12));
+
+    $categories = $result->getCategories();
+    self::assertCount(12, $categories);
+    self::assertSame(['key' => '2024-Q1', 'label' => 'Q1 2024'], $categories[0]);
+    self::assertSame('2026-Q4', $categories[11]['key']);
+    self::assertTrue($categories[11]['partial'] ?? FALSE);
+    self::assertSame(1, $result->getValues()['2024-Q1']);
+    self::assertSame(1, $result->getValues()['2026-Q4']);
+  }
+
+  /**
+   * Buckets after now are shown with zero and never queried.
+   */
+  public function testFutureBucketsAreZeroAndUnqueried(): void {
+    $project = $this->createProject('future');
+    $user = $this->createAccount('alice-future');
+    $this->createTicket($project, $user, self::at(2026, 10, 21, 8));
+    // A record dated after now must not leak into a future bucket.
+    $this->createTicket($project, $user, self::at(2026, 10, 23, 8));
+    $measurement = BbMeasurement::load('closed_tickets');
+    self::assertNotNull($measurement);
+
+    $result = $this->evaluator()->evaluate($measurement, ['project' => $project], [
+      'type' => 'days',
+      'from' => self::at(2026, 10, 19),
+      'to' => self::at(2026, 10, 25, 23, 59, 59),
+    ], self::at(2026, 10, 21, 12));
+
+    $categories = $result->getCategories();
+    self::assertCount(7, $categories);
+    self::assertSame(['key' => '2026-10-21', 'label' => 'Wed 21', 'partial' => TRUE], $categories[2]);
+    self::assertArrayNotHasKey('partial', $categories[3]);
+    self::assertSame(1, $result->getValues()['2026-10-21']);
+    self::assertSame(0, $result->getValues()['2026-10-23']);
+  }
+
+  /**
+   * A dimension counts only inside its range.
+   */
+  public function testDimensionUsesRange(): void {
+    $project = $this->createProject('dimension-range');
+    $user = $this->createAccount('alice-dimension-range');
+    $this->createTicket($project, $user, self::at(2026, 10, 5, 12));
+    $this->createTicket($project, $user, self::at(2026, 9, 30, 12));
+    $this->createTicket($project, $user, self::at(2026, 11, 1, 12));
+    $this->createTicket($project, $user, self::at(2026, 11, 2, 12));
+
+    $result = $this->evaluator()->evaluate(BbMeasurement::load('closed_tickets'), ['project' => $project], [
+      'type' => 'dimension',
+      'dimension' => 'user',
+      'from' => self::at(2026, 10, 1),
+      'to' => self::at(2026, 10, 31, 23, 59, 59),
+    ], self::at(2026, 12, 1));
+
+    self::assertSame([$user->uuid() => 1], $result->getValues());
+  }
+
+  /**
+   * A total is one bucket over the range up to now.
+   */
+  public function testTotalBucket(): void {
+    $project = $this->createProject('total');
+    $user = $this->createAccount('alice-total');
+    $this->createTicket($project, $user, self::at(2026, 10, 2, 12));
+    $this->createTicket($project, $user, self::at(2026, 10, 20, 8));
+    $this->createTicket($project, $user, self::at(2026, 10, 22, 8));
+
+    $result = $this->evaluator()->evaluate(BbMeasurement::load('closed_tickets'), ['project' => $project], [
+      'type' => 'total',
+      'from' => self::at(2026, 10, 1),
+      'to' => self::at(2026, 10, 31, 23, 59, 59),
+    ], self::at(2026, 10, 21, 12));
+
+    self::assertSame([['key' => 'total', 'label' => 'Total', 'partial' => TRUE]], $result->getCategories());
+    self::assertSame(['total' => 2], $result->getValues());
+  }
+
+  /**
+   * A time category needs an explicit range.
+   */
+  public function testTimeCategoryWithoutRangeIsRejected(): void {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->evaluate('closed_tickets', [], ['type' => 'days']);
+  }
+
+  /**
+   * The earliest record honours bindings and spans both sides of a ratio.
+   */
+  public function testEarliest(): void {
+    $project = $this->createProject('earliest');
+    $other = $this->createProject('earliest-other');
+    $user = $this->createAccount('alice-earliest');
+    $ticket = $this->createTicket($project, $user, self::NOW - 5 * self::DAY);
+    $this->createTicket($other, $user, self::NOW - 50 * self::DAY);
+    $this->createRun($ticket, self::NOW - 9 * self::DAY);
+    $this->createRun($ticket, self::NOW + self::DAY);
+
+    $evaluator = $this->evaluator();
+    $contexts = ['project' => $project];
+    self::assertSame(self::NOW - 5 * self::DAY, $evaluator->earliest(BbMeasurement::load('closed_tickets'), $contexts, self::NOW));
+    self::assertSame(self::NOW - 9 * self::DAY, $evaluator->earliest(BbMeasurement::load('tickets_per_run'), $contexts, self::NOW));
+    self::assertNull($evaluator->earliest(BbMeasurement::load('closed_tickets'), ['project' => $this->createProject('earliest-empty')], self::NOW));
+  }
+
+  /**
+   * The rating averages the job score of tickets closed in the period.
+   */
+  public function testRatingAveragesScoresOfTicketsClosedInPeriod(): void {
+    $this->installShippedMeasurement('job_rating');
+    $this->installShippedMeasurement('rated_tickets');
+    $project = $this->createProject('rating');
+    $user = $this->createAccount('alice-rating');
+    foreach ([5, 4, 4] as $score) {
+      $this->rateTicket($this->createTicket($project, $user, self::NOW - self::HOUR), $score);
+    }
+    $this->createTicket($project, $user, self::NOW - self::HOUR);
+    // Rated, but closed before the period.
+    $this->rateTicket($this->createTicket($project, $user, self::NOW - 40 * self::DAY), 1);
+
+    $total = ['type' => 'total', ...self::lastDays(30)];
+    $rating = $this->evaluate('job_rating', ['project' => $project], $total)->getValues()['total'];
+    self::assertEqualsWithDelta(4.33, $rating, 0.01);
+    self::assertSame(3, $this->evaluate('rated_tickets', ['project' => $project], $total)->getValues()['total']);
+  }
+
+  /**
+   * Only the score row of a ticket counts, never another metric's value.
+   */
+  public function testRatingIgnoresOtherMetricRowsOfTheSameTicket(): void {
+    $this->installShippedMeasurement('job_rating');
+    $project = $this->createProject('rating-rows');
+    $ticket = $this->createTicket($project, $this->createAccount('alice-rating-rows'), self::NOW - self::HOUR);
+    $ticket->set('metrics', [
+      ['name' => 'other.metric', 'value' => 100],
+      ['name' => 'job_rating.score', 'value' => 2],
+    ])->save();
+
+    $values = $this->evaluate('job_rating', ['project' => $project], ['type' => 'total', ...self::lastDays(30)])->getValues();
+    self::assertEqualsWithDelta(2.0, $values['total'], 0.001);
+  }
+
+  /**
+   * Without a rated ticket the rating is unknown, never zero.
+   */
+  public function testRatingIsNullWhenNothingIsRated(): void {
+    $this->installShippedMeasurement('job_rating');
+    $project = $this->createProject('rating-none');
+    $this->createTicket($project, $this->createAccount('alice-rating-none'), self::NOW - self::HOUR);
+
+    $values = $this->evaluate('job_rating', ['project' => $project], ['type' => 'total', ...self::lastDays(30)])->getValues();
+    self::assertNull($values['total']);
+  }
+
+  /**
+   * A rating grouped by project keeps its decimals.
+   */
+  public function testRatingGroupedByProjectKeepsDecimals(): void {
+    $this->installShippedMeasurement('job_rating');
+    $workspace = $this->createWorkspace('rating-grouped');
+    $alpha = $this->createProject('alpha-rating', $workspace);
+    $beta = $this->createProject('beta-rating', $workspace);
+    $user = $this->createAccount('alice-rating-grouped');
+    $this->rateTicket($this->createTicket($alpha, $user, self::NOW - self::HOUR), 5);
+    $this->rateTicket($this->createTicket($alpha, $user, self::NOW - self::HOUR), 4);
+    $this->rateTicket($this->createTicket($beta, $user, self::NOW - self::HOUR), 3);
+
+    $values = $this->evaluate('job_rating', ['workspace' => $workspace], [
+      'type' => 'dimension',
+      'dimension' => 'project',
+      ...self::lastDays(30),
+    ])->getValues();
+    self::assertEqualsWithDelta(4.5, $values[$alpha->uuid()], 0.001);
+    self::assertEqualsWithDelta(3.0, $values[$beta->uuid()], 0.001);
+  }
+
+  /**
+   * A UTC timestamp.
+   */
+  private static function at(int $year, int $month, int $day, int $hour = 0, int $minute = 0, int $second = 0): int {
+    return (int) gmmktime($hour, $minute, $second, $month, $day, $year);
+  }
+
+  /**
+   * The trailing calendar days ending today, as a category range.
+   *
+   * @return array{from: int, to: int}
+   *   The inclusive range.
+   */
+  private static function lastDays(int $days): array {
+    $today = intdiv(self::NOW, self::DAY) * self::DAY;
+    return ['from' => $today - ($days - 1) * self::DAY, 'to' => $today + self::DAY - 1];
   }
 
   /**
@@ -456,7 +746,7 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
    *
    * @param string $id
    *   The measurement ID.
-   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   * @param array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>> $contexts
    *   The named context entities.
    * @param array<string, mixed> $categories
    *   The category configuration.
@@ -658,15 +948,172 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
   }
 
   /**
+   * Installs one measurement exactly as shipped in config/sync.
+   */
+  private function installShippedMeasurement(string $id): void {
+    $data = (new FileStorage(dirname($this->root) . '/config/sync'))->read("bb_core.bb_measurement.$id");
+    self::assertIsArray($data, "config/sync/bb_core.bb_measurement.$id.yml exists.");
+    BbMeasurement::create($data)->save();
+  }
+
+  /**
+   * Creates a ticket at a creation time, closed at the given time or open.
+   */
+  private function createTicketAt(BbProjectInterface $project, ?UserInterface $assignee, int $created, ?int $closedDate): BbTicketInterface {
+    $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
+      'workflow' => 'bb_work',
+      'title' => 'at-' . mt_rand(),
+      'project_id' => $project->id(),
+      'assignee_user_id' => $assignee?->id(),
+      'created' => $created,
+      'closed' => $closedDate !== NULL,
+      'closed_date' => $closedDate,
+    ]);
+    self::assertInstanceOf(BbTicketInterface::class, $ticket);
+    $ticket->save();
+    return $ticket;
+  }
+
+  /**
+   * Counts tickets closed in the period with more than three runs in total.
+   */
+  public function testManyRunsCountsClosedTicketsWithMoreThanThreeRunsEver(): void {
+    $this->installShippedMeasurement('closed_tickets_many_runs');
+    $project = $this->createProject('many-runs');
+    $user = $this->createAccount('alice-many-runs');
+    $a = $this->createTicket($project, $user, self::NOW - self::HOUR);
+    $this->createRun($a, self::NOW - 60 * self::DAY);
+    foreach (range(1, 3) as $i) {
+      $this->createRun($a, self::NOW - $i * self::HOUR);
+    }
+    $b = $this->createTicket($project, $user, self::NOW - self::HOUR);
+    foreach (range(1, 3) as $i) {
+      $this->createRun($b, self::NOW - $i * self::HOUR);
+    }
+    $c = $this->createOpenTicket($project, $user, self::NOW - self::DAY);
+    foreach (range(1, 5) as $i) {
+      $this->createRun($c, self::NOW - $i * self::HOUR);
+    }
+
+    $total = ['type' => 'total', ...self::lastDays(30)];
+    self::assertSame(1, $this->evaluate('closed_tickets_many_runs', ['project' => $project], $total)->getValues()['total']);
+    $byUser = $this->evaluate('closed_tickets_many_runs', ['project' => $project], [
+      'type' => 'dimension',
+      'dimension' => 'user',
+      ...self::lastDays(30),
+    ])->getValues();
+    self::assertSame([$user->uuid() => 1], $byUser);
+  }
+
+  /**
+   * Tokens per ticket divides run tokens by closed tickets.
+   */
+  public function testTokensPerTicketDividesTokensByClosed(): void {
+    $this->installShippedMeasurement('run_tokens');
+    $this->installShippedMeasurement('tokens_per_ticket');
+    $project = $this->createProject('tokens-per-ticket');
+    $user = $this->createAccount('alice-tokens-per-ticket');
+    for ($n = 0; $n < 4; $n++) {
+      $ticket = $this->createTicket($project, $user, self::NOW - self::HOUR);
+      $this->createRun($ticket, self::NOW - self::HOUR, '', 250);
+    }
+    $empty = $this->createProject('tokens-per-ticket-empty');
+    $this->createRun($this->createOpenTicket($empty, $user, self::NOW - self::DAY), self::NOW - self::HOUR, '', 1000);
+
+    $total = ['type' => 'total', ...self::lastDays(30)];
+    self::assertSame(250.0, $this->evaluate('tokens_per_ticket', ['project' => $project], $total)->getValues()['total']);
+    self::assertNull($this->evaluate('tokens_per_ticket', ['project' => $empty], $total)->getValues()['total']);
+  }
+
+  /**
+   * A filled project dimension lists every project in scope, idle ones at 0.
+   */
+  public function testFilledProjectDimensionListsProjectsWithoutActivity(): void {
+    $this->installShippedMeasurement('job_rating');
+    $workspace = $this->createWorkspace('filled');
+    $busy = $this->createProject('busy', $workspace);
+    $idle = $this->createProject('idle', $workspace);
+    $this->createProject('foreign', $this->createWorkspace('filled-other'));
+    $this->createTicket($busy, $this->createAccount('alice-filled'), self::NOW - self::HOUR);
+
+    $definition = ['type' => 'dimension', 'dimension' => 'project', 'fill' => TRUE, ...self::lastDays(30)];
+    self::assertSame(
+      [$busy->uuid() => 1, $idle->uuid() => 0],
+      $this->evaluate('closed_tickets', ['workspace' => $workspace], $definition)->getValues(),
+    );
+    $rating = $this->evaluate('job_rating', ['workspace' => $workspace], $definition)->getValues();
+    self::assertSame([$busy->uuid(), $idle->uuid()], array_keys($rating));
+    self::assertNull($rating[$idle->uuid()]);
+  }
+
+  /**
+   * A team restriction narrows the filled projects to the team's projects.
+   */
+  public function testFilledDimensionRespectsTeamRestriction(): void {
+    $workspace = $this->createWorkspace('filled-team');
+    $team = $this->createTeam('filled-team', $workspace);
+    $own = $this->createProject('own', $workspace, [$team]);
+    $this->createProject('other', $workspace);
+
+    $values = $this->evaluate('closed_tickets', ['workspace' => $workspace, 'team' => [$team]], [
+      'type' => 'dimension',
+      'dimension' => 'project',
+      'fill' => TRUE,
+      ...self::lastDays(30),
+    ])->getValues();
+    self::assertSame([$own->uuid() => 0], $values);
+  }
+
+  /**
+   * The ticket dimension groups ticket and run measurements per ticket.
+   */
+  public function testTicketDimensionGroupsPerTicket(): void {
+    foreach (['closed_tickets', 'runs'] as $id) {
+      BbMeasurement::load($id)?->delete();
+    }
+    foreach (['closed_tickets', 'runs', 'run_tokens', 'job_rating', 'rated_tickets'] as $id) {
+      $this->installShippedMeasurement($id);
+    }
+    $project = $this->createProject('per-ticket');
+    $user = $this->createAccount('alice-per-ticket');
+    $rated = $this->createTicket($project, $user, self::NOW - self::HOUR);
+    $this->rateTicket($rated, 4);
+    $this->createRun($rated, self::NOW - 2 * self::HOUR, '', 100);
+    $this->createRun($rated, self::NOW - self::HOUR, '', 50);
+    $idle = $this->createTicket($project, $user, self::NOW - self::HOUR);
+
+    $definition = ['type' => 'dimension', 'dimension' => 'ticket', ...self::lastDays(30)];
+    $context = ['user' => $user];
+    $closed = $this->evaluate('closed_tickets', $context, $definition);
+    self::assertEquals([$rated->uuid() => 1, $idle->uuid() => 1], $closed->getValues());
+    self::assertEqualsCanonicalizing(
+      [(string) $rated->label(), (string) $idle->label()],
+      array_column($closed->getCategories(), 'label'),
+    );
+    self::assertSame([$rated->uuid() => 2], $this->evaluate('runs', $context, $definition)->getValues());
+    self::assertSame([$rated->uuid() => 150], $this->evaluate('run_tokens', $context, $definition)->getValues());
+    self::assertSame([$rated->uuid() => 1], $this->evaluate('rated_tickets', $context, $definition)->getValues());
+    self::assertEqualsWithDelta(4.0, $this->evaluate('job_rating', $context, $definition)->getValues()[$rated->uuid()], 0.001);
+  }
+
+  /**
+   * Records a job rating on a ticket.
+   */
+  private function rateTicket(BbTicketInterface $ticket, int $score): void {
+    $ticket->set('metrics', [['name' => 'job_rating.score', 'value' => $score]])->save();
+  }
+
+  /**
    * Creates and saves a run.
    */
-  private function createRun(BbTicketInterface $ticket, int $created, string $model = ''): void {
+  private function createRun(BbTicketInterface $ticket, int $created, string $model = '', int $tokens = 0): void {
     $run = $this->container->get('entity_type.manager')->getStorage('bb_run')->create([
       'ticket_id' => $ticket->id(),
       'state' => 'running',
-      'state_at_start' => 'coding',
+      'state_at_start' => 'working',
       'created' => $created,
       'model' => $model,
+      'tokens' => $tokens,
     ]);
     $run->save();
   }

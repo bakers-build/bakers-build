@@ -165,14 +165,15 @@ final class BbRailMyWorkTest extends KernelTestBase {
    * Navigation precedes the Teams heading, even before a team exists.
    */
   public function testNavigationPrecedesTheTeamCreateHeading(): void {
-    self::assertSame(['My work', 'Groups', 'Projects', 'Teams'], array_column($this->emitted(), 'title'));
+    self::assertSame(['My work', 'Groups', 'Projects', 'Insights', 'Teams'], array_column($this->emitted(), 'title'));
   }
 
   /**
    * Each rank sees the rows its route access allows, in the shipped order.
    *
    * The gates are the sitemap's: Settings needs `bb_workspace.update`
-   * (lead only), the rest workspace membership. A member of another
+   * (lead only), Insights the lead's figure permission in this workspace, the
+   * rest workspace membership. A member of another
    * workspace sees no workspace row at all.
    */
   public function testEachRankSeesItsRows(): void {
@@ -183,7 +184,7 @@ final class BbRailMyWorkTest extends KernelTestBase {
     $team->save();
 
     $expected = [
-      'lead' => ['My work', 'Groups', 'Projects', 'Settings', 'Teams'],
+      'lead' => ['My work', 'Groups', 'Projects', 'Insights', 'Settings', 'Teams'],
       'contributor' => ['My work', 'Groups', 'Projects', 'Teams'],
       'guest' => ['My work', 'Groups', 'Projects', 'Teams'],
       'non-member' => [],

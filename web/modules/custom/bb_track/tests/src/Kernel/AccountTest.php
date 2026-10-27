@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_track\Kernel;
 
+use Drupal\Core\Database\Database;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\bb_track\Entity\Account;
@@ -510,6 +511,49 @@ final class AccountTest extends WorkTimeTestBase {
       $account->get('fixed_fee')->value,
       $account->get('hourly_rate')->value,
     ];
+  }
+
+  /**
+   * Many tickets resolve exactly as each one does on its own.
+   */
+  public function testResolutionsMatchResolutionForEveryTicket(): void {
+    [$linked, $child] = $this->epicAndChild();
+    [$unlinked, $archived] = $this->epicAndChild();
+    $account = $this->linkedAccount($linked, 'Linked work');
+    $this->archive($this->linkedAccount($archived, 'Archived work'));
+    $project_id = (int) $this->project->id();
+    $tickets = [$linked, $child, $unlinked, $archived];
+    $ids = array_map(static fn(ContentEntityInterface $ticket): int => (int) $ticket->id(), $tickets);
+    $resolved = array_map(static fn(?Account $account): ?int => $account ? (int) $account->id() : NULL, $this->assignments()->resolutions($project_id, $ids));
+    $expected = [(int) $account->id(), (int) $account->id(), $this->accountId, $this->accountId];
+    self::assertSame(array_combine($ids, $expected), $resolved);
+    foreach ($ids as $id) {
+      self::assertSame($this->resolved($project_id, $id)[0], $resolved[$id]);
+    }
+  }
+
+  /**
+   * Many tickets load the project's accounts only once.
+   */
+  public function testResolutionsLoadTheAccountsOnce(): void {
+    [$linked, $child] = $this->epicAndChild();
+    $this->linkedAccount($linked, 'Linked work');
+    $project_id = (int) $this->project->id();
+    $once = $this->accountQueries(fn() => $this->assignments()->activeAccounts($project_id));
+    $ticket_ids = [(int) $linked->id(), (int) $child->id()];
+    $resolved = $this->accountQueries(fn() => $this->assignments()->resolutions($project_id, $ticket_ids));
+    self::assertSame($once, $resolved);
+  }
+
+  /**
+   * The number of billing account queries an operation issues.
+   */
+  private function accountQueries(callable $operation): int {
+    Database::startLog('account_queries');
+    $operation();
+    $log = Database::getLog('account_queries');
+    Database::getConnection()->getLogger()?->clear('account_queries');
+    return count(array_filter($log, static fn(array $entry): bool => str_contains((string) $entry['query'], 'bb_track_account')));
   }
 
   /**

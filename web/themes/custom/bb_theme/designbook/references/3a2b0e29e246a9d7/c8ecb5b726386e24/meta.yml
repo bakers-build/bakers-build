@@ -1,0 +1,71 @@
+{
+  "source": {
+    "kind": "figma",
+    "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv",
+    "revision": null
+  },
+  "role": "reference",
+  "elements": [
+    {
+      "id": "flow-chart-week",
+      "locator": {
+        "kind": "figma-node",
+        "value": "184:14485"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1228,
+          "height": 466
+        }
+      ]
+    },
+    {
+      "id": "flow-chart-month",
+      "locator": {
+        "kind": "figma-node",
+        "value": "184:14571"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1228,
+          "height": 466
+        }
+      ]
+    },
+    {
+      "id": "flow-chart-tooltip",
+      "locator": {
+        "kind": "figma-node",
+        "value": "90:1106"
+      },
+      "states": [
+        {
+          "name": "hover",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 203,
+          "height": 112
+        }
+      ]
+    }
+  ],
+  "assets_dir": "assets"
+}

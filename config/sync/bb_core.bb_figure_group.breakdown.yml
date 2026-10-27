@@ -3,23 +3,17 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_figure.project_models
   - bb_core.bb_figure.team_members
   - bb_core.bb_figure.team_models
   - bb_core.bb_figure.team_projects
   - bb_core.bb_figure.team_user_projects
-  - bb_core.bb_figure.user_models
-  - bb_core.bb_figure.user_projects
 _core:
   default_config_hash: Uz1IxdSdeZBMl6fDhlrOQRdSicmHkwEiTPS13Znv34o
 id: breakdown
 label: Breakdown
 weight: 20
 figures:
-- user_projects
 - team_projects
 - team_members
 - team_user_projects
-- user_models
 - team_models
-- project_models

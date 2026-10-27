@@ -51,6 +51,7 @@ final class BbFigureForm extends EntityForm {
         'matrix' => $this->t('Matrix'),
         'line' => $this->t('Line'),
         'grouped_horizontal_bars' => $this->t('Grouped horizontal bars'),
+        'flow' => $this->t('Flow'),
       ],
       '#default_value' => $figure->getWidget(),
       '#required' => TRUE,

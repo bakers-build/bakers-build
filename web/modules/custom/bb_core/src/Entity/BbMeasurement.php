@@ -158,7 +158,7 @@ final class BbMeasurement extends ConfigEntityBase implements BbMeasurementInter
   public function preSave(EntityStorageInterface $storage): void {
     parent::preSave($storage);
     $type = $this->operation['type'] ?? '';
-    if (!in_array($type, ['count', 'sum', 'divide'], TRUE)) {
+    if (!in_array($type, ['count', 'sum', 'avg', 'count_over', 'divide', 'open'], TRUE)) {
       throw new \InvalidArgumentException(sprintf('bakers.build measurement "%s" has unsupported operation "%s".', $this->id(), $type));
     }
     if ($type === 'divide') {
@@ -167,10 +167,23 @@ final class BbMeasurement extends ConfigEntityBase implements BbMeasurementInter
     elseif (($this->source['entity_type'] ?? '') === '' || ($this->source['time_field'] ?? '') === '') {
       throw new \InvalidArgumentException(sprintf('bakers.build measurement "%s" must define a source entity type and time field.', $this->id()));
     }
-    if ($type === 'sum' && ($this->operation['field'] ?? '') === '') {
-      throw new \InvalidArgumentException(sprintf('bakers.build measurement "%s" is a sum and must define operation.field.', $this->id()));
-    }
+    $this->validateOperationFields($type);
     $this->validateBindings();
+  }
+
+  /**
+   * Validates the fields each operation type needs.
+   */
+  private function validateOperationFields(string $type): void {
+    if (in_array($type, ['sum', 'avg'], TRUE) && ($this->operation['field'] ?? '') === '') {
+      throw new \InvalidArgumentException(sprintf('bakers.build measurement "%s" is a %s and must define operation.field.', $this->id(), $type));
+    }
+    if ($type === 'count_over' && (($this->operation['related']['entity_type'] ?? '') === '' || ($this->operation['related']['field'] ?? '') === '' || !is_int($this->operation['threshold'] ?? NULL))) {
+      throw new \InvalidArgumentException(sprintf('bakers.build measurement "%s" is a count_over and must define operation.related and an integer operation.threshold.', $this->id()));
+    }
+    if ($type === 'open' && ($this->operation['end_field'] ?? '') === '') {
+      throw new \InvalidArgumentException(sprintf('bakers.build measurement "%s" is an open count and must define operation.end_field.', $this->id()));
+    }
   }
 
   /**
@@ -203,7 +216,7 @@ final class BbMeasurement extends ConfigEntityBase implements BbMeasurementInter
    */
   private function validateBindings(): void {
     foreach ($this->bindings as $context => $binding) {
-      if (!in_array($binding['resolver'] ?? '', ['entity_id', 'team_projects', 'workspace_projects'], TRUE)) {
+      if (!in_array($binding['resolver'] ?? '', ['entity_id', 'epic_subtree', 'team_projects', 'workspace_projects'], TRUE)) {
         throw new \InvalidArgumentException(sprintf('bakers.build measurement "%s" has unsupported binding resolver "%s" for context "%s".', $this->id(), $binding['resolver'] ?? '', $context));
       }
       if (($binding['field'] ?? '') === '') {

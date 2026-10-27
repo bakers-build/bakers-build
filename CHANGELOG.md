@@ -2,6 +2,17 @@
 
 One version covers the CLI (`@bakers-build/bakers`) and the server.
 
+## [0.3.0](https://git.key-tec.de/bakers-build/bakers-build/compare/v0.2.0...v0.3.0) (2026-10-27)
+
+### Features
+
+* **skills:** bb-recipe-superpowers as a second recipe for feature, bug and chore ([7af95c6](https://git.key-tec.de/bakers-build/bakers-build/commits/7af95c6f73f507edc27f866f2f81ec921f74fffc))
+* **stats:** insights overview, project stats and my work stats ([291eaf0](https://git.key-tec.de/bakers-build/bakers-build/commits/291eaf073f55848ef45777bd2fca8e4a72c00fba))
+
+### Bug Fixes
+
+* **bb_core:** assign and claim only through conductors whose owner can access the project ([00540c9](https://git.key-tec.de/bakers-build/bakers-build/commits/00540c9751d6c1fdd05469a5cfcc8b70a9b9e346))
+
 ## [0.2.0](https://git.key-tec.de/bakers-build/bakers-build/compare/v0.1.1...v0.2.0) (2026-10-27)
 
 ### Features

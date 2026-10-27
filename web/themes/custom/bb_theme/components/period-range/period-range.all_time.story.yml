@@ -1,0 +1,5 @@
+component: bb_theme:period-range
+name: All time
+props:
+  kind: all
+  today: '2026-10-24'

@@ -1,0 +1,19 @@
+# Public test credentials; this account exists only in recipe-test worlds.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 7710d75c-ed4e-4e99-85b8-d1a306c2e3cf
+  default_langcode: en
+default:
+  name:
+  - value: fixture-claim-owner
+  mail:
+  - value: fixture-claim-owner@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

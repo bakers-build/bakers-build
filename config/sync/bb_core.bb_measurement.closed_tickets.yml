@@ -18,6 +18,9 @@ predicates:
   operator: '='
   value: true
 bindings:
+  epic:
+    field: id
+    resolver: epic_subtree
   project:
     field: project_id
     resolver: entity_id
@@ -37,3 +40,6 @@ dimensions:
   user:
     field: assignee_user_id
     entity_type: user
+  ticket:
+    field: id
+    entity_type: bb_ticket

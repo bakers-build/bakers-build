@@ -54,9 +54,73 @@ bb_ticket:
 # Recipe-test refreshes these relative dates after it applies the terminal
 # states above. Values are whole, non-negative days before installation time.
 bb_ticket_closed_date_days_ago:
-  G513F-1: 1
+  # Today, not yesterday: the team Stats default period is the current week,
+  # which on a Monday would not contain yesterday.
+  G513F-1: 0
   G513F-2: 14
 bb_run:
   dbb00000-0000-4000-8000-000000000001: done
   dbb00000-0000-4000-8000-000000000002: done
   dbb00000-0000-4000-8000-000000000003: running
+
+# Statistics demo (seeded by scripts/e2e/seed-test-world.sh, never recipe
+# content): a project whose tickets and runs sit on calendar days relative to
+# the seed time, so every period kind has data on any day. Offsets are whole
+# days before today (0 = today, within the last hour; otherwise 12:00 UTC).
+# Refresh them at any time: `ddev exec bash scripts/e2e/seed-test-world.sh --dates-only`.
+statistics_demo:
+  project:
+    key: STATS
+    label: 'Statistics demo'
+    # Reuses the group and owner of the period fixture project, but joins no
+    # team: north-lead sees it as workspace lead, and no team's counts, lists
+    # or statistics change because of the demo data.
+    template: G513F
+  # AI usage and job rating, cycled over the closed tickets and their runs in
+  # order; ~ leaves a run's model unattributed or a ticket unrated.
+  models: [claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5, ~]
+  run_tokens: [1840000, 920000, 2760000, 430000, 3150000]
+  ratings: [5, 4, ~, 3, 4, 5, 4, ~]
+  tickets:
+    - { identifier: STATS-1, created_days_ago: 2, closed_days_ago: 0, runs_days_ago: [0] }
+    - { identifier: STATS-2, created_days_ago: 3, closed_days_ago: 1, runs_days_ago: [2, 1] }
+    - { identifier: STATS-3, created_days_ago: 4, closed_days_ago: 2, runs_days_ago: [3, 2] }
+    - { identifier: STATS-4, created_days_ago: 5, closed_days_ago: 3, runs_days_ago: [4, 3] }
+    - { identifier: STATS-5, created_days_ago: 6, closed_days_ago: 4, runs_days_ago: [5, 4] }
+    - { identifier: STATS-6, created_days_ago: 7, closed_days_ago: 5, runs_days_ago: [6, 5] }
+    - { identifier: STATS-7, created_days_ago: 8, closed_days_ago: 6, runs_days_ago: [7, 6] }
+    - { identifier: STATS-8, created_days_ago: 9, closed_days_ago: 7, runs_days_ago: [8, 7] }
+    - { identifier: STATS-9, created_days_ago: 10, closed_days_ago: 8, runs_days_ago: [9, 8] }
+    - { identifier: STATS-10, created_days_ago: 11, closed_days_ago: 9, runs_days_ago: [10, 9] }
+    - { identifier: STATS-11, created_days_ago: 12, closed_days_ago: 10, runs_days_ago: [11, 10] }
+    - { identifier: STATS-12, created_days_ago: 13, closed_days_ago: 11, runs_days_ago: [12, 11] }
+    - { identifier: STATS-13, created_days_ago: 14, closed_days_ago: 12, runs_days_ago: [13, 12] }
+    - { identifier: STATS-14, created_days_ago: 15, closed_days_ago: 13, runs_days_ago: [14, 13] }
+    - { identifier: STATS-15, created_days_ago: 22, closed_days_ago: 20, runs_days_ago: [21, 20] }
+    - { identifier: STATS-16, created_days_ago: 27, closed_days_ago: 25, runs_days_ago: [26, 25] }
+    - { identifier: STATS-17, created_days_ago: 32, closed_days_ago: 30, runs_days_ago: [31, 30] }
+    - { identifier: STATS-18, created_days_ago: 37, closed_days_ago: 35, runs_days_ago: [36, 35] }
+    - { identifier: STATS-19, created_days_ago: 42, closed_days_ago: 40, runs_days_ago: [41, 40] }
+    - { identifier: STATS-20, created_days_ago: 82, closed_days_ago: 80, runs_days_ago: [81, 80] }
+    - { identifier: STATS-21, created_days_ago: 97, closed_days_ago: 95, runs_days_ago: [96, 95] }
+    - { identifier: STATS-22, created_days_ago: 112, closed_days_ago: 110, runs_days_ago: [111, 110] }
+    - { identifier: STATS-23, created_days_ago: 127, closed_days_ago: 125, runs_days_ago: [126, 125] }
+    - { identifier: STATS-24, created_days_ago: 142, closed_days_ago: 140, runs_days_ago: [141, 140] }
+    - { identifier: STATS-25, created_days_ago: 157, closed_days_ago: 155, runs_days_ago: [156, 155] }
+    - { identifier: STATS-26, created_days_ago: 172, closed_days_ago: 170, runs_days_ago: [171, 170] }
+    - { identifier: STATS-27, created_days_ago: 187, closed_days_ago: 185, runs_days_ago: [186, 185] }
+    - { identifier: STATS-28, created_days_ago: 202, closed_days_ago: 200, runs_days_ago: [201, 200] }
+    - { identifier: STATS-29, created_days_ago: 302, closed_days_ago: 300, runs_days_ago: [301, 300] }
+    - { identifier: STATS-30, created_days_ago: 322, closed_days_ago: 320, runs_days_ago: [321, 320] }
+    - { identifier: STATS-31, created_days_ago: 342, closed_days_ago: 340, runs_days_ago: [341, 340] }
+    - { identifier: STATS-32, created_days_ago: 362, closed_days_ago: 360, runs_days_ago: [361, 360] }
+    - { identifier: STATS-33, created_days_ago: 382, closed_days_ago: 380, runs_days_ago: [381, 380] }
+    - { identifier: STATS-34, created_days_ago: 402, closed_days_ago: 400, runs_days_ago: [401, 400] }
+    - { identifier: STATS-35, created_days_ago: 752, closed_days_ago: 750, runs_days_ago: [751, 750] }
+    - { identifier: STATS-36, created_days_ago: 772, closed_days_ago: 770, runs_days_ago: [771, 770] }
+    - { identifier: STATS-37, created_days_ago: 792, closed_days_ago: 790, runs_days_ago: [791, 790] }
+    - { identifier: STATS-38, created_days_ago: 822, closed_days_ago: 820, runs_days_ago: [821, 820] }
+    - { identifier: STATS-39, created_days_ago: 0, closed_days_ago: null, runs_days_ago: [0] }
+    - { identifier: STATS-40, created_days_ago: 3, closed_days_ago: null, runs_days_ago: [3] }
+    - { identifier: STATS-41, created_days_ago: 9, closed_days_ago: null, runs_days_ago: [9] }
+    - { identifier: STATS-42, created_days_ago: 30, closed_days_ago: null, runs_days_ago: [30] }

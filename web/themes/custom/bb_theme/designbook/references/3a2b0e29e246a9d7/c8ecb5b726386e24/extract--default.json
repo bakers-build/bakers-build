@@ -1,0 +1,1219 @@
+{
+  "format": "designbook-observations",
+  "capture": {
+    "role": "reference",
+    "source": {
+      "kind": "figma",
+      "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv",
+      "revision": null
+    },
+    "scope": [
+      {
+        "subject": "flow-chart-week",
+        "view": "desktop",
+        "state": "default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:14485"
+        }
+      },
+      {
+        "subject": "flow-chart-month",
+        "view": "desktop",
+        "state": "default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:14571"
+        }
+      },
+      {
+        "subject": "flow-chart-tooltip",
+        "view": "desktop",
+        "state": "hover",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "90:1106"
+        }
+      }
+    ]
+  },
+  "state": "default",
+  "captured_at": "2026-10-24T14:10:00Z",
+  "extract": {
+    "subjects": [
+      {
+        "id": "flow-chart-week",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:14485"
+        },
+        "samples": [
+          {
+            "view": "desktop",
+            "state": "default",
+            "structure": {
+              "roots": [
+                "184:14485"
+              ],
+              "nodes": [
+                {
+                  "id": "184:14485",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14485"
+                  },
+                  "children": [
+                    "184:14486",
+                    "184:14487",
+                    "184:14507",
+                    "184:14510"
+                  ]
+                },
+                {
+                  "id": "184:14486",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14486"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14487",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14487"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14507",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14507"
+                  },
+                  "children": [
+                    "184:14508",
+                    "184:14509"
+                  ]
+                },
+                {
+                  "id": "184:14508",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14508"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14509",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14509"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14510",
+                  "kind": "INSTANCE",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14510"
+                  },
+                  "children": [
+                    "I184:14510;177:1046",
+                    "I184:14510;177:1062",
+                    "I184:14510;177:1063",
+                    "I184:14510;177:1064",
+                    "I184:14510;177:1088",
+                    "I184:14510;177:1091"
+                  ]
+                },
+                {
+                  "id": "I184:14510;177:1046",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14510;177:1046"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14510;177:1062",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14510;177:1062"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14510;177:1063",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14510;177:1063"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14510;177:1064",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14510;177:1064"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14510;177:1088",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14510;177:1088"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14510;177:1091",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14510;177:1091"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "frame": {
+                  "width": 1228,
+                  "height": 466,
+                  "display": "flex column",
+                  "gap": 16,
+                  "padding": 24,
+                  "background": "var(--color-app,#f1f0ea)",
+                  "border": "1px solid var(--color-border,#d6d3ca)",
+                  "radius": 12
+                },
+                "out_of_scope_note": "The subject locator is the whole Zeitraum frame because heading row and Flow chart instance have no smaller common parent. The eyebrow text and the Period range row (instance + \"vs. ...\" text) are out of scope (separate ticket).",
+                "heading_row": {
+                  "display": "flex row",
+                  "align": "baseline",
+                  "gap": 10,
+                  "y_in_frame": 103,
+                  "height": 22
+                },
+                "chart": {
+                  "component": "Flow chart (component set 177:2019), variant Range=Week, Size=Wide, hover=false",
+                  "component_description": "Fluss-Diagramm (Entwurf F): neu und done als Linien mit Punkten, Fläche dazwischen rot = Backlog wächst, teal = schrumpft. Range bestimmt die Gruppierung (Tag/Tag/Woche/Monat/Quartal), Size Wide 1160 / Compact 768. Hover zeigt Spalte + Tooltip (Datum, New, Done, Backlog ±).",
+                  "width": 1160,
+                  "height": 300,
+                  "y_in_frame": 141,
+                  "plot_area": {
+                    "x0": 40,
+                    "x1": 1108,
+                    "width": 1068,
+                    "y_top_value_30": 34,
+                    "y_baseline_value_0": 234,
+                    "px_per_unit": 6.667
+                  },
+                  "grid": {
+                    "lines": [
+                      {
+                        "value": 30,
+                        "y": 34
+                      },
+                      {
+                        "value": 20,
+                        "y": 100.67
+                      },
+                      {
+                        "value": 10,
+                        "y": 167.33
+                      },
+                      {
+                        "value": 0,
+                        "y": 234
+                      }
+                    ],
+                    "height": 1,
+                    "x": 40,
+                    "width": 1068,
+                    "color": "var(--color-border,#d6d3ca)"
+                  },
+                  "y_axis_labels": {
+                    "values": [
+                      "0",
+                      "10",
+                      "20",
+                      "30"
+                    ],
+                    "right_edge_x": 36,
+                    "vertical": "centered on grid line (top = y-8)"
+                  },
+                  "x_axis_labels": {
+                    "y": 242,
+                    "centered_on_points": true
+                  },
+                  "series": {
+                    "new": {
+                      "color": "var(--color-chart-series-a,#494fe5)",
+                      "stroke_width": 2,
+                      "linecap": "round",
+                      "linejoin": "round",
+                      "interpolation": "straight segments (polyline)"
+                    },
+                    "done": {
+                      "color": "var(--proposal/chart-outflow,#0d9488)",
+                      "token_note": "chart-outflow is a Figma \"proposal/\" variable, not an existing project token",
+                      "stroke_width": 2,
+                      "linecap": "round",
+                      "linejoin": "round",
+                      "interpolation": "straight segments (polyline)"
+                    }
+                  },
+                  "points": {
+                    "radius": 3.5,
+                    "fill": "series colour",
+                    "stroke": "#fafaf7 (surface)",
+                    "stroke_width": 2,
+                    "emphasized_point": {
+                      "radius": 5.25,
+                      "stroke_width": 2.5,
+                      "note": "one point per series drawn larger (week: Tue 13, month: day 9 — the day of the peak \"new\" value)"
+                    }
+                  },
+                  "area_between_lines": {
+                    "backlog_grows": {
+                      "when": "new above done",
+                      "fill": "var(--color-state-unassigned-tint,#ffe2dd)"
+                    },
+                    "backlog_shrinks": {
+                      "when": "done above new",
+                      "fill": "var(--color-state-running-tint,#d9f2ee)"
+                    },
+                    "segmentation": "one fill polygon per day interval, split at line crossings (narrow slices at crossings)",
+                    "draw_order": "fills, then done line, then new line, then points"
+                  },
+                  "end_labels": {
+                    "x": 1118,
+                    "texts": [
+                      "new",
+                      "done"
+                    ],
+                    "vertical": "next to each series last point"
+                  },
+                  "ratio": {
+                    "x": "right-aligned, left ≈1063-1067",
+                    "y": 4,
+                    "display": "flex row",
+                    "align": "center",
+                    "gap": 6,
+                    "texts": [
+                      "done : new",
+                      "<ratio>"
+                    ]
+                  },
+                  "legend": {
+                    "x": 40,
+                    "y": 282,
+                    "display": "flex row",
+                    "gap": 16,
+                    "item_gap": 6,
+                    "items": [
+                      {
+                        "swatch": "line 16x2 radius 1",
+                        "color": "var(--color-chart-series-a,#494fe5)",
+                        "text": "new <total>"
+                      },
+                      {
+                        "swatch": "line 16x2 radius 1",
+                        "color": "var(--proposal/chart-outflow,#0d9488)",
+                        "text": "done <total>"
+                      },
+                      {
+                        "swatch": "square 10x10 radius 1",
+                        "color": "var(--color-state-unassigned-tint,#ffe2dd)",
+                        "text": "backlog grows"
+                      },
+                      {
+                        "swatch": "square 10x10 radius 1",
+                        "color": "var(--color-state-running-tint,#d9f2ee)",
+                        "text": "backlog shrinks"
+                      }
+                    ]
+                  },
+                  "hover_layers_hidden": "Hover column + light tooltip exist in the component (hover=false here); not in scope.",
+                  "x_labels": [
+                    "Mon 12",
+                    "Tue 13",
+                    "Wed 14",
+                    "Thu 15",
+                    "Fri 16",
+                    "Sat 17",
+                    "Sun 18"
+                  ],
+                  "point_x": [
+                    40,
+                    218,
+                    396,
+                    574,
+                    752,
+                    930,
+                    1108
+                  ],
+                  "column_width": 178,
+                  "values": {
+                    "new": [
+                      14,
+                      22,
+                      11,
+                      9,
+                      15,
+                      4,
+                      2
+                    ],
+                    "done": [
+                      12,
+                      10,
+                      13,
+                      18,
+                      21,
+                      3,
+                      1
+                    ]
+                  },
+                  "running_section": null,
+                  "ratio_value": "1.01",
+                  "legend_totals": {
+                    "new": 77,
+                    "done": 78
+                  },
+                  "end_label_y": {
+                    "new": 208,
+                    "done": 224
+                  }
+                },
+                "tokens_observed": {
+                  "color-title": "#14171a",
+                  "color-text": "#2c3137",
+                  "color-text-light": "#5b6169",
+                  "color-border": "#d6d3ca",
+                  "color-app": "#f1f0ea",
+                  "color-surface": "#fafaf7",
+                  "color-surface-3": "#d6d3ca",
+                  "color-chart-series-a": "#494fe5",
+                  "proposal/chart-outflow": "#0d9488",
+                  "color-state-unassigned-tint": "#ffe2dd",
+                  "color-state-running-tint": "#d9f2ee"
+                }
+              },
+              "typography": [
+                {
+                  "role": "heading",
+                  "style": "vorschlag/section-title",
+                  "family": "SF Pro",
+                  "weight": 700,
+                  "size": 16,
+                  "line_height": 22,
+                  "letter_spacing_figma": -0.5,
+                  "letter_spacing_px_code": -0.08,
+                  "color": "var(--color-title,#14171a)"
+                },
+                {
+                  "role": "caption",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text-light,#5b6169)"
+                },
+                {
+                  "role": "axis-label",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text-light,#5b6169)"
+                },
+                {
+                  "role": "series-end-label",
+                  "style": "vorschlag/label",
+                  "family": "SF Pro",
+                  "weight": 510,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "series colour (new: var(--color-chart-series-a,#494fe5); done: var(--proposal/chart-outflow,#0d9488))"
+                },
+                {
+                  "role": "ratio-label",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text-light,#5b6169)"
+                },
+                {
+                  "role": "ratio-value",
+                  "style": "vorschlag/body-strong",
+                  "family": "SF Pro",
+                  "weight": 510,
+                  "size": 13,
+                  "line_height": 20,
+                  "color": "var(--color-title,#14171a)"
+                },
+                {
+                  "role": "legend-label",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text,#2c3137)"
+                },
+                {
+                  "role": "eyebrow (out of scope context)",
+                  "style": "vorschlag/eyebrow",
+                  "family": "SF Pro",
+                  "weight": 590,
+                  "size": 11,
+                  "line_height": 14,
+                  "letter_spacing_px": 0.44,
+                  "transform": "uppercase",
+                  "color": "var(--color-text-light,#5b6169)"
+                }
+              ],
+              "content": [
+                {
+                  "node": "184:14508",
+                  "text": "New vs. done"
+                },
+                {
+                  "node": "184:14509",
+                  "text": "Per day, UTC"
+                },
+                {
+                  "node": "I184:14510;177:1088",
+                  "text": "done : new 1.01"
+                },
+                {
+                  "node": "I184:14510;177:1091",
+                  "text": "new 77 · done 78 · backlog grows · backlog shrinks"
+                },
+                {
+                  "node": "184:14510",
+                  "text": "x-axis: Mon 12, Tue 13, Wed 14, Thu 15, Fri 16, Sat 17, Sun 18"
+                }
+              ],
+              "interactions": [
+                {
+                  "state": "hover",
+                  "available": false,
+                  "note": "Not captured in this subject; flow-chart-tooltip covers the AC tooltip."
+                }
+              ],
+              "properties": {
+                "figma_component_variant_node": "177:1043",
+                "instance_node": "184:14510",
+                "note_instance_child_ids": "Instance child ids are I<instance>;<main-component child id> from get_design_context data-node-id (grid0 = baseline grid line 0; backlog fill slices are separate per-interval vectors, not listed)."
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [
+                "https://www.figma.com/api/mcp/asset/816b740c-81f1-4738-b609-60f02e194dea.svg",
+                "https://www.figma.com/api/mcp/asset/c31ac3d1-9a99-40c3-902d-73b07692f842.svg",
+                "https://www.figma.com/api/mcp/asset/a400373c-6d1e-4577-9275-12c37ad9e9c7.svg"
+              ],
+              "font_families": [
+                "SF Pro"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "fonts.SF Pro.files",
+                "reason": "Figma MCP tools expose family/style/weight only; no font binaries are downloadable for SF Pro (Apple system font, licence-restricted).",
+                "required": false
+              },
+              {
+                "property": "source.revision",
+                "reason": "Figma MCP tools return no file version id; revision recorded as null.",
+                "required": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "flow-chart-month",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:14571"
+        },
+        "samples": [
+          {
+            "view": "desktop",
+            "state": "default",
+            "structure": {
+              "roots": [
+                "184:14571"
+              ],
+              "nodes": [
+                {
+                  "id": "184:14571",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14571"
+                  },
+                  "children": [
+                    "184:14572",
+                    "184:14573",
+                    "184:14593",
+                    "184:14596"
+                  ]
+                },
+                {
+                  "id": "184:14572",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14572"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14573",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14573"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14593",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14593"
+                  },
+                  "children": [
+                    "184:14594",
+                    "184:14595"
+                  ]
+                },
+                {
+                  "id": "184:14594",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14594"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14595",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14595"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "184:14596",
+                  "kind": "INSTANCE",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "184:14596"
+                  },
+                  "children": [
+                    "I184:14596;177:1124",
+                    "I184:14596;177:1157",
+                    "I184:14596;177:1158",
+                    "I184:14596;177:1161",
+                    "I184:14596;177:1212",
+                    "I184:14596;177:1215"
+                  ]
+                },
+                {
+                  "id": "I184:14596;177:1124",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14596;177:1124"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14596;177:1157",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14596;177:1157"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14596;177:1158",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14596;177:1158"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14596;177:1161",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14596;177:1161"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14596;177:1212",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14596;177:1212"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I184:14596;177:1215",
+                  "kind": "LAYER",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I184:14596;177:1215"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "frame": {
+                  "width": 1228,
+                  "height": 466,
+                  "display": "flex column",
+                  "gap": 16,
+                  "padding": 24,
+                  "background": "var(--color-app,#f1f0ea)",
+                  "border": "1px solid var(--color-border,#d6d3ca)",
+                  "radius": 12
+                },
+                "out_of_scope_note": "The subject locator is the whole Zeitraum frame because heading row and Flow chart instance have no smaller common parent. The eyebrow text and the Period range row (instance + \"vs. ...\" text) are out of scope (separate ticket).",
+                "heading_row": {
+                  "display": "flex row",
+                  "align": "baseline",
+                  "gap": 10,
+                  "y_in_frame": 103,
+                  "height": 22
+                },
+                "chart": {
+                  "component": "Flow chart (component set 177:2019), variant Range=Month, Size=Wide, hover=false",
+                  "component_description": "Fluss-Diagramm (Entwurf F): neu und done als Linien mit Punkten, Fläche dazwischen rot = Backlog wächst, teal = schrumpft. Range bestimmt die Gruppierung (Tag/Tag/Woche/Monat/Quartal), Size Wide 1160 / Compact 768. Hover zeigt Spalte + Tooltip (Datum, New, Done, Backlog ±).",
+                  "width": 1160,
+                  "height": 300,
+                  "y_in_frame": 141,
+                  "plot_area": {
+                    "x0": 40,
+                    "x1": 1108,
+                    "width": 1068,
+                    "y_top_value_30": 34,
+                    "y_baseline_value_0": 234,
+                    "px_per_unit": 6.667
+                  },
+                  "grid": {
+                    "lines": [
+                      {
+                        "value": 30,
+                        "y": 34
+                      },
+                      {
+                        "value": 20,
+                        "y": 100.67
+                      },
+                      {
+                        "value": 10,
+                        "y": 167.33
+                      },
+                      {
+                        "value": 0,
+                        "y": 234
+                      }
+                    ],
+                    "height": 1,
+                    "x": 40,
+                    "width": 1068,
+                    "color": "var(--color-border,#d6d3ca)"
+                  },
+                  "y_axis_labels": {
+                    "values": [
+                      "0",
+                      "10",
+                      "20",
+                      "30"
+                    ],
+                    "right_edge_x": 36,
+                    "vertical": "centered on grid line (top = y-8)"
+                  },
+                  "x_axis_labels": {
+                    "y": 242,
+                    "centered_on_points": true
+                  },
+                  "series": {
+                    "new": {
+                      "color": "var(--color-chart-series-a,#494fe5)",
+                      "stroke_width": 2,
+                      "linecap": "round",
+                      "linejoin": "round",
+                      "interpolation": "straight segments (polyline)"
+                    },
+                    "done": {
+                      "color": "var(--proposal/chart-outflow,#0d9488)",
+                      "token_note": "chart-outflow is a Figma \"proposal/\" variable, not an existing project token",
+                      "stroke_width": 2,
+                      "linecap": "round",
+                      "linejoin": "round",
+                      "interpolation": "straight segments (polyline)"
+                    }
+                  },
+                  "points": {
+                    "radius": 3.5,
+                    "fill": "series colour",
+                    "stroke": "#fafaf7 (surface)",
+                    "stroke_width": 2,
+                    "emphasized_point": {
+                      "radius": 5.25,
+                      "stroke_width": 2.5,
+                      "note": "one point per series drawn larger (week: Tue 13, month: day 9 — the day of the peak \"new\" value)"
+                    }
+                  },
+                  "area_between_lines": {
+                    "backlog_grows": {
+                      "when": "new above done",
+                      "fill": "var(--color-state-unassigned-tint,#ffe2dd)"
+                    },
+                    "backlog_shrinks": {
+                      "when": "done above new",
+                      "fill": "var(--color-state-running-tint,#d9f2ee)"
+                    },
+                    "segmentation": "one fill polygon per day interval, split at line crossings (narrow slices at crossings)",
+                    "draw_order": "fills, then done line, then new line, then points"
+                  },
+                  "end_labels": {
+                    "x": 1118,
+                    "texts": [
+                      "new",
+                      "done"
+                    ],
+                    "vertical": "next to each series last point"
+                  },
+                  "ratio": {
+                    "x": "right-aligned, left ≈1063-1067",
+                    "y": 4,
+                    "display": "flex row",
+                    "align": "center",
+                    "gap": 6,
+                    "texts": [
+                      "done : new",
+                      "<ratio>"
+                    ]
+                  },
+                  "legend": {
+                    "x": 40,
+                    "y": 282,
+                    "display": "flex row",
+                    "gap": 16,
+                    "item_gap": 6,
+                    "items": [
+                      {
+                        "swatch": "line 16x2 radius 1",
+                        "color": "var(--color-chart-series-a,#494fe5)",
+                        "text": "new <total>"
+                      },
+                      {
+                        "swatch": "line 16x2 radius 1",
+                        "color": "var(--proposal/chart-outflow,#0d9488)",
+                        "text": "done <total>"
+                      },
+                      {
+                        "swatch": "square 10x10 radius 1",
+                        "color": "var(--color-state-unassigned-tint,#ffe2dd)",
+                        "text": "backlog grows"
+                      },
+                      {
+                        "swatch": "square 10x10 radius 1",
+                        "color": "var(--color-state-running-tint,#d9f2ee)",
+                        "text": "backlog shrinks"
+                      }
+                    ]
+                  },
+                  "hover_layers_hidden": "Hover column + light tooltip exist in the component (hover=false here); not in scope.",
+                  "x_labels_shown": [
+                    "1",
+                    "4",
+                    "7",
+                    "10",
+                    "13",
+                    "16",
+                    "20"
+                  ],
+                  "x_label_running_suffix": {
+                    "text": "running",
+                    "y": 258,
+                    "under": "20"
+                  },
+                  "point_x_step": 56.21,
+                  "days": 20,
+                  "values": {
+                    "new": [
+                      9,
+                      12,
+                      14,
+                      11,
+                      13,
+                      6,
+                      4,
+                      22,
+                      24,
+                      19,
+                      11,
+                      14,
+                      5,
+                      3,
+                      8,
+                      9,
+                      10,
+                      12,
+                      13,
+                      8
+                    ],
+                    "done": [
+                      10,
+                      11,
+                      12,
+                      12,
+                      13,
+                      5,
+                      3,
+                      10,
+                      11,
+                      12,
+                      12,
+                      13,
+                      4,
+                      2,
+                      19,
+                      21,
+                      18,
+                      11,
+                      12,
+                      4
+                    ]
+                  },
+                  "running_section": {
+                    "span": "last interval day 19 -> 20 (x 1051.8 -> 1108); 20 Oct is still running",
+                    "lines": "dashed (pre-dashed path, ~1.5px dashes, round caps, stroke 2) in series colour",
+                    "last_points": "hollow: fill #fafaf7, stroke series colour 2px, r 3.5 (cut / not final value)",
+                    "fill": "area between dashed segments still filled (backlog grows tint in this sample)"
+                  },
+                  "ratio_value": "0.96",
+                  "legend_totals": {
+                    "new": 219,
+                    "done": 211
+                  },
+                  "end_label_y": {
+                    "new": 172.67,
+                    "done": 199.33
+                  }
+                },
+                "tokens_observed": {
+                  "color-title": "#14171a",
+                  "color-text": "#2c3137",
+                  "color-text-light": "#5b6169",
+                  "color-border": "#d6d3ca",
+                  "color-app": "#f1f0ea",
+                  "color-surface": "#fafaf7",
+                  "color-surface-3": "#d6d3ca",
+                  "color-chart-series-a": "#494fe5",
+                  "proposal/chart-outflow": "#0d9488",
+                  "color-state-unassigned-tint": "#ffe2dd",
+                  "color-state-running-tint": "#d9f2ee"
+                }
+              },
+              "typography": [
+                {
+                  "role": "heading",
+                  "style": "vorschlag/section-title",
+                  "family": "SF Pro",
+                  "weight": 700,
+                  "size": 16,
+                  "line_height": 22,
+                  "letter_spacing_figma": -0.5,
+                  "letter_spacing_px_code": -0.08,
+                  "color": "var(--color-title,#14171a)"
+                },
+                {
+                  "role": "caption",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text-light,#5b6169)"
+                },
+                {
+                  "role": "axis-label",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text-light,#5b6169)"
+                },
+                {
+                  "role": "series-end-label",
+                  "style": "vorschlag/label",
+                  "family": "SF Pro",
+                  "weight": 510,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "series colour (new: var(--color-chart-series-a,#494fe5); done: var(--proposal/chart-outflow,#0d9488))"
+                },
+                {
+                  "role": "ratio-label",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text-light,#5b6169)"
+                },
+                {
+                  "role": "ratio-value",
+                  "style": "vorschlag/body-strong",
+                  "family": "SF Pro",
+                  "weight": 510,
+                  "size": 13,
+                  "line_height": 20,
+                  "color": "var(--color-title,#14171a)"
+                },
+                {
+                  "role": "legend-label",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-text,#2c3137)"
+                },
+                {
+                  "role": "eyebrow (out of scope context)",
+                  "style": "vorschlag/eyebrow",
+                  "family": "SF Pro",
+                  "weight": 590,
+                  "size": 11,
+                  "line_height": 14,
+                  "letter_spacing_px": 0.44,
+                  "transform": "uppercase",
+                  "color": "var(--color-text-light,#5b6169)"
+                }
+              ],
+              "content": [
+                {
+                  "node": "184:14594",
+                  "text": "New vs. done"
+                },
+                {
+                  "node": "184:14595",
+                  "text": "Per day, UTC · 20 Oct is still running"
+                },
+                {
+                  "node": "I184:14596;177:1212",
+                  "text": "done : new 0.96"
+                },
+                {
+                  "node": "I184:14596;177:1215",
+                  "text": "new 219 · done 211 · backlog grows · backlog shrinks"
+                },
+                {
+                  "node": "184:14596",
+                  "text": "x-axis: 1, 4, 7, 10, 13, 16, 20"
+                }
+              ],
+              "interactions": [
+                {
+                  "state": "hover",
+                  "available": false,
+                  "note": "Not captured in this subject; flow-chart-tooltip covers the AC tooltip."
+                }
+              ],
+              "properties": {
+                "figma_component_variant_node": "177:1121",
+                "instance_node": "184:14596",
+                "note_instance_child_ids": "Instance child ids are I<instance>;<main-component child id> from get_design_context data-node-id (grid0 = baseline grid line 0; backlog fill slices are separate per-interval vectors, not listed)."
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [
+                "https://www.figma.com/api/mcp/asset/3abe401e-c745-4c2d-ae0d-219f5bf57889.svg",
+                "https://www.figma.com/api/mcp/asset/129e108a-9e2a-4495-a41f-71e18648318c.svg",
+                "https://www.figma.com/api/mcp/asset/bb63291b-30af-42cc-8908-e1f17ef03447.svg",
+                "https://www.figma.com/api/mcp/asset/468246bb-feab-4862-9e3e-0eecb9740c70.svg",
+                "https://www.figma.com/api/mcp/asset/f5385374-dfcf-4c6f-aa50-c516e7d6f755.svg"
+              ],
+              "font_families": [
+                "SF Pro"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "fonts.SF Pro.files",
+                "reason": "Figma MCP tools expose family/style/weight only; no font binaries are downloadable for SF Pro (Apple system font, licence-restricted).",
+                "required": false
+              },
+              {
+                "property": "source.revision",
+                "reason": "Figma MCP tools return no file version id; revision recorded as null.",
+                "required": false
+              },
+              {
+                "property": "chart.series.stroke_dasharray",
+                "reason": "Running segments are exported as pre-dashed SVG paths (separate subpaths), not as a dash property; dash/gap lengths are only derivable from path geometry (~1.5px dash, ~3.5px gap along the segment at 2px stroke, round caps).",
+                "required": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parents": [],
+    "images": [
+      {
+        "url": "https://www.figma.com/api/mcp/asset/816b740c-81f1-4738-b609-60f02e194dea.svg",
+        "reference_path": "assets/flow-chart-week-new.svg",
+        "role": "illustration",
+        "alt": "new line (week)",
+        "location": "main",
+        "width": "1070",
+        "height": "135.4"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/c31ac3d1-9a99-40c3-902d-73b07692f842.svg",
+        "reference_path": "assets/flow-chart-week-done.svg",
+        "role": "illustration",
+        "alt": "done line (week)",
+        "location": "main",
+        "width": "1070",
+        "height": "135.3"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/a400373c-6d1e-4577-9275-12c37ad9e9c7.svg",
+        "reference_path": "assets/flow-chart-week-points.svg",
+        "role": "illustration",
+        "alt": "points (week)",
+        "location": "main",
+        "width": "1160",
+        "height": "300"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/3abe401e-c745-4c2d-ae0d-219f5bf57889.svg",
+        "reference_path": "assets/flow-chart-month-new.svg",
+        "role": "illustration",
+        "alt": "new line (month)",
+        "location": "main",
+        "width": "1013.8",
+        "height": "142"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/129e108a-9e2a-4495-a41f-71e18648318c.svg",
+        "reference_path": "assets/flow-chart-month-done.svg",
+        "role": "illustration",
+        "alt": "done line (month)",
+        "location": "main",
+        "width": "1013.8",
+        "height": "128.7"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/bb63291b-30af-42cc-8908-e1f17ef03447.svg",
+        "reference_path": "assets/flow-chart-month-new-running.svg",
+        "role": "illustration",
+        "alt": "new running dashed segment",
+        "location": "main",
+        "width": "58.2",
+        "height": "35.4"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/468246bb-feab-4862-9e3e-0eecb9740c70.svg",
+        "reference_path": "assets/flow-chart-month-done-running.svg",
+        "role": "illustration",
+        "alt": "done running dashed segment",
+        "location": "main",
+        "width": "58.2",
+        "height": "55.3"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/f5385374-dfcf-4c6f-aa50-c516e7d6f755.svg",
+        "reference_path": "assets/flow-chart-month-points.svg",
+        "role": "illustration",
+        "alt": "points incl. hollow running points (month)",
+        "location": "main",
+        "width": "1160",
+        "height": "300"
+      }
+    ],
+    "fonts": [
+      {
+        "family": "SF Pro",
+        "source": "system",
+        "weights": [
+          400,
+          510,
+          590,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": []
+      }
+    ],
+    "captures": [
+      {
+        "subject": "flow-chart-week",
+        "view": "desktop",
+        "state": "default",
+        "path": "desktop--flow-chart-week--default.png",
+        "width": 1228,
+        "height": 466
+      },
+      {
+        "subject": "flow-chart-month",
+        "view": "desktop",
+        "state": "default",
+        "path": "desktop--flow-chart-month--default.png",
+        "width": 1228,
+        "height": 466
+      }
+    ]
+  }
+}

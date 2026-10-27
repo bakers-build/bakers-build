@@ -103,10 +103,29 @@ bb_core.bb_measurement.*:
           label: 'Operation type'
           constraints:
             Choice:
-              choices: [count, sum, divide]
+              choices: [count, sum, avg, count_over, divide, open]
         field:
           type: string
-          label: 'Summed source field'
+          label: 'Summed or averaged source field'
+          requiredKey: false
+        end_field:
+          type: string
+          label: 'Source field that ends an open span'
+          requiredKey: false
+        related:
+          type: mapping
+          label: 'Related entities counted per source entity'
+          requiredKey: false
+          mapping:
+            entity_type:
+              type: string
+              label: 'Related entity type'
+            field:
+              type: string
+              label: 'Reference field on the related entity'
+        threshold:
+          type: integer
+          label: 'Related count that must be exceeded'
           requiredKey: false
         numerator:
           type: string
@@ -148,7 +167,7 @@ bb_core.bb_measurement.*:
             label: 'Binding resolver'
             constraints:
               Choice:
-                choices: [entity_id, team_projects, workspace_projects]
+                choices: [entity_id, epic_subtree, team_projects, workspace_projects]
     dimensions:
       type: sequence
       label: 'Breakdown dimensions by category key'
@@ -186,7 +205,7 @@ bb_core.bb_figure.*:
       label: 'Widget'
       constraints:
         Choice:
-          choices: [matrix, line, grouped_horizontal_bars]
+          choices: [matrix, line, grouped_horizontal_bars, flow, tiles, table, bars]
     measurements:
       type: sequence
       label: 'Ordered measurement IDs'
@@ -201,7 +220,7 @@ bb_core.bb_figure.*:
           label: 'Category type'
           constraints:
             Choice:
-              choices: [windows, days, months, dimension]
+              choices: [windows, days, months, dimension, total]
         values:
           type: sequence
           label: 'Fixed category values'
@@ -211,6 +230,10 @@ bb_core.bb_figure.*:
         dimension:
           type: string
           label: 'Dimension key'
+          requiredKey: false
+        fill:
+          type: boolean
+          label: 'List every project in scope, also without values'
           requiredKey: false
     series:
       type: mapping
@@ -225,6 +248,17 @@ bb_core.bb_figure.*:
           type: integer
           label: 'Individually shown series'
           requiredKey: false
+    ratio:
+      type: mapping
+      label: 'Ratio of two measurement totals over complete categories'
+      requiredKey: false
+      mapping:
+        numerator:
+          type: string
+          label: 'Numerator measurement'
+        denominator:
+          type: string
+          label: 'Denominator measurement'
     filters:
       type: sequence
       label: 'Exposed filters'
@@ -234,15 +268,31 @@ bb_core.bb_figure.*:
           label:
             type: label
             label: 'Filter label'
+          type:
+            type: string
+            label: 'Filter type; entities selects epic, project, team or user entities'
+            requiredKey: false
+            constraints:
+              Choice:
+                choices: [entities]
+          binding:
+            type: string
+            label: 'Measurement binding an entity filter restricts'
+            requiredKey: false
+            constraints:
+              Choice:
+                choices: [epic, project, team, user]
           default:
             type: string
             label: 'Default value'
+            requiredKey: false
             constraints:
               Choice:
-                choices: ['7', '30', '365']
+                choices: [week, month, quarter, year, all, custom]
           options:
             type: sequence
             label: 'Allowed values'
+            requiredKey: false
             sequence:
               type: mapping
               mapping:
@@ -251,7 +301,7 @@ bb_core.bb_figure.*:
                   label: 'Value'
                   constraints:
                     Choice:
-                      choices: ['7', '30', '365']
+                      choices: [week, month, quarter, year, all, custom]
                 label:
                   type: label
                   label: 'Label'

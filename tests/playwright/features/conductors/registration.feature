@@ -35,6 +35,8 @@ Feature: Machine registration requires workspace rank
     Then the API response status is 201
 
 
+  # Except reading one's own My work figures: another account's figures still
+  # need a rank over that account.
   Scenario: The test world grants no bakers.build capability to every authenticated account
     Then authenticated accounts receive no implicit bakers.build capability
 

@@ -54,6 +54,16 @@ use PHPUnit\Framework\Attributes\Group;
 final class SiteWideRoleResidueTest extends KernelTestBase {
 
   /**
+   * The My work figures every account reads for itself.
+   */
+  private const OWN_FIGURES = [
+    'view bakers figure user_flow',
+    'view bakers figure user_overview',
+    'view bakers figure user_projects',
+    'view bakers figure user_tickets',
+  ];
+
+  /**
    * The COMPLETE ceiling: exactly these permissions, no more and no fewer.
    *
    * Pinned in full rather than as a "must contain" subset, and the difference
@@ -343,10 +353,16 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
    * CIM. The assertion pins the ceiling to EXACTLY these three non-bakers.build
    * permissions rather than dropping the check — a fourth, unnoticed addition
    * here is still the failure this test exists to catch.
+   *
+   * The four My work figure reads (`view bakers figure user_*`) are the one
+   * bakers.build exception: every account reads its own figures. They grant no
+   * entity row, and FigureDisclosure answers another account's figures only
+   * through a rank over that account (`hasGroupPermission()` skips the
+   * site-wide alter), so the role cannot widen them past the account itself.
    */
   public function testNothingIsGrantedOnAuthenticated(): void {
     $role = $this->decode($this->syncPath('user.role.authenticated.yml'));
-    foreach ($role['permissions'] ?? [] as $permission) {
+    foreach (array_diff($role['permissions'] ?? [], self::OWN_FIGURES) as $permission) {
       self::assertStringNotContainsString(
         'bakers',
         $permission,
@@ -361,9 +377,16 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     );
     $recipe = $this->decode($this->repositoryRoot() . '/recipes/bakers/recipe.yml');
     self::assertSame(
-      ['grantPermissions' => ['grant simple_oauth codes', 'change own username', 'access content']],
+      [
+        'grantPermissions' => [
+          'grant simple_oauth codes',
+          'change own username',
+          'access content',
+          ...self::OWN_FIGURES,
+        ],
+      ],
       $recipe['config']['actions']['user.role.authenticated'] ?? NULL,
-      'the recipe must grant authenticated nothing beyond the CLI-sign-in, own-username and public-file permissions',
+      'the recipe must grant authenticated nothing beyond the CLI-sign-in, own-username, public-file and own-figure permissions',
     );
   }
 

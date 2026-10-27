@@ -429,6 +429,15 @@
         them as strings; this one is printed, and printing nothing is already
         the right answer. #}
     {{ c.markup }}
+  {%- elseif c.exact -%}
+    {#- An abbreviated value with its exact value on hover and focus. The
+        tooltip opens upwards and right-aligned: the table scrolls sideways, so
+        a tooltip below the last row would be clipped, and numbers sit right. -#}
+    {%- set tip_id = 'table-exact-' ~ random(1000000) -%}
+    <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+      <span tabindex="0" aria-describedby="{{ tip_id }}" class="{{ emphasis_map[c.emphasis]|default('text-text') }} rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ c.value }}</span>
+      <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 bottom-full z-10 mb-1 w-max max-w-prose whitespace-normal text-left rounded-xs bg-text px-2 py-1 text-caption font-normal text-surface opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ c.exact }}</span>
+    </span>
   {%- else -%}
     {#- `sum` names a live total this value shows, `seconds` its stored base;
         a `live_sums` table rewrites it while the reader types. -#}
@@ -522,7 +531,25 @@
             {%- set cell_tag = column.row_header ? 'th' : 'td' -%}
             <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="h-row px-3 py-3 align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-3' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
               {%- if loop.first %}<span class="{{ (rail_classes|merge([accent_map[row.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>{% endif -%}
-              {%- if c %}{{ cells.cell(c) }}{% endif -%}
+              {%- if column.row_header and row.depth is defined -%}
+                {#- A TREE ROW: indented one step per level, its disclosure a plain
+                    link that toggles the row (no script), and a slot of the same
+                    width on a row without children so names stay aligned. #}
+                {%- set indent_map = { 1: 'pl-6', 2: 'pl-12', 3: 'pl-18' } -%}
+                <span class="inline-flex items-center gap-2 {{ indent_map[row.depth]|default('') }}">
+                  {%- if row.disclosure -%}
+                    <a data-table-disclosure class="inline-flex w-5 justify-center text-text-light no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ row.disclosure.href }}" aria-expanded="{{ row.disclosure.expanded ? 'true' : 'false' }}" aria-label="{{ row.disclosure.expanded ? 'Collapse' : 'Expand' }} {{ c.value|default('') }}">
+                      <span class="inline-flex {{ row.disclosure.expanded ? '' : '-rotate-90' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>
+                    </a>
+                  {%- else -%}
+                    <span class="inline-flex w-5" aria-hidden="true"></span>
+                  {%- endif -%}
+                  {%- if c %}{{ cells.cell(c) }}{% endif -%}
+                  {%- for badge in row.badges|default([]) -%}
+                    {{ include('bb_theme:badge', { label: badge.label, tone: badge.tone|default('neutral') }, with_context = false) }}
+                  {%- endfor -%}
+                </span>
+              {%- elseif c %}{{ cells.cell(c) }}{% endif -%}
             </{{ cell_tag }}>
           {% endfor %}
         </tr>

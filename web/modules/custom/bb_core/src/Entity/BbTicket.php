@@ -362,6 +362,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
       ->setSetting('handler', 'bb_conductor_by_ticket_project')
       ->addConstraint('BbConductorProjectMatch')
       ->addConstraint('BbConductorActive')
+      ->addConstraint('BbConductorOwnerAccess')
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayOptions('form', ['type' => 'options_select', 'weight' => 8]);

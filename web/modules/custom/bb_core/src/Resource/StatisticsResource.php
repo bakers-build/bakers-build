@@ -95,7 +95,20 @@ final class StatisticsResource extends ResourceBase implements ContainerInjectio
    */
   public function getRouteResourceTypes(Route $route, string $route_name): array {
     $fields = [];
-    foreach (['label', 'description', 'widget', 'generated', 'filters', 'categories', 'measurements', 'empty', 'cache'] as $field) {
+    $names = [
+      'label',
+      'description',
+      'widget',
+      'generated',
+      'filters',
+      'period',
+      'categories',
+      'measurements',
+      'ratio',
+      'empty',
+      'cache',
+    ];
+    foreach ($names as $field) {
       $fields[$field] = new ResourceTypeAttribute($field);
     }
     $type = new ResourceType('bb_figure_value', 'bb_figure_value', '', FALSE, FALSE, FALSE, FALSE, $fields, 'bakers-figure');

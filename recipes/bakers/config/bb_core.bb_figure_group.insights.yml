@@ -1,0 +1,26 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_figure.project_flow
+    - bb_core.bb_figure.project_overview
+    - bb_core.bb_figure.project_people
+    - bb_core.bb_figure.workspace_flow
+    - bb_core.bb_figure.workspace_models
+    - bb_core.bb_figure.workspace_overview
+    - bb_core.bb_figure.workspace_people
+    - bb_core.bb_figure.workspace_projects
+    - bb_core.bb_figure.workspace_projects_tokens
+id: insights
+label: Insights
+weight: 30
+figures:
+  - workspace_overview
+  - workspace_flow
+  - workspace_models
+  - workspace_projects_tokens
+  - workspace_projects
+  - workspace_people
+  - project_overview
+  - project_flow
+  - project_people

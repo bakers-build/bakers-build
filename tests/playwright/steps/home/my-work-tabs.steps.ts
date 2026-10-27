@@ -1,7 +1,6 @@
-import { expect, type Locator, type TestInfo } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import { Given, Then, When } from '@key-tec/playwright-core/bdd';
 import { CONTENT_ISLAND, markDocument } from '../../support/shell';
-import { test } from '../../bdd.fixtures';
 
 // BB-481 — the three steps My work needs that the team suite does not
 // already export. Everything else this feature uses — the tab-click request
@@ -14,12 +13,6 @@ import { test } from '../../bdd.fixtures';
 
 const MY_WORK = '/bakers/tickets';
 const PERIOD_FIXTURE_PROJECT = 'Period filter fixture';
-
-type StatisticsSnapshot = {
-  figureIds: string[];
-};
-
-const statisticsSnapshots = new WeakMap<TestInfo, StatisticsSnapshot>();
 
 /**
  * The address of one My work tab.
@@ -61,48 +54,23 @@ Then('the Stats tab shows a figure', async ({ page }) => {
   ).toBeVisible();
 });
 
-Then('the Stats period filters are accessible links', async ({ page }) => {
-  const choices = page
-    .locator(CONTENT_ISLAND)
-    .locator('[data-bakers-tab-body="stats"]')
-    .getByRole('link', { name: '30 days', exact: true });
-  await expect(choices.first()).toBeVisible();
-  expect(await choices.count()).toBeGreaterThan(0);
-});
-
-When('I choose the Stats period {string}', async ({ page }, label: string) => {
-  const body = page.locator(CONTENT_ISLAND).locator('[data-bakers-tab-body="stats"]');
-  statisticsSnapshots.set(test.info(), await statisticsSnapshot(body));
-  await expect(await periodFixtureClosedTickets(body)).toHaveText('1');
-  await body.getByRole('link', { name: label, exact: true }).first().click();
-});
-
+// The period range's kind menu names the selected kind.
 Then('the selected Stats period is {string}', async ({ page }, label: string) => {
   await expect(
-    page
-      .locator(CONTENT_ISLAND)
-      .locator('[data-bakers-tab-body="stats"]')
-      .getByRole('link', { name: label, exact: true })
-      .first(),
-  ).toHaveAttribute('aria-current', 'true');
+    page.locator(CONTENT_ISLAND).locator('[data-bakers-tab-body="stats"] [x-ref="kindTrigger"]'),
+  ).toHaveText(label);
 });
 
-Then('the Stats period selection preserves the route and unrelated query parameter {string} with value {string}', async ({ page }, name: string, value: string) => {
-  const url = new URL(page.url());
-  expect(url.pathname).toBe(myWorkUrl('Stats'));
-  expect(url.searchParams.get(name)).toBe(value);
-  expect(url.searchParams.get('filter[period]')).toBe('30');
-});
-
-Then('the Stats figures keep their ordered applicability', async ({ page }) => {
-  const before = statisticsSnapshots.get(test.info());
-  if (!before) {
-    throw new Error('The period selection must capture the initial statistics before asserting its result.');
-  }
-  const after = await statisticsSnapshot(
-    page.locator(CONTENT_ISLAND).locator('[data-bakers-tab-body="stats"]'),
-  );
-  expect(after.figureIds).toEqual(before.figureIds);
+// UTC, the same calendar the server buckets by.
+When('I open the Stats period from {int} days ago until today', async ({ page }, days: number) => {
+  const day = (offset: number): string => new Date(Date.now() - offset * 86_400_000).toISOString().slice(0, 10);
+  const query = new URLSearchParams([
+    ['filter[period]', 'custom'],
+    ['filter[start]', day(days)],
+    ['filter[end]', day(0)],
+  ]);
+  await page.goto(`${myWorkUrl('Stats')}?${query.toString()}`);
+  await markDocument(page);
 });
 
 Then('the Stats period fixture displays {int} closed tickets', async ({ page }, count: number) => {
@@ -111,20 +79,11 @@ Then('the Stats period fixture displays {int} closed tickets', async ({ page }, 
   ).toHaveText(String(count));
 });
 
-async function statisticsSnapshot(body: Locator): Promise<StatisticsSnapshot> {
-  const figures = body.locator('[data-statistics-figure]');
-  await expect(figures.first()).toBeVisible();
-  return {
-    figureIds: await figures.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-statistics-figure')!)),
-  };
-}
-
 async function periodFixtureClosedTickets(body: Locator): Promise<Locator> {
   const table = body.locator('[data-statistics-figure="user_projects"]').getByRole('table');
-  const headers = await table.getByRole('columnheader').allTextContents();
-  const index = headers.findIndex((header) => header.trim() === 'Closed tickets');
-  expect(index, 'The project breakdown exposes its closed-ticket column.').toBeGreaterThanOrEqual(0);
-  return table.getByRole('row').filter({
-    has: body.page().getByRole('cell', { name: PERIOD_FIXTURE_PROJECT, exact: true }),
-  }).getByRole('cell').nth(index);
+  const headers = (await table.getByRole('columnheader').allTextContents()).map((header) => header.trim());
+  const index = headers.findIndex((header) => header.startsWith('Closed'));
+  expect(index, 'My projects exposes its closed-ticket column.').toBeGreaterThanOrEqual(0);
+  // Row header and cells are siblings, so the column is the nth child.
+  return table.locator('tbody tr').filter({ hasText: PERIOD_FIXTURE_PROJECT }).locator('> *').nth(index);
 }

@@ -21,6 +21,8 @@ extensions:
     skill: designbook-drupal
   - id: tailwind
     skill: designbook-css-tailwind
+  - id: figma
+    skill: designbook-figma
 # Backend command strings consumed by the `sync-to` workflow (sync concern).
 # bakers keeps its config-sync dir at <repo>/config/sync (settings.php:
 # $settings['config_sync_directory'] = '../config/sync', relative to the web

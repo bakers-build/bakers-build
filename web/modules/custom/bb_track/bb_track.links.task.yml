@@ -22,3 +22,9 @@ bb_track.project_time:
   route_name: view.worklog.project
   base_route: entity.bb_project.canonical
   weight: 3
+
+bb_track.workspace.insights_billing:
+  title: 'Billing report'
+  route_name: bb_track.workspace.insights_billing
+  base_route: bb_core.workspace.insights
+  weight: 1

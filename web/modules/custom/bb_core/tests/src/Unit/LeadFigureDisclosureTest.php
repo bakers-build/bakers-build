@@ -13,7 +13,10 @@ use Symfony\Component\Yaml\Yaml;
  *
  * The lead (Admin) sees the team- and project-scoped token figures — the
  * aggregate ones — but not the per-user figures, matching BB-479's rule
- * that only a team lead sees per-user breakdowns. Asserted on the shipped
+ * that only a team lead sees per-user breakdowns. The workspace Insights
+ * figures are the one exception (BAKERS-13, D1): a lead sees per-person
+ * figures for the people of their own workspace there, and only there; the
+ * user- and team-scoped per-user figures stay withheld. Asserted on the shipped
  * role config in BOTH homes, so a permission added to one and not the other
  * fails here rather than on a deploy.
  */
@@ -28,10 +31,17 @@ final class LeadFigureDisclosureTest extends UnitTestCase {
    * @var array<string>
    */
   private const GRANTED = [
-    'view bakers figure project_models',
-    'view bakers figure project_tickets_trend',
+    'view bakers figure project_overview',
+    'view bakers figure project_flow',
+    'view bakers figure project_people',
     'view bakers figure team_models',
     'view bakers figure team_tickets_trend',
+    'view bakers figure workspace_overview',
+    'view bakers figure workspace_flow',
+    'view bakers figure workspace_models',
+    'view bakers figure workspace_projects_tokens',
+    'view bakers figure workspace_projects',
+    'view bakers figure workspace_people',
   ];
 
   /**
@@ -40,8 +50,10 @@ final class LeadFigureDisclosureTest extends UnitTestCase {
    * @var array<string>
    */
   private const WITHHELD = [
-    'view bakers figure user_models',
-    'view bakers figure user_tickets_trend',
+    'view bakers figure user_flow',
+    'view bakers figure user_tickets',
+    'view bakers figure team_members',
+    'view bakers figure team_user_overview',
   ];
 
   /**

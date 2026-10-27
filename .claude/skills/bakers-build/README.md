@@ -16,6 +16,7 @@ field, a provision hint or a subagent start selects. Exactly thirteen ship:
 |---|---|
 | `@bakers-build/bb-workflow` | The frame of every state run: seven phases — `read, provision, work, validate, deliver, outtake, transition` — the state files, routing, binding, replacement and stop rules. |
 | `@bakers-build/bb-recipe-matt` | The project-default recipe for feature, bug and chore tickets, selected by the ticket's `recipe` field. |
+| `@bakers-build/bb-recipe-superpowers` | The superpowers method for the same ticket types, selected by `recipe` = `superpowers`. |
 | `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
 | `@bakers-build/bb-runtime-ddev` | Runtime guide: provision, run, lint, test and persona logins in DDEV; named in a `## bb-phase-provision` hint. |
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |

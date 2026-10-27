@@ -4,15 +4,92 @@
    suggests, so nothing here is carried by colour alone (C2). #}
 {% set tone_map = {
   'running': 'text-state-running-ink',
-  'attention': 'text-state-attention-ink'
+  'attention': 'text-state-attention-ink',
+  'muted': 'text-text-faint'
 } %}
 {% set compact = size|default('default') == 'compact' %}
-{% set tile_classes = compact
-  ? ['stat-tile', 'flex', 'flex-col', 'gap-1', 'px-2', 'py-1', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'min-w-16']
-  : ['stat-tile', 'flex', 'flex-col', 'gap-[2px]', 'px-[12px]', 'py-[10px]', 'bg-surface-2', 'border', 'border-border-2', 'rounded-[var(--radius-sm,7px)]', 'min-w-[120px]'] %}
-<div{{ (attributes ?: create_attribute()).addClass(tile_classes) }}>
+{% set kpi = size|default('default') == 'kpi' %}
+{% set tile_classes = kpi
+  ? ['stat-tile', 'flex', 'flex-col', 'gap-1.5', 'p-4', 'bg-surface', 'border', 'border-border-2', 'rounded-sm', 'min-w-0']
+  : (compact
+    ? ['stat-tile', 'flex', 'flex-col', 'gap-1', 'px-2', 'py-1', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'min-w-16']
+    : ['stat-tile', 'flex', 'flex-col', 'gap-[2px]', 'px-[12px]', 'py-[10px]', 'bg-surface-2', 'border', 'border-border-2', 'rounded-[var(--radius-sm,7px)]', 'min-w-[120px]']) %}
+{# The accessible name says what the tile shows, comparison included: "42 Closed tickets, vs. Q3 2026: 37, +14 %". #}
+{% set tile_name = value ~ ' ' ~ label ~ (comparison ? ', ' ~ comparison.label ~ ': ' ~ comparison.value ~ ', ' ~ comparison.delta : '') %}
+{# Shared by the info and the exact-value disclosure: shown while hovered or focused, dismissed with
+   Escape (WCAG 1.4.13) and shown again on the next hover or focus. #}
+{# Hidden with opacity, never `hidden`/`invisible`: Drupal's unlayered hidden.module.css defines both
+   and would beat the layered hover/focus variants. #}
+{% set tip_classes = 'absolute left-0 top-full z-10 mt-1 w-max max-w-prose rounded-xs bg-text px-2 py-1 text-caption font-normal text-surface opacity-0 pointer-events-none' %}
+{% set uid = 'stat-tile-' ~ random(1000000) %}
+<div{{ (attributes ?: create_attribute()).addClass(tile_classes).setAttribute('role', 'group').setAttribute('aria-label', tile_name) }}>
+  {% if kpi %}
+    <span class="flex items-center gap-1.5 text-caption text-text-light">
+      <span class="stat-tile__label">{{ label }}</span>
+      {% if info %}
+        <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+          <button type="button" class="inline-flex rounded-xs text-text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" aria-label="About {{ label }}" aria-describedby="{{ uid }}-info">
+            {{- include('bb_theme:icon', { name: 'info-circle', size: 'xs' }, with_context = false) -}}
+          </button>
+          <span id="{{ uid }}-info" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ info }} Source: {{ source }}</span>
+        </span>
+      {% endif %}
+    </span>
+    <span class="flex items-baseline gap-1.5">
+      {% if exact %}
+        <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+          <span tabindex="0" aria-describedby="{{ uid }}-exact" class="stat-tile__value text-heading font-bold leading-tight rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring {{ tone_map[tone]|default('text-title') }}">{{ value }}</span>
+          <span id="{{ uid }}-exact" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ exact }}</span>
+        </span>
+      {% else %}
+        <span class="stat-tile__value text-heading font-bold leading-tight {{ tone_map[tone]|default('text-title') }}">{{ value }}</span>
+      {% endif %}
+      {% if unit %}<span class="text-caption text-text-light">{{ unit }}</span>{% endif %}
+    </span>
+    {% if comparison %}
+      {% set arrow = comparison.direction == 'up' ? '-rotate-90' : (comparison.direction == 'down' ? 'rotate-90' : '') %}
+      <span class="flex flex-wrap items-center gap-1.5">
+        <span class="inline-flex items-center gap-1 px-1.5 rounded-xs bg-surface-3 text-caption font-bold text-text">
+          {{- include('bb_theme:icon', { name: 'arrow-right', size: 'xs', attributes: create_attribute({'aria-hidden': 'true'}).addClass([arrow]|filter(c => c)) }, with_context = false) -}}
+          {{ comparison.delta }}
+        </span>
+        {% if comparison.exact %}
+          <span class="relative inline-flex gap-1 group text-caption text-text-light" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+            {{ comparison.label }}
+            <span tabindex="0" aria-describedby="{{ uid }}-previous" class="rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ comparison.value }}</span>
+            <span id="{{ uid }}-previous" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ comparison.exact }}</span>
+          </span>
+        {% else %}
+          <span class="text-caption text-text-light">{{ comparison.label }} {{ comparison.value }}</span>
+        {% endif %}
+      </span>
+    {% endif %}
+    {% if detail and detail_exact %}
+      <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+        <span tabindex="0" aria-describedby="{{ uid }}-detail" class="text-caption text-text-light rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ detail }}</span>
+        <span id="{{ uid }}-detail" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ detail_exact }}</span>
+      </span>
+    {% elseif detail %}
+      <span class="text-caption text-text-light">{{ detail }}</span>
+    {% endif %}
+    {% if not info %}
+      <span class="stat-tile__source text-nano text-text-faint font-mono break-words">{{ source }}</span>
+    {% endif %}
+  {% else %}
   <span class="stat-tile__value {{ compact ? 'text-body' : 'text-heading' }} font-bold leading-tight {{ tone_map[tone]|default('text-title') }}">{{ value }}</span>
   <span class="stat-tile__label text-caption text-text-light">{{ label }}</span>
+  {# The chip is neutral for every direction: the tile cannot know whether up is good. The delta
+     text names the change, so the arrow is never the only carrier of meaning. #}
+  {% if comparison %}
+    {% set arrow = comparison.direction == 'up' ? '-rotate-90' : (comparison.direction == 'down' ? 'rotate-90' : '') %}
+    <span class="flex flex-wrap items-center gap-1.5">
+      <span class="inline-flex items-center gap-1 px-1.5 rounded-xs bg-surface-3 text-caption font-bold text-text">
+        {{- include('bb_theme:icon', { name: 'arrow-right', size: 'xs', attributes: create_attribute({'aria-hidden': 'true'}).addClass([arrow]|filter(c => c)) }, with_context = false) -}}
+        {{ comparison.delta }}
+      </span>
+      <span class="text-caption text-text-light">{{ comparison.label }}: {{ comparison.value }}</span>
+    </span>
+  {% endif %}
   {% if window %}
     <span class="stat-tile__window text-eyebrow text-text-light">{{ window }}</span>
   {% endif %}
@@ -20,4 +97,5 @@
      able to READ, and break-all split `claimable` across two lines as "cl aimable" in the first
      browser walk. Wrapping between words keeps a long source legible and still bounds the tile. #}
   <span class="stat-tile__source text-nano text-text-faint font-mono mt-[4px] break-words">{{ source }}</span>
+  {% endif %}
 </div>

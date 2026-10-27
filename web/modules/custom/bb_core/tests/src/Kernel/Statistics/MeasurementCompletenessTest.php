@@ -94,7 +94,7 @@ final class MeasurementCompletenessTest extends KernelTestBase {
     $result = $this->evaluate('run_tokens', ['project' => $project], [
       'type' => 'dimension',
       'dimension' => 'model',
-      'period' => 30,
+      ...self::lastDays(30),
     ]);
     $byLabel = [];
     foreach ($result->getCategories() as $category) {
@@ -115,16 +115,16 @@ final class MeasurementCompletenessTest extends KernelTestBase {
     $result = $this->evaluate('run_tokens', ['project' => $project], [
       'type' => 'dimension',
       'dimension' => 'model',
-      'period' => 30,
+      ...self::lastDays(30),
     ]);
     self::assertSame('Unattributed', $result->getCategories()[0]['label']);
     self::assertSame(5, $result->getValues()['unattributed']);
   }
 
   /**
-   * A months category returns twelve real calendar months, oldest first.
+   * A months category returns the real calendar months of its range.
    */
-  public function testMonthsCategoryReturnsTwelveCalendarMonths(): void {
+  public function testMonthsCategoryReturnsCalendarMonths(): void {
     $pinned = (int) gmmktime(12, 0, 0, 3, 15, 2026);
     $project = $this->createProject('months');
     $ticket = $this->createTicket($project, $this->createAccount('months-user'));
@@ -136,16 +136,23 @@ final class MeasurementCompletenessTest extends KernelTestBase {
     $result = $this->evaluator()->evaluate(
       $this->measurement('runs'),
       ['project' => $project],
-      ['type' => 'months'],
+      [
+        'type' => 'months',
+        'from' => (int) gmmktime(0, 0, 0, 1, 1, 2026),
+        'to' => (int) gmmktime(23, 59, 59, 12, 31, 2026),
+      ],
       $pinned,
     );
     $categories = $result->getCategories();
     self::assertCount(12, $categories);
-    self::assertSame('2025-04', $categories[0]['key']);
-    self::assertSame('2026-03', $categories[11]['key']);
-    self::assertTrue($categories[11]['partial'] ?? FALSE);
+    self::assertSame('2026-01', $categories[0]['key']);
+    self::assertSame('Jan 2026', $categories[0]['label']);
+    self::assertSame('2026-12', $categories[11]['key']);
+    self::assertTrue($categories[2]['partial'] ?? FALSE);
+    self::assertArrayNotHasKey('partial', $categories[1]);
     self::assertSame(1, $result->getValues()['2026-02']);
     self::assertSame(1, $result->getValues()['2026-03']);
+    self::assertSame(0, $result->getValues()['2026-04']);
   }
 
   /**
@@ -162,6 +169,17 @@ final class MeasurementCompletenessTest extends KernelTestBase {
       'values' => ['day'],
     ]);
     self::assertSame(['day' => 700], $result->getValues());
+  }
+
+  /**
+   * The trailing calendar days ending today, as a category range.
+   *
+   * @return array{from: int, to: int}
+   *   The inclusive range.
+   */
+  private static function lastDays(int $days): array {
+    $today = intdiv(self::NOW, self::DAY) * self::DAY;
+    return ['from' => $today - ($days - 1) * self::DAY, 'to' => $today + self::DAY - 1];
   }
 
   /**
@@ -287,7 +305,7 @@ final class MeasurementCompletenessTest extends KernelTestBase {
     $values = [
       'ticket_id' => $ticket->id(),
       'state' => $state,
-      'state_at_start' => 'coding',
+      'state_at_start' => 'working',
       'created' => $created,
       'tokens' => $tokens,
     ];

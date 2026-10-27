@@ -6,7 +6,10 @@ const { Given, When, Then } = createBdd(test);
 
 Then('authenticated accounts receive no implicit bakers.build capability', async () => {
     const permissions: string[] = JSON.parse(Drush.exec('php:eval \'print json_encode(\\Drupal\\user\\Entity\\Role::load("authenticated")->getPermissions());\'').trim());
-    expect(permissions.filter(permission => permission.includes('bakers'))).toEqual([]);
+    // Every account reads its own My work figures; another account's figures
+    // still need a rank over that account (FigureDisclosure).
+    const ownFigures = ['user_flow', 'user_overview', 'user_projects', 'user_tickets'].map(id => `view bakers figure ${id}`);
+    expect(permissions.filter(permission => permission.includes('bakers') && !ownFigures.includes(permission))).toEqual([]);
 });
 
 Then('conductor assignment declares no separate permission', async () => {

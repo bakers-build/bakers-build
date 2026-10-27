@@ -1,0 +1,39 @@
+component: bb_theme:stat-breakdown
+name: Bars
+props:
+  label: AI usage by model
+  caption: Tokens, 1 – 19 Oct. Not a billable quantity.
+  display: bars
+  columns:
+    - key: tokens
+      label: Tokens
+  entries:
+    - label: Opus 5.5
+      value: 17.9 B
+      exact: 17,912,004,330 tokens — Sum of run tokens by run start, UTC
+      share: 63
+      share_label: 63 %
+      counts:
+        tokens: 17.9 B
+    - label: Sonnet 5.5
+      value: 8.7 B
+      exact: 8,701,220,118 tokens — Sum of run tokens by run start, UTC
+      share: 31
+      share_label: 31 %
+      counts:
+        tokens: 8.7 B
+    - label: Haiku 5.5
+      value: 1.4 B
+      exact: 1,398,551,020 tokens — Sum of run tokens by run start, UTC
+      share: 5
+      share_label: 5 %
+      counts:
+        tokens: 1.4 B
+    - label: Unattributed
+      value: 0.4 B
+      exact: 400,777,636 tokens — Sum of run tokens by run start, UTC
+      share: 1
+      share_label: 1 %
+      counts:
+        tokens: 0.4 B
+  source: bb_measurement.run_tokens

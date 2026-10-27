@@ -16,6 +16,9 @@ operation:
   field: tokens
 predicates: {  }
 bindings:
+  epic:
+    field: ticket_id
+    resolver: epic_subtree
   workspace:
     field: ticket_id.entity.project_id
     resolver: workspace_projects
@@ -35,5 +38,8 @@ dimensions:
   user:
     field: ticket_id.entity.assignee_user_id
     entity_type: user
+  ticket:
+    field: ticket_id
+    entity_type: bb_ticket
   model:
     field: model

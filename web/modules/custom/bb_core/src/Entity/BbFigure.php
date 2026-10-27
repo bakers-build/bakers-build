@@ -16,6 +16,7 @@ use Drupal\bb_core\Form\BbFigureForm;
 use Drupal\bb_core\BbFigureInterface;
 use Drupal\bb_core\BbMeasurementInterface;
 use Drupal\bb_core\ListBuilder\BbFigureListBuilder;
+use Drupal\bb_core\Statistics\Period\PeriodResolver;
 
 /**
  * Stores one atomic server-composed statistics figure.
@@ -53,6 +54,7 @@ use Drupal\bb_core\ListBuilder\BbFigureListBuilder;
     'measurements',
     'categories',
     'series',
+    'ratio',
     'filters',
     'context_shape',
     'conditions',
@@ -92,6 +94,10 @@ final class BbFigure extends ConfigEntityBase implements BbFigureInterface {
    * The series source configuration.
    */
   protected array $series = [];
+  /**
+   * The ratio configuration.
+   */
+  protected array $ratio = [];
   /**
    * The filter configuration.
    */
@@ -149,6 +155,13 @@ final class BbFigure extends ConfigEntityBase implements BbFigureInterface {
    */
   public function getSeries(): array {
     return $this->series;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRatio(): array {
+    return $this->ratio;
   }
 
   /**
@@ -234,11 +247,28 @@ final class BbFigure extends ConfigEntityBase implements BbFigureInterface {
     if (count($this->measurements) !== count(array_unique($this->measurements))) {
       throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" contains duplicate measurements.', $this->id()));
     }
-    if (!in_array($this->widget, ['matrix', 'line', 'grouped_horizontal_bars'], TRUE)) {
-      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" has unsupported widget "%s".', $this->id(), $this->widget));
+    $this->validateWidget();
+    if ($this->ratio !== [] && array_diff([$this->ratio['numerator'] ?? '', $this->ratio['denominator'] ?? ''], $this->measurements) !== []) {
+      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" ratio must divide two of its own measurements.', $this->id()));
     }
     if (count($this->context_shape) !== count(array_unique($this->context_shape))) {
       throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" contains duplicate context keys.', $this->id()));
+    }
+  }
+
+  /**
+   * Validates the widget and what it needs from measurements and categories.
+   */
+  private function validateWidget(): void {
+    if (!in_array($this->widget, ['matrix', 'line', 'grouped_horizontal_bars', 'flow', 'tiles', 'table', 'bars'], TRUE)) {
+      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" has unsupported widget "%s".', $this->id(), $this->widget));
+    }
+    if ($this->widget === 'flow' && count($this->measurements) !== 3) {
+      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" is a flow and needs exactly three measurements: new, done, open.', $this->id()));
+    }
+    $required = ['tiles' => 'total', 'table' => 'dimension', 'bars' => 'dimension'][$this->widget] ?? NULL;
+    if ($required !== NULL && ($this->categories['type'] ?? '') !== $required) {
+      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" is %s and needs %s categories.', $this->id(), $this->widget, $required));
     }
   }
 
@@ -269,8 +299,11 @@ final class BbFigure extends ConfigEntityBase implements BbFigureInterface {
    */
   private function validateCategories(array $measurements): void {
     $categoryType = (string) ($this->categories['type'] ?? '');
-    if (!in_array($categoryType, ['windows', 'days', 'months', 'dimension'], TRUE)) {
+    if (!in_array($categoryType, ['windows', 'days', 'months', 'dimension', 'total'], TRUE)) {
       throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" has unsupported category type "%s".', $this->id(), $categoryType));
+    }
+    if ($categoryType === 'total' && $this->series !== []) {
+      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" cannot expand a total into series.', $this->id()));
     }
     if ($categoryType !== 'dimension') {
       return;
@@ -304,6 +337,13 @@ final class BbFigure extends ConfigEntityBase implements BbFigureInterface {
    *   The filter definition.
    */
   private function validateFilter(string $key, array $filter): void {
+    if (($filter['type'] ?? '') === 'entities') {
+      $binding = (string) ($filter['binding'] ?? '');
+      if (!in_array($binding, ['epic', 'project', 'team', 'user'], TRUE) || in_array($binding, $this->context_shape, TRUE)) {
+        throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" filter "%s" must bind epic, project, team or user outside its context shape.', $this->id(), $key));
+      }
+      return;
+    }
     if ($key !== 'period') {
       throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" has unsupported filter "%s".', $this->id(), $key));
     }
@@ -311,11 +351,9 @@ final class BbFigure extends ConfigEntityBase implements BbFigureInterface {
     if ($options === [] || in_array('', $options, TRUE) || count($options) !== count(array_unique($options))) {
       throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" filter "%s" must define unique non-empty options.', $this->id(), $key));
     }
-    // The single `period` filter carries three fixed presets: 7 and 30
-    // days at daily resolution, 365 at monthly.
-    $allowed = ['7', '30', '365'];
-    if (array_diff($options, $allowed) !== []) {
-      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" filter "%s" supports only %s options.', $this->id(), $key, implode(' and ', $allowed)));
+    // The single `period` filter offers the calendar period kinds.
+    if (array_diff($options, PeriodResolver::KINDS) !== []) {
+      throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" filter "%s" supports only %s options.', $this->id(), $key, implode(', ', PeriodResolver::KINDS)));
     }
     if (!in_array((string) ($filter['default'] ?? ''), $options, TRUE)) {
       throw new \InvalidArgumentException(sprintf('bakers.build figure "%s" filter "%s" default must match one configured option.', $this->id(), $key));

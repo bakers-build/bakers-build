@@ -29,10 +29,10 @@ Feature: The team Stats tab has one period switch and a painted chart
   Scenario: The single switch changes every figure
     Given I visit the team "Platform Crew" tab "Stats"
     And I note the statistics figures
-    When I choose the period "1 year"
-    Then the address carries the period "365"
+    When I choose the period "Year"
+    Then the address carries the period "year"
     And the statistics page has exactly one period switch
-    And the period "1 year" is the current one
+    And the period "Year" is the current one
     And the same statistics figures are shown
     And every chart figure reports a different bucket count
 

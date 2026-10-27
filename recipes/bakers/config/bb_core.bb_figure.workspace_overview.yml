@@ -1,0 +1,76 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.closed_tickets_many_runs
+    - bb_core.bb_measurement.created_tickets
+    - bb_core.bb_measurement.job_rating
+    - bb_core.bb_measurement.rated_tickets
+    - bb_core.bb_measurement.run_tokens
+    - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.runs_per_ticket
+    - bb_core.bb_measurement.tokens_per_ticket
+id: workspace_overview
+label: Overview
+description: "Throughput, rework, rating and AI usage across all projects of the workspace. Date basis: ticket closed_date for closed and rated tickets, ticket creation time for created tickets, run creation time for runs and tokens. Attribution basis: the ticket's project in this workspace."
+weight: 0
+widget: tiles
+measurements:
+  - closed_tickets
+  - created_tickets
+  - runs
+  - runs_per_ticket
+  - closed_tickets_many_runs
+  - job_rating
+  - rated_tickets
+  - run_tokens
+  - tokens_per_ticket
+categories:
+  type: total
+series: {  }
+ratio: {  }
+filters:
+  period:
+    label: Period
+    default: month
+    options:
+      -
+        value: week
+        label: Week
+      -
+        value: month
+        label: Month
+      -
+        value: quarter
+        label: Quarter
+      -
+        value: year
+        label: Year
+      -
+        value: all
+        label: 'All time'
+      -
+        value: custom
+        label: Custom
+  project:
+    label: Project
+    type: entities
+    binding: project
+  team:
+    label: Team
+    type: entities
+    binding: team
+  user:
+    label: Person
+    type: entities
+    binding: user
+context_shape:
+  - workspace
+conditions:
+  workspace:
+    id: bb_route_context
+    negate: false
+    context_mapping:
+      entity: workspace
+    entity_type: bb_workspace

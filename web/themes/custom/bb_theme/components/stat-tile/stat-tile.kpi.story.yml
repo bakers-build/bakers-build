@@ -1,0 +1,15 @@
+component: bb_theme:stat-tile
+name: KPI
+props:
+  value: '214'
+  unit: closed
+  label: Throughput
+  size: kpi
+  source: bb_measurement.closed_tickets
+  info: Tickets closed in the period, by closed date (UTC).
+  detail: 236 created · backlog +22
+  comparison:
+    value: '198'
+    label: vs
+    delta: +8 %
+    direction: up

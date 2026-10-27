@@ -1,0 +1,20 @@
+component: bb_theme:flow-chart
+name: Single
+props:
+  chart:
+    state: ready
+    label: New vs. done
+    caption: Per day, UTC · 20 Oct is still running
+    ratio: '0.50'
+    ratio_label: 'done : new'
+    totals:
+      new: '8'
+      done: '4'
+    open_at: 13:42 UTC
+    sections:
+      - label: Tue 20
+        new: 8
+        done: 4
+        open: 61
+        running: true
+        cut: false

@@ -1,0 +1,322 @@
+{
+  "format": "designbook-observations",
+  "capture": {
+    "role": "reference",
+    "source": {
+      "kind": "figma",
+      "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv",
+      "revision": null
+    },
+    "scope": [
+      {
+        "subject": "flow-chart-week",
+        "view": "desktop",
+        "state": "default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:14485"
+        }
+      },
+      {
+        "subject": "flow-chart-month",
+        "view": "desktop",
+        "state": "default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:14571"
+        }
+      },
+      {
+        "subject": "flow-chart-tooltip",
+        "view": "desktop",
+        "state": "hover",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "90:1106"
+        }
+      }
+    ]
+  },
+  "state": "hover",
+  "captured_at": "2026-10-24T14:10:00Z",
+  "extract": {
+    "subjects": [
+      {
+        "id": "flow-chart-tooltip",
+        "locator": {
+          "kind": "figma-node",
+          "value": "90:1106"
+        },
+        "samples": [
+          {
+            "view": "desktop",
+            "state": "hover",
+            "structure": {
+              "roots": [
+                "90:1106"
+              ],
+              "nodes": [
+                {
+                  "id": "90:1106",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1106"
+                  },
+                  "children": [
+                    "90:1107",
+                    "90:1108",
+                    "90:1111",
+                    "90:1114"
+                  ]
+                },
+                {
+                  "id": "90:1107",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1107"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "90:1108",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1108"
+                  },
+                  "children": [
+                    "90:1109",
+                    "90:1110"
+                  ]
+                },
+                {
+                  "id": "90:1109",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1109"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "90:1110",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1110"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "90:1111",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1111"
+                  },
+                  "children": [
+                    "90:1112",
+                    "90:1113"
+                  ]
+                },
+                {
+                  "id": "90:1112",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1112"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "90:1113",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1113"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "90:1114",
+                  "kind": "FRAME",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1114"
+                  },
+                  "children": [
+                    "90:1115",
+                    "90:1116"
+                  ]
+                },
+                {
+                  "id": "90:1115",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1115"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "90:1116",
+                  "kind": "TEXT",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "90:1116"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "tooltip": {
+                  "width": 203,
+                  "height": 112,
+                  "display": "flex column",
+                  "align": "start",
+                  "gap": 4,
+                  "padding": "10px 12px",
+                  "radius": 8,
+                  "background": "var(--color-title,#14171a)",
+                  "border": "none",
+                  "shadow": "none observed"
+                },
+                "row": {
+                  "display": "flex row",
+                  "align": "start",
+                  "gap": 24,
+                  "height": 20,
+                  "label_width": 140
+                },
+                "context": "Spec frame 90:1104 \"Tooltip: exakte Werte, laufender Tag\" (AC-7). Its second tooltip 90:1117 (AI usage) and the note 90:1121 are not part of this subject. Note text: \"Abgekürzte Zahlen (28.4 B) zeigen beim Hover den exakten Wert und die Berechnung; der laufende Tag ist blasser und benannt.\""
+              },
+              "typography": [
+                {
+                  "role": "title",
+                  "style": "vorschlag/body-strong",
+                  "family": "SF Pro",
+                  "weight": 510,
+                  "size": 13,
+                  "line_height": 20,
+                  "color": "var(--color-surface,#fafaf7)"
+                },
+                {
+                  "role": "row-label",
+                  "style": "vorschlag/meta",
+                  "family": "SF Pro",
+                  "weight": 400,
+                  "size": 12,
+                  "line_height": 16,
+                  "color": "var(--color-surface-3,#d6d3ca)"
+                },
+                {
+                  "role": "row-value",
+                  "style": "vorschlag/body-strong",
+                  "family": "SF Pro",
+                  "weight": 510,
+                  "size": 13,
+                  "line_height": 20,
+                  "color": "var(--color-surface,#fafaf7)"
+                }
+              ],
+              "content": [
+                {
+                  "node": "90:1107",
+                  "text": "Mon 19 Oct · still running"
+                },
+                {
+                  "node": "90:1108",
+                  "label": "Created",
+                  "value": "10"
+                },
+                {
+                  "node": "90:1111",
+                  "label": "Closed",
+                  "value": "9"
+                },
+                {
+                  "node": "90:1114",
+                  "label": "Open at 13:42 UTC",
+                  "value": "61"
+                }
+              ],
+              "interactions": [
+                {
+                  "state": "hover",
+                  "trigger": "hover over a day column (per spec frame title and note)",
+                  "available": "static spec frame only; no prototype interaction observed"
+                }
+              ],
+              "properties": {
+                "tokens_observed": {
+                  "color-title": "#14171a",
+                  "color-surface": "#fafaf7",
+                  "color-surface-3": "#d6d3ca"
+                }
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [],
+              "font_families": [
+                "SF Pro"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "fonts.SF Pro.files",
+                "reason": "Figma MCP tools expose family/style/weight only; no font binaries are downloadable for SF Pro (Apple system font, licence-restricted).",
+                "required": false
+              },
+              {
+                "property": "source.revision",
+                "reason": "Figma MCP tools return no file version id; revision recorded as null.",
+                "required": false
+              },
+              {
+                "property": "tooltip.position",
+                "reason": "Spec frame shows the tooltip detached from the chart; anchor/offset relative to the hovered column is not observable.",
+                "required": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parents": [],
+    "images": [],
+    "fonts": [
+      {
+        "family": "SF Pro",
+        "source": "system",
+        "weights": [
+          400,
+          510,
+          590,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": []
+      }
+    ],
+    "captures": [
+      {
+        "subject": "flow-chart-tooltip",
+        "view": "desktop",
+        "state": "hover",
+        "path": "desktop--flow-chart-tooltip--hover.png",
+        "width": 203,
+        "height": 112
+      }
+    ]
+  }
+}

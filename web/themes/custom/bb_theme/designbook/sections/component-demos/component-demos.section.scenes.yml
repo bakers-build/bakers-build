@@ -16,8 +16,8 @@ scenes:
   - name: segmented control
     group: Action
     docs: >-
-      A standalone demonstration of bb_theme:segmented_control (BB-490), not
-      a screen and not the shell — this scene exists only to reach the component
+      A standalone demonstration of bb_theme:segmented_control (BB-490), not a
+      screen and not the shell — this scene exists only to reach the component
       itself. It renders the component in isolation with three positions and the
       middle one active, in the same order and with the same URL tokens
       BbClosedRows::buildExposedForm() renders onto the six operator listings'
@@ -212,6 +212,149 @@ scenes:
                   - '8'
                   - '12'
                   - '5'
+  - name: new vs done
+    group: Data Display
+    docs: >-
+      A standalone sample-data demonstration of bb_theme:flow-chart: tickets
+      created (new) and closed (done) per day of a month, the area between them
+      tinted by which one is larger. Day 20 is still running, so the last
+      interval is dashed and its points are hollow; day 1 is cut by the period
+      start and its points are hollow too. The values are illustrative, not live
+      tenant measurements.
+    items:
+      - component: bb_theme:flow-chart
+        props:
+          chart:
+            state: ready
+            label: New vs. done
+            caption: Per day, UTC · 20 Oct is still running
+            ratio: '0.96'
+            ratio_label: 'done : new'
+            totals:
+              new: '219'
+              done: '211'
+            open_at: 13:42 UTC
+            sections:
+              - label: '1'
+                new: 9
+                done: 10
+                open: 48
+                running: false
+                cut: true
+              - label: '2'
+                new: 12
+                done: 11
+                open: 49
+                running: false
+                cut: false
+              - label: '3'
+                new: 14
+                done: 12
+                open: 51
+                running: false
+                cut: false
+              - label: '4'
+                new: 11
+                done: 12
+                open: 50
+                running: false
+                cut: false
+              - label: '5'
+                new: 13
+                done: 13
+                open: 50
+                running: false
+                cut: false
+              - label: '6'
+                new: 6
+                done: 5
+                open: 51
+                running: false
+                cut: false
+              - label: '7'
+                new: 4
+                done: 3
+                open: 52
+                running: false
+                cut: false
+              - label: '8'
+                new: 22
+                done: 10
+                open: 64
+                running: false
+                cut: false
+              - label: '9'
+                new: 24
+                done: 11
+                open: 77
+                running: false
+                cut: false
+              - label: '10'
+                new: 19
+                done: 12
+                open: 84
+                running: false
+                cut: false
+              - label: '11'
+                new: 11
+                done: 12
+                open: 83
+                running: false
+                cut: false
+              - label: '12'
+                new: 14
+                done: 13
+                open: 84
+                running: false
+                cut: false
+              - label: '13'
+                new: 5
+                done: 4
+                open: 85
+                running: false
+                cut: false
+              - label: '14'
+                new: 3
+                done: 2
+                open: 86
+                running: false
+                cut: false
+              - label: '15'
+                new: 8
+                done: 19
+                open: 75
+                running: false
+                cut: false
+              - label: '16'
+                new: 9
+                done: 21
+                open: 63
+                running: false
+                cut: false
+              - label: '17'
+                new: 10
+                done: 18
+                open: 55
+                running: false
+                cut: false
+              - label: '18'
+                new: 12
+                done: 11
+                open: 56
+                running: false
+                cut: false
+              - label: '19'
+                new: 13
+                done: 12
+                open: 57
+                running: false
+                cut: false
+              - label: '20'
+                new: 8
+                done: 4
+                open: 61
+                running: true
+                cut: false
   - name: autosave toast
     group: Data Display
     docs: >-
@@ -242,8 +385,8 @@ scenes:
     docs: >-
       A standalone demonstration of bb_theme:setup_paths, the generic
       two-position panel switcher. The wrapper owns Alpine `selected` state and
-      the Agent segmented filter; the two panels switch in place by position.
-      A story of setup_command or segmented_control is not this composition.
+      the Agent segmented filter; the two panels switch in place by position. A
+      story of setup_command or segmented_control is not this composition.
     items:
       - component: bb_theme:setup_paths
         props:
@@ -275,8 +418,8 @@ scenes:
             - component: bb_theme:setup_command
               props:
                 command: >-
-                  Use `bakers:bb-init` to guide me through installing and setting up
-                  bakers.build.
+                  Use `bakers:bb-init` to guide me through installing and setting
+                  up bakers.build.
                 label: Copy the skill wizard prompt
   - name: inline add row
     group: Layout
@@ -319,23 +462,29 @@ scenes:
                 label: Add member
   - name: ticket-inspector (billing)
     group: Data Display
-    docs: 'THE BILLING ROWS OF THE TICKET INSPECTOR (BB-666), in four states, as a demonstration: the
-      rows live in the inspector of the ticket screen, rendered by the `bb_track_ticket_billing` source.
-      Billing names the account recorded time on this ticket is booked to; Source says where it comes from:
-      `linked` (this ticket links it), `from <identifier>` (the nearest ancestor that links one) or `project
-      default`. Source is its own row because beside the picker the narrow rail would wrap it.
-  
-  
-      AN EDITOR PICKS, A VIEWER READS. A project editor gets a picker of the project''s linkable accounts
-      — active and not the default — plus Inherit, which removes only this ticket''s link, and saves with
-      Save billing account. Everyone else who can view the ticket reads the same rows as text. The default
-      is never offered: it is what Inherit falls back to.'
+    docs: >-
+      THE BILLING ROWS OF THE TICKET INSPECTOR (BB-666), in four states, as a
+      demonstration: the rows live in the inspector of the ticket screen,
+      rendered by the `bb_track_ticket_billing` source. Billing names the
+      account recorded time on this ticket is booked to; Source says where it
+      comes from: `linked` (this ticket links it), `from <identifier>` (the
+      nearest ancestor that links one) or `project default`. Source is its own
+      row because beside the picker the narrow rail would wrap it.
+
+
+      AN EDITOR PICKS, A VIEWER READS. A project editor gets a picker of the
+      project's linkable accounts — active and not the default — plus Inherit,
+      which removes only this ticket's link, and saves with Save billing
+      account. Everyone else who can view the ticket reads the same rows as
+      text. The default is never offered: it is what Inherit falls back to.
     items:
       - component: bb_theme:zone
         props:
           gap: lg
           columns: 2
-          description: Editors pick an account or Inherit; viewers read the same rows without a picker
+          description: >-
+            Editors pick an account or Inherit; viewers read the same rows
+            without a picker
         slots:
           heading: Billing rows of the ticket inspector
           content:
@@ -515,8 +664,8 @@ scenes:
                               kind: badge
                               label: project default
                               tone: neutral
-  - name: "markdown textarea"
-    group: "Form"
+  - name: markdown textarea
+    group: Form
     docs: >-
       A standalone demonstration of bb_theme:form_rich_text, the Markdown
       authoring control: a formatting toolbar over a plain textarea. Every
@@ -524,22 +673,663 @@ scenes:
       element or the bb_markdown text editor; the stored value stays the
       Markdown source the textarea holds. form_textarea stays the plain box.
     items:
-      - component: "bb_theme:zone"
+      - component: bb_theme:zone
         props:
-          inset: "none"
-          direction: "fill"
-          description: "The authoring control every bb_rich body field renders through: toolbar over a plain textarea; the value stays Markdown source."
+          inset: none
+          direction: fill
+          description: >-
+            The authoring control every bb_rich body field renders through:
+            toolbar over a plain textarea; the value stays Markdown source.
         slots:
-          heading: "Markdown textarea"
+          heading: Markdown textarea
           content:
-            - component: "bb_theme:form_label"
+            - component: bb_theme:form_label
               props:
-                for: "edit-body-value"
+                for: edit-body-value
               slots:
-                title: "Body"
-            - component: "bb_theme:form_rich_text"
+                title: Body
+            - component: bb_theme:form_rich_text
               props:
-                id: "edit-body-value"
-                name: "body[0][value]"
+                id: edit-body-value
+                name: body[0][value]
                 rows: 6
-                value: "## Steps to reproduce\n\n- Create a ticket without an assignee\n- Open `bakers ui` and export\n\nThe export **stops** at the first such ticket."
+                value: |-
+                  ## Steps to reproduce
+
+                  - Create a ticket without an assignee
+                  - Open `bakers ui` and export
+
+                  The export **stops** at the first such ticket.
+  - name: period range
+    group: Data Display
+    items:
+      - component: bb_theme:zone
+        props:
+          inset: none
+          direction: fill
+          description: >-
+            The statistics period switch above two figures that carry their
+            comparison with the previous quarter.
+        slots:
+          heading: Period range
+          content:
+            - component: bb_theme:period-range
+              props:
+                kind: quarter
+                date: '2026-10-24'
+                today: '2026-10-24'
+            - component: bb_theme:zone
+              props:
+                columns: 2
+                gap: md
+              slots:
+                content:
+                  - component: bb_theme:stat-tile
+                    props:
+                      value: '42'
+                      label: Closed tickets
+                      source: bb_measurement.closed_tickets
+                      window: Q4 2026
+                      comparison:
+                        value: '37'
+                        label: vs. Q3 2026
+                        delta: +14 %
+                        direction: up
+                  - component: bb_theme:stat-tile
+                    props:
+                      value: '3.1'
+                      label: Runs per ticket
+                      source: bb_measurement.runs_per_ticket
+                      window: Q4 2026
+                      comparison:
+                        value: '3.6'
+                        label: vs. Q3 2026
+                        delta: '-14 %'
+                        direction: down
+  - name: insights overview
+    group: Data Display
+    docs: >-
+      A standalone demonstration of the Insights › Overview building blocks
+      (BAKERS-13): the kpi stat tiles with info and exact-value disclosures, the
+      share-bar breakdowns, the sortable Projects table with its total row and
+      pager, the People table with its small-sample footnote, and the empty
+      state. Not a screen and not the shell: the page itself is rendered by
+      BbStatsController::insights() from these components. Reference: Figma
+      84:13, 95:2782, 90:1066 (designbook reference
+      3a2b0e29e246a9d7/66d6d40dd8d4913e).
+    items:
+      - component: bb_theme:zone
+        props:
+          inset: lg
+          description: keytec · all projects, all teams
+        slots:
+          heading: Insights
+          content:
+            - component: bb_theme:zone
+              props:
+                inset: none
+                direction: row
+                gap: sm
+              slots:
+                content:
+                  - component: bb_theme:period-range
+                    props:
+                      kind: month
+                      date: '2026-10-19'
+                      today: '2026-10-19'
+                  - component: bb_theme:property_pill
+                    props:
+                      name: project
+                      label: Project
+                      value_label: All
+                      picker_id: insights-project
+                      multiple: true
+                      searchable: true
+                      values: []
+                      options: []
+                  - component: bb_theme:property_pill
+                    props:
+                      name: team
+                      label: Team
+                      value_label: All
+                      picker_id: insights-team
+                      multiple: true
+                      searchable: true
+                      values: []
+                      options: []
+                  - component: bb_theme:property_pill
+                    props:
+                      name: user
+                      label: Person
+                      value_label: All
+                      picker_id: insights-user
+                      multiple: true
+                      searchable: true
+                      values: []
+                      options: []
+            - component: bb_theme:zone
+              props:
+                inset: none
+                columns: 4
+                gap: md
+              slots:
+                content:
+                  - component: bb_theme:stat-tile
+                    props:
+                      value: '214'
+                      unit: closed
+                      label: Throughput
+                      size: kpi
+                      source: bb_measurement.closed_tickets
+                      info: Tickets closed in the period, by closed date (UTC).
+                      detail: 236 created · backlog +22
+                      comparison:
+                        value: '198'
+                        label: vs
+                        delta: +8 %
+                        direction: up
+                  - component: bb_theme:stat-tile
+                    props:
+                      value: '4.9'
+                      unit: closed tickets
+                      label: Runs per ticket
+                      size: kpi
+                      source: bb_measurement.runs_per_ticket
+                      info: Runs started in the period per ticket closed in it.
+                      detail: 41 % needed > 3 runs
+                      comparison:
+                        value: '5.6'
+                        label: vs
+                        delta: '-0.7'
+                        direction: down
+                  - component: bb_theme:stat-tile
+                    props:
+                      value: '4.1'
+                      unit: of 5, job rating
+                      label: Rating
+                      size: kpi
+                      source: bb_measurement.job_rating
+                      info: >-
+                        Mean job rating of tickets closed in the period; unrated
+                        tickets are left out.
+                      detail: 87 of 214 rated
+                      comparison:
+                        value: '3.9'
+                        label: vs
+                        delta: '+0.2'
+                        direction: up
+                  - component: bb_theme:stat-tile
+                    props:
+                      value: 28.4 B
+                      unit: tokens
+                      label: AI usage
+                      size: kpi
+                      source: bb_measurement.run_tokens
+                      info: Run tokens by run start (UTC). Not a billable quantity.
+                      detail: ≈ 133 M per closed ticket
+                      comparison:
+                        value: 31.2 B
+                        label: vs
+                        delta: '-9 %'
+                        direction: down
+                      exact: >-
+                        28,412,553,104 tokens — Sum of run tokens by run start,
+                        UTC
+            - component: bb_theme:zone
+              props:
+                inset: none
+                columns: 2
+                gap: lg
+              slots:
+                content:
+                  - component: bb_theme:stat-breakdown
+                    props:
+                      label: AI usage by model
+                      caption: Tokens, 1 – 19 Oct. Not a billable quantity.
+                      display: bars
+                      columns:
+                        - key: tokens
+                          label: Tokens
+                      entries:
+                        - label: Opus 5.5
+                          value: 17.9 B
+                          share: 63
+                          share_label: 63 %
+                          counts:
+                            tokens: 17.9 B
+                        - label: Sonnet 5.5
+                          value: 8.7 B
+                          share: 31
+                          share_label: 31 %
+                          counts:
+                            tokens: 8.7 B
+                        - label: Haiku 5.5
+                          value: 1.4 B
+                          share: 5
+                          share_label: 5 %
+                          counts:
+                            tokens: 1.4 B
+                        - label: Unattributed
+                          value: 0.4 B
+                          share: 1
+                          share_label: 1 %
+                          counts:
+                            tokens: 0.4 B
+                      source: bb_measurement.run_tokens
+                  - component: bb_theme:stat-breakdown
+                    props:
+                      label: By project
+                      caption: Tokens, 1 – 19 Oct.
+                      display: bars
+                      columns:
+                        - key: tokens
+                          label: Tokens
+                      entries:
+                        - label: atlas
+                          value: 19.6 B
+                          share: 69
+                          share_label: 69 %
+                          counts:
+                            tokens: 19.6 B
+                        - label: pfiff
+                          value: 4.1 B
+                          share: 14
+                          share_label: 14 %
+                          counts:
+                            tokens: 4.1 B
+                        - label: dk-elvis-home
+                          value: 2.6 B
+                          share: 9
+                          share_label: 9 %
+                          counts:
+                            tokens: 2.6 B
+                        - label: cw-framework
+                          value: 1.7 B
+                          share: 6
+                          share_label: 6 %
+                          counts:
+                            tokens: 1.7 B
+                        - label: keytec-content
+                          value: 0.4 B
+                          share: 2
+                          share_label: 2 %
+                          counts:
+                            tokens: 0.4 B
+                      source: bb_measurement.run_tokens
+            - component: bb_theme:zone
+              props:
+                inset: none
+                description: All projects of keytec, 1 – 19 Oct. Sort by any column.
+              slots:
+                heading: Projects
+                content:
+                  - component: bb_theme:table
+                    props:
+                      columns:
+                        - key: label
+                          label: Project
+                          sort: asc
+                          url: >-
+                            ?sort[workspace_projects]=label&order[workspace_projects]=desc
+                          row_header: true
+                        - key: closed
+                          label: Closed
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_projects]=closed&order[workspace_projects]=desc
+                        - key: created
+                          label: Created
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_projects]=created&order[workspace_projects]=desc
+                        - key: open
+                          label: Open
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_projects]=open&order[workspace_projects]=desc
+                        - key: runs
+                          label: Runs / ticket
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_projects]=runs&order[workspace_projects]=desc
+                        - key: rating
+                          label: Rating
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_projects]=rating&order[workspace_projects]=desc
+                        - key: tokens
+                          label: AI tokens
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_projects]=tokens&order[workspace_projects]=desc
+                      rows:
+                        - cells:
+                            label:
+                              kind: text
+                              value: cw-framework
+                            closed:
+                              kind: text
+                              value: '19'
+                            created:
+                              kind: text
+                              value: '21'
+                            open:
+                              kind: text
+                              value: '4'
+                            runs:
+                              kind: text
+                              value: '6.2'
+                            rating:
+                              kind: text
+                              value: —
+                              emphasis: faint
+                            tokens:
+                              kind: text
+                              value: 1.7 B
+                        - cells:
+                            label:
+                              kind: text
+                              value: dk-elvis-home
+                            closed:
+                              kind: text
+                              value: '22'
+                            created:
+                              kind: text
+                              value: '27'
+                            open:
+                              kind: text
+                              value: '7'
+                            runs:
+                              kind: text
+                              value: '4.6'
+                            rating:
+                              kind: text
+                              value: 4.0 · n 8
+                            tokens:
+                              kind: text
+                              value: 2.6 B
+                        - cells:
+                            label:
+                              kind: text
+                              value: atlas
+                            closed:
+                              kind: text
+                              value: '132'
+                            created:
+                              kind: text
+                              value: '141'
+                            open:
+                              kind: text
+                              value: '38'
+                            runs:
+                              kind: text
+                              value: '5.3'
+                            rating:
+                              kind: text
+                              value: 4.2 · n 61
+                            tokens:
+                              kind: text
+                              value: 19.6 B
+                        - cells:
+                            label:
+                              kind: text
+                              value: keytec-content
+                            closed:
+                              kind: text
+                              value: '7'
+                            created:
+                              kind: text
+                              value: '8'
+                            open:
+                              kind: text
+                              value: '1'
+                            runs:
+                              kind: text
+                              value: '2.1'
+                            rating:
+                              kind: text
+                              value: —
+                              emphasis: faint
+                            tokens:
+                              kind: text
+                              value: 0.4 B
+                        - cells:
+                            label:
+                              kind: text
+                              value: pfiff
+                            closed:
+                              kind: text
+                              value: '34'
+                            created:
+                              kind: text
+                              value: '39'
+                            open:
+                              kind: text
+                              value: '11'
+                            runs:
+                              kind: text
+                              value: '4.1'
+                            rating:
+                              kind: text
+                              value: 3.9 · n 12
+                            tokens:
+                              kind: text
+                              value: 4.1 B
+                        - cells:
+                            label:
+                              kind: text
+                              value: All projects
+                              emphasis: strong
+                            closed:
+                              kind: text
+                              value: '214'
+                              emphasis: strong
+                            created:
+                              kind: text
+                              value: '236'
+                              emphasis: strong
+                            open:
+                              kind: text
+                              value: '61'
+                              emphasis: strong
+                            runs:
+                              kind: text
+                              value: '4.9'
+                              emphasis: strong
+                            rating:
+                              kind: text
+                              value: 4.1 · n 87
+                              emphasis: strong
+                            tokens:
+                              kind: text
+                              value: 28.4 B
+                              emphasis: strong
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      direction: row
+                      gap: sm
+                      align: center
+                    slots:
+                      content:
+                        - component: bb_theme:collection-position
+                          props:
+                            from: 1
+                            to: 5
+                            total: 24
+                            noun: projects
+                        - component: bb_theme:button
+                          props:
+                            label: Previous
+                            disabled: true
+                        - component: bb_theme:button
+                          props:
+                            label: Next
+                            href: '?page[workspace_projects]=1'
+            - component: bb_theme:zone
+              props:
+                inset: none
+                description: >-
+                  Sorted by name; click a column to sort. n = closed tickets
+                  behind the value.
+              slots:
+                heading: People
+                content:
+                  - component: bb_theme:table
+                    props:
+                      columns:
+                        - key: person
+                          label: Person
+                          sort: asc
+                          url: >-
+                            ?sort[workspace_people]=person&order[workspace_people]=desc
+                          row_header: true
+                        - key: team
+                          label: Team
+                          sort: none
+                          url: >-
+                            ?sort[workspace_people]=team&order[workspace_people]=asc
+                        - key: closed
+                          label: Closed
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_people]=closed&order[workspace_people]=desc
+                        - key: runs
+                          label: Runs / ticket
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_people]=runs&order[workspace_people]=desc
+                        - key: rating
+                          label: Rating
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_people]=rating&order[workspace_people]=desc
+                        - key: tokens
+                          label: AI tokens
+                          num: true
+                          sort: none
+                          url: >-
+                            ?sort[workspace_people]=tokens&order[workspace_people]=desc
+                      rows:
+                        - cells:
+                            person:
+                              kind: person
+                              display_name: Christian W.
+                              initials: CW
+                              color: running
+                            team:
+                              kind: text
+                              value: Platform crew
+                            closed:
+                              kind: text
+                              value: '58'
+                            runs:
+                              kind: text
+                              value: '5.6'
+                            rating:
+                              kind: text
+                              value: 4.3 · n 24
+                            tokens:
+                              kind: text
+                              value: 8.9 B
+                        - cells:
+                            person:
+                              kind: person
+                              display_name: Daniel S.
+                              initials: DS
+                              color: attention
+                            team:
+                              kind: text
+                              value: Design crew
+                            closed:
+                              kind: text
+                              value: '21'
+                            runs:
+                              kind: text
+                              value: '3.8'
+                            rating:
+                              kind: text
+                              value: 4.0 · n 9
+                            tokens:
+                              kind: text
+                              value: 2.1 B
+                        - cells:
+                            person:
+                              kind: person
+                              display_name: Robert K.
+                              initials: RK
+                              color: wait
+                            team:
+                              kind: text
+                              value: Platform crew
+                            closed:
+                              kind: text
+                              value: '3'
+                            runs:
+                              kind: text
+                              value: —
+                              emphasis: faint
+                            rating:
+                              kind: text
+                              value: —
+                              emphasis: faint
+                            tokens:
+                              kind: text
+                              value: 0.2 B
+                        - cells:
+                            person:
+                              kind: person
+                              display_name: Unassigned tickets
+                              initials: '?'
+                              color: idle
+                            team:
+                              kind: text
+                              value: —
+                              emphasis: faint
+                            closed:
+                              kind: text
+                              value: '45'
+                            runs:
+                              kind: text
+                              value: '5.1'
+                            rating:
+                              kind: text
+                              value: 4.0 · n 22
+                            tokens:
+                              kind: text
+                              value: 5.3 B
+                  - component: bb_theme:note
+                    props:
+                      lead: >-
+                        Robert K.: 3 closed tickets — too few for runs per
+                        ticket (n < 5), shown as —. Values belong to the current
+                        assignee.
+            - component: bb_theme:zone
+              props:
+                inset: md
+                description: >-
+                  Insights counts tickets that reach done in the selected
+                  period, the runs on them and the AI tokens they used. The
+                  first figures appear once a ticket is closed.
+              slots:
+                heading: No closed tickets in October yet
+                content:
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      direction: row
+                    slots:
+                      content:
+                        - component: bb_theme:button
+                          props:
+                            label: Open projects
+                            href: /bakers/projects

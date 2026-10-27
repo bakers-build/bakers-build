@@ -2,15 +2,11 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_figure.project_runs_trend
   - bb_core.bb_figure.team_runs_trend
   - bb_core.bb_figure.team_user_runs_trend
-  - bb_core.bb_figure.user_runs_trend
 id: runs
 label: Runs
 weight: 15
 figures:
-- user_runs_trend
 - team_user_runs_trend
 - team_runs_trend
-- project_runs_trend

@@ -1,0 +1,154 @@
+component: bb_theme:table
+name: Tree
+props:
+  variant: ''
+  columns:
+    - key: label
+      label: Account / project / ticket
+      row_header: true
+      sort: asc
+      url: '?sort%5Bbilling%5D=label&order%5Bbilling%5D=desc'
+    - key: external_id
+      label: External ID
+    - key: hours
+      label: Hours
+      num: true
+      sort: none
+      url: '?sort%5Bbilling%5D=hours&order%5Bbilling%5D=desc'
+    - key: tokens
+      label: AI tokens
+      num: true
+      sort: none
+      url: '?sort%5Bbilling%5D=tokens&order%5Bbilling%5D=desc'
+  rows:
+    - depth: 0
+      disclosure:
+        href: '?open%5B0%5D=a1&open%5B1%5D=p1-1'
+        expanded: true
+      badges:
+        - label: default account
+          tone: neutral
+      cells:
+        label:
+          kind: text
+          value: Atlas retainer
+        external_id:
+          kind: mono
+          value: K-2041
+        hours:
+          kind: text
+          value: 142 h
+          exact: 141.50 h — Recorded and approved worklogs by work date
+        tokens:
+          kind: text
+          value: 18.2 M
+    - depth: 1
+      disclosure:
+        href: '?open%5B0%5D=a1'
+        expanded: true
+      cells:
+        label:
+          kind: text
+          value: Atlas shop
+        external_id:
+          kind: text
+          value: —
+          emphasis: faint
+        hours:
+          kind: text
+          value: 98.0 h
+        tokens:
+          kind: text
+          value: 12.1 M
+    - depth: 2
+      cells:
+        label:
+          kind: text
+          value: ATL-112 · Checkout redesign
+        external_id:
+          kind: text
+          value: —
+          emphasis: faint
+        hours:
+          kind: text
+          value: 61.5 h
+        tokens:
+          kind: text
+          value: 9.4 M
+    - depth: 2
+      cells:
+        label:
+          kind: text
+          value: Without ticket
+        external_id:
+          kind: text
+          value: —
+          emphasis: faint
+        hours:
+          kind: text
+          value: 36.5 h
+        tokens:
+          kind: text
+          value: —
+          emphasis: faint
+    - depth: 0
+      disclosure:
+        href: '?open%5B0%5D=a1&open%5B1%5D=a2'
+        expanded: false
+      badges:
+        - label: no external ID
+          tone: attention
+      cells:
+        label:
+          kind: text
+          value: Pfiff support
+        external_id:
+          kind: text
+          value: —
+          emphasis: faint
+        hours:
+          kind: text
+          value: 9.0 h
+        tokens:
+          kind: text
+          value: 1.3 M
+    - depth: 0
+      disclosure:
+        href: '?open%5B0%5D=a1&open%5B1%5D=n'
+        expanded: false
+      badges:
+        - label: tokens only
+          tone: neutral
+      cells:
+        label:
+          kind: text
+          value: No billing account
+        external_id:
+          kind: text
+          value: —
+          emphasis: faint
+        hours:
+          kind: text
+          value: —
+          emphasis: faint
+        tokens:
+          kind: text
+          value: 412 K
+    - depth: 0
+      cells:
+        label:
+          kind: text
+          value: Total
+          emphasis: strong
+        external_id:
+          kind: text
+          value: —
+          emphasis: faint
+        hours:
+          kind: text
+          value: 151 h
+          emphasis: strong
+        tokens:
+          kind: text
+          value: 19.9 M
+          emphasis: strong

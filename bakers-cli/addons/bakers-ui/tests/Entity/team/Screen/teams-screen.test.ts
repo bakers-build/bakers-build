@@ -97,13 +97,18 @@ const DETAIL_WORLD: Record<string, unknown> = {
                 filters: {
                   period: {
                     label: 'Period',
-                    value: '7',
+                    value: 'year',
                     options: [
-                      { value: '7', label: '7 days' },
-                      { value: '30', label: '30 days' },
+                      { value: 'week', label: 'Week' },
+                      { value: 'month', label: 'Month' },
+                      { value: 'quarter', label: 'Quarter' },
+                      { value: 'year', label: 'Year' },
+                      { value: 'all', label: 'All time' },
+                      { value: 'custom', label: 'Custom' },
                     ],
                   },
                 },
+                period: { grouping: 'month' },
                 categories: [{ key: 'project-1', label: 'bakers.build' }],
                 measurements: [
                   {

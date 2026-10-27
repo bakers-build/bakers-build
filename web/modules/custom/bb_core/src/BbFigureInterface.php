@@ -55,6 +55,15 @@ interface BbFigureInterface extends ConfigEntityInterface, EntityWithPluginColle
   public function getSeries(): array;
 
   /**
+   * Gets the ratio configuration.
+   *
+   * @return array<string, string>
+   *   `[]` when the figure carries no ratio, otherwise
+   *   `['numerator' => string, 'denominator' => string]` measurement IDs.
+   */
+  public function getRatio(): array;
+
+  /**
    * Gets the filter configuration.
    *
    * @return array<string, mixed>

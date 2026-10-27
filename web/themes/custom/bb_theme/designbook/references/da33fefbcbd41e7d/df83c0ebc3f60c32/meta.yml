@@ -1,0 +1,106 @@
+source:
+  kind: "figma"
+  identity: "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv?node-id=83-1226"
+  revision: null
+role: "reference"
+elements:
+  - id: "period-range-month"
+    locator:
+      kind: "figma-node"
+      value: "84:187"
+    states:
+      - name: "period-range-month-default"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "period-range-kind-dropdown"
+    locator:
+      kind: "figma-node"
+      value: "150:13728"
+    states:
+      - name: "period-range-kind-dropdown-open"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "period-range-month-picker"
+    locator:
+      kind: "figma-node"
+      value: "153:1694"
+    states:
+      - name: "period-range-month-picker-open"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "period-range-week-picker"
+    locator:
+      kind: "figma-node"
+      value: "155:1669"
+    states:
+      - name: "period-range-week-picker-open"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "period-range-quarter-picker"
+    locator:
+      kind: "figma-node"
+      value: "155:1841"
+    states:
+      - name: "period-range-quarter-picker-open"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "period-range-year-picker"
+    locator:
+      kind: "figma-node"
+      value: "155:1925"
+    states:
+      - name: "period-range-year-picker-open"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "period-range-past-period"
+    locator:
+      kind: "figma-node"
+      value: "161:2567"
+    states:
+      - name: "period-range-past-period-return"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "period-range-custom"
+    locator:
+      kind: "figma-node"
+      value: "184:15016"
+    states:
+      - name: "period-range-custom-default"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+  - id: "stat-tile"
+    locator:
+      kind: "figma-node"
+      value: "84:226"
+    states:
+      - name: "stat-tile-default"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1815
+assets_dir: "assets"

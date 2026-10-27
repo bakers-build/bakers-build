@@ -1,0 +1,8 @@
+component: bb_theme:period-range
+name: Custom (calendar open)
+props:
+  kind: custom
+  start: '2026-09-01'
+  end: '2026-10-19'
+  today: '2026-10-24'
+  open: from
