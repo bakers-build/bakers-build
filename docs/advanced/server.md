@@ -99,7 +99,7 @@ CLI and server share one version, held in the repository's `VERSION` file. A rel
 3. The tag pipeline's `publish:npm` publishes `@bakers-build/bakers` and its packages as `latest`, and `release_images` tags that commit's `:tree-<tree>` images `php`, `nginx` and `mcp` as `:0.2.0` and `:latest`. Never publish by hand.
 4. The release branch merges back into `develop` the same way. `main` is never merged into `develop`.
 
-`php:0.2.0` is the server of `@bakers-build/bakers@0.2.0`. Release images carry the labels `org.opencontainers.image.version` and `org.opencontainers.image.revision`: the layers equal the deployed `:<commit-sha>`, the digest differs. `docker inspect --format '{{json .Config.Labels}}' <image>` shows what a host runs. The registry cleanup policy deletes `tree-*` tags after 30 days.
+`php:0.2.0` is the server of `@bakers-build/bakers@0.2.0`. Release images carry the labels `org.opencontainers.image.version` and `org.opencontainers.image.revision`: the layers equal the deployed `:<commit-sha>`, the digest differs. `docker inspect <image>` shows them for what a host runs. The registry cleanup policy deletes `tree-*` tags after 30 days.
 
 Every `develop` deploy also publishes the CLI under the dist-tag `next` (`<next patch>-next.<pipeline number>`), matching the commit on dev.
 
