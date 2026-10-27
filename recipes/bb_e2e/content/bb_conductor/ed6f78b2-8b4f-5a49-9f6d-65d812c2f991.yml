@@ -1,4 +1,6 @@
 # Dedicated API contract fixture; independent of the product-navigation seed.
+# Owned by fixture-claim-owner: a conductor is assignable only while its owner
+# can access the project.
 _meta:
   version: '1.0'
   entity_type: bb_conductor
@@ -6,7 +8,7 @@ _meta:
   default_langcode: en
   depends:
     b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
-    db58173e-ed5d-50cf-af02-2943a2803c36: user
+    7710d75c-ed4e-4e99-85b8-d1a306c2e3cf: user
 default:
   conductor_id:
   - value: api-contract-conductor
@@ -17,4 +19,4 @@ default:
   project_id:
   - entity: b76b40df-436c-5d3d-9bf1-5745fa621a7a
   owner_user_id:
-  - entity: db58173e-ed5d-50cf-af02-2943a2803c36
+  - entity: 7710d75c-ed4e-4e99-85b8-d1a306c2e3cf

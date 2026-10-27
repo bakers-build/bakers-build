@@ -141,7 +141,10 @@ final class ReferenceOptionsTest extends KernelTestBase {
    * Creates and saves a BbConductor bound to the given project.
    */
   private function createConductor(string $machineId, int $projectId): BbConductorInterface {
-    $owner = $this->createRawUser('owner-' . $machineId);
+    // An instance admin owner passes BbConductorOwnerAccess, which
+    // ConductorOwnerAccessTest covers; this suite is about project scoping.
+    $owner = $this->createUser(['administer bakers'], 'owner-' . $machineId);
+    $this->assertInstanceOf(UserInterface::class, $owner);
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
       'conductor_id' => $machineId,
       'label' => $machineId,

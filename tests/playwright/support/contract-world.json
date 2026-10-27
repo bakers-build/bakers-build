@@ -91,6 +91,10 @@
     "uuid": "db58173e-ed5d-50cf-af02-2943a2803c36",
     "entityType": "user"
   },
+  "user.claim-owner": {
+    "uuid": "7710d75c-ed4e-4e99-85b8-d1a306c2e3cf",
+    "entityType": "user"
+  },
   "user.edit-team-lead": {
     "uuid": "a4c8e2b0-1d5f-4a73-9c21-6e8b0d4f7a19",
     "entityType": "user"

@@ -8,8 +8,11 @@ use Drupal\Core\Entity\Attribute\EntityReferenceSelection;
 use Drupal\Core\Entity\Plugin\EntityReferenceSelection\DefaultSelection;
 use Drupal\Core\Entity\Query\QueryInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Conductor\ConductorOwnerAccess;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbTicketTemplateInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Scopes selectable conductors to the referring ticket's project.
@@ -26,7 +29,10 @@ use Drupal\bb_core\Entity\BbTicketTemplateInterface;
  * An inactive conductor is excluded unless it is the ticket's *current*
  * reference: `OptionsWidgetBase::getSelectedOptions()` drops a stored value
  * missing from the option list, so an unrelated form save would silently clear
- * a reference stranded on a deactivated conductor.
+ * a reference stranded on a deactivated conductor. The same escape keeps a
+ * current conductor whose owner has since lost access to the project; every
+ * other candidate needs an owner with access (BbConductorOwnerAccess) and, on
+ * a ticket with an assignee, one that is the assignee or a reviewer.
  */
 #[EntityReferenceSelection(
   id: 'bb_conductor_by_ticket_project',
@@ -36,6 +42,20 @@ use Drupal\bb_core\Entity\BbTicketTemplateInterface;
   weight: 0,
 )]
 class ConductorByTicketProjectSelection extends DefaultSelection {
+
+  /**
+   * Whether a conductor's owner may take the referring entity's work.
+   */
+  protected ConductorOwnerAccess $ownerAccess;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->ownerAccess = $container->get('bb_core.conductor_owner_access');
+    return $instance;
+  }
 
   /**
    * {@inheritdoc}
@@ -58,6 +78,7 @@ class ConductorByTicketProjectSelection extends DefaultSelection {
       // never a valid entity id, so it is the sentinel that makes this
       // branch match nothing without a second, always-false query shape.
       $activeAndProject->condition('project_id', $hasProject ? $projectId : 0);
+      $activeAndProject->condition('id', $this->eligibleConductorIds($entity, $projectId), 'IN');
     }
 
     // The current-reference escape stands outside the project condition as
@@ -73,6 +94,37 @@ class ConductorByTicketProjectSelection extends DefaultSelection {
       : $activeAndProject;
     $query->condition($condition);
     return $query;
+  }
+
+  /**
+   * Active conductors of the project whose owner may take the entity's work.
+   *
+   * @return array<int|string>
+   *   The eligible conductor ids, or the never-matching `[0]` when none; a
+   *   project holds few conductors.
+   */
+  private function eligibleConductorIds(BbTicketInterface|BbTicketTemplateInterface $entity, mixed $projectId): array {
+    if (!is_numeric($projectId)) {
+      return [0];
+    }
+    $projectId = (int) $projectId;
+    $storage = $this->entityTypeManager->getStorage('bb_conductor');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('active', TRUE)
+      ->condition('project_id', $projectId)
+      ->execute();
+    $eligible = [];
+    foreach ($storage->loadMultiple($ids) as $id => $conductor) {
+      if (
+        $conductor instanceof BbConductorInterface
+        && $this->ownerAccess->ownerHasAccess($conductor, $projectId)
+        && (!$entity instanceof BbTicketInterface || $this->ownerAccess->ownerIsResponsible($conductor, $entity))
+      ) {
+        $eligible[] = $id;
+      }
+    }
+    return $eligible ?: [0];
   }
 
   /**

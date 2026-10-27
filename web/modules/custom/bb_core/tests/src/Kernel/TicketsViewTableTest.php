@@ -149,7 +149,9 @@ final class TicketsViewTableTest extends KernelTestBase {
       // count as zero and hide_zero would omit the badge.
       'view bb_run',
     ]);
-    $this->addMembership($this->fixture('a', 'bb_workspace'), $reader, ['member']);
+    // Contributor, not member: the reader owns the conductors, and a ticket's
+    // conductor reads as stalled while its owner holds no working rank.
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $reader, ['contributor']);
     // BB-462 D4/D7: project visibility now follows team membership, not
     // direct project OG membership, which no longer exists once BB-462
     // Phase 3 deregisters bb_project as an OG group.

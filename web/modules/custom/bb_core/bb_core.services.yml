@@ -109,17 +109,22 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@config.factory']
   bb_core.ticket_stall_reason:
     class: Drupal\bb_core\Claim\TicketStallReason
-    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Claim\TicketStallReason:
     alias: bb_core.ticket_stall_reason
   bb_core.ticket_claim:
     class: Drupal\bb_core\Claim\TicketClaimService
-    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@config.factory', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher']
+    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@config.factory', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher', '@bb_core.conductor_owner_access']
   bb_core.conductor_deactivation_reassigner:
     class: Drupal\bb_core\Conductor\ConductorDeactivationReassigner
-    arguments: ['@entity_type.manager', '@logger.channel.bb_core', '@datetime.time']
+    arguments: ['@entity_type.manager', '@logger.channel.bb_core', '@datetime.time', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Conductor\ConductorDeactivationReassigner:
     alias: bb_core.conductor_deactivation_reassigner
+  bb_core.conductor_owner_access:
+    class: Drupal\bb_core\Conductor\ConductorOwnerAccess
+    arguments: ['@entity_type.manager', '@bb_core.workspace_read_scope', '@bb_core.rank_capability', '@bb_core.workspace_resolver']
+  Drupal\bb_core\Conductor\ConductorOwnerAccess:
+    alias: bb_core.conductor_owner_access
   bb_core.ticket_transition_subscriber:
     class: Drupal\bb_core\EventSubscriber\TicketTransitionSubscriber
     arguments: ['@bb_core.ticket_claim']

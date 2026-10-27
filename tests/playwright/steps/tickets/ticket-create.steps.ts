@@ -112,7 +112,8 @@ function ensureConductorFixture(): void {
       '$conductor = $etm->getStorage("bb_conductor")->create([',
       `"conductor_id" => "${CONDUCTOR_ID}",`,
       `"label" => "${CONDUCTOR_ID}",`,
-      '"owner_user_id" => 0,',
+      // Uid 1, an instance admin: a conductor is offered only while its owner can work in the project.
+      '"owner_user_id" => 1,',
       '"status" => "online",',
       '"project_id" => $project->id(),',
       '"states" => ["working"],',

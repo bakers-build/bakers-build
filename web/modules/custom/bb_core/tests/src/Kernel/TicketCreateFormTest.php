@@ -102,7 +102,9 @@ final class TicketCreateFormTest extends KernelTestBase {
       ->create([
         'conductor_id' => 'cw-framework',
         'label' => 'cw-framework',
-        'owner_user_id' => 0,
+        // An instance admin: a conductor is offered only while its owner can
+        // work in the project.
+        'owner_user_id' => $this->container->get('current_user')->id(),
         'status' => 'online',
         'project_id' => $this->project->id(),
         'states' => ['working'],

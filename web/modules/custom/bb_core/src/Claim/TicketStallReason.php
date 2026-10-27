@@ -8,6 +8,8 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Conductor\ConductorOwnerAccess;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Workflow\TypeWorkflows;
 
@@ -15,8 +17,9 @@ use Drupal\bb_core\Workflow\TypeWorkflows;
  * Names why a ticket is standing still.
  *
  * Operator-facing labels, in priority order: frozen, blocked, no conductor,
- * failing. A closed or terminal ticket has none. A live run short-circuits
- * to no reason, except freeze which wins even while a run is still finishing.
+ * conductor no access, failing. A closed or terminal ticket has none. A live
+ * run short-circuits to no reason, except freeze which wins even while a run
+ * is still finishing.
  * `running` is live regardless of lease; `claimed` only with a live lease.
  */
 final class TicketStallReason {
@@ -30,11 +33,14 @@ final class TicketStallReason {
    *   The time service, used to evaluate claim leases.
    * @param \Drupal\bb_core\Claim\FailedRunCircuitBreaker $circuitBreaker
    *   The failed-run circuit breaker, used for the failing label.
+   * @param \Drupal\bb_core\Conductor\ConductorOwnerAccess $ownerAccess
+   *   Whether the assigned conductor's owner may still work in the project.
    */
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
     private readonly FailedRunCircuitBreaker $circuitBreaker,
+    private readonly ConductorOwnerAccess $ownerAccess,
   ) {
   }
 
@@ -62,11 +68,12 @@ final class TicketStallReason {
    * Cacheability of anything that shows a ticket's stall reason.
    *
    * "blocked" depends on other tickets and runs, so the reason follows both
-   * list tags; a freeze age is relative to now, so a frozen one is uncacheable.
+   * list tags; "conductor no access" follows memberships; a freeze age is
+   * relative to now, so a frozen one is uncacheable.
    */
   public static function cacheability(BbTicketInterface $ticket): CacheableMetadata {
     $metadata = CacheableMetadata::createFromObject($ticket)
-      ->addCacheTags(['bb_run_list', 'bb_ticket_list']);
+      ->addCacheTags(['bb_run_list', 'bb_ticket_list', 'og_membership_list']);
     if ((string) $ticket->get('stall_reason')->value === 'frozen') {
       $metadata->setCacheMaxAge(0);
     }
@@ -81,6 +88,7 @@ final class TicketStallReason {
       'frozen' => new TranslatableMarkup('frozen'),
       'blocked' => new TranslatableMarkup('blocked'),
       'no conductor' => new TranslatableMarkup('no conductor'),
+      'conductor no access' => new TranslatableMarkup('conductor has no access'),
       'failing' => new TranslatableMarkup('failing'),
       default => $reason,
     };
@@ -123,13 +131,27 @@ final class TicketStallReason {
     if ($ticket->hasOpenBlockers()) {
       return 'blocked';
     }
-    if ($workflow !== '' && $ticket->get('conductor_id')->isEmpty()) {
-      return 'no conductor';
+    if ($workflow !== '') {
+      $reason = $this->conductorReason($ticket);
+      if ($reason !== '') {
+        return $reason;
+      }
     }
     if ($this->circuitBreaker->isTripped($ticket)) {
       return 'failing';
     }
     return '';
+  }
+
+  /**
+   * Why a classified ticket's conductor cannot take it, or empty.
+   */
+  private function conductorReason(BbTicketInterface $ticket): string {
+    $conductor = $ticket->get('conductor_id')->entity;
+    if (!$conductor instanceof BbConductorInterface) {
+      return 'no conductor';
+    }
+    return $this->ownerAccess->ownerHasAccess($conductor, (int) $ticket->get('project_id')->target_id) ? '' : 'conductor no access';
   }
 
   /**

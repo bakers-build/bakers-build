@@ -39,6 +39,7 @@ final class ConductorDeactivationReassigner {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly LoggerInterface $logger,
     private readonly TimeInterface $time,
+    private readonly ConductorOwnerAccess $ownerAccess,
   ) {
   }
 
@@ -241,12 +242,17 @@ final class ConductorDeactivationReassigner {
       ->sort('id', 'DESC')
       ->range(0, 1)
       ->execute();
-    $ticket->set('conductor_id', $candidateIds === [] ? NULL : (int) reset($candidateIds));
+    $candidate = $candidateIds === [] ? NULL : $this->entityTypeManager->getStorage('bb_conductor')->load(reset($candidateIds));
+    $eligible = $candidate instanceof BbConductorInterface
+      && $this->ownerAccess->ownerHasAccess($candidate, (int) $projectId)
+      && $this->ownerAccess->ownerIsResponsible($candidate, $ticket);
+    $ticket->set('conductor_id', $eligible ? $candidate->id() : NULL);
     try {
       // Deliberately not `setValidationRequired(TRUE)` — spec design item 5,
       // step 6 says "save each ticket with validation enabled", but the
-      // candidate query above already guarantees `BbConductorProjectMatch`
-      // and `BbConductorActive` hold, and validating would let an
+      // candidate query and the owner check above already guarantee
+      // `BbConductorProjectMatch`, `BbConductorActive` and
+      // `BbConductorOwnerAccess` hold, and validating would let an
       // unrelated pre-existing violation on the ticket block a reassignment
       // it has nothing to do with (N7).
       $ticket->save();

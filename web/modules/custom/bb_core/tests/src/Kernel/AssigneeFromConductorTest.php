@@ -224,6 +224,14 @@ final class AssigneeFromConductorTest extends KernelTestBase {
    */
   public function testDerivedAssigneeDoesNotAffectClaiming(): void {
     $owner = $this->createAccount('owner-claim');
+    // A conductor claims only while its owner can work in the project; an
+    // instance admin always can (ConductorOwnerAccessTest covers the rule).
+    $this->container->get('entity_type.manager')->getStorage('user_role')
+      ->create(['id' => 'claim_owner', 'label' => 'claim_owner'])
+      ->save();
+    user_role_grant_permissions('claim_owner', ['administer bakers']);
+    $owner->addRole('claim_owner');
+    $owner->save();
     $conductor = $this->createConductor('node-claim', $owner);
 
     $ticket = $this->createTicket([

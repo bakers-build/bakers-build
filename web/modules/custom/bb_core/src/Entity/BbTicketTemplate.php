@@ -222,6 +222,7 @@ final class BbTicketTemplate extends BbContentEntityBase implements BbTicketTemp
       ->setSetting('target_type', 'bb_conductor')
       ->setSetting('handler', 'bb_conductor_by_ticket_project')
       ->addConstraint('BbConductorProjectMatch')
+      ->addConstraint('BbConductorOwnerAccess')
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'bb_picker', 'weight' => 8]);
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition(9, new TranslatableMarkup('Owner'))

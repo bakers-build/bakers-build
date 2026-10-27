@@ -166,7 +166,9 @@ final class TicketConductorAssignmentTest extends KernelTestBase {
     $role_id = 'conductor_' . str_replace('-', '_', $name);
     $this->container->get('entity_type.manager')->getStorage('user_role')
       ->create(['id' => $role_id, 'label' => $role_id])->save();
-    user_role_grant_permissions($role_id, ['register bakers conductor', 'claim bakers tickets']);
+    // `administer bakers` lets the owner work in any project
+    // (BbConductorOwnerAccess); ConductorOwnerAccessTest covers the rule.
+    user_role_grant_permissions($role_id, ['register bakers conductor', 'claim bakers tickets', 'administer bakers']);
     $user = $this->container->get('entity_type.manager')->getStorage('user')
       ->create(['name' => $name, 'status' => 1, 'roles' => [$role_id]]);
     $this->assertInstanceOf(UserInterface::class, $user);
