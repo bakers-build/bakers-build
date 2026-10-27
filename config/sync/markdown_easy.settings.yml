@@ -1,0 +1,3 @@
+skip_filter_enforcement: false
+skip_html_input_stripping: false
+

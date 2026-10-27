@@ -9,7 +9,11 @@
    GitHub-flavoured Markdown (markdown_easy, `flavor: github`) that strips raw
    HTML, followed by an allow-list of p, br, strong, em, h1-h4, ul, ol, li, a,
    blockquote, hr, code, pre and table/thead/tbody/tr/th/td. Every one of those
-   is styled below and nothing else is. Pipe tables DO arrive as real tables.
+   is styled below and nothing else is. Pipe tables DO arrive as real tables,
+   and a column aligned with `:---`, `:---:` or `---:` keeps its
+   `markdown-align-left|center|right` class on th/td — the only class the
+   format allows. Those rules follow the `th` rule so they outrank its
+   `text-left`.
 
    `body` IS A PROP AND NOT A SLOT: a processed field value is one field's value
    rather than structure anybody composed, and a prop can be typed and described
@@ -35,6 +39,7 @@
   '[&_pre]:bg-surface-3 [&_pre]:p-3 [&_pre]:rounded-sm [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:rounded-none',
   '[&_table]:w-full [&_table]:border-collapse [&_tr]:border-b [&_tr]:border-border [&_thead_tr]:border-b-2 [&_tbody_tr:last-child]:border-b-0',
   '[&_th]:bg-surface-3 [&_th]:font-semibold [&_th]:text-title [&_th]:text-left [&_:is(th,td)]:align-top',
+  '[&_.markdown-align-left]:text-left [&_.markdown-align-center]:text-center [&_.markdown-align-right]:text-right',
   compact ? '[&_:is(th,td)]:px-2 [&_:is(th,td)]:py-1' : '[&_:is(th,td)]:px-3 [&_:is(th,td)]:py-2',
 ]|join(' ') %}
 {#- A TABLE IS NEVER CLAMPED AND NEVER WIDENS THE PAGE. Five clamped lines of a

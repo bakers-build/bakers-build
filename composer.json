@@ -34,7 +34,7 @@
         "drupal/gin_toolbar": "^3.0",
         "drupal/jsonapi_resources": "^1",
         "drupal/jsonapi_schema": "^1.0",
-        "drupal/markdown_easy": "^1.0",
+        "drupal/markdown_easy": "^2.0",
         "drupal/migrate_plus": "^6",
         "drupal/migrate_tools": "^6",
         "drupal/og": "^2.0",
