@@ -7,11 +7,24 @@
 # suite sources into ARTIFACT_DIR.
 #   ARTIFACT_DIR  where the fixture files go (required)
 #   BASE_URL      the site URL the suites use (required)
+#
+# --dates-only re-applies only the relative timestamps (closed dates and the
+# statistics demo's tickets and runs) to an already seeded site, so "today"
+# and "yesterday" follow the calendar. It needs neither variable and writes no
+# fixture files:  ddev exec bash scripts/e2e/seed-test-world.sh --dates-only
 
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-: "${ARTIFACT_DIR:?}" "${BASE_URL:?}"
 export PATH="$PWD/vendor/bin:$PATH"
+
+if [ "${1:-}" = "--dates-only" ]; then
+  drush status --fields=bootstrap --format=string 2>/dev/null | grep -q Successful \
+    || { echo "ERROR: site not installed." >&2; exit 1; }
+  BB_E2E_DATES_MODE=dates-only drush php:script "$PWD/scripts/e2e/relative-dates.php"
+  echo "Relative fixture dates refreshed."
+  exit 0
+fi
+: "${ARTIFACT_DIR:?}" "${BASE_URL:?}"
 
 # Single-site: the e2e/test world is seeded onto the one (default) site — there
 # is no separate `test` multisite anymore. All drush calls target the default
@@ -66,9 +79,8 @@ drush ${URI} ev '
 # bypassing StateItem::setValue, so validation rejects the null->X transition).
 # Apply the intended states from the recipe's fixture-states.yml here instead;
 # Entity::set() routes through StateItem::setValue and is accepted. The same
-# metadata also declares a small set of closed-ticket dates relative to each
-# recipe-test installation, keeping period statistics fresh on reused worlds.
-echo "==> Applying fixture states and relative closed dates"
+# Relative dates follow in relative-dates.php.
+echo "==> Applying fixture states"
 drush ${URI} ev '
 $map = \Symfony\Component\Yaml\Yaml::parseFile(DRUPAL_ROOT . "/../recipes/bb_e2e/fixture-states.yml");
 $etm = \Drupal::entityTypeManager();
@@ -76,20 +88,17 @@ $ts = $etm->getStorage("bb_ticket");
 foreach (($map["bb_ticket"] ?? []) as $ident => $state) {
   foreach ($ts->loadByProperties(["identifier" => $ident]) as $t) { $t->set("state", $state)->save(); }
 }
-$now = \Drupal::time()->getRequestTime();
-foreach (($map["bb_ticket_closed_date_days_ago"] ?? []) as $ident => $days) {
-  if (!is_int($days) || $days < 0 || $days > intdiv($now, 86400)) { throw new \RuntimeException("Invalid closed-date offset for " . $ident); }
-  $tickets = $ts->loadByProperties(["identifier" => $ident]);
-  if (count($tickets) !== 1) { throw new \RuntimeException("Expected one closed-date fixture ticket for " . $ident); }
-  $ticket = reset($tickets);
-  $ticket->markClosed($now - ($days * 86400))->save();
-}
 $rs = $etm->getStorage("bb_run");
 foreach (($map["bb_run"] ?? []) as $uuid => $state) {
   $runs = $rs->loadByProperties(["uuid" => $uuid]);
   if ($runs) { $r = reset($runs); $r->set("state", $state)->save(); }
 }
 ' >/dev/null
+
+# Closed dates and the statistics demo sit on calendar days before now; the
+# full seed also creates the demo project, tickets and runs when missing.
+echo "==> Applying relative dates and the statistics demo"
+BB_E2E_DATES_MODE=seed drush ${URI} php:script "$PWD/scripts/e2e/relative-dates.php"
 
 echo "==> Refreshing fixture run leases (avoid wall-clock 403)"
 drush ${URI} ev '

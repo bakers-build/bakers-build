@@ -1,0 +1,11 @@
+component: bb_theme:stat-tile
+name: KPI small sample
+props:
+  value: —
+  tone: muted
+  unit: closed tickets
+  label: Runs per ticket
+  size: kpi
+  source: bb_measurement.runs_per_ticket
+  info: Runs started in the period per ticket closed in it.
+  detail: n = 3 closed tickets · needs 5

@@ -1,0 +1,77 @@
+{# A Chart.js widget, built like stat-comparison: the markup carries the model in
+   `data-flow-chart` (|e('html_attr') keeps quotes in a label from breaking the
+   attribute) and flow-chart.src.js paints the canvas. Every word the canvas or
+   the tooltip shows comes from here as markup or a data attribute, so the
+   behaviour holds no copy. The tooltip and live region are filled by the
+   behaviour; the legend and the exact-value disclosure are plain markup. #}
+<section{{ (attributes ?: create_attribute()).addClass(['min-w-0', 'flex', 'flex-col', 'gap-4', 'py-4']).setAttribute('data-component-id', 'bb_theme:flow-chart') }}>
+  <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+    <h2 class="m-0 text-section font-semibold text-title">{{ chart.label }}</h2>
+    {% if chart.caption %}
+      <p class="m-0 text-caption text-text-light">{{ chart.caption }}</p>
+    {% endif %}
+  </div>
+  {% if chart.state != 'ready' %}
+    <p class="m-0 text-body text-text">No flow values for this period.</p>
+  {% else %}
+    <div class="flex flex-col gap-2">
+      <p class="m-0 flex items-center justify-end gap-2 text-caption text-text-light">
+        <span>{{ chart.ratio_label }}</span>
+        <span class="text-body font-medium text-title">{{ chart.ratio ?? '—' }}</span>
+      </p>
+      <div class="relative w-full h-72"
+        data-flow-chart="{{ chart|json_encode|e('html_attr') }}"
+        data-label-new="new"
+        data-label-done="done"
+        data-label-running="running"
+        data-running-suffix=" · still running"
+        data-open-running-label="Open at {{ chart.open_at }}">
+        <canvas class="block w-full h-full rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" role="img" tabindex="0" aria-label="{{ chart.label }}"></canvas>
+        <div class="absolute top-0 left-0 z-10 min-w-40 flex flex-col gap-1 rounded-sm bg-title px-3 py-2 text-surface pointer-events-none" data-flow-chart-tooltip hidden>
+          <p class="m-0 text-body font-medium" data-flow-chart-title></p>
+          <dl class="m-0 flex flex-col gap-1">
+            <div class="flex items-baseline justify-between gap-6">
+              <dt class="text-caption text-surface-3">Created</dt>
+              <dd class="m-0 text-body font-medium" data-flow-chart-value="new"></dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-6">
+              <dt class="text-caption text-surface-3">Closed</dt>
+              <dd class="m-0 text-body font-medium" data-flow-chart-value="done"></dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-6" data-flow-chart-open-row>
+              <dt class="text-caption text-surface-3" data-flow-chart-open-label>Open</dt>
+              <dd class="m-0 text-body font-medium" data-flow-chart-value="open"></dd>
+            </div>
+          </dl>
+        </div>
+        <p class="sr-only" aria-live="polite" data-flow-chart-live></p>
+      </div>
+    </div>
+    <ul class="flex flex-wrap items-center gap-4 list-none p-0 m-0 text-caption text-text">
+      <li class="flex items-center gap-2">
+        <span class="inline-block w-4 h-0.5 rounded-xs bg-chart-flow-new" aria-hidden="true"></span>
+        <span>new{% if chart.totals %} {{ chart.totals.new }}{% endif %}</span>
+      </li>
+      <li class="flex items-center gap-2">
+        <span class="inline-block w-4 h-0.5 rounded-xs bg-chart-flow-done" aria-hidden="true"></span>
+        <span>done{% if chart.totals %} {{ chart.totals.done }}{% endif %}</span>
+      </li>
+      <li class="flex items-center gap-2">
+        <span class="inline-block w-2.5 h-2.5 rounded-xs bg-chart-flow-grows" aria-hidden="true"></span>
+        <span>backlog grows</span>
+      </li>
+      <li class="flex items-center gap-2">
+        <span class="inline-block w-2.5 h-2.5 rounded-xs bg-chart-flow-shrinks" aria-hidden="true"></span>
+        <span>backlog shrinks</span>
+      </li>
+    </ul>
+    <details class="text-caption text-text-light">
+      <summary class="w-fit cursor-pointer rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">Exact values</summary>
+      <ul class="mt-2 p-0 m-0 list-none text-caption text-text">
+        {% for section in chart.sections %}
+          <li>{{ section.label }}{% if section.running %} · still running{% endif %} · Created {{ section.new }} · Closed {{ section.done }}{% if section.open is not null %} · {% if section.running and chart.open_at %}Open at {{ chart.open_at }}{% else %}Open{% endif %} {{ section.open }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
+</section>

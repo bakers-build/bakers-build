@@ -16,3 +16,4 @@
  * file the browser can drop independently.
  */
 import './../components/stat-comparison/stat-comparison.src.js';
+import './../components/flow-chart/flow-chart.src.js';

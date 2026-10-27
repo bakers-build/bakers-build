@@ -25,31 +25,30 @@ final class SeriesFigureDisclosureTest extends UnitTestCase {
   private const TEAM_MEMBER = 'og.og_role.bb_team-bb_team-member';
 
   /**
-   * The workspace lead sees the team- and project-scoped model trends.
+   * The workspace lead sees the team-scoped model trend.
    */
   public function testWorkspaceLeadSeesTheModelTrends(): void {
     foreach ($this->permissions(self::WORKSPACE_LEAD) as $file => $permissions) {
       self::assertContains('view bakers figure team_models_trend', $permissions, "$file grants the team model trend");
-      self::assertContains('view bakers figure project_models_trend', $permissions, "$file grants the project model trend");
     }
   }
 
   /**
-   * The workspace lead does not see the per-user model trend.
+   * The workspace lead rank discloses no other account's My work figures.
    */
-  public function testWorkspaceLeadDoesNotSeeTheUserModelTrend(): void {
+  public function testWorkspaceLeadDoesNotSeeOtherAccountsMyWorkFigures(): void {
     foreach ($this->permissions(self::WORKSPACE_LEAD) as $file => $permissions) {
-      self::assertNotContains('view bakers figure user_models_trend', $permissions, "$file withholds the user model trend");
+      self::assertSame([], preg_grep('/^view bakers figure user_/', $permissions), "$file withholds the user figures");
     }
   }
 
   /**
-   * A team lead is granted the user-scope model trend.
+   * A team lead is granted the My work figures of the team's members.
    */
-  public function testTeamLeadSeesTheUserModelTrend(): void {
+  public function testTeamLeadSeesTheMembersMyWorkFigures(): void {
     foreach ($this->permissions(self::TEAM_LEAD) as $file => $permissions) {
-      self::assertContains('view bakers figure user_models_trend', $permissions, "$file grants the user model trend");
-      self::assertContains('view bakers figure user_tokens_trend', $permissions, "$file already grants the user tokens trend");
+      self::assertContains('view bakers figure user_flow', $permissions, "$file grants the members' flow");
+      self::assertContains('view bakers figure user_tickets', $permissions, "$file grants the members' closed tickets");
     }
   }
 

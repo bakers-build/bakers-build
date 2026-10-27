@@ -1,0 +1,19 @@
+uuid: 79b07b90-3cd3-4be9-a960-28c15f692b75
+langcode: en
+status: true
+dependencies:
+  config:
+  - bb_core.bb_measurement.closed_tickets
+  - bb_core.bb_measurement.run_tokens
+id: tokens_per_ticket
+label: Tokens per closed ticket
+value_type: decimal
+unit: tokens_per_ticket
+source: {}
+operation:
+  type: divide
+  numerator: run_tokens
+  denominator: closed_tickets
+predicates: {}
+bindings: {}
+dimensions: {}

@@ -1,0 +1,99 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Flow Chart
+status: stable
+group: Data Display
+description: >-
+  Two series — tickets created ("new") and tickets closed ("done") per section —
+  on one category/value plot, drawn client-side by Chart.js, with the area
+  between them filled: the `chart-flow-grows` tint where new exceeds done and
+  the `chart-flow-shrinks` tint where done exceeds new, split where the lines
+  cross. A running section ends the lines dashed; running and cut sections get
+  hollow points. Hover or keyboard focus on the canvas highlights one section
+  and shows its exact values in a tooltip and a polite live region. The
+  component computes nothing: totals, the done-to-new ratio and every value are
+  prepared by the caller. Heading, ratio, legend and the exact-value disclosure
+  are plain markup and stay readable without the canvas. Sample demonstrations
+  use illustrative values, never live tenant observations.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    chart:
+      type: object
+      title: Chart
+      description: Values and labels for the client-side flow plot.
+      properties:
+        state:
+          type: string
+          enum:
+            - ready
+            - empty
+          title: State
+        label:
+          type: string
+          title: Label
+          description: Heading and the canvas's accessible name.
+        caption:
+          type: string
+          title: Caption
+          description: >-
+            Short context beside the heading, such as the grouping and time
+            zone.
+        ratio:
+          type:
+            - string
+            - 'null'
+          title: Ratio
+          description: Prepared done-to-new ratio; null renders an em dash.
+        ratio_label:
+          type: string
+          title: Ratio label
+        totals:
+          type: object
+          title: Totals
+          description: Prepared totals shown in the legend.
+          properties:
+            new:
+              type: string
+            done:
+              type: string
+        open_at:
+          type:
+            - string
+            - 'null'
+          title: Open at
+          description: Time the running section's open count was taken.
+        sections:
+          type: array
+          title: Sections
+          description: One entry per point on the shared X axis, in order.
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              new:
+                type: number
+              done:
+                type: number
+              open:
+                type:
+                  - number
+                  - 'null'
+              running:
+                type: boolean
+                description: The section has not ended yet.
+              cut:
+                type: boolean
+                description: The section is only partly inside the period.
+      required:
+        - state
+        - label
+        - sections
+  required:
+    - chart
+  additionalProperties: false
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

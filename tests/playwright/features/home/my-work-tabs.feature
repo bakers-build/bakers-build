@@ -52,12 +52,16 @@ Feature: My work carries Tickets and Stats as tabs
     When I visit My work tab "Stats"
     Then the Stats tab shows a figure
 
+  # Counts depend on the day of the run under Week or Month, so they are read
+  # over a custom range that ends today, whatever weekday or date that is.
   @period-filter
-  Scenario: Stats period filters preserve context while updating values
-    Given I visit My work tab "Stats" with query parameter "unrelated" set to "preserved"
-    Then the Stats period filters are accessible links
-    When I choose the Stats period "30 days"
-    Then the selected Stats period is "30 days"
-    And the Stats period selection preserves the route and unrelated query parameter "unrelated" with value "preserved"
-    And the Stats figures keep their ordered applicability
-    And the Stats period fixture displays 2 closed tickets
+  Scenario: Stats count the period fixture over a range ending today
+    When I open the Stats period from 30 days ago until today
+    Then the Stats period fixture displays 2 closed tickets
+    When I open the Stats period from 7 days ago until today
+    Then the Stats period fixture displays 1 closed tickets
+
+  @period-filter
+  Scenario: An old period bookmark falls back to Month
+    Given I visit My work tab "Stats" with query parameter "filter[period]" set to "30"
+    Then the selected Stats period is "Month"

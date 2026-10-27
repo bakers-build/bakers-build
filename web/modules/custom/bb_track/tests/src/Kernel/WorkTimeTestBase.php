@@ -10,6 +10,7 @@ use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\UserInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_track\WorkAssignments;
 
 /**
@@ -152,6 +153,16 @@ abstract class WorkTimeTestBase extends KernelTestBase {
       'name' => 'Project work',
     ], $default ? (int) $default->id() : NULL);
     $this->accountId = (int) $billing_account->id();
+  }
+
+  /**
+   * The fixture workspace.
+   */
+  protected function fixtureWorkspace(): BbWorkspaceInterface {
+    $workspaces = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->loadByProperties(['slug' => 'week']);
+    $workspace = reset($workspaces);
+    assert($workspace instanceof BbWorkspaceInterface);
+    return $workspace;
   }
 
   /**

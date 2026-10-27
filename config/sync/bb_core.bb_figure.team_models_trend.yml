@@ -18,20 +18,30 @@ categories:
 series:
   dimension: model
   limit: 5
+ratio: {  }
 filters:
   period:
     label: Period
-    default: '7'
+    default: week
     options:
       -
-        value: '7'
-        label: '7 days'
+        value: week
+        label: Week
       -
-        value: '30'
-        label: '30 days'
+        value: month
+        label: Month
       -
-        value: '365'
-        label: '1 year'
+        value: quarter
+        label: Quarter
+      -
+        value: year
+        label: Year
+      -
+        value: all
+        label: 'All time'
+      -
+        value: custom
+        label: Custom
 context_shape:
   - team
 conditions:

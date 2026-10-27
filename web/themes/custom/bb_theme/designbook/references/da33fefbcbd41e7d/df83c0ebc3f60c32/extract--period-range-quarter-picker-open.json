@@ -1,0 +1,717 @@
+{
+  "format": "designbook-observations",
+  "capture": {
+    "role": "reference",
+    "source": {
+      "kind": "figma",
+      "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv?node-id=83-1226",
+      "revision": null
+    },
+    "scope": [
+      {
+        "subject": "period-range-month",
+        "view": "desktop",
+        "state": "period-range-month-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:187"
+        }
+      },
+      {
+        "subject": "period-range-kind-dropdown",
+        "view": "desktop",
+        "state": "period-range-kind-dropdown-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "150:13728"
+        }
+      },
+      {
+        "subject": "period-range-month-picker",
+        "view": "desktop",
+        "state": "period-range-month-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "153:1694"
+        }
+      },
+      {
+        "subject": "period-range-week-picker",
+        "view": "desktop",
+        "state": "period-range-week-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1669"
+        }
+      },
+      {
+        "subject": "period-range-quarter-picker",
+        "view": "desktop",
+        "state": "period-range-quarter-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1841"
+        }
+      },
+      {
+        "subject": "period-range-year-picker",
+        "view": "desktop",
+        "state": "period-range-year-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1925"
+        }
+      },
+      {
+        "subject": "period-range-past-period",
+        "view": "desktop",
+        "state": "period-range-past-period-return",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "161:2567"
+        }
+      },
+      {
+        "subject": "period-range-custom",
+        "view": "desktop",
+        "state": "period-range-custom-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:15016"
+        }
+      },
+      {
+        "subject": "stat-tile",
+        "view": "desktop",
+        "state": "stat-tile-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:226"
+        }
+      }
+    ]
+  },
+  "state": "period-range-quarter-picker-open",
+  "captured_at": "2026-10-25T07:15:07.493990+00:00",
+  "extract": {
+    "subjects": [
+      {
+        "id": "period-range-quarter-picker",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1841"
+        },
+        "samples": [
+          {
+            "view": "desktop",
+            "state": "period-range-quarter-picker-open",
+            "structure": {
+              "roots": [
+                "155:1841"
+              ],
+              "nodes": [
+                {
+                  "id": "155:1841",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1841"
+                  },
+                  "children": [
+                    "155:1842",
+                    "155:1900"
+                  ]
+                },
+                {
+                  "id": "155:1842",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1842"
+                  },
+                  "children": [
+                    "155:1843",
+                    "155:1844"
+                  ]
+                },
+                {
+                  "id": "155:1843",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1843"
+                  },
+                  "children": [
+                    "I155:1843;150:13581",
+                    "I155:1843;150:13585"
+                  ]
+                },
+                {
+                  "id": "I155:1843;150:13581",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13581"
+                  },
+                  "children": [
+                    "I155:1843;150:13582",
+                    "I155:1843;150:13583"
+                  ]
+                },
+                {
+                  "id": "I155:1843;150:13582",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13582"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1843;150:13583",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13583"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1843;150:13585",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13585"
+                  },
+                  "children": [
+                    "I155:1843;150:13586",
+                    "I155:1843;150:13589",
+                    "I155:1843;150:13594"
+                  ]
+                },
+                {
+                  "id": "I155:1843;150:13586",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13586"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1843;150:13589",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13589"
+                  },
+                  "children": [
+                    "I155:1843;150:13590",
+                    "I155:1843;150:13593"
+                  ]
+                },
+                {
+                  "id": "I155:1843;150:13590",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13590"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1843;150:13593",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13593"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "I155:1843;150:13594",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13594"
+                  },
+                  "children": [
+                    "I155:1843;150:13595"
+                  ]
+                },
+                {
+                  "id": "I155:1843;150:13595",
+                  "kind": "instance-sublayer",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "I155:1843;150:13595"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1844",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1844"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1900",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1900"
+                  },
+                  "children": [
+                    "155:1901",
+                    "155:1907",
+                    "155:1908"
+                  ]
+                },
+                {
+                  "id": "155:1901",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1901"
+                  },
+                  "children": [
+                    "155:1902",
+                    "155:1904",
+                    "155:1905"
+                  ]
+                },
+                {
+                  "id": "155:1902",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1902"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1904",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1904"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1905",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1905"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1907",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1907"
+                  },
+                  "children": [
+                    "155:1909",
+                    "155:1912"
+                  ]
+                },
+                {
+                  "id": "155:1909",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1909"
+                  },
+                  "children": [
+                    "155:1910",
+                    "155:1911"
+                  ]
+                },
+                {
+                  "id": "155:1910",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1910"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1911",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1911"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1912",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1912"
+                  },
+                  "children": [
+                    "155:1913",
+                    "155:1914"
+                  ]
+                },
+                {
+                  "id": "155:1913",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1913"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1914",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1914"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1908",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1908"
+                  },
+                  "children": [
+                    "155:1915",
+                    "155:1918"
+                  ]
+                },
+                {
+                  "id": "155:1915",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1915"
+                  },
+                  "children": [
+                    "155:1916",
+                    "155:1917"
+                  ]
+                },
+                {
+                  "id": "155:1916",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1916"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1917",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1917"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1918",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1918"
+                  },
+                  "children": [
+                    "155:1919",
+                    "155:1920"
+                  ]
+                },
+                {
+                  "id": "155:1919",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1919"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "155:1920",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "155:1920"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "155:1842",
+                "width": 436,
+                "height": 32,
+                "display": "flex",
+                "direction": "row",
+                "align": "center",
+                "gap": "8px",
+                "frame": "155:1841",
+                "frame_size": [
+                  760,
+                  520
+                ],
+                "frame_style": {
+                  "fill": "var(--color-app,#f1f0ea)",
+                  "padding": "24px",
+                  "direction": "column"
+                },
+                "popover": {
+                  "node": "155:1900",
+                  "role": "picker-popover",
+                  "position": "absolute",
+                  "left": "114px",
+                  "top": "62px",
+                  "width": "280px",
+                  "padding": "12px",
+                  "gap": "6px",
+                  "radius": "8px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "1px var(--color-border,#d6d3ca)",
+                  "shadow": "0px 6px 18px 0px rgba(0,0,0,0.12)"
+                }
+              },
+              "typography": [
+                {
+                  "node": "I155:1843;150:13582",
+                  "text": "Quarter",
+                  "font_family": "SF Pro",
+                  "font_style": "Medium",
+                  "font_weight": 510,
+                  "font_size": "13px",
+                  "line_height": "1.45",
+                  "color": "var(--color-title,#14171a)",
+                  "text_style": "bb/body-strong"
+                },
+                {
+                  "node": "I155:1843;150:13593",
+                  "text": "This quarter · Q4 2026",
+                  "font_family": "SF Pro",
+                  "font_style": "Medium",
+                  "font_weight": 510,
+                  "font_size": "13px",
+                  "line_height": "1.45",
+                  "color": "var(--color-title,#14171a)",
+                  "text_style": "bb/body-strong"
+                },
+                {
+                  "node": "155:1844",
+                  "text": "vs. Q3 2026",
+                  "font_family": "SF Pro",
+                  "font_style": "Regular",
+                  "font_weight": 400,
+                  "font_size": "12px",
+                  "line_height": "16px",
+                  "color": "var(--color-text-light,#5b6169)",
+                  "text_style": "vorschlag/meta"
+                }
+              ],
+              "content": [
+                {
+                  "node": "I155:1843;150:13582",
+                  "text": "Quarter"
+                },
+                {
+                  "node": "I155:1843;150:13593",
+                  "text": "This quarter · Q4 2026"
+                },
+                {
+                  "node": "155:1844",
+                  "text": "vs. Q3 2026"
+                },
+                {
+                  "node": "155:1904",
+                  "text": "2026"
+                },
+                {
+                  "node": "155:1909",
+                  "text": "Q1 Jan – Mar"
+                },
+                {
+                  "node": "155:1912",
+                  "text": "Q2 Apr – Jun"
+                },
+                {
+                  "node": "155:1915",
+                  "text": "Q3 Jul – Sep"
+                },
+                {
+                  "node": "155:1918",
+                  "text": "Q4 Oct – Dec"
+                }
+              ],
+              "interactions": [
+                {
+                  "node": "I155:1843;150:13585",
+                  "kind": "picker-trigger",
+                  "state": "open",
+                  "border": "2px var(--color-focus-ring,#494fe5)"
+                },
+                {
+                  "node": "155:1918",
+                  "kind": "cell",
+                  "state": "selected",
+                  "text": "Q4"
+                }
+              ],
+              "properties": {
+                "kind": {
+                  "node": "I155:1843;150:13581",
+                  "role": "kind-select",
+                  "label": "Quarter",
+                  "height": "32px",
+                  "padding_x": "10px",
+                  "gap": "6px",
+                  "radius": "6px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "1px var(--color-control-border,#707888)",
+                  "icon": "icon/chevron-down 14px"
+                },
+                "range": {
+                  "node": "I155:1843;150:13585",
+                  "role": "range-stepper",
+                  "label": "This quarter · Q4 2026",
+                  "height": "32px",
+                  "padding_x": "4px",
+                  "gap": "4px",
+                  "radius": "6px",
+                  "fill": "var(--color-surface,#fafaf7)",
+                  "border": "2px var(--color-focus-ring,#494fe5)",
+                  "previous": "28x28 icon/arrow-left 14px radius 4px",
+                  "label_icon": "icon/calendar 14px",
+                  "label_padding_x": "10px",
+                  "next": "28x28 icon/arrow-right 14px radius 4px"
+                },
+                "picker": {
+                  "grid": "2 x 2, gap 6px, cell column centered px 6px py 7px radius 6px; label 13px/1.45, range 12px/16px text-light",
+                  "selected": {
+                    "fill": "var(--color-primary,#494fe5)",
+                    "text_color": "var(--color-on-primary,white)",
+                    "font_weight": 510
+                  }
+                }
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [
+                "https://www.figma.com/api/mcp/asset/3a140805-59d7-4547-90dc-10c86db00fd1.svg",
+                "https://www.figma.com/api/mcp/asset/75e7eb28-806e-40a9-abfc-e3a37227691c.svg",
+                "https://www.figma.com/api/mcp/asset/035170ae-8b80-4787-bf69-20f39671727c.svg",
+                "https://www.figma.com/api/mcp/asset/4d2fc44c-301e-4bb8-a94f-8358e3bb61ac.svg"
+              ],
+              "font_families": [
+                "SF Pro"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "source.revision",
+                "reason": "Figma MCP tools (get_metadata, get_design_context, get_screenshot) return no file version id",
+                "required": false
+              },
+              {
+                "property": "fonts.SF Pro.files",
+                "reason": "Figma tools expose no font binaries for SF Pro (Apple-licensed); only family/style/weight are observed",
+                "required": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parents": [],
+    "images": [
+      {
+        "url": "https://www.figma.com/api/mcp/asset/75e7eb28-806e-40a9-abfc-e3a37227691c.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-arrow-left.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/3a140805-59d7-4547-90dc-10c86db00fd1.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-chevron-down.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/035170ae-8b80-4787-bf69-20f39671727c.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-calendar.svg"
+      },
+      {
+        "url": "https://www.figma.com/api/mcp/asset/4d2fc44c-301e-4bb8-a94f-8358e3bb61ac.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "14px",
+        "height": "14px",
+        "reference_path": "assets/icon-arrow-right.svg"
+      }
+    ],
+    "fonts": [
+      {
+        "family": "SF Pro",
+        "source": "other",
+        "weights": [
+          400,
+          510,
+          590,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": []
+      }
+    ],
+    "captures": [
+      {
+        "subject": "period-range-quarter-picker",
+        "view": "desktop",
+        "state": "period-range-quarter-picker-open",
+        "path": "desktop--period-range-quarter-picker--period-range-quarter-picker-open.png",
+        "width": 760,
+        "height": 520
+      }
+    ]
+  }
+}

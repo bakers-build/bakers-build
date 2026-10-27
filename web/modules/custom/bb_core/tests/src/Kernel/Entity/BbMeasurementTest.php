@@ -145,6 +145,42 @@ final class BbMeasurementTest extends KernelTestBase {
   }
 
   /**
+   * An open count needs the field that ends a source entity's open span.
+   */
+  public function testOpenRequiresEndField(): void {
+    $measurement = BbMeasurement::create([
+      'id' => 'open_without_end',
+      'label' => 'Open without end',
+      'value_type' => 'integer',
+      'unit' => 'tickets',
+      'source' => ['entity_type' => 'bb_ticket', 'time_field' => 'created'],
+      'operation' => ['type' => 'open'],
+    ]);
+
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('operation.end_field');
+    $measurement->save();
+  }
+
+  /**
+   * An average needs the field it averages.
+   */
+  public function testAvgOperationRequiresField(): void {
+    $measurement = BbMeasurement::create([
+      'id' => 'avg_without_field',
+      'label' => 'Average without field',
+      'value_type' => 'decimal',
+      'unit' => 'of 5',
+      'source' => ['entity_type' => 'bb_ticket', 'time_field' => 'closed_date'],
+      'operation' => ['type' => 'avg'],
+    ]);
+
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('operation.field');
+    $measurement->save();
+  }
+
+  /**
    * Query bindings accept only resolver implementations available at runtime.
    */
   public function testMeasurementRejectsUnknownBindingResolver(): void {

@@ -2,6 +2,11 @@ uuid: c236ee00-626b-48db-995d-da943b5b6b99
 langcode: en
 status: true
 dependencies:
+  config:
+    - bb_core.bb_figure.user_flow
+    - bb_core.bb_figure.user_overview
+    - bb_core.bb_figure.user_projects
+    - bb_core.bb_figure.user_tickets
   module:
     - simple_oauth
     - system
@@ -16,3 +21,7 @@ permissions:
   - 'access content'
   - 'change own username'
   - 'grant simple_oauth codes'
+  - 'view bakers figure user_flow'
+  - 'view bakers figure user_overview'
+  - 'view bakers figure user_projects'
+  - 'view bakers figure user_tickets'

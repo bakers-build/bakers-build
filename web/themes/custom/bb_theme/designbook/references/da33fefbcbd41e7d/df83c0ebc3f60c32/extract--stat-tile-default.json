@@ -1,0 +1,433 @@
+{
+  "format": "designbook-observations",
+  "capture": {
+    "role": "reference",
+    "source": {
+      "kind": "figma",
+      "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv?node-id=83-1226",
+      "revision": null
+    },
+    "scope": [
+      {
+        "subject": "period-range-month",
+        "view": "desktop",
+        "state": "period-range-month-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:187"
+        }
+      },
+      {
+        "subject": "period-range-kind-dropdown",
+        "view": "desktop",
+        "state": "period-range-kind-dropdown-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "150:13728"
+        }
+      },
+      {
+        "subject": "period-range-month-picker",
+        "view": "desktop",
+        "state": "period-range-month-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "153:1694"
+        }
+      },
+      {
+        "subject": "period-range-week-picker",
+        "view": "desktop",
+        "state": "period-range-week-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1669"
+        }
+      },
+      {
+        "subject": "period-range-quarter-picker",
+        "view": "desktop",
+        "state": "period-range-quarter-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1841"
+        }
+      },
+      {
+        "subject": "period-range-year-picker",
+        "view": "desktop",
+        "state": "period-range-year-picker-open",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "155:1925"
+        }
+      },
+      {
+        "subject": "period-range-past-period",
+        "view": "desktop",
+        "state": "period-range-past-period-return",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "161:2567"
+        }
+      },
+      {
+        "subject": "period-range-custom",
+        "view": "desktop",
+        "state": "period-range-custom-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "184:15016"
+        }
+      },
+      {
+        "subject": "stat-tile",
+        "view": "desktop",
+        "state": "stat-tile-default",
+        "session": "anonymous",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:226"
+        }
+      }
+    ]
+  },
+  "state": "stat-tile-default",
+  "captured_at": "2026-10-25T07:15:07.493990+00:00",
+  "extract": {
+    "subjects": [
+      {
+        "id": "stat-tile",
+        "locator": {
+          "kind": "figma-node",
+          "value": "84:226"
+        },
+        "samples": [
+          {
+            "view": "desktop",
+            "state": "stat-tile-default",
+            "structure": {
+              "roots": [
+                "84:226"
+              ],
+              "nodes": [
+                {
+                  "id": "84:226",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:226"
+                  },
+                  "children": [
+                    "84:227",
+                    "84:240",
+                    "84:243",
+                    "84:253"
+                  ]
+                },
+                {
+                  "id": "84:227",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:227"
+                  },
+                  "children": [
+                    "84:228",
+                    "84:229"
+                  ]
+                },
+                {
+                  "id": "84:228",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:228"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "84:229",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:229"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "84:240",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:240"
+                  },
+                  "children": [
+                    "84:241",
+                    "84:242"
+                  ]
+                },
+                {
+                  "id": "84:241",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:241"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "84:242",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:242"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "84:243",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:243"
+                  },
+                  "children": [
+                    "84:244",
+                    "84:252"
+                  ]
+                },
+                {
+                  "id": "84:244",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:244"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "84:252",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:252"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "84:253",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "84:253"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "84:226",
+                "width": 288.75,
+                "height": 130,
+                "display": "flex",
+                "direction": "column",
+                "align": "start",
+                "gap": "6px",
+                "padding": "16px",
+                "rows": {
+                  "84:227": "row gap 6px (label + info icon 12px)",
+                  "84:240": "row gap 6px align end (value + unit)",
+                  "84:243": "row gap 6px (badge + comparison)"
+                },
+                "parent": "84:225 (Answer strip row, 1160 wide; tile at x 1 y 1)"
+              },
+              "typography": [
+                {
+                  "node": "84:228",
+                  "text": "Throughput",
+                  "font_family": "SF Pro",
+                  "font_style": "Medium",
+                  "font_weight": 510,
+                  "font_size": "12px",
+                  "line_height": "16px",
+                  "color": "var(--color-text-light,#5b6169)",
+                  "text_style": "vorschlag/label"
+                },
+                {
+                  "node": "84:241",
+                  "text": "214",
+                  "font_family": "SF Pro",
+                  "font_style": "Semibold",
+                  "font_weight": 590,
+                  "font_size": "24px",
+                  "line_height": "28px",
+                  "color": "var(--color-title,#14171a)",
+                  "text_style": "vorschlag/stat-value"
+                },
+                {
+                  "node": "84:242",
+                  "text": "closed",
+                  "font_family": "SF Pro",
+                  "font_style": "Regular",
+                  "font_weight": 400,
+                  "font_size": "12px",
+                  "line_height": "16px",
+                  "color": "var(--color-text-light,#5b6169)",
+                  "text_style": "vorschlag/meta"
+                },
+                {
+                  "node": "I84:244;44:171",
+                  "text": "+8 %",
+                  "font_family": "SF Pro",
+                  "font_style": "Semibold",
+                  "font_weight": 590,
+                  "font_size": "11px",
+                  "line_height": "1.2",
+                  "color": "var(--color-state-running-ink,#1b514c)",
+                  "text_style": "bb/badge"
+                },
+                {
+                  "node": "84:252",
+                  "text": "vs 198",
+                  "font_family": "SF Pro",
+                  "font_style": "Regular",
+                  "font_weight": 400,
+                  "font_size": "12px",
+                  "line_height": "16px",
+                  "color": "var(--color-text-light,#5b6169)",
+                  "text_style": "vorschlag/meta"
+                },
+                {
+                  "node": "84:253",
+                  "text": "236 created · backlog +22",
+                  "font_family": "SF Pro",
+                  "font_style": "Regular",
+                  "font_weight": 400,
+                  "font_size": "12px",
+                  "line_height": "16px",
+                  "color": "var(--color-text-light,#5b6169)",
+                  "text_style": "vorschlag/meta"
+                }
+              ],
+              "content": [
+                {
+                  "node": "84:228",
+                  "text": "Throughput"
+                },
+                {
+                  "node": "84:241",
+                  "text": "214"
+                },
+                {
+                  "node": "84:242",
+                  "text": "closed"
+                },
+                {
+                  "node": "I84:244;44:171",
+                  "text": "+8 %"
+                },
+                {
+                  "node": "84:252",
+                  "text": "vs 198"
+                },
+                {
+                  "node": "84:253",
+                  "text": "236 created · backlog +22"
+                }
+              ],
+              "interactions": [
+                {
+                  "node": "84:229",
+                  "kind": "info-icon",
+                  "label": "icon/info-circle"
+                }
+              ],
+              "properties": {
+                "badge": {
+                  "node": "84:244",
+                  "component": "Badge (44:250)",
+                  "height": "20px",
+                  "padding_x": "var(--spacing-space-2,8px)",
+                  "gap": "var(--spacing-space-1,4px)",
+                  "radius": "var(--radius-sm,7px)",
+                  "fill": "var(--color-state-running-tint,#d9f2ee)",
+                  "ink": "var(--color-state-running-ink,#1b514c)"
+                },
+                "tile_surface": "no fill/border on 84:226 itself in get_design_context; the visible card border/divider belongs to ancestor 84:225"
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [
+                "https://www.figma.com/api/mcp/asset/c8c8873c-eb06-488d-a40e-e6bec5c162e7.svg"
+              ],
+              "font_families": [
+                "SF Pro"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "source.revision",
+                "reason": "Figma MCP tools (get_metadata, get_design_context, get_screenshot) return no file version id",
+                "required": false
+              },
+              {
+                "property": "fonts.SF Pro.files",
+                "reason": "Figma tools expose no font binaries for SF Pro (Apple-licensed); only family/style/weight are observed",
+                "required": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parents": [],
+    "images": [
+      {
+        "url": "https://www.figma.com/api/mcp/asset/c8c8873c-eb06-488d-a40e-e6bec5c162e7.svg",
+        "role": "icon",
+        "alt": "",
+        "location": "main",
+        "width": "12px",
+        "height": "12px",
+        "reference_path": "assets/icon-info-circle.svg"
+      }
+    ],
+    "fonts": [
+      {
+        "family": "SF Pro",
+        "source": "other",
+        "weights": [
+          400,
+          510,
+          590,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": []
+      }
+    ],
+    "captures": [
+      {
+        "subject": "stat-tile",
+        "view": "desktop",
+        "state": "stat-tile-default",
+        "path": "desktop--stat-tile--stat-tile-default.png",
+        "width": 289,
+        "height": 130
+      }
+    ]
+  }
+}

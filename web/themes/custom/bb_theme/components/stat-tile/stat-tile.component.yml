@@ -1,8 +1,22 @@
-$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
 name: Stat Tile
 status: stable
 group: Data Display
-description: 'One figure, named and attributed: a value, what it counts, and the source it is read from. The source is a required prop rather than an optional footnote because BB-333 D11 makes every figure on a dashboard name the entity and field behind it — a number whose provenance is invisible is a number nobody can check, and one of the five figures these dashboards want has no source at all yet, which only shows if every tile is asked the question. The tile knows no scope and no screen: it never resolves a query, never formats a count and never decides which window it is showing, so the same component carries a per-state count, a 24-hour total and a per-person capacity figure without a branch.'
+description: >-
+  One figure, named and attributed: a value, what it counts, and the source it
+  is read from. The source is a required prop rather than an optional footnote
+  because BB-333 D11 makes every figure on a dashboard name the entity and field
+  behind it — a number whose provenance is invisible is a number nobody can
+  check, and one of the five figures these dashboards want has no source at all
+  yet, which only shows if every tile is asked the question. The tile knows no
+  scope and no screen: it never resolves a query, never formats a count and
+  never decides which window it is showing, so the same component carries a
+  per-state count, a 24-hour total and a per-person capacity figure without a
+  branch. The kpi size lays the same figure out as the Insights answer strip
+  (Figma 84:226): label and info on top, value and unit, comparison chip and
+  previous value, detail line; abbreviated values carry their exact value on
+  hover and focus (Figma 90:1104).
 provider: bb_theme
 props:
   type: object
@@ -10,38 +24,130 @@ props:
     value:
       type: string
       title: Value
-      description: The figure itself, already formatted by the caller. A string rather than a number so a tile can read "3" or "—" or "1.4k" without the component owning a number format.
+      description: >-
+        The figure itself, already formatted by the caller. A string rather than
+        a number so a tile can read "3" or "—" or "1.4k" without the component
+        owning a number format.
     label:
       type: string
       title: Label
-      description: What the value counts. The tile's accessible name is built from label and value together.
+      description: >-
+        What the value counts. The tile's accessible name is built from label
+        and value together.
     source:
       type: string
       title: Source
-      description: 'Where the figure is read from — an `entity_type.field`, an endpoint, or the file whose flag decides the set. Rendered as the tile''s faint footnote (BB-333 D11/C3).'
+      description: >-
+        Where the figure is read from — an `entity_type.field`, an endpoint, or
+        the file whose flag decides the set. Rendered as the tile's faint
+        footnote (BB-333 D11/C3).
     window:
       type: string
       title: Window
-      description: The period the figure covers, where it has one (`last 24 h`, `rolling 30 d`). A tile that counts a present state carries none.
+      description: >-
+        The period the figure covers, where it has one (`last 24 h`, `rolling 30
+        d`). A tile that counts a present state carries none.
     tone:
       type: string
       enum:
         - neutral
         - running
         - attention
+        - muted
       title: Tone
-      description: 'Optional accent on the value. Never the only carrier of meaning: the label and the value say the same thing in text, so the tile stays readable in greyscale (BB-333 C2).'
+      description: >-
+        Optional accent on the value. Never the only carrier of meaning: the
+        label and the value say the same thing in text, so the tile stays
+        readable in greyscale (BB-333 C2). `muted` greys the value for a figure
+        withheld as a small sample (shown as —).
     size:
       type: string
       enum:
         - default
         - compact
+        - kpi
       title: Size
       description: >-
         `default` is the dashboard tile. `compact` is the same figure at the
         density of an inspector row — smaller type and padding — for a count
         that sits beside a description rather than filling a dashboard band.
+        `kpi` is the Insights answer-strip tile: the label with its info trigger
+        on top, the value with its unit, the comparison chip with the previous
+        value, and the detail line; the source moves into the info disclosure.
       default: default
+    comparison:
+      type: object
+      title: Comparison
+      description: >-
+        The same figure for the comparison period, all strings preformatted by
+        the caller (FigureRenderer::tiles()); the tile does no arithmetic.
+        direction picks the arrow; the delta text always names the change, so
+        direction is never colour-only.
+      properties:
+        value:
+          type: string
+          title: Previous value
+        label:
+          type: string
+          title: Comparison label
+          description: Already prefixed, e.g. "vs. Q3 2026".
+        delta:
+          type: string
+          title: Change
+          description: e.g. "+14 %", "-9 %", "0 %", "—".
+        direction:
+          type: string
+          enum:
+            - up
+            - down
+            - flat
+          title: Direction
+        exact:
+          type: string
+          title: Exact previous value
+          description: >-
+            The unabbreviated previous value and its calculation. Shown when the
+            value is hovered or focused, dismissed with Escape; the value
+            becomes focusable when set.
+      required:
+        - value
+        - label
+        - delta
+        - direction
+    unit:
+      type: string
+      title: Unit
+      description: >-
+        What the value is counted in, set beside it in the kpi layout (`closed`,
+        `tokens`, `of 5, job rating`).
+    detail:
+      type: string
+      title: Detail
+      description: >-
+        One preformatted line under the comparison in the kpi layout, e.g. `236
+        created · backlog +22` or `n = 3 closed tickets · needs 5`.
+    info:
+      type: string
+      title: Info
+      description: >-
+        What the figure counts, behind a focusable info trigger beside the
+        label; shown on hover and on keyboard focus, and the trigger's
+        accessible description.
+    exact:
+      type: string
+      title: Exact value
+      description: >-
+        The unabbreviated value and its calculation, e.g. `28,412,553,104 tokens
+        — Sum of run tokens by run start, UTC`. Shown when the value is hovered
+        or focused; the value becomes focusable when set.
+    detail_exact:
+      type: string
+      title: Exact detail value
+      description: >-
+        The unabbreviated figure in the detail line and its calculation, e.g.
+        `132,768,940 tokens per closed ticket — Run tokens ÷ closed tickets`.
+        Shown when the value is hovered or focused, dismissed with Escape; the
+        value becomes focusable when set.
   required:
     - value
     - label

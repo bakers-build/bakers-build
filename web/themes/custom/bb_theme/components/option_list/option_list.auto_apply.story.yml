@@ -1,0 +1,28 @@
+component: bb_theme:option_list
+name: Auto apply
+variant: form
+props:
+  multiple: true
+  input_type: checkbox
+  input_name: filter[project]
+  bulk_actions: true
+  summary: true
+  apply_label: Apply
+  auto_apply: true
+  options:
+    - value: p-atlas
+      label: atlas
+      count: '58'
+      selected: true
+    - value: p-pfiff
+      label: pfiff
+      count: '41'
+      selected: true
+    - value: p-shop
+      label: Shop relaunch
+      count: '21'
+      selected: false
+    - value: p-docs
+      label: Docs portal
+      count: '3'
+      selected: false

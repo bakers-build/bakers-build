@@ -1,0 +1,27 @@
+decided_at: '2026-10-25T08:12:23.864Z'
+fingerprint: a26a388fc7c75dcc71bef6293efae1971afe69128194c890ecca991b87122f40
+note: 'cw approved the 9 screenshots (pixel-identical to the approved 67fb5021a50d6233 capture; only Figma style names renamed) in the coding conversation; suitability for BAKERS-11 period-range/stat-tile: yes.'
+scope:
+  states:
+    - period-range-month-default
+    - period-range-kind-dropdown-open
+    - period-range-month-picker-open
+    - period-range-week-picker-open
+    - period-range-quarter-picker-open
+    - period-range-year-picker-open
+    - period-range-past-period-return
+    - period-range-custom-default
+    - stat-tile-default
+  subjects:
+    - period-range-month
+    - period-range-kind-dropdown
+    - period-range-month-picker
+    - period-range-week-picker
+    - period-range-quarter-picker
+    - period-range-year-picker
+    - period-range-past-period
+    - period-range-custom
+    - stat-tile
+  views:
+    - desktop
+status: approved

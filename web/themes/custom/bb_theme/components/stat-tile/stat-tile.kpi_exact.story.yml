@@ -1,0 +1,18 @@
+component: bb_theme:stat-tile
+name: KPI exact value
+props:
+  value: 28.4 B
+  unit: tokens
+  label: AI usage
+  size: kpi
+  source: bb_measurement.run_tokens
+  info: Run tokens by run start (UTC). Not a billable quantity.
+  exact: 28,412,553,104 tokens — Sum of run tokens by run start, UTC
+  detail: ≈ 133 M per closed ticket
+  detail_exact: 132,768,940 tokens per closed ticket — Run tokens ÷ closed tickets
+  comparison:
+    value: 31.2 B
+    label: vs
+    delta: '-9 %'
+    direction: down
+    exact: 31,200,000,000 tokens — Sum of run tokens by run start, UTC

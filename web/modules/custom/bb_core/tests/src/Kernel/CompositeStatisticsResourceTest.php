@@ -79,10 +79,14 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
       'filters' => [
         'period' => [
           'label' => 'Period',
-          'default' => '7',
+          'default' => 'week',
           'options' => [
-          ['value' => '7', 'label' => '7 days'],
-          ['value' => '30', 'label' => '30 days'],
+            ['value' => 'week', 'label' => 'Week'],
+            ['value' => 'month', 'label' => 'Month'],
+            ['value' => 'quarter', 'label' => 'Quarter'],
+            ['value' => 'year', 'label' => 'Year'],
+            ['value' => 'all', 'label' => 'All time'],
+            ['value' => 'custom', 'label' => 'Custom'],
           ],
         ],
       ],
@@ -106,10 +110,14 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
       'filters' => [
         'period' => [
           'label' => 'Period',
-          'default' => '7',
+          'default' => 'week',
           'options' => [
-            ['value' => '7', 'label' => '7 days'],
-            ['value' => '30', 'label' => '30 days'],
+            ['value' => 'week', 'label' => 'Week'],
+            ['value' => 'month', 'label' => 'Month'],
+            ['value' => 'quarter', 'label' => 'Quarter'],
+            ['value' => 'year', 'label' => 'Year'],
+            ['value' => 'all', 'label' => 'All time'],
+            ['value' => 'custom', 'label' => 'Custom'],
           ],
         ],
       ],
@@ -174,11 +182,88 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     $figure = $groups[0]['figures'][1];
     self::assertSame('user_activity', $figure['id']);
     self::assertSame('line', $figure['widget']);
-    self::assertSame('30', $figure['filters']['period']['value']);
-    self::assertCount(30, $figure['categories']);
+    self::assertSame('week', $figure['filters']['period']['value'], 'An old preset falls back to the default kind.');
+    self::assertSame('week', $figure['period']['kind']);
+    self::assertCount(7, $figure['categories']);
     self::assertSame(['closed_tickets'], array_column($figure['measurements'], 'id'));
     self::assertStringNotContainsString('scope_id', (string) $response->getContent());
     self::assertStringContainsString('no-cache', $response->headers->get('Cache-Control', ''));
+  }
+
+  /**
+   * A direct read resolves the anchor date and rejects only unknown keys.
+   */
+  public function testDirectReadResolvesThePeriodAndRejectsUnknownKeys(): void {
+    $account = $this->account('period-viewer');
+    $response = $this->request('/jsonapi/bakers/statistics/user_activity', $account, [
+      'user_id' => $account->uuid(),
+      'filter' => ['period' => 'month', 'date' => '2026-02-10'],
+    ]);
+    self::assertSame(200, $response->getStatusCode());
+    $payload = json_decode((string) $response->getContent(), TRUE)['data']['attributes'];
+    self::assertSame('month', $payload['filters']['period']['value']);
+    self::assertSame(['start' => '2026-01-01', 'end' => '2026-01-31', 'label' => 'Jan 2026'], $payload['period']['comparison']);
+    self::assertSame('2026-02-01', $payload['period']['start']);
+    self::assertCount(28, $payload['categories']);
+    self::assertCount(28, $payload['measurements'][0]['comparison']['values']);
+
+    $legacy = $this->request('/jsonapi/bakers/statistics/user_activity', $account, [
+      'user_id' => $account->uuid(),
+      'filter' => ['period' => '30'],
+    ]);
+    self::assertSame(200, $legacy->getStatusCode());
+    self::assertSame('week', json_decode((string) $legacy->getContent(), TRUE)['data']['attributes']['period']['kind']);
+
+    $unknown = $this->request('/jsonapi/bakers/statistics/user_activity', $account, [
+      'user_id' => $account->uuid(),
+      'filter' => ['foo' => '1'],
+    ]);
+    self::assertSame(400, $unknown->getStatusCode());
+  }
+
+  /**
+   * A filter entity of another workspace is a bad request, never a widening.
+   */
+  public function testForeignFilterEntityIsRejected(): void {
+    BbFigure::create([
+      'id' => 'workspace_closed',
+      'label' => 'Closed',
+      'widget' => 'matrix',
+      'measurements' => ['closed_tickets'],
+      'categories' => ['type' => 'total'],
+      'filters' => ['project' => ['label' => 'Project', 'type' => 'entities', 'binding' => 'project']],
+      'context_shape' => ['workspace'],
+      'conditions' => [],
+    ])->save();
+    $storage = $this->container->get('entity_type.manager');
+    $north = $storage->getStorage('bb_workspace')->create(['name' => 'north']);
+    $north->save();
+    $south = $storage->getStorage('bb_workspace')->create(['name' => 'south']);
+    $south->save();
+    $projects = [];
+    foreach (['north' => $north, 'south' => $south] as $name => $workspace) {
+      $group = $storage->getStorage('bb_group')->create(['name' => $name, 'workspace_id' => $workspace->id()]);
+      $group->save();
+      $projects[$name] = $storage->getStorage('bb_project')->create(['name' => $name, 'group_id' => $group->id()]);
+      $projects[$name]->save();
+    }
+    $account = $this->account('workspace-reader', ['view bakers figure workspace_closed']);
+
+    $own = $this->request('/jsonapi/bakers/statistics/workspace_closed', $account, [
+      'workspace_id' => $north->uuid(),
+      'filter' => ['project' => [$projects['north']->uuid()]],
+    ]);
+    self::assertSame(200, $own->getStatusCode());
+    $foreign = $this->request('/jsonapi/bakers/statistics/workspace_closed', $account, [
+      'workspace_id' => $north->uuid(),
+      'filter' => ['project' => [$projects['south']->uuid()]],
+    ]);
+    self::assertSame(400, $foreign->getStatusCode());
+    $scalarList = $this->request('/jsonapi/bakers/statistics/user_activity', $account, [
+      'user_id' => $account->uuid(),
+      'filter' => ['period' => ['week']],
+    ]);
+    self::assertSame(400, $scalarList->getStatusCode(), 'Only entity filters take a list.');
   }
 
   /**
@@ -192,6 +277,9 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     self::assertSame('user_activity', $data['id']);
     $payload = $data['attributes'];
     self::assertArrayHasKey('measurements', $payload);
+    self::assertArrayHasKey('total', $payload['measurements'][0]);
+    self::assertArrayHasKey('ratio', $payload);
+    self::assertNull($payload['ratio']);
 
     $stranger = $this->account('stranger');
     $denied = $this->request(
@@ -269,8 +357,10 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     self::assertStringNotContainsString('<path', $markup);
     self::assertStringContainsString('Rendered project', $markup);
     self::assertStringContainsString('Closed tickets', $markup);
-    self::assertStringContainsString('7 days', $markup);
-    self::assertStringContainsString('30 days', $markup);
+    foreach (['week', 'month', 'quarter', 'year', 'all'] as $kind) {
+      self::assertStringContainsString('data-filter-value="' . $kind . '"', $markup);
+    }
+    self::assertStringNotContainsString('data-filter-value="custom"', $markup, 'Buttons cannot supply custom dates.');
     self::assertStringContainsString('aria-current="true"', $markup);
   }
 
@@ -301,11 +391,14 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
       'filters' => [
         'period' => [
           'label' => 'Period',
-          'default' => '7',
+          'default' => 'week',
           'options' => [
-            ['value' => '7', 'label' => '7 days'],
-            ['value' => '30', 'label' => '30 days'],
-            ['value' => '365', 'label' => '1 year'],
+            ['value' => 'week', 'label' => 'Week'],
+            ['value' => 'month', 'label' => 'Month'],
+            ['value' => 'quarter', 'label' => 'Quarter'],
+            ['value' => 'year', 'label' => 'Year'],
+            ['value' => 'all', 'label' => 'All time'],
+            ['value' => 'custom', 'label' => 'Custom'],
           ],
         ],
       ],
@@ -346,7 +439,11 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
 
     $daily = $this->request('/jsonapi/bakers/statistics/user_tickets_trend', $account, [
       'user_id' => $account->uuid(),
-      'filter' => ['period' => '7'],
+      'filter' => [
+        'period' => 'custom',
+        'start' => gmdate('Y-m-d', $today - 6 * 86400),
+        'end' => gmdate('Y-m-d', $today),
+      ],
     ]);
     self::assertSame(200, $daily->getStatusCode());
     $dailyPayload = json_decode((string) $daily->getContent(), TRUE)['data']['attributes'];
@@ -357,16 +454,16 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
     self::assertNotNull($dailyPayload['measurements'][0]['values'][$yesterdayKey], 'An empty period is zero, distinguishable from NULL/unavailable.');
     self::assertTrue((bool) array_filter($dailyPayload['categories'], static fn(array $category): bool => ($category['partial'] ?? FALSE) === TRUE));
 
-    // Switching period to the `365` preset selects the month category TYPE
+    // Switching period to `year` selects the month category TYPE
     // (FigureEvaluator::categoryDefinition) as well as the year-long bound,
     // not merely a different value of the same days-type axis.
     $monthly = $this->request('/jsonapi/bakers/statistics/user_tickets_trend', $account, [
       'user_id' => $account->uuid(),
-      'filter' => ['period' => '365'],
+      'filter' => ['period' => 'year'],
     ]);
     self::assertSame(200, $monthly->getStatusCode());
     $monthlyPayload = json_decode((string) $monthly->getContent(), TRUE)['data']['attributes'];
-    self::assertCount(12, $monthlyPayload['categories'], 'The 1-year preset yields 12 trailing calendar-month buckets.');
+    self::assertCount(12, $monthlyPayload['categories'], 'The year yields its 12 calendar-month buckets.');
     $monthKey = gmdate('Y-m', $today);
     self::assertSame(1, $monthlyPayload['measurements'][0]['values'][$monthKey]);
   }
@@ -545,8 +642,15 @@ final class CompositeStatisticsResourceTest extends KernelTestBase {
       'filters' => [
         'period' => [
           'label' => 'Period',
-          'default' => '30',
-          'options' => [['value' => '30', 'label' => '30 days']],
+          'default' => 'week',
+          'options' => [
+            ['value' => 'week', 'label' => 'Week'],
+            ['value' => 'month', 'label' => 'Month'],
+            ['value' => 'quarter', 'label' => 'Quarter'],
+            ['value' => 'year', 'label' => 'Year'],
+            ['value' => 'all', 'label' => 'All time'],
+            ['value' => 'custom', 'label' => 'Custom'],
+          ],
         ],
       ],
       'context_shape' => ['user'],

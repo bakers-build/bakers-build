@@ -379,6 +379,32 @@ semantic:
       $value: '{primitive.style.color.neutral-600}'
       $type: color
       $description: Sixth comparison series (even-dash / square).
+    chart-flow-new:
+      $value: '{primitive.style.color.violet-600}'
+      $type: color
+      $description: >-
+        Flow chart "new" line, points and end label. Observed as chart-series-a
+        (#494fe5) in reference 3a2b0e29e246a9d7/c8ecb5b726386e24.
+    chart-flow-done:
+      $value: '{primitive.style.color.teal-600}'
+      $type: color
+      $description: >-
+        Flow chart "done" line, points and end label. Observed as the Figma
+        proposal chart-outflow (#0d9488) in reference
+        3a2b0e29e246a9d7/c8ecb5b726386e24; teal-600 is the closest existing
+        primitive, so no new primitive is added.
+    chart-flow-grows:
+      $value: '{primitive.style.color.red-100}'
+      $type: color
+      $description: >-
+        Flow chart fill where new exceeds done (backlog grows). Observed as the
+        state-unassigned-tint colour.
+    chart-flow-shrinks:
+      $value: '{primitive.style.color.teal-100}'
+      $type: color
+      $description: >-
+        Flow chart fill where done exceeds new (backlog shrinks). Observed as
+        the state-running-tint colour.
     control-border:
       $value: '{primitive.style.color.neutral-500}'
       $type: color
@@ -760,6 +786,28 @@ themes:
           $value: '{primitive.style.color.neutral-400}'
           $type: color
           $description: Sixth comparison series (even-dash / square).
+        chart-flow-new:
+          $value: '{primitive.style.color.violet-400}'
+          $type: color
+          $description: Flow chart "new" line in dark mode (chart-series-a step).
+        chart-flow-done:
+          $value: '{primitive.style.color.teal-400}'
+          $type: color
+          $description: >-
+            Flow chart "done" line in dark mode. Addition: the reference shows
+            light mode only; teal-400 mirrors chart-series-b's dark step.
+        chart-flow-grows:
+          $value: '{primitive.style.color.red-800}'
+          $type: color
+          $description: >-
+            Flow chart "backlog grows" fill in dark mode (state-unassigned-tint
+            step).
+        chart-flow-shrinks:
+          $value: '{primitive.style.color.teal-800}'
+          $type: color
+          $description: >-
+            Flow chart "backlog shrinks" fill in dark mode (state-running-tint
+            step).
         control-border:
           $value: '{primitive.style.color.neutral-400}'
           $type: color

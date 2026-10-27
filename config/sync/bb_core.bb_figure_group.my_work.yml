@@ -1,0 +1,17 @@
+uuid: d42fe655-4331-4716-8fda-b10bdfe2d46b
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_figure.user_flow
+    - bb_core.bb_figure.user_overview
+    - bb_core.bb_figure.user_projects
+    - bb_core.bb_figure.user_tickets
+id: my_work
+label: 'My work'
+weight: 0
+figures:
+  - user_overview
+  - user_flow
+  - user_projects
+  - user_tickets

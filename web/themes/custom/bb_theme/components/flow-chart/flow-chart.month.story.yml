@@ -1,0 +1,134 @@
+component: bb_theme:flow-chart
+name: Month
+props:
+  chart:
+    state: ready
+    label: New vs. done
+    caption: Per day, UTC · 20 Oct is still running
+    ratio: '0.96'
+    ratio_label: 'done : new'
+    totals:
+      new: '219'
+      done: '211'
+    open_at: 13:42 UTC
+    sections:
+      - label: '1'
+        new: 9
+        done: 10
+        open: 48
+        running: false
+        cut: true
+      - label: '2'
+        new: 12
+        done: 11
+        open: 49
+        running: false
+        cut: false
+      - label: '3'
+        new: 14
+        done: 12
+        open: 51
+        running: false
+        cut: false
+      - label: '4'
+        new: 11
+        done: 12
+        open: 50
+        running: false
+        cut: false
+      - label: '5'
+        new: 13
+        done: 13
+        open: 50
+        running: false
+        cut: false
+      - label: '6'
+        new: 6
+        done: 5
+        open: 51
+        running: false
+        cut: false
+      - label: '7'
+        new: 4
+        done: 3
+        open: 52
+        running: false
+        cut: false
+      - label: '8'
+        new: 22
+        done: 10
+        open: 64
+        running: false
+        cut: false
+      - label: '9'
+        new: 24
+        done: 11
+        open: 77
+        running: false
+        cut: false
+      - label: '10'
+        new: 19
+        done: 12
+        open: 84
+        running: false
+        cut: false
+      - label: '11'
+        new: 11
+        done: 12
+        open: 83
+        running: false
+        cut: false
+      - label: '12'
+        new: 14
+        done: 13
+        open: 84
+        running: false
+        cut: false
+      - label: '13'
+        new: 5
+        done: 4
+        open: 85
+        running: false
+        cut: false
+      - label: '14'
+        new: 3
+        done: 2
+        open: 86
+        running: false
+        cut: false
+      - label: '15'
+        new: 8
+        done: 19
+        open: 75
+        running: false
+        cut: false
+      - label: '16'
+        new: 9
+        done: 21
+        open: 63
+        running: false
+        cut: false
+      - label: '17'
+        new: 10
+        done: 18
+        open: 55
+        running: false
+        cut: false
+      - label: '18'
+        new: 12
+        done: 11
+        open: 56
+        running: false
+        cut: false
+      - label: '19'
+        new: 13
+        done: 12
+        open: 57
+        running: false
+        cut: false
+      - label: '20'
+        new: 8
+        done: 4
+        open: 61
+        running: true
+        cut: false

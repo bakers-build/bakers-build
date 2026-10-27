@@ -102,10 +102,18 @@
     posting "", so an entity form can empty the field. Opt-in, because for a
     facet an empty value matches nothing; a `clear_url` wins. #}
 {% set clear_input = clear_control|default(false) and control and control_type == 'radio' and clear_url is empty %}
+{#- The filter-panel additions only make sense for a checkbox list: bulk actions and the summary act
+    on the checkboxes, and nothing here submits until the Apply button does. #}
+{% set checkboxes = control and control_type == 'checkbox' %}
+{% set bulk_on = bulk_actions|default(false) and checkboxes %}
+{% set summary_on = summary|default(false) and checkboxes %}
+{% set option_total = options|default([])|length %}
+{% set selected_count = options|default([])|filter(o => o.selected)|length %}
 <ul{{ (attributes ?: create_attribute()).addClass([
     'option-list', 'm-0', 'p-0', 'list-none', 'flex', 'flex-col',
   ]) }}
   role="listbox"
+  {%- if summary_on %} x-data="{ count: {{ selected_count }} }" @change="count = $el.querySelectorAll('input[type=checkbox]:checked').length"{% endif %}
   {%- if multiple %} aria-multiselectable="true"{% endif %}
   {%- if name %} data-option-list="{{ name }}"{% endif %}>
   {%- if clearable %}
@@ -140,7 +148,23 @@
     {%- if clear_url is not empty %}</a>{% endif %}
   </li>
   {%- endif %}
+  {%- if bulk_on %}
+  {#- Select all and Clear act on the rows a search left visible, set the checkbox and the row's
+      selected state together, and report the change so the summary recounts. #}
+  <li class="flex items-center gap-3 px-2 pb-1" role="presentation">
+    <button type="button" class="p-0 bg-transparent border-0 text-caption text-primary cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring"
+      @click="$el.closest('[role=listbox]').querySelectorAll('[role=option]:not([hidden]) input[type=checkbox]').forEach((i) => { i.checked = true; i.closest('[role=option]').setAttribute('aria-selected', 'true'); }); $dispatch('change')">Select all</button>
+    <button type="button" class="p-0 bg-transparent border-0 text-caption text-primary cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring"
+      @click="$el.closest('[role=listbox]').querySelectorAll('[role=option]:not([hidden]) input[type=checkbox]').forEach((i) => { i.checked = false; i.closest('[role=option]').setAttribute('aria-selected', 'false'); }); $dispatch('change')">Clear</button>
+  </li>
+  {%- endif %}
+  {#- Declared before the loop so each iteration sees the previous row's group. #}
+  {%- set previous_group = '' %}
   {%- for option in options|default([]) %}
+  {%- if option.group and option.group != previous_group %}
+  <li class="px-2 pt-2 pb-1 text-eyebrow uppercase tracking-wide text-text-faint" role="presentation">{{ option.group }}</li>
+  {%- endif %}
+  {%- set previous_group = option.group|default('') %}
   <li class="option-list__option flex items-center gap-[8px] px-[8px] py-[6px] rounded-xs cursor-pointer text-caption text-text hover:bg-surface-3 aria-selected:text-text"
     role="option"
     aria-selected="{{ option.selected ? 'true' : 'false' }}"
@@ -148,10 +172,21 @@
     {%- if trigger %}<button type="submit" name="{{ submit_name }}" value="{{ option.value }}" formnovalidate
       class="option-list__submit flex items-center gap-[8px] w-full p-0 bg-transparent border-0 font-inherit text-caption text-inherit text-left cursor-pointer">{% endif %}
     {%- if control %}<label class="option-list__control flex items-center gap-[8px] w-full cursor-pointer">{% endif %}
+    {%- if option.initials %}
+    {{- include('bb_theme:person', {
+      attributes: create_attribute({'aria-hidden': 'true'}),
+      variant: 'compact',
+      size: 'sm',
+      display_name: '',
+      initials: option.initials,
+      color: option.color|default('running'),
+    }, with_context = false) -}}
+    {%- endif %}
     <span class="option-list__text flex flex-col min-w-0 flex-1">
       <span class="option-list__label truncate">{{ option.label }}</span>
       {%- if option.description %}<span class="option-list__description text-eyebrow text-text-faint">{{ option.description }}</span>{% endif %}
     </span>
+    {%- if option.count is defined and option.count is not same as(null) %}<span class="shrink-0 text-caption tabular-nums text-text-light">{{ option.count }}</span>{% endif %}
     {%- if control %}
     <input type="{{ control_type }}" name="{{ control_name }}" value="{{ option.value }}"
       class="option-list__input sr-only peer"{% if option.selected %} checked{% endif %} />
@@ -201,6 +236,23 @@
       data-create-noun="{{ create_label|default('item') }}">
       <span class="option-list__create-label truncate">+ New {{ create_label|default('item') }}</span>
     </button>
+  </li>
+  {%- endif %}
+  {%- if summary_on or (apply_label and control) %}
+  {#- Pinned to the bottom of a scrolling panel, so the count stays visible however long the list is. #}
+  <li class="sticky bottom-0 flex items-center gap-3 mt-1 pt-2 px-2 border-t border-border-2 bg-surface-2" role="presentation">
+    {%- if summary_on %}
+    <span class="flex-1 text-caption text-text-light" x-text="count + ' of {{ option_total }} selected'">{{ selected_count }} of {{ option_total }} selected</span>
+    {%- endif %}
+    {%- if apply_label and control and auto_apply|default(false) %}
+    {#- The enclosing form applies every change itself once scripting runs, so Apply is only for a
+        visitor without JavaScript: removed, not hidden, so it leaves no tab stop. #}
+    <span x-data x-init="$el.remove()">
+    {{- include('bb_theme:button', { label: apply_label, type: 'submit', variant: 'primary' }, with_context = false) -}}
+    </span>
+    {%- elseif apply_label and control %}
+    {{- include('bb_theme:button', { label: apply_label, type: 'submit', variant: 'primary' }, with_context = false) -}}
+    {%- endif %}
   </li>
   {%- endif %}
 </ul>

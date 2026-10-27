@@ -285,6 +285,8 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     // Composite statistics config entities need both homes because recipes
     // skip config entities installed by a module.
     'bb_core.bb_measurement.closed_tickets',
+    'bb_core.bb_measurement.created_tickets',
+    'bb_core.bb_measurement.open_tickets',
     'bb_core.bb_measurement.runs',
     'bb_core.bb_measurement.tickets_per_run',
     // The ratio measurement, used only by the *_overview matrices, which are
@@ -302,18 +304,12 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     // scope, each its own navigable sub-tab, with bar length scaled against
     // one shared maximum across the visible period rather than a per-row
     // 100%, so a quiet period is distinguishable from a busy one.
-    'bb_core.bb_figure.user_tickets_trend',
-    'bb_core.bb_figure.user_runs_trend',
-    'bb_core.bb_figure.user_tokens_trend',
     'bb_core.bb_figure.team_user_tickets_trend',
     'bb_core.bb_figure.team_user_runs_trend',
     'bb_core.bb_figure.team_user_tokens_trend',
     'bb_core.bb_figure.team_tickets_trend',
     'bb_core.bb_figure.team_runs_trend',
     'bb_core.bb_figure.team_tokens_trend',
-    'bb_core.bb_figure.project_tickets_trend',
-    'bb_core.bb_figure.project_runs_trend',
-    'bb_core.bb_figure.project_tokens_trend',
     'bb_core.bb_figure_group.overview',
     'bb_core.bb_figure_group.tickets',
     'bb_core.bb_figure_group.runs',
@@ -331,18 +327,17 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     // (`*_tokens_by_state_model`) and its figure group were retired
     // entirely — the by-model breakdown below is the sole surviving model
     // crosstab.
-    'bb_core.bb_figure.user_models',
     'bb_core.bb_figure.team_models',
-    'bb_core.bb_figure.project_models',
     'bb_core.bb_figure_group.tokens',
     // The time-series axis: one series per dimension value inside each
     // day/month bucket, on the mechanism the comparison chart provides.
     // `team_members_tickets_trend` proves the axis is generic over any
     // measurement dimension, not special-cased for model.
-    'bb_core.bb_figure.user_models_trend',
     'bb_core.bb_figure.team_models_trend',
-    'bb_core.bb_figure.project_models_trend',
     'bb_core.bb_figure.team_members_tickets_trend',
+    // Project › Stats: the Insights building blocks for one project.
+    'bb_core.bb_figure.project_flow',
+    'bb_core.bb_figure.project_people',
   ];
 
   /**
@@ -481,14 +476,14 @@ final class ConfigCopyDriftTest extends UnitTestCase {
   }
 
   /**
-   * The project breakdown carries the complete ordered measurement set.
+   * My projects carries the complete ordered measurement set.
    */
   public function testUserProjectBreakdownOrdersItsMeasurements(): void {
     $root = $this->repositoryRoot();
     $figure = Yaml::parseFile($root . '/config/sync/bb_core.bb_figure.user_projects.yml');
     self::assertIsArray($figure);
     self::assertSame(
-      ['closed_tickets', 'runs'],
+      ['closed_tickets', 'runs', 'job_rating', 'rated_tickets', 'run_tokens'],
       $figure['measurements'],
     );
   }

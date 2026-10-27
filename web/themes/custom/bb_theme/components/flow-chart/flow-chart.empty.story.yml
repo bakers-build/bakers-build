@@ -1,0 +1,14 @@
+component: bb_theme:flow-chart
+name: Empty
+props:
+  chart:
+    state: empty
+    label: New vs. done
+    caption: Per day, UTC
+    ratio: null
+    ratio_label: 'done : new'
+    totals:
+      new: '0'
+      done: '0'
+    open_at: null
+    sections: []

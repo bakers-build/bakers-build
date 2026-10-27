@@ -58,14 +58,14 @@ final class BbProjectRouteProvider extends AdminHtmlRouteProvider {
     return new Route(
       '/_workspace/{bb_workspace}/project/{bb_project}/' . $tab,
       [
-        // Stats is the ONE tab served by the shared stats controller, which
-        // reads its scope from `_bb_stats_scope`. Every other
-        // tab keeps its own method on this entity's tab controller.
+        // Stats is the ONE tab served by the stats controller: the Insights
+        // page for this project. Every other tab keeps its own method on this
+        // entity's tab controller.
         '_controller' => $tab === 'stats'
-          ? BbStatsController::class . '::stats'
+          ? BbStatsController::class . '::projectStats'
           : BbProjectTabController::class . '::' . $tab,
         '_title_callback' => BbProjectTabController::class . '::title',
-      ] + ($tab === 'stats' ? ['_bb_stats_scope' => 'bb_project'] : []),
+      ],
       ['_entity_access' => 'bb_project.view'],
       ['parameters' => ['bb_project' => ['type' => 'entity:bb_project']]],
     );

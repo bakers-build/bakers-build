@@ -14,6 +14,9 @@ is_admin: false
 permissions:
   - 'access bakers dashboard'
   - 'use text format bb_rich'
+  - 'view bakers figure project_flow'
+  - 'view bakers figure project_overview'
+  - 'view bakers figure project_people'
   - 'view bb_comment'
   - 'view bb_group'
   - 'view bb_project'

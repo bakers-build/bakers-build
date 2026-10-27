@@ -9,7 +9,8 @@
 #
 # `register bakers conductor` is needed because every conductor re-registers
 # (an upsert), and the update path is fenced by rank. Per-user (`by_user`)
-# figures stay team-lead only.
+# figures stay team-lead only, except the workspace Insights figures: a lead sees
+# per-person figures for the people of their own workspace there (BAKERS-13, D1).
 #
 # Shipped in its saved form, key for key.
 langcode: en
@@ -64,17 +65,20 @@ permissions:
   - 'update own bb_machine'
   - 'use bb_ticket_template'
   - 'use text format bb_rich'
-  - 'view bakers figure project_models'
-  - 'view bakers figure project_models_trend'
+  - 'view bakers figure project_flow'
   - 'view bakers figure project_overview'
-  - 'view bakers figure project_runs_trend'
-  - 'view bakers figure project_tickets_trend'
-  - 'view bakers figure project_tokens_trend'
+  - 'view bakers figure project_people'
   - 'view bakers figure team_models'
   - 'view bakers figure team_models_trend'
   - 'view bakers figure team_runs_trend'
   - 'view bakers figure team_tickets_trend'
   - 'view bakers figure team_tokens_trend'
+  - 'view bakers figure workspace_flow'
+  - 'view bakers figure workspace_models'
+  - 'view bakers figure workspace_overview'
+  - 'view bakers figure workspace_people'
+  - 'view bakers figure workspace_projects'
+  - 'view bakers figure workspace_projects_tokens'
   - 'view bb_comment'
   - 'view bb_conductor'
   - 'view bb_environment'

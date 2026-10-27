@@ -1,0 +1,59 @@
+uuid: d0e97db7-4358-4788-938f-577d916c2979
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.created_tickets
+    - bb_core.bb_measurement.open_tickets
+id: user_flow
+label: 'New vs. done'
+description: "Your created and closed tickets per section, with the open tickets at each section end. Date basis: ticket creation time for new tickets, ticket closed_date for done tickets. Attribution basis: the ticket's current assignee, in every workspace."
+weight: 1
+widget: flow
+measurements:
+  - created_tickets
+  - closed_tickets
+  - open_tickets
+categories:
+  type: days
+series: {  }
+ratio:
+  numerator: closed_tickets
+  denominator: created_tickets
+filters:
+  period:
+    label: Period
+    default: month
+    options:
+      -
+        value: week
+        label: Week
+      -
+        value: month
+        label: Month
+      -
+        value: quarter
+        label: Quarter
+      -
+        value: year
+        label: Year
+      -
+        value: all
+        label: 'All time'
+      -
+        value: custom
+        label: Custom
+  project:
+    label: Project
+    type: entities
+    binding: project
+context_shape:
+  - user
+conditions:
+  user:
+    id: bb_route_context
+    negate: false
+    context_mapping:
+      entity: user
+    entity_type: user

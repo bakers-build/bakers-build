@@ -18,7 +18,9 @@ description: >-
   is the supported case: a screen that cannot add renders no action at all,
   rather than a hidden or disabled one. The tabs of an entity place live here
   too rather than in a chrome component of their own (D7). The rule is written
-  in designbook/design-system/action-pattern.md.
+  in designbook/design-system/action-pattern.md. The description line carries
+  the fixed id `page-header-description` (one page header per page), so an htmx
+  swap can refresh it out of band.
 provider: bb_theme
 props:
   type: object

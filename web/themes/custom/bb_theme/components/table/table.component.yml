@@ -156,6 +156,47 @@ props:
               acting on is the one state the deleted row components made loud,
               and the tint is what the `wait` badge's `-ink` colour is legible
               against.
+          depth:
+            type: integer
+            minimum: 0
+            maximum: 3
+            title: Tree depth
+            description: >-
+              Makes the row a TREE ROW: its row-header cell is indented one step
+              per level (0 is the top) and reserves a disclosure slot, so the
+              names of rows with and without children line up. Absent on an
+              ordinary table, which then renders exactly as before.
+          disclosure:
+            type: object
+            title: Disclosure
+            description: >-
+              A tree row with children: a chevron link before the row name that
+              shows or hides them. It is a plain link to `href` — the page keeps
+              which rows are open in the address — so it works without script;
+              `expanded` sets `aria-expanded` and the "Expand"/"Collapse"
+              accessible name.
+            properties:
+              href:
+                type: string
+                title: Toggle URL
+              expanded:
+                type: boolean
+                title: Expanded
+          badges:
+            type: array
+            title: Name badges
+            description: >-
+              Badges after a tree row's name, such as "default account". Only a
+              tree row (`depth` set) renders them.
+            items:
+              type: object
+              properties:
+                label:
+                  type: string
+                  title: Label
+                tone:
+                  type: string
+                  title: Badge tone
           cells:
             type: object
             title: Cells
@@ -210,6 +251,14 @@ props:
                   type: string
                   title: Value
                   description: The value of a `text`, `mono`, `link` or `masked` cell.
+                exact:
+                  type: string
+                  title: Exact value
+                  description: >-
+                    A `text` cell whose value is abbreviated: the unabbreviated
+                    value and its calculation. Shown when the value is hovered
+                    or focused, dismissed with Escape; the value becomes
+                    focusable when set.
                 working:
                   type: boolean
                   title: Working
@@ -276,9 +325,9 @@ props:
                   type: boolean
                   title: External address
                   description: >-
-                    A `link` cell whose target lies outside bakers.build — a preview
-                    or tunnel address an addon reports. It reads as a link in
-                    prose (`text-link`, underlined) rather than as a row
+                    A `link` cell whose target lies outside bakers.build — a
+                    preview or tunnel address an addon reports. It reads as a
+                    link in prose (`text-link`, underlined) rather than as a row
                     affordance, and opens in a new tab with `noopener`.
                 label:
                   type: string
@@ -425,8 +474,8 @@ props:
                   type: array
                   title: Selected identities
                   description: >-
-                    `{value, label}` rows for selected_chips, so a removal
-                    names the account rather than a label index.
+                    `{value, label}` rows for selected_chips, so a removal names
+                    the account rather than a label index.
                   items:
                     type: object
                     properties:

@@ -13,7 +13,10 @@ use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\PropTypeInterface;
+use Drupal\bb_core\Statistics\InsightsPage;
 use Drupal\ui_patterns\SourcePluginBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * The recessive line under the shell page title, when this route has one.
@@ -28,6 +31,27 @@ use Drupal\ui_patterns\SourcePluginBase;
   prop_types: ['string'],
 )]
 final class BbPageHeaderDescriptionSource extends SourcePluginBase {
+
+  /**
+   * Builds the Insights sub-line from the request's filters.
+   */
+  private ?InsightsPage $insightsPage = NULL;
+
+  /**
+   * The current request, for the Insights filters.
+   */
+  private ?RequestStack $requestStack = NULL;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    $plugin = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    assert($plugin instanceof self);
+    $plugin->insightsPage = $container->get('bb_core.insights_page');
+    $plugin->requestStack = $container->get('request_stack');
+    return $plugin;
+  }
 
   /**
    * {@inheritdoc}
@@ -50,6 +74,7 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
       'view.bb_api_keys.page' => 'Keys that let a script, pipeline or other tool act as this account, with exactly its permissions. Dates are UTC.',
       'view.bb_ticket_templates.project_list' => 'Reusable ticket recipes for this project.',
       'view.bb_service_accounts.settings' => 'Non-human automation accounts bound to this workspace, with their role, team and managed API keys.',
+      'bb_core.my_work.stats' => 'Your own figures — always visible to you',
     ];
     if (isset($fixed[$route])) {
       return $fixed[$route];
@@ -58,10 +83,14 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
     if ($project instanceof BbProjectInterface) {
       return $this->projectSubline($project);
     }
+    if ($route === 'bb_core.workspace.insights') {
+      return $this->insightsSubline();
+    }
     $workspace = $this->routeMatch->getParameter('bb_workspace');
     $template = match (TRUE) {
       str_starts_with($route, 'view.tickets.') => 'Every ticket in the @workspace workspace',
       $route === 'view.worklog.page' => 'Your recorded hours in the @workspace workspace',
+      $route === 'bb_track.workspace.insights_billing' => '@workspace · billing report',
       $route === 'view.projects.workspace_list' => 'Every project in the @workspace workspace',
       $route === 'view.groups.workspace_list' => 'Every group in the @workspace workspace',
       $route === 'view.bb_ticket_templates.workspace_list' => 'Ticket templates for every project in the @workspace workspace',
@@ -74,6 +103,18 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
       return str_replace('the @workspace workspace', 'this workspace', $template);
     }
     return str_replace('@workspace', (string) $workspace->label(), $template);
+  }
+
+  /**
+   * The Insights sub-line: the workspace and what its filters narrow it to.
+   */
+  private function insightsSubline(): string {
+    $workspace = $this->routeMatch->getParameter('bb_workspace');
+    $request = $this->requestStack?->getCurrentRequest();
+    if (!$workspace instanceof BbWorkspaceInterface || $this->insightsPage === NULL || $request === NULL) {
+      return '';
+    }
+    return $this->insightsPage->scope($workspace, $this->insightsPage->filters($request, $workspace));
   }
 
   /**
@@ -105,7 +146,7 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
    */
   public function alterComponent(array $element): array {
     $metadata = CacheableMetadata::createFromRenderArray($element)
-      ->addCacheContexts(['url.path']);
+      ->addCacheContexts(['url.path', 'url.query_args']);
     $ticket = $this->routeMatch->getParameter('bb_ticket');
     if ($ticket instanceof BbTicketInterface) {
       $metadata = $metadata->merge(TicketStallReason::cacheability($ticket));

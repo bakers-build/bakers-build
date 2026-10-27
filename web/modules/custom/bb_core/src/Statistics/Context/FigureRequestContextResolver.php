@@ -22,6 +22,11 @@ final class FigureRequestContextResolver {
     'user_id' => ['user', 'user'],
   ];
 
+  /**
+   * The filter keys that select a list of entities.
+   */
+  private const ENTITY_FILTERS = ['epic', 'project', 'team', 'user'];
+
   public function __construct(
     private readonly EntityRepositoryInterface $entityRepository,
   ) {}
@@ -57,13 +62,21 @@ final class FigureRequestContextResolver {
   /**
    * Reads selected figure filters from the request.
    *
-   * @return array<string, string>
+   * Only the entity filters take a list (`filter[project][]=<uuid>`); every
+   * other filter has exactly one value.
+   *
+   * @return array<string, string|list<string>>
    *   Selected values keyed by filter name.
    */
   public function filtersFromRequest(Request $request): array {
     $filters = $request->query->all('filter');
     $selected = [];
     foreach ($filters as $key => $value) {
+      if (is_array($value) && in_array($key, self::ENTITY_FILTERS, TRUE) && array_is_list($value)
+        && array_filter($value, static fn(mixed $item): bool => !is_scalar($item)) === []) {
+        $selected[(string) $key] = array_map('strval', $value);
+        continue;
+      }
       if (!is_scalar($value)) {
         throw new BadRequestHttpException(sprintf('Filter %s must have one value.', $key));
       }

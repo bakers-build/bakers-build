@@ -89,13 +89,13 @@ function matrixDisplay(
   });
 }
 
-function partialPeriodUnit(figure: StatisticFigure): 'day' | 'month' {
-  return figure.filters.period?.value === '365' ? 'month' : 'day';
+function partialPeriodUnit(figure: StatisticFigure): string {
+  return figure.period?.grouping ?? 'day';
 }
 
 // Shared above every widget: which trailing period is still filling in (the
 // figure's own categories carry the `partial` flag — see
-// MeasurementEvaluator::days()/months()) and what the figure means, in the
+// MeasurementEvaluator::buckets()) and what the figure means, in the
 // figure's own words. Rendered once here rather than per-widget so every
 // shipped widget (matrix, grouped_horizontal_bars) gets both without having
 // to know about them.

@@ -19,6 +19,14 @@ bb_core.my_work.stats:
   base_route: view.tickets.my_work
   weight: 2
 
+# --- Workspace Insights: Overview; Billing report (weight 1) is bb_track's ---
+
+bb_core.workspace.insights:
+  title: 'Overview'
+  route_name: bb_core.workspace.insights
+  base_route: bb_core.workspace.insights
+  weight: 0
+
 # --- Project: Overview, Board, Stats, Tickets, Runs, Conductors, Settings ---
 # No Members tab: a project carries no membership of its own.
 

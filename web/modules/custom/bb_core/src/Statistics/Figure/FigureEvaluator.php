@@ -7,28 +7,40 @@ namespace Drupal\bb_core\Statistics\Figure;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\bb_core\BbFigureInterface;
 use Drupal\bb_core\BbMeasurementInterface;
+use Drupal\bb_core\Statistics\Measurement\MeasurementEvaluator;
 use Drupal\bb_core\Statistics\Measurement\MeasurementEvaluatorInterface;
+use Drupal\bb_core\Statistics\Measurement\MeasurementResult;
+use Drupal\bb_core\Statistics\Period\PeriodRange;
+use Drupal\bb_core\Statistics\Period\PeriodResolver;
 
 /**
  * Composes every referenced measurement into one aligned figure payload.
  */
 final class FigureEvaluator {
 
+  private const TIME_TYPES = ['days', 'weeks', 'months', 'quarters'];
+
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly MeasurementEvaluatorInterface $measurementEvaluator,
     private readonly FigureFilterResolver $filterResolver,
+    private readonly PeriodResolver $periodResolver,
   ) {}
 
   /**
    * Evaluates one complete atomic figure.
    *
+   * Every figure except rolling `windows` is evaluated on a calendar period
+   * and once more on its comparison period, so each measurement carries the
+   * previous period's values next to its own.
+   *
    * @param \Drupal\bb_core\BbFigureInterface $figure
    *   The configured figure.
    * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
    *   Named entity contexts.
-   * @param array<string, string> $selectedFilters
-   *   Selected filter values.
+   * @param array<string, string|list<string>> $selectedFilters
+   *   Selected filter values, including the period companions; an entity
+   *   filter selects a list of UUIDs.
    * @param int $now
    *   The request timestamp.
    *
@@ -36,20 +48,51 @@ final class FigureEvaluator {
    *   The complete figure payload.
    */
   public function evaluate(BbFigureInterface $figure, array $contexts, array $selectedFilters, int $now): FigureResult {
-    $filters = $this->filterResolver->resolve($figure->getFilters(), $selectedFilters);
-    $categoryDefinition = $this->categoryDefinition($figure, $filters);
-    $results = $this->evaluateMeasurements($figure, $contexts, $categoryDefinition, $now);
-    [$categories, $measurements, $hasValue, $tags] = $this->align($figure, $results);
+    $filters = $this->filterResolver->resolve($figure->getFilters(), $selectedFilters, $contexts);
+    $contexts = $this->restrict($contexts, $filters);
+    $definition = $figure->getCategories();
+    $period = NULL;
+    if (($definition['type'] ?? NULL) !== 'windows') {
+      $period = $this->periodResolver->resolve(
+        ['period' => (string) ($filters['period']['value'] ?? '')] + array_filter(array_intersect_key($selectedFilters, array_flip(PeriodResolver::COMPANIONS)), 'is_string'),
+        (string) ($figure->getFilters()['period']['default'] ?? 'week'),
+        $now,
+        fn(): ?int => $this->earliest($figure, $contexts, $now),
+      );
+      if (isset($filters['period'])) {
+        $filters['period']['value'] = $period->kind;
+      }
+    }
+    $effective = $period === NULL ? $definition : $this->rangeDefinition($definition, $period);
+    $results = $this->evaluateMeasurements($figure, $contexts, $effective, $now, FALSE);
+    $comparison = $period?->comparisonRange();
+    $comparisonResults = $comparison === NULL
+      ? NULL
+      : $this->evaluateMeasurements($figure, $contexts, $this->rangeDefinition($definition, $comparison), $now, TRUE);
+    [$categories, $measurements, $hasValue, $tags] = $this->align($figure, $results, ($effective['type'] ?? '') !== 'windows');
+    if ($period !== NULL) {
+      foreach ($results as $index => $result) {
+        $measurements[$index]['comparison'] = $comparisonResults === NULL
+          ? NULL
+          : $this->alignComparison($categories, $result, $results, $comparisonResults, $index, (string) ($definition['type'] ?? ''), $period);
+      }
+    }
 
-    return new FigureResult([
+    $payload = [
       'id' => (string) $figure->id(),
       'label' => (string) $figure->label(),
       'description' => $figure->getDescription(),
       'widget' => $figure->getWidget(),
       'generated' => gmdate('c', $now),
       'filters' => $filters,
+    ];
+    if ($period !== NULL) {
+      $payload['period'] = $period->toArray();
+    }
+    return new FigureResult($payload + [
       'categories' => $categories,
       'measurements' => $measurements,
+      'ratio' => $this->ratio($figure->getRatio(), $categories, $measurements),
       'empty' => [
         'is_empty' => !$hasValue,
         'message' => $hasValue ? NULL : 'No data for this selection.',
@@ -63,36 +106,172 @@ final class FigureEvaluator {
   }
 
   /**
-   * Applies resolved filters to the category definition.
+   * Adds the selected entity filters as restriction contexts.
    *
-   * @param \Drupal\bb_core\BbFigureInterface $figure
-   *   The figure configuration.
+   * A restriction is a list of entities (NULL for "no entity") keyed by the
+   * measurement binding it narrows. It is evaluation input only, never part
+   * of the disclosure context shape. The loaded entities leave the filter
+   * metadata, which is part of the payload.
+   *
+   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   *   The named contexts.
    * @param array<string, array<string, mixed>> $filters
-   *   The resolved filters.
+   *   The resolved filters; entity lists are removed in place.
+   *
+   * @return array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>>
+   *   The contexts plus restrictions.
+   */
+  private function restrict(array $contexts, array &$filters): array {
+    foreach ($filters as $key => $filter) {
+      if (($filter['type'] ?? '') !== 'entities') {
+        continue;
+      }
+      $restriction = $filter['entities'];
+      if ($filter['unassigned']) {
+        $restriction[] = NULL;
+      }
+      if ($restriction !== []) {
+        $contexts[$filter['binding']] = $restriction;
+      }
+      unset($filters[$key]['entities']);
+    }
+    return $contexts;
+  }
+
+  /**
+   * Bounds the configured category definition by a period.
+   *
+   * A time axis takes the period's grouping as its bucket type; a dimension
+   * or a total keeps its type and is only bounded.
+   *
+   * @param array<string, mixed> $definition
+   *   The configured category definition.
+   * @param \Drupal\bb_core\Statistics\Period\PeriodRange $period
+   *   The period to evaluate.
    *
    * @return array<string, mixed>
    *   The effective category definition.
    */
-  private function categoryDefinition(BbFigureInterface $figure, array $filters): array {
-    $definition = $figure->getCategories();
-    if (isset($filters['period'])) {
-      // The single `period` filter carries three fixed presets — 7, 30 and
-      // 365 days — each pairing a period with the granularity that makes
-      // sense for it (7d/30d => daily buckets, 365d => monthly buckets). The
-      // category machinery selects a category VALUE or PERIOD from a filter,
-      // but never a category TYPE, so that mapping is resolved here. The
-      // model breakdown (categories.type === 'dimension') has no day/month
-      // axis, so only the period bound applies to it; the type stays
-      // 'dimension' unconditionally.
-      $definition['period'] = $filters['period']['value'];
-      if (($definition['type'] ?? NULL) !== 'dimension') {
-        $definition['type'] = match ($filters['period']['value']) {
-          '365' => 'months',
-          default => 'days',
-        };
+  private function rangeDefinition(array $definition, PeriodRange $period): array {
+    if (!in_array($definition['type'] ?? NULL, ['dimension', 'total'], TRUE)) {
+      $definition['type'] = $period->grouping . 's';
+    }
+    $definition['from'] = $period->from();
+    $definition['to'] = $period->to();
+    return $definition;
+  }
+
+  /**
+   * The earliest record over every measurement of the figure.
+   *
+   * @param \Drupal\bb_core\BbFigureInterface $figure
+   *   The figure configuration.
+   * @param array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>> $contexts
+   *   The named context entities.
+   * @param int $now
+   *   The evaluation timestamp.
+   */
+  private function earliest(BbFigureInterface $figure, array $contexts, int $now): ?int {
+    $storage = $this->entityTypeManager->getStorage('bb_measurement');
+    $times = [];
+    foreach ($figure->getMeasurements() as $measurementId) {
+      $measurement = $storage->load($measurementId);
+      if ($measurement instanceof BbMeasurementInterface) {
+        $times[] = $this->measurementEvaluator->earliest($measurement, $contexts, $now);
       }
     }
-    return $definition;
+    $times = array_filter($times, static fn(?int $time): bool => $time !== NULL);
+    return $times === [] ? NULL : min($times);
+  }
+
+  /**
+   * Aligns the comparison values of one measurement to the current keys.
+   *
+   * Time buckets align by position (the i-th comparison bucket belongs to the
+   * i-th current key; missing positions are NULL). A dimension and a total
+   * align by key, and the current rows decide which keys exist. A series
+   * finds its comparison by series id; the remainder series sums every
+   * comparison group that is not shown individually.
+   *
+   * @param array<int, array<string, mixed>> $categories
+   *   The aligned current categories.
+   * @param \Drupal\bb_core\Statistics\Measurement\MeasurementResult $result
+   *   The current measurement result.
+   * @param array<\Drupal\bb_core\Statistics\Measurement\MeasurementResult> $results
+   *   Every current result, to find the series shown individually.
+   * @param array<\Drupal\bb_core\Statistics\Measurement\MeasurementResult> $comparisonResults
+   *   Every comparison result.
+   * @param int $index
+   *   The position of the current result.
+   * @param string $configuredType
+   *   The configured category type.
+   * @param \Drupal\bb_core\Statistics\Period\PeriodRange $period
+   *   The current period.
+   *
+   * @return array{values: array<string, int|float|null>, labels: array<string, string|null>}
+   *   The comparison values and the labels of the matched buckets.
+   */
+  private function alignComparison(array $categories, MeasurementResult $result, array $results, array $comparisonResults, int $index, string $configuredType, PeriodRange $period): array {
+    $default = $result->getValueType() === 'integer' ? 0 : NULL;
+    $comparisonLabel = $period->comparisonRange()?->label;
+    [$comparisonCategories, $comparisonValues] = $this->comparisonFor($result, $results, $comparisonResults, $index);
+    $values = [];
+    $labels = [];
+    foreach ($categories as $position => $category) {
+      $key = $category['key'];
+      if (in_array($configuredType, ['dimension', 'total'], TRUE)) {
+        $values[$key] = $comparisonValues[$key] ?? $default;
+        $labels[$key] = $comparisonLabel;
+        continue;
+      }
+      $matched = $comparisonCategories[$position] ?? NULL;
+      $values[$key] = $matched === NULL ? NULL : ($comparisonValues[$matched['key']] ?? $default);
+      $labels[$key] = $matched['label'] ?? NULL;
+    }
+    return ['values' => $values, 'labels' => $labels];
+  }
+
+  /**
+   * Finds the comparison categories and values belonging to one result.
+   *
+   * @param \Drupal\bb_core\Statistics\Measurement\MeasurementResult $result
+   *   The current measurement result.
+   * @param array<\Drupal\bb_core\Statistics\Measurement\MeasurementResult> $results
+   *   Every current result.
+   * @param array<\Drupal\bb_core\Statistics\Measurement\MeasurementResult> $comparisonResults
+   *   Every comparison result.
+   * @param int $index
+   *   The position of the current result.
+   *
+   * @return array{0: array<int, array{key: string, label: string, partial?: bool}>, 1: array<string, int|float|null>}
+   *   The ordered comparison categories and values keyed by their keys.
+   */
+  private function comparisonFor(MeasurementResult $result, array $results, array $comparisonResults, int $index): array {
+    if (!str_contains($result->getId(), ':')) {
+      $comparison = $comparisonResults[$index] ?? NULL;
+      return [$comparison?->getCategories() ?? [], $comparison?->getValues() ?? []];
+    }
+    // shortcut: an empty comparison series list has no bucket labels, so its
+    // positions stay NULL; derive the comparison axis if that ever matters.
+    $categories = isset($comparisonResults[0]) ? $comparisonResults[0]->getCategories() : [];
+    $byId = [];
+    foreach ($comparisonResults as $comparison) {
+      $byId[$comparison->getId()] = $comparison;
+    }
+    if (!str_ends_with($result->getId(), ':' . MeasurementEvaluator::SERIES_OTHER)) {
+      return [$categories, isset($byId[$result->getId()]) ? $byId[$result->getId()]->getValues() : []];
+    }
+    $shown = array_map(static fn(MeasurementResult $current): string => $current->getId(), $results);
+    $values = [];
+    foreach ($byId as $id => $comparison) {
+      if (in_array($id, $shown, TRUE)) {
+        continue;
+      }
+      foreach ($comparison->getValues() as $key => $value) {
+        $values[$key] = ($values[$key] ?? 0) + $value;
+      }
+    }
+    return [$categories, $values];
   }
 
   /**
@@ -100,12 +279,15 @@ final class FigureEvaluator {
    *
    * @param \Drupal\bb_core\BbFigureInterface $figure
    *   The figure configuration.
-   * @param array<string, \Drupal\Core\Entity\EntityInterface> $contexts
+   * @param array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>> $contexts
    *   The named context entities.
    * @param array<string, mixed> $categoryDefinition
    *   The effective category definition.
    * @param int $now
    *   The evaluation timestamp.
+   * @param bool $allSeries
+   *   Whether a series source returns every group instead of the top ones,
+   *   which the comparison needs to find each current series.
    *
    * @return array<\Drupal\bb_core\Statistics\Measurement\MeasurementResult>
    *   The measurement results in configured order.
@@ -115,11 +297,12 @@ final class FigureEvaluator {
     array $contexts,
     array $categoryDefinition,
     int $now,
+    bool $allSeries,
   ): array {
     $series = $figure->getSeries();
     if ($series !== []) {
-      if (!in_array($categoryDefinition['type'] ?? '', ['days', 'months'], TRUE)) {
-        throw new \InvalidArgumentException(sprintf('Figure "%s" declares a series source, which requires a "days" or "months" category type.', $figure->id()));
+      if (!in_array($categoryDefinition['type'] ?? '', self::TIME_TYPES, TRUE)) {
+        throw new \InvalidArgumentException(sprintf('Figure "%s" declares a series source, which requires a time category type.', $figure->id()));
       }
     }
 
@@ -140,7 +323,7 @@ final class FigureEvaluator {
           $contexts,
           $categoryDefinition,
           $dimensionKey,
-          (int) ($series['limit'] ?? 5),
+          $allSeries ? PHP_INT_MAX : (int) ($series['limit'] ?? 5),
           $now,
         ));
         continue;
@@ -162,11 +345,13 @@ final class FigureEvaluator {
    *   The figure configuration.
    * @param array<\Drupal\bb_core\Statistics\Measurement\MeasurementResult> $results
    *   The evaluated measurement results.
+   * @param bool $summable
+   *   Whether the categories are disjoint; overlapping windows have no total.
    *
    * @return array{0: array<int, array<string, mixed>>, 1: array<int, array<string, mixed>>, 2: bool, 3: array<string>}
    *   Categories, measurements, the non-empty flag, and cache tags.
    */
-  private function align(BbFigureInterface $figure, array $results): array {
+  private function align(BbFigureInterface $figure, array $results, bool $summable): array {
     $categoryMap = [];
     foreach ($results as $result) {
       foreach ($result->getCategories() as $category) {
@@ -179,6 +364,7 @@ final class FigureEvaluator {
     $measurements = [];
     $hasValue = FALSE;
     $tags = ['config:' . $figure->getConfigDependencyName()];
+    $storage = $this->entityTypeManager->getStorage('bb_measurement');
     foreach ($results as $result) {
       $values = [];
       foreach ($keys as $key) {
@@ -188,12 +374,15 @@ final class FigureEvaluator {
           $hasValue = TRUE;
         }
       }
-      $measurement = $result->toArray();
-      $measurement['values'] = $values;
-      $measurements[] = $measurement;
       // A series result's id is "<measurement id>:<series key>"; the tag
       // names the underlying measurement config, not the synthetic series id.
-      $tags[] = 'config:bb_core.bb_measurement.' . strstr($result->getId() . ':', ':', TRUE);
+      $configId = explode(':', $result->getId(), 2)[0];
+      $config = $storage->load($configId);
+      $measurement = $result->toArray();
+      $measurement['values'] = $values;
+      $measurement['total'] = $summable ? $this->total($config, $values) : NULL;
+      $measurements[] = $measurement;
+      $tags[] = 'config:bb_core.bb_measurement.' . $configId;
     }
 
     return [
@@ -202,6 +391,52 @@ final class FigureEvaluator {
       $hasValue,
       array_values(array_unique($tags)),
     ];
+  }
+
+  /**
+   * Sums a measurement's values when they add up to a meaningful total.
+   *
+   * Point-in-time counts (`open`) and quotients (`divide`) have no meaningful
+   * sum over sections; only counts and sums do.
+   *
+   * @param mixed $config
+   *   The loaded measurement configuration.
+   * @param array<string, int|float|null> $values
+   *   The aligned values.
+   */
+  private function total(mixed $config, array $values): int|float|null {
+    $operation = $config instanceof BbMeasurementInterface ? ($config->getOperation()['type'] ?? '') : '';
+    if (!in_array($operation, ['count', 'sum'], TRUE)) {
+      return NULL;
+    }
+    return array_sum(array_filter($values, static fn($value): bool => $value !== NULL));
+  }
+
+  /**
+   * Divides two measurements' sums over complete categories.
+   *
+   * Running (`partial`) and period-clipped (`cut`) categories hold incomplete
+   * data, so they are left out on purpose.
+   *
+   * @param array<string, string> $ratio
+   *   The figure's ratio configuration, `[]` for none.
+   * @param array<int, array<string, mixed>> $categories
+   *   The aligned categories.
+   * @param array<int, array<string, mixed>> $measurements
+   *   The aligned measurements.
+   */
+  private function ratio(array $ratio, array $categories, array $measurements): ?float {
+    if ($ratio === []) {
+      return NULL;
+    }
+    $complete = array_column(array_filter(
+      $categories,
+      static fn(array $category): bool => empty($category['partial']) && empty($category['cut']),
+    ), 'key');
+    $byId = array_column($measurements, 'values', 'id');
+    $sum = static fn(string $id): float => (float) array_sum(array_intersect_key($byId[$id] ?? [], array_flip($complete)));
+    $denominator = $sum($ratio['denominator']);
+    return $denominator === 0.0 ? NULL : round($sum($ratio['numerator']) / $denominator, 2);
   }
 
 }

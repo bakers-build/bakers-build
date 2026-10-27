@@ -26,6 +26,7 @@ categories:
     - week
     - month
 series: {  }
+ratio: {  }
 filters: {  }
 context_shape:
   - team
