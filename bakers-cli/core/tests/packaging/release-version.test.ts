@@ -1,36 +1,36 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
-// The release tool as the repository configures it (root `.versionrc.cjs`), run in a throwaway
-// repository: version from conventional commits, VERSION bumped, chore(release) commit, no tag,
-// and the next run ranges from the tag on that commit.
-const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
-const TOOL = join(ROOT, 'bakers-cli/node_modules/.bin/commit-and-tag-version');
+// `release:version <ref> [--notes <file>|-]` in a throwaway repository: the next version and the
+// release notes from the Conventional Commits between the last reachable v* tag and <ref>, or
+// nothing when there is nothing to release. The `release` job and the plan's dry run share it.
+const SCRIPT = fileURLToPath(
+  new URL('../../../scripts/release-version.mjs', import.meta.url),
+);
+const PROJECT_URL = 'https://git.example.test/bakers/oven';
 
-const repos: string[] = [];
+const dirs: string[] = [];
 
-function repo(): string {
+function repo(tag = 'v0.1.1'): string {
   const dir = mkdtempSync(join(tmpdir(), 'release-version-'));
-  repos.push(dir);
+  dirs.push(dir);
   git(dir, 'init', '-q', '-b', 'develop');
   git(dir, 'config', 'user.email', 'test@example.test');
   git(dir, 'config', 'user.name', 'test');
   git(dir, 'config', 'commit.gpgsign', 'false');
-  writeFileSync(
-    join(dir, '.versionrc.cjs'),
-    `module.exports = require(${JSON.stringify(join(ROOT, '.versionrc.cjs'))});\n`,
-  );
-  writeFileSync(join(dir, 'VERSION'), '0.1.1');
-  writeFileSync(
-    join(dir, 'CHANGELOG.md'),
-    '# Changelog\n\nOne version covers the CLI (`@bakers-build/bakers`) and the server.\n\n## 0.1.1 — 2026-10-23\n\nHand-written history.\n',
-  );
-  commit(dir, 'chore: seed the version');
-  git(dir, 'tag', 'v0.1.1');
+  commit(dir, 'chore: seed');
+  git(dir, 'tag', tag);
   return dir;
 }
 
@@ -38,66 +38,68 @@ function git(dir: string, ...args: string[]): string {
   return execFileSync('git', args, { cwd: dir, encoding: 'utf8' }).trim();
 }
 
-function commit(dir: string, message: string): void {
+function commit(dir: string, message: string): string {
   writeFileSync(join(dir, 'work.txt'), `${message}\n`, { flag: 'a' });
   git(dir, 'add', '-A');
   git(dir, 'commit', '-q', '-m', message);
+  return git(dir, 'rev-parse', 'HEAD');
 }
 
-function release(dir: string, ...args: string[]): string {
-  return execFileSync(TOOL, args, { cwd: dir, encoding: 'utf8' });
+function version(dir: string, ref = 'HEAD'): string {
+  return execFileSync('node', [SCRIPT, ref], {
+    cwd: dir,
+    encoding: 'utf8',
+    env: { ...process.env, CI_PROJECT_URL: PROJECT_URL },
+  });
 }
 
-describe('release version and changelog from conventional commits', () => {
+function notes(dir: string, ref = 'HEAD'): { out: string; notes: string } {
+  const file = join(dir, '..', `${dir.split('/').pop()}-notes.md`);
+  dirs.push(file);
+  writeFileSync(file, '');
+  const out = execFileSync('node', [SCRIPT, ref, '--notes', file], {
+    cwd: dir,
+    encoding: 'utf8',
+    env: { ...process.env, CI_PROJECT_URL: PROJECT_URL },
+  });
+  return { out, notes: readFileSync(file, 'utf8') };
+}
+
+describe('release version and notes from conventional commits', () => {
   afterEach(() => {
-    for (const dir of repos.splice(0))
-      rmSync(dir, { recursive: true, force: true });
+    for (const path of dirs.splice(0))
+      rmSync(path, { recursive: true, force: true });
   });
 
-  it('a dry run reports the minor bump and both sections, and writes nothing', () => {
+  it('a feature and a fix since v0.1.1 make 0.2.0 with both sections, and change nothing', () => {
     const dir = repo();
-    commit(dir, 'feat(stats): new vs. done flow chart');
-    commit(dir, 'fix(cli): read the release version');
-    const head = git(dir, 'rev-parse', 'HEAD');
+    const feat = commit(dir, 'feat(stats): new vs. done flow chart');
+    const fix = commit(dir, 'fix(cli): read the release version');
 
-    const out = release(dir, '--dry-run');
+    const result = notes(dir);
 
-    expect(out).toContain('to 0.2.0');
-    expect(out).toMatch(/## \[0\.2\.0\]/);
-    expect(out).toMatch(
-      /### Features\n\n\* \*\*stats:\*\* new vs\. done flow chart/,
+    expect(result.out).toBe('0.2.0\n');
+    expect(result.notes).toContain(
+      `[0.2.0](${PROJECT_URL}/compare/v0.1.1...v0.2.0)`,
     );
-    expect(out).toMatch(
-      /### Bug Fixes\n\n\* \*\*cli:\*\* read the release version/,
+    expect(result.notes).toContain(
+      `### Features\n\n* **stats:** new vs. done flow chart ([${feat.slice(0, 7)}](${PROJECT_URL}/commits/${feat}))`,
     );
-    expect(readFileSync(join(dir, 'VERSION'), 'utf8')).toBe('0.1.1');
-    expect(git(dir, 'rev-parse', 'HEAD')).toBe(head);
-  });
-
-  it('the real run bumps VERSION, commits chore(release) and creates no tag', () => {
-    const dir = repo();
-    commit(dir, 'feat(stats): new vs. done flow chart');
-    commit(dir, 'fix(cli): read the release version');
-
-    release(dir);
-
-    expect(readFileSync(join(dir, 'VERSION'), 'utf8')).toBe('0.2.0');
-    expect(git(dir, 'log', '-1', '--format=%s')).toBe('chore(release): 0.2.0');
+    expect(result.notes).toContain(
+      `### Bug Fixes\n\n* **cli:** read the release version ([${fix.slice(0, 7)}](${PROJECT_URL}/commits/${fix}))`,
+    );
+    expect(result.notes).not.toContain('Breaking');
     expect(git(dir, 'tag', '--list')).toBe('v0.1.1');
-    const changelog = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8');
-    expect(changelog).toMatch(
-      /^# Changelog\n\nOne version covers the CLI \(`@bakers-build\/bakers`\) and the server\.\n\n## \[0\.2\.0\]/,
-    );
-    expect(changelog).toContain(
-      '## 0.1.1 — 2026-10-23\n\nHand-written history.',
-    );
+    expect(git(dir, 'rev-parse', 'HEAD')).toBe(fix);
+    expect(git(dir, 'status', '--porcelain')).toBe('');
   });
 
-  it('the next run ranges from the tag on the back-merged release commit only', () => {
+  it('ranges from a tag on a commit merged into develop and skips merge subjects', () => {
     const dir = repo();
     commit(dir, 'feat(stats): new vs. done flow chart');
-    git(dir, 'switch', '-q', '-c', 'release/2026-10-26-x');
-    release(dir);
+    git(dir, 'switch', '-q', '-c', 'release/x');
+    commit(dir, 'chore(release): 0.2.0');
+    git(dir, 'tag', 'v0.2.0');
     git(dir, 'switch', '-q', 'develop');
     git(
       dir,
@@ -105,24 +107,93 @@ describe('release version and changelog from conventional commits', () => {
       '-q',
       '--no-ff',
       '-m',
-      'Merge release',
-      'release/2026-10-26-x',
+      "Merge branch 'release/x' into 'develop'",
+      'release/x',
     );
-    // The release job tags the merge's second parent, the chore(release) commit.
-    git(dir, 'tag', 'v0.2.0', 'HEAD^2');
     commit(dir, 'fix(cli): keep the oven running');
 
-    const out = release(dir, '--dry-run');
+    const result = notes(dir);
 
-    expect(out).toContain('from 0.2.0 to 0.2.1');
-    expect(out).toContain('keep the oven running');
-    expect(out).not.toContain('new vs. done flow chart');
+    expect(result.out).toBe('0.2.1\n');
+    expect(result.notes).toContain('keep the oven running');
+    expect(result.notes).not.toContain('new vs. done flow chart');
+    expect(result.notes).not.toContain('Merge branch');
+  });
+
+  it('releases nothing for an already tagged ref', () => {
+    const dir = repo();
+    commit(dir, 'feat(stats): new vs. done flow chart');
+    git(dir, 'tag', 'v0.2.0');
+
+    expect(version(dir)).toBe('');
+    expect(version(dir, 'HEAD~1')).toBe('');
+  });
+
+  it('releases nothing for a ref below a newer tag', () => {
+    const dir = repo();
+    const old = commit(dir, 'fix(cli): keep the oven running');
+    commit(dir, 'feat(stats): new vs. done flow chart');
+    git(dir, 'tag', 'v0.2.0');
+
+    expect(version(dir, old)).toBe('');
+  });
+
+  it('`--notes -` prints the version, then the notes, on stdout redirected to a file', () => {
+    const dir = repo();
+    commit(dir, 'feat(stats): new vs. done flow chart');
+    const file = `${dir}-stdout.md`;
+    dirs.push(file);
+    const fd = openSync(file, 'w');
+    execFileSync('node', [SCRIPT, 'HEAD', '--notes', '-'], {
+      cwd: dir,
+      stdio: ['ignore', fd, 'inherit'],
+      env: { ...process.env, CI_PROJECT_URL: PROJECT_URL },
+    });
+    closeSync(fd);
+
+    const [first, heading] = readFileSync(file, 'utf8').split('\n');
+    expect(first).toBe('0.2.0');
+    expect(heading).toMatch(
+      new RegExp(
+        `^## \\[0\\.2\\.0\\]\\(${PROJECT_URL}/compare/v0\\.1\\.1\\.\\.\\.v0\\.2\\.0\\)`,
+      ),
+    );
+  });
+
+  it('releases nothing when only chores and docs lie in the range', () => {
+    const dir = repo();
+    commit(dir, 'chore(ci): faster ovens');
+    commit(dir, 'docs: explain the dough');
+
+    expect(notes(dir)).toEqual({ out: '', notes: '' });
   });
 
   it('below 1.0 a breaking change bumps minor', () => {
     const dir = repo();
     commit(dir, 'feat(server)!: require client 0.2');
 
-    expect(release(dir, '--dry-run')).toContain('to 0.2.0');
+    const result = notes(dir);
+
+    expect(result.out).toBe('0.2.0\n');
+    expect(result.notes).toContain(
+      '### ⚠ Breaking Changes\n\n* **server:** require client 0.2',
+    );
+  });
+
+  it('from 1.0 a BREAKING CHANGE footer bumps major and a fix bumps patch', () => {
+    const dir = repo('v1.4.2');
+    commit(dir, 'fix: crisper crust');
+    expect(version(dir)).toBe('1.4.3\n');
+
+    commit(dir, 'feat(api): new ovens\n\nBREAKING CHANGE: old ovens are gone');
+    expect(version(dir)).toBe('2.0.0\n');
+  });
+
+  it('starts from 0.0.0 without a tag', () => {
+    const dir = repo();
+    git(dir, 'tag', '-d', 'v0.1.1');
+    commit(dir, 'feat: first loaf');
+
+    expect(version(dir)).toBe('0.1.0\n');
   });
 });

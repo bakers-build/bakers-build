@@ -60,7 +60,7 @@ Local runs are for debugging a failure or selecting affected tests, never a subs
 
 ### Before merge
 
-The merge request title is the squash subject, verbatim, and the release changelog is generated
+The merge request title is the squash subject, verbatim, and the release notes are generated
 from it: a Conventional Commits subject `type(scope)!: subject`, with `type` one of `feat`, `fix`,
 `chore`, `docs`, `refactor`, `test`, `ci`, `build`, `perf`, an optional scope (`cli`, `server`, a
 module) and `!` for a breaking change (`feat(stats): new vs. done flow chart`). The title lint job

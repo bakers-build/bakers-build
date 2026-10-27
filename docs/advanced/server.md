@@ -92,12 +92,13 @@ Give users the server URL and their login method through a private channel. They
 
 ## Release
 
-CLI and server share one version, held in the repository's `VERSION` file. A release is the prod deployment of a `deploy-and-release` ticket ([Release](/advanced/cli/deployment#release)):
+CLI and server share one version, held only in the `v*` tag. A release is the prod deployment of a `deploy-and-release` ticket ([Release](/advanced/cli/deployment#release)):
 
-1. `commit-and-tag-version` on a release branch `release/<date>-<ticket>` derives the version from the Conventional Commits merge request titles since the last version tag, writes the `## [0.2.0]` section into `CHANGELOG.md` and commits `chore(release): 0.2.0`.
-2. The release branch merges into `main` through a merge request, its gate and a merge commit; the gate builds and tests the images of the branch's tree. The pipeline promotes them and deploys prod; then the `release` job tags `v0.2.0` on the `chore(release)` commit and creates the GitLab release with that section. A `main` push whose CHANGELOG version is already tagged releases nothing.
+1. A release branch `release/<date>-<ticket>`, cut at the frozen `develop` SHA with no commit of its own, merges into `main` through one merge request, its gate and a merge commit; the gate builds and tests the images of the branch's tree. The pipeline promotes them and deploys prod.
+2. The `release` job derives the version from the Conventional Commits merge request titles since the last version tag (`release:version`), tags `v0.2.0` on the merge's second parent, the frozen `develop` commit, and creates the GitLab release with the generated notes. A tagged commit or a range without `feat`, `fix` or breaking commit releases nothing.
 3. The tag pipeline's `publish:npm` publishes `@bakers-build/bakers` and its packages as `latest`, and `release_images` tags that commit's `:tree-<tree>` images `php`, `nginx` and `mcp` as `:0.2.0` and `:latest`. Never publish by hand.
-4. The release branch merges back into `develop` the same way. `main` is never merged into `develop`.
+
+Nothing merges back: `develop` already contains the tagged commit.
 
 `php:0.2.0` is the server of `@bakers-build/bakers@0.2.0`. Release images carry the labels `org.opencontainers.image.version` and `org.opencontainers.image.revision`: the layers equal the deployed `:<commit-sha>`, the digest differs. `docker inspect <image>` shows them for what a host runs. The registry cleanup policy deletes `tree-*` tags after 30 days.
 

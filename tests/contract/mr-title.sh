@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# A merge request title becomes the squash subject, and the release tool derives version and
-# changelog from those subjects, so the title must be a Conventional Commits subject.
+# A merge request title becomes the squash subject, and `release:version` derives version and
+# release notes from those subjects, so the title must be a Conventional Commits subject.
 # The one copy of the rule: the CI job `mr_title` and the merge step both run
 #   bash tests/contract/mr-title.sh "<title>"
 set -euo pipefail

@@ -32,7 +32,7 @@
       "git fetch origin succeeded; origin/develop is 4b825dc642cb6eb9a060e54bf8d69288fbee4904. No release branch exists yet.",
       "bakers deployment tickets --since origin/main --to 4b825dc642cb6eb9a060e54bf8d69288fbee4904: resolved EVAL-41 (feat(stats): new vs. done flow chart) and EVAL-42 (fix(cli): keep the port when re-linking); unresolved none.",
       "glab ci status for 4b825dc642cb6eb9a060e54bf8d69288fbee4904: build, lint and tests passed; the manual gate has not been played.",
-      "pnpm --dir bakers-cli run bump --dry-run (VERSION 0.1.1, last tag v0.1.1) printed: bumping version in VERSION from 0.1.1 to 0.2.0, and this CHANGELOG.md section:\n\n## [0.2.0] (2026-10-26)\n\n### Features\n\n* **stats:** new vs. done flow chart\n\n### Bug Fixes\n\n* **cli:** keep the port when re-linking",
+      "pnpm --dir bakers-cli run release:version 4b825dc642cb6eb9a060e54bf8d69288fbee4904 --notes - (last tag v0.1.1) printed the version 0.2.0, then these release notes:\n\n## [0.2.0] (2026-10-26)\n\n### Features\n\n* **stats:** new vs. done flow chart\n\n### Bug Fixes\n\n* **cli:** keep the port when re-linking",
       "No commit of the batch is breaking."
     ]
   },
@@ -113,7 +113,7 @@
         "id": "77777777-7777-4777-8777-000000000001",
         "bb_comment_type": "qualification",
         "body": {
-          "value": "## Qualification handoff\n\n### Acceptance\n\n- **AC-1** The batch merged since the last production deployment reaches production (`main`) through a release branch with a played gate.\n- **AC-2** The release is versioned and its changelog generated from the Conventional Commits of the batch.\n\nTally: 2 passed, 0 rewritten.\n\n### Out of scope\n\nHotfixes.\n\n### Handoff metadata\n\n- `recipe`: deploy-and-release\n- `ticket_type`: deployment\n- `reproduction`: not_required\n- `scenario_required`: false\n- `test_as`: no login needed\n- prior art: negative\n- `handoff_version`: 1\n- `provenance`: fixture-revision-1\n",
+          "value": "## Qualification handoff\n\n### Acceptance\n\n- **AC-1** The batch merged since the last production deployment reaches production (`main`) through a release branch with a played gate.\n- **AC-2** The release is versioned and its release notes generated from the Conventional Commits of the batch.\n\nTally: 2 passed, 0 rewritten.\n\n### Out of scope\n\nHotfixes.\n\n### Handoff metadata\n\n- `recipe`: deploy-and-release\n- `ticket_type`: deployment\n- `reproduction`: not_required\n- `scenario_required`: false\n- `test_as`: no login needed\n- prior art: negative\n- `handoff_version`: 1\n- `provenance`: fixture-revision-1\n",
           "format": "bb_rich"
         },
         "relationships": {
@@ -158,7 +158,7 @@
   "rubric": [
     {
       "id": "plan-content",
-      "criterion": "The plan comment names the target, the frozen SHA, the batch EVAL-41 and EVAL-42, the gate status, version 0.2.0 and the changelog draft with Features and Bug Fixes."
+      "criterion": "The plan comment names the target, the frozen SHA, the batch EVAL-41 and EVAL-42, the gate status, version 0.2.0 and the release notes draft with Features and Bug Fixes."
     },
     {
       "id": "stops-at-approval",

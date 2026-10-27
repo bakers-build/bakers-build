@@ -63,8 +63,8 @@ stores — including the `force_remove_source_branch` a forge project setting pu
 property left unstated is decided somewhere else entirely.
 
 `main` is the exception: it is never squashed. Only a release branch reaches it, by merge commit,
-so the `release` job finds the `chore(release)` commit as the merge's second parent and `develop`
-contains the tagged commit ([deployment](../advanced/cli/deployment.md)).
+so the `release` job tags the merge's second parent, the frozen `develop` commit, which `develop`
+contains ([deployment](../advanced/cli/deployment.md)).
 
 ## Ticket identifiers by surface
 
