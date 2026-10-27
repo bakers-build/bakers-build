@@ -91,6 +91,12 @@ const SINKS = new Set(['@bakers-build/ui', '@bakers-build/bakers']);
  */
 const PERMITTED_SIBLINGS = {
   '@bakers-build/addon-herdr': ['@bakers-build/addon-workspace-git'],
+  // The Orca host reuses herdr's launch wrapper, templates and base-ref
+  // resolution (`addon-herdr/shared`) and the same `loadInstructions`.
+  '@bakers-build/addon-orca': [
+    '@bakers-build/addon-herdr',
+    '@bakers-build/addon-workspace-git',
+  ],
   // BB-403 added `addon-name-refs` on the same footing `addon-workspace`
   // used to carry: an essentials child, so the single non-auth `plugins[]`
   // entry every committed config already carries stays exactly as it is.

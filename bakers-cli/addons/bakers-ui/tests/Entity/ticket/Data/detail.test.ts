@@ -29,8 +29,9 @@ it('loadTicketDetail requests the include set', async () => {
   // linkage data arrives WITHOUT an include, so dropping it here would degrade
   // the rows silently instead of emptying the section — which is what makes
   // pinning the exact path, and not just the section's output, the real guard.
+  // BAKERS-17: `ticket_type,recipe` joined it for the header's term names.
   const path =
-    'bb_ticket/bb_ticket/t1?include=comments,sub_tickets,runs,referenced_tickets,conductor_id,assignee_user_id,parent_id,labels,blocked_by,owner_user_id,reviewers,pending_reviews';
+    'bb_ticket/bb_ticket/t1?include=comments,sub_tickets,runs,referenced_tickets,conductor_id,assignee_user_id,parent_id,labels,ticket_type,recipe,blocked_by,owner_user_id,reviewers,pending_reviews';
   const client = fakeClient({ gets: { [path]: doc } });
   expect(await loadTicketDetail(client, 't1')).toBe(doc);
 });

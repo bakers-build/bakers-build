@@ -7,7 +7,7 @@
 1. **Ask your agent.**
 
    ```text
-   Use create-ticket for: <what you need and why>.
+   Use bb-create-ticket for: <what you need and why>.
    ```
 
    Your agent checks whether a similar ticket exists, asks for anything missing and creates the ticket. If it finds a match, you decide: create anyway, extend that ticket or drop the idea.
@@ -30,7 +30,7 @@ Everything else, such as workflow, labels, identifier and branch, your agent and
 
 | Created by | Ticket starts in |
 |---|---|
-| Your agent with `create-ticket` | `spec` (feature, chore) or `diagnose` (bug), already qualified |
+| Your agent with `bb-create-ticket` | `plan`, already qualified |
 | **New ticket** on the web | `qualification` |
 
 **Done when:** the ticket has an identifier and your criteria. Next: [Follow a ticket](/daily-work/follow-a-ticket).

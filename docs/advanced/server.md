@@ -1,13 +1,11 @@
 ---
 title: Server
-description: For operators - what a bakers.build control plane consists of, how the repository deploys it with Komodo, first install, sign-in and access, updates, releases, verification, failure diagnosis and rollback.
+description: For operators - what a bakers.build control plane consists of, how the repository tests and deploys it with Komodo, first install, sign-in and access, updates, releases and their image versions, verification, failure diagnosis and rollback.
 ---
 
 # Server
 
-A bakers.build control plane is a Drupal site deployed as one Docker Compose stack; this page is for the operator who provisions, updates or recovers it.
-
-Workstation setup needs an existing server and none of this.
+A bakers.build control plane is a Drupal site deployed as one Docker Compose stack; this page is for the operator who provisions, updates or recovers it. Workstation setup needs none of this.
 
 ## What runs
 
@@ -21,25 +19,27 @@ Workstation setup needs an existing server and none of this.
 | `install` | First install only. Profile-gated, so it never starts on a normal `up`. |
 | `php`, `nginx`, `cron` | The site, its web server and a `drush core:cron` loop (`CRON_INTERVAL`, default 300 seconds). They start only after `deploy` exits successfully. |
 
-Volumes hold the database, public files, private files, `/tmp` and the OAuth keys. Ingress is the overlay `docker-compose.traefik.yml`, which both stacks list in their `file_paths`. Each host runs Traefik on the external network `traefik_proxy` and gets its certificate from Let's Encrypt through the TLS-ALPN challenge, so the DNS record must point straight at the host (in Cloudflare: DNS only, not proxied). `nginx` limits `/oauth/register`, the open client registration for MCP clients, to 10 requests a minute with a burst of 5; behind Traefik that is one budget for all clients.
+Volumes hold the database, public files, private files, `/tmp` and the OAuth keys. Ingress is the overlay `docker-compose.traefik.yml` in both stacks' `file_paths`. Each host runs Traefik on the external network `traefik_proxy` with Let's Encrypt certificates through the TLS-ALPN challenge, so DNS must point straight at the host (Cloudflare: DNS only). `nginx` limits the open MCP client registration `/oauth/register` to 10 requests a minute with a burst of 5, one budget for all clients behind Traefik.
 
 ## Deployment path
 
-The repository deploys through GitLab CI and Komodo:
+The repository tests and deploys through GitLab CI and Komodo; the images the merge gate tested are the images that deploy:
 
-1. The `build` job builds the `php`, `nginx` and `mcp` images and pushes each twice: as `:<branch>`, which the stack pulls, and as `:<commit-sha>`, for rollback.
-2. The `deploy` job runs `keytec-ai deployer deploy`, which starts a Komodo DeployStack and polls it. Then `scripts/deploy/deploy-report.mjs` prints the deployed commit, the log of the server's `deploy` service and its exit state, and smoke-checks the host: valid TLS and the sign-in page, OAuth discovery, and `/mcp` answering from the MCP service. The smoke checks retry for up to three minutes while the containers and a new host's certificate come up. Any failure fails the job. It runs for the fixed branches: `develop` deploys the stack `bakers-develop` to `https://develop.dev.bakers.build` (server `dev2`), `main` deploys `bakers-prod` to `https://app.bakers.build` (server `bakers-prod`).
-3. The stacks are declared in git in `komodo/bakers.toml`, one `[[stack]]` per branch, and created by a Komodo Resource Sync. Each stack sets the server, repository and branch, `file_paths`, the domain, `STACK_NAME`, `DB_*`, the image references and its secrets.
+1. A merge request push runs only the fast checks (lint, static analysis, CLI tests, contracts).
+2. Before the merge, the merge step plays the manual `gate` job. It refuses a branch not up to date with its target. `build` then builds `php`, `nginx`, `mcp` and the test images `php-test` and `e2e` once as `:tree-<git tree hash>`, and `phpunit`, `e2e` and `config_install` test them in parallel. *Pipelines must succeed* blocks the merge until all are green.
+3. On a `develop` or `main` push, `promote` tags the images of the commit's tree `:<branch>`, which the stack pulls, and `:<commit-sha>`: same digests, no rebuild. A merged up-to-date branch keeps its tree. Without a tree image, `promote` fails: that commit skipped the gate.
+4. The `deploy` job runs `keytec-ai deployer deploy`, a Komodo DeployStack it polls. `scripts/deploy/deploy-report.mjs` then prints the deployed commit and the server's `deploy` service log with its exit state, and smoke-checks TLS, the sign-in page, OAuth discovery and `/mcp`, retrying for up to three minutes; any failure fails the job. `develop` deploys the stack `bakers-develop` to `https://develop.dev.bakers.build` (server `dev2`), `main` deploys `bakers-prod` to `https://app.bakers.build` (server `bakers-prod`).
+5. The stacks are declared in git in `komodo/bakers.toml`, one `[[stack]]` per branch, and created by a Komodo Resource Sync. Each stack sets the server, repository and branch, `file_paths`, the domain, `STACK_NAME`, `DB_*`, the image references and its secrets.
 
-The pipeline needs the project variables `KOMODO_URL`, `KOMODO_API_KEY`, `KOMODO_API_SECRET` and `NPM_TOKEN`, masked and protected. Protected variables reach only pipelines on protected refs, so `develop`, `main` and the tags `v*` are protected: a feature branch can neither deploy nor publish. Komodo pulls the images with a project deploy token (`read_registry`), registered in Komodo as the stack's `registry_account`.
+The pipeline needs the masked, protected project variables `KOMODO_URL`, `KOMODO_API_KEY`, `KOMODO_API_SECRET` and `NPM_TOKEN`. They reach only protected refs (`develop`, `main`, tags `v*`), so a feature branch can neither deploy nor publish. Komodo pulls the images with a project deploy token (`read_registry`), the stack's `registry_account`.
 
-Secrets are Komodo Variables referenced as `[[NAME]]` in the stack environment. `keytec-ai deployer provision-secrets` creates missing ones as random hex, idempotently. The SMTP values `MAIL_SMTP_DSN` and `MAIL_FROM_ADDRESS` must be real, because a random value breaks outbound mail and with it passwordless sign-in; `MAIL_FROM_NAME` is `bakers.build`. The Google sign-in variables stay empty until a Google client is registered for the host. Keep an intentionally empty variable non-secret: Komodo redacts secret values, and an empty secret breaks the deploy.
+Secrets are Komodo Variables referenced as `[[NAME]]` in the stack environment. `keytec-ai deployer provision-secrets` creates missing ones as random hex, idempotently. `MAIL_SMTP_DSN` and `MAIL_FROM_ADDRESS` must be real, or outbound mail and with it passwordless sign-in break; `MAIL_FROM_NAME` is `bakers.build`. The Google sign-in variables stay empty until a Google client is registered for the host. Keep an intentionally empty variable non-secret: Komodo redacts secret values, and an empty secret breaks the deploy.
 
-To provision another installation, copy a `[[stack]]` from `komodo/bakers.toml` and change the server, domain, branch, image references and variable names, and use the `keytec-drupal-deploy` skill for the Komodo setup. Agree DNS and TLS, storage, backups and secret ownership first. Run the Resource Sync before the first deploy, and again before any deploy that changes `file_paths`; otherwise a running stack can lose its ingress overlay and answer 404 on every path.
+To provision another installation, copy a `[[stack]]` from `komodo/bakers.toml`, change server, domain, branch, image references and variable names, and use the `keytec-drupal-deploy` skill. Agree DNS and TLS, storage, backups and secret ownership first. Run the Resource Sync before the first deploy and before any deploy that changes `file_paths`, or a running stack can lose its ingress and answer 404 everywhere.
 
 ## Outbound mail
 
-Every mail bakers.build sends goes through the `bb_html_mail` backend: a branded HTML part and a plain-text alternative in one message. Without `MAIL_SMTP_DSN` it delivers through local sendmail; with it, `settings.komodo.php` sets only the SMTP transport and keeps the backend. A per-module or per-key entry under `system.mail` › `interface` overrides the default and sends that mail without the template. When a mail arrives as plain text only, check the effective configuration:
+Every mail goes through the `bb_html_mail` backend: a branded HTML part plus a plain-text alternative. Without `MAIL_SMTP_DSN` it uses local sendmail; with it, `settings.komodo.php` sets only the SMTP transport. A per-module or per-key entry under `system.mail` › `interface` sends that mail without the template. When a mail arrives as plain text only, check:
 
 ```sh
 drush config:get system.mail --include-overridden
@@ -63,7 +63,7 @@ docker compose --profile install run --rm install
 
 This runs `site:install --existing-config`, which drops and recreates the database from `config/sync`, then the deploy hooks and OAuth key generation. Never run it against a live site. The new environment is empty: no content, no users besides the first admin.
 
-The first `deploy` job on an empty environment fails by design, because the `deploy` service refuses an uninstalled site. Install, then re-run the job.
+The first `deploy` job on an empty environment fails by design: the `deploy` service refuses an uninstalled site. Install, then re-run it.
 
 The first admin signs in once with a one-time link and then creates the first workspace and accounts in the web UI:
 
@@ -86,36 +86,33 @@ Give users the server URL and their login method through a private channel. They
 ## Update
 
 1. Record the deployed and target release. Back up the database and the file volumes, and the OAuth key volume.
-2. Merge to the deploy branch. The pipeline builds and deploys. To re-run the `deploy` service by hand, run `docker compose up -d` in the stack directory on the host.
+2. Merge through the gate; the pipeline promotes and deploys. To re-run the `deploy` service by hand, run `docker compose up -d` in the stack directory on the host.
 3. The `deploy` service applies database updates and imports `config/sync`. Configuration and schema changes travel only this way; never patch a live server with `drush`.
 4. Verify, as below.
 
 ## Release
 
-CLI and server share one version. A release is the merge of `develop` into `main`:
+CLI and server share one version, held in the repository's `VERSION` file. A release is the prod deployment of a `deploy-and-release` ticket ([Release](/advanced/cli/deployment#release)):
 
-1. On `develop`, generate the entry and open it as a normal merge request:
+1. `commit-and-tag-version` on a release branch `release/<date>-<ticket>` derives the version from the Conventional Commits merge request titles since the last version tag, writes the `## [0.2.0]` section into `CHANGELOG.md` and commits `chore(release): 0.2.0`.
+2. The release branch merges into `main` through a merge request, its gate and a merge commit; the gate builds and tests the images of the branch's tree. The pipeline promotes them and deploys prod; then the `release` job tags `v0.2.0` on the `chore(release)` commit and creates the GitLab release with that section. A `main` push whose CHANGELOG version is already tagged releases nothing.
+3. The tag pipeline's `publish:npm` publishes `@bakers-build/bakers` and its packages as `latest`, and `release_images` tags that commit's `:tree-<tree>` images `php`, `nginx` and `mcp` as `:0.2.0` and `:latest`. Never publish by hand.
+4. The release branch merges back into `develop` the same way. `main` is never merged into `develop`.
 
-   ```sh
-   GITLAB_TOKEN=$(glab config get token --host <gitlab host>) node bakers-cli/scripts/changelog.mjs 0.2.0
-   ```
+`php:0.2.0` is the server of `@bakers-build/bakers@0.2.0`. Release images carry the labels `org.opencontainers.image.version` and `org.opencontainers.image.revision`: the layers equal the deployed `:<commit-sha>`, the digest differs. `docker inspect <image>` shows them for what a host runs. The registry cleanup policy deletes `tree-*` tags after 30 days.
 
-   It prepends `## 0.2.0` to `CHANGELOG.md`: one line per merge request merged since the last version tag, with the MR title, split into **CLI** (the MR touched `bakers-cli/`) and **Server** (everything else). The MR's label picks the group: `breaking`, `feature`, `bug` or `maintenance`. MRs without one of these labels, such as documentation, are left out, and the script lists them; label them and run it again if they belong in the release notes. Correct the wording in the merge request.
-2. Merge `develop` into `main`. The pipeline deploys prod; then the `release` job tags `v0.2.0` and creates the GitLab release with that entry. A `main` push whose CHANGELOG version is already tagged releases nothing.
-3. The tag pipeline's `publish:npm` publishes `@bakers-build/bakers` and its packages as `latest`. Never publish by hand.
-
-Every `develop` deploy also publishes a test build under the dist-tag `next`, at `<next patch>-next.<pipeline number>`, so `npm install -g @bakers-build/bakers@next` matches the commit on dev.
+Every `develop` deploy also publishes the CLI under the dist-tag `next` (`<next patch>-next.<pipeline number>`), matching the commit on dev.
 
 ## Verify
 
-The `deploy` job already prints the `deploy` service log and the smoke checks. By hand:
+By hand:
 
 ```sh
 node scripts/deploy/deploy-report.mjs --smoke-only https://<your-domain>
 bakers config check --scope all --online
 ```
 
-The online check proves sign-in and workspace access. Then run a small ticket through an oven and confirm a run appears.
+The online check proves sign-in and workspace access; then run a small ticket through an oven.
 
 ## Diagnose a failed deploy
 
@@ -127,8 +124,8 @@ docker logs <stack>-deploy-1 2>&1 | tail -60
 cd /etc/komodo/stacks/<stack> && docker compose up -d
 ```
 
-The `deploy` job prints the `deploy` service log; on the host, `docker logs` shows the same. A `Lock wait timeout exceeded` during configuration import is transient: retry with `docker compose up -d`. A PHP `Allowed memory size` failure is not a host out-of-memory kill; check the log and `State.OOMKilled` before changing capacity, and keep the CLI's 384 MiB ceiling.
+A `Lock wait timeout exceeded` during configuration import is transient: retry with `docker compose up -d`. A PHP `Allowed memory size` failure is not a host out-of-memory kill; check the log and `State.OOMKilled` before changing capacity, and keep the CLI's 384 MiB ceiling.
 
 ## Roll back
 
-Every build also carries a `:<commit-sha>` tag, and the `deploy` job log names the deployed commit. To roll back code at once, set the stack's `REGISTRY_IMAGE_PHP`, `REGISTRY_IMAGE_NGINX` and `REGISTRY_IMAGE_MCP` in Komodo to the last good `:<commit-sha>` and redeploy the stack. The next Resource Sync puts `:<branch>` back, so follow up with a revert on the deploy branch and let the pipeline rebuild and redeploy. Database updates do not reverse themselves: when a release changed the schema or data, restore the database and file backups taken in step 1 of the update, redeploy the matching code and verify again. Keep the failed check visible and record the recovery procedure that worked.
+Every release has a `:<version>` tag and every deployed commit a `:<commit-sha>` tag; the `deploy` job log names the deployed commit. To roll back code at once, set the stack's `REGISTRY_IMAGE_PHP`, `REGISTRY_IMAGE_NGINX` and `REGISTRY_IMAGE_MCP` in Komodo to the last good version, such as `:0.1.0` (on dev: the last good `:<commit-sha>`), and redeploy the stack. The next Resource Sync puts `:<branch>` back, so follow up with a revert merge request. Database updates do not reverse themselves: when a release changed schema or data, restore the backups from step 1 of the update, redeploy the matching code and verify again. Record the recovery that worked.

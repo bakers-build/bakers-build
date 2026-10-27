@@ -13,8 +13,8 @@ use Drupal\state_machine\Plugin\Workflow\WorkflowInterface;
  * Computes the ordered workflow states of a state_machine entity.
  *
  * Reads the entity's `state` field workflow (resolved per entity via the
- * field's workflow / workflow_callback setting — bb_ticket picks bb_bug /
- * bb_feature / bb_chore, bb_run is fixed to bb_run) and emits its
+ * field's workflow / workflow_callback setting — bb_ticket picks bb_work,
+ * bb_run is fixed to bb_run) and emits its
  * states in definition order, minus the terminal `cancelled` side-exit,
  * comma-joined. This keeps every state-flow presentation (ticket_detail,
  * run_row) sourced from bb_core.workflows.yml instead of a hard-coded list.

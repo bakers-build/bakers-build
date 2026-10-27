@@ -19,8 +19,8 @@ final class CancelledRunFreesTicketTest extends ClaimKernelTestBase {
    * A ticket with only a cancelled run is claimable again.
    */
   public function testTicketWithOnlyCancelledRunIsClaimableAgain(): void {
-    $ticket = $this->seedAssignedTicket('diagnose');
-    $run = $this->seedRun($ticket, 'diagnose', 'running');
+    $ticket = $this->seedAssignedTicket('plan');
+    $run = $this->seedRun($ticket, 'plan', 'running');
 
     try {
       $this->claimService->claim($this->reloadTicket($ticket), $this->conductor);
@@ -37,7 +37,7 @@ final class CancelledRunFreesTicketTest extends ClaimKernelTestBase {
    * Cancelling one of the runs that parked a ticket breaks the all-failed set.
    */
   public function testCancellingOneFailedRunUnparksTheCircuitBreaker(): void {
-    $ticket = $this->seedAssignedTicket('diagnose');
+    $ticket = $this->seedAssignedTicket('plan');
     $runs = [];
     for ($i = 0; $i < 3; $i++) {
       $runs[] = $this->seedFailedRun($ticket, $this->now() - 600);
@@ -58,7 +58,7 @@ final class CancelledRunFreesTicketTest extends ClaimKernelTestBase {
    * Seeds a failed run inside the retry window.
    */
   private function seedFailedRun(BbTicketInterface $ticket, int $changed): BbRunInterface {
-    $run = $this->seedRun($ticket, 'diagnose', 'failed');
+    $run = $this->seedRun($ticket, 'plan', 'failed');
     $this->container->get('database')->update('bb_run')
       ->fields(['changed' => $changed])
       ->condition('id', $run->id())

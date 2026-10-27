@@ -48,7 +48,7 @@ final class TicketMetricsFieldTest extends KernelTestBase {
    */
   private function createTicket(string $identifier): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['identifier' => $identifier, 'workflow' => 'bb_feature', 'title' => $identifier]);
+      ->create(['identifier' => $identifier, 'workflow' => 'bb_work', 'title' => $identifier]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;

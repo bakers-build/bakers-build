@@ -30,7 +30,7 @@ props:
           emphasis: strong
         state:
           kind: badge
-          label: Coding
+          label: Working
           tone: running
           dot: true
         priority:
@@ -92,7 +92,7 @@ props:
           emphasis: strong
         state:
           kind: badge
-          label: Spec
+          label: Plan
           tone: neutral
           dot: true
         priority:

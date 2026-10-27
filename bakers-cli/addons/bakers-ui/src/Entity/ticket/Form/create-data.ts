@@ -94,7 +94,23 @@ const toOption = (row: {
  * the data service returns terms for whatever purpose, and which of the entity
  * type's vocabularies a given widget wants is the widget's business.
  */
-const LABEL_VOCABULARY = 'bb_labels';
+const LABEL_VOCABULARY = 'label';
+/** The vocabularies of the single-valued `ticket_type` / `recipe` (BAKERS-17). */
+const TYPE_VOCABULARY = 'type';
+const RECIPE_VOCABULARY = 'recipe';
+
+/** A vocabulary's terms as one option bag, under the bag key `bag`. */
+const termSource = (
+  client: DropshClient,
+  bag: string,
+  vocabulary: string,
+): OptionSource => ({
+  bag,
+  async load() {
+    const outcome = await listTerms(client, vocabulary);
+    return { options: outcome.rows.map(toOption), error: outcome.error };
+  },
+});
 
 /**
  * The `conductors` option source for one (possibly absent) project.
@@ -219,13 +235,9 @@ export function createFormSources(
       ownerUserId,
       ownConductorMachineId,
     }),
-    labels: {
-      bag: 'labels',
-      async load() {
-        const outcome = await listTerms(client, LABEL_VOCABULARY);
-        return { options: outcome.rows.map(toOption), error: outcome.error };
-      },
-    },
+    ticketType: termSource(client, 'ticketTypes', TYPE_VOCABULARY),
+    recipe: termSource(client, 'recipes', RECIPE_VOCABULARY),
+    labels: termSource(client, 'labels', LABEL_VOCABULARY),
   };
   // No project in scope ⇒ NO source, so the bag stays absent rather than empty:
   // "nothing can be offered" and "searched, nothing matched" are different
@@ -259,6 +271,8 @@ export async function composeCreateFormOptions(
     users: [],
     reviewers: [],
     conductors: [],
+    ticketTypes: [],
+    recipes: [],
     labels: [],
     workflows: WORKFLOW_OPTIONS,
     // Spread over the defaults, so a bag with no source stays ABSENT (D8) while

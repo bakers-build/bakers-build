@@ -1,6 +1,0 @@
-langcode: en
-status: true
-dependencies: {}
-id: bb_labels
-label: 'bakers.build labels'
-description: ''

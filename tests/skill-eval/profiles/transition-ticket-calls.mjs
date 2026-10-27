@@ -1,7 +1,7 @@
 import { calls, check, commonChecks, data, discoveryBefore, linkArray, readAfter, succeeded, uuid, validateTools, value, writes } from '../call-utils.mjs';
 import { requireValue } from '../validation.mjs';
 export function validate(f) {
-  validateTools(f, 'transition-ticket');
+  validateTools(f, 'bb-workflow/references/transition-ticket.md');
   requireValue(uuid(f.input.ticket_uuid) && Array.isArray(f.input.links) && Array.isArray(f.simulation.ticket?.links), 'Expected caller ticket and link sets');
   requireValue(f.input.destination === undefined || typeof f.input.destination === 'string', 'Destination must be explicit or absent');
 }

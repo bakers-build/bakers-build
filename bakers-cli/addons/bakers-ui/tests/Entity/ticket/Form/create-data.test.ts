@@ -13,7 +13,7 @@ const res = (id: string, attrs: Record<string, unknown>): Resource =>
   toResource({ id, type: 't--t', attributes: attrs });
 
 /** The bundle this popup offers as its labels (D3) — the fixture key it needs. */
-const LABELS = 'bb_term/bb_labels';
+const LABELS = 'bb_term/label';
 
 it('preselects the own user (by name) and own conductor (by machine_id)', async () => {
   const client = fakeClient({
@@ -35,7 +35,7 @@ it('preselects the own user (by name) and own conductor (by machine_id)', async 
   expect(opts.users[0]?.id).toBe('u2'); // own user first
   expect(opts.conductors[0]?.id).toBe('c2'); // own conductor first
   expect(opts.labels[0]?.label).toBe('bug');
-  expect(opts.workflows.map((w) => w.id)).toContain('bb_feature');
+  expect(opts.workflows.map((w) => w.id)).toContain('bb_work');
 });
 
 it('without hints keeps server order; a failing query yields an empty list', async () => {
@@ -183,8 +183,8 @@ it('every option is a PLAIN `{id, label}` — no status suffix, nothing else', a
 
 // ---- BB-257 AC-3 / AC-4: the vocabulary, and a failure that is sayable ------
 
-it('AC-3 (D3): the labels bag is read from the `bb_labels` vocabulary', async () => {
-  // The POLICY "this popup offers bb_labels" lives here, in the adapter, beside
+it('AC-3 (D3): the labels bag is read from the `label` vocabulary', async () => {
+  // The POLICY "this popup offers label" lives here, in the adapter, beside
   // every other create-popup policy — not in the data service, which stays
   // entity-named and form-ignorant (the boundary guard asserts it never imports
   // `Form/`).
@@ -198,6 +198,20 @@ it('AC-3 (D3): the labels bag is read from the `bb_labels` vocabulary', async ()
   ]);
   expect(client.collections).toContain(LABELS);
   expect(client.collections).not.toContain('bb_term/bb_term');
+});
+
+it('BAKERS-17: the type and recipe bags read their own vocabularies', async () => {
+  const client = fakeClient({
+    rows: {
+      'bb_term/type': [res('t1', { name: 'feature' })],
+      'bb_term/recipe': [res('r1', { name: 'drupal-feature' })],
+    },
+    failingCollections: ['bb_term/recipe'],
+  });
+  const opts = await loadCreateFormOptions(client);
+  expect(opts.ticketTypes).toEqual([{ id: 't1', label: 'feature' }]);
+  expect(opts.recipes).toEqual([]);
+  expect(opts.errors?.recipes).toBe('no bb_term/recipe');
 });
 
 it('AC-4: a failing label read yields an empty bag AND `errors.labels`', async () => {

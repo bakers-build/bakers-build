@@ -11,7 +11,7 @@ const snapshots = new WeakMap<Page, { url: string; title: string; values: Record
 const rejectedStatuses = new WeakMap<Page, number>();
 const writesSinceSelection = new WeakMap<Page, string[]>();
 const authenticatedCookies = new WeakMap<Page, Awaited<ReturnType<BrowserContext['cookies']>>>();
-const fields: Record<string, string> = { Assignee: 'assignee_user_id', Reviewers: 'reviewers', Conductor: 'conductor_id', Priority: 'priority', Labels: 'labels', Parent: 'parent_id', 'Blocked by': 'blocked_by' };
+const fields: Record<string, string> = { Assignee: 'assignee_user_id', Reviewers: 'reviewers', Conductor: 'conductor_id', Priority: 'priority', Type: 'ticket_type', Recipe: 'recipe', Labels: 'labels', Parent: 'parent_id', 'Blocked by': 'blocked_by' };
 const propertyForm = (page: Page) => page.locator('form[data-form-save]');
 const savedMessage = (page: Page) => propertyForm(page).locator('#messages-status');
 const saveButton = (page: Page) => propertyForm(page).getByRole('button', { name: 'Save', exact: true });
@@ -74,16 +74,16 @@ Then('the Properties block exposes the people pickers', async ({ page }) => {
 
 Then('the Properties block holds the property pickers and Created by', async ({ page }) => {
     await expect(propertyForm(page)).toHaveCount(1);
-    for (const label of ['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Labels', 'Parent', 'Blocked by']) {
+    for (const label of ['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Type', 'Recipe', 'Labels', 'Parent', 'Blocked by']) {
         await expect(picker(page, label).locator('[data-option-picker-trigger]')).toBeVisible();
     }
     // Stall leads when the ticket is standing still (frozen, blocked, no
-    // conductor, failing) and is omitted when it is not. The seven pickers
+    // conductor, failing) and is omitted when it is not. The nine pickers
     // follow, then the creator. Effort, Code and Relations are read-only
     // blocks of their own, outside the form.
     const labels = await propertyForm(page).locator('[data-cell="label"]').allTextContents();
     const afterStall = labels[0] === 'Stall' ? labels.slice(1) : labels;
-    expect(afterStall).toEqual(['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Labels', 'Parent', 'Blocked by', 'Created by']);
+    expect(afterStall).toEqual(['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Type', 'Recipe', 'Labels', 'Parent', 'Blocked by', 'Created by']);
     // Relations renders only with sub-tickets or referenced tickets, so it
     // is not asserted here; Parent and Blocked by are rows of the form above.
     await expect(page.locator('[data-canvas-region="inspector"] details > summary', { hasText: /^\s*Code/ })).toHaveCount(1);

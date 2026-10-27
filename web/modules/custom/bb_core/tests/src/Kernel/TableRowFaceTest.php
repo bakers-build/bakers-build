@@ -147,26 +147,17 @@ final class TableRowFaceTest extends KernelTestBase {
    * WHAT IT IS and the mapping from phase to accent lives in
    * `views-view-table.html.twig`, where presentation belongs.
    *
-   * The cases are chosen to cross workflow boundaries, because a per-state map
-   * would pass a `bb_feature`-only table and fail here: `verifying` and
-   * `post_deployment` are `running` in workflows that have no `coding` state at
-   * all, and the deleted `ACCENTS` map answered NULL for both.
+   * Every `bb_work` state is listed, the only ticket workflow; a further
+   * workflow adds its states here.
    */
   public function testTheTicketReportsItsPhaseAcrossEveryWorkflow(): void {
     foreach ([
-      ['bb_feature', 'coding', 'running'],
-      ['bb_bug', 'coding', 'running'],
-      ['bb_verification', 'verifying', 'running'],
-      ['bb_verification', 'summary', 'running'],
-      ['bb_deployment', 'post_deployment', 'running'],
-      ['bb_feature', 'review', 'review'],
-      ['bb_bug', 'review', 'review'],
-      ['bb_feature', 'qualification', 'prepare'],
-      ['bb_feature', 'spec', 'prepare'],
-      ['bb_bug', 'diagnose', 'prepare'],
-      ['bb_deployment', 'pre_deployment', 'prepare'],
-      ['bb_feature', 'done', 'done'],
-      ['bb_feature', 'cancelled', 'cancelled'],
+      ['bb_work', 'working', 'running'],
+      ['bb_work', 'review', 'review'],
+      ['bb_work', 'qualification', 'prepare'],
+      ['bb_work', 'plan', 'prepare'],
+      ['bb_work', 'done', 'done'],
+      ['bb_work', 'cancelled', 'cancelled'],
     ] as [$workflow, $state, $phase]) {
       $ticket = $this->ticket(['workflow' => $workflow, 'state' => $state]);
       self::assertSame($phase, $ticket->getBbPhase(), sprintf('%s.%s', $workflow, $state));
@@ -209,7 +200,7 @@ final class TableRowFaceTest extends KernelTestBase {
    * whole time, which is why no phase mapping to `wait` loses anything.
    */
   public function testStoredStateOutsideItsWorkflowAnswersNoPhase(): void {
-    $ticket = $this->ticket(['workflow' => 'bb_feature', 'state' => 'human_input']);
+    $ticket = $this->ticket(['workflow' => 'bb_work', 'state' => 'human_input']);
 
     self::assertNull($ticket->getBbPhase());
   }
@@ -285,7 +276,7 @@ final class TableRowFaceTest extends KernelTestBase {
   private function ticket(array $values = []): BbTicket {
     $ticket = $this->createEntity('bb_ticket', $values + [
       'title' => 'A row with a face',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
     ]);
     self::assertInstanceOf(BbTicket::class, $ticket);

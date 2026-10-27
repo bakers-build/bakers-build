@@ -167,7 +167,7 @@ final class RunCancelAccessTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'identifier' => 'ACCESS-' . mt_rand(),
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'title' => 'Access ticket',
         'project_id' => $project->id(),
       ]);

@@ -52,21 +52,21 @@ final class HasChildrenFilterTest extends KernelTestBase {
     $project->save();
     $storage = $etm->getStorage('bb_ticket');
     $parent = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'Parent',
       'state' => 'todo',
       'project_id' => $project->id(),
     ]);
     $parent->save();
     $childless = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'Childless',
       'state' => 'todo',
       'project_id' => $project->id(),
     ]);
     $childless->save();
     $child = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'Child',
       'state' => 'todo',
       'project_id' => $project->id(),

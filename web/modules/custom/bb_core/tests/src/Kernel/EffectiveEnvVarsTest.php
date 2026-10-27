@@ -51,7 +51,7 @@ final class EffectiveEnvVarsTest extends KernelTestBase {
    */
   private function ticket(array $values): ContentEntityInterface {
     $t = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
-      ->create(['workflow' => 'bb_feature', 'state' => 'todo'] + $values);
+      ->create(['workflow' => 'bb_work', 'state' => 'todo'] + $values);
     assert($t instanceof ContentEntityInterface);
     $t->save();
     return $t;

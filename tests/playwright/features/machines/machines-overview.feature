@@ -55,4 +55,4 @@ Feature: User Machines listing and View
   Scenario: A machine lists the claims of its conductors' runs
     Given I am signed in as a member of the "bakers" workspace
     When I visit the machine "e2e default host"
-    Then the Activities list "BB-142 started work in spec"
+    Then the Activities list "BB-142 started work in plan"

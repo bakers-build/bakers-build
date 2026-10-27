@@ -107,7 +107,7 @@ const ticketDoc = {
     },
     {
       id: 'l-1',
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: 'work:code' },
     },
     run(RUN_OLD, 4592, '2026-08-01T10:00:00+00:00', 'done', 'spec'),

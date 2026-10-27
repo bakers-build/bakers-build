@@ -24,7 +24,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testSingleCandidateTakesTheTickets(): void {
     $candidate = $this->createCandidate('candidate');
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $this->conductor->set('active', FALSE)->save();
 
     self::assertSame((int) $candidate->id(), (int) $this->reloadTicket($ticket)->get('conductor_id')->target_id);
@@ -36,7 +36,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
   public function testNewestLastSeenWins(): void {
     $this->createCandidate('old', 100);
     $newest = $this->createCandidate('new', 200);
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $this->conductor->set('active', FALSE)->save();
 
     self::assertSame((int) $newest->id(), (int) $this->reloadTicket($ticket)->get('conductor_id')->target_id);
@@ -46,7 +46,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    * No matching sibling leaves the ticket unassigned.
    */
   public function testNoCandidateClearsTheAssignment(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $this->conductor->set('active', FALSE)->save();
 
     self::assertNull($this->reloadTicket($ticket)->get('conductor_id')->target_id);
@@ -77,8 +77,8 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testTicketWithRunInFlightStays(): void {
     $this->createCandidate('candidate');
-    $ticket = $this->seedAssignedTicket('coding');
-    $this->seedRun($ticket, 'coding', 'running');
+    $ticket = $this->seedAssignedTicket('working');
+    $this->seedRun($ticket, 'working', 'running');
     $this->conductor->set('active', FALSE)->save();
 
     self::assertSame(
@@ -97,9 +97,9 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testTicketWithLeaseExpiredClaimedRunReassigns(): void {
     $candidate = $this->createCandidate('candidate');
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $now = $this->container->get('datetime.time')->getRequestTime();
-    $this->seedRun($ticket, 'coding', 'claimed', $now - 60);
+    $this->seedRun($ticket, 'working', 'claimed', $now - 60);
     $this->conductor->set('active', FALSE)->save();
 
     self::assertSame(
@@ -113,8 +113,8 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testSkippedTicketIsLogged(): void {
     $this->createCandidate('candidate');
-    $ticket = $this->seedAssignedTicket('coding');
-    $this->seedRun($ticket, 'coding', 'running');
+    $ticket = $this->seedAssignedTicket('working');
+    $this->seedRun($ticket, 'working', 'running');
 
     $logger = $this->capturingLogger();
     $reassigner = new ConductorDeactivationReassigner(
@@ -136,8 +136,8 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testTerminalTicketIsNotLoggedButInFlightOneIs(): void {
     $this->createCandidate('candidate');
-    $inFlight = $this->seedAssignedTicket('coding');
-    $this->seedRun($inFlight, 'coding', 'running');
+    $inFlight = $this->seedAssignedTicket('working');
+    $this->seedRun($inFlight, 'working', 'running');
     $terminal = $this->seedAssignedTicket('review');
     $terminal->getState()->applyTransitionById('finish');
     $terminal->save();
@@ -161,7 +161,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    * A projectless ticket is reported as stranded, not skipped silently (F16).
    */
   public function testTicketWithoutProjectIsLogged(): void {
-    $projectless = $this->seedAssignedTicket('coding');
+    $projectless = $this->seedAssignedTicket('working');
     $projectless->set('project_id', NULL)->save();
 
     $logger = $this->capturingLogger();
@@ -188,7 +188,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testTerminalTicketNeverLoaded(): void {
     $this->createCandidate('candidate');
-    $nonTerminal = $this->seedAssignedTicket('coding');
+    $nonTerminal = $this->seedAssignedTicket('working');
     $nonTerminalId = (string) $nonTerminal->id();
     $terminal = $this->seedAssignedTicket('review');
     $terminal->getState()->applyTransitionById('finish');
@@ -258,7 +258,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testNullStateRowSurvivesTheNarrowing(): void {
     $candidate = $this->createCandidate('candidate');
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     \Drupal::database()->update('bb_ticket')
       ->fields(['state' => NULL])
       ->condition('id', $ticket->id())
@@ -277,7 +277,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testForcedSaveFailureIsLoggedUnderItsOwnNotice(): void {
     $this->createCandidate('candidate');
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
 
     $entityTypeManager = $this->container->get('entity_type.manager');
     $reflection = new \ReflectionObject($entityTypeManager);
@@ -321,7 +321,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
       ->create(['name' => 'other-owner', 'status' => 1]);
     $other->save();
     $foreign->set('owner_user_id', $other->id())->save();
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $this->conductor->set('active', FALSE)->save();
 
     self::assertNull($this->reloadTicket($ticket)->get('conductor_id')->target_id);
@@ -332,9 +332,9 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   public function testTicketWithoutProjectDoesNotStrandTheBatch(): void {
     $candidate = $this->createCandidate('candidate');
-    $projectless = $this->seedAssignedTicket('coding');
+    $projectless = $this->seedAssignedTicket('working');
     $projectless->set('project_id', NULL)->save();
-    $normal = $this->seedAssignedTicket('coding');
+    $normal = $this->seedAssignedTicket('working');
 
     $this->conductor->set('active', FALSE)->save();
 
@@ -355,7 +355,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
     $sameLastSeen = 150;
     $first = $this->createCandidate('tied-first', $sameLastSeen);
     $second = $this->createCandidate('tied-second', $sameLastSeen);
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $this->conductor->set('active', FALSE)->save();
 
     $winner = (int) $first->id() > (int) $second->id() ? $first : $second;
@@ -375,7 +375,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
       'owner_user_id' => $this->conductor->get('owner_user_id')->target_id,
       'project_id' => $this->conductor->get('project_id')->target_id,
       'status' => 'offline',
-      'states' => ['diagnose', 'coding'],
+      'states' => ['plan', 'working'],
       'last_seen' => $lastSeen ?? $this->container->get('datetime.time')->getRequestTime(),
     ]);
     self::assertInstanceOf(BbConductorInterface::class, $candidate);

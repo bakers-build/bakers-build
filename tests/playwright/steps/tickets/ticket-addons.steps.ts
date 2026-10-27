@@ -45,7 +45,7 @@ async function createTicket(page: Page, withConductor: boolean): Promise<void> {
     '$etm = \\Drupal::entityTypeManager();',
     '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
     'if (!$p) { print "NO_PROJECT"; return; }',
-    `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "bb_feature", "state" => "coding"]);`,
+    `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "bb_work", "state" => "working"]);`,
     '$c = NULL;',
     withConductor
       ? '$c = current($etm->getStorage("bb_conductor")->loadByProperties(["project_id" => $p->id()])); if (!$c) { print "NO_CONDUCTOR"; return; } $t->set("conductor_id", $c->id());'

@@ -3,20 +3,18 @@
    highlighted. The colour/dot map covers every state id bakers.build's workflows
    define (bb_core.workflows.yml); unknown ids fall back to a neutral tone. #}
 {% set state_color_map = {
-  'spec': 'text-state-lease',
-  'diagnose': 'text-state-lease',
+  'plan': 'text-state-lease',
   'claimed': 'text-state-lease',
-  'coding': 'text-state-running',
+  'working': 'text-state-running',
   'running': 'text-state-running',
   'review': 'text-state-attention',
   'done': 'text-state-running',
   'cancelled': 'text-text-faint'
 } %}
 {% set state_dot_map = {
-  'spec': 'bg-state-lease',
-  'diagnose': 'bg-state-lease',
+  'plan': 'bg-state-lease',
   'claimed': 'bg-state-lease',
-  'coding': 'bg-state-running',
+  'working': 'bg-state-running',
   'running': 'bg-state-running',
   'review': 'bg-state-attention',
   'done': 'bg-state-running',

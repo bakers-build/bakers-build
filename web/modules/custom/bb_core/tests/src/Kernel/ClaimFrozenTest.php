@@ -19,7 +19,7 @@ final class ClaimFrozenTest extends ClaimKernelTestBase {
    * A frozen classified ticket is refused, and no run is created (AC-2).
    */
   public function testFrozenClassifiedTicketIsRefused(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $ticket->setFrozen(TRUE)->save();
 
     try {
@@ -55,7 +55,7 @@ final class ClaimFrozenTest extends ClaimKernelTestBase {
    * The claimNext candidate query never returns a frozen ticket (AC-4).
    */
   public function testClaimNextSkipsFrozenTickets(): void {
-    $frozen = $this->seedAssignedTicket('coding');
+    $frozen = $this->seedAssignedTicket('working');
     $frozen->setFrozen(TRUE)->save();
 
     self::assertNull($this->claimService->claimNext($this->conductor));
@@ -73,9 +73,9 @@ final class ClaimFrozenTest extends ClaimKernelTestBase {
    * query-level condition keeps the window populated by live candidates only.
    */
   public function testFrozenTicketsDoNotConsumeTheCandidateWindow(): void {
-    $claimable = $this->seedAssignedTicket('coding', 'GL-WINDOW-CLAIMABLE');
+    $claimable = $this->seedAssignedTicket('working', 'GL-WINDOW-CLAIMABLE');
     for ($i = 0; $i < 55; $i++) {
-      $noise = $this->seedAssignedTicket('coding', 'GL-WINDOW-FROZEN-' . $i);
+      $noise = $this->seedAssignedTicket('working', 'GL-WINDOW-FROZEN-' . $i);
       $noise->setFrozen(TRUE)->save();
     }
 
@@ -92,7 +92,7 @@ final class ClaimFrozenTest extends ClaimKernelTestBase {
    * already assigned to.
    */
   public function testClearingFrozenRestoresCandidacy(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $ticket->setFrozen(TRUE)->save();
     $whileFrozen = $this->claimService->claimNext($this->conductor);
     self::assertNull($whileFrozen, 'A frozen ticket is not a candidate.');
@@ -112,7 +112,7 @@ final class ClaimFrozenTest extends ClaimKernelTestBase {
    * `frozen = 0` never matches: unclaimable, yet reading as not frozen.
    */
   public function testClearingFrozenWithNullRestoresCandidacy(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
     $ticket->setFrozen(TRUE)->save();
 
     $ticket->set('frozen', NULL)->save();
@@ -138,7 +138,7 @@ final class ClaimFrozenTest extends ClaimKernelTestBase {
    * accounting cannot drift because an operator frozen something.
    */
   public function testFreezingDoesNotDisturbAnActiveRun(): void {
-    $ticket = $this->seedAssignedTicket('coding');
+    $ticket = $this->seedAssignedTicket('working');
 
     $run = $this->claimService->claim($ticket, $this->conductor);
     $loadBefore = (int) $this->conductor->get('reported_load')->value;

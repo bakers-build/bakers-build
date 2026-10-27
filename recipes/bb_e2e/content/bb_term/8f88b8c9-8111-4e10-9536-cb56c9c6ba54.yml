@@ -6,7 +6,7 @@ _meta:
   version: '1.0'
   entity_type: bb_term
   uuid: 8f88b8c9-8111-4e10-9536-cb56c9c6ba54
-  bundle: bb_labels
+  bundle: label
   default_langcode: en
   depends:
     2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace

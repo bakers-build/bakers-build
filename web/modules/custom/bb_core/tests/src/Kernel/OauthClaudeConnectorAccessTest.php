@@ -60,7 +60,7 @@ final class OauthClaudeConnectorAccessTest extends KernelTestBase {
     }
     $this->installConfig(['user']);
     $this->installOgScopeFixture();
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     // Uid 1 is a superuser; consume it so the account below is ordinary.
     $this->createAccount('uid1-dummy');
   }
@@ -84,7 +84,7 @@ final class OauthClaudeConnectorAccessTest extends KernelTestBase {
 
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => 'MCP-1',
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'MCP-1',
       'project_id' => $project->id(),
     ]);
@@ -94,12 +94,12 @@ final class OauthClaudeConnectorAccessTest extends KernelTestBase {
       'body' => ['value' => 'hi', 'format' => 'plain_text'],
       'type' => 'comment',
     ]);
-    $label_term = $this->createEntity('bb_term', ['vid' => 'bb_labels', 'name' => 'customer-visible']);
+    $label_term = $this->createEntity('bb_term', ['vid' => 'label', 'name' => 'customer-visible']);
 
     $token_account = $this->delegatedSessionAccount($account, [
       'view bb_ticket', 'create bb_ticket', 'update any bb_ticket',
       'view bb_comment', 'create bb_comment',
-      'view bb_project', 'view bb_labels bb_term',
+      'view bb_project', 'view bb_term',
       'use text format bb_rich',
     ]);
 
@@ -116,7 +116,7 @@ final class OauthClaudeConnectorAccessTest extends KernelTestBase {
       'comment create allowed',
     );
     self::assertTrue($project->access('view', $token_account), 'project read/search allowed');
-    self::assertTrue($label_term->access('view', $token_account), 'bb_labels term search allowed');
+    self::assertTrue($label_term->access('view', $token_account), 'label term search allowed');
 
     // Forbidden: `contributor` itself never granted these.
     self::assertFalse($ticket->access('delete', $token_account), 'ticket delete must be forbidden');
@@ -141,7 +141,7 @@ final class OauthClaudeConnectorAccessTest extends KernelTestBase {
     $this->addMembership($workspace, $account, ['contributor']);
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => 'MCP-2',
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'title' => 'MCP-2',
       'project_id' => $project->id(),
     ]);

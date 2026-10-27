@@ -146,6 +146,11 @@ final class BbOnboardingWizardForm extends FormBase {
       ->swap('outerHTML')
       ->encoding()
       ->applyTo($form);
+    // NEVER CACHED, and set after applyTo(), which overwrites #cache: the step
+    // and the prefilled values are this account's, from user.data, which
+    // carries no cache tag. Cached, Dynamic Page Cache served one account's
+    // step to the next new account.
+    $form['#cache']['max-age'] = 0;
 
     // THE COPY IS THE STEP'S, so it is built here and handed to the chrome by
     // the presenter template as props. It travels in the same fragment the
@@ -505,7 +510,7 @@ final class BbOnboardingWizardForm extends FormBase {
             (string) $this->t('Then paste this into your agent:'),
           ),
           'init_prompt' => $this->commandElement(
-            'Use `bakers:init` to guide me through installing and setting up bakers.build.',
+            'Use `bakers:bb-init` to guide me through installing and setting up bakers.build.',
             (string) $this->t('Copy the skill wizard prompt'),
           ),
         ],
@@ -529,7 +534,7 @@ final class BbOnboardingWizardForm extends FormBase {
       (string) $this->t('Paste this into your agent:'),
     );
     $form['fields']['init_prompt'] = $this->commandElement(
-      'Use `bakers:init-project` to connect this checkout as a bakers.build project.',
+      'Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.',
       (string) $this->t('Copy the init-project prompt'),
     );
     $this->attachDocsLinks($form, [

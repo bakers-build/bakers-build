@@ -79,7 +79,7 @@ final class TicketTemplateEndpointTest extends KernelTestBase {
       'enabled' => TRUE,
       'title_pattern' => 'Ticket',
       'description' => ['value' => 'Body', 'format' => 'bb_rich'],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
       'owner_user_id' => $this->worldOwner->id(),
@@ -213,7 +213,7 @@ final class TicketTemplateEndpointTest extends KernelTestBase {
   public function testUnknownFieldIs422(): void {
     $template = $this->createTemplate();
     $owner = ['data' => ['type' => 'user--user', 'id' => $this->actor->uuid()]];
-    foreach ([self::document(['state' => 'coding']), self::document([], ['owner_user_id' => $owner])] as $body) {
+    foreach ([self::document(['state' => 'working']), self::document([], ['owner_user_id' => $owner])] as $body) {
       self::assertSame(422, $this->send('POST', $template->uuid(), $this->actor, $body)->getStatusCode(), $body);
     }
   }

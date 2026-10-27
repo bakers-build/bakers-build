@@ -13,7 +13,7 @@ props:
     - cells:
         state:
           kind: badge
-          label: coding
+          label: working
         assignee:
           kind: person
           display_name: Christian Wiedemann

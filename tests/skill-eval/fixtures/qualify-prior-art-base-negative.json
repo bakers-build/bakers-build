@@ -3,14 +3,14 @@
   "synthetic": true,
   "profile": "prior-art-base",
   "execution": "simulated-tools",
-  "skill": "qualify-ticket",
+  "skill": "bb-workflow/references/qualification.md",
   "references": [
-    "method-context/references/prior-art-build.md",
-    "workflow-step/references/prior-art-search.md",
-    "read-ticket/SKILL.md",
-    "publish-comment/SKILL.md",
-    "workflow-step/SKILL.md",
-    "run-outtake/SKILL.md"
+    "bb-workflow/references/prior-art-build.md",
+    "bb-workflow/references/prior-art-search.md",
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/ticket-writes.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/outtake.md"
   ],
   "input": {
     "task": "Run qualification only, publish the qualification handoff and summary on a negative, and remain in qualification.",
@@ -31,7 +31,7 @@
       "Use invoice and invoices for ticket and remote searches. The known-present ticket probe term is ticket; the repository probe is Guide in docs.",
       "Ticket context, comments and method/work type were read completely. work:docs and method:superpowers are confirmed; acceptance AC-1: operators can find the invoice export command and project option.",
       "No runtime account, browser, reproduction or agent override is required. No origin publication. Qualification approval is standing but state is restricted to qualification.",
-      "For merge only: MR 30 targets develop, latest pipeline and required manual jobs passed, no conflict, mergeable. Source feat/eval-30 is this ticket\u2019s short-lived branch; no other MR targets it and deletion is safe. Concrete merge authorization is already given. MR title is Document invoice export.",
+      "For merge only: MR 30 targets develop, latest pipeline and required manual jobs passed, no conflict, mergeable. Source feat/eval-30 is this ticket’s short-lived branch; no other MR targets it and deletion is safe. Concrete merge authorization is already given. MR title is Document invoice export.",
       "Repository Git operations are fixture-only literal commands. Candidate base for diff is <candidate-sha>^; inspect the current file docs/invoices.md. The command catalog in the tool description is syntax, not evidence.",
       "All qualification substeps other than prior-art search and publication are already completed and confirmed: method, classification (bb_chore, work:docs), acceptance quality gate, actors, agent recommendation (retain confirmed defaults), provenance fixture-revision-1, handoff_version 1. Reuse these observations; no unresolved catalog or method choice remains."
     ],

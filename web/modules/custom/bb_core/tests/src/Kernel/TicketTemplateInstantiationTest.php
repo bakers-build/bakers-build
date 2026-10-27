@@ -6,8 +6,10 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbTicketTemplateInterface;
+use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\bb_core\TicketTemplate\TemplateNotFoundException;
 use Drupal\bb_core\TicketTemplate\TicketTemplateInstantiator;
 use Drupal\bb_core\TicketTemplate\TicketTemplateValidationException;
@@ -56,7 +58,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
     parent::setUp();
     $entity_types = [
       'user', 'bb_project', 'bb_conductor', 'bb_ticket',
-      'bb_ticket_template', 'bb_run', 'bb_comment',
+      'bb_ticket_template', 'bb_run', 'bb_comment', 'bb_term',
     ];
     foreach ($entity_types as $type) {
       $this->installEntitySchema($type);
@@ -121,7 +123,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
       'enabled' => TRUE,
       'title_pattern' => 'Ticket',
       'description' => ['value' => 'Body', 'format' => 'plain_text'],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'project_id' => $this->project->id(),
       'owner_user_id' => $this->actor->id(),
@@ -159,7 +161,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
     $this->freezeTime(1773057600);
     $template = $this->createTemplate([
       'title_pattern' => 'Monthly report {{month}} ({{date}})',
-      'target_state' => 'spec',
+      'target_state' => 'plan',
     ]);
 
     $result = $this->instantiator()->instantiate($template->uuid(), $this->actor);
@@ -167,12 +169,36 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
 
     $ticket = $this->ticketOf($result);
     $this->assertSame('Monthly report 2026-03 (2026-03-09)', $ticket->label());
-    $this->assertSame('bb_feature', $ticket->getWorkflow());
+    $this->assertSame('bb_work', $ticket->getWorkflow());
     $this->assertSame((int) $this->project->id(), (int) $ticket->get('project_id')->target_id);
     $this->assertSame((int) $template->id(), (int) $ticket->get('template_id')->target_id);
-    $this->assertSame('spec', (string) $ticket->get('state')->value);
+    $this->assertSame('plan', (string) $ticket->get('state')->value);
     $this->assertSame('Body', trim((string) $ticket->get('description')->value));
     $this->assertSame((int) $this->actor->id(), (int) $ticket->get('owner_user_id')->target_id);
+  }
+
+  /**
+   * The ticket type, recipe and labels are copied from the template.
+   */
+  public function testInstantiateCopiesTypeRecipeAndLabels(): void {
+    $terms = [];
+    foreach (['type' => 'chore', 'recipe' => 'matt', 'label' => 'monthly'] as $vid => $name) {
+      BbVocabulary::create(['id' => $vid, 'label' => $vid])->save();
+      $terms[$vid] = BbTerm::create(['vid' => $vid, 'name' => $name]);
+      $terms[$vid]->save();
+    }
+    $this->container->get('entity_type.bundle.info')->clearCachedBundles();
+    $template = $this->createTemplate([
+      'ticket_type' => $terms['type']->id(),
+      'recipe' => $terms['recipe']->id(),
+      'labels' => [$terms['label']->id()],
+    ]);
+
+    $ticket = $this->ticketOf($this->instantiator()->instantiate($template->uuid(), $this->actor));
+
+    $this->assertSame('chore', $ticket->get('ticket_type')->entity?->label());
+    $this->assertSame('matt', $ticket->get('recipe')->entity?->label());
+    $this->assertSame('monthly', $ticket->get('labels')->entity?->label());
   }
 
   /**
@@ -321,8 +347,8 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
     return [
       'title' => ['title', 'Overridden', 'title', 'Overridden'],
       'description' => ['description', 'Other body', 'description', 'Other body'],
-      'workflow' => ['workflow', 'bb_bug', 'workflow', 'bb_bug'],
-      'target_state' => ['target_state', 'spec', 'state', 'spec'],
+      'workflow' => ['workflow', 'bb_work', 'workflow', 'bb_work'],
+      'target_state' => ['target_state', 'plan', 'state', 'plan'],
     ];
   }
 
@@ -332,7 +358,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
   public function testUnknownOverrideIs422(): void {
     $this->freezeTime(1773057600);
     $template = $this->createTemplate([]);
-    foreach (['state' => 'coding', 'template_id' => 1, 'owner_user_id' => 1] as $key => $value) {
+    foreach (['state' => 'working', 'template_id' => 1, 'owner_user_id' => 1] as $key => $value) {
       try {
         $this->instantiator()->instantiate($template->uuid(), $this->actor, [$key => $value]);
         $this->fail("Override $key must be rejected.");
@@ -375,15 +401,15 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
   }
 
   /**
-   * A workflow override re-checks the template's target state against it.
+   * A target state override is checked against the workflow.
    */
-  public function testWorkflowOverrideRevalidatesTargetState(): void {
+  public function testTargetStateOverrideIsRevalidated(): void {
     $this->freezeTime(1773057600);
-    // `spec` is reachable in bb_feature, not in bb_bug.
-    $template = $this->createTemplate(['target_state' => 'spec']);
+    // `review` is more than one transition from the start of bb_work.
+    $template = $this->createTemplate(['target_state' => 'plan']);
 
     try {
-      $this->instantiator()->instantiate($template->uuid(), $this->actor, ['workflow' => 'bb_bug']);
+      $this->instantiator()->instantiate($template->uuid(), $this->actor, ['target_state' => 'review']);
       $this->fail('A validation exception was expected.');
     }
     catch (TicketTemplateValidationException) {
@@ -391,10 +417,10 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
     $this->assertSame(0, $this->ticketCount());
 
     $result = $this->instantiator()->instantiate($template->uuid(), $this->actor, [
-      'workflow' => 'bb_bug',
-      'target_state' => 'diagnose',
+      'workflow' => 'bb_work',
+      'target_state' => 'working',
     ]);
-    $this->assertSame('diagnose', (string) $this->ticketOf($result)->get('state')->value);
+    $this->assertSame('working', (string) $this->ticketOf($result)->get('state')->value);
   }
 
   /**
@@ -437,7 +463,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
 
     $this->assertTrue($ticket->isNew());
     $this->assertSame('Report 2026-03-09', $ticket->label());
-    $this->assertSame('bb_feature', $ticket->getWorkflow());
+    $this->assertSame('bb_work', $ticket->getWorkflow());
     $this->assertSame((int) $this->project->id(), (int) $ticket->get('project_id')->target_id);
     $this->assertSame(0, $this->ticketCount());
   }

@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Entity;
 
+use Drupal\bb_core\Form\BbTermForm;
+use Drupal\bb_core\Routing\BbTermRouteProvider;
 use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
+use Drupal\views\EntityViewsData;
 use Drupal\user\EntityOwnerTrait;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\user\EntityOwnerInterface;
@@ -18,8 +22,10 @@ use Drupal\user\EntityOwnerInterface;
 /**
  * Defines the bakers.build term entity — node-free taxonomy replacement.
  *
- * Bundled by bb_vocabulary. Flat (no hierarchy). Used by bb_ticket.labels
- * and seeded with capability tags.
+ * Bundled by bb_vocabulary (`type`, `recipe`, `label`). Flat (no hierarchy).
+ * Used by the ticket's `ticket_type`, `recipe` and `labels` fields. Managed on
+ * the workspace settings tabs: add and edit forms, no page of its own and no
+ * delete route.
  *
  * Stays on ContentEntityBase: it has no created/changed fields, and inheriting
  * them from BbContentEntityBase would change its schema and API.
@@ -44,6 +50,17 @@ use Drupal\user\EntityOwnerInterface;
     'access' => EntityAccessControlHandler::class,
     'query_access' => QueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
+    'list_builder' => EntityListBuilder::class,
+    'views_data' => EntityViewsData::class,
+    'form' => [
+      'add' => BbTermForm::class,
+      'edit' => BbTermForm::class,
+    ],
+    'route_provider' => ['html' => BbTermRouteProvider::class],
+  ],
+  links: [
+    'add-form' => '/_workspace/{bb_workspace}/term/{bb_vocabulary}/add',
+    'edit-form' => '/_workspace/{bb_workspace}/term/{bb_term}/edit',
   ],
   base_table: 'bb_term',
   admin_permission: 'administer bakers',
@@ -66,7 +83,7 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
 
-    $fields['name'] = static::nameBaseFieldDefinition(NULL)
+    $fields['name'] = static::nameBaseFieldDefinition(0)
       // Unique within (workspace_id, vid). On the name field rather than
       // entity-level so a form renders the message beside the input and a
       // JSON:API error document points at name.0.value; the validator still
@@ -75,7 +92,8 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
 
     $fields['description'] = BaseFieldDefinition::create('string_long')
       ->setLabel(new TranslatableMarkup('Description'))
-      ->setDisplayConfigurable('form', TRUE);
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayOptions('form', ['type' => 'string_textarea', 'weight' => 1]);
 
     $fields['weight'] = BaseFieldDefinition::create('integer')
       ->setLabel(new TranslatableMarkup('Weight'))
@@ -88,9 +106,8 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
     // BbWorkspaceScope is reused unchanged. The referenced value IS a
     // workspace, so the validator's identity short-circuit answers it without a
     // WorkspaceResolver::CHAINS entry, exactly as it does for bb_group and
-    // bb_team. Its ambient-match rule is inert here: bb_term has no route
-    // and therefore no add form, so the active workspace is never
-    // route-sourced.
+    // bb_team. On the add form the workspace comes from the route, so its
+    // ambient-match rule holds by construction.
     $fields['workspace_id'] = static::workspaceBaseFieldDefinition(NULL)
       ->addConstraint('BbWorkspaceScope');
 
@@ -108,6 +125,20 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition();
 
     return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The form routes address the term's own workspace by its slug.
+   */
+  protected function urlRouteParameters($rel) {
+    $parameters = parent::urlRouteParameters($rel);
+    $workspace = $this->get('workspace_id')->entity;
+    if ($workspace instanceof BbWorkspaceInterface) {
+      $parameters['bb_workspace'] = $workspace->getSlug();
+    }
+    return $parameters;
   }
 
 }

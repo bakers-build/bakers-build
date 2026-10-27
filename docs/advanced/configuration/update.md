@@ -32,11 +32,7 @@ Move a workstation to a newer bakers.build release: the CLI first, then your con
 
    Apply rechecks the files, writes a private backup `<file>.bakers.bak` next to each changed file, and replaces the file atomically. Do not commit the backups. The last preview must show no change; a remaining `unknown_value` warning about a computed `conductor_id` is not a change. An offline `ok` proves only the file shape; `--online` proves sign-in and project access, and "online skipped" is not a pass.
 
-4. Update the shared project files in a branch, never on the default branch. Ask your AI to run the `upgrade-project` skill, which keeps the repository's `WORKFLOW.md` policy, then validate and review:
-
-   ```sh
-   bakers validate
-   ```
+4. Update the shared project files in a branch, never on the default branch. Ask your AI to run the `bb-upgrade-project` skill, which keeps the repository's `WORKFLOW.md` policy, moves an old `## Loaded skills` layout to the entry line and phase sections, and confirms that every skill the file names is installed. Review the diff.
 
    Run a small test ticket in a disposable project, then submit the branch for review. Teammates update their own tools; your merge does not do it for them.
 

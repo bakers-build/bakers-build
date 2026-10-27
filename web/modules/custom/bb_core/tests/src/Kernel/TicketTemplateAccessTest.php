@@ -178,7 +178,7 @@ final class TicketTemplateAccessTest extends KernelTestBase {
       'enabled' => TRUE,
       'title_pattern' => 'Ticket',
       'description' => ['value' => 'Body', 'format' => 'bb_rich'],
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'target_state' => 'qualification',
       'project_id' => $this->fixture($side, 'bb_project')->id(),
       'owner_user_id' => $this->worldOwner->id(),
@@ -589,7 +589,7 @@ final class TicketTemplateAccessTest extends KernelTestBase {
   public function testForgedTemplateIdIsNotWritable(): void {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'forged',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
       'template_id' => $this->template('a')->id(),
     ]);
@@ -613,28 +613,14 @@ final class TicketTemplateAccessTest extends KernelTestBase {
    * A target state the template's workflow cannot reach fails on save.
    */
   public function testUnreachableTargetStateFailsTemplateValidation(): void {
-    self::assertSame([], $this->violationPathsAs($this->newTemplate('a', ['target_state' => 'spec']), $this->insider));
+    self::assertSame([], $this->violationPathsAs($this->newTemplate('a', ['target_state' => 'plan']), $this->insider));
     self::assertSame([], $this->violationPathsAs($this->newTemplate('a', ['target_state' => '']), $this->insider));
-    // `diagnose` belongs to the bug workflow; `cancelled` is terminal.
-    foreach (['diagnose', 'cancelled', 'review'] as $state) {
+    // `triage` is no bb_work state; `cancelled` is terminal; `review` is
+    // more than one transition away.
+    foreach (['triage', 'cancelled', 'review'] as $state) {
       $paths = $this->violationPathsAs($this->newTemplate('a', ['target_state' => $state]), $this->insider);
-      self::assertContains('target_state', $paths, "Target state $state is rejected for bb_feature.");
+      self::assertContains('target_state', $paths, "Target state $state is rejected for bb_work.");
     }
-  }
-
-  /**
-   * Changing only the workflow still trips an unreachable target state.
-   *
-   * JSON:API keeps only violations of the fields a PATCH names, so the
-   * violation must surface on `workflow` too.
-   */
-  public function testWorkflowChangeAloneRejectsAnUnreachableTargetState(): void {
-    $template = $this->template('a');
-    $template->set('target_state', 'spec')->save();
-    $template->set('workflow', 'bb_bug');
-    $violations = $template->validate();
-    $violations->filterByFields(array_diff(array_keys($template->getFieldDefinitions()), ['workflow']));
-    self::assertGreaterThan(0, $violations->count(), 'A PATCH of the workflow alone reports the unreachable target state.');
   }
 
   /**
@@ -666,18 +652,21 @@ final class TicketTemplateAccessTest extends KernelTestBase {
   /**
    * The shipped Drupal-update example imports, validates and instantiates.
    *
-   * Follows the recipe README: substitute project, owner and label, keep the
-   * UUID. A second import of the same UUID never overwrites the first.
+   * Follows the recipe README: substitute project, owner and type term, keep
+   * the UUID. A second import of the same UUID never overwrites the first.
    */
   public function testShippedExampleImportsAndInstantiates(): void {
     $file = dirname(DRUPAL_ROOT) . '/recipes/bb_ticket_templates/templates/bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30.yml';
     $example = Yaml::parseFile($file);
-    $label = $this->fixture('a', 'bb_term');
-    $label->set('name', 'work:code')->save();
+    $type = $this->createEntity('bb_term', [
+      'vid' => 'type',
+      'name' => 'chore',
+      'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
+    ]);
     $substitutes = [
       '<project-uuid>' => $this->fixture('a', 'bb_project')->id(),
       '<owner-user-uuid>' => $this->insider->id(),
-      array_key_first($example['_meta']['depends']) => $label->id(),
+      array_key_first($example['_meta']['depends']) => $type->id(),
     ];
     $values = ['uuid' => $example['_meta']['uuid']];
     foreach ($example['default'] as $field => $items) {
@@ -694,9 +683,9 @@ final class TicketTemplateAccessTest extends KernelTestBase {
     $template->set('enabled', TRUE)->save();
 
     $ticket = $this->ticketOf($this->instantiator()->instantiate($template->uuid(), $this->insider));
-    self::assertSame('bb_chore', $ticket->get('workflow')->value);
+    self::assertSame('bb_work', $ticket->get('workflow')->value);
     self::assertSame('qualification', $ticket->get('state')->value);
-    self::assertSame(['work:code'], array_map(static fn ($term): string => (string) $term->label(), $ticket->get('labels')->referencedEntities()));
+    self::assertSame(['chore'], array_map(static fn ($term): string => (string) $term->label(), $ticket->get('ticket_type')->referencedEntities()));
     self::assertStringContainsString('keytec-drupal-update', (string) $ticket->get('description')->value);
 
     $template->set('name', 'Customised')->save();

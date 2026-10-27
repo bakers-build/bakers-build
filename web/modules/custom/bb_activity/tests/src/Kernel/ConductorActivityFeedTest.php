@@ -253,7 +253,7 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     $this->create('bb_activity', [
       'ticket_id' => $unattributed->id(),
       'kind' => 'claimed',
-      'step' => 'coding',
+      'step' => 'working',
       'conductor_id' => $this->labelled->id(),
       'created' => 5000,
     ]);
@@ -272,7 +272,7 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     self::assertNotFalse($newer_at);
     self::assertNotFalse($older_at);
     self::assertTrue($hidden_at < $newer_at && $newer_at < $older_at, 'Newest first.');
-    self::assertSame(3, substr_count($html, 'started work in coding'), 'One row per readable entry.');
+    self::assertSame(3, substr_count($html, 'started work in working'), 'One row per readable entry.');
 
     // A lead of the home workspace only cannot read the other's ticket.
     $home_lead = $this->createAccount('home-lead', []);
@@ -282,14 +282,14 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     self::assertStringContainsString($this->row($newer), $html);
     self::assertStringContainsString($this->row($older), $html);
     self::assertStringNotContainsString($this->row($hidden), $html);
-    self::assertSame(2, substr_count($html, 'started work in coding'), 'The unreadable entry has no row.');
+    self::assertSame(2, substr_count($html, 'started work in working'), 'The unreadable entry has no row.');
   }
 
   /**
    * How an event row names its ticket.
    */
   private function row(BbTicketInterface $ticket): string {
-    return '>' . $ticket->getIdentifier() . '</a> started work in coding';
+    return '>' . $ticket->getIdentifier() . '</a> started work in working';
   }
 
   /**
@@ -366,8 +366,8 @@ final class ConductorActivityFeedTest extends KernelTestBase {
   private function ticketOn(ContentEntityInterface $project, string $title): BbTicketInterface {
     $ticket = $this->create('bb_ticket', [
       'title' => $title,
-      'state' => 'coding',
-      'workflow' => 'bb_feature',
+      'state' => 'working',
+      'workflow' => 'bb_work',
       'project_id' => $project->id(),
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -383,12 +383,12 @@ final class ConductorActivityFeedTest extends KernelTestBase {
       'conductor_id' => $conductor->id(),
       'owner_user_id' => $conductor->get('owner_user_id')->target_id,
       'state' => 'done',
-      'state_at_start' => 'coding',
+      'state_at_start' => 'working',
     ]);
     $this->create('bb_activity', [
       'ticket_id' => $ticket->id(),
       'kind' => 'claimed',
-      'step' => 'coding',
+      'step' => 'working',
       'run_id' => $run->id(),
       'conductor_id' => $conductor->id(),
       'created' => $created,

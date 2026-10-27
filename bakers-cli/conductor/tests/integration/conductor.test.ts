@@ -6,7 +6,7 @@
  *
  * Fixture contract (provided by `ddev init --test`):
  *   - project `bakers-e2e-project` (BB_E2E_PROJECT_UUID) with ticket
- *     GL-E2E-CONDUCTOR (BB_E2E_CONDUCTOR_TICKET_UUID) reset to state `coding`,
+ *     GL-E2E-CONDUCTOR (BB_E2E_CONDUCTOR_TICKET_UUID) reset to state `working`,
  *     with ALL its bb_run rows deleted → freshly claimable.
  *   - auth = static HTTP Basic `fixture-agent`; the conductor registers with
  *     owner_user_id = api.me() (the same agent), so a run it claims is in the
@@ -86,7 +86,7 @@ import {
 } from './helpers.js';
 
 const E2E_PROJECT_NAME = 'bakers-e2e-project';
-const E2E_STATES = ['coding'];
+const E2E_STATES = ['working'];
 
 function makeConfig(baseUrl: string): ConductorFileConfig {
   return {

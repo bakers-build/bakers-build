@@ -36,7 +36,7 @@ const good = `### 🎯 Outcome
 EVAL-5: Member invitation authorization is fixed.
 
 ### ✅ Success
-**Agent inspection:** member uid:73 saw no Invite control; direct invitation returned 403.
+- AC-1 PASS — agent inspection as member uid:73 at e11ce05: no Invite control; direct invitation returned 403.
 
 ### 🧪 Manual review
 Human review is pending. Use member uid:73 in the preview environment.
@@ -102,13 +102,8 @@ describe('outtake evaluation', () => {
         good.replace('### 🧪 Manual review', '### Walkthrough'),
       ],
       ['outtake-headings', `${good}\n### 🎯 Outcome`],
-      [
-        'no-passed-ac-list',
-        good.replace(
-          '**Agent inspection:**',
-          '- AC-1: PASS\n**Agent inspection:**',
-        ),
-      ],
+      ['criterion-lines', good.replace('- AC-1 PASS', '- AC-1 FAIL')],
+      ['criterion-lines', good.replace('at e11ce05', 'at the tested revision')],
       [
         'review-resources',
         good.replace(coding.input.mr, 'https://invented.invalid/mr'),
@@ -120,11 +115,8 @@ describe('outtake evaluation', () => {
       ['review-actor', good.replaceAll('uid:73', 'uid:1')],
       ['links', good.replace('🔗 [Coding evidence]', '[Coding evidence]')],
       [
-        'no-passed-ac-list',
-        good.replace(
-          '**Agent inspection:**',
-          '- AC-1: denial checked\n\n**Agent inspection:**',
-        ),
+        'criterion-lines',
+        good.replace('- AC-1 PASS', '- AC-1: denial checked\n- AC-1 PASS'),
       ],
       [
         'links',
@@ -196,7 +188,10 @@ describe('outtake evaluation', () => {
       await expect(validateFixture(bad), key).rejects.toThrow();
     }
     await expect(
-      validateFixture({ ...coding, skill: 'qualify-ticket' }),
+      validateFixture({
+        ...coding,
+        skill: 'bb-workflow/references/qualification.md',
+      }),
     ).rejects.toThrow();
     await expect(
       validateFixture({
@@ -757,6 +752,16 @@ Approve spec, plan and test so the ticket moves to coding.
         `### 📖 Spec digest\n${brief}\n\n### 🧪 Manual review`,
       );
     await fails('spec-digest-brief', moved, 'digest-placement');
+    for (const line of ['- AC-1: PASS', '- AC-1: denial checked\n']) {
+      await fails(
+        'spec-digest-brief',
+        outtake(brief).replace(
+          '**Agent inspection:**',
+          `${line}\n**Agent inspection:**`,
+        ),
+        'no-passed-ac-list',
+      );
+    }
   });
 
   it('rejects a fixture whose expectation contradicts its profile', async () => {

@@ -23,7 +23,7 @@ final class TicketClosureFieldsTest extends ClaimKernelTestBase {
    * A freshly seeded ticket is not closed and has no closed date.
    */
   public function testTicketStartsUnclosed(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+    $ticket = $this->seedAssignedTicket(state: 'working');
     self::assertFalse($ticket->isClosed());
     self::assertNull($ticket->getClosedDate());
   }
@@ -43,7 +43,7 @@ final class TicketClosureFieldsTest extends ClaimKernelTestBase {
    * Cleaned_up defaults FALSE and is independent of the closed lifecycle.
    */
   public function testTicketStartsUncleaned(): void {
-    $ticket = $this->seedAssignedTicket(state: 'coding');
+    $ticket = $this->seedAssignedTicket(state: 'working');
     self::assertFalse($ticket->isCleanedUp());
   }
 

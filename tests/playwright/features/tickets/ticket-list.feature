@@ -25,7 +25,7 @@ Feature: The ticket list is the nav home
   `position: sticky`, and a sticky element creates a stacking context whatever
   its `z-index`, so the picker panel's `z-index: 30` could not escape it and the
   table's positioned `<td class="relative">`, later in the document, painted over
-  the rows. `document.elementFromPoint()` at the centre of the `Coding` row
+  the rows. `document.elementFromPoint()` at the centre of the `Working` row
   returned that `<td>` and a raw click there picked nothing. Fixed on 2026-09-02
   by giving the sticky aside a `z-index` above the table's positioned cells, in
   `canvas` and through `designbook:debo`. Both paths are kept because they fail
@@ -38,9 +38,9 @@ Feature: The ticket list is the nav home
   `views-view-table.html.twig`, so its positioned cells are different cells and
   the fix was unverified. On the delivered surface at 1440x900, signed in as a
   non-admin member with ten rows on screen: `.canvas__filters` computes
-  `position: sticky` with `z-index: 40`, a pointer at the centre of the `Coding`
+  `position: sticky` with `z-index: 40`, a pointer at the centre of the `Working`
   row hits `SPAN.option-list__label` inside `DIV.option-picker__panel`, and the
-  click picks `coding`. THE DEFECT CONDITION SURVIVED THE REBUILD, which is what
+  click picks `working`. THE DEFECT CONDITION SURVIVED THE REBUILD, which is what
   makes the fix load-bearing rather than a leftover: forcing `z-index: auto` back
   onto the aside in the same session makes the same point return `TD.relative` —
   the accent-rail cell core's `table` style emits on every row's first column —
@@ -95,18 +95,18 @@ Feature: The ticket list is the nav home
     And the ticket listing lists at least 1 ticket
     And the active filters read "All tickets"
     And the facets sit in the filters aside, not above the ticket listing
-    And the "Workflow" facet offers "bakers.build feature, bakers.build bug"
+    And the "Workflow" facet offers "bakers.build work"
     And the "Priority" facet offers "High, Medium, Low"
     And the page carries exactly one main heading and one workspace description
 
     # PICK ONE. The address is asserted on the machine value while the row was
     # picked by its LABEL, which is T11b's split stated in the browser: the
-    # operator reads `Coding`, the URL carries `coding`, and a rename cannot
+    # operator reads `Working`, the URL carries `working`, and a rename cannot
     # break a shared link.
-    When I choose "Coding" in the "State" facet
+    When I choose "Working" in the "State" facet
     Then the document survived
-    And the address carries "state[]=coding"
-    And the active filters read "State is Coding"
+    And the address carries "state[]=working"
+    And the active filters read "State is Working"
     And exactly one active-filters strip sits above the ticket listing
 
     # PICK TWO, and this is the one that matters: it lands on the fragment the
@@ -115,7 +115,7 @@ Feature: The ticket list is the nav home
     When I choose "Review" in the "State" facet
     Then the document survived
     And the address carries "state[]=review"
-    And the active filters read "State is either of Coding, Review"
+    And the active filters read "State is either of Working, Review"
 
     # PICK THREE, in a DIFFERENT facet — two facets in turn, which is what the
     # criterion asks. `Medium` submits `2`, so this row's label and value differ
@@ -123,10 +123,10 @@ Feature: The ticket list is the nav home
     #
     # IT USED TO BE `High`, AND THE CHANGE IS DELIBERATE. Since a facet offers
     # only the values that still yield a hit, `High` is no longer on offer once
-    # the list is narrowed to Coding and Review — no ticket in either state has
+    # the list is narrowed to Working and Review — no ticket in either state has
     # priority 1 in the seeded world, so offering it would be offering an empty
     # result. Measured on a fresh `--provider recipe-test` world:
-    # `?state[]=coding&state[]=review` leaves the Priority facet reading
+    # `?state[]=working&state[]=review` leaves the Priority facet reading
     # `Medium(2) Low(3)`. The scenario is re-pointed at a value that is really
     # there rather than relaxed, because "the facet still offers the value I
     # want to pick" is exactly what it should keep asserting.
@@ -134,7 +134,7 @@ Feature: The ticket list is the nav home
     Then the document survived
     And the address carries "priority[]=2"
     And the active filters read "Priority is Medium"
-    And the active filters read "State is either of Coding, Review"
+    And the active filters read "State is either of Working, Review"
 
   # R8, and the honest regression gate for it. The scenario above picks by focus
   # and Space, which is a genuine user path but says nothing about the paint
@@ -150,15 +150,15 @@ Feature: The ticket list is the nav home
   Scenario: A facet value is picked with a pointer
     Given I am signed in as a member of the "bakers" workspace
     When I visit the full ticket list of the "bakers" workspace
-    And I click "Coding" in the "State" facet with a pointer
+    And I click "Working" in the "State" facet with a pointer
     Then the document survived
-    And the address carries "state[]=coding"
-    And the active filters read "State is Coding"
+    And the address carries "state[]=working"
+    And the active filters read "State is Working"
 
     When I click "Review" in the "State" facet with a pointer
     Then the document survived
     And the address carries "state[]=review"
-    And the active filters read "State is either of Coding, Review"
+    And the active filters read "State is either of Working, Review"
 
   # THE ANY ROW IS A LINK, not a submitted empty value, and the address it
   # builds used to rewrite every scalar the same form submits (sort, search,
@@ -169,8 +169,8 @@ Feature: The ticket list is the nav home
   Scenario: Clearing a facet through its Any row restores the list
     Given I am signed in as a member of the "bakers" workspace
     When I visit the full ticket list of the "bakers" workspace
-    And I click "Coding" in the "State" facet with a pointer
-    Then the address carries "state[]=coding"
+    And I click "Working" in the "State" facet with a pointer
+    Then the address carries "state[]=working"
     When I click "Any state" in the "State" facet with a pointer
     Then the address does not carry "state"
     And the ticket listing lists as many tickets as before
@@ -191,18 +191,18 @@ Feature: The ticket list is the nav home
   Scenario: A checkbox facet toggles visibly and narrows the list
     Given I am signed in as a member of the "bakers" workspace
     When I visit the full ticket list of the "bakers" workspace
-    And I click "Coding" in the "State" facet with a pointer
-    Then the "Coding" row of the "State" facet reads as checked
+    And I click "Working" in the "State" facet with a pointer
+    Then the "Working" row of the "State" facet reads as checked
     And the ticket listing lists fewer tickets than before
-    And the address carries "state[]=coding"
+    And the address carries "state[]=working"
 
     When I click "Review" in the "State" facet with a pointer
-    Then the "Coding" row of the "State" facet reads as checked
+    Then the "Working" row of the "State" facet reads as checked
     And the "Review" row of the "State" facet reads as checked
 
-    When I click "Coding" in the "State" facet with a pointer
-    Then the "Coding" row of the "State" facet reads as unchecked
-    And the address does not carry "state[]=coding"
+    When I click "Working" in the "State" facet with a pointer
+    Then the "Working" row of the "State" facet reads as unchecked
+    And the address does not carry "state[]=working"
 
   # A searchable facet puts a `type=search` input at the top of the panel,
   # inside the same exposed GET form BEF auto-submits. Typing, then clicking
@@ -274,18 +274,18 @@ Feature: The ticket list is the nav home
   #
   # THE FIRST REMOVAL LEAVES THE OTHER FILTER STANDING, asserted explicitly.
   # A chip that removed everything would satisfy "the address does not carry
-  # state[]=coding" perfectly well.
+  # state[]=working" perfectly well.
   Scenario: A chip is removed with a pointer, keeping the document
     Given I am signed in as a member of the "bakers" workspace
     When I visit the full ticket list of the "bakers" workspace
-    And I choose "Coding" in the "State" facet
+    And I choose "Working" in the "State" facet
     And I choose "Medium" in the "Priority" facet
-    Then the active filters read "State is Coding"
+    Then the active filters read "State is Working"
     And the active filters read "Priority is Medium"
 
     When I remove the "State" chip
     Then the document survived
-    And the address does not carry "state[]=coding"
+    And the address does not carry "state[]=working"
     And the address carries "priority[]=2"
     And the active filters read "Priority is Medium"
 
@@ -307,13 +307,13 @@ Feature: The ticket list is the nav home
   Scenario: The filter set survives a reload and a share
     Given I am signed in as a member of the "bakers" workspace
     When I visit the full ticket list of the "bakers" workspace
-    And I choose "Coding" in the "State" facet
+    And I choose "Working" in the "State" facet
     And I reload the ticket list
-    Then the active filters read "State is Coding"
-    And the "State" facet shows "Coding" as chosen
+    Then the active filters read "State is Working"
+    And the "State" facet shows "Working" as chosen
     When I open the current address in a fresh tab
-    Then the active filters read "State is Coding"
-    And the "State" facet shows "Coding" as chosen
+    Then the active filters read "State is Working"
+    And the "State" facet shows "Working" as chosen
 
   # AC 7, and exactly AC 7. The `filters` aside composes `collapsible`, which is
   # a native `<details>` over a real `<summary>`: no behaviour, no CSS class, no

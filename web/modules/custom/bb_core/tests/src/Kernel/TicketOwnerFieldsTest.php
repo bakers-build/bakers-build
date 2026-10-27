@@ -70,7 +70,7 @@ final class TicketOwnerFieldsTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create($values + [
         'title' => 'Owner fields ticket',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->projectId,
       ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);

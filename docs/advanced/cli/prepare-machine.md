@@ -42,7 +42,7 @@ Keep terminals organized and agent sessions running.
 - [**Install bakers.build and sign in** →](/advanced/cli/install)
 
 ::: tip Prefer a wizard?
-Install the bakers.build plugin first, then ask your AI: “Use `bakers:init` to explain the options and walk me through setup.”
+Install the bakers.build plugin first, then ask your AI: “Use `bakers:bb-init` to explain the options and walk me through setup.”
 :::
 
 ## Servers

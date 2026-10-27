@@ -102,7 +102,7 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
     $this->installSchema('search_api', ['search_api_item']);
     $this->installConfig(['user', 'search_api', 'views']);
     $this->enableTheShippedDisplayExtender();
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     $this->container->get('config.installer')
@@ -459,7 +459,7 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
       $values = [
         'title' => $title,
         'state' => $state,
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'priority' => 2,
         'project_id' => $project->id(),
       ];

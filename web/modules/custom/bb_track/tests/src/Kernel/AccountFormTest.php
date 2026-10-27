@@ -357,7 +357,7 @@ final class AccountFormTest extends WorkTimeTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => $title,
       'project_id' => $this->project->id(),
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ]);
     assert($ticket instanceof BbTicketInterface);
     $ticket->save();

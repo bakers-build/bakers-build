@@ -121,7 +121,7 @@ export default {
   workspace: slot('workspace'),
   bakers: { project: 'bakers' },
   machine_id: 'test-machine',
-  states: ['todo', 'coding'],
+  states: ['todo', 'working'],
 };
 `;
 
@@ -205,7 +205,7 @@ export default {
   plugins:   [ { plugin: './fixture.js', export: 'mkPlugin', with: { id: 'session' } } ],
   bakers: { project: 'bakers' },
   machine_id: 'test-machine',
-  states: ['todo', 'coding'],
+  states: ['todo', 'working'],
 ${extra}};
 `;
   const file = join(dir, 'conductor.config.js');
@@ -262,7 +262,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
   // regardless of how large the ticket that triggered the run is.
   it('renders bounded (<= 1 KB) and embed-free regardless of ticket size', () => {
     const rendered = DEFAULT_AGENT_PROMPT.replaceAll('{identifier}', 'BB-121')
-      .replaceAll('{state}', 'coding')
+      .replaceAll('{state}', 'working')
       .replaceAll('{runUuid}', 'r-1');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
@@ -381,7 +381,7 @@ describe('loadConductorConfig', () => {
     expect(config.machine_id).toBe('test-machine');
     expect(config.label).toBe(config.conductor_id);
     expect(config.project).toBe('bakers');
-    expect(config.states).toEqual(['todo', 'coding']);
+    expect(config.states).toEqual(['todo', 'working']);
     // Engine max_parallel is ignored; capacity comes from machine context (default 1).
     expect(config.max_parallel).toBe(1);
     expect(config.poll_interval_ms).toBe(5000);
@@ -476,19 +476,19 @@ describe('loadConductorConfig', () => {
   });
 
   it('accepts an empty states list (serves all claimable states)', async () => {
-    const empty = VALID.replace("states: ['todo', 'coding'],", 'states: [],');
+    const empty = VALID.replace("states: ['todo', 'working'],", 'states: [],');
     const config = await loadConductorConfig(writeConfig(empty));
     expect(config.states).toEqual([]);
   });
 
   it('defaults states to [] when absent (serves all claimable states)', async () => {
-    const absent = VALID.replace("states: ['todo', 'coding'],", '');
+    const absent = VALID.replace("states: ['todo', 'working'],", '');
     const config = await loadConductorConfig(writeConfig(absent));
     expect(config.states).toEqual([]);
   });
 
   it('rejects a non-string entry in a non-empty states list', async () => {
-    const bad = VALID.replace("states: ['todo', 'coding'],", 'states: [123],');
+    const bad = VALID.replace("states: ['todo', 'working'],", 'states: [123],');
     await expect(loadConductorConfig(writeConfig(bad))).rejects.toThrow(
       /states/,
     );
@@ -762,7 +762,7 @@ const clientSecret = local.oauth?.client_secret;
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
 export default {
   site: { base_url: baseUrl },
-  bakers: { project: 'bakers' }, machine_id: 'test-machine', states: ['coding'],
+  bakers: { project: 'bakers' }, machine_id: 'test-machine', states: ['working'],
   remote: { plugin: './plugin.js' },
   executor: slot('executor'), addons: ['@bakers-build/addon-codex'], workspace: slot('workspace'),
   plugins: [{ plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: { token_url: \`\${baseUrl}/x\`, client_id: clientId, client_secret: clientSecret } }],
@@ -1061,7 +1061,7 @@ export default {
   workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
   bakers: { project: 'bakers' },
   machine_id: 'test-machine',
-  states: ['todo', 'coding'],
+  states: ['todo', 'working'],
 };
 `,
     );
@@ -1085,7 +1085,7 @@ export default {
   workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
   bakers: { project: 'bakers' },
   machine_id: 'test-machine',
-  states: ['todo', 'coding'],
+  states: ['todo', 'working'],
 };
 `,
     );
@@ -1105,7 +1105,7 @@ export default {
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['coding'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
   remote:{ plugin:'./def.js', with:{ id:'from-default' } },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1122,7 +1122,7 @@ export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machin
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['coding'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
   remote:{ plugin:'./sole.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1138,7 +1138,7 @@ export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machin
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['coding'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
   remote:{ plugin:'./fixture.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1168,7 +1168,7 @@ export default mkRemote;`,
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['coding'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
   remote:{ plugin:'./plugin.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1179,7 +1179,7 @@ export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machin
 });
 
 // ---------------------------------------------------------------------------
-// BB-209 — @bakers-build/upgrade-project strips the obsolete `states:` key (AC 10).
+// BB-209 — @bakers-build/bb-upgrade-project strips the obsolete `states:` key (AC 10).
 // Coordinated with BB-207, which makes `states` optional. BB-207 is now
 // merged into this branch's base, so the loader accepts a config with no
 // `states`; the "a stripped config still loads" assertion runs (no longer
@@ -1215,7 +1215,7 @@ describe('BB-209 upgrade states-strip', () => {
     const src = [
       'export default {',
       "  project: 'bakers',",
-      "  states: ['qualification', 'spec', 'coding', 'review'],",
+      "  states: ['qualification', 'plan', 'working', 'review'],",
       '  worktrees: { root: ".worktrees" },',
       '};',
     ].join('\n');
@@ -1227,7 +1227,7 @@ describe('BB-209 upgrade states-strip', () => {
 
   it('strips an inline `states:` property inside an object literal', () => {
     const src =
-      "export default { project:'bakers', states:['coding'], site:{base_url:'http://web'} };";
+      "export default { project:'bakers', states:['working'], site:{base_url:'http://web'} };";
     const out = stripStatesFromConfigSource(src);
     expect(out).not.toMatch(/states\s*:/);
     expect(out).toMatch(/project:'bakers'/);
@@ -1258,7 +1258,7 @@ export default mkRemote;`,
     );
     const withStates = `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['coding'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
   remote:{ plugin:'./plugin.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`;
     const file = join(dir, 'conductor.config.js');
@@ -1290,7 +1290,7 @@ describe('named addon candidates', () => {
       uuid: 'u',
       identifier: 'TEST-1',
       title: 'Legacy routing',
-      state: 'coding',
+      state: 'working',
       branchName: 'b',
       labels: ['special'],
       environments: [],

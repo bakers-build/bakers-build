@@ -231,7 +231,7 @@ scenes:
                         - component: bb_theme:setup_command
                           props:
                             command: >-
-                              Use `bakers:init` to guide me through installing and
+                              Use `bakers:bb-init` to guide me through installing and
                               setting up bakers.build.
                             label: Copy the skill wizard prompt
                   - component: bb_theme:link-group
@@ -347,7 +347,7 @@ scenes:
                         - component: bb_theme:setup_command
                           props:
                             command: >-
-                              Use `bakers:init` to guide me through installing and
+                              Use `bakers:bb-init` to guide me through installing and
                               setting up bakers.build.
                             label: Copy the skill wizard prompt
                   - component: bb_theme:link-group
@@ -463,7 +463,7 @@ scenes:
                         - component: bb_theme:setup_command
                           props:
                             command: >-
-                              Use `bakers:init` to guide me through installing and
+                              Use `bakers:bb-init` to guide me through installing and
                               setting up bakers.build.
                             label: Copy the skill wizard prompt
                   - component: bb_theme:link-group
@@ -528,7 +528,7 @@ scenes:
                   - component: bb_theme:setup_command
                     props:
                       command: >-
-                        Use `bakers:init-project` to connect this checkout as a
+                        Use `bakers:bb-init-project` to connect this checkout as a
                         bakers.build project.
                       label: Copy the init-project prompt
                   - component: bb_theme:link-group
@@ -601,7 +601,7 @@ scenes:
                   - component: bb_theme:setup_command
                     props:
                       command: >-
-                        Use `bakers:init-project` to connect this checkout as a
+                        Use `bakers:bb-init-project` to connect this checkout as a
                         bakers.build project.
                       label: Copy the init-project prompt
                   - component: bb_theme:link-group

@@ -4,13 +4,13 @@ Feature: Session-scoped writeback contracts
 
   Background:
     Given the API client is "north-contributor"
-    When the API client creates a "bb_bug" ticket in "home" as "ticket"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
     Given the session actor owns a running lease for ticket "ticket"
 
   Scenario: An active session creates a child ticket and persists its parent
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
-      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API child","workflow":"bb_chore"},"relationships":{"parent_id":{"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}"}},"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API child","workflow":"bb_work"},"relationships":{"parent_id":{"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}"}},"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "child"
@@ -24,7 +24,7 @@ Feature: Session-scoped writeback contracts
   Scenario: An active session creates a ticket under a parent outside its scope
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
-      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API out-of-scope child","workflow":"bb_chore"},"relationships":{"parent_id":{"data":{"type":"bb_ticket--bb_ticket","id":"{ticket.home}"}},"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API out-of-scope child","workflow":"bb_work"},"relationships":{"parent_id":{"data":{"type":"bb_ticket--bb_ticket","id":"{ticket.home}"}},"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "out-of-scope-child"
@@ -49,7 +49,7 @@ Feature: Session-scoped writeback contracts
   Scenario: An active session cannot patch a foreign ticket
     When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{ticket.other}":
       """
-      {"data":{"type":"bb_ticket--bb_ticket","id":"{ticket.other}","attributes":{"state":"coding"}}}
+      {"data":{"type":"bb_ticket--bb_ticket","id":"{ticket.other}","attributes":{"state":"working"}}}
       """
     Then the API response status is 403
 

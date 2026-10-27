@@ -41,7 +41,7 @@ To check a page or an area, rate each question from 1 (no answer) to 6 (answered
 
 - Second person. The heading answers the reader's question; the first line states the benefit in one sentence.
 - Short sentences, one thought each. Verbs over noun chains. Positive phrasing: "You decide", not "nothing happens without you".
-- bakers.build terms are allowed; explain or link each at first use on the page. States as code: `spec`.
+- bakers.build terms are allowed; explain or link each at first use on the page. States as code: `plan`.
 - Outside Advanced and Addons › Build, no shell commands. Show the request to the agent as a text block. Where a command is unavoidable, collapse it:
 
   ```md

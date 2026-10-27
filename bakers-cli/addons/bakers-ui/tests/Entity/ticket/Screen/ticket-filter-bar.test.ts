@@ -95,14 +95,14 @@ describe('TicketFilterBar', () => {
 
     it('shows state badge when state is set', () => {
       const host = {
-        criteria: { ...DEFAULT_CRITERIA, state: 'coding' },
+        criteria: { ...DEFAULT_CRITERIA, state: 'working' },
         setCriteria: vi.fn(),
         resolveMine: () => undefined,
       };
       const bar = new TicketFilterBar(host);
       const badges = bar.badges();
       const stateBadge = badges.find((b) => b.id === 'state');
-      expect(stateBadge?.value).toBe('state: coding');
+      expect(stateBadge?.value).toBe('state: working');
     });
 
     it('shows closed badge as "closed: hidden" when closed is false', () => {
@@ -180,7 +180,7 @@ describe('TicketFilterBar', () => {
 
     it('c key resets to default criteria', () => {
       const host = {
-        criteria: { ...DEFAULT_CRITERIA, state: 'coding', query: 'test' },
+        criteria: { ...DEFAULT_CRITERIA, state: 'working', query: 'test' },
         setCriteria: vi.fn(),
         resolveMine: () => undefined,
       };
@@ -232,6 +232,21 @@ describe('TicketFilterBar', () => {
         expect.objectContaining({ state: 'backlog' }),
         expect.any(Object),
       );
+    });
+
+    it('s key cycles the bb_work states: todo → plan → working → review (BAKERS-17)', () => {
+      const next = (state: string) => {
+        const host = {
+          criteria: { ...DEFAULT_CRITERIA, state },
+          setCriteria: vi.fn(),
+          resolveMine: () => undefined,
+        };
+        new TicketFilterBar(host).handleKey('s', fakeContext());
+        return host.setCriteria.mock.calls[0]?.[0].state;
+      };
+      expect(next('todo')).toBe('plan');
+      expect(next('plan')).toBe('working');
+      expect(next('working')).toBe('review');
     });
 
     it('m key toggles who to mine when mine is resolved', () => {
@@ -330,12 +345,12 @@ describe('TicketFilterBar', () => {
 
     it('filters by state', () => {
       const host = {
-        criteria: { ...DEFAULT_CRITERIA, state: 'coding' },
+        criteria: { ...DEFAULT_CRITERIA, state: 'working' },
         setCriteria: vi.fn(),
         resolveMine: () => undefined,
       };
       const bar = new TicketFilterBar(host);
-      expect(bar.applyTo(row({ state: 'coding' }))).toBe(true);
+      expect(bar.applyTo(row({ state: 'working' }))).toBe(true);
       expect(bar.applyTo(row({ state: 'triage' }))).toBe(false);
     });
 

@@ -277,7 +277,7 @@ final class ProjectBoardViewTest extends KernelTestBase {
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => $identifier,
       'title' => $identifier,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'state' => $state,
       'closed' => $closed,
       'project_id' => $project->id(),

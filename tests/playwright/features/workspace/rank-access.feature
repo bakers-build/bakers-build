@@ -5,14 +5,14 @@ Feature: Rank-scoped JSON API reads
 
   Scenario: A project member reads its own filtered tickets
     Given the API client is "north-contributor"
-    When the API client reads "/jsonapi/bb_ticket/bb_ticket?filter[state]=spec"
+    When the API client reads "/jsonapi/bb_ticket/bb_ticket?filter[state]=plan"
     Then the API response status is 200
     And the API collection contains "ticket.home"
     And the API collection excludes "ticket.other"
 
   Scenario Outline: Missing project authority returns an empty successful collection
     Given the API client is "<account>"
-    When the API client reads "/jsonapi/bb_ticket/bb_ticket?filter[state]=spec"
+    When the API client reads "/jsonapi/bb_ticket/bb_ticket?filter[state]=plan"
     Then the API response status is 200
     And the API collection is empty
 

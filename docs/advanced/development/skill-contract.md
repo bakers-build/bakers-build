@@ -1,142 +1,95 @@
 # Skill contract
 
-A ticket step is run by exactly one skill, chosen by the skill's own `when` declaration and loaded by the project's `WORKFLOW.md`; this page states the rules that `bakers validate` and the contract test enforce.
+A ticket state is run by one frame skill, `bb-workflow`, which routes the state to its state file and binds the recipe, the runtime guide and the project's hints; this page states how those pieces fit together.
 
-bakers.build ships no workflow engine. It ships skills, which are Markdown instructions an agent reads, and each project decides which ones it loads. Two rules carry the model: a skill owns a step, including where the ticket goes next, and `WORKFLOW.md` only loads skills. It sequences nothing, routes nothing and merges nothing. For the practical path, see [how skills and WORKFLOW.md work](/skills-and-workflows/how-it-works) and [Write WORKFLOW.md](/skills-and-workflows/write-workflow-md).
+bakers.build ships no workflow engine and no loader. It ships skills, which are Markdown instructions an agent reads, and the agent's native skill mechanism loads them. No CLI command reads or validates them. For the practical path, see [How it works](/skills-and-workflows/how-it-works) and [Configure your workflow](/skills-and-workflows/write-workflow-md). The authoring reference is `.claude/skills/bakers-build/skills/bb-workflow/references/authoring.md`.
 
-## Step-owning skills
+## Skills and references
 
-A step-owning skill declares one `when` block in its frontmatter and owns the matched step from start to finish: read the ticket, frame the work, do it, validate it, publish the handoff, choose the destination state and write it. Its body is prose with one section per owned step, and the destination is stated in that prose. There is no central table of transitions.
+A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships thirteen:
 
-The reference for authors is the skill `workflow-step`, in `.claude/skills/bakers-build/skills/workflow-step/`, and its page `references/authoring.md`. It declares no `when` itself.
-
-## The `when` triple
-
-The whole selection surface is three keys in the frontmatter.
-
-```yaml
-when:
-  work_type: code
-  workflow: [bb_bug]
-  step: [diagnose, coding, review]
-inputs:
-  validate.command:
-    description: the command that runs the test suite
-    default: ddev e2e
-```
-
-| Key | Meaning |
+| Skill | Chosen by |
 |---|---|
-| `work_type` | The ticket's `work:*` label without the prefix, such as `code` or `docs` |
-| `workflow` | `bb_feature`, `bb_bug`, `bb_chore`, `bb_deployment` or `bb_verification` |
-| `step` | The workflow states this skill owns |
+| `bb-workflow` | the `WORKFLOW.md` entry line; the frame of every state run |
+| `bb-recipe-matt` | the ticket's `recipe` field; the project default, for `feature`, `bug` and `chore` tickets |
+| `bb-recipe-deploy-and-release` | the ticket's `recipe` field; for `deployment` tickets |
+| `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
+| `bb-runtime-ddev` | the project's `bb-phase-provision` hint |
+| `bb-verdict` | the review state, as its subagent's start |
+| `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
+| `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person, for a ticket or time proposals |
 
-Each key takes one string, a list of strings, `*` for any value, or nothing, which also means any. An empty list is an error. Only `step` values are checked against a known list: `qualification`, `spec`, `diagnose`, `coding`, `review`, `pre_deployment`, `post_deployment`, `verifying` and `summary`. A key other than these three is an error.
+Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, reading the ticket, publishing a comment, provisioning, verification, the browser surface, the intake and outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
 
-Qualification runs before the sub-works are known, so a ticket in it has no work type. Only a skill whose `work_type` is omitted or `*` can match such a step. From `spec` on, the qualification handoff has set the `work:*` labels and the work type selects the owner.
+## The grid
 
-## Exactly one match
+A run is **state × phase**. Every state run passes seven phases in order: `read, provision, work, validate, deliver, outtake, transition`. Each state with a state file — `qualification`, `plan`, `working`, `review` — has exactly one `## <phase>` section per phase, and that section always runs: it owns gates, publication and transitions. Guidance adds a **slot** to a cell under a prefixed heading; a heading under another name is never read.
 
-For every triple of `(work_type, workflow, step)` that the project can produce, exactly one loaded skill must match. No match is a coverage gap and two matches are a collision; both are configuration errors.
+**Two-file rule:** what state X does for type Y reads from X's state file plus the recipe's slots for X.
 
-The validator does not know your work types. It derives the triples from the loaded owners. It takes the claimable states of each workflow, then for each state it makes one triple per work type among the owners that cover that step, or one triple with no work type when no work-typed owner covers it.
+## The frame
 
-| Workflow | Claimable steps |
+`bb-workflow` is the single entry point. A project's `WORKFLOW.md` starts with one line that invokes it. It reads the ticket through `references/read-ticket.md` and routes by state. The routing table has two rows:
+
+| State | Flow |
 |---|---|
-| `bb_feature`, `bb_chore` | `qualification`, `spec`, `coding`, `review` |
-| `bb_bug` | `qualification`, `diagnose`, `coding`, `review` |
-| `bb_deployment` | `pre_deployment`, `post_deployment` |
-| `bb_verification` | `verifying`, `summary` |
+| `qualification` | `references/qualification.md` |
+| every other state | the recipe's `bb-state-<state>` section, run inside the state file of that name (`plan`, `working`, `review`) |
 
-The distributed `when` blocks are the decision table you would otherwise keep in one place, and each row is declared by the skill that implements it. To add a skill for your stack, you claim triples. Claim one that is taken and the load fails.
+It then resolves the recipe, renders the intake (`references/intake.md`) once and starts the state file's `## read`. A state without a state file stops the run and names the state.
 
-## Inputs
+Every ticket runs the one workflow `bb_work`: `qualification → plan → working → review → done`. A deployment and a verification are tickets of type `deployment` and `verification` whose recipes, `bb-recipe-deploy-and-release` and `bb-recipe-verify`, say what `plan`, `working` and `review` mean for them.
 
-Everything project-specific that a skill needs is a declared input, never baked into the body. An input key has the form `<role>.<kind>`, such as `validate.command` or `build.prompt`. By convention the kind tells the agent how to treat the value: `.command` runs verbatim, `.prompt` is followed verbatim, and `.data` is looked up and neither run nor followed. The validator does not check kinds.
+`plan`, `working` and `review` first apply `references/ensure-qualification.md` and continue only on `qualified`. Provisioning is lazy: the runtime is brought up before the first action that needs it, and skipped when nothing does.
 
-Each input should carry a `description` and a `default`, so the skill runs with no project configuration. `inputs` also accepts a bare list of keys, but those inputs have no default and every project must then supply a value. An input with neither an override nor a default is a configuration error that quotes the description.
+## Recipes
 
-A project overrides a value under the skill's bullet in `WORKFLOW.md`. The narrowest value wins, and there is no deep merge.
+A recipe is one skill named `bb-recipe-<method>` per engineering method, free of domain and runtime. Its description names the method, the ticket types it covers and, on at most one installed recipe, `Project default`; qualification chooses from descriptions alone. Its sections are `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`; each holds `### bb-phase-<phase>` slots only where the method adds something. Per phase the type slot wins, then the general one, else none. A slot supplies method; where it names its own deliverable, comment, merge or check, that replaces the state file's default. Approval, the coding gate, the verdict and every readback stay, and a transition slot only picks among the gate's destinations. A recipe names the method's original skills, links no `bb-workflow` reference, calls no other bakers.build skill, and leaves domain, runtime and project commands to guides and hints. A recipe may live in any plugin. The shipped recipes are `bb-recipe-matt` (project default), `bb-recipe-deploy-and-release` and `bb-recipe-verify`.
 
-```
-WORKFLOW.md override  >  bundle value  >  the skill's default
-```
+The ticket's `recipe` field names the recipe, without the `bb-recipe-` prefix; empty means the project default. Its `ticket_type` field selects the type slots.
 
-An override that names an input the skill does not declare is also an error. Without that rule, renaming an input key would leave the old override resolving to nothing while the skill silently ran on its default.
+## Runtime guides
 
-## The loader section
+A runtime guide is one skill named `bb-runtime-<tech>` that says how to provision, execute, lint, test and hand over persona logins in one technology, under `## bb-phase-<phase>` sections. A project names its guide in its `## bb-phase-provision` hint. The shipped guide is `bb-runtime-ddev`.
 
-The loader reads one section of `WORKFLOW.md`, `## Loaded skills`, up to the next `##` heading. The other sections of the file, such as the skill set, the skills and checks tables, the required skills and the standards, are instructions the agent reads. The loader ignores them.
+## Project hints
 
-```md
-## Loaded skills
+`WORKFLOW.md` is the entry line plus optional `## bb-phase-<phase>` sections and nothing else. `## bb-phase-work` holds a `| When | Skill |` table and `## bb-phase-validate` a `| When | Command |` table; a run applies every matching row. `## bb-phase-outtake` names the test-user list and how personas get logins. `## bb-phase-transition` holds the origin-label table (`| State | Origin label |`), the only source `references/origin-status.md` reads; without the table no origin label is ever written. Repository conventions and test lore belong in repository docs that `CLAUDE.md` points to.
 
-- @bakers-build/essential-skills
-- @bakers-build/ddev-drupal-bug
-    validate.command: pnpm test:e2e
-- @bakers-build/docs-authoring
-```
+## Binding and stop rules
 
-A skill is loaded by a bullet at indent 0 of the form `- @<namespace>/<skill-name>`, lowercase with digits and `-`. The skill is found by the `name` in its frontmatter, whatever the namespace says. Indented lines under a bullet are a YAML map of overrides, and each value must be a string. A code fence does not shelter a bullet, so an example bullet placed here is loaded for real. A bullet that starts `- @` but has the wrong shape fails with the line quoted, and a section with no bullet at indent 0 fails with a hint matched to what the section holds.
+Recipe sections and hint rows are binding: the agent loads every skill they require, reading its complete `SKILL.md`, before the work it governs, and announces what it loaded. A hint may mark a skill advisory. A required skill is replaced only when the user explicitly asks, and the outtake names the replacement.
 
-## Bundles
+If the recipe, its state section, the ticket's type among the recipe's declared types or a required skill cannot be resolved, the run stops and reports the exact identifier, before it edits a file, commits, publishes a comment, asks for confirmation or transitions the ticket.
 
-A bundle is a skill with a `## Loaded skills` section in its own body and no `when` and no `inputs`. It owns no step and is never invoked in prose. The loader replaces it with its members, recursively, in the order declared, and a skill that appears twice keeps its first place. The shipped bundle is `essential-skills`.
+## References route nothing
 
-A member's value can be written under its bullet inside the bundle. Project values beat bundle values, and in nested bundles the outermost value wins. A missing skill, a cycle, or values written under a bundle's own bullet each raise an error. There is no way to opt a member out. To replace or omit one, load your own bundle, because adding a competing owner beside the original is a collision.
-
-## Helper skills
-
-The capability skills that a step invokes, such as reading a ticket or publishing a comment, declare no `when` and produce one outcome. They route nothing. Two narrow exceptions exist: the qualification guard may send a ticket back to `qualification`, and ticket creation owns the first routing to `spec` or `diagnose`, or to `coding` for a fully specified ticket.
-
-A skill with no `when` can still be loaded, for its inputs. It is then a helper leaf: it matches no triple and cannot collide with an owner.
-
-## Several sub-works on one ticket
-
-A ticket can carry more than one `work:*` label. At a step, one skill matches per work type. They run in load order, each with its own build and validate body. The last matching skill in load order performs the single confirmation, the origin-status write and the final transition, once every sub-work has reached the step's gate.
+A reference produces one outcome and chooses no destination. Two exceptions exist: `references/ensure-qualification.md` may send a ticket back to `qualification`, and the `bb-create-ticket` skill owns the first routing of a new ticket. The global rules every run keeps live in `bb-workflow` and its references.
 
 ## Handoff and transition order
 
-Every owner finishes in the same order: publish the typed handoff and one `summary`, complete any confirmation the step requires, record optional measurements, publish the status to the origin issue when authorized, then write the ticket's next state and read it back. After the state write the owner stops, because the conductor ends the run shortly after it. Handoffs and ticket text are Markdown in the `bb_rich` format, which strips raw HTML.
-
-## Check the load
-
-`bakers validate` runs every rule above. Run it from the project root, or pass a directory or a `WORKFLOW.md` file. It indexes each `SKILL.md` under `.claude/skills` and `.agents/skills`, expands the bundles, derives the triples and checks them.
-
-```sh
-bakers validate
-bakers validate --skills ~/.claude/plugins/cache/bakers/bakers/<version>/skills
-```
-
-Success prints the workflow file, the skill roots, the number of skills indexed and the loaded owners and helpers, then a line starting `OK` that counts the owners and the triples they cover. It goes to stdout and exits 0. A defect prints a line starting `FAILED:` with the first problem, for example a coverage gap naming the uncovered triple, to stderr and exits 1.
-
-If your project does not keep its skills in the repository, point `--skills` at them, repeating the option for each root. The plugin cache is deliberately not scanned by default, because it holds every installed version and a blind scan would pass against whichever it met first.
-
-The same rules run in the contract test, `bakers-cli/core/tests/workflow/step-contract.test.ts`. It also checks this repository's own `WORKFLOW.md` and shipped skills, so a change to a skill's `when` fails it if a triple is left uncovered or owned twice.
-
-```sh
-cd bakers-cli && pnpm exec vitest run core/tests/workflow/step-contract.test.ts
-```
+Every state finishes in the same order. At `outtake` it publishes the typed handoff and one `summary` rendered through `references/outtake.md`, prints it, completes any confirmation the state requires and records optional measurements. At `transition` it publishes the status to the origin issue when authorized, then writes the ticket's next state and reads it back. After the state write the run stops, because the conductor ends the run shortly after it. Handoffs and ticket text are Markdown in the `bb_rich` format, which strips raw HTML.
 
 ## Handoffs and review
 
-Qualification records `review_actors`: role, account/selection rule, environment, source and
-resolution status. `resolve-environment` confirms concrete access before actor-dependent checks.
+Qualification records `test_as`: the test personas who check the change and what each should see.
+Provisioning (`references/provision.md`) confirms each persona exists, and the runtime guide's `bb-phase-outtake` issues its login link.
 
-`method-context/references/results.md` separates automated tests, agent inspection and human review.
-Results retain actual actor, environment, observation, revision and evidence. Authored tests are not
+`bb-workflow/references/results.md` separates automated tests, agent inspection and human review.
+Results retain persona, environment, observation, revision and evidence. Authored tests are not
 executed tests. Agent inspection is not human acceptance.
 
-Each owner supplies evidence; the last owner invokes `run-outtake` once. Typed comments retain full
-records. The summary gives brief successes, actionable problems and actor-specific review resources.
+Each state renders the outtake once. Typed comments retain full
+records. The summary gives brief successes, actionable problems and persona-specific review resources with login links.
 
 ## Size and verification
 
-Every bakers.build `SKILL.md` permits 500 whitespace-separated words, including frontmatter/code.
-`python3 tests/contract/skill-size.py` enforces this in CI. References contain conditional details;
-remove repetition instead of moving entire instructions elsewhere.
+Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` permits 500 whitespace-separated words, including frontmatter and code; `references/retrospective.md` is the listed exception.
+`python3 tests/contract/skill-size.py` enforces this in CI. Remove repetition instead of moving entire instructions elsewhere.
+
+`python3 tests/contract/skill-references.py` is the one structure check: links resolve, retired skill names are absent, grid headings are valid, every state file has the seven phases, `WORKFLOW.md` holds only `## bb-phase-*` sections, recipes link no frame reference and call no other bakers.build skill, no skill declares an input, and exactly the thirteen skills exist. No skill check asserts a sentence.
 
 [Test a skill](/advanced/development/test-skills) covers isolated generation and offline replay.
 These evaluations use synthetic facts, without live integration.
 [Add a skill test](/advanced/development/add-skill-test) documents profiles and CI coverage;
-the [run-outtake case](/advanced/development/test-run-outtake) checks coding presentation and login URLs.
+the [outtake case](/advanced/development/test-run-outtake) checks coding presentation and login URLs.

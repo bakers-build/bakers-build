@@ -14,6 +14,7 @@ import { herdrAgentHost } from './agents.js';
 import { type PaneSpec, renderTemplate } from './config.js';
 import { applyPaneLayout, isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
+import { resolveBaseRef } from './shared.js';
 
 export type HerdrExec = (args: string[]) => Promise<string>;
 export type GitExec = (args: string[]) => Promise<string>;
@@ -193,7 +194,7 @@ function parseWorktreeRootPane(output: string): PendingRootPane | null {
 }
 
 /** Git-safe branch validation: safe ref chars only, no leading dot, no `..`. */
-function validateBranch(branch: string): void {
+export function validateBranch(branch: string): void {
   if (
     !/^[A-Za-z0-9._/-]+$/.test(branch) ||
     branch.startsWith('.') ||
@@ -229,72 +230,6 @@ export class HerdrWorkspace implements BbWorkspace {
     this.open = options.open ?? DEFAULT_OPEN_LAYOUT;
     this.logger = options.logger ?? noopLogger;
     this.agentHost = herdrAgentHost(this.execHerdr);
-  }
-
-  /**
-   * Resolve the base ref for a new worktree branch. Prefers the configured
-   * `baseBranch`; otherwise the remote tracking branch of the repo's HEAD
-   * (e.g. `origin/develop`). Best-effort: a repo with no upstream returns
-   * `undefined`, leaving herdr to fall back to the parent workspace HEAD.
-   */
-  private async resolveBaseRef(): Promise<string | undefined> {
-    if (this.options.baseBranch) {
-      return this.options.baseBranch;
-    }
-    try {
-      const ref = (
-        await this.execGit([
-          '-C',
-          this.root,
-          'rev-parse',
-          '--abbrev-ref',
-          '--symbolic-full-name',
-          '@{u}',
-        ])
-      ).trim();
-      return ref || undefined;
-    } catch {
-      return undefined;
-    }
-  }
-
-  /**
-   * Fetch the base ref's remote branch so the new worktree starts from the
-   * latest pushed state. Best-effort: offline / unknown remote is non-fatal.
-   */
-  private async fetchBaseRef(baseRef: string): Promise<void> {
-    const slash = baseRef.indexOf('/');
-    if (slash <= 0) {
-      return;
-    }
-    const remote = baseRef.slice(0, slash);
-    const branch = baseRef.slice(slash + 1);
-    try {
-      await this.execGit(['-C', this.root, 'fetch', remote, branch]);
-    } catch {
-      // Non-fatal: use whatever the local tracking ref already points at.
-    }
-  }
-
-  /**
-   * Verify a base-ref candidate resolves on the remote (after fetching it).
-   * Returns the ref when it exists, else undefined so the caller falls back.
-   */
-  private async verifyRemoteRef(ref: string): Promise<string | undefined> {
-    await this.fetchBaseRef(ref);
-    try {
-      await this.execGit([
-        '-C',
-        this.root,
-        'rev-parse',
-        '--verify',
-        '--quiet',
-        `${ref}^{commit}`,
-      ]);
-      return ref;
-    } catch {
-      return undefined;
-    }
   }
 
   /**
@@ -352,16 +287,12 @@ export class HerdrWorkspace implements BbWorkspace {
     // host's local checked-out branch. A ticket passes its `origin/<base_branch>`
     // as the override; use it only when it resolves on the remote, else fall
     // back to the default base.
-    let baseRef: string | undefined;
-    if (baseRefOverride !== undefined) {
-      baseRef = await this.verifyRemoteRef(baseRefOverride);
-    }
-    if (baseRef === undefined) {
-      baseRef = await this.resolveBaseRef();
-      if (baseRef !== undefined) {
-        await this.fetchBaseRef(baseRef);
-      }
-    }
+    const baseRef = await resolveBaseRef(this.root, this.execGit, {
+      ...(this.options.baseBranch
+        ? { baseBranch: this.options.baseBranch }
+        : {}),
+      ...(baseRefOverride !== undefined ? { override: baseRefOverride } : {}),
+    });
     const createOutput = await this.execHerdr([
       'worktree',
       'create',

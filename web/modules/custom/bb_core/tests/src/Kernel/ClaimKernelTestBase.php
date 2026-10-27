@@ -84,7 +84,7 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
     $this->conductor = $this->createConductor(
       $owner,
       'node-base',
-      ['diagnose', 'coding', 'review'],
+      ['plan', 'working', 'review'],
     );
     $this->claimService = $this->container->get('bb_core.ticket_claim');
   }
@@ -146,7 +146,7 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
   private function createConductor(
     UserInterface $owner,
     string $machine_id,
-    array $states = ['diagnose', 'coding'],
+    array $states = ['plan', 'working'],
   ): BbConductorInterface {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
@@ -171,17 +171,16 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
    * conductor-assignment gate in TicketClaimService.
    *
    * @param string $state
-   *   The workflow state to put the ticket in (e.g. 'coding', 'spec').
+   *   The workflow state to put the ticket in (e.g. 'working', 'plan').
    * @param string $identifier
    *   Optional human-readable identifier; defaults to a unique value.
    * @param string $workflow
-   *   Workflow plugin id (default bb_bug). Feature/chore share the same
-   *   transition ids for qualify / to_coding / to_review chains.
+   *   Workflow plugin id (default bb_work).
    *
    * @return \Drupal\bb_core\Entity\BbTicketInterface
    *   The saved ticket entity.
    */
-  protected function seedAssignedTicket(string $state = 'diagnose', string $identifier = '', string $workflow = 'bb_bug'): BbTicketInterface {
+  protected function seedAssignedTicket(string $state = 'plan', string $identifier = '', string $workflow = 'bb_work'): BbTicketInterface {
     if ($identifier === '') {
       $identifier = 'GL-SEED-' . mt_rand();
     }
@@ -201,15 +200,12 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
     $ticket->save();
 
     // Advance to the requested state via workflow transitions if needed.
-    // Bug: qualification → diagnose (qualify) → coding → review.
-    // Feature/chore: qualification → spec (qualify) → coding → review.
-    // Transition ids for the coding/review chain are shared across types.
+    // bb_work: qualification → plan (qualify) → working → review.
     $transitions = [
       'qualification' => [],
-      'diagnose' => ['qualify'],
-      'spec' => ['qualify'],
-      'coding' => ['qualify', 'to_coding'],
-      'review' => ['qualify', 'to_coding', 'to_review'],
+      'plan' => ['qualify'],
+      'working' => ['qualify', 'to_working'],
+      'review' => ['qualify', 'to_working', 'to_review'],
     ];
     foreach ($transitions[$state] ?? [] as $transition) {
       $ticket->getState()->applyTransitionById($transition);

@@ -19,8 +19,8 @@ Extend the shared runner with a synthetic fixture and a small local validation/a
      "id": "example-check",
      "synthetic": true,
      "profile": "example-check",
-     "skill": "resolve-environment",
-     "references": ["method-context/references/results.md"],
+     "skill": "bb-workflow/references/provision.md",
+     "references": ["bb-workflow/references/results.md"],
      "input": {"required_role": "auditor", "observations": ["No matching account exists."]},
      "rubric": [
        {"id": "unresolved", "criterion": "Preserves the missing auditor account as unresolved; does not invent access."}
@@ -28,7 +28,9 @@ Extend the shared runner with a synthetic fixture and a small local validation/a
    }
    ```
 
-   `input` contains every observed fact the worker may use. `rubric` belongs only to the separate judge. Skill names resolve beneath `.claude/skills/bakers-build/skills/`; references are unique relative Markdown paths beneath that directory. Reference only material the skill needs. Fixtures use fictional identities and `.invalid` service URLs.
+   `input` contains every observed fact the worker may use. `rubric` belongs only to the separate judge. The unit under test, `skill`, is a skill name or one `bb-workflow/references/<file>.md`: a reference is applied directly, with `bb-workflow/SKILL.md` loaded first as context and no routing; `skill: "bb-workflow"` tests routing itself. Paths resolve beneath `.claude/skills/bakers-build/skills/`; references are unique relative Markdown paths beneath that directory. Reference only material the unit needs. Fixtures use fictional identities and `.invalid` service URLs.
+
+   A fixture that needs an installed recipe names it in `recipes` (for example `["bb-recipe-probe"]`). Test recipes live in `tests/skill-eval/recipes/` and never ship with the plugin; real recipes get no eval. The loader places each one as the virtual file `skills/<name>/SKILL.md` for a tool fixture, so reading it is a trace event, or as `input.installed_recipes` for a text fixture. `bb-recipe-probe` leaves a unique marker per slot (`probe-method`, `Probe-working: <n>`, …), so an eval sees which slot a run applied. Profile-specific expectations go under `expect`; a tool fixture can seed earlier states' comments with `simulation.comments`.
 
 3. Reuse a fitting `profile`, or add `profiles/<profile>.mjs`. It exports two functions:
 
@@ -52,7 +54,7 @@ Extend the shared runner with a synthetic fixture and a small local validation/a
 
    The loader discovers local profiles by name. Adding a fixture/profile requires no registry or shared runner edit. These modules are trusted repository code; the profile field cannot name an arbitrary filesystem path. The `artifact` profile provides only a nonempty-output check for legacy rubric-driven cases. The `outtake` profile reuses common presentation checks; `run-outtake-coding` adds the complete coding-review contract.
 
-4. Add positive, negative and malformed-input coverage in `bakers-cli/core/tests/workflow/skill-eval.test.ts`. Mutate the actual output for functional negative controls while preserving the original attempt:
+4. Add positive, negative and malformed-input coverage in `bakers-cli/core/tests/workflow/skill-eval.test.ts`, or for a state-eval profile a passing and a violating output/trace in `skill-state-evals.test.ts`. Mutate the actual output for functional negative controls while preserving the original attempt:
 
    ```js
    const changed = structuredClone(attempt);

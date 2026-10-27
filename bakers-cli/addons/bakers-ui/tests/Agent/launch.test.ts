@@ -11,7 +11,7 @@ const payload = (over: Partial<CreateFormPayload> = {}): CreateFormPayload => ({
   // above keeps exercising the description fallback it was written for.
   title: '',
   description: '',
-  workflow: { id: 'bb_feature', label: 'feature' },
+  workflow: { id: 'bb_work', label: 'work' },
   assignee: null,
   conductor: null,
   labels: [],
@@ -23,7 +23,7 @@ it('shortName uses the first description line, else the workflow', () => {
   expect(shortName(payload({ description: 'Add login\nmore' }))).toBe(
     'Add login',
   );
-  expect(shortName(payload())).toBe('New feature');
+  expect(shortName(payload())).toBe('New work');
 });
 
 it('shortName skips blank leading lines and caps a long first line', () => {
@@ -56,12 +56,12 @@ it('threads the spec path + workflow into the env', () => {
     project: 'bakers',
     cwd: '/repo',
     specPath: '/tmp/new.json',
-    workflow: 'bb_feature',
-    label: 'New feature',
+    workflow: 'bb_work',
+    label: 'New work',
   });
   expect(req.env.BB_NEW_TICKET_INPUT).toBe('/tmp/new.json');
-  expect(req.env.BB_WORKFLOW).toBe('bb_feature');
-  expect(req.label).toBe('New feature');
+  expect(req.env.BB_WORKFLOW).toBe('bb_work');
+  expect(req.label).toBe('New work');
 });
 
 it('createPrompt overrides the built-in default create prompt', () => {

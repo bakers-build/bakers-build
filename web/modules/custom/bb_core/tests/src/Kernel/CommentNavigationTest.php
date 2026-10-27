@@ -180,8 +180,8 @@ final class CommentNavigationTest extends KernelTestBase {
         'title' => $title,
         'project_id' => $project_id,
         'identifier' => $identifier,
-        'workflow' => 'bb_feature',
-        'state' => 'coding',
+        'workflow' => 'bb_work',
+        'state' => 'working',
       ]);
     $ticket->save();
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

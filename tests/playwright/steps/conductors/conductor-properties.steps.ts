@@ -39,7 +39,7 @@ function field(name: string, uuid: string): string {
 After({ tags: '@feature:conductor-properties' }, async () => {
   php(
     `$c = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_conductor", "${world['conductor.properties'].uuid}");` +
-      ' $c->set("label", "BDD properties conductor"); $c->set("states", ["coding"]); $c->set("active", TRUE); $c->save();',
+      ' $c->set("label", "BDD properties conductor"); $c->set("states", ["working"]); $c->set("active", TRUE); $c->save();',
   );
 });
 

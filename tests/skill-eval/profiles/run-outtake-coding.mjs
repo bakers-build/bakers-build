@@ -1,9 +1,9 @@
-import { check, visibleMarkdown, outtakeChecks } from '../outtake-checks.mjs';
+import { check, criterionRows, visibleMarkdown, outtakeChecks } from '../outtake-checks.mjs';
 import { requireValue, nonempty } from '../validation.mjs';
-export const SOURCES = ['method-context/references/results.md', 'method-context/SKILL.md', 'essential-skills/SKILL.md'];
+export const SOURCES = ['bb-workflow/references/results.md', 'bb-workflow/references/boundaries.md', 'bb-workflow/references/evidence.md', 'bb-workflow/references/outtake/working.md'];
 export function validate(fixture) {
   const i = fixture?.input;
-  requireValue(fixture?.synthetic === true && fixture.skill === 'run-outtake' && i?.state === 'coding',
+  requireValue(fixture?.synthetic === true && fixture.skill === 'bb-workflow/references/outtake.md' && i?.state === 'working',
     'Expected a synthetic run-outtake coding fixture');
   for (const field of ['ticket', 'outcome', 'gate', 'evidence', 'next_action', 'mr', 'revision']) {
     requireValue(nonempty(i[field]), `Missing fixture input.${field}`);
@@ -45,7 +45,7 @@ export function checkOutput(fixture, output) {
   const urls = text.match(/https?:\/\/[^\s<>()`\[\]]+/g) ?? [];
   const allowed = [input.mr, input.evidence, review.login_url, review.environment,
     ...(review.paths ?? []).map(p => review.environment + p)];
-  const common = outtakeChecks(output);
+  const common = outtakeChecks(output, criterionRows(input));
   return [
     ...common.slice(0, 2),
     check('issued-login-url', output.split(review.login_url).length === 2 && urls.filter(url => url === review.login_url).length === 1,

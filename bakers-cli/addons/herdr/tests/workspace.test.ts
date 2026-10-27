@@ -1,6 +1,7 @@
 import type { BbWorkspace } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
+import { resolveBaseRef } from '../src/shared.js';
 import herdrWorkspace, {
   DEFAULT_OPEN_LAYOUT,
   HerdrWorkspace,
@@ -983,5 +984,46 @@ describe('HerdrWorkspace overview labels (BB-374)', () => {
       'bakers ui --ticket GL-9',
     ]);
     expect(warnings.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('resolveBaseRef', () => {
+  it('returns a base-ref override that resolves on the remote', async () => {
+    const calls: string[][] = [];
+    const ref = await resolveBaseRef(
+      '/repo',
+      async (args) => {
+        calls.push(args);
+        return '';
+      },
+      { override: 'origin/release' },
+    );
+    expect(ref).toBe('origin/release');
+    expect(calls).toContainEqual(['-C', '/repo', 'fetch', 'origin', 'release']);
+  });
+
+  it('falls back to the upstream when the override does not resolve', async () => {
+    const ref = await resolveBaseRef(
+      '/repo',
+      async (args) => {
+        if (args.includes('--verify')) throw new Error('unknown revision');
+        if (args.includes('@{u}')) return 'origin/develop\n';
+        return '';
+      },
+      { override: 'origin/gone' },
+    );
+    expect(ref).toBe('origin/develop');
+  });
+
+  it('returns undefined when the repo has no upstream', async () => {
+    const ref = await resolveBaseRef(
+      '/repo',
+      async (args) => {
+        if (args.includes('@{u}')) throw new Error('no upstream');
+        return '';
+      },
+      {},
+    );
+    expect(ref).toBeUndefined();
   });
 });

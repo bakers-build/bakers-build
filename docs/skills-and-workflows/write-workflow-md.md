@@ -7,49 +7,77 @@
 ## Let your agent write it
 
 ```text
-Use bakers:init-project to create WORKFLOW.md for this repository and check that it is valid.
+Use bakers:bb-init-project to create WORKFLOW.md for this repository.
 ```
 
-`init-project` starts from the plugin's template; `upgrade-project` updates a file you already have.
+`bb-init-project` starts from the plugin's template; `bb-upgrade-project` updates a file you already have, including one in the old `## Loaded skills` layout.
 
 ## What goes in
 
+One entry line, then optional `bb-phase-<phase>` sections, each named after the phase of a run it refines, and nothing else:
+
+```md
+# Project — WORKFLOW
+
+Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
+
+## bb-phase-provision
+## bb-phase-work
+## bb-phase-validate
+## bb-phase-deliver
+## bb-phase-outtake
+```
+
 | Section | Job |
 |---|---|
-| `## Loaded skills` | The skills that own your steps, one `- @<namespace>/<skill>` bullet each, in load order. The only section bakers.build's loader reads. |
-| `## Skill set` | Your engineering method, such as Superpowers. The first entry is the default; with several, qualification asks and records a `method:*` label. |
-| `## Skills` | Extra skills when a change matches, for example a Drupal skill for `web/modules/`. |
-| `## Checks` | Commands to run for matching changes, with a `### Setup` table. |
-| `## Required skills` | Makes the named skills binding: load first, stop if missing. |
-| `## Standards` | Links to the conventions that apply. |
+| `## bb-phase-provision` | The runtime guide and setup that bring the environment up, for example `@bakers-build/bb-runtime-ddev`. Leave it out when no work needs a runtime. |
+| `## bb-phase-work` | A `\| When \| Skill \|` table: extra skills for matching changes, for example a Drupal skill for `web/modules/`. |
+| `## bb-phase-validate` | A `\| When \| Command \|` table: the checks for matching changes. |
+| `## bb-phase-deliver` | How a merge request is merged: the merge gate and what runs in it. |
+| `## bb-phase-outtake` | Your test-user list and how test personas get a login for manual review. |
 
-## Two examples
+A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. The engineering method is not in this file; each ticket carries a [recipe](/skills-and-workflows/labels-and-work-types). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
 
-Same states, different work. A Drupal code project:
+## Example
 
-```md
-## Loaded skills
-
-- @bakers-build/essential-skills
-- @bakers-build/method-context
-- @bakers-build/ddev-drupal-bug
-- @bakers-build/ddev-drupal-feature
-```
-
-A documentation project swaps the code owners for `@bakers-build/docs-authoring` and lists its prose checks under `## Checks`. A repository with both loads all of them; each `work:*` label then gets its own owner.
-
-`@bakers-build/essential-skills` brings qualification, spec, deployment and verification. The Drupal skills are examples; load your own skills for other stacks.
-
-## Adjust one skill
-
-Indent a YAML map under a skill's bullet to change one of its declared inputs, for example the health check after a deployment:
+A Drupal project on DDEV:
 
 ```md
-- @bakers-build/post-deployment
-    health.prompt: |
-      Expect HTTP 200 from /user/login after the deploy.
+## bb-phase-provision
+
+Runtime: DDEV through `@bakers-build/bb-runtime-ddev`.
+
+## bb-phase-work
+
+| When | Skill |
+|---|---|
+| `web/modules/custom/`, `config/` | `keytec-drupal:keytec-drupal-developer` |
+
+## bb-phase-validate
+
+| When | Command |
+|---|---|
+| PHP implementation | `ddev phpcs && ddev phpstan` |
 ```
 
-Declared inputs: `release.prompt` (`prepare-deployment`), `health.prompt` (`post-deployment`), `verify.prompt` (`verify-on-environment`), `origin_labels.data` (`publish-origin-status`). An unknown input fails the check. Every list item at indent 0 under `## Loaded skills` is a real load, so keep examples elsewhere.
+The skills and commands are examples; name your own for other stacks.
 
-**Done when:** your agent reports the file as valid. [How it works](/skills-and-workflows/how-it-works) explains the check.
+## Map states to origin labels
+
+A ticket whose origin is an issue gets a customer-facing label on that issue at every transition. The labels come from one table in `## bb-phase-transition`, and from nowhere else:
+
+```md
+## bb-phase-transition
+
+| State | Origin label |
+|---|---|
+| qualification | doing |
+| plan | doing |
+| working | doing |
+| review | doing |
+| done | review |
+```
+
+This is the default table the project template ships. Change the labels to your customer's vocabulary. A state without a row writes nothing, and a file without the table writes no origin label at all. The labels in the table form the family bakers.build owns: exactly one of them is on the issue at a time, and labels outside the table are never touched.
+
+**Done when:** the file starts with the entry line and every skill it names is installed for the agent. [How it works](/skills-and-workflows/how-it-works) explains how a run reads it.

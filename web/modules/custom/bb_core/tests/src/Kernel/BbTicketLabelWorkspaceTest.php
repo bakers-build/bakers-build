@@ -11,7 +11,7 @@ use Drupal\bb_core\Entity\BbTerm;
 use PHPUnit\Framework\Attributes\Group;
 
 /**
- * A ticket may only carry labels of its own workspace.
+ * A ticket may only carry terms of its own workspace.
  *
  * The rule spans two entities and a three-hop reference walk, so it needs a
  * two-workspace world. WorkspaceReadScopeTestTrait already builds exactly that,
@@ -123,7 +123,7 @@ final class BbTicketLabelWorkspaceTest extends KernelTestBase {
    */
   public function testProjectlessTicketAbstains(): void {
     $term = BbTerm::create([
-      'vid' => 'bb_labels',
+      'vid' => 'label',
       'name' => 'floating',
       'workspace_id' => $this->fixture('b', 'bb_workspace')->id(),
     ]);
@@ -134,12 +134,59 @@ final class BbTicketLabelWorkspaceTest extends KernelTestBase {
       ->create([
         'identifier' => 'T-NOPROJECT',
         'title' => 'no project',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'labels' => [$term->id()],
       ]);
     self::assertInstanceOf(FieldableEntityInterface::class, $ticket);
 
     self::assertNotContains('labels', $this->violationPaths($ticket));
+  }
+
+  /**
+   * Type and recipe follow the same workspace rule as labels.
+   */
+  public function testForeignWorkspaceTypeAndRecipeAreRejected(): void {
+    foreach (['ticket_type' => 'type', 'recipe' => 'recipe'] as $field => $vid) {
+      $own = $this->createTerm($vid, 'a');
+      $foreign = $this->createTerm($vid, 'b');
+      $ticket = $this->fixture('a', 'bb_ticket');
+
+      $ticket->set($field, $own->id());
+      $paths = $this->violationPaths($ticket);
+      self::assertSame([], $paths, implode(' | ', $paths));
+
+      $ticket->set($field, $foreign->id());
+      self::assertContains($field, $this->violationPaths($ticket));
+      $ticket->set($field, NULL);
+    }
+  }
+
+  /**
+   * A second type or recipe value is rejected: both fields hold one value.
+   */
+  public function testSecondTypeOrRecipeValueIsRejected(): void {
+    foreach (['ticket_type' => 'type', 'recipe' => 'recipe'] as $field => $vid) {
+      $ticket = $this->fixture('a', 'bb_ticket');
+      $ticket->set($field, [
+        $this->createTerm($vid, 'a')->id(),
+        $this->createTerm($vid, 'a')->id(),
+      ]);
+      self::assertContains($field, $this->violationPaths($ticket));
+      $ticket->set($field, NULL);
+    }
+  }
+
+  /**
+   * Creates a term of a bundle in the workspace of a side.
+   */
+  private function createTerm(string $vid, string $side): BbTerm {
+    $term = BbTerm::create([
+      'vid' => $vid,
+      'name' => $this->randomMachineName(),
+      'workspace_id' => $this->fixture($side, 'bb_workspace')->id(),
+    ]);
+    $term->save();
+    return $term;
   }
 
 }

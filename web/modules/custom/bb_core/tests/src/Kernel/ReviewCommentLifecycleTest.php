@@ -312,7 +312,7 @@ final class ReviewCommentLifecycleTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create([
         'title' => 'review-lifecycle',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'state' => 'todo',
         'project_id' => $project->id(),
         'owner_user_id' => $owner->id(),

@@ -7,6 +7,7 @@ import {
   readAttempt,
   sha256,
 } from '../../../../tests/skill-eval/artifacts.mjs';
+import { runSimulator } from '../../../../tests/skill-eval/cli-contract.mjs';
 import {
   loadFixture,
   loadProfile,
@@ -16,7 +17,6 @@ import { savedAttempt } from './skill-eval-helpers.js';
 const root = new URL('../../../../tests/skill-eval/', import.meta.url);
 const ticketId = '11111111-1111-4111-8111-111111111111';
 const commentId = '22222222-2222-4222-8222-000000000001';
-const newTicketId = '33333333-3333-4333-8333-333333333333';
 const result = (stdout: unknown, exit_code = 0, stderr = '') => ({
   stdout,
   exit_code,
@@ -117,122 +117,6 @@ async function transitionCase(id = 'transition-ticket-calls') {
     write,
     read(target, stored),
   ];
-  return { fixture, profile, trace };
-}
-
-async function createCase() {
-  const { fixture, profile } = await fixtureData('create-ticket-calls');
-  const description = fixture.simulation.files[fixture.input.description_file];
-  const target = `bb_ticket/bb_ticket/${newTicketId}`;
-  const initial = {
-    data: {
-      id: newTicketId,
-      attributes: {
-        title: fixture.input.title,
-        description: { value: description, format: 'bb_rich' },
-        project_id: fixture.input.project_uuid,
-        state: 'qualification',
-      },
-    },
-  };
-  const trace = [
-    ...['invoice', 'invoices'].flatMap((term) =>
-      ['title', 'description.value'].map((field) =>
-        bakers(
-          [
-            'search',
-            'bb_ticket',
-            '--bundle',
-            'bb_ticket',
-            '--filter',
-            `${field}:CONTAINS:${term}`,
-          ],
-          { data: [] },
-        ),
-      ),
-    ),
-    bakers(
-      [
-        'search',
-        'bb_ticket',
-        '--bundle',
-        'bb_ticket',
-        '--filter',
-        'title:CONTAINS:ticket',
-      ],
-      { data: [{ id: 'known-positive' }] },
-    ),
-    bakers(['create', 'bb_ticket', '--bundle', 'bb_ticket', '--fields'], {
-      writable_fields: ['title'],
-    }),
-    bakers(
-      [
-        'create',
-        'bb_ticket',
-        '--bundle',
-        'bb_ticket',
-        `--title=${fixture.input.title}`,
-        '--workflow',
-        'bb_feature',
-        `--description.value=${description}`,
-        '--description.format',
-        'bb_rich',
-        '--project_id',
-        fixture.input.project_uuid,
-        '--label_names',
-        'work:docs,method:matt',
-      ],
-      initial,
-    ),
-    read(target, initial),
-  ];
-  for (const type of ['qualification', 'summary']) {
-    const body =
-      type === 'qualification'
-        ? `# Qualification\n${fixture.input.acceptance_criterion}\nreview_actors: not_required\nout_of_scope: no code changes\nhandoff_version: 1\nprovenance: fixture\nreproduction: not_required\nscenario_required: false`
-        : '# Summary\nCreated and qualified; ready for spec.';
-    const id =
-      type === 'qualification'
-        ? commentId
-        : '22222222-2222-4222-8222-000000000002';
-    const stored = {
-      data: {
-        type: 'bb_comment--bb_comment',
-        id,
-        attributes: {
-          body: { value: body, format: 'bb_rich' },
-          bb_comment_type: type,
-        },
-        relationships: { ticket_id: { data: { id: newTicketId } } },
-      },
-    };
-    trace.push(
-      bakers(
-        [
-          'create',
-          'bb_comment',
-          '--bundle',
-          'bb_comment',
-          `--body.value=${body}`,
-          '--body.format',
-          'bb_rich',
-          '--bb_comment_type',
-          type,
-          '--ticket_id',
-          newTicketId,
-        ],
-        stored,
-      ),
-      read(`bb_comment/bb_comment/${id}`, stored),
-    );
-  }
-  trace.push(
-    bakers(['update', target, '--fields'], { writable_fields: ['state'] }),
-    bakers(['update', target, '--state', 'spec'], {
-      data: { id: newTicketId, attributes: { state: 'spec' } },
-    }),
-    read(target, { data: { id: newTicketId, attributes: { state: 'spec' } } }),
-  );
   return { fixture, profile, trace };
 }
 
@@ -360,161 +244,6 @@ describe('skill call contracts', () => {
         calls: [2],
       }),
     ]);
-  });
-  it('requires prior-art calls and confirmed comments before initial routing', async () => {
-    const { fixture, profile, trace } = await createCase();
-    const grade = (rows: unknown[]) =>
-      failing(
-        profile.checkOutput(fixture, 'Created and routed', {
-          tool_trace: rows,
-        }),
-      );
-    expect(grade(trace)).toEqual([]);
-    expect(grade(trace.filter((_, i) => i !== 0))).toContain(
-      'prior-art-search',
-    );
-    const failedQualification = structuredClone(trace);
-    failedQualification[8].result = result(null, 2, 'E_VALIDATION: rejected');
-    expect(grade(failedQualification)).toContain('qualification-and-summary');
-    const wrong = structuredClone(trace);
-    wrong[6].arguments.argv.push('--base_branch', 'develop');
-    expect(grade(wrong)).toContain('ticket-create');
-    // qualify-ticket records the boundary as an "Out of scope" section or an out_of_scope field.
-    const rewrite = (from: RegExp, to: string) => {
-      const changed = structuredClone(trace);
-      for (const i of [8, 9]) {
-        const row = changed[i] as {
-          arguments: { argv: string[] };
-          result: {
-            stdout: { data: { attributes: { body: { value: string } } } };
-          };
-        };
-        const body = row.result.stdout.data.attributes.body;
-        body.value = body.value.replace(from, to);
-        if (i === 8)
-          row.arguments.argv = row.arguments.argv.map((token) =>
-            token.startsWith('--body.value=')
-              ? `--body.value=${body.value}`
-              : token,
-          );
-      }
-      return changed;
-    };
-    expect(grade(rewrite(/out_of_scope: /, '## Out of scope\n\n'))).toEqual([]);
-    expect(
-      grade(
-        rewrite(
-          /review_actors: (.*)\n([\s\S]*)reproduction: (.*)\nscenario_required: (.*)$/,
-          '### Review actors\n\n$1\n$2### Reproduction\n\n$3\n\n### Scenario required\n\n$4',
-        ),
-      ),
-    ).toEqual([]);
-    expect(
-      grade(rewrite(/scenario_required: false/, 'scenario: false')),
-    ).toContain('qualification-and-summary');
-    expect(grade(rewrite(/out_of_scope: no code changes\n/, ''))).toContain(
-      'qualification-and-summary',
-    );
-    const hit = await loadFixture('create-ticket-prior-art');
-    const searched = trace.slice(0, 4).map((row) => ({
-      ...row,
-      result: result({ data: [hit.simulation.prior_art] }),
-    }));
-    searched.push(
-      read(`bb_ticket/bb_ticket/${hit.simulation.prior_art.id}`, {
-        data: hit.simulation.prior_art,
-      }),
-    );
-    expect(
-      failing(
-        profile.checkOutput(hit, 'Prior art blocks creation', {
-          tool_trace: searched,
-        }),
-      ),
-    ).toEqual([]);
-    const completeSearch = searched.slice(0, 4).map((row) => ({
-      ...row,
-      result: result({
-        data: [
-          {
-            id: hit.simulation.prior_art.id,
-            attributes: hit.simulation.prior_art,
-          },
-        ],
-      }),
-    }));
-    expect(
-      failing(
-        profile.checkOutput(hit, 'Hit inspected from full search result', {
-          tool_trace: completeSearch,
-        }),
-      ),
-    ).toEqual([]);
-    expect(
-      failing(
-        profile.checkOutput(hit, 'Inspected', {
-          tool_trace: searched.slice(0, 4).map((row) => ({
-            ...row,
-            result: result({ data: [{ id: hit.simulation.prior_art.id }] }),
-          })),
-        }),
-      ),
-    ).toContain('prior-art-read');
-    expect(
-      failing(
-        profile.checkOutput(hit, 'Created', {
-          tool_trace: [...searched, trace[6]],
-        }),
-      ),
-    ).toContain('prior-art-stop');
-  });
-  it('routes only after both creation handoffs are confirmed by their create responses', async () => {
-    const { fixture, profile, trace } = await createCase();
-    const grade = (rows: unknown[]) =>
-      failing(profile.checkOutput(fixture, 'Routed', { tool_trace: rows }));
-    const noReads = trace.filter((_, i) => i !== 9 && i !== 11);
-    expect(grade(noReads)).toEqual([]);
-    // The workspace lookup that method-context names is a supported read-only call.
-    const info = {
-      tool: 'bakers',
-      arguments: { argv: ['bakers', 'info'] },
-      result: result({ workspace_id: fixture.input.workspace_uuid }),
-    };
-    expect(grade([...noReads.slice(0, 9), info, ...noReads.slice(9)])).toEqual(
-      [],
-    );
-    const summaryFailed = structuredClone(noReads);
-    summaryFailed[9].result = result(null, 2, 'HTTP 500: backend failure');
-    expect(grade(summaryFailed)).toContain('qualification-and-summary');
-    const summaryAfterRouting = [
-      ...noReads.slice(0, 9),
-      ...noReads.slice(10, 12),
-      noReads[9],
-      noReads[12],
-    ];
-    expect(grade(summaryAfterRouting)).toContain('qualification-and-summary');
-
-    // An optional readback stays possible; a recovered read is a call-quality warning.
-    const malformed = bakers(
-      ['show', 'bb_comment', commentId],
-      null,
-      2,
-      'Expected action and entity target',
-    );
-    const recovered = [...trace.slice(0, 9), malformed, ...trace.slice(9)];
-    expect(grade(recovered)).toEqual([]);
-    expect(
-      profile.diagnose(fixture, 'Routed', { tool_trace: recovered }),
-    ).toEqual([
-      expect.objectContaining({ severity: 'warning', calls: [9, 10] }),
-    ]);
-    const afterRouting = [
-      ...trace.slice(0, 9),
-      malformed,
-      ...trace.slice(10, 15),
-      trace[9],
-    ];
-    expect(grade(afterRouting)).toContain('tool-results');
   });
   it('checks additive links, explicit state, links-only behavior and no alternate state after 422', async () => {
     const { fixture, profile, trace } = await transitionCase();
@@ -649,7 +378,6 @@ describe('skill call contracts', () => {
   }, 60000);
   it.each([
     { name: 'publication', create: commentCase },
-    { name: 'creation', create: createCase },
     { name: 'transition', create: transitionCase },
   ])('replays $name calls offline and rejects corrupt or unattributed trace changes', async ({
     create,
@@ -719,6 +447,114 @@ describe('skill call contracts', () => {
       await rm(dir, { recursive: true, force: true });
     }
   }, 60000);
+});
+
+describe('recipe and type on ticket creation', () => {
+  // The calls a created-and-qualified ticket makes, run through the simulator so the graded
+  // results (resolved terms, included names, routed state) are the simulator's, not hand-written.
+  async function creationTrace(createFlags: string[], destination = 'plan') {
+    const { fixture, profile } = await fixtureData('create-ticket-calls');
+    const target = 'bb_ticket/bb_ticket/33333333-3333-4333-8333-333333333333';
+    const comment = (type: string, body: string) => [
+      'create',
+      'bb_comment',
+      '--bundle',
+      'bb_comment',
+      `--body.value=${body}`,
+      '--body.format',
+      'bb_rich',
+      '--bb_comment_type',
+      type,
+      '--ticket_id',
+      '33333333-3333-4333-8333-333333333333',
+    ];
+    const qualification = [
+      `- ${fixture.input.acceptance_criterion}`,
+      ...[
+        'test_as',
+        'out_of_scope',
+        'handoff_version',
+        'provenance',
+        'reproduction',
+        'scenario_required',
+      ].map((field) => `- ${field}: recorded`),
+    ].join('\n');
+    const argvs = [
+      ['create', 'bb_ticket', '--bundle', 'bb_ticket', '--fields'],
+      [
+        'create',
+        'bb_ticket',
+        '--bundle',
+        'bb_ticket',
+        '--title',
+        fixture.input.title,
+        '--workflow',
+        'bb_work',
+        `--description.value=${fixture.simulation.files[fixture.input.description_file]}`,
+        '--description.format',
+        'bb_rich',
+        '--project_id',
+        fixture.input.project_uuid,
+        ...createFlags,
+      ],
+      ['read', target, '--include', 'comments,labels,ticket_type,recipe'],
+      comment('qualification', qualification),
+      comment('summary', 'Created and qualified.'),
+      ['update', target, '--fields'],
+      ['update', target, '--state', destination],
+      ['read', target],
+    ].map((argv) => ['bakers', 'dropsh', ...argv]);
+    const results = await runSimulator(
+      fixture.simulation,
+      argvs.map((argv) => ({ name: 'bakers', arguments: { argv } })),
+    );
+    const trace = argvs.map((argv, i) => ({
+      tool: 'bakers',
+      arguments: { argv },
+      result: results[i],
+    }));
+    const grade = (rows: unknown[]) =>
+      failing(profile.checkOutput(fixture, 'Created', { tool_trace: rows }));
+    return { grade, trace };
+  }
+  const named = [
+    'ticket-create',
+    'no-work-or-method-labels',
+    'ticket-readback',
+    'single-initial-route',
+  ];
+
+  it('writes recipe and type by name, reads them back and routes to plan', async () => {
+    const { grade, trace } = await creationTrace([
+      '--recipe_names',
+      'matt',
+      '--type_names',
+      'feature',
+    ]);
+    expect(grade(trace).filter((id) => named.includes(id))).toEqual([]);
+  });
+
+  it('rejects work:* / method:* labels in place of the recipe and type', async () => {
+    const { grade, trace } = await creationTrace([
+      '--label_names',
+      'work:docs,method:matt',
+    ]);
+    expect(grade(trace)).toEqual(
+      expect.arrayContaining([
+        'ticket-create',
+        'no-work-or-method-labels',
+        'ticket-readback',
+      ]),
+    );
+  });
+
+  it('rejects routing to a retired state', async () => {
+    const { grade, trace } = await creationTrace(
+      ['--recipe_names', 'matt', '--type_names', 'feature'],
+      'spec',
+    );
+    expect(grade(trace)).toContain('single-initial-route');
+  });
 });
 
 describe('remote base call evidence', () => {

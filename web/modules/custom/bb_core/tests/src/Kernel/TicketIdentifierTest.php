@@ -103,7 +103,7 @@ final class TicketIdentifierTest extends KernelTestBase {
       ->getStorage('bb_ticket')
       ->create([
         'project_id' => $project->id(),
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'title' => $title,
       ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);

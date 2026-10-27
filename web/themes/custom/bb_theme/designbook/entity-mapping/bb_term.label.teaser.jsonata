@@ -1,0 +1,58 @@
+(
+  /* A bb_term renders as a BADGE, and the labels screen is a badge surface. The human:
+     "with the labels I see badges rather than the rows." So no row component exists for a term at
+     all.
+
+     THREE VOCABULARIES SINCE BAKERS-17: `type`, `recipe` and `label` (the old labels vocabulary id was
+     renamed to `label`; capability tags are gone). Every one of them renders as this same badge.
+     Renamed by hand from the old bundle's name: the `design-entity` workflow regenerates a mapping
+     as a plain field-map and cannot carry the constant `tone`/`list_item` props below.
+
+     THERE IS NO VARIANT ANY MORE, AND THAT ANSWERED THE QUESTION THIS PARAGRAPH USED TO ARGUE.
+     `badge` carried four variants — `state`, `token`, `label`, `priority` — and this mapping picked
+     `label` over the other two because `state` was unpilled plain text, which made a whole screen of
+     labels read as a column of words, and `token` was the quiet counter chip that annotates another
+     value, which under-weighted the subject of the screen. All four collapsed into `tone`: the badge
+     has ONE shape now, a tinted pill, so both failure modes are gone by construction rather than by
+     picking correctly. `tone: neutral` is a label's tone — a term names itself and carries no state.
+
+     `list_item` IS SET HERE BECAUSE THE SCREEN'S CONTAINER IS A LIST. The labels surface puts these
+     badges directly inside `zone` with `list: true`, which puts `role="list"` on their parent, and
+     `role="list"`/`role="listitem"` must be direct parent and child or a browser drops both roles.
+     The badge cannot know where it was placed, so the placer says so.
+
+     MOVED FROM `full`, NOT REWRITTEN THERE. `full` is an entity's OWN SCREEN and `teaser` is its row
+     in a list; a term has no screen of its own, so it has no full rendering, and this file was only
+     ever filed under the wrong view mode. `git mv` rather than a delete-plus-add, so the move is what
+     the diff shows.
+
+     ONE CORRECTION CAME WITH THE MOVE, and it is worth naming because the spec's own Fact 11 has it
+     backwards. That fact claims this mapping emitted `badge` while the `designbook/sync/` generator
+     for the same name emitted `label`, and reads the pair as pre-existing drift. Neither half is
+     true: both emitted `bb_theme:form_label` — the FORM LABEL component, "Form label rendered inside a
+     form element's label slot", whose default variant is an uppercase eyebrow above a text input.
+     There was no drift; there was one wrong component in two places. A taxonomy term is not a form
+     label, and C14 requires the vocabulary to render through `badge`, so the component name is
+     corrected here. `label`'s two props went with it: `badge` has no slots and takes its text as the
+     `label` PROP.
+
+     A BADGE READS `name` ONLY. A term's `description` and `weight` are therefore not rendered
+     anywhere by this ticket, and no term edit surface exists — the screen's `[+]` and its badges are
+     inert, like every other action here. The section brief is corrected in the same change rather
+     than left promising three fields. Whoever gives these pickers an endpoint owns the term edit
+     surface along with it.
+
+     The `designbook/sync/` generator for the term `full` display is left as it is, and that is a
+     decision rather than an oversight: repairing it is a Drupal config change, which this ticket
+     does not make. It is a generator for a view mode this mapping no longer claims. */
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:badge",
+      "props": {
+        "label": name,
+        "tone": "neutral",
+        "list_item": true
+      }
+    }
+  ]
+)

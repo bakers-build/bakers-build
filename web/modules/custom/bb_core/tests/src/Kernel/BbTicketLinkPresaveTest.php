@@ -60,7 +60,7 @@ final class BbTicketLinkPresaveTest extends KernelTestBase {
     $ticket = $storage->create([
       'identifier' => 'bakers-t1',
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'links' => [
         [
           'uri' => 'https://git.key-tec.de/g/p/-/merge_requests/42',
@@ -93,7 +93,7 @@ final class BbTicketLinkPresaveTest extends KernelTestBase {
     $ticket = $storage->create([
       'identifier' => 'bakers-dedup',
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'links' => [
         ['uri' => 'https://git.key-tec.de/g/p/-/merge_requests/42', 'title' => 'MR'],
         ['uri' => 'https://example.com/spec.pdf', 'title' => 'Doc'],
@@ -121,7 +121,7 @@ final class BbTicketLinkPresaveTest extends KernelTestBase {
     $ticket = $storage->create([
       'identifier' => 'bakers-t2',
       'title' => 'T2',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'links' => [
         ['uri' => 'https://git.key-tec.de/g/p/-/merge_requests/7', 'title' => 'MR'],
       ],

@@ -28,7 +28,7 @@ const OTHER_USER = 'aaaaaaaa-0000-0000-0000-000000000002';
 const COND = 'bbbbbbbb-0000-0000-0000-000000000001';
 const PROJECT = 'pppppppp-0000-0000-0000-000000000001';
 
-const ticketDoc = (runState?: string, state = 'coding') => ({
+const ticketDoc = (runState?: string, state = 'working') => ({
   data: {
     id: TICKET,
     type: 'bb_ticket--bb_ticket',
@@ -305,7 +305,7 @@ it('AC-3: the conductor is written the same way, and the popup closes', async ()
   expect(screen()).not.toContain('[ Save ]');
   expect(screen()).toContain('[Overview]');
   // 'Assigned:' was a header row; now the assignee appears on the meta line.
-  expect(screen()).toContain('coding');
+  expect(screen()).toContain('working');
   await quit();
 });
 
@@ -498,9 +498,9 @@ it('AC-3: a conductor the READ profile cannot see still renders by name', async 
 
 // ---- BB-360 — Cancel ticket action (replaces BB-313 State select) -------
 
-/** Move focus to Cancel ticket: Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Labels·Save·Cancel */
+/** Move focus to Cancel ticket: Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Type·Recipe·Labels·Save·Cancel */
 const toCancelTicket = async (press: (key: string) => Promise<void>) => {
-  for (let i = 0; i < 8; i += 1) await press('\x1b[B');
+  for (let i = 0; i < 10; i += 1) await press('\x1b[B');
 };
 
 it('BB-360: Enter on Cancel ticket writes only state: cancelled', async () => {
@@ -560,8 +560,8 @@ it('BB-360: a done ticket gets no Cancel ticket row, and Save stays reachable', 
   expect(frame).toContain('Edit ticket');
   expect(frame).not.toContain('[ Cancel ticket ]');
   expect(frame).not.toContain('State:');
-  // ↓ seven times lands on Save (Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Labels·Save).
-  for (let i = 0; i < 7; i += 1) await press('\x1b[B');
+  // ↓ nine times lands on Save (Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Type·Recipe·Labels·Save).
+  for (let i = 0; i < 9; i += 1) await press('\x1b[B');
   await press('\x13');
   const attributes = h.rec.writes[0]?.body.attributes as Record<
     string,
@@ -619,7 +619,7 @@ it('BB-360: after a successful cancel the reopened popup is the terminal one', a
 
 it('BB-360: a rejected cancel keeps the popup and shows the server words', async () => {
   const detail =
-    'state: The transition from coding to cancelled is not allowed.';
+    'state: The transition from working to cancelled is not allowed.';
   const h = harness({
     writeError: Object.assign(new Error('HTTP 422'), {
       status: 422,

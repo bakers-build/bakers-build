@@ -1,0 +1,6 @@
+langcode: en
+status: true
+dependencies: {}
+id: recipe
+label: 'bakers.build recipes'
+description: ''

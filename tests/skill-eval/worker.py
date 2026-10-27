@@ -157,8 +157,15 @@ def parse_grade(raw, criteria, artifact):
     return checks
 
 
+def source_paths(fixture):
+    # A frame reference is applied directly, with the frame as context; validation.mjs states the same rule.
+    skill = fixture['skill']
+    unit = ["bb-workflow/SKILL.md", skill] if skill.endswith('.md') else [f"{skill}/SKILL.md"]
+    return [*unit, *fixture.get("references", [])]
+
+
 def snapshot(fixture, directory):
-    paths = [f"{fixture['skill']}/SKILL.md", *fixture.get("references", [])]
+    paths = source_paths(fixture)
     sources = []
     for relative in paths:
         path = SKILLS / relative

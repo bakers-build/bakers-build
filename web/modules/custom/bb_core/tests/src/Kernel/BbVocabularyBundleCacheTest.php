@@ -18,7 +18,7 @@ use PHPUnit\Framework\Attributes\Group;
  * bundle created afterwards is invisible to every later reader — including
  * `EntityDisplayBase::preSave()` → `init()` and ui_patterns'
  * `SampleEntityGenerator`, which is how BB-413 and BB-421 both saw
- * `Missing entity bundle. The "bb_labels" bundle does not exist` abort a
+ * `Missing entity bundle. The "label" bundle does not exist` abort a
  * recipe application.
  *
  * Core's own mechanism for this is `ConfigEntityBundleBase`, whose `postSave()`
@@ -65,12 +65,12 @@ final class BbVocabularyBundleCacheTest extends KernelTestBase {
     $bundle_info = $this->container->get('entity_type.bundle.info');
 
     // Prime the cache the way a config save does, BEFORE the bundle exists.
-    self::assertArrayNotHasKey('bb_labels', $bundle_info->getBundleInfo('bb_term'));
+    self::assertArrayNotHasKey('label', $bundle_info->getBundleInfo('bb_term'));
 
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
 
     self::assertArrayHasKey(
-      'bb_labels',
+      'label',
       $bundle_info->getBundleInfo('bb_term'),
       'A vocabulary created after the bundle cache was primed is still visible.',
     );
@@ -83,10 +83,10 @@ final class BbVocabularyBundleCacheTest extends KernelTestBase {
    * of events worse.
    */
   public function testVocabularySavedFirstIsVisible(): void {
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
 
     self::assertArrayHasKey(
-      'bb_labels',
+      'label',
       $this->container->get('entity_type.bundle.info')->getBundleInfo('bb_term'),
     );
   }
@@ -96,14 +96,14 @@ final class BbVocabularyBundleCacheTest extends KernelTestBase {
    */
   public function testDeletingVocabularyInvalidatesTheBundleCache(): void {
     $bundle_info = $this->container->get('entity_type.bundle.info');
-    $vocabulary = BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels']);
+    $vocabulary = BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels']);
     $vocabulary->save();
-    self::assertArrayHasKey('bb_labels', $bundle_info->getBundleInfo('bb_term'));
+    self::assertArrayHasKey('label', $bundle_info->getBundleInfo('bb_term'));
 
     $vocabulary->delete();
 
     self::assertArrayNotHasKey(
-      'bb_labels',
+      'label',
       $bundle_info->getBundleInfo('bb_term'),
       'A deleted vocabulary leaves no bundle behind in the cache.',
     );

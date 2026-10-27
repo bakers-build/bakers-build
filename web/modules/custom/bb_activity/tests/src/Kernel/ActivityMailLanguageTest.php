@@ -51,7 +51,7 @@ final class ActivityMailLanguageTest extends ActivityMailKernelTestBase {
     $this->container->get('state')->set('bb_activity_test.ticket_event', TRUE);
     $this->tick($watcher, ['test_ticket_event']);
 
-    $this->ticket('a')->set('state', 'spec')->save();
+    $this->ticket('a')->set('state', 'plan')->save();
 
     $email = $this->mailsTo($watcher)[0];
     self::assertStringContainsString('Ein Testereignis ist eingetreten', (string) $email->getSubject());

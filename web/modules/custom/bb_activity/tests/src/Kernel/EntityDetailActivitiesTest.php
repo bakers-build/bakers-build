@@ -97,7 +97,7 @@ final class EntityDetailActivitiesTest extends KernelTestBase {
     $created = $this->latestActivity();
     $status = $this->transition($ticket, 'qualify');
     $claim_a = $this->claim($ticket, $this->fixture['conductor_a']);
-    $closed_a = $this->transition($ticket, 'to_coding');
+    $closed_a = $this->transition($ticket, 'to_working');
     $failed_b = $this->endRun($ticket, $this->fixture['conductor_b'], 'failed');
     $ticket->set('conductor_id', $this->fixture['conductor_b']->id());
     $ticket->save();
@@ -232,7 +232,7 @@ final class EntityDetailActivitiesTest extends KernelTestBase {
       'conductor_id' => $conductor->id(),
       'owner_user_id' => 1,
       'state' => 'claimed',
-      'state_at_start' => 'spec',
+      'state_at_start' => 'plan',
     ]);
     self::assertInstanceOf(BbRunInterface::class, $run);
     $this->claimed($ticket, $run, $conductor);
@@ -274,12 +274,12 @@ final class EntityDetailActivitiesTest extends KernelTestBase {
   }
 
   /**
-   * A feature ticket in a project.
+   * A work ticket in a project.
    */
   private function ticket(string $title, int|string|null $project_id): BbTicketInterface {
     $ticket = $this->entity('bb_ticket', [
       'title' => $title,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project_id,
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -297,7 +297,7 @@ final class EntityDetailActivitiesTest extends KernelTestBase {
       'status' => 'online',
       'project_id' => NULL,
       'machine' => $machine_id,
-      'states' => ['spec'],
+      'states' => ['plan'],
     ]);
   }
 

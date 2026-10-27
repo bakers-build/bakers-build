@@ -27,17 +27,17 @@ Feature: Contextual tickets keep route and filter state
     Then the application shell is present
     When I open the next contextual ticket page
     Then the address carries "page=1"
-    When I choose "Coding" in the "State" facet
+    When I choose "Working" in the "State" facet
     Then the address does not carry "page="
-    And the "State" facet shows "Coding" as chosen
+    And the "State" facet shows "Working" as chosen
     And the contextual ticket route is unchanged
     When I remove the "State" chip
-    And I choose "Spec" in the "State" facet
+    And I choose "Plan" in the "State" facet
     And I reload the ticket list
-    Then the "State" facet shows "Spec" as chosen
+    Then the "State" facet shows "Plan" as chosen
     And the contextual ticket route is unchanged
     When I open the current address in a fresh tab
-    Then the "State" facet shows "Spec" as chosen
+    Then the "State" facet shows "Plan" as chosen
     When I open a contextual filter with no matches
     Then the contextual no-match message is visible
 
@@ -47,14 +47,14 @@ Feature: Contextual tickets keep route and filter state
     And I click the tab "Tickets"
     Then the application shell is present
     And the filters read "Closed, Group, Project, Template, State, Workflow, Assignee, Created by, Priority, Labels" in order
-    When I choose "Coding" in the "State" facet
-    Then the "State" facet shows "Coding" as chosen
+    When I choose "Working" in the "State" facet
+    Then the "State" facet shows "Working" as chosen
     When I remove the "State" chip
-    And I choose "Spec" in the "State" facet
+    And I choose "Plan" in the "State" facet
     And I reload the ticket list
-    Then the "State" facet shows "Spec" as chosen
+    Then the "State" facet shows "Plan" as chosen
     When I open the current address in a fresh tab
-    Then the "State" facet shows "Spec" as chosen
+    Then the "State" facet shows "Plan" as chosen
     When I open a contextual filter with no matches
     Then the contextual no-match message is visible
 

@@ -3,14 +3,13 @@
   "synthetic": true,
   "profile": "prior-art-base",
   "execution": "simulated-tools",
-  "skill": "qualify-ticket",
+  "skill": "bb-workflow/references/qualification.md",
   "references": [
-    "method-context/references/prior-art-build.md",
-    "workflow-step/references/prior-art-search.md",
-    "read-ticket/SKILL.md",
-    "publish-comment/SKILL.md",
-    "workflow-step/SKILL.md",
-    "run-outtake/SKILL.md"
+    "bb-workflow/references/prior-art-build.md",
+    "bb-workflow/references/prior-art-search.md",
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/outtake.md"
   ],
   "input": {
     "task": "Run qualification only, publish the qualification handoff and summary on a negative, and remain in qualification.",

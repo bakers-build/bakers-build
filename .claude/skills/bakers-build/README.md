@@ -1,71 +1,56 @@
 # bakers.build skills
 
-Configure the project in `WORKFLOW.md`:
+A project's `WORKFLOW.md` is one entry line plus optional phase-named hints:
 
-| Section | Purpose |
+```markdown
+Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
+```
+
+Start from `skills/bb-init-project/references/WORKFLOW.template.md`. No CLI reads or validates these
+skills; the agent environment's native skill mechanism loads them.
+
+**Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
+field, a provision hint or a subagent start selects. Exactly thirteen ship:
+
+| Skill | Job |
 |---|---|
-| Loaded skills | bakers.build lifecycle owners, including `@bakers-build/essential-skills`. |
-| Skill set | One or more references to Matt or Superpowers; the first is the default, and a ticket records its choice as a `method:*` label. |
-| Skills | Additional skills by work type and affected area. |
-| Checks | Exact commands, applicability and setup. |
+| `@bakers-build/bb-workflow` | The frame of every state run: seven phases — `read, provision, work, validate, deliver, outtake, transition` — the state files, routing, binding, replacement and stop rules. |
+| `@bakers-build/bb-recipe-matt` | The project-default recipe for feature, bug and chore tickets, selected by the ticket's `recipe` field. |
+| `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
+| `@bakers-build/bb-runtime-ddev` | Runtime guide: provision, run, lint, test and persona logins in DDEV; named in a `## bb-phase-provision` hint. |
+| `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
+| `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
+| `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, change its scope, prepare time proposals. |
 
-Start from `WORKFLOW.template.md`. The agent reads the selected collection and tables through
-`@bakers-build/method-context`; its own environment installs and exposes upstream skills.
+**The grid.** A run is state × phase. `qualification`, `plan`, `working` and `review` each have a
+state file under `skills/bb-workflow/references/` with exactly seven `## <phase>` sections, which
+always run and own gates, publication and transitions. A recipe adds slots
+(`## [<type>:]bb-state-<state>` › `### bb-phase-<phase>`; the type slot wins per phase), and
+`WORKFLOW.md` and runtime guides add `## bb-phase-<phase>` sections. Every state but `qualification`
+runs the recipe's section inside its state file; a state without a state file stops the run. Where a
+slot names its own comment, check or merge, it replaces the state file's default.
 
-This plugin exports independently addressable skills. For lifecycle owners, `WORKFLOW.md` is a
-pure loader; step-owning skills sequence their work. Lifecycle parameters use declared `inputs`.
-The skill set and tables are Markdown instructions for the agent, outside lifecycle validation.
+**References route nothing.** Everything only read — reading a ticket, publishing a comment,
+provisioning, verification, the browser surface, intake, outtake, measurement, merge and the state
+write — is a reference under `skills/bb-workflow/references/`, not a skill, and cannot be invoked.
+Each has one observable result and never chooses a destination; **a reference owns the command it
+performs**. `references/ensure-qualification.md` keeps its guard exception — its only route is the
+recovery back to `qualification`. Project parameters are `WORKFLOW.md` hint tables, such as the
+origin-label table under `## bb-phase-transition`.
 
-**Step-owning skills own their step's whole flow, including routing.** Each declares one `when:`
-over `(work_type, workflow, step)`; the runtime matches the ticket's current triple to exactly one
-loaded skill (a gap or collision is a configuration error) and that skill owns its step end to end —
-guard, intake, work, validation, outtake, confirmation, **transition destination**, authorized origin publish, final transition,
-and STOP. This reverses an earlier rule under which `WORKFLOW.md` alone owned routing; the reusable
-`@bakers-build/workflow-step` skill documents the full contract.
-
-**Helper/capability skills route nothing.** Skills a step invokes (`@bakers-build/read-ticket`,
-`@bakers-build/verify-tests`, `@bakers-build/verify-playwright-cli`, `@bakers-build/run-intake`, `@bakers-build/run-outtake`,
-`@bakers-build/publish-comment`, `@bakers-build/record-measurement`, `@bakers-build/transition-ticket`,
-`@bakers-build/publish-origin-status`, …) each have one observable result
-and never choose a destination. **A capability owns the command it performs** — the write recipes
-live there, not in a step owner, a contract document, or a prose resource.
-`@bakers-build/ensure-qualification` keeps its guard exception — its only route is the recovery back to
-`qualification`.
-
-The step-owning skills that ship here: `@bakers-build/qualify-ticket` (qualification), `@bakers-build/create-spec`
-(`work:code` spec), `@bakers-build/ddev-drupal-bug` (`work:code` on a bug — diagnose/coding/review),
-`@bakers-build/ddev-drupal-feature` (`work:code` on a feature/chore — coding/review),
-`@bakers-build/docs-authoring` (`work:docs` — self-contained spec/diagnose/coding/review; documentation /
-skill-instruction changes, validated by proportional checks and a real worker when behavior changes),
-`@bakers-build/prepare-deployment` (pre_deployment), `@bakers-build/post-deployment`
-(post_deployment), `@bakers-build/verify-on-environment` (verifying), `@bakers-build/summarize-verification`
-(summary). Lifecycle inputs may still be overridden under the owning skill's bullet.
-
-**Bundle skills.** `@bakers-build/essential-skills` is a **bundle** — a skill that carries a
-`## Loaded skills` section in its own body, the same section (and syntax) a `WORKFLOW.md` uses, and
-thereby loads further skills. No frontmatter key marks it; the section is the marker. It names the
-six globally-applicable workflow skills (`qualify-ticket`, `create-spec`, `prepare-deployment`,
-`post-deployment`, `verify-on-environment`, `summarize-verification`) in one canonical place, so a
-project's `WORKFLOW.md` loads the one bundle instead of re-listing them. The loader (`@bakers-build/core`
-`expandLoad`) expands bundles into their members — deterministically, idempotently, with a clear
-error on a missing or cyclic member — before the exactly-one-match validation, resolving values
-narrowest-first (`WORKFLOW.md` override > bundle value > the skill's own `default`).
-Project work-type owners stay explicit bullets; the workflow tables supply their project context.
-To drop or swap a member, a project writes its own bundle. The full bundle
-contract lives in `@bakers-build/essential-skills`; the step contract a member follows is
-`@bakers-build/workflow-step`.
+For authoring recipes, guides and hints, read `skills/bb-workflow/references/authoring.md`.
 
 ## Setup and upgrades
 
-- `@bakers-build/init-project` initializes or completes a selected machine, connection, project
+- `@bakers-build/bb-init-project` initializes or completes a selected machine, connection, project
   or all configuration scope through `bakers config init` and `bakers config check`. It preserves
   partial configurations and existing workflow policy; project setup composes an absent workflow.
-- `@bakers-build/init` (`bakers:init` in Claude Code) guides machine and user setup through the
+- `@bakers-build/bb-init` (`bakers:bb-init` in Claude Code) guides machine and user setup through the
   documentation. Its wizard explains workspace-manager and development-environment choices,
   checks the selected path, and helps with sign-in. Tool requirements and commands live in the
-  documentation; the person installs tools. `@bakers-build/init-project` calls it when a machine
+  documentation; the person installs tools. `@bakers-build/bb-init-project` calls it when a machine
   has no configured user.
-- `@bakers-build/upgrade-project` migrates and repairs through `bakers config upgrade` and scoped checks,
+- `@bakers-build/bb-upgrade-project` migrates and repairs through `bakers config upgrade` and scoped checks,
   preserving local policy and optional project connections. Package update is a separate action.
   Both skills distinguish local validity from online authentication readiness (workspace optional).
 
@@ -73,8 +58,8 @@ Initialization and upgrade are human-initiated capabilities. Neither starts tick
 
 ## Shared writes and skill delivery
 
-`@bakers-build/workflow-step` owns validated writes and uncertain-outcome reconciliation. Capabilities
-retain returned UUIDs for readback and follow-up work; `@bakers-build/create-ticket` owns the ticket-create
+`@bakers-build/bb-workflow` owns validated writes and uncertain-outcome reconciliation. References
+retain returned UUIDs for readback and follow-up work; `@bakers-build/bb-create-ticket` owns the ticket-create
 recipe. Normal outgoing validation stays enabled for every write.
 
 This directory is the bundle source. After changing instructions, use the target agent environment's
@@ -86,20 +71,19 @@ Refresh only the selected environment; preserve unrelated global skill libraries
 
 ## Review records and skill size
 
-Every bakers.build `SKILL.md` is limited to 500 whitespace-separated words, including frontmatter,
-tables and examples. `python3 tests/contract/skill-size.py` enforces this in the core CI suite.
-References are loaded for named conditions; copying the whole skill into an always-loaded
-reference is not a reduction.
+Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` is limited to 500
+whitespace-separated words, including frontmatter, tables and examples (`references/retrospective.md`
+excepted). `python3 tests/contract/skill-size.py` enforces this in the core CI suite;
+`python3 tests/contract/skill-references.py` checks links, grid headings and the skill set.
 
 Qualification records intended test users and environments. The shared contract in
-`method-context/references/results.md` separates automated checks, agent inspection and human
-review, with observed status, identity, environment and evidence. Each owner supplies records;
-the last matching owner renders one `run-outtake` summary for the state.
+`bb-workflow/references/results.md` separates automated checks, agent inspection and human
+review, with observed status, identity, environment and evidence. One outtake summary
+(`references/outtake.md`) is rendered per state.
 
-`resolve-environment` looks up confirmed project instructions, configured environments and
-existing scripts/fixtures before asking for missing choices. `provision-ddev` is a selected
-adapter, not a universal lifecycle prerequisite. Existing `ddev-drupal-*` owner names remain
-compatible while their lifecycle instructions use the neutral helper.
+`references/provision.md` looks up confirmed project instructions, configured environments and
+existing scripts/fixtures before asking for missing choices. `bb-runtime-ddev` is a selected
+adapter, not a universal lifecycle prerequisite.
 
 Behavioral evaluations use isolated tool-free workers with synthetic tickets. Run
 `python3 tests/skill-eval/run.py` from the repository; see `tests/skill-eval/README.md` for

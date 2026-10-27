@@ -135,7 +135,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
   private function createConductor(
     UserInterface $owner,
     string $machine_id,
-    array $states = ['diagnose', 'coding'],
+    array $states = ['plan', 'working'],
     ?int $project_id = NULL,
     ?int $last_seen = NULL,
     string $status = 'online',
@@ -155,10 +155,10 @@ final class TicketClaimServiceTest extends KernelTestBase {
   }
 
   /**
-   * Creates and saves a BbTicket in its claimable entry state ('diagnose').
+   * Creates and saves a BbTicket in its claimable entry state ('plan').
    *
-   * The bb_bug workflow starts in the 'diagnose' entry state, so a freshly
-   * created ticket is immediately claimable without an explicit activation.
+   * The ticket is advanced to the 'plan' work state, so it is immediately
+   * claimable without an explicit activation.
    *
    * @param string $identifier
    *   Human-readable ticket identifier.
@@ -172,14 +172,14 @@ final class TicketClaimServiceTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create($values + [
         'identifier' => $identifier,
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'title' => $identifier,
         'project_id' => $this->projectId,
       ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
-    // The bb_bug workflow now enters 'qualification' first (BB-196);
-    // advance to 'diagnose', the claimable work state the default conductor
+    // The bb_work workflow enters 'qualification' first (BB-196);
+    // advance to 'plan', the claimable work state the default conductor
     // states cover.
     $ticket->getState()->applyTransitionById('qualify');
     $ticket->save();
@@ -228,7 +228,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
 
     $run = $this->claim()->claim($ticket, $conductor, 600);
     $this->assertSame('claimed', $run->getRunState());
-    $this->assertSame('diagnose', $run->get('state_at_start')->value);
+    $this->assertSame('plan', $run->get('state_at_start')->value);
     $this->assertGreaterThan(
       $this->container->get('datetime.time')->getRequestTime(),
       $run->getClaimExpiresAt(),
@@ -279,10 +279,10 @@ final class TicketClaimServiceTest extends KernelTestBase {
    */
   public function testClaimRejectsUnregisteredState(): void {
     $owner = $this->createConductorUser('state-owner');
-    $right_states = $this->createConductor($owner, 'node-i', ['diagnose']);
+    $right_states = $this->createConductor($owner, 'node-i', ['plan']);
     $ticket = $this->assignToConductor($this->createActiveTicket('GL-C8'), $right_states);
 
-    $wrong_states = $this->createConductor($owner, 'node-h', ['coding', 'review']);
+    $wrong_states = $this->createConductor($owner, 'node-h', ['working', 'review']);
     $this->expectClaimConflict(fn () => $this->claim()->claim($ticket, $wrong_states, 600));
 
     $this->assertSame('claimed', $this->claim()->claim($ticket, $right_states, 600)->getRunState());
@@ -293,30 +293,30 @@ final class TicketClaimServiceTest extends KernelTestBase {
    *
    * An empty `states` list means the conductor serves all claimable states in
    * its project (BB-207) — no per-conductor allow-list narrows it. The same
-   * conductor claims tickets in `diagnose`, `coding` and `review`. A non-empty
+   * conductor claims tickets in `plan`, `working` and `review`. A non-empty
    * list still restricts (see testClaimRejectsUnregisteredState).
    */
   public function testEmptyStatesClaimsAllClaimableStates(): void {
     $owner = $this->createConductorUser('empty-states-owner');
     $conductor = $this->createConductor($owner, 'node-empty', []);
 
-    $diagnose = $this->assignToConductor($this->createActiveTicket('GL-ES1'), $conductor);
+    $plan = $this->assignToConductor($this->createActiveTicket('GL-ES1'), $conductor);
 
-    $coding = $this->assignToConductor($this->createActiveTicket('GL-ES2'), $conductor);
-    $coding->getState()->applyTransitionById('to_coding');
-    $coding->save();
+    $working = $this->assignToConductor($this->createActiveTicket('GL-ES2'), $conductor);
+    $working->getState()->applyTransitionById('to_working');
+    $working->save();
 
     $review = $this->assignToConductor($this->createActiveTicket('GL-ES3'), $conductor);
-    $review->getState()->applyTransitionById('to_coding');
+    $review->getState()->applyTransitionById('to_working');
     $review->getState()->applyTransitionById('to_review');
     $review->save();
 
-    $this->assertSame('diagnose', $diagnose->get('state')->value);
-    $this->assertSame('coding', $coding->get('state')->value);
+    $this->assertSame('plan', $plan->get('state')->value);
+    $this->assertSame('working', $working->get('state')->value);
     $this->assertSame('review', $review->get('state')->value);
 
-    $this->assertSame('diagnose', $this->claim()->claim($diagnose, $conductor, 600)->get('state_at_start')->value);
-    $this->assertSame('coding', $this->claim()->claim($coding, $conductor, 600)->get('state_at_start')->value);
+    $this->assertSame('plan', $this->claim()->claim($plan, $conductor, 600)->get('state_at_start')->value);
+    $this->assertSame('working', $this->claim()->claim($working, $conductor, 600)->get('state_at_start')->value);
     $this->assertSame('review', $this->claim()->claim($review, $conductor, 600)->get('state_at_start')->value);
   }
 
@@ -331,7 +331,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
     $owner = $this->createConductorUser('empty-next-owner');
     $conductor = $this->createConductor($owner, 'node-empty-next', []);
     $review = $this->assignToConductor($this->createActiveTicket('GL-ESN'), $conductor);
-    $review->getState()->applyTransitionById('to_coding');
+    $review->getState()->applyTransitionById('to_working');
     $review->getState()->applyTransitionById('to_review');
     $review->save();
 
@@ -350,7 +350,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
   public function testClaimRejectsProjectMismatch(): void {
     $owner = $this->createConductorUser('project-owner');
     $other_project = $this->createProject('other-project');
-    $foreign = $this->createConductor($owner, 'node-j', ['diagnose', 'coding'], $other_project);
+    $foreign = $this->createConductor($owner, 'node-j', ['plan', 'working'], $other_project);
 
     // Assign to owner so the assignee check passes; project mismatch blocks.
     $ticket = $this->assignToConductor($this->createActiveTicket('GL-P1'), $foreign);
@@ -428,7 +428,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
       'ticket_id' => $ticket->id(),
       'conductor_id' => $conductor->id(),
       'state' => 'running',
-      'state_at_start' => 'diagnose',
+      'state_at_start' => 'plan',
       'claim_expires_at' => $this->container->get('datetime.time')->getRequestTime() + 600,
     ])->save();
 
@@ -451,7 +451,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
       'ticket_id' => $ticket->id(),
       'conductor_id' => $conductor->id(),
       'state' => 'running',
-      'state_at_start' => 'diagnose',
+      'state_at_start' => 'plan',
       'claim_expires_at' => $this->container->get('datetime.time')->getRequestTime() - 3600,
     ])->save();
 
@@ -475,7 +475,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
       'ticket_id' => $ticket->id(),
       'conductor_id' => $conductor->id(),
       'state' => 'claimed',
-      'state_at_start' => 'diagnose',
+      'state_at_start' => 'plan',
       'claim_expires_at' => $this->container->get('datetime.time')->getRequestTime() - 3600,
     ]);
     $zombie->save();
@@ -506,7 +506,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
       'conductor_id' => $conductor->id(),
       'state' => 'done',
       'claim_expires_at' => $this->container->get('datetime.time')->getRequestTime() + 600,
-      'state_at_start' => 'diagnose',
+      'state_at_start' => 'plan',
     ])->save();
 
     $run = $this->claim()->claim($ticket, $conductor, 600);
@@ -518,7 +518,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
    */
   public function testTerminalRunForPreviousStateDoesNotBlockNextState(): void {
     $owner = $this->createConductorUser('terminal-next-owner');
-    $conductor = $this->createConductor($owner, 'node-terminal-next', ['diagnose', 'coding']);
+    $conductor = $this->createConductor($owner, 'node-terminal-next', ['plan', 'working']);
     $ticket = $this->assignToConductor($this->createActiveTicket('GL-TERM-NEXT'), $conductor);
 
     $this->container->get('entity_type.manager')->getStorage('bb_run')->create([
@@ -526,10 +526,10 @@ final class TicketClaimServiceTest extends KernelTestBase {
       'conductor_id' => $conductor->id(),
       'state' => 'done',
       'claim_expires_at' => $this->container->get('datetime.time')->getRequestTime() + 600,
-      'state_at_start' => 'diagnose',
+      'state_at_start' => 'plan',
     ])->save();
 
-    $ticket->getState()->applyTransitionById('to_coding');
+    $ticket->getState()->applyTransitionById('to_working');
     $ticket->save();
 
     $run = $this->claim()->claim($ticket, $conductor, 600);
@@ -615,7 +615,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
   /**
    * Verifies claimNext() skips a conductor-less ticket, claims once assigned.
    *
-   * The ticket is state-eligible (diagnose, handled by the conductor) and
+   * The ticket is state-eligible (plan, handled by the conductor) and
    * project-eligible (same project). The ONLY reason claimNext() returns NULL
    * is the missing conductor assignment. After assignment to the conductor, a
    * second claimNext() call must return a run — proving conductor assignment is
@@ -645,7 +645,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
   public function testClaimNextScopedToProject(): void {
     $owner = $this->createConductorUser('scope-owner');
     $other_project = $this->createProject('scope-other');
-    $conductor = $this->createConductor($owner, 'node-r', ['diagnose', 'coding'], $other_project);
+    $conductor = $this->createConductor($owner, 'node-r', ['plan', 'working'], $other_project);
 
     $this->createActiveTicket('GL-S1');
 
@@ -682,7 +682,7 @@ final class TicketClaimServiceTest extends KernelTestBase {
       'ticket_id' => $ticket->id(),
       'conductor_id' => $conductor->id(),
       'state' => 'running',
-      'state_at_start' => 'diagnose',
+      'state_at_start' => 'plan',
       'claim_expires_at' => $this->container->get('datetime.time')->getRequestTime() + 3600,
     ])->save();
 

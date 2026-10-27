@@ -7,8 +7,8 @@
   author_name: claude-opus-5-5
   author_initials: CO
   author_color: running
-  workflow: bb_feature
-  step: coding
+  workflow: bb_work
+  step: working
   run_id: '1'
   conductor_id: '1'
   conductor_label: cw-framework
@@ -24,9 +24,9 @@
   author_name: claude-opus-5-5
   author_initials: CO
   author_color: running
-  workflow: bb_feature
-  previous_state: spec
-  new_state: coding
+  workflow: bb_work
+  previous_state: plan
+  new_state: working
   run_id: '2'
   conductor_id: '1'
   conductor_label: cw-framework
@@ -44,7 +44,7 @@
   author_name: Christian Wiedemann
   author_initials: CW
   author_color: unassigned
-  workflow: bb_feature
+  workflow: bb_work
   previous_state: review
   new_state: done
   comment_id: '2'
@@ -59,7 +59,7 @@
   author_name: claude-opus-5-5
   author_initials: CO
   author_color: running
-  workflow: bb_feature
+  workflow: bb_work
   step: review
   run_id: '3'
   conductor_id: '1'
@@ -79,7 +79,7 @@
   author_name: Christian Wiedemann
   author_initials: CW
   author_color: unassigned
-  workflow: bb_feature
+  workflow: bb_work
   new_state: qualification
   __designbook:
     section: projects

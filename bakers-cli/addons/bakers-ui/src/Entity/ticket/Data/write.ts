@@ -71,7 +71,7 @@ const one = (
  *   1. NOTHING server-owned is written — no `state` (the server lands the
  *      ticket in the workflow's first state), no `identifier`, no `number`, no
  *      `branch_name`, no `base_branch`. Acceptance criterion 5 is satisfied by
- *      OMISSION, which is also what `@bakers-build/create-ticket` does.
+ *      OMISSION, which is also what `@bakers-build/bb-create-ticket` does.
  *   2. A relationship with nothing picked is OMITTED, not sent as an explicit
  *      `null`. A create has nothing to unset, so `null` would carry no
  *      information a missing key does not — the exact opposite of the PATCH in
@@ -91,10 +91,14 @@ export function buildTicketCreateBody(
   if (assignee) relationships.assignee_user_id = assignee;
   const conductor = one('bb_conductor--bb_conductor', payload.conductor?.id);
   if (conductor) relationships.conductor_id = conductor;
+  const ticketType = one('bb_term--type', payload.ticketType?.id);
+  if (ticketType) relationships.ticket_type = ticketType;
+  const recipe = one('bb_term--recipe', payload.recipe?.id);
+  if (recipe) relationships.recipe = recipe;
   if (payload.labels.length > 0) {
     relationships.labels = {
       data: payload.labels.map((l) => ({
-        type: 'bb_term--bb_labels',
+        type: 'bb_term--label',
         id: l.id,
       })),
     };

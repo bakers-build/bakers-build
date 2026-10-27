@@ -20,7 +20,6 @@ Options and subcommands are copied from `bakers --help` and the help of each com
 | `bakers init` | Set up machine identity and the server connection (not a project) |
 | `bakers config` | Initialize, migrate and validate scoped configuration: `init`, `upgrade`, `check` |
 | `bakers update` | Install the latest CLI |
-| `bakers validate` | Validate a project's `WORKFLOW.md` against the loaded skills' step contract |
 | `bakers oven` | Node-agent lifecycle and the registry of conductors: [bakers oven](/advanced/cli/conductor) |
 | `bakers ui` | Interactive terminal UI: [bakers ui](/advanced/cli/ui) and [keys](/advanced/cli/ui-keys) |
 | `bakers dropsh` | JSON:API shell bound to the bakers.build connection: [bakers dropsh](/advanced/cli/dropsh) |
@@ -96,14 +95,10 @@ The three subcommands share one set of scopes, `machine`, `connection`, `project
 ```sh
 bakers agents
 bakers info
-bakers validate
 ```
 
 - `bakers agents [--config <path>]` prints the available agent aliases and machine defaults as JSON; `--config` names the conductor config.
 - `bakers info [--config <path>] [--connection <id>]` prints the resolved project and workspace context as JSON.
-- `bakers validate [path] [--project <dir>] [--skills <dir>]` checks the project's `WORKFLOW.md` against the step contract of the loaded skills. `path` is a project directory or a `WORKFLOW.md` file (default: the working directory); `--project` is the root where `.claude/skills` and `.agents/skills` are discovered; `--skills` adds another skill root and may repeat.
-
-  It indexes every `SKILL.md`, expands bundles, derives the work type × workflow × step triples the project can produce and checks that exactly one loaded skill owns each, and that every inline override names an input the skill declares. A pass prints `OK` with the step owners and exits `0`; a defect goes to stderr, exits `1` and names the first thing to fix: a coverage gap, a collision or an unknown override. Skills installed as a plugin sit outside the repository: pass the exact installed version's root with `--skills`, because the plugin cache holds every version side by side and is not scanned by default. Run it in CI or before a run.
 
 ## bakers ports
 

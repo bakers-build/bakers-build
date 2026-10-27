@@ -6,8 +6,8 @@ bakers.build has three parts with fixed boundaries: a Drupal control plane that 
 
 The control plane is a Drupal application. Its code lives in `web/modules/custom/bb_core`, and it is the only authority for a ticket's state.
 
-- **Entities.** Workspaces, teams, projects, tickets, comments, runs, conductors, machines, environments, measurements and label terms.
-- **State machines.** They are defined in code, in `bb_core.workflows.yml`: five ticket workflows (`bb_feature`, `bb_bug`, `bb_chore`, `bb_deployment`, `bb_verification`) and one for runs. A state marked `claimable` may be picked up by a conductor. `done` and `cancelled` are never claimable. [Workflows and states](/skills-and-workflows/workflows-and-states) lists them.
+- **Entities.** Workspaces, teams, projects, tickets, comments, runs, conductors, machines, environments, measurements and the terms of the type, recipe and label vocabularies.
+- **State machines.** They are defined in code, in `bb_core.workflows.yml`: one ticket workflow, `bb_work`, which every ticket runs, one for runs and one for reviews. The kind of work is ticket data: a type, a recipe and labels; a deployment is a ticket of type `deployment`, a verification one of type `verification`. A state marked `claimable` may be picked up by a conductor. `done` and `cancelled` are never claimable. [Workflows and states](/skills-and-workflows/workflows-and-states) lists them.
 - **Access.** Everything goes through JSON:API, authenticated with OAuth. Agents, `bakers ui` and `bakers dropsh` all write through the same API; nothing writes behind it.
 
 ### Claims
@@ -75,11 +75,11 @@ flowchart TB
 
 What each package owns:
 
-- **`core`** holds the surface-agnostic kernel: configuration loading and path resolution, addon discovery, the workflow step contract behind `bakers validate`, logging and small utilities.
+- **`core`** holds the surface-agnostic kernel: configuration loading and path resolution, addon discovery, logging and small utilities.
 - **`conductor`** holds the run engine, the `conductor` command and the conductor contract, exposed to addons as `@bakers-build/conductor/contract`. The contract lives here, not in `core`, so the kernel stays free of engine types.
 - **`addons/*`** hold every mountable capability, one package each. [Addon contracts](/addons/build/contracts) describes them.
 - **`ui`** is the `bakers ui` command. It is an application, not an addon, so it may depend on addons.
-- **`host`**, published as `@bakers-build/bakers`, is the `bakers` binary. It registers `version`, `config`, `init`, `update` and `validate` itself, and builds the rest of its command list from the light presets of the command addons. A command's module is imported only when that command runs, so `bakers --help` imports none of them. The environment variable `BB_COMMANDS`, a JSON array of command descriptors, replaces the whole list.
+- **`host`**, published as `@bakers-build/bakers`, is the `bakers` binary. It registers `version`, `config`, `init` and `update` itself, and builds the rest of its command list from the light presets of the command addons. A command's module is imported only when that command runs, so `bakers --help` imports none of them. The environment variable `BB_COMMANDS`, a JSON array of command descriptors, replaces the whole list.
 
 The guard `bakers-cli/scripts/assert-acyclic.mjs` enforces this and fails with the offending edge. It checks that:
 

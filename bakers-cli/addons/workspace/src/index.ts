@@ -36,7 +36,7 @@ import type { DropSHPlugin, HttpRequest, RequestContext } from 'dropsh/plugin';
  *
  * `bb_term` joined in BB-339. It meets the criterion exactly — a direct
  * `workspace_id`, and which workspace a label belongs to is ambient rather than
- * chosen — and it is not merely a convenience: `@bakers-build/qualify-ticket` creates a
+ * chosen — and it is not merely a convenience: qualification (`bb-workflow`) creates a
  * missing `work:*` term through dropsh, so without this entry that step answers
  * 422 on `workspace_id` on every instance where the term is not seeded yet.
  */

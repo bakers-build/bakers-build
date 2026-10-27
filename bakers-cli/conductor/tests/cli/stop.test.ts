@@ -251,7 +251,7 @@ export default {
   workspace: slot('workspace'),
   bakers: { project: 'bakers' },
   conductor_id: 'mid-stop',
-  states: ['coding'],
+  states: ['working'],
 };
 `;
     const connectionConfig = `
@@ -356,7 +356,7 @@ export default {
       workspace: fakeWorkspace(),
       label: 'stop test',
       project: 'bakers',
-      states: ['coding'],
+      states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5000,

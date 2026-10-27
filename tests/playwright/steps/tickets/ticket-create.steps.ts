@@ -115,7 +115,7 @@ function ensureConductorFixture(): void {
       '"owner_user_id" => 0,',
       '"status" => "online",',
       '"project_id" => $project->id(),',
-      '"states" => ["coding"],',
+      '"states" => ["working"],',
       '"last_seen" => \\Drupal::time()->getRequestTime(),',
       ']);',
       '$conductor->save(); }',
@@ -769,7 +769,7 @@ Then('the create-ticket dialog is still operable', async ({ page }) => {
     'The refused dialog holds no form_build_id — the next submit cannot be made',
   ).toHaveCount(1);
 
-  // Five, not six (BB-664): every scenario that reaches this step opens a
+  // Seven, not eight (BB-664): every scenario that reaches this step opens a
   // route/query-BOUND dialog ("I open the create-ticket dialog from the
   // ticket list" always carries `?project=`), and a bound dialog never
   // renders the "Project" picker — see "the dialog carries the list's
@@ -777,9 +777,9 @@ Then('the create-ticket dialog is still operable', async ({ page }) => {
   const pickers = dialog.locator('[data-option-picker]');
   await expect(
     pickers,
-    'The refused dialog does not render all five pickers of the bound create display',
-  ).toHaveCount(5);
-  for (let index = 0; index < 5; index += 1) {
+    'The refused dialog does not render all seven pickers of the bound create display',
+  ).toHaveCount(7);
+  for (let index = 0; index < 7; index += 1) {
     await expect(
       pickers.nth(index),
       `Picker ${index} came back without its JavaScript — did the swapped dialog lose it?`,

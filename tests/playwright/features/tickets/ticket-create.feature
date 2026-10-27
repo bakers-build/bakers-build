@@ -208,7 +208,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And the dialog has exactly one submit and one cancel
     And the dialog has no assignee control
     And "workflow" has a labelled group alongside the text lines
-    And the peer pills are exactly "parent_id, blocked_by, conductor_id, labels"
+    And the peer pills are exactly "parent_id, blocked_by, conductor_id, labels, recipe, ticket_type"
     And no pill renders a bare dash
     And the dialog shows no text-format help
     And every picker menu in the dialog opens inside the dialog
@@ -391,7 +391,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And I click the "New ticket" action
     Then the create-ticket dialog is present
     And the dialog offers an editable project picker
-    And the peer pills are exactly "project_id, parent_id, blocked_by, labels"
+    And the peer pills are exactly "project_id, parent_id, blocked_by, labels, recipe, ticket_type"
     When I type "Filed from a project-less screen" into the title line
     And I open the "Project" picker
     And I pick a project option

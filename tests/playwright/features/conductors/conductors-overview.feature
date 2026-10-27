@@ -56,4 +56,4 @@ Feature: User and project conductors listings and Overview
   Scenario: A conductor lists the claims of its own runs
     Given I am signed in as a member of the "bakers" workspace
     When I visit the conductor "srv01-bakers"
-    Then the Activities list "BB-142 started work in spec"
+    Then the Activities list "BB-142 started work in plan"

@@ -23,7 +23,7 @@ The stock JSON:API candidate filter may use:
 filter[state][condition][path]=state
 filter[state][condition][operator]=IN
 filter[state][condition][value][]=todo
-filter[state][condition][value][]=coding
+filter[state][condition][value][]=working
 filter[blockers][condition][path]=has_open_blockers
 filter[blockers][condition][value]=0
 filter[lease-missing][condition][path]=claim_lease_expires_at

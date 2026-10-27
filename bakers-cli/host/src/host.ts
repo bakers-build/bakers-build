@@ -18,7 +18,6 @@ import { commands as uiCommands } from '@bakers-build/ui/preset';
 import { Command } from 'commander';
 import { registerConfig } from './config.js';
 import { registerUpdate } from './update.js';
-import { registerValidate } from './validate.js';
 
 // BB-201: the `bakers` plugin HOST. The meta package `@bakers-build/bakers` owns the
 // CLI entrypoint (AC-1); ui / conductor / dropsh / deployment are declared,
@@ -264,7 +263,6 @@ export async function buildHostProgram(
 
   registerConfig(program, { host });
   registerUpdate(program);
-  registerValidate(program);
 
   for (const entry of commands) {
     if (entry.name === target) {

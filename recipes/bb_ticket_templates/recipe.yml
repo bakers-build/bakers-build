@@ -1,5 +1,5 @@
 name: 'bakers.build ticket templates'
-description: 'Example ticket templates for a bakers.build workspace. Applies bb_seed (the work:* labels the templates reference) and ships the template definitions under templates/. It creates no template itself: a template belongs to a project, which only the target workspace knows. Import with the procedure in README.md.'
+description: 'Example ticket templates for a bakers.build workspace. Applies bb_seed (the type terms the templates reference) and ships the template definitions under templates/. It creates no template itself: a template belongs to a project, which only the target workspace knows. Import with the procedure in README.md.'
 type: 'Site'
 recipes:
   - bb_seed

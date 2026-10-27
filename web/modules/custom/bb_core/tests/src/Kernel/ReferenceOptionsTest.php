@@ -118,7 +118,7 @@ final class ReferenceOptionsTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create($values + [
         'title' => 'Reference options ticket',
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->projectId,
       ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);

@@ -48,7 +48,7 @@ describe('a departed screen leaves nothing standing (BB-340 F2)', () => {
       title: `${identifier} title`,
       state: 'coding',
       derived_status: 'idle',
-      workflow: 'bb_feature',
+      workflow: 'bb_work',
     },
     relationships: { labels: { data: [] } },
   });
@@ -96,7 +96,7 @@ describe('a departed screen leaves nothing standing (BB-340 F2)', () => {
                 title: 'BB-340 title',
                 state: 'coding',
                 derived_status: 'idle',
-                workflow: 'bb_feature',
+                workflow: 'bb_work',
                 description: 'The description body.',
               },
               relationships: { labels: { data: [] }, runs: { data: [] } },

@@ -115,7 +115,7 @@ An explicitly selected profile overrides the configured browser default.
 ## `audience.local.md` — how you want to be addressed
 
 An optional, **never committed** file that declares who the run handoffs are written for.
-`@bakers-build/method-context` › *Audience and register* reads it and owns what it means for the output;
+`@bakers-build/bb-workflow`'s boundaries reference (*Audience and register*) reads it and owns what it means for the output;
 this entry only says the file exists, because an uncommitted file is otherwise undiscoverable.
 
 Write free prose naming what you already know and do not want explained — technologies, tools, the

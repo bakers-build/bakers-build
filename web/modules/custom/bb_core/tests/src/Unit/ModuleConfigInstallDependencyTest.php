@@ -20,18 +20,18 @@ use Symfony\Component\Yaml\Yaml;
  *
  * That is the plain module-install path: every `KernelTestBase` calling
  * `installConfig(['bb_core'])`, every `BrowserTestBase` naming the module, and
- * any site enabling it. `bb_core.bb_vocabulary.bb_labels` ships only from
- * `config/sync/**` and `recipes/bakers/config/**`, never from the module, so a
- * file here naming it is unsatisfiable.
+ * any site enabling it. The term bundles (`bb_core.bb_vocabulary.*`) ship
+ * only from `config/sync/**` and `recipes/bakers/config/**`, never from the
+ * module, so a file here naming one is unsatisfiable.
  *
  * Measured on BB-421: the two create form displays carried
- * `dependencies.enforced.config: [bb_core.bb_vocabulary.bb_labels]` and
+ * `dependencies.enforced.config` on the term bundles and
  * the whole functional suite reported 96 errors, every one of them
  *
  *   Drupal\Core\Config\UnmetDependenciesException: Configuration objects
  *   provided by bb_core have unmet dependencies:
  *   core.entity_form_display.bb_project.bb_project.create
- *   (bb_core.bb_vocabulary.bb_labels)
+ *   (bb_core.bb_vocabulary.label)
  *
  * The edge existed to force a recipe install order; the real defect it worked
  * around was `BbVocabulary` not being a `ConfigEntityBundleBase`, which

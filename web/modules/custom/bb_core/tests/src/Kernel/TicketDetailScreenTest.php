@@ -169,9 +169,9 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $project->save();
 
     $ticket = $storage->getStorage('bb_ticket')->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => 'Add designbook entity view-mode for bb_ticket',
-      'state' => 'coding',
+      'state' => 'working',
       'project_id' => $project->id(),
       // THE DESCRIPTION IS NOT DECORATION HERE. The `full` display's About zone
       // feeds `rich-text.body` from `description:processed`. It USED TO BE a
@@ -349,7 +349,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $entity = $builder->buildEntity($form, $state);
     self::assertInstanceOf(BbTicketInterface::class, $entity);
     self::assertSame('Changed by another editor', $entity->label());
-    self::assertSame('coding', $entity->get('state')->value);
+    self::assertSame('working', $entity->get('state')->value);
     self::assertEquals(2, $entity->get('priority')->value);
     self::assertEquals(1, $entity->get('assignee_user_id')->target_id);
     self::assertEquals($this->ticket->get('project_id')->target_id, $entity->get('project_id')->target_id);
@@ -374,7 +374,10 @@ final class TicketDetailScreenTest extends KernelTestBase {
       'property_signature' => $form['property_signature']['#default_value'],
     ];
     self::assertEqualsCanonicalizing(
-      ['assignee_user_id', 'reviewers', 'conductor_id', 'priority', 'labels', 'parent_id', 'blocked_by'],
+      [
+        'assignee_user_id', 'reviewers', 'conductor_id', 'priority',
+        'ticket_type', 'recipe', 'labels', 'parent_id', 'blocked_by',
+      ],
       array_keys(json_decode(base64_decode(strtr($input['property_baseline'], '-_', '+/')), TRUE)),
     );
     $this->container->get('request_stack')->getCurrentRequest()->setMethod('POST');
@@ -493,40 +496,19 @@ final class TicketDetailScreenTest extends KernelTestBase {
   /**
    * The flow is the ticket's OWN workflow, with its current state marked.
    *
-   * Never a hard-coded list — the component says so of itself, and the reason
-   * is that five workflows share this screen. A ticket on `bb_bug` runs
-   * through `diagnose` where a feature runs through `spec`, and a literal list
-   * here would show every bug the wrong chain.
+   * Never a hard-coded list — the component says so of itself: the chain is
+   * read from the workflow definition, so a state added there shows here.
    */
   public function testTheFlowIsTheTicketsWorkflowWithItsCurrentState(): void {
     $flow = $this->stateFlowOf($this->band());
 
     self::assertSame('bb_theme:state-flow', $flow['#component']);
     self::assertSame(
-      ['qualification', 'spec', 'coding', 'review', 'done', 'cancelled'],
+      ['qualification', 'plan', 'working', 'review', 'done', 'cancelled'],
       $flow['#props']['states'],
-      'The states are bb_feature\'s, in the order the workflow declares them.',
+      'The states are bb_work\'s, in the order the workflow declares them.',
     );
-    self::assertSame('coding', $flow['#props']['current']);
-  }
-
-  /**
-   * The negative control: another workflow yields another chain.
-   *
-   * Without it the assertion above passes against a hard-coded feature chain,
-   * which is the exact mistake the component warns about.
-   */
-  public function testAnotherWorkflowYieldsAnotherFlow(): void {
-    $this->ticket->set('workflow', 'bb_bug')->set('state', 'diagnose');
-    $this->ticket->save();
-    $band = $this->band();
-
-    $flow = $this->stateFlowOf($band);
-    self::assertSame(
-      ['qualification', 'diagnose', 'coding', 'review', 'done', 'cancelled'],
-      $flow['#props']['states'],
-    );
-    self::assertSame('diagnose', $flow['#props']['current']);
+    self::assertSame('working', $flow['#props']['current']);
   }
 
   /**
@@ -651,7 +633,10 @@ final class TicketDetailScreenTest extends KernelTestBase {
   public function testTheFourPropertiesAreIdentifiedAndClearable(): void {
     $display = $this->container->get('entity_type.manager')->getStorage('entity_form_display')->load('bb_ticket.bb_ticket.property');
     self::assertEqualsCanonicalizing(
-      ['assignee_user_id', 'reviewers', 'conductor_id', 'priority', 'labels', 'parent_id', 'blocked_by'],
+      [
+        'assignee_user_id', 'reviewers', 'conductor_id', 'priority',
+        'ticket_type', 'recipe', 'labels', 'parent_id', 'blocked_by',
+      ],
       array_keys($display->getComponents()),
     );
     self::assertEquals(
@@ -660,6 +645,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'reviewers' => 'No reviewers',
         'conductor_id' => 'No conductor',
         'priority' => 'No priority',
+        'ticket_type' => 'No type',
+        'recipe' => 'No recipe',
         'labels' => 'No labels',
         'parent_id' => 'No parent',
         'blocked_by' => 'Nothing blocking',
@@ -687,7 +674,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $source->setContextValue('entity', $this->ticket);
     $form = $source->getPropValue();
     self::assertSame('bb_theme:zone', $form['readonly']['#component']);
-    self::assertCount(9, $form['readonly']['#slots']['content']['#props']['items']);
+    self::assertCount(11, $form['readonly']['#slots']['content']['#props']['items']);
     self::assertFalse($form['actions']['submit']['#access']);
     $ordinary = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('entity_form', [
       'settings' => ['operation' => 'default'],
@@ -702,7 +689,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     }
     $html = $this->renderScreen();
     self::assertStringNotContainsString('data-form-save', $html);
-    foreach (['Stall', 'Assignee', 'Reviewers', 'Conductor', 'Priority', 'Labels'] as $label) {
+    foreach (['Stall', 'Assignee', 'Reviewers', 'Conductor', 'Priority', 'Type', 'Recipe', 'Labels'] as $label) {
       self::assertStringContainsString($label, $html);
     }
     $this->container->get('request_stack')->getCurrentRequest()->setMethod('POST');
@@ -754,7 +741,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'Blocked by' => 'badge',
         'Referenced' => 'badge',
       ],
-      array_diff_key($kinds, array_flip(['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Labels'])),
+      array_diff_key($kinds, array_flip(['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Type', 'Recipe', 'Labels'])),
     );
   }
 
@@ -814,9 +801,9 @@ final class TicketDetailScreenTest extends KernelTestBase {
   public function testAnInheritedEnvVarIsBadgedInherited(): void {
     $parent = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'title' => 'Parent',
-        'state' => 'coding',
+        'state' => 'working',
         'project_id' => $this->ticket->get('project_id')->target_id,
         'env_vars' => "INHERITED_KEY=secret\n",
       ]);
@@ -1165,8 +1152,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
    *
    * Asserted on the rendered string, cell by cell. `data-cell` is the item's
    * own key, so each needle pins a value to the cell that is supposed to hold
-   * it rather than to the page at large — `done` and `coding` are substrings of
-   * half the theme's class names.
+   * it rather than to the page at large — `done` is a substring of half the
+   * theme's class names.
    */
   public function testTheRunRowsRenderTheirContent(): void {
     $this->giveTheTicketItsRuns();
@@ -1179,8 +1166,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
     );
     self::assertSame(
       [
-        'coding', '2026-02-03 03:40',
-        'spec', '2026-02-02 03:40',
+        'working', '2026-02-03 03:40',
+        'plan', '2026-02-02 03:40',
         'qualification', '2026-02-02 02:40', '18s',
       ],
       $this->monoValuesIn($html),
@@ -1197,8 +1184,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * Cancel run sits on the active run's own row and names that run.
    */
   public function testCancelRunSitsOnTheActiveRunsRow(): void {
-    $running = $this->createRun('running', 'coding', 1770090000);
-    $done = $this->createRun('done', 'spec', 1770003600);
+    $running = $this->createRun('running', 'working', 1770090000);
+    $done = $this->createRun('done', 'plan', 1770003600);
 
     $row = $this->runRow($running);
     $html = (string) $this->container->get('renderer')->renderInIsolation($row);
@@ -1224,7 +1211,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
   public function testEveryRunStateCarriesItsOwnGlyph(): void {
     $glyphs = [];
     foreach (['claimed', 'running', 'done', 'expired', 'failed', 'cancelled'] as $state) {
-      $run = $this->createRun($state, 'coding', 1770000000);
+      $run = $this->createRun($state, 'working', 1770000000);
       $row = $this->runRow($run);
       $html = (string) $this->container->get('renderer')->renderInIsolation($row);
       preg_match('#sprite\.svg(?:\?[^"\#]*)?\#([a-z-]+)#', $html, $match);
@@ -1389,7 +1376,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $labels = [];
     foreach (['backend', 'ui'] as $name) {
       $term = $etm->getStorage('bb_term')->create([
-        'vid' => 'bb_labels',
+        'vid' => 'label',
         'name' => $name,
         'workspace_id' => $this->workspace->id(),
       ]);
@@ -1406,9 +1393,9 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $related = [];
     foreach (['child', 'blocker', 'referenced', 'parent'] as $role) {
       $other = $etm->getStorage('bb_ticket')->create([
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'title' => ucfirst($role),
-        'state' => 'coding',
+        'state' => 'working',
         'project_id' => $project_id,
       ]);
       $other->save();
@@ -1537,7 +1524,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * to `recipes/bakers/config/`, because `RecipeRunner::installModule()` runs
    * `ConfigInstaller::installOptionalConfig()` — anything under
    * `config/optional` is created at MODULE-INSTALL time, before the recipe's
-   * `config:` step creates the `bb_labels` vocabulary that ui_patterns'
+   * `config:` step creates the `label` vocabulary that ui_patterns'
    * sample `bb_ticket` needs, and the resulting `Missing entity bundle`
    * aborts the whole recipe. The same move is what stopped a display_builder
    * third-party-settings payload reaching `bb_login`'s functional tests,
@@ -1557,7 +1544,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     // make every assertion below measure the wrong screen. It is written one by
     // one rather than through `installConfig(['bb_core'])`, because that also
     // installs `bb_core.settings` and ten `og.og_role.*` and dies on the
-    // `bb_labels` vocabulary this test has no reason to create.
+    // `label` vocabulary this test has no reason to create.
     $this->writeShippedConfig($target, $module . '/config/install', 'filter.format.bb_rich');
     foreach ([
       'core.entity_view_mode.bb_ticket.full' => $module . '/config/optional',
@@ -1610,8 +1597,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
    */
   private function giveTheTicketItsRuns(): void {
     $this->createRun('expired', 'qualification', 1770000000, 18);
-    $this->createRun('done', 'spec', 1770003600);
-    $this->createRun('running', 'coding', 1770090000);
+    $this->createRun('done', 'plan', 1770003600);
+    $this->createRun('running', 'working', 1770090000);
 
     // RELOADED, because `runs` is a COMPUTED reverse reference: the item list
     // on the in-memory ticket was materialised before any run existed and does

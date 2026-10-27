@@ -16,7 +16,7 @@ props:
     cards:
     - identifier: BOARD-01
       title: Unassigned backlog
-      state: spec
+      state: plan
       url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
       assignee_id: ''
       lane_id: ''
@@ -25,7 +25,7 @@ props:
       status: idle
     - identifier: BOARD-02
       title: Assigned backlog
-      state: spec
+      state: plan
       url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
       assignee_id: '1'
       lane_id: ''
@@ -36,7 +36,7 @@ props:
       assignee_initials: CW
     - identifier: BOARD-11
       title: Blocked without conductor
-      state: spec
+      state: plan
       url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
       assignee_id: '1'
       lane_id: ''
@@ -73,7 +73,7 @@ props:
     cards:
     - identifier: BOARD-04
       title: Blocked dependency
-      state: spec
+      state: plan
       url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
       assignee_id: '1'
       lane_id: '1'
@@ -84,7 +84,7 @@ props:
       assignee_initials: CW
     - identifier: BOARD-05
       title: Build the project screen
-      state: coding
+      state: working
       url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
       assignee_id: '1'
       lane_id: '1'
@@ -106,7 +106,7 @@ props:
       assignee_initials: SG
     - identifier: BOARD-12
       title: Running despite block
-      state: coding
+      state: working
       url: /?path=/story/designbook-sections-tickets-scenes--ticket-detail
       assignee_id: '2'
       lane_id: c-board

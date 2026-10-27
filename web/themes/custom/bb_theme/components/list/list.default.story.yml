@@ -12,7 +12,7 @@ props:
           dot: true
         from:
           kind: mono
-          value: coding
+          value: working
         conductor:
           kind: text
           value: cw-framework
@@ -56,7 +56,7 @@ props:
           dot: true
         from:
           kind: mono
-          value: spec
+          value: plan
         conductor:
           kind: text
           value: srv02-bakers

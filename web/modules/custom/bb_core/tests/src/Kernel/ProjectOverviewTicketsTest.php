@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\bb_core\Ticket\ProjectOverviewTickets;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -46,11 +48,12 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
     parent::setUp();
     foreach ([
       'user', 'og_membership', 'bb_group', 'bb_project', 'bb_conductor',
-      'bb_ticket', 'bb_run', 'bb_comment',
+      'bb_ticket', 'bb_run', 'bb_comment', 'bb_term',
     ] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['user']);
+    BbVocabulary::create(['id' => 'type', 'label' => 'type'])->save();
     // Epic queries check access. administer bakers bypasses the
     // workspace read-scope narrowing so these tests measure stocks, not
     // tenancy. The access test below switches to an outsider.
@@ -63,10 +66,11 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
   }
 
   /**
-   * Epic tickets of the project, identifier order, skip work tickets.
+   * Tickets of type epic, identifier order, skip other types.
    */
   public function testEpicTicketsAreTheProjectsEpics(): void {
-    $epic = $this->ticket('Epic work', ['workflow' => 'bb_epic']);
+    $epic = $this->workTicket('Epic work', ['ticket_type' => $this->type('epic')]);
+    $this->workTicket('Feature work', ['ticket_type' => $this->type('feature')]);
     $this->workTicket('Still open');
 
     $rows = $this->service()->epicTickets($this->project);
@@ -78,7 +82,7 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
    * The epic list omits tickets the viewer may not see.
    */
   public function testEpicsFollowTicketViewAccess(): void {
-    $this->ticket('Epic work', ['workflow' => 'bb_epic']);
+    $this->workTicket('Epic work', ['ticket_type' => $this->type('epic')]);
 
     self::assertCount(1, $this->service()->epicTickets($this->project));
 
@@ -108,7 +112,7 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
    *   Extra field values.
    */
   private function workTicket(string $title, array $values = []): BbTicketInterface {
-    return $this->ticket($title, $values + ['workflow' => 'bb_feature']);
+    return $this->ticket($title, $values + ['workflow' => 'bb_work']);
   }
 
   /**
@@ -128,6 +132,15 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;
+  }
+
+  /**
+   * The id of a new type term.
+   */
+  private function type(string $name): int|string|null {
+    $term = BbTerm::create(['vid' => 'type', 'name' => $name]);
+    $term->save();
+    return $term->id();
   }
 
 }

@@ -143,7 +143,7 @@ const ticketDetailDoc = {
   included: [
     {
       id: 'label-1',
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: '⚠️⚡work:日本' },
     },
     {

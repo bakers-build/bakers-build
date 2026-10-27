@@ -34,25 +34,6 @@ use bb_ticket_template:
   description: 'Create a bb_ticket from an enabled bb_ticket_template. Normal bb_ticket create access and the template''s own project scope still apply.'
   restrict access: true
 
-# BB-658: the generic `entity` module handlers (EntityAccessControlHandler,
-# QueryAccessHandler) already recognise a "<op> <bundle> <entity_type>"
-# permission string for any content entity, regardless of whether the entity
-# type's permission_provider is configured for bundle granularity — see
-# \Drupal\entity\EntityAccessControlHandler::checkEntityOwnerPermissions()
-# and \Drupal\entity\QueryAccess\QueryAccessHandlerBase::buildEntityConditions().
-# bb_term itself stays entity_type granularity (its two vocabularies,
-# bb_labels and bb_capability_tags, share "view bb_term" for every
-# ordinary bakers.build role), but the BB-658 MCP connector scope must grant search
-# on bb_labels terms only, never bb_capability_tags. This permission is
-# declared purely so simple_oauth's Permission scope-granularity plugin
-# accepts it (it validates against the permission handler's registry) and so
-# it is assignable on /admin/people/permissions; no new access-control code
-# is needed; the generic handlers already honour it.
-view bb_labels bb_term:
-  title: 'bakers.build labels: View bakers.build terms'
-  description: 'Search/view bb_term entities in the bb_labels vocabulary only — not bb_capability_tags.'
-  restrict access: true
-
 # The product UI gate: "may see the bakers.build product UI". The legacy name is kept
 # because the og_role files granting it are on the recipe strict list, so a
 # rename is a migration.

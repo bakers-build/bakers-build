@@ -161,7 +161,7 @@ ui_requirements: >
   `view.tickets`, a View that
     owns its table, and no view mode of the ticket at all — a listing row was never a view mode.
     The detail needs a place for every meta field: `state_flow`, `assignee_user_id`, `reviewers`, `conductor_id`,
-    `priority`, `labels`, `time_estimate`, `time_spent`, `branch_name`, `base_branch`,
+    `priority`, `ticket_type`, `recipe`, `labels`, `time_estimate`, `time_spent`, `branch_name`, `base_branch`,
     `environments`, `env_vars`, `parent_id`, `sub_tickets`, `blocked_by`, `referenced_tickets`,
     `links`.
   - `bb_comment.bb_comment` — the latest `summary` in the band and the
@@ -173,8 +173,9 @@ ui_requirements: >
   - `bb_run.bb_run` — the run history in the main region. Reads `state`,
   `started_at`,
     `duration`, `agent`.
-  - `bb_term.bb_labels` — the labels in the inspector, the label facet, and
-  the labels picker on
+  - `bb_term.type`, `bb_term.recipe`, `bb_term.label` — the Type, Recipe
+  and Labels rows in the inspector (Type and Recipe right before Labels), the
+  label facet, and the matching pickers on
     the create dialog.
   - `user.user` — the assignee column, the assignee facet, and the assignee
   picker in the rail.
@@ -391,7 +392,7 @@ scenes:
 
       The selected-facet summary sits directly ABOVE THE ROWS, left-aligned with
       the rows' leading edge, stating what the facets narrowed the list to:
-      Project is bakers.build Platform, State is either of coding and review. Its meta
+      Project is bakers.build Platform, State is either of working and review. Its meta
       slot carries the BB-312 position indicator, which until this ticket
       existed only in the TUI as countLabel(). The list below it is
       `view.tickets`: the eight rows come from one view mapping as
@@ -544,15 +545,15 @@ scenes:
                             name: state
                             label: State
                             icon: board
-                            aria_label: Filter by state. Currently coding and review.
+                            aria_label: Filter by state. Currently working and review.
                             id: filter-state
                             open: false
                             multiple: true
                             value_labels:
-                              - coding
+                              - working
                               - review
                             values:
-                              - coding
+                              - working
                               - review
                           slots:
                             options:
@@ -565,11 +566,11 @@ scenes:
                                   - value: qualification
                                     label: qualification
                                     selected: false
-                                  - value: spec
-                                    label: spec
+                                  - value: plan
+                                    label: plan
                                     selected: false
-                                  - value: coding
-                                    label: coding
+                                  - value: working
+                                    label: working
                                     selected: true
                                   - value: review
                                     label: review
@@ -594,13 +595,9 @@ scenes:
                                 clearable: true
                                 clear_label: Any workflow
                                 options:
-                                  - value: bb_feature
-                                    label: bb_feature
-                                    description: Feature work — spec before coding
-                                    selected: false
-                                  - value: bb_bug
-                                    label: bb_bug
-                                    description: Defect work — diagnose before coding
+                                  - value: bb_work
+                                    label: bb_work
+                                    description: Work — plan before working
                                     selected: false
                         - component: bb_theme:option_picker
                           props:
@@ -756,7 +753,7 @@ scenes:
                             - bakers.build Platform
                         - field: State
                           values:
-                            - coding
+                            - working
                             - review
                     slots:
                       meta:
@@ -1552,7 +1549,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                   - component: bb_theme:summary-band
                     slots:
                       flow:
@@ -1561,11 +1558,11 @@ scenes:
                           states:
                             - backlog
                             - qualification
-                            - spec
-                            - coding
+                            - plan
+                            - working
                             - review
                             - done
-                          current: coding
+                          current: working
                           label: Workflow state flow
                       summary:
                         entity: bb_comment.bb_comment
@@ -1887,7 +1884,7 @@ scenes:
                   - component: bb_theme:page_header
                     props:
                       title: NWS-80 · Checkout address step rewrite
-                      description: Northwind Shop · bb_feature · claimed by mvd-thinkpad
+                      description: Northwind Shop · bb_work · claimed by mvd-thinkpad
                   - component: bb_theme:summary-band
                     slots:
                       flow:
@@ -1896,11 +1893,11 @@ scenes:
                           states:
                             - backlog
                             - qualification
-                            - spec
-                            - coding
+                            - plan
+                            - working
                             - review
                             - done
-                          current: coding
+                          current: working
                           label: Workflow state flow
                       summary:
                         entity: bb_comment.bb_comment
@@ -2190,7 +2187,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                 main:
                   - component: bb_theme:zone
                     props:
@@ -2277,7 +2274,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                 main:
                   - component: bb_theme:zone
                     props:
@@ -2402,7 +2399,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                 main:
                   - component: bb_theme:zone
                     props:
@@ -2518,7 +2515,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                 main:
                   - component: bb_theme:zone
                     props:
@@ -2630,7 +2627,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                 main:
                   - component: bb_theme:collapsible
                     props:
@@ -2777,7 +2774,7 @@ scenes:
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
                       description: >-
-                        bakers.build Platform · bb_feature · claimed by cw-framework ·
+                        bakers.build Platform · bb_work · claimed by cw-framework ·
                         frozen 2 minutes ago
                   - component: bb_theme:summary-band
                     slots:
@@ -2793,11 +2790,11 @@ scenes:
                             states:
                               - backlog
                               - qualification
-                              - spec
-                              - coding
+                              - plan
+                              - working
                               - review
                               - done
-                            current: coding
+                            current: working
                             label: Workflow state flow
                       summary:
                         entity: bb_comment.bb_comment
@@ -2903,7 +2900,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: spec
+                                  value: plan
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -2938,7 +2935,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: coding
+                                  value: working
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -2973,7 +2970,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: coding
+                                  value: working
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -3005,7 +3002,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: coding
+                                  value: working
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -3482,7 +3479,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                   - component: bb_theme:summary-band
                     slots:
                       flow:
@@ -3491,11 +3488,11 @@ scenes:
                           states:
                             - backlog
                             - qualification
-                            - spec
-                            - coding
+                            - plan
+                            - working
                             - review
                             - done
-                          current: coding
+                          current: working
                           label: Workflow state flow
                       summary:
                         entity: bb_comment.bb_comment
@@ -3601,7 +3598,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: spec
+                                  value: plan
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -3636,7 +3633,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: coding
+                                  value: working
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -3671,7 +3668,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: coding
+                                  value: working
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -3703,7 +3700,7 @@ scenes:
                                   emphasis: faint
                                 from:
                                   kind: mono
-                                  value: coding
+                                  value: working
                                 conductor:
                                   kind: badge
                                   label: srv01-bakers
@@ -4199,20 +4196,16 @@ scenes:
                             label: Workflow
                             icon: board
                             picker_id: create-workflow
-                            aria_label: Change workflow. Currently bb_feature.
-                            value_label: bb_feature
+                            aria_label: Change workflow. Currently bb_work.
+                            value_label: bb_work
                             values:
-                              - bb_feature
+                              - bb_work
                             open: false
                             options:
-                              - value: bb_feature
-                                label: bb_feature
-                                description: Feature work — spec before coding
+                              - value: bb_work
+                                label: bb_work
+                                description: Work — plan before working
                                 selected: true
-                              - value: bb_bug
-                                label: bb_bug
-                                description: Defect work — diagnose before coding
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:
@@ -4460,20 +4453,16 @@ scenes:
                             label: Workflow
                             icon: board
                             picker_id: create-workflow
-                            aria_label: Change workflow. Currently bb_feature.
-                            value_label: bb_feature
+                            aria_label: Change workflow. Currently bb_work.
+                            value_label: bb_work
                             values:
-                              - bb_feature
+                              - bb_work
                             open: false
                             options:
-                              - value: bb_feature
-                                label: bb_feature
-                                description: Feature work — spec before coding
+                              - value: bb_work
+                                label: bb_work
+                                description: Work — plan before working
                                 selected: true
-                              - value: bb_bug
-                                label: bb_bug
-                                description: Defect work — diagnose before coding
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:
@@ -4686,20 +4675,16 @@ scenes:
                             label: Workflow
                             icon: board
                             picker_id: create-workflow
-                            aria_label: Change workflow. Currently bb_feature.
-                            value_label: bb_feature
+                            aria_label: Change workflow. Currently bb_work.
+                            value_label: bb_work
                             values:
-                              - bb_feature
+                              - bb_work
                             open: false
                             options:
-                              - value: bb_feature
-                                label: bb_feature
-                                description: Feature work — spec before coding
+                              - value: bb_work
+                                label: bb_work
+                                description: Work — plan before working
                                 selected: true
-                              - value: bb_bug
-                                label: bb_bug
-                                description: Defect work — diagnose before coding
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:
@@ -4961,20 +4946,16 @@ scenes:
                             label: Workflow
                             icon: board
                             picker_id: create-workflow
-                            aria_label: Change workflow. Currently bb_feature.
-                            value_label: bb_feature
+                            aria_label: Change workflow. Currently bb_work.
+                            value_label: bb_work
                             values:
-                              - bb_feature
+                              - bb_work
                             open: false
                             options:
-                              - value: bb_feature
-                                label: bb_feature
-                                description: Feature work — spec before coding
+                              - value: bb_work
+                                label: bb_work
+                                description: Work — plan before working
                                 selected: true
-                              - value: bb_bug
-                                label: bb_bug
-                                description: Defect work — diagnose before coding
-                                selected: false
                       lines:
                         - component: bb_theme:form_input
                           props:
@@ -5316,6 +5297,58 @@ scenes:
                               - cells:
                                   label:
                                     kind: text
+                                    value: Type
+                                    emphasis: faint
+                                  value:
+                                    kind: picker
+                                    label: Type
+                                    icon: tag
+                                    picker_id: inline-type
+                                    multiple: false
+                                    clearable: true
+                                    clear_label: No type
+                                    open: false
+                                    value_labels:
+                                      - feature
+                                    options:
+                                      - value: '4'
+                                        label: feature
+                                        selected: true
+                                      - value: '5'
+                                        label: bug
+                                        selected: false
+                                      - value: '6'
+                                        label: chore
+                                        selected: false
+                                      - value: '7'
+                                        label: epic
+                                        selected: false
+                              - cells:
+                                  label:
+                                    kind: text
+                                    value: Recipe
+                                    emphasis: faint
+                                  value:
+                                    kind: picker
+                                    label: Recipe
+                                    icon: tag
+                                    picker_id: inline-recipe
+                                    multiple: false
+                                    clearable: true
+                                    clear_label: No recipe
+                                    open: false
+                                    value_labels:
+                                      - ddev-drupal
+                                    options:
+                                      - value: '8'
+                                        label: ddev-drupal
+                                        selected: true
+                                      - value: '9'
+                                        label: docs-authoring
+                                        selected: false
+                              - cells:
+                                  label:
+                                    kind: text
                                     value: Labels
                                     emphasis: faint
                                   value:
@@ -5374,7 +5407,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                   - component: bb_theme:summary-band
                     slots:
                       flow:
@@ -5383,11 +5416,11 @@ scenes:
                           states:
                             - backlog
                             - qualification
-                            - spec
-                            - coding
+                            - plan
+                            - working
                             - review
                             - done
-                          current: coding
+                          current: working
                           label: Workflow state flow
                       summary:
                         entity: bb_comment.bb_comment
@@ -5869,7 +5902,7 @@ scenes:
                       title: >-
                         BB-142 · Add designbook entity view-mode for
                         bb_ticket
-                      description: bakers.build Platform · bb_feature · claimed by cw-framework
+                      description: bakers.build Platform · bb_work · claimed by cw-framework
                   - component: bb_theme:ticket_status_band
                     slots:
                       flow:
@@ -5878,11 +5911,11 @@ scenes:
                           states:
                             - backlog
                             - qualification
-                            - spec
-                            - coding
+                            - plan
+                            - working
                             - review
                             - done
-                          current: coding
+                          current: working
                           label: Workflow state flow
                       summary:
                         entity: bb_comment.bb_comment
@@ -6778,7 +6811,7 @@ scenes:
                             content:
                               - component: bb_theme:badge
                                 props:
-                                  label: coding
+                                  label: working
                                   tone: running
                                   dot: true
                               - component: bb_theme:link-group
@@ -6865,7 +6898,7 @@ scenes:
                             content:
                               - component: bb_theme:badge
                                 props:
-                                  label: coding
+                                  label: working
                                   tone: running
                                   dot: true
                               - component: bb_theme:link-group
@@ -6949,7 +6982,7 @@ scenes:
                             content:
                               - component: bb_theme:badge
                                 props:
-                                  label: coding
+                                  label: working
                                   tone: running
                                   dot: true
                               - component: bb_theme:link-group
@@ -7033,7 +7066,7 @@ scenes:
                             content:
                               - component: bb_theme:badge
                                 props:
-                                  label: coding
+                                  label: working
                                   tone: running
                                   dot: true
                               - component: bb_theme:link-group
@@ -7117,7 +7150,7 @@ scenes:
                             content:
                               - component: bb_theme:badge
                                 props:
-                                  label: spec
+                                  label: plan
                                   tone: lease
                                   dot: true
                               - component: bb_theme:link-group

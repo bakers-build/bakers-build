@@ -5,10 +5,10 @@ props:
   facets:
     - field: State
       values:
-        - Coding
+        - Working
         - Review
       remove_url: '?priority[]=2'
     - field: Priority
       values:
         - Medium
-      remove_url: '?state[]=coding&state[]=review'
+      remove_url: '?state[]=working&state[]=review'

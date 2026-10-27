@@ -123,7 +123,7 @@ final class TicketsContextualDisplayTest extends KernelTestBase {
     $this->ticketA = $ticket;
     $review = $this->createEntity('bb_ticket', [
       'title' => 'ticket-a-review',
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'state' => 'review',
       'project_id' => $this->projectA->id(),
     ]);
@@ -220,7 +220,7 @@ final class TicketsContextualDisplayTest extends KernelTestBase {
     $common = [
       'group' => [$this->fixture('a', 'bb_group')->id()],
       'state' => ['review'],
-      'workflow' => ['bb_bug'],
+      'workflow' => ['bb_work'],
       'assignee' => [$this->reader->id()],
       'priority' => [1],
       'label' => [$this->fixture('a', 'bb_term')->id()],
@@ -259,7 +259,7 @@ final class TicketsContextualDisplayTest extends KernelTestBase {
       self::assertInstanceOf(FacetsFilter::class, $workflow);
       self::assertNotEmpty($workflow->facet_results);
       foreach ($workflow->facet_results as $result) {
-        self::assertContains($result->getRawValue(), ['bb_feature', 'bb_bug']);
+        self::assertContains($result->getRawValue(), ['bb_work', 'bb_work']);
       }
     }
   }

@@ -3,6 +3,7 @@ _meta:
   entity_type: bb_ticket
   uuid: 612a0000-0000-4000-8000-000000000011
   depends:
+    db1a0000-0000-4000-8000-000000000020: bb_term
     612a0000-0000-4000-8000-000000000001: bb_project
     dbe50000-0000-4000-8000-000000000001: user
 default:
@@ -14,7 +15,10 @@ default:
       value: 1
   workflow:
     -
-      value: "bb_feature"
+      value: "bb_work"
+  ticket_type:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000020"
   title:
     -
       value: "Capture demo"

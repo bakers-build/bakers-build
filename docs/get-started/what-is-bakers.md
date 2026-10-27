@@ -21,7 +21,7 @@ flowchart LR
 | Workspace | Your team's space with its people and projects |
 | Project | One repository in bakers.build |
 | Ticket | One piece of work with its state, comments and history |
-| State | The current step of a ticket, such as `spec`, `coding` or `review` |
+| State | The current step of a ticket, such as `plan`, `working` or `review` |
 | Skill | Instructions that tell the agent how to do a step |
 | `WORKFLOW.md` | The file in your repository that picks the skills and checks |
 | Conductor | The worker that picks up tickets and starts agents |

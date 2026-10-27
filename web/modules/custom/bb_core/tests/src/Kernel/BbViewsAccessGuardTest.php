@@ -90,7 +90,7 @@ final class BbViewsAccessGuardTest extends KernelTestBase {
     // The recipe owns these vocabularies, so a Kernel test must create them
     // itself: ui_patterns builds a sample bb_ticket while calculating the
     // View's dependencies, and that sample references a bb_term bundle.
-    foreach (['bb_labels', 'bb_capability_tags'] as $vid) {
+    foreach (['type', 'recipe', 'label'] as $vid) {
       $this->container->get('entity_type.manager')->getStorage('bb_vocabulary')
         ->create(['id' => $vid, 'label' => $vid])->save();
     }

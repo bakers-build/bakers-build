@@ -3,7 +3,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 
 const measurements = new URL(
-  '../../../../.claude/skills/bakers-build/skills/review-ticket/measurements/',
+  '../../../../.claude/skills/bakers-build/skills/bb-verdict/measurements/',
   import.meta.url,
 );
 const read = (path: string) =>

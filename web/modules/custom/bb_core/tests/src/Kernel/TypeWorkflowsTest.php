@@ -33,23 +33,14 @@ final class TypeWorkflowsTest extends KernelTestBase {
    * Verifies isClaimable() reflects the workflow `claimable` flag.
    */
   public function testIsClaimableReadsFlag(): void {
-    // Qualification is the claimable first state of the work workflows.
-    $this->assertTrue(TypeWorkflows::isClaimable('bb_feature', 'qualification'));
-    $this->assertTrue(TypeWorkflows::isClaimable('bb_bug', 'qualification'));
-    $this->assertTrue(TypeWorkflows::isClaimable('bb_chore', 'qualification'));
-    $this->assertTrue(TypeWorkflows::isClaimable('bb_feature', 'spec'));
-    $this->assertTrue(TypeWorkflows::isClaimable('bb_feature', 'coding'));
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_epic', 'qualification'));
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_epic', 'spec'));
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_epic', 'active'));
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_epic', 'review'));
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_epic', 'done'));
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_epic', 'cancelled'));
+    foreach (['qualification', 'plan', 'working', 'review'] as $state) {
+      $this->assertTrue(TypeWorkflows::isClaimable('bb_work', $state), $state);
+    }
     // A state that is not flagged claimable (terminal) reports false.
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_feature', 'done'));
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_feature', 'cancelled'));
+    $this->assertFalse(TypeWorkflows::isClaimable('bb_work', 'done'));
+    $this->assertFalse(TypeWorkflows::isClaimable('bb_work', 'cancelled'));
     // An unknown state reports false.
-    $this->assertFalse(TypeWorkflows::isClaimable('bb_feature', 'nonexistent'));
+    $this->assertFalse(TypeWorkflows::isClaimable('bb_work', 'nonexistent'));
   }
 
   /**
@@ -58,10 +49,9 @@ final class TypeWorkflowsTest extends KernelTestBase {
   public function testStateOptionsListsOnlyClaimableStates(): void {
     $options = TypeWorkflows::stateOptions();
     $this->assertArrayHasKey('qualification', $options);
-    $this->assertArrayHasKey('coding', $options);
-    $this->assertArrayNotHasKey('active', $options);
-    $this->assertArrayHasKey('diagnose', $options);
-    $this->assertArrayHasKey('spec', $options);
+    $this->assertArrayHasKey('plan', $options);
+    $this->assertArrayHasKey('working', $options);
+    $this->assertArrayNotHasKey('coding', $options);
     $this->assertArrayHasKey('review', $options);
     $this->assertArrayNotHasKey('done', $options);
     $this->assertArrayNotHasKey('cancelled', $options);
@@ -101,9 +91,7 @@ final class TypeWorkflowsTest extends KernelTestBase {
   public function testTerminalTicketStatesPairsEachWorkflowWithItsTerminalStates(): void {
     $terminal = TypeWorkflows::terminalTicketStates();
 
-    foreach ([
-      'bb_feature', 'bb_bug', 'bb_chore', 'bb_epic', 'bb_deployment', 'bb_verification',
-    ] as $workflow_id) {
+    foreach (['bb_work'] as $workflow_id) {
       $this->assertArrayHasKey($workflow_id, $terminal);
       $states = $terminal[$workflow_id];
       sort($states);
@@ -117,9 +105,8 @@ final class TypeWorkflowsTest extends KernelTestBase {
 
     // No workflow reports a state it can still leave.
     foreach ($terminal as $workflow_id => $states) {
-      $this->assertNotContains('spec', $states, $workflow_id);
-      $this->assertNotContains('coding', $states, $workflow_id);
-      $this->assertNotContains('active', $states, $workflow_id);
+      $this->assertNotContains('plan', $states, $workflow_id);
+      $this->assertNotContains('working', $states, $workflow_id);
       $this->assertNotContains('review', $states, $workflow_id);
       $this->assertNotContains('qualification', $states, $workflow_id);
     }
@@ -131,7 +118,7 @@ final class TypeWorkflowsTest extends KernelTestBase {
    * THE ENUMERATION IS THE GUARD, and it is deliberately not a fallback.
    * `phase()` throws for a state that declares none, so this test is what
    * makes that exception unreachable in production: it walks the workflow
-   * plugin manager rather than a list written here, so a SEVENTH workflow —
+   * plugin manager rather than a list written here, so a new workflow —
    * or one more state on an existing one — is covered the moment it is
    * defined. A `?? 'prepare'` in `phase()` would have shipped that workflow
    * with a silently wrong phase and nothing anywhere would have said so.
@@ -147,13 +134,12 @@ final class TypeWorkflowsTest extends KernelTestBase {
     $manager = $this->container->get('plugin.manager.workflow');
     $definitions = $manager->getDefinitions();
 
-    // The eight workflows this tree defines (six ticket types, bb_run and
-    // the review comment's bb_review).
-    // Asserted so that an eighth cannot arrive unnoticed: the phase table
+    // The three workflows this tree defines (the ticket workflow bb_work,
+    // bb_run and the review comment's bb_review).
+    // Asserted so that a fourth cannot arrive unnoticed: the phase table
     // below would then be incomplete and this count is what says so first.
     $this->assertSame([
-      'bb_feature', 'bb_bug', 'bb_chore', 'bb_epic', 'bb_deployment',
-      'bb_verification', 'bb_run', 'bb_review',
+      'bb_work', 'bb_run', 'bb_review',
     ], array_values(array_map('strval', array_keys($definitions))));
 
     $phases = [];
@@ -174,47 +160,11 @@ final class TypeWorkflowsTest extends KernelTestBase {
     // state name is only meaningful inside its workflow, and a union would
     // hide the day two workflows disagree about one.
     $this->assertSame([
-      'bb_feature' => [
+      'bb_work' => [
         'qualification' => 'prepare',
-        'spec' => 'prepare',
-        'coding' => 'running',
+        'plan' => 'prepare',
+        'working' => 'running',
         'review' => 'review',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_bug' => [
-        'qualification' => 'prepare',
-        'diagnose' => 'prepare',
-        'coding' => 'running',
-        'review' => 'review',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_chore' => [
-        'qualification' => 'prepare',
-        'spec' => 'prepare',
-        'coding' => 'running',
-        'review' => 'review',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_epic' => [
-        'qualification' => 'prepare',
-        'spec' => 'prepare',
-        'active' => 'running',
-        'review' => 'review',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_deployment' => [
-        'pre_deployment' => 'prepare',
-        'post_deployment' => 'running',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_verification' => [
-        'verifying' => 'running',
-        'summary' => 'running',
         'done' => 'done',
         'cancelled' => 'cancelled',
       ],
@@ -245,8 +195,8 @@ final class TypeWorkflowsTest extends KernelTestBase {
    */
   public function testStateWithNoPhaseThrows(): void {
     $this->expectException(\LogicException::class);
-    $this->expectExceptionMessage('bb_feature');
-    TypeWorkflows::phase('bb_feature', 'nonexistent');
+    $this->expectExceptionMessage('bb_work');
+    TypeWorkflows::phase('bb_work', 'nonexistent');
   }
 
   /**

@@ -121,7 +121,7 @@ final class RunActivityViewTest extends KernelTestBase {
     $run = $etm->getStorage('bb_run')->create([
       'ticket_id' => $ticket->id(),
       'state' => 'done',
-      'state_at_start' => 'coding',
+      'state_at_start' => 'working',
     ]);
     $run->save();
     self::assertInstanceOf(BbRunInterface::class, $run);
@@ -157,9 +157,9 @@ final class RunActivityViewTest extends KernelTestBase {
       'ticket_id' => $this->ticket->id(),
       'run_id' => $this->run->id(),
       'kind' => 'run_ended',
-      'step' => 'coding',
+      'step' => 'working',
       'actor' => 1,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
     ])->save();
     $etm->getStorage('bb_ticket')->resetCache([$this->ticket->id()]);
     $etm->getStorage('bb_run')->resetCache([$this->run->id()]);
@@ -185,9 +185,9 @@ final class RunActivityViewTest extends KernelTestBase {
       'ticket_id' => $this->ticket->id(),
       'run_id' => $this->run->id(),
       'kind' => Claimed::ID,
-      'step' => 'older-coding',
+      'step' => 'older-working',
       'actor' => 1,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'created' => 1700000000,
     ]);
     $older->save();
@@ -197,14 +197,14 @@ final class RunActivityViewTest extends KernelTestBase {
       'kind' => Claimed::ID,
       'step' => 'newer-review',
       'actor' => 1,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'created' => 1700003600,
     ]);
     $newer->save();
 
     $html = $this->renderMode('full');
     self::assertStringContainsString('newer-review', $html);
-    self::assertStringNotContainsString('older-coding', $html);
+    self::assertStringNotContainsString('older-working', $html);
   }
 
   /**

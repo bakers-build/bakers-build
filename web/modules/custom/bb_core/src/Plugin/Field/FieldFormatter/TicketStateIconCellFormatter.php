@@ -15,9 +15,9 @@ use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 /**
  * Working vs not: filled disc while the phase is running, empty ring otherwise.
  *
- * Feature `coding` and epic `active` are both the running phase. Same label
- * source as TicketStateCellFormatter, so the icon and the badge never name a
- * state differently. The tooltip is the workflow's own label.
+ * The phase, not the state name, decides: `working` is the running phase.
+ * Same label source as TicketStateCellFormatter, so the icon and the badge
+ * never name a state differently. The tooltip is the workflow's own label.
  */
 #[FieldFormatter(
   id: 'bb_ticket_state_icon_cell',

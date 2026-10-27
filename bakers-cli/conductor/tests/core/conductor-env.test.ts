@@ -67,7 +67,7 @@ function makeConfig(
     label: 'test',
     conductor_id: 'bakers-test-conductor',
     project: 'bakers',
-    states: ['todo', 'coding'],
+    states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
     max_parallel: 2,
     poll_interval_ms: 5000,
@@ -161,7 +161,7 @@ describe('Conductor dispatch env injection', () => {
         't-1': {
           identifier: 'BB-1',
           title: 'One',
-          state: 'coding',
+          state: 'working',
           effectiveEnvVars: 'APP_KEY=secretval\nBB_ID=evil',
         },
       },
@@ -171,7 +171,7 @@ describe('Conductor dispatch env injection', () => {
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -213,7 +213,7 @@ describe('Conductor dispatch env injection', () => {
         't-1': {
           identifier: 'BB-1',
           title: 'One',
-          state: 'coding',
+          state: 'working',
           projectId: 'project-uuid',
           projectName: 'Demo',
           workspaceId: 'ws-uuid',
@@ -226,7 +226,7 @@ describe('Conductor dispatch env injection', () => {
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -258,7 +258,7 @@ describe('Conductor dispatch env injection', () => {
         't-1': {
           identifier: 'BB-1',
           title: 'One',
-          state: 'coding',
+          state: 'working',
           effectiveEnvVars: 'BB_TUNNEL=0',
         },
       },
@@ -268,7 +268,7 @@ describe('Conductor dispatch env injection', () => {
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();
@@ -296,7 +296,7 @@ describe('Conductor dispatch env injection', () => {
           't-1': {
             identifier: 'BB-1',
             title: 'One',
-            state: 'coding',
+            state: 'working',
           },
         },
       };
@@ -305,7 +305,7 @@ describe('Conductor dispatch env injection', () => {
         runUuid: 'r-1',
         runId: 1,
         ticketUuid: 't-1',
-        stateAtStart: 'coding',
+        stateAtStart: 'working',
         handler: 'code',
       });
       const executor = new RecordingExecutor();
@@ -331,7 +331,7 @@ describe('Conductor dispatch env injection', () => {
   it('omits the workspace/project keys entirely when unresolved, rather than exporting them empty', async () => {
     const seed: FakeRemoteSeed = {
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'coding' },
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     };
     const remote = new FakeBbRemote(seed);
@@ -339,7 +339,7 @@ describe('Conductor dispatch env injection', () => {
       runUuid: 'r-1',
       runId: 1,
       ticketUuid: 't-1',
-      stateAtStart: 'coding',
+      stateAtStart: 'working',
       handler: 'code',
     });
     const executor = new RecordingExecutor();

@@ -89,7 +89,7 @@ final class TicketMyWorkWorkspaceScopeTest extends KernelTestBase {
     $this->installConfig(['user', 'search_api', 'views']);
     $this->installOgScopeFixture();
     $this->enableTheShippedDisplayExtender();
-    BbVocabulary::create(['id' => 'bb_labels', 'label' => 'bakers.build labels'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'bakers.build labels'])->save();
     $this->container->get('entity_type.bundle.info')->clearCachedBundles();
     $this->container->get('typed_data_manager')->clearCachedDefinitions();
     $this->container->get('config.installer')
@@ -203,8 +203,8 @@ final class TicketMyWorkWorkspaceScopeTest extends KernelTestBase {
     ]);
     $this->create('bb_ticket', [
       'title' => 'Ticket in the solo workspace',
-      'state' => 'coding',
-      'workflow' => 'bb_feature',
+      'state' => 'working',
+      'workflow' => 'bb_work',
       'priority' => 2,
       'project_id' => $project->id(),
       'assignee_user_id' => $solo->id(),
@@ -305,8 +305,8 @@ final class TicketMyWorkWorkspaceScopeTest extends KernelTestBase {
       ]);
       $this->create('bb_ticket', [
         'title' => $title,
-        'state' => 'coding',
-        'workflow' => 'bb_feature',
+        'state' => 'working',
+        'workflow' => 'bb_work',
         'priority' => 2,
         'project_id' => $project->id(),
         'assignee_user_id' => $this->me->id(),

@@ -45,7 +45,7 @@ final class BbTicketEnvVarsTest extends KernelTestBase {
   public function testEnvVarsRoundTrip(): void {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
     $ticket = $storage->create([
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'state' => 'todo',
       'title' => 'With env',
       'env_vars' => "A=1\nB=2",

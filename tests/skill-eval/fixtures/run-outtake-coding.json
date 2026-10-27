@@ -1,15 +1,16 @@
 {
   "id": "run-outtake-coding",
-  "skill": "run-outtake",
+  "skill": "bb-workflow/references/outtake.md",
   "references": [
-    "method-context/references/results.md",
-    "method-context/SKILL.md",
-    "essential-skills/SKILL.md"
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/boundaries.md",
+    "bb-workflow/references/evidence.md",
+    "bb-workflow/references/outtake/working.md"
   ],
   "outtake": true,
   "input": {
     "ticket": "EVAL-5: Member cannot invite colleagues",
-    "state": "coding",
+    "state": "working",
     "outcome": "Member invitation authorization fix is delivered; the coding agent observed both required denial paths.",
     "revision": "e11ce05000000000000000000000000000000000",
     "mr": "https://git.example.invalid/team/app/-/merge_requests/5",

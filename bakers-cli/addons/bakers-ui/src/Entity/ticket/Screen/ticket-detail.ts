@@ -14,6 +14,8 @@ export { ticketDetailInputContext } from '../Data/input.js';
 
 const INCLUDES = [
   'labels',
+  'ticket_type',
+  'recipe',
   'parent_id',
   'blocked_by',
   'conductor_id',

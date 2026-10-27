@@ -289,7 +289,7 @@ Given(
         '$team->save();',
         `$project = $etm->getStorage("bb_project")->create(["name" => "BB-492 beta project", "key" => "G492B", "group_id" => $group->id(), "teams" => [$team->id()], "owner_user_id" => $owner->id()]);`,
         '$project->save();',
-        `$ticket = $etm->getStorage("bb_ticket")->create(["title" => "BB-492 second-workspace ticket", "state" => "coding", "workflow" => "bb_feature", "priority" => 2, "project_id" => $project->id(), "assignee_user_id" => ${listing.uid}, "owner_user_id" => $owner->id()]);`,
+        `$ticket = $etm->getStorage("bb_ticket")->create(["title" => "BB-492 second-workspace ticket", "state" => "working", "workflow" => "bb_work", "priority" => 2, "project_id" => $project->id(), "assignee_user_id" => ${listing.uid}, "owner_user_id" => $owner->id()]);`,
         '$ticket->save();',
         // `contributor`, not `member`: BB-462 D1 made the bare `member`
         // rank grant nothing, including `view bb_ticket` — measured against
@@ -1084,14 +1084,14 @@ Given('the workspace has an open ticket and a closed ticket assigned to me', asy
     'if (!$p) { print "NO_PROJECT"; return; }',
     `$open = current($ts->loadByProperties(["title" => "${OPEN_FIXTURE_TICKET_TITLE}"]));`,
     'if (!$open) {',
-    `$open = $ts->create(["project_id" => $p->id(), "title" => "${OPEN_FIXTURE_TICKET_TITLE}", "workflow" => "bb_feature", "state" => "coding", "assignee_user_id" => ${listing.uid}]);`,
+    `$open = $ts->create(["project_id" => $p->id(), "title" => "${OPEN_FIXTURE_TICKET_TITLE}", "workflow" => "bb_work", "state" => "working", "assignee_user_id" => ${listing.uid}]);`,
     '} else {',
-    `$open->set("state", "coding")->set("assignee_user_id", ${listing.uid});`,
+    `$open->set("state", "working")->set("assignee_user_id", ${listing.uid});`,
     '}',
     '$open->save();',
     `$closed = current($ts->loadByProperties(["title" => "${CLOSED_FIXTURE_TICKET_TITLE}"]));`,
     'if (!$closed) {',
-    `$closed = $ts->create(["project_id" => $p->id(), "title" => "${CLOSED_FIXTURE_TICKET_TITLE}", "workflow" => "bb_feature", "state" => "done", "assignee_user_id" => ${listing.uid}]);`,
+    `$closed = $ts->create(["project_id" => $p->id(), "title" => "${CLOSED_FIXTURE_TICKET_TITLE}", "workflow" => "bb_work", "state" => "done", "assignee_user_id" => ${listing.uid}]);`,
     '} else {',
     `$closed->set("state", "done")->set("assignee_user_id", ${listing.uid});`,
     '}',
@@ -1257,10 +1257,10 @@ const ORIGIN_FIXTURES: Record<string, string> = {
 Given('the workspace has tickets from origin issues 19, 190 and twice 20', async () => {
   const upserts = Object.entries(ORIGIN_FIXTURES).map(([name, origin]) => [
     `$t = current($ts->loadByProperties(["title" => "${ORIGIN_FIXTURE_PREFIX} ${name}"]));`,
-    `if (!$t) { $t = $ts->create(["project_id" => $p->id(), "title" => "${ORIGIN_FIXTURE_PREFIX} ${name}", "workflow" => "bb_feature"]); }`,
-    // `spec`, not `coding`: the facet scenarios pick Coding and Review and
+    `if (!$t) { $t = $ts->create(["project_id" => $p->id(), "title" => "${ORIGIN_FIXTURE_PREFIX} ${name}", "workflow" => "bb_work"]); }`,
+    // `plan`, not `working`: the facet scenarios pick Working and Review and
     // compare row counts, so fixtures there would fill their page.
-    `$t->set("state", "spec")->set("origin", "${origin}")->save();`,
+    `$t->set("state", "plan")->set("origin", "${origin}")->save();`,
   ].join(' '));
   const result = php([
     '$etm = \\Drupal::entityTypeManager();',

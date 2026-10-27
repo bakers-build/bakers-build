@@ -1,0 +1,7 @@
+uuid: 2d901a2d-7e0a-4033-a2af-615054b98821
+langcode: en
+status: true
+dependencies: {  }
+id: label
+label: 'bakers.build labels'
+description: ''

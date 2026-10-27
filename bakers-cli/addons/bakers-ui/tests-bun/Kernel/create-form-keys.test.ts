@@ -44,7 +44,7 @@ const THIRD_USER = 'aaaaaaaa-0000-0000-0000-000000000003';
 const COND = 'bbbbbbbb-0000-0000-0000-000000000001';
 const LABEL_A = 'cccccccc-0000-0000-0000-000000000001';
 const LABEL_B = 'cccccccc-0000-0000-0000-000000000002';
-const LABEL_BUNDLE = 'bb_term/bb_labels';
+const LABEL_BUNDLE = 'bb_term/label';
 
 /** The inverse bit as the renderer stores it — the caret's only trace. */
 const INVERSE = createTextAttributes({ inverse: true });
@@ -76,7 +76,7 @@ const rows = () => ({
       attributes: { label: 'cw-framework' },
     }),
   ],
-  // BB-257 F2/D3: the labels live in the `bb_labels` VOCABULARY, so the
+  // BB-257 F2/D3: the labels live in the `label` VOCABULARY, so the
   // fixture is keyed by the bundle the popup really requests. Keyed `bb_term`
   // it answered `bb_term/bb_term` — a bundle that 404s on the control plane
   // — which is exactly why the empty list went unnoticed by this suite (F2b).
@@ -84,13 +84,27 @@ const rows = () => ({
   [LABEL_BUNDLE]: [
     toResource({
       id: LABEL_A,
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: 'bug' },
     }),
     toResource({
       id: LABEL_B,
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: 'ui' },
+    }),
+  ],
+  // BAKERS-17: the Type select's vocabulary. Two terms, so the clearable ring
+  // (none, feature, bug) can tell ← from →.
+  'bb_term/type': [
+    toResource({
+      id: 'type-feature',
+      type: 'bb_term--type',
+      attributes: { name: 'feature' },
+    }),
+    toResource({
+      id: 'type-bug',
+      type: 'bb_term--type',
+      attributes: { name: 'bug' },
     }),
   ],
 });
@@ -238,7 +252,7 @@ it('`n` opens the New-ticket popup, prefilled from the loaded options', async ()
   // way it rejects a cross-project one.
   expect(f).toContain('Assignee: < cw >');
   expect(f).toContain('Conductor: < — none — >');
-  expect(f).toContain('Workflow: < feature >');
+  expect(f).toContain('Workflow: < work >');
   // Both labels unchecked, and BOTH action rows are rendered (BB-309 D3).
   expect(f).toContain('[ ] bug');
   expect(f).toContain('[ ] ui');
@@ -274,7 +288,7 @@ it('Ctrl+S submits from any field and hands the payload to the agent host', asyn
   expect(launch?.group).toBe('bakers');
   expect(launch?.cwd).toBe('/repo');
   expect(launch?.label).toBe('Bug');
-  expect(launch?.env.BB_WORKFLOW).toBe('bb_feature');
+  expect(launch?.env.BB_WORKFLOW).toBe('bb_work');
   const specPath = launch?.env.BB_NEW_TICKET_INPUT as string;
   expect(specPath).toMatch(/bakers-new-ticket-.*\.json$/);
   expect(JSON.parse(readFileSync(specPath, 'utf8'))).toEqual({
@@ -285,11 +299,14 @@ it('Ctrl+S submits from any field and hands the payload to the agent host', asyn
     // description's first line.
     title: '',
     description: 'Bug',
-    workflow: { id: 'bb_feature', label: 'feature' },
+    workflow: { id: 'bb_work', label: 'work' },
     assignee: { id: USER, label: 'cw' },
     reviewers: [],
     // BB-664 F4: no project context in this harness, no conductor candidate.
     conductor: null,
+    // BAKERS-17: Type and Recipe open empty and stay empty untouched.
+    ticketType: null,
+    recipe: null,
     labels: [],
     // BB-257 AC-7: the Parent field is optional, and an untouched one adds
     // exactly this and changes nothing else about the submission.
@@ -339,7 +356,7 @@ it('field movement clamps at both ends of the list', async () => {
   // BB-664 AC-8: Project is the real first field with no project in scope.
   await d.press('\x1b[A'); // ↑ on the first field: no move
   expect(d.frame()).toContain('▸ Project:');
-  for (let i = 0; i < 12; i++) await d.press('\x1b[B'); // ↓ past the end
+  for (let i = 0; i < 14; i++) await d.press('\x1b[B'); // ↓ past the end
   expect(d.frame()).toContain('▸ [ Create directly ]');
   await d.quit();
 });
@@ -590,16 +607,18 @@ it('→ and ← cycle the active select and wrap, never reaching a cleared value
 });
 
 it('cycling touches only the active select', async () => {
+  // BAKERS-17: one workflow is left, so the three-position ring is the Type
+  // select's clearable one: none, feature, bug.
   const d = await openForm();
-  await goTo(d, 'workflow');
+  await goTo(d, 'ticketType');
   await d.press('\x1b[C');
   const f = d.frame();
-  expect(f).toContain('Workflow: < bug >');
+  expect(f).toContain('Type: < feature >');
   expect(f).toContain('Assignee: < cw >');
-  // ← from the first option wraps to the LAST of the three.
+  // ← back past none wraps to the LAST of the three.
   await d.press('\x1b[D');
   await d.press('\x1b[D');
-  expect(d.frame()).toContain('Workflow: < chore >');
+  expect(d.frame()).toContain('Type: < bug >');
   await d.quit();
 });
 
@@ -732,7 +751,7 @@ it('a non-Enter key on the action row does nothing', async () => {
 // under it had advanced twice. One claimed key costs both the navigation and
 // the data.
 //
-it('six ↓ traverse the form and leave every select on its original value', async () => {
+it('eight ↓ traverse the form and leave every select on its original value', async () => {
   const d = await openForm();
   await d.press('\x1b[B'); // BB-664 AC-8: off Project, onto Title.
   // The values the popup opens on — each select prefills to its first option.
@@ -740,13 +759,13 @@ it('six ↓ traverse the form and leave every select on its original value', asy
   expect(opened).toContain('▸ Title:');
   expect(opened).toContain('Assignee: < cw >');
   expect(opened).toContain('Conductor: < — none — >');
-  expect(opened).toContain('Workflow: < feature >');
+  expect(opened).toContain('Workflow: < work >');
 
-  // Six ↓ from Title: Description, Parent, Assignee, Reviewers, Conductor,
-  // Labels. Presses land ON selects and pass over the reviewers multi, so a
+  // Eight ↓ from Title: Description, Parent, Assignee, Reviewers, Conductor,
+  // Type, Recipe (BAKERS-17), Labels. Presses land ON selects and pass over the reviewers multi, so a
   // widget claiming the key would be caught whether it claims on arrival or
   // on departure.
-  for (let i = 0; i < 6; i++) await d.press('\x1b[B');
+  for (let i = 0; i < 8; i++) await d.press('\x1b[B');
 
   const after = d.frame();
   // The traversal happened…
@@ -754,7 +773,8 @@ it('six ↓ traverse the form and leave every select on its original value', asy
   // …and cost nothing. Every select still reports what it was opened with.
   expect(after).toContain('Assignee: < cw >');
   expect(after).toContain('Conductor: < — none — >');
-  expect(after).toContain('Workflow: < feature >');
+  expect(after).toContain('Type: < — none — >');
+  expect(after).toContain('Workflow: < work >');
   // The multiselect's toggles are the same state under another kind: a widget
   // that claimed ↓ for its option cursor would move `›` without being asked.
   expect(after).toContain('›[ ] bug');
@@ -773,7 +793,7 @@ it('six ↓ traverse the form and leave every select on its original value', asy
   expect(payload.assignee).toEqual({ id: USER, label: 'cw' });
   // BB-664 F4: no project context in this harness, no conductor candidate.
   expect(payload.conductor).toBeNull();
-  expect(payload.workflow).toEqual({ id: 'bb_feature', label: 'feature' });
+  expect(payload.workflow).toEqual({ id: 'bb_work', label: 'work' });
   expect(payload.labels).toEqual([]);
   await d.quit();
 });
@@ -795,11 +815,11 @@ it('with no agent host injected `n` opens nothing and says so', async () => {
 // drives them — there is no browser here, so this harness IS the validator the
 // spec substitutes for Playwright-BDD (D10/D13).
 
-it('S3 (AC-3): the project`s bb_labels terms are listed and togglable', async () => {
+it('S3 (AC-3): the project`s label terms are listed and togglable', async () => {
   const d = await openForm();
   // The read that renders this list addressed the vocabulary, not the entity
   // type alone — the whole defect in one assertion (F2).
-  expect(d.client.collections).toContain('bb_term/bb_labels');
+  expect(d.client.collections).toContain('bb_term/label');
   expect(d.client.collections).not.toContain('bb_term/bb_term');
 
   await goTo(d, 'labels');

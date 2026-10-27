@@ -78,17 +78,17 @@ it('fakeClient records every update, get and collection call', async () => {
 
 it('resolveCollectionPath mirrors dropsh: shorthand, path and type all resolve', () => {
   expect(resolveCollectionPath('bb_run')).toBe('bb_run/bb_run');
-  expect(resolveCollectionPath('bb_term/bb_labels')).toBe('bb_term/bb_labels');
-  expect(resolveCollectionPath('bb_term--bb_labels')).toBe('bb_term/bb_labels');
+  expect(resolveCollectionPath('bb_term/label')).toBe('bb_term/label');
+  expect(resolveCollectionPath('bb_term--label')).toBe('bb_term/label');
 });
 
 it('fakeClient records the RESOLVED path, so a wrong bundle cannot pass', () => {
   const client = fakeClient();
   client.collection('bb_term');
-  client.collection('bb_term/bb_labels');
+  client.collection('bb_term/label');
   // The two are different requests, and only the second one exists on the
   // control plane — which is exactly BB-257 F2.
-  expect(client.collections).toEqual(['bb_term/bb_term', 'bb_term/bb_labels']);
+  expect(client.collections).toEqual(['bb_term/bb_term', 'bb_term/label']);
 });
 
 it('rows and failingCollections may be keyed in EITHER form', async () => {
@@ -107,7 +107,7 @@ it('rows and failingCollections may be keyed in EITHER form', async () => {
   ).toHaveLength(1);
   // …and a DIFFERENT bundle is not answered by it.
   expect(
-    await fakeClient({ rows: { 'bb_term/bb_labels': [row] } })
+    await fakeClient({ rows: { 'bb_term/label': [row] } })
       .collection('bb_term')
       .list(),
   ).toEqual([]);

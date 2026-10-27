@@ -100,7 +100,7 @@ const WARNING_INDENT = 2;
 const LEGEND =
   'Assignee = human ownership · Reviewers = named reviewers · Conductor = who works it next · ' +
   'Estimate/Spent = accounted time, not the run footprint (1d 2h 30m, 90m, or a bare number as minutes) · ' +
-  'Parent = optional parent ticket · Labels = multi-select from bb_labels · ' +
+  'Parent = optional parent ticket · Labels = multi-select from label · ' +
   'Cancel ticket abandons a non-terminal ticket (Esc closes and writes nothing)';
 
 /**

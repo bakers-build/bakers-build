@@ -210,8 +210,8 @@ final class ReviewActivityTest extends KernelTestBase {
   private function ticket(array $reviewers = []): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'review-activity',
-      'workflow' => 'bb_feature',
-      'state' => 'coding',
+      'workflow' => 'bb_work',
+      'state' => 'working',
       'project_id' => $this->projectId,
       'owner_user_id' => $this->people['owner']->id(),
       'assignee_user_id' => $this->people['assignee']->id(),

@@ -56,10 +56,10 @@ export default defineConfig<CoreTestOptions>({
         trace: 'retain-on-failure',
         ignoreHTTPSErrors: true,
         // Route Chromium's shared memory to /tmp instead of /dev/shm. The suite
-        // runs inside the DDEV web container, whose /dev/shm is Docker's 64MB
-        // default; under that ceiling the renderer intermittently dies with
+        // runs in containers (DDEV's web container, CI's e2e runner) whose
+        // /dev/shm is Docker's 64MB default; under that ceiling the renderer intermittently dies with
         // "Target crashed" / "Page crashed" — not an assertion, a killed
-        // process — which surfaced as flaky e2e_api failures scattered across
+        // process — which surfaced as flaky e2e failures scattered across
         // unrelated features. Disk-backed shm removes the ceiling. Applied in
         // global `use` so both chromium projects inherit it (neither overrides
         // launchOptions via devices['Desktop Chrome']).

@@ -15,7 +15,7 @@
 //   bb_ticket/bb_ticket     search, read, create, update   (exact)
 //   bb_comment/bb_comment   create, search                 (update NOT blocked here)
 //   bb_project/bb_project   search, read                   (create/update NOT blocked here)
-//   bb_term/bb_labels       search                         (create/update NOT blocked here)
+//   bb_term/type|recipe|label search                       (create/update NOT blocked here)
 // This config layer is defense-in-depth only. The real enforcement boundary
 // is the authorizing human's own Drupal permissions and workspace rank under
 // the single `bb:session` scope (BB-658 review F7 — a dedicated
@@ -40,7 +40,9 @@ export default {
           "bb_ticket/bb_ticket",
           "bb_comment/bb_comment",
           "bb_project/bb_project",
-          "bb_term/bb_labels",
+          "bb_term/type",
+          "bb_term/recipe",
+          "bb_term/label",
         ],
         operations: ["search", "read", "create", "update"],
       },

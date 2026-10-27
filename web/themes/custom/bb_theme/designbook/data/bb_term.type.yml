@@ -1,0 +1,24 @@
+- id: '4'
+  name: feature
+  description: New or changed behaviour.
+  weight: 0
+  __designbook:
+    section: bb_ticket
+- id: '5'
+  name: bug
+  description: Defect fix restoring expected behaviour.
+  weight: 1
+  __designbook:
+    section: bb_ticket
+- id: '6'
+  name: chore
+  description: Maintenance with no behaviour change.
+  weight: 2
+  __designbook:
+    section: bb_ticket
+- id: '7'
+  name: epic
+  description: Groups child tickets; the project overview lists epics.
+  weight: 3
+  __designbook:
+    section: bb_ticket

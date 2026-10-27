@@ -66,7 +66,7 @@ final class TicketConductorAssignmentTest extends KernelTestBase {
     $conductor = $this->createConductor('mid-1');
     $ticket = BbTicket::create([
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->projectId,
     ]);
     $ticket->setConductor($conductor);
@@ -128,7 +128,7 @@ final class TicketConductorAssignmentTest extends KernelTestBase {
    * Unclassified tickets stay claimable by any conductor for qualification.
    */
   public function testUnclassifiedTicketIsClaimableByAnyConductorForQualification(): void {
-    $conductor = $this->createConductor('mid-qualification', ['coding']);
+    $conductor = $this->createConductor('mid-qualification', ['working']);
     // Unclassified: no workflow, no conductor_id.
     $ticket = BbTicket::create([
       'identifier' => 'GL-CA3',
@@ -188,7 +188,7 @@ final class TicketConductorAssignmentTest extends KernelTestBase {
   /**
    * Creates and saves a BbConductor for the shared project and given states.
    */
-  private function createConductor(string $machineId, array $states = ['diagnose', 'coding']): BbConductorInterface {
+  private function createConductor(string $machineId, array $states = ['plan', 'working']): BbConductorInterface {
     $owner = $this->createConductorUser('owner-' . $machineId);
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
       'conductor_id' => $machineId,
@@ -207,15 +207,15 @@ final class TicketConductorAssignmentTest extends KernelTestBase {
   /**
    * Creates a saved classified ticket in its claimable work entry state.
    *
-   * The bb_bug workflow now enters 'qualification' first (BB-196); this
-   * advances to the 'diagnose' entry state handled by the default conductor
+   * The bb_work workflow enters 'qualification' first (BB-196); this
+   * advances to the 'plan' entry state handled by the default conductor
    * states.
    */
   private function createActiveTicket(string $identifier): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'identifier' => $identifier,
-        'workflow' => 'bb_bug',
+        'workflow' => 'bb_work',
         'title' => $identifier,
         'project_id' => $this->projectId,
       ]);

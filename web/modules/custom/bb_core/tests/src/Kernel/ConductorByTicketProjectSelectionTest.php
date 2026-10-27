@@ -78,7 +78,7 @@ final class ConductorByTicketProjectSelectionTest extends KernelTestBase {
     $this->createConductor('mid-out', $p2);
     $ticket = BbTicket::create([
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $p1,
     ]);
     $ticket->save();
@@ -124,7 +124,7 @@ final class ConductorByTicketProjectSelectionTest extends KernelTestBase {
     $active = $this->createConductor('active', $project);
     $inactive = $this->createConductor('inactive', $project);
     $inactive->set('active', FALSE)->save();
-    $ticket = BbTicket::create(['title' => 'T', 'workflow' => 'bb_feature', 'project_id' => $project]);
+    $ticket = BbTicket::create(['title' => 'T', 'workflow' => 'bb_work', 'project_id' => $project]);
     $ticket->save();
     $handler = $this->container->get('plugin.manager.entity_reference_selection')->getInstance([
       'target_type' => 'bb_conductor',
@@ -152,9 +152,9 @@ final class ConductorByTicketProjectSelectionTest extends KernelTestBase {
     $other = $this->createConductor('other-inactive', $project);
     $ticket = BbTicket::create([
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $project,
-      'state' => 'coding',
+      'state' => 'working',
     ]);
     $ticket->set('conductor_id', $current->id())->save();
     // A run still in flight is what keeps the deactivation reassigner from
@@ -192,7 +192,7 @@ final class ConductorByTicketProjectSelectionTest extends KernelTestBase {
   public function testNewTicketWithoutProjectOffersNoCandidates(): void {
     $p1 = $this->createProject('p1');
     $this->createConductor('mid-a', $p1);
-    $ticket = BbTicket::create(['title' => 'T', 'workflow' => 'bb_feature']);
+    $ticket = BbTicket::create(['title' => 'T', 'workflow' => 'bb_work']);
 
     $handler = $this->container->get('plugin.manager.entity_reference_selection')
       ->getInstance([
@@ -221,9 +221,9 @@ final class ConductorByTicketProjectSelectionTest extends KernelTestBase {
     $current = $this->createConductor('stranded', $projectA);
     $ticket = BbTicket::create([
       'title' => 'T',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $projectA,
-      'state' => 'coding',
+      'state' => 'working',
     ]);
     $ticket->set('conductor_id', $current->id())->save();
     // A run still in flight keeps the reassigner from clearing the reference

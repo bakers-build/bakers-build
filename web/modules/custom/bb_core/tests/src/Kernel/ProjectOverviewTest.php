@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Entity\BbTerm;
+use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Database\Database;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
@@ -72,7 +74,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group',
       'bb_project', 'bb_environment', 'bb_conductor', 'bb_ticket',
-      'bb_run', 'bb_comment', 'file',
+      'bb_run', 'bb_comment', 'file', 'bb_term',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -267,7 +269,7 @@ final class ProjectOverviewTest extends KernelTestBase {
    * Overview inspector lists epic tickets and skips work tickets.
    */
   public function testFullViewModeShowsEpicTicketsInTheInspector(): void {
-    $epic = $this->epicTicket('Ship the Overview tab', 'active');
+    $epic = $this->epicTicket('Ship the Overview tab', 'working');
     $this->featureTicket('Still open');
 
     $html = $this->renderMode('full');
@@ -323,7 +325,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'title' => $title,
-        'workflow' => 'bb_feature',
+        'workflow' => 'bb_work',
         'project_id' => $this->project->id(),
       ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -334,11 +336,17 @@ final class ProjectOverviewTest extends KernelTestBase {
   /**
    * An epic ticket on the fixture project.
    */
-  private function epicTicket(string $title, string $state = 'active'): BbTicketInterface {
+  private function epicTicket(string $title, string $state = 'working'): BbTicketInterface {
+    if (!BbVocabulary::load('type')) {
+      BbVocabulary::create(['id' => 'type', 'label' => 'type'])->save();
+    }
+    $epic = BbTerm::create(['vid' => 'type', 'name' => 'epic']);
+    $epic->save();
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->create([
         'title' => $title,
-        'workflow' => 'bb_epic',
+        'workflow' => 'bb_work',
+        'ticket_type' => $epic->id(),
         'state' => $state,
         'project_id' => $this->project->id(),
       ]);

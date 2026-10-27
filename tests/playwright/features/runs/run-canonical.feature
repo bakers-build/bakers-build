@@ -29,7 +29,7 @@ Feature: A run has a ticket-relative canonical page
     Then the run page response status is 404
 
   Scenario: Opening a run from the ticket history lands on the canonical page
-    Given a disposable "bb_feature" ticket in state "coding" with a running run
+    Given a disposable "bb_work" ticket in state "working" with a running run
     When I visit the disposable ticket
     And I open the disposable run from its history row
     Then the page heading is the disposable run title
@@ -39,7 +39,7 @@ Feature: A run has a ticket-relative canonical page
     And the document was not reloaded
 
   Scenario: The ticket crumb returns to the ticket
-    Given a disposable "bb_feature" ticket in state "coding" with a running run
+    Given a disposable "bb_work" ticket in state "working" with a running run
     When I visit the disposable ticket
     And I open the disposable run from its history row
     And I follow the ticket crumb in the breadcrumb
@@ -51,7 +51,7 @@ Feature: A run has a ticket-relative canonical page
 
   Scenario: Cancel run is offered only while the run is eligible
     Given I am logged in as "Administrator"
-    And a disposable "bb_bug" ticket in state "coding" with a running run
+    And a disposable "bb_work" ticket in state "working" with a running run
     When I visit the disposable run page
     Then the run page offers "Cancel run"
     When I visit the seeded run "dbb00000-0000-4000-8000-000000000001"

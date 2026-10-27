@@ -813,7 +813,7 @@ export function fileForStem(stem: string): string {
 /**
  * List the conductor-config **file names** in a `.bakers/` dir, using the same
  * naming predicate the loader uses (`configStems`). This is the only supported
- * enumeration for the `@bakers-build/upgrade-project` states-strip: it visits the
+ * enumeration for the `@bakers-build/bb-upgrade-project` states-strip: it visits the
  * default `conductor.config.js` + every `<variant>.conductor.config.js`, and
  * never an unrelated JS config (`vite.config.js`, the near-miss
  * `myconductor.config.js`).
@@ -825,7 +825,7 @@ export function listConductorConfigFiles(bakersDir: string): string[] {
 /**
  * Remove the obsolete `states:` array property from a conductor-config JS
  * source (BB-207 made `states` optional — empty ⇒ serve all claimable
- * states — so `@bakers-build/upgrade-project` drops the now-dead key). Pure string
+ * states — so `@bakers-build/bb-upgrade-project` drops the now-dead key). Pure string
  * transform: it strips the `states: [ ... ]` property (line form or inline in
  * an object literal) with its trailing comma, and rewrites nothing else. A
  * `substates:`/other key containing "states" is not matched.

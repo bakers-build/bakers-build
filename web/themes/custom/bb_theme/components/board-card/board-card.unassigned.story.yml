@@ -5,7 +5,7 @@ props:
   title: Lease expired, nobody assigned
   status: wait
   priority: p1
-  type: bb_bug
+  type: bug
 slots:
   footer:
     - type: element

@@ -71,7 +71,7 @@ final class TicketMetricsViewTest extends KernelTestBase {
   private function createTicketWithRate(string $identifier, string $rate): BbTicketInterface {
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'identifier' => $identifier,
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'title' => $identifier,
       'metrics' => [
         ['name' => 'review_bounces', 'value' => '9.0000'],

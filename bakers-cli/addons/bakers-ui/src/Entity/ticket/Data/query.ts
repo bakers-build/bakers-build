@@ -78,15 +78,14 @@ import {
 } from './tickets.js';
 
 // Ticket states from web/modules/custom/bb_core/bb_core.workflows.yml
-// (feature/bug/chore workflows) plus the import/backlog states seen on tickets.
+// (the `bb_work` workflow) plus the import/backlog states seen on tickets.
 // Hardcoded so the cycle is deterministic and independent of the loaded page.
 export const STATE_FILTER_VALUES: string[] = [
   'triage',
   'backlog',
   'todo',
-  'spec',
-  'diagnose',
-  'coding',
+  'plan',
+  'working',
   'review',
   'done',
   'cancelled',

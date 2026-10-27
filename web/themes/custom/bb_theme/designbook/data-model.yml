@@ -7,8 +7,8 @@ content:
         REVERSES what this field used to say: the project carries NO membership
         or role of its own any more — it is deregistered from og.settings
         entirely, and its three roles (non-member, member, lead) are deleted
-        from both config paths. Visibility now comes from bb_project.teams
-        (D4): a project is visible to the members of a team it names, or to a
+        from both config paths. Visibility now comes from bb_project.teams (D4):
+        a project is visible to the members of a team it names, or to a
         workspace admin. The two levels that grant rights are the workspace
         (create/edit/delete rights, via
         bb_workspace-bb_workspace-{contributor,lead}) and, per-project, its
@@ -312,9 +312,9 @@ content:
         work), `claimed` only for the first run outside qualification, and
         `run_ended` when a run ends failed, expired or cancelled without moving
         the ticket. Writes come only from the bb_activity kinds, called where
-        the change happens. Each row is
-        this bundle's `full` view mode (`bb_theme:event` with a structured
-        lead); there is no second activity view mode.
+        the change happens. Each row is this bundle's `full` view mode
+        (`bb_theme:event` with a structured lead); there is no second activity
+        view mode.
       view_modes:
         full:
           template: field-map
@@ -547,14 +547,9 @@ content:
           settings:
             allowed_values:
               - qualification
-              - spec
-              - diagnose
-              - coding
+              - plan
+              - working
               - review
-              - pre_deployment
-              - post_deployment
-              - verifying
-              - summary
         workspace_root:
           type: string
           title: Workspace root
@@ -640,8 +635,8 @@ content:
       purpose: >-
         The customer. Bundles projects and carries the cost centre for
         re-invoicing. Carries NO permissions and is NOT an OG group —
-        og.settings registers only bb_workspace and bb_team since BB-462
-        D7 deregisters bb_project — it is not a rights level, so no screen may
+        og.settings registers only bb_workspace and bb_team since BB-462 D7
+        deregisters bb_project — it is not a rights level, so no screen may
         offer a permission control on it.
       view_modes:
         teaser:
@@ -746,11 +741,7 @@ content:
           multiple: false
           settings:
             allowed_values:
-              - bb_feature
-              - bb_bug
-              - bb_chore
-              - bb_deployment
-              - bb_verification
+              - bb_work
         title:
           type: string
           title: Title
@@ -772,22 +763,34 @@ content:
           settings:
             allowed_values:
               - qualification
-              - spec
-              - diagnose
-              - coding
+              - plan
+              - working
               - review
-              - pre_deployment
-              - post_deployment
-              - verifying
-              - summary
               - done
               - cancelled
+        ticket_type:
+          type: reference
+          title: Type
+          description: >-
+            The ticket's type term (vocabulary `type`). A ticket whose type term
+            is named `epic` is an epic.
+          required: false
+          multiple: false
+          reference: bb_term
+        recipe:
+          type: reference
+          title: Recipe
+          description: The ticket's recipe term (vocabulary `recipe`).
+          required: false
+          multiple: false
+          reference: bb_term
         labels:
           type: reference
           title: Labels
           required: false
           multiple: true
           reference: bb_term
+          description: The ticket's label terms (vocabulary `label`).
         assignee_user_id:
           type: reference
           title: Assignee user
@@ -830,7 +833,9 @@ content:
         links:
           type: link
           title: Links
-          description: Typed links (uri, title, options.bakers.kind); kind is server-derived.
+          description: >-
+            Typed links (uri, title, options.bakers.kind); kind is
+            server-derived.
           required: false
           multiple: true
         comments:
@@ -1070,8 +1075,8 @@ content:
           key.
         uuid: Entity key; the designbook model addresses records by `id`.
   bb_term:
-    bb_labels:
-      title: bakers.build term
+    type:
+      title: bakers.build ticket type
       view_modes:
         teaser:
           template: field-map
@@ -1110,14 +1115,110 @@ content:
           renders it as an object of its own, and the file name
           data/bb_term.<bundle>.yml already carries it.
         langcode: >-
-          Entity key; bakers.build terms are single-language and no screen renders a
-          language.
+          Entity key; bakers.build terms are single-language and no screen
+          renders a language.
         created: >-
-          bb_term extends ContentEntityBase directly and has no
-          created/changed timestamps.
+          bb_term extends ContentEntityBase directly and has no created/changed
+          timestamps.
         changed: >-
-          bb_term extends ContentEntityBase directly and has no
-          created/changed timestamps.
+          bb_term extends ContentEntityBase directly and has no created/changed
+          timestamps.
+    recipe:
+      title: bakers.build recipe
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        description:
+          type: string
+          title: Description
+          description: >-
+            A plain string_long with no text format, so a screen must not offer
+            rich-text rendering for it.
+          required: false
+          multiple: false
+        weight:
+          type: integer
+          title: Weight
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+        vid: >-
+          The bundle key. The vocabulary IS the bb_term bundle; no screen
+          renders it as an object of its own, and the file name
+          data/bb_term.<bundle>.yml already carries it.
+        langcode: >-
+          Entity key; bakers.build terms are single-language and no screen
+          renders a language.
+        created: >-
+          bb_term extends ContentEntityBase directly and has no created/changed
+          timestamps.
+        changed: >-
+          bb_term extends ContentEntityBase directly and has no created/changed
+          timestamps.
+    label:
+      title: bakers.build label
+      view_modes:
+        teaser:
+          template: field-map
+        full:
+          template: field-map
+      fields:
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        description:
+          type: string
+          title: Description
+          description: >-
+            A plain string_long with no text format, so a screen must not offer
+            rich-text rendering for it.
+          required: false
+          multiple: false
+        weight:
+          type: integer
+          title: Weight
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+        vid: >-
+          The bundle key. The vocabulary IS the bb_term bundle; no screen
+          renders it as an object of its own, and the file name
+          data/bb_term.<bundle>.yml already carries it.
+        langcode: >-
+          Entity key; bakers.build terms are single-language and no screen
+          renders a language.
+        created: >-
+          bb_term extends ContentEntityBase directly and has no created/changed
+          timestamps.
+        changed: >-
+          bb_term extends ContentEntityBase directly and has no created/changed
+          timestamps.
   bb_run:
     bb_run:
       title: bakers.build run
@@ -1444,8 +1545,8 @@ content:
         id: Entity key, not a modelled field.
         uuid: Entity key.
         pass: >-
-          Authentication internal; no bakers.build screen renders or edits a password
-          hash.
+          Authentication internal; no bakers.build screen renders or edits a
+          password hash.
         init: Authentication internal (initial email); never rendered.
         preferred_langcode: Localisation internal; bakers.build is English-only.
         preferred_admin_langcode: Localisation internal; bakers.build is English-only.
@@ -1464,10 +1565,10 @@ content:
         separate, per-team question (D4) that carries no rights of its own. Is
         an OG group (registered in og.settings) with the roles non-member,
         member, contributor, lead (labelled "Admin") and guest — five, not six:
-        `owner`/`admin` were already consolidated into `lead` by BB-359 D12,
-        and the machine principal `app` is GONE (BB-462 D9, its rank is
-        answered entirely from OAuth scope now). Built by BB-316; the role set
-        is BB-462's.
+        `owner`/`admin` were already consolidated into `lead` by BB-359 D12, and
+        the machine principal `app` is GONE (BB-462 D9, its rank is answered
+        entirely from OAuth scope now). Built by BB-316; the role set is
+        BB-462's.
       view_modes:
         full:
           template: field-map
@@ -1529,10 +1630,10 @@ content:
     bb_team:
       title: bakers.build team
       purpose: >-
-        The stable crew, cutting across customer projects, and since BB-419
-        also their structural parent: a project is assigned to teams n:m through
-        bb_project.teams and belongs to at least one. BB-462 D4 REVERSES
-        what this field used to say: the assignment now DECIDES VISIBILITY — an
+        The stable crew, cutting across customer projects, and since BB-419 also
+        their structural parent: a project is assigned to teams n:m through
+        bb_project.teams and belongs to at least one. BB-462 D4 REVERSES what
+        this field used to say: the assignment now DECIDES VISIBILITY — an
         account sees exactly the projects of the teams it belongs to (or every
         project, if it holds the workspace admin tier) — while still granting no
         RIGHTS of its own; a team answers "what do you see", the workspace alone
@@ -1589,15 +1690,15 @@ content:
       title: OG membership
       purpose: >-
         Membership is ONE mechanism, modelled once: a user x group row reused by
-        workspace and team rather than re-invented per level. This is NOT a bakers.build
-        invention — it is contrib Organic Groups' own og_membership entity,
-        whose only bundle is `default` (og.og_membership_type.default). BB-462
-        D7 REVERSES what this field used to say: og.settings now registers only
-        bb_workspace and bb_team as OG groups — bb_project is deregistered
-        entirely, and every membership row anchored on a project is deleted by
-        that ticket's migration. BB-318 bridges the remaining rows into bakers.build's
-        query access. A screen reads membership here, never from a field on the
-        group.
+        workspace and team rather than re-invented per level. This is NOT a
+        bakers.build invention — it is contrib Organic Groups' own og_membership
+        entity, whose only bundle is `default` (og.og_membership_type.default).
+        BB-462 D7 REVERSES what this field used to say: og.settings now
+        registers only bb_workspace and bb_team as OG groups — bb_project is
+        deregistered entirely, and every membership row anchored on a project is
+        deleted by that ticket's migration. BB-318 bridges the remaining rows
+        into bakers.build's query access. A screen reads membership here, never
+        from a field on the group.
       view_modes:
         teaser:
           template: field-map
@@ -1684,9 +1785,9 @@ content:
           description: >-
             MULTI-VALUE (OG sets cardinality unlimited) and a reference to
             og_role config objects by their full id, e.g.
-            bb_workspace-bb_workspace-lead. The `member` role is never
-            stored: OgMembership::preSave() revokes it and getRoles() prepends
-            it on read, so a row that looks role-less is still a member.
+            bb_workspace-bb_workspace-lead. The `member` role is never stored:
+            OgMembership::preSave() revokes it and getRoles() prepends it on
+            read, so a row that looks role-less is still a member.
           required: false
           multiple: true
           reference: og_role
@@ -1694,8 +1795,8 @@ content:
         id: Entity key, not a modelled field.
         uuid: Entity key.
         language: >-
-          Entity key; bakers.build memberships are single-language and no screen renders
-          a language.
+          Entity key; bakers.build memberships are single-language and no screen
+          renders a language.
   bb_addon:
     bb_addon:
       title: bakers.build addon
@@ -1762,37 +1863,37 @@ config:
       aspect_ratio: '1:1'
   omitted:
     bb_core.bb_vocabulary: >-
-      The vocabulary IS the bb_term bundle; no screen renders it as an object
-      of its own.
+      The vocabulary IS the bb_term bundle; no screen renders it as an object of
+      its own.
   og.og_role:
     title: OG role
     entity_type: og_role
     purpose: >-
       The role vocabulary of the OG groups — what a Settings screen assigns a
       person on a workspace or a team. Contrib Organic Groups' own config
-      entity. AS-IS, MEASURED IN config/sync AT BB-462: NINE objects, not ten
-      — bb_project carries no role at all any more (D7 deregisters it as an OG
+      entity. AS-IS, MEASURED IN config/sync AT BB-462: NINE objects, not ten —
+      bb_project carries no role at all any more (D7 deregisters it as an OG
       group entirely). Five for bb_workspace (non-member, member, contributor,
-      lead, guest) and four for bb_team (non-member, member, lead, owner).
-      `app` is GONE (D9: a conductor's OAuth identity is bound to its owning
-      user, so it sees exactly what that user's own rank sees — no separate
-      machine rank exists to list here). `owner` is NEW (D3): governs the team
-      itself, who may join it and its own settings. The key is the Drupal
-      config-name PREFIX, so this is one entry per config entity TYPE; the
-      instances live in sample data. Three facts a screen must not get wrong.
-      First, `permissions` is NOT an empty list on every role:
-      bb_workspace-lead and -contributor carry real permission strings
-      (create/edit/delete rights), bb_workspace-guest carries read-only, and
-      bb_team-owner carries `manage members`/`update group`. It IS empty on
-      exactly four: the three non-member roles and bb_team-bb_team-member —
-      the implicit member rank is deliberately emptied everywhere (D1: OG ranks
-      are additive and cannot be narrowed, so any right left on an implicit rank
-      is inherited by every membership including guests). Second, `is_admin` is
-      FALSE on all nine. Third, "a workspace admin sees every project of their
-      workspace" (D4) is a VISIBILITY rule computed from the rank id, never an
-      OG admin flag or a project-level role — there is no project-level role
-      left to read at all. TARGET: product roles are OG ranks only; team
-      ownership is the one new rank this ticket adds.
+      lead, guest) and four for bb_team (non-member, member, lead, owner). `app`
+      is GONE (D9: a conductor's OAuth identity is bound to its owning user, so
+      it sees exactly what that user's own rank sees — no separate machine rank
+      exists to list here). `owner` is NEW (D3): governs the team itself, who
+      may join it and its own settings. The key is the Drupal config-name
+      PREFIX, so this is one entry per config entity TYPE; the instances live in
+      sample data. Three facts a screen must not get wrong. First, `permissions`
+      is NOT an empty list on every role: bb_workspace-lead and -contributor
+      carry real permission strings (create/edit/delete rights),
+      bb_workspace-guest carries read-only, and bb_team-owner carries `manage
+      members`/`update group`. It IS empty on exactly four: the three non-member
+      roles and bb_team-bb_team-member — the implicit member rank is
+      deliberately emptied everywhere (D1: OG ranks are additive and cannot be
+      narrowed, so any right left on an implicit rank is inherited by every
+      membership including guests). Second, `is_admin` is FALSE on all nine.
+      Third, "a workspace admin sees every project of their workspace" (D4) is a
+      VISIBILITY rule computed from the rank id, never an OG admin flag or a
+      project-level role — there is no project-level role left to read at all.
+      TARGET: product roles are OG ranks only; team ownership is the one new
+      rank this ticket adds.
     fields:
       id:
         type: string
@@ -1821,9 +1922,9 @@ config:
         type: boolean
         title: Is admin
         description: >-
-          FALSE on every shipped role — measured in config/sync at BB-435
-          across all ten og.og_role objects, and the role it used to name does
-          not exist. Read the role id, never this flag. See the purpose above.
+          FALSE on every shipped role — measured in config/sync at BB-435 across
+          all ten og.og_role objects, and the role it used to name does not
+          exist. Read the role id, never this flag. See the purpose above.
         required: false
         multiple: false
       permissions:
@@ -1855,8 +1956,8 @@ config:
         title: Role type
         description: >-
           `required` for the two roles OG creates for every group (non-member,
-          member); `standard` for the roles bakers.build adds. A screen must not offer
-          to delete a required role.
+          member); `standard` for the roles bakers.build adds. A screen must not
+          offer to delete a required role.
         required: true
         multiple: false
         settings:
@@ -1869,5 +1970,5 @@ config:
         and is never rendered.
       group_id: >-
         Null in all ten shipped roles. OG sets it only for a role scoped to one
-        single group instance, which bakers.build ships none of, so no screen renders
-        it.
+        single group instance, which bakers.build ships none of, so no screen
+        renders it.

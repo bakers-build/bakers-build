@@ -2,6 +2,22 @@
 
 One version covers the CLI (`@bakers-build/bakers`) and the server.
 
+## [0.2.0](https://git.key-tec.de/bakers-build/bakers-build/compare/v0.1.1...v0.2.0) (2026-10-27)
+
+### Features
+
+* one work workflow with type, recipe and label terms ([65d363d](https://git.key-tec.de/bakers-build/bakers-build/commits/65d363d))
+* run every state through one frame, a recipe and runtime guides ([8e4a39e](https://git.key-tec.de/bakers-build/bakers-build/commits/8e4a39e))
+* skills: one state file per state, recipe slots and per-state evals ([6a7f42d](https://git.key-tec.de/bakers-build/bakers-build/commits/6a7f42d))
+* Orca as executor and workspace host ([fe43d33](https://git.key-tec.de/bakers-build/bakers-build/commits/fe43d33))
+* CI: one image per merge request, merge gate, release versions ([bde59d6](https://git.key-tec.de/bakers-build/bakers-build/commits/bde59d6))
+* name the questions bakers init asks in the switch guide ([00b6eae](https://git.key-tec.de/bakers-build/bakers-build/commits/00b6eae))
+* one bb_work workflow, deploy-and-release and verify recipes, conventional releases ([2d8adfd](https://git.key-tec.de/bakers-build/bakers-build/commits/2d8adfd1ddd201f4f16190ad2868aa14b442728b))
+
+### Bug Fixes
+
+* start the changelog after the newest version tag ([9f0ef53](https://git.key-tec.de/bakers-build/bakers-build/commits/9f0ef5326241a2448efb81740341f55a2ce2a248))
+
 ## 0.1.1 — 2026-10-23
 
 The first version on npm: `0.1.0` was tagged but its npm publish failed, so `@bakers-build/bakers@latest` starts at `0.1.1`.
@@ -15,6 +31,7 @@ No changes.
 #### Fixes
 
 - Install the skill-eval packages before the release test run (!10)
+- Read the release version without a pipe (!13)
 
 ## 0.1.0 — 2026-10-23
 

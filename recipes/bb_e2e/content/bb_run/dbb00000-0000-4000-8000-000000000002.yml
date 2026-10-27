@@ -20,7 +20,7 @@ default:
       entity: "dbc00000-0000-4000-8000-000000000001"
   state_at_start:
     -
-      value: "coding"
+      value: "working"
   started_at:
     -
       value: 1781780700

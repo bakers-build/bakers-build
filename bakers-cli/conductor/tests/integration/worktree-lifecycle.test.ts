@@ -138,7 +138,7 @@ function makeConfig(baseUrl: string): ConductorFileConfig {
     label: 'e2e-worktree-lifecycle',
     machine_id: DISPATCH_MACHINE_ID,
     project: E2E_PROJECT,
-    states: ['coding'],
+    states: ['working'],
     prompt: '',
     max_parallel: 1,
     poll_interval_ms: 1000,
@@ -156,9 +156,9 @@ function makeConfig(baseUrl: string): ConductorFileConfig {
 /**
  * Mint a fresh, claimable bb_ticket via drush (perm-forced: the API identity
  * cannot create a ticket or assign a conductor). Assigns it to the seeded
- * dispatch conductor + the e2e project, forces state=coding, and returns its
+ * dispatch conductor + the e2e project, forces state=working, and returns its
  * uuid + derived branch_name. `Entity::set()` routes state through StateItem so
- * the coding state is accepted (mirrors the bakers-init-test fixture-states step).
+ * the working state is accepted (mirrors the bakers-init-test fixture-states step).
  */
 function mintTicket(
   root: string,
@@ -172,13 +172,13 @@ $conductor = $first($etm->getStorage('bb_conductor')->loadByProperties(['conduct
 if (!$project || !$conductor) { fwrite(STDERR, 'missing e2e project or dispatch conductor - run ddev init --recipe --test'); exit(1); }
 $t = $etm->getStorage('bb_ticket')->create([
   'identifier' => '${identifier}',
-  'workflow' => 'bb_feature',
+  'workflow' => 'bb_work',
   'title' => 'e2e worktree lifecycle',
   'project_id' => $project->id(),
   'conductor_id' => $conductor->id(),
   'description' => ['value' => 'e2e worktree lifecycle', 'format' => 'bb_rich'],
 ]);
-$t->set('state', 'coding');
+$t->set('state', 'working');
 $t->save();
 print json_encode(['uuid' => $t->uuid(), 'branch' => $t->get('branch_name')->value]);
 `.trim();
@@ -207,7 +207,7 @@ print 'deleted';
 /**
  * Drive the ticket to a TERMINAL state (and retire its run) via drush.
  *
- * Entity::set() bypasses state-machine transition-edge validation (coding->done
+ * Entity::set() bypasses state-machine transition-edge validation (working->done
  * is not a direct API edge), matching the bakers-init-test fixture-states step.
  * Since BB-451, BbTicket::preSave() closes a terminal ticket on its own
  * save — this ->save() is what does it, `done` and `cancelled` alike — so the

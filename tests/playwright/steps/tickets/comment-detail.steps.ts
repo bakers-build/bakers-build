@@ -113,7 +113,7 @@ Given('another ticket has a comment between those times', async ({ page }) => {
     '$p = $home ? $home->get("project_id")->entity : NULL;',
     '$u = current($etm->getStorage("user")->loadByProperties(["name" => "north-lead"]));',
     'if (!$p || !$u) { print "NO_FOREIGN"; return; }',
-    '$f = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "Foreign comment host", "workflow" => "bb_feature", "state" => "coding"]);',
+    '$f = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "Foreign comment host", "workflow" => "bb_work", "state" => "working"]);',
     '$f->save();',
     '$c = $etm->getStorage("bb_comment")->create(["ticket_id" => $f->id(), "author" => $u->id(), "type" => "spec", "body" => ["value" => "FOREIGN-COMMENT-BODY", "format" => "bb_rich"]]);',
     '$c->setCreatedTime(150);',

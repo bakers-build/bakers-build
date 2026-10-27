@@ -41,4 +41,25 @@ Every identifier in the log whose key was admitted that way is then collected, i
 
 ## Where it is used
 
-The `prepare-deployment` skill runs it during the deployment workflow and writes `resolved[].uuid` to the deployment ticket's `referenced_tickets`, recording any `unresolved` identifiers in its summary. The `bb_deployment` workflow itself is described in [Workflows and states](/skills-and-workflows/workflows-and-states).
+A deployment is a ticket of type `deployment` with the recipe `deploy-and-release`; it runs the one workflow `bb_work` like every other ticket. Its `plan` step runs `bakers deployment tickets` from the environment's deployed ref to the frozen SHA and records `resolved[].uuid` in the ticket's `referenced_tickets`, listing any `unresolved` identifiers in the plan comment.
+
+## Release
+
+A deployment to the environment whose branch is `main` is the release; CLI and server share its one version. It follows Conventional Commits, SemVer, Keep a Changelog and a git-flow release branch:
+
+1. **Version and changelog from the merge request titles.** Every squash subject on `develop` is a Conventional Commits subject (the `mr_title` CI job and the merge step check it). `commit-and-tag-version` derives the next version from the subjects since the last reachable `v*` tag: `fix` bumps the patch, `feat` the minor, a `!` or `BREAKING CHANGE` the major, and below 1.0 a breaking change bumps the minor. The `plan` step shows its dry run, and the approver may override the version:
+
+   ```sh
+   pnpm --dir bakers-cli run bump --dry-run
+   pnpm --dir bakers-cli run bump --release-as 0.2.0   # only when the approver overrides it
+   ```
+
+2. **Release branch.** The `working` step cuts `release/<date>-<ticket>` at the frozen SHA and runs `pnpm --dir bakers-cli run bump` there. The tool sets `VERSION`, writes the `## [x.y.z]` section into `CHANGELOG.md` and commits `chore(release): x.y.z`; it creates no tag.
+3. **Into `main`.** A merge request from the release branch into `main`, titled `chore(release): x.y.z` like the back-merge below (the `mr_title` job refuses any other title), with its gate played, merged with a merge commit, never squashed (the merge API with `squash=false`; the `mr_main_merge_commit` job fails a merge request into `main` that has squash on). The `main` pipeline promotes the gate-built images and deploys prod. The `release` job then tags `vx.y.z` on the merge's second parent, the `chore(release)` commit, and creates the GitLab release from its changelog section. The tag pipeline publishes `@bakers-build/bakers@x.y.z` as `latest` and tags the images `:x.y.z`.
+4. **Back-merge into `develop`.** A second merge request from the release branch into `develop`, again with a played gate and a merge commit. If `develop` moved since the freeze, merge `develop` into the release branch first. `main` is never merged into `develop`: both branches receive the release branch, so every commit on them keeps a gate-built tree, which `promote` requires, and `develop` contains the tagged commit, so the next release ranges from that tag.
+
+A breaking server change needs a raised `min_client_version` in the same batch; the raise is an ordinary merge request on `develop`, followed by a new freeze.
+
+## Roll back
+
+Roll back by version: point the prod stack's images at the last good `:<version>` and redeploy, then revert through a merge request ([Server › Roll back](/advanced/server#roll-back)). A version tag is never moved or reused; the fix ships as the next version.

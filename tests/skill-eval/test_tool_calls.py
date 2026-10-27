@@ -11,6 +11,19 @@ HERE = Path(__file__).resolve().parent
 
 
 class ToolServerTests(unittest.TestCase):
+    def test_seeded_comments_are_read_with_their_ticket(self):
+        spec = importlib.util.spec_from_file_location('tool_server', HERE / 'tool-server.py')
+        server = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(server)
+        ticket = '11111111-1111-4111-8111-111111111111'
+        seeded = {'id': '77777777-7777-4777-8777-000000000001', 'bb_comment_type': 'qualification',
+                  'body': {'value': 'Handoff', 'format': 'bb_rich'},
+                  'relationships': {'ticket_id': {'data': {'type': 'bb_ticket--bb_ticket', 'id': ticket}}}}
+        simulation = server.Simulation({'simulation': {'ticket': {'id': ticket, 'state': 'plan'}, 'comments': [seeded]}})
+        read = simulation.call('bakers', {'argv': ['bakers', 'dropsh', 'read', f'bb_ticket/bb_ticket/{ticket}', '--include', 'comments']})
+        included = json.loads(read['stdout'])['included']
+        self.assertEqual([(c['id'], c['attributes']['bb_comment_type']) for c in included], [(seeded['id'], 'qualification')])
+
     def test_comment_call_preserves_markdown_and_readback_without_running_commands(self):
         body = '-- leading dash\n\n`code` $HOME $(touch /tmp/not-executed) "quoted"\n\n'
         ticket = '11111111-1111-4111-8111-111111111111'

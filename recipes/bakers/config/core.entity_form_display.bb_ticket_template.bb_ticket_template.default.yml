@@ -6,7 +6,9 @@ dependencies:
     - text
   enforced:
     config:
-      - bb_core.bb_vocabulary.bb_labels
+      - bb_core.bb_vocabulary.label
+      - bb_core.bb_vocabulary.recipe
+      - bb_core.bb_vocabulary.type
 id: bb_ticket_template.bb_ticket_template.default
 targetEntityType: bb_ticket_template
 bundle: bb_ticket_template
@@ -28,7 +30,7 @@ content:
       default_value: ''
       note_lead: Set
       note_prefix: 'Tickets from this template are claimed at the next poll and an agent run starts on '
-      note_suffix: '.'
+      note_suffix: .
     third_party_settings: {  }
   description:
     type: text_textarea
@@ -81,6 +83,24 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
+  recipe:
+    type: bb_picker
+    weight: 6
+    region: content
+    settings:
+      picker_region: pills
+      label: Recipe
+      icon: tag
+      searchable: false
+      fallback: true
+      clear_label: 'No recipe'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
   target_state:
     type: bb_picker
     weight: 5
@@ -92,6 +112,24 @@ content:
       searchable: false
       fallback: true
       clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  ticket_type:
+    type: bb_picker
+    weight: 6
+    region: content
+    settings:
+      picker_region: pills
+      label: Type
+      icon: tag
+      searchable: false
+      fallback: true
+      clear_label: 'No type'
       create_label: ''
       context_parameter: ''
       default_value: ''
@@ -120,7 +158,7 @@ content:
       clear_label: ''
       create_label: ''
       context_parameter: ''
-      default_value: bb_feature
+      default_value: bb_work
       note_lead: ''
       note_prefix: ''
       note_suffix: ''

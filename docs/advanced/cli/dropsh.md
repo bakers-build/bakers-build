@@ -26,11 +26,14 @@ The connection is chosen by the same rule as in `bakers ui`: [Which control plan
 
 ## Targets and envelopes
 
-A **target** is `entity_type/bundle/uuid`, for example `bb_ticket/bb_ticket/57738e90-...`. For bakers.build entities the bundle equals the entity type, except labels: `bb_term/bb_labels/<uuid>`.
+A **target** is `entity_type/bundle/uuid`, for example `bb_ticket/bb_ticket/57738e90-...`. For bakers.build entities the bundle equals the entity type, except terms, whose bundle is the vocabulary: `bb_term/type/<uuid>`, `bb_term/recipe/<uuid>` or `bb_term/label/<uuid>`.
 
 An **envelope** is a JSON:API document whose `data.type` is `<entity>--<bundle>`, with fields under `attributes` and `relationships`, given inline or as `@path` to a file. Alternatively `create` and `update` take **field parameters**, `--title "Hello"`, `--body.value "Text"`, `--<relationship> <uuid>`, or `--json <field>=<json>` for an array of objects; the two forms are mutually exclusive. `--fields` lists the parameters a bundle accepts, and an unknown field name is rejected with exit code `4` rather than ignored. `--dry-run` validates against the cached schema and prints what would be sent, without sending it.
 
-bakers.build adds two name fields to writes: `--label_names work:code` and `--environment_names staging` resolve names to the matching labels or environments on the live write (a dry run shows them unresolved, and an unknown name fails before anything is sent).
+bakers.build adds name fields to writes, resolved on the live write (a dry run shows them unresolved):
+
+- `--type_names bug`, `--recipe_names <name>` and `--label_names agent:claude` set the ticket's `ticket_type`, `recipe` and `labels` from term names in the ticket's workspace. An unknown name is created in that workspace first, then linked; a create that names no project cannot create one and fails. `--type_names` and `--recipe_names` take one name and replace the previous value; `--label_names` adds to any `--labels` in the same write.
+- `--environment_names staging` sets the environment; an unknown name fails before anything is sent.
 
 ## Verbs
 
@@ -58,7 +61,7 @@ bakers.build adds two name fields to writes: `--label_names work:code` and `--en
 | `<>`, `!=` | not equals |
 | `<`, `<=`, `>`, `>=` | comparisons |
 | `CONTAINS`, `STARTS_WITH`, `ENDS_WITH` | substring, prefix, suffix |
-| `IN`, `NOT IN` | comma-separated list: `--filter state:IN:spec,coding` |
+| `IN`, `NOT IN` | comma-separated list: `--filter state:IN:plan,working` |
 | `BETWEEN`, `NOT BETWEEN` | comma-separated `low,high` |
 | `IS NULL`, `IS NOT NULL` | no value; quote it so the shell passes one argument: `--filter 'origin:IS NULL'` |
 
@@ -81,7 +84,7 @@ bakers dropsh schema bb_ticket/bb_ticket --for create
 
 # a project's uuid, and the labels
 bakers dropsh search bb_project --bundle bb_project
-bakers dropsh search bb_term --bundle bb_labels
+bakers dropsh search bb_term --bundle label
 
 # the comments of one ticket, oldest first
 bakers dropsh search bb_comment --bundle bb_comment \

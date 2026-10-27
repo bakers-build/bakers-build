@@ -85,7 +85,7 @@ final class ActivityMailDeliveryTest extends ActivityMailKernelTestBase {
   public function testTransportFailureIsLoggedAndNotRetried(): void {
     $this->transport->failure = new TransportException('Connection refused.');
     $this->changeState();
-    self::assertSame('spec', $this->storedState());
+    self::assertSame('plan', $this->storedState());
     self::assertSame(1, $this->transport->attempts);
     self::assertNotSame([], $this->logs->messages('bb_activity', RfcLogLevel::WARNING));
 
@@ -102,7 +102,7 @@ final class ActivityMailDeliveryTest extends ActivityMailKernelTestBase {
     $this->container->get('state')->set('bb_activity_test.break', TRUE);
     $this->tick($this->watcher, ['test_broken', 'test_ticket_event']);
     $this->changeState();
-    self::assertSame('spec', $this->storedState());
+    self::assertSame('plan', $this->storedState());
     self::assertCount(1, $this->mailsTo($this->watcher));
     $errors = $this->logs->messages('bb_activity', RfcLogLevel::ERROR);
     self::assertCount(1, $errors);
@@ -154,10 +154,10 @@ final class ActivityMailDeliveryTest extends ActivityMailKernelTestBase {
   }
 
   /**
-   * Moves side a's ticket to spec.
+   * Moves side a's ticket to plan.
    */
   private function changeState(): void {
-    $this->ticket('a')->set('state', 'spec')->save();
+    $this->ticket('a')->set('state', 'plan')->save();
   }
 
   /**

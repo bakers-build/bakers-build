@@ -27,6 +27,8 @@ const TICKET = 'cccccccc-0000-0000-0000-000000000001';
 const PARENT = 'dddddddd-0000-0000-0000-000000000001';
 const LABEL_A = 'eeeeeeee-0000-0000-0000-000000000001';
 const LABEL_B = 'eeeeeeee-0000-0000-0000-000000000002';
+const TYPE = 'eeeeeeee-0000-0000-0000-000000000003';
+const RECIPE = 'eeeeeeee-0000-0000-0000-000000000004';
 
 const opts: EditFormOptions = {
   users: [
@@ -41,6 +43,8 @@ const opts: EditFormOptions = {
     { id: COND, label: 'cw-framework (online)' },
     { id: OTHER_COND, label: 'tom (offline)' },
   ],
+  ticketTypes: [{ id: TYPE, label: 'feature' }],
+  recipes: [{ id: RECIPE, label: 'drupal-feature' }],
   labels: [
     { id: LABEL_A, label: 'work:code' },
     { id: LABEL_B, label: 'work:docs' },
@@ -52,6 +56,8 @@ function doc(
     assignee?: string | null;
     conductor?: string | null;
     parent?: string | null;
+    ticketType?: string | null;
+    recipe?: string | null;
     labels?: string[];
     reviewers?: string[] | undefined;
   } = {},
@@ -74,6 +80,10 @@ function doc(
         parent_id: {
           data: rel.parent ? { id: rel.parent } : null,
         },
+        ticket_type: {
+          data: rel.ticketType ? { id: rel.ticketType } : null,
+        },
+        recipe: { data: rel.recipe ? { id: rel.recipe } : null },
         labels: {
           data: (rel.labels ?? []).map((id) => ({ id })),
         },
@@ -121,8 +131,9 @@ it('AC-1: prefills null for an unassigned ticket, and mixes', () => {
   expect(onlyCond.conductor).toBe(COND);
 });
 
-it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, parent, labels, save, cancelTicket', () => {
+it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, parent, type, recipe, labels, save, cancelTicket', () => {
   // BB-360: State select is gone; Parent + Labels sit before the dual actions.
+  // BAKERS-17: Type and Recipe sit between them.
   // Cancel ticket is a dedicated action id — never `cancel` (Esc owns that intent).
   expect(EDIT_FIELDS.map((f) => f.id)).toEqual([
     'assignee',
@@ -131,6 +142,8 @@ it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, par
     'estimate',
     'spent',
     'parent',
+    'ticketType',
+    'recipe',
     'labels',
     'submit',
     CANCEL_TICKET_ACTION_ID,
@@ -142,7 +155,7 @@ it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, par
   expect(activeEditField(moveEditField(s, 1)).id).toBe('reviewers');
   expect(activeEditField(moveEditField(s, 2)).id).toBe('conductor');
   expect(moveEditField(s, -1).active).toBe(0);
-  expect(moveEditField(s, 99).active).toBe(8);
+  expect(moveEditField(s, 99).active).toBe(10);
 });
 
 // ---- AC-4: clearable, from both ends, in both directions --------------------
@@ -180,7 +193,7 @@ it('AC-4: the clear shortcut sets null on the active select only', () => {
   expect(clearedUser.assignee).toBeNull();
   expect(clearedUser.conductor).toBe(COND);
   // On the Save action row it is a no-op.
-  expect(clearEditValue({ ...s, active: 7 })).toEqual({ ...s, active: 7 });
+  expect(clearEditValue({ ...s, active: 9 })).toEqual({ ...s, active: 9 });
 });
 
 it('cycleEdit only touches the active field', () => {
@@ -199,10 +212,35 @@ it('serializeEdit emits assignee, conductor, labels and parent linkages', () => 
       conductor_id: {
         data: { type: 'bb_conductor--bb_conductor', id: COND },
       },
+      ticket_type: { data: null },
+      recipe: { data: null },
       labels: { data: [] },
       parent_id: { data: null },
     },
   });
+});
+
+it('BAKERS-17: type and recipe prefill from the ticket and PATCH as to-one terms', () => {
+  const typed = initialEditForm(doc({ ticketType: TYPE, recipe: RECIPE }));
+  expect(typed.ticketType).toBe(TYPE);
+  expect(typed.recipe).toBe(RECIPE);
+  const body = serializeEdit(typed);
+  expect(body.relationships.ticket_type).toEqual({
+    data: { type: 'bb_term--type', id: TYPE },
+  });
+  expect(body.relationships.recipe).toEqual({
+    data: { type: 'bb_term--recipe', id: RECIPE },
+  });
+  // Clearable like the assignment selects: null is a real position.
+  expect(
+    serializeEdit({ ...typed, ticketType: null }).relationships.ticket_type,
+  ).toEqual({ data: null });
+  for (const id of ['ticketType', 'recipe']) {
+    expect(EDIT_FIELDS.find((f) => f.id === id)).toMatchObject({
+      kind: 'select',
+      clearable: true,
+    });
+  }
 });
 
 it('serializeEdit emits data: null for a cleared assignment field', () => {
@@ -225,8 +263,8 @@ it('serializeEdit always includes labels (possibly empty) and never attributes.s
   });
   expect(withLabels.relationships.labels).toEqual({
     data: [
-      { type: 'bb_term--bb_labels', id: LABEL_A },
-      { type: 'bb_term--bb_labels', id: LABEL_B },
+      { type: 'bb_term--label', id: LABEL_A },
+      { type: 'bb_term--label', id: LABEL_B },
     ],
   });
   expect(withLabels.attributes).not.toHaveProperty('state');
@@ -248,6 +286,8 @@ it('an UNCHANGED form still emits every relationship key (explicit no-op PATCH)'
     'conductor_id',
     'labels',
     'parent_id',
+    'recipe',
+    'ticket_type',
   ]);
 });
 
@@ -428,13 +468,7 @@ describe('BB-360 — Cancel ticket and terminal declaration', () => {
     doc({ assignee: USER, conductor: COND }, { attributes: { state } });
 
   it('non-terminal declaration has parent, labels, Save and Cancel ticket — no State', () => {
-    for (const state of [
-      'qualification',
-      'spec',
-      'coding',
-      'review',
-      'verifying',
-    ])
+    for (const state of ['qualification', 'plan', 'working', 'review'])
       expect(editFormFor(withState(state)).fields.map((f) => f.id)).toEqual([
         'assignee',
         'reviewers',
@@ -442,6 +476,8 @@ describe('BB-360 — Cancel ticket and terminal declaration', () => {
         'estimate',
         'spent',
         'parent',
+        'ticketType',
+        'recipe',
         'labels',
         'submit',
         CANCEL_TICKET_ACTION_ID,
@@ -457,6 +493,8 @@ describe('BB-360 — Cancel ticket and terminal declaration', () => {
         'estimate',
         'spent',
         'parent',
+        'ticketType',
+        'recipe',
         'labels',
         'submit',
       ]);
@@ -481,7 +519,7 @@ describe('BB-360 — Cancel ticket and terminal declaration', () => {
   });
 
   it('ordinary serializeEdit never emits state even if the form was edited', () => {
-    const base = initialEditForm(withState('coding'));
+    const base = initialEditForm(withState('working'));
     expect(serializeEdit(base).attributes).not.toHaveProperty('state');
     expect(
       serializeEdit({
@@ -533,6 +571,8 @@ describe("a closed ticket's edit popup", () => {
       'estimate',
       'spent',
       'parent',
+      'ticketType',
+      'recipe',
       'labels',
     ]);
   });

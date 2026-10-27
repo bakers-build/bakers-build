@@ -6,9 +6,9 @@ _meta:
   uuid: 685a0000-0000-4000-8000-000000000003
   default_langcode: en
   depends:
+    db1a0000-0000-4000-8000-000000000022: bb_term
     684a0000-0000-4000-8000-000000000003: bb_project
     dbe50000-0000-4000-8000-000000000001: user
-    db1a0000-0000-4000-8000-000000000010: bb_term
 default:
   name:
     -
@@ -25,13 +25,13 @@ default:
       format: bb_rich
   workflow:
     -
-      value: "bb_chore"
+      value: "bb_work"
+  ticket_type:
+    -
+      entity: "db1a0000-0000-4000-8000-000000000022"
   target_state:
     -
       value: "qualification"
-  labels:
-    -
-      entity: "db1a0000-0000-4000-8000-000000000010"
   project_id:
     -
       entity: "684a0000-0000-4000-8000-000000000003"

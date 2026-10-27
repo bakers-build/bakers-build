@@ -25,7 +25,7 @@ codex plugin add bakers@bakers
 Then paste this prompt:
 
 ```text
-Use `bakers:init` to guide me through installing and setting up bakers.build.
+Use `bakers:bb-init` to guide me through installing and setting up bakers.build.
 ```
 
 The wizard explains your choices, checks your tools and signs you in. You decide; the wizard guides and checks.

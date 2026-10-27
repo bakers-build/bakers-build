@@ -166,7 +166,7 @@ final class TicketsViewTableTest extends KernelTestBase {
    * The listing renders as the theme's list, with no table anywhere.
    */
   public function testTheViewRendersThePatternedListAndNoTable(): void {
-    $this->ticket(['state' => 'coding', 'priority' => 2]);
+    $this->ticket(['state' => 'working', 'priority' => 2]);
     $html = $this->renderList($this->executed());
 
     self::assertStringContainsString('data-component-id="bb_theme:list"', $html);
@@ -189,19 +189,19 @@ final class TicketsViewTableTest extends KernelTestBase {
     ]);
     $ticket = $this->ticket([
       'title' => 'Wire the ticket list',
-      'state' => 'coding',
+      'state' => 'working',
       'priority' => 1,
       'conductor_id' => $conductor->id(),
       'owner_user_id' => $this->reader->id(),
     ]);
     $item = $this->itemOf($this->renderList($this->executed()), $ticket);
 
-    // The state is a glyph named by the workflow's own label; coding is
+    // The state is a glyph named by the workflow's own label; working is
     // the filled disc, occupancy is the rail.
     $avatar = $this->regionOf($item, 'avatar');
     self::assertStringContainsString('role="img"', $avatar);
-    self::assertStringContainsString('title="Coding"', $avatar);
-    self::assertStringContainsString('#status-running', $avatar, 'Coding is the working disc.');
+    self::assertStringContainsString('title="Working"', $avatar);
+    self::assertStringContainsString('#status-running', $avatar, 'Working is the working disc.');
     self::assertStringContainsString('bg-state-running', $item, 'A conductor paints the teal rail.');
 
     $headline = $this->regionOf($item, 'headline');
@@ -229,7 +229,7 @@ final class TicketsViewTableTest extends KernelTestBase {
    * Absent optional values leave no cell, and dropped columns never render.
    */
   public function testAbsentOptionalValuesAndDroppedColumnsRenderNothing(): void {
-    $ticket = $this->ticket(['state' => 'coding']);
+    $ticket = $this->ticket(['state' => 'working']);
     $item = $this->itemOf($this->renderList($this->executed()), $ticket);
 
     self::assertStringNotContainsString('data-cell="priority"', $item);
@@ -245,7 +245,7 @@ final class TicketsViewTableTest extends KernelTestBase {
    * A frozen ticket names why it is standing still on the listing row.
    */
   public function testFrozenTicketNamesItsStallReason(): void {
-    $ticket = $this->ticket(['state' => 'coding']);
+    $ticket = $this->ticket(['state' => 'working']);
     $ticket->setFrozen(TRUE)->save();
     $item = $this->itemOf($this->renderList($this->executed()), $ticket);
     $meta = $this->regionOf($item, 'meta');
@@ -277,13 +277,13 @@ final class TicketsViewTableTest extends KernelTestBase {
       'owner_user_id' => $this->reader->id(),
     ]);
 
-    $coding_idle = $this->ticket(['state' => 'coding']);
-    $coding_held = $this->ticket([
-      'state' => 'coding',
+    $working_idle = $this->ticket(['state' => 'working']);
+    $working_held = $this->ticket([
+      'state' => 'working',
       'conductor_id' => $conductor->id(),
     ]);
-    $spec_held = $this->ticket([
-      'state' => 'spec',
+    $plan_held = $this->ticket([
+      'state' => 'plan',
       'conductor_id' => $conductor->id(),
     ]);
     $review_held = $this->ticket([
@@ -291,15 +291,15 @@ final class TicketsViewTableTest extends KernelTestBase {
       'conductor_id' => $conductor->id(),
     ]);
     $review_idle = $this->ticket(['state' => 'review']);
-    $spec_idle = $this->ticket(['state' => 'spec']);
+    $plan_idle = $this->ticket(['state' => 'plan']);
     $html = $this->renderList($this->executed());
 
-    $this->assertRail($this->itemOf($html, $coding_idle), 'bg-transparent');
-    $this->assertRail($this->itemOf($html, $coding_held), 'bg-state-running');
-    $this->assertRail($this->itemOf($html, $spec_held), 'bg-state-running');
+    $this->assertRail($this->itemOf($html, $working_idle), 'bg-transparent');
+    $this->assertRail($this->itemOf($html, $working_held), 'bg-state-running');
+    $this->assertRail($this->itemOf($html, $plan_held), 'bg-state-running');
     $this->assertRail($this->itemOf($html, $review_held), 'bg-state-attention');
     $this->assertRail($this->itemOf($html, $review_idle), 'bg-state-attention');
-    $this->assertRail($this->itemOf($html, $spec_idle), 'bg-transparent');
+    $this->assertRail($this->itemOf($html, $plan_idle), 'bg-transparent');
     self::assertStringNotContainsString('data-row-url', $html);
   }
 
@@ -312,8 +312,8 @@ final class TicketsViewTableTest extends KernelTestBase {
       'project_id' => $this->fixture('a', 'bb_project')->id(),
       'owner_user_id' => $this->reader->id(),
     ]);
-    $with = $this->ticket(['state' => 'coding']);
-    $without = $this->ticket(['state' => 'spec']);
+    $with = $this->ticket(['state' => 'working']);
+    $without = $this->ticket(['state' => 'plan']);
     $this->createEntity('bb_run', [
       'ticket_id' => $with->id(),
       'conductor_id' => $conductor->id(),
@@ -341,7 +341,7 @@ final class TicketsViewTableTest extends KernelTestBase {
    * The occupancy rail is never the wait accent; a finished row has no stall.
    */
   public function testNoItemIsTinted(): void {
-    foreach (['qualification', 'spec', 'coding', 'review', 'done', 'cancelled'] as $state) {
+    foreach (['qualification', 'plan', 'working', 'review', 'done', 'cancelled'] as $state) {
       $this->ticket(['state' => $state]);
     }
     $html = $this->renderList($this->executed());
@@ -397,8 +397,8 @@ final class TicketsViewTableTest extends KernelTestBase {
    * Every combined sort orders the actual rows, with a stable tie-breaker.
    */
   public function testEveryCombinedSortOrdersTheRows(): void {
-    $low = $this->ticket(['priority' => 4, 'state' => 'spec']);
-    $high = $this->ticket(['priority' => 1, 'state' => 'coding']);
+    $low = $this->ticket(['priority' => 4, 'state' => 'plan']);
+    $high = $this->ticket(['priority' => 1, 'state' => 'working']);
     // Ties on priority: the unique tie-breaker orders them in the chosen
     // direction.
     $tie_a = $this->ticket(['priority' => 2, 'state' => 'review']);
@@ -471,7 +471,7 @@ final class TicketsViewTableTest extends KernelTestBase {
   private function ticket(array $values = []): BbTicketInterface {
     $ticket = $this->createEntity('bb_ticket', $values + [
       'title' => 'Wire the ticket list',
-      'workflow' => 'bb_feature',
+      'workflow' => 'bb_work',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

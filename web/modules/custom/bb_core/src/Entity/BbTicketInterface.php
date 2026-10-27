@@ -38,7 +38,7 @@ interface BbTicketInterface extends BbContentEntityInterface {
    * Returns the workflow plugin ID selected for this ticket.
    *
    * @return string
-   *   The workflow machine name (e.g. 'bb_feature').
+   *   The workflow machine name (e.g. 'bb_work').
    */
   public function getWorkflow(): string;
 

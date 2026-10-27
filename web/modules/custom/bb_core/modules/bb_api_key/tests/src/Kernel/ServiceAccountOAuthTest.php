@@ -275,7 +275,7 @@ final class ServiceAccountOAuthTest extends KernelTestBase {
         'type' => 'bb_ticket--bb_ticket',
         'attributes' => [
           'title' => 'Incident',
-          'workflow' => 'bb_bug',
+          'workflow' => 'bb_work',
           'description' => ['value' => '# Hi', 'format' => 'bb_rich'],
         ],
         'relationships' => $relationships,
@@ -596,7 +596,7 @@ final class ServiceAccountOAuthTest extends KernelTestBase {
     $this->container->get('current_user')->setAccount($contributor);
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Human ticket',
-      'workflow' => 'bb_bug',
+      'workflow' => 'bb_work',
       'project_id' => $this->projectA->id(),
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);

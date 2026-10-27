@@ -43,6 +43,8 @@ final class TicketTemplateInstantiateResource extends EntityResourceBase impleme
   private const RELATIONSHIPS = [
     'project_id' => 'bb_project',
     'conductor_id' => 'bb_conductor',
+    'ticket_type' => 'bb_term',
+    'recipe' => 'bb_term',
     'labels' => 'bb_term',
   ];
 

@@ -19,6 +19,7 @@ import {
   SUMMARY_MAX_LINES,
   sectionsForTab,
   tabViewTree,
+  ticketHeaderTree,
 } from '../../../../../src/Entity/ticket/Component/ticket-detail/index.js';
 import {
   BOLD,
@@ -1132,12 +1133,12 @@ const overviewDoc = {
     },
     {
       id: 'l-1',
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: 'work:code' },
     },
     {
       id: 'l-2',
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: 'priority:high' },
     },
   ],
@@ -1402,6 +1403,45 @@ it('D11: detailLines (the piped render) carries Labels and Parent', () => {
   expect(text).toContain('BB-200');
 });
 
+it('BAKERS-17: type and recipe names show beside labels, in the header and the pipe', () => {
+  const typed = {
+    data: {
+      ...overviewDoc.data,
+      relationships: {
+        ...overviewDoc.data.relationships,
+        ticket_type: { data: { type: 'bb_term--type', id: 'ty-1' } },
+        recipe: { data: { type: 'bb_term--recipe', id: 'r-1' } },
+      },
+    },
+    included: [
+      ...(overviewDoc.included ?? []),
+      { type: 'bb_term--type', id: 'ty-1', attributes: { name: 'feature' } },
+      {
+        type: 'bb_term--recipe',
+        id: 'r-1',
+        attributes: { name: 'drupal-feature' },
+      },
+    ],
+  };
+  const header = renderTree(ticketHeaderTree(typed, 'BB-1', 'T', [])).join(
+    '\n',
+  );
+  expect(header).toContain('feature  ·  drupal-feature  ·  work:code');
+  const sections = detailSections(typed);
+  expect(sections.find((x) => x.heading === 'Type')?.lines).toEqual([
+    'feature',
+  ]);
+  expect(sections.find((x) => x.heading === 'Recipe')?.lines).toEqual([
+    'drupal-feature',
+  ]);
+  // Unset: stated in the pipe, dropped from the header — like the labels.
+  const bare = detailSections(bareDoc);
+  expect(bare.find((x) => x.heading === 'Type')?.lines).toEqual(['No type.']);
+  expect(bare.find((x) => x.heading === 'Recipe')?.lines).toEqual([
+    'No recipe.',
+  ]);
+});
+
 // AC-6 / D5 — the Runs tab is the EXISTING run table over the sideloaded runs, so
 // a run looks the same here as on the project-wide Runs screen. Ordered
 // newest-started first by a TOTAL comparator (see runs.test.ts for the order
@@ -1531,7 +1571,7 @@ const richDoc = {
   included: [
     {
       id: 'l-x',
-      type: 'bb_term--bb_labels',
+      type: 'bb_term--label',
       attributes: { name: '__x__' },
     },
     {

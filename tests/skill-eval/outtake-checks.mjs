@@ -17,7 +17,26 @@ export function visibleMarkdown(output) {
 
 export const check = (id, met, reason) => ({ id, met: Boolean(met), reason });
 
-export function outtakeChecks(output) {
+const section = (text, heading) => text.split(new RegExp(`^#{1,6}\\s+${heading}\\s*$`, 'm'))[1]?.split(/^#{1,6}\s/m)[0] ?? '';
+
+/** Working's per-criterion rows, from the handoff's checks and their result records. */
+export const criterionRows = input => (input.checks ?? []).flatMap(c => (c.ac_ids ?? []).map(id => {
+  const r = (input.results ?? []).find(x => x.check_id === c.id) ?? {};
+  return { id, status: ['passed', 'reused'].includes(r.status) ? 'PASS' : 'FAIL', revision: r.revision,
+    test_path: c.test_path, command: c.mode === 'automated' ? c.command_or_steps : undefined };
+}));
+
+/** Working shows each criterion on one Success line: ID, PASS/FAIL, test path, command, revision. */
+export function criterionLines(output, rows) {
+  const lines = section(visibleMarkdown(output), '✅ Success').split('\n');
+  return check('criterion-lines', rows.length > 0 && rows.every(row => {
+    const own = lines.filter(line => new RegExp(`\\b${row.id}\\b`).test(line));
+    return own.length === 1 && own[0].includes(row.status) && Boolean(row.revision) && own[0].includes(row.revision.slice(0, 7)) &&
+      (!row.test_path || own[0].includes(row.test_path)) && (!row.command || own[0].includes(row.command));
+  }), 'Success lists each criterion once with PASS/FAIL, its test path and command where recorded, and its revision');
+}
+
+export function outtakeChecks(output, rows) {
   const text = visibleMarkdown(output);
   const headings = [...text.matchAll(/^#{1,6}\s+(.+?)\s*$/gm)].map(m => m[1]);
   const selected = headings.filter(h => HEADINGS.includes(h));
@@ -29,7 +48,7 @@ export function outtakeChecks(output) {
       [HEADINGS[0], HEADINGS[3], HEADINGS[4]].every(h => selected.includes(h)) &&
       /^#{1,6}\s+🎯 Outcome\s*\n/.test(text.trimStart()),
     'Required headings must be present, ordered, unique and outside code fences'),
-    check('no-passed-ac-list', !success.split('\n').some(line =>
+    rows ? criterionLines(output, rows) : check('no-passed-ac-list', !success.split('\n').some(line =>
       /^\s*(?:[-*]\s+|\d+[.)]\s+|\|)/.test(line) && /\bAC[- ]?\d+\b/.test(line)) && !text.split('\n').some(line =>
       /^\s*(?:[-*]\s+|\d+[.)]\s+|\|)/.test(line) && /\bAC[- ]?\d+\b/.test(line) && /\bPASS(?:ED)?\b|✅/i.test(line)),
     'Passing acceptance criteria belong in typed evidence, not a visible list'),

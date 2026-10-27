@@ -1,0 +1,7 @@
+uuid: d08dc44c-6c09-49c6-b688-359f8ea0e868
+langcode: en
+status: true
+dependencies: {  }
+id: type
+label: 'bakers.build ticket types'
+description: ''
