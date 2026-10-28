@@ -24,6 +24,13 @@ When('the provider returns {string} as confirmed', async ({ page }, mail: string
   await page.waitForLoadState('networkidle');
 });
 
+When('the provider returns {string} as confirmed with the picture {string}', async ({ page }, mail: string, picture: string) => {
+  lastMail = mail;
+  before = provisionState(mail);
+  await page.goto(`/user/login/stub?mail=${encodeURIComponent(mail)}&verified=1&picture=${encodeURIComponent(picture)}`);
+  await page.waitForLoadState('networkidle');
+});
+
 When('the provider returns {string} as unconfirmed', async ({ page }, mail: string) => {
   lastMail = mail;
   before = provisionState(mail);
