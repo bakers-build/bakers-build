@@ -23,6 +23,7 @@ import {
 } from '../../tests/chrome-rows.js';
 import { renderTree } from '../../tests/render-tree.js';
 import { PROJECT_TABS, ROOT_TABS, topTabBar } from '../../tests/tab-bars.js';
+import { includedProjects } from '../fixtures/included-projects.js';
 import { type BootedTui, bootTui, settle } from '../tui-harness.js';
 
 // BB-239 — navigation has THREE levels and every screen shows exactly ONE tab
@@ -225,13 +226,15 @@ function fakeServices(
   runsGate?: Promise<unknown>,
   stats: StatsBehaviour = {},
 ): RendererServices {
-  const collection = (): Collection => {
+  const collection = (type: string): Collection => {
     const c: Collection = {
       where: () => c,
+      whereIn: () => c,
       sort: () => c,
       page: () => c,
       first: async () => null,
-      list: async () => [],
+      list: async () =>
+        type === 'bb_project' ? includedProjects(conductorDoc) : [],
     };
     return c;
   };

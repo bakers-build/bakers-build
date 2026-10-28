@@ -6,6 +6,7 @@ import type {
   RendererServices,
   ResolvedRoute,
 } from '../../src/types.js';
+import { includedProjects } from '../fixtures/included-projects.js';
 import { type BootedTui, bootTui, settle } from '../tui-harness.js';
 
 // BB-326 Step A — THE ROW POOL.
@@ -92,13 +93,15 @@ const ticketListDoc = {
 // navigation case.
 
 function fakeServices(): RendererServices {
-  const collection = (): Collection => {
+  const collection = (type: string): Collection => {
     const c: Collection = {
       where: () => c,
+      whereIn: () => c,
       sort: () => c,
       page: () => c,
       first: async () => null,
-      list: async () => [],
+      list: async () =>
+        type === 'bb_project' ? includedProjects(conductorDoc) : [],
     };
     return c;
   };

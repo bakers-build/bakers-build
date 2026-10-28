@@ -18,6 +18,7 @@ import {
   chromeShape,
 } from '../../tests/chrome-rows.js';
 import { topTabBar } from '../../tests/tab-bars.js';
+import { includedProjects } from '../fixtures/included-projects.js';
 // BB-326 — the TTY half of this file boots the OpenTUI test renderer through
 // `tests-bun/tui-harness.ts`; the fake `FakeInput`/`FakeOutput` pair it used to
 // import from `tests/Kernel/tui-harness.ts` is deleted with the swap. The one
@@ -369,13 +370,17 @@ function fakeServices(
   overrides: ServiceOverrides = {},
 ): RendererServices & { paths: string[] } {
   const paths: string[] = [];
-  const collection = (): Collection => {
+  const collection = (type: string): Collection => {
     const c: Collection = {
       where: () => c,
+      whereIn: () => c,
       sort: () => c,
       page: () => c,
       first: async () => null,
-      list: async () => [],
+      list: async () =>
+        type === 'bb_project'
+          ? includedProjects(overrides.conductors ?? conductorDoc)
+          : [],
     };
     return c;
   };

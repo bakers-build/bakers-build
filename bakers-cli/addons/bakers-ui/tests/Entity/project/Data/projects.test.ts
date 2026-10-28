@@ -7,6 +7,7 @@ import {
   type ProjectRow,
 } from '../../../../src/Entity/project/Data/projects.js';
 import { cellValues, idsOf, nodeById } from '../../../render-tree.js';
+import { queryStringOf, toResource } from '../../../test-support.js';
 
 const NOW = 1_000_000; // epoch seconds
 
@@ -26,7 +27,7 @@ function conductor(
   };
 }
 
-/** A bb_project sideload (`included[]` entry). */
+/** A bb_project resource (raw JSON:API), as the project-name read lists it. */
 function project(id: string, name: string) {
   return {
     type: 'bb_project--bb_project',
@@ -35,33 +36,65 @@ function project(id: string, name: string) {
   };
 }
 
-/** Fake dropsh client whose `get()` returns a fixed collection document. */
-function fakeClient(doc: unknown) {
+/**
+ * Fake dropsh client: `get()` serves the bb_conductor `pages` in order (an
+ * `Error` page throws) and records each query; `collection('bb_project')`
+ * lists `projects`, narrowed by `whereIn('id', …)` and cut at the server's
+ * 50-row page as one `list()` is; a read asking for `p-broken` throws.
+ */
+function fakeClient(
+  pages: unknown[],
+  projects: ReturnType<typeof project>[] = [],
+) {
+  const queries: string[] = [];
   return {
-    collection() {
-      throw new Error('loadProjectRows must not use collection()');
+    queries,
+    collection(type: string) {
+      if (type !== 'bb_project') throw new Error(`unexpected ${type}`);
+      let ids: unknown[] | undefined;
+      const collection = {
+        whereIn(path: string, values: unknown[]) {
+          if (path === 'id') ids = values;
+          return collection;
+        },
+        list: async () => {
+          if (ids?.includes('p-broken')) throw new Error('network down');
+          return projects
+            .filter((p) => !ids || ids.includes(p.id))
+            .slice(0, 50)
+            .map(toResource);
+        },
+      };
+      return collection;
     },
-    async get() {
-      return doc;
+    async get(_path: string, params: unknown) {
+      queries.push(queryStringOf(params));
+      const page = pages[queries.length - 1];
+      if (page instanceof Error) throw page;
+      return page;
     },
   };
 }
 
-it('lists projects from bb_conductor, joining the sideloaded project name', async () => {
-  const client = fakeClient({
-    data: [
-      conductor('c1', 'p-bakers', {
-        status: 'online',
-        last_seen: iso(NOW - 10),
-        lease_expires_at: iso(NOW + 60),
-      }),
-      conductor('c2', 'p-shop', {
-        status: 'offline',
-        last_seen: iso(NOW - 10),
-      }),
+it('lists projects from bb_conductor, joining the project name', async () => {
+  const client = fakeClient(
+    [
+      {
+        data: [
+          conductor('c1', 'p-bakers', {
+            status: 'online',
+            last_seen: iso(NOW - 10),
+            lease_expires_at: iso(NOW + 60),
+          }),
+          conductor('c2', 'p-shop', {
+            status: 'offline',
+            last_seen: iso(NOW - 10),
+          }),
+        ],
+      },
     ],
-    included: [project('p-bakers', 'bakers'), project('p-shop', 'shop')],
-  });
+    [project('p-bakers', 'bakers'), project('p-shop', 'shop')],
+  );
   const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
   const bakers = rows.find((r) => r.project === 'bakers');
   const shop = rows.find((r) => r.project === 'shop');
@@ -71,32 +104,43 @@ it('lists projects from bb_conductor, joining the sideloaded project name', asyn
 });
 
 it('stale when the conductor last_seen is old', async () => {
-  const client = fakeClient({
-    data: [
-      conductor('c1', 'p1', {
-        status: 'online',
-        last_seen: iso(NOW - 601),
-        lease_expires_at: iso(NOW + 60),
-      }),
+  const client = fakeClient(
+    [
+      {
+        data: [
+          conductor('c1', 'p1', {
+            status: 'online',
+            last_seen: iso(NOW - 601),
+            lease_expires_at: iso(NOW + 60),
+          }),
+        ],
+      },
     ],
-    included: [project('p1', 'bakers')],
-  });
+    [project('p1', 'bakers')],
+  );
   const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
   expect(rows[0]?.derivedStatus).toBe('stale');
 });
 
 it('the liveliest conductor wins for a project with several', async () => {
-  const client = fakeClient({
-    data: [
-      conductor('dead', 'p1', { status: 'offline', last_seen: iso(NOW - 10) }),
-      conductor('live', 'p1', {
-        status: 'online',
-        last_seen: iso(NOW - 5),
-        lease_expires_at: iso(NOW + 60),
-      }),
+  const client = fakeClient(
+    [
+      {
+        data: [
+          conductor('dead', 'p1', {
+            status: 'offline',
+            last_seen: iso(NOW - 10),
+          }),
+          conductor('live', 'p1', {
+            status: 'online',
+            last_seen: iso(NOW - 5),
+            lease_expires_at: iso(NOW + 60),
+          }),
+        ],
+      },
     ],
-    included: [project('p1', 'bakers')],
-  });
+    [project('p1', 'bakers')],
+  );
   const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
   expect(rows).toHaveLength(1);
   expect(rows[0]?.derivedStatus).toBe('online'); // live sibling wins over offline
@@ -104,16 +148,16 @@ it('the liveliest conductor wins for a project with several', async () => {
 });
 
 it('a conductor with no resolvable project is skipped', async () => {
-  const client = fakeClient({
-    data: [conductor('c1', 'p-missing', { status: 'online' })],
-    included: [], // project not sideloaded
-  });
+  const client = fakeClient(
+    [{ data: [conductor('c1', 'p-missing', { status: 'online' })] }],
+    [], // no bb_project of that id
+  );
   const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
   expect(rows).toEqual([]);
 });
 
 it('no conductors → empty list', async () => {
-  const client = fakeClient({ data: [], included: [] });
+  const client = fakeClient([{ data: [] }]);
   const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
   expect(rows).toEqual([]);
 });
@@ -234,14 +278,99 @@ it('an empty project list renders its header and an explicit line', () => {
 });
 
 it('a failing conductor query degrades to an empty list, not a throw', async () => {
-  const client = {
-    collection() {
-      throw new Error('unused');
-    },
-    async get() {
-      throw new Error('network down');
-    },
-  };
+  const client = fakeClient([new Error('network down')]);
+  const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
+  expect(rows).toEqual([]);
+});
+
+it('reads every page of bb_conductor until links.next is absent', async () => {
+  const client = fakeClient(
+    [
+      {
+        data: [conductor('c1', 'p-alpha', { status: 'offline' })],
+        links: { next: { href: 'next' } },
+      },
+      {
+        data: [
+          conductor('c2', 'p-alpha', {
+            status: 'online',
+            last_seen: iso(NOW - 5),
+            lease_expires_at: iso(NOW + 60),
+          }),
+          conductor('c3', 'p-beta', { status: 'offline' }),
+        ],
+      },
+    ],
+    [project('p-alpha', 'alpha'), project('p-beta', 'beta')],
+  );
+  const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
+  expect(rows.map((r) => `${r.project}=${r.derivedStatus}`)).toEqual([
+    'alpha=online',
+    'beta=offline',
+  ]);
+  expect(client.queries).toHaveLength(2);
+  // Offset paging needs a total order; the serial id is its unique key.
+  expect(client.queries[0]).toContain('drupal_internal__id');
+  expect(client.queries[1]).toContain('page[offset]=');
+});
+
+it('a failing later page degrades to an empty list, never a partial one', async () => {
+  const client = fakeClient(
+    [
+      {
+        data: [conductor('c1', 'p-alpha', { status: 'offline' })],
+        links: { next: { href: 'next' } },
+      },
+      new Error('network down'),
+    ],
+    [project('p-alpha', 'alpha')],
+  );
+  const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
+  expect(rows).toEqual([]);
+});
+
+it('names a project that sits past the first page of visible bb_project rows', async () => {
+  const visible = Array.from({ length: 51 }, (_, i) =>
+    project(`p-${i}`, `project-${i}`),
+  );
+  const client = fakeClient(
+    [{ data: [conductor('c1', 'p-50', { status: 'offline' })] }],
+    visible,
+  );
+  const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
+  expect(rows.map((r) => r.project)).toEqual(['project-50']);
+});
+
+it('names every referenced project when they span more than one name read', async () => {
+  const projects = Array.from({ length: 51 }, (_, i) =>
+    project(`p-${i}`, `project-${i}`),
+  );
+  const client = fakeClient(
+    [
+      {
+        data: projects.map((p, i) =>
+          conductor(`c${i}`, p.id, { status: 'offline' }),
+        ),
+      },
+    ],
+    projects,
+  );
+  const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
+  expect(rows.map((r) => r.project).sort()).toEqual(
+    projects.map((p) => p.attributes.name).sort(),
+  );
+});
+
+it('a failing later name read degrades to an empty list, never a partial one', async () => {
+  const ids = [...Array.from({ length: 20 }, (_, i) => `p-${i}`), 'p-broken'];
+  const client = fakeClient(
+    [
+      {
+        data: ids.map((id, i) => conductor(`c${i}`, id, { status: 'offline' })),
+      },
+    ],
+    ids.map((id) => project(id, id)),
+  );
   const rows = await loadProjectRows({ client, nowSeconds: () => NOW });
   expect(rows).toEqual([]);
 });

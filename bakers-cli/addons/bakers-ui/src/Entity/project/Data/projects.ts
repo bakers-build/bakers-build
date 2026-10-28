@@ -1,27 +1,13 @@
-import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import { humanizeAge } from '../../../lib/format.js';
-import type { DropshClient, JsonApiRelationship } from '../../../types.js';
-import type { JsonApiCollectionDoc, ListTable } from '../../collection.js';
+import type { DropshClient } from '../../../types.js';
+import type { ListTable } from '../../collection.js';
 import {
-  type ConductorStatus,
-  deriveConductorStatus,
-} from '../../conductor/Data/liveness.js';
-
-/** JSON:API timestamps arrive as ISO-8601 strings; liveness works in seconds. */
-function toEpochSeconds(value: unknown): number | null {
-  if (value == null) return null;
-  if (typeof value === 'number') return value;
-  if (typeof value !== 'string') return null;
-  const ms = Date.parse(value);
-  return Number.isNaN(ms) ? null : Math.floor(ms / 1000);
-}
-
-/** Id of a single-valued relationship linkage (`data` object), or null. */
-function singleRelId(rel: JsonApiRelationship | undefined): string | null {
-  const data = rel?.data;
-  if (!data || Array.isArray(data)) return null;
-  return data.id ?? null;
-}
+  type ConductorRow,
+  type ConductorRowContext,
+  listConductorRowPage,
+  listProjectNames,
+} from '../../conductor/Data/conductors.js';
+import type { ConductorStatus } from '../../conductor/Data/liveness.js';
 
 // Most-alive-first ranking so a project with several conductors reports its
 // liveliest one, not whichever the collection happened to return first.
@@ -169,12 +155,13 @@ export const PROJECT_TABLE = {
 } as const satisfies ListTable<ProjectRow, void>;
 
 /**
- * Resolve the projects screen's rows straight from the control plane: list the
- * `bb_conductor` entities (read is owner-gated, so this is already scoped to
- * the current user's conductors — no local registry needed), sideload their
- * `project_id`, group by project name, and report each project's liveliest
- * conductor (online > stale > offline). Everything is a Drupal entity read
- * through `services.client` (AC-5); the screen itself stays a screen/route.
+ * Resolve the projects screen's rows straight from the control plane: page the
+ * `bb_conductor` collection through the Conductors screen's own read (read is
+ * owner-gated, so this is already scoped to the current user's conductors — no
+ * local registry needed), name each conductor's project through
+ * `listProjectNames`, group by project name, and report each project's
+ * liveliest conductor (online > stale > offline). Everything is a Drupal entity
+ * read through `services.client` (AC-5); the screen itself stays a screen/route.
  */
 export async function loadProjectRows({
   client,
@@ -183,58 +170,54 @@ export async function loadProjectRows({
   client: DropshClient;
   nowSeconds: () => number;
 }): Promise<ProjectRow[]> {
-  const params = new DrupalJsonApiParams().addInclude(['project_id']);
-  let doc: JsonApiCollectionDoc;
+  const now = nowSeconds();
+  // Only liveness is read off these rows; locality and host identity are the
+  // Conductors screen's concern, so they are given values that claim neither.
+  const ctx: ConductorRowContext = {
+    now,
+    exists: () => false,
+    thisHostKey: '',
+  };
+  // Every page, or no list: a failed page never yields a truncated one.
+  const conductors: ConductorRow[] = [];
   try {
-    doc = (await client.get(
-      'bb_conductor/bb_conductor',
-      params,
-    )) as JsonApiCollectionDoc;
+    for (let page = 0; ; page++) {
+      const result = await listConductorRowPage(client, ctx, {}, page);
+      conductors.push(...result.rows);
+      if (!result.hasNext) break;
+    }
   } catch {
     return [];
   }
+  const projectNameById = await listProjectNames(client, [
+    ...new Set(conductors.flatMap((c) => (c.projectId ? [c.projectId] : []))),
+  ]);
 
-  // Resolve each conductor's project name from the sideloaded bb_project.
-  const projectNameById = new Map<string, string>();
-  for (const inc of doc.included ?? []) {
-    if (inc.id && typeof inc.attributes?.name === 'string') {
-      projectNameById.set(inc.id, inc.attributes.name);
-    }
-  }
-
-  const now = nowSeconds();
   const best = new Map<
     string,
-    { derivedStatus: ConductorStatus; lastSeen: number | null }
+    { id: string; derivedStatus: ConductorStatus; lastSeen: number | null }
   >();
-  for (const c of doc.data ?? []) {
-    const a = c.attributes ?? {};
-    const projectId = singleRelId(c.relationships?.project_id);
-    const project = projectId ? projectNameById.get(projectId) : undefined;
+  for (const c of conductors) {
+    const project = c.projectId ? projectNameById.get(c.projectId) : undefined;
     // A conductor whose project cannot be resolved is not a project row.
-    if (!project) continue;
-    const lastSeen = toEpochSeconds(a.last_seen ?? null);
-    const derivedStatus = deriveConductorStatus(
-      {
-        present: true,
-        status: typeof a.status === 'string' ? a.status : null,
-        lastSeen,
-        leaseExpiresAt: toEpochSeconds(a.lease_expires_at ?? null),
-      },
-      now,
-    );
+    if (!c.projectId || !project) continue;
     const prev = best.get(project);
-    if (!prev || STATUS_RANK[derivedStatus] < STATUS_RANK[prev.derivedStatus]) {
-      best.set(project, { derivedStatus, lastSeen });
+    if (
+      !prev ||
+      STATUS_RANK[c.derivedStatus] < STATUS_RANK[prev.derivedStatus]
+    ) {
+      best.set(project, {
+        id: c.projectId,
+        derivedStatus: c.derivedStatus,
+        // ConductorRow spells "never reported" as 0.
+        lastSeen: c.lastSeen || null,
+      });
     }
   }
 
   return [...best.entries()].map(([project, b]) => ({
     project,
-    id:
-      [...projectNameById.entries()].find(
-        ([, name]) => name === project,
-      )?.[0] ?? project,
+    id: b.id,
     projectName: project,
     projectSlug: project,
     derivedStatus: b.derivedStatus,
