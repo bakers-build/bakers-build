@@ -80,6 +80,7 @@ final class ConfigCopyDriftTest extends UnitTestCase {
    */
   private const SCOPE_CONFIG_NAMES = [
     'simple_oauth.oauth2_scope.bb_session',
+    'simple_oauth.oauth2_scope.bb_session_access_content',
     'simple_oauth.oauth2_scope.bb_session_claim_bakers_tickets',
     'simple_oauth.oauth2_scope.bb_session_create_bb_comment',
     'simple_oauth.oauth2_scope.bb_session_create_bb_environment',

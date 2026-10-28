@@ -1,0 +1,16 @@
+uuid: 90774ce3-3436-41a5-912c-9f63d38ce379
+langcode: en
+status: true
+dependencies: {  }
+id: bb_session_access_content
+name: 'bb:session:access_content'
+description: 'bakers.build session ceiling — access content'
+grant_types:
+  client_credentials:
+    status: true
+    description: 'bakers.build session ceiling'
+umbrella: false
+parent: bb_session
+granularity_id: permission
+granularity_configuration:
+  permission: 'access content'
