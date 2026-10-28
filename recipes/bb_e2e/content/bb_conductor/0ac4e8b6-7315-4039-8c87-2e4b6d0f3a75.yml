@@ -5,7 +5,7 @@ _meta:
   uuid: 0ac4e8b6-7315-4039-8c87-2e4b6d0f3a75
   default_langcode: en
   depends:
-    b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
+    d463805a-b9b6-4825-989e-12626809cd92: bb_project
     db58173e-ed5d-50cf-af02-2943a2803c36: user
     f9b3d7a5-6204-4f28-eb76-1d3a5c9e2f64: bb_machine
 default:
@@ -18,7 +18,7 @@ default:
   active:
   - value: true
   project_id:
-  - entity: b76b40df-436c-5d3d-9bf1-5745fa621a7a
+  - entity: d463805a-b9b6-4825-989e-12626809cd92
   owner_user_id:
   - entity: db58173e-ed5d-50cf-af02-2943a2803c36
   machine:

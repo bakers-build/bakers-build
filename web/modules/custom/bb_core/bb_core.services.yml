@@ -278,7 +278,7 @@ services:
     alias: bb_core.conductor_reaper
   bb_core.conductor_registrar:
     class: Drupal\bb_core\Conductor\ConductorRegistrar
-    arguments: ['@entity_type.manager', '@datetime.time', '@lock']
+    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@bb_core.workspace_read_scope', '@bb_core.rank_capability', '@bb_core.workspace_resolver']
   Drupal\bb_core\Conductor\ConductorRegistrar:
     alias: bb_core.conductor_registrar
   bb_core.measurement_context_binding_resolver:

@@ -19,6 +19,8 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 #[RunTestsInSeparateProcesses]
 final class MachineRegistrarTest extends KernelTestBase {
 
+  use OgScopeFixtureTrait;
+
   /**
    * {@inheritdoc}
    *
@@ -37,12 +39,13 @@ final class MachineRegistrarTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     foreach ([
-      'user', 'og_membership', 'bb_workspace', 'bb_machine',
+      'user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_machine',
       'bb_group', 'bb_project', 'bb_conductor',
     ] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['user']);
+    $this->installOgScopeFixture();
     $this->createUser('uid1-dummy');
   }
 
@@ -109,16 +112,17 @@ final class MachineRegistrarTest extends KernelTestBase {
    */
   public function testExplicitWorkspaceAttribute(): void {
     $this->seedProjectChain('proj-explicit');
-    $other = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
-      ->create(['name' => 'other-ws']);
-    $other->save();
+    $workspaces = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
+      ->loadByProperties(['name' => 'ws-proj-explicit']);
+    $own = reset($workspaces);
+    $this->assertNotFalse($own);
 
     $owner = $this->createUser('owner-explicit');
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'explicit-mid',
       'host_key' => 'host-explicit',
       'project' => 'proj-explicit',
-      'workspace' => $other->uuid(),
+      'workspace' => $own->uuid(),
     ]);
     $machine = $conductor->getMachine();
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
@@ -178,8 +182,11 @@ final class MachineRegistrarTest extends KernelTestBase {
     $group = $this->container->get('entity_type.manager')->getStorage('bb_group')
       ->create(['name' => 'g-' . $project_name, 'workspace_id' => $workspace->id()]);
     $group->save();
+    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')
+      ->create(['name' => 't-' . $project_name, 'workspace_id' => $workspace->id()]);
+    $team->save();
     $project = $this->container->get('entity_type.manager')->getStorage('bb_project')
-      ->create(['name' => $project_name, 'group_id' => $group->id()]);
+      ->create(['name' => $project_name, 'group_id' => $group->id(), 'teams' => [$team->id()]]);
     $project->save();
   }
 
@@ -191,6 +198,7 @@ final class MachineRegistrarTest extends KernelTestBase {
       ->create(['name' => $name, 'status' => 1]);
     $this->assertInstanceOf(UserInterface::class, $user);
     $user->save();
+    $this->addContributorEverywhere($user);
     return $user;
   }
 

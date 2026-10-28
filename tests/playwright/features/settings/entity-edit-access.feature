@@ -265,7 +265,7 @@ Feature: Entity edit access across browser, session token and CLI
     Given the API client uses the owner client-credentials session token
     When the API client sends "POST" to "/jsonapi/bakers/heartbeat":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"api-edit-conductor","host_key":"api-edit-host","project":"API home","states":["working"],"workspace_root":"/tmp/api-edit","label":"heartbeat must not win","max_parallel":99}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"api-edit-conductor","host_key":"api-edit-host","project":"API conductor project","states":["working"],"workspace_root":"/tmp/api-edit","label":"heartbeat must not win","max_parallel":99}}}
       """
     Then the API response status is 200
     When the API client reads "/jsonapi/bb_conductor/bb_conductor/{conductor.edit}"
@@ -281,7 +281,7 @@ Feature: Entity edit access across browser, session token and CLI
     Then the API response status is 200
     When the API client sends "POST" to "/jsonapi/bakers/heartbeat":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"api-edit-conductor","host_key":"api-edit-host","project":"API home","states":["working"],"workspace_root":"/tmp/api-edit","label":"heartbeat must not win","max_parallel":99,"current_load":2,"lease_seconds":300}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"api-edit-conductor","host_key":"api-edit-host","project":"API conductor project","states":["working"],"workspace_root":"/tmp/api-edit","label":"heartbeat must not win","max_parallel":99,"current_load":2,"lease_seconds":300}}}
       """
     Then the API response status is 200
     When the API client reads "/jsonapi/bb_conductor/bb_conductor/{conductor.edit}"
@@ -324,7 +324,7 @@ Feature: Entity edit access across browser, session token and CLI
     Given the API client uses the owner client-credentials session token
     When the API client sends "POST" to "/jsonapi/bakers/heartbeat":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"api-edit-conductor","host_key":"api-edit-host","project":"API home","states":["working"],"workspace_root":"/tmp/api-edit","current_load":1,"lease_seconds":300}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"api-edit-conductor","host_key":"api-edit-host","project":"API conductor project","states":["working"],"workspace_root":"/tmp/api-edit","current_load":1,"lease_seconds":300}}}
       """
     Then the API response status is 200
     And the API document contains:
