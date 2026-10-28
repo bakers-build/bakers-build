@@ -35,17 +35,21 @@ final class StubProviderController extends ControllerBase {
 
   /**
    * Hands the decorated authenticator a stubbed address and assertion.
+   *
+   * An optional `picture` site path becomes the provider's picture URL, on
+   * plain HTTP: the PHP container cannot verify the local site's certificate.
    */
   public function callback(Request $request): RedirectResponse {
     $mail = (string) $request->query->get('mail', '');
     $verified = $request->query->get('verified') === '1';
+    $picture = (string) $request->query->get('picture', '');
 
     $user = new SocialAuthUser(
       $mail !== '' ? $mail : 'stub',
       'stub-' . md5($mail),
       'stub-token',
       $mail,
-      NULL,
+      $picture !== '' ? 'http://' . $request->getHttpHost() . $picture : NULL,
       [BbGoogleAuthManager::VERIFIED_KEY => $verified],
     );
 

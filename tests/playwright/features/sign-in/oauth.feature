@@ -15,6 +15,13 @@ Feature: Provider sign-in
     And exactly one account was created
     And no workspace was created
 
+  Scenario: A confirmed address takes over the Google picture
+    Given I open anonymous login
+    When the provider returns "bakers-oauth-picture@example.com" as confirmed with the picture "/core/misc/druplicon.png"
+    Then I am logged in
+    When I edit the crop of the profile picture
+    Then the crop dialog is open
+
   Scenario: An unconfirmed first sign-in is refused
     Given I open anonymous login
     When the provider returns "bakers-oauth-unconfirmed@example.com" as unconfirmed

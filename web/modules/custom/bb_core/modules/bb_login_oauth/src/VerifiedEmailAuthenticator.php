@@ -30,7 +30,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * through `EmailLogin::createAccount()` because registration is `admin_only`,
  * and the gated work runs on `$this` via `parent::`, never on a second
  * authenticator.
- *.
+ *
+ * It also takes over the provider's profile picture while the account has
+ * none, since `social_auth` only does so on its own registration path.
  */
 final class VerifiedEmailAuthenticator extends UserAuthenticator {
 
@@ -112,7 +114,43 @@ final class VerifiedEmailAuthenticator extends UserAuthenticator {
       $this->messenger->addError($this->t('Google has not confirmed this address. Sign in with your e-mail address instead.'));
       return $this->getLoginFormRedirection();
     }
+    $this->adoptProviderPicture($user);
     return $this->applyPendingDestination($response);
+  }
+
+  /**
+   * Stores the provider's picture as the account's while it has none.
+   *
+   * Runs after login, so the downloaded file is owned by the account. A
+   * failure never disturbs the sign-in; it is only logged.
+   *
+   * @param \Drupal\social_auth\User\SocialAuthUserInterface $user
+   *   The provider's user data.
+   */
+  private function adoptProviderPicture(SocialAuthUserInterface $user): void {
+    $url = (string) $user->getPictureUrl();
+    if ($url === '' || !$this->currentUser->isAuthenticated()) {
+      return;
+    }
+    // The constructor takes social_auth's manager; the parent types it wider.
+    assert($this->userManager instanceof UserManager);
+    $account = $this->userManager->loadUserByProperty('uid', (string) $this->currentUser->id());
+    if (!$account || !$account->hasField('user_picture') || !$account->get('user_picture')->isEmpty()) {
+      return;
+    }
+    try {
+      // Contrib does not catch the HTTP client's exceptions.
+      $file = $this->userManager->downloadProfilePic($url, $user->getProviderId());
+      if ($file) {
+        $account->set('user_picture', $file->id())->save();
+        return;
+      }
+    }
+    catch (\Throwable $e) {
+      $this->logger->warning('Provider picture could not be stored: @message', ['@message' => $e->getMessage()]);
+      return;
+    }
+    $this->logger->warning('Provider picture could not be downloaded.');
   }
 
   /**
