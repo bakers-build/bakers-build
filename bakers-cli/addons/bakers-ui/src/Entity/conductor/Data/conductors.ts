@@ -695,13 +695,15 @@ export const countConductors = async (
 };
 
 /**
- * Project uuid → name, for the Conductors screen's project column.
+ * Project uuid → name, for the Conductors screen's project column and the
+ * Projects tab (`loadProjectRows`).
  *
- * A conductor references its project by uuid; the screen shows the name. This
- * is a separate small read rather than a widened `ProjectRow`, because
- * `loadProjectRows` builds the PROJECTS screen (one row per project, derived
- * from conductors) and adding an id to it would change a shape four screens
- * depend on to serve one column.
+ * A conductor references its project by uuid; the screens show the name.
+ *
+ * Without `ids` this is one `bb_project` read, so only the first page of
+ * visible projects is named. With `ids` only those projects are read, in
+ * chunks below the server's page cap, so every referenced project is named
+ * however many projects the user can see.
  *
  * A failed read yields an empty map: an unnamed project renders blank, which is
  * better than a screen that refuses to list conductors because their projects
@@ -709,10 +711,29 @@ export const countConductors = async (
  */
 export const listProjectNames = async (
   client: DropshClient,
+  ids?: string[],
 ): Promise<Map<string, string>> => {
-  const outcome = await listOutcome(client, 'bb_project', (r) => ({
-    id: r.id,
-    name: str(r.attr('name')) ?? str(r.attr('label')) ?? '',
-  }));
-  return new Map(outcome.rows.map((p) => [p.id, p.name]));
+  const nameOf = (r: Resource) =>
+    str(r.attr('name')) ?? str(r.attr('label')) ?? '';
+  if (!ids) {
+    const outcome = await listOutcome(client, 'bb_project', (r) => ({
+      id: r.id,
+      name: nameOf(r),
+    }));
+    return new Map(outcome.rows.map((p) => [p.id, p.name]));
+  }
+  const names = new Map<string, string>();
+  try {
+    for (let i = 0; i < ids.length; i += LIST_PAGE_SIZE) {
+      const chunk = ids.slice(i, i + LIST_PAGE_SIZE);
+      const rows = await client
+        .collection('bb_project')
+        .whereIn('id', chunk)
+        .list();
+      for (const r of rows) names.set(r.id, nameOf(r));
+    }
+  } catch {
+    return new Map();
+  }
+  return names;
 };

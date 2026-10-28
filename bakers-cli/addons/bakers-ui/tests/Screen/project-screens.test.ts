@@ -108,9 +108,28 @@ describe('project tab screens own their asynchronous lifecycle', () => {
                 relationships: { project_id: { data: { id: 'project-1' } } },
               },
             ],
-            included: [{ id: 'project-1', attributes: { name: 'Bb' } }],
           }),
-          collection: vi.fn(() => collection),
+          // The project names are their own bb_project read.
+          collection: vi.fn((type: string) =>
+            type === 'bb_project'
+              ? {
+                  whereIn() {
+                    return this;
+                  },
+                  list: vi.fn().mockResolvedValue([
+                    {
+                      id: 'project-1',
+                      type: 'bb_project--bb_project',
+                      attr: vi.fn((key: string) =>
+                        key === 'name' ? 'Bb' : null,
+                      ),
+                      rel: vi.fn(() => null),
+                      rels: vi.fn(() => []),
+                    },
+                  ]),
+                }
+              : collection,
+          ),
         },
       },
       requestDraw: vi.fn(),

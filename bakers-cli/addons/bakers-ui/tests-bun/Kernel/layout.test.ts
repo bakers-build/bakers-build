@@ -7,6 +7,7 @@ import type {
   ResolvedRoute,
 } from '../../src/types.js';
 import { chromeRowCount, chromeShape } from '../../tests/chrome-rows.js';
+import { includedProjects } from '../fixtures/included-projects.js';
 import { type BootedTui, bootTui } from '../tui-harness.js';
 
 // BB-326 Step B — THE FRAME IS LAID OUT, NOT PLACED.
@@ -76,13 +77,15 @@ const ticketListDoc = {
 };
 
 function fakeServices(): RendererServices {
-  const collection = (): Collection => {
+  const collection = (type: string): Collection => {
     const c: Collection = {
       where: () => c,
+      whereIn: () => c,
       sort: () => c,
       page: () => c,
       first: async () => null,
-      list: async () => [],
+      list: async () =>
+        type === 'bb_project' ? includedProjects(conductorDoc) : [],
     };
     return c;
   };

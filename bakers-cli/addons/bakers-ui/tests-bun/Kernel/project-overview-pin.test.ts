@@ -14,6 +14,7 @@ import type {
   RendererServices,
 } from '../../src/types.js';
 import { topTabBar } from '../../tests/tab-bars.js';
+import { includedProjects } from '../fixtures/included-projects.js';
 import { bootTui } from '../tui-harness.js';
 
 // BB-256 AC-2 — the all-projects OVERVIEW, pinned BEFORE the rename.
@@ -95,13 +96,15 @@ const conductorDoc = {
 };
 
 function fakeServices(): RendererServices {
-  const collection = (): Collection => {
+  const collection = (type: string): Collection => {
     const c: Collection = {
       where: () => c,
+      whereIn: () => c,
       sort: () => c,
       page: () => c,
       first: async () => null,
-      list: async () => [],
+      list: async () =>
+        type === 'bb_project' ? includedProjects(conductorDoc) : [],
     };
     return c;
   };
