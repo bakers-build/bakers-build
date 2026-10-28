@@ -1,0 +1,23 @@
+# fixture-conductor-owner's membership in its own team on "API conductor project".
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 968d2332-899b-487c-ae42-a488f7400b3b
+  default_langcode: en
+  bundle: default
+  depends:
+    db58173e-ed5d-50cf-af02-2943a2803c36: user
+    40a59191-b6f7-4ee2-b00a-5a22162b2d1e: bb_team
+default:
+  entity_type:
+  - value: bb_team
+  entity_bundle:
+  - value: bb_team
+  entity_id:
+  - value: 40a59191-b6f7-4ee2-b00a-5a22162b2d1e
+  state:
+  - value: active
+  uid:
+  - entity: db58173e-ed5d-50cf-af02-2943a2803c36
+  type:
+  - target_id: default

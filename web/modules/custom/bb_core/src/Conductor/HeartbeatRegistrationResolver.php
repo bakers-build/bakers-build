@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Conductor;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\bb_core\Entity\BbGroupInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\bb_core\Access\BbRankCapabilityInterface;
+use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
+use Drupal\bb_core\Access\WorkspaceResolverInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -17,6 +20,9 @@ final class HeartbeatRegistrationResolver {
 
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly BbWorkspaceReadScopeInterface $readScope,
+    private readonly BbRankCapabilityInterface $rankCapability,
+    private readonly WorkspaceResolverInterface $workspaceResolver,
   ) {
   }
 
@@ -56,41 +62,99 @@ final class HeartbeatRegistrationResolver {
   }
 
   /**
-   * Resolves the project entity id from the heartbeat's `project` name.
+   * Resolves the project the owner may register a conductor for.
+   *
+   * The name is looked up among the projects the owner can see, inside the
+   * named workspace when one is given. The owner's own rank in the project's
+   * workspace must grant `register bakers conductor`; token scopes do not
+   * count. Every refusal of an existing project reads as "not found", so it
+   * discloses nothing outside the owner's scope.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The conductor owner.
    */
-  public function projectId(array $attrs): int {
+  public function projectId(array $attrs, AccountInterface $owner): int {
     $name = isset($attrs['project']) && is_string($attrs['project']) ? $attrs['project'] : '';
     if ($name === '') {
       throw new UnprocessableEntityHttpException('project is required to register a conductor.');
     }
-    $ids = $this->entityTypeManager->getStorage('bb_project')->getQuery()
-      ->accessCheck(FALSE)
-      ->condition('name', $name)
-      ->range(0, 1)
-      ->execute();
+    $admin = $this->rankCapability->isInstanceAdmin($owner);
+    $ids = $this->candidateIds($name, $attrs, $admin ? NULL : $owner);
     if ($ids === []) {
-      throw new UnprocessableEntityHttpException(sprintf('bakers.build project "%s" not found.', $name));
+      throw $this->notFound($name);
     }
-    return (int) reset($ids);
+    if (count($ids) > 1) {
+      throw new UnprocessableEntityHttpException(sprintf('bakers.build project "%s" is ambiguous; name its workspace.', $name));
+    }
+    $projectId = (int) reset($ids);
+    if (!$this->mayRegister($owner, $projectId)) {
+      throw $this->notFound($name);
+    }
+    return $projectId;
   }
 
   /**
-   * Resolves the workspace id from explicit attrs or project chain.
+   * Whether the owner can see the project and may register conductors there.
    *
-   * @param array<string, mixed> $attrs
-   *   Registration attributes.
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The conductor owner.
    * @param int $projectId
-   *   Resolved project entity id.
+   *   Project entity id.
    */
-  public function workspaceId(array $attrs, int $projectId): int {
-    $explicit = $this->explicitWorkspaceId($attrs);
-    if ($explicit !== NULL) {
-      return $explicit;
+  public function mayRegister(AccountInterface $owner, int $projectId): bool {
+    if ($this->rankCapability->isInstanceAdmin($owner)) {
+      return TRUE;
     }
-    return $this->workspaceIdFromProject($projectId);
+    return in_array($projectId, array_map('intval', $this->readScope->projectIds($owner)), TRUE)
+      && $this->rankCapability->hasGroupRolePermission($owner, 'register bakers conductor', $this->workspace($projectId));
+  }
+
+  /**
+   * Returns the ids of the projects of that name the owner can see.
+   *
+   * @param string $name
+   *   The project name.
+   * @param array<string, mixed> $attrs
+   *   Registration attributes; `workspace`/`workspace_id` narrow the lookup.
+   * @param \Drupal\Core\Session\AccountInterface|null $owner
+   *   The owner whose read scope applies, or NULL for an instance admin.
+   *
+   * @return array<int|string>
+   *   The matching project ids.
+   */
+  private function candidateIds(string $name, array $attrs, ?AccountInterface $owner): array {
+    $query = $this->entityTypeManager->getStorage('bb_project')->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('name', $name);
+    $workspaceId = $this->explicitWorkspaceId($attrs);
+    if ($workspaceId !== NULL) {
+      $query->condition('group_id.entity.workspace_id', $workspaceId);
+    }
+    if ($owner !== NULL) {
+      $query->condition('id', $this->readScope->projectIds($owner) ?: [0], 'IN');
+    }
+    return $query->execute();
+  }
+
+  /**
+   * Resolves the workspace a project belongs to.
+   */
+  private function workspace(int $projectId): BbWorkspaceInterface {
+    $project = $this->entityTypeManager->getStorage('bb_project')->load($projectId);
+    $workspace = $project instanceof BbProjectInterface ? $this->workspaceResolver->resolve($project) : NULL;
+    if ($workspace === NULL) {
+      throw new UnprocessableEntityHttpException('project has no workspace; cannot register a conductor.');
+    }
+    return $workspace;
+  }
+
+  /**
+   * The refusal for a project outside the owner's scope or without one.
+   */
+  public function notFound(string $name): UnprocessableEntityHttpException {
+    return new UnprocessableEntityHttpException(sprintf('bakers.build project "%s" not found.', $name));
   }
 
   /**
@@ -123,25 +187,6 @@ final class HeartbeatRegistrationResolver {
       }
     }
     throw new UnprocessableEntityHttpException(sprintf('bakers.build workspace "%s" not found.', $token));
-  }
-
-  /**
-   * Resolves workspace via project → group → workspace_id.
-   */
-  private function workspaceIdFromProject(int $projectId): int {
-    $project = $this->entityTypeManager->getStorage('bb_project')->load($projectId);
-    if (!$project instanceof BbProjectInterface) {
-      throw new UnprocessableEntityHttpException('bakers.build project not found for workspace resolution.');
-    }
-    $group = $project->getGroup();
-    if (!$group instanceof BbGroupInterface) {
-      throw new UnprocessableEntityHttpException('project has no group; cannot resolve workspace for conductor.');
-    }
-    $workspaceId = $group->get('workspace_id')->target_id;
-    if ($workspaceId === NULL || $workspaceId === '') {
-      throw new UnprocessableEntityHttpException('group has no workspace_id; cannot resolve workspace for conductor.');
-    }
-    return (int) $workspaceId;
   }
 
 }

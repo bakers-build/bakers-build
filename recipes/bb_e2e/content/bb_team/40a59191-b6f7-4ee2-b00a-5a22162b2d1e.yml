@@ -1,0 +1,17 @@
+# fixture-conductor-owner's own team on "API conductor project".
+#
+# A heartbeat registers only for a project its owner can see, so the owner
+# of conductor.edit needs a team of that project. A team of its own keeps the
+# owner out of "API home" (conductor-properties.feature).
+_meta:
+  version: '1.0'
+  entity_type: bb_team
+  uuid: 40a59191-b6f7-4ee2-b00a-5a22162b2d1e
+  default_langcode: en
+  depends:
+    2a92d03c-c4c6-41dc-b194-31aa299ed064: bb_workspace
+default:
+  name:
+  - value: Conductor Owner Crew
+  workspace_id:
+  - entity: 2a92d03c-c4c6-41dc-b194-31aa299ed064

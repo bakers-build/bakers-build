@@ -1,0 +1,22 @@
+# Dedicated project of conductor.edit. Its only team holds only
+# fixture-conductor-owner, whose heartbeat registers here; a second team on
+# "API edit project" would block the team lead's project edits.
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: d463805a-b9b6-4825-989e-12626809cd92
+  default_langcode: en
+  depends:
+    a5f6ffd1-70a9-50d2-95cb-0b82f93d4269: bb_group
+    40a59191-b6f7-4ee2-b00a-5a22162b2d1e: bb_team
+default:
+  name:
+  - value: API conductor project
+  key:
+  - value: APIC
+  group_id:
+  - entity: a5f6ffd1-70a9-50d2-95cb-0b82f93d4269
+  teams:
+  - entity: 40a59191-b6f7-4ee2-b00a-5a22162b2d1e
+  next_number:
+  - value: 1

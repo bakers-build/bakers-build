@@ -108,6 +108,24 @@ trait OgScopeFixtureTrait {
   }
 
   /**
+   * Makes an account a Contributor of every workspace and member of every team.
+   *
+   * A conductor owner registers only where its own rank allows it.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The account.
+   */
+  protected function addContributorEverywhere(UserInterface $account): void {
+    $etm = $this->container->get('entity_type.manager');
+    foreach ($etm->getStorage('bb_workspace')->loadMultiple() as $workspace) {
+      $this->addMembership($workspace, $account, ['contributor']);
+    }
+    foreach ($etm->getStorage('bb_team')->loadMultiple() as $team) {
+      $this->addMembership($team, $account);
+    }
+  }
+
+  /**
    * Grants an account an active membership in a group, with optional roles.
    *
    * @param \Drupal\Core\Entity\EntityInterface $group
