@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import codexAgentDefault, {
   CodexAgent,
   codexAgent,
@@ -20,26 +20,28 @@ describe('default export', () => {
 
 describe('CodexAgent.launchCommand', () => {
   it('includes the prompt, model, sandbox, and bypass flag', () => {
-    const agent = new CodexAgent({ model: 'gpt-5' });
+    const agent = new CodexAgent({ model: 'gpt-5', security: 'yolo' });
     expect(agent.launchCommand('do the thing')).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model 'gpt-5' 'do the thing'",
     );
   });
 
   it('omits --model when no model is set', () => {
-    expect(new CodexAgent({}).launchCommand('x')).toBe(
+    expect(new CodexAgent({ security: 'yolo' }).launchCommand('x')).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust 'x'",
     );
   });
 
   it('returns codex with run flags for an empty prompt', () => {
-    expect(new CodexAgent({}).launchCommand('')).toBe(
+    expect(new CodexAgent({ security: 'yolo' }).launchCommand('')).toBe(
       'codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust',
     );
   });
 
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file', () => {
-    const cmd = new CodexAgent({}).launchCommand('para one\n\npara two');
+    const cmd = new CodexAgent({ security: 'yolo' }).launchCommand(
+      'para one\n\npara two',
+    );
     expect(cmd).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust 'para one\n\npara two'",
     );
@@ -58,6 +60,7 @@ function captureArgv(binary: string, command: string): string[] {
 describe('CodexAgent args and effort', () => {
   it('appends args after generated elements and serializes effort as one -c assignment', () => {
     const command = new CodexAgent({
+      security: 'yolo',
       model: 'gpt-5',
       effort: 'medium',
       args: ['--foo', 'bar baz'],
@@ -80,6 +83,7 @@ describe('CodexAgent args and effort', () => {
 
   it('suppresses generated model and effort when -c assignments override them', () => {
     const command = new CodexAgent({
+      security: 'yolo',
       model: 'gpt-5',
       effort: 'low',
       args: ['-c', 'model=gpt-6', '-c', 'model_reasoning_effort="high"'],
@@ -100,6 +104,7 @@ describe('CodexAgent args and effort', () => {
 
   it('leaves unrelated -c keys in place and still generates model', () => {
     const command = new CodexAgent({
+      security: 'yolo',
       model: 'gpt-5',
       args: ['-c', 'sandbox_mode="danger-full-access"'],
     }).launchCommand('x');
@@ -119,6 +124,7 @@ describe('CodexAgent args and effort', () => {
 
   it('does not treat JSON config values as independent flags', () => {
     const command = new CodexAgent({
+      security: 'yolo',
       model: 'gpt-5',
       args: ['-c', 'notice="--model other"'],
     }).launchCommand('x');
@@ -143,6 +149,9 @@ describe('CodexAgent args and effort', () => {
       '-sfoo',
       '--dangerously-bypass-approvals-and-sandbox',
       '--dangerously-bypass-hook-trust',
+      '-a',
+      '--ask-for-approval',
+      '--ask-for-approval=never',
     ]) {
       expect(() => new CodexAgent({ args: [flag] })).toThrow(/reserved flag/);
     }
@@ -150,9 +159,202 @@ describe('CodexAgent args and effort', () => {
 
   it('does not append args for an empty prompt', () => {
     const command = new CodexAgent({
+      security: 'yolo',
       args: ['--foo'],
     }).launchCommand('');
     expect(command).not.toContain('--foo');
+  });
+});
+
+async function homeWithCodexMcp(): Promise<string> {
+  const home = await mkdtemp(join(tmpdir(), 'codex-home-'));
+  await mkdir(join(home, '.codex'), { recursive: true });
+  await writeFile(
+    join(home, '.codex', 'config.toml'),
+    [
+      'model = "gpt-5"',
+      '[mcp_servers.gitlab]',
+      'command = "gitlab-mcp"',
+      '[mcp_servers.gitlab.env]',
+      'TOKEN = "x"',
+      '[mcp_servers.playwright]',
+      'command = "npx"',
+    ].join('\n'),
+  );
+  return home;
+}
+
+describe('CodexAgent security: sandbox (default)', () => {
+  it('starts in workspace-write without approvals, bypass flags or the user MCP servers', async () => {
+    const home = await homeWithCodexMcp();
+    expect(
+      captureArgv('codex', new CodexAgent({}, home).launchCommand('x')),
+    ).toEqual([
+      'codex',
+      '--sandbox',
+      'workspace-write',
+      '-a',
+      'never',
+      '-c',
+      'sandbox_workspace_write.network_access=true',
+      '-c',
+      'mcp_servers.gitlab.enabled=false',
+      '-c',
+      'mcp_servers.playwright.enabled=false',
+      'x',
+    ]);
+  });
+
+  it('keeps the servers listed in sandbox.mcp_servers, adds a dir per allow_write and turns network off for []', async () => {
+    const home = await homeWithCodexMcp();
+    const argv = captureArgv(
+      'codex',
+      new CodexAgent(
+        {
+          sandbox: {
+            mcp_servers: { playwright: {} },
+            allow_write: ['/srv/cache', '~/.cache/pnpm'],
+            network: [],
+          },
+        },
+        home,
+      ).launchCommand('x'),
+    );
+    expect(argv).toContain('sandbox_workspace_write.network_access=false');
+    expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+    expect(argv).not.toContain('mcp_servers.playwright.enabled=false');
+    expect(argv.join(' ')).toContain(
+      `--add-dir /srv/cache --add-dir ${join(home, '.cache/pnpm')}`,
+    );
+  });
+
+  it('disables user servers in every TOML form, including prototype-like names', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'codex-home-'));
+    await mkdir(join(home, '.codex'), { recursive: true });
+    await writeFile(
+      join(home, '.codex', 'config.toml'),
+      [
+        'mcp_servers.gamma.command = "echo"',
+        "[mcp_servers.'delta']",
+        'command = "echo"',
+        '[mcp_servers.toString]',
+        'command = "echo"',
+        '[mcp_servers]',
+        'beta = { command = "echo" }',
+        'eps.command = "echo"',
+        '# [mcp_servers.commented]',
+      ].join('\n'),
+    );
+    const argv = captureArgv(
+      'codex',
+      new CodexAgent({}, home).launchCommand('x'),
+    );
+    expect(argv.filter((a) => a.startsWith('mcp_servers.')).sort()).toEqual([
+      'mcp_servers.beta.enabled=false',
+      'mcp_servers.delta.enabled=false',
+      'mcp_servers.eps.enabled=false',
+      'mcp_servers.gamma.enabled=false',
+      'mcp_servers.toString.enabled=false',
+    ]);
+  });
+
+  it('reads the config under CODEX_HOME', async () => {
+    const home = await homeWithCodexMcp();
+    vi.stubEnv('CODEX_HOME', join(home, '.codex'));
+    try {
+      const argv = captureArgv(
+        'codex',
+        new CodexAgent({}, '/nonexistent-home').launchCommand('x'),
+      );
+      expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it.each([
+    ['mcp_servers = { a = { command = "echo" } }'],
+    ['[mcp_servers."my.srv"]'],
+    ['[[mcp_servers]]'],
+  ])('refuses to launch when it cannot disable a server: %s', async (line) => {
+    const home = await mkdtemp(join(tmpdir(), 'codex-home-'));
+    await mkdir(join(home, '.codex'), { recursive: true });
+    await writeFile(join(home, '.codex', 'config.toml'), line);
+    expect(() => new CodexAgent({}, home).launchCommand('x')).toThrow(
+      /mcp_servers/,
+    );
+  });
+
+  it('runs without a Codex config file', () => {
+    const argv = captureArgv(
+      'codex',
+      new CodexAgent({}, '/nonexistent-home').launchCommand('x'),
+    );
+    expect(argv.some((a) => a.startsWith('mcp_servers.'))).toBe(false);
+  });
+
+  it('drops denied env vars, or keeps them in yolo', () => {
+    expect(new CodexAgent({}).runEnvPolicy.drop).toBe(true);
+    expect(new CodexAgent({ security: 'yolo' }).runEnvPolicy.drop).toBe(false);
+    expect(new CodexAgent({ env_deny: [] }).runEnvPolicy.deny).toEqual([]);
+  });
+});
+
+describe('CodexAgent security: system, yolo, custom', () => {
+  it('system adds no security flag', () => {
+    expect(
+      captureArgv(
+        'codex',
+        new CodexAgent({ security: 'system' }).launchCommand('x'),
+      ),
+    ).toEqual(['codex', 'x']);
+  });
+
+  it('custom passes each config entry as one -c key=value', () => {
+    expect(
+      captureArgv(
+        'codex',
+        new CodexAgent({
+          security: 'custom',
+          config: {
+            sandbox_mode: 'read-only',
+            'sandbox_workspace_write.writable_roots': ['/a'],
+          },
+        }).launchCommand('x'),
+      ),
+    ).toEqual([
+      'codex',
+      '-c',
+      'sandbox_mode=read-only',
+      '-c',
+      'sandbox_workspace_write.writable_roots=["/a"]',
+      'x',
+    ]);
+  });
+});
+
+describe('CodexAgent security load errors', () => {
+  it.each([
+    [
+      { sandbox: { trusted_commands: ['git'] } },
+      /Codex does not support sandbox.trusted_commands/,
+    ],
+    [
+      { sandbox: { deny_read: ['~/.ssh'] } },
+      /Codex does not support sandbox.deny_read/,
+    ],
+    [{ skip_permissions: true }, /security: 'yolo'/],
+    [{ security: 'custom' }, /requires config/],
+    [{ security: 'custom', config: { x: { y: 1 } } }, /config.x.*dotted key/],
+  ])('%j fails loading', (options, message) => {
+    expect(() => new CodexAgent(options as never)).toThrow(message);
+  });
+
+  it('accepts empty trusted_commands and deny_read', () => {
+    expect(
+      () =>
+        new CodexAgent({ sandbox: { trusted_commands: [], deny_read: [] } }),
+    ).not.toThrow();
   });
 });
 
