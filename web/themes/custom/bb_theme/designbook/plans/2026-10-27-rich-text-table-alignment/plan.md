@@ -129,7 +129,7 @@ definitions:
         description: |
           Bare component name — NO `provider:` namespace prefix (e.g. `hero`, `content_card`, `active-filters`; never `test_integration_drupal:hero`). Becomes the component directory and file basename (`components/<component>/<component>.component.yml`), so a namespace colon produces an invalid directory and breaks import resolution. The provider namespace is configured separately and is not part of this name.
           A HYPHEN IS ALLOWED, and it was forbidden here by mistake until 2026-09-04. The colon is the hazard this pattern exists for; the hyphen ban was carried over from `Variant.id`, where it IS load-bearing because a variant id becomes a JS export name in the generated story (`mark-only` -> `export const Mark-only`, a SyntaxError). A component name becomes a directory, a file basename and a Storybook TITLE — never a JS identifier — so the same reasoning does not reach it.
-          Measured on 2026-09-04, against a theme shipping ten hyphenated components: Drupal's own SDC metadata schema admits `^[a-zA-Z0-9_-]+$`; `ComponentPluginManager` normalises nothing, so `gaia_theme:active-filters` resolves and `gaia_theme:active_filters` raises `ComponentNotFoundException`; and all sixteen stories of those ten rendered in a real browser with zero console errors. The old pattern therefore locked ten working components out of every workflow in this skill, with no defect to show for it.
+          Measured on 2026-09-04, against a theme shipping ten hyphenated components: Drupal's own SDC metadata schema admits `^[a-zA-Z0-9_-]+$`; `ComponentPluginManager` normalises nothing, so `bb_theme:active-filters` resolves and `bb_theme:active_filters` raises `ComponentNotFoundException`; and all sixteen stories of those ten rendered in a real browser with zero console errors. The old pattern therefore locked ten working components out of every workflow in this skill, with no defect to show for it.
         examples:
           - hero
           - content_card
@@ -1837,7 +1837,7 @@ samples: []
 scenes: []
 data_model: {}
 namespace: bb_theme
-data_dir: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-gaia_rich-render/web/themes/custom/bb_theme/designbook
+data_dir: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-bb_rich-render/web/themes/custom/bb_theme/designbook
 ```
 
 ## Context
@@ -4361,27 +4361,27 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
         $ref: '#/definitions/SdcComponent'
       submission: data
       validators: []
-      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-gaia_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.component.yml
+      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-bb_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.component.yml
     component-twig:
       required: true
       schema:
         $ref: '#/definitions/SdcTemplate'
       submission: data
       validators: []
-      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-gaia_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.twig
+      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-bb_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.twig
     component-story:
       required: true
       schema:
         $ref: '#/definitions/SdcStory'
       submission: data
       validators: []
-      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-gaia_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.default.story.yml
+      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-bb_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.default.story.yml
     component-js:
       required: false
       schema: {}
       submission: data
       validators: []
-      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-gaia_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.js
+      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-bb_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.js
   ```
 
   #### Results
@@ -4419,7 +4419,7 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
         $ref: '#/definitions/SdcStory'
       submission: data
       validators: []
-      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-gaia_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.aligned_table.story.yml
+      path: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-bb_rich-render/web/themes/custom/bb_theme/components/rich-text/rich-text.aligned_table.story.yml
   ```
 
   #### Results
@@ -4435,7 +4435,7 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   #### Params
   ```yaml
   command: pnpm run build && pnpm exec storybook build
-  cwd: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-gaia_rich-render/web/themes/custom/bb_theme
+  cwd: /projects/bakers-build/.bakers-worktrees/feat/bakers-6-bb_rich-render/web/themes/custom/bb_theme
   index_url: http://localhost:39625/index.json
   story_ids:
     - bb-theme-data-display-rich-text--default

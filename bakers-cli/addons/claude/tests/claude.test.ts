@@ -28,21 +28,28 @@ describe('encodeClaudeProjectDir', () => {
 
 describe('ClaudeAgent.launchCommand', () => {
   it('includes the prompt, --model and the skip-permissions flag', () => {
-    const agent = new ClaudeAgent({ model: 'claude-opus-4-8' });
+    const agent = new ClaudeAgent({
+      model: 'claude-opus-4-8',
+      security: 'yolo',
+    });
     expect(agent.launchCommand('do the thing')).toBe(
       "claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
     );
   });
   it('omits --model when no model is set', () => {
-    expect(new ClaudeAgent({}).launchCommand('x')).toBe(
+    expect(new ClaudeAgent({ security: 'yolo' }).launchCommand('x')).toBe(
       "claude 'x' --dangerously-skip-permissions",
     );
   });
   it('returns the bare command for an empty prompt', () => {
-    expect(new ClaudeAgent({}).launchCommand('')).toBe('claude');
+    expect(new ClaudeAgent({ security: 'yolo' }).launchCommand('')).toBe(
+      'claude',
+    );
   });
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file', () => {
-    const cmd = new ClaudeAgent({}).launchCommand('para one\n\npara two');
+    const cmd = new ClaudeAgent({ security: 'yolo' }).launchCommand(
+      'para one\n\npara two',
+    );
     expect(cmd).toBe(
       "claude 'para one\n\npara two' --dangerously-skip-permissions",
     );
@@ -173,14 +180,14 @@ describe('ClaudeAgent.getRunLog', () => {
 
 describe('ClaudeAgent.launchCommand with a run identity', () => {
   it('pins the session id via --session-id when a run is given (BB-473)', () => {
-    const agent = new ClaudeAgent({});
+    const agent = new ClaudeAgent({ security: 'yolo' });
     const cmd = agent.launchCommand('do the thing', { sessionId: 'r-123' });
     expect(cmd).toBe(
       "claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
     );
   });
   it('omits --session-id when no run is given (unchanged behaviour)', () => {
-    const agent = new ClaudeAgent({});
+    const agent = new ClaudeAgent({ security: 'yolo' });
     expect(agent.launchCommand('x')).toBe(
       "claude 'x' --dangerously-skip-permissions",
     );
@@ -196,9 +203,10 @@ function captureArgv(binary: string, command: string): string[] {
   return output.split('\0').slice(0, -1);
 }
 
-describe('ClaudeAgent args, effort and skip_permissions', () => {
+describe('ClaudeAgent args and effort', () => {
   it('appends each args element as exactly one argv item, preserving order, duplicates and empty strings', () => {
     const agent = new ClaudeAgent({
+      security: 'yolo',
       args: ['--effort', 'medium', '--effort', 'high', '', '--foo', "it's"],
     });
     const command = agent.launchCommand('task');
@@ -220,6 +228,7 @@ describe('ClaudeAgent args, effort and skip_permissions', () => {
 
   it('quotes a model value with spaces as one --model argument', () => {
     const command = new ClaudeAgent({
+      security: 'yolo',
       model: 'opus --injected',
     }).launchCommand('x');
     expect(captureArgv('claude', command)).toEqual([
@@ -239,6 +248,7 @@ describe('ClaudeAgent args, effort and skip_permissions', () => {
 
   it('omits generated --model/--effort when args already override them', () => {
     const command = new ClaudeAgent({
+      security: 'yolo',
       model: 'sonnet',
       effort: 'medium',
       args: ['--model', 'opus', '--effort', 'high'],
@@ -256,6 +266,7 @@ describe('ClaudeAgent args, effort and skip_permissions', () => {
 
   it('recognizes --model=VALUE and --effort=VALUE overrides', () => {
     const command = new ClaudeAgent({
+      security: 'yolo',
       model: 'sonnet',
       effort: 'low',
       args: ['--model=opus', '--effort=high'],
@@ -286,6 +297,11 @@ describe('ClaudeAgent args, effort and skip_permissions', () => {
       '--allow-dangerously-skip-permissions',
       '--permission-mode',
       '--permission-mode=bypass',
+      '--settings',
+      '--settings={}',
+      '--setting-sources',
+      '--strict-mcp-config',
+      '--mcp-config',
     ]) {
       expect(() => new ClaudeAgent({ args: [flag] })).toThrow(/reserved flag/);
     }
@@ -295,25 +311,26 @@ describe('ClaudeAgent args, effort and skip_permissions', () => {
     expect(() => new ClaudeAgent({ args: ['~/settings.json'] })).toThrow(
       /absolute path/,
     );
-    expect(
-      () => new ClaudeAgent({ args: ['--settings=~/.bakers/claude.json'] }),
-    ).toThrow(/absolute path/);
+    expect(() => new ClaudeAgent({ args: ['--add-dir=~/.bakers'] })).toThrow(
+      /absolute path/,
+    );
   });
 
   it('keeps an absolute path with spaces and an embedded tilde as literal args', () => {
     const command = new ClaudeAgent({
-      args: ['--settings', '/home/cw/My Settings/a~b.json'],
+      security: 'yolo',
+      args: ['--add-dir', '/home/cw/My Settings/a~b.json'],
     }).launchCommand('x');
     expect(captureArgv('claude', command)).toEqual([
       'claude',
       'x',
       '--dangerously-skip-permissions',
-      '--settings',
+      '--add-dir',
       '/home/cw/My Settings/a~b.json',
     ]);
   });
 
-  it('rejects non-array args, non-string members, NUL, and invalid skip_permissions', () => {
+  it('rejects non-array args, non-string members and NUL', () => {
     expect(() => new ClaudeAgent({ args: '--effort' as never })).toThrow(
       /args must be an array of strings/,
     );
@@ -322,9 +339,6 @@ describe('ClaudeAgent args, effort and skip_permissions', () => {
     );
     expect(() => new ClaudeAgent({ args: ['ok\0no'] })).toThrow(/NUL/);
     expect(() => new ClaudeAgent({ model: 'x\0y' })).toThrow(/NUL/);
-    expect(() => new ClaudeAgent({ skip_permissions: 'yes' as never })).toThrow(
-      /skip_permissions must be a boolean/,
-    );
   });
 
   it('copies args so later caller mutation cannot introduce a reserved flag', () => {
@@ -333,22 +347,147 @@ describe('ClaudeAgent args, effort and skip_permissions', () => {
     args.push('--session-id');
     expect(agent.launchCommand('x')).not.toContain('--session-id');
   });
+});
 
-  it('omits the bypass flag when skip_permissions is false and still defaults to emitting it', () => {
+function flagValue(argv: string[], flag: string): string {
+  const at = argv.indexOf(flag);
+  expect(at, `${flag} present`).toBeGreaterThan(-1);
+  return argv[at + 1] as string;
+}
+
+describe('ClaudeAgent security: sandbox (default)', () => {
+  const argv = () =>
+    captureArgv('claude', new ClaudeAgent({}).launchCommand('x'));
+
+  it('starts without a bypass, in dontAsk mode, with project/local settings only and no MCP server', () => {
+    const a = argv();
+    expect(a).not.toContain('--dangerously-skip-permissions');
+    expect(flagValue(a, '--permission-mode')).toBe('dontAsk');
+    expect(flagValue(a, '--setting-sources')).toBe('project,local');
+    expect(a).toContain('--strict-mcp-config');
+    expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+      mcpServers: {},
+    });
+  });
+
+  it('generates OS-sandbox settings that fail closed and deny reads of ~/.ssh and ~/.bakers', () => {
+    const settings = JSON.parse(flagValue(argv(), '--settings'));
+    expect(settings.sandbox).toEqual({
+      enabled: true,
+      failIfUnavailable: true,
+      allowUnsandboxedCommands: false,
+      excludedCommands: ['bakers', 'git', 'ddev'],
+      filesystem: { denyRead: ['~/.ssh', '~/.bakers'], allowWrite: [] },
+      network: { allowedDomains: ['*'] },
+    });
+    expect(settings.disableClaudeAiConnectors).toBe(true);
+    expect(settings.permissions.allow).toEqual(['Bash', 'Edit(./**)']);
+    expect(settings.permissions.deny).toEqual([
+      'Read(~/.ssh)',
+      'Read(~/.ssh/**)',
+      'Read(~/.bakers)',
+      'Read(~/.bakers/**)',
+    ]);
+  });
+
+  it('replaces each default with the configured sandbox key, lists not merged', () => {
+    const a = captureArgv(
+      'claude',
+      new ClaudeAgent({
+        sandbox: {
+          trusted_commands: ['git', 'docker'],
+          deny_read: ['~/.aws', '/etc/secret', '~/.netrc'],
+          allow_write: ['/srv/cache'],
+          network: ['api.anthropic.com'],
+          mcp_servers: { playwright: { command: 'npx', args: ['pw-mcp'] } },
+        },
+      }).launchCommand('x'),
+    );
+    const settings = JSON.parse(flagValue(a, '--settings'));
+    expect(settings.sandbox.excludedCommands).toEqual(['git', 'docker']);
+    expect(settings.sandbox.filesystem).toEqual({
+      denyRead: ['~/.aws', '/etc/secret', '~/.netrc'],
+      allowWrite: ['/srv/cache'],
+    });
+    expect(settings.sandbox.network.allowedDomains).toEqual([
+      'api.anthropic.com',
+    ]);
+    // A file entry is covered by itself; an absolute path takes `//`.
+    expect(settings.permissions.deny).toEqual([
+      'Read(~/.aws)',
+      'Read(~/.aws/**)',
+      'Read(//etc/secret)',
+      'Read(//etc/secret/**)',
+      'Read(~/.netrc)',
+      'Read(~/.netrc/**)',
+    ]);
+    expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+      mcpServers: { playwright: { command: 'npx', args: ['pw-mcp'] } },
+    });
+  });
+
+  it('exposes a dropping env policy with the default deny list, or env_deny', () => {
+    expect(new ClaudeAgent({}).runEnvPolicy).toEqual({
+      drop: true,
+      deny: expect.arrayContaining(['ANTHROPIC_*', 'NODE_OPTIONS', 'GIT_*']),
+    });
+    expect(new ClaudeAgent({ env_deny: ['X_*'] }).runEnvPolicy).toEqual({
+      drop: true,
+      deny: ['X_*'],
+    });
+  });
+});
+
+describe('ClaudeAgent security: system, yolo, custom', () => {
+  it('system adds no security flag', () => {
     expect(
       captureArgv(
         'claude',
-        new ClaudeAgent({ skip_permissions: false }).launchCommand('x'),
+        new ClaudeAgent({ security: 'system' }).launchCommand('x'),
       ),
     ).toEqual(['claude', 'x']);
-    expect(
-      captureArgv('claude', new ClaudeAgent({}).launchCommand('x')),
-    ).toEqual(['claude', 'x', '--dangerously-skip-permissions']);
-    expect(
-      captureArgv(
-        'claude',
-        new ClaudeAgent({ skip_permissions: true }).launchCommand('x'),
-      ),
-    ).toEqual(['claude', 'x', '--dangerously-skip-permissions']);
+  });
+
+  it("yolo restores today's bypass launch and keeps denied env vars", () => {
+    const agent = new ClaudeAgent({ security: 'yolo' });
+    expect(captureArgv('claude', agent.launchCommand('x'))).toEqual([
+      'claude',
+      'x',
+      '--dangerously-skip-permissions',
+    ]);
+    expect(agent.runEnvPolicy.drop).toBe(false);
+  });
+
+  it('custom passes config verbatim as the only settings', () => {
+    const config = { permissions: { defaultMode: 'acceptEdits' } };
+    const a = captureArgv(
+      'claude',
+      new ClaudeAgent({ security: 'custom', config }).launchCommand('x'),
+    );
+    expect(a).toEqual(['claude', 'x', '--settings', JSON.stringify(config)]);
+  });
+});
+
+describe('ClaudeAgent security load errors', () => {
+  it.each([
+    [{ skip_permissions: true }, /security: 'yolo'/],
+    [{ security: 'open' }, /security must be one of/],
+    [
+      { security: 'yolo', config: {} },
+      /config is only valid with security: 'custom'/,
+    ],
+    [{ security: 'custom' }, /security: 'custom' requires config/],
+    [
+      { security: 'system', sandbox: {} },
+      /sandbox is only valid with security: 'sandbox'/,
+    ],
+    [
+      { sandbox: { network: 'all' } },
+      /sandbox.network must be an array of strings/,
+    ],
+    [{ sandbox: { nope: [] } }, /unknown sandbox key nope/],
+    [{ env_deny: 'X' }, /env_deny must be an array of strings/],
+  ])('%j fails loading', (options, message) => {
+    expect(() => new ClaudeAgent(options as never)).toThrow(message);
   });
 });

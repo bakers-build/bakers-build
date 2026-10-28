@@ -18,7 +18,10 @@ import type {
   SpawnRunInput,
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
-import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
+import {
+  DEFAULT_ENV_DENY,
+  emptyAgentFootprint,
+} from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
@@ -154,7 +157,100 @@ describe('resolveRunEnv', () => {
   });
 });
 
+describe('resolveRunEnv run-env policy', () => {
+  const ticketVars =
+    'ANTHROPIC_BASE_URL=http://evil\nNODE_OPTIONS=--require x\nGIT_CONFIG_COUNT=1\nHTTPS_PROXY=http://p\nFOO=bar';
+  const core = { BB_ID: 'real-uuid' };
+  const dangerous = [
+    'ANTHROPIC_BASE_URL',
+    'NODE_OPTIONS',
+    'GIT_CONFIG_COUNT',
+    'HTTPS_PROXY',
+  ];
+
+  it('drops names on the default deny list and names them, with the ticket, in one warning', () => {
+    const { log, calls } = spyLogger();
+    const env = resolveRunEnv(ticketVars, core, log, {
+      ticket: 'BB-1',
+      policy: { drop: true, deny: DEFAULT_ENV_DENY },
+    });
+    expect(env).toEqual({ FOO: 'bar', BB_ID: 'real-uuid' });
+    const warned = calls.filter((c) => c.level === 'warn');
+    expect(warned).toHaveLength(1);
+    expect(warned[0]?.obj).toMatchObject({ ticket: 'BB-1', keys: dangerous });
+    expect(JSON.stringify(calls)).not.toContain('evil');
+  });
+
+  it('keeps them when the policy does not drop (yolo), still warning', () => {
+    const { log, calls } = spyLogger();
+    const env = resolveRunEnv(ticketVars, core, log, {
+      ticket: 'BB-1',
+      policy: { drop: false, deny: DEFAULT_ENV_DENY },
+    });
+    expect(Object.keys(env)).toEqual([...dangerous, 'FOO', 'BB_ID']);
+    const warned = calls.filter((c) => c.level === 'warn');
+    expect(warned).toHaveLength(1);
+    expect(warned[0]?.obj).toMatchObject({ ticket: 'BB-1', keys: dangerous });
+  });
+
+  it('passes everything without a warning for an empty deny list', () => {
+    const { log, calls } = spyLogger();
+    const env = resolveRunEnv(ticketVars, core, log, {
+      ticket: 'BB-1',
+      policy: { drop: true, deny: [] },
+    });
+    expect(Object.keys(env)).toEqual([...dangerous, 'FOO', 'BB_ID']);
+    expect(calls.filter((c) => c.level === 'warn')).toHaveLength(0);
+  });
+
+  it('drops with the default list when no policy is given', () => {
+    const { log } = spyLogger();
+    expect(resolveRunEnv(ticketVars, core, log)).toEqual({
+      FOO: 'bar',
+      BB_ID: 'real-uuid',
+    });
+  });
+});
+
 describe('Conductor dispatch env injection', () => {
+  it("hands the agent and its hooks the env filtered by the agent's policy", async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'working',
+          effectiveEnvVars: 'LD_PRELOAD=/x.so\nAPP_KEY=ok',
+        },
+      },
+    });
+    remote.queue.push({
+      runUuid: 'r-1',
+      runId: 1,
+      ticketUuid: 't-1',
+      stateAtStart: 'working',
+      handler: 'code',
+    });
+    const executor = new RecordingExecutor();
+    const { log } = spyLogger();
+    const conductor = new Conductor(
+      makeConfig(),
+      remote,
+      executor,
+      new RecordingWorkspace(),
+      [{ id: fakeAgent.id, agent: fakeAgent }],
+      log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    const agentEnv = executor.started[0]?.env ?? {};
+    expect(agentEnv.APP_KEY).toBe('ok');
+    expect(agentEnv.LD_PRELOAD).toBeUndefined();
+    const beforeRun = executor.hookCalls.find((c) => c.name === 'before_run');
+    expect(beforeRun?.env?.LD_PRELOAD).toBeUndefined();
+  });
+
   it('injects the resolved env into BOTH the agent run env and the lifecycle hooks', async () => {
     const seed: FakeRemoteSeed = {
       tickets: {

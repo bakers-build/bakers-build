@@ -1,6 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { type ConductorLogger, stemForConfigFile } from '@bakers-build/core';
+import {
+  type BbAgent,
+  DEFAULT_ENV_DENY,
+  matchesEnvDeny,
+  type RunEnvPolicy,
+} from '../plugins/agent.js';
 import type {
   BbExecutor,
   HookListenerContext,
@@ -106,14 +112,21 @@ export function resolveRunEnv(
   effectiveEnvVars: string | undefined,
   core: Record<string, string>,
   logger: ConductorLogger,
+  scope: { ticket?: string; policy?: RunEnvPolicy } = {},
 ): Record<string, string> {
+  const policy = scope.policy ?? { drop: true, deny: DEFAULT_ENV_DENY };
   const user = effectiveEnvVars ? parseEnvLines(effectiveEnvVars) : {};
   const clobbered: string[] = [];
+  const denied: string[] = [];
   const safe: Record<string, string> = {};
   for (const [key, value] of Object.entries(user)) {
     if (isReservedEnvKey(key)) {
       clobbered.push(key);
       continue;
+    }
+    if (matchesEnvDeny(key, policy.deny)) {
+      denied.push(key);
+      if (policy.drop) continue;
     }
     safe[key] = value;
   }
@@ -121,6 +134,14 @@ export function resolveRunEnv(
     logger.warn(
       { keys: clobbered },
       'ignored reserved keys in ticket env_vars (core vars win)',
+    );
+  }
+  if (denied.length > 0) {
+    logger.warn(
+      { ticket: scope.ticket, keys: denied },
+      policy.drop
+        ? 'dropped denied keys from ticket env_vars (agent run-env policy)'
+        : 'passed denied keys from ticket env_vars (agent security: yolo)',
     );
   }
   // Core vars overlay last — they can never be overridden.
@@ -638,6 +659,7 @@ export class Conductor {
       hook: 'after_run',
       run: { uuid: r.runUuid, id: r.runId },
       ...(r.stateAtStart ? { state: r.stateAtStart } : {}),
+      agent: this.agents.find((a) => a.id === r.agent)?.agent,
     });
     await this.runSlot(
       'after_run',
@@ -661,6 +683,8 @@ export class Conductor {
       hook: HookName;
       run?: { uuid: string; id?: number };
       state?: string;
+      /** The run's agent, whose env policy applies; omitted → the default. */
+      agent?: BbAgent | undefined;
     },
   ): Promise<HookListenerContext | undefined> {
     try {
@@ -674,6 +698,7 @@ export class Conductor {
           ticket,
           opts.run?.uuid,
           opts.state ?? ticket.state,
+          opts.agent,
         ),
         ...(opts.run ? { run: opts.run } : {}),
       };
@@ -1161,6 +1186,7 @@ export class Conductor {
     t: Ticket,
     runUuid: string | undefined,
     state: string,
+    agent?: BbAgent,
   ): Promise<Record<string, string>> {
     // BB-495: the agent names the workspace on its own calls now (the
     // dropsh transport stamps none), so it has to know which one it is
@@ -1196,7 +1222,10 @@ export class Conductor {
       ...(t.workspaceId ? { BB_WORKSPACE_ID: t.workspaceId } : {}),
       ...(workspaceIds ? { BB_WORKSPACE_IDS: workspaceIds } : {}),
     };
-    return resolveRunEnv(t.effectiveEnvVars, core, this.logger);
+    return resolveRunEnv(t.effectiveEnvVars, core, this.logger, {
+      ticket: t.identifier,
+      ...(agent?.runEnvPolicy ? { policy: agent.runEnvPolicy } : {}),
+    });
   }
 
   /** Dispatches one claimed run; a failure terminalises it (BB-149). */
@@ -1245,7 +1274,12 @@ export class Conductor {
     // inject it into BOTH the executor-owned lifecycle hooks AND the agent run
     // env (BB-99). Reserved core keys always win; values may be sensitive so
     // only key names are ever logged.
-    const env = await this.runEnv(t, run.runUuid, run.stateAtStart);
+    const env = await this.runEnv(
+      t,
+      run.runUuid,
+      run.stateAtStart,
+      chosen.agent,
+    );
     const ws = await this.serialGit(() =>
       this.workspace.ensure(t.identifier, t.branchName, baseRef),
     );
