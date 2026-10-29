@@ -1,5 +1,5 @@
 # CI e2e runner (merge gate only, never deployed): the Playwright suite and the conductor
-# integration suite, run on the e2e stack's network against the gate's php/nginx/mcp images.
+# integration suite, run on the e2e stack's network against the gate's php/nginx images.
 # The base image version matches @playwright/test in tests/playwright/package-lock.json.
 FROM mcr.microsoft.com/playwright:v1.61.1-noble
 

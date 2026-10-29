@@ -1,7 +1,7 @@
-import { calls, check, data, readAfter, succeeded, uuid, validateTools, value, writes } from '../call-utils.mjs';
+import { arg, calls, check, names, payload, readAfter, succeeded, tool, toolCalls, uuid, validateTools, writes } from '../call-utils.mjs';
 import { requireValue } from '../validation.mjs';
 
-// Classification: one update naming recipe and type, verified by readback — or a question and no write.
+// Classification: one bakers_ticket_classify call naming recipe and type, verified by readback — or a question and no write.
 export function validate(f) {
   validateTools(f, 'bb-workflow/references/classify.md');
   const e = f.expect;
@@ -10,32 +10,31 @@ export function validate(f) {
     : e?.write === false && Array.isArray(e.question) && e.question.length > 1, 'Expected a write expectation or the recipes asked about');
 }
 
+/** The one classification of a ticket: a successful call with recipe and type, and a later readback showing both. */
+export function classified(trace, ticket, accept = () => true) {
+  const all = toolCalls(trace, 'bakers_ticket_classify').filter(c => c.result?.exit_code !== 4);
+  const call = all[0], read = readAfter(trace, call, ticket);
+  return all.length === 1 && names(call, ticket) && succeeded(call) && arg(call, 'recipe') && arg(call, 'type') &&
+    accept(arg(call, 'recipe'), arg(call, 'type')) &&
+    payload(read)?.recipe === arg(call, 'recipe') && payload(read)?.type === arg(call, 'type') ? call : undefined;
+}
+
 export function checkOutput(f, output, context) {
-  const e = f.expect, trace = calls(context), all = writes(trace);
-  const target = `bb_ticket/bb_ticket/${f.input.ticket_uuid}`;
-  const update = all.find(c => c.action === 'update' && c.target === target);
-  const read = readAfter(trace, update, target);
+  const e = f.expect, trace = calls(context, f.simulation.files), all = writes(trace), ticket = f.simulation.ticket;
   const recipes = trace.filter(c => c.tool === 'read_file' && succeeded(c) && /^skills\/bb-recipe-/.test(c.arguments?.path));
+  const classification = classified(trace, ticket, (recipe, type) => recipe === e.recipe && e.types.includes(type));
   const common = [
+    check('ticket-read', toolCalls(trace, 'bakers_ticket_read').some(c => names(c, ticket) && succeeded(c)), 'Read the ticket'),
     check('recipes-read', recipes.length >= 2, 'Read the descriptions of the installed recipes'),
-    check('nothing-else', all.every(c => c === update) && !all.some(c => c.target?.startsWith('bb_comment')) &&
-      !update?.flags.state && !update?.flags.label_names, 'Publish no comment, write no label and transition nothing'),
+    check('nothing-else', all.every(c => e.write && c.name === tool('bakers_ticket_classify')),
+      e.write ? 'Publish no comment, write no label and transition nothing' : 'Write nothing before the human answers'),
   ];
   if (!e.write) {
     return [...common,
-      check('no-write', all.length === 0, 'Write no recipe or type before the human answers'),
       // A recipe is named as its skill or as the `recipe` field value: `bb-recipe-pair` or `pair`.
       check('asks', output.includes('?') && e.question.every(name => output.includes(name) || output.includes(`\`${name.replace('bb-recipe-', '')}\``)),
         'Ask the human to choose between the fitting recipes')];
   }
-  // The frame reads tickets as Markdown (`recipe: [bb_term--recipe/…]`); JSON reads carry relationships.
-  const relationships = data(read)?.relationships ?? {};
-  const markdown = typeof read?.result?.stdout === 'string' ? read.result.stdout : '';
-  const resolved = name => Boolean(relationships[name]?.data?.id) || new RegExp(`^${name}: \\[bb_term--`, 'm').test(markdown);
-  return [...common,
-    check('single-update', all.length === 1 && update && succeeded(update) && value(update, 'recipe_names') === e.recipe &&
-      e.types.includes(value(update, 'type_names')), 'One update with --recipe_names (the suffix) and a declared --type_names'),
-    check('readback', resolved('recipe') && resolved('ticket_type'),
-      'Read the ticket back and verify the resolved recipe and type'),
-  ];
+  return [...common, check('classified', classification,
+    'One bakers_ticket_classify call with the recipe (the suffix) and a declared type, read back')];
 }

@@ -16,6 +16,7 @@ const CONTRACTS: Array<[string, string]> = [
   ['python3', 'skill-comment-example.py'],
   ['python3', 'skill-references.py'],
   ['python3', 'skill-size.py'],
+  ['python3', 'skill-tools.py'],
 ];
 
 describe('repository contracts', () => {

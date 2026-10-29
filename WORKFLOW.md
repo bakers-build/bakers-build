@@ -36,7 +36,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | bakers.build CLI source | `cd bakers-cli && pnpm install && pnpm -r run build` |
 | PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
-| `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/mcp-compose.sh` |
+| `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |

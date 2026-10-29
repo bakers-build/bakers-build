@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -71,6 +72,37 @@ trait TicketInputTrait {
       $violation = $violations->get(0);
       throw new \InvalidArgumentException(sprintf('%s: %s', $violation->getPropertyPath(), strip_tags((string) $violation->getMessage())));
     }
+  }
+
+  /**
+   * The term of this vocabulary and name in the workspace, created if missing.
+   *
+   * Server side of the CLI's `*_names` flags: scoped to the workspace and
+   * created there on first use when the caller may create terms.
+   *
+   * @throws \InvalidArgumentException
+   */
+  protected function term(?BbWorkspaceInterface $workspace, string $vid, string $name): ContentEntityInterface {
+    $storage = $this->entities()->getStorage('bb_term');
+    $ids = $workspace === NULL ? [] : $storage->getQuery()->accessCheck(TRUE)
+      ->condition('vid', $vid)
+      ->condition('name', $name)
+      ->condition('workspace_id', $workspace->id())
+      ->range(0, 1)
+      ->execute();
+    if ($ids) {
+      $term = $storage->load(reset($ids));
+      assert($term instanceof ContentEntityInterface);
+      return $term;
+    }
+    if ($workspace === NULL || !$this->entities()->getAccessControlHandler('bb_term')->createAccess($vid, $this->currentUser)) {
+      throw new \InvalidArgumentException(sprintf('The %s %s does not exist and you may not create it.', $vid, $name));
+    }
+    $term = $storage->create(['vid' => $vid, 'name' => $name, 'workspace_id' => $workspace->id()]);
+    assert($term instanceof ContentEntityInterface);
+    $this->assertValid($term);
+    $term->save();
+    return $term;
   }
 
 }

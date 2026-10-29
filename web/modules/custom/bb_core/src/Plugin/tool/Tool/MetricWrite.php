@@ -9,7 +9,6 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\tool\Attribute\Tool;
 use Drupal\tool\ExecutableResult;
 use Drupal\tool\Tool\ToolBase;
@@ -103,6 +102,7 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Unit'),
             description: new TranslatableMarkup('The unit.'),
             required: FALSE,
+            nullable: TRUE,
           ),
         ],
       ),
@@ -131,7 +131,7 @@ final class MetricWrite extends ToolBase {
     }
     $ticket->set('metrics', array_values($metrics));
     if (!empty($values['label'])) {
-      $label = $this->label($ticket, $values['label']);
+      $label = $this->term($ticket->getProject()?->getGroup()?->getWorkspace(), 'label', $values['label']);
       if (!in_array($label->id(), array_column($ticket->get('labels')->getValue(), 'target_id'))) {
         $ticket->get('labels')->appendItem($label->id());
       }
@@ -147,38 +147,6 @@ final class MetricWrite extends ToolBase {
         'unit' => $row['unit'] ?? NULL,
       ], $saved->get('metrics')->getValue()),
     ]);
-  }
-
-  /**
-   * The label term of this name in the ticket's workspace, created if missing.
-   *
-   * Server side of the CLI's `label_names`: scoped to the ticket's workspace
-   * and created there on first use.
-   *
-   * @throws \InvalidArgumentException
-   */
-  private function label(BbTicketInterface $ticket, string $name): ContentEntityInterface {
-    $workspace = $ticket->getProject()?->getGroup()?->getWorkspace();
-    $storage = $this->entities()->getStorage('bb_term');
-    $ids = $workspace === NULL ? [] : $storage->getQuery()->accessCheck(TRUE)
-      ->condition('vid', 'label')
-      ->condition('name', $name)
-      ->condition('workspace_id', $workspace->id())
-      ->range(0, 1)
-      ->execute();
-    if ($ids) {
-      $term = $storage->load(reset($ids));
-      assert($term instanceof ContentEntityInterface);
-      return $term;
-    }
-    if ($workspace === NULL || !$this->entities()->getAccessControlHandler('bb_term')->createAccess('label', $this->currentUser)) {
-      throw new \InvalidArgumentException(sprintf('Label %s does not exist and you may not create it.', $name));
-    }
-    $term = $storage->create(['vid' => 'label', 'name' => $name, 'workspace_id' => $workspace->id()]);
-    assert($term instanceof ContentEntityInterface);
-    $this->assertValid($term);
-    $term->save();
-    return $term;
   }
 
   /**

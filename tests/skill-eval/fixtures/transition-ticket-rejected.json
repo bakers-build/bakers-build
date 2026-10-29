@@ -34,7 +34,8 @@
           "uri": "https://git.example.invalid/team/app/-/pipelines/81",
           "title": "Historical human CI link"
         }
-      ]
+      ],
+      "title": "Synthetic fixture ticket"
     },
     "files": {},
     "reject_transition": true

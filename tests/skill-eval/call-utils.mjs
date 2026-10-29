@@ -1,6 +1,14 @@
+import { readFileSync } from 'node:fs';
 import { nonempty, requireValue } from './validation.mjs';
 export const check = (id, met, reason) => ({ id, met: Boolean(met), reason });
 export const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(value);
+
+const schemas = Object.fromEntries(JSON.parse(readFileSync(new URL('./contract-fixture.json', import.meta.url), 'utf8'))
+  .tools.map(t => [t.name, t.inputSchema]));
+/** The MCP wire name of a bakers tool: mcp_server_tool_bridge serves tool `<id>` as `tool_api__<id>`. */
+export const tool = id => `tool_api__${id}`;
+export const WRITES = ['bakers_ticket_create', 'bakers_ticket_classify', 'bakers_ticket_transition', 'bakers_comment_publish', 'bakers_metric_write', 'bakers_time_propose'].map(tool);
+const JSONAPI = ['read', 'search', 'create', 'update', 'delete', 'schema', 'upload-file'];
 
 export function validateTools(fixture, skill) {
   requireValue(fixture.skill === skill && fixture.execution === 'simulated-tools' &&
@@ -8,117 +16,103 @@ export function validateTools(fixture, skill) {
   requireValue(nonempty(fixture.input.task), 'Expected caller task');
 }
 
-export function calls(context = {}) {
+// `--param key=value` overrides --data keys, coerced by the input schema like the CLI.
+function coerce(name, key, value) {
+  const node = schemas[name]?.properties?.[key] ?? {};
+  const type = [node.type, ...(node.oneOf ?? []).map(o => o.type)].flat().find(t => t && t !== 'null');
+  if (['integer', 'number'].includes(type)) return value.trim() === '' || Number.isNaN(Number(value)) ? value : Number(value);
+  if (type === 'boolean') return value === 'true' ? true : value === 'false' ? false : value;
+  if (['object', 'array'].includes(type)) { try { return JSON.parse(value); } catch { return value; } }
+  return value;
+}
+
+/**
+ * The trace as tool calls: each `bakers dropsh tool` row gets `mode` (list, schema or call), the wire
+ * `name` and its `args` (from --data inline JSON or @file, then --param). An @file resolves against
+ * the fixture's files and the virtual files written earlier in the trace. A JSON:API command gets
+ * mode `jsonapi`: it is not part of the skill contract.
+ */
+export function calls(context = {}, files = {}) {
+  const written = { ...files };
   return (context.tool_trace ?? []).map((row, index) => {
-    const base = { ...row, index, flags: {}, action: undefined, target: undefined };
+    const base = { ...row, index, mode: undefined, name: undefined, args: undefined };
+    if (row.tool === 'write_file' && row.result?.exit_code === 0) written[row.arguments.path] = row.arguments.content;
     if (row.tool !== 'bakers') return base;
     const argv = row.arguments?.argv;
-    if (Array.isArray(argv) && argv.length === 2 && argv[0] === 'bakers' && argv[1] === 'info') return { ...base, action: 'info', target: 'bakers' };
-    if (!Array.isArray(argv) || argv[0] !== 'bakers' || argv[1] !== 'dropsh') return base;
-    const at = argv.findIndex((v, i) => i >= 2 && ['read', 'search', 'create', 'update'].includes(v));
-    if (argv.includes('--help')) return { ...base, action: 'help', target: 'bakers' };
-    if (at < 0) return base;
-    const tokens = [...argv.slice(2, at), ...argv.slice(at + 2)];
-    const flags = {};
-    let last;
-    while (tokens.length) {
-      const token = tokens.shift();
-      // Variadic options (--include a b, --filter x y, --json a=1 b=2) keep taking bare values.
-      if (typeof token === 'string' && !token.startsWith('--') && ['include', 'filter', 'json'].includes(last)) { flags[last].push(token); continue; }
-      if (typeof token !== 'string' || !token.startsWith('--')) return base;
-      const at = token.indexOf('=');
-      const key = token.slice(2, at < 0 ? undefined : at);
-      const value = at >= 0 ? token.slice(at + 1) : ['fields', 'no-validate'].includes(key) ? true : tokens.shift();
-      (flags[key] ??= []).push(value);
-      last = key;
+    if (!Array.isArray(argv) || argv[0] !== 'bakers') return base;
+    if (argv.length === 2 && argv[1] === 'info') return { ...base, mode: 'info' };
+    if (argv[1] !== 'dropsh') return base;
+    if (argv.includes('--help') || argv.includes('-h')) return { ...base, mode: 'help' };
+    if (JSONAPI.includes(argv[2])) return { ...base, mode: 'jsonapi' };
+    if (argv[2] !== 'tool') return base;
+    let name, data, schema = false;
+    const params = [];
+    for (let i = 3; i < argv.length; i++) {
+      const [key, ...rest] = argv[i].split('=');
+      const value = rest.length ? rest.join('=') : argv[i + 1];
+      if (key === '--schema') schema = true;
+      else if (key === '--data' || key === '--param') {
+        if (!rest.length) i++;
+        if (key === '--param') params.push(value); else data = value;
+      } else if (argv[i].startsWith('-')) return base;
+      else name ??= argv[i];
     }
-    return { ...base, flags, action: argv[at], target: argv[at + 1] };
+    if (!name) return { ...base, mode: 'list' };
+    if (schema) return { ...base, mode: 'schema', name };
+    let args = {};
+    try { args = data === undefined ? {} : JSON.parse(data.startsWith('@') ? written[data.slice(1)] : data); } catch { args = undefined; }
+    for (const p of params) if (args && p.includes('=')) args[p.slice(0, p.indexOf('='))] = coerce(name, p.slice(0, p.indexOf('=')), p.slice(p.indexOf('=') + 1));
+    return { ...base, mode: 'call', name, args };
   });
 }
-export const value = (call, name) => call?.flags[name]?.at(-1);
-export const writes = trace => trace.filter(c => ['create', 'update'].includes(c.action) && !value(c, 'fields'));
-/** The CLI prints JSON text; historical simulator traces stored the parsed object. Both read alike. */
+export const arg = (call, key) => call?.args?.[key];
+/** Successful-or-not calls of one bakers tool, by its id (bakers_ticket_read). */
+export const toolCalls = (trace, id) => trace.filter(c => c.mode === 'call' && c.name === tool(id));
+export const writes = trace => trace.filter(c => c.mode === 'call' && WRITES.includes(c.name));
+/** The tool's structured output: the CLI prints it as JSON text. */
 export function payload(call) {
   const stdout = call?.result?.stdout;
   if (typeof stdout !== 'string') return stdout ?? undefined;
   try { return JSON.parse(stdout); } catch { return undefined; }
 }
-export const data = call => payload(call)?.data;
 export function cliError(call) {
   try { return JSON.parse(call?.result?.stderr?.trim().split('\n').at(-1)).error; } catch { return undefined; }
 }
-/** A lost response: the write may or may not have applied. Legacy traces used synthetic exit 124. */
-export const uncertain = call => call?.result?.exit_code === 124 ||
-  (call?.result?.exit_code === 5 && cliError(call)?.code === 'E_HTTP' && cliError(call)?.details?.status === 0);
+/** A lost response (E_HTTP without status): the write may or may not have applied. */
+export const uncertain = call => call?.result?.exit_code === 5 && cliError(call)?.code === 'E_HTTP' && cliError(call)?.details?.status === 0;
+/** The tool ran and refused (exit 1, E_TOOL): a definite rejection. */
+export const refused = call => call?.result?.exit_code === 1 && cliError(call)?.code === 'E_TOOL';
 export const succeeded = call => call?.result?.exit_code === 0;
-export const discoveryBefore = (trace, write) => Boolean(write && trace.some(c => c.index < write.index &&
-  c.action === write.action && c.target === write.target && value(c, 'fields') && succeeded(c)));
-export const readAfter = (trace, write, target) => trace.find(c => write && c.index > write.index && c.action === 'read' && c.target === target && succeeded(c));
+/** Does a call's `ticket` argument name this ticket (by UUID or identifier)? */
+export const names = (call, ticket) => Boolean(ticket) && [ticket.id, ticket.identifier].filter(Boolean).includes(arg(call, 'ticket'));
+export const readAfter = (trace, write, ticket) => trace.find(c => write && c.index > write.index &&
+  c.name === tool('bakers_ticket_read') && names(c, ticket) && succeeded(c));
 export function commonChecks(trace, allowedError = () => false, recovered = new Set()) {
   return [
-    check('actual-tool-calls', trace.some(c => c.tool === 'bakers'), 'A final success claim cannot replace an observed bakers.build tool call'),
+    check('actual-tool-calls', trace.some(c => c.mode === 'call'), 'A final success claim cannot replace an observed bakers.build tool call'),
     check('tool-results', trace.every(c => succeeded(c) || allowedError(c) || recovered.has(c.index)),
-      'Every tool must succeed unless this fixture injects the specified error or the read recovery is certified'),
-    check('validated-call-surface', trace.every(c => c.tool === 'read_file' || (c.tool === 'bakers' && (c.action || recovered.has(c.index)) && !('no-validate' in c.flags))),
-      'Only literal bakers.build argument arrays and virtual file reads are allowed; never bypass validation'),
+      'Every tool must succeed unless this fixture injects the specified error or the call recovery is certified'),
+    check('validated-call-surface', trace.every(c => ['read_file', 'write_file'].includes(c.tool) ||
+      (c.tool === 'bakers' && ['call', 'schema', 'list', 'help', 'info'].includes(c.mode) && (c.mode !== 'call' || c.args))),
+    'Only bakers tool calls (bakers dropsh tool), their lookups and virtual files; no JSON:API command or unreadable arguments'),
   ];
 }
 
-// Records returned by successful reads and searches after `after` and before `before`.
-// A create response is never among them: it is not independent verification.
-export const evidence = (trace, after, before = Infinity) => trace.filter(c => c.index > after && c.index < before &&
-  ['read', 'search'].includes(c.action) && succeeded(c)).flatMap(c => {
-  const document = payload(c);
-  return [...(Array.isArray(document?.data) ? document.data : [document?.data]), ...(document?.included ?? [])]
-    .filter(Boolean).map(record => ({ record, index: c.index }));
-});
-export const firstEvidence = (trace, id, after, before) => evidence(trace, after, before).find(e => e.record.id === id);
-export const commentMatches = (record, { id, ticket, type, body }) => uuid(id) && record?.id === id &&
-  record.type === 'bb_comment--bb_comment' && record.relationships?.ticket_id?.data?.id === ticket &&
-  record.attributes?.bb_comment_type === type && record.attributes?.body?.format === 'bb_rich' &&
-  record.attributes?.body?.value === body;
-
-// Simulator rejections raised while parsing, before any record lookup or mutation.
-// Every other error shape (404, backend, timeout, unknown) fails closed.
-// Historical simulator texts, then the CLI's own: commander errors and the read-target guard.
-const SYNTAX_REJECTION = /^(?:E_VALIDATION: unknown options|Unexpected positional argument|Expected action and entity target|Missing value for --|Unsupported fixture entity|error: (?:unknown option|unknown command|missing required argument|option '[^']*' argument missing))/;
-const syntaxRejected = call => SYNTAX_REJECTION.test(call.result?.stderr ?? '') ||
-  (cliError(call)?.code === 'E_VALIDATION' && /^target must be /.test(cliError(call)?.message ?? ''));
-const READ_VERBS = ['read', 'get', 'show'];
-export function rejectedReadId(call) {
-  const argv = call.arguments?.argv;
-  if (call.tool !== 'bakers' || succeeded(call) || !Array.isArray(argv) || argv[0] !== 'bakers' || argv[1] !== 'dropsh' ||
-      !syntaxRejected(call) || !argv.some(a => READ_VERBS.includes(a)) ||
-      argv.some(a => ['--no-validate', '--help', 'create', 'update', 'search'].includes(a))) return undefined;
-  const ids = new Set(argv.join(' ').match(/[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}/g) ?? []);
-  return ids.size === 1 ? [...ids][0] : undefined;
-}
-
-// A rejected read is a call-quality warning only when it is the single rejected read for one
-// record-verification obligation and a later exact verification precedes the dependent-write
-// barrier. Each obligation: { id, after, before, verified } with `verified` the index of the
-// exactly matching independent evidence, or undefined. Everything else stays a hard failure.
-export function readRecovery(trace, obligations) {
+// A call rejected before sending (exit 4: invalid arguments or an unknown tool) is a recovered
+// mistake when the next tool call succeeds, schema or list lookups in between. A repeated or
+// unrecovered rejection stays a failure, and `tool-results` fails with it.
+export function callRecovery(trace) {
   const recovered = new Set(), diagnostics = [];
-  for (const o of obligations) {
-    const rejected = trace.filter(c => c.index > o.after && rejectedReadId(c) === o.id);
-    if (!rejected.length) continue;
-    const ok = rejected.length === 1 && o.verified !== undefined && rejected[0].index < o.verified && o.verified < o.before;
-    if (ok) recovered.add(rejected[0].index);
-    const help = trace.filter(c => c.action === 'help' && c.index > rejected[0].index && c.index < (o.verified ?? Infinity));
+  for (const rejected of trace.filter(c => c.mode === 'call' && c.result?.exit_code === 4)) {
+    const next = trace.find(c => c.index > rejected.index && c.mode === 'call');
+    const ok = Boolean(next && succeeded(next));
+    if (ok) recovered.add(rejected.index);
     diagnostics.push({
-      id: `read-recovery-${o.id}`, category: 'read-recovery', severity: ok ? 'warning' : 'failure',
-      reason: ok ? 'One rejected read syntax attempt; a later independent read verified the exact record before the next dependent write'
-        : 'Rejected read not recovered: repeated, unverified, mismatched or verified only after the next dependent write',
-      calls: [...rejected, ...help].map(c => c.index).concat(o.verified ?? []).sort((a, b) => a - b),
+      id: `call-recovery-${rejected.index}`, category: 'call-recovery', severity: ok ? 'warning' : 'failure',
+      reason: ok ? 'One call rejected before sending; the next tool call succeeded'
+        : 'Rejected call not recovered: rejected again or never followed by a successful call',
+      calls: trace.filter(c => c.index >= rejected.index && c.index <= (next?.index ?? rejected.index)).map(c => c.index),
     });
   }
   return { recovered, diagnostics };
-}
-
-export function linkArray(call) {
-  const item = call?.flags.json?.find(v => typeof v === 'string' && v.startsWith('links='));
-  if (!item) return undefined;
-  try { const parsed = JSON.parse(item.slice(6)); return Array.isArray(parsed) ? parsed : undefined; }
-  catch { return undefined; }
 }

@@ -1,4 +1,5 @@
-import { calls, check, commonChecks, data, succeeded, uuid, validateTools, value, writes } from '../call-utils.mjs';
+import { arg, calls, check, commonChecks, payload, succeeded, tool, toolCalls, uuid, validateTools, writes } from '../call-utils.mjs';
+import { priorArtSearched } from './create-ticket-calls.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 
 export function validate(f) {
@@ -56,18 +57,16 @@ export function checkOutput(f, output, context) {
     check('stop-on-blocker', !blocked || (allWrites.length === 0 && merges.length === 0), 'A hit or unresolved error permits no publication, transition or merge'),
   ];
   if (s.checkpoint === 'qualify') {
-    const searches = bakers.filter(c => c.action === 'search' && c.target === 'bb_ticket' && value(c, 'bundle') === 'bb_ticket' && succeeded(c) && c.index < fetch?.index);
-    const queries = searches.flatMap(c => c.flags.filter ?? []);
-    checks.push(check('ticket-search', input.terms.every(t => ['title', 'description.value'].every(field => queries.includes(`${field}:CONTAINS:${t}`))) &&
-      searches.some(c => c.flags.filter?.includes('title:CONTAINS:ticket') &&
-        (data(c)?.length > 0 || typeof c.result.stdout === 'string' && c.result.stdout.includes('type: bb_ticket--bb_ticket'))),
-      'Complete both spellings, both scalar fields and the known-present ticket probe before the base check'));
+    const searches = toolCalls(bakers, 'bakers_ticket_search').filter(c => c.index < fetch?.index);
+    checks.push(check('ticket-search', input.terms.every(t => searches.some(c => succeeded(c) && arg(c, 'query') === t)) && priorArtSearched(searches),
+      'Search both spellings, and prove an empty search with the known-present ticket probe, before the base check'));
     if (!blocked) {
-      const comments = allWrites.filter(c => c.target === 'bb_comment');
-      const qualification = comments.find(c => value(c, 'bb_comment_type') === 'qualification');
-      checks.push(check('qualification-handoff', comments.some(c => value(c, 'bb_comment_type') === 'summary') && qualification &&
-        allWrites.every(c => c.target === 'bb_comment' && c.index > Math.max(grep.index, probe?.index ?? -1) && succeeded(c) && value(c, 'body.format') === 'bb_rich' && value(c, 'ticket_id') === input.ticket_uuid) &&
-        [...evidence, s.checked_revision, 'negative'].every(t => value(qualification, 'body.value')?.includes(t)),
+      const comments = allWrites.filter(c => c.name === tool('bakers_comment_publish'));
+      const qualification = comments.find(c => arg(c, 'type') === 'qualification');
+      checks.push(check('qualification-handoff', comments.some(c => arg(c, 'type') === 'summary') && qualification &&
+        allWrites.every(c => comments.includes(c) && c.index > Math.max(grep.index, probe?.index ?? -1) && succeeded(c) &&
+          [input.ticket_uuid, s.ticket.identifier].includes(arg(c, 'ticket'))) &&
+        [...evidence, s.checked_revision, 'negative'].every(t => arg(qualification, 'body')?.includes(t)),
         'Publish qualification and summary with explicit negative evidence after the check, without transitioning'));
     }
   } else if (!blocked) {
@@ -85,11 +84,9 @@ export function checkOutput(f, output, context) {
     checks.push(check('candidate-inspection', succeeded(trailer) && succeeded(diff) && succeeded(current) &&
       [trailer, diff, current].every(c => c.index > grep?.index), 'Inspect trailer, net diff and current behavior before declaring delivered prior art'));
     if (s.candidate_kind && s.outcome === 'negative') checks.push(check('candidate-reason', new RegExp(s.candidate_kind === 'self' ? 'self|own ticket' : 'reverted', 'i').test(output), 'Explain why the inspected candidate is not delivered sibling work'));
-    if (s.outcome === 'hit') checks.push(check('candidate-read', bakers.some(c => ['read', 'search'].includes(c.action) && succeeded(c) && (
-      (Array.isArray(data(c)) ? data(c) : [data(c)]).some(r => r?.id === s.prior_art.id &&
-        (r.attributes ?? r).identifier === s.prior_art.identifier && (r.attributes ?? r).state === s.prior_art.state) ||
-      typeof c.result.stdout === 'string' && [`id: ${s.prior_art.id}`, `identifier: ${s.prior_art.identifier}`, `title: ${s.prior_art.title}`, `state: ${s.prior_art.state}`].every(t => c.result.stdout.includes(t)))) &&
-      [s.prior_art.identifier, s.prior_art.title, s.prior_art.state, s.prior_art.assignee].filter(Boolean).every(t => output.includes(t)), 'Resolve the candidate and report available metadata'));
+    if (s.outcome === 'hit') checks.push(check('candidate-read', toolCalls(bakers, 'bakers_ticket_read').some(c => succeeded(c) &&
+      payload(c)?.id === s.prior_art.id && payload(c)?.identifier === s.prior_art.identifier && payload(c)?.state === s.prior_art.state) &&
+      [s.prior_art.identifier, s.prior_art.title, s.prior_art.state].every(t => output.includes(t)), 'Read the candidate and report its identifier, title and state'));
     if (s.outcome === 'hit') checks.push(check('hit-decision', /decision|continue|combine|close|proceed|build anyway|stops? and asks?/i.test(output), 'Ask the operator to decide on the hit'));
   }
   return checks;

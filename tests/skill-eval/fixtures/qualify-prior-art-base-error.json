@@ -30,7 +30,7 @@
       "Use invoice and invoices for ticket and remote searches. The known-present ticket probe term is ticket; the repository probe is Guide in docs.",
       "Ticket context, comments and method/work type were read completely. work:docs and method:superpowers are confirmed; acceptance AC-1: operators can find the invoice export command and project option.",
       "No runtime account, browser, reproduction or agent override is required. No origin publication. Qualification approval is standing but state is restricted to qualification.",
-      "For merge only: MR 30 targets develop, latest pipeline and required manual jobs passed, no conflict, mergeable. Source feat/eval-30 is this ticket\u2019s short-lived branch; no other MR targets it and deletion is safe. Concrete merge authorization is already given. MR title is Document invoice export.",
+      "For merge only: MR 30 targets develop, latest pipeline and required manual jobs passed, no conflict, mergeable. Source feat/eval-30 is this ticket’s short-lived branch; no other MR targets it and deletion is safe. Concrete merge authorization is already given. MR title is Document invoice export.",
       "Repository Git operations are fixture-only literal commands. Candidate base for diff is <candidate-sha>^; inspect the current file docs/invoices.md. The command catalog in the tool description is syntax, not evidence.",
       "All qualification substeps other than prior-art search and publication are already completed and confirmed: method, classification (bb_chore, work:docs), acceptance quality gate, actors, agent recommendation (retain confirmed defaults), provenance fixture-revision-1, handoff_version 1. Reuse these observations; no unresolved catalog or method choice remains."
     ],
@@ -42,26 +42,21 @@
       "id": "11111111-1111-4111-8111-111111111111",
       "identifier": "EVAL-30",
       "title": "Document invoice export options",
-      "description": {
-        "value": "Document invoice export: use export --project NAME.",
-        "format": "bb_rich"
-      },
+      "description": "Document invoice export: use export --project NAME.",
       "created": "2026-01-01",
       "base_branch": "develop",
       "state": "qualification",
       "changed": "fixture-revision-1",
-      "comments": []
+      "workflow": "bb_work"
     },
     "prior_art": {
       "id": "77777777-7777-4777-8777-777777777777",
       "identifier": "EVAL-70",
       "title": "Delivered documentation",
-      "description": {
-        "value": "Operator documentation.",
-        "format": "bb_rich"
-      },
+      "description": "Operator documentation.",
       "state": "done",
-      "assignee": "fixture-maintainer"
+      "assignee": "fixture-maintainer",
+      "workflow": "bb_work"
     },
     "commands": {
       "git": [

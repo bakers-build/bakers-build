@@ -1,0 +1,153 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Drupal\bb_core\Plugin\tool\Tool;
+
+use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\Component\Uuid\Uuid;
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\tool\Attribute\Tool;
+use Drupal\tool\ExecutableResult;
+use Drupal\tool\Tool\ToolBase;
+use Drupal\tool\Tool\ToolOperation;
+use Drupal\tool\TypedData\InputDefinition;
+use Drupal\tool\TypedData\OutputDefinition;
+
+/**
+ * Creates a ticket with a Markdown description and its terms by name.
+ */
+#[Tool(
+  id: 'bakers_ticket_create',
+  label: new TranslatableMarkup('Create a ticket'),
+  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. Returns the new ticket’s UUID, identifier and state.'),
+  operation: ToolOperation::Write,
+  destructive: FALSE,
+  permission: 'view bb_ticket',
+  input_definitions: [
+    'title' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Title'),
+      description: new TranslatableMarkup('The ticket title, stored verbatim.'),
+      constraints: ['NotBlank' => []],
+    ),
+    'workflow' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Workflow'),
+      description: new TranslatableMarkup('The workflow id, e.g. bb_work.'),
+      constraints: ['NotBlank' => []],
+    ),
+    'project' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Project'),
+      description: new TranslatableMarkup('Project key (e.g. BAKERS) or UUID.'),
+      constraints: ['NotBlank' => []],
+    ),
+    'description' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Description'),
+      description: new TranslatableMarkup('Markdown source; raw HTML is stripped.'),
+      required: FALSE,
+      constraints: ['MediaType' => ['type' => 'text/markdown']],
+    ),
+    'type' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Type'),
+      description: new TranslatableMarkup('Ticket type name, e.g. feature or bug.'),
+      required: FALSE,
+    ),
+    'recipe' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Recipe'),
+      description: new TranslatableMarkup('Recipe name, e.g. matt.'),
+      required: FALSE,
+    ),
+    'parent' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Parent'),
+      description: new TranslatableMarkup('Parent ticket identifier or UUID, in the same project.'),
+      required: FALSE,
+    ),
+  ],
+  output_definitions: [
+    'id' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('UUID'),
+      description: new TranslatableMarkup('The new ticket.'),
+    ),
+    'identifier' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Identifier'),
+      description: new TranslatableMarkup('The ticket identifier, e.g. BAKERS-15.'),
+      nullable: TRUE,
+    ),
+    'state' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('State'),
+      description: new TranslatableMarkup('The initial state id.'),
+    ),
+  ],
+)]
+final class TicketCreate extends ToolBase {
+
+  use TicketInputTrait;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function doExecute(array $values): ExecutableResult {
+    if (!$this->entities()->getAccessControlHandler('bb_ticket')->createAccess('bb_ticket', $this->currentUser)) {
+      throw new \InvalidArgumentException('You may not create tickets.');
+    }
+    $project = $this->readableProject($values['project']);
+    $fields = [
+      'title' => $values['title'],
+      'workflow' => $values['workflow'],
+      'project_id' => $project->id(),
+      'description' => ['value' => $values['description'] ?? NULL, 'format' => 'bb_rich'],
+      'parent_id' => empty($values['parent']) ? NULL : $this->readableTicket($values['parent'])->id(),
+    ];
+    foreach (array_intersect_key(['type' => 'ticket_type', 'recipe' => 'recipe'], array_filter($values)) as $vid => $field) {
+      $fields[$field] = $this->term($project->getGroup()?->getWorkspace(), $vid, $values[$vid])->id();
+    }
+    $ticket = $this->entities()->getStorage('bb_ticket')->create($fields);
+    assert($ticket instanceof BbTicketInterface);
+    $this->assertValid($ticket);
+    $ticket->save();
+    return ExecutableResult::success(new TranslatableMarkup('Ticket created.'), [
+      'id' => $ticket->uuid(),
+      'identifier' => $ticket->getIdentifier() ?: NULL,
+      'state' => $ticket->get('state')->value,
+    ]);
+  }
+
+  /**
+   * The readable project of this key or UUID.
+   *
+   * @throws \InvalidArgumentException
+   */
+  private function readableProject(string $project): BbProjectInterface {
+    $field = Uuid::isValid($project) ? 'uuid' : 'key';
+    $found = $this->entities()->getStorage('bb_project')->loadByProperties([$field => $project]);
+    $found = reset($found);
+    if (!$found instanceof BbProjectInterface || !$found->access('view', $this->currentUser)) {
+      throw new \InvalidArgumentException(sprintf('Project %s does not exist or is not readable.', $project));
+    }
+    return $found;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+   */
+  protected function checkAccess(array $values, AccountInterface $account, bool $return_as_object = FALSE): bool|AccessResultInterface {
+    // Access depends on the values; doExecute() checks it.
+    return $return_as_object ? AccessResult::allowed() : TRUE;
+  }
+
+}

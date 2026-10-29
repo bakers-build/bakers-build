@@ -17,23 +17,49 @@ import { savedAttempt } from './skill-eval-helpers.js';
 const root = new URL('../../../../tests/skill-eval/', import.meta.url);
 const ticketId = '11111111-1111-4111-8111-111111111111';
 const commentId = '22222222-2222-4222-8222-000000000001';
+const argsFile = '/tmp/comment-args.json';
+type Row = {
+  tool: string;
+  arguments: Record<string, any>;
+  result: { stdout: unknown; exit_code: number; stderr: string };
+};
 const result = (stdout: unknown, exit_code = 0, stderr = '') => ({
-  stdout,
+  stdout:
+    typeof stdout === 'string' || stdout === null
+      ? stdout
+      : `${JSON.stringify(stdout, null, 2)}\n`,
   exit_code,
   stderr,
 });
+const error = (code: string, details: Record<string, unknown> = {}) =>
+  `${JSON.stringify({ error: { code, message: code, details } })}\n`;
+const rejected = (exit: number, code: string, details = {}) =>
+  result('', exit, error(code, details));
+const lostResult = () => rejected(5, 'E_HTTP', { status: 0 });
 const bakers = (
   argv: string[],
   stdout: unknown,
   exit_code = 0,
   stderr = '',
-) => ({
+): Row => ({
   tool: 'bakers',
   arguments: { argv: ['bakers', 'dropsh', ...argv] },
   result: result(stdout, exit_code, stderr),
 });
-const read = (target: string, stdout: unknown) =>
-  bakers(['read', target], stdout);
+/** `bakers dropsh tool tool_api__<id> --data <inline JSON>`. */
+const call = (
+  id: string,
+  args: unknown,
+  stdout: unknown,
+  exit_code = 0,
+  stderr = '',
+) =>
+  bakers(
+    ['tool', `tool_api__${id}`, '--data', JSON.stringify(args)],
+    stdout,
+    exit_code,
+    stderr,
+  );
 const fixtureData = async (id: string) => ({
   fixture: await loadFixture(id),
   profile: await loadProfile(await loadFixture(id)),
@@ -41,195 +67,169 @@ const fixtureData = async (id: string) => ({
 const failing = (checks: Array<{ id: string; met: boolean }>) =>
   checks.filter((c) => !c.met).map((c) => c.id);
 
+/** Read the body, write the arguments file, publish from it with --data @file. */
 async function commentCase() {
   const { fixture, profile } = await fixtureData('publish-comment-calls');
   const body = fixture.simulation.files[fixture.input.body_file];
-  const stored = {
-    data: {
-      type: 'bb_comment--bb_comment',
-      id: commentId,
-      attributes: {
-        body: { value: body, format: 'bb_rich' },
-        bb_comment_type: 'coding',
-      },
-      relationships: { ticket_id: { data: { id: ticketId } } },
-    },
-  };
-  const trace = [
+  const trace: Row[] = [
     {
       tool: 'read_file',
       arguments: { path: fixture.input.body_file },
       result: result(body),
     },
-    bakers(['create', 'bb_comment', '--bundle', 'bb_comment', '--fields'], {
-      writable_fields: ['body.value'],
-    }),
+    {
+      tool: 'write_file',
+      arguments: {
+        path: argsFile,
+        content: JSON.stringify({ ticket: ticketId, type: 'coding', body }),
+      },
+      result: result(''),
+    },
     bakers(
-      [
-        'create',
-        'bb_comment',
-        '--bundle',
-        'bb_comment',
-        `--body.value=${body}`,
-        '--body.format',
-        'bb_rich',
-        '--bb_comment_type',
-        'coding',
-        '--ticket_id',
-        ticketId,
-      ],
-      stored,
+      ['tool', 'tool_api__bakers_comment_publish', '--data', `@${argsFile}`],
+      {
+        id: commentId,
+        type: 'coding',
+      },
     ),
-    read(`bb_comment/bb_comment/${commentId}`, stored),
   ];
-  return { fixture, profile, trace };
+  return { fixture, profile, trace, body };
 }
 
 async function transitionCase(id = 'transition-ticket-calls') {
   const { fixture, profile } = await fixtureData(id);
-  const target = `bb_ticket/bb_ticket/${ticketId}`;
-  const links = [...fixture.simulation.ticket.links, ...fixture.input.links];
-  const stored = {
-    data: {
-      id: ticketId,
-      attributes: { state: fixture.input.destination ?? 'coding', links },
-    },
-  };
-  const write = bakers(
-    [
-      'update',
-      target,
-      ...(fixture.input.destination
-        ? ['--state', fixture.input.destination]
-        : []),
-      '--json',
-      `links=${JSON.stringify(links)}`,
-    ],
-    stored,
-  );
+  const { ticket } = fixture.simulation;
+  const links = [...ticket.links, ...fixture.input.links];
+  const state = fixture.input.destination ?? ticket.state;
   const trace = [
-    read(target, {
-      data: { id: ticketId, attributes: fixture.simulation.ticket },
-    }),
-    bakers(['update', target, '--fields'], {
-      writable_fields: ['state', 'links'],
-    }),
-    write,
-    read(target, stored),
+    call(
+      'bakers_ticket_read',
+      { ticket: ticketId },
+      { id: ticketId, state: ticket.state, links: ticket.links },
+    ),
+    call(
+      'bakers_ticket_transition',
+      {
+        ticket: ticketId,
+        ...(fixture.input.destination
+          ? { state: fixture.input.destination }
+          : {}),
+        links: fixture.input.links,
+      },
+      { state, links },
+    ),
+    call(
+      'bakers_ticket_read',
+      { ticket: ticketId },
+      { id: ticketId, state, links },
+    ),
   ];
   return { fixture, profile, trace };
 }
 
 describe('skill call contracts', () => {
-  it('confirms a comment from its create response and never repeats a timed-out create', async () => {
+  it('confirms a comment from its result and never repeats a timed-out publication', async () => {
     const { fixture, profile, trace } = await commentCase();
     const grade = (rows: unknown[], f = fixture) =>
       failing(profile.checkOutput(f, 'Success', { tool_trace: rows }));
-    const created = trace.slice(0, 3);
-    expect(grade(created)).toEqual([]);
     expect(grade(trace)).toEqual([]);
-    const rejected = structuredClone(created);
-    rejected[2].result = result(null, 2, 'HTTP 500: backend failure');
-    expect(grade(rejected)).toEqual(
+    const refused = structuredClone(trace);
+    refused[2]!.result = rejected(1, 'E_TOOL');
+    expect(grade(refused)).toEqual(
       expect.arrayContaining(['tool-results', 'comment-confirmed']),
     );
-    const changed = structuredClone(created);
-    changed[2].arguments = {
-      argv: [
-        ...(created[2].arguments as { argv: string[] }).argv,
-        '--no-validate',
+    // A skill still shelling out to JSON:API is outside the contract.
+    const jsonapi = structuredClone(trace);
+    jsonapi[2] = bakers(
+      [
+        'create',
+        'bb_comment',
+        '--bundle',
+        'bb_comment',
+        '--data',
+        `@${argsFile}`,
       ],
-    };
-    expect(grade(changed)).toContain('validated-call-surface');
-    const trimmed = structuredClone(created);
-    (trimmed[2].arguments as { argv: string[] }).argv[6] =
-      '--body.value=changed';
+      { data: { id: commentId } },
+    );
+    expect(grade(jsonapi)).toEqual(
+      expect.arrayContaining(['validated-call-surface', 'comment-write']),
+    );
+    const trimmed = structuredClone(trace);
+    trimmed[1]!.arguments.content = JSON.stringify({
+      ticket: ticketId,
+      type: 'coding',
+      body: 'changed',
+    });
     expect(grade(trimmed)).toContain('comment-write');
-    expect(grade([...created, created[2]])).toContain('comment-write');
+    const retyped = structuredClone(trace);
+    retyped[1]!.arguments.content = retyped[1]!.arguments.content.replace(
+      '"coding"',
+      '"summary"',
+    );
+    expect(grade(retyped)).toContain('comment-write');
+    expect(grade([...trace, trace[2]])).toContain('comment-write');
     const uncertain = await loadFixture('publish-comment-uncertain');
-    const lost = structuredClone(created);
-    lost[2].result = result(null, 124, 'ETIMEDOUT: outcome unknown');
+    const lost = structuredClone(trace);
+    lost[2]!.result = lostResult();
     expect(grade(lost, uncertain)).toEqual([]);
-    expect(grade([...lost, created[2]], uncertain)).toContain(
+    expect(grade([...lost, trace[2]], uncertain)).toContain(
       'uncertain-write-not-repeated',
     );
   });
-  it('passes one rejected read followed by help and exact readback with a call-quality warning', async () => {
-    const { fixture, profile, trace } = await commentCase();
-    const malformed = bakers(
-      ['read', 'bb_comment', '--id', commentId],
-      null,
-      2,
-      'E_VALIDATION: unknown options id',
+  it('passes one call rejected before sending, a schema lookup and a successful retry with a call-quality warning', async () => {
+    const { fixture, profile, trace, body } = await commentCase();
+    const invalid = call(
+      'bakers_comment_publish',
+      { ticket: ticketId, body },
+      '',
+      4,
+      error('E_VALIDATION'),
     );
-    const help = bakers(['--help'], 'Usage: bakers dropsh ...');
-    const recovered = [...trace.slice(0, 3), malformed, help, trace[3]];
-    const grade = (rows: unknown[], f = fixture) =>
-      failing(profile.checkOutput(f, 'Published', { tool_trace: rows }));
-    const diagnose = (rows: unknown[], f = fixture) =>
-      profile.diagnose(f, 'Published', { tool_trace: rows });
+    const schema = bakers(
+      ['tool', 'tool_api__bakers_comment_publish', '--schema'],
+      { name: 'x' },
+    );
+    const recovered = [...trace.slice(0, 2), invalid, schema, trace[2]];
+    const grade = (rows: unknown[]) =>
+      failing(profile.checkOutput(fixture, 'Published', { tool_trace: rows }));
+    const diagnose = (rows: unknown[]) =>
+      profile.diagnose(fixture, 'Published', { tool_trace: rows });
     expect(grade(recovered)).toEqual([]);
     expect(diagnose(recovered)).toEqual([
       expect.objectContaining({
-        category: 'read-recovery',
+        category: 'call-recovery',
         severity: 'warning',
-        calls: [3, 4, 5],
+        calls: [2, 3, 4],
       }),
     ]);
     expect(diagnose(trace)).toEqual([]);
-
-    // Each row below names the external rule a recovery may not absorb.
-    const repeated = [
-      ...recovered.slice(0, 4),
-      malformed,
-      ...recovered.slice(4),
-    ];
+    // Each row below names the rule a recovery may not absorb.
+    const repeated = [...trace.slice(0, 2), invalid, invalid, trace[2]];
     expect(grade(repeated)).toContain('tool-results');
-    expect(diagnose(repeated)).toEqual([
-      expect.objectContaining({
-        category: 'read-recovery',
-        severity: 'failure',
-      }),
-    ]);
-    expect(grade(recovered.slice(0, -1))).toContain('tool-results');
-    const otherRecord = structuredClone(recovered);
-    otherRecord[3].arguments.argv[5] = '22222222-2222-4222-8222-000000000009';
-    expect(grade(otherRecord)).toContain('tool-results');
-    const unknownVerb = structuredClone(recovered);
-    unknownVerb[3].arguments.argv[2] = 'fetch';
-    unknownVerb[3].result.stderr = 'Expected action and entity target';
-    expect(grade(unknownVerb)).toContain('tool-results');
-    const bypass = structuredClone(recovered);
-    bypass[3].arguments.argv.push('--no-validate');
-    expect(grade(bypass)).toContain('validated-call-surface');
-    const backend = structuredClone(recovered);
-    backend[3].result.stderr = 'HTTP 500: backend failure';
-    expect(grade(backend)).toContain('tool-results');
-    const beforeCreate = [
-      ...trace.slice(0, 2),
-      malformed,
-      trace[2],
-      help,
-      trace[3],
-    ];
-    expect(grade(beforeCreate)).toContain('tool-results');
-    const wrongBody = structuredClone(recovered);
-    wrongBody[5].result.stdout.data.attributes.body.value = 'changed';
-    expect(grade(wrongBody)).toContain('tool-results');
-    const correction = bakers(
-      ['update', `bb_comment/bb_comment/${commentId}`, '--body.value=x'],
-      {},
+    expect(diagnose(repeated)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: 'call-recovery',
+          severity: 'failure',
+        }),
+      ]),
     );
-    const afterWrite = [...recovered.slice(0, 5), correction, recovered[5]];
-    expect(grade(afterWrite)).toContain('tool-results');
+    expect(grade([...trace.slice(0, 2), invalid])).toContain('tool-results');
+    const refusedAfter = structuredClone(recovered);
+    refusedAfter[4]!.result = rejected(1, 'E_TOOL');
+    expect(grade(refusedAfter)).toContain('tool-results');
   });
-  it('fails a timed-out publication whose create lost one trailing newline', async () => {
+  it('fails a timed-out publication whose body lost one trailing newline', async () => {
     const { profile, trace } = await commentCase();
     const uncertain = await loadFixture('publish-comment-uncertain');
     const body = uncertain.simulation.files[uncertain.input.body_file];
-    const lost = structuredClone(trace.slice(0, 3));
-    lost[2].arguments.argv[6] = `--body.value=${body.slice(0, -1)}`;
-    lost[2].result = result(null, 124, 'ETIMEDOUT: outcome unknown');
+    const lost = structuredClone(trace);
+    lost[1]!.arguments.content = JSON.stringify({
+      ticket: ticketId,
+      type: 'coding',
+      body: body.slice(0, -1),
+    });
+    lost[2]!.result = lostResult();
     const failed = failing(
       profile.checkOutput(uncertain, 'Unresolved', { tool_trace: lost }),
     );
@@ -245,7 +245,7 @@ describe('skill call contracts', () => {
       }),
     ]);
   });
-  it('checks additive links, explicit state, links-only behavior and no alternate state after 422', async () => {
+  it('checks added links, explicit state, links-only behavior and no alternate state after a refusal', async () => {
     const { fixture, profile, trace } = await transitionCase();
     const grade = (rows: unknown[]) =>
       failing(
@@ -253,7 +253,11 @@ describe('skill call contracts', () => {
       );
     expect(grade(trace)).toEqual([]);
     const omitted = structuredClone(trace);
-    omitted[2].arguments.argv[7] = 'links=[]';
+    omitted[1] = call(
+      'bakers_ticket_transition',
+      { ticket: ticketId, state: 'review' },
+      omitted[1]!.result.stdout,
+    );
     expect(grade(omitted)).toContain('additive-links');
     expect(grade(trace.slice(0, -1))).toContain('transition-readback');
     const linksOnly = await transitionCase('transition-ticket-links-only');
@@ -264,29 +268,36 @@ describe('skill call contracts', () => {
         }),
       ),
     ).toEqual([]);
-    linksOnly.trace[2].arguments.argv.push('--state', 'review');
+    const withState = structuredClone(linksOnly.trace);
+    withState[1] = call(
+      'bakers_ticket_transition',
+      {
+        ticket: ticketId,
+        state: 'review',
+        links: linksOnly.fixture.input.links,
+      },
+      withState[1]!.result.stdout,
+    );
     expect(
       failing(
         profile.checkOutput(linksOnly.fixture, 'Linked', {
-          tool_trace: linksOnly.trace,
+          tool_trace: withState,
         }),
       ),
     ).toContain('single-authorized-update');
-    const rejected = await loadFixture('transition-ticket-rejected');
-    const blocked = structuredClone(trace.slice(0, 3));
-    blocked[2].result = result(null, 2, 'HTTP 422: rejected');
+    const refusal = await loadFixture('transition-ticket-rejected');
+    const blocked = structuredClone(trace.slice(0, 2));
+    blocked[1]!.result = rejected(1, 'E_TOOL');
     expect(
-      failing(
-        profile.checkOutput(rejected, 'Rejected', { tool_trace: blocked }),
-      ),
+      failing(profile.checkOutput(refusal, 'Refused', { tool_trace: blocked })),
     ).toEqual([]);
     expect(
-      profile.diagnose(rejected, 'Rejected', { tool_trace: blocked }),
+      profile.diagnose(refusal, 'Refused', { tool_trace: blocked }),
     ).toEqual([
       expect.objectContaining({
         category: 'expected-error',
         severity: 'info',
-        calls: [2],
+        calls: [1],
       }),
     ]);
     expect(
@@ -294,26 +305,36 @@ describe('skill call contracts', () => {
     ).toEqual([]);
     expect(
       failing(
-        profile.checkOutput(rejected, 'Retried', {
-          tool_trace: [...blocked, trace[2]],
+        profile.checkOutput(refusal, 'Retried', {
+          tool_trace: [
+            ...blocked,
+            call(
+              'bakers_ticket_transition',
+              { ticket: ticketId, state: 'done', links: refusal.input.links },
+              trace[1]!.result.stdout,
+            ),
+          ],
         }),
       ),
     ).toContain('single-authorized-update');
   });
-  it('replays a recovered read as passed with a warning, measured effort and unchanged attempt bytes', async () => {
+  it('replays a recovered call as passed with a warning, measured effort and unchanged attempt bytes', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'skill-call-quality-'));
     try {
-      const { fixture, trace } = await commentCase();
+      const { fixture, trace, body } = await commentCase();
       const recovered = [
-        ...trace.slice(0, 3),
-        bakers(
-          ['read', 'bb_comment', '--id', commentId],
-          null,
-          2,
-          'E_VALIDATION: unknown options id',
+        ...trace.slice(0, 2),
+        call(
+          'bakers_comment_publish',
+          { ticket: ticketId, body },
+          '',
+          4,
+          error('E_VALIDATION'),
         ),
-        bakers(['--help'], 'Usage'),
-        trace[3],
+        bakers(['tool', 'tool_api__bakers_comment_publish', '--schema'], {
+          name: 'x',
+        }),
+        trace[2],
       ];
       const path = join(dir, 'attempt.json');
       const attempt = savedAttempt(fixture, 'Published', recovered);
@@ -347,14 +368,14 @@ describe('skill call contracts', () => {
       expect(first.call_quality).toEqual({
         status: 'warning',
         diagnostics: [
-          expect.objectContaining({ severity: 'warning', calls: [3, 4, 5] }),
+          expect.objectContaining({ severity: 'warning', calls: [2, 3, 4] }),
         ],
       });
       expect(second.call_quality).toEqual(first.call_quality);
       expect(second.checks).toEqual(first.checks);
       expect(first.effort.tool_calls).toEqual({
-        total: 6,
-        bakers: 5,
+        total: 5,
+        bakers: 3,
         read_file: 1,
         failed: 1,
       });
@@ -451,23 +472,12 @@ describe('skill call contracts', () => {
 
 describe('recipe and type on ticket creation', () => {
   // The calls a created-and-qualified ticket makes, run through the simulator so the graded
-  // results (resolved terms, included names, routed state) are the simulator's, not hand-written.
-  async function creationTrace(createFlags: string[], destination = 'plan') {
+  // results (stored terms, comments, routed state) are the simulator's, not hand-written.
+  async function creationTrace(
+    createArgs: Record<string, unknown>,
+    destination = 'plan',
+  ) {
     const { fixture, profile } = await fixtureData('create-ticket-calls');
-    const target = 'bb_ticket/bb_ticket/33333333-3333-4333-8333-333333333333';
-    const comment = (type: string, body: string) => [
-      'create',
-      'bb_comment',
-      '--bundle',
-      'bb_comment',
-      `--body.value=${body}`,
-      '--body.format',
-      'bb_rich',
-      '--bb_comment_type',
-      type,
-      '--ticket_id',
-      '33333333-3333-4333-8333-333333333333',
-    ];
     const qualification = [
       `- ${fixture.input.acceptance_criterion}`,
       ...[
@@ -479,31 +489,41 @@ describe('recipe and type on ticket creation', () => {
         'scenario_required',
       ].map((field) => `- ${field}: recorded`),
     ].join('\n');
-    const argvs = [
-      ['create', 'bb_ticket', '--bundle', 'bb_ticket', '--fields'],
+    const created = 'EVAL-101';
+    const steps: Array<[string, unknown]> = [
+      ['bakers_ticket_search', { query: 'invoice' }],
+      ['bakers_ticket_search', { query: 'invoices' }],
+      ['bakers_ticket_search', { query: 'ticket' }],
       [
-        'create',
-        'bb_ticket',
-        '--bundle',
-        'bb_ticket',
-        '--title',
-        fixture.input.title,
-        '--workflow',
-        'bb_work',
-        `--description.value=${fixture.simulation.files[fixture.input.description_file]}`,
-        '--description.format',
-        'bb_rich',
-        '--project_id',
-        fixture.input.project_uuid,
-        ...createFlags,
+        'bakers_ticket_create',
+        {
+          title: fixture.input.title,
+          workflow: 'bb_work',
+          project: fixture.input.project_uuid,
+          description: fixture.simulation.files[fixture.input.description_file],
+          ...createArgs,
+        },
       ],
-      ['read', target, '--include', 'comments,labels,ticket_type,recipe'],
-      comment('qualification', qualification),
-      comment('summary', 'Created and qualified.'),
-      ['update', target, '--fields'],
-      ['update', target, '--state', destination],
-      ['read', target],
-    ].map((argv) => ['bakers', 'dropsh', ...argv]);
+      ['bakers_ticket_read', { ticket: created }],
+      [
+        'bakers_comment_publish',
+        { ticket: created, type: 'qualification', body: qualification },
+      ],
+      [
+        'bakers_comment_publish',
+        { ticket: created, type: 'summary', body: 'Created and qualified.' },
+      ],
+      ['bakers_ticket_transition', { ticket: created, state: destination }],
+      ['bakers_ticket_read', { ticket: created }],
+    ];
+    const argvs = steps.map(([id, args]) => [
+      'bakers',
+      'dropsh',
+      'tool',
+      `tool_api__${id}`,
+      '--data',
+      JSON.stringify(args),
+    ]);
     const results = await runSimulator(
       fixture.simulation,
       argvs.map((argv) => ({ name: 'bakers', arguments: { argv } })),
@@ -518,42 +538,45 @@ describe('recipe and type on ticket creation', () => {
     return { grade, trace };
   }
   const named = [
+    'prior-art-search',
     'ticket-create',
-    'no-work-or-method-labels',
     'ticket-readback',
+    'qualification-and-summary',
     'single-initial-route',
   ];
 
-  it('writes recipe and type by name, reads them back and routes to plan', async () => {
-    const { grade, trace } = await creationTrace([
-      '--recipe_names',
-      'matt',
-      '--type_names',
-      'feature',
+  it('writes recipe and type by name, publishes before routing and routes to plan', async () => {
+    const { grade, trace } = await creationTrace({
+      recipe: 'matt',
+      type: 'feature',
+    });
+    expect(grade(trace)).toEqual([]);
+    expect(grade(trace.filter((_, i) => i !== 2))).toEqual([
+      'prior-art-search',
     ]);
-    expect(grade(trace).filter((id) => named.includes(id))).toEqual([]);
+    // Routing before the summary is published fails the publication order.
+    expect(grade([...trace.slice(0, 6), trace[7], trace[6], trace[8]])).toEqual(
+      expect.arrayContaining(['qualification-and-summary']),
+    );
   });
 
-  it('rejects work:* / method:* labels in place of the recipe and type', async () => {
-    const { grade, trace } = await creationTrace([
-      '--label_names',
-      'work:docs,method:matt',
-    ]);
+  it('rejects labels in place of the recipe and type', async () => {
+    const { grade, trace } = await creationTrace({
+      labels: 'work:docs,method:matt',
+    });
     expect(grade(trace)).toEqual(
-      expect.arrayContaining([
-        'ticket-create',
-        'no-work-or-method-labels',
-        'ticket-readback',
-      ]),
+      expect.arrayContaining(['ticket-create', 'ticket-readback']),
     );
   });
 
   it('rejects routing to a retired state', async () => {
     const { grade, trace } = await creationTrace(
-      ['--recipe_names', 'matt', '--type_names', 'feature'],
+      { recipe: 'matt', type: 'feature' },
       'spec',
     );
-    expect(grade(trace)).toContain('single-initial-route');
+    expect(grade(trace).filter((id) => named.includes(id))).toEqual([
+      'single-initial-route',
+    ]);
   });
 });
 
@@ -635,15 +658,10 @@ describe('remote base call evidence', () => {
       else expect(grade()).toEqual([]);
       expect(
         grade([
-          bakers(
-            [
-              'create',
-              'bb_comment',
-              '--bundle',
-              'bb_comment',
-              '--body.value=x',
-            ],
-            {},
+          call(
+            'bakers_comment_publish',
+            { ticket: ticketId, type: 'comment', body: 'x' },
+            { id: commentId, type: 'comment' },
           ),
         ]),
       ).toContain('stop-on-blocker');
@@ -659,34 +677,24 @@ describe('prior-art fixture integrity', () => {
     const { fixture, profile } = await fixtureData(
       `${checkpoint}-prior-art-base-hit`,
     );
-    const searches = ['invoice', 'invoices'].flatMap((term) =>
-      ['title', 'description.value'].map((field) =>
-        bakers(
-          [
-            'search',
-            'bb_ticket',
-            '--bundle',
-            'bb_ticket',
-            '--filter',
-            `${field}:CONTAINS:${term}`,
+    const searches = [
+      call('bakers_ticket_search', { query: 'invoice' }, { tickets: [] }),
+      call('bakers_ticket_search', { query: 'invoices' }, { tickets: [] }),
+      call(
+        'bakers_ticket_search',
+        { query: 'ticket' },
+        {
+          tickets: [
+            {
+              identifier: 'EVAL-90',
+              title: 'Unrelated dashboard ticket',
+              state: 'done',
+              type: null,
+            },
           ],
-          { data: [] },
-        ),
+        },
       ),
-    );
-    searches.push(
-      bakers(
-        [
-          'search',
-          'bb_ticket',
-          '--bundle',
-          'bb_ticket',
-          '--filter',
-          'title:CONTAINS:ticket',
-        ],
-        { data: [{ id: 'known' }] },
-      ),
-    );
+    ];
     const trace = [
       ...(checkpoint === 'qualify' ? searches : []),
       ...fixture.simulation.commands.git
@@ -697,9 +705,11 @@ describe('prior-art fixture integrity', () => {
           arguments: { argv: c.argv },
           result: c.result,
         })),
-      read(`bb_ticket/bb_ticket/${fixture.simulation.prior_art.id}`, {
-        data: fixture.simulation.prior_art,
-      }),
+      call(
+        'bakers_ticket_read',
+        { ticket: fixture.simulation.prior_art.identifier },
+        fixture.simulation.prior_art,
+      ),
     ];
     const output = `prior_art_hit EVAL-70 Delivered documentation done fixture-maintainer ${'b'.repeat(40)}. Decision needed. origin/develop invoice invoices docs ${'a'.repeat(40)}`;
     expect(
@@ -714,19 +724,13 @@ describe('prior-art fixture integrity', () => {
         ),
       ),
     ).toContain('reported-evidence');
-    const missing = structuredClone(fixture);
-    delete missing.simulation.prior_art.assignee;
     expect(
       failing(
-        profile.checkOutput(
-          missing,
-          output
-            .replace('fixture-maintainer', 'assignee unresolved')
-            .replace('Decision needed', 'The caller stops and asks'),
-          { tool_trace: trace },
-        ),
+        profile.checkOutput(fixture, output, {
+          tool_trace: trace.slice(0, -1),
+        }),
       ),
-    ).toEqual([]);
+    ).toContain('candidate-read');
   });
   it('rejects incomplete fixtures and corrupt remote evidence before replay', async () => {
     const { fixture } = await fixtureData('merge-prior-art-base-negative');

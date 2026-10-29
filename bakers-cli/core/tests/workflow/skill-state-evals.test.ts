@@ -8,15 +8,24 @@ import {
 type Row = { tool: string; arguments: unknown; result: unknown };
 type Check = { id: string; met: boolean };
 const ticket = '11111111-1111-4111-8111-111111111111';
-const target = `bb_ticket/bb_ticket/${ticket}`;
 const ok = (stdout: unknown = '{}') => ({
   exit_code: 0,
   stdout: typeof stdout === 'string' ? stdout : JSON.stringify(stdout),
   stderr: '',
 });
-const bakers = (argv: string[], stdout?: unknown): Row => ({
+/** One `bakers dropsh tool tool_api__<id> --data <json>` call with its result. */
+const call = (id: string, args: unknown, stdout?: unknown): Row => ({
   tool: 'bakers',
-  arguments: { argv: ['bakers', 'dropsh', ...argv] },
+  arguments: {
+    argv: [
+      'bakers',
+      'dropsh',
+      'tool',
+      `tool_api__${id}`,
+      '--data',
+      JSON.stringify(args),
+    ],
+  },
   result: ok(stdout),
 });
 const file = (path: string, exit_code = 0): Row => ({
@@ -27,21 +36,15 @@ const file = (path: string, exit_code = 0): Row => ({
     : ok('x'),
 });
 const comment = (type: string, body = `${type} body`) =>
-  bakers([
-    'create',
-    'bb_comment',
-    '--bundle',
-    'bb_comment',
-    `--body.value=${body}`,
-    '--body.format',
-    'bb_rich',
-    '--bb_comment_type',
-    type,
-    '--ticket_id',
-    ticket,
-  ]);
-const readTicket = (relationships = {}) =>
-  bakers(['read', target], { data: { id: ticket, relationships } });
+  call(
+    'bakers_comment_publish',
+    { ticket, type, body },
+    { id: '22222222-2222-4222-8222-000000000001', type },
+  );
+const transition = (state: string) =>
+  call('bakers_ticket_transition', { ticket, state }, { state, links: [] });
+const readTicket = (fields = {}) =>
+  call('bakers_ticket_read', { ticket }, { id: ticket, ...fields });
 
 async function judge(id: string, output: string, trace?: Row[]) {
   const fixture = await loadFixture(id);
@@ -68,7 +71,7 @@ describe('frame routing profile', () => {
     expect(
       await judge('frame-recipe-route', intake.replace('GREEN', 'done'), [
         readTicket(),
-        bakers(['update', target, '--state', 'review']),
+        transition('review'),
       ]),
     ).toEqual(['no-mutation', 'recipe-read', 'intake-read', 'intake-rendered']);
   });
@@ -97,52 +100,63 @@ describe('classify profile', () => {
     file('skills/bb-recipe-probe/SKILL.md'),
     file('skills/bb-recipe-pair/SKILL.md'),
   ];
-  const update = (recipe: string) =>
-    bakers([
-      'update',
-      target,
-      '--recipe_names',
-      recipe,
-      '--type_names',
-      'feature',
+  const classify = (recipe: string, type = 'feature') =>
+    call('bakers_ticket_classify', { ticket, recipe, type }, { recipe, type });
+  const classifiedRead = (recipe: string, type = 'feature') =>
+    readTicket({ recipe, type });
+  it('accepts one classify call with readback', async () => {
+    expect(
+      await judge('qualify-classify-default', 'probe, feature', [
+        readTicket(),
+        ...recipes,
+        classify('probe'),
+        classifiedRead('probe'),
+      ]),
+    ).toEqual([]);
+  });
+  it('names a wrong recipe, a missing readback, a second call and a published comment', async () => {
+    const wrong = [
+      readTicket(),
+      ...recipes,
+      classify('bb-recipe-probe'),
+      classifiedRead('bb-recipe-probe'),
+    ];
+    expect(await judge('qualify-classify-default', 'done', wrong)).toEqual([
+      'classified',
     ]);
-  const resolved = {
-    recipe: { data: { id: 'r' } },
-    ticket_type: { data: { id: 't' } },
-  };
-  it('accepts one default update with readback', async () => {
-    expect(
-      await judge('qualify-classify-default', 'probe, feature', [
-        readTicket(),
-        ...recipes,
-        update('probe'),
-        readTicket(resolved),
-      ]),
-    ).toEqual([]);
-  });
-  it('accepts the Markdown readback the frame prescribes', async () => {
-    const markdown = bakers(
-      ['--format', 'md', 'read', target],
-      `id: ${ticket}\nrecipe: [bb_term--recipe/r]\nticket_type: [bb_term--type/t]\n`,
-    );
-    expect(
-      await judge('qualify-classify-default', 'probe, feature', [
-        readTicket(),
-        ...recipes,
-        update('probe'),
-        markdown,
-      ]),
-    ).toEqual([]);
-  });
-  it('names a wrong recipe, a missing readback and a published comment', async () => {
     expect(
       await judge('qualify-classify-default', 'done', [
         readTicket(),
         ...recipes,
-        update('bb-recipe-probe'),
+        classify('probe', 'epic'),
+        classifiedRead('probe', 'epic'),
+      ]),
+    ).toEqual(['classified']);
+    expect(
+      await judge('qualify-classify-default', 'done', [
+        readTicket(),
+        ...recipes,
+        classify('probe'),
+      ]),
+    ).toEqual(['classified']);
+    expect(
+      await judge('qualify-classify-default', 'done', [
+        readTicket(),
+        ...recipes,
+        classify('probe'),
+        classify('probe'),
+        classifiedRead('probe'),
+      ]),
+    ).toEqual(['classified']);
+    expect(
+      await judge('qualify-classify-default', 'done', [
+        readTicket(),
+        ...recipes,
+        classify('probe'),
+        classifiedRead('probe'),
         comment('qualification'),
       ]),
-    ).toEqual(['nothing-else', 'single-update', 'readback']);
+    ).toEqual(['nothing-else']);
   });
   it('requires a question and no write when two recipes fit', async () => {
     const ask = 'Which recipe: bb-recipe-probe or bb-recipe-pair?';
@@ -169,9 +183,13 @@ describe('classify profile', () => {
       await judge('qualify-classify-ambiguous', 'Chose bb-recipe-probe.', [
         readTicket(),
         ...recipes,
-        update('probe'),
+        call(
+          'bakers_ticket_classify',
+          { ticket, recipe: 'probe' },
+          { recipe: 'probe', type: null },
+        ),
       ]),
-    ).toEqual(['no-write', 'asks']);
+    ).toEqual(['nothing-else', 'asks']);
   });
 });
 
@@ -324,7 +342,7 @@ describe('state run profile', () => {
         comment('spec'),
         comment('test'),
         comment('summary'),
-        bakers(['update', target, '--state', 'working']),
+        transition('working'),
       ]),
     ).toEqual([
       'comment-sequence',
@@ -334,20 +352,18 @@ describe('state run profile', () => {
     ]);
   });
   it('requires classification before the handoff and one transition after it', async () => {
-    const classify = bakers([
-      'update',
-      target,
-      '--recipe_names',
-      'probe',
-      '--type_names',
-      'chore',
-    ]);
+    const classify = call(
+      'bakers_ticket_classify',
+      { ticket, recipe: 'probe', type: 'chore' },
+      { recipe: 'probe', type: 'chore' },
+    );
     const done = [
       readTicket(),
       classify,
+      readTicket({ recipe: 'probe', type: 'chore' }),
       comment('qualification'),
       comment('summary'),
-      bakers(['update', target, '--state', 'plan']),
+      transition('plan'),
       readTicket(),
     ];
     expect(await judge('qualification-run', 'Routed to plan.', done)).toEqual(
@@ -358,10 +374,18 @@ describe('state run profile', () => {
         readTicket(),
         comment('qualification'),
         classify,
-        bakers(['update', target, '--state', 'plan']),
+        readTicket({ recipe: 'probe', type: 'chore' }),
+        transition('plan'),
         comment('summary'),
       ]),
     ).toEqual(['transition', 'classified']);
+    expect(
+      await judge(
+        'qualification-run',
+        'Routed to plan.',
+        done.filter((row) => row !== classify),
+      ),
+    ).toEqual(['classified']);
   });
 });
 
@@ -382,68 +406,80 @@ describe('persona login profile', () => {
   });
 });
 
-describe('create-ticket profile on Markdown searches', () => {
-  const search = (filter: string, stdout: string) =>
-    bakers(
-      [
-        '--format',
-        'md',
-        'search',
-        'bb_ticket',
-        '--bundle',
-        'bb_ticket',
-        '--filter',
-        filter,
-      ],
-      stdout,
-    );
-  const hit =
-    'type: bb_ticket--bb_ticket\nid: 77777777-7777-4777-8777-777777777777\nstate: coding\ndescription: |\n  ## Goal\n\n  Document invoice export configuration for operators.\n\n  ## Acceptance\n\n  - AC-1: An operator can find the documented invoice export command and its required project option.\n\n  ## Out of scope\n\n  No code or runtime change.\n';
+describe('create-ticket profile on prior art', () => {
+  const prior = '77777777-7777-4777-8777-777777777777';
+  const search = (query: string, tickets: unknown[]) =>
+    call('bakers_ticket_search', { query }, { tickets });
+  const row = {
+    identifier: 'EVAL-70',
+    title: 'Document invoice export options',
+    state: 'coding',
+    type: null,
+  };
   const trace = [
-    search('title:CONTAINS:invoice', hit),
-    search('description.value:CONTAINS:invoice', hit),
-    search('title:CONTAINS:invoices', '_(no results)_\n'),
-    search('description.value:CONTAINS:invoices', '_(no results)_\n'),
+    search('invoice', [row]),
+    search('invoices', []),
+    search('ticket', [{ ...row, identifier: 'EVAL-90' }]),
   ];
-  it('reads the candidate from a Markdown search result', async () => {
+  const read = call(
+    'bakers_ticket_read',
+    { ticket: 'EVAL-70' },
+    {
+      id: prior,
+      identifier: 'EVAL-70',
+      state: 'coding',
+      description:
+        '## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n',
+    },
+  );
+  it('reads the returned candidate in full', async () => {
+    expect(
+      await judge('create-ticket-prior-art', 'EVAL-70 is prior art.', [
+        ...trace,
+        read,
+      ]),
+    ).toEqual([]);
+  });
+  it('requires the read and the probe for an empty spelling', async () => {
     expect(
       await judge('create-ticket-prior-art', 'EVAL-70 is prior art.', trace),
-    ).not.toContain('prior-art-read');
-  });
-  it('still requires the candidate in the result', async () => {
-    const empty = trace.map((row, i) =>
-      i < 2
-        ? search(
-            i ? 'description.value:CONTAINS:invoice' : 'title:CONTAINS:invoice',
-            '_(no results)_\n',
-          )
-        : row,
-    );
-    expect(await judge('create-ticket-prior-art', 'none', empty)).toContain(
-      'prior-art-read',
-    );
+    ).toEqual(['prior-art-read']);
+    expect(
+      await judge('create-ticket-prior-art', 'EVAL-70 is prior art.', [
+        trace[0]!,
+        trace[1]!,
+        read,
+      ]),
+    ).toEqual(['prior-art-search']);
   });
 });
 
-describe('create-ticket profile on the Markdown readback', () => {
-  const created = '33333333-3333-4333-8333-333333333333';
-  const project = '55555555-5555-4555-8555-555555555555';
-  const create = bakers(['create', 'bb_ticket', '--bundle', 'bb_ticket'], {
-    data: { id: created },
-  });
+describe('create-ticket profile on the readback', () => {
+  const created = '33333333-3333-4333-8333-000000000001';
+  const create = call(
+    'bakers_ticket_create',
+    {
+      title: 'Document invoice export options',
+      workflow: 'bb_work',
+      project: '55555555-5555-4555-8555-555555555555',
+    },
+    { id: created, identifier: 'EVAL-101', state: 'qualification' },
+  );
   const readback = (recipe: string) =>
-    bakers(
-      [
-        '--format',
-        'md',
-        'read',
-        `bb_ticket/bb_ticket/${created}`,
-        '--include',
-        'comments,labels,ticket_type,recipe',
-      ],
-      `type: bb_ticket--bb_ticket\nid: ${created}\ntitle: Document invoice export options\ndescription: |\n  ## Goal\n\n  Document invoice export configuration for operators.\n\n  ## Acceptance\n\n  - AC-1: An operator can find the documented invoice export command and its required project option.\n\n  ## Out of scope\n\n  No code or runtime change.\nstate: qualification\nproject_id: [bb_project--bb_project/${project}]\nticket_type: [bb_term--type/t1]\nrecipe: [bb_term--recipe/r1]\n\n## Included\n\ntype: bb_term--type\nid: t1\nname: feature\n\n---\n\ntype: bb_term--recipe\nid: r1\nname: ${recipe}\n`,
+    call(
+      'bakers_ticket_read',
+      { ticket: 'EVAL-101' },
+      {
+        id: created,
+        title: 'Document invoice export options',
+        description:
+          '## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n',
+        state: 'qualification',
+        type: 'feature',
+        recipe,
+      },
     );
-  it('verifies text, project, state, recipe and type from Markdown', async () => {
+  it('verifies text, state, recipe and type by identifier', async () => {
     expect(
       await judge('create-ticket-calls', 'done', [create, readback('matt')]),
     ).not.toContain('ticket-readback');
@@ -490,7 +526,7 @@ describe('recipe run profile', () => {
         cmd(['git', 'checkout', '-b', 'release/x']),
         comment('plan', 'Batch EVAL-41'),
         comment('summary'),
-        bakers(['update', target, '--state', 'working']),
+        transition('working'),
       ]),
     ).toEqual(['no-transition', 'plan-content', 'no-branch']);
   });
@@ -540,22 +576,35 @@ describe('recipe run profile', () => {
     ).toEqual(['merges', 'frame-merge-unused']);
   });
   it('wants one result per ticket, one searched regression and the missing persona', async () => {
-    const search = bakers([
-      'search',
-      'bb_ticket',
-      '--bundle',
-      'bb_ticket',
-      '--filter',
-      'title:CONTAINS:totals',
-    ]);
-    const bug = bakers([
-      'create',
-      'bb_ticket',
-      '--bundle',
-      'bb_ticket',
-      '--type_names',
-      'bug',
-    ]);
+    const search = (query: string) =>
+      call(
+        'bakers_ticket_search',
+        { query },
+        {
+          tickets: [
+            {
+              identifier: 'EVAL-61',
+              title: 'Guest totals',
+              state: 'done',
+              type: null,
+            },
+          ],
+        },
+      );
+    const bug = call(
+      'bakers_ticket_create',
+      {
+        title: 'Guest totals fail',
+        workflow: 'bb_work',
+        project: '55555555-5555-4555-8555-555555555555',
+        type: 'bug',
+      },
+      {
+        id: '33333333-3333-4333-8333-000000000001',
+        identifier: 'EVAL-101',
+        state: 'qualification',
+      },
+    );
     const good = [
       readTicket(),
       comment('result', 'EVAL-60: 3 passed'),
@@ -563,7 +612,8 @@ describe('recipe run profile', () => {
         'result',
         'EVAL-61: guest totals failed\nsouth-auditor: missing, not run',
       ),
-      search,
+      search('totals'),
+      search('total'),
       bug,
       comment('summary'),
     ];

@@ -1,5 +1,6 @@
-import { calls, check, readAfter, succeeded, uuid, validateTools, value, writes } from '../call-utils.mjs';
+import { arg, calls, check, names, readAfter, succeeded, tool, toolCalls, uuid, validateTools, writes } from '../call-utils.mjs';
 import { requireValue } from '../validation.mjs';
+import { classified } from './classify.mjs';
 
 // A whole state through bb-workflow: which comments are published in which order, and where it routes.
 export function validate(f) {
@@ -11,33 +12,32 @@ export function validate(f) {
 }
 
 export function checkOutput(f, output, context) {
-  const e = f.expect, trace = calls(context), all = writes(trace);
-  const target = `bb_ticket/bb_ticket/${f.input.ticket_uuid}`;
-  const comments = all.filter(c => c.action === 'create' && c.target === 'bb_comment' && succeeded(c));
-  const states = all.filter(c => c.action === 'update' && c.target === target && value(c, 'state'));
-  const summary = comments.find(c => value(c, 'bb_comment_type') === 'summary');
+  const e = f.expect, trace = calls(context, f.simulation.files), all = writes(trace), ticket = f.simulation.ticket;
+  const comments = all.filter(c => c.name === tool('bakers_comment_publish') && names(c, ticket) && succeeded(c));
+  const states = all.filter(c => c.name === tool('bakers_ticket_transition') && names(c, ticket) && arg(c, 'state'));
+  const summary = comments.find(c => arg(c, 'type') === 'summary');
   const checks = [
-    check('ticket-read', trace.some(c => c.action === 'read' && c.target === target && succeeded(c)), 'Read the ticket first'),
-    check('validated', !trace.some(c => 'no-validate' in c.flags), 'Never bypass validation'),
-    check('comment-sequence', JSON.stringify(comments.map(c => value(c, 'bb_comment_type'))) === JSON.stringify(e.comments),
+    check('ticket-read', toolCalls(trace, 'bakers_ticket_read').some(c => names(c, ticket) && succeeded(c)), 'Read the ticket first'),
+    check('tool-calls-only', !trace.some(c => c.mode === 'jsonapi'), 'Call bakers tools; no JSON:API command'),
+    check('comment-sequence', JSON.stringify(comments.map(c => arg(c, 'type'))) === JSON.stringify(e.comments),
       `Publish exactly ${e.comments.join(', ')}, in that order`),
     e.transition
-      ? check('transition', states.length === 1 && value(states[0], 'state') === e.transition && comments.every(c => c.index < states[0].index) &&
-        Boolean(readAfter(trace, states[0], target)), `After the comments, transition once to ${e.transition} and read it back`)
+      ? check('transition', states.length === 1 && arg(states[0], 'state') === e.transition && comments.every(c => c.index < states[0].index) &&
+        Boolean(readAfter(trace, states[0], ticket)), `After the comments, transition once to ${e.transition} and read it back`)
       : check('no-transition', states.length === 0, 'Stop at the approval: no state write'),
   ];
   if (e.classify) {
-    const update = all.find(c => c.action === 'update' && c.target === target && value(c, 'recipe_names'));
-    checks.push(check('classified', update && value(update, 'type_names') && comments.every(c => c.index > update.index),
-      'Write recipe and type before publishing the handoff'));
+    const classification = classified(trace, ticket);
+    checks.push(check('classified', classification && comments.every(c => c.index > classification.index),
+      'Classify recipe and type once, read them back, then publish the handoff'));
   }
   if (e.markers) {
-    checks.push(check('summary-markers', summary && e.markers.every(m => value(summary, 'body.value')?.includes(m)),
+    checks.push(check('summary-markers', summary && e.markers.every(m => arg(summary, 'body')?.includes(m)),
       'The summary carries the recipe slot lines'));
   }
   if (e.answers) {
-    const spec = comments.find(c => value(c, 'bb_comment_type') === 'spec');
-    checks.push(check('answers-used', spec && e.answers.every(a => value(spec, 'body.value')?.includes(a)),
+    const spec = comments.find(c => arg(c, 'type') === 'spec');
+    checks.push(check('answers-used', spec && e.answers.every(a => arg(spec, 'body')?.includes(a)),
       'The spec is written from the answers to the slot\'s questions'));
   }
   return checks;
