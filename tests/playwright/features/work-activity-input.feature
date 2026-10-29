@@ -1,13 +1,13 @@
 @work_activity_input
-Feature: AI activity becomes recorded time without a weekly workflow
+Feature: AI activity becomes time without a weekly workflow
 
   Background:
     Given I am logged in as the account "north-lead"
 
-  Scenario: Activity is recorded once and can be inspected in the ordinary form
+  Scenario: Activity is stored once and can be inspected in the ordinary form
     When I submit a two-hour activity for "2024-04-01" with source "browser-activity"
     And I repeat the last activity submission
-    Then the activity response keeps the same identity and revision
+    Then the activity is refused with "This source was already recorded."
     When I open the submitted activity
     Then the time form shows duration "2:00" and description "browser-activity"
     When I visit "/time/week/2024-04-01"
@@ -22,10 +22,10 @@ Feature: AI activity becomes recorded time without a weekly workflow
 
   Scenario: Activity input cannot forge an owner or cross project visibility
     When I submit an activity with a forged owner
-    Then the activity response status is 400
+    Then the activity is refused with "owner and approval fields are not accepted"
     Given I am logged in as the account "south-contributor"
     When I submit an activity for the time capture project
-    Then the activity response status is 409
+    Then the activity is refused with "Assignment unavailable."
 
   Scenario: A same-workspace contributor cannot read a peer entry or configure targets
     When I submit a two-hour activity for "2024-04-15" with source "private-activity"

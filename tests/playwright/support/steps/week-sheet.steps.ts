@@ -5,14 +5,15 @@ import { randomUUID } from 'node:crypto';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { Given, Then, When } from '@key-tec/playwright-core/bdd';
 import { php } from '../drush';
+import { callTool, type ToolResult } from '../mcp';
 import { safe } from '../picker';
 import { markDocument } from '../shell';
 import { gridCell } from './time-calendar.steps';
 
 const projectUuid = '612a0000-0000-4000-8000-000000000001';
 let proposalUuid = '';
-let proposalActivities: Record<string, unknown>[] = [];
-let lastStatus = 0;
+let proposalEntries: Record<string, unknown>[] = [];
+let resent: ToolResult;
 
 When('I type {string} into the week grid row {string} on {string}', async ({ page }, value: string, row: string, column: string) => {
   await (await gridCell(page, row, column)).locator('input[type="text"]').fill(value);
@@ -56,40 +57,24 @@ Then('{string} of {string} on {string} totals {int} seconds', async ({}, account
 
 Given('the AI proposes {string} on {string} and {string} on {string} for project {string}', async ({ page }, first: string, firstDate: string, second: string, secondDate: string, project: string) => {
   expect(project).toBe('Time capture');
-  const token = await (await page.request.get('/session/token')).text();
-  proposalUuid = randomUUID();
-  const created = await page.request.post('/jsonapi/bb_track_submission/bb_track_submission', {
-    headers: { 'Content-Type': 'application/vnd.api+json', Accept: 'application/vnd.api+json', 'X-CSRF-Token': token },
-    data: JSON.stringify({ data: { type: 'bb_track_submission--bb_track_submission', id: proposalUuid, attributes: { state: 'proposed' } } }),
-  });
-  expect(created.status(), await created.text()).toBe(201);
-  proposalActivities = [[first, firstDate], [second, secondDate]].map(([duration, date]) => {
+  proposalEntries = [[first, firstDate], [second, secondDate]].map(([duration, date]) => {
     const [hours, minutes] = duration.split(':').map(Number);
     return { source_system: 'browser', source_key: `proposal-${randomUUID()}`, source_version: '1', work_date: date,
-      description: `Proposed ${date}`, project_id: projectUuid, duration_seconds: hours * 3600 + minutes * 60, submission_id: proposalUuid };
+      description: `Proposed ${date}`, duration_seconds: hours * 3600 + minutes * 60 };
   });
-  for (const data of proposalActivities) {
-    const response = await page.request.post('/api/time/activity', { data, headers: { 'X-CSRF-Token': token } });
-    expect(response.status(), await response.text()).toBe(200);
-  }
+  const result = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: proposalEntries });
+  expect(result.isError, result.message).toBe(false);
+  proposalUuid = result.structuredContent?.submission as string;
 });
 
 When('the AI sends the proposal again', async ({ page }) => {
-  const token = await (await page.request.get('/session/token')).text();
-  const retry = await page.request.post('/jsonapi/bb_track_submission/bb_track_submission', {
-    headers: { 'Content-Type': 'application/vnd.api+json', Accept: 'application/vnd.api+json', 'X-CSRF-Token': token },
-    data: JSON.stringify({ data: { type: 'bb_track_submission--bb_track_submission', id: proposalUuid, attributes: { state: 'proposed' } } }),
-  });
-  expect([409, 422]).toContain(retry.status());
-  lastStatus = 200;
-  for (const data of proposalActivities) {
-    const response = await page.request.post('/api/time/activity', { data, headers: { 'X-CSRF-Token': token } });
-    lastStatus = Math.max(lastStatus, response.status());
-  }
+  resent = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: proposalEntries });
 });
 
-Then('the repeated proposal answers {int}', async ({}, status: number) => {
-  expect(lastStatus).toBe(status);
+Then('the repeated proposal is refused as already recorded', async () => {
+  expect(resent.isError, resent.message).toBe(true);
+  expect(resent.message).toContain('Entry 1 (proposal-');
+  expect(resent.message).toContain('This source was already recorded.');
 });
 
 When('I open the proposal review link', async ({ page }) => {

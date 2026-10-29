@@ -7,6 +7,7 @@ import {
   loadReadyBbConnection,
   type WorkspaceRecoveryOptions,
 } from '@bakers-build/core';
+import { toolPlugin } from '@dropsh/plugin-tool';
 import type { Command } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
 import { registerTemplateCommand } from './template.js';
@@ -115,8 +116,12 @@ export async function dispatchBbDropsh(
     : auth
       ? await loadBbConnectionBootstrap(host, opts)
       : await loadReadyBbConnection(host, opts);
+  const plugins = connection?.plugins ?? [];
   const program = buildDropshProgram({
-    plugins: connection?.plugins ?? [],
+    // `dropsh tool` (MCP, default endpoint /mcp) rides the same connection and auth profile.
+    plugins: plugins.some((plugin) => plugin.id === 'tool')
+      ? plugins
+      : [...plugins, toolPlugin()],
     ...(options.stdout ? { stdout: options.stdout } : {}),
     ...(options.stderr ? { stderr: options.stderr } : {}),
     ...(connection

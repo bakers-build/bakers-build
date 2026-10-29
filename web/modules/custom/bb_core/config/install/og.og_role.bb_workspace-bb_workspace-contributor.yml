@@ -22,6 +22,7 @@ group_bundle: bb_workspace
 is_admin: false
 permissions:
   - 'access bakers dashboard'
+  - 'access mcp server'
   - 'claim bakers tickets'
   - 'create bb_comment'
   - 'create bb_group'

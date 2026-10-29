@@ -22,7 +22,7 @@
     "@bakers-build/core": "workspace:^"
   },
   "dependencies": {
-    "dropsh": "^0.7.5"
+    "dropsh": "^0.8.2"
   },
   "devDependencies": {
     "@bakers-build/core": "workspace:^",

@@ -110,17 +110,6 @@ bb_track.account_edit:
       bb_track_account:
         type: entity:bb_track_account
 
-bb_track.activity_input:
-  path: '/api/time/activity'
-  defaults:
-    _controller: '\Drupal\bb_track\Controller\WorkActivityController::input'
-  methods: [POST]
-  requirements:
-    _user_is_logged_in: 'TRUE'
-    _csrf_request_header_token: 'TRUE'
-  options:
-    _auth: ['basic_auth', 'oauth2', 'cookie']
-
 entity.bb_track_submission.canonical:
   path: '/time/submission/{bb_track_submission}'
   defaults:
@@ -149,16 +138,6 @@ bb_track.ticket_account:
     parameters:
       bb_ticket:
         type: 'entity:bb_ticket'
-
-bb_track.worklog_evidence:
-  path: '/api/time/worklogs'
-  defaults:
-    _controller: '\Drupal\bb_track\Controller\WorklogEvidenceController::read'
-  methods: [GET]
-  requirements:
-    _user_is_logged_in: 'TRUE'
-  options:
-    _auth: ['basic_auth', 'oauth2', 'cookie']
 
 # Insights › Billing report: the same lead-only check as Insights › Overview,
 # so a lead elsewhere meets the workspace boundary (404) and a member a 403.

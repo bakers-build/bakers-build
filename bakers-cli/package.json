@@ -26,8 +26,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
-    "@dropsh/plugin-jsonapi-schema": "^0.7.1",
-    "@dropsh/plugin-oauth2": "^0.7.5",
+    "@dropsh/plugin-jsonapi-schema": "^0.8.2",
+    "@dropsh/plugin-oauth2": "^0.8.2",
     "@bakers-build/addon-agents": "workspace:^",
     "@bakers-build/addon-auth-basic": "workspace:^",
     "@bakers-build/addon-claude": "workspace:^",
