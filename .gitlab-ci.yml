@@ -280,7 +280,7 @@ compose_render:
   before_script:
     - apk add --no-cache bash git
   script:
-    - bash tests/contract/mcp-compose.sh
+    - bash tests/contract/compose.sh
 
 # Merge gate: the unit-kernel suite inside the gate's `php-test` image — the shipped `php` image
 # plus dev dependencies — so it tests the shipped code and PHP runtime. Two shards
@@ -597,7 +597,7 @@ web_ui:
 # Image identity is the git TREE, not the commit: the squash and merge commits of a branch that
 # contains its target have the branch head's tree, and so does the develop → main merge. So the
 # images the gate tested are found again after the merge (`promote`), with no rebuild.
-#   :tree-<tree>          gate images (php, php-test, nginx, mcp, e2e); tree-* tags expire
+#   :tree-<tree>          gate images (php, php-test, nginx, e2e); tree-* tags expire
 #   :<branch>, :<sha>     promote, what the stacks pull and roll back to
 #   :<version>, :latest   release_images, on a v<semver> tag
 
@@ -662,11 +662,9 @@ build:
         docker build $label --target php      -t "$CI_REGISTRY_IMAGE/php:$tag" .
         docker build $label --target php-test -t "$CI_REGISTRY_IMAGE/php-test:$tag" .
         docker build $label --target nginx    -t "$CI_REGISTRY_IMAGE/nginx:$tag" .
-        # MCP connector (BB-658 Task 3) — own Dockerfile, own image.
-        docker build $label -f docker/mcp/Dockerfile -t "$CI_REGISTRY_IMAGE/mcp:$tag" .
         docker build $label -f docker/e2e/Dockerfile -t "$CI_REGISTRY_IMAGE/e2e:$tag" .
         # e2e last: its tag is the "all images exist" marker checked above.
-        for image in php php-test nginx mcp e2e; do
+        for image in php php-test nginx e2e; do
           docker push "$CI_REGISTRY_IMAGE/$image:$tag"
         done
       fi
@@ -699,7 +697,6 @@ build:
     DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
     REGISTRY_IMAGE_PHP: $CI_REGISTRY_IMAGE/php:tree-$GATE_TREE
     REGISTRY_IMAGE_NGINX: $CI_REGISTRY_IMAGE/nginx:tree-$GATE_TREE
-    REGISTRY_IMAGE_MCP: $CI_REGISTRY_IMAGE/mcp:tree-$GATE_TREE
     REGISTRY_IMAGE_E2E: $CI_REGISTRY_IMAGE/e2e:tree-$GATE_TREE
   before_script:
     - apk add --no-cache bash
@@ -707,7 +704,7 @@ build:
     - bash scripts/ci/prune-gate-stacks.sh
 
 # The Playwright-BDD suite (browser and API contracts) and the conductor integration suite,
-# against a stack of the gate's php, nginx and mcp images with MariaDB and Mailpit. The runner
+# against a stack of the gate's php and nginx images with MariaDB and Mailpit. The runner
 # image (docker/e2e) holds the suites and reaches the site on the stack network; its `drush`
 # runs in the php container. Two shards, split by feature file; shard 1 also runs the
 # integration suite, after the browser suite, because it mutates the pristine bb_e2e seed.
@@ -726,7 +723,7 @@ e2e:
     - docker compose pull -q
     # The recipe-test world: the bakers recipe installer, then scripts/e2e/seed-test-world.sh.
     - docker compose run --rm install
-    - docker compose up -d --no-build --wait php nginx mailpit mcp
+    - docker compose up -d --no-build --wait php nginx mailpit
     # `typecheck` and `test:unit` first: Playwright strips types without checking them, and the
     # baseURL resolver's own test names a resolver regression as one.
     - >
@@ -835,14 +832,14 @@ promote:
     - |
       set -e
       tree="$(git rev-parse 'HEAD^{tree}')"
-      for image in php nginx mcp; do
+      for image in php nginx; do
         if ! crane digest "$CI_REGISTRY_IMAGE/$image:tree-$tree" >/dev/null; then
           echo "No tested image $image:tree-$tree for $CI_COMMIT_SHA: the merge gate did not run for this tree."
           echo "Merge only through the gate; to ship this commit anyway, open a merge request for it and play its gate."
           exit 1
         fi
       done
-      for image in php nginx mcp; do
+      for image in php nginx; do
         crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_REF_SLUG"
         crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_SHA"
         echo "$image: $(crane digest "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA")"
@@ -876,7 +873,7 @@ release_images:
       set -e
       version="${CI_COMMIT_TAG#v}"
       tree="$(git rev-parse "$CI_COMMIT_SHA^{tree}")"
-      for image in php nginx mcp; do
+      for image in php nginx; do
         crane mutate "$CI_REGISTRY_IMAGE/$image:tree-$tree" \
           --label "org.opencontainers.image.version=$version" \
           --label "org.opencontainers.image.revision=$CI_COMMIT_SHA" \

@@ -50,11 +50,13 @@ final class CommentPublishToolTest extends BakersToolTestBase {
   }
 
   /**
-   * A missing body or an unreadable ticket stores nothing.
+   * A missing or blank body or an unreadable ticket stores nothing.
    */
   public function testInvalidInputStoresNothing(): void {
     $id = $this->ticket('TL-3')->getIdentifier();
     $this->assertFailure($this->runTool('bakers_comment_publish', ['ticket' => $id, 'type' => 'plan']), 'body');
+    $blank = ['ticket' => $id, 'type' => 'plan', 'body' => " \t\n\n"];
+    $this->assertFailure($this->runTool('bakers_comment_publish', $blank), 'body');
     $missing = ['ticket' => 'TL-404', 'type' => 'plan', 'body' => 'x'];
     $this->assertFailure($this->runTool('bakers_comment_publish', $missing), 'TL-404');
     $this->container->get('current_user')->setAccount($this->account('outsider', ['skill_user']));

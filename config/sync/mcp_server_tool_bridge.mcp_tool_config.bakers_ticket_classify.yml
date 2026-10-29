@@ -1,0 +1,8 @@
+uuid: 6d0aee46-d30f-4492-b387-d9a8d76d6276
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_ticket_classify
+tool_id: bakers_ticket_classify
+description: null
+

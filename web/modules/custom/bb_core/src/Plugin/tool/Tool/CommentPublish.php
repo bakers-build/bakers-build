@@ -43,7 +43,7 @@ use Drupal\tool\TypedData\OutputDefinition;
       data_type: 'string',
       label: new TranslatableMarkup('Body'),
       description: new TranslatableMarkup('Markdown source; raw HTML is stripped.'),
-      constraints: ['NotBlank' => [], 'MediaType' => ['type' => 'text/markdown']],
+      constraints: ['NotBlank' => [], 'Regex' => ['pattern' => '/\\S/'], 'MediaType' => ['type' => 'text/markdown']],
     ),
   ],
   output_definitions: [

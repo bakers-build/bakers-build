@@ -42,27 +42,12 @@
       "title": "Export invoices as CSV",
       "state": "working",
       "workflow": "bb_feature",
-      "description": {
-        "value": "Operators export the invoice list as CSV from the invoice page.",
-        "format": "bb_rich"
-      },
+      "description": "Operators export the invoice list as CSV from the invoice page.",
       "created": "2026-01-01",
       "base_branch": "develop",
       "changed": "fixture-revision-1",
-      "relationships": {
-        "recipe": {
-          "data": {
-            "type": "bb_term--recipe",
-            "id": "88888888-8888-4888-8888-000000000202"
-          }
-        },
-        "ticket_type": {
-          "data": {
-            "type": "bb_term--type",
-            "id": "88888888-8888-4888-8888-000000000103"
-          }
-        }
-      }
+      "type": "chore",
+      "recipe": "probe"
     },
     "files": {
       "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"

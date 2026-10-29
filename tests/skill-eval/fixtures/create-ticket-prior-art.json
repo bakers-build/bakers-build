@@ -61,9 +61,7 @@
       "id": "77777777-7777-4777-8777-777777777777",
       "identifier": "EVAL-70",
       "title": "Document invoice export options",
-      "description": {
-        "value": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n"
-      },
+      "description": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n",
       "state": "coding",
       "assignee": "fixture-maintainer",
       "links": [
@@ -71,7 +69,8 @@
           "uri": "https://git.example.invalid/team/docs/-/merge_requests/70",
           "title": "Existing implementation"
         }
-      ]
+      ],
+      "workflow": "bb_work"
     }
   },
   "rubric": [

@@ -1,28 +1,25 @@
 # Ticket writes
 
-Read before writing a ticket, comment or relationship.
+Read before writing a ticket, comment or relationship. Every write is a tool call
+([tools](tools.md)).
 
 ## Handoffs and ticket text are Markdown
 
-Store Markdown source in `body.value` or a ticket's `description.value` with `format: bb_rich`.
-Inspect headings, lists, links and tables before writing. Raw HTML is stripped. `bb_comment_type`
-is separate from the text format, which is always `bb_rich` and set by the write. Verify the exact
-stored text on readback;
-[publish comment](publish-comment.md) confirms comments by their create response.
+Pass Markdown source as a comment's `body` or a ticket's `description`; the tool stores it as
+`bb_rich`. Inspect headings, lists, links and tables before writing. Raw HTML is stripped. The
+comment type is its own argument, separate from the text. Verify the exact stored text on readback;
+[publish comment](publish-comment.md) confirms comments by their result.
 
 ## Validated writes and uncertain outcomes
 
-Keep outgoing schema validation enabled. Discover writable fields with `--fields`; use
-body file → field parameters → live. Use supported data-file input for bodies exceeding argv limits.
-Retain created UUIDs immediately. Reconcile uncertain writes by UUID or uniquely matching context;
-never blindly repeat the create. Correct confirmed pre-send rejection before retrying.
+Arguments are validated against the tool's schema before sending; correct a rejection (exit 4)
+before retrying. Retain returned UUIDs immediately. Reconcile uncertain writes by UUID or uniquely
+matching context; never blindly repeat a create.
 
 Verify state readback. On definite rejection retain state and best-effort restore mapped origin
 status while authorized; on uncertain outcomes reconcile first. Report unreconciled mismatches.
 
 ## References are named, not resolved
 
-Use schema-supported name flags. Environment names require project scope. Verify resolved
-relationships, not input-only flags. PATCH replaces relationships; preserve existing members.
-Clear nullable references only through supported normal validation.
-
+Type, recipe and labels are term names; the tool resolves them in the ticket's workspace. Verify the
+resolved values on readback. Links are added, never replaced: the tool keeps existing links.

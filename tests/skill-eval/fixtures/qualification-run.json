@@ -60,10 +60,7 @@
       "title": "Document invoice export options",
       "state": "qualification",
       "workflow": "bb_feature",
-      "description": {
-        "value": "Document invoice export: use export --project NAME.",
-        "format": "bb_rich"
-      },
+      "description": "Document invoice export: use export --project NAME.",
       "created": "2026-01-01",
       "base_branch": "develop",
       "changed": "fixture-revision-1"
@@ -75,12 +72,10 @@
       "id": "77777777-7777-4777-8777-777777777777",
       "identifier": "EVAL-70",
       "title": "Delivered documentation",
-      "description": {
-        "value": "Operator documentation.",
-        "format": "bb_rich"
-      },
+      "description": "Operator documentation.",
       "state": "done",
-      "assignee": "fixture-maintainer"
+      "assignee": "fixture-maintainer",
+      "workflow": "bb_work"
     },
     "commands": {
       "git": [

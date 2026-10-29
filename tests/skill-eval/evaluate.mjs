@@ -22,8 +22,8 @@ export async function loadEvaluator() {
   return { evaluate, version: pkg.version };
 }
 
-const CATEGORIES = ['read-recovery', 'uncertain-write', 'expected-error'];
-const RECOVERIES = ['read-recovery'];
+const CATEGORIES = ['call-recovery', 'uncertain-write', 'expected-error'];
+const RECOVERIES = ['call-recovery'];
 
 // Optional profile diagnostics describe call quality beside the authoritative named checks.
 function diagnosticsOf(profile, fixture, output, context) {

@@ -604,10 +604,10 @@ export function diagnose() { return ${diagnostics}; }`,
             status: 'warning',
             diagnostics: [
               {
-                id: 'read-recovery',
-                category: 'read-recovery',
+                id: 'call-recovery-3',
+                category: 'call-recovery',
                 severity: 'warning',
-                reason: '<b>one rejected read</b>',
+                reason: '<b>one rejected call</b>',
                 calls: [3, 4, 5],
               },
             ],
@@ -624,7 +624,7 @@ export function diagnose() { return ${diagnostics}; }`,
     expect(table).toContain('current.json');
     expect(table).toMatch(/failed[\s\S]*passed/);
     expect(table).toContain('warning');
-    expect(html).toContain('&lt;b&gt;one rejected read&lt;/b&gt;');
+    expect(html).toContain('&lt;b&gt;one rejected call&lt;/b&gt;');
     expect(html).toContain('4, 5, 6');
     expect(html).toContain('unavailable: Not recorded by this attempt');
     expect(html).toContain('0 USD');

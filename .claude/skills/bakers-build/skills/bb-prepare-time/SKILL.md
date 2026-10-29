@@ -38,33 +38,23 @@ Preserve absences, corrections and source identities; subtract time already repr
 in bookings/proposals. Unconfirmed suggestions stay in the report. If no resolved rows
 remain, return the report without an empty Submission or review link.
 
-## Verify proposal support
-
-```bash
-bakers dropsh schema bb_track_submission/bb_track_submission --refresh
-```
-
-Verify the server's **Proposals** contract is
-deployed. If not: return the proposal in chat, make no writes, never book directly.
-
 ## Publish and link
 
-Use employee authentication and the documented payloads. Generate and retain a
-Submission UUID before creating it through JSON:API with `state: proposed`;
-repeated creates return 409/422, not a reason for another UUID.
+Use employee authentication. Publish every resolved row in **one** `bakers_time_propose` call
+([tools](../bb-workflow/references/tools.md)): `entries`, each with `source_system`, `source_key`,
+`source_version`, `work_date`, `description`, `duration_seconds` and its `project`, `ticket` or
+`account` where resolved. The result is a new proposed Submission and one Worklog per entry;
+proposed time is unbooked. A failing entry stores nothing and the message names it by position and
+`source_key`: correct that row and call again. An unknown tool means the server cannot take
+proposals: return the proposal in chat, make no writes, never book directly. After a timeout or
+lost response, reconcile with the readback below before any second call.
 
-Post activities to `/api/time/activity`, always with that `submission_id`, one per
-distinct activity with stable source identity. Read back Submission state before
-continuing partial delivery: only `proposed` is unbooked; `draft` books
-immediately. Changed retries return 409; preserve UI corrections and stop on
-ambiguous results.
+Verify through `bakers_worklog_list` over the date range: the rows whose `submission_id` is the
+returned `submission` match the entry count and totals, each in state `proposed`. An empty page proves
+nothing; follow `next_offset` to the end.
 
-Deliver all rows before sharing the link. Verify ownership, proposed state, entry
-count and totals through owner-accessible readback; filter Worklogs by
-`submission_id.id` and check each state. An empty collection proves nothing.
-
-Review URL: `/time/submission/{uuid}` on the selected public origin (not JSON:API
-`links.self`); verify employee access. Local URLs follow [preview links](../bb-workflow/references/preview-links.md).
+Review URL: `/time/submission/{uuid}` on the selected public origin, with the returned
+`submission`; verify employee access. Local URLs follow [preview links](../bb-workflow/references/preview-links.md).
 
 Return the link, entry count, totals, per-week capacity/remaining/excess and
 unresolved assignments:

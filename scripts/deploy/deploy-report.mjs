@@ -80,14 +80,13 @@ async function smoke() {
       '/.well-known/oauth-authorization-server',
       (r) => r.status === 200,
     ],
-    // The MCP service demands a bearer; Drupal would answer with its own X-Generator.
+    // Drupal's mcp_server demands a bearer before any tool runs.
     [
-      '/mcp answers from the MCP service',
+      '/mcp answers from mcp_server',
       '/mcp',
       (r) =>
         r.status === 401 &&
-        /resource_metadata=/.test(r.headers.get('www-authenticate') ?? '') &&
-        !/Drupal/.test(r.headers.get('x-generator') ?? ''),
+        /realm="mcp_server"/.test(r.headers.get('www-authenticate') ?? ''),
     ],
   ];
   const results = [];

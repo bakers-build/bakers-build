@@ -26,7 +26,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_transition',
   label: new TranslatableMarkup('Transition a ticket'),
-  description: new TranslatableMarkup('Moves a ticket to the target state when its workflow allows it, appending the given links to the existing ones. Returns the saved state and links.'),
+  description: new TranslatableMarkup('Moves a ticket to the target state when its workflow allows it, appending the given links to the existing ones; without a state it only appends the links. Returns the saved state and links.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -40,8 +40,8 @@ use Drupal\tool\TypedData\OutputDefinition;
     'state' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Target state'),
-      description: new TranslatableMarkup('The workflow state id to move to, e.g. working or review.'),
-      constraints: ['NotBlank' => []],
+      description: new TranslatableMarkup('The workflow state id to move to, e.g. working or review; omit to only append links.'),
+      required: FALSE,
     ),
     'links' => new ListInputDefinition(
       label: new TranslatableMarkup('Links'),
@@ -103,20 +103,25 @@ final class TicketTransition extends ToolBase {
    * {@inheritdoc}
    */
   protected function doExecute(array $values): ExecutableResult {
-    $ticket = $this->writableTicket($values['ticket'], ['state', 'links']);
-    $state = $ticket->getState();
-    $current = $state->getId();
-    $transition = NULL;
-    foreach ($state->getTransitions() as $candidate) {
-      if ($candidate->getToState()->getId() === $values['state']) {
-        $transition = $candidate;
-        break;
+    $target = $values['state'] ?? '';
+    if ($target === '' && empty($values['links'])) {
+      throw new \InvalidArgumentException('Give a target state or links to add.');
+    }
+    $ticket = $this->writableTicket($values['ticket'], $target === '' ? ['links'] : ['state', 'links']);
+    if ($target !== '') {
+      $state = $ticket->getState();
+      $transition = NULL;
+      foreach ($state->getTransitions() as $candidate) {
+        if ($candidate->getToState()->getId() === $target) {
+          $transition = $candidate;
+          break;
+        }
       }
+      if ($transition === NULL) {
+        throw new \InvalidArgumentException(sprintf('Ticket %s cannot move from %s to %s.', $values['ticket'], $state->getId(), $target));
+      }
+      $state->applyTransition($transition);
     }
-    if ($transition === NULL) {
-      throw new \InvalidArgumentException(sprintf('Ticket %s cannot move from %s to %s.', $values['ticket'], $current, $values['state']));
-    }
-    $state->applyTransition($transition);
     foreach ($values['links'] ?? [] as $link) {
       $ticket->get('links')->appendItem(['uri' => $link['uri'], 'title' => $link['title'] ?? '']);
     }

@@ -24,50 +24,13 @@
       "title": "Export invoices as CSV",
       "state": "working",
       "workflow": "bb_work",
-      "description": {
-        "value": "Operators export invoices.",
-        "format": "bb_rich"
-      },
+      "description": "Operators export invoices.",
       "created": "2026-10-26",
       "base_branch": "develop",
       "changed": "fixture-revision-1",
-      "relationships": {
-        "recipe": {
-          "data": {
-            "type": "bb_term--recipe",
-            "id": "88888888-8888-4888-8888-000000000205"
-          }
-        },
-        "ticket_type": {
-          "data": {
-            "type": "bb_term--type",
-            "id": "88888888-8888-4888-8888-000000000104"
-          }
-        }
-      },
-      "origin": "https://git.example.invalid/acme/shop/-/issues/7"
-    },
-    "terms": {
-      "type": [
-        {
-          "id": "88888888-8888-4888-8888-000000000104",
-          "name": "deployment"
-        },
-        {
-          "id": "88888888-8888-4888-8888-000000000105",
-          "name": "verification"
-        }
-      ],
-      "recipe": [
-        {
-          "id": "88888888-8888-4888-8888-000000000205",
-          "name": "deploy-and-release"
-        },
-        {
-          "id": "88888888-8888-4888-8888-000000000206",
-          "name": "verify"
-        }
-      ]
+      "origin": "https://git.example.invalid/acme/shop/-/issues/7",
+      "type": "deployment",
+      "recipe": "deploy-and-release"
     },
     "files": {
       "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-transition\n\n| State | Origin label |\n|---|---|\n| plan | in progress |\n| working | in progress |\n| review | in progress |\n| done | ready for review |\n"

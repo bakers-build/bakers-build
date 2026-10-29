@@ -1,5 +1,5 @@
 // Real-CLI contract boundary: literal argv through the checked-out bakers.build launcher against one
-// disposable loopback JSON:API fixture. No shell, no PATH lookup, no tracker, no model.
+// disposable loopback MCP fixture. No shell, no PATH lookup, no tracker, no model.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
@@ -17,19 +17,13 @@ const basicToken = Buffer.from('contract-fixture:contract-fixture').toString('ba
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const inside = path => !relative(repoRoot, path).startsWith('..');
 
-const ticketType = 'bb_ticket--bb_ticket';
-const commentType = 'bb_comment--bb_comment';
-const labelType = 'bb_term--label';
-// Synthetic jsonapi_schema resource-object documents shared with the simulator. They define this
-// contract's fixture, not the live Drupal schema, whose freshness remains outside this boundary.
+// The bakers tool definitions (tools/list) shared with the simulator: names, input and output
+// schemas as Drupal serves them. They define this contract's fixture, not the live site, whose
+// freshness remains outside this boundary.
 export const contractFixture = JSON.parse(readFileSync(join(here, 'contract-fixture.json'), 'utf8'));
-const resourceSchemas = contractFixture.schemas;
 
-/** Endpoint state for a simulator fixture: the same tickets, probe and label terms the simulator holds. */
-export const endpointSeed = (simulation, faults = {}) => ({
-  tickets: [simulation.ticket, simulation.prior_art, contractFixture.probe_ticket].filter(Boolean),
-  terms: contractFixture.terms, faults,
-});
+/** Endpoint state for a simulator fixture: the same tickets, comments and faults the simulator holds. */
+export const endpointSeed = (simulation, faults = {}) => ({ simulation, faults });
 
 /** Executable identity of the tested repository CLI; throws instead of falling back elsewhere. */
 export function cliIdentity(launcherPath = launcher) {
@@ -47,7 +41,8 @@ export function cliIdentity(launcherPath = launcher) {
   };
   const packages = {};
   for (const [name, from] of [['dropsh', 'addons/dropsh'], ['@dropsh/plugin-jsonapi-schema', 'addons/essentials'],
-    ['@dropsh/plugin-markdown', 'addons/essentials'], ['@bakers-build/addon-name-refs', 'addons/essentials']]) {
+    ['@dropsh/plugin-markdown', 'addons/essentials'], ['@bakers-build/addon-name-refs', 'addons/essentials'],
+    ['@dropsh/plugin-tool', 'addons/dropsh']]) {
     const path = realpathSync(join(cliRoot, from, 'node_modules', name, 'package.json'));
     packages[name] = { path, version: JSON.parse(readFileSync(path, 'utf8')).version };
   }
@@ -69,50 +64,117 @@ export function cliIdentity(launcherPath = launcher) {
   };
 }
 
-const clone = value => structuredClone(value);
-const jsonapi = (res, status, body) => {
-  res.writeHead(status, { 'Content-Type': 'application/vnd.api+json' });
-  res.end(body === undefined ? '' : JSON.stringify(body));
-};
-const resource = (type, record) => {
-  const { id, relationships, ...attributes } = record;
-  return { type, id, attributes, ...(relationships ? { relationships } : {}) };
-};
-const fieldOf = (record, path) => path.split('.').reduce((v, k) => v?.[k], record);
-// The subset of Drupal filter semantics the selected skill searches use.
-function matches(record, filters) {
-  return filters.every(({ path, operator = '=', value }) => {
-    const relation = record.relationships?.[path]?.data;
-    const actual = relation ? relation.id : fieldOf(record, path);
-    if (actual !== null && typeof actual === 'object') throw Object.assign(new Error(`Invalid nested filtering. The field \`${path}\` is not a filterable scalar.`), { status: 400 });
-    if (operator === 'CONTAINS') return typeof actual === 'string' && actual.toLowerCase().includes(String(value).toLowerCase());
-    if (operator === '=') return actual === value;
-    throw new Error(`fixture endpoint does not model filter operator ${operator}`);
-  });
-}
-function filtersFrom(query) {
-  const grouped = {};
-  for (const [key, value] of query) {
-    // Both the short form filter[f][value|operator] and filter[id][condition][path|operator|value].
-    const m = /^filter\[([^\]]+)\](?:\[(?:condition\]\[)?(path|operator|value)\])?(\[\])?$/.exec(key);
-    if (!m) continue;
-    const item = (grouped[m[1]] ??= { path: m[1] });
-    item[m[2] ?? 'value'] = value;
-  }
-  return Object.values(grouped);
+class Refused extends Error {}
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const pick = (record, keys) => Object.fromEntries(keys.map(k => [k, record[k] ?? null]));
+
+/** The Drupal tools' behavior over fixture state; an independent model of what the simulator implements. */
+function toolModel(simulation) {
+  const sim = structuredClone(simulation);
+  const tickets = [sim.ticket, sim.prior_art, contractFixture.probe_ticket].filter(Boolean)
+    .map(t => ({ labels: [], links: [], ...structuredClone(t) }));
+  const comments = sim.comments ?? [];
+  const worklogs = sim.worklogs ?? [];
+  let created = 0, submissions = 0;
+  const find = ref => tickets.find(t => t.id === ref || t.identifier === ref) ??
+    (() => { throw new Refused(`Ticket ${ref} does not exist or is not readable.`); })();
+  const project = ref => { if (![contractFixture.project, contractFixture.project_key].includes(ref)) throw new Refused(`Project ${ref} does not exist or is not readable.`); };
+  // Term names (type, recipe, label) are reused or created: the fixture caller may create terms.
+  const tools = {
+    ticket_classify: a => {
+      if (!a.type && !a.recipe) throw new Refused('Give a recipe or a type.');
+      const t = find(a.ticket);
+      for (const field of ['type', 'recipe']) if (a[field]) t[field] = a[field];
+      return { type: t.type ?? null, recipe: t.recipe ?? null };
+    },
+    ticket_read: a => {
+      const t = find(a.ticket);
+      return { ...pick(t, ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe']), labels: t.labels, links: t.links,
+        comments: comments.filter(c => c.ticket === t.id).map(c => ({ id: c.id, type: c.type, body: c.body,
+          created: c.created ?? '2026-01-01T00:00:00+00:00', author: c.author ?? 'fixture-agent' })) };
+    },
+    ticket_search: a => {
+      if (a.project) project(a.project);
+      const q = a.query.toLowerCase();
+      return { tickets: [...tickets].reverse().filter(t => (t.title ?? '').toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q))
+        .slice(0, 50).map(t => pick(t, ['identifier', 'title', 'state', 'type'])) };
+    },
+    ticket_create: a => {
+      project(a.project);
+      const parent = a.parent ? find(a.parent).id : null;
+      created += 1;
+      const t = { id: `33333333-3333-4333-8333-${String(created).padStart(12, '0')}`, identifier: `EVAL-${100 + created}`, title: a.title,
+        state: 'qualification', workflow: a.workflow, description: a.description ?? null, type: a.type || null, recipe: a.recipe || null,
+        labels: [], links: [], parent };
+      tickets.push(t);
+      return pick(t, ['id', 'identifier', 'state']);
+    },
+    ticket_transition: a => {
+      const state = a.state ?? '', links = a.links ?? [];
+      if (!state && !links.length) throw new Refused('Give a target state or links to add.');
+      const t = find(a.ticket);
+      if (state && sim.reject_transition) throw new Refused(`Ticket ${a.ticket} cannot move from ${t.state} to ${state}.`);
+      if (state) t.state = state;
+      for (const link of links) if (!t.links.some(l => l.uri === link.uri)) t.links.push({ uri: link.uri, title: link.title ?? '' });
+      return { state: t.state, links: structuredClone(t.links) };
+    },
+    comment_publish: a => {
+      const t = find(a.ticket);
+      const comment = { id: `22222222-2222-4222-8222-${String(comments.length + 1).padStart(12, '0')}`, ticket: t.id, type: a.type, body: a.body };
+      comments.push(comment);
+      return { id: comment.id, type: comment.type };
+    },
+    metric_write: a => {
+      const prefix = `${a.name}.`;
+      const outside = a.rows.find(r => !r.name.startsWith(prefix));
+      if (outside) throw new Refused(`Row ${outside.name} is not in the ${prefix} namespace.`);
+      const t = find(a.ticket);
+      t.metrics = [...(t.metrics ?? []).filter(m => !m.name.startsWith(prefix)), ...a.rows.map(r => ({ name: r.name, value: r.value, unit: r.unit ?? null }))];
+      if (a.label) {
+        if (!t.labels.includes(a.label)) t.labels.push(a.label);
+      }
+      return { metrics: structuredClone(t.metrics) };
+    },
+    time_propose: a => {
+      a.entries.forEach((e, i) => {
+        if (!DATE.test(e.work_date) || e.duration_seconds < 60 || e.duration_seconds > 86400 || e.duration_seconds % 60 || e.description.length > 2000) {
+          throw new Refused(`Entry ${i + 1} (${e.source_key}) is invalid: work_date Y-m-d, whole minutes from 60 to 86400 seconds, at most 2000 characters.`);
+        }
+      });
+      submissions += 1;
+      const submission = `aaaaaaaa-aaaa-4aaa-8aaa-${String(submissions).padStart(12, '0')}`;
+      const ids = a.entries.map(e => {
+        const id = `bbbbbbbb-bbbb-4bbb-8bbb-${String(worklogs.length + 1).padStart(12, '0')}`;
+        worklogs.push({ id, work_date: e.work_date, state: 'proposed', duration_seconds: e.duration_seconds, description: e.description, source_keys: [],
+          project_id: e.project || a.project || contractFixture.project, ticket_id: e.ticket ?? null, submission_id: submission });
+        return id;
+      });
+      return { submission, worklogs: ids };
+    },
+    worklog_list: a => {
+      const limit = a.limit ?? 50, offset = a.offset ?? 0;
+      if (!DATE.test(a.from) || !DATE.test(a.to) || a.from > a.to || limit < 1 || limit > 50 || offset < 0) {
+        throw new Refused('Give from <= to as Y-m-d, limit 1 to 50 and a non-negative offset.');
+      }
+      const rows = worklogs.filter(w => a.from <= w.work_date && w.work_date <= a.to);
+      const page = structuredClone(rows.slice(offset, offset + limit));
+      return { data: page,
+        projects: [...new Set(page.map(w => w.project_id).filter(Boolean))].sort().map(id => ({ id, name: 'fixture' })),
+        tickets: tickets.filter(t => page.some(w => w.ticket_id === t.id)).map(t => ({ id: t.id, identifier: t.identifier ?? null, title: t.title ?? null, project_id: contractFixture.project })),
+        omitted: false, next_offset: rows.length > offset + limit ? offset + limit : null };
+    },
+  };
+  return { tickets, comments, call: (name, args) => tools[name.replace(/^tool_api__bakers_/, '')](args) };
 }
 
 /**
- * One disposable endpoint per case. State is fixed synthetic data; faults are named and explicit.
- * Every request is recorded with raw bytes and decoded JSON; an unmodeled route fails the case.
+ * One disposable MCP endpoint (JSON-RPC over HTTP at /mcp) per case, serving the shared tool
+ * definitions. State is fixed synthetic data; faults are named and explicit. Every request is
+ * recorded with raw bytes and decoded JSON; an unmodeled route or method fails the case.
  */
 export async function startEndpoint(seed = {}) {
-  const state = {
-    tickets: Object.fromEntries((seed.tickets ?? []).map(t => [t.id, clone(t)])),
-    comments: Object.fromEntries((seed.comments ?? []).map(c => [c.id, clone(c)])),
-    terms: clone(seed.terms ?? []),
-  };
   const faults = { ...seed.faults };
+  const model = toolModel(seed.simulation ?? {});
   const requests = [];
   const unknown = [];
   const server = createServer((req, res) => {
@@ -123,76 +185,58 @@ export async function startEndpoint(seed = {}) {
       const url = new URL(req.url, 'http://fixture.invalid');
       let decoded;
       try { decoded = raw ? JSON.parse(raw) : undefined; } catch { decoded = { unparseable: raw }; }
-      const record = { method: req.method, path: url.pathname, query: [...url.searchParams], raw, json: decoded,
+      const record = { method: req.method, path: url.pathname, raw, json: decoded,
         authorization: req.headers.authorization === `Basic ${basicToken}` };
       requests.push(record);
-      const reply = (status, body) => { record.status = status; record.response = body; jsonapi(res, status, body); };
-      if (!record.authorization) return reply(401, { errors: [{ status: '401', detail: 'fixture credential required' }] });
-      if (faults.redirect && url.pathname.startsWith('/jsonapi/bb_ticket/bb_ticket/')) {
+      const send = (status, body) => {
+        record.status = status;
+        record.response = body;
+        res.writeHead(status, body === undefined ? {} : { 'Content-Type': 'application/json' });
+        res.end(body === undefined ? '' : JSON.stringify(body));
+      };
+      if (!record.authorization) return send(401, { error: 'fixture credential required' });
+      if (url.pathname !== '/mcp') { unknown.push(record); return send(404, { error: 'unmodeled fixture route' }); }
+      if (faults.redirect) {
         record.status = 302;
         res.writeHead(302, { Location: faults.redirect });
         return res.end();
       }
-      const parts = url.pathname.replace(/^\/jsonapi\/?/, '').split('/').filter(Boolean);
-      const [entity, bundle, id, schemaSuffix] = parts;
-      const key = `${entity}/${bundle}`;
-      if (!url.pathname.startsWith('/jsonapi/')) { unknown.push(record); return reply(404, { errors: [{ status: '404' }] }); }
-      if (req.method === 'GET' && id === 'resource' && schemaSuffix === 'schema' && parts.length === 4) {
-        if (faults.noSchema || !resourceSchemas[key]) return reply(404, { errors: [{ status: '404', detail: 'no schema route' }] });
-        return reply(200, resourceSchemas[key]);
+      // No server-initiated stream: the client tolerates 405 on its optional GET.
+      if (req.method === 'GET') return send(405);
+      if (req.method !== 'POST' || !decoded?.method) { unknown.push(record); return send(405); }
+      if (decoded.id === undefined) return send(202);
+      const reply = result => send(200, { jsonrpc: '2.0', id: decoded.id, result });
+      if (decoded.method === 'initialize') {
+        return reply({ protocolVersion: decoded.params.protocolVersion, capabilities: { tools: {} }, serverInfo: { name: 'bakers-contract-fixture', version: '1' } });
       }
-      const store = key === 'bb_ticket/bb_ticket' ? state.tickets : key === 'bb_comment/bb_comment' ? state.comments : undefined;
-      const type = key === 'bb_ticket/bb_ticket' ? ticketType : commentType;
-      const search = (rows, rowType) => {
-        try { return reply(200, { data: rows.filter(r => matches(r, filtersFrom(url.searchParams))).map(r => resource(rowType, r)), links: {} }); }
-        catch (error) { if (error.status !== 400) throw error; return reply(400, { errors: [{ status: '400', detail: error.message }] }); }
-      };
-      if (key === 'bb_term/label' && req.method === 'GET' && parts.length === 2) return search(state.terms, labelType);
-      if (!store) { unknown.push(record); return reply(404, { errors: [{ status: '404', detail: 'unmodeled fixture route' }] }); }
-      if (req.method === 'GET' && parts.length === 2) return search(Object.values(store), type);
-      if (req.method === 'GET' && parts.length === 3) {
-        const stored = store[id];
-        if (!stored) return reply(404, { errors: [{ status: '404', title: 'Not Found', detail: `The "${entity}" parameter was not converted for the path "/jsonapi/${key}/{entity}".` }] });
-        // Like the simulator's server model, a ticket lists the comments that reference it.
-        const found = type !== ticketType ? stored : { ...stored, relationships: { ...stored.relationships, comments: { data: Object.values(state.comments)
-          .filter(c => c.relationships?.ticket_id?.data?.id === id).map(c => ({ type: commentType, id: c.id })) } } };
-        const body = { data: resource(type, found) };
-        const include = url.searchParams.get('include');
-        if (include) {
-          body.included = include.split(',').flatMap(name => [found.relationships?.[name]?.data ?? []].flat())
-            .map(r => r.type === commentType ? state.comments[r.id] && resource(commentType, state.comments[r.id])
-              : r.type === labelType ? state.terms.find(t => t.id === r.id) && resource(labelType, state.terms.find(t => t.id === r.id)) : undefined)
-            .filter(Boolean);
-        }
-        return reply(200, body);
+      if (decoded.method === 'tools/list') return reply({ tools: contractFixture.tools });
+      if (decoded.method !== 'tools/call' || !contractFixture.tools.some(t => t.name === decoded.params?.name)) {
+        unknown.push(record);
+        return send(200, { jsonrpc: '2.0', id: decoded.id, error: { code: -32601, message: 'unmodeled fixture method' } });
       }
-      const document = decoded?.data;
-      if (req.method === 'POST' && parts.length === 2) {
-        // Server-assigned identity and defaults mirror the simulator's server model.
-        const id = type === commentType ? `22222222-2222-4222-8222-${String(Object.keys(store).length + 1).padStart(12, '0')}` : '33333333-3333-4333-8333-333333333333';
-        const defaults = type === ticketType ? { state: 'qualification', identifier: 'EVAL-30', changed: 'fixture-revision-1' } : {};
-        const entry = { id, ...document.attributes, ...defaults, ...(document.relationships ? { relationships: document.relationships } : {}) };
-        const apply = faults.lostResponse !== 'unapplied';
-        if (apply) store[id] = entry;
-        if (faults.lostResponse) { record.status = 'connection-closed'; record.applied = apply; return req.socket.destroy(); }
-        return reply(201, { data: resource(type, entry) });
+      const { name, arguments: args } = decoded.params;
+      record.tool = name;
+      let output;
+      try { output = model.call(name, args ?? {}); }
+      catch (error) {
+        if (!(error instanceof Refused)) throw error;
+        return reply({ content: [{ type: 'text', text: error.message }], isError: true });
       }
-      if (req.method === 'PATCH' && parts.length === 3) {
-        const found = store[id];
-        if (!found) return reply(404, { errors: [{ status: '404', title: 'Not Found' }] });
-        if (faults.reject422 && document.attributes?.state !== undefined) return reply(422, { errors: [{ status: '422', title: 'Unprocessable Content', detail: faults.reject422 }] });
-        Object.assign(found, document.attributes ?? {});
-        if (document.relationships) found.relationships = { ...found.relationships, ...document.relationships };
-        return reply(200, { data: resource(type, found) });
+      if (faults.lostResponse && name === 'tool_api__bakers_comment_publish') {
+        if (faults.lostResponse === 'unapplied') model.comments.pop();
+        record.status = 'connection-closed';
+        record.applied = faults.lostResponse !== 'unapplied';
+        return req.socket.destroy();
       }
-      unknown.push(record);
-      return reply(405, { errors: [{ status: '405' }] });
+      return reply({ content: [{ type: 'text', text: JSON.stringify(output) }], structuredContent: output });
     });
   });
   await new Promise(done => server.listen(0, '127.0.0.1', done));
   const origin = `http://127.0.0.1:${server.address().port}`;
   return {
-    origin, state, requests, unknown, faults,
+    origin, state: model, requests, unknown, faults,
+    /** The tools/call requests that reached the endpoint, in order. */
+    calls: () => requests.filter(r => r.json?.method === 'tools/call'),
     close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); }),
   };
 }

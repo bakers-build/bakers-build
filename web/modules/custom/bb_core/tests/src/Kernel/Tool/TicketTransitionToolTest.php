@@ -38,6 +38,36 @@ final class TicketTransitionToolTest extends BakersToolTestBase {
   }
 
   /**
+   * Without a target state, links are appended and the state stays.
+   */
+  public function testLinksOnlyKeepsState(): void {
+    $ticket = $this->ticket('TT-4', [
+      'state' => 'working',
+      'links' => [['uri' => 'https://example.com/ci', 'title' => 'CI']],
+    ]);
+    $out = $this->outputs($this->runTool('bakers_ticket_transition', [
+      'ticket' => $ticket->getIdentifier(),
+      'links' => [
+        ['uri' => 'https://example.com/mr/1', 'title' => 'MR'],
+        ['uri' => 'https://example.com/ci', 'title' => 'CI'],
+      ],
+    ]));
+    self::assertSame('working', $out['state']);
+    self::assertSame(['https://example.com/ci', 'https://example.com/mr/1'], array_column($out['links'], 'uri'));
+    self::assertSame('working', $this->reload($ticket)->get('state')->value);
+  }
+
+  /**
+   * A call with neither state nor links is refused.
+   */
+  public function testNeitherStateNorLinksFails(): void {
+    $ticket = $this->ticket('TT-5');
+    $this->assertFailure($this->runTool('bakers_ticket_transition', [
+      'ticket' => $ticket->getIdentifier(),
+    ]), 'state or links');
+  }
+
+  /**
    * A transition the workflow refuses names both states and saves nothing.
    */
   public function testRefusedTransitionNamesBothStates(): void {

@@ -34,7 +34,6 @@ DB_ROOT_PASSWORD=[[BB_DEVELOP_DB_ROOT_PW]]
 DRUPAL_HASH_SALT=[[BB_DEVELOP_HASH_SALT]]
 REGISTRY_IMAGE_PHP=git.key-tec.de:5050/bakers-build/bakers-build/php:develop
 REGISTRY_IMAGE_NGINX=git.key-tec.de:5050/bakers-build/bakers-build/nginx:develop
-REGISTRY_IMAGE_MCP=git.key-tec.de:5050/bakers-build/bakers-build/mcp:develop
 # Auto-deploy runs UPDATE only (drush deploy); it never installs. The first install of
 # a fresh environment is a deliberate, profile-gated action, run once on the host:
 #   docker compose --profile install run --rm install
@@ -81,7 +80,6 @@ DB_ROOT_PASSWORD=[[BB_PROD_DB_ROOT_PW]]
 DRUPAL_HASH_SALT=[[BB_PROD_HASH_SALT]]
 REGISTRY_IMAGE_PHP=git.key-tec.de:5050/bakers-build/bakers-build/php:main
 REGISTRY_IMAGE_NGINX=git.key-tec.de:5050/bakers-build/bakers-build/nginx:main
-REGISTRY_IMAGE_MCP=git.key-tec.de:5050/bakers-build/bakers-build/mcp:main
 # Auto-deploy runs UPDATE only (drush deploy); it never installs — a bootstrap
 # false-negative can no longer wipe prod. The first install of this environment is a
 # deliberate, profile-gated action from config/sync, run once on the prod host:

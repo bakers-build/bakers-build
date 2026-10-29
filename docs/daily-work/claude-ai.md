@@ -5,7 +5,7 @@
 | In the chat you can | For the rest |
 |---|---|
 | Create feature and chore tickets, check for duplicates, qualify them and take them to `plan` | Follow, answer, accept: the bakers.build web UI ([Work in the browser](/get-started/work-in-the-browser)) |
-| Search and read tickets, comments and projects | Bug tickets, coding, review, merge: your team's agents |
+| Search and read tickets and their comments | Bug tickets, coding, review, merge: your team's agents |
 
 **You need:** a bakers.build account with access to the workspace, and an MCP client with OAuth support, for example claude.ai, Claude Desktop, ChatGPT or Cursor.
 
