@@ -23,6 +23,7 @@
     "@bakers-build/core": "workspace:^"
   },
   "dependencies": {
+    "@dropsh/plugin-tool": "^0.8.2",
     "commander": "^12.1.0",
     "drupal-jsonapi-params": "^3.0.1"
   },

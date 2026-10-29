@@ -1,8 +1,9 @@
 import {
   type BbCommandPlugin,
-  createBbConnectionClient,
+  createBbConnectionContext,
   loadReadyBbConnection,
 } from '@bakers-build/core';
+import { createToolClient } from '@dropsh/plugin-tool';
 import type { Command } from 'commander';
 import { loadEvidence } from './evidence.js';
 
@@ -47,12 +48,15 @@ const trackCommand: BbCommandPlugin = {
         ...(options.config ? { explicit: options.config } : {}),
         ...(options.connection ? { connection: options.connection } : {}),
       });
-      const client = await createBbConnectionClient(connection);
-      const worklogs = await createBbConnectionClient({
-        ...connection,
-        site: { ...connection.site, jsonapi_prefix: '/api/time' },
-      });
-      return loadEvidence(client, options, worklogs);
+      const { client, auth, baseUrl } =
+        await createBbConnectionContext(connection);
+      // Worklogs come from the `tool_api__bakers_worklog_list` MCP tool on the same auth profile.
+      const tools = createToolClient({ auth, baseUrl, endpoint: '/mcp' });
+      try {
+        return await loadEvidence(client, options, tools);
+      } finally {
+        await tools.close();
+      }
     });
   },
 };

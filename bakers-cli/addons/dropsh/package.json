@@ -22,10 +22,11 @@
     "@bakers-build/core": "workspace:^"
   },
   "dependencies": {
-    "@dropsh/plugin-jsonapi-schema": "^0.7.1",
-    "@dropsh/plugin-oauth2": "^0.7.5",
+    "@dropsh/plugin-jsonapi-schema": "^0.8.2",
+    "@dropsh/plugin-oauth2": "^0.8.2",
+    "@dropsh/plugin-tool": "^0.8.2",
     "commander": "^12.1.0",
-    "dropsh": "^0.7.5"
+    "dropsh": "^0.8.2"
   },
   "devDependencies": {
     "@bakers-build/core": "workspace:^",

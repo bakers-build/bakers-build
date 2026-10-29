@@ -1,0 +1,8 @@
+uuid: d8fe27b6-bbff-4e08-ab57-9eb27607d7e9
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_ticket_read
+tool_id: bakers_ticket_read
+description: null
+

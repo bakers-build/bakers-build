@@ -24,6 +24,7 @@ minimumReleaseAgeExclude:
   - '@dropsh/plugin-jsonapi-schema'
   - '@dropsh/plugin-markdown'
   - '@dropsh/plugin-oauth2'
+  - '@dropsh/plugin-tool'
   - dropsh
   - dropsh@0.2.0
   - dropsh@0.2.1

@@ -68,6 +68,11 @@ services:
     class: Drupal\bb_core\EventSubscriber\BbWorkspaceNotFoundSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.mcp_permission_denied_subscriber:
+    class: Drupal\bb_core\EventSubscriber\McpPermissionDeniedSubscriber
+    arguments: ['@current_user', '@current_route_match']
+    tags:
+      - { name: event_subscriber }
   bb_core.my_work_sign_in_subscriber:
     class: Drupal\bb_core\EventSubscriber\MyWorkSignInSubscriber
     arguments: ['@current_user']

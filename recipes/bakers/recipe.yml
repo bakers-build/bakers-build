@@ -138,6 +138,14 @@ install:
   - simple_oauth_server_metadata
   - simple_oauth_pkce
   - simple_oauth_client_registration
+  # Skills call bakers tools (Tool API plugins in bb_core/bb_track) over
+  # `/mcp`. `mcp_server_tool_bridge` exposes each `mcp_tool_config` as an MCP
+  # tool; `mcp_server_oauth` adds Bearer auth to `/mcp`, so the `bakers`
+  # session token (scope child `access mcp server`) works for tools too.
+  - tool
+  - mcp_server
+  - mcp_server_tool_bridge
+  - mcp_server_oauth
   # BB-550 — RFC 8628 device authorization grant. Carries no config entity,
   # so it needs no `config: import:` entry on the recipe strict list.
   - bb_oauth_device

@@ -7,7 +7,7 @@ Feature: AI proposals are reviewed before anything is booked
   Scenario: A proposal books nothing until the employee saves the week
     Given the AI proposes "1:30" on "2026-09-14" and "2:00" on "2026-09-15" for project "Time capture"
     When the AI sends the proposal again
-    Then the repeated proposal answers 200
+    Then the repeated proposal is refused as already recorded
     When I open the proposal review link
     Then the week grid row "Bread · Time capture" shows "1:30" on "Mon 14"
     And the week grid row "Bread · Time capture" on "Mon 14" is marked Proposed
@@ -36,7 +36,7 @@ Feature: AI proposals are reviewed before anything is booked
     And no proposed entry of the proposal is left
     And "north-lead" of "Time capture" on "2026-09-21" totals 0 seconds
     When the AI sends the proposal again
-    Then the repeated proposal answers 409
+    Then the repeated proposal is refused as already recorded
 
   Scenario: Nobody else can see or open a proposal
     Given the AI proposes "1:00" on "2026-09-28" and "0:30" on "2026-09-29" for project "Time capture"
@@ -76,7 +76,7 @@ Feature: AI proposals are reviewed before anything is booked
     And the page shows "This submission has no entries."
     And I do not see the text "Save time"
     When the AI sends the proposal again
-    Then the repeated proposal answers 409
+    Then the repeated proposal is refused as already recorded
 
   @nojs
   Scenario: Submission review works without JavaScript on a small screen

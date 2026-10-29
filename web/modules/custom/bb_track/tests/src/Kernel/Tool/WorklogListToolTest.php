@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Drupal\Tests\bb_track\Kernel;
+namespace Drupal\Tests\bb_track\Kernel\Tool;
 
 use Drupal\Core\Session\AnonymousUserSession;
-use Drupal\bb_track\Controller\WorklogEvidenceController;
 use Drupal\bb_track\Entity\Submission;
 use PHPUnit\Framework\Attributes\Group;
-use Symfony\Component\HttpFoundation\Request;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Personal evidence never mixes another employee's time or records proposals.
  */
 #[Group('bb_track')]
-final class WorklogEvidenceTest extends WorkTimeTestBase {
+#[RunTestsInSeparateProcesses]
+final class WorklogListToolTest extends TimeToolTestBase {
 
   /**
    * Reads page through own recorded/proposed time without mutating it.
@@ -30,23 +30,20 @@ final class WorklogEvidenceTest extends WorkTimeTestBase {
     $this->addMembership($this->project->get('teams')->entity, $this->employee, ['lead']);
     $this->container->get('current_user')->setAccount($this->employee);
     self::assertTrue($foreign->access('view', $this->employee));
-    $controller = new WorklogEvidenceController();
-    $request = Request::create('/api/time/worklogs', 'GET', [
-      'from' => '2026-08-03',
-      'to' => '2026-08-09',
-      'page' => ['limit' => '1'],
-    ]);
-    $response = $controller->read($request);
-    self::assertSame(200, $response->getStatusCode());
-    self::assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
-    $first = json_decode((string) $response->getContent(), TRUE, 512, JSON_THROW_ON_ERROR);
+    $selection = ['from' => '2026-08-03', 'to' => '2026-08-09', 'limit' => 1];
+    $first = $this->outputs($this->runTool('bakers_worklog_list', $selection));
     self::assertSame([$own->uuid()], array_column($first['data'], 'id'));
-    self::assertNotNull($first['links']['next']);
-    $request->query->set('page', ['limit' => '1', 'offset' => '1']);
-    $second = json_decode((string) $controller->read($request)->getContent(), TRUE, 512, JSON_THROW_ON_ERROR);
+    self::assertSame($this->project->uuid(), $first['data'][0]['project_id']);
+    self::assertSame([['id' => $this->project->uuid(), 'name' => 'Work']], $first['projects']);
+    self::assertFalse($first['omitted']);
+    self::assertSame(1, $first['next_offset']);
+    $second = $this->outputs($this->runTool('bakers_worklog_list', $selection + ['offset' => 1]));
     self::assertSame([$proposal->uuid()], array_column($second['data'], 'id'));
-    self::assertSame('proposed', $second['data'][0]['attributes']['state']);
-    self::assertNull($second['links']['next']);
+    self::assertSame('proposed', $second['data'][0]['state']);
+    self::assertSame($submission->uuid(), $second['data'][0]['submission_id']);
+    self::assertSame(7200, $second['data'][0]['duration_seconds']);
+    self::assertCount(1, $second['data'][0]['source_keys']);
+    self::assertNull($second['next_offset'] ?? NULL);
     self::assertSame('proposed', Submission::load($submission->id())->get('state')->value);
   }
 
@@ -54,17 +51,18 @@ final class WorklogEvidenceTest extends WorkTimeTestBase {
    * Invalid selection and anonymous reads cannot yield an apparent empty day.
    */
   public function testInvalidAndAnonymousReads(): void {
-    $controller = new WorklogEvidenceController();
     foreach ([
       ['from' => '2026-02-30', 'to' => '2026-03-01'],
       ['from' => '2026-08-09', 'to' => '2026-08-03'],
+      ['from' => '2025-01-01', 'to' => '2026-01-14'],
       ['from' => '2026-08-03', 'to' => '2026-08-09', 'owner' => $this->peer->uuid()],
-      ['from' => '2026-08-03', 'to' => '2026-08-09', 'page' => ['offset' => '-1']],
-    ] as $query) {
-      self::assertSame(400, $controller->read(Request::create('/api/time/worklogs', 'GET', $query))->getStatusCode());
+      ['from' => '2026-08-03', 'to' => '2026-08-09', 'offset' => -1],
+      ['from' => '2026-08-03', 'to' => '2026-08-09', 'limit' => 51],
+    ] as $selection) {
+      self::assertFalse($this->runTool('bakers_worklog_list', $selection)->isSuccess(), var_export($selection, TRUE));
     }
     $this->container->get('current_user')->setAccount(new AnonymousUserSession());
-    self::assertSame(403, $controller->read(Request::create('/api/time/worklogs'))->getStatusCode());
+    self::assertFalse($this->runTool('bakers_worklog_list', ['from' => '2026-08-03', 'to' => '2026-08-09'])->isSuccess());
   }
 
 }
