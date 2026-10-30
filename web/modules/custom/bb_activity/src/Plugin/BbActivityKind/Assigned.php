@@ -20,7 +20,8 @@ use Drupal\user\UserInterface;
  *
  * Also covers the assignee derived from the conductor's owner: it is set
  * before the save, so the saved ticket already holds it. The same assignee
- * again, a cleared assignee and account zero record nothing.
+ * again, a cleared assignee and account zero record nothing. The account that
+ * saved the ticket is never mailed about its own assignment.
  */
 #[BbActivityKind(
   id: Assigned::ID,
@@ -54,6 +55,14 @@ final class Assigned extends ActivityKindBase {
       return NULL;
     }
     return $this->save($ticket, ['accounts' => [$uid]]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function recipients(BbActivity $activity): array {
+    $actor = (int) $activity->get('actor')->target_id;
+    return array_values(array_diff(parent::recipients($activity), [$actor]));
   }
 
   /**
