@@ -7,10 +7,33 @@
         "repo": "mattpocock/skills",
         "ref": "v1.3.2"
       }
+    },
+    "keytec": {
+      "source": {
+        "source": "git",
+        "url": "git@git.key-tec.de:keytec/laws-of-robotics.git"
+      }
+    },
+    "designbook": {
+      "source": {
+        "source": "github",
+        "repo": "pen-drop/designbook"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
     }
   },
   "enabledPlugins": {
     "bakers@bakers": false,
-    "mattpocock-skills@mattpocock": true
+    "mattpocock-skills@mattpocock": true,
+    "mattpocock-skills@keytec-mattpocock": false,
+    "keytec-qa@keytec": true,
+    "keytec-drupal@keytec": true,
+    "designbook@designbook": true,
+    "ponytail@ponytail": true
   }
 }
