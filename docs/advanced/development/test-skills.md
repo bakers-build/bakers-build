@@ -59,7 +59,7 @@ Write every replay and attempt to a new path. The original attempt and its first
 Each result carries `effort`:
 
 - `tool_calls`: total, `bakers`, `read_file` and failed calls in the recorded trace.
-- `recovery`: attempted and verified read-recovery episodes. An episode starts at a rejected read and ends at its exact verification or stays unresolved. Any other failed call counts only in `tool_calls.failed`, never as an episode. Help calls count as calls, not as verification.
+- `recovery`: attempted and verified call-recovery episodes. An episode starts at a call rejected before sending (exit 4) and is verified when the next tool call succeeds. Any other failed call counts only in `tool_calls.failed`, never as an episode. Schema and list lookups count as calls, not as verification.
 - `generation`: model turns, measured elapsed milliseconds, cost and provider usage of the original worker. A value the attempt never recorded is `null` with `unavailable`; older attempts have no duration. A reported `0` is a measurement.
 - `evaluation`: this replay's own elapsed milliseconds and its zero model calls. It is not the generation cost.
 

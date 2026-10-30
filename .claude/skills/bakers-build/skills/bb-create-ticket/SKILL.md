@@ -12,10 +12,10 @@ workflow, Markdown description, scope and optional assignment/relationships from
 ## Prior art — search before the live create
 
 Execute [prior-art search](../bb-workflow/references/prior-art-search.md) completely — every
-spelling in both fields — before judging it. On a hit, stop before writing; report identifier, title, state, assignee and available MR/merge, then obtain the decision.
+spelling — before judging it. On a hit, stop before writing; report identifier, title, state, assignee and available MR/merge, then obtain the decision.
 Retain searched terms and evidence. An error is not a negative.
 
-## Propose the branch's ticket as `parent_id`
+## Propose the branch's ticket as `parent`
 
 An explicit intake parent wins. Otherwise resolve the ticket whose `branch_name` matches this
 checkout and propose that parent; a rejection means no parent. No matching ticket means no proposal.
@@ -23,19 +23,16 @@ checkout and propose that parent; a rejection means no parent. No matching ticke
 
 ## The write
 
-Apply [ticket writes](../bb-workflow/references/ticket-writes.md): body file → field parameters → live.
-Use the supplied title verbatim. Inspect `--fields`, then supply actual variables in the same call:
+Apply [ticket writes](../bb-workflow/references/ticket-writes.md). Call `bakers_ticket_create`
+([tools](../bb-workflow/references/tools.md)) with `title` (the supplied title verbatim),
+`workflow`, `project` (UUID), `description` (the Markdown file's content), `recipe`, `type` and,
+when one was accepted, `parent`.
 
-```bash
-bakers dropsh create bb_ticket --bundle bb_ticket --fields
-bakers dropsh create bb_ticket --bundle bb_ticket   --title="$TITLE" --workflow "$WORKFLOW"   --description.value="$(cat "$DESC_FILE")" --description.format bb_rich   --project_id "$PROJECT_UUID" --recipe_names "$RECIPE" --type_names "$TYPE"
-```
-
-Choose `RECIPE` and `TYPE` under [classify](../bb-workflow/references/classify.md); a deployment
-takes `deploy-and-release` and `deployment`, a verification `verify` and `verification`. Retain the returned UUID immediately as `TICKET_UUID`;
-read it back through [read ticket](../bb-workflow/references/read-ticket.md) and verify project, title, description, recipe, type and initial state.
+Choose `recipe` and `type` under [classify](../bb-workflow/references/classify.md); a deployment
+takes `deploy-and-release` and `deployment`, a verification `verify` and `verification`. Retain the returned `id` and `identifier` immediately;
+read it back through [read ticket](../bb-workflow/references/read-ticket.md) and verify title, description, recipe, type and initial state.
 On uncertain creation reconcile the known UUID or uniquely matching context before retrying;
-ambiguous results remain unresolved. Preserve schema validation and exact field names.
+ambiguous results remain unresolved.
 
 ## Qualify and route in the same action
 

@@ -1,3 +1,5 @@
+import { DEFAULT_ENV_DENY, type RunEnvPolicy } from './agent.js';
+
 /**
  * Shared validation and known-scalar override detection for harness `args`.
  * Quote only at final command assembly with `shellQuote`; this helper returns
@@ -293,5 +295,115 @@ export function resolveAgentCliOptions(
     model: validateOptionalString(input.model, 'model'),
     effort: validateOptionalString(input.effort, 'effort'),
     overrides: detectKnownOverrides(args, known),
+  };
+}
+
+export const SECURITY_MODES = ['sandbox', 'system', 'yolo', 'custom'] as const;
+export type SecurityMode = (typeof SECURITY_MODES)[number];
+
+/** The `sandbox` block of an agent addon's `with` (mode `sandbox` only). */
+export interface SandboxOptions {
+  trusted_commands?: string[];
+  deny_read?: string[];
+  allow_write?: string[];
+  network?: string[];
+  mcp_servers?: Record<string, unknown>;
+}
+
+export interface SecurityOptions {
+  security?: SecurityMode;
+  sandbox?: SandboxOptions;
+  config?: Record<string, unknown>;
+  env_deny?: string[];
+}
+
+export interface ResolvedSecurity {
+  mode: SecurityMode;
+  /** Every key set: the harness default unless `with.sandbox` replaced it. */
+  sandbox: Required<SandboxOptions>;
+  config: Record<string, unknown> | undefined;
+  runEnvPolicy: RunEnvPolicy;
+}
+
+function validateStringList(value: unknown, field: string): string[] {
+  if (
+    !Array.isArray(value) ||
+    value.some((v) => typeof v !== 'string' || v.includes('\0'))
+  ) {
+    throw new Error(`${field} must be an array of strings`);
+  }
+  return [...value];
+}
+
+function validatePlainObject(
+  value: unknown,
+  field: string,
+): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${field} must be an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
+/**
+ * Validate the security options an agent addon takes in `with` and fill the
+ * harness's sandbox defaults. Any misconfiguration is a load error, so a run
+ * never starts with rights the operator did not choose.
+ */
+export function resolveSecurityOptions(
+  input: SecurityOptions & { skip_permissions?: unknown },
+  defaults: Required<SandboxOptions>,
+): ResolvedSecurity {
+  if (input.skip_permissions !== undefined) {
+    throw new Error(
+      "skip_permissions was removed: use security: 'yolo' for a permission bypass",
+    );
+  }
+  const mode = input.security ?? 'sandbox';
+  if (!SECURITY_MODES.includes(mode)) {
+    throw new Error(`security must be one of ${SECURITY_MODES.join(', ')}`);
+  }
+  if (mode !== 'custom' && input.config !== undefined) {
+    throw new Error("config is only valid with security: 'custom'");
+  }
+  if (mode === 'custom' && input.config === undefined) {
+    throw new Error("security: 'custom' requires config");
+  }
+  if (mode !== 'sandbox' && input.sandbox !== undefined) {
+    throw new Error("sandbox is only valid with security: 'sandbox'");
+  }
+  const given =
+    input.sandbox === undefined
+      ? {}
+      : validatePlainObject(input.sandbox, 'sandbox');
+  const sandbox = { ...defaults };
+  for (const [key, value] of Object.entries(given)) {
+    if (key === 'mcp_servers') {
+      sandbox.mcp_servers = validatePlainObject(value, 'sandbox.mcp_servers');
+    } else if (
+      key === 'trusted_commands' ||
+      key === 'deny_read' ||
+      key === 'allow_write' ||
+      key === 'network'
+    ) {
+      sandbox[key] = validateStringList(value, `sandbox.${key}`);
+    } else {
+      throw new Error(`unknown sandbox key ${key}`);
+    }
+  }
+  return {
+    mode,
+    sandbox,
+    config:
+      input.config === undefined
+        ? undefined
+        : validatePlainObject(input.config, 'config'),
+    runEnvPolicy: {
+      drop: mode !== 'yolo',
+      deny:
+        input.env_deny === undefined
+          ? DEFAULT_ENV_DENY
+          : validateStringList(input.env_deny, 'env_deny'),
+    },
   };
 }

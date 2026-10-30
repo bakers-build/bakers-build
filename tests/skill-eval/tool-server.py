@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Local stdio MCP simulator. Never executes argv, accesses a tracker, or reads model-selected disk paths.
 
-The command language, error classes and payloads follow the repository bakers.build CLI as observed by the
-real-CLI contract suite (bakers-cli/core/tests/workflow/skill-cli-contract.test.ts); that suite fails
-when this bounded model drifts from the CLI.
+It models `bakers dropsh tool [<tool>] [--schema] [--data <json|@file>] [--param k=v]` for the bakers
+tools in contract-fixture.json: argument validation, results and error classes follow the repository
+CLI (@dropsh/plugin-tool) and the Drupal tools as observed by the real-CLI contract suite
+(bakers-cli/core/tests/workflow/skill-cli-contract.test.ts), which fails when this model drifts.
+JSON:API commands (read, search, create, update, schema) are not part of the skill contract.
 """
 import argparse
 import copy
@@ -14,39 +16,24 @@ import sys
 
 HERE = Path(__file__).resolve().parent
 CONTRACT = json.loads((HERE / 'contract-fixture.json').read_text())
-SCHEMAS = CONTRACT['schemas']
-# The name-refs addon's term resolvers, in its order: (flag, noun, relationship, vocabulary, single).
-NAME_REFS = [('type_names', 'ticket type', 'ticket_type', 'type', True),
-             ('recipe_names', 'recipe', 'recipe', 'recipe', True),
-             ('label_names', 'label', 'labels', 'label', False)]
+TOOL_DEFS = {t['name']: t for t in CONTRACT['tools']}
 
 TOOLS = [
-    {'name': 'bakers', 'description': 'Invoke the synthetic bakers.build CLI. Supply the complete argv array beginning with bakers dropsh, with each flag/value as a separate token (or --field=value). Values are literal: no shell expansion. Discover command syntax with argv ["bakers", "dropsh", "--help"] or an action followed by --help. argv ["bakers", "info"] returns the project and workspace context. Returns exit_code, stdout and stderr as text, like the real CLI. State exists only in this fixture server.',
+    {'name': 'bakers', 'description': 'Invoke the synthetic bakers.build CLI. Supply the complete argv array beginning with bakers, each flag/value as a separate token (or --flag=value). Values are literal: no shell expansion. argv ["bakers", "dropsh", "tool"] lists the tracker tools, ["bakers", "dropsh", "tool", "<tool>", "--schema"] describes one and ["bakers", "dropsh", "tool", "<tool>", "--data", "@<file>"] calls it with a JSON arguments file written by write_file. argv ["bakers", "info"] returns the project and workspace context. Returns exit_code, stdout and stderr as text, like the real CLI. State exists only in this fixture server.',
      'inputSchema': {'type': 'object', 'properties': {'argv': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['argv'], 'additionalProperties': False}},
-    {'name': 'read_file', 'description': 'Read a caller-supplied virtual fixture file by its exact path. No host filesystem access.',
+    {'name': 'read_file', 'description': 'Read a caller-supplied or previously written virtual file by its exact path. No host filesystem access.',
      'inputSchema': {'type': 'object', 'properties': {'path': {'type': 'string'}}, 'required': ['path'], 'additionalProperties': False}},
+    {'name': 'write_file', 'description': 'Write a virtual file (e.g. a tool arguments JSON file) by its exact path; caller-supplied files are read-only. No host filesystem access.',
+     'inputSchema': {'type': 'object', 'properties': {'path': {'type': 'string'}, 'content': {'type': 'string'}}, 'required': ['path', 'content'], 'additionalProperties': False}},
 ]
 
-EXIT = {'E_UNKNOWN': 1, 'E_CONFIG': 2, 'E_AUTH': 3, 'E_VALIDATION': 4, 'E_HTTP': 5, 'E_PLUGIN': 6}
-PROGRAM_VALUE = {'--config', '--connection', '--connections-dir', '--auth-profile', '--format', '--view-mode'}
-COMMANDS = {
-    'read': {'argument': 'target', 'value': set(), 'variadic': {'--include'}, 'flags': set(), 'unknown': False},
-    'search': {'argument': 'entity_type', 'value': {'--bundle', '--limit', '--offset', '--sort'}, 'variadic': {'--filter', '--include'}, 'flags': set(), 'unknown': False},
-    'create': {'argument': 'entity_type', 'value': {'--bundle', '--data'}, 'variadic': set(), 'flags': {'--dry-run', '--no-validate', '--fields'}, 'unknown': True, 'required': '--bundle <bundle>'},
-    'update': {'argument': 'target', 'value': {'--data'}, 'variadic': set(), 'flags': {'--dry-run', '--no-validate', '--fields'}, 'unknown': True},
-}
-# Real commands outside the fixture's bounded matrix: rejected as unmodeled, never as unknown.
-UNMODELED = {'delete', 'upload-file', 'schema', 'connections', 'auth', 'help'}
+EXIT = {'E_TOOL': 1, 'E_VALIDATION': 4, 'E_HTTP': 5}
+JSONAPI = {'read', 'search', 'create', 'update', 'delete', 'schema', 'upload-file'}
 HELP = {
-    None: 'Usage: dropsh [options] [command]\n\nOptions:\n  --format <id>  output format: json (default) or a renderer id (md)\n  -h, --help     display help for command\n\nCommands:\n  read [options] <target>\n  search [options] <entity_type>\n  create [options] <entity_type>\n  update [options] <target>\n',
-    'read': 'Usage: dropsh read [options] <target>\n\nRead entity_type/bundle/uuid\n\nOptions:\n  --include <fields...>  related fields to include (JSON:API include)\n',
-    'search': 'Usage: dropsh search [options] <entity_type>\n\nSearch entities with filters\n\nOptions:\n  --bundle <bundle>\n  --filter <kv...>  filter in key:value or key:op:value form (default: [])\n  --limit <n>       max results per page (default: 50)\n  --offset <n>      skip the first n results (page[offset])\n  --sort <field>    sort by field; prefix with - for descending\n  --include <fields...>  related fields to include (JSON:API include)\n',
-    'create': 'Usage: dropsh create [options] <entity_type>\n\nCreate an entity of given type/bundle\n\nOptions:\n  --bundle <bundle>\n  --data <json>  inline JSON or @path\n  --dry-run\n  --no-validate  skip client-side schema validation\n  --fields       list this bundle\'s field parameters and exit\n\nField parameters (instead of --data):\n  --<field> <value>  --<field>=<value>  --<field>.<sub> <value>  --<relationship> <uuid>  --json <field>=<json>\nA value starting with -- needs the --<field>=<value> form.\n',
-    'update': 'Usage: dropsh update [options] <target>\n\nUpdate an existing entity\n\nOptions:\n  --data <json>  inline JSON or @path\n  --dry-run\n  --no-validate  skip client-side schema validation\n  --fields       list this bundle\'s field parameters and exit\n\nField parameters (instead of --data):\n  --<field> <value>  --<field>=<value>  --<field>.<sub> <value>  --<relationship> <uuid>  --json <field>=<json>\nA value starting with -- needs the --<field>=<value> form.\n',
+    None: 'Usage: dropsh [options] [command]\n\nCommands:\n  tool [options] [name]  List, describe or call the site\'s Drupal Tool API tools over its MCP endpoint\n',
+    'tool': 'Usage: dropsh tool [options] [name]\n\nList, describe or call the site\'s Drupal Tool API tools over its MCP endpoint\n\nOptions:\n  --schema              print the tool\'s input (and output) schema\n  --param <key=value>   tool argument; repeatable, overrides --data (default: [])\n  --data <json|@file>   tool arguments as a JSON object, or @file\n  -h, --help            display help for command\n',
 }
-READ_TARGET = re.compile(r'^[a-z0-9_]+/[a-z0-9_]+/[a-z0-9_-]+$')
-UPDATE_TARGET = re.compile(r'^[a-z0-9_]+/[a-z0-9_]+/[a-f0-9-]{8,}$')
-UUID = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
+DATE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
 
 class Fail(Exception):
@@ -56,7 +43,12 @@ class Fail(Exception):
 
 
 class Commander(Exception):
-    """A parser rejection printed as plain text, before any bakers.build JSON error envelope exists."""
+    """A parser rejection printed as plain text, before any error envelope exists."""
+
+
+def refused(message):
+    """A tool that ran and reported an error (isError): E_TOOL, exit 1."""
+    return Fail('E_TOOL', message, {'content': [{'type': 'text', 'text': message}]})
 
 
 def result(stdout='', error='', code=0):
@@ -67,278 +59,116 @@ def failure(exc):
     return result(error=json.dumps({'error': {'code': exc.code, 'message': exc.message, 'details': exc.details}}, ensure_ascii=False) + '\n', code=EXIT[exc.code])
 
 
-def http(status, detail):
-    return Fail('E_HTTP', f'HTTP {status}', {'status': status, 'body': {'errors': [{'status': str(status), 'detail': detail}]}})
-
-
 def dumps(value):
-    return json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\n'
+    return json.dumps(value, ensure_ascii=False, indent=2) + '\n'
 
 
 def parse(argv):
-    """Commander-equivalent split: program options anywhere, then one command and its options."""
+    """Commander-equivalent split of `bakers dropsh tool [name] [options]`."""
     if not isinstance(argv, list) or not all(isinstance(a, str) for a in argv) or argv[:2] != ['bakers', 'dropsh']:
         raise ValueError('Only bakers dropsh argument arrays are supported; commands are never executed')
-    tokens, program, rest = argv[2:], {}, []
-    while tokens:
-        token = tokens.pop(0)
-        name, eq, value = token.partition('=')
-        if name in PROGRAM_VALUE:
-            if not eq:
-                if not tokens:
-                    raise Commander(f"error: option '{name} <value>' argument missing")
-                value = tokens.pop(0)
-            program[name] = value
-            continue
-        rest.append(token)
-    command = rest[0] if rest else None
-    if not rest or command in {'--help', '-h'} or (command in COMMANDS and ('--help' in rest or '-h' in rest)):
-        return 'help', command if command in COMMANDS else None, program, {}, []
-    if command.startswith('-'):
-        raise Commander(f"error: unknown option '{command}'")
-    if command in UNMODELED:
-        raise Commander(f"fixture simulator does not model '{command}'; it supports read, search, create and update")
-    if command not in COMMANDS:
-        raise Commander(f"error: unknown command '{command}'")
-    spec, args, options, operands, unknown = COMMANDS[command], rest[1:], {}, [], []
-    destination = operands
+    rest = argv[2:]
+    if not rest or rest[0] in {'--help', '-h'}:
+        return 'help', None, {}
+    if rest[0] in JSONAPI:
+        raise ValueError(f"'{rest[0]}' is a JSON:API command and not part of the skill contract; "
+                         'call a bakers tool: bakers dropsh tool <tool> --data @<args.json>')
+    if rest[0].startswith('-'):
+        raise Commander(f"error: unknown option '{rest[0]}'")
+    if rest[0] != 'tool':
+        raise Commander(f"error: unknown command '{rest[0]}'")
+    args, options, names = rest[1:], {'--param': []}, []
+    if '--help' in args or '-h' in args:
+        return 'help', 'tool', {}
     while args:
         token = args.pop(0)
-        if token == '--':
-            destination.extend(args)
-            break
-        if len(token) > 1 and token.startswith('-'):
-            key, eq, value = token.partition('=')
-            if key in spec['flags'] and not eq:
-                options[key] = True
-                continue
-            if key in spec['value'] or key in spec['variadic']:
-                if not eq:
-                    if not args:
-                        raise Commander(f"error: option '{key} <value>' argument missing")
-                    value = args.pop(0)
-                values = [value]
-                while key in spec['variadic'] and args and not (len(args[0]) > 1 and args[0].startswith('-')):
-                    values.append(args.pop(0))
-                options.setdefault(key, []).extend(values)
-                continue
-            if not spec['unknown']:
-                raise Commander(f"error: unknown option '{token}'")
-            destination = unknown
-        destination.append(token)
-    positional = operands + unknown
-    if not positional:
-        raise Commander(f"error: missing required argument '{spec['argument']}'")
-    if spec.get('required') and spec['required'].split()[0] not in options:
-        raise Commander(f"error: required option '{spec['required']}' not specified")
-    return command, positional[0], program, options, positional[1:]
-
-
-def field_args(tokens):
-    out, i = [], 0
-    while i < len(tokens):
-        token = tokens[i]
-        if not token.startswith('--'):
-            raise Fail('E_VALIDATION', f'unexpected argument "{token}"; field parameters are long options (--<field> <value>)')
-        body = token[2:]
-        if not body:
-            raise Fail('E_VALIDATION', '"--" is not a field parameter')
-        name, eq, value = body.partition('=')
-        if name == 'json':
-            pairs = [value] if eq else []
-            i += 1
-            while not eq and i < len(tokens) and not tokens[i].startswith('--'):
-                pairs.append(tokens[i])
-                i += 1
-            if not pairs:
-                raise Fail('E_VALIDATION', '--json expects at least one <field>=<value> pair')
-            for pair in pairs:
-                if pair.find('=') <= 0:
-                    raise Fail('E_VALIDATION', f'--json expects <field>=<value> pairs, got "{pair}"')
-                path, _, raw = pair.partition('=')
-                out.append({'path': path, 'value': raw, 'json': True, 'has': True})
-            continue
-        if eq:
-            out.append({'path': name, 'value': value, 'json': False, 'has': True})
-            i += 1
-        elif i + 1 < len(tokens) and not tokens[i + 1].startswith('--'):
-            out.append({'path': name, 'value': tokens[i + 1], 'json': False, 'has': True})
-            i += 2
+        key, eq, value = token.partition('=')
+        if key == '--schema' and not eq:
+            options['--schema'] = True
+        elif key in {'--data', '--param'}:
+            if not eq:
+                if not args:
+                    raise Commander(f"error: option '{key} <{'json|@file' if key == '--data' else 'key=value'}>' argument missing")
+                value = args.pop(0)
+            if key == '--param':
+                options['--param'].append(value)
+            else:
+                options['--data'] = value
+        elif token.startswith('-') and len(token) > 1:
+            raise Commander(f"error: unknown option '{token}'")
         else:
-            out.append({'path': name, 'value': '', 'json': False, 'has': False})
-            i += 1
-    return out
+            names.append(token)
+    # Like the CLI, excess positional arguments are ignored.
+    return 'tool', names[0] if names else None, options
 
 
-def operation_schema(key, operation):
-    """The resource schema as dropsh sees it: write envelope, operation variant, name-ref extension."""
-    resource = copy.deepcopy(SCHEMAS[key]['allOf'][0]['properties'])
-    if operation == 'update':
-        resource['attributes']['required'] = []
-        resource['relationships']['required'] = []
-    for field, noun, relationship, vid, single in NAME_REFS:
-        if relationship in resource['relationships']['properties']:
-            resource['attributes']['properties'][field] = {'type': 'string', 'title': (
-                f"{noun[0].upper()}{noun[1:]} names (comma-separated {vid} term names{'; one name' if single else ''}; "
-                "resolved in the ticket's workspace and created there when missing, on the live write)")}
-    return resource
+def coerce(schema, key, value):
+    declared = schema.get('properties', {}).get(key, {})
+    kinds = declared.get('type') or [o.get('type') for o in declared.get('oneOf', [])]
+    kind = next((k for k in (kinds if isinstance(kinds, list) else [kinds]) if k != 'null'), None)
+    if kind in {'integer', 'number'}:
+        try:
+            return int(value) if re.fullmatch(r'-?\d+', value.strip()) else float(value) if value.strip() else value
+        except ValueError:
+            return value
+    if kind == 'boolean':
+        return {'true': True, 'false': False}.get(value, value)
+    if kind in {'object', 'array'}:
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise Fail('E_VALIDATION', f'--param {key} is not valid JSON: {exc.msg}')
+    return value
 
 
-def describe(resource):
-    attributes, relationships = [], []
-
-    def walk(path, node, required):
-        props = node.get('properties') if node.get('type') != 'array' else None
-        if props:
-            for sub, child in props.items():
-                walk(f'{path}.{sub}', child, required and sub in node.get('required', []))
-            return
-        kind = node.get('type')
-        spelled = f'--json {path}=<json>' if kind == 'array' else f'--{path} [true|false]' if kind == 'boolean' else f'--{path} <value>'
-        attributes.append((spelled, '  '.join(n for n in [kind or '', 'required' if required else '', node.get('title', '')] if n)))
-    attrs = resource['attributes']
-    for name, node in attrs['properties'].items():
-        walk(name, node, name in attrs.get('required', []))
-    for name, node in resource['relationships']['properties'].items():
-        data = node['properties']['data']
-        many = data.get('type') == 'array'
-        targets = (data['items'] if many else data)['properties']['type']['enum']
-        relationships.append((f'--{name} <uuid>', '  '.join([' | '.join(targets)] + (['repeatable'] if many else []))))
-    rows = attributes + relationships
-    width = max(len(p) for p, _ in rows) + 2
-    line = lambda row: f'  {row[0].ljust(width)}{row[1]}' if row[1] else f'  {row[0]}'
-    out = [f"{resource['type']['const']} — field parameters"]
-    if attributes:
-        out += ['', 'Attributes:'] + [line(r) for r in attributes]
-    if relationships:
-        out += ['', 'Relationships (take a UUID):'] + [line(r) for r in relationships]
-    return '\n'.join(out) + '\n'
+def kind_of(value):
+    if value is None:
+        return 'null'
+    if isinstance(value, bool):
+        return 'boolean'
+    if isinstance(value, int) or isinstance(value, float) and value.is_integer():
+        return 'integer'
+    return {float: 'number', str: 'string', list: 'array', dict: 'object'}.get(type(value))
 
 
 def validate(node, value, path=''):
-    """The JSON Schema subset the contract schemas use; a mismatch is a pre-send rejection."""
-    kind = node.get('type')
-    checks = {'object': dict, 'array': list, 'string': str}
-    if kind in checks and not isinstance(value, checks[kind]):
-        return [f'{path} must be {kind}']
-    if 'const' in node and value != node['const'] or 'enum' in node and value not in node['enum']:
-        return [f'{path} must be an allowed value']
-    if kind == 'string' and len(value) > node.get('maxLength', len(value)):
-        return [f'{path} is too long']
-    if node.get('format') == 'uuid' and not UUID.match(value) or node.get('format') == 'uri' and not re.match(r'^[a-z][a-z0-9+.-]*:', value, re.I):
-        return [f'{path} must match format {node["format"]}']
+    """The JSON Schema subset the Drupal tool schemas use, judged like the CLI's Ajv: pre-send rejections."""
+    if 'oneOf' in node:
+        matching = [o for o in node['oneOf'] if not validate(o, value, path)]
+        if len(matching) != 1:
+            return [f'{path or "/"} must match exactly one schema in oneOf']
+    declared = node.get('type')
+    if declared is not None:
+        kinds = declared if isinstance(declared, list) else [declared]
+        actual = kind_of(value)
+        if not (actual in kinds or actual == 'integer' and 'number' in kinds):
+            return [f'{path or "/"} must be {",".join(kinds)}']
     errors = []
-    if kind == 'object':
+    if isinstance(value, str):
+        if len(value) < node.get('minLength', 0) or len(value) > node.get('maxLength', len(value)):
+            errors.append(f'{path} must have a length within its limits')
+        if 'pattern' in node and not re.search(node['pattern'], value):
+            errors.append(f'{path} must match pattern "{node["pattern"]}"')
+    if isinstance(value, dict):
         props = node.get('properties', {})
-        errors += [f'{path} must have {name}' for name in node.get('required', []) if name not in value]
-        errors += [f'{path} must not have {name}' for name in value if node.get('additionalProperties') is False and name not in props]
+        errors += [f"{path or '/'} must have required property '{name}'" for name in node.get('required', []) if name not in value]
+        errors += [f'{path or "/"} must NOT have additional properties' for name in value if node.get('additionalProperties') is False and name not in props]
         for name, child in value.items():
             if name in props:
                 errors += validate(props[name], child, f'{path}/{name}')
-    if kind == 'array':
+    if isinstance(value, list):
+        if len(value) < node.get('minItems', 0):
+            errors.append(f'{path} must NOT have fewer than {node["minItems"]} items')
         for index, item in enumerate(value):
             errors += validate(node.get('items', {}), item, f'{path}/{index}')
     return errors
 
 
-def build_payload(resource, params, operation, identifier=None):
-    attrs, rels = resource['attributes']['properties'], resource['relationships']['properties']
-    attributes, relationships = {}, {}
-    for param in params:
-        segments = param['path'].split('.')
-        name = segments[0]
-        if name in rels:
-            if len(segments) > 1:
-                raise Fail('E_VALIDATION', f"relationship '{name}' takes a UUID, not a sub-path ('{param['path']}')")
-            if not param['has']:
-                raise Fail('E_VALIDATION', f'missing value for --{name} (expected a UUID)')
-            data = rels[name]['properties']['data']
-            many = data.get('type') == 'array'
-            if relationships.get(name) and not many:
-                raise Fail('E_VALIDATION', f"relationship '{name}' accepts a single value; it was given more than once")
-            relationships.setdefault(name, []).append({'type': (data['items'] if many else data)['properties']['type']['enum'][0], 'id': param['value']})
-            continue
-        if name not in attrs:
-            raise Fail('E_VALIDATION', f"unknown parameter '{name}'. Known attributes: {', '.join(attrs) or '(none)'}. Known relationships: {', '.join(rels) or '(none)'}.")
-        node, cursor = attrs[name], attributes
-        for segment in segments[1:]:
-            if segment not in node.get('properties', {}):
-                raise Fail('E_VALIDATION', f"unknown sub-property '{segment}' of '{name}'")
-            node = node['properties'][segment]
-        if param['json']:
-            try:
-                value = json.loads(param['value'])
-            except json.JSONDecodeError as exc:
-                raise Fail('E_VALIDATION', f"--json {param['path']} is not valid JSON: {exc.msg}")
-        elif not param['has']:
-            raise Fail('E_VALIDATION', f"missing value for --{param['path']}" + (f" (expected {node['type']})" if node.get('type') else ''))
-        else:
-            value = param['value']
-        for segment in segments[:-1]:
-            cursor = cursor.setdefault(segment, {})
-        if segments[-1] in cursor:
-            raise Fail('E_VALIDATION', f"parameter '{param['path']}' was given more than once")
-        cursor[segments[-1]] = value
-    data = {'type': resource['type']['const']}
-    if operation == 'update':
-        data['id'] = identifier
-    if attributes:
-        data['attributes'] = {k: ({s: attributes[k][s] for s in attrs[k].get('properties', {}) if s in attributes[k]} if isinstance(attributes[k], dict) else attributes[k]) for k in attrs if k in attributes}
-    if relationships:
-        data['relationships'] = {k: {'data': v if rels[k]['properties']['data'].get('type') == 'array' else v[0]} for k, v in ((k, relationships[k]) for k in rels if k in relationships)}
-    return {'data': data}
-
-
-def yaml_scalar(text):
-    return json.dumps(text, ensure_ascii=False) if text == '' or text.strip() != text or re.search(r'[:#\n"\'\[\]{}]', text) else text
-
-
-def field_text(value):
-    if isinstance(value, bool):
-        return 'true' if value else 'false'
-    if isinstance(value, (str, int, float)):
-        return str(value)
-    if isinstance(value, dict):
-        if isinstance(value.get('value'), str) and isinstance(value.get('format'), str):
-            return value['value']
-        if isinstance(value.get('processed'), str):
-            return value['processed']
-        if isinstance(value.get('value'), str):
-            return value['value']
-    return json.dumps(value, ensure_ascii=False, separators=(',', ':')) if value is not None else ''
-
-
-def render_resource(record):
-    lines = [f"type: {record['type']}", f"id: {record['id']}"]
-    for key, value in record.get('attributes', {}).items():
-        text = field_text(value)
-        if '\n' in text:
-            lines.append(f'{key}: |')
-            lines += ['' if line == '' else f'  {line}' for line in text.rstrip('\n').split('\n')]
-        else:
-            lines.append(f'{key}: {yaml_scalar(text)}')
-    for key, rel in record.get('relationships', {}).items():
-        data = rel.get('data') if isinstance(rel, dict) else None
-        refs = [f"{r['type']}/{r['id']}" for r in (data if isinstance(data, list) else [data] if data else [])]
-        if refs:
-            lines.append(f"{key}: [{', '.join(refs)}]")
-    return '\n'.join(lines)
-
-
-def render_markdown(document):
-    data = document['data']
-    primary = ('_(no results)_' if not data else '\n\n---\n\n'.join(map(render_resource, data))) if isinstance(data, list) else render_resource(data)
-    included = document.get('included') or []
-    text = primary + ('\n\n## Included\n\n' + '\n\n---\n\n'.join(map(render_resource, included)) if included else '')
-    return text + '\n'
-
-
-def record_from(kind, value):
-    """Legacy fixture tickets are flat attribute maps; stored records follow the JSON:API resource shape."""
-    value = copy.deepcopy(value)
-    identifier = value.pop('id')
-    relationships = value.pop('relationships', {})
-    return {'type': kind, 'id': identifier, 'attributes': value, **({'relationships': relationships} if relationships else {})}
+def ticket_record(source):
+    record = copy.deepcopy(source)
+    record.setdefault('labels', [])
+    record.setdefault('links', [])
+    return record
 
 
 class Simulation:
@@ -350,34 +180,16 @@ class Simulation:
             raise ValueError('Only fixture git/glab commands are supported')
         self.tools = TOOLS + [dict(TOOLS[0], name=name,
             description=f'Synthetic {name}: literal argv including the binary. No host execution. Supported command syntax: ' + json.dumps([row['argv'] for row in commands[name]])) for name in commands]
-        ticket = 'bb_ticket--bb_ticket'
         sources = [self.config.get('ticket'), self.config.get('prior_art'), CONTRACT['probe_ticket']]
-        self.tickets = {s['id']: record_from(ticket, s) for s in sources if s}
+        self.tickets = {s['id']: ticket_record(s) for s in sources if s}
         # Seeded comments model earlier states' handoffs; created ones are numbered after them.
-        self.comments = {c['id']: record_from('bb_comment--bb_comment', c) for c in self.config.get('comments', [])}
-        self.terms = {t['id']: record_from('bb_term--label', t) for t in CONTRACT['terms']}
-        # A fixture adds the type and recipe terms its workspace already holds (terms are created lazily).
-        extra = self.config.get('terms', {})
-        self.vocabularies = {'label': self.terms,
-                             'type': {t['id']: record_from('bb_term--type', t) for t in CONTRACT['type_terms'] + extra.get('type', [])},
-                             'recipe': {t['id']: record_from('bb_term--recipe', t) for t in CONTRACT['recipe_terms'] + extra.get('recipe', [])}}
+        self.comments = [copy.deepcopy(c) for c in self.config.get('comments', [])]
+        self.worklogs = copy.deepcopy(self.config.get('worklogs', []))
+        self.files = dict(self.config.get('files', {}))
+        self.created = 0
+        self.submissions = 0
         self.lost = False
         self.merge_completed = False
-
-    def store(self, key):
-        return {'bb_ticket/bb_ticket': self.tickets, 'bb_comment/bb_comment': self.comments,
-                **{f'bb_term/{vid}': store for vid, store in self.vocabularies.items()}}.get(key)
-
-    def term(self, identifier):
-        return next((store[identifier] for store in self.vocabularies.values() if identifier in store), None)
-
-    def emit(self, document, program):
-        fmt = program.get('--format', 'json')
-        if fmt == 'json' or 'data' not in document:
-            return result(dumps(document))
-        if fmt == 'md':
-            return result(render_markdown(document))
-        raise Fail('E_CONFIG', f"Unknown format '{fmt}'. Available: json, md")
 
     def call(self, name, arguments):
         if name in self.config.get('commands', {}):
@@ -392,9 +204,15 @@ class Simulation:
             return result(error='Undeclared fixture command', code=2)
         if name == 'read_file':
             path = arguments.get('path')
-            if path not in self.config.get('files', {}):
+            if path not in self.files:
                 return result(error='No such virtual fixture file', code=2)
-            return result(self.config['files'][path])
+            return result(self.files[path])
+        if name == 'write_file':
+            path, content = arguments.get('path'), arguments.get('content')
+            if not isinstance(path, str) or not path or not isinstance(content, str) or path in self.config.get('files', {}):
+                return result(error='Expected a new virtual path and string content; caller-supplied files are read-only', code=2)
+            self.files[path] = content
+            return result()
         if name != 'bakers':
             return result(error='Unknown tool', code=2)
         try:
@@ -405,12 +223,10 @@ class Simulation:
                 # Like the real `bakers info`: pretty-printed JSON text.
                 return result(json.dumps({'project': 'fixture', 'project_id': self.input.get('project_uuid'), 'workspace': 'fixture',
                                           'workspace_id': self.input['workspace_uuid'], 'workspace_ids': [self.input['workspace_uuid']]}, indent=2) + '\n')
-            command, target, program, options, extra = parse(arguments.get('argv'))
+            command, tool, options = parse(argv)
             if command == 'help':
-                return result(HELP[target])
-            if program.get('--format', 'json') not in {'json', 'md'}:
-                raise Fail('E_CONFIG', f"Unknown format '{program['--format']}'. Available: json, md")
-            return getattr(self, command)(target, program, options, extra)
+                return result(HELP[tool])
+            return self.tool(tool, options)
         except Commander as exc:
             return result(error=f'{exc}\n', code=1)
         except Fail as exc:
@@ -418,164 +234,158 @@ class Simulation:
         except (ValueError, TypeError, KeyError, AttributeError) as exc:
             return result(error=str(exc), code=2)
 
-    def read(self, target, program, options, _extra):
-        if not READ_TARGET.match(target):
-            raise Fail('E_VALIDATION', f'target must be <entity_type>/<bundle>/<uuid>, got "{target}"')
-        entity, bundle, identifier = target.split('/')
-        store = self.store(f'{entity}/{bundle}')
-        if store is None or identifier not in store:
-            raise http(404, 'fixture entity not found')
-        record = copy.deepcopy(store[identifier])
-        document = {'data': record}
-        includes = [n.strip() for v in options.get('--include', []) for n in v.split(',') if n.strip()]
-        if entity == 'bb_ticket':
-            record['relationships'] = {**record.get('relationships', {}),
-                                       'comments': {'data': [{'type': c['type'], 'id': c['id']} for c in self.comments.values() if c['relationships']['ticket_id']['data']['id'] == identifier]}}
-        if includes:
-            refs = [r for name in includes for r in ([record.get('relationships', {}).get(name, {}).get('data')] if isinstance(record.get('relationships', {}).get(name, {}).get('data'), dict) else record.get('relationships', {}).get(name, {}).get('data') or [])]
-            document['included'] = [copy.deepcopy((self.comments.get(r['id']) or self.term(r['id']))) for r in refs if self.comments.get(r['id']) or self.term(r['id'])]
-        return self.emit(document, program)
-
-    def search(self, entity, program, options, _extra):
-        bundle = options.get('--bundle', [None])[-1]
-        filters = []
-        for raw in options.get('--filter', []):
-            parts = raw.split(':')
-            if len(parts) < 2:
-                raise Fail('E_VALIDATION', f'--filter must be key:value or key:op:value, got "{raw}"')
-            filters.append((parts[0], parts[1], ':'.join(parts[2:])) if len(parts) >= 3 and parts[1] in {'CONTAINS', '='} else (parts[0], '=', ':'.join(parts[1:])))
-        store = self.store(f'{entity}/{bundle}')
-        if store is None:
-            raise http(404, 'unmodeled fixture route')
-        rows = []
-        for record in store.values():
-            matched = True
-            for path, operator, expected in filters:
-                relationship = record.get('relationships', {}).get(path, {}).get('data')
-                actual = relationship['id'] if isinstance(relationship, dict) else record['attributes']
-                if not isinstance(relationship, dict):
-                    for segment in path.split('.'):
-                        actual = actual.get(segment) if isinstance(actual, dict) else None
-                if isinstance(actual, dict):
-                    raise http(400, f'Invalid nested filtering. The field `{path}` is not a filterable scalar.')
-                matched = matched and (isinstance(actual, str) and expected.lower() in actual.lower() if operator == 'CONTAINS' else actual == expected)
-            if matched:
-                rows.append(copy.deepcopy(record))
-        return self.emit({'data': rows, 'links': {}}, program)
-
-    def payload(self, key, operation, options, extra, identifier=None):
-        resource = operation_schema(key, operation)
-        params = field_args(extra)
-        if '--data' in options and params:
-            raise Fail('E_VALIDATION', '--data and field parameters are mutually exclusive; use one or the other')
-        if '--data' not in options and not params:
-            raise Fail('E_VALIDATION', 'provide either --data or field parameters (--<field> <value>)')
+    def tool(self, name, options):
+        """The CLI's order: list, unknown tool, --schema, read --data, overlay --param, validate, call."""
+        if name is None:
+            return result(dumps([{'name': t['name'], 'title': t['title'], 'description': t['description']} for t in CONTRACT['tools']]))
+        definition = TOOL_DEFS.get(name)
+        if definition is None:
+            raise Fail('E_VALIDATION', f"unknown tool '{name}'", {'tool': name})
+        if options.get('--schema'):
+            return result(dumps({'name': name, 'inputSchema': definition['inputSchema'], 'outputSchema': definition['outputSchema']}))
+        data = {}
         if '--data' in options:
-            raw = options['--data'][-1]
+            raw = options['--data']
             if raw.startswith('@'):
-                if raw[1:] not in self.config.get('files', {}):
-                    raise Fail('E_VALIDATION', f'Cannot read --data file {raw[1:]}: no such virtual fixture file')
-                raw = self.config['files'][raw[1:]]
+                if raw[1:] not in self.files:
+                    raise Fail('E_VALIDATION', f'Cannot read --data file {raw[1:]}: no such virtual file')
+                raw = self.files[raw[1:]]
             try:
-                document = json.loads(raw)
+                data = json.loads(raw)
             except json.JSONDecodeError as exc:
                 raise Fail('E_VALIDATION', f'--data is not valid JSON: {exc.msg}')
-        else:
-            if operation == 'update' and not UPDATE_TARGET.match(identifier[0]):
-                raise Fail('E_VALIDATION', f'target must be <entity_type>/<bundle>/<uuid>, got "{identifier[0]}"')
-            document = build_payload(resource, params, operation, identifier and identifier[1])
-        if '--no-validate' not in options:
-            schema = {'type': 'object', 'required': ['data'], 'properties': {'data': {'type': 'object', 'required': ['type', 'id'] if operation == 'update' else ['type'],
-                      'properties': {'type': resource['type'], 'id': {'type': 'string'}, 'attributes': resource['attributes'], 'relationships': resource['relationships']}}}}
-            errors = validate(schema, document)
-            if errors:
-                raise Fail('E_VALIDATION', f'payload does not match schema for {key}', {'errors': errors})
-        return document
+            if not isinstance(data, dict):
+                raise Fail('E_VALIDATION', '--data must be a JSON object')
+        for param in options['--param']:
+            key, eq, value = param.partition('=')
+            if not eq or not key:
+                raise Fail('E_VALIDATION', f"--param '{param}' must be key=value")
+            data[key] = coerce(definition['inputSchema'], key, value)
+        errors = validate(definition['inputSchema'], data)
+        if errors:
+            raise Fail('E_VALIDATION', f'payload does not match schema for tool {name}', {'errors': errors})
+        try:
+            output = getattr(self, name.removeprefix('tool_api__bakers_'))(data)
+        except Fail as exc:
+            if exc.code == 'E_TOOL':
+                exc.details = {'tool': name, **exc.details}
+            raise
+        # The MCP client checks structured content against the advertised output schema.
+        if validate(definition['outputSchema'], output):
+            raise Fail('E_HTTP', "MCP error -32602: Structured content does not match the tool's output schema", {'status': 0})
+        return result(dumps(output))
 
-    def resolve_labels(self, data):
-        """Label names must exist; type and recipe names are created on first use, like the addon."""
-        attributes = data.get('attributes', {})
-        names = {field: attributes.pop(field) for field, *_ in NAME_REFS if field in attributes}
-        if not data.get('attributes'):
-            data.pop('attributes', None)
-        for field, noun, relationship, vid, single in NAME_REFS:
-            if field not in names:
-                continue
-            store = self.vocabularies[vid]
-            by_name = {t['attributes']['name']: t['id'] for t in store.values()}
-            ids = []
-            for name in [n.strip() for n in names[field].split(',') if n.strip()]:
-                if name not in by_name and not single:
-                    cause = f"Error: {noun} name '{name}' does not exist in the bb_term/{vid} vocabulary. Known names: {', '.join(by_name)}"
-                    raise Fail('E_PLUGIN', "plugin 'bakers-name-refs' failed in alterRequest", {'pluginId': 'bakers-name-refs', 'hook': 'alterRequest', 'cause': cause})
-                if name not in by_name:
-                    identifier = f'88888888-8888-4888-8888-{len(store) + 900:012d}'
-                    store[identifier] = record_from(f'bb_term--{vid}', {'id': identifier, 'name': name})
-                    by_name[name] = identifier
-                ids.append(by_name[name])
-            if single:
-                if len(ids) != 1:
-                    raise Fail('E_VALIDATION', f'--{field} takes one name')
-                data.setdefault('relationships', {})[relationship] = {'data': {'type': f'bb_term--{vid}', 'id': ids[0]}}
-                continue
-            existing = data.get('relationships', {}).get(relationship, {}).get('data', [])
-            merged = list({r['id']: r for r in existing + [{'type': f'bb_term--{vid}', 'id': i} for i in ids]}.values())
-            if merged:
-                data.setdefault('relationships', {})[relationship] = {'data': merged}
+    def find(self, reference):
+        found = next((t for t in self.tickets.values() if reference in (t['id'], t.get('identifier'))), None)
+        if found is None:
+            raise refused(f'Ticket {reference} does not exist or is not readable.')
+        return found
 
-    def create(self, entity, program, options, extra):
-        bundle = options['--bundle'][-1]
-        key = f'{entity}/{bundle}'
-        if key not in SCHEMAS:
-            raise Fail('E_VALIDATION', f"no such target '{key}'. Run 'dropsh schema' to see available targets.")
-        if options.get('--fields'):
-            return result(describe(operation_schema(key, 'create')))
-        document = self.payload(key, 'create', options, extra)
-        if options.get('--dry-run'):
-            return result(dumps({'dry_run': True, 'method': 'POST', 'path': key, 'payload': document}))
-        data = copy.deepcopy(document['data'])
-        self.resolve_labels(data)
-        if entity == 'bb_comment':
-            data['id'] = f'22222222-2222-4222-8222-{len(self.comments) + 1:012d}'
-            self.comments[data['id']] = data
-            mode = self.config.get('uncertain_comment')
-            if mode and not self.lost:
-                self.lost = True
-                if mode == 'unapplied':
-                    del self.comments[data['id']]
-                raise Fail('E_HTTP', 'Network failure after 1 attempts', {'status': 0, 'body': {'cause': 'TypeError: fetch failed'}})
-        else:
-            data['id'] = '33333333-3333-4333-8333-333333333333'
-            data['attributes'] = {**data.get('attributes', {}), 'state': 'qualification', 'identifier': 'EVAL-30', 'changed': 'fixture-revision-1'}
-            self.tickets[data['id']] = data
-        return self.emit({'data': copy.deepcopy(data)}, program)
+    def project(self, reference):
+        if reference not in (CONTRACT['project'], CONTRACT['project_key']):
+            raise refused(f'Project {reference} does not exist or is not readable.')
 
-    def update(self, target, program, options, extra):
-        entity, _, rest = target.partition('/')
-        bundle, _, identifier = rest.partition('/')
-        key = f'{entity}/{bundle}'
-        if key not in SCHEMAS:
-            raise Fail('E_VALIDATION', f"no such target '{key}'. Run 'dropsh schema' to see available targets.")
-        if options.get('--fields'):
-            return result(describe(operation_schema(key, 'update')))
-        document = self.payload(key, 'update', options, extra, (target, identifier))
-        if not UPDATE_TARGET.match(target):
-            raise Fail('E_VALIDATION', f'target must be <entity_type>/<bundle>/<uuid>, got "{target}"')
-        if options.get('--dry-run'):
-            return result(dumps({'dry_run': True, 'method': 'PATCH', 'path': target, 'payload': document}))
-        store = self.store(key)
-        if identifier not in store:
-            raise http(404, 'fixture entity not found')
-        data = copy.deepcopy(document['data'])
-        self.resolve_labels(data)
-        if 'state' in data.get('attributes', {}) and self.config.get('reject_transition'):
-            raise http(422, 'supplied transition rejected; current state unchanged')
-        # The complete mutation is validated above; only now does the stored record change.
-        record = store[identifier]
-        record['attributes'].update(data.get('attributes', {}))
-        if data.get('relationships'):
-            record['relationships'] = {**record.get('relationships', {}), **data['relationships']}
-        return self.emit({'data': copy.deepcopy(record)}, program)
+    def ticket_read(self, args):
+        t = self.find(args['ticket'])
+        return {**{k: t.get(k) for k in ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe']},
+                'labels': t['labels'], 'links': t['links'],
+                'comments': [{'id': c['id'], 'type': c['type'], 'body': c['body'], 'created': c.get('created', '2026-01-01T00:00:00+00:00'),
+                              'author': c.get('author', 'fixture-agent')} for c in self.comments if c['ticket'] == t['id']]}
+
+    def ticket_search(self, args):
+        if args.get('project'):
+            self.project(args['project'])
+        query = args['query'].lower()
+        rows = [t for t in reversed(list(self.tickets.values())) if query in (t.get('title') or '').lower() or query in (t.get('description') or '').lower()]
+        return {'tickets': [{k: t.get(k) for k in ['identifier', 'title', 'state', 'type']} for t in rows[:50]]}
+
+    def ticket_create(self, args):
+        self.project(args['project'])
+        parent = self.find(args['parent'])['id'] if args.get('parent') else None
+        self.created += 1
+        ticket = {'id': f'33333333-3333-4333-8333-{self.created:012d}', 'identifier': f'EVAL-{100 + self.created}', 'title': args['title'],
+                  'state': 'qualification', 'workflow': args['workflow'], 'description': args.get('description'),
+                  'type': args.get('type') or None, 'recipe': args.get('recipe') or None, 'labels': [], 'links': [], 'parent': parent}
+        self.tickets[ticket['id']] = ticket
+        return {'id': ticket['id'], 'identifier': ticket['identifier'], 'state': ticket['state']}
+
+    # Term names (type, recipe, label) are reused or created: the fixture caller may create terms.
+    def ticket_classify(self, args):
+        if not args.get('type') and not args.get('recipe'):
+            raise refused('Give a recipe or a type.')
+        t = self.find(args['ticket'])
+        for field in ['type', 'recipe']:
+            if args.get(field):
+                t[field] = args[field]
+        return {'type': t.get('type'), 'recipe': t.get('recipe')}
+
+    def ticket_transition(self, args):
+        state, links = args.get('state') or '', args.get('links') or []
+        if not state and not links:
+            raise refused('Give a target state or links to add.')
+        t = self.find(args['ticket'])
+        if state and self.config.get('reject_transition'):
+            raise refused(f"Ticket {args['ticket']} cannot move from {t['state']} to {state}.")
+        if state:
+            t['state'] = state
+        for link in links:
+            if not any(existing['uri'] == link['uri'] for existing in t['links']):
+                t['links'].append({'uri': link['uri'], 'title': link.get('title') or ''})
+        return {'state': t['state'], 'links': copy.deepcopy(t['links'])}
+
+    def comment_publish(self, args):
+        t = self.find(args['ticket'])
+        comment = {'id': f'22222222-2222-4222-8222-{len(self.comments) + 1:012d}', 'ticket': t['id'], 'type': args['type'], 'body': args['body']}
+        self.comments.append(comment)
+        mode = self.config.get('uncertain_comment')
+        if mode and not self.lost:
+            self.lost = True
+            if mode == 'unapplied':
+                self.comments.pop()
+            raise Fail('E_HTTP', 'cannot reach MCP endpoint: fetch failed', {'status': 0})
+        return {'id': comment['id'], 'type': comment['type']}
+
+    def metric_write(self, args):
+        prefix = args['name'] + '.'
+        for row in args['rows']:
+            if not row['name'].startswith(prefix):
+                raise refused(f"Row {row['name']} is not in the {prefix} namespace.")
+        t = self.find(args['ticket'])
+        t['metrics'] = [m for m in t.get('metrics', []) if not m['name'].startswith(prefix)] + \
+            [{'name': r['name'], 'value': float(r['value']), 'unit': r.get('unit')} for r in args['rows']]
+        if args.get('label'):
+            if args['label'] not in t['labels']:
+                t['labels'].append(args['label'])
+        return {'metrics': copy.deepcopy(t['metrics'])}
+
+    def time_propose(self, args):
+        for position, entry in enumerate(args['entries'], 1):
+            seconds = entry['duration_seconds']
+            if not DATE.match(entry['work_date']) or not 60 <= seconds <= 86400 or seconds % 60 or len(entry['description']) > 2000:
+                raise refused(f"Entry {position} ({entry['source_key']}) is invalid: work_date Y-m-d, whole minutes from 60 to 86400 seconds, at most 2000 characters.")
+        self.submissions += 1
+        submission = f'aaaaaaaa-aaaa-4aaa-8aaa-{self.submissions:012d}'
+        ids = []
+        for entry in args['entries']:
+            ids.append(f'bbbbbbbb-bbbb-4bbb-8bbb-{len(self.worklogs) + 1:012d}')
+            self.worklogs.append({'id': ids[-1], 'work_date': entry['work_date'], 'state': 'proposed', 'duration_seconds': entry['duration_seconds'],
+                                  'description': entry['description'], 'source_keys': [],
+                                  'project_id': entry.get('project') or args.get('project') or CONTRACT['project'],
+                                  'ticket_id': entry.get('ticket'), 'submission_id': submission})
+        return {'submission': submission, 'worklogs': ids}
+
+    def worklog_list(self, args):
+        start, end = args['from'], args['to']
+        limit, offset = args.get('limit') or 50, args.get('offset') or 0
+        if not DATE.match(start) or not DATE.match(end) or start > end or not 1 <= limit <= 50 or offset < 0:
+            raise refused('Give from <= to as Y-m-d, limit 1 to 50 and a non-negative offset.')
+        rows = [w for w in self.worklogs if start <= w['work_date'] <= end]
+        page = copy.deepcopy(rows[offset:offset + limit])
+        tickets = [t for t in self.tickets.values() if t['id'] in {w['ticket_id'] for w in page}]
+        return {'data': page,
+                'projects': [{'id': p, 'name': 'fixture'} for p in sorted({w['project_id'] for w in page if w['project_id']})],
+                'tickets': [{'id': t['id'], 'identifier': t.get('identifier'), 'title': t.get('title'), 'project_id': CONTRACT['project']} for t in tickets],
+                'omitted': False, 'next_offset': offset + limit if len(rows) > offset + limit else None}
 
 
 def main():
@@ -584,7 +394,7 @@ def main():
     parser.add_argument('--trace', required=True)
     args = parser.parse_args()
     simulation = Simulation(json.loads(Path(args.fixture).read_text()))
-    # Only runner-selected startup paths touch disk; model-selected read_file paths are virtual.
+    # Only runner-selected startup paths touch disk; model-selected file paths are virtual.
     with Path(args.trace).open('x') as trace:
         for line in sys.stdin:
             request = json.loads(line)
@@ -592,7 +402,7 @@ def main():
                 continue
             method = request.get('method')
             if method == 'initialize':
-                response = {'protocolVersion': request.get('params', {}).get('protocolVersion', '2024-11-05'), 'capabilities': {'tools': {}}, 'serverInfo': {'name': 'bakers-skill-fixture', 'version': '2'}}
+                response = {'protocolVersion': request.get('params', {}).get('protocolVersion', '2024-11-05'), 'capabilities': {'tools': {}}, 'serverInfo': {'name': 'bakers-skill-fixture', 'version': '3'}}
             elif method == 'tools/list':
                 response = {'tools': simulation.tools}
             elif method == 'tools/call':

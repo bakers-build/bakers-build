@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -7,14 +8,19 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
+  type ResolvedSecurity,
+  type RunEnvPolicy,
   resolveAgentCliOptions,
+  resolveSecurityOptions,
+  type SandboxOptions,
+  type SecurityOptions,
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
 import { parseCodexTranscript } from './footprint.js';
 
 export { parseCodexTranscript } from './footprint.js';
 
-export interface CodexAgentOptions {
+export interface CodexAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
   args?: string[];
@@ -25,7 +31,84 @@ const CODEX_RESERVED = [
   '-s',
   '--dangerously-bypass-approvals-and-sandbox',
   '--dangerously-bypass-hook-trust',
+  '-a',
+  '--ask-for-approval',
 ] as const;
+
+const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
+  trusted_commands: [],
+  deny_read: [],
+  allow_write: [],
+  network: ['*'],
+  mcp_servers: {},
+};
+
+/** One dotted-key segment: bare, "basic" or 'literal'. */
+const KEY_SEGMENT = /\s*(?:([A-Za-z0-9_-]+)|"([^"\\]*)"|'([^']*)')\s*/y;
+
+function keyPath(text: string): string[] | null {
+  const path: string[] = [];
+  KEY_SEGMENT.lastIndex = 0;
+  for (;;) {
+    const m = KEY_SEGMENT.exec(text);
+    if (!m) return null;
+    path.push((m[1] ?? m[2] ?? m[3]) as string);
+    if (KEY_SEGMENT.lastIndex === text.length) return path;
+    if (text[KEY_SEGMENT.lastIndex] !== '.') return null;
+    KEY_SEGMENT.lastIndex += 1;
+  }
+}
+
+/**
+ * The server ids a Codex `config.toml` declares under `mcp_servers`, in table,
+ * dotted-key and inline-table form. Throws on a declaration it cannot read or
+ * that `-c mcp_servers.<id>.enabled=false` cannot address (Codex splits `-c`
+ * keys on every dot), so a server never stays enabled unnoticed.
+ * shortcut: line-based, so a multi-line string holding a header-like line is
+ * read as one; switch to a TOML parser if that ever matters.
+ */
+export function codexMcpServerIds(toml: string): string[] {
+  const ids = new Set<string>();
+  const unreadable = (line: string) =>
+    new Error(`Codex config: cannot read the mcp_servers declaration ${line}`);
+  let table: string[] = [];
+  for (const raw of toml.split('\n')) {
+    const line = raw.trim();
+    if (line === '' || line.startsWith('#')) continue;
+    const header = /^\[(\[?)(.*?)\]\]?\s*(?:#.*)?$/.exec(line);
+    const key = header
+      ? header[2]
+      : line.slice(0, Math.max(line.indexOf('='), 0));
+    if (!header && key === '') continue; // a value continued from an earlier line
+    const path = keyPath(key as string);
+    if (path === null || (header && header[1] !== '')) {
+      // Only keys directly in `[mcp_servers]` are server ids; deeper ones
+      // belong to a server already found.
+      const inRoot =
+        !header && table.length === 1 && table[0] === 'mcp_servers';
+      if (key?.includes('mcp_servers') || inRoot) {
+        throw unreadable(line);
+      }
+      table = header ? ['<unread>'] : table;
+      continue;
+    }
+    const full = header ? path : [...table, ...path];
+    if (header) table = path;
+    if (full[0] !== 'mcp_servers') continue;
+    if (full.length === 1) {
+      if (header) continue;
+      throw unreadable(line);
+    }
+    const id = full[1] as string;
+    if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+      throw new Error(
+        `Codex config: mcp_servers id "${id}" cannot be disabled with -c`,
+      );
+    }
+    ids.add(id);
+  }
+  return [...ids];
+}
 
 const CODEX_KNOWN: readonly KnownOptionSpec[] = [
   { kind: 'model', flags: ['--model', '-m'], configKeys: ['model'] },
@@ -38,6 +121,8 @@ export class CodexAgent implements BbAgent {
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
+  private readonly security: ResolvedSecurity;
+  readonly runEnvPolicy: RunEnvPolicy;
 
   constructor(
     options: CodexAgentOptions = {},
@@ -48,15 +133,84 @@ export class CodexAgent implements BbAgent {
     this.model = cli.model;
     this.effort = cli.effort;
     this.overrides = cli.overrides;
+    this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
+    this.runEnvPolicy = this.security.runEnvPolicy;
+    // Codex has no read deny or unsandboxed-command list to map these onto.
+    for (const key of ['trusted_commands', 'deny_read'] as const) {
+      if (this.security.sandbox[key].length > 0) {
+        throw new Error(`Codex does not support sandbox.${key}`);
+      }
+    }
+    // `-c` takes a TOML value; a JSON object is not one.
+    for (const [key, value] of Object.entries(this.security.config ?? {})) {
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        !Array.isArray(value)
+      ) {
+        throw new Error(
+          `Codex config.${key} is an object; use one dotted key per value`,
+        );
+      }
+    }
+  }
+
+  /** The launch flags a security mode owns (`docs/addons/codex.md`). */
+  private securityFlags(): string[] {
+    const { mode, sandbox, config } = this.security;
+    if (mode === 'system') return [];
+    if (mode === 'yolo') {
+      return [
+        '--sandbox',
+        'danger-full-access',
+        '--dangerously-bypass-approvals-and-sandbox',
+        '--dangerously-bypass-hook-trust',
+      ];
+    }
+    const pairs = (entries: [string, unknown][]) =>
+      entries.flatMap(([key, value]) => [
+        '-c',
+        `${key}=${typeof value === 'string' ? value : JSON.stringify(value)}`,
+      ]);
+    if (mode === 'custom') return pairs(Object.entries(config ?? {}));
+    const flags = [
+      '--sandbox',
+      'workspace-write',
+      '-a',
+      'never',
+      ...pairs([
+        ['sandbox_workspace_write.network_access', sandbox.network.length > 0],
+      ]),
+    ];
+    for (const dir of sandbox.allow_write) {
+      flags.push(
+        '--add-dir',
+        dir.startsWith('~/') ? join(this.home, dir.slice(2)) : dir,
+      );
+    }
+    for (const id of this.userMcpServers()) {
+      if (!Object.hasOwn(sandbox.mcp_servers, id)) {
+        flags.push(...pairs([[`mcp_servers.${id}.enabled`, false]]));
+      }
+    }
+    return flags;
+  }
+
+  private userMcpServers(): string[] {
+    const codexHome = process.env.CODEX_HOME || join(this.home, '.codex');
+    let toml: string;
+    try {
+      toml = readFileSync(join(codexHome, 'config.toml'), 'utf8');
+    } catch {
+      return [];
+    }
+    return codexMcpServerIds(toml);
   }
 
   launchCommand(prompt: string, _run?: AgentRunIdentity): string {
-    const parts = [
-      'codex',
-      '--sandbox danger-full-access',
-      '--dangerously-bypass-approvals-and-sandbox',
-      '--dangerously-bypass-hook-trust',
-    ];
+    // Quote at assembly; a plain word has nothing for the shell to expand.
+    const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
+    const parts = ['codex', ...this.securityFlags().map(word)];
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));
     }

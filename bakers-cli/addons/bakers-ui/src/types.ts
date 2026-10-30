@@ -16,6 +16,7 @@ export interface Resource {
 /** A dropsh collection query builder (fluent). */
 export interface Collection {
   where(path: string, op: string, value: unknown): Collection;
+  whereIn(path: string, values: unknown[]): Collection;
   sort(field: string, direction: string): Collection;
   page(size: number): Collection;
   first(): Promise<Resource | null>;

@@ -45,7 +45,6 @@ async function collect(
   client: Pick<Client, 'get'>,
   type: string,
   params: DrupalJsonApiParams,
-  path = `${type}/${type}`,
 ) {
   const data = new Map<string, Row>();
   const included = new Map<string, Row>();
@@ -53,7 +52,7 @@ async function collect(
   let offset = 0;
   while (true) {
     params.addPageLimit(50).addPageOffset(offset);
-    const raw = await client.get(path, params);
+    const raw = await client.get(`${type}/${type}`, params);
     if (!raw || typeof raw !== 'object' || !('data' in raw) || !rows(raw.data))
       throw new Error(`Invalid ${type} collection response.`);
     const page = raw as Page;
@@ -93,6 +92,80 @@ async function collect(
   };
 }
 
+type Worklog = {
+  id: string;
+  work_date?: unknown;
+  state?: unknown;
+  duration_seconds?: unknown;
+  description?: unknown;
+  source_keys?: unknown;
+  project_id?: string | null;
+  ticket_id?: string | null;
+  submission_id?: string | null;
+};
+type WorklogPage = {
+  data: Worklog[];
+  projects: { id: string; name?: unknown }[];
+  tickets: {
+    id: string;
+    identifier?: unknown;
+    title?: unknown;
+    project_id?: string | null;
+  }[];
+  omitted?: unknown;
+  next_offset?: unknown;
+};
+/** The slice of `@dropsh/plugin-tool`'s ToolClient this reader needs. */
+export type WorklogTool = {
+  call(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<{ structuredContent?: unknown }>;
+};
+const ided = (value: unknown) =>
+  Array.isArray(value) &&
+  value.every(
+    (row) => row && typeof row === 'object' && typeof row.id === 'string',
+  );
+
+/** Page `tool_api__bakers_worklog_list` (the owner's own worklogs) until next_offset is null. */
+async function collectWorklogs(tool: WorklogTool, from: string, to: string) {
+  const data = new Map<string, Worklog>();
+  const tickets = new Map<string, WorklogPage['tickets'][number]>();
+  const projects = new Map<string, WorklogPage['projects'][number]>();
+  let complete = true;
+  let offset = 0;
+  while (true) {
+    const { structuredContent: page } = await tool.call(
+      'tool_api__bakers_worklog_list',
+      { from, to, limit: 50, offset },
+    );
+    if (
+      !page ||
+      typeof page !== 'object' ||
+      !ided((page as WorklogPage).data) ||
+      !ided((page as WorklogPage).tickets) ||
+      !ided((page as WorklogPage).projects)
+    )
+      throw new Error('Invalid worklog tool response.');
+    const { data: rows, omitted, next_offset: next } = page as WorklogPage;
+    if (omitted) complete = false;
+    for (const row of rows) data.set(row.id, row);
+    for (const row of (page as WorklogPage).tickets) tickets.set(row.id, row);
+    for (const row of (page as WorklogPage).projects) projects.set(row.id, row);
+    if (next === null || next === undefined) break;
+    if (!Number.isSafeInteger(next) || (next as number) <= offset)
+      throw new Error('Non-advancing worklog pagination.');
+    offset = next as number;
+  }
+  return {
+    data: [...data.values()],
+    tickets: [...tickets.values()],
+    projects: [...projects.values()],
+    complete,
+  };
+}
+
 function context(params: DrupalJsonApiParams) {
   return params
     .addInclude(['ticket_id.project_id'])
@@ -103,7 +176,7 @@ function context(params: DrupalJsonApiParams) {
 export async function loadEvidence(
   client: Client,
   selection: Selection,
-  worklogClient: Pick<Client, 'get'>,
+  worklogTool: WorklogTool,
 ) {
   const dates = selectedDates(selection.from, selection.to);
   if (selection.timezone) calendar(selection.timezone);
@@ -171,14 +244,10 @@ export async function loadEvidence(
     ])
     .addFields('bb_comment--bb_comment', ['body'])
     .addSort('drupal_internal__id');
-  const worklogParams = new DrupalJsonApiParams().addCustomParam({
-    from: weekStart,
-    to: weekEnd,
-  });
   const [runPage, activityPage, worklogPage] = await Promise.all([
     collect(client, 'bb_run', runParams),
     collect(client, 'bb_activity', activityParams),
-    collect(worklogClient, 'bb_track_worklog', worklogParams, 'worklogs'),
+    collectWorklogs(worklogTool, weekStart, weekEnd),
   ]);
   for (const [name, page] of [
     ['runs', runPage],
@@ -196,11 +265,7 @@ export async function loadEvidence(
   > = {};
   const projects: Record<string, { name: unknown }> = {};
   const summaries = new Map<string, string>();
-  for (const row of [
-    ...runPage.included,
-    ...activityPage.included,
-    ...worklogPage.included,
-  ]) {
+  for (const row of [...runPage.included, ...activityPage.included]) {
     if (row.type === 'bb_ticket--bb_ticket')
       tickets[row.id] = {
         identifier: attr(row, 'identifier') ?? null,
@@ -214,6 +279,14 @@ export async function loadEvidence(
       if (typeof body?.value === 'string') summaries.set(row.id, body.value);
     }
   }
+  for (const ticket of worklogPage.tickets)
+    tickets[ticket.id] = {
+      identifier: ticket.identifier ?? null,
+      title: ticket.title ?? null,
+      project_id: ticket.project_id ?? null,
+    };
+  for (const project of worklogPage.projects)
+    projects[project.id] = { name: project.name ?? null };
   const unplaced: string[] = [];
   for (const [id, ticket] of Object.entries(tickets))
     if (ticket.project_id && !projects[ticket.project_id])
@@ -307,28 +380,24 @@ export async function loadEvidence(
         summary_truncated: (summary?.length ?? 0) > 2000,
       };
     });
-  const worklogs = worklogPage.data
-    .filter((row) => relation(row, 'owner_user_id') === owner)
-    .map((row) => ({
-      id: row.id,
-      date: attr(row, 'work_date'),
-      state: attr(row, 'state'),
-      duration_seconds: seconds(attr(row, 'duration_seconds')),
-      description: attr(row, 'description'),
-      ticket_id: relation(row, 'ticket_id'),
-      project_id: relation(row, 'project_id'),
-      submission_id: relation(row, 'submission_id'),
-      source_keys: attr(row, 'source_keys') ?? null,
-    }));
-  const worklogsValid =
-    worklogPage.data.every((row) => relation(row, 'owner_user_id')) &&
-    worklogs.every(
-      (row) =>
-        typeof row.date === 'string' &&
-        Number.isFinite(civilDate(row.date)) &&
-        row.duration_seconds !== null &&
-        ['recorded', 'approved', 'proposed'].includes(String(row.state)),
-    );
+  const worklogs = worklogPage.data.map((row) => ({
+    id: row.id,
+    date: row.work_date,
+    state: row.state,
+    duration_seconds: seconds(row.duration_seconds),
+    description: row.description,
+    ticket_id: row.ticket_id ?? null,
+    project_id: row.project_id ?? null,
+    submission_id: row.submission_id ?? null,
+    source_keys: row.source_keys ?? null,
+  }));
+  const worklogsValid = worklogs.every(
+    (row) =>
+      typeof row.date === 'string' &&
+      Number.isFinite(civilDate(row.date)) &&
+      row.duration_seconds !== null &&
+      ['recorded', 'approved', 'proposed'].includes(String(row.state)),
+  );
   if (!worklogsValid)
     evidenceGaps.push('Some worklogs have invalid dates, states or durations.');
   for (const row of [...activities, ...worklogs]) {

@@ -1,361 +1,1119 @@
 {
-  "schemas": {
-    "bb_ticket/bb_ticket": {
-      "allOf": [
-        {
-          "properties": {
-            "type": {
-              "const": "bb_ticket--bb_ticket"
-            },
-            "attributes": {
+  "project": "55555555-5555-4555-8555-555555555555",
+  "project_key": "EVAL",
+  "probe_ticket": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "identifier": "EVAL-90",
+    "title": "Unrelated dashboard ticket",
+    "state": "done",
+    "workflow": "bb_work",
+    "description": "Dashboard colors only",
+    "links": []
+  },
+  "tools": [
+    {
+      "name": "tool_api__bakers_comment_publish",
+      "title": "Publish a ticket comment",
+      "description": "Stores a Markdown comment of the given type (plan, spec, summary, …) on a ticket. The create response is the confirmation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket identifier (e.g. BAKERS-15) or UUID.",
+            "title": "Ticket"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "description": "The bb_comment_type, e.g. comment, plan, spec, test, acceptance, summary, qualification.",
+            "title": "Comment type"
+          },
+          "body": {
+            "type": "string",
+            "pattern": "\\S",
+            "contentMediaType": "text/markdown",
+            "minLength": 1,
+            "description": "Markdown source; raw HTML is stripped.",
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket",
+          "type",
+          "body"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The new comment.",
+            "title": "Comment UUID"
+          },
+          "type": {
+            "type": "string",
+            "description": "The comment type as stored.",
+            "title": "Stored type"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_metric_write",
+      "title": "Record a measurement",
+      "description": "Replaces the ticket’s metric rows whose name starts with the definition name and a dot with the given rows, keeping every other row and label, and optionally adds a label by name (created in the ticket’s workspace when missing).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket identifier (e.g. BAKERS-15) or UUID.",
+            "title": "Ticket"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "minLength": 1,
+            "description": "The measurement definition id, e.g. review_quality; every row name starts with it and a dot.",
+            "title": "Measurement"
+          },
+          "rows": {
+            "type": "array",
+            "description": "The measurement’s metric rows.",
+            "items": {
               "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "title",
-                "workflow"
-              ],
               "properties": {
+                "name": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "description": "The metric name, e.g. review_quality.score.",
+                  "title": "Name"
+                },
+                "value": {
+                  "type": "number",
+                  "description": "The numeric value.",
+                  "title": "Value"
+                },
+                "unit": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "maxLength": 32,
+                  "description": "The unit, e.g. ratio or hours.",
+                  "title": "Unit"
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ],
+              "description": "One metric row.",
+              "title": "Row"
+            },
+            "minItems": 1,
+            "title": "Rows"
+          },
+          "label": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A label name to add to the ticket, e.g. retro.",
+            "title": "Label"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket",
+          "name",
+          "rows"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "type": "array",
+            "description": "Every metric row of the ticket after the write.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The metric name.",
+                  "title": "Name"
+                },
+                "value": {
+                  "type": "number",
+                  "description": "The numeric value.",
+                  "title": "Value"
+                },
+                "unit": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The unit.",
+                  "title": "Unit"
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ],
+              "description": "One metric row.",
+              "title": "Metric"
+            },
+            "title": "Metrics"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_ticket_classify",
+      "title": "Classify a ticket",
+      "description": "Sets a ticket’s recipe and/or type by term name of its workspace, created there when missing and the caller may. Returns the saved names.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket identifier (e.g. BAKERS-15) or UUID.",
+            "title": "Ticket"
+          },
+          "recipe": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Recipe name, e.g. matt.",
+            "title": "Recipe"
+          },
+          "type": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ticket type name, e.g. feature or bug.",
+            "title": "Type"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The saved type name.",
+            "title": "Type"
+          },
+          "recipe": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The saved recipe name.",
+            "title": "Recipe"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_ticket_create",
+      "title": "Create a ticket",
+      "description": "Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. Returns the new ticket’s UUID, identifier and state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The ticket title, stored verbatim.",
+            "title": "Title"
+          },
+          "workflow": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The workflow id, e.g. bb_work.",
+            "title": "Workflow"
+          },
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project key (e.g. BAKERS) or UUID.",
+            "title": "Project"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "contentMediaType": "text/markdown",
+            "description": "Markdown source; raw HTML is stripped.",
+            "title": "Description"
+          },
+          "type": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ticket type name, e.g. feature or bug.",
+            "title": "Type"
+          },
+          "recipe": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Recipe name, e.g. matt.",
+            "title": "Recipe"
+          },
+          "parent": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Parent ticket identifier or UUID, in the same project.",
+            "title": "Parent"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "workflow",
+          "project"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The new ticket.",
+            "title": "UUID"
+          },
+          "identifier": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The ticket identifier, e.g. BAKERS-15.",
+            "title": "Identifier"
+          },
+          "state": {
+            "type": "string",
+            "description": "The initial state id.",
+            "title": "State"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_ticket_read",
+      "title": "Read a ticket",
+      "description": "Returns a ticket’s fields, labels, links and its readable comments in chronological order.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket identifier (e.g. BAKERS-15) or UUID.",
+            "title": "Ticket"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ticket UUID.",
+            "title": "UUID"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "The ticket identifier, e.g. BAKERS-15.",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "description": "The ticket title.",
+            "title": "Title"
+          },
+          "state": {
+            "type": "string",
+            "description": "The workflow state id.",
+            "title": "State"
+          },
+          "workflow": {
+            "type": "string",
+            "description": "The workflow id.",
+            "title": "Workflow"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "contentMediaType": "text/markdown",
+            "description": "The Markdown description.",
+            "title": "Description"
+          },
+          "type": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The ticket type name.",
+            "title": "Type"
+          },
+          "recipe": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recipe name.",
+            "title": "Recipe"
+          },
+          "labels": {
+            "type": "array",
+            "description": "The label names.",
+            "items": {
+              "type": "string",
+              "description": "A label name.",
+              "title": "Label"
+            },
+            "title": "Labels"
+          },
+          "links": {
+            "type": "array",
+            "description": "The ticket links.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uri": {
+                  "type": "string",
+                  "description": "The link target.",
+                  "title": "URI"
+                },
                 "title": {
                   "type": "string",
-                  "title": "Title",
-                  "maxLength": 255
-                },
-                "workflow": {
+                  "description": "The link text.",
+                  "title": "Title"
+                }
+              },
+              "required": [
+                "uri",
+                "title"
+              ],
+              "description": "One link.",
+              "title": "Link"
+            },
+            "title": "Links"
+          },
+          "comments": {
+            "type": "array",
+            "description": "The readable comments, oldest first.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
                   "type": "string",
-                  "title": "Workflow",
-                  "enum": [
-                    "bb_work"
-                  ]
+                  "description": "The comment UUID.",
+                  "title": "UUID"
                 },
-                "description": {
-                  "type": "object",
-                  "properties": {
-                    "value": {
-                      "type": "string",
-                      "title": "Text"
-                    },
-                    "format": {
-                      "type": "string",
-                      "title": "Text format"
-                    }
-                  },
-                  "required": [
-                    "value"
-                  ]
+                "type": {
+                  "type": "string",
+                  "description": "The comment type, e.g. plan or spec.",
+                  "title": "Type"
+                },
+                "body": {
+                  "type": "string",
+                  "contentMediaType": "text/markdown",
+                  "description": "The Markdown body.",
+                  "title": "Body"
+                },
+                "created": {
+                  "type": "string",
+                  "description": "ISO 8601 creation time.",
+                  "title": "Created"
+                },
+                "author": {
+                  "type": "string",
+                  "description": "The author’s display name.",
+                  "title": "Author"
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "body",
+                "created",
+                "author"
+              ],
+              "description": "One comment.",
+              "title": "Comment"
+            },
+            "title": "Comments"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_ticket_search",
+      "title": "Search tickets",
+      "description": "Finds up to 50 readable tickets whose title or description contains the query, newest first, optionally within one project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Text to find in ticket titles and descriptions.",
+            "title": "Query"
+          },
+          "project": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Project UUID to search within.",
+            "title": "Project"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "query"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "description": "The matching tickets.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "identifier": {
+                  "type": "string",
+                  "description": "The ticket identifier.",
+                  "title": "Identifier"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "The ticket title.",
+                  "title": "Title"
                 },
                 "state": {
                   "type": "string",
+                  "description": "The workflow state id.",
                   "title": "State"
                 },
-                "links": {
-                  "type": "array",
-                  "title": "Links",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "uri": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "title": {
-                        "type": "string"
-                      }
+                "type": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
                     }
-                  }
+                  ],
+                  "description": "The ticket type name.",
+                  "title": "Type"
                 }
-              }
-            },
-            "relationships": {
-              "type": "object",
-              "additionalProperties": false,
+              },
               "required": [
+                "identifier",
+                "title",
+                "state",
+                "type"
+              ],
+              "description": "One matching ticket.",
+              "title": "Ticket"
+            },
+            "title": "Tickets"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_ticket_transition",
+      "title": "Transition a ticket",
+      "description": "Moves a ticket to the target state when its workflow allows it, appending the given links to the existing ones; without a state it only appends the links. Returns the saved state and links.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket identifier (e.g. BAKERS-15) or UUID.",
+            "title": "Ticket"
+          },
+          "state": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The workflow state id to move to, e.g. working or review; omit to only append links.",
+            "title": "Target state"
+          },
+          "links": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Links to add; existing links are kept and duplicates merged.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uri": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The link target, e.g. a merge request URL.",
+                  "title": "URI"
+                },
+                "title": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The link text.",
+                  "title": "Title"
+                }
+              },
+              "required": [
+                "uri"
+              ],
+              "description": "One link.",
+              "title": "Link"
+            },
+            "title": "Links"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "The saved state id.",
+            "title": "State"
+          },
+          "links": {
+            "type": "array",
+            "description": "The saved links.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uri": {
+                  "type": "string",
+                  "description": "The link target.",
+                  "title": "URI"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "The link text.",
+                  "title": "Title"
+                }
+              },
+              "required": [
+                "uri",
+                "title"
+              ],
+              "description": "One link.",
+              "title": "Link"
+            },
+            "title": "Links"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_time_propose",
+      "title": "Propose time",
+      "description": "Stores activities as proposed worklogs of one new proposed submission owned by the caller, for review in the week sheet. Any failing entry stores nothing; the message names it by 1-based position and source_key.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Project UUID used by entries that name none.",
+            "title": "Project"
+          },
+          "account": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Billing account UUID used by entries that name none; otherwise the project or ticket default applies.",
+            "title": "Billing account"
+          },
+          "entries": {
+            "type": "array",
+            "description": "The activities, one worklog each.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_system": {
+                  "type": "string",
+                  "description": "Where the activity comes from, e.g. git.",
+                  "title": "Source system"
+                },
+                "source_key": {
+                  "type": "string",
+                  "description": "Stable key of the activity within its source system.",
+                  "title": "Source key"
+                },
+                "source_version": {
+                  "type": "string",
+                  "description": "Version of the activity; a recorded key with other content is refused.",
+                  "title": "Source version"
+                },
+                "work_date": {
+                  "type": "string",
+                  "description": "Civil date, Y-m-d.",
+                  "title": "Work date"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "What was done, at most 2000 characters.",
+                  "title": "Description"
+                },
+                "duration_seconds": {
+                  "type": "integer",
+                  "description": "Whole minutes in seconds, 60 to 86400.",
+                  "title": "Duration"
+                },
+                "project": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Project UUID; defaults to the top-level project.",
+                  "title": "Project"
+                },
+                "ticket": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Ticket UUID of the project.",
+                  "title": "Ticket"
+                },
+                "account": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Billing account UUID; defaults to the top-level account.",
+                  "title": "Billing account"
+                }
+              },
+              "required": [
+                "source_system",
+                "source_key",
+                "source_version",
+                "work_date",
+                "description",
+                "duration_seconds"
+              ],
+              "description": "One activity with stable source identity.",
+              "title": "Entry"
+            },
+            "minItems": 1,
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "entries"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "submission": {
+            "type": "string",
+            "description": "The new proposed submission.",
+            "title": "Submission UUID"
+          },
+          "worklogs": {
+            "type": "array",
+            "description": "One worklog per entry, in entry order.",
+            "items": {
+              "type": "string",
+              "description": "A proposed worklog.",
+              "title": "Worklog UUID"
+            },
+            "title": "Worklog UUIDs"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_worklog_list",
+      "title": "List own worklogs",
+      "description": "Returns the caller’s own non-voided worklogs between two civil dates (at most 378 days), with the readable projects and tickets they reference. A reference the caller cannot read is null and sets omitted.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "First civil date, Y-m-d.",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "description": "Last civil date, Y-m-d.",
+            "title": "To"
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 50,
+            "description": "Rows per page, 1 to 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; use next_offset of the previous page.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "The page, oldest first by creation.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Worklog UUID.",
+                  "title": "UUID"
+                },
+                "work_date": {
+                  "type": "string",
+                  "description": "Civil date, Y-m-d.",
+                  "title": "Work date"
+                },
+                "state": {
+                  "type": "string",
+                  "description": "recorded, proposed, …",
+                  "title": "State"
+                },
+                "duration_seconds": {
+                  "type": "integer",
+                  "description": "Seconds.",
+                  "title": "Duration"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "What was done.",
+                  "title": "Description"
+                },
+                "source_keys": {
+                  "type": "array",
+                  "description": "Hashed source identities.",
+                  "items": {
+                    "type": "string",
+                    "description": "A hashed source identity.",
+                    "title": "Source key"
+                  },
+                  "title": "Source keys"
+                },
+                "project_id": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Project UUID, or null.",
+                  "title": "Project"
+                },
+                "ticket_id": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Ticket UUID, or null.",
+                  "title": "Ticket"
+                },
+                "submission_id": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Submission UUID, or null.",
+                  "title": "Submission"
+                }
+              },
+              "required": [
+                "id",
+                "work_date",
+                "state",
+                "duration_seconds",
+                "description",
+                "source_keys",
+                "project_id",
+                "ticket_id",
+                "submission_id"
+              ],
+              "description": "One worklog.",
+              "title": "Worklog"
+            },
+            "title": "Worklogs"
+          },
+          "projects": {
+            "type": "array",
+            "description": "Readable referenced projects.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Project UUID.",
+                  "title": "UUID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Project name.",
+                  "title": "Name"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "description": "One project.",
+              "title": "Project"
+            },
+            "title": "Projects"
+          },
+          "tickets": {
+            "type": "array",
+            "description": "Readable referenced tickets.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Ticket UUID.",
+                  "title": "UUID"
+                },
+                "identifier": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Ticket identifier.",
+                  "title": "Identifier"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Ticket title.",
+                  "title": "Title"
+                },
+                "project_id": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Project UUID, or null when unreadable.",
+                  "title": "Project"
+                }
+              },
+              "required": [
+                "id",
+                "identifier",
+                "title",
                 "project_id"
               ],
-              "properties": {
-                "project_id": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "type",
-                        "id"
-                      ],
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "bb_project--bb_project"
-                          ]
-                        },
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      }
-                    }
-                  }
-                },
-                "ticket_type": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "type",
-                        "id"
-                      ],
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "bb_term--type"
-                          ]
-                        },
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      }
-                    }
-                  }
-                },
-                "recipe": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "type",
-                        "id"
-                      ],
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "bb_term--recipe"
-                          ]
-                        },
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      }
-                    }
-                  }
-                },
-                "labels": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "type",
-                          "id"
-                        ],
-                        "properties": {
-                          "type": {
-                            "type": "string",
-                            "enum": [
-                              "bb_term--label"
-                            ]
-                          },
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          }
-                        }
-                      }
-                    }
-                  }
-                },
-                "parent_id": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "type",
-                        "id"
-                      ],
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "bb_ticket--bb_ticket"
-                          ]
-                        },
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      }
-                    }
-                  }
-                },
-                "conductor_id": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "type",
-                        "id"
-                      ],
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "bb_conductor--bb_conductor"
-                          ]
-                        },
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      }
-                    }
-                  }
-                }
+              "description": "One ticket.",
+              "title": "Ticket"
+            },
+            "title": "Tickets"
+          },
+          "omitted": {
+            "type": "boolean",
+            "description": "TRUE when some referenced context is unreadable.",
+            "title": "Omitted"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
               }
-            }
+            ],
+            "description": "Offset of the next page, or null on the last page.",
+            "title": "Next offset"
           }
         }
-      ]
-    },
-    "bb_comment/bb_comment": {
-      "allOf": [
-        {
-          "properties": {
-            "type": {
-              "const": "bb_comment--bb_comment"
-            },
-            "attributes": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "body",
-                "bb_comment_type"
-              ],
-              "properties": {
-                "body": {
-                  "type": "object",
-                  "properties": {
-                    "value": {
-                      "type": "string",
-                      "title": "Text"
-                    },
-                    "format": {
-                      "type": "string",
-                      "title": "Text format"
-                    }
-                  },
-                  "required": [
-                    "value"
-                  ]
-                },
-                "bb_comment_type": {
-                  "type": "string",
-                  "title": "Type",
-                  "maxLength": 255
-                }
-              }
-            },
-            "relationships": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "ticket_id"
-              ],
-              "properties": {
-                "ticket_id": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "type",
-                        "id"
-                      ],
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "bb_ticket--bb_ticket"
-                          ]
-                        },
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      ]
-    }
-  },
-  "terms": [
-    {
-      "id": "88888888-8888-4888-8888-000000000001",
-      "name": "work:docs"
-    },
-    {
-      "id": "88888888-8888-4888-8888-000000000002",
-      "name": "method:matt"
-    },
-    {
-      "id": "88888888-8888-4888-8888-000000000003",
-      "name": "work:code"
-    }
-  ],
-  "probe_ticket": {
-    "id": "44444444-4444-4444-8444-444444444444",
-    "title": "Unrelated dashboard ticket",
-    "identifier": "EVAL-90",
-    "state": "done",
-    "description": {
-      "value": "Dashboard colors only"
-    },
-    "assignee": "fixture-reader",
-    "links": []
-  },
-  "type_terms": [
-    {
-      "id": "88888888-8888-4888-8888-000000000101",
-      "name": "feature"
-    },
-    {
-      "id": "88888888-8888-4888-8888-000000000102",
-      "name": "bug"
-    },
-    {
-      "id": "88888888-8888-4888-8888-000000000103",
-      "name": "chore"
-    }
-  ],
-  "recipe_terms": [
-    {
-      "id": "88888888-8888-4888-8888-000000000201",
-      "name": "matt"
-    },
-    {
-      "id": "88888888-8888-4888-8888-000000000202",
-      "name": "probe"
-    },
-    {
-      "id": "88888888-8888-4888-8888-000000000203",
-      "name": "lean"
-    },
-    {
-      "id": "88888888-8888-4888-8888-000000000204",
-      "name": "pair"
+      }
     }
   ]
 }

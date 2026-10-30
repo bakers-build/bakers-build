@@ -8,7 +8,12 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
+  type ResolvedSecurity,
+  type RunEnvPolicy,
   resolveAgentCliOptions,
+  resolveSecurityOptions,
+  type SandboxOptions,
+  type SecurityOptions,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
@@ -26,15 +31,65 @@ const MEASURE_WRAPPER = fileURLToPath(
   ),
 );
 
-const MEASURE_FLAGS: readonly string[] = [
-  '--setting-sources',
-  'project,local',
-  '--settings',
-  '.bakers/claude-measure.settings.json',
-  '--strict-mcp-config',
-  '--mcp-config',
-  '{"mcpServers":{}}',
+/** Flag → value pairs; a flag the security mode already passes is skipped. */
+const MEASURE_FLAGS: readonly (readonly string[])[] = [
+  ['--setting-sources', 'project,local'],
+  ['--settings', '.bakers/claude-measure.settings.json'],
+  ['--strict-mcp-config'],
+  ['--mcp-config', '{"mcpServers":{}}'],
 ];
+
+const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
+  trusted_commands: ['bakers', 'git', 'ddev'],
+  deny_read: ['~/.ssh', '~/.bakers'],
+  allow_write: [],
+  network: ['*'],
+  mcp_servers: {},
+};
+
+/** The launch flags a security mode owns (`docs/addons/claude.md`). */
+function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
+  if (mode === 'system') return [];
+  if (mode === 'yolo') return ['--dangerously-skip-permissions'];
+  if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  const settings = {
+    sandbox: {
+      enabled: true,
+      failIfUnavailable: true,
+      allowUnsandboxedCommands: false,
+      excludedCommands: sandbox.trusted_commands,
+      filesystem: {
+        denyRead: sandbox.deny_read,
+        allowWrite: sandbox.allow_write,
+      },
+      network: { allowedDomains: sandbox.network },
+    },
+    disableClaudeAiConnectors: true,
+    // dontAsk denies whatever is not allowed here; every Bash command is
+    // either sandboxed or a trusted command, and the Read deny covers the
+    // Read tool, which the OS sandbox does not confine.
+    permissions: {
+      allow: ['Bash', 'Edit(./**)'],
+      // Claude reads a single leading `/` as relative to the settings file;
+      // the plain rule covers a file entry, `/**` a directory's contents.
+      deny: sandbox.deny_read.flatMap((path) => {
+        const rule = path.startsWith('/') ? `/${path}` : path;
+        return [`Read(${rule})`, `Read(${rule}/**)`];
+      }),
+    },
+  };
+  return [
+    '--permission-mode',
+    'dontAsk',
+    '--setting-sources',
+    'project,local',
+    '--settings',
+    JSON.stringify(settings),
+    '--strict-mcp-config',
+    '--mcp-config',
+    JSON.stringify({ mcpServers: sandbox.mcp_servers }),
+  ];
+}
 
 /**
  * Encode an absolute cwd the way Claude Code names its per-project transcript
@@ -44,11 +99,10 @@ export function encodeClaudeProjectDir(cwd: string): string {
   return cwd.replace(/[^a-zA-Z0-9]/g, '-');
 }
 
-export interface ClaudeAgentOptions {
+export interface ClaudeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
   args?: string[];
-  skip_permissions?: boolean;
   /**
    * When true, the launch runs through `measure/claude-measure.mjs`, which
    * starts the logging proxy for the lifetime of this Claude process and
@@ -62,6 +116,10 @@ const CLAUDE_RESERVED = [
   '--dangerously-skip-permissions',
   '--allow-dangerously-skip-permissions',
   '--permission-mode',
+  '--settings',
+  '--setting-sources',
+  '--strict-mcp-config',
+  '--mcp-config',
 ] as const;
 
 const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
@@ -74,7 +132,8 @@ export class ClaudeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
-  private readonly skipPermissions: boolean;
+  private readonly securityFlags: string[];
+  readonly runEnvPolicy: RunEnvPolicy;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
 
@@ -87,9 +146,9 @@ export class ClaudeAgent implements BbAgent {
     this.model = cli.model;
     this.effort = cli.effort;
     this.overrides = cli.overrides;
-    this.skipPermissions =
-      validateOptionalBoolean(options.skip_permissions, 'skip_permissions') ??
-      true;
+    const security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
+    this.securityFlags = securityFlags(security);
+    this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
   }
 
@@ -106,9 +165,12 @@ export class ClaudeAgent implements BbAgent {
     if (this.effort !== undefined && !this.overrides.effort) {
       parts.push('--effort', shellQuote(this.effort));
     }
-    if (this.skipPermissions) {
-      parts.push('--dangerously-skip-permissions');
-    }
+    // The flags are constants; only their generated values need quoting.
+    parts.push(
+      ...this.securityFlags.map((t) =>
+        t.startsWith('--') ? t : shellQuote(t),
+      ),
+    );
     // Pin the transcript's own session id to the run's UUID (BB-473), so
     // `getRunLog` can read that ONE file directly instead of scanning the
     // worktree-keyed directory by mtime — the scan is what let a
@@ -118,7 +180,12 @@ export class ClaudeAgent implements BbAgent {
     }
     parts.push(...this.args.map(shellQuote));
     if (this.measure) {
-      parts.push(...MEASURE_FLAGS.map(shellQuote));
+      // The wrapper folds an inline --settings JSON into its profile file.
+      for (const pair of MEASURE_FLAGS) {
+        if (!this.securityFlags.includes(pair[0] as string)) {
+          parts.push(...pair.map(shellQuote));
+        }
+      }
     }
     return parts.join(' ');
   }

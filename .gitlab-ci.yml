@@ -85,8 +85,6 @@ before_script:
   - .gitlab-ci.yml
 .changes_cli: &changes_cli
   - bakers-cli/**/*
-  # The release-version test reads the release tool's configuration.
-  - .versionrc.cjs
   # The conductor job tests the code of this guide.
   - docs/addons/build/actions.md
   # The repository contracts the conductor job runs through vitest read these.
@@ -219,9 +217,9 @@ docs_pages:
   script:
     - node website/scripts/check-pages.mjs
 
-# The MR title becomes the squash subject, from which the release tool derives version and
-# changelog. GitLab reads the title when the pipeline is created: after fixing a title, run a new
-# pipeline. A `Draft: ` prefix is GitLab's own and leaves the title when the MR is marked ready.
+# The MR title becomes the squash subject, from which `release:version` derives version and
+# release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a
+# new pipeline. A `Draft: ` prefix is GitLab's own and leaves the title when the MR is marked ready.
 mr_title:
   stage: lint
   image: alpine:3.22
@@ -236,8 +234,9 @@ mr_title:
     - bash tests/contract/mr-title.test.sh
     - 'bash tests/contract/mr-title.sh "${CI_MERGE_REQUEST_TITLE#Draft: }"'
 
-# main is never squashed: `release` tags the merge's second parent, and develop must contain that
-# commit. GitLab cannot forbid squash per target branch, so this job refuses it before the merge.
+# main is never squashed: `release` tags the merge's second parent, the frozen develop commit, and
+# develop must contain it. GitLab cannot forbid squash per target branch, so this job refuses it
+# before the merge.
 # shortcut: the flag is read when the pipeline is created; ticking squash later needs a new pipeline to be caught.
 mr_main_merge_commit:
   stage: lint
@@ -281,7 +280,7 @@ compose_render:
   before_script:
     - apk add --no-cache bash git
   script:
-    - bash tests/contract/mcp-compose.sh
+    - bash tests/contract/compose.sh
 
 # Merge gate: the unit-kernel suite inside the gate's `php-test` image — the shipped `php` image
 # plus dev dependencies — so it tests the shipped code and PHP runtime. Two shards
@@ -598,7 +597,7 @@ web_ui:
 # Image identity is the git TREE, not the commit: the squash and merge commits of a branch that
 # contains its target have the branch head's tree, and so does the develop → main merge. So the
 # images the gate tested are found again after the merge (`promote`), with no rebuild.
-#   :tree-<tree>          gate images (php, php-test, nginx, mcp, e2e); tree-* tags expire
+#   :tree-<tree>          gate images (php, php-test, nginx, e2e); tree-* tags expire
 #   :<branch>, :<sha>     promote, what the stacks pull and roll back to
 #   :<version>, :latest   release_images, on a v<semver> tag
 
@@ -663,11 +662,9 @@ build:
         docker build $label --target php      -t "$CI_REGISTRY_IMAGE/php:$tag" .
         docker build $label --target php-test -t "$CI_REGISTRY_IMAGE/php-test:$tag" .
         docker build $label --target nginx    -t "$CI_REGISTRY_IMAGE/nginx:$tag" .
-        # MCP connector (BB-658 Task 3) — own Dockerfile, own image.
-        docker build $label -f docker/mcp/Dockerfile -t "$CI_REGISTRY_IMAGE/mcp:$tag" .
         docker build $label -f docker/e2e/Dockerfile -t "$CI_REGISTRY_IMAGE/e2e:$tag" .
         # e2e last: its tag is the "all images exist" marker checked above.
-        for image in php php-test nginx mcp e2e; do
+        for image in php php-test nginx e2e; do
           docker push "$CI_REGISTRY_IMAGE/$image:$tag"
         done
       fi
@@ -700,7 +697,6 @@ build:
     DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
     REGISTRY_IMAGE_PHP: $CI_REGISTRY_IMAGE/php:tree-$GATE_TREE
     REGISTRY_IMAGE_NGINX: $CI_REGISTRY_IMAGE/nginx:tree-$GATE_TREE
-    REGISTRY_IMAGE_MCP: $CI_REGISTRY_IMAGE/mcp:tree-$GATE_TREE
     REGISTRY_IMAGE_E2E: $CI_REGISTRY_IMAGE/e2e:tree-$GATE_TREE
   before_script:
     - apk add --no-cache bash
@@ -708,7 +704,7 @@ build:
     - bash scripts/ci/prune-gate-stacks.sh
 
 # The Playwright-BDD suite (browser and API contracts) and the conductor integration suite,
-# against a stack of the gate's php, nginx and mcp images with MariaDB and Mailpit. The runner
+# against a stack of the gate's php and nginx images with MariaDB and Mailpit. The runner
 # image (docker/e2e) holds the suites and reaches the site on the stack network; its `drush`
 # runs in the php container. Two shards, split by feature file; shard 1 also runs the
 # integration suite, after the browser suite, because it mutates the pristine bb_e2e seed.
@@ -727,7 +723,7 @@ e2e:
     - docker compose pull -q
     # The recipe-test world: the bakers recipe installer, then scripts/e2e/seed-test-world.sh.
     - docker compose run --rm install
-    - docker compose up -d --no-build --wait php nginx mailpit mcp
+    - docker compose up -d --no-build --wait php nginx mailpit
     # `typecheck` and `test:unit` first: Playwright strips types without checking them, and the
     # baseURL resolver's own test names a resolver regression as one.
     - >
@@ -836,14 +832,14 @@ promote:
     - |
       set -e
       tree="$(git rev-parse 'HEAD^{tree}')"
-      for image in php nginx mcp; do
+      for image in php nginx; do
         if ! crane digest "$CI_REGISTRY_IMAGE/$image:tree-$tree" >/dev/null; then
           echo "No tested image $image:tree-$tree for $CI_COMMIT_SHA: the merge gate did not run for this tree."
           echo "Merge only through the gate; to ship this commit anyway, open a merge request for it and play its gate."
           exit 1
         fi
       done
-      for image in php nginx mcp; do
+      for image in php nginx; do
         crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_REF_SLUG"
         crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_SHA"
         echo "$image: $(crane digest "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA")"
@@ -857,9 +853,9 @@ promote:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
 
-# A release's images: the gate-built :tree-<tree> images of the tagged chore(release) commit get
-# :<version> and :latest with the OCI version and revision labels. The tag sits on the release
-# branch's commit, not on main's merge commit, so it has no :<sha> image; main's merge keeps that
+# A release's images: the gate-built :tree-<tree> images of the tagged develop commit get
+# :<version> and :latest with the OCI version and revision labels. The tag sits on the merge's
+# second parent, not on main's merge commit, so it has no :<sha> image; main's merge keeps that
 # tree, so these are the digests prod runs. `crane mutate` rewrites only the image config, so the
 # layers are identical; the new config gives :<version> its own digest.
 release_images:
@@ -877,7 +873,7 @@ release_images:
       set -e
       version="${CI_COMMIT_TAG#v}"
       tree="$(git rev-parse "$CI_COMMIT_SHA^{tree}")"
-      for image in php nginx mcp; do
+      for image in php nginx; do
         crane mutate "$CI_REGISTRY_IMAGE/$image:tree-$tree" \
           --label "org.opencontainers.image.version=$version" \
           --label "org.opencontainers.image.revision=$CI_COMMIT_SHA" \
@@ -1003,14 +999,13 @@ publish:npm:next:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
 
-# Release on a main push after prod deployed: the top `## [<version>]` of CHANGELOG.md, written
-# by commit-and-tag-version on the release branch, becomes tag v<version> and a GitLab release
-# carrying that entry. The tag goes on the merge's second parent, the `chore(release)` commit,
-# which develop also contains through the back-merge, so the next release ranges from it. The
-# tag pipeline then runs publish:npm (`latest`) and release_images. A main push whose CHANGELOG
-# version is already tagged releases nothing; `## <version>` (the hand-written 0.1.x headings)
-# is still read. glab is the tool behind GitLab's `release:` keyword, called directly because the
-# keyword cannot be skipped.
+# Release on a main push after prod deployed: `release:version` computes the next version from the
+# Conventional Commits between the last reachable v* tag and the merge's second parent, the frozen
+# develop commit. That commit gets tag v<version> and a GitLab release whose generated notes are
+# the only changelog; develop contains it, so the next release ranges from it. The tag pipeline
+# then runs publish:npm (`latest`) and release_images. A tagged second parent or a range without
+# feat, fix or breaking commit releases nothing. glab is the tool behind GitLab's `release:`
+# keyword, called directly because the keyword cannot be skipped.
 release:
   stage: publish
   image:
@@ -1024,20 +1019,13 @@ release:
   variables:
     GIT_DEPTH: "0"
     GLAB_ENABLE_CI_AUTOLOGIN: "true"
-  before_script: []
+  before_script:
+    - apk add --no-cache nodejs git
   script:
     - |
-      # No pipe: with pipefail, `sed | head -1` dies of SIGPIPE once CHANGELOG.md holds two versions.
-      version=$(awk '/^## \[?[0-9]/ { v = $2; sub(/^\[/, "", v); sub(/\].*/, "", v); print v; exit }' CHANGELOG.md)
-      [ -n "$version" ] || { echo "CHANGELOG.md names no version"; exit 1; }
-      if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
-        echo "v$version is already released; nothing to do."
-        exit 0
-      fi
-      release_commit=$(git rev-parse -q --verify 'HEAD^2') || { echo "$CI_COMMIT_SHA is not a merge; a release reaches main through its release branch's merge commit."; exit 1; }
-      subject=$(git log -1 --format=%s "$release_commit")
-      [ "$subject" = "chore(release): $version" ] || { echo "HEAD^2 ($release_commit) is \"$subject\", not \"chore(release): $version\"."; exit 1; }
-      awk -v v="$version" '/^## /{if(f)exit; if(index($0,"## [" v "]")==1 || index($0,"## " v " ")==1)f=1; next} f' CHANGELOG.md > release-notes.md
+      release_commit=$(git rev-parse -q --verify 'HEAD^2') || { echo "$CI_COMMIT_SHA is not a merge; a release reaches main through the merge commit of its merge request."; exit 1; }
+      version=$(node bakers-cli/scripts/release-version.mjs "$release_commit" --notes release-notes.md)
+      [ -n "$version" ] || { echo "Nothing to release since the last v* tag."; exit 0; }
       cat release-notes.md
       glab release create "v$version" --ref "$release_commit" --name "v$version" --notes-file release-notes.md
   rules:

@@ -19,8 +19,8 @@ import { ProjectOverviewScreen } from './project-overview.js';
  *
  * MOUNTED WHOLE, so the bound on its nodes is the data's own length against
  * `@opentui/core@0.5.1`'s ceiling of 16 382 renderables. A project row is one
- * box of 3 cells, and the rows are the user's own projects read from a single
- * bounded `bb_conductor` collection, grouped by project — three orders of
+ * box of 3 cells, and the rows are the user's own projects read from the
+ * `bb_conductor` collection page by page, grouped by project — three orders of
  * magnitude of headroom on any control plane a person works with. This screen
  * therefore windows nothing of its own, deliberately rather than by omission.
  */

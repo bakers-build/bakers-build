@@ -8,6 +8,9 @@ use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\bb_core\Access\BbRankCapabilityInterface;
+use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
+use Drupal\bb_core\Access\WorkspaceResolverInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -36,8 +39,11 @@ final class ConductorRegistrar {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
     private readonly LockBackendInterface $lock,
+    BbWorkspaceReadScopeInterface $readScope,
+    BbRankCapabilityInterface $rankCapability,
+    WorkspaceResolverInterface $workspaceResolver,
   ) {
-    $this->registration = new HeartbeatRegistrationResolver($entityTypeManager);
+    $this->registration = new HeartbeatRegistrationResolver($entityTypeManager, $readScope, $rankCapability, $workspaceResolver);
   }
 
   /**
@@ -56,10 +62,9 @@ final class ConductorRegistrar {
   public function heartbeat(AccountInterface $owner, array $attrs): BbConductorInterface {
     $conductorId = $this->registration->conductorId($attrs);
     $hostKey = $this->registration->hostKey($attrs, $conductorId);
-    $projectId = $this->registration->projectId($attrs);
-    // Workspace resolution still belongs to the conductor (project chain).
-    // Machines are account-owned and carry no workspace edge.
-    $this->registration->workspaceId($attrs, $projectId);
+    // Resolved on every heartbeat, so an owner who lost access is refused
+    // before any write.
+    $projectId = $this->registration->projectId($attrs, $owner);
     // One registration per identity at a time: between this read and the
     // save below, a concurrent first registration from another host could
     // otherwise bind the identity to its own machine. A short overlap (poll
@@ -93,14 +98,8 @@ final class ConductorRegistrar {
    */
   private function register(AccountInterface $owner, string $conductorId, string $hostKey, int $projectId, array $attrs): BbConductorInterface {
     $existing = $this->load($owner, $conductorId);
-    // Another machine means another conductor. Refuse before any write so
-    // the established binding, its history and the loads stay untouched.
-    $bound = $existing?->getMachine();
-    if ($bound !== NULL && (string) $bound->get('host_key')->value !== $hostKey) {
-      throw new UnprocessableEntityHttpException(sprintf(
-        'Conductor "%s" is bound to another machine; register this machine with another conductor id.',
-        $conductorId,
-      ));
+    if ($existing !== NULL) {
+      $this->refuseRebinding($owner, $existing, $hostKey, $projectId, (string) $attrs['project']);
     }
     $machine = $this->loadOrCreateMachine($owner, $hostKey, $attrs);
     $machine->save();
@@ -132,6 +131,40 @@ final class ConductorRegistrar {
 
     $this->recomputeMachineLoad($machine);
     return $conductor;
+  }
+
+  /**
+   * Refuses a heartbeat that would rebind an existing conductor.
+   *
+   * Runs before any write so the established binding, its history and the
+   * loads stay untouched.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The authenticated conductor owner.
+   * @param \Drupal\bb_core\Entity\BbConductorInterface $existing
+   *   The owner's conductor for this conductor_id.
+   * @param string $hostKey
+   *   The registering host.
+   * @param int $projectId
+   *   The project resolved for the heartbeat.
+   * @param string $project
+   *   The project name the heartbeat sent.
+   */
+  private function refuseRebinding(AccountInterface $owner, BbConductorInterface $existing, string $hostKey, int $projectId, string $project): void {
+    // Access was checked for the named project only; a conductor moved to
+    // another project keeps heartbeating only while its owner may use that one.
+    $stored = (int) $existing->get('project_id')->target_id;
+    if ($stored !== $projectId && !$this->registration->mayRegister($owner, $stored)) {
+      throw $this->registration->notFound($project);
+    }
+    // Another machine means another conductor.
+    $bound = $existing->getMachine();
+    if ($bound !== NULL && (string) $bound->get('host_key')->value !== $hostKey) {
+      throw new UnprocessableEntityHttpException(sprintf(
+        'Conductor "%s" is bound to another machine; register this machine with another conductor id.',
+        $existing->get('conductor_id')->value,
+      ));
+    }
   }
 
   /**

@@ -92,7 +92,7 @@ section is absent on every other site.
 | `fixture-automation` | Northside contributor service account, Automation Crew (no password) | Execution identity of the seeded monthly trigger on *Monthly Drupal update* |
 | `fixture-app` | Northside lead, North Crew | Registers conductors, which grants it the app rank |
 | `fixture-lead` | Northside lead, North Crew | JSON:API lead matrix; lead of the disposable detail-card worlds |
-| `fixture-conductor-owner` | Northside contributor, no team | Owns the edit and conductor-properties conductors and their machine |
+| `fixture-conductor-owner` | Northside contributor, only in Conductor Owner Crew (not in API home's team) | Owns the edit and conductor-properties conductors and their machine |
 | `fixture-claim-owner` | Northside contributor in API home's team | Owns the assignable JSON:API contract conductors and claims with them |
 | `fixture-foreign-lead` | Northside member, North Crew, Southside lead | A lead rank in another workspace grants nothing here |
 | `fixture-api-machine` | site role `api_machine` | JSON:API machine registration matrix |

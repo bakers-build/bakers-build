@@ -23,7 +23,7 @@ export default {
   tunnel: false,
   addons: [
     '@bakers-build/addon-codex',
-    { use: '@bakers-build/addon-claude', with: { skip_permissions: true } },
+    { use: '@bakers-build/addon-claude', with: { security: 'sandbox' } },
     '@bakers-build/addon-bakers-ui-artifacts',
   ],
   agents: {
@@ -135,8 +135,8 @@ Options go in the addon entry's `with` object (or a `catalog` entry). The addon 
 
 | Package | Aliases | Options |
 |---|---|---|
-| `@bakers-build/addon-claude` | `opus`, `sonnet` | `model`, `effort`, `skip_permissions` (default `true`), `args`, `measure` (default `false`) |
-| `@bakers-build/addon-codex` | `codex`, `astra`, `sol`, `terra`, `luna` | `model`, `effort`, `args` |
+| `@bakers-build/addon-claude` | `opus`, `sonnet` | `model`, `effort`, `security`, `sandbox`, `config`, `env_deny`, `args`, `measure` (default `false`) |
+| `@bakers-build/addon-codex` | `codex`, `astra`, `sol`, `terra`, `luna` | `model`, `effort`, `security`, `sandbox`, `config`, `env_deny`, `args` |
 | `@bakers-build/addon-kimi` | `kimi` | `model`, `args`; `effort` is ignored with a log line |
 | `@bakers-build/addon-opencode` | `opencode` | `model`, `args`; `effort` is ignored with a log line |
 | `@bakers-build/addon-pi` | `pi` | `model`, `provider`, `thinking` or `effort`, `approve`, `args` |
@@ -156,14 +156,28 @@ Place that object in `addons` of `machine.config.js`. An agent harness in a cond
 
 | Package | Reserved |
 |---|---|
-| claude | `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode` |
-| codex | `--sandbox`, `-s`, `--dangerously-bypass-approvals-and-sandbox`, `--dangerously-bypass-hook-trust` |
+| claude | `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config`, `--mcp-config` |
+| codex | `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox`, `--dangerously-bypass-hook-trust` |
 | kimi | `-p`, `--prompt`, `--output-format` |
 | opencode | `--prompt`, `--auto` |
 | pi | `--session-dir`, `--approve`, `-a`, `--no-approve`, `-na` |
 | grok | `--permission-mode`, `--session-id` |
 
-`skip_permissions: false` only omits bakers.build's bypass flag; Claude settings that select bypass mode still apply. Pi's `approve` trusts project-local Pi files and grants no bakers.build access. Claude `measure: true` launches Claude through the addon's measure wrapper, which runs a logging proxy for that process and applies the state-group settings; it also works on a `catalog` entry.
+Pi's `approve` trusts project-local Pi files and grants no bakers.build access. Claude `measure: true` launches Claude through the addon's measure wrapper, which runs a logging proxy for that process and applies the state-group settings; it also works on a `catalog` entry.
+
+## Run security
+
+Claude and Codex runs start sandboxed by default. Set `security`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. No global or conductor-level setting exists.
+
+```js
+agents: {
+  catalog: [
+    { harness: '@bakers-build/addon-claude', alias: 'opus-yolo', with: { model: 'opus', security: 'yolo' } },
+  ],
+},
+```
+
+Modes, blocks, env var filter, risks and isolation: [Run security](/advanced/run-security).
 
 ## Mixed harnesses
 

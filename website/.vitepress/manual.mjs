@@ -125,6 +125,7 @@ export const SIDEBAR = {
     group('Operations', [
       ['Overview', '/advanced/'],
       ['Machines', '/advanced/machines'],
+      ['Run security', '/advanced/run-security'],
       ['Connections', '/advanced/connections'],
       ['Conductors', '/advanced/conductors'],
       ['Set up a worker server', '/advanced/worker-server'],

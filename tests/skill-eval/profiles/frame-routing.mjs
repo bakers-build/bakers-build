@@ -1,4 +1,4 @@
-import { calls, check, succeeded, uuid, validateTools, writes } from '../call-utils.mjs';
+import { calls, check, names, succeeded, toolCalls, uuid, validateTools, writes } from '../call-utils.mjs';
 import { requireValue } from '../validation.mjs';
 
 const INTAKE = 'bb-workflow/references/intake.md';
@@ -16,11 +16,10 @@ export function validate(f) {
 
 export function checkOutput(f, output, context) {
   const e = f.expect, trace = calls(context);
-  const target = `bb_ticket/bb_ticket/${f.input.ticket_uuid}`;
   const skillReads = trace.filter(c => c.tool === 'read_file' && succeeded(c) && String(c.arguments?.path).startsWith('skills/'));
   return [
-    check('ticket-read', trace.some(c => c.action === 'read' && c.target === target && succeeded(c)), 'Read the ticket before routing'),
-    check('no-mutation', writes(trace).length === 0, 'Routing writes nothing: no create or update'),
+    check('ticket-read', toolCalls(trace, 'bakers_ticket_read').some(c => names(c, f.simulation.ticket) && succeeded(c)), 'Read the ticket before routing'),
+    check('no-mutation', writes(trace).length === 0, 'Routing writes nothing: no tracker write tool'),
     check('recipe-read', skillReads.some(c => c.arguments.path === e.recipe.path) === e.recipe.read,
       e.recipe.read ? 'Read the resolved recipe as a file' : 'Read no content for this recipe: it is missing, or routing stopped first'),
     check('slot-markers', e.markers.every(m => output.includes(m)) && e.absent.every(m => !output.includes(m)),

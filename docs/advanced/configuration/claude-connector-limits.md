@@ -22,27 +22,21 @@ a readable permission error; Claude will report it as a failure. It does not fal
 anything, and it does not retry as a different identity. Ask a workspace admin to grant the
 missing permission if you expect to have it.
 
-**Invalid, expired or revoked tokens are not a clean 401.** Only a *missing* bearer gets an HTTP
-401 from the server. An invalid, expired or revoked token is forwarded to bakers.build; its rejection
-comes back inside the conversation as a failing tool call or an empty tool list, not as a
-connection-level failure. There is no token audience binding: any valid bakers.build `bb:session`
-token, including one issued to another bakers.build client such as the CLI, is accepted. If tools start
-erroring unexpectedly, disconnect and reconnect the connector (see below) rather than assuming
-it's a permission problem.
+**Invalid, expired or revoked tokens get an HTTP 401** from bakers.build itself, like a missing one,
+so the client asks you to sign in again. Any valid bakers.build `bb:session` token is accepted,
+including one issued to the CLI.
 
 ## Limitations
 
 - No shell or filesystem access — the connector cannot infer a branch, read a local checkout, or
-  run commands. It can only read/write through the four MCP tools (`search`, `read`, `create`, `update`).
+  run commands. It works only through the bakers tools that bakers.build serves at `/mcp`.
 - No conductor assignment, no working/review/done transitions, no bug tickets. The
   connector's instructions stop at `plan` (feature/chore) by design — see the
-  [instructions bundle](/advanced/configuration/claude-project-instructions)'s "What this bundle deliberately drops" section for the full list and why. **This is an
-  instructions-level policy, not a server-enforced one**: the MCP server itself exposes the same
-  `update` tool bakers.build's JSON:API would accept from any `bb:session` client, so it would technically
-  let a state/conductor write through if asked to make one. Nothing in this setup should be relied
-  on to block that beyond Claude following the instructions and your own account's permissions.
-- No label/term creation — a missing recipe or ticket type term blocks qualification
-  until a workspace contributor or lead adds it in the workspace settings, or someone with CLI access
-  creates it.
-- `search` returns at most 100 results per call with no offset/pagination; narrow with `filters`
-  rather than expecting to page through a large result set.
+  [instructions bundle](/advanced/configuration/claude-project-instructions)'s "What this bundle
+  deliberately drops" section. **This is an instructions-level policy**: `bakers_ticket_transition`
+  allows every move the ticket's workflow and your permissions allow. Nothing in this setup blocks a
+  later transition beyond Claude following the instructions and your account's permissions.
+- A missing recipe or ticket type term is created only when your workspace rank may create terms;
+  otherwise `bakers_ticket_create` fails naming it and a workspace contributor or lead adds it first.
+- `bakers_ticket_search` returns at most 50 tickets per call, newest first, with no paging; search
+  with a narrower word instead.

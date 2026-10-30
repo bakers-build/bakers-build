@@ -55,6 +55,7 @@ async function measured(
   state: string,
   extraEnv: Record<string, string> = {},
   callerArgs: string[] = ['extra-arg'],
+  settingsArgs: string[] = SETTINGS_ARGS,
 ) {
   try {
     await run(
@@ -65,7 +66,7 @@ async function measured(
         '-e',
         FAKE_CLAUDE,
         ...callerArgs,
-        ...SETTINGS_ARGS,
+        ...settingsArgs,
       ],
       {
         cwd,
@@ -94,6 +95,28 @@ const bundled = (group: string) =>
   readFile(join(measureDir, `keytec-${group}.json`), 'utf8');
 
 describe('claude-measure launch wrapper', () => {
+  it('folds an inline --settings JSON into the profile, joining permission lists', async () => {
+    const cwd = await worktree(true);
+    const inline = {
+      sandbox: { enabled: true },
+      permissions: { allow: ['Bash'], deny: ['Read(~/.ssh/**)'] },
+    };
+    const out = await measured(cwd, 'coding', {}, undefined, [
+      '--settings',
+      JSON.stringify(inline),
+    ]);
+    expect(out.settingsPath).toBe('.bakers/claude-measure.settings.json');
+    const settings = JSON.parse(out.settings);
+    const profile = JSON.parse(await bundled('coding'));
+    expect(settings.sandbox).toEqual({ enabled: true });
+    expect(settings.effortLevel).toBe(profile.effortLevel);
+    expect(settings.permissions.allow).toEqual(['Bash']);
+    expect(settings.permissions.deny).toEqual([
+      ...profile.permissions.deny,
+      'Read(~/.ssh/**)',
+    ]);
+  });
+
   it('copies the state group, runs claude through a live loopback proxy, and exits with its code', async () => {
     const cwd = await worktree(true);
     const out = await measured(cwd, 'coding');
@@ -223,6 +246,7 @@ describe('ClaudeAgent measure', () => {
     const cmd = new ClaudeAgent({
       model: 'opus',
       measure: true,
+      security: 'yolo',
       args: ['--verbose'],
     }).launchCommand('go');
     expect(cmd).toBe(
@@ -230,10 +254,33 @@ describe('ClaudeAgent measure', () => {
     );
   });
 
+  it('passes each overlapping flag once in sandbox mode, with the sandbox settings inline', () => {
+    const argv = execFileSync(
+      'bash',
+      [
+        '-c',
+        `node() { printf '%s\\0' "$@"; }; ${new ClaudeAgent({ measure: true }).launchCommand('go')}`,
+      ],
+      { encoding: 'utf8' },
+    )
+      .split('\0')
+      .slice(0, -1);
+    for (const flag of [
+      '--setting-sources',
+      '--settings',
+      '--strict-mcp-config',
+      '--mcp-config',
+    ]) {
+      expect(argv.filter((a) => a === flag)).toHaveLength(1);
+    }
+    const settings = JSON.parse(argv[argv.indexOf('--settings') + 1] as string);
+    expect(settings.sandbox.enabled).toBe(true);
+  });
+
   it('leaves the launch untouched without measure', () => {
-    expect(new ClaudeAgent({ model: 'opus' }).launchCommand('go')).toBe(
-      "claude 'go' --model 'opus' --dangerously-skip-permissions",
-    );
+    expect(
+      new ClaudeAgent({ model: 'opus', security: 'yolo' }).launchCommand('go'),
+    ).toBe("claude 'go' --model 'opus' --dangerously-skip-permissions");
   });
 
   it('omits measure for an empty prompt', () => {

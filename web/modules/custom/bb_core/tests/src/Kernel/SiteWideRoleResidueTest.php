@@ -81,6 +81,11 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
    * @var array<string>
    */
   private const SCOPE_CEILING = [
+    // A user-bound token loses what the scope does not name, and core grants
+    // `view` of a public file (the `user_picture`) only through this.
+    'access content',
+    // Skills call bakers tools over `/mcp` with the session token.
+    'access mcp server',
     'claim bakers tickets',
     'create bb_comment',
     // `prepare-deployment` tells the agent in so many words to "create the

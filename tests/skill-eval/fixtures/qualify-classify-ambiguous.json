@@ -33,10 +33,7 @@
       "title": "Export invoices as CSV",
       "state": "qualification",
       "workflow": "bb_feature",
-      "description": {
-        "value": "Operators export the invoice list as CSV. The PM wants to shape the column set together with the agent while building, and has no preference between the installed methods: either the probe or the pair method would do.",
-        "format": "bb_rich"
-      },
+      "description": "Operators export the invoice list as CSV. The PM wants to shape the column set together with the agent while building, and has no preference between the installed methods: either the probe or the pair method would do.",
       "created": "2026-01-01",
       "base_branch": "develop",
       "changed": "fixture-revision-1"

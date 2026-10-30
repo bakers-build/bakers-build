@@ -27,7 +27,7 @@
     "@bakers-build/addon-herdr": "workspace:^",
     "@bakers-build/addon-workspace": "workspace:^",
     "commander": "^12.1.0",
-    "dropsh": "^0.7.5"
+    "dropsh": "^0.8.2"
   },
   "devDependencies": {
     "@bakers-build/addon-bakers-ui": "workspace:^",

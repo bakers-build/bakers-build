@@ -27,10 +27,12 @@ with the comment ID and a truncation flag for a deliberate follow-up read.
 
 Three paginated reads cover runs (including four weeks of history), target
 activities and whole-week worklogs. The first two use JSON:API; worklogs use
-`GET /api/time/worklogs?from=YYYY-MM-DD&to=YYYY-MM-DD`. This employee-only
-endpoint is provided by `bb_track` and must be deployed with this addon. It
-accepts `page[limit]` (1–50) and `page[offset]`, bounds the range to 378 dates
-(to cover complete weeks around a 366-day selection), and accepts no owner selector.
+the MCP tool `tool_api__bakers_worklog_list` on the site's `/mcp` endpoint
+(`@dropsh/plugin-tool`, same auth profile), called with `from`/`to`
+(YYYY-MM-DD, complete weeks around the selection, at most 378 dates), `limit` 50
+and `offset` until its `next_offset` is null. This employee-only tool is provided
+by `bb_track` and must be deployed with this addon; it accepts no owner selector
+and returns the referenced `tickets`/`projects` plus an `omitted` flag.
 Generic JSON:API deliberately hides worklog ownership and may include led-team
 records, so it cannot safely supply personal totals. Sparse includes retrieve ticket/project context
 without per-ticket requests. Historical runs are reduced to daily counts and known

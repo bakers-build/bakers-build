@@ -50,10 +50,12 @@ through `bakers ports` when the tunnel policy is enabled. Serving remains separa
 For publish-comment, create-ticket and transition-ticket, see
 [Test a skill's tool calls](../../docs/advanced/development/test-skill-tools.md). Seven cases exercise
 actual MCP calls against a local simulator, including exact Markdown, prior-art decisions, confirmation,
-uncertain publication, additive links-only updates and a rejected transition. `bakers(argv)` never
-executes a command or contacts a tracker. Final prose cannot substitute for the recorded call trace.
-`cli-contract.mjs` runs the same argv through the repository CLI against a loopback fixture, so the
-simulator cannot drift from the real command language unnoticed; the guide documents that suite.
+uncertain publication, links-only transitions and a refused transition. `bakers(argv)` simulates
+`bakers dropsh tool <tool> --data @<file>` for the bakers tools in `contract-fixture.json`; it never
+executes a command or contacts a tracker, and a JSON:API command fails as outside the skill contract.
+Final prose cannot substitute for the recorded call trace. `cli-contract.mjs` runs the same argv through
+the repository CLI against a loopback MCP endpoint serving the same tool definitions, so the simulator
+cannot drift from the real CLI unnoticed; the guide documents that suite.
 Profiles receive the trace as a third context argument. Results keep correctness (`status`) and
 call quality (`call_quality`) separate and record observed `effort`; reports display both with the
 call arguments and results.

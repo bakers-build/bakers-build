@@ -2,7 +2,7 @@
 #
 # A conductor is assigned and claims work only while its owner can access the
 # project. claims.feature and activities.feature register this account's
-# conductors in project.home. fixture-conductor-owner stays without a team:
+# conductors in project.home. fixture-conductor-owner stays out of this team:
 # conductor-properties.feature needs a conductor owner who cannot inspect
 # that project's runs.
 _meta:

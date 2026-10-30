@@ -216,29 +216,6 @@ services:
     networks:
       - internal
 
-  # MCP connector for Claude (BB-658 Task 3). Hosts the upstream
-  # @dropsh/plugin-mcp Streamable HTTP server. No host port here: ingress
-  # (Traefik overlay) is the only thing that reaches it, exactly like
-  # nginx above. See docker/mcp/README.md for why this image runs two
-  # processes (the MCP process binds loopback-only; nginx in the same
-  # container proxies it out) and for the entity/operation policy's known gap.
-  mcp:
-    build:
-      context: .
-      dockerfile: docker/mcp/Dockerfile
-    image: "${REGISTRY_IMAGE_MCP}"
-    restart: unless-stopped
-    depends_on:
-      - nginx
-    environment:
-      # The MCP process forwards each request's bearer to this origin — no
-      # service-account credentials here (BB-658 review F9: a prior
-      # `oauth2_client_credentials` profile/env trio was dead code, since the
-      # HTTP transport never authenticates as a default profile).
-      MCP_BASE_URL: "https://${DOMAIN}"
-    networks:
-      - internal
-
   cron:
     image: "${REGISTRY_IMAGE_PHP}"
     restart: unless-stopped

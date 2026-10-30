@@ -22,10 +22,10 @@
     "@bakers-build/core": "workspace:^"
   },
   "dependencies": {
-    "@dropsh/plugin-markdown": "^0.7.1",
-    "@dropsh/plugin-jsonapi-schema": "^0.7.1",
+    "@dropsh/plugin-markdown": "^0.8.2",
+    "@dropsh/plugin-jsonapi-schema": "^0.8.2",
     "@bakers-build/addon-name-refs": "workspace:^",
-    "dropsh": "^0.7.5"
+    "dropsh": "^0.8.2"
   },
   "devDependencies": {
     "@bakers-build/core": "workspace:^",

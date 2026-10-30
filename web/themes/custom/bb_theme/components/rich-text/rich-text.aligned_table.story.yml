@@ -1,0 +1,10 @@
+component: bb_theme:rich-text
+name: Aligned table
+props:
+  body: >-
+    <table><thead><tr><th class="markdown-align-left">A</th><th
+    class="markdown-align-center">B</th><th
+    class="markdown-align-right">C</th><th>D</th></tr></thead><tbody><tr><td
+    class="markdown-align-left">1</td><td
+    class="markdown-align-center">2</td><td
+    class="markdown-align-right">3</td><td>4</td></tr></tbody></table>

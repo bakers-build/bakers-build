@@ -45,6 +45,33 @@ function run(
     { owner_user_id: who, ticket_id: 'ticket-a', conductor_id: 'conductor-a' },
   );
 }
+function worklog(id: string, values: Record<string, unknown> = {}) {
+  return {
+    id,
+    work_date: '2026-10-12',
+    state: 'recorded',
+    duration_seconds: 3600,
+    description: null,
+    source_keys: [],
+    project_id: null,
+    ticket_id: null,
+    submission_id: null,
+    ...values,
+  };
+}
+function page(
+  data: unknown[],
+  extra: { omitted?: boolean; next_offset?: number | null } = {},
+) {
+  return {
+    data,
+    projects: [],
+    tickets: [],
+    omitted: false,
+    next_offset: null,
+    ...extra,
+  };
+}
 async function fixture(overrides: Record<string, unknown> = {}) {
   const urls: URL[] = [];
   const documents: Record<string, unknown> = {
@@ -110,36 +137,19 @@ async function fixture(overrides: Record<string, unknown> = {}) {
         ),
       ],
     },
-    '/api/time/worklogs': {
-      data: [
-        row(
-          'bb_track_worklog',
-          'w1',
-          {
-            work_date: '2026-10-12',
-            state: 'recorded',
-            duration_seconds: 3600,
-            description: 'Work',
-          },
-          {
-            owner_user_id: owner,
-            ticket_id: 'ticket-a',
-            project_id: 'project-a',
-          },
-        ),
-        row(
-          'bb_track_worklog',
-          'w2',
-          {
-            work_date: '2026-10-12',
-            state: 'proposed',
-            duration_seconds: 7200,
-            description: 'Draft',
-          },
-          { owner_user_id: owner, project_id: 'project-a' },
-        ),
-      ],
-    },
+    worklogs: page([
+      worklog('w1', {
+        description: 'Work',
+        ticket_id: 'ticket-a',
+        project_id: 'project-a',
+      }),
+      worklog('w2', {
+        state: 'proposed',
+        duration_seconds: 7200,
+        description: 'Draft',
+        project_id: 'project-a',
+      }),
+    ]),
     ...overrides,
   };
   const options: Parameters<typeof createBbConnectionClient>[1] = {
@@ -172,17 +182,19 @@ async function fixture(overrides: Record<string, unknown> = {}) {
     },
     options,
   );
-  const worklogClient = await createBbConnectionClient(
-    {
-      site: {
-        base_url: 'https://example.invalid',
-        jsonapi_prefix: '/api/time',
-      },
-      plugins: [],
+  const calls: { name: string; args: Record<string, unknown> }[] = [];
+  // The `tool_api__bakers_worklog_list` MCP tool; `worklogs` is page 0, `worklogs:<offset>` later pages.
+  const worklogClient = {
+    call: async (name: string, args: Record<string, unknown>) => {
+      calls.push({ name, args });
+      const offset = Number(args.offset ?? 0);
+      const body = documents[offset ? `worklogs:${offset}` : 'worklogs'];
+      if (body === undefined) throw new Error(`Unexpected call ${offset}`);
+      if (body instanceof Error) throw body;
+      return { content: [], structuredContent: body };
     },
-    options,
-  );
-  return { client, worklogClient, urls };
+  };
+  return { client, worklogClient, urls, calls };
 }
 const selection = { from: '2026-10-12', to: '2026-10-13' };
 
@@ -320,7 +332,7 @@ it('keeps pagination after an empty access-filtered page and discloses omitted w
       data: [],
       links: { next: '/jsonapi/bb_run/bb_run?page[offset]=50' },
     },
-    '/api/time/worklogs': { data: [], meta: { omitted: { detail: 'hidden' } } },
+    worklogs: page([], { omitted: true }),
   });
   const report = await loadEvidence(client, selection, worklogClient);
   expect(report.days[0].run_count).toBe(2);
@@ -356,17 +368,9 @@ it('retains events on owned runs outside the run interval without admitting fore
   expect(report.days[0].run_count).toBe(3);
 });
 
-it('discloses missing worklog ownership instead of reporting verified zero bookings', async () => {
+it('discloses an invalid worklog state instead of reporting verified zero bookings', async () => {
   const { client, worklogClient } = await fixture({
-    '/api/time/worklogs': {
-      data: [
-        row('bb_track_worklog', 'unknown', {
-          work_date: '2026-10-12',
-          state: 'recorded',
-          duration_seconds: 3600,
-        }),
-      ],
-    },
+    worklogs: page([worklog('unknown', { state: 'deleted' })]),
   });
   const report = await loadEvidence(client, selection, worklogClient);
   expect(report.complete).toBe(false);
@@ -435,20 +439,7 @@ it('retains a zero-duration run at the earliest historical midnight', async () =
 
 it('rejects impossible returned worklog dates before reporting daily or weekly totals', async () => {
   const { client, worklogClient } = await fixture({
-    '/api/time/worklogs': {
-      data: [
-        row(
-          'bb_track_worklog',
-          'bad-date',
-          {
-            work_date: '2026-02-30',
-            state: 'recorded',
-            duration_seconds: 3600,
-          },
-          { owner_user_id: owner },
-        ),
-      ],
-    },
+    worklogs: page([worklog('bad-date', { work_date: '2026-02-30' })]),
   });
   await expect(
     loadEvidence(
@@ -490,24 +481,11 @@ it.each([
       ],
     };
   if (missing.startsWith('worklog-'))
-    overrides['/api/time/worklogs'] = {
-      data: [
-        row(
-          'bb_track_worklog',
-          'worklog',
-          {
-            work_date: '2026-10-12',
-            state: 'recorded',
-            duration_seconds: 3600,
-          },
-          {
-            owner_user_id: owner,
-            [missing === 'worklog-ticket' ? 'ticket_id' : 'project_id']:
-              'missing',
-          },
-        ),
-      ],
-    };
+    overrides.worklogs = page([
+      worklog('worklog', {
+        [missing === 'worklog-ticket' ? 'ticket_id' : 'project_id']: 'missing',
+      }),
+    ]);
   const { client, worklogClient } = await fixture(overrides);
   const report = await loadEvidence(client, selection, worklogClient);
   expect(report.complete).toBe(false);
@@ -535,4 +513,64 @@ it('filters Drupal timestamp fields with Unix seconds so real runs and activitie
   )!.searchParams;
   expect(activityQuery.get('filter[created][value]')).toBe('1791756000');
   expect(activityQuery.get('filter[1][condition][value]')).toBe('1791928800');
+});
+
+it('pages the worklog tool by next_offset over the whole selected weeks', async () => {
+  const { client, worklogClient, calls } = await fixture({
+    worklogs: page([worklog('w1')], { next_offset: 50 }),
+    'worklogs:50': page([worklog('w3', { work_date: '2026-10-13' })]),
+  });
+  const report = await loadEvidence(client, selection, worklogClient);
+  expect(calls).toEqual([
+    {
+      name: 'tool_api__bakers_worklog_list',
+      args: { from: '2026-10-12', to: '2026-10-18', limit: 50, offset: 0 },
+    },
+    {
+      name: 'tool_api__bakers_worklog_list',
+      args: { from: '2026-10-12', to: '2026-10-18', limit: 50, offset: 50 },
+    },
+  ]);
+  expect(report.worklogs.map((w: { id: string }) => w.id)).toEqual([
+    'w1',
+    'w3',
+  ]);
+  expect(report.days[1].recorded_seconds).toBe(3600);
+});
+
+it('takes ticket and project context from the worklog tool and rejects non-advancing pages', async () => {
+  const withContext = await fixture({
+    worklogs: {
+      ...page([
+        worklog('w9', { ticket_id: 'ticket-w', project_id: 'project-w' }),
+      ]),
+      tickets: [
+        {
+          id: 'ticket-w',
+          identifier: 'EX-9',
+          title: 'Nine',
+          project_id: 'project-w',
+        },
+      ],
+      projects: [{ id: 'project-w', name: 'Worklog project' }],
+    },
+  });
+  const report = await loadEvidence(
+    withContext.client,
+    selection,
+    withContext.worklogClient,
+  );
+  expect(report.tickets['ticket-w']).toEqual({
+    identifier: 'EX-9',
+    title: 'Nine',
+    project_id: 'project-w',
+  });
+  expect(report.projects['project-w']).toEqual({ name: 'Worklog project' });
+  expect(report.complete).toBe(true);
+  for (const worklogs of [page([], { next_offset: 0 }), { data: 'nope' }]) {
+    const { client, worklogClient } = await fixture({ worklogs });
+    await expect(
+      loadEvidence(client, selection, worklogClient),
+    ).rejects.toThrow(/response|pagination/);
+  }
 });

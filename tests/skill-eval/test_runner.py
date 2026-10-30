@@ -56,8 +56,8 @@ class RunnerTests(unittest.TestCase):
                 runner.read_stream(raw)
 
     def test_tool_mode_requires_exact_server_tools_and_independent_call_trace(self):
-        call = {"type": "tool_use", "id": "call-1", "name": "mcp__fixture__bakers", "input": {"argv": ["bakers", "dropsh", "read", "bb_ticket/bb_ticket/id"]}}
-        raw = stream(tools=["mcp__fixture__bakers", "mcp__fixture__read_file"], blocks=[call])
+        call = {"type": "tool_use", "id": "call-1", "name": "mcp__fixture__bakers", "input": {"argv": ["bakers", "dropsh", "tool", "tool_api__bakers_ticket_read", "--data", "@/args.json"]}}
+        raw = stream(tools=["mcp__fixture__bakers", "mcp__fixture__read_file", "mcp__fixture__write_file"], blocks=[call])
         raw = raw.replace('"mcp_servers": []', '"mcp_servers": [{"name":"fixture","status":"connected"}]')
         trace = [{"tool": "bakers", "arguments": call['input'], "result": {"exit_code": 0}}]
         self.assertEqual(runner.read_stream(raw, tool_trace=trace)[0], "artifact")
@@ -70,7 +70,7 @@ class RunnerTests(unittest.TestCase):
 
     def test_optional_tools_are_bound_to_the_selected_fixture(self):
         fixture = {'simulation': {'commands': {'git': []}}}
-        names = ['mcp__fixture__bakers', 'mcp__fixture__read_file', 'mcp__fixture__git']
+        names = ['mcp__fixture__bakers', 'mcp__fixture__read_file', 'mcp__fixture__write_file', 'mcp__fixture__git']
         raw = stream(tools=names).replace('"mcp_servers": []', '"mcp_servers": [{"name":"fixture","status":"connected"}]')
         self.assertEqual(runner.read_stream(raw, tool_trace=[], fixture=fixture)[0], 'artifact')
         with self.assertRaises(ValueError):
@@ -101,7 +101,7 @@ class RunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
             cli = directory / 'claude'
-            raw = stream(tools=['mcp__fixture__bakers', 'mcp__fixture__read_file']).replace('"mcp_servers": []', '"mcp_servers": [{"name":"fixture","status":"connected"}]')
+            raw = stream(tools=['mcp__fixture__bakers', 'mcp__fixture__read_file', 'mcp__fixture__write_file']).replace('"mcp_servers": []', '"mcp_servers": [{"name":"fixture","status":"connected"}]')
             cli.write_text(f'#!{sys.executable}\nimport json, subprocess, sys\na=sys.argv\nc=json.loads(a[a.index("--mcp-config")+1])["mcpServers"]["fixture"]\nr=subprocess.run([c["command"], *c["args"]], input="", text=True, capture_output=True)\nif r.returncode: print(r.stderr, file=sys.stderr); sys.exit(r.returncode)\nprint({raw!r})\n')
             cli.chmod(0o755)
             output = directory / 'attempt'

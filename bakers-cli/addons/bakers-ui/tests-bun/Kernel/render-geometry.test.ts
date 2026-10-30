@@ -34,6 +34,7 @@ import type {
   ResolvedRoute,
 } from '../../src/types.js';
 import { oracleWidth } from '../../tests/support/eaw-oracle.js';
+import { includedProjects } from '../fixtures/included-projects.js';
 import { bootTui } from '../tui-harness.js';
 
 // BB-241 Amendment A (spec D11 / AC-13) — the RENDER INVARIANT.
@@ -180,13 +181,15 @@ const ticketDetailDoc = {
 };
 
 function fakeServices(): RendererServices {
-  const collection = (): Collection => {
+  const collection = (type: string): Collection => {
     const c: Collection = {
       where: () => c,
+      whereIn: () => c,
       sort: () => c,
       page: () => c,
       first: async () => null,
-      list: async () => [],
+      list: async () =>
+        type === 'bb_project' ? includedProjects(conductorDoc) : [],
     };
     return c;
   };

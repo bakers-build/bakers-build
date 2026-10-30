@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Compose-rendering contract for the BB-658 Task 3 MCP service.
+# Compose-rendering contract for the deployed stack.
 #
-#   bash tests/contract/mcp-compose.sh
+#   bash tests/contract/compose.sh
 #
 # Renders docker-compose.yml + the Traefik ingress overlay with dummy
 # environment values (`docker compose config`, no real secrets, nothing
 # started) and asserts:
-#   - the mcp service is present
 #   - no plaintext secret leaks into the rendered output
-#   - the mcp service exposes no host port (ingress-only, like nginx)
+#   - no separate mcp service renders; /mcp is Drupal's mcp_server
 #   - the `install` profile (site:install, DROPS the DB) is not active on a
 #     normal render
 #   - Traefik is the only ingress overlay, and no removed keytec variable
@@ -17,15 +16,6 @@
 #   - `/oauth/register` is rate-limited in the baked nginx config
 #   - the merge gate's e2e overlay (docker/e2e/compose.yml) renders, publishes
 #     no port, keeps config/sync out of its recipe world and leaks no secret
-#
-# The entity/operation allowlist itself lives in docker/mcp/dropsh.config.js,
-# baked into the image — see docker/mcp/README.md for why it is a documented
-# superset, not an exact-matrix claim, and why the real boundary is Drupal
-# permissions, not this config layer.
-#
-# A real `docker build` + container smoke test (does the image actually
-# resolve its plugins and answer `initialize`?) is a separate, slower step:
-# run `bash tests/contract/mcp-image-smoke.sh` when `docker/mcp/**` changes.
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -42,7 +32,7 @@ render() {
   DB_NAME=dummy DB_USER=dummy DB_PASSWORD=dummy-pw DB_ROOT_PASSWORD=dummy-root-pw \
   DRUPAL_HASH_SALT=dummy-salt \
   REGISTRY_IMAGE_PHP=dummy/php:dummy REGISTRY_IMAGE_NGINX=dummy/nginx:dummy \
-  REGISTRY_IMAGE_MCP=dummy/mcp:dummy REGISTRY_IMAGE_E2E=dummy/e2e:dummy \
+  REGISTRY_IMAGE_E2E=dummy/e2e:dummy \
     docker compose -f docker-compose.yml -f "$overlay" "$@" config
 }
 
@@ -57,18 +47,13 @@ for overlay in docker-compose.traefik.yml; do
   out="$(render "$overlay")"
 
   echo "$out" | grep -q '^  mcp:' \
-    || fail "$overlay: rendered config has no mcp service"
+    && fail "$overlay: a separate mcp service renders; /mcp belongs to Drupal"
 
   # No secret-bearing line renders without the injected dummy value.
   if echo "$out" | grep -E 'DB_PASSWORD|DB_ROOT_PASSWORD|DRUPAL_HASH_SALT' \
        | grep -Ev 'dummy'; then
     fail "$overlay: a secret-bearing line rendered without the injected dummy value"
   fi
-
-  # No host port bypassing ingress — the mcp service must not publish ports.
-  mcp_block="$(echo "$out" | awk '/^  mcp:/{f=1} f && /^  [a-z]/ && !/^  mcp:/{f=0} f')"
-  echo "$mcp_block" | grep -q 'ports:' \
-    && fail "$overlay: mcp service publishes a host port"
 
   # install profile (site:install, DROPS the DB) must never be implicitly
   # active: a normal render (no --profile install) must not include it.
@@ -87,7 +72,7 @@ for overlay in docker-compose.traefik.yml; do
     fail "$overlay: a removed variable or the consumer seed is still wired"
   fi
 
-  pass "$overlay renders mcp service with no host port and no leaked secret"
+  pass "$overlay renders with no mcp service and no leaked secret"
 done
 
 # The merge gate's e2e overlay: no host port anywhere, the recipe world never runs
@@ -129,4 +114,4 @@ if [ -n "$nginx_image" ] && docker image inspect "$nginx_image" >/dev/null 2>&1;
     || fail "nginx -t failed for docker/nginx/oauth-discovery.conf + oauth-register-zone.conf"
 fi
 
-pass "mcp-compose.sh"
+pass "compose.sh"

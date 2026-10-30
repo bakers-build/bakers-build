@@ -29,6 +29,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 #[RunTestsInSeparateProcesses]
 final class ConductorOfflineResourceTest extends KernelTestBase {
 
+  use OgScopeFixtureTrait;
+
   /**
    * {@inheritdoc}
    *
@@ -48,12 +50,13 @@ final class ConductorOfflineResourceTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     foreach ([
-      'user', 'og_membership', 'bb_workspace', 'bb_machine',
+      'user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_machine',
       'bb_group', 'bb_project', 'bb_conductor',
     ] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['user', 'jsonapi']);
+    $this->installOgScopeFixture();
     $this->createConductorUser('uid1-dummy');
     $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
       ->create(['name' => 'ws-off']);
@@ -61,8 +64,11 @@ final class ConductorOfflineResourceTest extends KernelTestBase {
     $group = $this->container->get('entity_type.manager')->getStorage('bb_group')
       ->create(['name' => 'g-off', 'workspace_id' => $workspace->id()]);
     $group->save();
+    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')
+      ->create(['name' => 't-off', 'workspace_id' => $workspace->id()]);
+    $team->save();
     $this->container->get('entity_type.manager')->getStorage('bb_project')
-      ->create(['name' => 'default-project', 'group_id' => $group->id()])->save();
+      ->create(['name' => 'default-project', 'group_id' => $group->id(), 'teams' => [$team->id()]])->save();
   }
 
   /**
@@ -248,6 +254,7 @@ final class ConductorOfflineResourceTest extends KernelTestBase {
       ->create(['name' => $name, 'status' => 1, 'roles' => [$role_id]]);
     $this->assertInstanceOf(UserInterface::class, $user);
     $user->save();
+    $this->addContributorEverywhere($user);
     return $user;
   }
 

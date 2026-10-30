@@ -1,4 +1,5 @@
-import { calls, check, readAfter, succeeded, uuid, validateTools, value, writes } from '../call-utils.mjs';
+import { arg, calls, check, names, readAfter, succeeded, tool, toolCalls, uuid, validateTools, writes } from '../call-utils.mjs';
+import { priorArtSearched } from './create-ticket-calls.mjs';
 import { requireValue } from '../validation.mjs';
 
 // A state of a deployment or verification ticket through bb-workflow and its recipe: the comments on
@@ -18,27 +19,26 @@ export function validate(f) {
 }
 
 export function checkOutput(f, output, context) {
-  const e = f.expect, trace = calls(context), all = writes(trace);
-  const target = `bb_ticket/bb_ticket/${f.input.ticket_uuid}`;
-  const own = all.filter(c => c.action === 'create' && c.target === 'bb_comment' && succeeded(c) && value(c, 'ticket_id') === f.input.ticket_uuid);
-  const types = own.map(c => value(c, 'bb_comment_type'));
-  const states = all.filter(c => c.action === 'update' && c.target === target && value(c, 'state'));
+  const e = f.expect, trace = calls(context, f.simulation.files), all = writes(trace), ticket = f.simulation.ticket;
+  const own = all.filter(c => c.name === tool('bakers_comment_publish') && succeeded(c) && names(c, ticket));
+  const types = own.map(c => arg(c, 'type'));
+  const states = all.filter(c => c.name === tool('bakers_ticket_transition') && names(c, ticket) && arg(c, 'state'));
   const external = trace.filter(c => ['git', 'glab'].includes(c.tool));
   const argv = c => (c.arguments?.argv ?? []).join(' ');
   const merges = external.filter(c => c.tool === 'glab' && /^glab (mr merge|api .*merge_requests\/\d+\/merge)\b/.test(argv(c)));
   let at = -1;
   const checks = [
-    check('ticket-read', trace.some(c => c.action === 'read' && c.target === target && succeeded(c)), 'Read the ticket first'),
-    check('validated', !trace.some(c => 'no-validate' in c.flags), 'Never bypass validation'),
+    check('ticket-read', toolCalls(trace, 'bakers_ticket_read').some(c => names(c, ticket) && succeeded(c)), 'Read the ticket first'),
+    check('tool-calls-only', !trace.some(c => c.mode === 'jsonapi'), 'Call bakers tools; no JSON:API command'),
     check('comment-sequence', e.comments.every(t => (at = types.indexOf(t, at + 1)) >= 0) && types.at(-1) === 'summary',
       `Publish ${e.comments.join(', ')} on this ticket in that order, the summary last`),
     e.transition
-      ? check('transition', states.length === 1 && value(states[0], 'state') === e.transition && Boolean(readAfter(trace, states[0], target)),
+      ? check('transition', states.length === 1 && arg(states[0], 'state') === e.transition && Boolean(readAfter(trace, states[0], ticket)),
         `Transition once to ${e.transition} and read it back`)
       : check('no-transition', states.length === 0, 'Stop without a state write'),
   ];
   for (const [type, needles] of Object.entries(e.includes ?? {})) {
-    const bodies = own.filter(c => value(c, 'bb_comment_type') === type).map(c => value(c, 'body.value') ?? '').join('\n');
+    const bodies = own.filter(c => arg(c, 'type') === type).map(c => arg(c, 'body') ?? '').join('\n');
     checks.push(check(`${type}-content`, needles.every(n => bodies.includes(n)), `The ${type} comment names ${needles.join(', ')}`));
   }
   if (e.merges) {
@@ -54,18 +54,18 @@ export function checkOutput(f, output, context) {
       !merges.some(c => /--squash|squash=true/.test(argv(c))), 'The recipe merges itself; the frame\'s squash merge never runs'));
   }
   if (e.results !== undefined) {
-    const results = own.filter(c => value(c, 'bb_comment_type') === 'result');
+    const results = own.filter(c => arg(c, 'type') === 'result');
     checks.push(check('per-ticket-results', results.length === e.results.length &&
-      e.results.every(id => results.some(c => value(c, 'body.value')?.includes(id))), `One result comment per tested ticket: ${e.results.join(', ')}`));
+      e.results.every(id => results.some(c => arg(c, 'body')?.includes(id))), `One result comment per tested ticket: ${e.results.join(', ')}`));
   }
   if (e.bugs !== undefined) {
-    const creates = all.filter(c => c.action === 'create' && c.target === 'bb_ticket' && succeeded(c));
-    const searched = c => trace.some(s => s.action === 'search' && s.target === 'bb_ticket' && succeeded(s) && s.index < c.index);
-    checks.push(check('regressions', creates.length === e.bugs && creates.every(c => value(c, 'type_names') === 'bug' && searched(c)),
+    const creates = all.filter(c => c.name === tool('bakers_ticket_create') && succeeded(c));
+    const searched = c => priorArtSearched(toolCalls(trace, 'bakers_ticket_search').filter(s => s.index < c.index));
+    checks.push(check('regressions', creates.length === e.bugs && creates.every(c => arg(c, 'type') === 'bug' && searched(c)),
       `Create ${e.bugs} bug ticket(s), each after a prior-art search`));
   }
   if (e.missing_persona) {
-    const texts = [output, ...all.map(c => value(c, 'body.value') ?? '')];
+    const texts = [output, ...all.map(c => arg(c, 'body') ?? '')];
     const reported = texts.join('\n').split('\n').some(l => l.includes(e.missing_persona) && /missing|blocked|not run/i.test(l));
     checks.push(check('missing-persona', reported && !texts.some(t => ADMIN.test(t)),
       `Report ${e.missing_persona} as missing; no administrator login replaces it`));

@@ -87,17 +87,16 @@ For actual recorded calls, use [Test a skill's tool calls](/advanced/development
 
 ## Call profiles
 
-A tool-call profile parses the trace with `calls(context)` from `call-utils.mjs` and reuses its checks rather than copying them:
+A tool-call profile parses the trace with `calls(context, fixture.simulation.files)` from `call-utils.mjs`: each `bakers dropsh tool` row gets a `mode` (`call`, `schema`, `list`), the wire `name` (`tool('bakers_ticket_read')` builds one) and its `args`. Reuse the shared checks rather than copying them:
 
 | Helper | Use |
 |---|---|
-| `commonChecks(trace, allowedError, recovered)` | Observed bakers.build calls, tool results and the validated call surface. `allowedError` admits only the fixture's injected error; `recovered` admits only certified read recoveries |
-| `discoveryBefore`, `readAfter`, `writes` | Schema discovery before a write, readback after it, the mutation list |
-| `evidence`, `firstEvidence` | Records from later successful reads and searches, including `included` records. A create response is never evidence |
-| `commentMatches(record, { id, ticket, type, body })` | Exact UUID, entity type, ticket, comment type, `bb_rich` and body |
-| `readRecovery(trace, obligations)` | Certifies at most one rejected read per `{ id, after, before, verified }` obligation; returns `recovered` and diagnostics |
+| `commonChecks(trace, allowedError, recovered)` | Observed tool calls, tool results and the call surface (no JSON:API command). `allowedError` admits only the fixture's injected error; `recovered` admits only certified call recoveries |
+| `toolCalls`, `writes`, `arg`, `names`, `readAfter` | Calls of one tool, the write calls, one argument, whether a call names a ticket, the readback after a write |
+| `payload`, `refused`, `uncertain` | The structured result, a tool refusal (exit 1), a lost response (exit 5, status 0) |
+| `callRecovery(trace)` | Certifies a call rejected before sending (exit 4) when the next tool call succeeds; returns `recovered` and diagnostics |
 
-The profile owns its obligations, barriers, allowed mutations and injected errors. Compute checks and diagnostics once and export both:
+The profile owns its barriers, allowed mutations and injected errors. Compute checks and diagnostics once and export both:
 
 ```js
 function analyze(fixture, context) { /* return { checks, diagnostics } */ }
@@ -105,16 +104,16 @@ export const checkOutput = (f, _output, context) => analyze(f, context).checks;
 export const diagnose = (f, _output, context) => analyze(f, context).diagnostics;
 ```
 
-`diagnose` is optional; a profile without it reports `call_quality.status: clean`. Each diagnostic has a unique `id`, a `category` of `read-recovery`, `uncertain-write` or `expected-error`, a `severity` of `warning`, `info` or `failure`, a `reason`, and zero-based `calls` indices into the trace. A malformed diagnostic, or a `failure` while every named check passes, is an execution error (exit 2): a failure must also fail a named check.
+`diagnose` is optional; a profile without it reports `call_quality.status: clean`. Each diagnostic has a unique `id`, a `category` of `call-recovery`, `uncertain-write` or `expected-error`, a `severity` of `warning`, `info` or `failure`, a `reason`, and zero-based `calls` indices into the trace. A malformed diagnostic, or a `failure` while every named check passes, is an execution error (exit 2): a failure must also fail a named check.
 
 Cover each profile in `skill-tool-calls.test.ts` with a passing trace, the recovered variant, and one negative control per rule the recovery must not absorb.
 
-A call fixture that needs a command form, field or fault the simulator does not model yet extends the simulator and the [real-CLI contract](/advanced/development/test-skill-tools#check-the-simulator-against-the-real-cli) together:
+A call fixture that needs a tool, argument or fault the simulator does not model yet extends the simulator and the [real-CLI contract](/advanced/development/test-skill-tools#check-the-simulator-against-the-real-cli) together:
 
-- Put a new field or label in `tests/skill-eval/contract-fixture.json`, which the simulator and the loopback endpoint both read. Do not create a second copy.
-- Add the literal argv to the matching case group in `core/tests/workflow/skill-cli-contract.test.ts`. Reuse a fixture's `simulation` instead of new data.
+- Put a new tool definition in `tests/skill-eval/contract-fixture.json`, which the simulator and the loopback MCP endpoint both read; copy tool definitions from what the site serves. Do not create a second copy.
+- Add the call to the matching case group in `core/tests/workflow/skill-cli-contract.test.ts`. Reuse a fixture's `simulation` instead of new data.
 - Assert the request, readback or error against a fixed literal. Never derive the expectation from the simulator or by calling a parser.
-- Keep raw output visible. Add no normalization beyond the runner's two: JSON compared by value, and the `<contract-root>` path. Text, IDs, relationship cardinality and failure classes stay exact.
+- Keep raw output visible. Add no normalization beyond the runner's two: JSON compared by value, and the `<contract-root>` path. Text, IDs and failure classes stay exact.
 - Show the check can fail: add a deliberate variation to `drift-negative-controls`, or a fault that makes the named check fail.
 - Run `pnpm exec vitest run core/tests/workflow/skill-cli-contract.test.ts` with the regression checks above.
 

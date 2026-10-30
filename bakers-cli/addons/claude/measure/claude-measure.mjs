@@ -3,8 +3,9 @@
  *
  *   node claude-measure.mjs claude <claude args…>
  *
- * Writes the state group's settings, with the project's own `enabledPlugins`
- * on top, to `.bakers/claude-measure.settings.json` — or, where git does not
+ * Writes the state group's settings, with an inline `--settings` JSON and the
+ * project's own `enabledPlugins` on top, to `.bakers/claude-measure.settings.json`
+ * — or, where git does not
  * ignore that path, to a temporary file whose path replaces the `--settings`
  * argument, so a foreign repository gains no untracked file. It then
  * starts agent-proxy on an ephemeral loopback port, runs the command with
@@ -64,17 +65,37 @@ function projectPlugins() {
 // `--settings` outranks project settings, so fold the project's enabledPlugins
 // into the copy: the profile is a default, the project has the last word.
 const group = GROUPS[process.env.BB_STATE] ?? 'ops';
-const profile = JSON.parse(
+let profile = JSON.parse(
   fs.readFileSync(path.join(HERE, `keytec-${group}.json`), 'utf8'),
 );
+// The last one: an alias's own `--settings` precedes the measure flags.
+const settingsAt = args.lastIndexOf('--settings');
+// A security mode's inline settings (sandbox, custom) win over the profile;
+// permission lists are joined so neither side's rules are lost.
+const inline = settingsAt === -1 ? undefined : args[settingsAt + 1];
+if (inline?.trimStart().startsWith('{')) {
+  const own = JSON.parse(inline);
+  const join = (key) => [
+    ...(profile.permissions?.[key] ?? []),
+    ...(own.permissions?.[key] ?? []),
+  ];
+  profile = {
+    ...profile,
+    ...own,
+    permissions: {
+      ...profile.permissions,
+      ...own.permissions,
+      allow: join('allow'),
+      deny: join('deny'),
+    },
+  };
+}
 profile.enabledPlugins = { ...profile.enabledPlugins, ...projectPlugins() };
 const ignored =
   spawnSync('git', ['check-ignore', '-q', SETTINGS_REL]).status === 0;
 const settingsFile = ignored
   ? SETTINGS_REL
   : path.join(os.tmpdir(), `claude-measure-${randomUUID()}.settings.json`);
-// The last one: an alias's own `--settings` precedes the measure flags.
-const settingsAt = args.lastIndexOf('--settings');
 if (settingsAt !== -1) args[settingsAt + 1] = settingsFile;
 fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
 fs.writeFileSync(settingsFile, `${JSON.stringify(profile, null, 2)}\n`);

@@ -49,6 +49,48 @@ export function emptyAgentFootprint(): AgentFootprint {
   };
 }
 
+/** See {@link BbAgent.runEnvPolicy}. */
+export interface RunEnvPolicy {
+  drop: boolean;
+  deny: readonly string[];
+}
+
+/**
+ * Env names a ticket must not set for an agent: they redirect the model API,
+ * inject code into every process, or reconfigure git/ssh/proxies. `*` globs.
+ */
+export const DEFAULT_ENV_DENY: readonly string[] = [
+  'ANTHROPIC_*',
+  'OPENAI_*',
+  'CLAUDE_*',
+  'CODEX_*',
+  'NODE_OPTIONS',
+  'LD_*',
+  'DYLD_*',
+  'PATH',
+  'BASH_ENV',
+  'ENV',
+  'GIT_*',
+  'SSH_*',
+  '*_PROXY',
+  '*_proxy',
+];
+
+/** Whether `name` matches one of the `*`-glob `patterns`. */
+export function matchesEnvDeny(
+  name: string,
+  patterns: readonly string[],
+): boolean {
+  return patterns.some((pattern) =>
+    new RegExp(
+      `^${pattern
+        .split('*')
+        .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*')}$`,
+    ).test(name),
+  );
+}
+
 /**
  * A bakers.build agent: the program the conductor runs to work a ticket (e.g. claude).
  * It knows how it is launched (CLI + model + flags) and where its per-run
@@ -83,6 +125,12 @@ export interface AgentRunIdentity {
 export interface BbAgent {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
+  /**
+   * How the conductor treats ticket/project env_vars whose names match
+   * `deny`: dropped when `drop`, kept (and still logged) otherwise. Omitted →
+   * drop with {@link DEFAULT_ENV_DENY}.
+   */
+  readonly runEnvPolicy?: RunEnvPolicy;
   /**
    * Informational notes the conductor logs once per dispatch, before
    * `startRun`. Unsupported effort on a harness that cannot express it is
