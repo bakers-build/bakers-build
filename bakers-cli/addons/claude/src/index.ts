@@ -160,9 +160,14 @@ export class ClaudeAgent implements BbAgent {
     if (prompt === '') {
       return 'claude';
     }
-    const parts = this.measure
-      ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
-      : ['claude', shellQuote(prompt)];
+    // Wait for project-declared plugins (extraKnownMarketplaces) to install
+    // before the first turn; a fresh worktree otherwise starts without them.
+    const parts = [
+      'CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1',
+      ...(this.measure
+        ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
+        : ['claude', shellQuote(prompt)]),
+    ];
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));
     }

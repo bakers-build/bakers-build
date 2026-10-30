@@ -18,6 +18,10 @@ Without a `model` it publishes two aliases: `opus` for demanding work and `sonne
 { use: '@bakers-build/addon-claude', with: { model: 'opus', effort: 'high' } }
 ```
 
+## Project plugins
+
+Every run starts with `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1`, so plugins the repository declares in `.claude/settings.json` (`extraKnownMarketplaces` plus `enabledPlugins`) are installed before the first turn, even in a fresh worktree and in sandbox mode.
+
 ## Options
 
 | Option | Type | Default | Effect |

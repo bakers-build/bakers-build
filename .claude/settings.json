@@ -1,6 +1,16 @@
 {
   "//": "Disable the bakers@bakers marketplace plugin inside the bakers repository itself. The marketplace is registered as a *directory* in ~/.claude/plugins/known_marketplaces.json pointing to the main checkout, and Claude Code installs it as a frozen snapshot under ~/.claude/plugins/cache/bakers/bakers/<version>. Working in this repo means working on the skill sources, so the sources must win: the plugin ships a stale copy of the very files under .claude/skills/bakers-build/skills/, and a plugin beats anything a project links or re-registers. Keep the plugin enabled globally -- other projects consume bakers skills through it. This committed setting is inherited by this repository's worktrees; the committed playground fixture carries the same opt-out for its own worktrees.",
+  "extraKnownMarketplaces": {
+    "mattpocock": {
+      "source": {
+        "source": "github",
+        "repo": "mattpocock/skills",
+        "ref": "v1.3.2"
+      }
+    }
+  },
   "enabledPlugins": {
-    "bakers@bakers": false
+    "bakers@bakers": false,
+    "mattpocock-skills@mattpocock": true
   }
 }

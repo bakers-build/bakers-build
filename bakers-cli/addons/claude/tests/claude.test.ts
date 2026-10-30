@@ -33,12 +33,12 @@ describe('ClaudeAgent.launchCommand', () => {
       security: 'yolo',
     });
     expect(agent.launchCommand('do the thing')).toBe(
-      "claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
     );
   });
   it('omits --model when no model is set', () => {
     expect(new ClaudeAgent({ security: 'yolo' }).launchCommand('x')).toBe(
-      "claude 'x' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
   });
   it('returns the bare command for an empty prompt', () => {
@@ -51,7 +51,7 @@ describe('ClaudeAgent.launchCommand', () => {
       'para one\n\npara two',
     );
     expect(cmd).toBe(
-      "claude 'para one\n\npara two' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'para one\n\npara two' --dangerously-skip-permissions",
     );
   });
 });
@@ -183,13 +183,13 @@ describe('ClaudeAgent.launchCommand with a run identity', () => {
     const agent = new ClaudeAgent({ security: 'yolo' });
     const cmd = agent.launchCommand('do the thing', { sessionId: 'r-123' });
     expect(cmd).toBe(
-      "claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
     );
   });
   it('omits --session-id when no run is given (unchanged behaviour)', () => {
     const agent = new ClaudeAgent({ security: 'yolo' });
     expect(agent.launchCommand('x')).toBe(
-      "claude 'x' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
   });
 });
