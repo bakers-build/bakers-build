@@ -224,7 +224,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     // precede the `read` subcommand. Without it the run-start read emits a raw
     // JSON:API envelope (34.8 KB on BB-226 itself).
     expect(DEFAULT_AGENT_PROMPT).toContain(
-      'bakers dropsh --format md read bb_ticket/bb_ticket/$BB_ID --include comments',
+      'bakers dropsh --format md read bb_ticket/bb_ticket/{ticketUuid} --include comments',
     );
   });
 
@@ -276,10 +276,11 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
   it('renders bounded (<= 1 KB) and embed-free regardless of ticket size', () => {
     const rendered = DEFAULT_AGENT_PROMPT.replaceAll('{identifier}', 'BB-121')
       .replaceAll('{state}', 'working')
-      .replaceAll('{runUuid}', 'r-1');
+      .replaceAll('{runUuid}', 'r-1')
+      .replaceAll('{ticketUuid}', 't-1');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      'bakers dropsh --format md read bb_ticket/bb_ticket/$BB_ID --include comments',
+      'bakers dropsh --format md read bb_ticket/bb_ticket/t-1 --include comments',
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -314,7 +315,7 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
   ];
   const NEUTRAL_CONTRACT = [
     'Read the ticket and all comments',
-    'bakers dropsh --format md read bb_ticket/bb_ticket/$BB_ID --include comments',
+    'bakers dropsh --format md read bb_ticket/bb_ticket/{ticketUuid} --include comments',
     './WORKFLOW.md',
     "that skill's {state} section",
     'Do not start or prepare a later state',

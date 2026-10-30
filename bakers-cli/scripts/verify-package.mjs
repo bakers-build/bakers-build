@@ -339,7 +339,7 @@ console.log(m[1]);
       }
       for (const marker of [
         'Read the ticket and all comments',
-        'bakers dropsh --format md read bb_ticket/bb_ticket/$BB_ID --include comments',
+        'bakers dropsh --format md read bb_ticket/bb_ticket/{ticketUuid} --include comments',
         './WORKFLOW.md',
         "that skill's {state} section",
         'Do not start or prepare a later state',

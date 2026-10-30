@@ -376,7 +376,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       enabled: true,
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
-      excludedCommands: ['bakers', 'git', 'ddev'],
+      excludedCommands: ['bakers *', 'git *', 'ddev *'],
       filesystem: { denyRead: ['~/.ssh', '~/.bakers'], allowWrite: [] },
       network: { allowedDomains: ['*'] },
     });
@@ -395,7 +395,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       'claude',
       new ClaudeAgent({
         sandbox: {
-          trusted_commands: ['git', 'docker'],
+          trusted_commands: ['git', 'docker compose *'],
           deny_read: ['~/.aws', '/etc/secret', '~/.netrc'],
           allow_write: ['/srv/cache'],
           network: ['api.anthropic.com'],
@@ -404,7 +404,10 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       }).launchCommand('x'),
     );
     const settings = JSON.parse(flagValue(a, '--settings'));
-    expect(settings.sandbox.excludedCommands).toEqual(['git', 'docker']);
+    expect(settings.sandbox.excludedCommands).toEqual([
+      'git *',
+      'docker compose *',
+    ]);
     expect(settings.sandbox.filesystem).toEqual({
       denyRead: ['~/.aws', '/etc/secret', '~/.netrc'],
       allowWrite: ['/srv/cache'],
