@@ -129,6 +129,7 @@ export const SIDEBAR = {
       ['Connections', '/advanced/connections'],
       ['Conductors', '/advanced/conductors'],
       ['Set up a worker server', '/advanced/worker-server'],
+      ['Set up a Coder workspace', '/advanced/coder-workspace'],
       ['Conductor configuration', '/advanced/conductor-config'],
       ['Server', '/advanced/server'],
       ['Configuration migration', '/advanced/migration'],

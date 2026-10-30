@@ -1,6 +1,6 @@
 # Set up a worker server
 
-Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, DDEV and Claude Code; choose your own tooling with [Prepare a machine](/advanced/cli/prepare-machine).
+Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, DDEV and Claude Code; choose your own tooling with [Prepare a machine](/advanced/cli/prepare-machine). On a Coder deployment, the `bakers-ddev` template does this setup for you: [Set up a Coder workspace](/advanced/coder-workspace).
 
 **You need:** root over SSH, a bakers.build account with a workspace rank, the control-plane URL and a Claude Code account.
 
