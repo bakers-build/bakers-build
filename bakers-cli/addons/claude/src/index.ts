@@ -57,7 +57,11 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       enabled: true,
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
-      excludedCommands: sandbox.trusted_commands,
+      // Claude matches these like `Bash(...)` rules: a bare `git` is exact
+      // and would leave `git status` sandboxed, so a name takes ` *`.
+      excludedCommands: sandbox.trusted_commands.map((cmd) =>
+        cmd.endsWith('*') ? cmd : `${cmd} *`,
+      ),
       filesystem: {
         denyRead: sandbox.deny_read,
         allowWrite: sandbox.allow_write,

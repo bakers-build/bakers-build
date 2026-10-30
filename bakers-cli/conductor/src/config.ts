@@ -61,7 +61,7 @@ export {
  * that a short `sh '<file>'` line runs (BB-635), so its length is not bound
  * by the tty canonical cap (macOS 1024 B, Linux 4096 B). The prompt is still
  * kept single-line (BB-128 test).
- * Placeholders: `{identifier}`, `{state}`, `{runUuid}` ({state} falls back to
+ * Placeholders: `{identifier}`, `{state}`, `{runUuid}`, `{ticketUuid}` ({state} falls back to
  * `qualification` for unclassified tickets).
  *
  * WHERE THE PROMPT SENDS THE AGENT, and why it no longer names a WORKFLOW.md
@@ -82,7 +82,8 @@ export {
  */
 export const DEFAULT_AGENT_PROMPT =
   `You are working ticket {identifier}, current state: {state}. Read the ticket and all comments ` +
-  `(bakers dropsh --format md read bb_ticket/bb_ticket/$BB_ID --include comments), ` +
+  `(bakers dropsh --format md read bb_ticket/bb_ticket/{ticketUuid} --include comments, ` +
+  `run as a Bash call of its own: chained to another command it stays sandboxed without its config), ` +
   `then read ./WORKFLOW.md, load the bakers.build skill its loader names for this ticket's work type ` +
   `and state, and execute only that skill's {state} section. ` +
   `Do not start or prepare a later state. ` +

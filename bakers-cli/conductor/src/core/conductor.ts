@@ -195,12 +195,18 @@ function recordAfterCreateOutcome(
 
 function renderPrompt(
   template: string,
-  values: { identifier: string; state: string; runUuid: string },
+  values: {
+    identifier: string;
+    state: string;
+    runUuid: string;
+    ticketUuid: string;
+  },
 ): string {
   return template
     .replaceAll('{identifier}', values.identifier)
     .replaceAll('{state}', values.state)
-    .replaceAll('{runUuid}', values.runUuid);
+    .replaceAll('{runUuid}', values.runUuid)
+    .replaceAll('{ticketUuid}', values.ticketUuid);
 }
 
 export class Conductor {
@@ -1405,6 +1411,7 @@ export class Conductor {
           identifier: t.identifier,
           state: t.state || 'qualification',
           runUuid: run.runUuid,
+          ticketUuid: t.uuid,
         })
       : '';
     // BB-473 review round 2 (Critical 1): pinning the run's own UUID

@@ -8,16 +8,16 @@ step names the tool, its arguments and the expected result.
 On the wire each tool is named `tool_api__<tool>` (`tool_api__bakers_ticket_read`).
 
 - **The host lists the tool** (an MCP connector): call it with the step's arguments.
-- **Otherwise** write the arguments to a JSON file and call it through the `bakers` login:
+- **Otherwise** write the arguments to a JSON file and call it alone, with literal values; chaining sandboxes it:
 
   ```bash
   bakers dropsh tool tool_api__<tool> --data @<args.json>
   ```
 
-  The file keeps Markdown byte for byte. Write it with a file tool or a JSON encoder
+  The file keeps Markdown byte for byte. Write it with a file tool or JSON encoder
   (`jq -n --rawfile body <file.md> --arg t <ticket> '{ticket: $t, type: "plan", body: $body}'`).
 
-`bakers dropsh tool` lists the tools; `--schema` after a name prints its schemas.
+`bakers dropsh tool` lists tools; `--schema` after a name prints schemas.
 
 ## Results and errors
 
