@@ -280,7 +280,9 @@ describe('ClaudeAgent measure', () => {
   it('leaves the launch untouched without measure', () => {
     expect(
       new ClaudeAgent({ model: 'opus', security: 'yolo' }).launchCommand('go'),
-    ).toBe("CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions");
+    ).toBe(
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions",
+    );
   });
 
   it('omits measure for an empty prompt', () => {

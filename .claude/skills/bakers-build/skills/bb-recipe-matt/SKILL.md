@@ -1,6 +1,6 @@
 ---
 name: bb-recipe-matt
-description: Recipe for tickets of type feature, bug or chore — the Matt method, for hard, under-specified work. grilling to a shared understanding, then to-spec; diagnosing-bugs for bugs; implement with tdd; code-review. Project default.
+description: Recipe for tickets of type feature, bug or chore — the Matt method, for hard, under-specified work. grilling to a shared understanding, then a spec; diagnosing-bugs for bugs; tdd; code-review. Project default.
 ---
 
 # Matt method
@@ -8,7 +8,8 @@ description: Recipe for tickets of type feature, bug or chore — the Matt metho
 Each section names the method's skills for one state; `@bakers-build/bb-workflow` supplies inputs,
 publication, gates and transitions. Domain and runtime come from the project's hints and natively
 matching skills, never from here. The skills are the originals from `mattpocock/skills`, as the
-agent environment provides them.
+agent environment provides them; the slots name only skills the agent can invoke, and carry the
+user-only ones' method inline.
 
 ## bb-state-qualification
 
@@ -21,7 +22,9 @@ plan.
 
 ### bb-phase-work
 
-Follow `grilling` until shared understanding, then `to-spec`.
+Follow `grilling` until shared understanding, then write the spec from it, with no further
+interview, in these sections: Problem Statement, Solution, User Stories, Implementation Decisions,
+Testing Decisions, Out of Scope, Further Notes.
 
 ## bug:bb-state-plan
 
@@ -33,7 +36,7 @@ Follow `diagnosing-bugs` with the existing tests, the reported failure and the t
 
 ### bb-phase-work
 
-Follow `implement`; work test-first at the agreed seams with `tdd`.
+Work test-first at the agreed seams with `tdd`.
 
 ### bb-phase-transition
 
