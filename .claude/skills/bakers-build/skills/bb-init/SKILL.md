@@ -23,7 +23,9 @@ read, report the missing source and stop; do not substitute a remembered tool li
 
 Establish whether this machine runs tickets and whether it is the developer's computer or a
 remote worker. For a worker, ask which workspace manager and development environment they want,
-then resolve the remaining choices from the documentation. Explain the options and their
+then resolve the remaining choices from the documentation. A Coder workspace is a remote worker
+whose path is [Set up a Coder workspace](https://bb-539921.gitlab-pages.keytec.de/advanced/coder-workspace)
+(`docs/advanced/coder-workspace.md` in a source checkout). Explain the options and their
 tradeoffs briefly, using the docs; distinguish supported integrations from planned ones.
 
 Reuse supplied answers and explicit project or machine configuration, naming the source.
@@ -37,11 +39,22 @@ Follow the selected documentation path: tooling first, then identity and sign-in
 applicable read-only checks and explain failures with the documentation's next action.
 The person installs tools; give the relevant documentation link and recheck after they act.
 
-Before configuration writes, inspect existing configuration and collect only missing inputs.
+Before configuration writes, inspect existing configuration, collect only missing inputs and
+write after the person confirms.
 Preserve correct values, keep secrets out of output, and leave project configuration to the caller.
 Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain
 outstanding; they are not successful setup.
 **Done when the documented checks pass or each remaining action has an owner.**
+
+## Check out projects
+
+On a remote worker, after sign-in: list the person's projects on the control plane and ask
+which to check out. Confirm the
+SSH key is accepted by each `repository.url` host, then clone it at `repository.default_branch`
+into `~/projects/<key>` and invoke `@bakers-build/bb-init-project` with scope `project` there.
+After the person confirms, start `bakers oven start --foreground` in its own herdr tab per checkout.
+**Done when each chosen project is checked out, configured, and its conductor runs or the person
+declined.**
 
 ## Report and return
 

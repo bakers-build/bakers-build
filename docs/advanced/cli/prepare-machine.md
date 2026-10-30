@@ -50,3 +50,5 @@ Install the bakers.build plugin first, then ask your AI: “Use `bakers:bb-init`
 **A remote worker is another machine running bakers.build.** It can use local or remote development environments, just like your computer.
 
 [Set up a worker server →](/advanced/worker-server)
+
+[Set up a Coder workspace →](/advanced/coder-workspace)
