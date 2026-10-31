@@ -239,6 +239,7 @@ describe('FakeBbRemote', () => {
     expect(finalizable).toEqual([
       {
         runUuid: 'r-1',
+        state: 'done',
         runId: 1,
         ticketUuid: 't-1',
         stateAtStart: 'review',

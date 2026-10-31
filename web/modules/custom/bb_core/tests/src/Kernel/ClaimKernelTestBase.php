@@ -167,7 +167,7 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
   /**
    * Creates and saves a BbConductor registered for a project and states.
    */
-  private function createConductor(
+  protected function createConductor(
     UserInterface $owner,
     string $machine_id,
     array $states = ['plan', 'working'],

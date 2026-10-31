@@ -50,6 +50,7 @@ const WRITES = [
   'bakers_comment_publish',
   'bakers_metric_write',
   'bakers_time_propose',
+  'bakers_run_cancel',
 ].map(wire);
 const failing = (checks: { id: string; met: boolean }[]) =>
   checks.filter((c) => !c.met).map((c) => c.id);

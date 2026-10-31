@@ -553,7 +553,7 @@ export class Conductor {
         (this.config.capture_logs ?? true) ? captured.log : '';
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
       this.logger.info(
-        { run: r.runUuid, footprint: captured.metrics },
+        { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',
       );
     } catch (err) {

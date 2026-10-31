@@ -1142,19 +1142,23 @@ describe('DrupalBbRemote', () => {
     expect(run).toMatchObject({ ticketUuid: 'tic-1', stateAtStart: 'working' });
   });
 
-  it('fetchFinalizableRuns asks for both done and cancelled runs', async () => {
-    const done = fakeCollection();
-    const cancelled = fakeCollection();
+  it('fetchFinalizableRuns asks for both done and cancelled runs and keeps each state', async () => {
+    const done = fakeCollection({ list: [fakeResource('run-d', {})] });
+    const cancelled = fakeCollection({ list: [fakeResource('run-c', {})] });
     const collection = vi
       .fn()
       .mockReturnValueOnce(done)
       .mockReturnValueOnce(cancelled);
     const remote = new DrupalBbRemote(fakeClient({ collection }));
 
-    await remote.fetchFinalizableRuns('machine-1');
+    const runs = await remote.fetchFinalizableRuns('machine-1');
 
     expect(done.where).toHaveBeenCalledWith('state', '=', 'done');
     expect(cancelled.where).toHaveBeenCalledWith('state', '=', 'cancelled');
+    expect(runs.map((r) => [r.runUuid, r.state])).toEqual([
+      ['run-d', 'done'],
+      ['run-c', 'cancelled'],
+    ]);
   });
 
   it('fetchUncleanedTickets merges cleaned_up=0 and cleaned_up-never-written, de-dupes, resolves the latest run worktree', async () => {

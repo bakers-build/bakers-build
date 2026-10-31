@@ -462,6 +462,7 @@ export class FakeBbRemote implements BbRemote {
       )
       .map((r) => ({
         runUuid: r.runUuid,
+        state: r.state as FinalizableRun['state'],
         runId: r.runId,
         ticketUuid: r.ticketUuid,
         stateAtStart: r.stateAtStart,
