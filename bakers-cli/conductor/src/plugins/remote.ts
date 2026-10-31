@@ -127,6 +127,8 @@ export interface ConductorStatus {
 
 export interface FinalizableRun {
   runUuid: string;
+  /** The run's terminal state; a `cancelled` run is stopped like a `done` one. */
+  state: 'done' | 'cancelled';
   /** Numeric run id (the `#<runId>` tab-label token); scopes the run's tab-close at finalise (BB-183). */
   runId: number;
   /**

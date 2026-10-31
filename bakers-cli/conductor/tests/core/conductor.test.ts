@@ -1848,6 +1848,58 @@ describe('Conductor', () => {
     ]);
   });
 
+  it('tick stops a cancelled run, keeps it cancelled and logs its state', async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'working',
+          branchName: 'bakers/bb-1-one',
+        },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'working',
+          state: 'cancelled',
+          worktreePath: '/wt/r-1',
+        },
+      ],
+    });
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    const { log, calls } = spyLogger();
+    const conductor = new Conductor(
+      makeConfig(),
+      remote,
+      executor,
+      new FakeWorkspace(),
+      resolved(agentReturning('X')),
+      log,
+      CHECKOUT,
+    );
+    await conductor.start();
+
+    await conductor.tick();
+
+    expect(executor.calls).toContainEqual({
+      kind: 'cleanupRun',
+      branch: 'bakers/bb-1-one',
+      runId: 1,
+    });
+    expect(calls).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'run finalised',
+        obj: expect.objectContaining({ run: 'r-1', state: 'cancelled' }),
+      }),
+    );
+    expect(remote.calls.markFailed).toEqual([]);
+    expect(await remote.fetchFinalizableRuns('any')).toEqual([]);
+  });
+
   it('tick signals stopRun then closes the run tab (cleanupRun) around finalising — persistent executor', async () => {
     const remote = new FakeBbRemote({
       tickets: {
