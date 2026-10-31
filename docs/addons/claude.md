@@ -2,11 +2,9 @@
 
 **Lets bakers.build run tickets with the Claude Code CLI.**
 
-For anyone whose machine should run tickets with Claude.
-
 ## Enable it
 
-Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there. Keep the other fields there.
+Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there.
 
 ```js
 addons: ['@bakers-build/addon-claude'],
@@ -17,10 +15,6 @@ Without a `model` it publishes two aliases: `opus` for demanding work and `sonne
 ```js
 { use: '@bakers-build/addon-claude', with: { model: 'opus', effort: 'high' } }
 ```
-
-## Project plugins
-
-Every run starts with `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1`, so plugins the repository declares in `.claude/settings.json` (`extraKnownMarketplaces` plus `enabledPlugins`) are installed before the first turn, even in a fresh worktree and in sandbox mode.
 
 ## Options
 
@@ -72,6 +66,7 @@ bakers agents
 
 ## Good to know
 
+- Runs start with `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1`: plugins declared in `.claude/settings.json` install before the first turn.
 - The addon starts `claude`; it does not install it or sign it in. The binary must be on `PATH` for a non-interactive shell; an alias is not loaded.
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` was removed; setting it fails loading. Use `security: 'yolo'` for the old bypass.

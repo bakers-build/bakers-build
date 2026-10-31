@@ -46,6 +46,7 @@ bakers.build adds name fields to writes, resolved on the live write (a dry run s
 | `delete <target>` | `--dry-run` | Delete one entity |
 | `upload-file` | `--target entity_type/bundle/uuid/field_name` · `--file <path>` · `--dry-run` | Upload a file into a file or media field |
 | `schema [target]` | `--for create\|update` (default `create`) · `--refresh` · `--fields` | The catalog, or the JSON Schema for `<entity>/<bundle>` |
+| `tool [name]` | `--data <json\|@path>` · `--param <key=value>` · `--schema` | List the site's tools, or call one by its wire name (`tool_api__bakers_ticket_read`) |
 | `connections list` | none | List the `.js` connections in the connections directory (default `~/.config/dropsh/connections`; pass `--connections-dir ~/.bakers/connections` to list bakers.build's named connections) |
 | `auth <subcommand>` | `login [--provider <id>]` · `use <id>` · `logout [--profile <id>] [--all]` · `status [--json] [--profile <id>]` | Manage sign-in |
 
@@ -89,6 +90,9 @@ bakers dropsh search bb_term --bundle label
 # the comments of one ticket, oldest first
 bakers dropsh search bb_comment --bundle bb_comment \
   --filter ticket_id.id:<ticket uuid> --sort created
+
+# a ticket with every comment, as an agent run reads it first
+bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
 
 # a ticket with its runs sideloaded, as Markdown
 bakers dropsh --format md read bb_ticket/bb_ticket/<uuid> --include runs

@@ -10,10 +10,10 @@ The terminal UI's Overview tab leads with the latest `summary`:
 bakers ui <identifier>
 ```
 
-`bakers ui <identifier> | cat` prints the same sections as text. The full record with every comment:
+`bakers ui <identifier> | cat` prints the same sections as text. The full record with every comment, through the `bakers_ticket_read` tool that every agent run starts with:
 
 ```sh
-bakers dropsh --format md read bb_ticket/bb_ticket/<uuid> --include comments
+bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
 ```
 
 ## Runs

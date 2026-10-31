@@ -330,6 +330,8 @@ console.log(m[1]);
         // `State: <state>` section for the prompt to point at. A packaged
         // prompt that still names one stops literal-minded agents mid-dispatch.
         'State: {state}',
+        // The run reads through bakers_ticket_read like every skill step.
+        'dropsh --format md read',
       ]) {
         if (prompt.includes(bad)) {
           fail(
@@ -339,7 +341,8 @@ console.log(m[1]);
       }
       for (const marker of [
         'Read the ticket and all comments',
-        'bakers dropsh --format md read bb_ticket/bb_ticket/{ticketUuid} --include comments',
+        'bakers_ticket_read',
+        `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
         './WORKFLOW.md',
         "that skill's {state} section",
         'Do not start or prepare a later state',
