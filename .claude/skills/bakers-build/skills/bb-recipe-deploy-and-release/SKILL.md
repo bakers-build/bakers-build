@@ -14,7 +14,7 @@ source. A target whose `branch` is `main` is the **release environment**.
 
 1. A target `branch` equal to `base_branch` leaves nothing to merge: stop and say so.
 2. Freeze the candidate once: `git fetch origin`, then the SHA of `origin/<base_branch>`; an
-   existing release branch keeps its head.
+   already pushed `origin/<branch_name>` keeps its head.
 3. Batch: `bakers deployment tickets --since origin/<target branch> --to <SHA>`; report unresolved
    identifiers.
 4. Read the SHA's pipeline (`glab ci status`).
@@ -28,15 +28,16 @@ source. A target whose `branch` is `main` is the **release environment**.
 
 One `plan` comment, no `spec` or `test`: target, frozen SHA, batch, gate status and, on the release
 environment, version and release notes draft. Its approval authorizes the release and its version,
-which the commits fix. Cut no branch before it.
+which the commits fix. Push nothing before it.
 
 ## bb-state-working
 
 ### bb-phase-work
 
-A deployment builds nothing: skip the remote base check. Cut `release/<date>-<identifier>` at the
-frozen SHA, or reuse it when it exists, and record it as `branch_name`. Push it as it is: it carries
-no commit of its own, so the commit `main` merges is the frozen one.
+A deployment builds nothing: skip the remote base check. The ticket branch (`branch_name`,
+`release/<identifier>`) is checked out in the worktree: `git fetch origin`, `git reset --hard
+<frozen SHA>`, then `git push -u origin <branch_name>`. It carries no commit of its own, so the
+commit `main` merges is the frozen one.
 
 ### bb-phase-deliver
 

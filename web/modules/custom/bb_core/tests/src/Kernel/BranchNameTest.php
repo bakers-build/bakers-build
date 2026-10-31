@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\BranchName;
 use Drupal\KernelTests\KernelTestBase;
@@ -55,13 +56,19 @@ final class BranchNameTest extends KernelTestBase {
   /**
    * Creates and saves a ticket, returning it.
    */
-  private function createTicket(string $identifier, string $title): BbTicketInterface {
+  private function createTicket(string $identifier, string $title, ?string $type = NULL): BbTicketInterface {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
-    $ticket = $storage->create([
+    $values = [
       'identifier' => $identifier,
       'workflow' => 'bb_work',
       'title' => $title,
-    ]);
+    ];
+    if ($type !== NULL) {
+      $term = BbTerm::create(['vid' => 'type', 'name' => $type]);
+      $term->save();
+      $values['ticket_type'] = $term->id();
+    }
+    $ticket = $storage->create($values);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;
@@ -72,6 +79,22 @@ final class BranchNameTest extends KernelTestBase {
    */
   public function testFreezesGitSafeBranchName(): void {
     $ticket = $this->createTicket('GL-7', 'Fix Login Flow!');
+    $this->assertSame('feat/gl-7-fix-login-flow', $ticket->get('branch_name')->value);
+  }
+
+  /**
+   * A deployment ticket runs on release/<identifier>, title ignored.
+   */
+  public function testDeploymentTicketGetsReleaseBranch(): void {
+    $ticket = $this->createTicket('BB-12', 'Deploy to stage', 'Deployment');
+    $this->assertSame('release/bb-12', $ticket->get('branch_name')->value);
+  }
+
+  /**
+   * Any other ticket type keeps the convention's feat/ branch.
+   */
+  public function testOtherTicketTypeKeepsConvention(): void {
+    $ticket = $this->createTicket('GL-7', 'Fix Login Flow!', 'chore');
     $this->assertSame('feat/gl-7-fix-login-flow', $ticket->get('branch_name')->value);
   }
 

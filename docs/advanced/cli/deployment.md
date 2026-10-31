@@ -53,7 +53,7 @@ A deployment to the environment whose branch is `main` is the release; CLI and s
    pnpm --dir bakers-cli run release:version <frozen SHA> --notes -
    ```
 
-2. **Release branch.** The `working` step cuts `release/<date>-<ticket>` at the frozen SHA and pushes it with no commit of its own, so later merges to `develop` stay out of the release.
+2. **Release branch.** The `working` step resets the ticket branch `release/<identifier>` to the frozen SHA and pushes it with no commit of its own, so later merges to `develop` stay out of the release.
 3. **Into `main`.** One merge request from the release branch into `main`, titled `chore(release): x.y.z` (the `mr_title` job refuses any other title), with its gate played, merged with a merge commit, never squashed (the merge API with `squash=false`; the `mr_main_merge_commit` job fails a merge request into `main` that has squash on). The `main` pipeline promotes the gate-built images and deploys prod. The `release` job then runs the same computation on the merge's second parent, the frozen `develop` commit, tags it `vx.y.z` and creates the GitLab release with the generated notes. A second parent already in a `v*` tag, or a range with nothing to release, releases nothing; a `main` push that is not a merge commit fails the job. The tag pipeline publishes `@bakers-build/bakers@x.y.z` as `latest` and tags the images `:x.y.z`.
 
 Nothing merges back into `develop`: it already contains the tagged commit, so the next release ranges from that tag. `main` is never merged into `develop`. `CHANGELOG.md` keeps the history up to 0.3.0; later notes are the [GitLab releases](https://git.key-tec.de/bakers-build/bakers-build/-/releases).
