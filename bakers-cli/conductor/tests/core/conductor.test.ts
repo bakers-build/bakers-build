@@ -862,7 +862,8 @@ describe('Conductor', () => {
     const home = mkdtempSync(join(tmpdir(), 'claude-home-'));
     const cwd = '/fake/BB-1';
     const dir = join(home, '.claude', 'projects', encodeClaudeProjectDir(cwd));
-    const agent = new ClaudeAgent({}, home);
+    // `system`: nothing launches here, so the machine's sandbox must not gate claims.
+    const agent = new ClaudeAgent({ security: 'system' }, home);
 
     class ClaudeLikeExecutor extends RecordingExecutor {
       async startRun(input: SpawnRunInput) {

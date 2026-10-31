@@ -110,6 +110,14 @@ export type {
   TicketMetric,
   UncleanTicket,
 } from './plugins/remote.js';
+export {
+  installCommand,
+  lastLine,
+  type SandboxHost,
+  type SandboxPreflight,
+  sandboxFailures,
+  systemSandboxHost,
+} from './plugins/sandbox-preflight.js';
 export type {
   BbWorkspace,
   EnsuredWorkspace,

@@ -134,7 +134,8 @@ describe('Conductor integration — claim → dispatch → running', () => {
     remote = new DrupalBbRemote(ctx.api);
     const executor = new FakeExecutor({ outcome: 'exited' });
     const workspace = new FakeWorkspace();
-    const agent = new ClaudeAgent({});
+    // `system`: nothing launches here, so the machine's sandbox must not gate claims.
+    const agent = new ClaudeAgent({ security: 'system' });
     conductor = new Conductor(
       config,
       remote,

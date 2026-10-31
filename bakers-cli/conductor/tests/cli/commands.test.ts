@@ -9,11 +9,12 @@ function quietProgram() {
   return program;
 }
 
-it('mounts the oven group with start, once, clean, stop, ls and status', () => {
+it('mounts the oven group with start, once, check, clean, stop, ls and status', () => {
   const oven = buildConductorProgram().commands.find(
     (c) => c.name() === 'oven',
   );
   expect(oven?.commands.map((c) => c.name()).sort()).toEqual([
+    'check',
     'clean',
     'ls',
     'once',

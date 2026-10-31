@@ -7,13 +7,19 @@ import {
   type AgentPlugin,
   type AgentRunIdentity,
   type BbAgent,
+  installCommand,
   type KnownOptionSpec,
+  lastLine,
   type ResolvedSecurity,
   type RunEnvPolicy,
   resolveAgentCliOptions,
   resolveSecurityOptions,
+  type SandboxHost,
   type SandboxOptions,
+  type SandboxPreflight,
+  type SecurityMode,
   type SecurityOptions,
+  systemSandboxHost,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
@@ -139,6 +145,7 @@ export class ClaudeAgent implements BbAgent {
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly securityFlags: string[];
+  private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
@@ -154,6 +161,7 @@ export class ClaudeAgent implements BbAgent {
     this.overrides = cli.overrides;
     const security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
     this.securityFlags = securityFlags(security);
+    this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
   }
@@ -329,6 +337,46 @@ export class ClaudeAgent implements BbAgent {
 
   parseFootprint(log: string): AgentFootprint {
     return parseClaudeTranscript(log);
+  }
+
+  /** Linux needs bwrap, socat and a user namespace; macOS ships Seatbelt. */
+  async sandboxPreflight(
+    host: SandboxHost = systemSandboxHost(),
+  ): Promise<SandboxPreflight> {
+    if (this.securityMode !== 'sandbox' || host.platform !== 'linux') {
+      return { ok: true };
+    }
+    const missing = [
+      ['bwrap', 'bubblewrap'],
+      ['socat', 'socat'],
+    ].filter(([bin]) => !host.onPath(bin as string));
+    if (missing.length > 0) {
+      return {
+        ok: false,
+        cause: `${missing.map(([bin]) => bin).join(' and ')} not found`,
+        fix: `install it with ${installCommand(
+          host,
+          missing.map(([, pkg]) => pkg as string),
+        )}`,
+      };
+    }
+    // The namespaces Claude's sandbox needs: user (unprivileged) and net.
+    const probe = await host.run('bwrap', [
+      '--unshare-user',
+      '--unshare-net',
+      '--die-with-parent',
+      '--ro-bind',
+      '/',
+      '/',
+      'true',
+    ]);
+    return probe.ok
+      ? { ok: true }
+      : {
+          ok: false,
+          cause: `bwrap cannot set up its sandbox: ${lastLine(probe.stderr)}`,
+          fix: 'allow unprivileged user namespaces on this host, or run the conductor where they are allowed',
+        };
   }
 }
 
