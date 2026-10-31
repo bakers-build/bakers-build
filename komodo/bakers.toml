@@ -50,6 +50,46 @@ MAIL_FROM_ADDRESS=[[BB_DEVELOP_MAIL_FROM_ADDRESS]]
 MAIL_FROM_NAME=[[BB_DEVELOP_MAIL_FROM_NAME]]
 """
 
+# Test environment for the customer project-manager bot: branch
+# feat/bl-1-customer-project-man -> stack bakers-bl1 on dev2, next to develop. The
+# pipeline promotes and deploys it like develop; drop this block, the CI rules for the
+# branch and the stack once the branch has merged.
+[[stack]]
+name = "bakers-bl1"
+[stack.config]
+server           = "dev2"
+git_provider     = "git.key-tec.de"
+git_account      = "keyki"
+repo             = "bakers-build/bakers-build"
+branch           = "feat/bl-1-customer-project-man"
+run_directory    = "."
+file_paths       = ["docker-compose.yml", "docker-compose.traefik.yml"]
+auto_pull        = true
+registry_provider = "git.key-tec.de:5050"
+registry_account = "gitlab+deploy-token-30"
+webhook_enabled  = false
+poll_for_updates = false
+extra_args       = ["--wait"]
+ignore_services  = ["init-perms", "deploy"]
+environment = """
+DOMAIN=bl1.dev.bakers.build
+STACK_NAME=bakers-bl1
+DB_NAME=bakers
+DB_USER=bakers
+DB_PASSWORD=[[BB_BL1_DB_PASSWORD]]
+DB_ROOT_PASSWORD=[[BB_BL1_DB_ROOT_PW]]
+DRUPAL_HASH_SALT=[[BB_BL1_HASH_SALT]]
+REGISTRY_IMAGE_PHP=git.key-tec.de:5050/bakers-build/bakers-build/php:feat-bl-1-customer-project-man
+REGISTRY_IMAGE_NGINX=git.key-tec.de:5050/bakers-build/bakers-build/nginx:feat-bl-1-customer-project-man
+# First install, once on dev2: docker compose --profile install run --rm install
+# No Google sign-in: its redirect URI is host-bound. Mail shares develop's SMTP account.
+BB_OAUTH_GOOGLE_CLIENT_ID=
+BB_OAUTH_GOOGLE_CLIENT_SECRET=
+MAIL_SMTP_DSN=[[BB_DEVELOP_MAIL_SMTP_DSN]]
+MAIL_FROM_ADDRESS=[[BB_DEVELOP_MAIL_FROM_ADDRESS]]
+MAIL_FROM_NAME=[[BB_DEVELOP_MAIL_FROM_NAME]]
+"""
+
 # Production. branch main -> stack bakers-prod on its own server (Komodo server
 # "bakers-prod", 162.55.171.54), Traefik ingress like dev2. Domain app.bakers.build,
 # DNS only in Cloudflare so Traefik's TLS-ALPN challenge reaches the host.
