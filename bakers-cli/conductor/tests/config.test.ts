@@ -219,13 +219,16 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     expect(DEFAULT_AGENT_PROMPT).not.toContain('--- Ticket comments ---');
   });
 
-  it('instructs the step-0 dropsh read with comments sideloaded, rendered as Markdown', () => {
-    // BB-226: `--format md` is a PROGRAM-level dropsh option, so it must
-    // precede the `read` subcommand. Without it the run-start read emits a raw
-    // JSON:API envelope (34.8 KB on BB-226 itself).
+  it('instructs the step-0 read through the bakers_ticket_read tool, with and without a connector', () => {
+    // The run reads its ticket through the same tool as every skill step, not a
+    // second JSON:API read; the fallback is the transport `tools.md` defines.
+    expect(DEFAULT_AGENT_PROMPT).toContain('bakers_ticket_read');
+    expect(DEFAULT_AGENT_PROMPT).toContain('MCP: tool_api__bakers_ticket_read');
     expect(DEFAULT_AGENT_PROMPT).toContain(
-      'bakers dropsh --format md read bb_ticket/bb_ticket/{ticketUuid} --include comments',
+      `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
     );
+    expect(DEFAULT_AGENT_PROMPT).not.toContain('dropsh --format md read');
+    expect(DEFAULT_AGENT_PROMPT).not.toContain('stays sandboxed');
   });
 
   it('routes through the loader to the skill that owns the step', () => {
@@ -280,7 +283,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
       .replaceAll('{ticketUuid}', 't-1');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      'bakers dropsh --format md read bb_ticket/bb_ticket/t-1 --include comments',
+      `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -312,10 +315,13 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'ticket:run',
     'coding engine',
     'State: {state}',
+    // The run reads through bakers_ticket_read like every skill step.
+    'dropsh --format md read',
   ];
   const NEUTRAL_CONTRACT = [
     'Read the ticket and all comments',
-    'bakers dropsh --format md read bb_ticket/bb_ticket/{ticketUuid} --include comments',
+    'bakers_ticket_read',
+    `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
     './WORKFLOW.md',
     "that skill's {state} section",
     'Do not start or prepare a later state',
