@@ -20,7 +20,7 @@ The launch flags per mode, the `sandbox` keys and their defaults are on the [Cla
 
 ## Claude in `sandbox` mode
 
-The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. In `dontAsk` mode anything else not allowed is denied instead of prompting for permission. `AskUserQuestion` stays allowed because a run sits in a terminal you watch and skills ask you to decide.
+The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. They run without a prompt. Anything else asks you in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. A run nobody watches therefore waits at such a prompt.
 
 What the default blocks:
 

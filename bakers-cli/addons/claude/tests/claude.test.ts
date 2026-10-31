@@ -359,10 +359,10 @@ describe('ClaudeAgent security: sandbox (default)', () => {
   const argv = () =>
     captureArgv('claude', new ClaudeAgent({}).launchCommand('x'));
 
-  it('starts without a bypass, in dontAsk mode, with project/local settings only and no MCP server', () => {
+  it('starts without a bypass, in default mode, with project/local settings only and no MCP server', () => {
     const a = argv();
     expect(a).not.toContain('--dangerously-skip-permissions');
-    expect(flagValue(a, '--permission-mode')).toBe('dontAsk');
+    expect(flagValue(a, '--permission-mode')).toBe('default');
     expect(flagValue(a, '--setting-sources')).toBe('project,local');
     expect(a).toContain('--strict-mcp-config');
     expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({

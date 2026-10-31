@@ -35,7 +35,7 @@ A run starts sandboxed unless you choose otherwise, because ticket text is writt
 
 | `security` | Launch flags |
 |---|---|
-| `sandbox` | `--permission-mode dontAsk --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
+| `sandbox` | `--permission-mode default --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
 | `system` | none: your own Claude settings apply unchanged |
 | `yolo` | `--dangerously-skip-permissions`, the launch before `security` existed |
 | `custom` | `--settings '<config as JSON>'`, nothing else |
