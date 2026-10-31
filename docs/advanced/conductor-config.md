@@ -146,7 +146,7 @@ addons: [
 | `worktreeDir` | Worktree directory relative to the root, default `.bakers-worktrees`. |
 | `baseBranch` | Base ref for new branches; default the remote-tracking branch of the checked-out branch. |
 | `command` | Fallback agent command when the agent addons supply none, default `claude`. |
-| `default`, `states.<state>` | `tabLabel`, the agent terminal's title, default `{identifier} · {titleSlug}`; it must contain `{identifier}`. ` #<run id>` is always appended, and the title is set as the terminal's manual name (`orca terminal rename`). The agent can still change the title shown for the terminal itself; the run's terminal is found again by the renamed tab title in the Orca app, or by the terminal title with `orca serve`. |
+| `default`, `states.<state>` | `tabLabel`, the agent terminal's title, default `{identifier} · {state}`; it must contain `{identifier}` and also accepts `{state}` (the state the run was started for), `{title}`, `{titleSlug}`, `{runUuid}` and `{workspacePath}`. ` #<run id>` is always appended, and the title is set as the terminal's manual name (`orca terminal rename`). The agent can still change the title shown for the terminal itself; the run's terminal is found again by the renamed tab title in the Orca app, or by the terminal title with `orca serve`. |
 | `open` | Overview terminal of a fresh worktree. Omitted runs `bakers ui --ticket {identifier}` titled `{identifier} · {title}`; `{}` opens none. Keys: `command`, `title`. |
 | `launchWatch` | As for herdr: `startTimeoutMs` (default 60000) and `timeoutMs` (default 4000). |
 | `adoptTimeoutMs` | How long to wait for Orca to pick up a new worktree, default 35000. |
