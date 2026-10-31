@@ -381,7 +381,11 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       network: { allowedDomains: ['*'] },
     });
     expect(settings.disableClaudeAiConnectors).toBe(true);
-    expect(settings.permissions.allow).toEqual(['Bash', 'Edit(./**)']);
+    expect(settings.permissions.allow).toEqual([
+      'Bash',
+      'Edit(./**)',
+      'AskUserQuestion',
+    ]);
     expect(settings.permissions.deny).toEqual([
       'Read(~/.ssh)',
       'Read(~/.ssh/**)',

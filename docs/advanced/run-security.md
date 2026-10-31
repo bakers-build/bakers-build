@@ -20,7 +20,7 @@ The launch flags per mode, the `sandbox` keys and their defaults are on the [Cla
 
 ## Claude in `sandbox` mode
 
-The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash` and `Edit(./**)`. In `dontAsk` mode anything else not allowed is denied instead of prompting, so an unattended run never waits on a question.
+The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. In `dontAsk` mode anything else not allowed is denied instead of prompting for permission. `AskUserQuestion` stays allowed because a run sits in a terminal you watch and skills ask you to decide.
 
 What the default blocks:
 
