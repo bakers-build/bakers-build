@@ -41,6 +41,7 @@ import {
 } from '../plugins/plugins.js';
 import type { HerdrHost } from '../plugins/process-host.js';
 import type { BbRemote, ConductorStatus } from '../plugins/remote.js';
+import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 
@@ -385,6 +386,16 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
   );
   await conductor.start();
   await conductor.tick();
+}
+
+/** `bakers oven check`: whether each enabled agent can start its sandbox. */
+async function cmdCheck(deps: BbCliDeps): Promise<void> {
+  const config = await resolveConfig(deps);
+  for (const agent of deps.agents ?? (await selectAgents(config))) {
+    const [failure] = await sandboxFailures([agent]);
+    console.log(failure ?? `${agent.alias ?? agent.id}: sandbox ok`);
+    if (failure) process.exitCode = 1;
+  }
 }
 
 async function cmdReap(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
@@ -823,6 +834,15 @@ async function cmdStartBody(
   const checkoutRoot = await checkoutRootOf(config);
   const logger = loggerFor(checkoutRoot, log);
   if (!(await ensureAuthenticated(config, logger))) return;
+  // The loop withholds claims while this fails; say so before it starts.
+  // Best-effort: an agent config the loop cannot load fails there, as before.
+  try {
+    for (const line of await sandboxFailures(
+      deps.agents ?? (await selectAgents(config)),
+    )) {
+      console.warn(`warning: ${line}`);
+    }
+  } catch {}
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
   const thisHostKey = hostKeyOf(config);
@@ -1131,6 +1151,15 @@ Examples:
     .description('run one conductor cycle then exit')
     .action(async function (this: Command) {
       await cmdPoll(deps, logOptsOf(this));
+    });
+
+  conductor
+    .command('check')
+    .description(
+      'check that every enabled agent can start its sandbox on this machine (exit 1 if one cannot)',
+    )
+    .action(async () => {
+      await cmdCheck(deps);
     });
 
   conductor

@@ -498,3 +498,95 @@ describe('ClaudeAgent security load errors', () => {
     expect(() => new ClaudeAgent(options as never)).toThrow(message);
   });
 });
+
+describe('ClaudeAgent.sandboxPreflight', () => {
+  const host = (
+    over: Partial<{
+      platform: NodeJS.Platform;
+      tools: string[];
+      probe: { ok: boolean; stderr: string };
+    }> = {},
+  ) => {
+    const calls: string[][] = [];
+    const tools = over.tools ?? ['bwrap', 'socat', 'apt-get'];
+    return {
+      calls,
+      host: {
+        platform: over.platform ?? ('linux' as NodeJS.Platform),
+        onPath: (name: string) => tools.includes(name),
+        run: async (cmd: string, args: string[]) => {
+          calls.push([cmd, ...args]);
+          return over.probe ?? { ok: true, stderr: '' };
+        },
+      },
+    };
+  };
+
+  it('names a missing socat and the apt install command', async () => {
+    const { host: h } = host({ tools: ['bwrap', 'apt-get'] });
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+      ok: false,
+      cause: 'socat not found',
+      fix: 'install it with sudo apt-get install -y socat',
+    });
+  });
+
+  it('names both tools and the dnf command when bwrap and socat are missing', async () => {
+    const { host: h, calls } = host({ tools: ['dnf'] });
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+      ok: false,
+      cause: 'bwrap and socat not found',
+      fix: 'install it with sudo dnf install -y bubblewrap socat',
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it('reports a refused user namespace from the bwrap probe', async () => {
+    const { host: h } = host({
+      probe: {
+        ok: false,
+        stderr:
+          'bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces.\n',
+      },
+    });
+    const result = await new ClaudeAgent().sandboxPreflight(h);
+    expect(result).toMatchObject({
+      ok: false,
+      cause:
+        'bwrap cannot set up its sandbox: bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces.',
+    });
+    expect(result.ok ? '' : result.fix).toContain('user namespaces');
+  });
+
+  it('is ok when both tools are present and the probe starts', async () => {
+    const { host: h, calls } = host();
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(calls[0]?.slice(0, 2)).toEqual(['bwrap', '--unshare-user']);
+  });
+
+  it.each([
+    'system',
+    'yolo',
+  ] as const)('skips the probe in %s mode', async (security) => {
+    const { host: h, calls } = host({ tools: [] });
+    expect(await new ClaudeAgent({ security }).sandboxPreflight(h)).toEqual({
+      ok: true,
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it('skips the probe in custom mode', async () => {
+    const { host: h } = host({ tools: [] });
+    expect(
+      await new ClaudeAgent({
+        security: 'custom',
+        config: {},
+      }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
+  });
+
+  it('skips the probe on macOS (Seatbelt is built in)', async () => {
+    const { host: h } = host({ platform: 'darwin', tools: [] });
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+  });
+});

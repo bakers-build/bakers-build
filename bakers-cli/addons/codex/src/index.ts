@@ -8,12 +8,16 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
+  lastLine,
   type ResolvedSecurity,
   type RunEnvPolicy,
   resolveAgentCliOptions,
   resolveSecurityOptions,
+  type SandboxHost,
   type SandboxOptions,
+  type SandboxPreflight,
   type SecurityOptions,
+  systemSandboxHost,
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
 import { parseCodexTranscript } from './footprint.js';
@@ -302,6 +306,27 @@ export class CodexAgent implements BbAgent {
 
   parseFootprint(log: string): AgentFootprint {
     return parseCodexTranscript(log);
+  }
+
+  /** Codex brings its own sandbox runner; a missing binary fails at launch as before. */
+  async sandboxPreflight(
+    host: SandboxHost = systemSandboxHost(),
+  ): Promise<SandboxPreflight> {
+    if (this.security.mode !== 'sandbox' || !host.onPath('codex')) {
+      return { ok: true };
+    }
+    const probe = await host.run('codex', ['sandbox', 'true']);
+    // A release without this probe form is not proof the sandbox fails; launch decides.
+    return probe.ok || /unrecognized subcommand/.test(probe.stderr)
+      ? { ok: true }
+      : {
+          ok: false,
+          cause: `codex sandbox cannot start: ${lastLine(probe.stderr)}`,
+          fix:
+            host.platform === 'linux'
+              ? 'allow unprivileged user namespaces on this host, or run the conductor where they are allowed'
+              : 'make `codex sandbox true` succeed on this host',
+        };
   }
 }
 

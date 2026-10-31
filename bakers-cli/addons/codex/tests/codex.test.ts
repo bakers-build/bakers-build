@@ -533,3 +533,82 @@ describe('parseCodexTranscript', () => {
     expect(new CodexAgent({}).parseFootprint(log).tokens).toBe(9);
   });
 });
+
+describe('CodexAgent.sandboxPreflight', () => {
+  const host = (
+    tools: string[],
+    probe: { ok: boolean; stderr: string } = { ok: true, stderr: '' },
+  ) => {
+    const calls: string[][] = [];
+    return {
+      calls,
+      host: {
+        platform: 'linux' as NodeJS.Platform,
+        onPath: (name: string) => tools.includes(name),
+        run: async (cmd: string, args: string[]) => {
+          calls.push([cmd, ...args]);
+          return probe;
+        },
+      },
+    };
+  };
+
+  it('reports the cause from a failing `codex sandbox true`', async () => {
+    const { host: h, calls } = host(['codex'], {
+      ok: false,
+      stderr:
+        'WARNING: proceeding, even though we could not create PATH aliases\nbwrap: No permissions to create a new namespace\n',
+    });
+    const result = await new CodexAgent().sandboxPreflight(h);
+    expect(calls).toEqual([['codex', 'sandbox', 'true']]);
+    expect(result).toMatchObject({
+      ok: false,
+      cause:
+        'codex sandbox cannot start: bwrap: No permissions to create a new namespace',
+    });
+  });
+
+  it('gives no Linux namespace advice when the probe fails on macOS', async () => {
+    const { host: h } = host(['codex'], {
+      ok: false,
+      stderr: 'sandbox-exec: denied',
+    });
+    const result = await new CodexAgent().sandboxPreflight({
+      ...h,
+      platform: 'darwin',
+    });
+    expect(result).toMatchObject({ ok: false });
+    expect(JSON.stringify(result)).not.toMatch(/Linux|namespace/);
+  });
+
+  it('is ok when the probe starts', async () => {
+    const { host: h } = host(['codex']);
+    expect(await new CodexAgent().sandboxPreflight(h)).toEqual({ ok: true });
+  });
+
+  it('is ok when this Codex release has no `sandbox` subcommand', async () => {
+    const { host: h } = host(['codex'], {
+      ok: false,
+      stderr:
+        "error: unrecognized subcommand 'sandbox'\n\nUsage: codex [OPTIONS] [PROMPT]\n",
+    });
+    expect(await new CodexAgent().sandboxPreflight(h)).toEqual({ ok: true });
+  });
+
+  it('is ok without probing when the codex binary is missing', async () => {
+    const { host: h, calls } = host([]);
+    expect(await new CodexAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(calls).toEqual([]);
+  });
+
+  it.each([
+    'system',
+    'yolo',
+  ] as const)('skips the probe in %s mode', async (security) => {
+    const { host: h, calls } = host(['codex'], { ok: false, stderr: 'x' });
+    expect(await new CodexAgent({ security }).sandboxPreflight(h)).toEqual({
+      ok: true,
+    });
+    expect(calls).toEqual([]);
+  });
+});

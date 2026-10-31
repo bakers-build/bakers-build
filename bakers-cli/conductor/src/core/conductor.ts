@@ -29,6 +29,7 @@ import type {
   Ticket,
   UncleanTicket,
 } from '../plugins/remote.js';
+import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
@@ -355,6 +356,9 @@ export class Conductor {
         'addon registration failed',
       );
     }
+    for (const line of await sandboxFailures(this.agents)) {
+      this.logger.error({ conductorId: this.id }, line);
+    }
   }
 
   /** One tick that also waits for its actions: `bakers oven once`, tests. */
@@ -432,9 +436,16 @@ export class Conductor {
       this.logger,
       this.queue,
     );
+    // A run that cannot start its sandbox would only fail and count against
+    // the retry cap; claim nothing until every enabled agent can start.
+    const unavailable =
+      machineLoad < maxParallel ? await sandboxFailures(this.agents) : [];
+    for (const line of unavailable) {
+      this.logger.warn({ conductorId: this.id }, `claims withheld: ${line}`);
+    }
     let claimed = 0;
-    let withheld = false;
-    while (machineLoad < maxParallel) {
+    let withheld = unavailable.length > 0;
+    while (!withheld && machineLoad < maxParallel) {
       const run = await this.remote.claimNext({
         leaseSeconds: this.config.lease_seconds,
         conductorId: this.id,
@@ -1279,6 +1290,9 @@ export class Conductor {
       defaultAgent: this.config.default_agent,
       warn: (message) => this.logger.warn({ ticket: t.identifier }, message),
     });
+    // The tick's gate may be stale by now; spawn nothing that cannot start.
+    const [unavailable] = await sandboxFailures([chosen]);
+    if (unavailable) throw new Error(unavailable);
     const baseRef = t.baseBranch ? `origin/${t.baseBranch}` : undefined;
     // Resolve the run env once (per-ticket env_vars + core BB_* vars) and
     // inject it into BOTH the executor-owned lifecycle hooks AND the agent run

@@ -33,6 +33,8 @@ Keep terminals organized and agent sessions running.
 
 **Claude Code, Codex, Grok, Kimi, OpenCode or Pi.** Choose the agents your workers use.
 
+Claude and Codex run in their OS sandbox; on Linux install `bubblewrap` and `socat` first (`sudo apt-get install -y bubblewrap socat` on Debian and Ubuntu; other platforms: [Sandbox prerequisites](/advanced/run-security#sandbox-prerequisites)).
+
 [Agent setup →](/advanced/configuration/agents-and-models)
 
 ## Get ready

@@ -47,5 +47,6 @@ Install the `bakers` command, sign in and check your workspace access. Most peop
 ## Next
 
 - [Prepare a machine](/advanced/cli/prepare-machine) with your workspace manager and development environment.
+- **Worker on Linux?** Claude and Codex runs need their OS sandbox: install `bubblewrap` and `socat` (`sudo apt-get install -y bubblewrap socat`), then run `bakers oven check` in the connected project. See [Sandbox prerequisites](/advanced/run-security#sandbox-prerequisites).
 - **Unattended server?** Use a machine connection with client credentials; see [worker servers](/advanced/worker-server) and [connections](/advanced/connections).
 - **Command missing?** Check [Node.js and PATH](/advanced/cli/node), then [troubleshooting](/advanced/cli/troubleshooting).

@@ -15,8 +15,8 @@ Read [Prepare a machine](https://bb-539921.gitlab-pages.keytec.de/advanced/cli/p
 and [Install the CLI](https://bb-539921.gitlab-pages.keytec.de/advanced/cli/install).
 In a bakers.build source checkout, use its `docs/advanced/cli/prepare-machine.md` and
 `docs/advanced/cli/install.md` instead, so instructions match the revision being worked on.
-Follow their links when a chosen path needs more detail. If the required documentation cannot be
-read, report the missing source and stop; do not substitute a remembered tool list.
+If the required documentation cannot be read, report the missing source and stop; do not
+substitute a remembered tool list.
 **Done when the relevant documentation is loaded.**
 
 ## Ask and explain
@@ -37,11 +37,14 @@ ones `not determined`; a custom environment calls for its project's documented s
 
 Follow the selected documentation path: tooling first, then identity and sign-in. Run the
 applicable read-only checks and explain failures with the documentation's next action.
-The person installs tools; give the relevant documentation link and recheck after they act.
+The person installs tools; give the documentation link and recheck after they act.
+On a worker, check the documented agent sandbox prerequisites (`bakers oven check` once a
+project is connected). Report present tools and leave them alone. Run a missing one's documented
+install command only with explicit consent, or hand it over when it needs `sudo` this session lacks.
 
 Before configuration writes, inspect existing configuration, collect only missing inputs and
 write after the person confirms.
-Preserve correct values, keep secrets out of output, and leave project configuration to the caller.
+Preserve correct values and keep secrets out of output.
 Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain
 outstanding; they are not successful setup.
 **Done when the documented checks pass or each remaining action has an owner.**
