@@ -498,9 +498,9 @@ it('AC-3: a conductor the READ profile cannot see still renders by name', async 
 
 // ---- BB-360 — Cancel ticket action (replaces BB-313 State select) -------
 
-/** Move focus to Cancel ticket: Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Type·Recipe·Labels·Save·Cancel */
+/** Move focus to Cancel ticket: Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Type·Recipe·Labels·Workflow·Save·Cancel */
 const toCancelTicket = async (press: (key: string) => Promise<void>) => {
-  for (let i = 0; i < 10; i += 1) await press('\x1b[B');
+  for (let i = 0; i < 11; i += 1) await press('\x1b[B');
 };
 
 it('BB-360: Enter on Cancel ticket writes only state: cancelled', async () => {
@@ -560,8 +560,8 @@ it('BB-360: a done ticket gets no Cancel ticket row, and Save stays reachable', 
   expect(frame).toContain('Edit ticket');
   expect(frame).not.toContain('[ Cancel ticket ]');
   expect(frame).not.toContain('State:');
-  // ↓ nine times lands on Save (Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Type·Recipe·Labels·Save).
-  for (let i = 0; i < 9; i += 1) await press('\x1b[B');
+  // ↓ ten times lands on Save (Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Type·Recipe·Labels·Workflow·Save).
+  for (let i = 0; i < 10; i += 1) await press('\x1b[B');
   await press('\x13');
   const attributes = h.rec.writes[0]?.body.attributes as Record<
     string,

@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
@@ -38,7 +39,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'workflow' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Workflow'),
-      description: new TranslatableMarkup('The workflow id, e.g. bb_work.'),
+      description: new TranslatableMarkup('The workflow id: bb_work, or bb_autopilot for automatic approvals.'),
       constraints: ['NotBlank' => []],
     ),
     'project' => new InputDefinition(
@@ -102,6 +103,9 @@ final class TicketCreate extends ToolBase {
   protected function doExecute(array $values): ExecutableResult {
     if (!$this->entities()->getAccessControlHandler('bb_ticket')->createAccess('bb_ticket', $this->currentUser)) {
       throw new \InvalidArgumentException('You may not create tickets.');
+    }
+    if (!array_key_exists($values['workflow'], TypeWorkflows::ticketWorkflowOptions())) {
+      throw new \InvalidArgumentException(sprintf('Unknown ticket workflow %s; use one of: %s.', $values['workflow'], implode(', ', array_keys(TypeWorkflows::ticketWorkflowOptions()))));
     }
     $project = $this->readableProject($values['project']);
     $fields = [

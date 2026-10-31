@@ -1,0 +1,178 @@
+{
+  "id": "qualification-autopilot-run",
+  "synthetic": true,
+  "profile": "state-run",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow",
+  "references": [
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/intake.md",
+    "bb-workflow/references/qualification.md",
+    "bb-workflow/references/prior-art-search.md",
+    "bb-workflow/references/prior-art-build.md",
+    "bb-workflow/references/classify.md",
+    "bb-workflow/references/acceptance.md",
+    "bb-workflow/references/agent-choice.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/ticket-writes.md",
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/outtake/qualification.md",
+    "bb-workflow/references/origin-status.md",
+    "bb-workflow/references/transition-ticket.md",
+    "bb-workflow/references/autopilot.md"
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ],
+  "input": {
+    "task": "Run the ticket's current state end to end. No human is available and no approval has been given. The ticket has no origin. `bakers agents` is unavailable here.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "installed_skills": "Installed recipes are readable with read_file at skills/<name>/SKILL.md. Installed: bb-recipe-probe. No other skill file is installed.",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555",
+    "base_branch": "develop",
+    "created": "2026-01-01",
+    "terms": [
+      "invoice",
+      "invoices"
+    ],
+    "paths": [
+      "docs"
+    ],
+    "probe": "Guide",
+    "observations": [
+      "Use invoice and invoices for ticket and remote searches; the known-present ticket probe term is ticket; the repository probe is Guide in docs.",
+      "Repository Git operations are fixture-only literal commands; the command catalog in the tool description is syntax, not evidence."
+    ]
+  },
+  "expect": {
+    "comments": [
+      "qualification",
+      "summary"
+    ],
+    "transition": "plan",
+    "classify": true,
+    "automatic": true
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-40",
+      "title": "Document invoice export options",
+      "state": "qualification",
+      "workflow": "bb_autopilot",
+      "description": "Document invoice export: use export --project NAME.",
+      "created": "2026-01-01",
+      "base_branch": "develop",
+      "changed": "fixture-revision-1",
+      "approval": "automatic"
+    },
+    "files": {
+      "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
+    },
+    "prior_art": {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "identifier": "EVAL-70",
+      "title": "Delivered documentation",
+      "description": "Operator documentation.",
+      "state": "done",
+      "assignee": "fixture-maintainer",
+      "workflow": "bb_work"
+    },
+    "commands": {
+      "git": [
+        {
+          "argv": [
+            "git",
+            "fetch",
+            "origin",
+            "--quiet"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "rev-parse",
+            "origin/develop"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "log",
+            "--oneline",
+            "origin/develop",
+            "--since=2026-01-01"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "grep",
+            "-nEi",
+            "invoice|invoices",
+            "origin/develop",
+            "--",
+            "docs"
+          ],
+          "result": {
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "grep",
+            "-c",
+            "Guide",
+            "origin/develop",
+            "--",
+            "docs"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "origin/develop:docs/README.md:1\n",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "diff",
+            "--stat",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..origin/develop"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        }
+      ]
+    }
+  },
+  "rubric": [
+    {
+      "id": "automatic-approval",
+      "criterion": "Publishes the qualification handoff and summary, records the approval as automatic, and transitions to plan without asking for approval."
+    }
+  ]
+}

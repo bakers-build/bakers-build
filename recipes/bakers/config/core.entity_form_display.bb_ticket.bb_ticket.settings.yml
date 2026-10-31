@@ -55,6 +55,23 @@ content:
       size: 60
       placeholder: 'Ticket title'
     third_party_settings: {  }
+  workflow:
+    type: bb_picker
+    weight: 4
+    region: content
+    settings:
+      picker_region: lead
+      label: Workflow
+      icon: board
+      searchable: false
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: bb_work
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
 hidden:
   assignee_user_id: true
   cleaned_up: true
@@ -82,5 +99,4 @@ hidden:
   ticket_type: true
   time_estimate: true
   time_spent: true
-  workflow: true
 

@@ -89,7 +89,7 @@ function toolModel(simulation) {
     },
     ticket_read: a => {
       const t = find(a.ticket);
-      return { ...pick(t, ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe']), labels: t.labels, links: t.links,
+      return { ...pick(t, ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe']), approval: t.approval ?? 'human', labels: t.labels, links: t.links,
         comments: comments.filter(c => c.ticket === t.id).map(c => ({ id: c.id, type: c.type, body: c.body,
           created: c.created ?? '2026-01-01T00:00:00+00:00', author: c.author ?? 'fixture-agent' })) };
     },

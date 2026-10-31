@@ -31,6 +31,10 @@ export function checkOutput(f, output, context) {
     checks.push(check('classified', classification && comments.every(c => c.index > classification.index),
       'Classify recipe and type once, read them back, then publish the handoff'));
   }
+  if (e.automatic) {
+    checks.push(check('approval-recorded', comments.some(c => String(arg(c, 'body') ?? '').includes('Approval: automatic')),
+      'A published comment records `Approval: automatic`'));
+  }
   if (e.markers) {
     checks.push(check('summary-markers', summary && e.markers.every(m => arg(summary, 'body')?.includes(m)),
       'The summary carries the recipe slot lines'));

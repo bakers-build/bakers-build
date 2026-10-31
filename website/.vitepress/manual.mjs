@@ -55,6 +55,7 @@ export const SIDEBAR = {
       ['How it works', '/skills-and-workflows/how-it-works'],
       ['Configure your workflow', '/skills-and-workflows/write-workflow-md'],
       ['Workflows and states', '/skills-and-workflows/workflows-and-states'],
+      ['Autopilot workflow', '/skills-and-workflows/autopilot'],
       ['Ticket type, recipe and labels', '/skills-and-workflows/labels-and-work-types'],
     ]),
   ],
