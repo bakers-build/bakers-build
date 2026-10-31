@@ -111,7 +111,7 @@ describe('OrcaExecutor.startRun', () => {
       '--worktree',
       'path:/repo/.bakers-worktrees/feat/x',
       '--title',
-      'BAKERS-1 · my-title #7',
+      'BAKERS-1 · coding #7',
     ]);
     expect(createCall?.[7]).toMatch(/^sh '.+\/run\.sh'$/);
     expect(create.seen.command).toBe("FOO='bar' claude --resume");
@@ -129,7 +129,7 @@ describe('OrcaExecutor.startRun', () => {
       '--terminal',
       'term-1',
       '--title',
-      'BAKERS-1 · my-title #7',
+      'BAKERS-1 · coding #7',
     ]);
   });
 
@@ -160,6 +160,21 @@ describe('OrcaExecutor.startRun', () => {
     await ex.startRun(input());
     const createCall = calls.find((c) => c[0] === 'terminal');
     expect(createCall?.[5]).toBe('BAKERS-1 build #7');
+  });
+
+  it('places the state with {state} in a per-state tab label', async () => {
+    const create = terminalCreate('started');
+    const { orca, calls } = fakeOrca({ 'terminal create': create.handler });
+    const ex = new OrcaExecutor(
+      {
+        launchWatch: INSTANT_WATCH,
+        states: { coding: { tabLabel: '{identifier} [{state}] {titleSlug}' } },
+      },
+      orca,
+    );
+    await ex.startRun(input());
+    const createCall = calls.find((c) => c[0] === 'terminal');
+    expect(createCall?.[5]).toBe('BAKERS-1 [coding] my-title #7');
   });
 
   it('rejects a tab label without {identifier}', async () => {
