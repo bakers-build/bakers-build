@@ -22,9 +22,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * already raises for a denied field.
  *
  * `branch_name` is deliberately different: it must stay writable at CREATE —
- * that is the only way a deployment ticket carries `release/<date>-<id>` and
- * the only lever a ticket has to sit on an integration branch — and frozen
- * afterwards, which is what its own description already claims.
+ * that is the only lever a ticket has to sit on an integration branch — and
+ * frozen afterwards, which is what its own description already claims.
  *
  * @group bb_core
  */

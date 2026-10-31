@@ -37,8 +37,9 @@ final class BranchName {
   /**
    * Derives the branch name for a ticket, or '' when it cannot have one.
    *
-   * ONE path: resolve the repo convention, or the overridable default when no
-   * repo sets one. Token-resolve, sanitise, then cap — the imperative
+   * A deployment ticket always gets `release/<identifier>`. Every other ticket
+   * resolves the repo convention, or the overridable default when no repo
+   * sets one. Token-resolve, sanitise, then cap — the imperative
    * post-processing (30-char cap, identifier never truncated) runs after token
    * resolution for every convention alike.
    *
@@ -54,6 +55,11 @@ final class BranchName {
     $identifier = self::sanitize((string) $ticket->get('identifier')->value);
     if ($identifier === '') {
       return '';
+    }
+    // A deployment's ticket branch is its release branch, whatever the
+    // project convention says.
+    if (mb_strtolower((string) $ticket->get('ticket_type')->entity?->label()) === 'deployment') {
+      return self::cap(self::sanitize('release/' . $identifier), $identifier);
     }
     $convention = self::convention($ticket) ?: self::DEFAULT_CONVENTION;
     $raw = (string) \Drupal::token()->replace(
