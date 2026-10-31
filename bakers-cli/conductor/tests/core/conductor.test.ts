@@ -43,7 +43,7 @@ import type {
   SpawnRunInput,
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
-import type { ConductorLogger } from '@bakers-build/core';
+import { type ConductorLogger, shellQuote } from '@bakers-build/core';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { attemptFamily, attemptSessionId } from '../../src/core/attempt.js';
@@ -1205,7 +1205,11 @@ describe('Conductor', () => {
       remote,
       new FakeExecutor({ outcome: 'exited' }),
       new FakeWorkspace(),
-      resolved(fakeAgent),
+      resolved({
+        ...fakeAgent,
+        launchCommand: (p: string) =>
+          `claude ${shellQuote(p)} --dangerously-skip-permissions`,
+      }),
       log,
       CHECKOUT,
     );
@@ -1218,7 +1222,11 @@ describe('Conductor', () => {
       handler: 'code',
     });
     await conductor.tick();
-    expect(calls.some((c) => c.msg === 'dispatched run')).toBe(true);
+    const dispatched = calls.find((c) => c.msg === 'dispatched run');
+    expect(dispatched?.obj).toMatchObject({
+      harness: 'claude',
+      launch: "claude '<prompt>' --dangerously-skip-permissions",
+    });
   });
 
   it('dispatch: classified ticket (state="plan") with WORKFLOW.md → state prompt + release instruction', async () => {

@@ -1,6 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { type ConductorLogger, stemForConfigFile } from '@bakers-build/core';
+import {
+  type ConductorLogger,
+  shellQuote,
+  stemForConfigFile,
+} from '@bakers-build/core';
 import {
   type BbAgent,
   DEFAULT_ENV_DENY,
@@ -1469,6 +1473,7 @@ export class Conductor {
         );
       }
     }
+    const command = chosen.agent.launchCommand(prompt, identity);
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,
@@ -1481,7 +1486,7 @@ export class Conductor {
       run: { uuid: run.runUuid, id: run.runId, handler: run.handler },
       workspacePath: ws.path,
       instructions: ws.instructions,
-      command: chosen.agent.launchCommand(prompt, identity),
+      command,
       env,
     });
     launch.started = true;
@@ -1493,6 +1498,10 @@ export class Conductor {
         workspace: ws.path,
         // Key names only — env values may be sensitive (BB-99).
         envKeys: Object.keys(env),
+        harness: chosen.agent.id,
+        alias: chosen.alias ?? chosen.id,
+        // The launch with its options; the prompt is long and in the ticket.
+        launch: command.replace(shellQuote(prompt), "'<prompt>'"),
       },
       'dispatched run',
     );

@@ -69,10 +69,11 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       network: { allowedDomains: sandbox.network },
     },
     disableClaudeAiConnectors: true,
-    // dontAsk denies whatever is not allowed here; every Bash command is
-    // either sandboxed or a trusted command, and the Read deny covers the
-    // Read tool, which the OS sandbox does not confine. AskUserQuestion stays
-    // allowed: the run sits in a terminal the human watches, and skills ask.
+    // What is allowed here runs without a prompt; anything else, such as a
+    // write to the protected `.claude/`, asks the human watching the run's
+    // terminal (dontAsk would deny it, and no allow rule lifts that). Every
+    // Bash command is either sandboxed or a trusted command, and the Read
+    // deny covers the Read tool, which the OS sandbox does not confine.
     permissions: {
       allow: ['Bash', 'Edit(./**)', 'AskUserQuestion'],
       // Claude reads a single leading `/` as relative to the settings file;
@@ -85,7 +86,7 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
   };
   return [
     '--permission-mode',
-    'dontAsk',
+    'default',
     '--setting-sources',
     'project,local',
     '--settings',
