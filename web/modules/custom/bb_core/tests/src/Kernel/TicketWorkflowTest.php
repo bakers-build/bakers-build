@@ -11,9 +11,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Verifies the bb_work state machine every work ticket runs.
+ * Verifies the ticket state machines: bb_work and bb_autopilot.
  *
- * Checks its exact states and transitions, that a new ticket starts in
+ * Checks their exact states and transitions, that a new ticket starts in
  * qualification, and that valid transitions apply while invalid ones are
  * rejected.
  */
@@ -49,37 +49,63 @@ final class TicketWorkflowTest extends KernelTestBase {
   }
 
   /**
-   * Every ticket runs bb_work; it is the only ticket workflow.
+   * The ticket workflows are bb_work and bb_autopilot, with one state machine.
    *
    * States and transitions are asserted exactly, so a new route cannot
-   * arrive unnoticed.
+   * arrive unnoticed. bb_autopilot differs from bb_work only in its approval
+   * mode, so a ticket can switch between them in any state.
    */
-  public function testWorkWorkflowStatesAndTransitions(): void {
+  public function testTicketWorkflowStatesAndTransitions(): void {
     $manager = $this->container->get('plugin.manager.workflow');
     $ticket_workflows = array_keys(array_filter(
       $manager->getDefinitions(),
       static fn (array $definition): bool => $definition['group'] === 'bb_ticket',
     ));
-    $this->assertSame(['bb_work'], $ticket_workflows);
-    $work = $manager->createInstance('bb_work');
-    $this->assertInstanceOf(WorkflowInterface::class, $work);
-    $this->assertSame(
-      ['qualification', 'plan', 'working', 'review', 'done', 'cancelled'],
-      array_keys($work->getStates()),
-    );
-    $transitions = [];
-    foreach ($work->getTransitions() as $id => $transition) {
-      $transitions[$id] = [array_keys($transition->getFromStates()), $transition->getToState()->getId()];
+    $this->assertSame(['bb_work', 'bb_autopilot'], $ticket_workflows);
+    foreach ($ticket_workflows as $id) {
+      $workflow = $manager->createInstance($id);
+      $this->assertInstanceOf(WorkflowInterface::class, $workflow);
+      $this->assertSame(
+        ['qualification', 'plan', 'working', 'review', 'done', 'cancelled'],
+        array_keys($workflow->getStates()),
+        $id,
+      );
+      $transitions = [];
+      foreach ($workflow->getTransitions() as $transition_id => $transition) {
+        $transitions[$transition_id] = [array_keys($transition->getFromStates()), $transition->getToState()->getId()];
+      }
+      $this->assertSame([
+        'qualify' => [['qualification'], 'plan'],
+        'requalify' => [['plan', 'working'], 'qualification'],
+        'to_working' => [['qualification', 'plan', 'review'], 'working'],
+        'to_plan' => [['working'], 'plan'],
+        'to_review' => [['working'], 'review'],
+        'finish' => [['working', 'review'], 'done'],
+        'cancel' => [['qualification', 'plan', 'working', 'review'], 'cancelled'],
+      ], $transitions, $id);
     }
-    $this->assertSame([
-      'qualify' => [['qualification'], 'plan'],
-      'requalify' => [['plan', 'working'], 'qualification'],
-      'to_working' => [['qualification', 'plan', 'review'], 'working'],
-      'to_plan' => [['working'], 'plan'],
-      'to_review' => [['working'], 'review'],
-      'finish' => [['working', 'review'], 'done'],
-      'cancel' => [['qualification', 'plan', 'working', 'review'], 'cancelled'],
-    ], $transitions);
+    $this->assertSame('bakers.build autopilot', (string) $manager->getDefinition('bb_autopilot')['label']);
+  }
+
+  /**
+   * A ticket switched from bb_work to bb_autopilot keeps its state.
+   */
+  public function testSwitchingWorkflowKeepsState(): void {
+    $ticket = $this->createWorkTicket('GL-SW1');
+    $ticket->getState()->applyTransitionById('qualify');
+    $ticket->save();
+    $ticket->set('workflow', 'bb_autopilot');
+    $ticket->save();
+    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->loadUnchanged($ticket->id());
+    $this->assertInstanceOf(BbTicketInterface::class, $reloaded);
+    $this->assertSame('bb_autopilot', $reloaded->getWorkflow());
+    $this->assertSame('plan', $reloaded->get('state')->value);
+    $workflow = $reloaded->getState()->getWorkflow();
+    $this->assertInstanceOf(WorkflowInterface::class, $workflow);
+    $this->assertSame('bb_autopilot', $workflow->getId());
+    $reloaded->getState()->applyTransitionById('to_working');
+    $reloaded->save();
+    $this->assertSame('working', $reloaded->get('state')->value);
   }
 
   /**
@@ -186,7 +212,7 @@ final class TicketWorkflowTest extends KernelTestBase {
    */
   public function testCancelledHasNoOutgoingTransitions(): void {
     $manager = $this->container->get('plugin.manager.workflow');
-    foreach (['bb_work'] as $id) {
+    foreach (['bb_work', 'bb_autopilot'] as $id) {
       $this->assertTrue($manager->hasDefinition($id), "workflow $id missing");
       $workflow = $manager->createInstance($id);
       $this->assertInstanceOf(WorkflowInterface::class, $workflow);

@@ -142,7 +142,7 @@ final class TicketActionFormTest extends KernelTestBase {
   public function testSettingsOfClosedTicketsAreReadOnly(): void {
     $ticket = $this->ticket('bb_work', 'done');
     $form = $this->settingsForm($ticket);
-    foreach (['title', 'description', 'env_vars'] as $field) {
+    foreach (['title', 'description', 'env_vars', 'workflow'] as $field) {
       self::assertArrayHasKey($field, $form, $field . ' is on the form.');
       self::assertFalse($form[$field]['#access'], $field . ' is not editable.');
     }
@@ -362,10 +362,11 @@ final class TicketActionFormTest extends KernelTestBase {
   }
 
   /**
-   * Settings carry title, description, env vars and the two relation fields.
+   * Settings carry title, description, env vars, two relations and workflow.
    *
    * BB-664 added `parent_id` and `blocked_by`: editable relations an
    * operator may need to correct outside the create dialog's own picker.
+   * `workflow` switches between ticket workflows that share their states.
    * `team` is gone from the list entirely — the base field itself was
    * removed, not merely hidden here.
    */
@@ -376,10 +377,10 @@ final class TicketActionFormTest extends KernelTestBase {
       $display = Yaml::decode((string) file_get_contents($root . $directory . $name));
       $content = $display['content'];
       ksort($content);
-      self::assertSame(['blocked_by', 'description', 'env_vars', 'parent_id', 'title'], array_keys($content), $directory);
+      self::assertSame(['blocked_by', 'description', 'env_vars', 'parent_id', 'title', 'workflow'], array_keys($content), $directory);
       $removed = [
         'conductor_id', 'environments', 'cleaned_up', 'cleaned_up_date', 'metrics',
-        'owner_user_id', 'workflow', 'state', 'project_id', 'assignee_user_id',
+        'owner_user_id', 'state', 'project_id', 'assignee_user_id',
         'links', 'origin', 'time_spent', 'time_estimate', 'labels',
         'referenced_tickets', 'priority',
         'frozen', 'stall_reason',
@@ -388,6 +389,21 @@ final class TicketActionFormTest extends KernelTestBase {
         self::assertTrue($display['hidden'][$field] ?? FALSE, $field . ' is hidden');
       }
     }
+  }
+
+  /**
+   * Workflow is an enabled picker offering both ticket workflows.
+   */
+  public function testWorkflowIsEditableOnTheSettingsForm(): void {
+    $form = $this->settingsForm($this->ticket('bb_work', 'plan'));
+    self::assertArrayHasKey('workflow', $form);
+    self::assertNotFalse($form['workflow']['#access'] ?? TRUE, 'workflow is not hidden by access.');
+    self::assertSame(['bb_work'], (array) $form['workflow']['widget']['#default_value']);
+    // `_none` is the options widget's placeholder; with no `clear_label` the
+    // picker renders no clear row, so a workflow cannot be emptied here.
+    $options = array_values(array_diff(array_keys($form['workflow']['widget']['#options'] ?? []), ['_none']));
+    sort($options);
+    self::assertSame(['bb_autopilot', 'bb_work'], $options);
   }
 
   /**

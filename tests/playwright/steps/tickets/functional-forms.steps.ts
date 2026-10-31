@@ -1,6 +1,7 @@
 import { createBdd } from 'playwright-bdd';
 import { Drush } from '@key-tec/playwright-core';
 import { test, expect } from '../../bdd.fixtures';
+import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
 
 const { Given, When, Then } = createBdd(test);
 
@@ -43,4 +44,26 @@ Then('the ticket routes resolve identifier, ID and UUID for {string}', async ({ 
     }
     const old = await page.goto(`/admin/bakers/ticket/${data.attributes.drupal_internal__id}`);
     expect(old?.status()).toBe(404);
+});
+
+// The Settings form's Workflow picker; Save keeps the state, which both ticket workflows share.
+When("the ticket's workflow is switched through its settings to {string}", async ({ page }, label: string) => {
+    const trigger = pickerTrigger(page, 'form', 'Workflow');
+    await expect(trigger, 'Ticket Settings offer no Workflow picker').toBeAttached();
+    await waitForPickerBehaviour(trigger);
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    const row = optionRow(page, pickerPanel(trigger), label);
+    await expect(row, `The Workflow picker offers no "${label}" option`).toBeAttached();
+    await row.click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.waitForLoadState('load');
+});
+
+Then('ticket {string} is stored with workflow {string} in state {string}', async ({ apiClient }, name: string, workflow: string, state: string) => {
+    await apiClient.read(`/jsonapi/bb_ticket/bb_ticket/{saved.${name}}`);
+    expect(apiClient.response!.status()).toBe(200);
+    const { data } = await apiClient.response!.json();
+    expect(data.attributes.workflow).toBe(workflow);
+    expect(data.attributes.state).toBe(state);
 });

@@ -38,7 +38,7 @@ are term names, reused or created.
 
 | Operation | Tool | Arguments | Result |
 |---|---|---|---|
-| Read a ticket | `bakers_ticket_read` | `ticket` | `id`, `identifier`, `title`, `state`, `workflow`, `description`, `type`, `recipe`, `labels`, `links`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
+| Read a ticket | `bakers_ticket_read` | `ticket` | `id`, `identifier`, `title`, `state`, `workflow`, `approval`, `description`, `type`, `recipe`, `labels`, `links`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
 | Search tickets | `bakers_ticket_search` | `query`, optional `project` | `tickets` (`identifier`, `title`, `state`, `type`) whose title or description contains `query`; newest first, at most 50 |
 | Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent` | `id`, `identifier`, initial `state` |
 | Edit a ticket | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor` (UUID) | saved values, others kept; closed refused |

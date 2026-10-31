@@ -267,6 +267,19 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And the stored ticket has conductor "cw-framework"
     And the stored ticket is in its workflow's first state
 
+  # The Workflow picker offers bakers.build autopilot beside bakers.build work;
+  # the choice lands on the stored ticket, which still starts at its first state.
+  Scenario: A lead creates a ticket on autopilot
+    Given I am logged in as the account "north-lead"
+    And I open the create-ticket dialog from the ticket list
+    When I type "Ticket that runs on autopilot" into the title line
+    And I open the "Workflow" picker
+    And I pick the option "bakers.build autopilot"
+    And I submit the dialog
+    Then the dialog closed
+    And the stored ticket has workflow "bb_autopilot"
+    And the stored ticket is in its workflow's first state
+
   # AC 3's second half, read off the ENTITY and not off the form.
   #
   # GREEN as of fix round 1, same fix as above.

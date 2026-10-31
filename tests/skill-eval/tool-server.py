@@ -288,7 +288,7 @@ class Simulation:
     def ticket_read(self, args):
         t = self.find(args['ticket'])
         return {**{k: t.get(k) for k in ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe']},
-                'labels': t['labels'], 'links': t['links'],
+                'approval': t.get('approval', 'human'), 'labels': t['labels'], 'links': t['links'],
                 'comments': [{'id': c['id'], 'type': c['type'], 'body': c['body'], 'created': c.get('created', '2026-01-01T00:00:00+00:00'),
                               'author': c.get('author', 'fixture-agent')} for c in self.comments if c['ticket'] == t['id']]}
 
