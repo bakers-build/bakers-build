@@ -167,7 +167,7 @@ function main() {
         `import { existsSync } from 'node:fs';
 import { ClaudeAgent } from '@bakers-build/addon-claude';
 const cmd = new ClaudeAgent({ measure: true }).launchCommand('go');
-const m = cmd.match(/^node '([^']+)' /);
+const m = cmd.match(/^(?:\\w+=\\S+ )*node '([^']+)' /);
 if (!m) {
   console.error('measure launch did not wrap in node: ' + cmd);
   process.exit(1);
