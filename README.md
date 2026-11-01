@@ -36,7 +36,7 @@ bakers.build ships its own Claude Code marketplace, so agents (and you) get the 
 skill. Add the marketplace and install the plugin:
 
 ```
-/plugin marketplace add git@git.key-tec.de:bakers-build/bakers-build.git
+/plugin marketplace add https://bakers.build/marketplace.json
 /plugin install bakers@bakers
 ```
 

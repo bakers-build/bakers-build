@@ -11,8 +11,8 @@ requirements and commands; this skill owns the conversation. Return project conf
 
 ## Read
 
-Read [Prepare a machine](https://bb-539921.gitlab-pages.keytec.de/advanced/cli/prepare-machine)
-and [Install the CLI](https://bb-539921.gitlab-pages.keytec.de/advanced/cli/install).
+Read [Prepare a machine](https://bakers.build/advanced/cli/prepare-machine)
+and [Install the CLI](https://bakers.build/advanced/cli/install).
 In a bakers.build source checkout, use its `docs/advanced/cli/prepare-machine.md` and
 `docs/advanced/cli/install.md` instead, so instructions match the revision being worked on.
 If the required documentation cannot be read, report the missing source and stop; do not
@@ -24,7 +24,7 @@ substitute a remembered tool list.
 Establish whether this machine runs tickets and whether it is the developer's computer or a
 remote worker. For a worker, ask which workspace manager and development environment they want,
 then resolve the remaining choices from the documentation. A Coder workspace is a remote worker
-whose path is [Set up a Coder workspace](https://bb-539921.gitlab-pages.keytec.de/advanced/coder-workspace)
+whose path is [Set up a Coder workspace](https://bakers.build/advanced/coder-workspace)
 (`docs/advanced/coder-workspace.md` in a source checkout). Explain the options and their
 tradeoffs briefly, using the docs; distinguish supported integrations from planned ones.
 

@@ -79,6 +79,33 @@ COPY --chown=root docker/nginx/oauth-discovery.conf /etc/nginx/oauth-discovery.c
 # http-level rate-limit zone for /oauth/register (applied in oauth-discovery.conf).
 COPY --chown=root docker/nginx/oauth-register-zone.conf /etc/nginx/conf.d/oauth-register-zone.conf
 
+# --- Docs site build stage ---
+# The VitePress site (docs/ through website/) plus the plugin marketplace: marketplace.json and
+# plugins/bakers-<version>.zip (website/scripts/marketplace.mjs). Same pnpm pin and settings as
+# the theme stage; pnpm 11 fails on esbuild's ignored build script without the last one.
+FROM node:22-bookworm-slim AS docs-build
+WORKDIR /repo/website
+ENV CI=true \
+    npm_config_verify_deps_before_run=false \
+    PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 \
+    PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS=true
+RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
+COPY website/package.json website/pnpm-lock.yaml website/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY docs /repo/docs
+COPY website /repo/website
+COPY .claude-plugin /repo/.claude-plugin
+COPY .claude/skills/bakers-build /repo/.claude/skills/bakers-build
+# The sidebar's version row (website/.vitepress/config.mts): target branch and commit.
+ARG CI_COMMIT_REF_NAME CI_COMMIT_SHORT_SHA
+RUN pnpm build
+
+# --- Docs stage: the public docs and marketplace host, static ---
+FROM nginx:1.27.5-alpine AS docs
+COPY docker/docs/default.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=0755 docker/docs/marketplace-host.sh /docker-entrypoint.d/40-marketplace-host.sh
+COPY --from=docs-build /repo/website/.vitepress/dist /usr/share/nginx/html
+
 # --- PHPUnit stage (CI merge gate only, never deployed) ---
 # The shipped `php` image plus the dev dependencies, so the gate's `phpunit` job runs
 # the unit and kernel tests on the shipped code and PHP runtime.

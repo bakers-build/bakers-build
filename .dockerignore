@@ -12,3 +12,7 @@ web/themes/custom/*/dist/
 .ddev/
 .idea/
 .vscode/
+
+# Built docs site; the docs-build stage builds its own.
+website/.vitepress/dist/
+website/.vitepress/cache/
