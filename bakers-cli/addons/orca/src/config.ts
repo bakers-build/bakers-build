@@ -3,7 +3,8 @@ import type { RootGitExec } from '@bakers-build/core';
 export interface OrcaStateConfig {
   /**
    * Terminal title template; must contain `{identifier}`. Other vars:
-   * `{title}`, `{titleSlug}`, `{runUuid}`, `{workspacePath}`. `startRun`
+   * `{state}` (the state the run was started for), `{title}`, `{titleSlug}`,
+   * `{runUuid}`, `{workspacePath}`. `startRun`
    * appends ` #<run.id>`, the token `cleanupRun` finds the run's terminal by.
    */
   tabLabel?: string;
@@ -38,7 +39,7 @@ export interface OrcaExecutorOptions {
   adoptTimeoutMs?: number;
 }
 
-export const DEFAULT_TAB_LABEL = '{identifier} · {titleSlug}';
+export const DEFAULT_TAB_LABEL = '{identifier} · {state}';
 
 export function resolveTabLabel(
   options: OrcaExecutorOptions,

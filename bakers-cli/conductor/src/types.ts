@@ -47,7 +47,7 @@ export interface ConductorSettings {
    * Agent prompt template - the bakers.build run contract, NOT project workflow. Bounds
    * the agent to exactly one state and tells it to release + stop, keeping run
    * mechanics out of the repo's WORKFLOW.md. Placeholders: `{identifier}`,
-   * `{state}`, `{runUuid}`. Defaults to `DEFAULT_AGENT_PROMPT`.
+   * `{state}`, `{runUuid}`, `{ticketUuid}`. Defaults to `DEFAULT_AGENT_PROMPT`.
    */
   prompt: string;
   /**

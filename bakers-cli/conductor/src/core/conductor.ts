@@ -1,6 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { type ConductorLogger, stemForConfigFile } from '@bakers-build/core';
+import {
+  type ConductorLogger,
+  shellQuote,
+  stemForConfigFile,
+} from '@bakers-build/core';
 import {
   type BbAgent,
   DEFAULT_ENV_DENY,
@@ -25,6 +29,7 @@ import type {
   Ticket,
   UncleanTicket,
 } from '../plugins/remote.js';
+import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
@@ -195,12 +200,18 @@ function recordAfterCreateOutcome(
 
 function renderPrompt(
   template: string,
-  values: { identifier: string; state: string; runUuid: string },
+  values: {
+    identifier: string;
+    state: string;
+    runUuid: string;
+    ticketUuid: string;
+  },
 ): string {
   return template
     .replaceAll('{identifier}', values.identifier)
     .replaceAll('{state}', values.state)
-    .replaceAll('{runUuid}', values.runUuid);
+    .replaceAll('{runUuid}', values.runUuid)
+    .replaceAll('{ticketUuid}', values.ticketUuid);
 }
 
 export class Conductor {
@@ -345,6 +356,9 @@ export class Conductor {
         'addon registration failed',
       );
     }
+    for (const line of await sandboxFailures(this.agents)) {
+      this.logger.error({ conductorId: this.id }, line);
+    }
   }
 
   /** One tick that also waits for its actions: `bakers oven once`, tests. */
@@ -422,9 +436,16 @@ export class Conductor {
       this.logger,
       this.queue,
     );
+    // A run that cannot start its sandbox would only fail and count against
+    // the retry cap; claim nothing until every enabled agent can start.
+    const unavailable =
+      machineLoad < maxParallel ? await sandboxFailures(this.agents) : [];
+    for (const line of unavailable) {
+      this.logger.warn({ conductorId: this.id }, `claims withheld: ${line}`);
+    }
     let claimed = 0;
-    let withheld = false;
-    while (machineLoad < maxParallel) {
+    let withheld = unavailable.length > 0;
+    while (!withheld && machineLoad < maxParallel) {
       const run = await this.remote.claimNext({
         leaseSeconds: this.config.lease_seconds,
         conductorId: this.id,
@@ -543,7 +564,7 @@ export class Conductor {
         (this.config.capture_logs ?? true) ? captured.log : '';
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
       this.logger.info(
-        { run: r.runUuid, footprint: captured.metrics },
+        { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',
       );
     } catch (err) {
@@ -1269,6 +1290,9 @@ export class Conductor {
       defaultAgent: this.config.default_agent,
       warn: (message) => this.logger.warn({ ticket: t.identifier }, message),
     });
+    // The tick's gate may be stale by now; spawn nothing that cannot start.
+    const [unavailable] = await sandboxFailures([chosen]);
+    if (unavailable) throw new Error(unavailable);
     const baseRef = t.baseBranch ? `origin/${t.baseBranch}` : undefined;
     // Resolve the run env once (per-ticket env_vars + core BB_* vars) and
     // inject it into BOTH the executor-owned lifecycle hooks AND the agent run
@@ -1405,6 +1429,7 @@ export class Conductor {
           identifier: t.identifier,
           state: t.state || 'qualification',
           runUuid: run.runUuid,
+          ticketUuid: t.uuid,
         })
       : '';
     // BB-473 review round 2 (Critical 1): pinning the run's own UUID
@@ -1462,6 +1487,7 @@ export class Conductor {
         );
       }
     }
+    const command = chosen.agent.launchCommand(prompt, identity);
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,
@@ -1474,7 +1500,7 @@ export class Conductor {
       run: { uuid: run.runUuid, id: run.runId, handler: run.handler },
       workspacePath: ws.path,
       instructions: ws.instructions,
-      command: chosen.agent.launchCommand(prompt, identity),
+      command,
       env,
     });
     launch.started = true;
@@ -1486,6 +1512,10 @@ export class Conductor {
         workspace: ws.path,
         // Key names only — env values may be sensitive (BB-99).
         envKeys: Object.keys(env),
+        harness: chosen.agent.id,
+        alias: chosen.alias ?? chosen.id,
+        // The launch with its options; the prompt is long and in the ticket.
+        launch: command.replace(shellQuote(prompt), "'<prompt>'"),
       },
       'dispatched run',
     );

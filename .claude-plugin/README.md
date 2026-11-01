@@ -5,6 +5,19 @@ marketplace (`laws-of-robotics`).
 
 ## Install (no bakers clone required)
 
+Claude Code (v2.1.224 or later), without git or an account:
+
+```
+/plugin marketplace add https://bakers.build/marketplace.json
+/plugin install bakers@bakers
+```
+
+`https://docs-develop.dev.bakers.build/marketplace.json` serves `develop`. The docs build
+(`website/scripts/marketplace.mjs`) writes that catalog from this file, with the plugin as a zip
+behind an `archive` source pinned by sha256.
+
+From git, as Codex installs it:
+
 ```
 /plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git
 /plugin install bakers@bakers

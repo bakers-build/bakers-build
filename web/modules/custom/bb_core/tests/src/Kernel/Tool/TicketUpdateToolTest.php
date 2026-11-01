@@ -1,0 +1,235 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Drupal\Tests\bb_core\Kernel\Tool;
+
+use Drupal\Core\Entity\ContentEntityInterface;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+
+/**
+ * Updating a ticket through its tool changes only the given fields.
+ */
+#[Group('bb_core')]
+#[RunTestsInSeparateProcesses]
+final class TicketUpdateToolTest extends BakersToolTestBase {
+
+  /**
+   * Title and description change in one call; nothing else does.
+   */
+  public function testUpdatesTitleAndDescription(): void {
+    $ticket = $this->ticket('TU-1', ['assignee_user_id' => $this->actor->id()]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Clarified title',
+      'description' => 'Clarified *ask*.',
+    ]));
+    self::assertSame([
+      'identifier' => $ticket->getIdentifier(),
+      'title' => 'Clarified title',
+      'description' => 'Clarified *ask*.',
+      'conductor' => NULL,
+    ], $out);
+    $stored = $this->reload($ticket);
+    self::assertSame('Clarified title', $stored->label());
+    self::assertSame('Clarified *ask*.', $stored->get('description')->value);
+    self::assertSame((string) $this->actor->id(), (string) $stored->get('assignee_user_id')->target_id);
+    self::assertSame($ticket->get('state')->value, $stored->get('state')->value);
+    self::assertTrue($stored->get('conductor_id')->isEmpty());
+  }
+
+  /**
+   * A field left out of the call keeps its value.
+   */
+  public function testAbsentFieldIsKept(): void {
+    $ticket = $this->ticket('TU-2', ['description' => ['value' => 'Original ask.', 'format' => 'bb_rich']]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Only the title',
+    ]));
+    self::assertSame('Original ask.', $out['description']);
+    $stored = $this->reload($ticket);
+    self::assertSame('Only the title', $stored->label());
+    self::assertSame('Original ask.', $stored->get('description')->value);
+  }
+
+  /**
+   * A call without any changeable field is refused.
+   */
+  public function testNothingToChangeFails(): void {
+    $ticket = $this->ticket('TU-3');
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+    ]), 'Give a title, a description or a conductor.');
+    self::assertSame('TU-3', $this->reload($ticket)->label());
+  }
+
+  /**
+   * An account outside the project cannot see the ticket at all.
+   */
+  public function testOutsiderCannotReadTicket(): void {
+    $ticket = $this->ticket('TU-4');
+    $this->container->get('current_user')->setAccount($this->account('outsider', ['skill_user']));
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Hijacked',
+    ]), 'does not exist or is not readable');
+    self::assertSame('TU-4', $this->reload($ticket)->label());
+  }
+
+  /**
+   * A reader without update access is refused with the fields named.
+   */
+  public function testReaderWithoutUpdateAccessFails(): void {
+    $ticket = $this->ticket('TU-5');
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'viewer', 'label' => 'Viewer'])->save();
+    user_role_grant_permissions('viewer', ['view bb_ticket', 'view bb_project']);
+    $reader = $this->account('reader', ['viewer']);
+    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
+      $this->addMembership($team, $reader);
+    }
+    $this->container->get('current_user')->setAccount($reader);
+    self::assertSame('TU-5', $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['title']);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Renamed',
+      'description' => 'Rewritten.',
+    ]), 'You may not change title, description of ticket');
+    self::assertSame('TU-5', $this->reload($ticket)->label());
+  }
+
+  /**
+   * Tickets with work in progress stay editable.
+   */
+  public function testTicketsInProgressAreUpdated(): void {
+    foreach (['working', 'review'] as $state) {
+      $ticket = $this->ticket("TU-$state", ['state' => $state]);
+      $this->outputs($this->runTool('bakers_ticket_update', [
+        'ticket' => $ticket->getIdentifier(),
+        'title' => "Updated in $state",
+      ]));
+      $stored = $this->reload($ticket);
+      self::assertSame("Updated in $state", $stored->label());
+      self::assertSame($state, $stored->get('state')->value);
+    }
+  }
+
+  /**
+   * A conductor of the ticket's project is assigned.
+   */
+  public function testAssignsConductorOfTicketProject(): void {
+    $conductor = $this->conductor((int) $this->project->id());
+    $ticket = $this->ticket('TU-7', ['assignee_user_id' => $this->actor->id()]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'conductor' => $conductor->uuid(),
+    ]));
+    self::assertSame($conductor->uuid(), $out['conductor']);
+    self::assertSame('TU-7', $out['title']);
+    self::assertSame((string) $conductor->id(), (string) $this->reload($ticket)->get('conductor_id')->target_id);
+  }
+
+  /**
+   * A conductor of another project is refused by the project-match rule.
+   */
+  public function testConductorOfOtherProjectIsRefused(): void {
+    $other = $this->container->get('entity_type.manager')->getStorage('bb_project')->create([
+      'name' => 'other-project',
+      'group_id' => $this->project->get('group_id')->target_id,
+    ]);
+    $other->save();
+    $conductor = $this->conductor((int) $other->id());
+    $ticket = $this->ticket('TU-8', ['assignee_user_id' => $this->actor->id()]);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Not saved',
+      'conductor' => $conductor->uuid(),
+    ]), 'conductor_id: The selected conductor belongs to a different project');
+    $stored = $this->reload($ticket);
+    self::assertTrue($stored->get('conductor_id')->isEmpty());
+    self::assertSame('TU-8', $stored->label());
+  }
+
+  /**
+   * An unknown conductor UUID is refused before anything is set.
+   */
+  public function testUnknownConductorIsRefused(): void {
+    $ticket = $this->ticket('TU-9');
+    $uuid = '00000000-0000-4000-8000-000000000000';
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'conductor' => $uuid,
+    ]), "Conductor $uuid does not exist.");
+    self::assertTrue($this->reload($ticket)->get('conductor_id')->isEmpty());
+  }
+
+  /**
+   * Assigning a conductor fills an empty assignee with its owner.
+   */
+  public function testConductorFillsEmptyAssignee(): void {
+    $conductor = $this->conductor((int) $this->project->id());
+    $ticket = $this->ticket('TU-10');
+    $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'conductor' => $conductor->uuid(),
+    ]));
+    self::assertSame((string) $this->actor->id(), (string) $this->reload($ticket)->get('assignee_user_id')->target_id);
+  }
+
+  /**
+   * An empty title is refused with the field's validation message.
+   */
+  public function testEmptyTitleIsRefused(): void {
+    $ticket = $this->ticket('TU-11');
+    $result = $this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => '',
+      'description' => 'Not saved either.',
+    ]);
+    $this->assertFailure($result, 'Invalid input: title: ');
+    $stored = $this->reload($ticket);
+    self::assertSame('TU-11', $stored->label());
+    self::assertNull($stored->get('description')->value);
+  }
+
+  /**
+   * The tool offers no input for state, assignee, terms, links or approvals.
+   */
+  public function testInputsAreLimitedToEditableFields(): void {
+    $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_ticket_update');
+    self::assertSame(['ticket', 'title', 'description', 'conductor'], array_keys($definition->getInputDefinitions()));
+  }
+
+  /**
+   * A closed ticket is refused with its own message.
+   */
+  public function testClosedTicketIsRefused(): void {
+    $ticket = $this->ticket('TU-6', ['state' => 'done']);
+    self::assertTrue($this->reload($ticket)->isClosed());
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Rewritten history',
+    ]), sprintf('Ticket %s is closed and can no longer be changed.', $ticket->getIdentifier()));
+    self::assertSame('TU-6', $this->reload($ticket)->label());
+  }
+
+  /**
+   * An active conductor in the given project, owned by the actor.
+   */
+  private function conductor(int $project_id): ContentEntityInterface {
+    $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => $this->randomMachineName(),
+      'label' => "conductor-$project_id",
+      'owner_user_id' => $this->actor->id(),
+      'active' => TRUE,
+      'status' => 'online',
+      'project_id' => $project_id,
+    ]);
+    assert($conductor instanceof ContentEntityInterface);
+    $conductor->save();
+    return $conductor;
+  }
+
+}

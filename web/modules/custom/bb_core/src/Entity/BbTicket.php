@@ -24,6 +24,7 @@ use Drupal\bb_core\ListBuilder\BbTicketListBuilder;
 use Drupal\bb_core\Routing\BbTicketRouteProvider;
 use Drupal\bb_core\Ticket\BranchName;
 use Drupal\bb_core\Ticket\TicketClosure;
+use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\bb_core\ViewsData\BbTicketViewsData;
 use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
@@ -144,6 +145,30 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     TicketClosure::stampCleanedUpDate($this);
     TicketClosure::coerceFrozenNull($this);
     TicketClosure::stampFrozenAt($this);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * A changed conductor cancels the runs still active on another one, so the
+   * new conductor can claim the ticket. Server side: the editor's run access
+   * plays no part.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+   */
+  public function postSave(EntityStorageInterface $storage, $update = TRUE): void {
+    parent::postSave($storage, $update);
+    $original = $this->getOriginal();
+    if (!$update || !$original instanceof BbTicketInterface) {
+      return;
+    }
+    $conductor = (int) $this->get('conductor_id')->target_id;
+    if ($conductor === (int) $original->get('conductor_id')->target_id) {
+      return;
+    }
+    foreach (TicketInterventions::activeRuns($this, \Drupal::entityTypeManager(), $conductor ?: NULL) as $run) {
+      TicketInterventions::cancelRun($run, 'conductor reassigned');
+    }
   }
 
   /**

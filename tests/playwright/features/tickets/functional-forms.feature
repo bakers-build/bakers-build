@@ -50,6 +50,20 @@ Feature: Entity administration form contracts
       """
     And the stored ticket identifier still matches resource "ticket"
 
+  Scenario: Ticket Settings switch the workflow and keep the state
+    Given the API client is "north-contributor"
+    When the API client creates a "bb_work" ticket in "home" as "switched"
+    And I am logged in as the account "north-lead"
+    And the contract browser opens "/bakers/ticket/{saved.switched}/edit" with status 200
+    And the ticket's workflow is switched through its settings to "bakers.build autopilot"
+    Then ticket "switched" is stored with workflow "bb_autopilot" in state "qualification"
+
+  Scenario: A guest cannot open Ticket Settings to switch the workflow
+    Given the API client is "north-contributor"
+    When the API client creates a "bb_work" ticket in "home" as "guarded"
+    And I am logged in as the account "north-guest"
+    Then the contract browser opens "/bakers/ticket/{saved.guarded}/edit" with status 403
+
   Scenario: Ticket routes accept all three identities and refuse unknown UUIDs
     Given the API client is "north-contributor"
     When the API client creates a "bb_work" ticket in "home" as "ticket"

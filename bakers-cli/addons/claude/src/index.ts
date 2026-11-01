@@ -7,13 +7,19 @@ import {
   type AgentPlugin,
   type AgentRunIdentity,
   type BbAgent,
+  installCommand,
   type KnownOptionSpec,
+  lastLine,
   type ResolvedSecurity,
   type RunEnvPolicy,
   resolveAgentCliOptions,
   resolveSecurityOptions,
+  type SandboxHost,
   type SandboxOptions,
+  type SandboxPreflight,
+  type SecurityMode,
   type SecurityOptions,
+  systemSandboxHost,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
@@ -57,7 +63,11 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       enabled: true,
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
-      excludedCommands: sandbox.trusted_commands,
+      // Claude matches these like `Bash(...)` rules: a bare `git` is exact
+      // and would leave `git status` sandboxed, so a name takes ` *`.
+      excludedCommands: sandbox.trusted_commands.map((cmd) =>
+        cmd.endsWith('*') ? cmd : `${cmd} *`,
+      ),
       filesystem: {
         denyRead: sandbox.deny_read,
         allowWrite: sandbox.allow_write,
@@ -65,11 +75,13 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       network: { allowedDomains: sandbox.network },
     },
     disableClaudeAiConnectors: true,
-    // dontAsk denies whatever is not allowed here; every Bash command is
-    // either sandboxed or a trusted command, and the Read deny covers the
-    // Read tool, which the OS sandbox does not confine.
+    // What is allowed here runs without a prompt; anything else, such as a
+    // write to the protected `.claude/`, asks the human watching the run's
+    // terminal (dontAsk would deny it, and no allow rule lifts that). Every
+    // Bash command is either sandboxed or a trusted command, and the Read
+    // deny covers the Read tool, which the OS sandbox does not confine.
     permissions: {
-      allow: ['Bash', 'Edit(./**)'],
+      allow: ['Bash', 'Edit(./**)', 'AskUserQuestion'],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
       deny: sandbox.deny_read.flatMap((path) => {
@@ -80,7 +92,7 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
   };
   return [
     '--permission-mode',
-    'dontAsk',
+    'default',
     '--setting-sources',
     'project,local',
     '--settings',
@@ -133,6 +145,7 @@ export class ClaudeAgent implements BbAgent {
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly securityFlags: string[];
+  private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
@@ -148,6 +161,7 @@ export class ClaudeAgent implements BbAgent {
     this.overrides = cli.overrides;
     const security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
     this.securityFlags = securityFlags(security);
+    this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
   }
@@ -156,9 +170,14 @@ export class ClaudeAgent implements BbAgent {
     if (prompt === '') {
       return 'claude';
     }
-    const parts = this.measure
-      ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
-      : ['claude', shellQuote(prompt)];
+    // Wait for project-declared plugins (extraKnownMarketplaces) to install
+    // before the first turn; a fresh worktree otherwise starts without them.
+    const parts = [
+      'CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1',
+      ...(this.measure
+        ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
+        : ['claude', shellQuote(prompt)]),
+    ];
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));
     }
@@ -318,6 +337,46 @@ export class ClaudeAgent implements BbAgent {
 
   parseFootprint(log: string): AgentFootprint {
     return parseClaudeTranscript(log);
+  }
+
+  /** Linux needs bwrap, socat and a user namespace; macOS ships Seatbelt. */
+  async sandboxPreflight(
+    host: SandboxHost = systemSandboxHost(),
+  ): Promise<SandboxPreflight> {
+    if (this.securityMode !== 'sandbox' || host.platform !== 'linux') {
+      return { ok: true };
+    }
+    const missing = [
+      ['bwrap', 'bubblewrap'],
+      ['socat', 'socat'],
+    ].filter(([bin]) => !host.onPath(bin as string));
+    if (missing.length > 0) {
+      return {
+        ok: false,
+        cause: `${missing.map(([bin]) => bin).join(' and ')} not found`,
+        fix: `install it with ${installCommand(
+          host,
+          missing.map(([, pkg]) => pkg as string),
+        )}`,
+      };
+    }
+    // The namespaces Claude's sandbox needs: user (unprivileged) and net.
+    const probe = await host.run('bwrap', [
+      '--unshare-user',
+      '--unshare-net',
+      '--die-with-parent',
+      '--ro-bind',
+      '/',
+      '/',
+      'true',
+    ]);
+    return probe.ok
+      ? { ok: true }
+      : {
+          ok: false,
+          cause: `bwrap cannot set up its sandbox: ${lastLine(probe.stderr)}`,
+          fix: 'allow unprivileged user namespaces on this host, or run the conductor where they are allowed',
+        };
   }
 }
 

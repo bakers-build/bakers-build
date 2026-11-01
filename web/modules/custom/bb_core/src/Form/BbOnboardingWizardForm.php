@@ -463,7 +463,7 @@ final class BbOnboardingWizardForm extends FormBase {
     ];
     $i = 0;
     foreach ([
-      '/plugin marketplace add ' . $marketplace => (string) $this->t('Copy the marketplace add command'),
+      '/plugin marketplace add ' . $this->claudeMarketplace($marketplace) => (string) $this->t('Copy the marketplace add command'),
       '/plugin install bakers@bakers' => (string) $this->t('Copy the plugin install command'),
     ] as $command => $label) {
       $claude['cmd_' . $i] = $this->commandElement($command, $label);
@@ -763,6 +763,18 @@ final class BbOnboardingWizardForm extends FormBase {
       $base = self::DEFAULT_PLUGIN_SOURCE_BASE;
     }
     return rtrim($base, '/') . '/bakers-build.git';
+  }
+
+  /**
+   * Claude Code marketplace source: the published catalog, unless forked.
+   *
+   * Claude Code installs from the URL catalog on bakers.build; a site whose
+   * plugin_source_base points at another git host keeps its own git source.
+   */
+  private function claudeMarketplace(string $gitUrl): string {
+    return $gitUrl === rtrim(self::DEFAULT_PLUGIN_SOURCE_BASE, '/') . '/bakers-build.git'
+      ? 'https://bakers.build/marketplace.json'
+      : $gitUrl;
   }
 
   /**

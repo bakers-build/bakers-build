@@ -33,12 +33,12 @@ describe('ClaudeAgent.launchCommand', () => {
       security: 'yolo',
     });
     expect(agent.launchCommand('do the thing')).toBe(
-      "claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
     );
   });
   it('omits --model when no model is set', () => {
     expect(new ClaudeAgent({ security: 'yolo' }).launchCommand('x')).toBe(
-      "claude 'x' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
   });
   it('returns the bare command for an empty prompt', () => {
@@ -51,7 +51,7 @@ describe('ClaudeAgent.launchCommand', () => {
       'para one\n\npara two',
     );
     expect(cmd).toBe(
-      "claude 'para one\n\npara two' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'para one\n\npara two' --dangerously-skip-permissions",
     );
   });
 });
@@ -183,13 +183,13 @@ describe('ClaudeAgent.launchCommand with a run identity', () => {
     const agent = new ClaudeAgent({ security: 'yolo' });
     const cmd = agent.launchCommand('do the thing', { sessionId: 'r-123' });
     expect(cmd).toBe(
-      "claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
     );
   });
   it('omits --session-id when no run is given (unchanged behaviour)', () => {
     const agent = new ClaudeAgent({ security: 'yolo' });
     expect(agent.launchCommand('x')).toBe(
-      "claude 'x' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
   });
 });
@@ -359,10 +359,10 @@ describe('ClaudeAgent security: sandbox (default)', () => {
   const argv = () =>
     captureArgv('claude', new ClaudeAgent({}).launchCommand('x'));
 
-  it('starts without a bypass, in dontAsk mode, with project/local settings only and no MCP server', () => {
+  it('starts without a bypass, in default mode, with project/local settings only and no MCP server', () => {
     const a = argv();
     expect(a).not.toContain('--dangerously-skip-permissions');
-    expect(flagValue(a, '--permission-mode')).toBe('dontAsk');
+    expect(flagValue(a, '--permission-mode')).toBe('default');
     expect(flagValue(a, '--setting-sources')).toBe('project,local');
     expect(a).toContain('--strict-mcp-config');
     expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
@@ -376,12 +376,16 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       enabled: true,
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
-      excludedCommands: ['bakers', 'git', 'ddev'],
+      excludedCommands: ['bakers *', 'git *', 'ddev *'],
       filesystem: { denyRead: ['~/.ssh', '~/.bakers'], allowWrite: [] },
       network: { allowedDomains: ['*'] },
     });
     expect(settings.disableClaudeAiConnectors).toBe(true);
-    expect(settings.permissions.allow).toEqual(['Bash', 'Edit(./**)']);
+    expect(settings.permissions.allow).toEqual([
+      'Bash',
+      'Edit(./**)',
+      'AskUserQuestion',
+    ]);
     expect(settings.permissions.deny).toEqual([
       'Read(~/.ssh)',
       'Read(~/.ssh/**)',
@@ -395,7 +399,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       'claude',
       new ClaudeAgent({
         sandbox: {
-          trusted_commands: ['git', 'docker'],
+          trusted_commands: ['git', 'docker compose *'],
           deny_read: ['~/.aws', '/etc/secret', '~/.netrc'],
           allow_write: ['/srv/cache'],
           network: ['api.anthropic.com'],
@@ -404,7 +408,10 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       }).launchCommand('x'),
     );
     const settings = JSON.parse(flagValue(a, '--settings'));
-    expect(settings.sandbox.excludedCommands).toEqual(['git', 'docker']);
+    expect(settings.sandbox.excludedCommands).toEqual([
+      'git *',
+      'docker compose *',
+    ]);
     expect(settings.sandbox.filesystem).toEqual({
       denyRead: ['~/.aws', '/etc/secret', '~/.netrc'],
       allowWrite: ['/srv/cache'],
@@ -489,5 +496,97 @@ describe('ClaudeAgent security load errors', () => {
     [{ env_deny: 'X' }, /env_deny must be an array of strings/],
   ])('%j fails loading', (options, message) => {
     expect(() => new ClaudeAgent(options as never)).toThrow(message);
+  });
+});
+
+describe('ClaudeAgent.sandboxPreflight', () => {
+  const host = (
+    over: Partial<{
+      platform: NodeJS.Platform;
+      tools: string[];
+      probe: { ok: boolean; stderr: string };
+    }> = {},
+  ) => {
+    const calls: string[][] = [];
+    const tools = over.tools ?? ['bwrap', 'socat', 'apt-get'];
+    return {
+      calls,
+      host: {
+        platform: over.platform ?? ('linux' as NodeJS.Platform),
+        onPath: (name: string) => tools.includes(name),
+        run: async (cmd: string, args: string[]) => {
+          calls.push([cmd, ...args]);
+          return over.probe ?? { ok: true, stderr: '' };
+        },
+      },
+    };
+  };
+
+  it('names a missing socat and the apt install command', async () => {
+    const { host: h } = host({ tools: ['bwrap', 'apt-get'] });
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+      ok: false,
+      cause: 'socat not found',
+      fix: 'install it with sudo apt-get install -y socat',
+    });
+  });
+
+  it('names both tools and the dnf command when bwrap and socat are missing', async () => {
+    const { host: h, calls } = host({ tools: ['dnf'] });
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+      ok: false,
+      cause: 'bwrap and socat not found',
+      fix: 'install it with sudo dnf install -y bubblewrap socat',
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it('reports a refused user namespace from the bwrap probe', async () => {
+    const { host: h } = host({
+      probe: {
+        ok: false,
+        stderr:
+          'bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces.\n',
+      },
+    });
+    const result = await new ClaudeAgent().sandboxPreflight(h);
+    expect(result).toMatchObject({
+      ok: false,
+      cause:
+        'bwrap cannot set up its sandbox: bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces.',
+    });
+    expect(result.ok ? '' : result.fix).toContain('user namespaces');
+  });
+
+  it('is ok when both tools are present and the probe starts', async () => {
+    const { host: h, calls } = host();
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(calls[0]?.slice(0, 2)).toEqual(['bwrap', '--unshare-user']);
+  });
+
+  it.each([
+    'system',
+    'yolo',
+  ] as const)('skips the probe in %s mode', async (security) => {
+    const { host: h, calls } = host({ tools: [] });
+    expect(await new ClaudeAgent({ security }).sandboxPreflight(h)).toEqual({
+      ok: true,
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it('skips the probe in custom mode', async () => {
+    const { host: h } = host({ tools: [] });
+    expect(
+      await new ClaudeAgent({
+        security: 'custom',
+        config: {},
+      }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
+  });
+
+  it('skips the probe on macOS (Seatbelt is built in)', async () => {
+    const { host: h } = host({ platform: 'darwin', tools: [] });
+    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
   });
 });

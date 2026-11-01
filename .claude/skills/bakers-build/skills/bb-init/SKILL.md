@@ -11,19 +11,21 @@ requirements and commands; this skill owns the conversation. Return project conf
 
 ## Read
 
-Read [Prepare a machine](https://bb-539921.gitlab-pages.keytec.de/advanced/cli/prepare-machine)
-and [Install the CLI](https://bb-539921.gitlab-pages.keytec.de/advanced/cli/install).
+Read [Prepare a machine](https://bakers.build/advanced/cli/prepare-machine)
+and [Install the CLI](https://bakers.build/advanced/cli/install).
 In a bakers.build source checkout, use its `docs/advanced/cli/prepare-machine.md` and
 `docs/advanced/cli/install.md` instead, so instructions match the revision being worked on.
-Follow their links when a chosen path needs more detail. If the required documentation cannot be
-read, report the missing source and stop; do not substitute a remembered tool list.
+If the required documentation cannot be read, report the missing source and stop; do not
+substitute a remembered tool list.
 **Done when the relevant documentation is loaded.**
 
 ## Ask and explain
 
 Establish whether this machine runs tickets and whether it is the developer's computer or a
 remote worker. For a worker, ask which workspace manager and development environment they want,
-then resolve the remaining choices from the documentation. Explain the options and their
+then resolve the remaining choices from the documentation. A Coder workspace is a remote worker
+whose path is [Set up a Coder workspace](https://bakers.build/advanced/coder-workspace)
+(`docs/advanced/coder-workspace.md` in a source checkout). Explain the options and their
 tradeoffs briefly, using the docs; distinguish supported integrations from planned ones.
 
 Reuse supplied answers and explicit project or machine configuration, naming the source.
@@ -35,13 +37,27 @@ ones `not determined`; a custom environment calls for its project's documented s
 
 Follow the selected documentation path: tooling first, then identity and sign-in. Run the
 applicable read-only checks and explain failures with the documentation's next action.
-The person installs tools; give the relevant documentation link and recheck after they act.
+The person installs tools; give the documentation link and recheck after they act.
+On a worker, check the documented agent sandbox prerequisites (`bakers oven check` once a
+project is connected). Report present tools and leave them alone. Run a missing one's documented
+install command only with explicit consent, or hand it over when it needs `sudo` this session lacks.
 
-Before configuration writes, inspect existing configuration and collect only missing inputs.
-Preserve correct values, keep secrets out of output, and leave project configuration to the caller.
+Before configuration writes, inspect existing configuration, collect only missing inputs and
+write after the person confirms.
+Preserve correct values and keep secrets out of output.
 Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain
 outstanding; they are not successful setup.
 **Done when the documented checks pass or each remaining action has an owner.**
+
+## Check out projects
+
+On a remote worker, after sign-in: list the person's projects on the control plane and ask
+which to check out. Confirm the
+SSH key is accepted by each `repository.url` host, then clone it at `repository.default_branch`
+into `~/projects/<key>` and invoke `@bakers-build/bb-init-project` with scope `project` there.
+After the person confirms, start `bakers oven start --foreground` in its own herdr tab per checkout.
+**Done when each chosen project is checked out, configured, and its conductor runs or the person
+declined.**
 
 ## Report and return
 

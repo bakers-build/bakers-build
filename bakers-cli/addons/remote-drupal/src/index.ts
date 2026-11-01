@@ -667,15 +667,22 @@ export class DrupalBbRemote implements BbRemote {
     // transcript, then close the run's terminal tab. Two queries are used
     // because this builder has no `IN` operator in use.
     const rows = [
-      ...(await this.finalizableRunsInState(id, 'done')),
-      ...(await this.finalizableRunsInState(id, 'cancelled')),
+      ...(await this.finalizableRunsInState(id, 'done')).map((row) => ({
+        row,
+        state: 'done' as const,
+      })),
+      ...(await this.finalizableRunsInState(id, 'cancelled')).map((row) => ({
+        row,
+        state: 'cancelled' as const,
+      })),
     ];
     // `started_at` is read back ONLY as a transcript-selection lower bound
     // (BB-473, `AgentRunIdentity.startedAt`) for agents with no session-id
     // mechanism (codex, opencode). It is NOT used to (re)compute duration_s,
     // which stays derived from the transcript itself (BB-151).
-    return rows.map((r) => ({
+    return rows.map(({ row: r, state }) => ({
       runUuid: r.id,
+      state,
       // The `#<runId>` tab-label token: scopes the run's tab-close (BB-183).
       runId: Number(r.attr<number>('drupal_internal__id')),
       // The `after_run` context (BB-599): durable, so it survives a restart.

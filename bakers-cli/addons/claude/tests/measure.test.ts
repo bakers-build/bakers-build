@@ -250,7 +250,7 @@ describe('ClaudeAgent measure', () => {
       args: ['--verbose'],
     }).launchCommand('go');
     expect(cmd).toBe(
-      `node '${wrapper}' claude 'go' --model 'opus' --dangerously-skip-permissions '--verbose' '--setting-sources' 'project,local' '--settings' '.bakers/claude-measure.settings.json' '--strict-mcp-config' '--mcp-config' '{"mcpServers":{}}'`,
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${wrapper}' claude 'go' --model 'opus' --dangerously-skip-permissions '--verbose' '--setting-sources' 'project,local' '--settings' '.bakers/claude-measure.settings.json' '--strict-mcp-config' '--mcp-config' '{"mcpServers":{}}'`,
     );
   });
 
@@ -280,7 +280,9 @@ describe('ClaudeAgent measure', () => {
   it('leaves the launch untouched without measure', () => {
     expect(
       new ClaudeAgent({ model: 'opus', security: 'yolo' }).launchCommand('go'),
-    ).toBe("claude 'go' --model 'opus' --dangerously-skip-permissions");
+    ).toBe(
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions",
+    );
   });
 
   it('omits measure for an empty prompt', () => {

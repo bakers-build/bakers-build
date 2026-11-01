@@ -67,7 +67,8 @@ function makeConfig(
     site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
     remote: fakeRemote(),
     executor: fakeExecutor(),
-    agents: [{ agent: claudeAgent(), alias: 'claude' }],
+    // `system`: nothing launches here, so the machine's sandbox must not gate claims.
+    agents: [{ agent: claudeAgent({ security: 'system' }), alias: 'claude' }],
     enabled_agents: ['claude'],
     disabled_agents: [],
     default_agent: 'claude',

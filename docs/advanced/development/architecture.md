@@ -24,13 +24,21 @@ A run is both one attempt at one ticket state and the lease on that ticket. The 
 
 A run ends on the server. When the ticket moves to its next state, the server closes the run that executed the previous state, and a ticket that enters `done` or `cancelled` closes its last run. No client command releases a run.
 
+A run is cancelled in three ways, each setting the existing state `cancelled`; the tool and a conductor change also append the cause to the run's error log:
+
+- *Cancel run* on the ticket page or in the terminal UI;
+- the `bakers_run_cancel` tool (`ticket`, `reason`), which cancels all of the ticket's `claimed` and `running` runs under the same rule as *Cancel run* (ticket edit access), all or none, and logs `cancelled by <account>: <reason>`; an agent passes its own ticket to stop its run;
+- a change of the ticket's conductor, including clearing it: every run still `claimed` or `running` on another conductor is cancelled with `conductor reassigned`, and the new conductor claims the ticket on its next tick. A save that keeps the conductor cancels nothing.
+
+Cancelled runs never count toward the failed-run circuit breaker.
+
 ## Conductor
 
 The conductor is the claim-and-dispatch loop that `bakers oven start` runs, in `@bakers-build/conductor`. One conductor serves one project checkout, and the control plane coordinates them; there is no central daemon. Each tick does the following.
 
 1. Send a heartbeat, which refreshes the registration and recomputes the machine's load.
 2. Read the machine's shared capacity.
-3. Finalise runs the server has closed: store the transcript, compute the effort metrics, close the hosted session.
+3. Finalise runs the server has closed (`done`) or cancelled: stop the agent, store the transcript, compute the effort metrics, close the hosted session. The run keeps its state, and the `run finalised` log names it.
 4. Reap the worktrees of finished tickets.
 5. Claim one ticket at a time while the machine has capacity, and dispatch each claim: resolve the agent, ensure the workspace, start the session and mark the run `running`. A failed dispatch marks the run `failed` with the error.
 

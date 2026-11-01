@@ -253,6 +253,17 @@ services:
     networks:
       - internal
 
+  # The public docs site and plugin marketplace (Dockerfile `docs` target), independent of the
+  # app. Profile-gated: only the stacks that set COMPOSE_PROFILES=docs (develop, prod) run it.
+  docs:
+    image: "${REGISTRY_IMAGE_DOCS:-}"
+    profiles: [docs]
+    restart: unless-stopped
+    environment:
+      DOCS_DOMAIN: ${DOCS_DOMAIN:-}
+    networks:
+      - internal
+
 volumes:
   db:
   public_files:

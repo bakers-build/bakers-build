@@ -389,6 +389,106 @@ describe('state run profile', () => {
   });
 });
 
+describe('automatic approval', () => {
+  const automatic = 'Approval: automatic (workflow bb_autopilot)';
+  it('carries an autopilot plan to working and records the approval', async () => {
+    const plan = [
+      readTicket({ workflow: 'bb_autopilot', approval: 'automatic' }),
+      comment('spec', 'Dates are ISO 8601; the delimiter is a semicolon.'),
+      comment('plan'),
+      comment('test'),
+      comment('summary', `Probe-plan: 2\n${automatic}`),
+      transition('working'),
+      readTicket({ state: 'working' }),
+    ];
+    expect(
+      await judge('plan-autopilot-run', 'Moved to working.', plan),
+    ).toEqual([]);
+    expect(
+      await judge('plan-autopilot-run', 'Approve?', plan.slice(0, 5)),
+    ).toEqual(['transition']);
+    expect(
+      await judge('plan-autopilot-run', 'Moved to working.', [
+        ...plan.slice(0, 4),
+        comment('summary', 'Probe-plan: 2'),
+        ...plan.slice(5),
+      ]),
+    ).toEqual(['approval-recorded']);
+  });
+  it('carries an autopilot qualification to plan', async () => {
+    const classify = call(
+      'bakers_ticket_classify',
+      { ticket, recipe: 'probe', type: 'chore' },
+      { recipe: 'probe', type: 'chore' },
+    );
+    const done = [
+      readTicket(),
+      classify,
+      readTicket({ recipe: 'probe', type: 'chore' }),
+      comment('qualification', automatic),
+      comment('summary'),
+      transition('plan'),
+      readTicket(),
+    ];
+    expect(
+      await judge('qualification-autopilot-run', 'Routed to plan.', done),
+    ).toEqual([]);
+    expect(
+      await judge('qualification-autopilot-run', 'Approve?', done.slice(0, 5)),
+    ).toEqual(['transition']);
+  });
+  it('lets the coding gate move to review on its own only when GREEN and within the loop bound', async () => {
+    const moved = [readTicket(), transition('review'), readTicket()];
+    const stopped = [readTicket()];
+    expect(await judge('coding-gate-autopilot', 'review', moved)).toEqual([]);
+    expect(await judge('coding-gate-autopilot', 'Confirm?', stopped)).toEqual([
+      'transition',
+    ]);
+    for (const id of [
+      'coding-gate-autopilot-loop',
+      'coding-gate-autopilot-red',
+      'coding-gate-work-unattended',
+    ]) {
+      expect(await judge(id, 'Confirm?', stopped), id).toEqual([]);
+      expect(await judge(id, 'review', moved), id).toEqual(['no-transition']);
+    }
+  });
+  it('publishes the verdict on its own and still stops at merge authorization', async () => {
+    const published = [
+      readTicket(),
+      comment('review', `Status: **OK**\n${automatic}`),
+      comment('summary'),
+    ];
+    expect(
+      await judge(
+        'review-autopilot-ok',
+        'Merge authorization needed: may I merge MR 40?',
+        published,
+      ),
+    ).toEqual([]);
+    expect(
+      await judge('review-autopilot-ok', 'Done.', [
+        ...published,
+        transition('done'),
+        readTicket(),
+      ]),
+    ).toEqual(['no-transition', 'asks']);
+    const repaired = [
+      readTicket(),
+      comment('review', `Status: **Not OK**\n${automatic}`),
+      comment('summary'),
+      transition('working'),
+      readTicket(),
+    ];
+    expect(
+      await judge('review-autopilot-not-ok', 'Back to working.', repaired),
+    ).toEqual([]);
+    expect(
+      await judge('review-autopilot-not-ok', 'Confirm?', repaired.slice(0, 3)),
+    ).toEqual(['transition']);
+  });
+});
+
 describe('persona login profile', () => {
   const link =
     'https://eval-42.ddev.site/user/reset/41/1791072000/lead-token/login';

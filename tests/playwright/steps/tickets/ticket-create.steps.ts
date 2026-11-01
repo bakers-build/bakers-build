@@ -931,6 +931,11 @@ Then('the stored ticket has conductor {string}', async ({}, conductorLabel: stri
   expect(facts.conductorLabel, 'The stored ticket does not carry the expected conductor').toBe(conductorLabel);
 });
 
+Then('the stored ticket has workflow {string}', async ({}, workflow: string) => {
+  const facts = loadCreatedTicketFacts(requireLastTypedTitle());
+  expect(facts.workflow, 'The stored ticket does not carry the chosen workflow').toBe(workflow);
+});
+
 Then('the stored ticket has no conductor', async () => {
   const facts = loadCreatedTicketFacts(requireLastTypedTitle());
   expect(facts.conductorLabel, 'The stored ticket unexpectedly carries a conductor').toBe('');

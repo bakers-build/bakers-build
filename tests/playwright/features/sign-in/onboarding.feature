@@ -165,7 +165,7 @@ Feature: The onboarding wizard before the workspace overview
     And I continue from the about-you step
     Then the setup installation step is present
     And the document was not reloaded
-    And the command "/plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git" is shown
+    And the command "/plugin marketplace add https://bakers.build/marketplace.json" is shown
     And the command "/plugin install bakers@bakers" is shown
     And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
     When I choose the "Codex" agent filter

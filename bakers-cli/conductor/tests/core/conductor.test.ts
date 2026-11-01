@@ -43,7 +43,7 @@ import type {
   SpawnRunInput,
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
-import type { ConductorLogger } from '@bakers-build/core';
+import { type ConductorLogger, shellQuote } from '@bakers-build/core';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { attemptFamily, attemptSessionId } from '../../src/core/attempt.js';
@@ -862,7 +862,8 @@ describe('Conductor', () => {
     const home = mkdtempSync(join(tmpdir(), 'claude-home-'));
     const cwd = '/fake/BB-1';
     const dir = join(home, '.claude', 'projects', encodeClaudeProjectDir(cwd));
-    const agent = new ClaudeAgent({}, home);
+    // `system`: nothing launches here, so the machine's sandbox must not gate claims.
+    const agent = new ClaudeAgent({ security: 'system' }, home);
 
     class ClaudeLikeExecutor extends RecordingExecutor {
       async startRun(input: SpawnRunInput) {
@@ -1205,7 +1206,11 @@ describe('Conductor', () => {
       remote,
       new FakeExecutor({ outcome: 'exited' }),
       new FakeWorkspace(),
-      resolved(fakeAgent),
+      resolved({
+        ...fakeAgent,
+        launchCommand: (p: string) =>
+          `claude ${shellQuote(p)} --dangerously-skip-permissions`,
+      }),
       log,
       CHECKOUT,
     );
@@ -1218,7 +1223,11 @@ describe('Conductor', () => {
       handler: 'code',
     });
     await conductor.tick();
-    expect(calls.some((c) => c.msg === 'dispatched run')).toBe(true);
+    const dispatched = calls.find((c) => c.msg === 'dispatched run');
+    expect(dispatched?.obj).toMatchObject({
+      harness: 'claude',
+      launch: "claude '<prompt>' --dangerously-skip-permissions",
+    });
   });
 
   it('dispatch: classified ticket (state="plan") with WORKFLOW.md → state prompt + release instruction', async () => {
@@ -1331,7 +1340,7 @@ describe('Conductor', () => {
     // The agent self-reads the ticket + comments at step 0 — the dispatch line
     // embeds neither the ticket body nor any comment text, and stays bounded.
     expect(command).toContain(
-      'bakers dropsh --format md read bb_ticket/bb_ticket/$BB_ID --include comments',
+      `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
     );
     expect(command).not.toContain('--- Ticket comments ---');
     expect(command).not.toContain('{comments}');
@@ -1838,6 +1847,58 @@ describe('Conductor', () => {
         },
       },
     ]);
+  });
+
+  it('tick stops a cancelled run, keeps it cancelled and logs its state', async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'working',
+          branchName: 'bakers/bb-1-one',
+        },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'working',
+          state: 'cancelled',
+          worktreePath: '/wt/r-1',
+        },
+      ],
+    });
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    const { log, calls } = spyLogger();
+    const conductor = new Conductor(
+      makeConfig(),
+      remote,
+      executor,
+      new FakeWorkspace(),
+      resolved(agentReturning('X')),
+      log,
+      CHECKOUT,
+    );
+    await conductor.start();
+
+    await conductor.tick();
+
+    expect(executor.calls).toContainEqual({
+      kind: 'cleanupRun',
+      branch: 'bakers/bb-1-one',
+      runId: 1,
+    });
+    expect(calls).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'run finalised',
+        obj: expect.objectContaining({ run: 'r-1', state: 'cancelled' }),
+      }),
+    );
+    expect(remote.calls.markFailed).toEqual([]);
+    expect(await remote.fetchFinalizableRuns('any')).toEqual([]);
   });
 
   it('tick signals stopRun then closes the run tab (cleanupRun) around finalising — persistent executor', async () => {

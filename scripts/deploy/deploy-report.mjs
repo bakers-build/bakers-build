@@ -3,17 +3,22 @@
 // exit state (through the Komodo read API), then smoke-check the live host. Any failure
 // exits non-zero, naming the failed check, so a broken deploy is never green.
 //
-//   node scripts/deploy/deploy-report.mjs <stack> <base-url>   # CI: log + exit state + smoke
-//   node scripts/deploy/deploy-report.mjs --smoke-only <base-url>
+//   node scripts/deploy/deploy-report.mjs <stack> <base-url> [<docs-url>]   # CI: log + exit state + smoke
+//   node scripts/deploy/deploy-report.mjs --smoke-only <base-url> [<docs-url>]
+//
+// With <docs-url>, the docs host is checked too: root 200, marketplace.json 200, its plugin
+// archive on the docs host and matching the pinned sha256.
 //
 // Env (full mode): KOMODO_URL, KOMODO_API_KEY, KOMODO_API_SECRET. Node >= 18 (global fetch).
 
+import { createHash } from 'node:crypto';
+
 const args = process.argv.slice(2);
 const smokeOnly = args[0] === '--smoke-only';
-const [stack, baseUrl] = smokeOnly ? [null, args[1]] : args;
+const [stack, baseUrl, docsUrl] = smokeOnly ? [null, ...args.slice(1)] : args;
 if (!baseUrl || (!smokeOnly && !stack)) {
   console.error(
-    'usage: deploy-report.mjs <stack> <base-url> | --smoke-only <base-url>',
+    'usage: deploy-report.mjs <stack> <base-url> [<docs-url>] | --smoke-only <base-url> [<docs-url>]',
   );
   process.exit(2);
 }
@@ -64,8 +69,8 @@ async function reportDeployService() {
   }
 }
 
-async function get(path) {
-  return fetch(new URL(path, baseUrl), {
+async function get(path, base = baseUrl) {
+  return fetch(new URL(path, base), {
     redirect: 'manual',
     signal: AbortSignal.timeout(20000),
   });
@@ -102,7 +107,62 @@ async function smoke() {
       ]);
     }
   }
+  if (docsUrl) results.push(...(await smokeDocs()));
   return results;
+}
+
+// The marketplace a user adds by URL downloads the archive its entry names: it must be on the
+// docs host and match its sha256, or `/plugin install` refuses it.
+async function smokeDocs() {
+  const results = [];
+  const probe = async (name, run) => {
+    try {
+      const [ok, detail] = await run();
+      results.push([name, ok, detail]);
+    } catch (err) {
+      results.push([name, false, err.cause?.code ?? err.cause?.message ?? err.message]);
+    }
+  };
+  await probe('docs site 200', async () => {
+    const res = await get('/', docsUrl);
+    return [res.status === 200, `HTTP ${res.status}`];
+  });
+  let archive;
+  await probe('marketplace.json 200', async () => {
+    const res = await get('/marketplace.json', docsUrl);
+    if (res.status !== 200) return [false, `HTTP ${res.status}`];
+    const catalog = await res.json();
+    archive = catalog.plugins?.find((p) => p.name === 'bakers')?.source;
+    return [archive?.source === 'archive', `bakers source ${JSON.stringify(archive)}`];
+  });
+  if (archive?.source !== 'archive') return results;
+  const url = new URL(archive.url);
+  const onHost = url.origin === new URL(docsUrl).origin;
+  results.push(['marketplace archive on the docs host', onHost, archive.url]);
+  if (!onHost) return results;
+  await probe('marketplace archive matches its sha256', async () => {
+    const res = await get(url, docsUrl);
+    if (res.status !== 200) return [false, `HTTP ${res.status}`];
+    const sha = createHash('sha256').update(Buffer.from(await res.arrayBuffer())).digest('hex');
+    return [sha === archive.sha256?.toLowerCase(), `${sha} vs pinned ${archive.sha256}`];
+  });
+  return results;
+}
+
+// Warn-only: www.<apex> → 301 → apex needs its own DNS record, which may not exist yet.
+// shortcut: an apex is a two-label host; upgrade to an explicit alias argument if a docs host
+// ever sits on a deeper apex.
+async function warnWwwRedirect() {
+  const { hostname } = new URL(docsUrl);
+  if (hostname.split('.').length !== 2) return;
+  try {
+    const res = await get('/x', `https://www.${hostname}`);
+    const location = res.headers.get('location');
+    const ok = res.status === 301 && location === `https://${hostname}/x`;
+    console.log(`[smoke] ${ok ? 'ok  ' : 'WARN'} www.${hostname} → 301 → ${hostname} — HTTP ${res.status} ${location ?? ''}`);
+  } catch (err) {
+    console.log(`[smoke] WARN www.${hostname} → 301 → ${hostname} — ${err.cause?.code ?? err.message}`);
+  }
 }
 
 // Right after a deploy the containers are starting, and a new host has no certificate
@@ -122,6 +182,7 @@ async function smokeWithRetry() {
 
 if (!smokeOnly) await reportDeployService();
 await smokeWithRetry();
+if (docsUrl) await warnWwwRedirect();
 if (failures.length) {
   console.error(
     `deploy-report: ${failures.length} check(s) failed: ${failures.join('; ')}`,

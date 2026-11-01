@@ -18,9 +18,38 @@ A run executes text other people wrote (ticket title, description, comments, env
 
 The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security) and [Codex](/addons/codex#security) pages. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
+## Sandbox prerequisites
+
+`sandbox` mode needs the harness's OS sandbox on the machine that runs the conductor. Check every enabled agent with:
+
+```sh
+bakers oven check
+```
+
+It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. `system`, `yolo` and `custom` agents are not checked.
+
+| Platform | Claude | Codex |
+|---|---|---|
+| Linux | `bwrap` (package `bubblewrap`) and `socat`, and unprivileged user namespaces | its own `codex sandbox`, which needs unprivileged user namespaces |
+| macOS | nothing to install: the built-in Seatbelt sandbox | nothing to install: the built-in Seatbelt sandbox |
+
+Install the Linux packages with your package manager:
+
+| Package manager | Command |
+|---|---|
+| apt (Debian, Ubuntu) | `sudo apt-get install -y bubblewrap socat` |
+| dnf (Fedora, RHEL) | `sudo dnf install -y bubblewrap socat` |
+| pacman (Arch) | `sudo pacman -S --needed bubblewrap socat` |
+
+Other distributions: install the packages `bubblewrap` and `socat`.
+
+A host or container that forbids unprivileged user namespaces shows `bwrap cannot set up its sandbox: …` (Claude) or `codex sandbox cannot start: …` (Codex). Allow them on the host (on Ubuntu 24.04 and later, AppArmor restricts them), or run the conductor where they are allowed.
+
+While an enabled agent cannot start its sandbox, the conductor claims nothing and logs `claims withheld: sandbox unavailable: …` on every cycle; `bakers oven start` prints the same line as a warning. No run is created, so no ticket is parked by the failed-run limit. After the fix the next cycle claims, without a restart. A run whose sandbox becomes unavailable between the cycle and its start fails with the same message in its error log, and no agent starts.
+
 ## Claude in `sandbox` mode
 
-The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash` and `Edit(./**)`. In `dontAsk` mode anything else not allowed is denied instead of prompting, so an unattended run never waits on a question.
+The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. They run without a prompt. Anything else asks you in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. A run nobody watches therefore waits at such a prompt.
 
 What the default blocks:
 
@@ -28,7 +57,7 @@ What the default blocks:
 - Shell commands and Claude's Read tool reading a `deny_read` path.
 - Network access from shell commands to hosts outside `network`.
 - Your user-level MCP servers from `~/.claude.json`, your personal `~/.claude/settings.json` rules and claude.ai connectors.
-- The start itself when the OS sandbox is unavailable (Linux needs `bubblewrap` and `socat`).
+- The start itself when the OS sandbox is unavailable; see [Sandbox prerequisites](#sandbox-prerequisites).
 
 What it does not block:
 

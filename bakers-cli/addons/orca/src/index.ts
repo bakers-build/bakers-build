@@ -151,6 +151,7 @@ export class OrcaExecutor implements BbExecutor {
     );
     const title = `${renderTemplate(tabLabel, {
       identifier: input.ticket.identifier,
+      state: input.ticket.state,
       title: input.ticket.title,
       titleSlug: slugify(input.ticket.title),
       runUuid: input.run.uuid,

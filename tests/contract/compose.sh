@@ -32,7 +32,8 @@ render() {
   DB_NAME=dummy DB_USER=dummy DB_PASSWORD=dummy-pw DB_ROOT_PASSWORD=dummy-root-pw \
   DRUPAL_HASH_SALT=dummy-salt \
   REGISTRY_IMAGE_PHP=dummy/php:dummy REGISTRY_IMAGE_NGINX=dummy/nginx:dummy \
-  REGISTRY_IMAGE_E2E=dummy/e2e:dummy \
+  REGISTRY_IMAGE_E2E=dummy/e2e:dummy REGISTRY_IMAGE_DOCS=dummy/docs:dummy \
+  DOCS_DOMAIN=docs.example.test DOCS_ALIAS_DOMAIN=www.docs.example.test \
     docker compose -f docker-compose.yml -f "$overlay" "$@" config
 }
 
@@ -73,7 +74,29 @@ for overlay in docker-compose.traefik.yml; do
   fi
 
   pass "$overlay renders with no mcp service and no leaked secret"
+
+  # The public docs host is opt-in by profile: only stacks that set COMPOSE_PROFILES=docs run it.
+  echo "$out" | grep -q '^  docs:' && fail "$overlay: 'docs' service is active without the docs profile"
+  out="$(render "$overlay" --profile docs)"
+  docs_block="$(echo "$out" | awk '/^  docs:/{f=1} f && /^  [a-z]/ && !/^  docs:/{f=0} f')"
+  echo "$docs_block" | grep -q 'image: dummy/docs:dummy' || fail "$overlay: docs service does not run REGISTRY_IMAGE_DOCS"
+  echo "$docs_block" | grep -q 'DOCS_DOMAIN: docs.example.test' || fail "$overlay: docs container does not get DOCS_DOMAIN"
+  echo "$docs_block" | grep -qF 'Host(`docs.example.test`) || Host(`www.docs.example.test`)' \
+    || fail "$overlay: docs router does not match DOCS_DOMAIN and DOCS_ALIAS_DOMAIN"
+  echo "$docs_block" | grep -qF 'redirectregex.permanent: "true"' || fail "$overlay: docs router has no permanent www redirect"
+  echo "$docs_block" | grep -qF 'traefik_proxy' || fail "$overlay: docs service is not on traefik_proxy"
+  pass "$overlay renders the docs host only under the docs profile"
 done
+
+# Only develop and prod serve the docs; every other stack leaves the profile off.
+for stack in bakers-develop bakers-prod; do
+  # grep without -q reads to the end: under pipefail, an early exit can SIGPIPE sed and fail.
+  sed -n "/^name = \"$stack\"\$/,/^\[\[stack/p" komodo/bakers.toml \
+    | grep '^COMPOSE_PROFILES=docs$' >/dev/null || fail "komodo/bakers.toml: $stack does not enable the docs profile"
+done
+[ "$(grep -c '^COMPOSE_PROFILES=docs$' komodo/bakers.toml)" = 2 ] \
+  || fail "komodo/bakers.toml: a stack other than develop and prod enables the docs profile"
+pass "komodo/bakers.toml enables the docs host on develop and prod only"
 
 # The merge gate's e2e overlay: no host port anywhere, the recipe world never runs
 # `drush deploy` (it imports config/sync), and the runner is opt-in by profile.
@@ -88,6 +111,7 @@ if echo "$out" | grep -E 'DB_PASSWORD|DB_ROOT_PASSWORD|DRUPAL_HASH_SALT' | grep 
   fail "e2e overlay: a secret-bearing line rendered without the injected dummy value"
 fi
 render docker/e2e/compose.yml | grep -q '^  runner:' && fail "e2e runner is active without the e2e profile"
+echo "$out" | grep -q '^  docs:' && fail "e2e overlay starts the docs host"
 pass "docker/e2e/compose.yml renders the gate stack with no host port"
 
 # Open dynamic client registration is rate-limited: the http-level zone is baked

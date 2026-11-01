@@ -34,6 +34,7 @@ BB_LOG_LEVEL=debug bakers oven once
 |---|---|---|
 | `start` | `--foreground`, `--no-update-check`, `--force` | Start the conductor loop |
 | `once` | none | Run one conductor cycle, then exit |
+| `check` | none | Check that every enabled agent can start its sandbox |
 | `status` | none | One line for this checkout's conductor |
 | `ls` | none | One line per conductor the control plane holds for you |
 | `stop` | `--now` | Stop the conductor: graceful by default, hard kill with `--now` |
@@ -48,6 +49,12 @@ By default `start` launches the loop in a herdr pane (handle `bakers-conductor:<
 - `--force` turns "already running" into a restart: a verified `SIGTERM`, a grace period, then `SIGKILL`, then the normal start. It fails rather than starting a second conductor when the running one cannot be verified or stopped.
 
 An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. The procedure, decline window, rerun and failure behaviour are in [Update bakers.build](/advanced/configuration/update).
+
+A start on a machine where an enabled agent cannot start its sandbox prints `warning: sandbox unavailable: <agent>: <cause> — <fix>` and still starts; the loop then claims nothing until the cause is fixed (see `check`).
+
+### check
+
+`check` prints one line per enabled agent: `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix> (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)`. It exits 1 when one agent cannot start its sandbox and needs no sign-in. While that is so, every cycle logs `claims withheld: sandbox unavailable: …` and claims nothing. Prerequisites per platform: [Sandbox prerequisites](/advanced/run-security#sandbox-prerequisites).
 
 ### once and clean
 

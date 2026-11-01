@@ -2,11 +2,9 @@
 
 **Lets bakers.build run tickets with the Claude Code CLI.**
 
-For anyone whose machine should run tickets with Claude.
-
 ## Enable it
 
-Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there. Keep the other fields there.
+Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there.
 
 ```js
 addons: ['@bakers-build/addon-claude'],
@@ -37,7 +35,7 @@ A run starts sandboxed unless you choose otherwise, because ticket text is writt
 
 | `security` | Launch flags |
 |---|---|
-| `sandbox` | `--permission-mode dontAsk --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
+| `sandbox` | `--permission-mode default --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
 | `system` | none: your own Claude settings apply unchanged |
 | `yolo` | `--dangerously-skip-permissions`, the launch before `security` existed |
 | `custom` | `--settings '<config as JSON>'`, nothing else |
@@ -46,7 +44,7 @@ A run starts sandboxed unless you choose otherwise, because ticket text is writt
 
 | Key | Default | Becomes |
 |---|---|---|
-| `trusted_commands` | `['bakers', 'git', 'ddev']` | `sandbox.excludedCommands`: these run outside the sandbox |
+| `trusted_commands` | `['bakers', 'git', 'ddev']` | `sandbox.excludedCommands` as `<name> *`, or unchanged if ending in `*`: these run outside the sandbox |
 | `deny_read` | `['~/.ssh', '~/.bakers']` | `sandbox.filesystem.denyRead` and the rules `Read(<path>)`, `Read(<path>/**)`; an absolute path becomes `//<path>` |
 | `allow_write` | `[]` | `sandbox.filesystem.allowWrite`; the worktree and `$TMPDIR` are always writable |
 | `network` | `['*']` | `sandbox.network.allowedDomains`; `['*']` allows every host |
@@ -68,6 +66,7 @@ bakers agents
 
 ## Good to know
 
+- Runs start with `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1`: plugins declared in `.claude/settings.json` install before the first turn.
 - The addon starts `claude`; it does not install it or sign it in. The binary must be on `PATH` for a non-interactive shell; an alias is not loaded.
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` was removed; setting it fails loading. Use `security: 'yolo'` for the old bypass.

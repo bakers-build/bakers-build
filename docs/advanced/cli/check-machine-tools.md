@@ -26,6 +26,8 @@ Verify only the tools your machine will use. [Choose your setup first](/advanced
 
 4. Choose and sign in to an **agent harness** as the worker user. Supported CLIs and their installation guides: [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) (`claude`), [Codex](https://github.com/openai/codex) (`codex`), [Grok](https://github.com/xai-org/grok-build) (`grok`), [Kimi](https://github.com/MoonshotAI/kimi-code) (`kimi`), [OpenCode](https://opencode.ai/docs/) (`opencode`), [Pi](https://pi.dev/docs/latest/quickstart) (`pi`). Check each chosen CLI is present and authenticated. Keep the [machine's harness list](/advanced/configuration/agents-and-models) aligned with what is installed.
 
+   Claude and Codex runs start in their OS sandbox. On Linux, Claude needs `bubblewrap` and `socat` (`sudo apt-get install -y bubblewrap socat` on Debian and Ubuntu), and both need unprivileged user namespaces; macOS needs nothing. Once the project is connected, `bakers oven check` checks every enabled agent. Other platforms and package managers: [Run security › Sandbox prerequisites](/advanced/run-security#sandbox-prerequisites).
+
 5. If you enable preview tunnels, install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) and check its version. The [machine configuration](/advanced/machines#preview-link-tunnels) owns this choice.
 
 **Done when:** the runtime and every chosen tool pass their checks as the worker user. Continue with [Install and sign in](/advanced/cli/install).

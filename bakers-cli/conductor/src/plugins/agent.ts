@@ -1,3 +1,5 @@
+import type { SandboxHost, SandboxPreflight } from './sandbox-preflight.js';
+
 /**
  * Per-agent effort footprint parsed from that agent's run transcript
  * (BB-132). The metrics are transcript-derived and therefore
@@ -179,4 +181,11 @@ export interface BbAgent {
    * {@link emptyAgentFootprint}.
    */
   parseFootprint(log: string): AgentFootprint;
+  /**
+   * Whether this agent's OS sandbox can start on this machine. The conductor
+   * withholds claims and refuses to spawn while it reports a cause. Returns
+   * ok without probing when the agent does not run sandboxed. Optional: an
+   * agent without it is never checked.
+   */
+  sandboxPreflight?(host?: SandboxHost): Promise<SandboxPreflight>;
 }

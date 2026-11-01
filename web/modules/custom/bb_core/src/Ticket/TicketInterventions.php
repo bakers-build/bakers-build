@@ -16,6 +16,10 @@ use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
  * AI agents drive the workflow; a human on the ticket detail intervenes. The
  * detail offers Freeze, Unfreeze, Cancel ticket and Cancel run, each through a
  * confirmation. Settings carry no transition; Delete is their one action.
+ *
+ * One home for every intervention rule, so the UI and the tools share it.
+ *
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 final class TicketInterventions {
 
@@ -99,6 +103,37 @@ final class TicketInterventions {
     $runs = $entity_type_manager->getStorage('bb_run')->loadByProperties(['uuid' => $uuid]);
     $run = reset($runs);
     return $run instanceof BbRunInterface ? $run : NULL;
+  }
+
+  /**
+   * The ticket's claimed or running runs, optionally off one conductor.
+   *
+   * Loaded without access checks; callers decide who may cancel them.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The active runs keyed by id.
+   */
+  public static function activeRuns(BbTicketInterface $ticket, EntityTypeManagerInterface $entity_type_manager, ?int $except_conductor = NULL): array {
+    $storage = $entity_type_manager->getStorage('bb_run');
+    $query = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('ticket_id', $ticket->id())
+      ->condition('state', self::ACTIVE_RUN_STATES, 'IN');
+    if ($except_conductor !== NULL) {
+      $query->condition('conductor_id', $except_conductor, '<>');
+    }
+    /** @var array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs */
+    $runs = $storage->loadMultiple($query->execute());
+    return $runs;
+  }
+
+  /**
+   * Cancels the run and appends the note to its error log.
+   */
+  public static function cancelRun(BbRunInterface $run, string $note): void {
+    self::runState($run)->applyTransitionById(self::CANCEL);
+    $log = rtrim($run->getErrorLog() ?? '', "\r\n");
+    $run->setErrorLog($log === '' ? $note : $log . "\n" . $note);
+    $run->save();
   }
 
   /**

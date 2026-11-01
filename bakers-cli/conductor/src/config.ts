@@ -55,13 +55,18 @@ export {
  * ticket content into a single typed pane line overran the PTY canonical line
  * cap and truncated the dispatch command. Instead the prompt is a bounded,
  * constant-size pointer and the agent reads the ticket + all comments at run
- * start via `bakers dropsh read … --include comments`.
+ * start.
+ *
+ * That read goes through the bakers tool `bakers_ticket_read`, the same path
+ * every skill step uses, so the run does not read its ticket twice in two
+ * formats. The prompt names both transports because the agent has not loaded
+ * a skill yet; why the fallback must run alone lives in bb-workflow's tools.md.
  *
  * herdr no longer types this into the pane: the launch command goes to a file
  * that a short `sh '<file>'` line runs (BB-635), so its length is not bound
  * by the tty canonical cap (macOS 1024 B, Linux 4096 B). The prompt is still
  * kept single-line (BB-128 test).
- * Placeholders: `{identifier}`, `{state}`, `{runUuid}` ({state} falls back to
+ * Placeholders: `{identifier}`, `{state}`, `{runUuid}`, `{ticketUuid}` ({state} falls back to
  * `qualification` for unclassified tickets).
  *
  * WHERE THE PROMPT SENDS THE AGENT, and why it no longer names a WORKFLOW.md
@@ -82,7 +87,10 @@ export {
  */
 export const DEFAULT_AGENT_PROMPT =
   `You are working ticket {identifier}, current state: {state}. Read the ticket and all comments ` +
-  `(bakers dropsh --format md read bb_ticket/bb_ticket/$BB_ID --include comments), ` +
+  `with the bakers tool bakers_ticket_read, arguments {"ticket":"{ticketUuid}"} ` +
+  `(MCP: tool_api__bakers_ticket_read, without a connector: ` +
+  `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}', ` +
+  `run as a Bash call of its own), ` +
   `then read ./WORKFLOW.md, load the bakers.build skill its loader names for this ticket's work type ` +
   `and state, and execute only that skill's {state} section. ` +
   `Do not start or prepare a later state. ` +

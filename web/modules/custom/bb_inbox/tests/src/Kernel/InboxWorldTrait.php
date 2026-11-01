@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_inbox\Kernel;
 
+use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -52,11 +53,27 @@ trait InboxWorldTrait {
   protected UserInterface $outsider;
 
   /**
+   * {@inheritdoc}
+   *
+   * A cancelled run's error log is written to the private stream.
+   */
+  public function register(ContainerBuilder $container): void {
+    parent::register($container);
+    $container->register('stream_wrapper.private', 'Drupal\Core\StreamWrapper\PrivateStream')
+      ->addTag('stream_wrapper', ['scheme' => 'private']);
+  }
+
+  /**
    * Builds the world. Call from setUp() after parent::setUp().
    */
   protected function buildInboxWorld(): void {
     $this->installReadScopeEnvironment();
     $this->installEntitySchema('bb_inbox_message');
+    // Assigning the conductor below cancels the fixture's active run, which
+    // writes the run's error log as a file.
+    $this->installEntitySchema('file');
+    $this->installSchema('file', ['file_usage']);
+    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
     $this->buildTwoWorkspaceWorld();
 
     $this->conductorOwner = $this->createAccount('conductor-owner', [

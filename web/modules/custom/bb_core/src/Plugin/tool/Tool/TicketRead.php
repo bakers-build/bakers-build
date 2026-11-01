@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
+use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -60,6 +61,11 @@ use Drupal\tool\TypedData\OutputDefinition;
       data_type: 'string',
       label: new TranslatableMarkup('Workflow'),
       description: new TranslatableMarkup('The workflow id.'),
+    ),
+    'approval' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Approval'),
+      description: new TranslatableMarkup("Who approves the current state's gates: automatic or human."),
     ),
     'description' => new OutputDefinition(
       data_type: 'string',
@@ -179,6 +185,7 @@ final class TicketRead extends ToolBase {
       'title' => $ticket->getTitle(),
       'state' => (string) $ticket->get('state')->value,
       'workflow' => $ticket->getWorkflow(),
+      'approval' => TypeWorkflows::approval($ticket->getWorkflow(), (string) $ticket->get('state')->value),
       'description' => $ticket->get('description')->value,
       'type' => $ticket->get('ticket_type')->entity?->label(),
       'recipe' => $ticket->get('recipe')->entity?->label(),
