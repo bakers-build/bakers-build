@@ -11,7 +11,7 @@ Add the bakers.build plugin to your agent:
 ::: code-group
 
 ```text [Claude Code]
-/plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git
+/plugin marketplace add https://bakers.build/marketplace.json
 /plugin install bakers@bakers
 ```
 

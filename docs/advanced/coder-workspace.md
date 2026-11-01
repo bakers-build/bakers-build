@@ -30,7 +30,7 @@ The `bakers-ddev` template provides one long-lived workspace per person. It star
 
    ```sh
    claude auth login
-   claude plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git
+   claude plugin marketplace add https://bakers.build/marketplace.json
    claude plugin install bakers@bakers
    mkdir -p ~/projects && cd ~/projects && claude
    ```

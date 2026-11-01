@@ -200,7 +200,7 @@ scenes:
                           props:
                             command: >-
                               /plugin marketplace add
-                              https://git.key-tec.de/bakers-build/bakers-build.git
+                              https://bakers.build/marketplace.json
                             label: Copy the marketplace add command
                         - component: bb_theme:setup_command
                           props:
@@ -316,7 +316,7 @@ scenes:
                           props:
                             command: >-
                               /plugin marketplace add
-                              https://git.key-tec.de/bakers-build/bakers-build.git
+                              https://bakers.build/marketplace.json
                             label: Copy the marketplace add command
                         - component: bb_theme:setup_command
                           props:
@@ -432,7 +432,7 @@ scenes:
                           props:
                             command: >-
                               /plugin marketplace add
-                              https://git.key-tec.de/bakers-build/bakers-build.git
+                              https://bakers.build/marketplace.json
                             label: Copy the marketplace add command
                         - component: bb_theme:setup_command
                           props:

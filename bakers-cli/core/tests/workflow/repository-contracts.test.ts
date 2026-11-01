@@ -8,6 +8,7 @@ const contract = (name: string) =>
   fileURLToPath(new URL(`../../../../tests/contract/${name}`, import.meta.url));
 
 const CONTRACTS: Array<[string, string]> = [
+  ['node', 'deploy-report-docs.mjs'],
   ['bash', 'pathshim-resolution.sh'],
   ['bash', 'phpunit-shard.sh'],
   ['bash', 'test-project-branch.sh'],

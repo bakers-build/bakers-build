@@ -11,8 +11,8 @@ const require = createRequire(import.meta.url)
 const vitepressRequire = createRequire(require.resolve('vitepress/package.json'))
 const vueRoot = dirname(vitepressRequire.resolve('vue/package.json'))
 
-// The public site is published from develop on every dev deployment (BB-579), so a CI
-// build names its branch and commit; local builds are identified explicitly.
+// The public site is the merge gate's `docs` image (Dockerfile), built with the target
+// branch and commit as build args; local builds are identified explicitly.
 const { CI_COMMIT_REF_NAME, CI_COMMIT_SHORT_SHA } = process.env
 const DOCS_VERSION = CI_COMMIT_SHORT_SHA ? `${CI_COMMIT_REF_NAME} · ${CI_COMMIT_SHORT_SHA}` : 'development'
 const RELEASES_URL = 'https://www.npmjs.com/package/@bakers-build/bakers?activeTab=versions'
@@ -67,9 +67,8 @@ export default withMermaid(
       plugins: [tailwindcss()],
     },
     sitemap: {
-      // The GitLab Pages unique domain (BB-276 D2). The former custom host
-      // bakers-docs.keytec.de was never provisioned — it resolves to nothing.
-      hostname: 'https://bb-539921.gitlab-pages.keytec.de',
+      // Prod is canonical; the develop docs host is not indexed under its own name.
+      hostname: 'https://bakers.build',
     },
     // BB-427 D7: dark code blocks in both colour modes, as on Storybook's docs.
     markdown: {

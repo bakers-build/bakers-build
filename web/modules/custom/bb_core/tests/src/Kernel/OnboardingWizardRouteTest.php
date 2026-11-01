@@ -388,6 +388,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
       self::assertContains($command, $install, $command . ' must be a complete line in install.md.');
     }
     self::assertNotContains('https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
+    self::assertContains('/plugin marketplace add https://bakers.build/marketplace.json', $step3Commands);
     self::assertContains('codex plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
     self::assertContains('codex plugin add bakers@bakers', $step3Commands);
     self::assertContains('Use `bakers:bb-init` to guide me through installing and setting up bakers.build.', $step3Commands);

@@ -16,6 +16,24 @@ services:
       - internal
       - traefik_proxy
 
+  # The docs host. DOCS_ALIAS_DOMAIN (prod: www.bakers.build) redirects permanently to
+  # DOCS_DOMAIN, path kept; a stack without an alias sets it to DOCS_DOMAIN itself.
+  docs:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${STACK_NAME}-docs.rule=Host(`${DOCS_DOMAIN:-}`) || Host(`${DOCS_ALIAS_DOMAIN:-}`)"
+      - "traefik.http.routers.${STACK_NAME}-docs.entrypoints=websecure"
+      - "traefik.http.routers.${STACK_NAME}-docs.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${STACK_NAME}-docs.middlewares=${STACK_NAME}-docs-www"
+      - "traefik.http.middlewares.${STACK_NAME}-docs-www.redirectregex.regex=^https?://www\\.(.*)"
+      - "traefik.http.middlewares.${STACK_NAME}-docs-www.redirectregex.replacement=https://$${1}"
+      - "traefik.http.middlewares.${STACK_NAME}-docs-www.redirectregex.permanent=true"
+      - "traefik.http.services.${STACK_NAME}-docs.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+    networks:
+      - internal
+      - traefik_proxy
+
 networks:
   traefik_proxy:
     external: true

@@ -68,7 +68,7 @@ before_script:
 # rather than silently skipping it — YAML cannot concatenate lists, so the net
 # is repeated per group on purpose. config_sync is deliberately NOT filtered
 # (BB-407: it must stay an every-push gate); gate/build run in every merge request
-# pipeline and promote/deploy/pages/publish on branch/tag, never filtered.
+# pipeline and promote/deploy/publish on branch/tag, never filtered.
 .changes_php: &changes_php
   - web/modules/custom/**/*
   - web/themes/custom/**/*
@@ -203,7 +203,8 @@ bb_skill_version_gate:
       done
     - BASE_REF="refs/bb-469-gate/target" HEAD_REF="$CI_COMMIT_SHA" bash tests/contract/skill-version-gate.sh
 
-# The docs prose gate `pages` runs, but only after merge on develop; this runs it before merge.
+# The docs prose gate and the marketplace generator's test, before merge. The site itself is the
+# gate's `docs` image (Dockerfile), which runs the same prose gate in its build.
 docs_pages:
   stage: lint
   image: node:22
@@ -216,6 +217,7 @@ docs_pages:
   before_script: []
   script:
     - node website/scripts/check-pages.mjs
+    - node --test website/scripts/marketplace.test.mjs
 
 # The MR title becomes the squash subject, from which `release:version` derives version and
 # release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a
@@ -597,7 +599,7 @@ web_ui:
 # Image identity is the git TREE, not the commit: the squash and merge commits of a branch that
 # contains its target have the branch head's tree, and so does the develop → main merge. So the
 # images the gate tested are found again after the merge (`promote`), with no rebuild.
-#   :tree-<tree>          gate images (php, php-test, nginx, e2e); tree-* tags expire
+#   :tree-<tree>          gate images (php, php-test, nginx, docs, e2e); tree-* tags expire
 #   :<branch>, :<sha>     promote, what the stacks pull and roll back to
 #   :<version>, :latest   release_images, on a v<semver> tag
 
@@ -662,9 +664,12 @@ build:
         docker build $label --target php      -t "$CI_REGISTRY_IMAGE/php:$tag" .
         docker build $label --target php-test -t "$CI_REGISTRY_IMAGE/php-test:$tag" .
         docker build $label --target nginx    -t "$CI_REGISTRY_IMAGE/nginx:$tag" .
+        # The docs site's version row names the target branch, the one its promote serves.
+        docker build $label --target docs -t "$CI_REGISTRY_IMAGE/docs:$tag" \
+          --build-arg CI_COMMIT_REF_NAME="$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --build-arg CI_COMMIT_SHORT_SHA .
         docker build $label -f docker/e2e/Dockerfile -t "$CI_REGISTRY_IMAGE/e2e:$tag" .
         # e2e last: its tag is the "all images exist" marker checked above.
-        for image in php php-test nginx e2e; do
+        for image in php php-test nginx docs e2e; do
           docker push "$CI_REGISTRY_IMAGE/$image:$tag"
         done
       fi
@@ -832,14 +837,14 @@ promote:
     - |
       set -e
       tree="$(git rev-parse 'HEAD^{tree}')"
-      for image in php nginx; do
+      for image in php nginx docs; do
         if ! crane digest "$CI_REGISTRY_IMAGE/$image:tree-$tree" >/dev/null; then
           echo "No tested image $image:tree-$tree for $CI_COMMIT_SHA: the merge gate did not run for this tree."
           echo "Merge only through the gate; to ship this commit anyway, open a merge request for it and play its gate."
           exit 1
         fi
       done
-      for image in php nginx; do
+      for image in php nginx docs; do
         crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_REF_SLUG"
         crane tag "$CI_REGISTRY_IMAGE/$image:tree-$tree" "$CI_COMMIT_SHA"
         echo "$image: $(crane digest "$CI_REGISTRY_IMAGE/$image:$CI_COMMIT_SHA")"
@@ -873,7 +878,7 @@ release_images:
       set -e
       version="${CI_COMMIT_TAG#v}"
       tree="$(git rev-parse "$CI_COMMIT_SHA^{tree}")"
-      for image in php nginx; do
+      for image in php nginx docs; do
         crane mutate "$CI_REGISTRY_IMAGE/$image:tree-$tree" \
           --label "org.opencontainers.image.version=$version" \
           --label "org.opencontainers.image.revision=$CI_COMMIT_SHA" \
@@ -931,7 +936,7 @@ publish:npm:
     # wires it into staging AND publishing, no per-package line to forget here.
     - pnpm run release:semver "$CI_COMMIT_TAG"
   # $CI_PIPELINE_SOURCE != "schedule" excludes a schedule pointed at a tag ref,
-  # same reasoning as promote/deploy/pages above: GitLab sets $CI_COMMIT_TAG for a
+  # same reasoning as promote/deploy above: GitLab sets $CI_COMMIT_TAG for a
   # scheduled pipeline against a tag just like it sets $CI_COMMIT_BRANCH for one
   # against a branch, so without this a misdirected schedule would trigger a
   # real publish to public npm.
@@ -960,7 +965,7 @@ deploy:
     - |
       status=0
       npx -y -p keytec-ai-cli@0.4.0 keytec-ai deployer deploy || status=$?
-      node scripts/deploy/deploy-report.mjs "$DEPLOY_STACK" "$DEPLOY_URL" || status=1
+      node scripts/deploy/deploy-report.mjs "$DEPLOY_STACK" "$DEPLOY_URL" "$DOCS_URL" || status=1
       exit $status
   # See the same guard on the promote job above: excludes a schedule misdirected
   # at develop/main from triggering a real Komodo deploy.
@@ -969,10 +974,12 @@ deploy:
       variables:
         DEPLOY_STACK: bakers-develop
         DEPLOY_URL: https://develop.dev.bakers.build
+        DOCS_URL: https://docs-develop.dev.bakers.build
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
       variables:
         DEPLOY_STACK: bakers-prod
         DEPLOY_URL: https://app.bakers.build
+        DOCS_URL: https://bakers.build
 
 # Test build of the CLI for every develop deploy: the whole set under dist-tag `next`, at
 # <next patch after the latest v-tag>-next.<pipeline iid> (0.1.0-next.<iid> before the
@@ -1030,51 +1037,3 @@ release:
       glab release create "v$version" --ref "$release_commit" --name "v$version" --notes-file release-notes.md
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
-
-# GitLab Pages: publish the VitePress docs site in /website.
-# No custom domain and therefore NO DNS record - the instance's
-# *.gitlab-pages.keytec.de wildcard already resolves, which is how keytec/ai-adopt
-# (id 249) has published since June. Pages serves whatever `public/` contains, so the
-# built site is moved there rather than copied.
-# Every develop push that deploys dev2 also publishes the site ROOT (BB-579), so merged
-# documentation is public without a CLI release; the sidebar version row names the commit.
-# A release tag no longer publishes: this instance has no license for parallel deployments
-# (GitLab rejects `pages.path_prefix` without one), so the project has exactly one Pages
-# deployment and develop owns it. `needs: []` keeps the docs off the Drupal build path - a
-# failing docs build neither waits for nor blocks build/deploy - and the job deliberately
-# carries NO resource_group so publishing the docs never queues behind the stack deploy.
-pages:
-  stage: publish
-  image: node:22
-  tags:
-    - parallel
-  needs: []
-  # A newer develop commit supersedes this build (workflow: auto_cancel above).
-  interruptible: true
-  # Same two pnpm settings the other Node jobs (conductor, publish:npm) carry, and for
-  # the same reason. `website/package.json` pins no `packageManager`, so `corepack
-  # enable pnpm` resolves the CURRENT pnpm major — 11 at time of writing — and pnpm 11
-  # turns an ignored build script into a HARD failure:
-  #   [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.21.5  -> exit 1
-  # It aborts in `pnpm install`, before `pnpm build` ever runs. Local installs on pnpm
-  # 10 only WARN about the same thing, so a green local build proves nothing here.
-  # Setting these in package.json's `pnpm` field does not work: pnpm 11 reads them from
-  # pnpm-workspace.yaml, not package.json.
-  variables:
-    PNPM_CONFIG_MINIMUM_RELEASE_AGE: "0"
-    PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
-  before_script:
-    - corepack enable pnpm
-  script:
-    - cd website
-    - pnpm install --frozen-lockfile
-    - pnpm build
-    - cd ..
-    - mv website/.vitepress/dist public
-  artifacts:
-    paths:
-      - public
-  # Same guard as promote/deploy: a develop push publishes; a schedule misdirected at
-  # develop does not (GitLab sets $CI_COMMIT_BRANCH for a scheduled pipeline too).
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
