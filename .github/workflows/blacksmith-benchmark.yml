@@ -1,0 +1,44 @@
+name: Blacksmith benchmark
+on:
+  push:
+    branches: [ci/blacksmith-benchmark]
+permissions:
+  contents: read
+jobs:
+  conductor:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+      PNPM_CONFIG_MINIMUM_RELEASE_AGE: "0"
+      PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 2e4de45e6175ecb56fe913d17eb7d2549505f2d7
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y --no-install-recommends jq python3
+          npm ci --prefix tests/skill-eval --no-audit --no-fund
+          corepack enable pnpm
+          cd bakers-cli
+          pnpm install --frozen-lockfile
+          pnpm run build:all
+          pnpm run typecheck
+          pnpm run lint
+          pnpm run test:vitest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conductor-report
+          path: bakers-cli/junit-vitest.xml
+          retention-days: 7
+    container: node:22
