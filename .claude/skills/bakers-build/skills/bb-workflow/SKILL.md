@@ -50,8 +50,8 @@ names the replacement and its reason.
 **If the recipe, its section for this state, the ticket's type among the recipe's declared types,
 or a required skill is missing** — it cannot be resolved or read — **stop and report the exact
 identifier that failed**. Stop *before* editing a file, committing, publishing a comment, asking for
-confirmation, or transitioning the ticket. Say plainly that you cannot do the work because it is
-unavailable; do not substitute your own method for it.
+confirmation, or transitioning the ticket. Say plainly that the work cannot proceed, and use no
+other method.
 
 ## Rules
 
@@ -60,5 +60,6 @@ unavailable; do not substitute your own method for it.
 - Before creation and every qualification, run [prior-art search](references/prior-art-search.md);
   a hit needs a human decision.
 - Before writing a ticket, comment or relationship, read [ticket writes](references/ticket-writes.md).
+- Questions to or answers from a human: [ask human](references/ask-human.md).
 - [Evidence and links](references/evidence.md); [local preview links](references/preview-links.md).
 - Skill prose cites no ticket identifiers.
