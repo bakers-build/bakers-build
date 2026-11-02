@@ -74,7 +74,7 @@
 } %}
 {% set badge_classes = [
   'inline-flex', 'max-w-full', 'min-w-0', 'overflow-x-clip', '*:min-w-0', 'items-center', 'gap-1', 'h-5', 'px-2',
-  'rounded-sm', 'text-eyebrow', 'font-semibold', 'whitespace-nowrap',
+  'rounded-sm', 'text-badge', 'whitespace-nowrap',
   tint_map[tone_key]|default(quiet),
 ] %}
 {% if mono %}{% set badge_classes = badge_classes|merge(['font-mono']) %}{% endif %}
@@ -88,5 +88,5 @@
   {%- if dot %}<span class="inline-block shrink-0 w-2 h-2 rounded-full {{ dot_map[tone_key]|default('bg-state-offline') }}" aria-hidden="true"></span>{% endif %}
   {%- if icon %}{{ include('bb_theme:icon', { name: icon, size: 'xs' }, with_context = false) }}{% endif %}
   <span data-badge-label>{{ label }}</span>
-  {%- if suffix %}<span class="font-mono text-eyebrow text-text-faint">{{ suffix }}</span>{% endif %}
+  {%- if suffix %}<span class="text-badge font-normal tabular-nums text-text-faint">{{ suffix }}</span>{% endif %}
 </span>

@@ -165,7 +165,7 @@ final class BbOnboardingWizardForm extends FormBase {
       '#component' => 'bb_theme:text',
       '#props' => [
         'text' => $this->progressText($step),
-        'size' => 'caption',
+        'size' => 'meta',
         'tone' => 'light',
         'attributes' => ['aria-current' => 'step'],
       ],
@@ -800,7 +800,7 @@ final class BbOnboardingWizardForm extends FormBase {
       '#component' => 'bb_theme:text',
       '#props' => [
         'text' => $text,
-        'size' => 'caption',
+        'size' => 'meta',
         'tone' => 'light',
       ],
     ];

@@ -44,7 +44,7 @@
       <div class="flex flex-wrap items-center gap-2">
         {% if input_id %}
           <span class="sr-only peer">{{ upload }}</span>
-          <label for="{{ input_id }}" class="inline-flex items-center justify-center h-[30px] px-[10px] rounded-sm border border-border bg-surface text-text text-caption font-bold cursor-pointer hover:bg-surface-2 peer-has-[:focus-visible]:outline-2 peer-has-[:focus-visible]:outline-offset-2 peer-has-[:focus-visible]:outline-primary">
+          <label for="{{ input_id }}" class="inline-flex items-center justify-center h-[30px] px-[10px] rounded-sm border border-border bg-surface text-text text-meta font-bold cursor-pointer hover:bg-surface-2 peer-has-[:focus-visible]:outline-2 peer-has-[:focus-visible]:outline-offset-2 peer-has-[:focus-visible]:outline-primary">
             <span x-text="src ? 'Choose another' : 'Choose picture'">{{ has_image ? 'Choose another' : 'Choose picture' }}</span>
           </label>
         {% elseif upload %}
@@ -57,14 +57,14 @@
         }, with_context = false) }}
         {% if remove %}{{ remove }}{% endif %}
       </div>
-      {% if hint %}<p class="m-0 text-caption text-text-light">{{ hint }}</p>{% endif %}
+      {% if hint %}<p class="m-0 text-meta text-text-light">{{ hint }}</p>{% endif %}
     </div>
   </div>
   {% if rest %}{{ rest }}{% endif %}
   <dialog x-ref="dialog" aria-labelledby="{{ title_id }}" x-on:cancel.prevent="close()" x-on:keydown.escape.stop
     class="m-auto w-[360px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] overflow-y-auto p-0 rounded-md border border-border bg-surface text-text shadow-lg backdrop:bg-text/40">
     <div class="flex items-center h-[44px] px-[16px] border-b border-border-2">
-      <h2 id="{{ title_id }}" class="m-0 text-heading font-bold text-title">Crop image</h2>
+      <h2 id="{{ title_id }}" class="m-0 text-section-title font-bold text-title">Crop image</h2>
     </div>
     <div class="flex flex-col gap-3 px-[16px] py-[14px]">
       <div x-ref="viewport" role="img" aria-label="Image to crop" tabindex="0"
@@ -72,7 +72,7 @@
         x-on:pointerdown="startPan($event)" x-on:pointermove="pan($event)" x-on:pointerup="endPan()" x-on:pointercancel="endPan()" x-on:keydown="nudge($event)">
         <img alt="" draggable="false" class="absolute max-w-none pointer-events-none" style="image-orientation: none" x-bind:src="src" x-bind:style="frame(draft, viewport)" />
       </div>
-      <p class="m-0 text-caption text-text-light">Drag the image or use the arrow keys to frame it.</p>
+      <p class="m-0 text-meta text-text-light">Drag the image or use the arrow keys to frame it.</p>
       <label class="flex items-center gap-3 text-body text-text">
         Zoom
         <input type="range" min="1" max="4" step="0.01" class="flex-1 accent-primary" x-bind:max="maxZoom" x-model.number="zoom" x-on:input="zoomTo()" />

@@ -212,7 +212,7 @@ final class TicketsViewTableTest extends KernelTestBase {
     self::assertStringNotContainsString('P1', $item);
 
     $meta = $this->regionOf($item, 'meta');
-    self::assertStringContainsString('font-mono font-semibold text-mono', $meta, 'The identifier leads the meta line.');
+    self::assertStringContainsString('font-mono font-semibold text-data', $meta, 'The identifier leads the meta line.');
     self::assertStringContainsString('href="' . $ticket->toUrl()->toString() . '"', $meta);
     self::assertStringContainsString('Created', $meta);
     self::assertMatchesRegularExpression('/\d+ \w+ ago|in \d+ \w+/', $meta);

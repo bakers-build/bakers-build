@@ -1,0 +1,8 @@
+@theme static {
+  --spacing-inline-xs: calc(var(--spacing) * 1);
+  --spacing-inline: calc(var(--spacing) * 2);
+  --spacing-stack: calc(var(--spacing) * 3);
+  --spacing-card: calc(var(--spacing) * 4);
+  --spacing-gutter: calc(var(--spacing) * 6);
+  --spacing-section: calc(var(--spacing) * 8);
+}

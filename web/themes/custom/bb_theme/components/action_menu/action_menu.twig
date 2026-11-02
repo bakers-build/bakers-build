@@ -14,7 +14,7 @@
     aria-haspopup="menu">
     {{- include('bb_theme:icon', { name: 'more-horizontal', size: 'sm' }, with_context = false) -}}
   </summary>
-  <ul class="absolute {{ align|default('end') == 'start' ? 'left-0' : 'right-0' }} top-full z-10 min-w-40 m-0 list-none p-1 rounded-sm bg-surface-2 border border-border text-caption" role="menu">
+  <ul class="absolute {{ align|default('end') == 'start' ? 'left-0' : 'right-0' }} top-full z-10 min-w-40 m-0 list-none p-1 rounded-sm bg-surface-2 border border-border text-meta" role="menu">
     {% for item in items|default([]) %}
       <li class="list-none" role="none">
         {{- include('bb_theme:menu_item', { label: item.label, url: item.url, attributes: item.attributes ? create_attribute(item.attributes) : null }, with_context = false) -}}

@@ -51,7 +51,7 @@
       <span class="flex-1 min-w-0 truncate text-left text-body text-title" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{{ workspace_label }}</span>
       <span class="flex items-center text-text-faint" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{{ include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) }}</span>
     </button>
-    <div class="absolute left-0 top-full translate-y-1 z-40 w-55 rounded-sm border border-border bg-surface p-1 text-caption text-text"
+    <div class="absolute left-0 top-full translate-y-1 z-40 w-55 rounded-sm border border-border bg-surface p-1 text-meta text-text"
       id="{{ workspace_panel_id }}"
       role="menu"
       :hidden="!open"

@@ -17,18 +17,18 @@
 {%- set rows_content %}{% block rows %}{% if rows %}{{ rows }}{% endif %}{% endblock %}{% endset %}
 {%- set footer_content %}{% block footer %}{% if footer %}{{ footer }}{% endif %}{% endblock %}{% endset %}
 {%- if surface|default(false) %}
-<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'shrink-0', 'p-4', 'bg-surface', 'border', 'border-border-2', 'rounded-sm']) }}>
-  <div class="flex flex-col divide-y divide-border-2 *:py-4 *:first:pt-0 *:last:pb-0">{{ rows_content }}</div>
+<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'shrink-0', 'p-card', 'bg-surface', 'border', 'border-border-2', 'rounded-sm']) }}>
+  <div class="flex flex-col divide-y divide-border-2 *:py-card *:first:pt-0 *:last:pb-0">{{ rows_content }}</div>
   {%- if footer_content|trim is not empty %}
-  <div class="flex flex-col items-start gap-2 mt-4 pt-4 border-t border-border-2">{{ footer_content }}</div>
+  <div class="flex flex-col items-start gap-inline mt-card pt-card border-t border-border-2">{{ footer_content }}</div>
   {%- endif %}
 </aside>
 {%- else %}
-<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'gap-1', 'shrink-0']) }}>
+<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'gap-inline-xs', 'shrink-0']) }}>
   {{ rows_content }}
   {#- The intervention footer, after a divider; absent when empty. #}
   {%- if footer_content|trim is not empty %}
-  <div class="flex flex-col items-start gap-2 mt-2 pt-3 border-t border-border-2">{{ footer_content }}</div>
+  <div class="flex flex-col items-start gap-inline mt-inline pt-stack border-t border-border-2">{{ footer_content }}</div>
   {%- endif %}
 </aside>
 {%- endif %}

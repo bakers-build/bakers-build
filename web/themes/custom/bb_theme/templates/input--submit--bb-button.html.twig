@@ -46,7 +46,7 @@
 } %}
 <button{{ attributes.addClass([
   'button', 'inline-flex', 'items-center', 'justify-center', 'gap-[6px]',
-  'h-[30px]', 'px-[10px]', 'rounded-sm', 'text-caption', 'font-bold',
+  'h-[30px]', 'px-[10px]', 'rounded-sm', 'text-meta', 'font-bold',
   'no-underline', 'cursor-pointer', 'disabled:opacity-60',
   'disabled:cursor-not-allowed',
 ]|merge(variant_classes[element['#bb_variant']|default('primary')]|default(variant_classes['primary']))) }}>{{ element['#value'] }}</button>{{ children }}

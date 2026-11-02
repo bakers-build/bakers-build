@@ -1,3 +1,4 @@
 @theme static {
   --container: 1280px;
+  --container-prose-measure: 620px;
 }

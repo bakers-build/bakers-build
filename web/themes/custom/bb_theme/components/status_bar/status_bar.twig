@@ -4,7 +4,7 @@
    {% block %} so filling the slot replaces the content, never the wrapper. #}
 <div{{ (attributes ?: create_attribute()).addClass([
     'flex', 'min-w-0', 'overflow-hidden', 'items-center', 'gap-2', 'h-control', 'px-3',
-    'bg-app', 'border-t', 'border-border', 'text-caption', 'text-text-light',
+    'bg-app', 'border-t', 'border-border', 'text-meta', 'text-text-light',
   ]) }}
   data-status-bar>
   {%- if label %}<span class="min-w-0 truncate">{{ label }}</span>{% endif %}

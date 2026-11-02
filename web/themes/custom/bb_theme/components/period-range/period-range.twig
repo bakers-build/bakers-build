@@ -77,15 +77,15 @@
 {% set day_calendar %}
   <div role="grid" class="flex flex-col gap-1" x-on:keydown="moveFocus($event, 7)">
     <div role="row" class="grid" x-bind:class="open === 'picker' ? 'grid-cols-8' : 'grid-cols-7'">
-      <span role="columnheader" class="flex items-center justify-center h-6 text-caption text-text-light" x-show="open === 'picker'">CW</span>
+      <span role="columnheader" class="flex items-center justify-center h-6 text-meta text-text-light" x-show="open === 'picker'">CW</span>
       {%- for weekday in ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
-      <span role="columnheader" class="flex items-center justify-center h-6 text-caption text-text-light">{{ weekday }}</span>
+      <span role="columnheader" class="flex items-center justify-center h-6 text-meta text-text-light">{{ weekday }}</span>
       {%- endfor %}
     </div>
     <template x-for="row in weeks" x-bind:key="row.start">
       <div role="row" class="grid rounded-sm"
         x-bind:class="[open === 'picker' ? 'grid-cols-8' : 'grid-cols-7', open === 'picker' && row.selected ? 'bg-primary text-on-primary' : 'text-text']">
-        <span role="rowheader" class="flex items-center justify-center h-8 text-caption"
+        <span role="rowheader" class="flex items-center justify-center h-8 text-meta"
           x-show="open === 'picker'"
           x-bind:class="row.selected ? 'text-on-primary' : 'text-text-light'"
           x-text="row.week"></span>
@@ -151,7 +151,7 @@
           x-bind:aria-selected="String(kind === value)"
           x-on:click="setKind(value)">
           <span class="text-body text-title" x-text="kindLabel(value)"></span>
-          <span class="text-caption text-text-light" x-text="kindHint(value)"></span>
+          <span class="text-meta text-text-light" x-text="kindHint(value)"></span>
         </button>
       </template>
     </div>
@@ -210,7 +210,7 @@
               x-bind:aria-pressed="String(cell.selected)"
               x-on:click="pick(cell.range)">
               <span class="text-body font-medium" x-text="cell.label"></span>
-              <span class="text-caption" x-bind:class="cell.selected ? 'text-on-primary' : 'text-text-light'" x-text="cell.sub"></span>
+              <span class="text-meta" x-bind:class="cell.selected ? 'text-on-primary' : 'text-text-light'" x-text="cell.sub"></span>
             </button>
           </template>
         </div>
@@ -261,7 +261,7 @@
       variant: 'primary',
       attributes: create_attribute({ 'x-bind:disabled': 'applyDisabled', 'x-on:click': 'apply()' }),
     }, with_context = false) }}
-    <span class="text-caption text-text-light" x-text="dayCount"></span>
+    <span class="text-meta text-text-light" x-text="dayCount"></span>
     <div role="dialog" class="{{ popover }} w-72"
       x-cloak
       x-show="open === 'from' || open === 'to'"
@@ -277,5 +277,5 @@
     x-show="canReturn"
     x-on:click="returnToCurrent()"
     x-text="returnLabel"></button>
-  <span class="text-caption text-text-light" x-show="comparisonLabel" x-text="comparisonLabel"></span>
+  <span class="text-meta text-text-light" x-show="comparisonLabel" x-text="comparisonLabel"></span>
 </form>

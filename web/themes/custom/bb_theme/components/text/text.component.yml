@@ -7,7 +7,7 @@ description: >-
   One run of plain text in one of the theme's typographic roles: a paragraph, a
   heading, an inline span, or a link. The element (`as`) serves the document
   outline and the role (`size`, `tone`) the look, independently, so a page's h1
-  can read at the h3 step. It is for copy a form or controller supplies as a
+  can read at the section-title step. It is for copy a form or controller supplies as a
   single string; rich or multi-part content belongs in a component with slots.
 provider: bb_theme
 props:
@@ -30,16 +30,22 @@ props:
     size:
       type: string
       enum:
+        - page-title
+        - section-title
+        - item-title
+        - body-strong
         - body
-        - caption
-        - h3
-        - display
-        - gate-body
+        - prose
+        - label
+        - meta
+        - data
+        - eyebrow
+        - badge
+        - stat-value
       title: Size
       description: >-
-        Typographic role: body, caption, the h3 step, `display` (the 24px bold
-        page-title role) or `gate-body` (the 16px body of a standalone gate
-        result). Default `body`.
+        Typography role, the Figma `vorschlag/*` styles. `page-title` carries
+        the display face and `data` the mono face. Default `body`.
       default: body
     tone:
       type: string

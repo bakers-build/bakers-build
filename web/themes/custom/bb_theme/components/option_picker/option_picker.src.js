@@ -378,7 +378,7 @@ const renderChips = (picker) => {
     const chip = document.createElement('span');
     chip.setAttribute('data-option-picker-chip', '');
     chip.setAttribute('data-value', value);
-    chip.className = 'inline-flex items-center gap-1 h-6 max-w-40 px-1.5 rounded-full border border-control-border bg-app text-caption';
+    chip.className = 'inline-flex items-center gap-1 h-6 max-w-40 px-1.5 rounded-full border border-control-border bg-app text-meta';
     const text = document.createElement('span');
     text.className = 'min-w-0 truncate';
     text.title = label;

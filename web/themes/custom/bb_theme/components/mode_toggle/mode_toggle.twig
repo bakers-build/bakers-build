@@ -14,18 +14,18 @@
   <div popover="auto" x-ref="panel" :id="$id('appearance')" aria-label="Appearance"
     class="fixed inset-auto left-4 bottom-12 m-0 max-w-full p-4 rounded-md border border-control-border bg-surface text-text font-sans">
     <div class="flex flex-col gap-4">
-      <label class="flex flex-col gap-2 text-caption font-medium">
+      <label class="flex flex-col gap-2 text-meta font-medium">
         <span>Theme</span>
         <select aria-label="Theme" :value="theme" @change="theme = window.bakersSetTheme($event.target.value)"
           class="w-full h-control px-2 rounded-sm border border-control-border bg-input text-text text-body focus-visible:outline-2 focus-visible:outline-focus-ring">
-          <option value="bakers">bakers.build · System font</option>
-          <option value="harbor">Harbor · Source Sans 3</option>
-          <option value="grove">Grove · IBM Plex Sans</option>
-          <option value="ember">Ember · Public Sans</option>
-          <option value="iris">Iris · Atkinson Hyperlegible Next</option>
+          <option value="bakers">bakers.build</option>
+          <option value="harbor">Harbor</option>
+          <option value="grove">Grove</option>
+          <option value="ember">Ember</option>
+          <option value="iris">Iris</option>
         </select>
       </label>
-      <label class="flex flex-col gap-2 text-caption font-medium">
+      <label class="flex flex-col gap-2 text-meta font-medium">
         <span>Appearance</span>
         <select aria-label="Appearance" :value="mode" @change="mode = window.bakersSetMode($event.target.value)"
           class="w-full h-control px-2 rounded-sm border border-control-border bg-input text-text text-body focus-visible:outline-2 focus-visible:outline-focus-ring">

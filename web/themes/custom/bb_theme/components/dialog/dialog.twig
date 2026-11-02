@@ -90,7 +90,7 @@
         <span class="dialog__separator text-text-faint" aria-hidden="true">&rsaquo;</span>
       </div>
     {% endif %}
-    <h2 id="{{ title_id }}" class="dialog__title flex-1 min-w-0 truncate m-0 text-heading font-bold text-title">{{ title }}</h2>
+    <h2 id="{{ title_id }}" class="dialog__title flex-1 min-w-0 truncate m-0 text-section-title font-bold text-title">{{ title }}</h2>
     {%- if dismissible %}
       {{ include('bb_theme:button', {
         label: 'Close dialog',

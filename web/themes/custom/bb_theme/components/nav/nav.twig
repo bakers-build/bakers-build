@@ -73,7 +73,7 @@
       {%- if is_heading and not heading_keeps_icon %} data-collapse-hidden{% if collapsed %} hidden{% endif %}{% endif %}>
       {% if is_heading %}
         <button type="button"
-          class="flex items-center gap-1 flex-1 min-w-0 h-10 px-3 rounded-sm bg-transparent border-0 text-text-faint cursor-pointer text-caption font-semibold transition-colors duration-fast hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring{{ heading_keeps_icon ? ' group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0' : '' }}"
+          class="flex items-center gap-1 flex-1 min-w-0 h-10 px-3 rounded-sm bg-transparent border-0 text-text-faint cursor-pointer text-meta font-semibold transition-colors duration-fast hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring{{ heading_keeps_icon ? ' group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0' : '' }}"
           data-navigation-toggle
           aria-label="{{ item.title }}"
           aria-controls="{{ panel_id }}"
@@ -134,7 +134,7 @@
             :aria-expanded="menuOpen ? 'true' : 'false'">
             {{ include('bb_theme:icon', { name: 'more-horizontal', size: 'sm' }, with_context = false) }}
           </button>
-          <ul class="absolute right-0 top-full z-10 min-w-40 list-none p-1 rounded-sm bg-surface-2 border border-border text-caption"
+          <ul class="absolute right-0 top-full z-10 min-w-40 list-none p-1 rounded-sm bg-surface-2 border border-border text-meta"
             id="{{ menu_id }}"
             role="menu"
             :hidden="!menuOpen"

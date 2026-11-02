@@ -188,13 +188,13 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'Install the bakers.build plugin first:'
-                            size: caption
+                            size: meta
                             tone: light
                       panel_a:
                         - component: bb_theme:text
                           props:
                             text: 'Inside Claude Code, each as its own command:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -210,7 +210,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'With the Codex CLI, each as its own command:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -226,7 +226,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'Then paste this into your agent:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -304,13 +304,13 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'Install the bakers.build plugin first:'
-                            size: caption
+                            size: meta
                             tone: light
                       panel_a:
                         - component: bb_theme:text
                           props:
                             text: 'Inside Claude Code, each as its own command:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -326,7 +326,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'With the Codex CLI, each as its own command:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -342,7 +342,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'Then paste this into your agent:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -420,13 +420,13 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'Install the bakers.build plugin first:'
-                            size: caption
+                            size: meta
                             tone: light
                       panel_a:
                         - component: bb_theme:text
                           props:
                             text: 'Inside Claude Code, each as its own command:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -442,7 +442,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'With the Codex CLI, each as its own command:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -458,7 +458,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: 'Then paste this into your agent:'
-                            size: caption
+                            size: meta
                             tone: light
                         - component: bb_theme:setup_command
                           props:
@@ -523,7 +523,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: 'Paste this into your agent:'
-                      size: caption
+                      size: meta
                       tone: light
                   - component: bb_theme:setup_command
                     props:
@@ -596,7 +596,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: 'Paste this into your agent:'
-                      size: caption
+                      size: meta
                       tone: light
                   - component: bb_theme:setup_command
                     props:

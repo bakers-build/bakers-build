@@ -46,7 +46,7 @@
 {% set filters_controls %}{% block controls %}{{ controls }}{% endblock %}{% endset %}
 {% if layout|default('panel') == 'bar' %}
 <div{{ (attributes ?: create_attribute()).addClass([
-    'flex', 'flex-row', 'flex-wrap', 'items-end', 'gap-3', 'p-3', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
+    'flex', 'flex-row', 'flex-wrap', 'items-end', 'gap-stack', 'p-stack', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
     '*:first:flex-1', '*:first:basis-40', '*:first:min-w-0', '*:not-first:shrink-0', '*:not-first:max-w-full',
   ]) }} role="search"
   {%- if label %} aria-label="{{ label }}"{% endif %}
@@ -58,7 +58,7 @@
 </div>
 {% else %}
 <aside{{ (attributes ?: create_attribute()).addClass([
-    'p-3', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
+    'p-stack', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
   ]) }}
   {%- if label %} aria-label="{{ label }}"{% endif %}>
   {% embed 'bb_theme:collapsible' with {
@@ -67,7 +67,7 @@
   } %}
     {% block label %}<span class="text-body font-semibold text-title">{{ title }}</span>{% endblock %}
     {% block content %}
-      <div class="flex flex-col items-stretch gap-4">{{ filters_controls }}</div>
+      <div class="flex flex-col items-stretch gap-card">{{ filters_controls }}</div>
     {% endblock %}
   {% endembed %}
 </aside>

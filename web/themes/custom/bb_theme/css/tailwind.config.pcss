@@ -28,8 +28,14 @@ html {
   scrollbar-color: var(--color-border) var(--color-app);
 }
 
+/* The body role, so unclassed text is 13/20 in Spline Sans, never the
+ * browser's 16px default. */
 body {
   color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  font-weight: var(--text-body--font-weight);
+  line-height: var(--text-body--line-height);
 }
 
 html[data-mode="dark"] {

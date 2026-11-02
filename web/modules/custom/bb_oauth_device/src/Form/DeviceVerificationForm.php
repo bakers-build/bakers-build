@@ -123,10 +123,10 @@ class DeviceVerificationForm extends FormBase {
     $content = [
       'title' => $this->text($confirmed
         ? $this->t('Welcome, @name', ['@name' => $this->currentUser->getDisplayName()])
-        : $this->t('Sign-in denied'), ['as' => 'h2', 'size' => 'display']),
+        : $this->t('Sign-in denied'), ['as' => 'h2', 'size' => 'page-title']),
       'body' => $this->text($confirmed
         ? $this->t('You are signed in. You can return to your terminal.')
-        : $this->t('You can return to your terminal.'), ['size' => 'gate-body', 'tone' => 'default']),
+        : $this->t('You can return to your terminal.'), ['size' => 'prose', 'tone' => 'default']),
     ];
     if ($confirmed) {
       $content['home'] = [
@@ -195,7 +195,7 @@ class DeviceVerificationForm extends FormBase {
           '#props' => [
             'text' => $this->normalize($prefill),
             'as' => 'span',
-            'size' => 'h3',
+            'size' => 'section-title',
             'tracking' => 'widest',
           ],
         ],

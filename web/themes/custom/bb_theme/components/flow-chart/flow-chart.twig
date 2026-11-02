@@ -6,16 +6,16 @@
    behaviour; the legend and the exact-value disclosure are plain markup. #}
 <section{{ (attributes ?: create_attribute()).addClass(['min-w-0', 'flex', 'flex-col', 'gap-4', 'py-4']).setAttribute('data-component-id', 'bb_theme:flow-chart') }}>
   <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-    <h2 class="m-0 text-section font-semibold text-title">{{ chart.label }}</h2>
+    <h2 class="m-0 text-section-title font-semibold text-title">{{ chart.label }}</h2>
     {% if chart.caption %}
-      <p class="m-0 text-caption text-text-light">{{ chart.caption }}</p>
+      <p class="m-0 text-meta text-text-light">{{ chart.caption }}</p>
     {% endif %}
   </div>
   {% if chart.state != 'ready' %}
     <p class="m-0 text-body text-text">No flow values for this period.</p>
   {% else %}
     <div class="flex flex-col gap-2">
-      <p class="m-0 flex items-center justify-end gap-2 text-caption text-text-light">
+      <p class="m-0 flex items-center justify-end gap-2 text-meta text-text-light">
         <span>{{ chart.ratio_label }}</span>
         <span class="text-body font-medium text-title">{{ chart.ratio ?? '—' }}</span>
       </p>
@@ -31,15 +31,15 @@
           <p class="m-0 text-body font-medium" data-flow-chart-title></p>
           <dl class="m-0 flex flex-col gap-1">
             <div class="flex items-baseline justify-between gap-6">
-              <dt class="text-caption text-surface-3">Created</dt>
+              <dt class="text-meta text-surface-3">Created</dt>
               <dd class="m-0 text-body font-medium" data-flow-chart-value="new"></dd>
             </div>
             <div class="flex items-baseline justify-between gap-6">
-              <dt class="text-caption text-surface-3">Closed</dt>
+              <dt class="text-meta text-surface-3">Closed</dt>
               <dd class="m-0 text-body font-medium" data-flow-chart-value="done"></dd>
             </div>
             <div class="flex items-baseline justify-between gap-6" data-flow-chart-open-row>
-              <dt class="text-caption text-surface-3" data-flow-chart-open-label>Open</dt>
+              <dt class="text-meta text-surface-3" data-flow-chart-open-label>Open</dt>
               <dd class="m-0 text-body font-medium" data-flow-chart-value="open"></dd>
             </div>
           </dl>
@@ -47,7 +47,7 @@
         <p class="sr-only" aria-live="polite" data-flow-chart-live></p>
       </div>
     </div>
-    <ul class="flex flex-wrap items-center gap-4 list-none p-0 m-0 text-caption text-text">
+    <ul class="flex flex-wrap items-center gap-4 list-none p-0 m-0 text-meta text-text">
       <li class="flex items-center gap-2">
         <span class="inline-block w-4 h-0.5 rounded-xs bg-chart-flow-new" aria-hidden="true"></span>
         <span>new{% if chart.totals %} {{ chart.totals.new }}{% endif %}</span>
@@ -65,9 +65,9 @@
         <span>backlog shrinks</span>
       </li>
     </ul>
-    <details class="text-caption text-text-light">
+    <details class="text-meta text-text-light">
       <summary class="w-fit cursor-pointer rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">Exact values</summary>
-      <ul class="mt-2 p-0 m-0 list-none text-caption text-text">
+      <ul class="mt-2 p-0 m-0 list-none text-meta text-text">
         {% for section in chart.sections %}
           <li>{{ section.label }}{% if section.running %} · still running{% endif %} · Created {{ section.new }} · Closed {{ section.done }}{% if section.open is not null %} · {% if section.running and chart.open_at %}Open at {{ chart.open_at }}{% else %}Open{% endif %} {{ section.open }}{% endif %}</li>
         {% endfor %}

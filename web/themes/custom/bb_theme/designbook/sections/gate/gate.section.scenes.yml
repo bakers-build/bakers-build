@@ -333,7 +333,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: Your workspace's address is derived from this.
-                            size: caption
+                            size: meta
                             tone: light
                   - component: bb_theme:button
                     props:
@@ -384,7 +384,7 @@ scenes:
                     props:
                       text: Check your mail
                       as: h1
-                      size: h3
+                      size: section-title
                       align: center
                   - component: bb_theme:text
                     props:
@@ -445,11 +445,11 @@ scenes:
                     props:
                       text: Welcome, Ada
                       as: h2
-                      size: display
+                      size: page-title
                   - component: bb_theme:text
                     props:
                       text: You are signed in. You can return to your terminal.
-                      size: gate-body
+                      size: prose
                       tone: default
                   - component: bb_theme:button
                     props:
@@ -477,11 +477,11 @@ scenes:
                     props:
                       text: Sign-in denied
                       as: h2
-                      size: display
+                      size: page-title
                   - component: bb_theme:text
                     props:
                       text: You can return to your terminal.
-                      size: gate-body
+                      size: prose
                       tone: default
   - name: device sign-in done long name
     group: Gate
@@ -507,11 +507,11 @@ scenes:
                         Welcome, Maximiliane Theodora
                         Wolfeschlegelsteinhausenbergerdorff-Ottenheimer
                       as: h2
-                      size: display
+                      size: page-title
                   - component: bb_theme:text
                     props:
                       text: You are signed in. You can return to your terminal.
-                      size: gate-body
+                      size: prose
                       tone: default
                   - component: bb_theme:button
                     props:
@@ -550,7 +550,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: Enter the code shown in your terminal.
-                            size: caption
+                            size: meta
                             tone: light
                   - component: bb_theme:zone
                     props:
@@ -598,7 +598,7 @@ scenes:
                           props:
                             text: ABCD-EFGH
                             as: span
-                            size: h3
+                            size: section-title
                             tracking: widest
                   - component: bb_theme:text
                     props:
@@ -640,7 +640,7 @@ scenes:
                     props:
                       text: 404 — Page not found
                       as: h1
-                      size: display
+                      size: page-title
                       align: center
                 main:
                   - component: bb_theme:empty-state
@@ -667,7 +667,7 @@ scenes:
                     props:
                       text: 403 — Access denied
                       as: h1
-                      size: display
+                      size: page-title
                       align: center
                 main:
                   - component: bb_theme:empty-state

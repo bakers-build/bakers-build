@@ -119,7 +119,7 @@
   {%- for facet in bb_facets %}
     {%- set values = facet.values|default([]) %}
     {%- set derived = values|length > 1 ? 'is either of' : 'is' %}
-    <span data-facet class="inline-flex items-baseline flex-wrap gap-x-1 px-2 py-1 rounded-xs bg-primary/10 border border-transparent text-caption text-primary">
+    <span data-facet class="inline-flex items-baseline flex-wrap gap-x-1 px-2 py-1 rounded-xs bg-primary/10 border border-transparent text-meta text-primary">
       <span data-part="field" class="font-semibold">{{ facet.field }}</span>
       <span data-part="operator" class="text-text-faint">{{ facet.operator|default(derived) }}</span>
       <span data-part="values">{{ values|join(', ') }}</span>
@@ -146,7 +146,7 @@
     {%- elseif bb_facets is not empty %}
       {{- bb_own -}}
     {%- else %}
-      <span data-active-filters="empty" class="text-caption text-text-light">{{ empty_label|default('All results') }}</span>
+      <span data-active-filters="empty" class="text-meta text-text-light">{{ empty_label|default('All results') }}</span>
     {%- endif %}
   </div>
   {%- if meta %}

@@ -25,10 +25,10 @@
         <div>{% block mark %}{{ mark }}{% endblock %}</div>
       {% endif %}
       {% if title %}
-        <h1 class="text-h3" tabindex="-1" x-init="$el.focus({preventScroll: true})">{{ title }}</h1>
+        <h1 class="text-section-title" tabindex="-1" x-init="$el.focus({preventScroll: true})">{{ title }}</h1>
       {% endif %}
       {% if description %}
-        <p class="text-caption text-text-faint max-w-xs">{{ description }}</p>
+        <p class="text-meta text-text-faint max-w-xs">{{ description }}</p>
       {% endif %}
     </div>
     <div class="w-full min-w-0 flex flex-col gap-4 p-6 bg-surface border border-border-2 rounded-md">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>

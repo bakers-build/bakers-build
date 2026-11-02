@@ -59,23 +59,25 @@
    the level below it. A zone with nothing in its heading slot renders no heading
    element at all rather than an empty one.
 
-   SPACING IS THE TOKEN SCALE (D16). `inset` and `gap` resolve to `space-*` and
+   SPACING IS THE ROLE SCALE. `inset` and `gap` resolve to the spacing roles and
    nothing else — no arbitrary pixel value appears in this template.
 
    Both the heading and the actions are CAPTURED before they are tested, so a
    slot filled through a `{% block %}` override still renders its wrapper: a
    wrapper written inside the block would be replaced wholesale by the fill. #}
+{#- VERTICAL ONLY: the left edge belongs to the canvas, or to the
+    `surface_card` a carded zone sits in, so a zone never adds a second one. #}
 {% set inset_map = {
   'none': '',
-  'sm': 'p-3',
-  'md': 'p-5',
-  'lg': 'p-6',
+  'sm': 'py-stack',
+  'md': 'py-card',
+  'lg': 'py-gutter',
 } %}
 {% set gap_map = {
   'none': 'gap-0',
-  'sm': 'gap-zone-sm',
-  'md': 'gap-zone-md',
-  'lg': 'gap-zone-lg',
+  'sm': 'gap-stack',
+  'md': 'gap-card',
+  'lg': 'gap-gutter',
 } %}
 {% set col_map = {
   1: 'grid-cols-1',
@@ -89,7 +91,7 @@
     center` centres the heading, the copy and the cells: a short result (a
     heading, a sentence, one action) standing alone in a card. #}
 {% set centered = align|default('start') == 'center' %}
-{% set zone_classes = ['flex', 'flex-col', 'min-w-0', 'gap-4', (inset_map[inset|default('md')] ?? inset_map['md'])]|merge(centered ? ['items-center', 'text-center'] : []) %}
+{% set zone_classes = ['flex', 'flex-col', 'min-w-0', 'gap-stack', (inset_map[inset|default('md')] ?? inset_map['md'])]|merge(centered ? ['items-center', 'text-center'] : []) %}
 {#- `fill` is ONE row for a field and its submit: the first cell takes the
     remaining width, every later cell keeps its intrinsic width on one line, and
     all of them sit on the bottom edge so the button lines up with the input
@@ -121,7 +123,7 @@
 {% if shows_content or shows_actions or description %}
 <section{{ (attributes ?: create_attribute()).addClass(zone_classes) }}>
   {% if heading_content|trim is not empty or description or actions_content|trim is not empty %}
-    <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+    <div class="flex flex-col items-start gap-stack sm:flex-row sm:items-center">
       {#- THE SUB-LINE IS A PROP, NOT MARKUP IN THE HEADING SLOT. Ten block headers
           in the delivered scenes carry one, and with no prop for it they were
           written as block-level `<span>`s with inline `style=""` — the only thing
@@ -132,15 +134,15 @@
       {% if heading_content|trim is not empty or description %}
         <div class="flex flex-col min-w-0">
           {% if heading_content|trim is not empty %}
-            <h2 data-zone-heading class="m-0 min-w-0 text-title {{ heading_size|default('section') == 'display' ? 'text-display font-bold' : 'text-section' }}">{{ heading_content }}</h2>
+            <h2 data-zone-heading class="m-0 min-w-0 text-title {{ heading_size|default('section') == 'display' ? 'text-page-title font-display font-bold' : 'text-section-title' }}">{{ heading_content }}</h2>
           {% endif %}
           {% if description %}
-            <p class="m-0 text-caption text-text-faint">{{ description }}</p>
+            <p class="m-0 text-meta text-text-faint">{{ description }}</p>
           {% endif %}
         </div>
       {% endif %}
       {% if actions_content|trim is not empty %}
-        <div class="sm:ml-auto flex items-center gap-3 shrink-0">{{ actions_content }}</div>
+        <div class="sm:ml-auto flex items-center gap-stack shrink-0">{{ actions_content }}</div>
       {% endif %}
     </div>
   {% endif %}

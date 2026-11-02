@@ -15,7 +15,7 @@
   <div class="flex flex-col gap-1 px-2 py-2 border-b border-border-2">
     <h2 class="flex items-center justify-between gap-2 m-0">
       {{ include('bb_theme:badge', {label: col|upper, tone: tone, dot: true}, with_context = false) }}
-      <span class="text-caption text-text-light">{{ view.total_rows|default(0) }}</span>
+      <span class="text-meta text-text-light">{{ view.total_rows|default(0) }}</span>
     </h2>
   </div>
   <div class="flex flex-col gap-2 flex-1 p-2">

@@ -86,17 +86,17 @@
 {% set inspector_content %}{% block inspector %}{{ inspector }}{% endblock %}{% endset %}
 {% set has_filters = filters_content|trim is not empty %}
 {% set has_inspector = inspector_content|trim is not empty %}
-<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-5']) }}>
+<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-card']) }}>
   {% if header_content|trim is not empty %}
     <div data-canvas-region="header">{{ header_content }}</div>
   {% endif %}
-  <div class="flex flex-col lg:flex-row gap-5 items-start px-5 pb-5 {{ header_content|trim is empty ? 'pt-5' : '' }}">
+  <div class="flex flex-col lg:flex-row gap-gutter items-start px-card xl:px-gutter pb-gutter {{ header_content|trim is empty ? 'pt-card' : '' }}">
     {% if has_filters %}
       <div data-canvas-region="filters" class="w-full lg:w-48 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 lg:z-40">{{ filters_content }}</div>
     {% endif %}
-    <div data-canvas-region="main" class="w-full lg:w-auto flex-1 min-w-0 flex flex-col gap-5">{{ main_content }}</div>
+    <div data-canvas-region="main" class="w-full lg:w-auto flex-1 min-w-0 flex flex-col gap-section">{{ main_content }}</div>
     {% if has_inspector %}
-      <div data-canvas-region="inspector" class="w-full lg:w-80 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 flex flex-col gap-5">{{ inspector_content }}</div>
+      <div data-canvas-region="inspector" class="w-full lg:w-80 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 flex flex-col gap-card">{{ inspector_content }}</div>
     {% endif %}
   </div>
 </div>

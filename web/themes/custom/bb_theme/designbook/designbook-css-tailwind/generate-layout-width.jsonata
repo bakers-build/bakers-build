@@ -57,9 +57,13 @@
     )
   };
   $node := $reduce($split("component.container.max-width", "."), function($a, $s) { $lookup($a, $s) }, $$);
-  $lines := $exists($node."$value")
-    ? ["  --container: " & $resolveVal($node."$value") & ";"]
-    : $walk($node, "");
+  $measure := $$.component.container."prose-measure";
+  $lines := $append(
+    $exists($node."$value")
+      ? ["  --container: " & $resolveVal($node."$value") & ";"]
+      : $walk($node, ""),
+    $exists($measure."$value") ? ["  --container-prose-measure: " & $resolveVal($measure."$value") & ";"] : []
+  );
   $count($lines) > 0
     ? "@theme static {\n" & $join($lines, "\n") & "\n}\n"
     : ""

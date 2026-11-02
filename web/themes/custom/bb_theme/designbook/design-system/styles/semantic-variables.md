@@ -44,13 +44,13 @@ comment for the exact classification rule.
 | `semantic.radius.sm` | layout | Small corner-radius role |
 | `semantic.radius.xs` | layout | Smallest corner-radius role |
 
-## Style axis (70)
+## Style axis (80)
 
 | Name | Axis | Purpose |
 | --- | --- | --- |
+| `component.container.prose-measure` | style | Container role: prose-measure |
 | `component.empty-state.compact-icon` | style | Empty-state role: compact-icon |
 | `component.empty-state.icon` | style | Empty-state role: icon |
-| `component.gate.body` | style | Gate role: body |
 | `component.shell.offset` | style | Shell role: offset |
 | `semantic.color.app` | style | Outermost page/app background colour |
 | `semantic.color.border` | style | Default border colour |
@@ -108,13 +108,23 @@ comment for the exact classification rule.
 | `semantic.shadow.shadow-1` | style | Lowest elevation shadow role |
 | `semantic.shadow.shadow-2` | style | Mid elevation shadow role |
 | `semantic.shadow.shadow-3` | style | Highest elevation shadow role |
+| `semantic.spacing.card` | style | Spacing role: card |
+| `semantic.spacing.gutter` | style | Spacing role: gutter |
+| `semantic.spacing.inline` | style | Spacing role: inline |
+| `semantic.spacing.inline-xs` | style | Spacing role: inline-xs |
+| `semantic.spacing.section` | style | Spacing role: section |
+| `semantic.spacing.stack` | style | Spacing role: stack |
 | `semantic.transition.base` | style | Transition role: base |
 | `semantic.transition.fast` | style | Transition role: fast |
+| `semantic.typography.badge` | style | Typography role: badge |
 | `semantic.typography.body` | style | Default body-text type style |
-| `semantic.typography.caption` | style | Caption/annotation type style |
-| `semantic.typography.display` | style | Largest display heading type style |
+| `semantic.typography.body-strong` | style | Typography role: body-strong |
+| `semantic.typography.data` | style | Typography role: data |
 | `semantic.typography.eyebrow` | style | Eyebrow/label type style |
-| `semantic.typography.heading` | style | Primary heading type style |
-| `semantic.typography.lead` | style | Lead/intro paragraph type style |
-| `semantic.typography.mono` | style | Monospaced (code/data) type style |
-| `semantic.typography.section` | style | Section heading type style |
+| `semantic.typography.item-title` | style | Typography role: item-title |
+| `semantic.typography.label` | style | Typography role: label |
+| `semantic.typography.meta` | style | Typography role: meta |
+| `semantic.typography.page-title` | style | Typography role: page-title |
+| `semantic.typography.prose` | style | Typography role: prose |
+| `semantic.typography.section-title` | style | Typography role: section-title |
+| `semantic.typography.stat-value` | style | Typography role: stat-value |

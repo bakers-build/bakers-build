@@ -18,7 +18,7 @@
   {% if url %}<a class="use-ajax absolute inset-0 z-10" href="{{ url }}" data-dialog-type="dialog.off_canvas" data-dialog-options='{"width":"40%"}' aria-label="Open {{ identifier }}"></a>{% endif %}
   <div class="flex items-center gap-1 mb-1">
     {% if type_dot_map[type_key] is defined %}<span class="inline-block w-2 h-2 rounded-full shrink-0 {{ type_dot_map[type_key] }}" title="{{ type_key }}" aria-label="{{ type_key }}"></span>{% endif %}
-    <span class="font-mono font-semibold text-section text-text">{{ identifier }}</span>
+    <span class="font-mono font-semibold text-section-title text-text">{{ identifier }}</span>
     <span class="flex-1"></span>
     {#- P1 is `critical`, not `wait`. Both draw the same red pair, so nothing moves on
         the screen; what changes is what the badge SAYS. `wait` means nobody is acting
@@ -26,7 +26,7 @@
         for its colour while the token layer had no name for the red that ranks. #}
     {% if priority %}{{ include('bb_theme:badge', { label: priority|upper, tone: priority == 'p1' ? 'critical' : 'neutral' }, with_context = false) }}{% endif %}
   </div>
-  <p class="text-caption text-text leading-normal m-0 line-clamp-2">{{ title }}</p>
+  <p class="text-meta text-text leading-normal m-0 line-clamp-2">{{ title }}</p>
   {% if blocked or state == 'cancelled' %}
     <div class="flex flex-wrap gap-1 mt-2">
       {% if blocked %}{{ include('bb_theme:badge', { label: 'Blocked', tone: 'neutral' }, with_context = false) }}{% endif %}

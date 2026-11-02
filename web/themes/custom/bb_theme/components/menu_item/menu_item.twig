@@ -6,7 +6,7 @@
    `description` sits beneath it; without either, the row is the bare label. #}
 <a{{ (attributes ?: create_attribute()).setAttribute('href', url).setAttribute('role', 'menuitem').addClass([
     'block', 'px-2', 'py-1', 'rounded-xs', 'no-underline',
-    'text-caption', 'text-text',
+    'text-meta', 'text-text',
     'hover:bg-surface-3', 'hover:text-text',
     'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
     current ? 'font-bold' : '',
@@ -16,7 +16,7 @@
       {%- if mark %}<span class="flex shrink-0">{{ include('bb_theme:person', { variant: 'compact', size: 'sm', initials: mark.initials|default(''), color: mark.color|default('running'), picture: mark.picture|default(''), image_fit: 'contain' }, with_context = false) }}</span>{% endif -%}
       <span class="flex min-w-0 flex-col">
         <span>{{ label }}</span>
-        {%- if description %}<span class="font-normal text-caption text-text-faint wrap-anywhere whitespace-pre-line">{{ description }}</span>{% endif -%}
+        {%- if description %}<span class="font-normal text-meta text-text-faint wrap-anywhere whitespace-pre-line">{{ description }}</span>{% endif -%}
       </span>
     </span>
   {%- else -%}

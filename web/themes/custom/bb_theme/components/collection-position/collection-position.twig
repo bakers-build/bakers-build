@@ -1,2 +1,2 @@
-{% set root_classes = ['collection-position', 'text-caption', 'text-text-faint', 'font-mono', 'tabular-nums'] %}
+{% set root_classes = ['collection-position', 'text-meta', 'text-text-faint', 'font-mono', 'tabular-nums'] %}
 <span{{ (attributes ?: create_attribute()).addClass(root_classes) }}>{{ from }}–{{ to }} of {% if total is defined and total is not null %}{{ total }} {{ noun }}{% else %}?{% endif %}</span>

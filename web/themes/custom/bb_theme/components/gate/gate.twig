@@ -29,10 +29,10 @@
       <div class="gate__mark flex items-center justify-center">{% block mark %}{{ mark }}{% endblock %}</div>
     {% endif %}
     {% if title %}
-      <h1 class="gate__title text-h3 text-center">{{ title }}</h1>
+      <h1 class="gate__title text-section-title text-center">{{ title }}</h1>
     {% endif %}
     {% if description %}
-      <p class="gate__description text-caption text-text-faint text-center max-w-[40ch] mx-auto">{{ description }}</p>
+      <p class="gate__description text-meta text-text-faint text-center max-w-[40ch] mx-auto">{{ description }}</p>
     {% endif %}
     <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
   </div>

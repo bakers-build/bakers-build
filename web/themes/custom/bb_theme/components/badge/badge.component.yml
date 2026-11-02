@@ -120,7 +120,7 @@ props:
       title: Suffix
       description: >-
         A quiet trailing value the label qualifies — a relative time, a count.
-        Rendered in mono at the smallest step so it reads as an annotation of
+        Rendered quieter at the badge step so it reads as an annotation of
         the label rather than a second label.
     list_item:
       type: boolean

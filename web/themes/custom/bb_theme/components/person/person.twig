@@ -49,7 +49,7 @@
   'lease': 'bg-state-lease',
   'offline': 'bg-state-offline'
 } %}
-{% set size_classes = profile ? 'w-20 h-20 text-display' : (size == 'md' ? 'w-7 h-7 text-eyebrow' : 'w-6 h-6 text-eyebrow') %}
+{% set size_classes = profile ? 'w-20 h-20 text-page-title font-display' : (size == 'md' ? 'w-7 h-7 text-eyebrow' : 'w-6 h-6 text-eyebrow') %}
 {% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'leading-none', 'font-bold', 'text-state-ink', size_classes, color_map[color]|default('bg-state-running')] %}
 {% set stack_gap = profile ? 'gap-3' : (size == 'md' ? 'gap-2' : 'gap-1') %}
 {% set root_classes = profile ? ['flex', 'flex-col', 'items-center', 'text-center', stack_gap, 'min-w-0'] : ['inline-flex', 'items-center', stack_gap, 'min-w-0'] %}
@@ -64,7 +64,7 @@
     {%- if display_name %}<span class="truncate text-body text-text" data-collapse-hidden>{{ display_name }}</span>{% endif %}
   {%- elseif profile %}
     <span class="flex flex-col items-center gap-1 min-w-0">
-      <span class="text-display text-text">{{ display_name|default(initials) }}</span>
+      <span class="text-page-title font-display text-text">{{ display_name|default(initials) }}</span>
       {%- if subtitle %}<span class="text-body text-text-light">{{ subtitle }}</span>{% endif %}
     </span>
   {%- else %}

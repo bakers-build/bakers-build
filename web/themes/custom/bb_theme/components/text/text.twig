@@ -1,11 +1,11 @@
 {# One run of plain text in one of the theme's typographic roles. The caller
    picks the element (`as`) for its document outline and the role (`size`,
-   `tone`) for its look; the two are independent, so an h1 can read at the h3
-   step the gate and onboarding chromes use. With `href` the run is a link in
+   `tone`) for its look; the two are independent, so an h1 can read at the
+   section-title step the gate and onboarding chromes use. With `href` the run is a link in
    the link colour and `tone` does not apply. An unbroken token wraps inside
    the run's box rather than overflowing it, and the copy's line breaks are
    kept, so a multiline plain-text value reads as separate lines. #}
-{% set size_map = { 'body': 'text-body', 'caption': 'text-caption', 'h3': 'text-h3', 'display': 'text-display', 'gate-body': 'text-gate-body' } %}
+{% set size_map = { 'page-title': 'text-page-title font-display', 'section-title': 'text-section-title', 'item-title': 'text-item-title', 'body-strong': 'text-body-strong', 'body': 'text-body', 'prose': 'text-prose', 'label': 'text-label', 'meta': 'text-meta', 'data': 'text-data font-mono', 'eyebrow': 'text-eyebrow uppercase', 'badge': 'text-badge', 'stat-value': 'text-stat-value' } %}
 {% set tone_map = { 'default': '', 'light': 'text-text-light', 'faint': 'text-text-faint' } %}
 {% set tag = href ? 'a' : (as in ['p', 'span', 'h1', 'h2'] ? as : 'p') %}
 {% set text_classes = [

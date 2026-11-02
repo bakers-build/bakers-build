@@ -223,12 +223,18 @@ primitive:
     fontFamily:
       sans:
         $value: >-
-          system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-          sans-serif
+          'Spline Sans', system-ui, -apple-system, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif
         $type: fontFamily
       mono:
-        $value: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace
+        $value: >-
+          'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, Consolas,
+          monospace
         $type: fontFamily
+      display:
+        $value: "'Bricolage Grotesque', 'Spline Sans', system-ui, sans-serif"
+        $type: fontFamily
+        $description: Page titles only.
     fontSize:
       '11':
         $value: 11px
@@ -238,6 +244,9 @@ primitive:
         $type: dimension
       '13':
         $value: 13px
+        $type: dimension
+      '14':
+        $value: 14px
         $type: dimension
       '16':
         $value: 16px
@@ -271,6 +280,27 @@ primitive:
       normal:
         $value: 1.45
         $type: number
+      '14':
+        $value: 14px
+        $type: dimension
+      '16':
+        $value: 16px
+        $type: dimension
+      '20':
+        $value: 20px
+        $type: dimension
+      '21':
+        $value: 21px
+        $type: dimension
+      '22':
+        $value: 22px
+        $type: dimension
+      '28':
+        $value: 28px
+        $type: dimension
+      '30':
+        $value: 30px
+        $type: dimension
     elevation:
       '1':
         $value:
@@ -485,62 +515,102 @@ semantic:
         in one of the two modes; this token stays constant in both and keeps
         ≥4.5:1 against every state hue.
   typography:
-    display:
+    page-title:
       $value:
-        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontFamily: '{primitive.style.fontFamily.display}'
         fontSize: '{primitive.style.fontSize.24}'
         fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
+        lineHeight: '{primitive.style.lineHeight.30}'
       $type: typography
-    heading:
+      $description: Page title; carries font-display.
+    section-title:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.16}'
         fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
+        lineHeight: '{primitive.style.lineHeight.22}'
       $type: typography
-    section:
+      $description: Zone and section heading.
+    item-title:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
-        fontSize: '{primitive.style.fontSize.16}'
-        fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
+        fontSize: '{primitive.style.fontSize.14}'
+        fontWeight: '{primitive.style.fontWeight.semibold}'
+        lineHeight: '{primitive.style.lineHeight.20}'
       $type: typography
+      $description: Title of a list item or card.
+    body-strong:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.13}'
+        fontWeight: '{primitive.style.fontWeight.medium}'
+        lineHeight: '{primitive.style.lineHeight.20}'
+      $type: typography
+      $description: Emphasised body text and values.
     body:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.13}'
         fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.20}'
       $type: typography
-    lead:
+      $description: Default text; set on html/body.
+    prose:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.13}'
         fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.21}'
       $type: typography
-    caption:
+      $description: Running text; its container is at most max-w-prose-measure wide.
+    label:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.12}'
         fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.16}'
       $type: typography
+      $description: A property label, muted; never louder than its value (Figma 12/500, lowered to 400).
+    meta:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.12}'
+        fontWeight: '{primitive.style.fontWeight.regular}'
+        lineHeight: '{primitive.style.lineHeight.16}'
+      $type: typography
+      $description: 'Secondary line: times, counts, by-lines.'
+    data:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.mono}'
+        fontSize: '{primitive.style.fontSize.12}'
+        fontWeight: '{primitive.style.fontWeight.medium}'
+        lineHeight: '{primitive.style.lineHeight.16}'
+      $type: typography
+      $description: 'Machine values: keys, branches, IDs; carries font-mono.'
     eyebrow:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.11}'
-        fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
-      $type: typography
-    mono:
-      $value:
-        fontFamily: '{primitive.style.fontFamily.mono}'
-        fontSize: '{primitive.style.fontSize.12}'
         fontWeight: '{primitive.style.fontWeight.semibold}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.14}'
       $type: typography
+      $description: Uppercase kicker above a heading.
+    badge:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.11}'
+        fontWeight: '{primitive.style.fontWeight.semibold}'
+        lineHeight: '{primitive.style.lineHeight.14}'
+      $type: typography
+      $description: Badge and chip text.
+    stat-value:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.24}'
+        fontWeight: '{primitive.style.fontWeight.semibold}'
+        lineHeight: '{primitive.style.lineHeight.28}'
+      $type: typography
+      $description: A headline figure.
   fontWeight:
     regular:
       $value: '{primitive.style.fontWeight.regular}'
@@ -567,6 +637,31 @@ semantic:
     normal:
       $value: '{primitive.style.lineHeight.normal}'
       $type: number
+  spacing:
+    inline-xs:
+      $value: calc(var(--spacing) * 1)
+      $type: dimension
+      $description: Between an icon and its label.
+    inline:
+      $value: calc(var(--spacing) * 2)
+      $type: dimension
+      $description: Between inline items.
+    stack:
+      $value: calc(var(--spacing) * 3)
+      $type: dimension
+      $description: Between stacked items; below a heading.
+    card:
+      $value: calc(var(--spacing) * 4)
+      $type: dimension
+      $description: Inside a card; the page edge below 1280px.
+    gutter:
+      $value: calc(var(--spacing) * 6)
+      $type: dimension
+      $description: The page edge from 1280px up.
+    section:
+      $value: calc(var(--spacing) * 8)
+      $type: dimension
+      $description: Between sections; above a heading.
   radius:
     xs:
       $value: '{primitive.layout.radius.5}'
@@ -623,6 +718,10 @@ component:
     max-width:
       $value: 1280px
       $type: dimension
+    prose-measure:
+      $value: 620px
+      $type: dimension
+      $description: Widest running text (`max-w-prose-measure`), for the prose role.
   row:
     height:
       $value: '{primitive.layout.row-h}'
@@ -657,17 +756,6 @@ component:
         $description: >-
           Gap between braid and wordmark in the compact brand (24 + 8 + 96 =
           128px combined).
-  gate:
-    body:
-      $value:
-        fontFamily: '{primitive.style.fontFamily.sans}'
-        fontSize: '{primitive.style.fontSize.16}'
-        fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
-      $type: typography
-      $description: >-
-        Body copy of a standalone gate result, such as the device sign-in
-        confirmation: readable at 16px rather than the 13px product body.
   zone:
     gap:
       sm:
@@ -939,12 +1027,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"Source Sans 3", system-ui, sans-serif'
-            $type: fontFamily
   harbor-dark:
     $extensions:
       selector: '[data-skin="harbor"][data-mode="dark"]'
@@ -1057,12 +1139,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"IBM Plex Sans", system-ui, sans-serif'
-            $type: fontFamily
   grove-dark:
     $extensions:
       selector: '[data-skin="grove"][data-mode="dark"]'
@@ -1175,12 +1251,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"Public Sans", system-ui, sans-serif'
-            $type: fontFamily
   ember-dark:
     $extensions:
       selector: '[data-skin="ember"][data-mode="dark"]'
@@ -1293,12 +1363,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"Atkinson Hyperlegible Next", system-ui, sans-serif'
-            $type: fontFamily
   iris-dark:
     $extensions:
       selector: '[data-skin="iris"][data-mode="dark"]'
