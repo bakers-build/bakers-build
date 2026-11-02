@@ -2,7 +2,7 @@
 
 GitLab remains the development, npm publication and deployment authority during overlap.
 The GitHub workflow is a rehearsal: it grants only `contents: read`, uses disposable
-Blacksmith 4-vCPU Ubuntu 24.04 runners, and has no registry login, publish token or deployment job.
+Blacksmith Ubuntu 24.04 runners, and has no registry login, publish token or deployment job.
 Do not transfer uncleared repository history to enable it.
 
 ## Checks
@@ -60,8 +60,9 @@ also apply to later GitLab integrations. Existing GitLab customer connectors are
 
 ## Runner selection
 
-The private rehearsal uses `blacksmith-4vcpu-ubuntu-2404` for every job, including the
-Docker image gate. The Blacksmith GitHub App must have access to the repository.
+The private rehearsal uses `blacksmith-4vcpu-ubuntu-2404` for fast jobs and
+`blacksmith-8vcpu-ubuntu-2404` for the Docker image and private registry gates.
+PHPUnit uses eight processes on these 8-vCPU runners. The Blacksmith GitHub App must have access to the repository.
 The same-source conductor benchmark passed 4,679 tests (3 existing skips) in 3m07s,
 compared with 7m27s on GitHub standard runners and 2m21s on the existing GitLab runner.
 This single sample does not establish full-pipeline runtime or cost.

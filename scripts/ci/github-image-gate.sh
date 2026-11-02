@@ -15,7 +15,7 @@ done
 printf '%s\n' "commit=$GITHUB_SHA" "tree=$(git rev-parse 'HEAD^{tree}')" "run=$GITHUB_RUN_ID" "attempt=$GITHUB_RUN_ATTEMPT" > gate-reports/candidate.txt
 
 docker run --name phpunit --user root -e SIMPLETEST_DB=sqlite://localhost/:memory: \
-  bakers-gate/php-test:local sh -c 'cd /var/www/html && ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 4 --log-junit /tmp/junit.xml' || phpunit_status=$?
+  bakers-gate/php-test:local sh -c 'cd /var/www/html && ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 8 --log-junit /tmp/junit.xml' || phpunit_status=$?
 docker cp phpunit:/tmp/junit.xml gate-reports/junit-phpunit.xml
 if [ "${phpunit_status:-0}" != 0 ]; then exit "$phpunit_status"; fi
 

@@ -46,6 +46,7 @@ describe('disposable image gate', () => {
     const result = gate();
     expect(result.status).toBe(0);
     expect(result.calls).toContain('run --name phpunit');
+    expect(result.calls).toContain('--processes 8');
     expect(
       result.calls.indexOf('github-recipe:compose run --rm install'),
     ).toBeLessThan(

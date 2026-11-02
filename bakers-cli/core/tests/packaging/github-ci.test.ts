@@ -14,6 +14,7 @@ describe('GitHub migration checks', () => {
     expect(workflow.on.push.branches).toEqual(['ci/ghcr-rehearsal']);
     expect(workflow.on.pull_request).toBeUndefined();
     const job = workflow.jobs.registry;
+    expect(job['runs-on']).toBe('blacksmith-8vcpu-ubuntu-2404');
     expect(job.permissions).toEqual({ contents: 'read', packages: 'write' });
     const commands = job.steps
       .map((step: { run?: string }) => step.run || '')
@@ -115,7 +116,11 @@ describe('GitHub migration checks', () => {
     expect(workflow.jobs.required.needs.sort()).toEqual(required.sort());
     for (const name of required) {
       const job = workflow.jobs[name];
-      expect(job['runs-on']).toBe('blacksmith-4vcpu-ubuntu-2404');
+      expect(job['runs-on']).toBe(
+        name === 'image_gate'
+          ? 'blacksmith-8vcpu-ubuntu-2404'
+          : 'blacksmith-4vcpu-ubuntu-2404',
+      );
       expect(job.permissions).toBeUndefined();
       expect(job.if).toBeUndefined();
       expect(job.steps[0].with['persist-credentials']).toBe(false);

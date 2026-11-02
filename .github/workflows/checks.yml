@@ -377,7 +377,7 @@ jobs:
           bash tests/contract/mr-title.test.sh
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
   image_gate:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 180
     env:
       DOMAIN: nginx
