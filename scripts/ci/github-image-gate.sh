@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Only for disposable GitHub-hosted runners: never point this at a deployment daemon.
+# Only for disposable CI runners: never point this at a deployment daemon.
 set -euo pipefail
 mkdir -p gate-reports
 images=(php php-test nginx docs)

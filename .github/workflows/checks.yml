@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   phpcs:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -49,7 +49,7 @@ jobs:
           ./vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist
     container: php:8.4
   phpmd:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -82,7 +82,7 @@ jobs:
           php -d error_reporting='E_ALL & ~E_DEPRECATED' ./vendor/bin/phpmd web/modules/custom,web/themes/custom text phpmd.xml.dist --exclude 'tests/*,**/tests/*,**/node_modules/*'
     container: php:8.4
   phpstan:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -115,7 +115,7 @@ jobs:
           ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 1G
     container: php:8.4
   docs_pages:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -136,7 +136,7 @@ jobs:
           node --test website/scripts/marketplace.test.mjs website/scripts/third-party.test.mjs
     container: node:22
   config_sync:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -170,7 +170,7 @@ jobs:
           bash tests/config-sync/check-ci-wiring.sh
     container: php:8.4
   compose_render:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -185,7 +185,7 @@ jobs:
           set -eu
           bash tests/contract/compose.sh
   conductor:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -221,7 +221,7 @@ jobs:
           retention-days: 7
     container: node:22
   tui:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -254,7 +254,7 @@ jobs:
           retention-days: 7
     container: node:22
   tui_musl:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -313,7 +313,7 @@ jobs:
           path: bakers-cli/junit-tui.xml
           retention-days: 7
   web_ui:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     env:
       NODE_OPTIONS: --max-old-space-size=4096
@@ -353,7 +353,7 @@ jobs:
           retention-days: 7
     container: node:22
   bb_skill_version_gate:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
         with:
@@ -364,7 +364,7 @@ jobs:
           HEAD_REF: ${{ github.sha }}
         run: bash tests/contract/skill-version-gate.sh
   mr_title:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
         with:
@@ -377,7 +377,7 @@ jobs:
           bash tests/contract/mr-title.test.sh
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
   image_gate:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 180
     env:
       DOMAIN: nginx
@@ -404,7 +404,7 @@ jobs:
           path: gate-reports/
           retention-days: 7
   release_rehearsal:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container: node:22
     timeout-minutes: 60
     steps:
@@ -432,7 +432,7 @@ jobs:
           path: release-notes.md
           if-no-files-found: ignore
   required:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: always()
     needs:
       - phpcs

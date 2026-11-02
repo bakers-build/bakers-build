@@ -93,7 +93,7 @@ describe('GitHub migration checks', () => {
     expect(workflow.jobs.required.needs.sort()).toEqual(required.sort());
     for (const name of required) {
       const job = workflow.jobs[name];
-      expect(job['runs-on']).toBe('ubuntu-24.04');
+      expect(job['runs-on']).toBe('blacksmith-4vcpu-ubuntu-2404');
       expect(job.permissions).toBeUndefined();
       expect(job.if).toBeUndefined();
       expect(job.steps[0].with['persist-credentials']).toBe(false);

@@ -2,7 +2,7 @@
 
 GitLab remains the development, npm publication and deployment authority during overlap.
 The GitHub workflow is a rehearsal: it grants only `contents: read`, uses disposable
-GitHub-hosted runners, and has no registry login, publish token or deployment job.
+Blacksmith 4-vCPU Ubuntu 24.04 runners, and has no registry login, publish token or deployment job.
 Do not transfer uncleared repository history to enable it.
 
 ## Checks
@@ -57,3 +57,16 @@ A cleared candidate, real PR and separate fork PR, required-check rejection, pac
 rights, transferable tested-image identity and explicit publisher handover remain necessary.
 Consumer URL/default changes wait for reachable target repositories. License/history gates
 also apply to later GitLab integrations. Existing GitLab customer connectors are unchanged.
+
+## Runner selection
+
+The private rehearsal uses `blacksmith-4vcpu-ubuntu-2404` for every job, including the
+Docker image gate. The Blacksmith GitHub App must have access to the repository.
+The same-source conductor benchmark passed 4,679 tests (3 existing skips) in 3m07s,
+compared with 7m27s on GitHub standard runners and 2m21s on the existing GitLab runner.
+This single sample does not establish full-pipeline runtime or cost.
+[Benchmark evidence](https://github.com/bakers-build/bakers-build/actions/runs/41542518835).
+
+PHPUnit, browser/integration tests and config import continue using the images built
+once by `scripts/ci/github-image-gate.sh`; runner selection does not change the gates.
+Public fork execution remains unverified and must be checked before public cutover.
