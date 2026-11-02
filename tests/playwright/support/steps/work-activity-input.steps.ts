@@ -2,7 +2,7 @@
 // Consumers: work-activity-input.feature and work-schedule.feature, including no-JS.
 import { randomUUID } from 'node:crypto';
 import { expect } from '@playwright/test';
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { callTool, type ToolResult } from '../mcp';
 import { uidOf } from '../shell';
 

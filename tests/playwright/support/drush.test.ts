@@ -1,0 +1,50 @@
+import { execSync } from 'node:child_process';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { Drush } from './drush';
+
+vi.mock('node:child_process', () => ({ execSync: vi.fn() }));
+const exec = vi.mocked(execSync);
+
+beforeEach(() => {
+    exec.mockReset();
+    vi.stubEnv('DDEV_DOCROOT', '');
+    vi.stubEnv('DRUSH_CWD', '');
+});
+afterEach(() => vi.unstubAllEnvs());
+
+it('runs native Drush inside DDEV and preserves shell arguments, cwd and UTF-8 output', () => {
+    vi.stubEnv('DDEV_DOCROOT', '/var/www/html/web');
+    vi.stubEnv('DRUSH_CWD', '/var/www/html');
+    exec.mockReturnValue('café\n');
+    expect(Drush.exec('ev \'print "$value";\'')).toBe('café\n');
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect(exec).toHaveBeenCalledWith('drush ev \'print "$value";\'', {
+        cwd: '/var/www/html', encoding: 'utf-8', stdio: 'pipe',
+    });
+});
+
+it.each([
+    [true, true, 'drush status'],
+    [false, true, 'ddev drush status'],
+    [false, false, 'drush status'],
+])('selects the available runner (native=%s, DDEV=%s)', (native, ddev, command) => {
+    exec.mockImplementation((cmd) => {
+        if (cmd === 'which drush' && !native || cmd === 'which ddev' && !ddev) throw new Error('not found');
+        return 'ready\n';
+    });
+    expect(Drush.exec('status')).toBe('ready\n');
+    expect(exec).toHaveBeenLastCalledWith(command, {
+        cwd: process.cwd(), encoding: 'utf-8', stdio: 'pipe',
+    });
+    if (native) expect(exec).not.toHaveBeenCalledWith('which ddev', expect.anything());
+});
+
+it('propagates a failed Drush command without retrying it through another runner', () => {
+    const failure = new Error('PHP failed');
+    exec.mockImplementation((command) => {
+        if (command === 'which drush') return '';
+        throw failure;
+    });
+    expect(() => Drush.exec('status')).toThrow(failure);
+    expect(exec).not.toHaveBeenCalledWith('which ddev', expect.anything());
+});

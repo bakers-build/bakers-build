@@ -2,17 +2,12 @@
   "name": "bakers-playwright-bdd",
   "private": true,
   "version": "0.0.0",
-  "description": "bakers.build BDD feature tests (keytec-playwright)",
+  "description": "bakers.build BDD browser and HTTP contract tests",
   "scripts": {
     "bddgen": "bddgen --config playwright.bdd.config.ts",
     "test": "bddgen --config playwright.bdd.config.ts && playwright test --config playwright.bdd.config.ts",
     "test:unit": "vitest run --dir . --exclude '**/.features-gen/**' --exclude '**/node_modules/**'",
-    "generate:definitions": "generate definitions",
-    "pretest": "npm run generate:definitions",
     "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@key-tec/playwright-core": "0.0.0-dev.72"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

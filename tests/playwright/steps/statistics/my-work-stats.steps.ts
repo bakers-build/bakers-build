@@ -4,7 +4,7 @@
 // Login, My work tabs, the period range, the filter popover and the address
 // are NOT re-implemented here — `steps/home/my-work-tabs.steps.ts`,
 // `steps/statistics/insights.steps.ts` and `support/steps/*` own them.
-import { Then } from '@key-tec/playwright-core/bdd';
+import { Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 

@@ -1,9 +1,9 @@
 // The square crop dialog of an image upload, operated through its visible
 // controls only. The avatar is read back as decoded pixels of the rendered
 // <img>, so a URL that merely names the image style proves nothing here.
-import { Given, When, Then, test } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then, test } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { RAIL_ISLAND } from '../../support/shell';
 import { php } from '../../support/drush';

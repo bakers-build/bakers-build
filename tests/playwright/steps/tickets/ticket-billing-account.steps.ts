@@ -2,7 +2,7 @@
 // value and Source, the picker / no-JS choice and the link route's status.
 // The fresh project and the sign-in steps come from billing-accounts.steps.ts,
 // listing.steps.ts and accounts.steps.ts.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php, phpUnderLock } from '../../support/drush';
 import { safe } from '../../support/listing';

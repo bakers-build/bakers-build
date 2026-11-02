@@ -3,7 +3,7 @@
 // team-time, project-time and worklog-overview.
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { Given, Then, When } from '@key-tec/playwright-core/bdd';
+import { Given, Then, When } from '../../bdd.fixtures';
 import { php } from '../drush';
 import { facetRow, facetTrigger } from '../listing';
 import { safe } from '../picker';

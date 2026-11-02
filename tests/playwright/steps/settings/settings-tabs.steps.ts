@@ -11,7 +11,7 @@
 // hardcoded.
 import { randomUUID } from 'node:crypto';
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import type { Page, Request } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
 

@@ -11,8 +11,8 @@
 // `rail attrs AFTER the click: []`. A one-click scenario cannot see it, which
 // is why `the document was not reloaded` is asserted after each of two clicks
 // rather than once at the end.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { MEMBERS_ISLAND, RAIL_ISLAND, memberHandle, uidOf } from '../../support/shell';

@@ -11,7 +11,7 @@
 // list's own "New ticket" trigger — that trigger belongs to Task 6, a task
 // numbered after this one, and depending on it here would be a circular
 // build order.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { php } from '../../support/drush';

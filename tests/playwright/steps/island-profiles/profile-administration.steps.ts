@@ -1,4 +1,4 @@
-import { Given, When, Then, test } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then, test } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
 import { expect, type Locator, type Page } from '@playwright/test';
 

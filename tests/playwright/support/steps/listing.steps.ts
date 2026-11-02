@@ -1,7 +1,7 @@
 // Shared steps of the faceted list screens: signing in as a workspace member,
 // picking facets and chips, reading the address, the closed-rows control.
 // Consumers: features/tickets, runs, projects.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { php } from '../drush';

@@ -2,7 +2,7 @@
 // settings forms, read back from storage and from the listing row.
 // Consumer: features/projects/identity-forms.feature.
 import { join } from 'node:path';
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
 import { safe } from '../../support/listing';

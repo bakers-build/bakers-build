@@ -4,7 +4,7 @@
 // received. `invitation.feature` seeds its invitation through the service; this
 // feature is the other half, proving the dialog is what creates one.
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import { test, expect } from '../../bdd.fixtures';
 import { messagesFor, clearMailboxFor } from '../../support/login-flow';
 import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';

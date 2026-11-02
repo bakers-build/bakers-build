@@ -1,7 +1,7 @@
 // The shell's island detectors and account handles, shared by every feature
 // whose steps observe the shell: the document mark that tells a boosted swap
 // from a full load, the island selectors, and seed-account lookups.
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from './drush';
 import { expect, type Page } from '@playwright/test';
 
 /** The shell heading island (title, tabs, create actions). */

@@ -1,4 +1,4 @@
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { provisionState, provisionDelta, type ProvisionState } from '../../support/provision-state';
 

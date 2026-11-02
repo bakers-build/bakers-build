@@ -19,8 +19,7 @@ describe('sessionFileFor', () => {
     });
 });
 
-vi.mock('@key-tec/playwright-core', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@key-tec/playwright-core')>()),
+vi.mock('./drush', () => ({
     Drush: { exec: () => 'https://site.test/user/reset/7/1/x/login' },
 }));
 

@@ -1,7 +1,7 @@
 // The collapse toggle must remain clickable after the first click. Presence
 // is not the assertion: the broken rail leaves the button in the DOM and
 // reported visible, with the workspace avatar swallowing the hit test.
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
 

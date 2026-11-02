@@ -7,7 +7,7 @@
 // `I am signed in as a member of the {string} workspace` and `the address
 // carries` come from support/steps/listing.steps.ts. `the page heading is` comes from
 // support/steps/shell.steps.ts.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
 import { expectToolbarAbove, SEARCH_TOOLBAR } from '../../support/listing';
