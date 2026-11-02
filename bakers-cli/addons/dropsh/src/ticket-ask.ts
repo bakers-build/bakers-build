@@ -92,10 +92,14 @@ export async function askQuestion(
     const row = await api.read('bb_ticket--bb_ticket', uuid);
     const project = one(row, 'project_id');
     if (!project) throw new Error('the ticket has no project');
-    const workspace = one(
+    // A project belongs to a group, and the group to the workspace.
+    const group = one(
       await api.read('bb_project--bb_project', project),
-      'workspace_id',
+      'group_id',
     );
+    const workspace = group
+      ? one(await api.read('bb_group--bb_group', group), 'workspace_id')
+      : null;
     if (!workspace) throw new Error('the ticket project has no workspace');
 
     let label = await api.findLabel(QUESTION_LABEL, workspace);

@@ -3,6 +3,7 @@ import { type AskApi, askQuestion } from '../src/ticket-ask.js';
 
 const TICKET = '11111111-1111-4111-8111-111111111111';
 const PROJECT = '22222222-2222-4222-8222-222222222222';
+const GROUP = '99999999-9999-4999-8999-999999999999';
 const WORKSPACE = '33333333-3333-4333-8333-333333333333';
 const OTHER_WORKSPACE = '44444444-4444-4444-8444-444444444444';
 const EXISTING_LABEL = '55555555-5555-4555-8555-555555555555';
@@ -34,6 +35,14 @@ function fakeSite(
   put({
     id: PROJECT,
     type: 'bb_project--bb_project',
+    attributes: {},
+    relationships: {
+      group_id: { data: { type: 'bb_group--bb_group', id: GROUP } },
+    },
+  });
+  put({
+    id: GROUP,
+    type: 'bb_group--bb_group',
     attributes: {},
     relationships: {
       workspace_id: {
