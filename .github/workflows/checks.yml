@@ -112,7 +112,7 @@ jobs:
             sleep 10
           done
 
-          ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 512M
+          ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 1G
     container: php:8.4
   docs_pages:
     runs-on: ubuntu-24.04
@@ -124,6 +124,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
       - name: Existing validation gates
         shell: sh
         run: |-
@@ -192,6 +196,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
       - name: Existing validation gates
         shell: sh
         run: |-
@@ -224,6 +232,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
       - name: Existing validation gates
         shell: sh
         run: |-
@@ -304,12 +316,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
-      CI_PROJECT_DIR: ${{ github.workspace }}
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
       - name: Existing validation gates
         shell: sh
         run: |-
@@ -396,6 +412,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
       - env:
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}

@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
@@ -6,6 +9,51 @@ const read = (path: string) =>
   readFileSync(new URL(`../../../../${path}`, import.meta.url), 'utf8');
 
 describe('GitHub migration checks', () => {
+  it.each([
+    'docs_pages',
+    'conductor',
+    'tui',
+    'web_ui',
+    'release_rehearsal',
+  ])('%s prepares the mounted checkout for container Git and path consumers', (name) => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    const setup = workflow.jobs[name].steps.find(
+      (step: { name?: string }) => step.name === 'Prepare container workspace',
+    );
+    expect(setup).toBeDefined();
+    const dir = mkdtempSync(join(tmpdir(), 'github-container-'));
+    try {
+      execFileSync('git', ['init', '-q', dir]);
+      const env = {
+        ...process.env,
+        GIT_CONFIG_GLOBAL: join(dir, 'gitconfig'),
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_TEST_ASSUME_DIFFERENT_OWNER: '1',
+        GITHUB_ENV: join(dir, 'env'),
+        CI_PROJECT_DIR: '/host/path/not/mounted',
+      };
+      expect(
+        spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: dir, env })
+          .status,
+      ).not.toBe(0);
+      execFileSync('sh', ['-eu', '-c', setup.run], { cwd: dir, env });
+      expect(
+        execFileSync('git', ['rev-parse', '--show-toplevel'], {
+          cwd: dir,
+          env,
+          encoding: 'utf8',
+        }).trim(),
+      ).toBe(dir);
+      expect(readFileSync(env.GITHUB_ENV, 'utf8')).toBe(
+        `CI_PROJECT_DIR=${dir}\n`,
+      );
+      expect(readFileSync(env.GIT_CONFIG_GLOBAL, 'utf8')).not.toContain(
+        'directory = *',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
   it('runs all gates on disposable runners without publication authority', () => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     expect(Object.keys(workflow.on)).toEqual([
@@ -63,7 +111,11 @@ describe('GitHub migration checks', () => {
         .map((step: { run?: string }) => step.run ?? '')
         .join('\n');
       for (const command of old[name].script)
-        expect(commands).toContain(command);
+        expect(commands).toContain(
+          name === 'phpstan'
+            ? command.replace('--memory-limit 512M', '--memory-limit 1G')
+            : command,
+        );
     }
   });
 });
