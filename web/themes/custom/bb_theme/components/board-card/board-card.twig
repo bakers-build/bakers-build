@@ -1,8 +1,8 @@
 {% set status_tone = { running: 'running', attention: 'attention', needs_input: 'attention', wait: 'wait', idle: 'neutral' } %}
 {% set edge_map = {
   'running': 'before:bg-state-running',
-  'attention': 'before:bg-state-attention',
-  'needs_input': 'before:bg-state-attention',
+  'attention': 'before:bg-state-attention-mark',
+  'needs_input': 'before:bg-state-attention-mark',
   'wait': 'before:bg-state-unassigned'
 } %}
 {% set card_classes = ['relative', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'p-2', 'pl-3', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-1', 'before:rounded-l-sm', edge_map[status]|default('before:bg-transparent')] %}
