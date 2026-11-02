@@ -2,9 +2,9 @@
 // pm-relay: the PM bot's local MCP server over stdio and its only writer to
 // bakers.build. Hermes starts it; it makes no LLM call. Each tool is a fixed,
 // multi-step operation, signed in with the service account's API key through
-// ../lib/bakers-client.mjs. bin/setup installs it as $HERMES_HOME/pm-relay/server.mjs
-// next to $HERMES_HOME/lib/; it reads its values from $HERMES_HOME/.env, so no
-// secret is in config.yaml.
+// ../lib/bakers-client.mjs. The bot's image holds it at /opt/pm-bot/relay/; it
+// reads its values from the env file its argument names ($HERMES_HOME/.env), so
+// no secret is in config.yaml.
 
 import { readFileSync, realpathSync } from 'node:fs';
 import { createInterface } from 'node:readline';
@@ -250,8 +250,13 @@ export function readEnv(file) {
 
 // Run as a program (not imported by a test); symlinked paths such as macOS's tmpdir compare by real path.
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
-  // The bot's env file: $HERMES_HOME/.env, one folder up from this server.
-  const env = readEnv(new URL('../.env', import.meta.url));
+  // The bot's env file, named by the argument (config.yaml: $HERMES_HOME/.env). Hermes
+  // starts MCP servers with a filtered environment, so the relay reads the file itself.
+  if (!process.argv[2]) {
+    console.error('usage: node server.mjs <env file>');
+    process.exit(2);
+  }
+  const env = readEnv(process.argv[2]);
   const client = createBakersClient({ url: env.BAKERS_URL, clientId: env.BAKERS_CLIENT_ID, clientSecret: env.BAKERS_CLIENT_SECRET });
   const relay = createRelay({ client, env });
   const write = (message) => message && process.stdout.write(`${JSON.stringify(message)}\n`);

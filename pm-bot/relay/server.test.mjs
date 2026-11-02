@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -166,20 +166,17 @@ test('ticket_read and ticket_search pass through, the search scoped to the proje
   assert.deepEqual(s.stub.calls('bakers_ticket_search'), [{ query: 'Price', project: PROJECT }]);
 });
 
-test('over stdio the installed server reads the env file next to its folder and answers tools/list', async (t) => {
+test('over stdio the server reads the env file its argument names and answers tools/call', async (t) => {
   const s = await site();
   t.after(s.close);
   const home = mkdtempSync(join(tmpdir(), 'pm-relay-'));
-  mkdirSync(join(home, 'pm-relay'));
-  mkdirSync(join(home, 'lib'));
-  cpSync(join(HERE, 'server.mjs'), join(home, 'pm-relay', 'server.mjs'));
-  cpSync(join(HERE, '..', 'lib', 'bakers-client.mjs'), join(home, 'lib', 'bakers-client.mjs'));
   writeFileSync(
     join(home, '.env'),
     [`BAKERS_URL=${s.stub.url}`, 'BAKERS_CLIENT_ID=key', 'BAKERS_CLIENT_SECRET=secret', `PM_BOT_PROJECT=${PROJECT}`, `SLACK_ALLOWED_CHANNELS=${CHANNEL}`].join('\n'),
   );
   s.addTicket({ title: 'Price updater' });
-  const child = spawn(process.execPath, [join(home, 'pm-relay', 'server.mjs')], { env: { PATH: process.env.PATH }, stdio: ['pipe', 'pipe', 'inherit'] });
+  // As the image runs it: from its own folder, with a filtered environment (Hermes').
+  const child = spawn(process.execPath, [join(HERE, 'server.mjs'), join(home, '.env')], { env: { PATH: process.env.PATH }, stdio: ['pipe', 'pipe', 'inherit'] });
   t.after(() => child.kill());
   const answers = new Map();
   const waiters = new Map();

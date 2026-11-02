@@ -1,6 +1,6 @@
 # Your project
 
-`bin/setup` renders this file into `project.md` from the bot's env file.
+The container's entrypoint renders this file into `project.md` from the bot's env file on every start.
 
 | Fact | Value |
 |---|---|

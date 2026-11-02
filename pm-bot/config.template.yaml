@@ -1,6 +1,7 @@
-# Hermes configuration of the PM bot, for the pinned Hermes version in bin/setup.
-# bin/setup renders it into $HERMES_HOME/config.yaml, filling each dollar-brace placeholder from
-# pm-bot/.env. Nothing customer-specific belongs here: it all comes from the env.
+# Hermes configuration of the PM bot, for the Hermes version its image is built on (Dockerfile).
+# The container's entrypoint renders it into $HERMES_HOME/config.yaml on every start, filling
+# each dollar-brace placeholder from the env. Nothing customer-specific belongs here: it all
+# comes from the env.
 # tests/contract/pm-bot.sh asserts the lock-down below.
 
 # The Hermes config schema version this file is written for; without it Hermes
@@ -12,7 +13,7 @@ model:
   default: ${PM_BOT_MODEL}
 
 # Slack over Socket Mode; the bot and app tokens are read from $HERMES_HOME/.env.
-# Users: every user in the allowed channels by default (bin/start exports
+# Users: every user in the allowed channels by default (entrypoint.sh exports
 # GATEWAY_ALLOW_ALL_USERS=true unless SLACK_ALLOWED_USERS is set); with SLACK_ALLOWED_USERS
 # only those. Hermes reads both from the environment, not from this file.
 # In a channel the bot answers only when mentioned; in a thread it answers freely,
@@ -86,14 +87,15 @@ mcp_servers:
         - search_files
         - get_file_info
 
-  # bakers.build: a local server bin/setup installs from pm-bot/relay/. It is the bot's
-  # only way into bakers.build and signs in with the service account's API key from
-  # $HERMES_HOME/.env; its tools are fixed operations without an LLM. No "slack" in the
-  # name: Hermes would read it as a Slack toolset.
+  # bakers.build: the relay baked into the bot's image (pm-bot/relay/). It is the bot's
+  # only way into bakers.build and signs in with the service account's API key from the
+  # env file named by its argument; its tools are fixed operations without an LLM. No
+  # "slack" in the name: Hermes would read it as a Slack toolset.
   pm-relay:
     command: node
     args:
-      - ${HERMES_HOME}/pm-relay/server.mjs
+      - /opt/pm-bot/relay/server.mjs
+      - ${HERMES_HOME}/.env
     tools:
       resources: false
       prompts: false
