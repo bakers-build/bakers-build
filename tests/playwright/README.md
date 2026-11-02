@@ -140,7 +140,7 @@ npm test -- cli-refresh          # run the same affected selection
 # The CI merge gate runs the full suite.
 ```
 
-Before planning, writing, changing or reviewing tests, load `keytec-qa:keytec-testing`.
+Before planning, writing, changing or reviewing tests, load the repository's `testing` skill.
 Select the union of affected scenarios, including unchanged consumers of shared steps/helpers.
 For example, after generation the CLI-refresh path is
 `.features-gen/js/features/sign-in/cli-refresh.feature.spec.js`; pass that path to both

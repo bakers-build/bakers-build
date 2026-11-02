@@ -14,8 +14,8 @@ prerequisite when setup is missing.
 
 First inspect `ddev describe` from the worktree root and check the selected site's readiness.
 A live stack serving the required site/fixtures is a successful no-op; never blindly re-init
-one. If setup is needed, run only the supplied commands, such as `ddev start` or the project's
-`ddev init --provider <p>`; plain `ddev init` means `existing-config`. Use a safe, self-contained
+one. If setup is needed, run only the supplied commands, such as `ddev start`. Provider selection
+and defaults belong to the project's setup instructions. Use a safe, self-contained
 subagent scoped to the worktree and selected commands, without tracker credentials. Await
 completion, then verify the base URL actually responds and the required site/provider is ready
 before returning.
@@ -28,20 +28,22 @@ Return the live base URL and readiness, or explicit failures and their reasons.
 
 ## bb-phase-work
 
-Everything runs in the container: `ddev exec …`. Lint commands are project-owned DDEV wrappers
-(`ddev phpcs`, `ddev phpmd`, `ddev phpstan`).
+Run container commands through `ddev exec …` or the project's configured DDEV commands.
+Read the project's work instructions for domain conventions and tooling.
 
 ## bb-phase-validate
 
-Before running or writing ANY test in DDEV, read [testing](references/testing.md) — it prevents
-the silent sqlite/MariaDB and empty-discovery traps.
+Before running or writing tests, read the testing guidance named by the project's `WORKFLOW.md`.
+Use its selected commands, data providers and test-selection rules. Missing setup is an unresolved
+prerequisite, not permission to invent a test environment.
 
 ## bb-phase-outtake
 
-Before the outtake renders, every manual-review step names its persona from `test_as`. Read
-[login links](references/logins.md), issue one link per persona in the worktree, and add each to
-the handoff with the persona, its role and the environment; a persona that does not exist is
-recorded as **missing**.
+Before the outtake renders, every manual-review step names its persona from `test_as`. Use the
+project's `bb-phase-outtake` login method to check each account and issue fresh access against a
+reachable worktree URL. Return each issued link unchanged with persona, role and environment;
+`anonymous` gets the plain URL and denied personas still get their access. A missing account or
+login method is **missing**: create no account and substitute no administrator or other persona.
 
 ## Boundaries
 

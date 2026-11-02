@@ -1487,7 +1487,7 @@ export class Conductor {
         );
       }
     }
-    const command = chosen.agent.launchCommand(prompt, identity);
+    const command = chosen.agent.launchCommand(prompt, identity, ws.path);
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,

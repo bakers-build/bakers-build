@@ -32,7 +32,7 @@ A run starts sandboxed unless you choose otherwise, because ticket text is writt
 
 | `security` | Launch flags |
 |---|---|
-| `sandbox` | `--sandbox workspace-write -a never -c sandbox_workspace_write.network_access=<network not empty>`, `--add-dir` per `allow_write`, and `-c mcp_servers.<id>.enabled=false` for every server in `$CODEX_HOME/config.toml` (default `~/.codex/config.toml`) not named in `mcp_servers` |
+| `sandbox` | `-a never` with a generated `bakers` permission profile extending `:workspace`; MCP servers not in `mcp_servers` are disabled |
 | `system` | none: your own `~/.codex/config.toml` applies unchanged |
 | `yolo` | `--sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust`, the launch before `security` existed |
 | `custom` | one `-c key=value` per `config` entry (non-string values as JSON), nothing else; an object value fails loading, so write one dotted key per value (`'a.b': 1`) |
@@ -41,10 +41,12 @@ A run starts sandboxed unless you choose otherwise, because ticket text is writt
 
 | Key | Default | Becomes |
 |---|---|---|
-| `allow_write` | `[]` | `--add-dir <path>`; a leading `~/` is expanded |
+| `allow_write` | `[]` | Additional profile workspace roots; a leading `~/` is expanded |
 | `network` | `['*']` | network on when not empty; Codex has no host list, so any non-empty value allows every host |
 | `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled |
 | `trusted_commands`, `deny_read` | `[]` | Codex has no equivalent; a non-empty list fails loading rather than promise a protection Codex does not give |
+
+Needs Codex 0.166.0+. Writable: Git directories, not config or hooks; read-only: `.agents`, `.codex`, `.aws`.
 
 ## Check it works
 

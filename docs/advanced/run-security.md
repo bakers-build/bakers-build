@@ -69,7 +69,7 @@ What it does not block:
 
 What the default blocks:
 
-- Commands that write outside the worktree and `allow_write`.
+- Commands that write outside the worktree, configured `allow_write` paths, temporary directories and the workspace's resolved Git metadata.
 - Approval prompts: `-a never` makes a refused action fail instead of waiting.
 - The MCP servers of your Codex config that `mcp_servers` does not name, whether declared as `[mcp_servers.<id>]` tables, dotted keys or inline tables. A declaration bakers.build cannot read, or a server id that is not a bare key (Codex splits `-c` keys on every dot, so `"my.server"` cannot be addressed), stops the launch with an error instead of leaving the server on.
 
@@ -77,7 +77,7 @@ What it does not block:
 
 - **Reads.** Codex's sandbox does not confine reads, so a command can still read `~/.ssh` and `~/.bakers`. Isolate the machine (below) when that matters.
 - Network access to any host while `network` is not empty.
-- Not confirmed: whether `workspace-write` lets `git commit` write a worktree's shared `.git` directory outside the worktree (add it to `allow_write`, or use `custom`). The hook-trust bypass is not passed, so a project with Codex hooks may stop at Codex's trust prompt.
+- The Codex sandbox profile grants write access to the dispatched workspace's resolved Git directory and shared Git directory. This supports staging/commits in linked worktrees without granting the parent checkout. Their `config`, `config.worktree`, `hooks`, `commondir`, `gitdir`, `modules` and `worktrees` are configured read-only so a run cannot plant code that a later unsandboxed Git command executes; enforcement by Codex, including for paths that do not exist yet, has not been observed on a host. Objects, refs and the index stay writable, so a run can still rewrite branches and history. Other protected workspace paths remain read-only. Permission-profile support is required; see [Codex security](/addons/codex#security) for validation limits. The hook-trust bypass is not passed, so a project with Codex hooks may stop at Codex's trust prompt.
 
 ## Grok in `sandbox` mode
 

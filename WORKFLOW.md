@@ -15,8 +15,9 @@ Apply all matching rows.
 
 | When | Skill |
 |---|---|
-| Planning, writing, changing or reviewing tests (any test tool) | `keytec-qa:keytec-testing` |
-| `web/modules/custom/`, `web/themes/custom/`, `recipes/`, `config/` | `keytec-drupal:keytec-drupal-developer` |
+| Planning, writing, changing or reviewing tests (any test tool) | `testing` |
+| `web/modules/custom/`, `web/themes/custom/`, `recipes/`, `config/` | `drupal-developer` |
+| Drupal core or contrib updates | `drupal-update` |
 | Components and stories under `web/themes/custom/bb_theme/` | `designbook:design-component` |
 | Scenes under `web/themes/custom/bb_theme/` | `designbook:design-screen`, or `designbook:design-shell` for the application shell |
 | Entity mappings under `web/themes/custom/bb_theme/` | `designbook:design-entity` |
@@ -70,7 +71,7 @@ and the merge refuse any other title; retitle the merge request before playing t
 `test_as` personas come from [testing › Test users](docs/bakers/testing.md#test-users): the one
 whose rank and team the change needs (default `north-lead`), plus every persona the criteria expect
 to be denied (e.g. `north-guest`, `no-bakery`). Manual review gives each a one-time login link
-(`@bakers-build/bb-runtime-ddev` › `bb-phase-outtake`); on a `recipe-test` site the *Test personas* buttons on
+using the project's [DDEV login instructions](docs/bakers/ddev-logins.md); on a `recipe-test` site the *Test personas* buttons on
 `/user/login` are the fallback.
 
 ## bb-phase-transition

@@ -2,7 +2,7 @@
 
 Example `bb_ticket_template` definitions. Today: **Drupal update**
 (`bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30`), a `bb_work` ticket of type `chore` whose
-description points to the `keytec-drupal-update` skill. It ships **disabled**; its monthly
+description points to the repository's `drupal-update` skill. It ships **disabled**; its monthly
 schedule is a trigger you add on the template (see *Monthly trigger* below).
 
 The recipe applies `bb_seed` for the `chore` type term. It creates **no template**, because a

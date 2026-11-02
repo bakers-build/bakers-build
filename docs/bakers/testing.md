@@ -1,8 +1,11 @@
 # Testing in the bakers.build repository
 
 Repository-internal test rules: who the test users are, how environments are set up, how tests are
-selected and where they run. `CLAUDE.md` points here; `WORKFLOW.md` names the commands. The
-DDEV-generic PHPUnit traps live in the `bb-runtime-ddev` skill's testing reference as well.
+selected and where they run. `CLAUDE.md` points here; `WORKFLOW.md` names the commands.
+This document owns the project's PHPUnit selection and database rules. The generic DDEV
+adapter reads these project instructions; persona access follows [DDEV logins](ddev-logins.md).
+The [development skill ledger](development-skills.md) records dependencies, public source
+revisions and the repository-owned project skills.
 
 ## Where tests run
 

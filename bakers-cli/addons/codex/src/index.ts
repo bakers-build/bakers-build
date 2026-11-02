@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -160,7 +161,7 @@ export class CodexAgent implements BbAgent {
   }
 
   /** The launch flags a security mode owns (`docs/addons/codex.md`). */
-  private securityFlags(): string[] {
+  private securityFlags(workspacePath: string): string[] {
     const { mode, sandbox, config } = this.security;
     if (mode === 'system') return [];
     if (mode === 'yolo') {
@@ -177,21 +178,52 @@ export class CodexAgent implements BbAgent {
         `${key}=${typeof value === 'string' ? value : JSON.stringify(value)}`,
       ]);
     if (mode === 'custom') return pairs(Object.entries(config ?? {}));
-    const flags = [
-      '--sandbox',
-      'workspace-write',
-      '-a',
-      'never',
-      ...pairs([
-        ['sandbox_workspace_write.network_access', sandbox.network.length > 0],
+    const gitDirs = new Set<string>();
+    for (const option of ['--git-dir', '--git-common-dir']) {
+      const git = spawnSync(
+        'git',
+        ['-C', workspacePath, 'rev-parse', '--path-format=absolute', option],
+        { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } },
+      );
+      if (git.error) throw git.error;
+      if (git.status !== 0) {
+        if (git.stderr.includes('not a git repository')) break;
+        throw new Error(
+          `Cannot resolve Codex workspace Git directories: ${git.stderr.trim()}`,
+        );
+      }
+      gitDirs.add(git.stdout.replace(/\r?\n$/, ''));
+    }
+    const roots = sandbox.allow_write.map(
+      (dir) =>
+        `${JSON.stringify(dir.startsWith('~/') ? join(this.home, dir.slice(2)) : dir)} = true`,
+    );
+    // Filesystem overrides replace inherited entries, so retain workspace protections explicitly.
+    const filesystem = [
+      '":workspace_roots" = { ".git" = "read", ".agents" = "read", ".codex" = "read", ".aws" = "read" }',
+      ...[...gitDirs].flatMap((dir) => [
+        `${JSON.stringify(dir)} = "write"`,
+        // Unsandboxed Git later runs config/hooks code, or follows these redirects to it.
+        ...[
+          'config',
+          'config.worktree',
+          'hooks',
+          'commondir',
+          'gitdir',
+          'modules',
+          'worktrees',
+        ].map((name) => `${JSON.stringify(join(dir, name))} = "read"`),
       ]),
     ];
-    for (const dir of sandbox.allow_write) {
-      flags.push(
-        '--add-dir',
-        dir.startsWith('~/') ? join(this.home, dir.slice(2)) : dir,
-      );
-    }
+    const profile = `{ extends = ":workspace", filesystem = { ${filesystem.join(', ')} }, workspace_roots = { ${roots.join(', ')} }, network = { enabled = ${sandbox.network.length > 0} } }`;
+    const flags = [
+      '-a',
+      'never',
+      '-c',
+      'default_permissions="bakers"',
+      '-c',
+      `permissions.bakers=${profile}`,
+    ];
     for (const id of this.userMcpServers()) {
       if (!Object.hasOwn(sandbox.mcp_servers, id)) {
         flags.push(...pairs([[`mcp_servers.${id}.enabled`, false]]));
@@ -211,10 +243,14 @@ export class CodexAgent implements BbAgent {
     return codexMcpServerIds(toml);
   }
 
-  launchCommand(prompt: string, _run?: AgentRunIdentity): string {
+  launchCommand(
+    prompt: string,
+    _run?: AgentRunIdentity,
+    workspacePath = process.cwd(),
+  ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
-    const parts = ['codex', ...this.securityFlags().map(word)];
+    const parts = ['codex', ...this.securityFlags(workspacePath).map(word)];
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));
     }

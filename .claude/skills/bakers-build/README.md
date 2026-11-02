@@ -85,6 +85,8 @@ review, with observed status, identity, environment and evidence. One outtake su
 `references/provision.md` looks up confirmed project instructions, configured environments and
 existing scripts/fixtures before asking for missing choices. `bb-runtime-ddev` is a selected
 adapter, not a universal lifecycle prerequisite.
+It consumes project-supplied setup, testing and login instructions; domain-specific procedures
+belong in the project's documentation, outside this bundle.
 
 Behavioral evaluations use isolated tool-free workers with synthetic tickets. Run
 `python3 tests/skill-eval/run.py` from the repository; see `tests/skill-eval/README.md` for
