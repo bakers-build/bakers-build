@@ -1,0 +1,69 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
+
+const read = (path: string) =>
+  readFileSync(new URL(`../../../../${path}`, import.meta.url), 'utf8');
+
+describe('GitHub migration checks', () => {
+  it('runs all gates on disposable runners without publication authority', () => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    expect(Object.keys(workflow.on)).toEqual([
+      'pull_request',
+      'workflow_dispatch',
+    ]);
+    expect(workflow.permissions).toEqual({ contents: 'read' });
+    const required = [
+      'phpcs',
+      'phpmd',
+      'phpstan',
+      'bb_skill_version_gate',
+      'docs_pages',
+      'mr_title',
+      'config_sync',
+      'compose_render',
+      'conductor',
+      'tui',
+      'tui_musl',
+      'web_ui',
+      'image_gate',
+      'release_rehearsal',
+    ];
+    expect(workflow.jobs.required.needs.sort()).toEqual(required.sort());
+    for (const name of required) {
+      const job = workflow.jobs[name];
+      expect(job['runs-on']).toBe('ubuntu-24.04');
+      expect(job.permissions).toBeUndefined();
+      expect(job.if).toBeUndefined();
+      expect(job.steps[0].with['persist-credentials']).toBe(false);
+    }
+    const source = read('.github/workflows/checks.yml');
+    expect(source).not.toMatch(
+      /secrets\.|pull_request_target|self-hosted|packages: write|npm publish|docker push/,
+    );
+    expect(workflow.jobs.required.if).toBe('always()');
+    expect(workflow.jobs.required.steps[0].run).toContain('success');
+  });
+  it('retains the existing validation commands', () => {
+    const old = parse(read('.gitlab-ci.yml'));
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    for (const name of [
+      'phpcs',
+      'phpmd',
+      'phpstan',
+      'docs_pages',
+      'config_sync',
+      'compose_render',
+      'conductor',
+      'tui',
+      'tui_musl',
+      'web_ui',
+    ]) {
+      const commands = workflow.jobs[name].steps
+        .map((step: { run?: string }) => step.run ?? '')
+        .join('\n');
+      for (const command of old[name].script)
+        expect(commands).toContain(command);
+    }
+  });
+});

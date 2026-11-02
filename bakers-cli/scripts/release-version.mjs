@@ -56,6 +56,7 @@ const version = `${major}.${minor}.${patch}`;
 let notes;
 if (notesFile) {
   const url = projectUrl();
+  const commitPath = !process.env.CI_PROJECT_URL && process.env.GITHUB_REPOSITORY ? 'commit' : 'commits';
   const heading = tag
     ? `[${version}](${url}/compare/${tag}...v${version})`
     : version;
@@ -69,7 +70,7 @@ if (notesFile) {
     lines.push('', `### ${title}`, '');
     for (const { sha, scope, text } of sections[key])
       lines.push(
-        `* ${scope ? `**${scope}:** ` : ''}${text} ([${sha.slice(0, 7)}](${url}/commits/${sha}))`,
+        `* ${scope ? `**${scope}:** ` : ''}${text} ([${sha.slice(0, 7)}](${url}/${commitPath}/${sha}))`,
       );
   }
   notes = `${lines.join('\n')}\n`;
@@ -81,6 +82,8 @@ else if (notesFile) writeFileSync(notesFile, notes);
 
 function projectUrl() {
   if (process.env.CI_PROJECT_URL) return process.env.CI_PROJECT_URL;
+  if (process.env.GITHUB_REPOSITORY)
+    return `${process.env.GITHUB_SERVER_URL || 'https://github.com'}/${process.env.GITHUB_REPOSITORY}`;
   const remote = git('remote', 'get-url', 'origin');
   return remote
     .replace(/^git@([^:]+):/, 'https://$1/')
