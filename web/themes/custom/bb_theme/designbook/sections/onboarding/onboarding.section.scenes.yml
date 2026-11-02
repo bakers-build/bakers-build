@@ -216,7 +216,7 @@ scenes:
                           props:
                             command: >-
                               codex plugin marketplace add
-                              https://git.key-tec.de/bakers-build/bakers-build.git
+                              https://github.com/bakers-build/bakers-build --ref main
                             label: Copy the Codex marketplace add command
                         - component: bb_theme:setup_command
                           props:
@@ -332,7 +332,7 @@ scenes:
                           props:
                             command: >-
                               codex plugin marketplace add
-                              https://git.key-tec.de/bakers-build/bakers-build.git
+                              https://github.com/bakers-build/bakers-build --ref main
                             label: Copy the Codex marketplace add command
                         - component: bb_theme:setup_command
                           props:
@@ -448,7 +448,7 @@ scenes:
                           props:
                             command: >-
                               codex plugin marketplace add
-                              https://git.key-tec.de/bakers-build/bakers-build.git
+                              https://github.com/bakers-build/bakers-build --ref main
                             label: Copy the Codex marketplace add command
                         - component: bb_theme:setup_command
                           props:

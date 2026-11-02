@@ -165,7 +165,10 @@ export const hooks = (acc) => [...acc, {
 
   it('loads the hooks guide example, whose before_run adds the env key it documents', async () => {
     const guide = readFileSync(
-      new URL('../../../docs/advanced/configuration/hooks.md', import.meta.url),
+      new URL(
+        '../../../docs/configuration/provisioning/hooks.md',
+        import.meta.url,
+      ),
       'utf8',
     );
     const section = guide.split('## Add a listener from an addon')[1] ?? '';

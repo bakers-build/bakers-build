@@ -127,7 +127,7 @@ bakers auth status --config ~/.config/bakers-conductor/conductor.config.js
 When the conductor config loads, the CLI sets `DROPSH_CONFIG` to the loaded
 `conductor.config.js`. Agent sessions call the server's named tools, natively
 through the MCP connector or with `bakers tools <wire name> --data @args.json`
-(see `docs/advanced/cli/tools.md`).
+(see `docs/configuration/clients/tools.md`).
 
 The conductor passes `DROPSH_CONFIG`, `BB_RUN_UUID`, and `BB_TICKET_UUID`
 into every spawned session.

@@ -32,4 +32,4 @@ A dispatched ticket gets a worktree in `<checkout>-worktrees/` on a branch that 
 - The package also loads `WORKFLOW.md` from the worktree as run instructions, when the file exists.
 - Do not combine it with [herdr](/addons/herdr): herdr brings its own workspace, and the last one listed wins with a warning.
 
-Source: [`bakers-cli/addons/workspace-git`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/workspace-git)
+Package source in a checkout: `bakers-cli/addons/workspace-git`.

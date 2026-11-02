@@ -1,8 +1,11 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "bakers",
-  "description": "bakers.build — independently addressable capabilities composed by each project's WORKFLOW.md.",
-  "owner": { "name": "keytec", "url": "https://git.key-tec.de/bakers-build/bakers-build" },
+  "description": "bakers.build \u2014 independently addressable capabilities composed by each project's WORKFLOW.md.",
+  "owner": {
+    "name": "keytec",
+    "url": "https://bakers.build"
+  },
   "plugins": [
     {
       "name": "bakers",

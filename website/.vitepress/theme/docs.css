@@ -58,6 +58,7 @@ html:not(.landing-page) {
   --vp-c-danger-soft: rgba(224, 82, 82, 0.12);
 
   --vp-code-block-bg: #1c1b22;
+  --vp-code-block-color: #ecebf5;
   --vp-code-block-divider-color: #2a2833;
   --vp-code-copy-code-bg: #2a2833;
   --vp-code-copy-code-hover-bg: #3a3745;

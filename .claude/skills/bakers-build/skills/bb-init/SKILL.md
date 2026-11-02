@@ -11,21 +11,20 @@ requirements and commands; this skill owns the conversation. Return project conf
 
 ## Read
 
-Read [Prepare a machine](https://bakers.build/advanced/cli/prepare-machine)
-and [Install the CLI](https://bakers.build/advanced/cli/install).
-In a bakers.build source checkout, use its `docs/advanced/cli/prepare-machine.md` and
-`docs/advanced/cli/install.md` instead, so instructions match the revision being worked on.
+Read [Set up a machine](https://bakers.build/get-started/machine).
+In a bakers.build source checkout, use its `docs/get-started/machine.md` instead,
+so instructions match the revision being worked on.
 If the required documentation cannot be read, report the missing source and stop; do not
 substitute a remembered tool list.
 **Done when the relevant documentation is loaded.**
 
 ## Ask and explain
 
-Establish whether this machine runs tickets and whether it is the developer's computer or a
-remote worker. For a worker, ask which workspace manager and development environment they want,
-then resolve the remaining choices from the documentation. A Coder workspace is a remote worker
-whose path is [Set up a Coder workspace](https://bakers.build/advanced/coder-workspace)
-(`docs/advanced/coder-workspace.md` in a source checkout). Explain the options and their
+Establish whether this host runs tickets, locally or remotely. Resolve agent harnesses, skills
+and host prerequisites from the documentation. Leave client and environment choices to project
+setup; reuse existing projects’ requirements. A Coder workspace is a remote worker
+whose path is [Set up a Coder workspace](https://bakers.build/configuration/machine/coder-workspace)
+(`docs/configuration/machine/coder-workspace.md` in a source checkout). Explain the options and their
 tradeoffs briefly, using the docs; distinguish supported integrations from planned ones.
 
 Reuse supplied answers and explicit project or machine configuration, naming the source.
@@ -55,7 +54,8 @@ On a remote worker, after sign-in: list the person's projects on the control pla
 which to check out. Confirm the
 SSH key is accepted by each `repository.url` host, then clone it at `repository.default_branch`
 into `~/projects/<key>` and invoke `@bakers-build/bb-init-project` with scope `project` there.
-After the person confirms, start `bakers oven start --foreground` in its own herdr tab per checkout.
+After the person confirms, start each conductor through its configured client, following that
+client’s documented startup path; for herdr, use a separate tab per checkout.
 **Done when each chosen project is checked out, configured, and its conductor runs or the person
 declined.**
 

@@ -1574,7 +1574,7 @@ describe('BB-239 AC-1..3 — the ticket detail screen draws exactly one tab bar'
     // chrome's, and what `Tab` moves through is a SECTION of the open ticket — a
     // mode of the route, not a destination. The hint is the only place the
     // operator is told which of the two they get, and the README's key table and
-    // `docs/advanced/cli/ui-keys.md` say `section` too.
+    // `docs/addons/bakers-ui-keys.md` say `section` too.
     // BB-369 D4 — `↑↓:Select`, not `↑↓:Scroll`. Overview has two expandable
     // entries since `Latest summary` joined it, and the hint is derived from
     // `selectable > 1`, so this word IS the report of that. What the case asserts

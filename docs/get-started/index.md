@@ -1,42 +1,22 @@
----
-layout: home
-title: Get started
-hero:
-  name: Get started
-  text: Your first ticket with an AI agent.
-  tagline: Your agent, your machine, your subscriptions. Or nothing to install at all.
-  actions:
-    - theme: brand
-      text: Set up bakers.build
-      link: /get-started/install
-    - theme: alt
-      text: What is bakers.build?
-      link: /get-started/what-is-bakers
-features:
-  - title: 1. Set up bakers.build
-    details: Add the bakers.build plugin to your agent.
-    link: /get-started/install
-    linkText: Start setup
-  - title: 2. Connect your project
-    details: Let your agent bring your repository into bakers.build.
-    link: /get-started/connect-a-project
-    linkText: Connect a repository
-  - title: 3. Run your first ticket
-    details: Describe a small task and watch your agent work it.
-    link: /get-started/first-ticket
-    linkText: Start a ticket
-  - title: 4. Daily work
-    details: Create, follow and accept tickets with your team.
-    link: /daily-work/
-    linkText: Find your routine
-  - title: Work in the browser
-    details: Create tickets in your chat and follow them on the web. Nothing to install.
-    link: /get-started/work-in-the-browser
-    linkText: Start without installing
-  - title: Is bakers.build right for us?
-    details: Stack, agents, where things run, hosted or self-run, roles.
-    link: /get-started/is-bakers-right-for-us
-    linkText: Check the fit
----
+# Getting Started
 
-Prefer the terminal? [Set up with the CLI](/advanced/cli/install).
+Start at the task you need:
+
+1. [Set up a connector](/get-started/connector) to work through chat with your own account.
+2. [Set up a machine](/get-started/machine) with AI: install skills, prepare the host and sign in.
+3. [Set up a project](/get-started/connect-a-project) on a prepared machine; choose its TUI, environment and workflow.
+4. [Run the first ticket](/get-started/first-ticket) and verify its first summary.
+
+## Before you start
+
+You need a bakers.build account and workspace access. Chat users need an OAuth-capable MCP client; developers bring their agent subscription and tools. [Security](/configuration/security) explains permissions, hosting and where data live. Start on one laptop; add [worker servers](/configuration/machine/worker-server) when you need capacity.
+
+## How it works
+
+You describe work in a **ticket**. A **conductor** picks it up, starts an agent in a Git worktree, and records a summary after each **state**. You decide at approval gates.
+
+A **workspace** contains your team and projects; a **project** identifies a repository. **Skills** supply instructions. The repository's `WORKFLOW.md` names project setup, standards and checks; the ticket's **recipe** selects the engineering method. [Workflows](/configuration/workflows) explains the complete process.
+
+## After your first ticket
+
+[Create](/get-started/daily-work/create-a-ticket), [follow](/get-started/daily-work/follow-a-ticket), [accept](/get-started/daily-work/accept-results) or [freeze](/get-started/daily-work/freeze-a-ticket) a ticket. Check [team work](/get-started/daily-work/team-overview), [record time](/get-started/daily-work/record-time), or configure [email notifications](/configuration/connector/notifications).

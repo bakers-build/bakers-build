@@ -28,6 +28,6 @@ bakers config check
 ```
 :::
 
-More: [Connections](/advanced/connections).
+More: [Connections](/configuration/connector/connections).
 
-Source: [`bakers-cli/addons/essentials`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/essentials)
+Package source in a checkout: `bakers-cli/addons/essentials`.

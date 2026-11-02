@@ -28,6 +28,6 @@ bakers config check
 ```
 :::
 
-More: [Conductor config](/advanced/conductor-config), [Connections](/advanced/connections).
+More: [Conductor config](/configuration/project), [Connections](/configuration/connector/connections).
 
-Source: [`bakers-cli/addons/remote-drupal`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/remote-drupal)
+Package source in a checkout: `bakers-cli/addons/remote-drupal`.

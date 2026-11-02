@@ -27,6 +27,6 @@ bakers ui
 - It runs on the Bun runtime that the package installs; `bakers ui` restarts itself under Bun. `BB_UI_NO_BUN=1` uses Node 26 or later with `--experimental-ffi` instead.
 - `@bakers-build/ui` is the `bakers ui` command; `@bakers-build/addon-bakers-ui` is this renderer.
 
-More: [Terminal UI](/advanced/cli/terminal-ui), [bakers ui](/advanced/cli/ui), [UI keys](/advanced/cli/ui-keys).
+More: [Usage](/addons/bakers-ui/usage), [command reference](/addons/bakers-ui/reference), [tickets and runs](/addons/bakers-ui/tickets), [UI keys](/addons/bakers-ui-keys).
 
-Source: [`bakers-cli/addons/bakers-ui`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/bakers-ui)
+Package source in a checkout: `bakers-cli/addons/bakers-ui`.

@@ -2,6 +2,12 @@
 
 Apply only for `project` or `all` initialization, before writing configuration that names a project.
 
+Read [Set up a project](https://bakers.build/get-started/connect-a-project), using
+`docs/get-started/connect-a-project.md` in a bakers.build source checkout. Resolve the client’s
+executor/workspace pair separately from the application environment; preserve explicit repository
+choices. Explain proposed setup/readiness/cleanup commands, then obtain the operator’s exact hook
+choices below. **Done when both choices and their owning files are understood.**
+
 1. Search the control plane for the requested project name. Reuse a hit and report its UUID;
    otherwise invoke `@bakers-build/bb-create-project`. Use the returned entity's own name for `--project`:
    `bakers config init` records a name without verifying it.

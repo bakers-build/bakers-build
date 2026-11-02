@@ -49,4 +49,4 @@ A malformed setting is never ignored: `bakers ports` names the file and the key,
 "Share my worktree's dev server with a ports `services` entry, then run `bakers ports list`."
 :::
 
-Source: [`bakers-cli/addons/ports`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/ports)
+Package source in a checkout: `bakers-cli/addons/ports`.

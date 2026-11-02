@@ -66,7 +66,7 @@ export function resolveVersion(raw) {
   return version;
 }
 
-const REPO_URL = 'git+https://git.key-tec.de/bakers-build/bakers-build.git';
+const REPO_URL = 'git+https://github.com/bakers-build/bakers-build.git';
 
 /** Rewrite `workspace:^`-style deps to the publish `version`; pass others through. */
 function rewriteWorkspaceRefs(deps, version) {
@@ -186,7 +186,7 @@ export function stagePackage({ dir, readme = 'gen' }, version) {
       `# ${pkg.name}\n\n${pkg.description ?? ''}\n\n` +
         'Part of the bakers.build CLI. Install the meta package `@bakers-build/bakers` ' +
         'to get the `bakers` CLI with all addons. Source: ' +
-        'https://git.key-tec.de/bakers-build/bakers-build (bakers-cli/).\n',
+        'https://github.com/bakers-build/bakers-build (bakers-cli/).\n',
     );
   }
   // A package's own LICENSE wins; the root text is the shared keytec MIT license.

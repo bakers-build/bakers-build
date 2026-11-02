@@ -9,7 +9,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 EXCLUDE=(
-  ':!docs/advanced/cli/switch-to-bakers.md'
+  ':!docs/configuration/clients/switch-to-bakers.md'
   ':!tests/skill-eval/package-lock.json'
 )
 if git grep -niE 'g[a]ia' -- . "${EXCLUDE[@]}"; then

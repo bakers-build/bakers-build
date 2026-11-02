@@ -64,7 +64,7 @@ property left unstated is decided somewhere else entirely.
 
 `main` is the exception: it is never squashed. Only a release branch reaches it, by merge commit,
 so the `release` job tags the merge's second parent, the frozen `develop` commit, which `develop`
-contains ([deployment](../advanced/cli/deployment.md)).
+contains ([deployment](../addons/deployment/reference.md)).
 
 ## Ticket identifiers by surface
 

@@ -4,6 +4,14 @@
 
 For anyone whose machine should run tickets with pi.
 
+## AI first
+
+Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+
+## Setup
+
+Follow the [vendor installation guide](https://pi.dev/docs/latest/quickstart), then authenticate `pi` as the conductor user and check it resolves on `PATH`.
+
 ## Enable it
 
 Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there. Keep the other fields there.
@@ -42,6 +50,5 @@ bakers agents
 - The addon starts `pi`; it does not install it or sign it in. The binary must be on `PATH`.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 
-More: [Choose agents and models](/advanced/configuration/agents-and-models), [Machines](/advanced/machines#harnesses).
+More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
 
-Source: [`bakers-cli/addons/pi`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/pi)

@@ -90,7 +90,7 @@ final class BbOnboardingWizardForm extends FormBase {
    *
    * Must match the shipped default in bb_core.settings.yml.
    */
-  private const string DEFAULT_PLUGIN_SOURCE_BASE = 'https://git.key-tec.de/bakers-build/';
+  private const string DEFAULT_PLUGIN_SOURCE_BASE = 'https://github.com/bakers-build/';
 
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,
@@ -476,7 +476,7 @@ final class BbOnboardingWizardForm extends FormBase {
     ];
     $i = 0;
     foreach ([
-      'codex plugin marketplace add ' . $marketplace => (string) $this->t('Copy the Codex marketplace add command'),
+      'codex plugin marketplace add ' . $marketplace . ' --ref main' => (string) $this->t('Copy the Codex marketplace add command'),
       'codex plugin add bakers@bakers' => (string) $this->t('Copy the Codex plugin install command'),
     ] as $command => $label) {
       $codex['cmd_' . $i] = $this->commandElement($command, $label);
@@ -518,8 +518,8 @@ final class BbOnboardingWizardForm extends FormBase {
     ];
     $this->attachDocsLinks($form, [
       (string) $this->t('bakers.build documentation') => '/get-started/',
-      (string) $this->t('Install bakers.build') => '/get-started/install',
-      (string) $this->t('Skill wizard') => '/get-started/install#skill-wizard-%E2%80%94-recommended',
+      (string) $this->t('Install bakers.build') => '/get-started/machine',
+      (string) $this->t('Skill wizard') => '/get-started/machine#skill-wizard-%E2%80%94-recommended',
     ]);
   }
 
