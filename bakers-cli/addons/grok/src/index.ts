@@ -7,7 +7,15 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
+  type ResolvedSecurity,
+  type RunEnvPolicy,
   resolveAgentCliOptions,
+  resolveSecurityOptions,
+  type SandboxHost,
+  type SandboxOptions,
+  type SandboxPreflight,
+  type SecurityOptions,
+  systemSandboxHost,
   validateOptionalString,
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
@@ -17,14 +25,130 @@ export { parseGrokTranscript } from './footprint.js';
 
 export type GrokReasoningEffort = 'high' | 'medium' | 'low';
 
-export interface GrokAgentOptions {
+export interface GrokAgentOptions extends SecurityOptions {
   model?: string;
   reasoningEffort?: GrokReasoningEffort | string;
   effort?: string;
   args?: string[];
 }
 
-const GROK_RESERVED = ['--permission-mode', '--session-id'] as const;
+const GROK_RESERVED = ['--permission-mode', '--session-id', '-s'] as const;
+
+/** Flags sandbox mode owns on top of `GROK_RESERVED` (`docs/addons/grok.md`). */
+const GROK_SANDBOX_RESERVED = [
+  ...GROK_RESERVED,
+  '--sandbox',
+  '--always-approve',
+  '--allow',
+  '--allowedTools',
+  '--allowed-tools',
+  '--add-dir',
+  // the workspace profile makes the cwd writable; agent definitions may carry their own permissions
+  '--cwd',
+  '-w',
+  '--worktree',
+  '--agents',
+  '--agent',
+] as const;
+
+/**
+ * Grok splits short-flag clusters (`-cw` is `-c -w`), which the shared matcher
+ * only checks at the token's start. Only `-m`/`-p` end the scan: their value
+ * follows. Fail-closed: an optional-value flag such as `-r` does not end it.
+ */
+function rejectClusteredReserved(
+  args: readonly string[],
+  reserved: readonly string[],
+): void {
+  const letters = reserved.filter((f) => /^-[^-]$/.test(f)).map((f) => f[1]);
+  for (const token of args) {
+    if (!/^-[^-]/.test(token)) continue;
+    for (const letter of token.slice(1)) {
+      if (letters.includes(letter)) {
+        throw new Error(`args contains reserved flag -${letter}`);
+      }
+      if (letter === 'm' || letter === 'p') break;
+    }
+  }
+}
+
+/** Grok flags whose value is the next token (`grok --help`, grok 1.0.70). */
+const GROK_VALUE_FLAGS = new Set([
+  '--model',
+  '--single',
+  '--resume',
+  '--debug-file',
+  '--deny',
+  '--disallowedTools',
+  '--disallowed-tools',
+  '--json-schema',
+  '--leader-socket',
+  '--max-turns',
+  '--output-format',
+  '--prompt-file',
+  '--prompt-json',
+  '--reasoning-effort',
+  '--effort',
+  '--rules',
+  '--system-prompt-override',
+  '--system-prompt',
+  '--tools',
+  '--worktree-ref',
+  '--ref',
+]);
+
+/**
+ * After the prompt, Grok parses a bare token as a subcommand (`wrap`, `agent`),
+ * which replaces the sandboxed session. Allowlist: only a value of a known
+ * value flag may be bare. A short cluster qualifies only when its last letter
+ * is the first that takes a value (`-cm`): in `-pm` the `m` is `-p`'s value.
+ * `-c`, `-h`, `-v` are Grok's only short flags without a value.
+ */
+function rejectBareArgs(args: readonly string[]): void {
+  args.forEach((token, i) => {
+    if (token.startsWith('-')) return;
+    const prev = args[i - 1] ?? '';
+    if (GROK_VALUE_FLAGS.has(prev) || /^-[chv]*[mpr]$/.test(prev)) return;
+    throw new Error(
+      `args contains bare token ${token}, which Grok would run as a subcommand outside the sandboxed session`,
+    );
+  });
+}
+
+/** Only what Grok's built-in `workspace` profile enforces. */
+const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
+  trusted_commands: [],
+  deny_read: [],
+  allow_write: [],
+  network: ['*'],
+  mcp_servers: {},
+};
+
+/** Throws on a sandbox key Grok cannot enforce from the command line. */
+function rejectUnsupportedSandbox(sandbox: Required<SandboxOptions>): void {
+  if (sandbox.network.length !== 1 || sandbox.network[0] !== '*') {
+    throw new Error(
+      "Grok cannot restrict sandbox.network: its workspace profile allows all hosts; leave network at ['*']",
+    );
+  }
+  if (Object.keys(sandbox.mcp_servers).length > 0) {
+    throw new Error(
+      'Grok cannot allow only named sandbox.mcp_servers: sandbox mode passes a deny rule for every MCP tool; leave mcp_servers empty',
+    );
+  }
+  if (sandbox.trusted_commands.length > 0) {
+    throw new Error(
+      "Grok has no command exception narrowed to executable, arguments and directory for sandbox.trusted_commands; use security: 'system' with your own sandbox.toml profile",
+    );
+  }
+  for (const key of ['deny_read', 'allow_write'] as const) {
+    if (sandbox[key].length > 0) {
+      throw new Error(
+        `Grok needs a sandbox.toml profile for sandbox.${key}, which bakers.build does not write; use security: 'system' with args: ['--sandbox', '<profile>']`,
+      );
+    }
+  }
+}
 
 const GROK_KNOWN: readonly KnownOptionSpec[] = [
   { kind: 'model', flags: ['--model', '-m'] },
@@ -60,12 +184,26 @@ export class GrokAgent implements BbAgent {
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
+  private readonly security: ResolvedSecurity;
+  readonly runEnvPolicy: RunEnvPolicy;
 
   constructor(
     options: GrokAgentOptions = {},
     private readonly home: string = homedir(),
   ) {
-    const cli = resolveAgentCliOptions(options, GROK_RESERVED, GROK_KNOWN);
+    this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
+    this.runEnvPolicy = this.security.runEnvPolicy;
+    if (this.security.mode === 'custom') {
+      throw new Error(
+        "Grok has no config flags for security: 'custom'; use security: 'system' with args: ['--sandbox', '<profile>'] for your own sandbox.toml profile",
+      );
+    }
+    rejectUnsupportedSandbox(this.security.sandbox);
+    const reserved =
+      this.security.mode === 'sandbox' ? GROK_SANDBOX_RESERVED : GROK_RESERVED;
+    const cli = resolveAgentCliOptions(options, reserved, GROK_KNOWN);
+    rejectClusteredReserved(cli.args, reserved);
+    if (this.security.mode === 'sandbox') rejectBareArgs(cli.args);
     this.args = cli.args;
     this.model = cli.model;
     this.effort =
@@ -83,7 +221,7 @@ export class GrokAgent implements BbAgent {
       // dispatched into instead of holding a session there.
       parts.push(shellQuote(prompt));
     }
-    parts.push('--permission-mode', 'bypassPermissions');
+    parts.push(...this.securityFlags());
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('-m', shellQuote(this.model));
     }
@@ -101,6 +239,53 @@ export class GrokAgent implements BbAgent {
       parts.push(...this.args.map(shellQuote));
     }
     return parts.join(' ');
+  }
+
+  /** The launch flags a security mode owns (`docs/addons/grok.md`). */
+  private securityFlags(): string[] {
+    if (this.security.mode === 'system') return [];
+    if (this.security.mode === 'yolo') {
+      return ['--permission-mode', 'bypassPermissions'];
+    }
+    return [
+      '--sandbox',
+      'workspace',
+      '--permission-mode',
+      'acceptEdits',
+      '--allow',
+      shellQuote('Bash(*)'),
+      '--deny',
+      shellQuote('MCPTool(*)'),
+    ];
+  }
+
+  /** Grok's sandbox is Landlock on Linux and Seatbelt on macOS. */
+  async sandboxPreflight(
+    host: SandboxHost = systemSandboxHost(),
+  ): Promise<SandboxPreflight> {
+    if (this.security.mode !== 'sandbox' || host.platform === 'darwin') {
+      return { ok: true };
+    }
+    const fallback = "set security: 'system' or 'yolo' for Grok";
+    if (host.platform !== 'linux') {
+      return {
+        ok: false,
+        cause: `Grok's sandbox does not support ${host.platform}`,
+        fix: fallback,
+      };
+    }
+    const probe = await host.run('grep', [
+      '-qw',
+      'landlock',
+      '/sys/kernel/security/lsm',
+    ]);
+    return probe.ok
+      ? { ok: true }
+      : {
+          ok: false,
+          cause: 'Landlock is not active in this kernel',
+          fix: `boot a kernel with landlock in its lsm= list, or ${fallback}`,
+        };
   }
 
   /**

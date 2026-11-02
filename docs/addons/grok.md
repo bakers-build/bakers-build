@@ -21,7 +21,34 @@ addons: [{ use: '@bakers-build/addon-grok', with: { model: 'grok-4.5' } }],
 | `model` | string | Grok CLI default | Passed as `--model`. |
 | `effort` | string | none | Passed as `--reasoning-effort`. |
 | `reasoningEffort` | string | none | Older name for `effort`; `effort` wins. |
+| `security` | `'sandbox'` \| `'system'` \| `'yolo'` | `'sandbox'` | How strictly a run starts; see [Security](#security). `'custom'` fails loading. |
+| `sandbox` | object | see below | Only with `security: 'sandbox'`. Only the defaults are accepted. |
+| `env_deny` | string[] | the [default list](/advanced/run-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. A `-m`/`--model` here wins over `model`. |
+
+## Security
+
+What each mode blocks and misses: [Run security](/advanced/run-security#grok-in-sandbox-mode).
+
+| `security` | Launch flags |
+|---|---|
+| `sandbox` | `--sandbox workspace --permission-mode acceptEdits --allow 'Bash(*)' --deny 'MCPTool(*)'` |
+| `system` | none |
+| `yolo` | `--permission-mode bypassPermissions` |
+| `custom` | fails loading; use `system` with `args: ['--sandbox', '<profile>']` |
+
+Custom Grok profiles live in `sandbox.toml`, which bakers.build does not write, so `sandbox` keys keep their defaults; any other value fails loading, naming the key:
+
+| Key | Default | Why fixed |
+|---|---|---|
+| `network` | `['*']` | `workspace` allows every host |
+| `mcp_servers` | `{}` | every MCP tool is denied |
+| `trusted_commands` | `[]` | no narrow command exception |
+| `deny_read`, `allow_write` | `[]` | needs a `sandbox.toml` profile |
+
+`--permission-mode` and `--session-id` (`-s`) are reserved; in `sandbox` mode also `--sandbox`, `--always-approve`, `--allow`, `--allowedTools`, `--allowed-tools`, `--add-dir`, `--cwd`, `--worktree` (`-w`), `--agents` and `--agent`. A reserved flag in `args` fails loading, also inside a short-flag cluster such as `-cw`. In `sandbox` mode a bare token is allowed only as the value of a Grok flag that takes one, such as `-m`, `-r` or `--rules` (a cluster only after `-c`, `-h`, `-v`, as in `-cm`), because Grok would run any other bare token, such as `wrap`, as a subcommand.
+
+`bakers oven check` needs Landlock on Linux and nothing on macOS; other platforms fail.
 
 ## Check it works
 
@@ -35,7 +62,7 @@ bakers agents
 
 ## Good to know
 
-- Grok runs with `--permission-mode bypassPermissions`. `--permission-mode` and `--session-id` are reserved; putting them in `args` fails loading.
+- Before `security` existed, Grok always ran with `--permission-mode bypassPermissions`. Set `security: 'yolo'` to keep that launch.
 - The addon starts `grok`; it does not install it or sign it in. The binary must be on `PATH`.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 
