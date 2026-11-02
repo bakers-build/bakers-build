@@ -1563,7 +1563,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -1898,7 +1898,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -2795,7 +2795,7 @@ scenes:
                               - review
                               - done
                             current: working
-                            label: Workflow state flow
+                            label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -3493,7 +3493,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -5421,7 +5421,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -5916,7 +5916,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser

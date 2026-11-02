@@ -228,6 +228,17 @@ async function clickTrigger(page: Page, name: string): Promise<void> {
  * differently (`island:dialog` says "Close", `bb_theme:dialog` says "Close
  * dialog") and the hook is the contract both honour.
  */
+/**
+ * Initial focus: the first enabled field, never the close control, so a
+ * keyboard user types at once.
+ */
+Then('focus is in the first field of the {string} create dialog', async ({ page }, name: string) => {
+  const first = openHull(page, surface(name))
+    .locator('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)')
+    .first();
+  await expect(first, 'Focus did not land in the dialog\'s first field').toBeFocused();
+});
+
 Then('the {string} create dialog offers a close control', async ({ page }, name: string) => {
   const target = surface(name);
   await expect(

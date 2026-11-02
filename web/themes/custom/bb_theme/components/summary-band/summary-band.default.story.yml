@@ -11,7 +11,7 @@ slots:
           - review
           - done
         current: working
-        label: Workflow state flow
+        label: Workflow
   summary:
     - type: component
       component: bb_theme:event

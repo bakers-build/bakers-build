@@ -510,7 +510,8 @@ Then('every ticket row reads its identifier and {string} beneath the title', asy
   );
   for (const row of rows) {
     expect(row.identifier, "A row has no identifier").toMatch(/^\S+$/);
-    expect(row.created).toMatch(new RegExp(`^${word} .+ (ago|hence)$`));
+    // BbDate: relative under seven days, else "15 Jun, 13:30" or "15 Jun 2025".
+    expect(row.created).toMatch(new RegExp(`^${word} (.+ ago|in .+|\\d{1,2} [A-Z][a-z]{2}(, \\d{2}:\\d{2}| \\d{4}))$`));
     expect(row.metaTop, 'The meta line does not sit beneath the title').toBeGreaterThanOrEqual(row.headlineBottom - 1);
   }
 });

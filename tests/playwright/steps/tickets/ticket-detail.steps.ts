@@ -585,3 +585,46 @@ Then('no run history is shown', async ({ page }) => {
   await expect(runHistoryHeading(page)).toHaveCount(0);
   await expect(page.locator(`${MAIN_REGION} [data-cell="state"]`)).toHaveCount(0);
 });
+
+// ---------------------------------------------------------------------------
+// Semantics: the state flow, the handoff times and the report source.
+// ---------------------------------------------------------------------------
+
+Then(
+  'the workflow list marks the state of ticket {string} as its one current step',
+  async ({ page }, identifier: string) => {
+    const state = php(
+      'print (($e = current(\\Drupal::entityTypeManager()->getStorage("bb_ticket")' +
+        `->loadByProperties(["identifier" => "${safe(identifier)}"]))) ? $e->get("state")->value : "");`,
+    );
+    const list = page.getByRole('list', { name: 'Workflow', exact: true });
+    const current = list.locator('li[aria-current="step"]');
+    await expect(current, 'the workflow list marks no single current step').toHaveCount(1);
+    await expect(current).toContainText(state);
+  },
+);
+
+Then('every handoff time is a time element with its exact date on hover', async ({ page }) => {
+  const times = page.locator(`${MAIN_REGION} details.collapsible time`);
+  const count = await times.count();
+  expect(count, 'the handoff stream shows no time').toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    await expect(times.nth(i)).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T/);
+    await expect(times.nth(i)).toHaveAttribute('title', /\d{4}, \d{2}:\d{2}/);
+  }
+});
+
+Then('every report row names its source before its counts', async ({ page }) => {
+  const rows = page.locator('.summary-band__links .link-report-row');
+  const count = await rows.count();
+  expect(count, 'the band shows no report row').toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    const source = rows.nth(i).locator('.link-report-row__title');
+    await expect(source, 'a report row names no source').not.toHaveText('');
+    const leads = await source.evaluate(
+      (title, counts) => Boolean(counts && title.compareDocumentPosition(counts) & Node.DOCUMENT_POSITION_FOLLOWING),
+      await rows.nth(i).locator('.link-report-row__counts').elementHandle(),
+    );
+    expect(leads, 'the counts come before the source').toBe(true);
+  }
+});

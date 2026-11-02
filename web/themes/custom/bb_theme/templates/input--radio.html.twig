@@ -4,4 +4,4 @@
  * Keep radio inputs at their native rendering — see input--checkbox.html.twig.
  */
 #}
-<input{{ attributes }} />{{ children }}
+<input{{ attributes.addClass(['focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring']) }} />{{ children }}

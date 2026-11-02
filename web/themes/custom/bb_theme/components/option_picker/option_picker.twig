@@ -161,7 +161,7 @@
 {% endif %}
 {% set pill_classes = ['inline-flex',
   'items-center', 'gap-1.5', 'h-control', 'px-2.5', 'rounded-full', 'text-left',
-  'whitespace-nowrap', 'cursor-pointer', 'border', 'focus:outline-none', 'focus:border-primary'] %}
+  'whitespace-nowrap', 'cursor-pointer', 'border', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'] %}
 {% set pill_weight = prominent
   ? ['bg-primary/10', 'border-primary/45', 'text-primary',
      'text-meta', 'font-bold', 'hover:bg-primary/15']
@@ -176,7 +176,7 @@
   ? ['inline-flex', 'items-center', 'gap-1.5', 'h-6', 'px-1.5',
      'bg-app', 'border', 'border-control-border', 'rounded-xs', 'text-body',
      'text-text', 'text-left', 'cursor-pointer', 'hover:bg-surface-3',
-     'focus:outline-none', 'focus:border-primary']
+     'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring']
   : pill_classes|merge(pill_weight) %}
 <div{{ (attributes ?: create_attribute()).addClass(['relative', use_chips ? 'inline-flex flex-wrap items-center gap-1.5' : (is_facet ? 'block w-full' : 'inline-block')]) }}
   data-option-picker

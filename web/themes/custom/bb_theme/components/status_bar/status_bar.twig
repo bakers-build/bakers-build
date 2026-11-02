@@ -6,6 +6,7 @@
     'flex', 'min-w-0', 'overflow-hidden', 'items-center', 'gap-2', 'h-control', 'px-3',
     'bg-app', 'border-t', 'border-border', 'text-meta', 'text-text-light',
   ]) }}
+  role="status"
   data-status-bar>
   {%- if label %}<span class="min-w-0 truncate">{{ label }}</span>{% endif %}
   <span class="flex items-center justify-start flex-1 min-w-0 overflow-hidden">{% block refresh %}{% if refresh %}{{ refresh }}{% endif %}{% endblock %}</span>
