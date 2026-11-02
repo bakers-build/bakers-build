@@ -3,9 +3,9 @@
 > **This repo no longer commits `bakers.config.js`.** It pointed every checkout at the
 > develop control plane (dev2); bakers's own tickets now live on prod
 > (`https://app.bakers.build`), so `bakers` falls back to each developer's
-> `~/.bakers/bakers.config.js`. The conductor identity comes from
-> `~/.config/conductor/conductor.config.local.js` (`export default { conductor_id: '<id>' }`)
-> unless a gitignored `.bakers/conductor.config.local.js` overrides it. The notes below
+> `~/.bakers/bakers.config.js`. The conductor identity is composed from
+> `~/.bakers/machine.config.js` as `<user_id>-<machine_id>-bakers` unless a gitignored
+> `.bakers/conductor.config.local.js` (`export default { conductor_id: '<id>' }`) overrides it. The notes below
 > still apply to any project-level `bakers.config.js`.
 
 Reference for `bakers.config.js`, the bakers.build **connection**

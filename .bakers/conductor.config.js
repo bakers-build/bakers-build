@@ -34,15 +34,26 @@
 // (BB-139). `bakers upgrade` rewrites a pre-BB-224 config that still names the
 // deleted barrel or a `@bakers-build/plugin-*` package.
 
-async function loadLocal() {
-  try { return (await import('./conductor.config.local.js')).default ?? {}; } catch {}
+async function loadMachine() {
   try {
-    return (await import(`${process.env.HOME}/.config/conductor/conductor.config.local.js`)).default ?? {};
+    return (await import(`${process.env.BB_HOME ?? `${process.env.HOME}/.bakers`}/machine.config.js`)).default ?? {};
   } catch {}
   return {};
 }
 
+async function loadLocal() {
+  try { return (await import('./conductor.config.local.js')).default ?? {}; } catch {}
+  return {};
+}
+
+const machine = await loadMachine();
 const local = await loadLocal();
+// Same composition as the generated project config (config-templates.ts), so
+// `bakers init` alone yields a conductor_id; the local file still overrides it.
+const composedConductorId =
+  machine.user_id && machine.machine_id
+    ? `${machine.user_id}-${machine.machine_id}-bakers`
+    : undefined;
 
 export default {
   bakers: { project: 'bakers' },
@@ -58,7 +69,7 @@ export default {
   // either, because the upgrader only relocates a KNOWN LITERAL and every value
   // in this file is a `local.*` expression — it reports
   // `unknown_value [max_parallel]` and refuses the whole plan.
-  conductor_id: local.conductor_id ?? local.machine_id,
+  conductor_id: local.conductor_id ?? local.machine_id ?? composedConductorId,
   // Lifecycle hooks are executor-owned + best-effort (BB-84): the executor
   // invokes each (after_create/before_run/after_done), logs loudly + continues
   // on failure, and never wedges a run — so they live at the config TOP LEVEL,

@@ -88,7 +88,6 @@ export {
 } from './cli/load-bakers-config.js';
 export {
   type AgentRoutes,
-  legacyMachineContextPath,
   type MachineContext,
   machineContextPath,
   readMachineContext,

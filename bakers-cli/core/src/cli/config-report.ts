@@ -5,8 +5,6 @@ export type ConfigLayer = Exclude<ConfigScope, 'all'>;
 export type ConfigOperation = 'init' | 'upgrade' | 'check';
 export type ConfigFileKind =
   | 'machine'
-  | 'home-local'
-  | 'legacy-machine'
   | 'connection'
   | 'project-connection'
   | 'conductor'

@@ -3,7 +3,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  legacyMachineContextPath,
   machineContextPath,
   readMachineContext,
   resolveMachineContextPath,
@@ -25,14 +24,9 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
-  it('canonical path is ~/.bakers/machine.config.js; legacy under ~/.config/conductor', () => {
+  it('canonical path is ~/.bakers/machine.config.js', () => {
     expect(
       machineContextPath().endsWith(join('.bakers', 'machine.config.js')),
-    ).toBe(true);
-    expect(
-      legacyMachineContextPath().endsWith(
-        join('.config', 'conductor', 'conductor.config.machine.js'),
-      ),
     ).toBe(true);
   });
 
@@ -128,7 +122,7 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
     expect(await readMachineContext(join(tmp, 'nope.js'))).toEqual({});
   });
   it('never reads a historical credential file when the canonical machine is absent', async () => {
-    const legacy = legacyMachineContextPath();
+    const legacy = join(tmp, '.config/conductor/conductor.config.machine.js');
     mkdirSync(join(tmp, '.config/conductor'), { recursive: true });
     writeFileSync(
       legacy,

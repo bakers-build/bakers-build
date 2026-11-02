@@ -1590,18 +1590,21 @@ export default {`,
   expect(migrated).not.toContain('file://');
   expect(migrated).not.toContain(w.home);
 });
-it('migrates the legacy machine path into current ownership with no runtime shim', () => {
+// ~/.config/conductor belongs to other tools; an upgrade must neither merge nor delete it.
+it('never reads or removes a conductor machine file under ~/.config/conductor', () => {
   const w = world();
   const legacy = join(w.home, '.config/conductor/conductor.config.machine.js');
   mkdirSync(dirname(legacy), { recursive: true });
-  writeFileSync(legacy, readFileSync(w.machine, 'utf8'));
-  rmSync(w.machine);
+  const original =
+    "export default {machine_id:'foreign-host',user_id:'foreign'};";
+  writeFileSync(legacy, original);
   const plan = service.planConfig(w);
+  expect(plan.writes.some((write) => write.path === legacy)).toBe(false);
   expect(service.applyConfigPlan(plan).result).toBe('ok');
-  expect(existsSync(w.machine)).toBe(true);
-  expect(existsSync(legacy)).toBe(false);
+  expect(readFileSync(legacy, 'utf8')).toBe(original);
+  expect(readFileSync(w.machine, 'utf8')).not.toContain('foreign');
 });
-it('refuses a computed home-local credential with its exact source', () => {
+it('refuses a retired home-local override beside the global connection', () => {
   const w = world();
   writeFileSync(
     w.machine,
@@ -1623,11 +1626,11 @@ it('refuses a computed home-local credential with its exact source', () => {
   expect(
     plan.report.findings.some(
       (f) =>
-        f.code === 'unknown_value' &&
+        f.code === 'superseded_file' &&
         f.path === join(w.home, '.bakers/conductor.config.local.js'),
     ),
   ).toBe(true);
-  service.applyConfigPlan(plan);
+  expect(service.applyConfigPlan(plan).result).toBe('blocked');
   expect(readFileSync(w.connection, 'utf8')).toBe(before);
 });
 

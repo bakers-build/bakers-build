@@ -83,12 +83,7 @@ describe('shipped configuration histories', () => {
     manifest.filter((row) => row.family !== 'current'),
   )('$family refuses computed policy and leaves project credentials untouched', (row) => {
     const w = world();
-    const legacyMachine = join(
-      w.home,
-      '.config/conductor/conductor.config.machine.js',
-    );
-    mkdirSync(join(w.home, '.config/conductor'), { recursive: true });
-    writeFileSync(legacyMachine, fixture(row.files.machine, w.home));
+    writeFileSync(w.machine, fixture(row.files.machine, w.home));
     writeFileSync(
       join(w.cwd, '.bakers/conductor.config.js'),
       fixture(row.files.engine, w.home).replaceAll(
@@ -103,7 +98,7 @@ describe('shipped configuration histories', () => {
       ? readFileSync(projectConnection, 'utf8')
       : null;
     const enginePath = join(w.cwd, '.bakers/conductor.config.js');
-    const machineBefore = readFileSync(legacyMachine, 'utf8');
+    const machineBefore = readFileSync(w.machine, 'utf8');
     const engineBefore = readFileSync(enginePath, 'utf8');
     const plan = planConfig(w);
     expect(plan.report.findings).toContainEqual(
@@ -113,7 +108,7 @@ describe('shipped configuration histories', () => {
       }),
     );
     expect(applyConfigPlan(plan).result).toBe('blocked');
-    expect(readFileSync(legacyMachine, 'utf8')).toBe(machineBefore);
+    expect(readFileSync(w.machine, 'utf8')).toBe(machineBefore);
     expect(readFileSync(enginePath, 'utf8')).toBe(engineBefore);
     expect(existsSync(projectConnection)).toBe(
       projectConnectionBefore !== null,
@@ -173,60 +168,31 @@ describe('shipped configuration histories', () => {
     );
     expect(planConfig({ ...w, inputs, project: 'history' }).writes).toEqual([]);
   });
-  // Ignoring a proven home-local override would silently switch server/account.
-  it('preserves effective literal home-local values and fingerprints their source', async () => {
+  // The historical connection imports this retired sibling; migrating past it
+  // unseen would silently switch server or account.
+  it('refuses migration while a retired home-local override exists', () => {
     const w = world();
     writeFileSync(w.machine, fixture('connection-v3-machine.js.txt', w.home));
     writeFileSync(
       w.connection,
       fixture('connection-v3-connection.js.txt', w.home),
     );
+    const before = readFileSync(w.connection, 'utf8');
     writeFileSync(
       w.local,
-      `export default {base_url:'https://override.test',workspace_id:'${workspace}',oauth:{client_id:'override-client',client_secret:'override-secret'},jsonapi_prefix:'/api',custom:42};`,
+      `export default {base_url:'https://override.test',oauth:{client_id:'override-client',client_secret:'override-secret'}};`,
     );
     const plan = planConfig(w);
-    expect(plan.fingerprints.get(w.local)).toMatch(/^sha256:/);
-    expect(plan.report.findings.filter((f) => f.severity === 'error')).toEqual(
-      [],
+    expect(plan.report.findings).toContainEqual(
+      expect.objectContaining({
+        code: 'superseded_file',
+        severity: 'error',
+        path: w.local,
+      }),
     );
-    expect(applyConfigPlan(plan).result).toBe('ok');
-    const config = (await import(pathToFileURL(w.connection).href)).default;
-    expect(config.site).toEqual({
-      base_url: 'https://override.test',
-      jsonapi_prefix: '/api',
-    });
-    expect(
-      config.plugins.find(
-        (p: { plugin: string }) => p.plugin === '@dropsh/plugin-oauth2',
-      ).with,
-    ).toMatchObject({
-      client_id: 'override-client',
-      client_secret: 'override-secret',
-      token_url: 'https://override.test/oauth/token',
-    });
-    expect(readFileSync(w.machine, 'utf8')).not.toContain('historical-secret');
     expect(JSON.stringify(plan.report)).not.toContain('override-secret');
-    expect(planConfig(w).writes).toEqual([]);
-  });
-  it('blocks an opaque home-local OAuth object before replacing effective credentials', () => {
-    const w = world();
-    writeFileSync(w.machine, fixture('connection-v3-machine.js.txt', w.home));
-    writeFileSync(
-      w.connection,
-      fixture('connection-v3-connection.js.txt', w.home),
-    );
-    writeFileSync(w.local, 'export default {oauth: readCredentials()};');
-    const plan = planConfig(w);
-    expect(
-      plan.report.findings.some(
-        (f) =>
-          f.code === 'unknown_value' &&
-          f.path === w.local &&
-          f.key === 'oauth.client_secret',
-      ),
-    ).toBe(true);
     expect(applyConfigPlan(plan).result).toBe('blocked');
+    expect(readFileSync(w.connection, 'utf8')).toBe(before);
     expect(existsSync(`${w.machine}.bakers.bak`)).toBe(false);
   });
   it('preserves an opaque project object while repairing explicitly empty engines', () => {
@@ -239,25 +205,5 @@ describe('shipped configuration histories', () => {
     const plan = planConfig({ ...w, project: 'history' });
     applyConfigPlan(plan);
     expect(readFileSync(engine, 'utf8')).toContain('...custom');
-  });
-  it('refuses a changed home-local source before any write', () => {
-    const w = world();
-    writeFileSync(w.machine, fixture('connection-v3-machine.js.txt', w.home));
-    writeFileSync(
-      w.connection,
-      fixture('connection-v3-connection.js.txt', w.home),
-    );
-    writeFileSync(w.local, `export default {workspace_id:'${workspace}'};`);
-    const plan = planConfig(w);
-    writeFileSync(
-      w.local,
-      `export default {workspace_id:'22222222-2222-4222-8222-222222222222'};`,
-    );
-    expect(
-      applyConfigPlan(plan).findings.some(
-        (f) => f.code === 'changed_since_planning' && f.path === w.local,
-      ),
-    ).toBe(true);
-    expect(existsSync(`${w.machine}.bakers.bak`)).toBe(false);
   });
 });

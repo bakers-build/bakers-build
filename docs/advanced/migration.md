@@ -20,7 +20,7 @@ Every `bakers config` command takes `--scope`:
 | `project` | The checkout's `.bakers/` files: conductor configs and the local selector | 1 (conductor configs) |
 | `all` | All of them | - |
 
-A move between owners, for example `max_parallel` from a conductor config to the machine file, needs `--scope all`, because one scope may not write another. `--path <directory>` selects the project root; it does not replace the home directory. `--machine-path` and `--config` override the machine and connection files, and `--connection <id>` picks a named connection. A legacy machine file at `~/.config/conductor/conductor.config.machine.js` is read as migration input.
+A move between owners, for example `max_parallel` from a conductor config to the machine file, needs `--scope all`, because one scope may not write another. `--path <directory>` selects the project root; it does not replace the home directory. `--machine-path` and `--config` override the machine and connection files, and `--connection <id>` picks a named connection. Nothing under `~/.config/conductor` is read; a machine that only has a file there runs `bakers init` once. A leftover `~/.bakers/conductor.config.local.js` blocks every scope until its values move to the machine, connection or project local config and the file is deleted.
 
 ## Preview, apply, check
 
