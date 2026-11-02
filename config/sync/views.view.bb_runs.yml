@@ -158,20 +158,9 @@ display:
             alter_text: false
           element_label_colon: true
           click_sort_column: value
-          type: timestamp
+          type: bb_time
           settings:
-            date_format: medium
-            custom_date_format: ''
-            timezone: ''
-            tooltip:
-              date_format: ''
-              custom_date_format: ''
-            time_diff:
-              enabled: false
-              future_format: '@interval hence'
-              past_format: '@interval ago'
-              granularity: 2
-              refresh: 60
+            date_only: false
           group_column: value
           group_rows: true
           multi_type: separator
@@ -269,20 +258,9 @@ display:
             alter_text: false
           element_label_colon: true
           click_sort_column: value
-          type: timestamp
+          type: bb_time
           settings:
-            date_format: medium
-            custom_date_format: ''
-            timezone: ''
-            tooltip:
-              date_format: ''
-              custom_date_format: ''
-            time_diff:
-              enabled: false
-              future_format: '@interval hence'
-              past_format: '@interval ago'
-              granularity: 2
-              refresh: 60
+            date_only: false
           group_column: value
           group_rows: true
           multi_type: separator

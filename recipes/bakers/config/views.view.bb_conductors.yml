@@ -145,11 +145,9 @@ display:
           empty: nie
           hide_alter_empty: false
           click_sort_column: value
-          type: timestamp_ago
+          type: bb_time
           settings:
-            future_format: 'in @interval'
-            past_format: 'vor @interval'
-            granularity: 1
+            date_only: false
           group_column: value
           group_rows: true
           multi_type: separator

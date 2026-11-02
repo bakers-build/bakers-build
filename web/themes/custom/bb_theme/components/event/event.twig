@@ -41,7 +41,7 @@
       {% if role %}{{ include('bb_theme:badge', { label: role, tone: 'neutral' }, with_context = false) }}{% endif %}
       {% if typed %}<span class="text-eyebrow font-semibold uppercase tracking-[0.04em] {{ accent_map[tag]|default('text-text-light') }}">{{ tag }}</span>{% endif %}
       <span class="flex-1"></span>
-      {% if timestamp %}<time class="text-caption text-text-faint font-mono tabular-nums whitespace-nowrap">{{ timestamp }}</time>{% endif %}
+      {% if timestamp %}{{ include('bb_theme:time', { label: timestamp, datetime: datetime|default(''), title: timestamp_title|default(''), attributes: create_attribute({ class: ['text-meta', 'text-text-faint'] }) }, with_context = false) }}{% endif %}
     </div>
     {#- THE PROSE TREATMENT IS NOT HERE ANY MORE. It used to be a fifteen-
         declaration blob on this div, which made this the only place in the theme

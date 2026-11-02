@@ -244,6 +244,7 @@ props:
                     - masked
                     - action
                     - rendered
+                    - time
                     - status
                     - input
                   title: Cell kind
@@ -674,6 +675,14 @@ props:
                   type: integer
                   title: Total base seconds
                   description: A live total `text` cell's stored seconds.
+                datetime:
+                  type: string
+                  title: Machine-readable stamp
+                  description: A `time` cell's ISO 8601 stamp; its `label` is the displayed text.
+                title:
+                  type: string
+                  title: Full date and time
+                  description: A `time` cell's absolute stamp, shown on hover.
                 markup:
                   type: string
                   title: Rendered markup

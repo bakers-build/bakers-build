@@ -215,7 +215,7 @@ final class TicketsViewTableTest extends KernelTestBase {
     self::assertStringContainsString('font-mono font-semibold text-mono', $meta, 'The identifier leads the meta line.');
     self::assertStringContainsString('href="' . $ticket->toUrl()->toString() . '"', $meta);
     self::assertStringContainsString('Created', $meta);
-    self::assertMatchesRegularExpression('/\d+ \w+ (ago|hence)/', $meta);
+    self::assertMatchesRegularExpression('/\d+ \w+ ago|in \d+ \w+/', $meta);
     self::assertMatchesRegularExpression('/>by<.*' . preg_quote((string) $this->reader->getDisplayName(), '/') . '/s', $meta, 'The creator is named after "by".');
     self::assertStringContainsString('bg-state-lease-tint', $meta);
     self::assertStringContainsString('cw-framework', $meta);

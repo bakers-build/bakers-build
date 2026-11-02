@@ -60,9 +60,14 @@ final class BbCommentTeaserSource extends SourcePluginBase implements ContainerF
       'author_initials' => (string) $comment->get('author_initials')->value,
       'author_color' => (string) $comment->get('author_color')->value,
       'tag' => $type !== 'comment' ? $type : '',
-      'timestamp' => $this->date->normal($comment->getCreatedTime()),
       'body' => $comment->get('body')->processed,
     ], static fn (mixed $value): bool => $value !== '' && $value !== NULL);
+    $time = $this->date->time($comment->getCreatedTime());
+    $props += [
+      'timestamp' => $time['#props']['label'],
+      'datetime' => $time['#props']['datetime'],
+      'timestamp_title' => $time['#props']['title'],
+    ];
     $build = [
       'event' => [
         '#type' => 'component',
@@ -87,6 +92,7 @@ final class BbCommentTeaserSource extends SourcePluginBase implements ContainerF
     CacheableMetadata::createFromRenderArray($build)
       ->addCacheableDependency($comment)
       ->addCacheContexts(['user'])
+      ->merge(CacheableMetadata::createFromRenderArray($time))
       ->applyTo($build);
     return $build;
   }

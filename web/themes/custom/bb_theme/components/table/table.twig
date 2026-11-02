@@ -406,6 +406,9 @@
       <span id="{{ input_id }}--error" class="text-caption text-state-attention-ink" role="alert">{{ c.error }}</span>
       {%- endif -%}
     </span>
+  {%- elseif c.kind == 'time' -%}
+    {#- A point in time, already formatted by BbDate::cell(). #}
+    {{ include('bb_theme:time', { label: c.label, datetime: c.datetime, title: c.title|default('') }, with_context = false) }}
   {%- elseif c.kind == 'rendered' -%}
     {#- MARKUP ANOTHER LAYER ALREADY PRODUCED, and a ninth KIND rather than a
         second slot. The ticket list is bound by core's own `table` views style

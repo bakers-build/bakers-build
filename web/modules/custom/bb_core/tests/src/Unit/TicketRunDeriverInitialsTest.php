@@ -11,6 +11,7 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Derive\TicketRunDeriver;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\Tests\UnitTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -47,7 +48,7 @@ final class TicketRunDeriverInitialsTest extends UnitTestCase {
     $deriver = new TicketRunDeriver(
       $this->createMock(EntityTypeManagerInterface::class),
       $this->createMock(TimeInterface::class),
-      $this->createMock(DateFormatterInterface::class),
+      new BbDate($this->createMock(DateFormatterInterface::class), $this->createMock(TimeInterface::class)),
     );
 
     $this->assertSame($expected, $deriver->assignee($ticket)['initials']);

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
@@ -15,6 +14,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
 use Drupal\bb_core\Ticket\ProjectOverviewTickets;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 use Drupal\ui_patterns\Attribute\Source;
@@ -46,7 +46,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
   /**
    * Formats "Created … ago".
    */
-  protected DateFormatterInterface $dateFormatter;
+  protected BbDate $date;
 
   /**
    * {@inheritdoc}
@@ -54,7 +54,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->overview = $container->get(ProjectOverviewTickets::class);
-    $instance->dateFormatter = $container->get('date.formatter');
+    $instance->date = $container->get(BbDate::class);
     return $instance;
   }
 
@@ -323,16 +323,14 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
   }
 
   /**
-   * Relative created time for the Created caption.
+   * The created time label for the Created caption.
    */
   private function createdAgo(BbTicketInterface $ticket): string {
     $timestamp = (int) $ticket->getCreatedTime();
     if ($timestamp <= 0) {
       return '';
     }
-    return (string) $this->t('@interval ago', [
-      '@interval' => $this->dateFormatter->formatTimeDiffSince($timestamp, ['granularity' => 1]),
-    ]);
+    return $this->date->label($timestamp);
   }
 
   /**

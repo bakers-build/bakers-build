@@ -6,6 +6,7 @@ namespace Drupal\bb_connector\ListBuilder;
 
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\bb_core\Time\BbDate;
 
 /**
  * Lists bb_connector config entities.
@@ -33,7 +34,7 @@ final class BbConnectorListBuilder extends ConfigEntityListBuilder {
       'label' => $entity->label(),
       'plugin' => $entity->getPluginId(),
       'base_url' => (string) $entity->getSetting('base_url'),
-      'import_interval' => $entity->getImportInterval() > 0 ? $entity->getImportInterval() . 's' : $this->t('disabled'),
+      'import_interval' => $entity->getImportInterval() > 0 ? \Drupal::service(BbDate::class)->duration($entity->getImportInterval()) : $this->t('disabled'),
     ] + parent::buildRow($entity);
   }
 

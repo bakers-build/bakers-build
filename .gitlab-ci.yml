@@ -98,6 +98,10 @@ before_script:
   - .gitlab-ci.yml
 .changes_theme: &changes_theme
   - web/themes/custom/**/*
+  # time-format.sh reads module PHP and the shipped view/display config.
+  - web/modules/custom/**/*
+  - config/sync/**/*
+  - recipes/bakers/config/**/*
   - tests/contract/**/*
   - tests/playwright/**/*
   - .gitlab-ci.yml
@@ -577,6 +581,7 @@ web_ui:
     - bash tests/contract/layout-components.sh
     - bash tests/contract/data-display-components.sh
     - bash tests/contract/token-discipline.sh
+    - bash tests/contract/time-format.sh
     - bash tests/contract/run-detail-overlay.sh
     - bash tests/contract/island-links.sh
     - node tests/contract/appearance.mjs

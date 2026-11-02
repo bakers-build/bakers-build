@@ -41,7 +41,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |
-| Web UI implementation, or `tests/contract/**` | `bash tests/contract/token-discipline.sh && bash tests/contract/run-detail-overlay.sh && bash tests/contract/island-links.sh && node tests/contract/appearance.mjs && node tests/contract/icon-storybook.mjs && node tests/contract/period-range.mjs` |
+| Web UI implementation, or `tests/contract/**` | `bash tests/contract/token-discipline.sh && bash tests/contract/time-format.sh && bash tests/contract/run-detail-overlay.sh && bash tests/contract/island-links.sh && node tests/contract/appearance.mjs && node tests/contract/icon-storybook.mjs && node tests/contract/period-range.mjs` |
 | Playwright configuration, fixtures, steps or helpers | `cd tests/playwright && npm run typecheck && npm run test:unit` |
 | Adding or removing component directories | `bash tests/contract/data-display-components.sh` |
 

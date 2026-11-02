@@ -82,6 +82,13 @@ props:
     timestamp:
       type: string
       title: Posted-at label
+      description: The readable label from `BbDate::time()`.
+    datetime:
+      type: string
+      title: Posted-at ISO 8601 stamp
+    timestamp_title:
+      type: string
+      title: Posted-at full date and time, shown on hover
     body:
       type: string
       title: Rendered body markup; absent when the structured lead is used

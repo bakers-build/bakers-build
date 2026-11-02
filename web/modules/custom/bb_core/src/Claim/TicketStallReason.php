@@ -11,6 +11,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Conductor\ConductorOwnerAccess;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\bb_core\Workflow\TypeWorkflows;
 
 /**
@@ -104,13 +105,7 @@ final class TicketStallReason {
     if (\Drupal::time()->getRequestTime() - $frozenAt < 2) {
       return (string) new TranslatableMarkup('just now');
     }
-    /** @var \Drupal\Core\Datetime\DateFormatterInterface $formatter */
-    $formatter = \Drupal::service('date.formatter');
-    return (string) new TranslatableMarkup('@interval ago', [
-      '@interval' => $formatter->formatTimeDiffSince($frozenAt, [
-        'granularity' => 1,
-      ]),
-    ]);
+    return \Drupal::service(BbDate::class)->label($frozenAt);
   }
 
   /**

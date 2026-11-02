@@ -13,7 +13,7 @@
  * exactly `event`, so this generator names exactly that one. No second
  * address may be written down here, not even in prose.
  *
- * Timestamp uses Drupal date format `normal` (BbDate::NORMAL). The shipped
+ * The timestamp renders through the `bb_time` formatter (BbDate). The shipped
  * YAML is the saved form: canvas with the event in main and
  * `bb_comment_context` in the inspector. See README.md.
  */

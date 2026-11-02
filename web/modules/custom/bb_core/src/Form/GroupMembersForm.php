@@ -82,7 +82,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $container->get('plugin.manager.island'),
       $container->get('bb_core.membership_writer'),
       new MemberItemBuilder(
-        $container->get('date.formatter'),
+        $container->get('bb_core.date'),
         $translation,
         $container->get('module_handler'),
       ),
