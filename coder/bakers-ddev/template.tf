@@ -110,26 +110,20 @@ variable "frp_version" {
   default     = "0.68.0"
 }
 
-variable "pm_bot_source_url" {
-  description = "HTTPS URL of the bakers.build repository the PM bot's code (pm-bot/) is fetched from; no credentials in it"
-  type        = string
-  default     = "https://git.key-tec.de/bakers-build/bakers-build.git"
-}
-
-variable "pm_bot_ref" {
-  description = "Full commit hash of bakers.build whose pm-bot/ every workspace runs; it also pins Hermes (pm-bot/bin/setup)"
-  type        = string
-  default     = "93a76c871761d1d8030989e10345456a249ae7fc"
-}
-
-variable "pm_bot_source_user" {
-  description = "User name of the deploy token for pm_bot_source_url"
+variable "pm_bot_image" {
+  description = "The PM bot's image, tag and digest (<registry>/<path>:<tag>@sha256:<digest>; README › PM bot). Empty: no workspace runs the bot"
   type        = string
   default     = ""
 }
 
-variable "pm_bot_source_token" {
-  description = "Deploy token (read_repository) for pm_bot_source_url; empty for a public repository"
+variable "pm_bot_registry_user" {
+  description = "User name of the deploy token for pm_bot_image's registry"
+  type        = string
+  default     = ""
+}
+
+variable "pm_bot_registry_token" {
+  description = "Deploy token (read_registry) for pm_bot_image's registry; empty for a public registry"
   type        = string
   default     = ""
   sensitive   = true
@@ -380,10 +374,9 @@ resource "coder_agent" "main" {
     CLOUDFLARED_VERSION     = var.cloudflared_version
     FRP_VERSION             = var.frp_version
     # The PM bot (scripts/pm-bot.sh). Never in coder_metadata: secrets stay off the workspace page.
-    PM_BOT_SOURCE_URL             = var.pm_bot_source_url
-    PM_BOT_REF                    = var.pm_bot_ref
-    PM_BOT_SOURCE_USER            = var.pm_bot_source_user
-    PM_BOT_SOURCE_TOKEN           = var.pm_bot_source_token
+    PM_BOT_IMAGE                  = var.pm_bot_image
+    PM_BOT_REGISTRY_USER          = var.pm_bot_registry_user
+    PM_BOT_REGISTRY_TOKEN         = var.pm_bot_registry_token
     PM_BOT_SLACK_BOT_TOKEN        = data.coder_parameter.pm_bot_slack_bot_token.value
     PM_BOT_SLACK_APP_TOKEN        = data.coder_parameter.pm_bot_slack_app_token.value
     PM_BOT_SLACK_ALLOWED_CHANNELS = data.coder_parameter.pm_bot_slack_allowed_channels.value
@@ -419,18 +412,13 @@ resource "docker_image" "workspace" {
   keep_locally = true
 }
 
-# Named by workspace ID, so renaming the workspace keeps the volumes.
+# Named by workspace ID, so renaming the workspace keeps both volumes.
 resource "docker_volume" "home" {
   name = "coder-${data.coder_workspace.me.id}-home"
 }
 
 resource "docker_volume" "docker" {
   name = "coder-${data.coder_workspace.me.id}-docker"
-}
-
-# The PM bot's home: its Hermes installation, sessions and the clone of the project's repository.
-resource "docker_volume" "pmbot" {
-  name = "coder-${data.coder_workspace.me.id}-pmbot"
 }
 
 resource "docker_container" "workspace" {
@@ -469,17 +457,17 @@ resource "docker_container" "workspace" {
     target = "/var/lib/docker"
   }
 
-  mounts {
-    type   = "volume"
-    source = docker_volume.pmbot.name
-    target = "/home/pmbot"
-  }
-
-  # Root-owned, so neither coder's tools nor the bot can change it.
+  # The PM bot's start script and compose file. Root-owned, so coder's tools cannot change
+  # them; the bot's data lives in the home volume (README › PM bot).
   upload {
     content    = file("${path.module}/scripts/pm-bot.sh")
     file       = "/usr/local/bin/pm-bot"
     executable = true
+  }
+
+  upload {
+    content = file("${path.module}/pm-bot.compose.yaml")
+    file    = "/usr/local/share/pm-bot/compose.yaml"
   }
 
   env = ["CODER_AGENT_TOKEN=${coder_agent.main.token}"]

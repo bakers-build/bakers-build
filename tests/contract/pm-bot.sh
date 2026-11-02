@@ -13,8 +13,8 @@
 #   - there is no direct bakers.build MCP server and no OAuth client: pm-relay,
 #     signed in with an API key, is the bot's only way into bakers.build
 #   - the clone reader is a pinned filesystem server with read tools only
-#   - pm-relay is the installed local server with exactly its four tools, and
-#     the relay lists those four
+#   - pm-relay is the image's relay, reading the bot's env file, with exactly
+#     its four tools, and the relay lists those four
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller, relay and client call no LLM
@@ -23,6 +23,11 @@
 #   - the relay passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
 #   - the env file is ignored and no committed file holds a token
+#   - the bot has no install script (pm-bot/bin/, lib/running.sh)
+#   - the template's compose service runs the image with exactly two mounts
+#     (data read-write, clone read-only), no Docker socket, restart
+#     unless-stopped, every capability dropped but the ones Hermes' bootstrap
+#     needs, and no-new-privileges
 # Needs python3 with PyYAML.
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -36,7 +41,7 @@ pass() { echo "ok: $*"; }
 BOT=pm-bot
 TEMPLATE="$BOT/config.template.yaml"
 for f in "$TEMPLATE" "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/.env.example" \
-         "$BOT/README.md" "$BOT/bin/setup" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
+         "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
          "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/relay/server.mjs" "$BOT/lib/bakers-client.mjs" \
          "$BOT/slack-app-manifest.yaml"; do
   [ -f "$f" ] || fail "$f is missing"
@@ -87,10 +92,11 @@ read_only = {"read_text_file", "list_directory", "directory_tree", "search_files
 rtools = set((reader.get("tools") or {}).get("include") or [])
 need(rtools and rtools <= read_only, f"clone-reader includes {sorted(rtools - read_only)}")
 
-# The bot's only way into bakers.build: the local server bin/setup installs.
+# The bot's only way into bakers.build: the relay baked into the image, reading the env file.
 relay = servers.get("pm-relay") or {}
 need(relay.get("command") == "node", "pm-relay is not started with node")
-need([str(a) for a in relay.get("args") or []] == ["${HERMES_HOME}/pm-relay/server.mjs"], "pm-relay is not the installed ${HERMES_HOME}/pm-relay/server.mjs")
+need([str(a) for a in relay.get("args") or []] == ["/opt/pm-bot/relay/server.mjs", "${HERMES_HOME}/.env"],
+     "pm-relay is not the image's /opt/pm-bot/relay/server.mjs with ${HERMES_HOME}/.env")
 need(sorted((relay.get("tools") or {}).get("include") or []) == ["answer_question", "create_ticket", "ticket_read", "ticket_search"],
      "pm-relay does not include exactly create_ticket, answer_question, ticket_read and ticket_search")
 
@@ -145,8 +151,8 @@ fi
 pass "no question entity, OAuth client, expert hand-in or chat_thread field"
 
 # Every user in the allowed channels by default; SLACK_ALLOWED_USERS restricts.
-grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=true' "$BOT/bin/start" \
-  || fail "bin/start does not serve every user when SLACK_ALLOWED_USERS is empty"
+grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=true' "$BOT/entrypoint.sh" \
+  || fail "entrypoint.sh does not serve every user when SLACK_ALLOWED_USERS is empty"
 pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 
 # The poller and the relay relay; they never call a model.
@@ -180,5 +186,50 @@ if git grep --untracked -nIE 'xox[abp]-[0-9]{6,}-|xapp-[0-9]-[0-9A-Z]{6,}|sk-ant
   fail "a committed file under $BOT holds a token"
 fi
 pass "no token committed under $BOT"
+
+# The bot runs from its image; nothing installs it.
+if [ -e "$BOT/bin" ] || [ -e "$BOT/lib/running.sh" ] || [ -n "$(git ls-files "$BOT/bin" "$BOT/lib/running.sh")" ]; then
+  fail "$BOT/bin/ or $BOT/lib/running.sh is back"
+fi
+pass "no install script for the bot"
+
+COMPOSE=coder/bakers-ddev/pm-bot.compose.yaml
+[ -f "$COMPOSE" ] || fail "$COMPOSE is missing"
+python3 - "$COMPOSE" <<'PY' || fail "$COMPOSE breaks the container's lock-down (see above)"
+import sys, yaml
+
+with open(sys.argv[1]) as fh:
+    text = fh.read()
+compose = yaml.safe_load(text)
+
+errors = []
+def need(cond, msg):
+    if not cond:
+        errors.append(msg)
+
+services = compose.get("services") or {}
+need(list(services) == ["pm-bot"], f"services are {sorted(services)}, not one pm-bot")
+svc = services.get("pm-bot") or {}
+need(svc.get("image") == "${PM_BOT_IMAGE}", "the image is not ${PM_BOT_IMAGE}")
+need(svc.get("restart") == "unless-stopped", "restart is not unless-stopped")
+need(svc.get("env_file") in ("${PM_BOT_DATA}/.env", ["${PM_BOT_DATA}/.env"]), "env_file is not ${PM_BOT_DATA}/.env")
+vols = [str(v) for v in svc.get("volumes") or []]
+need(vols == ["${PM_BOT_DATA}:/opt/data", "${PM_BOT_CLONE}:/opt/clone:ro"],
+     f"volumes are {vols}, not the data directory and the read-only clone")
+need("docker.sock" not in text, "the Docker socket appears in the compose file")
+for key in ("privileged", "pid", "ipc", "network_mode", "devices", "volumes_from", "user", "cgroup_parent"):
+    need(key not in svc, f"{key} is set")
+need(svc.get("cap_drop") == ["ALL"], "cap_drop is not [ALL]")
+need(sorted(svc.get("cap_add") or []) == ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"],
+     f"cap_add is {svc.get('cap_add')}, not CHOWN, DAC_OVERRIDE, SETGID, SETUID")
+need("no-new-privileges:true" in (svc.get("security_opt") or []), "no-new-privileges is not set")
+env = svc.get("environment") or {}
+need(env.get("HERMES_UID") == "${PM_BOT_UID}" and env.get("HERMES_GID") == "${PM_BOT_GID}",
+     "HERMES_UID and HERMES_GID are not the workspace user's")
+for e in errors:
+    print("FAIL:", e, file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+pass "compose: two mounts (clone read-only), no Docker socket, unless-stopped, capabilities dropped"
 
 echo "OK: pm-bot lock-down and configurability contract holds"
