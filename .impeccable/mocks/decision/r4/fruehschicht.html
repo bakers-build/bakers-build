@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;background:#0B0D10;color:#F4F3EF;font-family:"Inter Tight",sans-serif;overflow:hidden;position:relative}
+.m{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.02em;color:#8A8F96}
+nav{display:flex;align-items:center;gap:40px;padding:26px 56px;border-bottom:1px solid #1E2227}
+nav b{font-weight:600;font-size:16px;letter-spacing:-.01em;margin-right:auto}
+nav a{color:#B9BDC2;font-size:14px;text-decoration:none}
+h1{position:absolute;left:56px;top:110px;width:820px;font-size:76px;line-height:.98;font-weight:500;letter-spacing:-.035em}
+h1 em{font-style:normal;background:linear-gradient(90deg,#F6B48A,#F2A7B8 55%,#A9D8E6);-webkit-background-clip:text;color:transparent}
+.lede{position:absolute;left:56px;top:300px;width:560px;font-size:19px;line-height:1.5;color:#B9BDC2}
+.demo{position:absolute;right:56px;top:110px;width:360px;border:1px solid #2A2F35;padding:22px}
+.demo h4{font-size:15px;font-weight:600;margin-bottom:4px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.slots span{border:1px solid #2A2F35;padding:10px;font-family:"JetBrains Mono";font-size:13px;color:#F4F3EF}
+.slots span.sel{border-color:#F4F3EF;background:#F4F3EF;color:#0B0D10}
+.btn{display:block;text-align:center;background:#F4F3EF;color:#0B0D10;padding:13px;font-weight:600;font-size:15px}
+.axis{position:absolute;left:56px;right:56px;bottom:150px;height:240px}
+.runs{position:absolute;left:0;right:0;bottom:0;height:200px;display:flex;align-items:flex-end;gap:3px}
+.runs i{flex:1;background:#3A3F46}
+.runs i.h{background:#F4F3EF}
+.now{position:absolute;bottom:-4px;width:1px;height:250px;background:#F4F3EF;left:71%}
+.now span{position:absolute;top:-22px;left:8px;white-space:nowrap;color:#F4F3EF}
+.horizon{position:absolute;left:0;right:0;bottom:0;height:150px;border-top:1px solid #2A2F35;overflow:hidden}
+.horizon::before{content:"";position:absolute;left:calc(71% - 520px);top:-2px;width:1040px;height:260px;border-radius:50%;
+background:radial-gradient(closest-side,rgba(246,180,138,.55),rgba(242,167,184,.28) 45%,rgba(169,216,230,.12) 70%,transparent);filter:blur(10px)}
+.ticks{position:absolute;left:56px;right:56px;bottom:116px;display:flex;justify-content:space-between}
+.legend{position:absolute;left:56px;right:56px;bottom:40px;display:flex;gap:56px;align-items:baseline}
+.legend div{display:flex;flex-direction:column;gap:6px}.legend .n{font-family:"JetBrains Mono";font-size:28px;color:#F4F3EF}
+</style></head><body>
+<nav><b>Bakers Build</b><a>Produkt</a><a>Terminal</a><a>Docs</a></nav>
+<h1>Die Frühschicht macht die Maschine. <em>Entscheiden</em> tust du.</h1>
+<p class="lede">Agenten arbeiten Tickets auf euren eigenen Rechnern ab. Jeder Lauf ist ein Strich auf dieser Linie: wer, wann, mit welchem Ergebnis.</p>
+<div class="demo"><h4>Demo vereinbaren</h4><div class="m">30 Minuten, mit eurem Repo</div>
+<div class="slots"><span>Do 09:00</span><span class="sel">Do 14:30</span><span>Fr 10:00</span><span>Mo 11:00</span></div><span class="btn">Termin anfragen</span></div>
+<div class="axis"><div class="runs" id="r"></div><div class="now m"><span>jetzt · 06:12 · BB-151 coding · agent cw-framework</span></div></div>
+<div class="horizon" style="left:56px;right:56px;position:absolute"></div>
+<div class="ticks m"><span>04:00</span><span>04:30</span><span>05:00</span><span>05:30</span><span>06:00</span><span>06:30</span><span>07:00</span></div>
+<div class="legend m"><div>LÄUFE HEUTE<span class="n">38</span></div><div>WARTEN AUF MENSCHEN<span class="n">4</span></div><div>ERLEDIGT<span class="n">11</span></div><div>TOKENS<span class="n">1 204 330</span></div></div>
+<script>const r=document.getElementById('r');let s=5;for(let i=0;i<180;i++){s=(s*9301+49297)%233280;const e=document.createElement('i');const k=s/233280;const past=i<128;e.style.height=(past?(18+k*82):0)+'%';if(past&&k>.9)e.className='h';r.appendChild(e)}</script>
+</body></html>

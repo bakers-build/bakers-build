@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;background:#7CC4F2;color:#111;font-family:Inter,sans-serif;overflow:hidden;position:relative;
+background-image:radial-gradient(circle,rgba(17,17,17,.10) 2px,transparent 2.5px);background-size:32px 32px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:28px 48px}
+.logo{font-weight:900;font-size:20px;display:flex;gap:10px;align-items:center}.logo i{width:28px;height:20px;background:#E3242B;border:3px solid #111;border-radius:3px}
+.cta{background:#FFD23F;border:3px solid #111;padding:12px 20px;font-weight:800;border-radius:6px;box-shadow:4px 4px 0 #111}
+h1{position:absolute;left:48px;top:110px;font-size:62px;font-weight:900;letter-spacing:-.02em;line-height:1;width:640px}
+.steps{position:absolute;left:48px;right:48px;bottom:56px;display:grid;grid-template-columns:repeat(5,1fr);gap:24px}
+.s{background:#fff;border:3px solid #111;border-radius:10px;height:330px;padding:18px;position:relative}
+.s .n{font-size:88px;font-weight:900;line-height:.9}
+.s .lbl{font-size:13px;font-weight:800;letter-spacing:.08em;margin-top:6px}
+.s .who{position:absolute;bottom:16px;left:18px;font-size:13px;font-weight:500}
+.brick{position:absolute;left:18px;right:18px;bottom:60px;height:110px;display:flex;flex-direction:column-reverse;gap:0}
+.brick b{height:30px;border:3px solid #111;border-radius:3px;margin-top:-3px;background:#cfd6dc}
+.ghost{opacity:.35}
+.s.now{outline:6px solid #E3242B;outline-offset:-3px}
+.s.now .brick b:last-child{background:#E3242B;opacity:1}
+.arrow{position:absolute;right:30px;top:60px;font-size:54px;font-weight:900;color:#E3242B}
+.call{position:absolute;right:48px;top:96px;width:360px;background:#fff;border:3px solid #111;border-radius:10px;padding:16px;font-size:15px;font-weight:500}
+.call b{display:block;font-size:13px;letter-spacing:.08em;margin-bottom:6px}
+.call .x{font-size:44px;font-weight:900;float:right;line-height:1}
+</style></head><body>
+<div class="top"><span class="logo"><i></i>Bakers Build</span><span class="cta">Demo vereinbaren</span></div>
+<h1>Software bauen, Schritt für Schritt. Nichts fehlt.</h1>
+<div class="call"><span class="x">1×</span><b>BB-151 · CSV IMPORT</b>Agent cw-framework setzt gerade den Code-Baustein. Du prüfst bei Schritt 4.</div>
+<div class="steps">
+<div class="s"><div class="n">1</div><div class="lbl">QUALIFICATION</div><div class="brick ghost"><b></b></div><div class="who">Mensch · ms</div></div>
+<div class="s"><div class="n">2</div><div class="lbl">SPEC</div><div class="brick ghost"><b></b><b></b></div><div class="who">Agent</div></div>
+<div class="s now"><div class="arrow">↓</div><div class="n">3</div><div class="lbl">CODING</div><div class="brick"><b class="ghost"></b><b class="ghost"></b><b></b></div><div class="who">Agent · läuft</div></div>
+<div class="s"><div class="n">4</div><div class="lbl">REVIEW</div><div class="who">Mensch · du</div></div>
+<div class="s"><div class="n">5</div><div class="lbl">DONE</div><div class="who">ausgeliefert</div></div>
+</div></body></html>

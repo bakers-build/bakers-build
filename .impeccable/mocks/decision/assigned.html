@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;background:#141414;color:#F4F2EA;font-family:"Helvetica Neue",Arial,sans-serif;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:22px 48px;border-bottom:2px solid #2a2a2a}
+.brand{font-weight:700;font-size:26px;letter-spacing:.02em}.nav{display:flex;gap:28px;font-size:15px;color:#9a9a95}
+.demo{background:#FFD500;color:#141414;font-weight:700;font-size:22px;padding:14px 22px}
+h1{font-size:96px;line-height:.95;letter-spacing:-.02em;padding:56px 48px 28px;font-weight:700}
+h1 span{color:#FFD500}
+.board{margin:0 48px;border-top:3px solid #FFD500}
+.row{display:grid;grid-template-columns:150px 200px 1fr 260px 220px;gap:10px;padding:10px 0;border-bottom:1px solid #2a2a2a;align-items:center}
+.flap{display:inline-flex;gap:3px}.flap b{display:inline-block;width:30px;height:42px;background:#232323;border-radius:3px;font:700 30px/42px "Courier New",monospace;text-align:center;color:#F4F2EA;position:relative}
+.flap b:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#0d0d0d}
+.t{font:700 28px "Courier New",monospace;color:#FFD500}.d{font-size:26px}.s{font:700 24px "Courier New",monospace;color:#9a9a95}
+.live{background:#1f1d12}.live .s{color:#FFD500}
+.ghost b{color:#2e2e2e}
+.foot{position:absolute;bottom:28px;left:48px;right:48px;display:flex;justify-content:space-between;font-size:24px;color:#9a9a95}
+</style></head><body>
+<div class="top"><div class="brand">bakers build</div><div class="nav">Produkt · Ablauf · Sicherheit · Docs</div><div class="demo">Demo vereinbaren →</div></div>
+<h1>Tickets kommen an.<br><span>Software fährt pünktlich ab.</span></h1>
+<div class="board">
+<div class="row"><span class="t">09:12</span><span class="flap"><b>B</b><b>B</b><b>1</b><b>4</b><b>2</b></span><span class="d">Designbook view-mode</span><span class="s">GLEIS cw-framework</span><span class="s">REVIEW · MENSCH</span></div>
+<div class="row live"><span class="t">09:20</span><span class="flap"><b>B</b><b>B</b><b>1</b><b>4</b><b>5</b></span><span class="d">Comment feed region</span><span class="s">GLEIS ds-minis</span><span class="s">CODING · AGENT</span></div>
+<div class="row"><span class="t">09:31</span><span class="flap"><b>B</b><b>B</b><b>1</b><b>5</b><b>0</b></span><span class="d">Board filters persist</span><span class="s">GLEIS —</span><span class="s">SPEC · MENSCH</span></div>
+<div class="row ghost"><span class="t">06:00</span><span class="flap"><b>B</b><b>R</b><b>O</b><b>T</b><b>!</b></span><span class="d" style="color:#555">Frische Brötchen</span><span class="s">—</span><span class="s">PÜNKTLICH</span></div>
+</div>
+<div class="foot"><span>Jeder Zustand: Mensch oder Agent.</span><span>Am Bahnsteig entscheidet ein Mensch.</span></div>
+</body></html>

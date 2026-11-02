@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;background:#F6F5F1;color:#0E0E0E;font-family:"Roboto Flex",sans-serif;overflow:hidden;position:relative}
+.m{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.04em}
+.top{display:flex;justify-content:space-between;align-items:center;padding:24px 48px;border-bottom:1px solid #0E0E0E}
+.top b{font-weight:700;font-size:15px;letter-spacing:.02em}.cta{background:#0E0E0E;color:#F6F5F1;padding:11px 18px;font-size:14px;font-weight:600}
+.big{position:absolute;left:36px;top:70px;font-size:560px;line-height:1;font-variation-settings:"wght" 760,"opsz" 144;letter-spacing:-.04em}
+.copy{position:absolute;left:520px;top:120px;width:520px}
+h1{font-size:54px;line-height:1.02;font-variation-settings:"wght" 640,"opsz" 96;letter-spacing:-.02em}
+p{font-size:19px;line-height:1.5;margin-top:20px;color:#333}
+.slider{position:absolute;left:520px;top:420px;width:860px}
+.track{height:2px;background:#0E0E0E;position:relative;margin:18px 0}
+.knob{position:absolute;left:63%;top:-11px;width:24px;height:24px;border-radius:50%;background:#FF5A1F}
+.ends{display:flex;justify-content:space-between}
+.grid{position:absolute;left:48px;right:48px;bottom:48px;display:grid;grid-template-columns:repeat(12,1fr);border-top:1px solid #0E0E0E}
+.c{height:150px;border-right:1px solid #D8D6CF;padding:10px;display:flex;flex-direction:column;justify-content:space-between}
+.c span.g{font-size:64px;line-height:1}
+.c.on{background:#FF5A1F;color:#0E0E0E}
+</style></head><body>
+<div class="top"><b>Bakers Build</b><span class="m">wght 640 · agent 63 % · läufe 1 284</span><span class="cta">Demo vereinbaren →</span></div>
+<div class="big">B</div>
+<div class="copy"><h1>Du stellst ein, wie viel die Maschine macht.</h1><p>Agenten bearbeiten Tickets, Menschen entscheiden an den Toren. Ein Regler, nachvollziehbar bis zum letzten Lauf.</p></div>
+<div class="slider m"><div class="ends"><span>MENSCH</span><span>63 / 100</span><span>AGENT</span></div><div class="track"><div class="knob"></div></div></div>
+<div class="grid" id="g"></div>
+<script>const st=["qual","spec","code","review","done"];const g=document.getElementById('g');for(let i=0;i<12;i++){const w=100+i*80;const d=document.createElement('div');d.className='c'+(i==7?' on':'');d.innerHTML=`<span class="m">BB-${140+i}</span><span class="g" style="font-variation-settings:'wght' ${w},'opsz' 72">${'Bb'[i%2]}</span><span class="m">${st[i%5]} · ${w}</span>`;g.appendChild(d)}</script>
+</body></html>

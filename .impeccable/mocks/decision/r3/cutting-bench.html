@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;background:#FF6A13;color:#0A0A0A;font-family:"Barlow Condensed",sans-serif;font-size:22px;text-transform:uppercase;letter-spacing:.03em;overflow:hidden;position:relative}
+body::after{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");mix-blend-mode:multiply;pointer-events:none}
+.top{display:flex;justify-content:space-between;padding:26px 48px;font-weight:700}
+.cta{background:#0A0A0A;color:#FF6A13;padding:10px 18px}
+.win{position:absolute;left:48px;top:96px;width:620px;background:#F2EFE8;padding:28px 32px;font-weight:700;line-height:1.05}
+.win p{font-weight:500;text-transform:none;letter-spacing:0;line-height:1.35;margin-top:14px}
+.rail{position:absolute;left:0;right:0;top:400px;height:230px;background:#0A0A0A;display:flex;gap:14px;padding:34px 48px}
+.rail::before,.rail::after{content:"";position:absolute;left:0;right:0;height:12px;background:repeating-linear-gradient(90deg,transparent 0 14px,#FF6A13 14px 28px)}
+.rail::before{top:10px}.rail::after{bottom:10px}
+.f{flex:1;background:#F2EFE8;position:relative;padding:12px;font-weight:700;font-size:20px}
+.f small{display:block;font-weight:500;font-size:18px;margin-top:4px}
+.f.done::after{content:"✕";position:absolute;right:10px;bottom:0;font-size:88px;color:#fff;-webkit-text-stroke:2px #0A0A0A;opacity:.9}
+.f.flag::before{content:"WARTET AUF DICH";position:absolute;top:-34px;left:-4px;background:#FF6A13;color:#0A0A0A;padding:2px 10px;font-size:16px}
+.f.na{clip-path:polygon(0 0,82% 0,100% 18%,100% 100%,0 100%)}
+.bin{position:absolute;left:48px;right:48px;bottom:40px;display:flex;gap:40px;font-weight:700;font-size:18px}
+.pin{display:flex;flex-direction:column;align-items:center}.pin i{width:2px;height:40px;background:#0A0A0A}.pin span{background:#F2EFE8;padding:8px 12px;transform:rotate(-4deg)}
+</style></head><body>
+<div class="top"><span>Bakers Build</span><span>Arbeitskopie · Projekt BAKERS</span><span class="cta">Demo vereinbaren →</span></div>
+<div class="win">Agenten schneiden vor. Du nimmst ab.<p>Jedes Ticket läuft als Kader über die Schiene. Ein Kreuz heißt erledigt, ein Fähnchen heißt: hier wartet ein Mensch.</p></div>
+<div class="rail">
+<div class="f done">BB-138<small>done</small></div><div class="f done">BB-140<small>done</small></div>
+<div class="f flag">BB-142<small>review · mensch</small></div><div class="f">BB-151<small>coding · agent</small></div>
+<div class="f">BB-153<small>spec · agent</small></div><div class="f na">BB-155<small>blockiert</small></div><div class="f">BB-160<small>qualification</small></div></div>
+<div class="bin"><div class="pin"><i></i><span>BB-121 cancelled</span></div><div class="pin"><i></i><span>BB-129 zurückgestellt</span></div><div class="pin"><i></i><span>BB-133 cancelled</span></div></div>
+</body></html>
