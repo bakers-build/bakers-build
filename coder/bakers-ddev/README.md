@@ -4,11 +4,11 @@ Coder is an optional client/workspace provider, separate from the [control-plane
 
 One long-lived Coder workspace per person that is a bakers.build worker, like a developer's own machine. The template provides the machine and the tools. Signing in, checking out projects and starting conductors happen inside the workspace through `/bb-init`, which follows the [guide](../../docs/configuration/machine/coder-workspace.md).
 
-A workspace is one Sysbox container with its own Docker daemon, a home volume, a Docker volume and the PM bot's volume. The agent runs [`scripts/install.sh`](scripts/install.sh) on every start. It installs each missing tool into the home volume, starts `herdr server`, then starts the [PM bot](#pm-bot) when the workspace has its parameters.
+A workspace is one Sysbox container with its own Docker daemon, a home volume and a Docker volume. The agent runs [`scripts/install.sh`](scripts/install.sh) on every start. It installs each missing tool into the home volume, starts `herdr server`, then starts the [PM bot](#pm-bot) when the workspace has its parameters.
 
 ## Tools
 
-`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `frpc` and `cloudflared` are installed and started only when their operator configuration files exist.
+`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `frpc` and `cloudflared` are installed and started only when their operator configuration files exist. With PM bot parameters, the bot runs as a container on the workspace's Docker daemon.
 
 ## Prerequisites
 
@@ -22,8 +22,8 @@ The `image` variable names the full image reference, tag included. Any image wor
 - Ubuntu 24.04 with user `coder` (passwordless `sudo`).
 - The entrypoint `/home/coder-files/bin/coder-entrypoint.sh`. It starts `dockerd`, opens its socket, makes `/home/coder` writable for `coder` and runs the Coder agent init script, which it receives as its first argument.
 - Docker, DDEV, `curl`, `jq`, `tar` and `xz`.
-- Node 22 with `npm config prefix` set to `~/.npm-global`, and `node` and `npx` on a system path outside `/home/coder` (for the PM bot).
-- `git` and `perl` (for the PM bot).
+- Node 22 with `npm config prefix` set to `~/.npm-global`.
+- `git` and Docker Compose v2 (for the PM bot).
 - `~/.local/bin` and `~/.npm-global/bin` on `PATH` in `~/.profile` and `~/.bashrc`.
 
 The home volume starts empty. Docker copies `/home/coder` of the image into it on first mount.
@@ -48,10 +48,9 @@ Set them at push time with `--variable name=value`. `image` is required; other i
 | `glab_version` | 1.124.0 | GitLab CLI release |
 | `cloudflared_version` | 2026.10.2 | cloudflared release |
 | `frp_version` | 0.68.0 | frp release, the version the bakers.build frp transport is written against |
-| `pm_bot_source_url` | `https://git.key-tec.de/bakers-build/bakers-build.git` | HTTPS URL the PM bot's code (`pm-bot/`) is fetched from, without credentials |
-| `pm_bot_ref` | a bakers.build commit | Full 40-character commit hash whose `pm-bot/` every workspace runs. It also pins Hermes, through `pm-bot/bin/setup` |
-| `pm_bot_source_user` | empty | User name of the deploy token for `pm_bot_source_url` |
-| `pm_bot_source_token` | empty | Deploy token (`read_repository`) for `pm_bot_source_url`. Sensitive; empty for a public repository |
+| `pm_bot_image` | empty | The PM bot's image with tag and digest, `<registry>/<path>:<tag>@sha256:<digest>` ([PM bot › The bot's version](#4-the-bots-version)). Empty: no workspace runs the bot |
+| `pm_bot_registry_user` | empty | User name of the deploy token for `pm_bot_image`'s registry |
+| `pm_bot_registry_token` | empty | Deploy token (`read_registry`) for that registry. Sensitive; empty for a public registry |
 
 ## Push
 
@@ -80,13 +79,20 @@ A start that fails to download a tool stops the install script, marks the start 
 
 ## Logs
 
-The install log is `/tmp/coder-startup-script.log`. The PM bot's gateway logs to `/tmp/hermes-gateway.log` and its poller to `/tmp/pm-bot-poller.log` ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
+The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
 
 ## PM bot
 
-The workspace can run the bakers.build PM bot (`pm-bot/` of bakers.build): a Hermes gateway that answers in Slack, and a poller that posts ticket changes into their Slack threads. Its settings are workspace parameters. Set them once; every start, restart and template update brings the bot back with them. A workspace with every PM bot parameter empty runs no bot and starts as before.
+The workspace can run the bakers.build PM bot ([`pm-bot/`](../../pm-bot/README.md)): a Hermes gateway that answers in Slack, and a poller that posts ticket changes into their Slack threads. Its settings are workspace parameters. Set them once; every start, restart, rebuild and template update brings the bot back with them. A workspace with every PM bot parameter empty runs no bot and starts as before.
 
-The bot runs as `pmbot`, a user with no `sudo`, no login shell and no Docker socket. On every bot start, `/home/coder` is set to mode `700`, so `pmbot` cannot read the owner's credentials, checkouts or worktrees. Its home is a separate volume, `/home/pmbot`, which keeps Hermes, its sessions and the clone of the project's repository.
+The bot is one container, `pm-bot`, on the workspace's own Docker daemon, from the image the template variable `pm_bot_image` pins. On every start, [`scripts/pm-bot.sh`](scripts/pm-bot.sh) checks the parameters, writes the bot's env file, refreshes the clone of the project's repository and runs `docker compose up` with [`pm-bot.compose.yaml`](pm-bot.compose.yaml). The container restarts on its own (`unless-stopped`) and sees two directories of the home volume, nothing else:
+
+| Host path | In the container | Holds |
+|---|---|---|
+| `~/.pm-bot/data` | `/opt/data`, read-write | Hermes' home: sessions, memories, learned skills, the poller's state and the env file. Kept across starts and rebuilds |
+| `~/.pm-bot/clone` | `/opt/clone`, read-only | A clone of the project's repository without env files, settings, keys and certificates |
+
+It has no Docker socket and every capability dropped except the four Hermes' start needs to drop to its own user, which runs as the workspace user's UID. Every start rewrites the env file from the parameters, and the container rewrites `config.yaml`, `SOUL.md` and the `project-manager` skill from the image: edits to them are lost; sessions, memories and other skills stay.
 
 ### 1. The bot's service account
 
@@ -98,7 +104,7 @@ As a bakers.build workspace administrator:
 
 ### 2. The Slack app
 
-At api.slack.com/apps, choose **Create New App → From a manifest**, pick your workspace and paste `pm-bot/slack-app-manifest.yaml` from bakers.build at the template's `pm_bot_ref`. It sets up Socket Mode, the bot scopes and the message events.
+At api.slack.com/apps, choose **Create New App → From a manifest**, pick your workspace and paste [`pm-bot/slack-app-manifest.yaml`](../../pm-bot/slack-app-manifest.yaml) from the bakers.build revision of the image. It sets up Socket Mode, the bot scopes and the message events.
 
 1. **Basic Information → App-Level Tokens:** generate a token with the `connections:write` scope. That is the app token (`xapp-…`) for `pm_bot_slack_app_token`.
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
@@ -108,7 +114,7 @@ At api.slack.com/apps, choose **Create New App → From a manifest**, pick your 
 
 ### 3. Parameters
 
-Set these in the workspace form, or with `--parameter` on `coder create` and `coder update`. A changed value takes effect on the next start, and `coder update` restarts the workspace.
+Set these in the workspace form, or with `--parameter` on `coder create` and `coder update`. A changed value takes effect on the next start, and `coder update` restarts the workspace. Values may hold letters, digits and `. _ ~ : / , @ + = % -` only.
 
 | Parameter | Required | Value |
 |---|---|---|
@@ -129,7 +135,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 | `pm_bot_claude_oauth_token` | one of two | Token from `claude setup-token`, for tests (masked). Set exactly one of the two |
 | `pm_bot_model` | no | Default `claude-sonnet-5-5` |
 | `pm_bot_repo_url` | no | HTTPS URL of the project's repository, without credentials. The bot reads a secret-free clone of it. Empty: no code access |
-| `pm_bot_repo_user`, `pm_bot_repo_token` | no | A read-only token (`read_repository`) for that URL; the token is masked. It is used only while cloning and is never written to the bot's configuration |
+| `pm_bot_repo_user`, `pm_bot_repo_token` | no | A read-only token (`read_repository`) for that URL; the token is masked. Only git uses it, while cloning on the workspace; it never reaches the container |
 
 Channel and member IDs are separated by spaces, commas or both. On the command line, quote the list and separate it with spaces:
 
@@ -149,22 +155,47 @@ coder create pm --template bakers-ddev \
 coder update pm --parameter "pm_bot_slack_allowed_users=U0123456789 U0987654321"
 ```
 
-### 4. Changing the bot's version
+On the command line, use the space form shown above: a `--parameter` value with commas may be split by the CLI. The form field accepts both.
 
-The template variable `pm_bot_ref` decides which bot runs, and with it which Hermes version runs. To move every workspace to a new revision, push the template with the new hash (`--variable pm_bot_ref=<40-character hash>`) and update or restart each workspace. The script fetches only `pm-bot/` at that commit into `/opt/pm-bot`, owned by root, and installs Hermes for `pmbot` when its version differs from the pin. The repository is private, so set a deploy token with `pm_bot_source_user` and `pm_bot_source_token`. git receives the token only through its environment.
+### 4. The bot's version
+
+The bot's image is `pm-bot/Dockerfile`: the official Hermes image at the version the bot is written for, with the bot's files baked in. CI (`pm_bot_image`) builds it for every merge request and `develop` commit that changes `pm-bot/`, checks it and pushes `pm-bot:<commit>` to the project's registry. Its last log line is the value to pin:
+
+```text
+pm_bot_image=git.key-tec.de:5050/bakers-build/bakers-build/pm-bot:<commit>@sha256:<digest>
+```
+
+Push the template with it and a deploy token with `read_registry` for that registry, then update or restart each workspace:
+
+```sh
+coder templates push bakers-ddev -d coder/bakers-ddev \
+  --variable pm_bot_image=git.key-tec.de:5050/bakers-build/bakers-build/pm-bot:<commit>@sha256:<digest> \
+  --variable pm_bot_registry_user=<deploy token user> \
+  --variable pm_bot_registry_token=<deploy token>
+```
+
+The script refuses an image without its digest. It logs in with the token on `docker login`'s stdin, so the token stays in the workspace user's Docker configuration (`~/.docker/config.json`) and never reaches the bot's env file or container.
 
 ### Logs and skip lines
 
-The script logs to `/tmp/coder-startup-script.log` and never fails the workspace start. Whatever stops the bot writes one line there and to `/tmp/hermes-gateway.log`:
+The script logs to `/tmp/coder-startup-script.log` and never fails the workspace start. Whatever stops the bot takes the container down and writes one line there:
 
 | Line | Meaning |
 |---|---|
 | `pm-bot: skipped: no bot configured` | Every PM bot parameter is empty |
-| `pm-bot: skipped: missing parameters: pm_bot_…` | These required parameters, or the template variables marked as such, are empty |
+| `pm-bot: skipped: missing parameters: pm_bot_…` | These required parameters, or the template variable marked as such, are empty |
 | `pm-bot: skipped: set exactly one of …` | Neither or both model credentials are set |
-| `pm-bot: skipped: pm_bot_… must …` | A value has the wrong form: a UUID, a Slack ID list or a URL |
-| `pm-bot: skipped: fetching pm-bot/ at … failed` | The pin, the source URL or the deploy token is wrong |
+| `pm-bot: skipped: pm_bot_… must …` | A value has the wrong form: a UUID, a Slack ID list, a URL or the image pin |
 | `pm-bot: skipped: refreshing the clone of … failed` | The repository URL or its token is wrong |
-| `pm-bot: skipped: bin/setup failed` | The bot rejected its configuration; the reason is in the startup log |
+| `pm-bot: skipped: secret files in the clone …` | A file named like a secret is in the clone; remove it |
+| `pm-bot: skipped: docker login to … failed` | The registry token is wrong or expired |
+| `pm-bot: skipped: docker compose up failed` | The image could not be pulled or started; the reason is in the lines above |
 
-After a successful start, `/tmp/coder-startup-script.log` has `pm-bot: code at <ref>`. The gateway logs to `/tmp/hermes-gateway.log` and the poller to `/tmp/pm-bot-poller.log`. To check the processes, run `ps -o user,pid,args -u pmbot`.
+After a successful start the log has `pm-bot: running <image>`. The container's own log holds the gateway's and the poller's output:
+
+```sh
+docker compose -p pm-bot ps      # one service, running
+docker compose -p pm-bot logs -f
+```
+
+The container exits when the gateway or the poller exits, with `pm-bot: missing: …` when a required key is not in its env file, and Docker restarts it. Hermes' own logs are in `~/.pm-bot/data/logs`.
