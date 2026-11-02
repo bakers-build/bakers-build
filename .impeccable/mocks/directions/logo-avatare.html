@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logo & Avatare</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Spline+Sans:wght@400;500&family=Spline+Sans+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--flour:#F5EBDA;--rye:#2B2116;--rye-2:#5A4A38;--butter:#F3CE3A;--lime:#BFE07A;--rose:#F4AFC0;--paper:#FFFDF8}
+*{box-sizing:border-box;margin:0}
+body{background:var(--flour);color:var(--rye);font-family:"Spline Sans",sans-serif;padding:40px 56px 80px}
+h1{font:400 56px/1 "Instrument Serif",serif;margin-bottom:8px}
+h2{font:400 36px/1 "Instrument Serif",serif;margin:56px 0 6px}
+p.l{font:400 16px/1.5 "Spline Sans";color:var(--rye-2);max-width:70ch}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:22px}
+.opt{border:1.5px solid rgba(43,33,22,.25);border-radius:18px;overflow:hidden;background:var(--paper)}
+.opt .stage{height:200px;display:grid;place-items:center}
+.opt .stage.dark{background:var(--rye);color:var(--flour)}
+.opt .meta{padding:16px 18px;border-top:1.5px solid rgba(43,33,22,.15)}
+.opt .meta b{font:400 24px "Instrument Serif"}
+.opt .meta span{display:block;font:400 14px/1.45 "Spline Sans";color:var(--rye-2);margin-top:4px}
+.small{display:flex;gap:18px;align-items:center;padding:14px 18px;border-top:1.5px solid rgba(43,33,22,.15);font:500 12px "Spline Sans Mono"}
+.word{font:400 52px/1 "Instrument Serif",serif;letter-spacing:-.01em;display:inline-flex;align-items:baseline}
+.lock{display:flex;align-items:center;gap:14px}
+.ic{display:flex;gap:40px;align-items:flex-end;margin-top:22px;flex-wrap:wrap}
+.ic figure{display:flex;flex-direction:column;align-items:center;gap:10px;font:500 12px "Spline Sans Mono"}
+.sizes{display:flex;gap:14px;align-items:center}
+.sizes svg{color:var(--rye)}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--paper);border:1.5px solid rgba(43,33,22,.25);border-radius:999px;padding:7px 14px 7px 9px;font:500 13px "Spline Sans Mono"}
+.ctx{display:flex;gap:16px;margin-top:22px;flex-wrap:wrap}
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+ <!-- roll used as the dot of the wordmark -->
+ <symbol id="roll" viewBox="0 0 40 30"><path d="M4 22 C 3 10 12 4 20 4 C 28 4 37 10 36 22 C 36 26 28 27 20 27 C 12 27 4 26 4 22 Z" fill="var(--fill,#F3CE3A)" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M13 10 C 17 14 23 14 27 10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+ <!-- oven-terminal mark -->
+ <symbol id="oven" viewBox="0 0 48 48"><rect x="5" y="5" width="38" height="38" rx="6" fill="var(--fill,#fff)" stroke="currentColor" stroke-width="3.2"/><path d="M5 15 H 43" stroke="currentColor" stroke-width="3.2"/><circle cx="31" cy="10" r="2" fill="currentColor"/><circle cx="37" cy="10" r="2" fill="currentColor"/><rect x="11" y="21" width="26" height="16" rx="3" fill="var(--win,#2B2116)"/><path d="M15 25 l4 3.5 -4 3.5 M22 32 h7" stroke="var(--fill,#fff)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+ <!-- roll mascot mark -->
+ <symbol id="bun" viewBox="0 0 48 48"><path d="M5 31 C 4 17 14 9 24 9 C 34 9 44 17 43 31 C 43 37 34 40 24 40 C 14 40 5 37 5 31 Z" fill="var(--fill,#fff)" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round"/><path d="M15 15 C 20 19 28 19 33 15" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><circle cx="19" cy="27" r="4.6" fill="#fff" stroke="currentColor" stroke-width="2.4"/><circle cx="28" cy="27" r="3.8" fill="#fff" stroke="currentColor" stroke-width="2.4"/><circle cx="20.6" cy="27.4" r="1.7" fill="currentColor"/><circle cx="29.4" cy="27.4" r="1.5" fill="currentColor"/></symbol>
+
+ <!-- simplified agent avatars, 24px grid, 2px stroke -->
+ <symbol id="av-scale" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10 H 20"/><path d="M5 12 H 19 L 18 20 H 6 Z" fill="#fff"/><path d="M8 10 L 9 4 H 15 L 16 10" fill="#fff"/></g><circle cx="10" cy="16" r="1.4" fill="currentColor"/><circle cx="14" cy="16" r="1.4" fill="currentColor"/></symbol>
+ <symbol id="av-scraper" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4 H 18 L 17 8 H 7 Z" fill="#fff"/><path d="M7 8 H 17 V 18 L 18 20 H 6 L 7 18 Z" fill="#fff"/></g><circle cx="10" cy="13" r="1.4" fill="currentColor"/><circle cx="14" cy="13" r="1.4" fill="currentColor"/></symbol>
+ <symbol id="av-oven" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3" fill="#fff"/><path d="M3.5 8 H 20.5"/><rect x="7" y="11" width="10" height="6.5" rx="1.5"/></g><circle cx="7.5" cy="5.8" r="1.2" fill="currentColor"/><circle cx="11" cy="5.8" r="1.2" fill="currentColor"/></symbol>
+ <symbol id="av-brush" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3 L 20 6 L 13 15 L 9 12.5 Z" fill="#fff"/><path d="M9 12.5 L 13 15 C 12 18 9 21 5 21 C 5 17 7 14 9 12.5 Z" fill="#fff"/></g><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/><circle cx="17.6" cy="9" r="1.2" fill="currentColor"/></symbol>
+
+ <!-- merged: oven whose window looks back -->
+ <symbol id="ovenbun" viewBox="0 0 48 48"><rect x="5" y="5" width="38" height="38" rx="6" fill="var(--fill,#fff)" stroke="currentColor" stroke-width="3.2"/><path d="M5 15 H 43" stroke="currentColor" stroke-width="3.2"/><path d="M11 10 h 6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="31" cy="10" r="2" fill="currentColor"/><circle cx="37" cy="10" r="2" fill="currentColor"/><rect x="11" y="21" width="26" height="16" rx="3" fill="var(--win,#2B2116)"/><path d="M14 36 C 14 30 19 27 24 27 C 29 27 34 30 34 36" fill="var(--bunf,#F3CE3A)" stroke="var(--fill,#fff)" stroke-width="1.8"/><circle cx="21" cy="31.5" r="2.6" fill="#fff"/><circle cx="27.5" cy="31.5" r="2.2" fill="#fff"/><circle cx="21.9" cy="31.8" r="1.1" fill="#2B2116"/><circle cx="28.3" cy="31.8" r="1" fill="#2B2116"/><path d="M15 24.5 l3 2.5 -3 2.5" stroke="var(--fill,#fff)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+</defs></svg>
+
+<h1>Logo &amp; Avatare</h1>
+<p class="l">Drei Logo-Ideen im Strichstil von A, jeweils hell, dunkel und klein. Darunter die vereinfachten Agenten-Avatare für App und Docs: 24-px-Raster, 2-px-Strich, Augen nur noch als zwei Punkte.</p>
+
+<h2>Logo</h2>
+<div class="opts">
+ <div class="opt">
+  <div class="stage"><span class="word">bakers<svg width="22" height="17" style="color:var(--rye);margin:0 1px"><use href="#roll"/></svg>build</span></div>
+  <div class="stage dark"><span class="word" style="color:var(--flour)">bakers<svg width="22" height="17" style="color:var(--flour);--fill:var(--butter);margin:0 1px"><use href="#roll"/></svg>build</span></div>
+  <div class="meta"><b>1 · Der Punkt ist ein Brötchen</b><span>Reine Wortmarke. Das Bäckerei-Detail sitzt genau im Punkt der Domain. Am leisesten.</span></div>
+  <div class="small"><svg width="32" height="24" style="color:var(--rye)"><use href="#roll"/></svg><svg width="20" height="15" style="color:var(--rye)"><use href="#roll"/></svg><span>Favicon: nur das Brötchen</span></div>
+ </div>
+ <div class="opt">
+  <div class="stage"><span class="lock"><svg width="56" height="56" style="color:var(--rye)"><use href="#oven"/></svg><span class="word">bakers.build</span></span></div>
+  <div class="stage dark"><span class="lock"><svg width="56" height="56" style="color:var(--flour);--fill:var(--rye);--win:var(--butter)"><use href="#oven"/></svg><span class="word" style="color:var(--flour)">bakers.build</span></span></div>
+  <div class="meta"><b>2 · Ofen mit Terminal</b><span>Die Ofenscheibe ist ein Terminal mit Prompt. Verbindet Backstube und bakers ui in einem Zeichen.</span></div>
+  <div class="small"><svg width="32" height="32" style="color:var(--rye)"><use href="#oven"/></svg><svg width="16" height="16" style="color:var(--rye)"><use href="#oven"/></svg><span>Favicon und App-Icon</span></div>
+ </div>
+ <div class="opt">
+  <div class="stage"><span class="lock"><svg width="60" height="60" style="color:var(--rye)"><use href="#bun"/></svg><span class="word">bakers.build</span></span></div>
+  <div class="stage dark"><span class="lock"><svg width="60" height="60" style="color:var(--flour);--fill:var(--butter)"><use href="#bun"/></svg><span class="word" style="color:var(--flour)">bakers.build</span></span></div>
+  <div class="meta"><b>3 · Das Brötchen schaut</b><span>Das Brötchen aus den Illustrationen als Maskottchen-Zeichen. Am meisten Charakter, am nächsten an Graza.</span></div>
+  <div class="small"><svg width="32" height="32" style="color:var(--rye)"><use href="#bun"/></svg><svg width="16" height="16" style="color:var(--rye)"><use href="#bun"/></svg><span>Favicon und App-Icon</span></div>
+ </div>
+</div>
+
+
+<h2>Oder beides in einem Zeichen</h2>
+<p class="l">Der Ofen bleibt das Terminal-Fenster mit Prompt – aber in der Scheibe sitzt das Brötchen und schaut heraus. Technisch im Rahmen, zugänglich im Inhalt.</p>
+<div class="opts" style="grid-template-columns:repeat(2,1fr);max-width:900px">
+ <div class="opt">
+  <div class="stage"><span class="lock"><svg width="64" height="64" style="color:var(--rye)"><use href="#ovenbun"/></svg><span class="word">bakers.build</span></span></div>
+  <div class="small"><svg width="48" height="48" style="color:var(--rye)"><use href="#ovenbun"/></svg><svg width="32" height="32" style="color:var(--rye)"><use href="#ovenbun"/></svg><svg width="16" height="16" style="color:var(--rye)"><use href="#ovenbun"/></svg><span>48 · 32 · 16 px</span></div>
+ </div>
+ <div class="opt">
+  <div class="stage dark"><span class="lock"><svg width="64" height="64" style="color:var(--flour);--fill:var(--rye);--win:#1a140d"><use href="#ovenbun"/></svg><span class="word" style="color:var(--flour)">bakers.build</span></span></div>
+  <div class="small" style="background:var(--rye);color:var(--flour)"><svg width="48" height="48" style="color:var(--flour);--fill:var(--rye);--win:#1a140d"><use href="#ovenbun"/></svg><svg width="32" height="32" style="color:var(--flour);--fill:var(--rye);--win:#1a140d"><use href="#ovenbun"/></svg><svg width="16" height="16" style="color:var(--flour);--fill:var(--rye);--win:#1a140d"><use href="#ovenbun"/></svg><span>Dark</span></div>
+ </div>
+</div>
+
+<h2>Agenten-Avatare</h2>
+<p class="l">Die Werkzeuge aus den Illustrationen, reduziert auf ein Icon. In der App stehen sie neben dem Ticket, im Terminal bleibt es beim Rollennamen.</p>
+<div class="ic">
+ <figure><div class="sizes"><svg width="48" height="48"><use href="#av-scale"/></svg><svg width="32" height="32"><use href="#av-scale"/></svg><svg width="24" height="24"><use href="#av-scale"/></svg><svg width="16" height="16"><use href="#av-scale"/></svg></div>Qualification · Waage</figure>
+ <figure><div class="sizes"><svg width="48" height="48"><use href="#av-scraper"/></svg><svg width="32" height="32"><use href="#av-scraper"/></svg><svg width="24" height="24"><use href="#av-scraper"/></svg><svg width="16" height="16"><use href="#av-scraper"/></svg></div>Spec · Teigschaber</figure>
+ <figure><div class="sizes"><svg width="48" height="48"><use href="#av-oven"/></svg><svg width="32" height="32"><use href="#av-oven"/></svg><svg width="24" height="24"><use href="#av-oven"/></svg><svg width="16" height="16"><use href="#av-oven"/></svg></div>Coding · Ofen</figure>
+ <figure><div class="sizes"><svg width="48" height="48"><use href="#av-brush"/></svg><svg width="32" height="32"><use href="#av-brush"/></svg><svg width="24" height="24"><use href="#av-brush"/></svg><svg width="16" height="16"><use href="#av-brush"/></svg></div>Review · Pinsel</figure>
+</div>
+<div class="ctx">
+ <span class="chip"><svg width="22" height="22"><use href="#av-scale"/></svg>Qualification · weighing BB-163</span>
+ <span class="chip"><svg width="22" height="22"><use href="#av-scraper"/></svg>Spec · drafting BB-158</span>
+ <span class="chip"><svg width="22" height="22"><use href="#av-oven"/></svg>Coding · cw-framework · 12:08</span>
+ <span class="chip"><svg width="22" height="22"><use href="#av-brush"/></svg>Review · verdict ready</span>
+</div>
+</body></html>

@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>bakers.build Brand-Fundament</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Spline+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--flour:#F5EBDA;--paper:#FFFDF8;--rye:#2B2116;--rye-2:#5A4A38;--muted:#6E5D49;--butter:#F3CE3A;--butter-soft:#FFF4CC;--lime:#BFE07A;--rose:#F4AFC0;--crust:#B8692E;--line:rgba(43,33,22,.32);
+ --display:"Bricolage Grotesque",sans-serif;--sans:"Spline Sans",system-ui,sans-serif;--mono:"Spline Sans Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0}
+body{background:var(--flour);color:var(--rye);font:400 17px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--butter)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+h1,h2,h3,.disp{font-family:var(--display);font-variation-settings:"opsz" 96;letter-spacing:-.035em;color:var(--rye)}
+h1{font-weight:800;font-size:84px;line-height:.92;max-width:14ch}
+h2{font-weight:800;font-size:48px;line-height:.96;max-width:20ch}
+h3{font-weight:700;font-size:26px;line-height:1.05;letter-spacing:-.025em}
+.lead{font-size:19px;color:var(--rye-2);margin-top:16px;max-width:60ch}
+.small{font-size:14.5px;color:var(--rye-2)}
+.mono{font:600 12.5px/1.35 var(--mono)}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--mono);border:1.5px solid var(--rye);border-radius:999px;padding:5px 10px;background:var(--paper);color:var(--rye);white-space:nowrap}
+.chip.ok{background:var(--lime)}.chip.wait{background:var(--butter)}.chip.cw{background:var(--rose)}.chip.no{background:var(--paper);text-decoration:line-through}
+header.top{border-bottom:1.5px dashed var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:12px;padding-top:18px;padding-bottom:18px}
+header.top .word{font:700 24px/1 var(--display);letter-spacing:-.035em}
+header.top .word i{font-style:normal;color:var(--crust)}
+header.top .meta{margin-left:auto;display:flex;gap:8px}
+.intro{padding:64px 0 48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:end}
+.intro p{color:var(--rye-2);font-size:18px;max-width:48ch}
+section{padding:64px 0;border-top:1.5px dashed var(--line)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.box{background:var(--paper);border:2px solid var(--rye);border-radius:16px;padding:22px 24px}
+.box p{margin-top:8px}
+
+/* why */
+.why{margin-top:36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:28px}
+.facts{display:grid;gap:14px}
+.fact{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:baseline;padding-bottom:14px;border-bottom:1.5px dashed var(--line)}
+.fact .k{font:600 13px var(--mono)}
+.quotes{display:grid;gap:14px}
+.quote{background:var(--butter);border:2px solid var(--rye);border-radius:16px;padding:20px 24px;font:700 26px/1.12 var(--display);letter-spacing:-.025em}
+.quote:nth-child(2){background:var(--lime)}
+.quote:nth-child(3){background:var(--paper)}
+.quote small{display:block;font:500 12.5px var(--mono);letter-spacing:0;color:var(--rye-2);margin-top:8px}
+
+/* personas */
+.personas{margin-top:36px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.persona{background:var(--paper);border:2px solid var(--rye);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.persona.primary{border-width:3px;box-shadow:0 16px 34px -22px rgba(43,33,22,.65)}
+.persona .top{padding:20px 20px 16px;display:flex;gap:14px;align-items:center;border-bottom:1.5px solid var(--line)}
+.persona .top img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3.5px solid var(--butter);box-shadow:0 0 0 2px var(--rye);flex:none}
+.persona .id{font:600 12px var(--mono);color:var(--rye-2)}
+.persona h3{font-size:23px;margin-top:2px}
+.persona .tagline{font:500 13px/1.35 var(--mono);color:var(--rye-2);margin-top:4px}
+.persona .body{padding:16px 20px 20px;display:grid;gap:14px;flex:1}
+.persona .row .mono{display:block;margin-bottom:4px}
+.persona ul{padding-left:18px;font-size:14.5px;line-height:1.45;display:grid;gap:3px}
+.persona .first{margin-top:auto;background:var(--butter-soft);border:1.5px solid var(--rye);border-radius:12px;padding:10px 12px;font-size:14.5px}
+.persona .first b{font:600 12px var(--mono);display:block;margin-bottom:2px}
+.persona .role{font:500 12.5px/1.4 var(--mono);color:var(--rye-2)}
+.persona .flag{font:500 12.5px/1.4 var(--mono);background:var(--rose);border:1.5px solid var(--rye);border-radius:10px;padding:8px 10px}
+.segs{margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.seg{border-top:3px solid var(--rye);padding-top:12px}
+.seg .mono{color:var(--rye-2)}
+.seg p{margin-top:6px;font-size:15.5px}
+
+/* business */
+.stairs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;margin-top:36px}
+.step{border:2.5px solid var(--rye);border-right:0;padding:22px 24px;display:flex;flex-direction:column;gap:10px}
+.step:last-child{border-right:2.5px solid var(--rye)}
+.step.s1{min-height:220px;background:var(--lime);border-radius:16px 0 0 0}
+.step.s2{min-height:270px;background:var(--butter)}
+.step.s3{min-height:320px;background:var(--paper);border-radius:0 16px 0 0}
+.step h3{font-size:30px}
+.step p{font-size:15.5px}
+.step .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.under{margin-top:20px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+.under .box{font-size:15.5px}
+
+/* actions */
+.actions{margin-top:36px;display:grid;grid-template-columns:1.3fr 1fr .8fr;gap:16px;align-items:stretch}
+.act{border:2px solid var(--rye);border-radius:16px;padding:22px 24px;background:var(--paper);display:flex;flex-direction:column;gap:10px}
+.act.p1{background:var(--butter);border-width:3px}
+.act.p3{border-style:dashed;background:transparent}
+.act .btn{align-self:flex-start;font:600 15px/1 var(--sans);padding:13px 20px;border-radius:12px;border:2px solid var(--rye);background:var(--paper)}
+.act.p1 .btn{background:var(--rye);color:var(--flour)}
+.act .who{font:500 12.5px var(--mono);color:var(--rye-2)}
+
+/* idea */
+.idea{margin-top:36px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+.coreline{background:var(--rye);color:var(--flour);border-radius:18px;padding:30px 32px;display:flex;flex-direction:column;gap:14px}
+.coreline .disp{color:var(--flour);font-weight:800;font-size:54px;line-height:.95}
+.coreline .sub{font:700 24px/1.1 var(--display);color:var(--butter);letter-spacing:-.02em}
+.coreline .small{color:#CDBDA6}
+.coreline .no{font:500 13px var(--mono);color:#CDBDA6}
+.coreline .no s{color:#F3EADA}
+.meta-map{display:grid;gap:0;border:2px solid var(--rye);border-radius:18px;overflow:hidden;background:var(--paper)}
+.mm{display:grid;grid-template-columns:120px 1fr 1fr;gap:12px;padding:14px 18px;align-items:baseline;border-bottom:1.5px dashed var(--line);font-size:15px}
+.mm:last-child{border-bottom:0}
+.mm.h{background:var(--flour);font:600 12.5px var(--mono)}
+.mm b{font:700 19px/1.1 var(--display);letter-spacing:-.02em}
+.beats{margin-top:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:2.5px solid var(--rye)}
+.beat{padding:18px 24px 0 0}
+.beat+.beat{padding-left:24px;border-left:1.5px dashed var(--line)}
+.beat p{font-size:15.5px;color:var(--rye-2);margin-top:6px}
+
+/* anti */
+.anti{margin-top:32px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.anti div{border:2px solid var(--rye);border-radius:14px;padding:16px;background:var(--paper);position:relative}
+.anti div::after{content:"";position:absolute;right:12px;top:12px;width:18px;height:18px;border-radius:50%;background:var(--rose);border:1.5px solid var(--rye)}
+.anti b{font:700 19px/1.1 var(--display);letter-spacing:-.02em;display:block;padding-right:22px}
+.anti p{font-size:13.5px;color:var(--rye-2);margin-top:6px}
+
+/* roles */
+.roles{margin-top:32px;border:2px solid var(--rye);border-radius:18px;overflow:hidden;background:var(--paper)}
+.rr{display:grid;grid-template-columns:1.1fr 1.2fr 1.4fr;gap:16px;padding:14px 20px;border-bottom:1.5px dashed var(--line);align-items:center;font-size:15px}
+.rr:last-child{border-bottom:0}
+.rr.h{background:var(--flour);font:600 12.5px var(--mono)}
+.rr .p{display:flex;align-items:center;gap:10px;font-weight:600}
+.rr img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--butter);box-shadow:0 0 0 1.5px var(--rye)}
+
+/* cd */
+.cd{margin-top:32px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.cd .box h3{font-size:22px}
+.cd .sw{display:flex;gap:6px;margin-top:12px}
+.cd .sw span{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--rye)}
+.cd .type{font:800 46px/1 var(--display);letter-spacing:-.04em;margin-top:10px}
+.cd .faces{display:flex;margin-top:12px}
+.cd .faces img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:3px solid var(--butter);box-shadow:0 0 0 1.5px var(--rye);margin-right:-8px}
+
+/* status */
+.status{margin-top:32px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
+.col{border:2px solid var(--rye);border-radius:18px;overflow:hidden;background:var(--paper)}
+.col .ch{padding:14px 18px;border-bottom:2px solid var(--rye);display:flex;align-items:center;justify-content:space-between}
+.col .ch h3{font-size:21px}
+.col.c1 .ch{background:var(--lime)}.col.c2 .ch{background:var(--butter)}.col.c3 .ch{background:var(--rose)}.col.c4 .ch{background:var(--flour)}
+.col ul{list-style:none;padding:0}
+.col li{padding:12px 18px;border-bottom:1.5px dashed var(--line);font-size:14.5px;line-height:1.45}
+.col li:last-child{border-bottom:0}
+.col li b{font-weight:600}
+.col li .d{display:block;font:500 12.5px var(--mono);color:var(--rye-2);margin-top:3px}
+footer{border-top:1.5px dashed var(--line);padding:24px 0 40px;font:500 13px var(--mono);color:var(--rye-2)}
+</style></head>
+<body>
+<script src="../directions/brand.js"></script>
+<header class="top"><div class="wrap">
+ <svg width="34" height="34" aria-hidden="true"><use href="#bun"/></svg><span class="word">bakers<i>.</i>build</span>
+ <span class="meta"><span class="chip ok">freigegeben 23.10.</span><span class="chip">docs/decisions/brand-foundation.md</span></span>
+</div></header>
+
+<main class="wrap">
+<div class="intro">
+ <h1>Brand-Fundament auf einen Blick</h1>
+ <p>Wer die Marke anspricht, was sie verspricht, wie sie es erzählt und was sie nie sein darf. Dazu der Stand aller Entscheidungen und offenen Punkte vom 23.10. Grün ist entschieden, Butter wartet auf dich, Rose wartet auf Christian.</p>
+</div>
+
+<section>
+ <h2>Warum, und woran wir Erfolg messen</h2>
+ <div class="why">
+  <div class="facts">
+   <div class="fact"><span class="k">Markenaufgabe</span><span>Die Angstschwelle vor KI senken.</span></div>
+   <div class="fact"><span class="k">Erstes großes Ziel</span><span>So viele Menschen wie möglich nutzen bakers.build. Reichweite vor Umsatz.</span></div>
+   <div class="fact"><span class="k">Erster Käufer</span><span>Nicht der Entwickler, sondern die Agenturleitung, die eigene Ideen ins Produkt bringen will, ohne zu warten und ohne etwas kaputtzumachen.</span></div>
+   <div class="fact"><span class="k">Täglich nutzen</span><span>Kern technisch und ehrlich (Terminal), Oberfläche menschlich und zugänglich.</span></div>
+  </div>
+  <div class="quotes">
+   <div class="quote">„Meine Ideen sind direkt ins Produkt gegangen.“<small>Erfolg nach drei Monaten, in deinen Worten · 1</small></div>
+   <div class="quote">„Die Anwendung ist nicht kaputt.“<small>2</small></div>
+   <div class="quote">„Durch die Arbeit damit habe ich die Linie an mich angepasst, bei komplexen Änderungen mit einem Entwickler.“<small>3</small></div>
+  </div>
+ </div>
+</section>
+
+<section>
+ <h2>Personas</h2>
+ <p class="lead">Marketing-Zielgruppen, keine App-Rollen. Die Porträts stehen nur für Rollen (Unsplash), die Namen sind offen.</p>
+ <div class="personas">
+  <article class="persona primary">
+   <div class="top"><img src="../directions/portraits/lead.jpg" alt=""><div><div class="id">P1 · Erstkontakt, Käufer</div><h3>Die Agenturleitung</h3><div class="tagline">kein Entwickler</div></div></div>
+   <div class="body">
+    <div class="row"><span class="mono">will</span><ul><li>Prozesse automatisieren, Kosten senken</li><li>nicht auf Entwickler warten</li><li>Kleines selbst ändern: „Button gelb statt grün“</li></ul></div>
+    <div class="row"><span class="mono">fürchtet</span><ul><li>Kontrollverlust</li><li>kaputte Anwendung</li><li>KI-Hype ohne Ergebnis</li></ul></div>
+    <div class="row"><span class="mono">überzeugt durch</span><ul><li>ein Mensch an jeder Station</li><li>nichts geht live ohne Freigabe</li><li>die Linie passt sich an</li></ul></div>
+    <div class="role">App: Workspace-Admin oder Team-Lead, als Reviewer eingetragen. Merge im Terminal oder GitLab-MR.</div>
+    <div class="first"><b>erste Aktion</b>Start a free trial · kauft Hosting und Add-ons</div>
+   </div>
+  </article>
+  <article class="persona">
+   <div class="top"><img src="../directions/portraits/developer.jpg" alt=""><div><div class="id">P2 · Prüfer und Bauer</div><h3>Der Entwickler</h3><div class="tagline">sagt P1 „das ist solide“</div></div></div>
+   <div class="body">
+    <div class="row"><span class="mono">will</span><ul><li>wiederkehrende Arbeit automatisieren</li><li>die Linie selbst hosten, einrichten, erweitern</li></ul></div>
+    <div class="row"><span class="mono">überzeugt durch</span><ul><li>Open Source, MIT</li><li>CLI und Terminal</li><li>eigene Maschinen, eigenes Agent-Abo</li><li>WORKFLOW.md im Repo</li></ul></div>
+    <div class="role">App: Contributor, Projekt-Member, Besitzer eines Conductors.</div>
+    <div class="first"><b>erste Aktion</b>CLI installieren, Docs lesen · self-host for free</div>
+   </div>
+  </article>
+  <article class="persona">
+   <div class="top"><img src="../directions/portraits/client.jpg" alt=""><div><div class="id">P3 · Teilnehmerin, kein Käufer</div><h3>Der Agenturkunde</h3><div class="tagline">nutzt, kauft nie</div></div></div>
+   <div class="body">
+    <div class="row"><span class="mono">macht</span><ul><li>beschreibt, klärt, gibt frei</li><li>in Qualification und Spec</li></ul></div>
+    <div class="row"><span class="mono">braucht</span><ul><li>die einfachste Sprache</li><li>klare „du bist dran“-Momente</li><li>kein Jargon</li></ul></div>
+    <div class="row"><span class="mono">für die Reichweite</span><ul><li>jeder Kunde ist ein möglicher künftiger Nutzer</li></ul></div>
+    <div class="flag">Offen bei Christian: Guest darf nur lesen. Freigeben braucht heute Contributor.</div>
+    <div class="first"><b>erste Aktion</b>wird eingeladen · App-Texte für P3 folgen</div>
+   </div>
+  </article>
+  <article class="persona">
+   <div class="top"><img src="../directions/portraits/team-2.jpg" alt=""><div><div class="id">P4 · Self-Serve</div><h3>Der technische Solo-Gründer</h3><div class="tagline">„Rosmarie“? Name offen</div></div></div>
+   <div class="body">
+    <div class="row"><span class="mono">macht</span><ul><li>startet allein mit dem eigenen Agenten</li><li>auf dem Open-Source-Weg</li></ul></div>
+    <div class="row"><span class="mono">überzeugt durch</span><ul><li>kostenlos, sofort, ohne Vertrieb</li><li>dieselben Argumente wie P2</li></ul></div>
+    <div class="role">App: Workspace-Owner mit allen Rechten.</div>
+    <div class="first"><b>erste Aktion</b>self-host for free</div>
+   </div>
+  </article>
+ </div>
+ <div class="segs">
+  <div class="seg"><span class="mono">Kernsegment</span><p>Mittelgroße Agenturen, vor allem Tech-Agenturen mit wiederkehrenden Prozessen. Beispiel: eine WordPress-Agentur, die vom Angebot bis zur Website immer denselben Ablauf will.</p></div>
+  <div class="seg"><span class="mono">zweites Segment</span><p>Firmen und Agenturen, die externe Dienstleister ersetzen wollen.</p></div>
+  <div class="seg"><span class="mono">drittes Segment</span><p>Start-ups und Solo-Gründer mit technischem Hintergrund.</p></div>
+ </div>
+</section>
+
+<section>
+ <h2>Geschäftsmodell: Open Core wie GitLab</h2>
+ <div class="stairs">
+  <div class="step s1"><span class="chip">kostenlos</span><h3>Bake for free</h3><p>Der Kern ist Open Source (MIT) und kostenlos, selbst gehostet.</p><div class="chips"><span class="chip ok">entschieden</span></div></div>
+  <div class="step s2"><span class="chip">kostet</span><h3>Let us run the oven</h3><p>Hosting unter der Marke bakers.build. Die Instanz läuft schon, Workspaces legt ihr von Hand an. Testphase oder Demo geplant.</p><div class="chips"><span class="chip ok">kostet</span><span class="chip wait">Testphase: Form, Dauer</span><span class="chip wait">Self-Service: wann</span></div></div>
+  <div class="step s3"><span class="chip">kostet</span><h3>Add tools when you need them</h3><p>Bezahlte Add-ons erweitern den Kern, zum Beispiel Time Tracking.</p><div class="chips"><span class="chip ok">kostet</span><span class="chip wait">Liste der Add-ons</span><span class="chip wait">alle Preise</span></div></div>
+ </div>
+ <div class="under">
+  <div class="box"><b>Pflichtsatz zum Hosting:</b> Selbst gehostet oder gehostet, die Conductors und der Code bleiben auf den Maschinen des Teams. Beim Hosting läuft nur die Control Plane auf den Servern von bakers.build. Sie hält Tickets, Handoffs und den Footprint jedes Runs; Code und Run-Transkripte bleiben beim Team.</div>
+  <div class="box"><b>Keine Individuallösungen.</b> Teams passen ihre Linie selbst an, über WORKFLOW.md, eigene Skills und Add-ons. keytec taucht öffentlich nicht auf. Betreibt keytec Conductors für eigene Kunden, ist keytec dabei eine Agentur, die bakers.build nutzt.</div>
+ </div>
+</section>
+
+<section>
+ <h2>Aktionen auf öffentlichen Seiten</h2>
+ <div class="actions">
+  <div class="act p1"><span class="chip">primär</span><span class="btn">Start a free trial</span><p>Eine kurze Anfrage. Wir legen den Workspace an und schicken den Link.</p><span class="who">für P1 und alle, die nichts einrichten wollen</span></div>
+  <div class="act"><span class="chip">sekundär</span><span class="btn">Self-host for free</span><p>npm, Docs, GitLab. Open Source ist das Angebot selbst.</p><span class="who">für P2 und P4</span></div>
+  <div class="act p3"><span class="chip">leise</span><span class="btn">Book a demo</span><p>Für Agenturen, die einen begleiteten Start wollen.</p><span class="who">ersetzt „Book a demo“ als Hauptaktion vom 22.10.</span></div>
+ </div>
+</section>
+
+<section>
+ <h2>Kernidee und Geschichte</h2>
+ <div class="idea">
+  <div class="coreline">
+   <span class="chip ok" style="align-self:flex-start">Kernzeile, entschieden</span>
+   <span class="disp">You're the baker. Agents run the line.</span>
+   <span class="sub">Your recipes. Your line.</span>
+   <p class="small">Die Bäcker sind die Menschen: Agenturleitung, Kunde, Entwickler. Ihnen gehören die Rezepte, sie entscheiden. Die Agenten sind die Werkzeuge und Maschinen der Linie. Die Nähe zu monday.coms „Du steuerst. Agenten führen aus.“ ist bekannt und akzeptiert.</p>
+   <p class="no">verworfen: <s>Agents do the dough work</s> · <s>Fresh builds every day</s></p>
+  </div>
+  <div class="meta-map">
+   <div class="mm h"><span>Bild</span><span>steht für</span><span>wo es vorkommt</span></div>
+   <div class="mm"><b>Linie</b><span>die Stationen in fester Reihenfolge</span><span>Website, Docs, Gespräche</span></div>
+   <div class="mm"><b>Station</b><span>ein Ticket-State, mit Werkzeug und Mensch</span><span>Website, Docs</span></div>
+   <div class="mm"><b>Rezept</b><span>WORKFLOW.md</span><span>Website, Docs</span></div>
+   <div class="mm"><b>Brötchen</b><span>was ausgeliefert wird</span><span>Website, leere Zustände</span></div>
+   <div class="mm"><b>Werkzeuge</b><span>Agenten und Add-ons</span><span>Website, Docs, 22-px-Icons</span></div>
+   <div class="mm"><b>States</b><span>qualification, spec, coding, review, done</span><span>App und Terminal, ohne Bäckerwörter</span></div>
+  </div>
+ </div>
+ <div class="beats">
+  <div class="beat"><h3>Deine Linie</h3><p>Jedes Ticket durchläuft dieselben Stationen.</p></div>
+  <div class="beat"><h3>Ein Mensch an jeder Station</h3><p>Agenten arbeiten, du entscheidest.</p></div>
+  <div class="beat"><h3>Heraus kommt, was funktioniert</h3><p>Pipeline-Tests, Browser-Szenarien, ein Review-Urteil, und ein Mensch gibt den Merge frei. Mechanismen, kein Versprechen.</p></div>
+ </div>
+</section>
+
+<section>
+ <h2>Woran die Marke scheitert</h2>
+ <div class="anti">
+  <div><b>AI-Slop, Tailwind-Look</b><p>Standard-Karten, Kicker, Pillen überall.</p></div>
+  <div><b>Zu dunkel</b><p>Dark als Markenauftritt.</p></div>
+  <div><b>Zu Sci-Fi</b><p>Kosmos, Glow, Verläufe.</p></div>
+  <div><b>Zu verspielt</b><p>Wortspiele, Emoji, niedliche Figuren.</p></div>
+  <div><b>3D-Avatare</b><p>monday-Stil.</p></div>
+  <div><b>Zu komplexe Geschichte</b><p>Ein Satz, drei Takte.</p></div>
+ </div>
+</section>
+
+<section>
+ <h2>Personas und App-Rollen</h2>
+ <p class="lead">Christians Personas aus der alten Rollen-Spec sind App-Rollen im Workspace (member, lead, admin). Beide Ebenen bleiben getrennt, so hängen sie zusammen:</p>
+ <div class="roles">
+  <div class="rr h"><span>Persona</span><span>Einstieg heute auf der Landingpage</span><span>typische App-Rolle</span></div>
+  <div class="rr"><span class="p"><img src="../directions/portraits/lead.jpg" alt="">P1 · Agenturleitung</span><span>„In the browser only“, später „For your team“</span><span>Workspace-Admin oder Team-Lead, als Reviewer eingetragen</span></div>
+  <div class="rr"><span class="p"><img src="../directions/portraits/developer.jpg" alt="">P2 · Entwickler</span><span>„With your agent in the repo“</span><span>Contributor, Projekt-Member, Conductor-Besitzer</span></div>
+  <div class="rr"><span class="p"><img src="../directions/portraits/client.jpg" alt="">P3 · Agenturkunde</span><span>„In the browser only“</span><span><span class="chip cw">offen bei Christian</span> Guest reicht nicht</span></div>
+  <div class="rr"><span class="p"><img src="../directions/portraits/team-2.jpg" alt="">P4 · Solo-Gründer</span><span>„With your agent in the repo“</span><span>Workspace-Owner</span></div>
+ </div>
+</section>
+
+<section>
+ <h2>Corporate Design: entschieden am 23.10.</h2>
+ <div class="cd">
+  <div class="box"><h3>Display-Schrift</h3><div class="type">Bricolage</div><p class="small">Bricolage Grotesque ersetzt Instrument Serif. Spline Sans für Text, Spline Sans Mono für Daten.</p></div>
+  <div class="box"><h3>Farbrollen</h3><div class="sw"><span style="background:var(--butter)"></span><span style="background:var(--lime)"></span><span style="background:var(--rose)"></span><span style="background:var(--crust)"></span><span style="background:var(--rye)"></span><span style="background:var(--flour)"></span></div><p class="small">Butter wartet auf dich und trägt die Hauptaktion. Limette läuft und ist gut. Rose ist Review. Kruste nur Grafik.</p></div>
+  <div class="box"><h3>Menschen an den Stationen</h3><div class="faces"><img src="../directions/portraits/client.jpg" alt=""><img src="../directions/portraits/developer.jpg" alt=""><img src="../directions/portraits/lead.jpg" alt=""></div><p class="small">Konzept B: echte Menschen im Butter-Ring unter jedem Werkzeug. In der App der echte Avatar.</p></div>
+  <div class="box"><h3>Porträts</h3><p class="small">Unsplash oder KI-generiert. Nur Rollen: keine Namen, keine Zitate, nie als Kunden ausgegeben.</p><p class="small">Basis bleibt „Teig &amp; Terminal“, Revision v2 liegt im Entwurf vor.</p></div>
+ </div>
+</section>
+
+<section>
+ <h2>Stand der Entscheidungen</h2>
+ <div class="status">
+  <div class="col c1"><div class="ch"><h3>Entschieden</h3><span class="chip">23.10.</span></div><ul>
+   <li><b>Fundament freigegeben</b>, ohne Änderungen</li>
+   <li><b>Open Core</b>: Kern frei, Hosting und Add-ons kosten</li>
+   <li><b>Hosting-Instanz</b> existiert, Workspaces von Hand</li>
+   <li><b>Hauptaktion</b> Start a free trial, Demo leise</li>
+   <li><b>Station statt Gate</b>, ein Mensch an jeder</li>
+   <li><b>Kernzeile</b> You're the baker. Agents run the line.</li>
+   <li><b>Merge</b> nur im Terminal oder GitLab-MR</li>
+   <li><b>Conductors</b> immer bei der Agentur</li>
+   <li><b>CD</b>: Bricolage, Konzept B, Farbrollen, Porträts</li>
+  </ul></div>
+  <div class="col c2"><div class="ch"><h3>Offen bei dir</h3><span class="chip">später</span></div><ul>
+   <li><b>Testphase oder Demo</b>: Form und Dauer<span class="d">bestimmt den Text am Trial-Button</span></li>
+   <li><b>Free Tier beim Hosting</b></li>
+   <li><b>Add-on-Liste</b> über Time Tracking hinaus</li>
+   <li><b>Preise</b><span class="d">bis dahin keine Preise öffentlich</span></li>
+   <li><b>Self-Service-Anmeldung</b>: ab wann</li>
+   <li><b>Persona-Name</b> „Rosmarie“ für P4</li>
+   <li><b>Illustration</b>: Endfassung durch Illustrator?</li>
+  </ul></div>
+  <div class="col c3"><div class="ch"><h3>Offen bei Christian</h3><span class="chip">Produkt</span></div><ul>
+   <li><b>Rang für den Agenturkunden</b> (P3)<span class="d">Guest liest nur, Contributor darf zu viel</span></li>
+   <li><b>Docs prüfen</b>: Rückfragen der Agenten<span class="d">work-in-the-browser.md sagt „nur auf der Maschine“, laut dir auch im Browser</span></li>
+  </ul></div>
+  <div class="col c4"><div class="ch"><h3>Nächste Schritte</h3><span class="chip">Abschnitt 10</span></div><ul>
+   <li><b>Moodboard</b><span class="d">fertig 23.10.</span></li>
+   <li><b>CD-Revision</b> Teig &amp; Terminal v2<span class="d">Entwurf 23.10., Dark Mode offen</span></li>
+   <li><b>Copy</b>: Headline, drei Takte, Your recipe, Free/hosted, FAQ Kosten</li>
+   <li><b>App-Texte für P3</b> in Qualification und Spec</li>
+   <li><b>Nicht in diesem Durchgang</b>: Website im Repo, Tokens, Preisseite</li>
+  </ul></div>
+ </div>
+</section>
+</main>
+<footer><div class="wrap">bakers.build · Brand-Fundament · Stand 2026-10-23 · Quelle: docs/decisions/brand-foundation.md, PRODUCT.md, .claude/brand-voice-guidelines.md</div></footer>
+</body></html>

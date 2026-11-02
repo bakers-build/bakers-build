@@ -1,0 +1,80 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/directions/logo-avatare.html"
+        ],
+        "createdAt": "2026-10-22T11:05:48.871Z",
+        "reason": "user chose direction A (Graza reference, flour ground #F5EBDA) on 2026-10-22"
+      },
+      {
+        "rule": "tight-leading",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/moodboard/index.html"
+        ],
+        "createdAt": "2026-10-23T08:45:28.283Z",
+        "reason": "intentional: display serif headings at ~0.95 leading, matching approved a-kombi.html (84px/.95); body text is 1.55"
+      },
+      {
+        "rule": "overused-font",
+        "value": "instrument serif",
+        "files": [
+          ".impeccable/mocks/moodboard/index.html"
+        ],
+        "createdAt": "2026-10-23T08:45:28.311Z",
+        "reason": "moodboard shows Instrument Serif as the current face under review next to its alternatives"
+      },
+      {
+        "rule": "repeated-container-text",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/moodboard/index.html"
+        ],
+        "createdAt": "2026-10-23T08:45:28.346Z",
+        "reason": "type specimen: the same sample line is repeated on purpose to compare faces"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/moodboard/index.html"
+        ],
+        "createdAt": "2026-10-23T08:45:28.375Z",
+        "reason": "user chose direction A (flour ground #F5EBDA) on 2026-10-22, same as existing ignore for logo-avatare.html"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/directions/teig-terminal-v2.html"
+        ],
+        "createdAt": "2026-10-23T09:20:32.327Z",
+        "reason": "user chose direction A (flour ground #F5EBDA) on 2026-10-22; v2 keeps it"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/directions/teig-terminal-v2.html"
+        ],
+        "createdAt": "2026-10-23T09:20:32.386Z",
+        "reason": "the beats are separated by hairline dividers, not boxed; text is meant to align with the page edge"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/foundation/index.html"
+        ],
+        "createdAt": "2026-10-23T09:29:52.805Z",
+        "reason": "user chose direction A (flour ground #F5EBDA) on 2026-10-22"
+      }
+    ]
+  }
+}

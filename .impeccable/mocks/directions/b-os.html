@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>B · Backstuben-OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Martian+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--field:#FFB27A;--field-dot:#E8834A;--ink:#17120E;--win:#FFFCF4;--butter:#FFD84D;--mint:#9FE3B5;--berry:#F59AB5;--sky:#A9D2F5;
+ --disp:"Bricolage Grotesque",system-ui,sans-serif;--mono:"Martian Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0}
+body{background:#cfc6bb;color:var(--ink);font-family:var(--mono);-webkit-font-smoothing:antialiased}
+::selection{background:var(--ink);color:var(--butter)}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.note{font:500 13px/1.6 var(--mono);color:#3d342b;max-width:1440px;margin:56px auto 16px;padding:0 8px}
+.board{width:1440px;margin:0 auto;position:relative;overflow:hidden;
+ background-color:var(--field);background-image:radial-gradient(var(--field-dot) 1.1px,transparent 1.3px);background-size:6px 6px}
+.menubar{display:flex;align-items:center;gap:28px;height:40px;padding:0 20px;background:var(--win);border-bottom:2px solid var(--ink);font:500 13px var(--mono)}
+.menubar b{font:800 18px var(--disp);letter-spacing:-.02em;margin-right:12px}
+.menubar a{text-decoration:none;color:inherit}
+.menubar .r{margin-left:auto;display:flex;gap:18px;align-items:center}
+.menubar .cta{background:var(--ink);color:var(--butter);padding:6px 12px}
+.win{position:absolute;background:var(--win);border:2px solid var(--ink);box-shadow:6px 6px 0 rgba(23,18,14,.9)}
+.win .tb{display:flex;align-items:center;gap:10px;height:28px;padding:0 10px;background:var(--ink);color:var(--win);font:500 12px var(--mono)}
+.win .tb i{width:12px;height:12px;border:1.5px solid var(--win);display:inline-block}
+.win .tb span{margin-left:auto;opacity:.7}
+.win .bd{padding:20px}
+h1{font:800 96px/.9 var(--disp);letter-spacing:-.035em}
+.lead{font:400 15px/1.7 var(--mono);margin-top:22px;max-width:46ch}
+.agent{display:flex;flex-direction:column;align-items:center;gap:6px;font:500 12px var(--mono);text-align:center}
+.agent svg{color:var(--ink)}
+.agent b{font:700 20px var(--disp)}
+.stat{display:flex;gap:8px;align-items:center;font-size:12px}
+.sq{width:10px;height:10px;border:1.5px solid var(--ink);display:inline-block}
+.field{display:flex;flex-direction:column;gap:6px;font:500 12px var(--mono);margin-bottom:14px}
+.field input{font:400 14px var(--mono);padding:10px;border:2px solid var(--ink);background:#fff;color:var(--ink)}
+.btns{display:flex;gap:10px;justify-content:flex-end}
+.btn{font:600 13px var(--mono);padding:10px 16px;border:2px solid var(--ink);background:var(--win);color:var(--ink);cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.btn.def{background:var(--butter)}
+.btn:active{transform:translate(3px,3px);box-shadow:none}
+.taskbar{position:absolute;left:0;right:0;bottom:0;height:40px;background:var(--win);border-top:2px solid var(--ink);display:flex;align-items:center;gap:12px;padding:0 14px;font:500 12px var(--mono)}
+.taskbar .t{border:2px solid var(--ink);padding:3px 10px}
+.taskbar .clock{margin-left:auto}
+/* terminal */
+.term{background:#0F0C0A;color:#F2E8D9;font:400 13.5px/1.8 var(--mono)}
+.term pre{padding:18px 22px;font:inherit;white-space:pre}
+.y{color:var(--butter)}.g{color:var(--mint)}.p{color:var(--berry)}.d{color:#8c8174}.w{color:#fff}
+.cur{display:inline-block;width:9px;height:17px;background:var(--butter);vertical-align:-3px;animation:bl 1.1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}@media (prefers-reduced-motion:reduce){.cur{animation:none}}
+/* app */
+.cols{display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid var(--ink)}
+.col{border-right:2px solid var(--ink);min-height:460px}.col:last-child{border-right:0}
+.col h5{font:600 12px var(--mono);display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:2px solid var(--ink);background:#F4EEDF}
+.col h5 em{margin-left:auto;font-style:normal;font-weight:400}
+.card{margin:10px;border:2px solid var(--ink);background:#fff;padding:10px 12px}
+.card .id{font:500 12px var(--mono);color:var(--ink);opacity:.72}
+.card .t{font:700 16px/1.2 var(--disp);margin:5px 0 10px}
+.who{display:flex;gap:8px;align-items:center;font:500 12px var(--mono)}
+.who svg{width:24px;height:30px;color:var(--ink)}
+.ini{width:24px;height:24px;border:2px solid var(--ink);display:grid;place-items:center;font:600 10px var(--mono);background:var(--sky)}
+.card.wait{background:var(--butter)}
+.card.live{box-shadow:4px 4px 0 var(--ink)}
+.act{display:flex;gap:8px;margin-top:10px}.act .btn{padding:6px 10px;font-size:12px;box-shadow:2px 2px 0 var(--ink)}
+.prog{height:10px;border:2px solid var(--ink);margin-top:10px;background:repeating-linear-gradient(90deg,var(--ink) 0 6px,transparent 6px 9px) left/58% 100% no-repeat}
+</style></head><body>
+<script src="bakers.js"></script>
+
+<p class="note"><b>B · Backstuben-OS</b> — typesafe-Haltung: ein kleines Betriebssystem auf gerasterter Aprikosen-Fläche. Jeder Agent ist ein Fenster. Fette Grotesk, Mono überall, harte Kanten.</p>
+<section class="board" style="height:900px" aria-label="Landing">
+ <nav class="menubar"><b>bakers.build</b><a href="#">How it works</a><a href="#">Terminal</a><a href="#">Docs</a><a href="#">GitLab</a><span class="r"><span>Open source · MIT</span><a class="cta" href="#demo">Book a demo</a></span></nav>
+ <div class="win" style="left:56px;top:84px;width:780px">
+  <div class="tb"><i></i>README.txt<span>bakers.build</span></div>
+  <div class="bd" style="padding:34px 36px 40px"><h1>AI agents work your tickets. You decide what ships.</h1>
+   <p class="lead">Before your team is up, the prep is done. Agents run on your own machines, every run is recorded, and every plan, review and merge waits for a person.</p></div>
+ </div>
+ <div class="win" style="left:880px;top:84px;width:166px"><div class="tb"><i></i>spec.agent</div><div class="bd agent"><svg width="110" height="169" style="--apron:var(--butter)"><use href="#baker-spec"/></svg><b>Spec</b><span class="stat"><span class="sq" style="background:var(--butter)"></span>drafting BB-158</span></div></div>
+ <div class="win" style="left:1062px;top:128px;width:166px"><div class="tb"><i></i>coding.agent</div><div class="bd agent"><svg width="110" height="169" style="--apron:var(--mint)"><use href="#baker-coding"/></svg><b>Coding</b><span class="stat"><span class="sq" style="background:var(--mint)"></span>BB-151 · 12:08</span></div></div>
+ <div class="win" style="left:1244px;top:84px;width:166px"><div class="tb"><i></i>review.agent</div><div class="bd agent"><svg width="110" height="169" style="--apron:var(--berry)"><use href="#baker-review"/></svg><b>Review</b><span class="stat"><span class="sq" style="background:var(--berry)"></span>your call</span></div></div>
+ <form class="win" id="demo" style="left:960px;top:448px;width:400px" onsubmit="return false">
+  <div class="tb"><i></i>Book a demo<span>30 min</span></div>
+  <div class="bd"><p style="font:700 22px/1.15 var(--disp);margin-bottom:16px">See it work on one ticket from your repo.</p>
+   <label class="field">Work email<input type="email" placeholder="you@team.dev" required></label>
+   <div class="btns"><button class="btn" type="button">Read the docs</button><button class="btn def" type="submit">Book a demo</button></div></div>
+ </form>
+ <div class="win" style="left:96px;top:640px;width:560px"><div class="tb"><i></i>install.sh</div>
+  <div class="term"><pre><span class="d">$</span> npm i -g @bakers-build/bakers
+<span class="d">$</span> bakers ui           <span class="d"># your board, in the terminal</span></pre></div></div>
+ <div class="taskbar"><span class="t">bakers.build</span><span class="t">3 agents online</span><span class="clock">04:12 · prep done</span></div>
+</section>
+
+<p class="note"><b>bakers ui</b> — das Terminal ist ein Fenster in derselben Welt. Neues Ticket direkt eingeben.</p>
+<section class="board" style="height:640px" aria-label="Terminal">
+ <div class="win" style="left:56px;top:48px;width:400px"><div class="tb"><i></i>about.txt</div><div class="bd"><p style="font:800 44px/.95 var(--disp);letter-spacing:-.03em">Write the ticket where you already work.</p><p class="lead" style="font-size:13px">The Spec agent drafts a plan. You approve it before any code is written.</p></div></div>
+ <div class="win" style="left:500px;top:48px;width:884px"><div class="tb"><i></i>bakers ui — shop-relaunch<span>80×24</span></div>
+  <div class="term"><pre><span class="y">┌ new ticket ─────────────────────────────────────────────┐</span>
+<span class="y">│</span> title    CSV import for product prices
+<span class="y">│</span> detail   Editors upload a CSV; prices update, errors per row.
+<span class="y">│</span> project  shop-relaunch        priority  normal
+<span class="y">└──────────────────────────────────────── [enter] create ┘</span>
+
+<span class="g">■</span> created <span class="w">BB-162</span> → qualification
+
+ ID      STATE          WHO                 NOW
+ <span class="w">BB-162</span>  qualification  <span class="y">you</span>                 waiting for your OK
+ <span class="w">BB-151</span>  coding         <span class="g">Coding @cw-framework</span> running 12:08 · 62k tok
+ <span class="w">BB-149</span>  review         <span class="p">Review</span>              verdict ready → <span class="y">your call</span>
+ <span class="w">BB-140</span>  done           ms                  merged · 2 runs
+
+<span class="d">a approve   r send back   / search   ? help</span>   <span class="cur"></span></pre></div></div>
+</section>
+
+<p class="note"><b>Web-App</b> — dasselbe Fenster-Vokabular, aber ruhig und dicht. Was auf dich wartet, ist butter-gelb gefüllt.</p>
+<section class="board" style="height:700px" aria-label="Web app">
+ <nav class="menubar"><b>bakers.build</b><a href="#">My work</a><a href="#" style="text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:2px">Board</a><a href="#">Tickets</a><a href="#">Runs</a><span class="r"><span>ms-laptop ● cw-framework ●</span><button class="btn def" style="padding:5px 10px;box-shadow:2px 2px 0 var(--ink)">New ticket</button></span></nav>
+ <div class="win" style="left:40px;top:72px;width:1360px">
+  <div class="tb"><i></i>shop-relaunch — board<span>14 open</span></div>
+  <div class="cols">
+   <div class="col"><h5><span class="sq"></span>qualification<em>2</em></h5>
+    <div class="card wait"><div class="id">BB-162</div><div class="t">CSV import for product prices</div><div class="who"><span class="ini">ms</span>waiting for you</div><div class="act"><button class="btn def" style="background:#fff">Approve</button><button class="btn">Edit</button></div></div>
+    <div class="card"><div class="id">BB-163</div><div class="t">Redirects for old category URLs</div><div class="who"><span class="ini">cw</span>cw</div></div></div>
+   <div class="col"><h5><span class="sq" style="background:var(--butter)"></span>spec<em>1</em></h5>
+    <div class="card"><div class="id">BB-158</div><div class="t">Newsletter opt-in on checkout</div><div class="who"><svg style="--apron:var(--butter)"><use href="#baker-head"/></svg>Spec · drafting</div></div></div>
+   <div class="col"><h5><span class="sq" style="background:var(--mint)"></span>coding<em>2</em></h5>
+    <div class="card live"><div class="id">BB-151</div><div class="t">Product search ranks by stock</div><div class="who"><svg><use href="#baker-head"/></svg>Coding · cw-framework</div><div class="prog" role="img" aria-label="running for 12 minutes"></div></div>
+    <div class="card"><div class="id">BB-155</div><div class="t">Faster image thumbnails</div><div class="who"><svg><use href="#baker-head"/></svg>queued</div></div></div>
+   <div class="col"><h5><span class="sq" style="background:var(--berry)"></span>review<em>1</em></h5>
+    <div class="card wait"><div class="id">BB-149</div><div class="t">Order export for accounting</div><div class="who"><svg><use href="#baker-head"/></svg>verdict: looks good</div><div class="act"><button class="btn" style="background:#fff">Merge</button><button class="btn">Send back</button></div></div></div>
+   <div class="col"><h5><span class="sq" style="background:var(--ink)"></span>done<em>14</em></h5>
+    <div class="card"><div class="id">BB-140</div><div class="t">Cookie banner copy</div><div class="who"><span class="ini">ms</span>merged · 2 runs</div></div>
+    <div class="card"><div class="id">BB-138</div><div class="t">Fix VAT rounding</div><div class="who"><span class="ini">cw</span>merged · 1 run</div></div></div>
+  </div>
+ </div>
+</section>
+<div style="height:80px"></div>
+</body></html>
