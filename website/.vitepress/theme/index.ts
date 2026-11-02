@@ -12,7 +12,9 @@
 // away from `html.landing-page`, so the landing is untouched.
 import './tailwind.css'
 import './landing.css'
-import DefaultTheme from 'vitepress/theme'
+// Without its bundled Inter files: Nunito Sans comes from Google Fonts, Inter is only a
+// fallback, and shipping Inter would need its OFL notice (docs/bakers/licensing.md).
+import DefaultTheme from 'vitepress/theme-without-fonts'
 import './docs.css'
 import { h } from 'vue'
 import Landing from './landing/Landing.vue'

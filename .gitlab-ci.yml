@@ -217,7 +217,7 @@ docs_pages:
   before_script: []
   script:
     - node website/scripts/check-pages.mjs
-    - node --test website/scripts/marketplace.test.mjs
+    - node --test website/scripts/marketplace.test.mjs website/scripts/third-party.test.mjs
 
 # The MR title becomes the squash subject, from which `release:version` derives version and
 # release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a

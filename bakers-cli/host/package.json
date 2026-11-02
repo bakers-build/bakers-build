@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "bakers.build meta package: the `bakers` plugin-host CLI + all runtime plugins. Global install target.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20.19"
   },

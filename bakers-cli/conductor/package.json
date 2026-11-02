@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "bakers.build conductor engine + CLI: registers, claims tickets via JSON:API, dispatches agents.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20.19"
   },

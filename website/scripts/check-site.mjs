@@ -85,6 +85,20 @@ for (const [from, to] of Object.entries(ROUTES)) {
   else if (pages.get(target).redirect) report(from, `redirect target ${to} is itself a redirect; point at ${pages.get(target).redirect}`)
 }
 
+// The bundled frameworks' MIT notices live only in this file (scripts/third-party.mjs).
+let notices = ''
+try {
+  notices = readFileSync(join(DIST, 'THIRD-PARTY-LICENSES.txt'), 'utf8')
+} catch {}
+for (const name of ['@vue/runtime-core', 'vitepress'])
+  if (!notices.includes(`\n${name}@`)) report('/THIRD-PARTY-LICENSES.txt', `does not list the bundled ${name} package`)
+if (notices.includes('ships no license file'))
+  report('/THIRD-PARTY-LICENSES.txt', 'a bundled package has no license text; add it to docs/bakers/licensing.md')
+// Font files are assets, not JS modules, so third-party.mjs never lists them; the site ships none.
+for (const name of readdirSync(DIST, { recursive: true }))
+  if (/\.(woff2?|ttf|otf|eot)$/i.test(name))
+    report('/' + name.split(sep).join('/'), 'font file without a license notice; load it from a host or add its license to docs/bakers/licensing.md')
+
 const prefixes = process.argv.slice(2)
 const shown = problems.filter(({ where }) => prefixes.length === 0 || prefixes.some((prefix) => where.startsWith(prefix)))
 for (const { where, message } of shown) console.log(`${where}: ${message}`)

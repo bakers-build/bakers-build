@@ -7,7 +7,8 @@
 # built here. Pin pnpm 11.5.2 (the version the wodby web image runs, and the one
 # the committed lockfile installs cleanly — pnpm 9 trips over the overrides entry).
 FROM node:22-bookworm-slim AS theme
-WORKDIR /theme
+# The repository layout is kept so vite.config.js finds website/scripts/third-party.mjs.
+WORKDIR /repo/web/themes/custom/bb_theme
 # CI=true: non-interactive (no purge-confirm TTY prompt). verify-deps-before-run=false:
 # pnpm 11 otherwise re-checks deps before `pnpm build` and tries to reinstall — the
 # install layer already satisfies the lockfile, so skip the redundant recheck.
@@ -22,6 +23,7 @@ COPY web/themes/custom/bb_theme/package.json \
      web/themes/custom/bb_theme/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY web/themes/custom/bb_theme ./
+COPY website/scripts/third-party.mjs /repo/website/scripts/third-party.mjs
 RUN pnpm build
 
 # --- PHP / Drupal stage ---
@@ -68,7 +70,7 @@ COPY --chown=wodby patches ${APP_ROOT}/patches
 RUN composer install --no-dev --no-interaction --no-progress --prefer-dist
 COPY --chown=wodby . ${APP_ROOT}
 # Built theme assets (dist/ is gitignored, so absent from the build context above).
-COPY --chown=wodby --from=theme /theme/dist ${APP_ROOT}/web/themes/custom/bb_theme/dist
+COPY --chown=wodby --from=theme /repo/web/themes/custom/bb_theme/dist ${APP_ROOT}/web/themes/custom/bb_theme/dist
 
 # --- Nginx stage ---
 FROM wodby/nginx:1.27-5.39.11 AS nginx
