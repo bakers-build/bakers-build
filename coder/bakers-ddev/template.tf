@@ -110,11 +110,254 @@ variable "frp_version" {
   default     = "0.68.0"
 }
 
+variable "pm_bot_source_url" {
+  description = "HTTPS URL of the bakers.build repository the PM bot's code (pm-bot/) is fetched from; no credentials in it"
+  type        = string
+  default     = "https://git.key-tec.de/bakers-build/bakers-build.git"
+}
+
+variable "pm_bot_ref" {
+  description = "Full commit hash of bakers.build whose pm-bot/ every workspace runs; it also pins Hermes (pm-bot/bin/setup)"
+  type        = string
+  default     = "93a76c871761d1d8030989e10345456a249ae7fc"
+}
+
+variable "pm_bot_source_user" {
+  description = "User name of the deploy token for pm_bot_source_url"
+  type        = string
+  default     = ""
+}
+
+variable "pm_bot_source_token" {
+  description = "Deploy token (read_repository) for pm_bot_source_url; empty for a public repository"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 provider "docker" {
   host = var.docker_host
 }
 
 data "coder_workspace" "me" {}
+
+# The PM bot's configuration (README › PM bot). Mutable, so a value can be changed on an
+# existing workspace; it applies on the next start. All empty means no bot.
+
+data "coder_parameter" "pm_bot_slack_bot_token" {
+  name         = "pm_bot_slack_bot_token"
+  display_name = "PM bot: Slack bot token"
+  description  = "The Slack app's bot token (xoxb-…). All PM bot parameters empty: no bot (README › PM bot)."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 1
+  form_type    = "input"
+  styling      = jsonencode({ mask_input = true })
+}
+
+data "coder_parameter" "pm_bot_slack_app_token" {
+  name         = "pm_bot_slack_app_token"
+  display_name = "PM bot: Slack app token"
+  description  = "The Slack app's Socket Mode token (xapp-…)."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 2
+  form_type    = "input"
+  styling      = jsonencode({ mask_input = true })
+}
+
+data "coder_parameter" "pm_bot_slack_allowed_channels" {
+  name         = "pm_bot_slack_allowed_channels"
+  display_name = "PM bot: allowed channels"
+  description  = "Slack channel IDs the bot answers in, separated by spaces or commas (C0123 C0456)."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 3
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_slack_allowed_users" {
+  name         = "pm_bot_slack_allowed_users"
+  display_name = "PM bot: allowed users"
+  description  = "Optional. Slack member IDs the bot answers, separated by spaces or commas. Empty: everyone in the allowed channels."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 4
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_slack_admin_users" {
+  name         = "pm_bot_slack_admin_users"
+  display_name = "PM bot: operators"
+  description  = "Slack member IDs that may run Hermes slash commands, separated by spaces or commas. Must not be empty."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 5
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_slack_workspace_url" {
+  name         = "pm_bot_slack_workspace_url"
+  display_name = "PM bot: Slack workspace URL"
+  description  = "The Slack workspace URL, for thread permalinks (https://example.slack.com)."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 6
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_slack_home_channel" {
+  name         = "pm_bot_slack_home_channel"
+  display_name = "PM bot: home channel"
+  description  = "Optional. A channel ID only the operators are in, for Hermes' restart notices."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 7
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_bakers_url" {
+  name         = "pm_bot_bakers_url"
+  display_name = "PM bot: bakers.build URL"
+  description  = "The bakers.build server (https://bakers.example.com)."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 8
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_bakers_client_id" {
+  name         = "pm_bot_bakers_client_id"
+  display_name = "PM bot: API key client ID"
+  description  = "Client ID of the API key of the bot's service account."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 9
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_bakers_client_secret" {
+  name         = "pm_bot_bakers_client_secret"
+  display_name = "PM bot: API key secret"
+  description  = "Client secret of that API key."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 10
+  form_type    = "input"
+  styling      = jsonencode({ mask_input = true })
+}
+
+data "coder_parameter" "pm_bot_project" {
+  name         = "pm_bot_project"
+  display_name = "PM bot: project UUID"
+  description  = "UUID of the bakers.build project the bot creates and follows tickets in."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 11
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_ticket_workflow" {
+  name         = "pm_bot_ticket_workflow"
+  display_name = "PM bot: ticket workflow"
+  description  = "Workflow of the tickets the bot creates: bb_work, or bb_autopilot for automatic approvals."
+  type         = "string"
+  default      = "bb_work"
+  mutable      = true
+  order        = 12
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_conductor" {
+  name         = "pm_bot_conductor"
+  display_name = "PM bot: conductor UUID"
+  description  = "Optional. The conductor set on each new ticket. Empty: tickets wait until someone sets one."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 13
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_anthropic_api_key" {
+  name         = "pm_bot_anthropic_api_key"
+  display_name = "PM bot: Anthropic API key"
+  description  = "The model credential. Set exactly one of this and the Claude OAuth token."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 14
+  form_type    = "input"
+  styling      = jsonencode({ mask_input = true })
+}
+
+data "coder_parameter" "pm_bot_claude_oauth_token" {
+  name         = "pm_bot_claude_oauth_token"
+  display_name = "PM bot: Claude OAuth token"
+  description  = "Alternative model credential, from `claude setup-token`; for tests. Set exactly one of the two."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 15
+  form_type    = "input"
+  styling      = jsonencode({ mask_input = true })
+}
+
+data "coder_parameter" "pm_bot_model" {
+  name         = "pm_bot_model"
+  display_name = "PM bot: model"
+  description  = "The Claude model the bot runs on."
+  type         = "string"
+  default      = "claude-sonnet-5-5"
+  mutable      = true
+  order        = 16
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_repo_url" {
+  name         = "pm_bot_repo_url"
+  display_name = "PM bot: repository URL"
+  description  = "Optional. HTTPS URL of the project's repository, without credentials; the bot reads a secret-free clone. Empty: no code access."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 17
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_repo_user" {
+  name         = "pm_bot_repo_user"
+  display_name = "PM bot: repository user"
+  description  = "Optional. User name of a read-only token for the repository URL."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 18
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_repo_token" {
+  name         = "pm_bot_repo_token"
+  display_name = "PM bot: repository token"
+  description  = "Optional. Read-only token (read_repository) for the repository URL; used only while cloning."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 19
+  form_type    = "input"
+  styling      = jsonencode({ mask_input = true })
+}
 
 resource "coder_agent" "main" {
   arch           = "amd64"
@@ -136,6 +379,30 @@ resource "coder_agent" "main" {
     GLAB_VERSION            = var.glab_version
     CLOUDFLARED_VERSION     = var.cloudflared_version
     FRP_VERSION             = var.frp_version
+    # The PM bot (scripts/pm-bot.sh). Never in coder_metadata: secrets stay off the workspace page.
+    PM_BOT_SOURCE_URL             = var.pm_bot_source_url
+    PM_BOT_REF                    = var.pm_bot_ref
+    PM_BOT_SOURCE_USER            = var.pm_bot_source_user
+    PM_BOT_SOURCE_TOKEN           = var.pm_bot_source_token
+    PM_BOT_SLACK_BOT_TOKEN        = data.coder_parameter.pm_bot_slack_bot_token.value
+    PM_BOT_SLACK_APP_TOKEN        = data.coder_parameter.pm_bot_slack_app_token.value
+    PM_BOT_SLACK_ALLOWED_CHANNELS = data.coder_parameter.pm_bot_slack_allowed_channels.value
+    PM_BOT_SLACK_ALLOWED_USERS    = data.coder_parameter.pm_bot_slack_allowed_users.value
+    PM_BOT_SLACK_ADMIN_USERS      = data.coder_parameter.pm_bot_slack_admin_users.value
+    PM_BOT_SLACK_WORKSPACE_URL    = data.coder_parameter.pm_bot_slack_workspace_url.value
+    PM_BOT_SLACK_HOME_CHANNEL     = data.coder_parameter.pm_bot_slack_home_channel.value
+    PM_BOT_BAKERS_URL             = data.coder_parameter.pm_bot_bakers_url.value
+    PM_BOT_BAKERS_CLIENT_ID       = data.coder_parameter.pm_bot_bakers_client_id.value
+    PM_BOT_BAKERS_CLIENT_SECRET   = data.coder_parameter.pm_bot_bakers_client_secret.value
+    PM_BOT_PROJECT                = data.coder_parameter.pm_bot_project.value
+    PM_BOT_TICKET_WORKFLOW        = data.coder_parameter.pm_bot_ticket_workflow.value
+    PM_BOT_CONDUCTOR              = data.coder_parameter.pm_bot_conductor.value
+    PM_BOT_ANTHROPIC_API_KEY      = data.coder_parameter.pm_bot_anthropic_api_key.value
+    PM_BOT_CLAUDE_OAUTH_TOKEN     = data.coder_parameter.pm_bot_claude_oauth_token.value
+    PM_BOT_MODEL                  = data.coder_parameter.pm_bot_model.value
+    PM_BOT_REPO_URL               = data.coder_parameter.pm_bot_repo_url.value
+    PM_BOT_REPO_USER              = data.coder_parameter.pm_bot_repo_user.value
+    PM_BOT_REPO_TOKEN             = data.coder_parameter.pm_bot_repo_token.value
   }
 
   metadata {
@@ -152,13 +419,18 @@ resource "docker_image" "workspace" {
   keep_locally = true
 }
 
-# Named by workspace ID, so renaming the workspace keeps both volumes.
+# Named by workspace ID, so renaming the workspace keeps the volumes.
 resource "docker_volume" "home" {
   name = "coder-${data.coder_workspace.me.id}-home"
 }
 
 resource "docker_volume" "docker" {
   name = "coder-${data.coder_workspace.me.id}-docker"
+}
+
+# The PM bot's home: its Hermes installation, sessions and the clone of the project's repository.
+resource "docker_volume" "pmbot" {
+  name = "coder-${data.coder_workspace.me.id}-pmbot"
 }
 
 resource "docker_container" "workspace" {
@@ -195,6 +467,19 @@ resource "docker_container" "workspace" {
     type   = "volume"
     source = docker_volume.docker.name
     target = "/var/lib/docker"
+  }
+
+  mounts {
+    type   = "volume"
+    source = docker_volume.pmbot.name
+    target = "/home/pmbot"
+  }
+
+  # Root-owned, so neither coder's tools nor the bot can change it.
+  upload {
+    content    = file("${path.module}/scripts/pm-bot.sh")
+    file       = "/usr/local/bin/pm-bot"
+    executable = true
   }
 
   env = ["CODER_AGENT_TOKEN=${coder_agent.main.token}"]
