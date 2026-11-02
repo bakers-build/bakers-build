@@ -3,12 +3,12 @@
   "autoMemoryEnabled": false,
   "enabledPlugins": {
     "bakers@bakers": true,
-    "superpowers@claude-plugins-official": true,
-    "mattpocock-skills@keytec-mattpocock": true,
-    "keytec-drupal@keytec": true,
+    "superpowers@claude-plugins-official": false,
+    "mattpocock-skills@mattpocock": true,
     "designbook@designbook": true,
     "designbook-drupal@designbook": true,
-    "designbook-css-tailwind@designbook": true
+    "designbook-css-tailwind@designbook": true,
+    "superpowers@superpowers-dev": true
   },
   "permissions": {
     "deny": [
@@ -32,5 +32,28 @@
       "PushNotification",
       "mcp__claude-in-chrome"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "mattpocock": {
+      "source": {
+        "source": "github",
+        "repo": "mattpocock/skills",
+        "ref": "v1.3.2"
+      }
+    },
+    "superpowers-dev": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers",
+        "ref": "v7.0.0"
+      }
+    },
+    "designbook": {
+      "source": {
+        "source": "github",
+        "repo": "pen-drop/designbook",
+        "ref": "a4fea9d7cf8d2e06321d132e6d24892d17c0a480"
+      }
+    }
   }
 }

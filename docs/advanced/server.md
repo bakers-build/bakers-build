@@ -35,7 +35,7 @@ The pipeline needs the masked, protected project variables `KOMODO_URL`, `KOMODO
 
 Secrets are Komodo Variables referenced as `[[NAME]]` in the stack environment. `keytec-ai deployer provision-secrets` creates missing ones as random hex, idempotently. `MAIL_SMTP_DSN` and `MAIL_FROM_ADDRESS` must be real, or outbound mail and with it passwordless sign-in break; `MAIL_FROM_NAME` is `bakers.build`. The Google sign-in variables stay empty until a Google client is registered for the host. Keep an intentionally empty variable non-secret: Komodo redacts secret values, and an empty secret breaks the deploy.
 
-To provision another installation, copy a `[[stack]]` from `komodo/bakers.toml`, change server, domain, branch, image references and variable names, and use the `keytec-drupal-deploy` skill. Agree DNS and TLS, storage, backups and secret ownership first. Run the Resource Sync before the first deploy and before any deploy that changes `file_paths`, or a running stack can lose its ingress and answer 404 everywhere.
+To add an installation, first agree DNS, TLS, storage, backups and secret ownership. Copy a `[[stack]]` in `komodo/bakers.toml`; change name, server, branch, domain, images and variable names (`[A-Za-z0-9_]`). Run `keytec-ai deployer provision-secrets`, review the Resource Sync diff, and sync before the first deploy and any `file_paths` change, or the stack can lose its ingress and answer 404 everywhere. Then point DNS and push the branch.
 
 ## Outbound mail
 

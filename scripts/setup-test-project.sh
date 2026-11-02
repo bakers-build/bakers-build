@@ -89,7 +89,7 @@
 #     state runs through `@bakers-build/bb-workflow`, and `plan`/`working`/`review` run
 #     the ticket's recipe (`bb-recipe-matt` by default). Read
 #     `workspaces/bakers-playground/WORKFLOW.md` before creating a ticket: its
-#     `## validate` row is the check a `working` run must report, and that file — not
+#     `## bb-phase-validate` row is the check a `working` run must report, and that file — not
 #     this script — is where the answer lives.
 #  7. RE-DRIVING THE SAME TICKET NEEDS ITS RUN DELETED, not released. A `bb_run`
 #     whose `state_at_start` equals the ticket's current state blocks re-claiming

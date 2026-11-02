@@ -148,8 +148,14 @@ export interface BbAgent {
    * <uuid>`), so `getRunLog` can read that one file directly instead of
    * scanning a worktree-keyed directory by mtime — the mtime scan is what let
    * a resumed/re-dispatched/reused worktree finalise a FOREIGN transcript.
+   * `workspacePath` is the dispatch workspace, for harness permissions that need
+   * its Git metadata paths rather than the conductor's own working directory.
    */
-  launchCommand(prompt: string, run?: AgentRunIdentity): string;
+  launchCommand(
+    prompt: string,
+    run?: AgentRunIdentity,
+    workspacePath?: string,
+  ): string;
   /**
    * Locate and read this agent's run transcript for a run that executed in
    * `worktreePath`. MUST return '' (never throw) when nothing is found.

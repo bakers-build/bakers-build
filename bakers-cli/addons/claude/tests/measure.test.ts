@@ -95,6 +95,40 @@ const bundled = (group: string) =>
   readFile(join(measureDir, `keytec-${group}.json`), 'utf8');
 
 describe('claude-measure launch wrapper', () => {
+  it.each([
+    'qualification',
+    'coding',
+    'review',
+  ])('loads versioned public recipe packages for %s', async (state) => {
+    const out = await measured(await worktree(true), state);
+    const settings = JSON.parse(out.settings);
+    expect(settings.extraKnownMarketplaces.mattpocock.source).toEqual({
+      source: 'github',
+      repo: 'mattpocock/skills',
+      ref: 'v1.3.2',
+    });
+    expect(settings.enabledPlugins['mattpocock-skills@mattpocock']).toBe(true);
+    expect(settings.enabledPlugins).not.toHaveProperty(
+      'mattpocock-skills@keytec-mattpocock',
+    );
+    expect(settings.extraKnownMarketplaces['superpowers-dev']?.source).toEqual({
+      source: 'github',
+      repo: 'obra/superpowers',
+      ref: 'v7.0.0',
+    });
+    expect(settings.enabledPlugins['superpowers@superpowers-dev']).toBe(true);
+    expect(settings.enabledPlugins['superpowers@claude-plugins-official']).toBe(
+      false,
+    );
+    if (state === 'coding') {
+      expect(settings.extraKnownMarketplaces.designbook?.source).toEqual({
+        source: 'github',
+        repo: 'pen-drop/designbook',
+        ref: 'a4fea9d7cf8d2e06321d132e6d24892d17c0a480',
+      });
+    }
+  });
+
   it('folds an inline --settings JSON into the profile, joining permission lists', async () => {
     const cwd = await worktree(true);
     const inline = {

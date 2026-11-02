@@ -739,11 +739,17 @@ describe('Conductor', () => {
     // call sites (the fix for the mtime-trap: agents can pin/select a
     // transcript by this id instead of scanning a directory by mtime).
     const launchedWith: (AgentRunIdentity | undefined)[] = [];
+    const launchedIn: (string | undefined)[] = [];
     const readWith: (AgentRunIdentity | undefined)[] = [];
     const agent: BbAgent = {
       id: 'claude',
-      launchCommand: (p: string, run?: AgentRunIdentity) => {
+      launchCommand: (
+        p: string,
+        run?: AgentRunIdentity,
+        workspacePath?: string,
+      ) => {
         launchedWith.push(run);
+        launchedIn.push(workspacePath);
         return p === '' ? 'claude' : `claude '${p}'`;
       },
       getRunLog: async (_worktreePath: string, run?: AgentRunIdentity) => {
@@ -791,6 +797,7 @@ describe('Conductor', () => {
     await conductor.tick();
 
     expect(launchedWith).toEqual([{ sessionId: 'r-2' }]);
+    expect(launchedIn).toEqual(['/fake/BB-1']);
     expect(readWith).toEqual([
       { sessionId: 'r-1', attemptFamily: attemptFamily('r-1') },
     ]);

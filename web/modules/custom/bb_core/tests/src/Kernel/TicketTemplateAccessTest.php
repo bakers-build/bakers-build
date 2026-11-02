@@ -686,7 +686,7 @@ final class TicketTemplateAccessTest extends KernelTestBase {
     self::assertSame('bb_work', $ticket->get('workflow')->value);
     self::assertSame('qualification', $ticket->get('state')->value);
     self::assertSame(['chore'], array_map(static fn ($term): string => (string) $term->label(), $ticket->get('ticket_type')->referencedEntities()));
-    self::assertStringContainsString('keytec-drupal-update', (string) $ticket->get('description')->value);
+    self::assertStringContainsString('`drupal-update` skill', (string) $ticket->get('description')->value);
 
     $template->set('name', 'Customised')->save();
     try {

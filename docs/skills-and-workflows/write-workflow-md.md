@@ -51,7 +51,7 @@ Runtime: DDEV through `@bakers-build/bb-runtime-ddev`.
 
 | When | Skill |
 |---|---|
-| `web/modules/custom/`, `config/` | `keytec-drupal:keytec-drupal-developer` |
+| `web/modules/custom/`, `config/` | `drupal-developer` |
 
 ## bb-phase-validate
 

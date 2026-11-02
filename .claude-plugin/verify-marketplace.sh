@@ -57,9 +57,14 @@ echo "Scenario: the shipped skill set is exactly bakers"
 # is no harness skill left to keep out of the marketplace (the automated one moved to
 # BB-286). What still needs guarding is the structural claim this scenario is named
 # for — one plugin, and no second skill bundle sitting in the same directory that a
-# reader would take for a shipped one.
-SKILLS="$(cd .claude/skills && ls -1)"
-[ "$SKILLS" = "bakers-build" ] || fail ".claude/skills holds more than the bakers-build bundle: $SKILLS"
-ok "bakers-build is the only project skill bundle, and it is the one the marketplace ships"
+# reader would take for a shipped one. Beside it sit only this repository's own
+# project skills (one SKILL.md each), which never ship.
+[ -d .claude/skills/bakers-build ] || fail ".claude/skills/bakers-build missing"
+for d in .claude/skills/*/; do
+  [ "$d" = ".claude/skills/bakers-build/" ] && continue
+  [ -f "${d}SKILL.md" ] && [ ! -e "${d}.claude-plugin" ] && [ ! -d "${d}skills" ] \
+    || fail "$d is a second skill bundle, not a project skill"
+done
+ok "bakers-build is the only skill bundle, and it is the one the marketplace ships"
 
 echo "ALL SCENARIOS GREEN"
