@@ -1337,6 +1337,43 @@ export class Conductor {
   }
 
   /**
+   * The session to resume for a run that picks up a human answer: the latest
+   * existing session of the ticket's previous run, when that run was in the
+   * same state and the ticket's latest `# Question` comment is newer than its
+   * start. Anything else — another state, no question, a session that is not
+   * on this machine, an agent or remote without the capability, or a failed
+   * read — starts a fresh session.
+   */
+  private async questionSession(
+    run: ClaimedRun,
+    t: Ticket,
+    chosen: ResolvedAgent,
+    worktreePath: string,
+  ): Promise<string | undefined> {
+    const exists = chosen.agent.sessionExists?.bind(chosen.agent);
+    if (!exists || !this.remote.fetchResumeContext) return undefined;
+    try {
+      const { previousRun, questionAt } =
+        await this.remote.fetchResumeContext(t.uuid, run.runUuid);
+      if (!previousRun || !questionAt) return undefined;
+      if (previousRun.stateAtStart !== run.stateAtStart) return undefined;
+      const asked = Date.parse(questionAt);
+      const started = Date.parse(previousRun.startedAt);
+      if (!(asked > started)) return undefined;
+      // The highest existing attempt is the session that asked.
+      for (const candidate of attemptFamily(previousRun.runUuid).reverse()) {
+        if (await exists(worktreePath, candidate)) return candidate;
+      }
+    } catch (err) {
+      this.logger.warn(
+        { ticket: t.identifier, run: run.runUuid, err },
+        'resume context unreadable — starting a fresh session',
+      );
+    }
+    return undefined;
+  }
+
+  /**
    * The part of a dispatch that can leave a sidecar or a worker behind
    * (BB-599): its caller unwinds it through `after_run` on any failure.
    */
@@ -1459,8 +1496,14 @@ export class Conductor {
         break;
       }
     }
+    const resumeSessionId = pinnedSessionId
+      ? await this.questionSession(run, t, chosen, ws.path)
+      : undefined;
     const identity = pinnedSessionId
-      ? { sessionId: pinnedSessionId }
+      ? {
+          sessionId: pinnedSessionId,
+          ...(resumeSessionId ? { resumeSessionId } : {}),
+        }
       : undefined;
     // BB-473 round 4 (review round 3, Critical 1): captured BEFORE
     // `startRun` so it precedes any transcript the agent is about to write —

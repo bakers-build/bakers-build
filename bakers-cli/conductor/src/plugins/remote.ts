@@ -236,6 +236,20 @@ export interface FrozenTicket {
   worktreePath: string;
 }
 
+/**
+ * What a dispatch needs to decide whether to resume the session that asked a
+ * ticket question: the ticket's run before this one, and when the latest
+ * `# Question` comment was published (ISO 8601).
+ */
+export interface ResumeContext {
+  previousRun: {
+    runUuid: string;
+    stateAtStart: string;
+    startedAt: string;
+  } | null;
+  questionAt: string | null;
+}
+
 /** Extra conductor-writable bb_run attributes (besides state/lease). */
 export interface RunWriteAttributes {
   /** Absolute path of the per-run git worktree (set by the conductor). */
@@ -407,6 +421,16 @@ export interface BbRemote {
    * latest run's worktree path ('' when none). Drives `on_freeze`/`on_resume`.
    */
   fetchFrozenTickets(conductorId: string): Promise<FrozenTicket[]>;
+  /**
+   * The resume facts for a run about to start on a ticket: its previous run
+   * (any run of the ticket other than `runUuid`, newest first) and the time
+   * of its latest `# Question` comment. Optional: a remote without it never
+   * resumes, and every run starts a fresh session.
+   */
+  fetchResumeContext?(
+    ticketUuid: string,
+    runUuid: string,
+  ): Promise<ResumeContext>;
   /**
    * Append one diagnostic line to a run's log (BB-293) — how the reaper
    * records what it found on the run record itself, not only in this machine's

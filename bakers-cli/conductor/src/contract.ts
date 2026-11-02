@@ -104,6 +104,7 @@ export type {
   FrozenTicket,
   InboxMessage,
   InboxSnapshot,
+  ResumeContext,
   RunMetrics,
   RunWriteAttributes,
   Ticket,
