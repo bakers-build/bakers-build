@@ -34,6 +34,9 @@
     "keytec-qa@keytec": true,
     "keytec-drupal@keytec": true,
     "designbook@designbook": true,
+    "designbook-drupal@designbook": true,
+    "designbook-css-tailwind@designbook": true,
+    "designbook-figma@designbook": true,
     "ponytail@ponytail": true
   }
 }
