@@ -32,7 +32,7 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 
 3. **Install it** in the repository or in any plugin, so the agent can discover it. `WORKFLOW.md` does not list recipes.
 
-4. **Prove it on a ticket.** Create a small ticket of a type your recipe covers, let qualification choose your recipe, or set it with `--recipe_names <method>`, and let it run. The run log shows `bb-recipe-<method>` loaded in each state, and the handoff comments show whether your slots hold.
+4. **Prove it on a ticket.** Create a small ticket of a type your recipe covers, let qualification choose your recipe, or set it with the `bakers_ticket_classify` tool ([bakers tools](/advanced/cli/tools)), and let it run. The run log shows `bb-recipe-<method>` loaded in each state, and the handoff comments show whether your slots hold.
 
 **Done when:** one ticket has passed through `plan`, `working` and `review` with your recipe loaded, as the run log shows.
 

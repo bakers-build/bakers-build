@@ -18,7 +18,7 @@ The check prints the selected connection, how it was selected and its file; `bak
 |---|---|---|
 | `bakers` is not found | `npm prefix -g`; is its `bin` directory on `PATH` in this terminal? | Add it, then open a new terminal or restart the IDE. See [Install and sign in](/advanced/cli/install) |
 | The AI cannot find `init`, `bb-init-project` or another bakers.build skill | Is the bakers.build plugin enabled in this agent session? | Install it (`/plugin install bakers@bakers` in Claude Code) and start a fresh session |
-| 401 or a login error | `bakers dropsh auth status` | `bakers dropsh auth login`. If the session is valid and access is still denied, ask the operator to fix your workspace or project membership |
+| 401 or a login error | `bakers auth status` | `bakers auth login`. If the session is valid and access is still denied, ask the operator to fix your workspace or project membership |
 | Wrong server or wrong project | The `Connection:` line of `bakers config check` and the output of `bakers info` | Remove a stray `.bakers/connection.config.local.js`, or select the right name in it. The project comes from `bakers.project` and `bakers.workspace` in `.bakers/conductor.config.js` |
 | Project name matches several workspaces | `bakers info` shows the wrong workspace | Set `bakers.workspace` in the committed config; see [Connect your project](/advanced/cli/connect-a-project) |
 | The check reports an old configuration shape | The finding names the file and key | `bakers config upgrade --scope all --dry-run`, review it, then apply; see [Update bakers.build](/advanced/configuration/update) |

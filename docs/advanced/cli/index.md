@@ -22,7 +22,8 @@ Options and subcommands are copied from `bakers --help` and the help of each com
 | `bakers update` | Install the latest CLI |
 | `bakers oven` | Node-agent lifecycle and the registry of conductors: [bakers oven](/advanced/cli/conductor) |
 | `bakers ui` | Interactive terminal UI: [bakers ui](/advanced/cli/ui) and [keys](/advanced/cli/ui-keys) |
-| `bakers dropsh` | JSON:API shell bound to the bakers.build connection: [bakers dropsh](/advanced/cli/dropsh) |
+| `bakers tools` | List, describe and call the server's named tools: [bakers tools](/advanced/cli/tools) |
+| `bakers auth` | Sign in, switch auth profiles and show the session: [bakers auth](/advanced/cli/auth) |
 | `bakers deployment` | Release and deployment helpers: [bakers deployment](/advanced/cli/deployment) |
 | `bakers agents` | Print the locally resolved agent catalog as JSON |
 | `bakers info` | Print the resolved project and workspace context as JSON |
@@ -43,10 +44,10 @@ bakers update
 
 ```sh
 bakers init
-bakers dropsh auth login
+bakers auth login
 ```
 
-`bakers init` is the first command a person runs. It sets up the machine identity and the connection to your server, never the project, and it needs no scope. `bakers init --help` still lists a `--scope` line, which `bakers init` does not require. A fresh connection signs in with a device code unless you pass a secret: `bakers dropsh auth login` then prints a URL and a short code, you confirm on any device, and it waits until you are signed in.
+`bakers init` is the first command a person runs. It sets up the machine identity and the connection to your server, never the project, and it needs no scope. `bakers init --help` still lists a `--scope` line, which `bakers init` does not require. A fresh connection signs in with a device code unless you pass a secret: `bakers auth login` then prints a URL and a short code, you confirm on any device, and it waits until you are signed in.
 
 | Option | Meaning |
 |---|---|

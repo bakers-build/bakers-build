@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildHostProgram,
   DEFAULT_COMMANDS,
@@ -42,12 +42,14 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
     if (saved === undefined) delete process.env.BB_COMMANDS;
     else process.env.BB_COMMANDS = saved;
   });
-  it('defaults to oven/ui/dropsh/deployment/agents/info/ports/track', () => {
+  it('includes official aliases and the compatibility command', () => {
     delete process.env.BB_COMMANDS;
     expect(resolveCommands().map((c) => c.name)).toEqual([
       'oven',
       'ui',
       'dropsh',
+      'tools',
+      'auth',
       'deployment',
       'agents',
       'info',
@@ -79,6 +81,9 @@ describe('buildHostProgram — help completeness + version (AC-1/AC-2)', () => {
     expect(cmds).not.toContain('bake');
     expect(cmds).toContain('ui');
     expect(cmds).toContain('dropsh');
+    expect(program.helpInformation()).not.toContain('dropsh');
+    expect(program.helpInformation()).toContain('tools');
+    expect(program.helpInformation()).toContain('auth');
     expect(cmds).toContain('deployment');
     // Also the host's own commands.
     expect(cmds).toContain('version');
@@ -88,6 +93,52 @@ describe('buildHostProgram — help completeness + version (AC-1/AC-2)', () => {
 
   it('resolveCliVersion returns the meta package version', () => {
     expect(resolveCliVersion()).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it.each([
+    ['tools', []],
+    ['auth', []],
+    ['tools', ['--conductor', 'default']],
+    ['auth', ['--conductor', 'default']],
+    ['tools', ['--conductor=default']],
+    ['auth', ['--conductor=default']],
+    ['tools', ['--conductor', 'help']],
+    ['auth', ['--conductor', 'help']],
+  ])('help %s exposes its options after %j', async (alias, leading) => {
+    delete process.env.BB_COMMANDS;
+    const savedCode = process.exitCode;
+    const savedConductor = process.env.BB_CONDUCTOR;
+    process.exitCode = 0;
+    let output = '';
+    const stdout = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((text) => {
+        output += text;
+        return true;
+      });
+    try {
+      await runHost([...leading, 'help', alias]);
+      expect(process.exitCode).toBe(0);
+      expect(output).toContain(`bakers ${alias}`);
+      if (alias === 'tools') {
+        expect(output).toContain('--schema');
+        expect(output).toContain('--data');
+      } else {
+        expect(output).toContain('login');
+        expect(output).toContain('logout');
+      }
+      expect(output).not.toContain('dropsh');
+      if (leading.length) {
+        expect(process.env.BB_CONDUCTOR).toBe(
+          leading.length === 2 ? leading[1] : 'default',
+        );
+      }
+    } finally {
+      stdout.mockRestore();
+      process.exitCode = savedCode;
+      if (savedConductor === undefined) delete process.env.BB_CONDUCTOR;
+      else process.env.BB_CONDUCTOR = savedConductor;
+    }
   });
 });
 
@@ -153,6 +204,8 @@ it('DEFAULT_COMMANDS names the split command packages', () => {
   expect(DEFAULT_COMMANDS.map((c) => c.plugin)).toEqual([
     '@bakers-build/conductor/commands/conductor',
     '@bakers-build/ui',
+    '@bakers-build/addon-dropsh',
+    '@bakers-build/addon-dropsh',
     '@bakers-build/addon-dropsh',
     '@bakers-build/addon-deployment',
     '@bakers-build/addon-agents',

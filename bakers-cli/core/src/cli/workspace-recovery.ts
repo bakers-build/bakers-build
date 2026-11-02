@@ -22,7 +22,7 @@ export interface WorkspaceRecoveryOptions extends BbConnectionLoadOptions {
   prompt?: (choices: WorkspaceChoice[]) => Promise<string | undefined>;
 }
 export function workspaceSearchCommand(path: string): string {
-  return `bakers dropsh --config ${shellQuote(path)} --format md search bb_workspace`;
+  return `bakers tools --config ${shellQuote(path)} tool_api__bakers_workspace_list`;
 }
 
 /** A UUID looks like `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`. */

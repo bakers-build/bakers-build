@@ -10,7 +10,7 @@ This page is the command reference. What a cycle does and how to run several con
 bakers [--conductor <name>] oven [--log-level <level>] [--log-sink <sink>] <subcommand>
 ```
 
-Every subcommand except `ls` works on the conductor of the checkout you stand in, found by walking up from the working directory to a `.bakers/` directory that holds a conductor config. `start`, `once` and `clean` need a signed-in connection and stop with a pointer to `bakers dropsh auth login` when there is none.
+Every subcommand except `ls` works on the conductor of the checkout you stand in, found by walking up from the working directory to a `.bakers/` directory that holds a conductor config. `start`, `once` and `clean` need a signed-in connection and stop with a pointer to `bakers auth login` when there is none.
 
 ## Global flags
 

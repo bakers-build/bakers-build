@@ -8,7 +8,7 @@ import {
   type WorkspaceRecoveryOptions,
 } from '@bakers-build/core';
 import { toolPlugin } from '@dropsh/plugin-tool';
-import type { Command } from 'commander';
+import { type Command, Help } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
 import { registerTemplateCommand } from './template.js';
 import { hideUnpublishedComments } from './unpublished-comments.js';
@@ -17,6 +17,7 @@ export function dropshConfigHint(resolvedPath?: string): string {
   return `bakers dropsh: no connection config at ${resolvedPath ?? '~/.bakers/bakers.config.js'}. Use --config <path> or run bakers config init --scope connection.`;
 }
 export interface DropshDispatchOptions extends WorkspaceRecoveryOptions {
+  publicCommand?: 'tools' | 'auth';
   stdout?: (text: string) => void;
   stderr?: (text: string) => void;
 }
@@ -54,6 +55,7 @@ function invocation(argv: string[]) {
     if (token.startsWith('--config=')) explicit = token.slice(9);
     if (token.startsWith('--connection=')) connection = token.slice(13);
     if (token.startsWith('--format=')) format = token.slice(9);
+    if (token.startsWith('--auth-profile=')) profile = token.slice(15);
     forwarded.push(token);
   }
   // Global options can appear late, after the command's positional arguments.
@@ -135,6 +137,23 @@ export async function dispatchBbDropsh(
         }
       : {}),
   });
+  if (options.publicCommand) {
+    program.name('bakers');
+    const command = program.commands.find(
+      (entry) =>
+        entry.name() === (options.publicCommand === 'tools' ? 'tool' : 'auth'),
+    );
+    for (const entry of command ? [command, ...command.commands] : []) {
+      entry.exitOverride();
+      entry.configureHelp({
+        showGlobalOptions: true,
+        commandUsage: (entry) =>
+          new Help()
+            .commandUsage(entry)
+            .replace(/^bakers tool\b/, 'bakers tools'),
+      });
+    }
+  }
   if (connection) {
     registerTemplateCommand(program, {
       contextFactory: () =>
@@ -163,7 +182,7 @@ const dropshCommandPlugin: BbCommandPlugin = {
     'JSON:API shell (dropsh) bound to the bakers.build connection config',
   register(program: Command, host: BbCommandHost): void {
     program
-      .command('dropsh')
+      .command('dropsh', { hidden: true })
       .description('JSON:API shell bound to the bakers.build connection')
       .helpOption(false)
       .allowUnknownOption()
@@ -174,3 +193,38 @@ const dropshCommandPlugin: BbCommandPlugin = {
   },
 };
 export default dropshCommandPlugin;
+
+function publicAlias(
+  name: 'tools' | 'auth',
+  verb: 'tool' | 'auth',
+): BbCommandPlugin {
+  return {
+    kind: 'command',
+    name,
+    describe:
+      name === 'tools'
+        ? 'discover, inspect and execute named tools'
+        : 'manage connection authentication and profiles',
+    register(program, host) {
+      program
+        .command(name)
+        .description(this.describe)
+        .helpOption(false)
+        .allowUnknownOption()
+        .argument('[args...]')
+        .action(async (args: string[]) => {
+          try {
+            await dispatchBbDropsh(host, [verb, ...args], {
+              publicCommand: name,
+            });
+          } catch (error) {
+            if ((error as { code?: string }).code !== 'commander.helpDisplayed')
+              throw error;
+          }
+        });
+    },
+  };
+}
+
+export const toolsCommandPlugin = publicAlias('tools', 'tool');
+export const authCommandPlugin = publicAlias('auth', 'auth');

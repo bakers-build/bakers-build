@@ -38,15 +38,23 @@ A definition may name a `label_term`, an existing label added to the ticket as v
 
 The `bb-workflow` reference `references/measurement.md` owns the write, and every state reads it instead of patching the field themselves. It checks that the rows match the chosen definition (every declared value present, each numeric, none undeclared) and never writes a violation. It then reads the ticket, drops every current row whose name starts with `<id>.`, appends the fresh set, keeps foreign rows and existing labels, and sends one update. Record the measurement before any state write: a transition retires the run, and a retired run loses its write scope.
 
-The same shape from a shell looks like this. The field is a multi-value array, so a write replaces the whole array and you must send the rows you want to keep:
+The write is the `bakers_metric_write` tool. It replaces the rows whose names start with `<name>.` and keeps every other row, so you send only the fresh set. From a shell, write the arguments to `metric.json`:
 
-```sh
-bakers dropsh read bb_ticket/bb_ticket/<uuid>
-bakers dropsh update bb_ticket/bb_ticket/<uuid> --dry-run \
-  --json metrics='[{"name":"job_rating.score","value":"4.0000","recorded":1789766400}]'
+```json
+{
+  "ticket": "<identifier>",
+  "name": "job_rating",
+  "rows": [{ "name": "job_rating.score", "value": 4 }],
+  "label": "retro"
+}
 ```
 
-The first command prints the current `metrics` under `data.attributes`. Drop `--dry-run` to send the update for real, and never use `--no-validate`. To add a `label_term`, name it with `--label_names` and resend every existing label as a repeated `--labels <uuid>`, because an update replaces a relationship.
+```sh
+bakers tools tool_api__bakers_metric_write --schema
+bakers tools tool_api__bakers_metric_write --data @metric.json
+```
+
+`--schema` shows the exact row shape the server accepts. `label` is the definition's `label_term`; leave it out for a definition without one. The result lists every metric row of the ticket. See [bakers tools](/advanced/cli/tools) for exit codes; a write that ended with exit `5` may have been applied, so read the ticket back before trying again.
 
 Re-measuring keeps no history in the field; earlier values live in the ticket comments and the run footprint. A human can also edit the metrics on the ticket's edit form, which has a Metrics widget.
 

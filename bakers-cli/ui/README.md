@@ -189,10 +189,10 @@ prints the same rows scoped to that project. A control plane that does not serve
 `/jsonapi/bakers/statistics` yields the named message on **stderr** and exit code `1`, so a
 script sees a failure rather than empty output.
 
-There is consequently **no non-interactive way to print the project list** any more: the
-deep-link grammar has no `projects:` target. The same data is one
-`bakers dropsh search bb_conductor --include project_id` away, which is what the screen
-itself reads.
+There is consequently **no non-interactive way to print the project list** in `bakers ui` any
+more: the deep-link grammar has no `projects:` target. `bakers tools
+tool_api__bakers_project_list` prints the projects, and `tool_api__bakers_conductor_list` a
+project's conductors.
 
 ## The Conductors tab (BB-232)
 
@@ -229,7 +229,7 @@ section below for which config wins.
 
 ## Which control plane answers
 
-`bakers ui` resolves its connection through the same single rule `bakers dropsh` uses:
+`bakers ui` resolves its connection through the same single rule `bakers tools` and `bakers auth` use:
 explicit `--config` / `$BB_CONFIG` / `$DROPSH_CONFIG` → the project's
 `./.bakers/bakers.config.js` (walk-up) → `~/.bakers/bakers.config.js` → the shipped fallback. So
 running it inside a repo that declares its own connection reaches **that** repo's control

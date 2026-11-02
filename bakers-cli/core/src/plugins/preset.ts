@@ -48,6 +48,10 @@ export interface CommandDescriptor {
   describe: string;
   /** Named export to pick instead of the module default. */
   export?: string;
+  /** Keep dispatch available while omitting the command from help. */
+  hidden?: boolean;
+  /** `bakers help <name>` runs `bakers <name> --help`, for plugins that render their own help. */
+  forwardHelp?: boolean;
 }
 
 /** The three surfaces, each named for its config home (surface = file = plugins). */

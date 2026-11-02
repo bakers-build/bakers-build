@@ -8,7 +8,7 @@ const schemas = Object.fromEntries(JSON.parse(readFileSync(new URL('./contract-f
 /** The MCP wire name of a bakers tool: mcp_server_tool_bridge serves tool `<id>` as `tool_api__<id>`. */
 export const tool = id => `tool_api__${id}`;
 export const WRITES = ['bakers_ticket_create', 'bakers_ticket_classify', 'bakers_ticket_transition', 'bakers_comment_publish', 'bakers_metric_write', 'bakers_time_propose', 'bakers_run_cancel'].map(tool);
-const JSONAPI = ['read', 'search', 'create', 'update', 'delete', 'schema', 'upload-file'];
+const SELECTORS = new Set(['--config', '--connection', '--auth-profile', '--conductor']);
 
 export function validateTools(fixture, skill) {
   requireValue(fixture.skill === skill && fixture.execution === 'simulated-tools' &&
@@ -27,10 +27,10 @@ function coerce(name, key, value) {
 }
 
 /**
- * The trace as tool calls: each `bakers dropsh tool` row gets `mode` (list, schema or call), the wire
+ * The trace as tool calls: each `bakers tools` row gets `mode` (list, schema or call), the wire
  * `name` and its `args` (from --data inline JSON or @file, then --param). An @file resolves against
- * the fixture's files and the virtual files written earlier in the trace. A JSON:API command gets
- * mode `jsonapi`: it is not part of the skill contract.
+ * the fixture's files and the virtual files written earlier in the trace. Retired shell calls
+ * remain unclassified so the skill contract rejects them.
  */
 export function calls(context = {}, files = {}) {
   const written = { ...files };
@@ -40,17 +40,18 @@ export function calls(context = {}, files = {}) {
     if (row.tool !== 'bakers') return base;
     const argv = row.arguments?.argv;
     if (!Array.isArray(argv) || argv[0] !== 'bakers') return base;
-    if (argv.length === 2 && argv[1] === 'info') return { ...base, mode: 'info' };
-    if (argv[1] !== 'dropsh') return base;
-    if (argv.includes('--help') || argv.includes('-h')) return { ...base, mode: 'help' };
-    if (JSONAPI.includes(argv[2])) return { ...base, mode: 'jsonapi' };
-    if (argv[2] !== 'tool') return base;
+    let command = 1;
+    while (SELECTORS.has(argv[command]?.split('=')[0])) command += argv[command].includes('=') ? 1 : 2;
+    if (argv.length === command + 1 && argv[command] === 'info') return { ...base, mode: 'info' };
+    if (argv[command] !== 'tools') return base;
     let name, data, schema = false;
     const params = [];
-    for (let i = 3; i < argv.length; i++) {
+    for (let i = command + 1; i < argv.length; i++) {
       const [key, ...rest] = argv[i].split('=');
       const value = rest.length ? rest.join('=') : argv[i + 1];
-      if (key === '--schema') schema = true;
+      if (SELECTORS.has(key)) { if (!rest.length) i++; }
+      else if (key === '--help' || key === '-h') return { ...base, mode: 'help' };
+      else if (key === '--schema') schema = true;
       else if (key === '--data' || key === '--param') {
         if (!rest.length) i++;
         if (key === '--param') params.push(value); else data = value;
@@ -94,7 +95,7 @@ export function commonChecks(trace, allowedError = () => false, recovered = new 
       'Every tool must succeed unless this fixture injects the specified error or the call recovery is certified'),
     check('validated-call-surface', trace.every(c => ['read_file', 'write_file'].includes(c.tool) ||
       (c.tool === 'bakers' && ['call', 'schema', 'list', 'help', 'info'].includes(c.mode) && (c.mode !== 'call' || c.args))),
-    'Only bakers tool calls (bakers dropsh tool), their lookups and virtual files; no JSON:API command or unreadable arguments'),
+    'Only bakers tool calls (bakers tools), their lookups and virtual files; no JSON:API command or unreadable arguments'),
   ];
 }
 

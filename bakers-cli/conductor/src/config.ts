@@ -89,7 +89,7 @@ export const DEFAULT_AGENT_PROMPT =
   `You are working ticket {identifier}, current state: {state}. Read the ticket and all comments ` +
   `with the bakers tool bakers_ticket_read, arguments {"ticket":"{ticketUuid}"} ` +
   `(MCP: tool_api__bakers_ticket_read, without a connector: ` +
-  `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}', ` +
+  `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}', ` +
   `run as a Bash call of its own), ` +
   `then read ./WORKFLOW.md, load the bakers.build skill its loader names for this ticket's work type ` +
   `and state, and execute only that skill's {state} section. ` +

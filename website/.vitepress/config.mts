@@ -28,8 +28,10 @@ type Area = { label: string; link: string; icon: string; match?: string; externa
 const LEGACY_ROUTES: Record<string, string> = JSON.parse(
   readFileSync(fileURLToPath(new URL('../routes.json', import.meta.url)), 'utf8'),
 )
-const redirectPage = (to: string) =>
+// A `/old#anchor` key sends that anchor elsewhere; any other anchor is kept.
+const redirectPage = (to: string, anchors: Record<string, string>) =>
   '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Page moved</title>' +
+  `<script>location.replace(${JSON.stringify(anchors)}[location.hash] || ${JSON.stringify(to)}${to.includes('#') ? '' : ' + location.hash'})</script>` +
   `<meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=${to}">` +
   `<link rel="canonical" href="${to}"></head><body><p>This page moved to <a href="${to}">${to}</a>.</p></body></html>\n`
 
@@ -47,11 +49,17 @@ export default withMermaid(
     outDir: './.vitepress/dist',
     buildEnd(site) {
       for (const [from, to] of Object.entries(LEGACY_ROUTES)) {
+        if (from.includes('#')) continue
+        const anchors = Object.fromEntries(
+          Object.entries(LEGACY_ROUTES)
+            .filter(([key]) => key.startsWith(`${from}#`))
+            .map(([key, target]) => [key.slice(from.length), target]),
+        )
         const file = join(site.outDir, from.endsWith('/') ? `${from.slice(1)}index.html` : `${from.slice(1)}.html`)
         // A source page still at the old path wins; check-site.mjs reports it.
         if (existsSync(file)) continue
         mkdirSync(dirname(file), { recursive: true })
-        writeFileSync(file, redirectPage(to))
+        writeFileSync(file, redirectPage(to, anchors))
       }
     },
     title: 'bakers.build',

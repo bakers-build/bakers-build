@@ -14,6 +14,7 @@ Preserve confirmed choices and report unavailable targets for a decision. A fail
 or empty catalog produces no proposal; continue with existing defaults.
 
 Write a proposed label only after explicit confirmation of that choice; general qualification
-approval does not authorize an unstated override. Ensure the confirmed term exists, use
-`--label_names`, and preserve unrelated labels. Do not bulk-sync catalog entries.
+approval does not authorize an unstated override. Add it with `bakers_ticket_update` `labels_add`
+([tools](tools.md)); the tool creates a missing workspace label and keeps unrelated labels. Do not
+bulk-sync catalog entries.
 An unattended run writes no agent label; its recommendation remains advisory.

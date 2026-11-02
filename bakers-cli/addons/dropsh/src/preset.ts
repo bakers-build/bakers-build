@@ -1,15 +1,27 @@
-// BB-215: the dropsh addon self-declares its COMMAND contribution via
-// `./preset`. Light (no runtime import): the host runs this `commands`
-// accumulator at boot to list `bakers dropsh` in `--help`, importing the dropsh
-// command module only when the subcommand is actually dispatched.
+// Keep command discovery light; the runtime loads only on dispatch.
 import type { BbPreset } from '@bakers-build/core';
 
 export const commands: BbPreset['commands'] = (acc) => [
   ...acc,
   {
     name: 'dropsh',
+    hidden: true,
     plugin: '@bakers-build/addon-dropsh',
     describe:
       'JSON:API shell (dropsh) bound to the bakers.build connection config',
+  },
+  {
+    name: 'tools',
+    plugin: '@bakers-build/addon-dropsh',
+    export: 'toolsCommandPlugin',
+    forwardHelp: true,
+    describe: 'discover, inspect and execute named tools',
+  },
+  {
+    name: 'auth',
+    plugin: '@bakers-build/addon-dropsh',
+    export: 'authCommandPlugin',
+    forwardHelp: true,
+    describe: 'manage connection authentication and profiles',
   },
 ];

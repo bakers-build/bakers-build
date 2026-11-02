@@ -1,4 +1,7 @@
 {
+  "/addons/dropsh": "/advanced/cli/tools",
+  "/advanced/cli/dropsh": "/advanced/cli/tools",
+  "/advanced/cli/dropsh#auth-profiles": "/advanced/cli/auth#profiles",
   "/advanced/development/addon-actions": "/addons/build/actions",
   "/advanced/development/addon-contracts": "/addons/build/contracts",
   "/configuration/": "/advanced/configuration/",
@@ -79,7 +82,7 @@
   "/reference/engine-config": "/advanced/conductor-config",
   "/reference/bakers-conductor": "/advanced/cli/conductor",
   "/reference/bakers-deployment": "/advanced/cli/deployment",
-  "/reference/bakers-dropsh": "/advanced/cli/dropsh",
+  "/reference/bakers-dropsh": "/advanced/cli/tools",
   "/reference/bakers-ui": "/advanced/cli/ui",
   "/reference/specification": "/advanced/development/architecture",
   "/reference/ticket-metrics": "/advanced/ticket-metrics",
@@ -101,6 +104,6 @@
   "/setup/updates/server": "/advanced/server",
   "/setup/user-and-access": "/get-started/install",
   "/start/": "/get-started/",
-  "/writeback/bakers-issue": "/advanced/cli/dropsh",
+  "/writeback/bakers-issue": "/advanced/cli/tools",
   "/writeback/oauth-setup": "/advanced/connections"
 }

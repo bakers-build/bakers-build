@@ -111,6 +111,12 @@ describe('loadReadyBbConnection (BB-495 F8)', () => {
   });
 });
 
+it('teaches the named workspace tool as the recovery command', () => {
+  expect(recovery.workspaceSearchCommand("/x/it's.js")).toBe(
+    `bakers tools --config '/x/it'\\''s.js' tool_api__bakers_workspace_list`,
+  );
+});
+
 describe('resolveWorkspaceSelector', () => {
   const choices = [
     { id: 'aaaa-1', name: 'keytec' },

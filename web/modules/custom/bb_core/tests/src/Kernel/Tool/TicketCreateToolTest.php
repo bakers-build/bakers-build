@@ -78,6 +78,25 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A carrier ticket keeps the given branch; others get the derived one.
+   */
+  public function testCarrierBranchIsKeptAndOtherwiseDerived(): void {
+    $carrier = $this->outputs($this->runTool('bakers_ticket_create', [
+      'title' => 'Release 1.2',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+      'branch_name' => 'release/1.2',
+    ]));
+    self::assertSame('release/1.2', $carrier['branch_name']);
+    $derived = $this->outputs($this->runTool('bakers_ticket_create', [
+      'title' => 'Plain',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+    ]));
+    self::assertStringStartsWith('feat/', $derived['branch_name']);
+  }
+
+  /**
    * The project also resolves by its key.
    */
   public function testProjectByKey(): void {

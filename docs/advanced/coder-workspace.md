@@ -42,7 +42,7 @@ The `bakers-ddev` template provides one long-lived workspace per person. It star
    ```sh
    BB_CLIENT_SECRET='<issued secret>' bakers init --scope all --machine-id <name> --user-id <operator> \
      --base-url <server-url> --auth-type client_credentials --client-id <id> --secret-env BB_CLIENT_SECRET --yes
-   bakers dropsh auth login
+   bakers auth login
    ```
 
    Keep only the installed harnesses, `@bakers-build/addon-claude` and `@bakers-build/addon-codex`, in `addons` of `~/.bakers/machine.config.js` ([machines](/advanced/machines)), and set both to `security: 'custom'`. The default `sandbox` cannot start in the workspace: its `bwrap` needs unprivileged user namespaces, which a Docker host on Ubuntu 23.10 or later restricts. The container is the boundary instead, so a run can still read everything in your home, including your sign-ins and SSH key ([Run security](/advanced/run-security)).

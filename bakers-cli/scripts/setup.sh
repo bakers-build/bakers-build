@@ -271,9 +271,9 @@ Next steps:
   1. Export your OAuth consumer secret (never committed):
        export $SECRET_ENV=<your consumer secret>
   2. Authenticate:
-       bakers dropsh auth login
+       bakers auth login
   3. Verify:
-       bakers dropsh auth status
+       bakers auth status
 
 Edit .bakers/conductor.config.local.js to adjust machine_id / client_id.
 Re-run this script (or: pnpm run bootstrap) any time — it is idempotent.

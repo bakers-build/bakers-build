@@ -12,7 +12,7 @@
 //
 // then authenticate once:
 //
-//   bakers dropsh auth login
+//   bakers auth login
 export default {
   conductor_id: '__MACHINE_ID__',
   oauth: {

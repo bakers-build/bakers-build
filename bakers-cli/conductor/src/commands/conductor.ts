@@ -358,7 +358,7 @@ export async function ensureAuthenticated(
   if (!st.loggedIn) {
     logger.error(
       { baseUrl: config.site.base_url },
-      `not logged in against ${config.site.base_url} — run 'bakers dropsh auth login'`,
+      `not logged in against ${config.site.base_url} — run 'bakers auth login'`,
     );
     return false;
   }

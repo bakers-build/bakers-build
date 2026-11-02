@@ -4,8 +4,8 @@
 surface-agnostic **core** kernel, the **conductor** run engine, the **ui** cockpit app, and
 every **addon** under `addons/*`. The **conductor** is the bakers.build Network node: it registers a
 machine, claims tickets over Drupal JSON:API, and drives agents through executor/agent addons
-(Claude, herdr, …). The CLI also exposes `bakers dropsh …` for raw JSON:API write-back used by the
-ticket workflows, `bakers ui …` for the cockpit, `bakers deployment …` for release helpers, and `bakers agents` for the local agent catalog.
+(Claude, herdr, …). The CLI also exposes `bakers tools …` for the server's named tools used by the
+ticket workflows, `bakers auth …` for sign-in, `bakers ui …` for the cockpit, `bakers deployment …` for release helpers, and `bakers agents` for the local agent catalog.
 
 **Vocabulary (BB-224).** An **addon** is a *package* under `addons/*` that self-declares its
 contributions through a fixed `./preset` export and is what you list in an `addons: []` config
@@ -35,8 +35,8 @@ Then set your OAuth consumer secret and log in:
 
 ```bash
 export BB_CONSUMER_SECRET=<your consumer secret>
-bakers dropsh auth login
-bakers dropsh auth status      # verify
+bakers auth login
+bakers auth status      # verify
 ```
 
 The setup script is **idempotent** — re-run it any time (e.g. after pulling changes that
@@ -157,8 +157,8 @@ and runs eight idempotent steps:
    on `PATH` (it is the executor, not a conductor-CLI prereq), and a missing
    `spiceedit` binary only prints a note — the overlay degrades to a message at run
    time, so nothing here fails the bootstrap.
-8. **Summary** — prints the next steps (export the secret, `bakers dropsh auth login`,
-   verify with `bakers dropsh auth status`).
+8. **Summary** — prints the next steps (export the secret, `bakers auth login`,
+   verify with `bakers auth status`).
 
 ## `bakers ui` deep links (BB-223)
 
@@ -251,8 +251,8 @@ interview question, no personal secret. `--auth-type client_credentials` is the 
   local callback listener a browser needs to reach. Sign in with:
 
   ```bash
-  bakers dropsh auth login
-  bakers dropsh auth status
+  bakers auth login
+  bakers auth status
   ```
 
   The CLI prints a URL and a short code; open the URL on any device, confirm the code, and the CLI
@@ -277,7 +277,7 @@ Create and use a second connection by id:
 
 ```bash
 bakers config init --scope connection --connection staging
-bakers dropsh --connection staging --format md search bb_project
+bakers tools --connection staging tool_api__bakers_project_list
 BB_CONNECTION=staging bakers info
 bakers config check --scope connection --connection staging --format json
 ```
@@ -508,7 +508,7 @@ the overlay for `$SPICEEDIT_FILE`. Everything degrades gracefully: a missing
 ## Troubleshooting
 
 - **`ERR_MODULE_NOT_FOUND: Cannot find package '@bakers-build/bakers'`** (or `@bakers-build/addon-*` /
-  `@dropsh/*`) when a `bakers dropsh …` command loads the config → the resolution farm or the
+  `@dropsh/*`) when a `bakers tools …` or `bakers auth …` command loads the config → the resolution farm or the
   addon build is missing/stale. **Re-run `bakers-cli/scripts/setup.sh`.**
 - **`ERR_MODULE_NOT_FOUND: Cannot find package '@bakers-build/plugin-<name>'`** → the config still
   names a pre-BB-224 addon package. Run **`bakers config upgrade`** (`--dry-run` first) to rewrite the
@@ -517,8 +517,8 @@ the overlay for `$SPICEEDIT_FILE`. Everything degrades gracefully: a missing
   `export PATH="$HOME/.local/bin:$PATH"`.
 - **`bakers: not in a bakers worktree and no global bakers on PATH`** → you are outside any bakers.build
   worktree and have no global `bakers`. `cd` into a clone/worktree, or re-run setup there.
-- **Auth failures** → confirm `BB_CONSUMER_SECRET` is exported and `bakers dropsh auth
-  login` has been run; check `bakers dropsh auth status`.
+- **Auth failures** → confirm `BB_CONSUMER_SECRET` is exported and `bakers auth
+  login` has been run; check `bakers auth status`.
 
 ## Agent aliases
 

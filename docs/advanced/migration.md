@@ -80,7 +80,7 @@ Each finding has a `code`, the file and key, what was expected and a recheck com
 | `superseded_file` | A legacy project connection override is still supported. | Create a named connection and select it in `.bakers/connection.config.local.js`. |
 | `changed_since_planning` | A file changed between plan and apply. | Re-run the upgrade. |
 | `write_failure` | A write failed and changes were restored, or some files remain changed. | Restore any named file from its `.bakers.bak` backup, fix permissions and retry. |
-| `authentication_failure` | `--online` could not sign in with the selected identity. | Check the credentials in the connection file, sign in again with `bakers dropsh auth login`, then recheck. |
+| `authentication_failure` | `--online` could not sign in with the selected identity. | Check the credentials in the connection file, sign in again with `bakers auth login`, then recheck. |
 | `cancelled_selection` | Interactive setup input was cancelled. | Re-run `bakers config init` with an explicit `--scope` and the required input flags. |
 
 An ambiguous project name (the same name in several workspaces) stops with an error that lists the candidates; commit the intended `bakers.workspace`. Keep the command, the failing key and the source path when you ask for help, and leave out secret values.

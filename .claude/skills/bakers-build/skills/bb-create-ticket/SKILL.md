@@ -17,9 +17,12 @@ Retain searched terms and evidence. An error is not a negative.
 
 ## Propose the branch's ticket as `parent`
 
-An explicit intake parent wins. Otherwise resolve the ticket whose `branch_name` matches this
-checkout and propose that parent; a rejection means no parent. No matching ticket means no proposal.
-`base_branch` is computed from the parent; never write it. Preserve explicit null conductor choices.
+An explicit intake parent wins. Otherwise call `bakers_ticket_search` with this checkout's
+`branch_name` and the `project`, and propose the one match as parent; a rejection means no parent.
+No match means no proposal; several matches are a question for the human.
+`base_branch` is computed from the parent; never write it. An accepted conductor, chosen from
+`bakers_conductor_list`, is set after creation with `bakers_ticket_update` `conductor`; an explicit
+no-conductor choice writes nothing.
 
 ## The write
 

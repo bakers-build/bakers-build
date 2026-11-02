@@ -342,7 +342,7 @@ console.log(m[1]);
       for (const marker of [
         'Read the ticket and all comments',
         'bakers_ticket_read',
-        `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+        `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
         './WORKFLOW.md',
         "that skill's {state} section",
         'Do not start or prepare a later state',
@@ -362,18 +362,23 @@ console.log(m[1]);
     if (!/bakers.build conductor/.test(help)) fail('`bakers --help` did not print usage');
     ok('`bakers --help` prints usage from the installed meta-package bin');
 
-    // 1b. --help lists all FOUR command plugins via describe-only stubs (AC-2:
-    //     lazy mount — help imports none of them). BB-224 Finding 7 added
-    //     `deployment` (@bakers-build/addon-deployment), which the `conductor` command
-    //     plugin used to register as a side effect.
-    for (const cmd of ['oven', 'ui', 'dropsh', 'deployment']) {
+    // Public commands remain discoverable without loading their runtimes.
+    for (const cmd of ['oven', 'ui', 'tools', 'auth', 'deployment']) {
       if (!new RegExp(`\\b${cmd}\\b`).test(help)) {
         fail(`\`bakers --help\` did not list the '${cmd}' command`);
       }
     }
-    ok(
-      '`bakers --help` lists oven/ui/dropsh/deployment command plugins (lazy stubs)',
-    );
+    if (/\bdropsh\b/.test(help)) fail('Compatibility command leaked into top-level help');
+    for (const [command, expected] of [['tools', '--schema'], ['auth', 'login']]) {
+      const aliasHelp = run(bin, [command, '--help']);
+      if (!aliasHelp.includes(`bakers ${command}`) || !aliasHelp.includes(expected) || /\bdropsh\b/.test(aliasHelp)) {
+        fail(`Installed ${command} alias did not expose its own help: ${aliasHelp}`);
+      }
+    }
+    if (!run(bin, ['dropsh', '--help']).includes('JSON:API')) {
+      fail('Hidden compatibility command no longer dispatches');
+    }
+    ok('public tools/auth help and hidden compatibility dispatch work in the installed package');
 
     // 1c. the deployment command really MOUNTS from its own package (not from the
     //     conductor command plugin): its subcommand help must render.

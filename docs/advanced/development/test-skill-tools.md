@@ -13,7 +13,7 @@ Evaluate the actual tool calls made by publish-comment, create-ticket and transi
      --output "$eval_dir/publication" --model sonnet --timeout 240
    ```
 
-   Ordinary fixtures expose three MCP tools: `bakers(argv)`, `read_file(path)` and `write_file(path, content)`. `bakers` simulates `bakers dropsh tool`: no name lists the bakers tools, `<tool> --schema` describes one and `<tool> --data @<file>` calls it, as the tools reference (`.claude/skills/bakers-build/skills/bb-workflow/references/tools.md`) prescribes. Tools use their wire names, `tool_api__bakers_ticket_read` and so on; an unprefixed name is an unknown tool (exit 4). The arguments file is a virtual file the model writes with `write_file`; fixture files are read-only. A JSON:API command (`read`, `search`, `create`, `update`, `schema`) is not part of the skill contract and fails.
+   Ordinary fixtures expose three MCP tools: `bakers(argv)`, `read_file(path)` and `write_file(path, content)`. `bakers` simulates `bakers tools`: no name lists the bakers tools, `<tool> --schema` describes one and `<tool> --data @<file>` calls it, as the tools reference (`.claude/skills/bakers-build/skills/bb-workflow/references/tools.md`) prescribes. Tools use their wire names, `tool_api__bakers_ticket_read` and so on; an unprefixed name is an unknown tool (exit 4). The arguments file is a virtual file the model writes with `write_file`; fixture files are read-only. A JSON:API command (`read`, `search`, `create`, `update`, `schema`) is not part of the skill contract and fails.
 
 2. Inspect `worker/tool-trace.jsonl`, `worker/stream.jsonl` and `attempt.json`. The independent simulator trace must match the model stream; prose claims do not count.
 
@@ -98,7 +98,7 @@ merge/publication order. Python tests verify Git semantics in disposable local r
 
 ## Check the simulator against the real CLI
 
-The contract suite sends the same literal argument arrays to the simulator and to this checkout's CLI. The CLI's `bakers dropsh tool` (`@dropsh/plugin-tool`, an MCP Streamable-HTTP client) talks to a disposable loopback MCP endpoint: JSON-RPC over HTTP at `/mcp`, serving `tools/list` from the shared `contract-fixture.json` and answering `tools/call` from fixture state. A disagreement, a wrong payload or an escaped request fails a named check. It needs no model, bakers.build account, credential or DDEV:
+The contract suite sends the same literal argument arrays to the simulator and to this checkout's CLI. The CLI's `bakers tools` (`@dropsh/plugin-tool`, an MCP Streamable-HTTP client) talks to a disposable loopback MCP endpoint: JSON-RPC over HTTP at `/mcp`, serving `tools/list` from the shared `contract-fixture.json` and answering `tools/call` from fixture state. A disagreement, a wrong payload or an escaped request fails a named check. It needs no model, bakers.build account, credential or DDEV:
 
 ```sh
 cd bakers-cli && pnpm install && pnpm -r run build && cd ..

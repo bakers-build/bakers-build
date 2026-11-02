@@ -59,12 +59,13 @@ select_workspace_branch "$TMP/playground" feat/bakers-6-test ''
 [ "$(git -C "$TMP/playground" branch --show-current)" = develop ] || fail 'fixture clone did not fall back to develop'
 # Exercise the ticket lookup at its external command boundary.
 bakers() {
-  [ "$*" = 'dropsh --format json search bb_ticket --bundle bb_ticket --filter identifier:SHOP-27' ] || return 99
+  [ "$1 $2 $3" = 'tools tool_api__bakers_ticket_search --data' ] || return 99
+  [ "$(jq -c . "${4#@}")" = '{"branch_name":"feat/shop-27-cart"}' ] || return 98
   printf '%s\n' "$LOOKUP_JSON"
 }
-LOOKUP_JSON='{"data":[{"attributes":{"base_branch":"feat/shop-9-checkout"},"relationships":{"parent_id":{"data":{"id":"parent"}}}}]}'
+LOOKUP_JSON='{"tickets":[{"identifier":"SHOP-27","base_branch":"feat/shop-9-checkout","parent":"SHOP-9"}]}'
 [ "$(parent_branch_for feat/shop-27-cart)" = feat/shop-9-checkout ] || fail 'parent is not read from ticket metadata'
-LOOKUP_JSON='{"data":[{"attributes":{"base_branch":"develop"},"relationships":{"parent_id":{"data":null}}}]}'
+LOOKUP_JSON='{"tickets":[{"identifier":"SHOP-27","base_branch":"develop","parent":null}]}'
 [ -z "$(parent_branch_for feat/shop-27-cart)" ] || fail 'root ticket invented a parent'
 LOOKUP_JSON='{"error":{"message":"offline"}}'
 if (parent_branch_for feat/shop-27-cart) >/dev/null 2>&1; then fail 'lookup error was treated as no parent'; fi

@@ -44,7 +44,7 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
 
    ```sh
    bakers init
-   bakers dropsh auth login
+   bakers auth login
    bakers config check --scope connection --online
    ```
 
@@ -57,7 +57,7 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
    | Server base URL | keep `https://app.bakers.build`, or enter your team's URL if it runs its own |
    | OAuth client identifier | keep `bakers-cli` |
 
-   It ends with `Offline: passed`. `bakers dropsh auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/advanced/cli/install).
+   It ends with `Offline: passed`. `bakers auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/advanced/cli/install).
 
 4. **Connect each project and register its oven.** In the project checkout:
 
@@ -102,7 +102,7 @@ bakers 0.1.0 is too old for this server (requires >= 0.2.0). Update: npm install
 
 The second one appears when a `bakers` installation is older than the server allows. Run `bakers update` to fix it.
 
-`gaia dropsh …` prints the server's error body, so it shows the first message. `gaia conductor …` prints only its own short error, such as `HTTP 404` or `Not authenticated for profile 'gaia'`, and exits non-zero. If an old conductor fails like that against a bakers.build server, it is the wrong program: follow the steps above.
+The old `gaia` shell commands print the server's error body, so it shows the first message. `gaia conductor …` prints only its own short error, such as `HTTP 404` or `Not authenticated for profile 'gaia'`, and exits non-zero. If an old conductor fails like that against a bakers.build server, it is the wrong program: follow the steps above.
 
 ## For operators
 

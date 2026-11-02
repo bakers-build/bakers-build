@@ -117,20 +117,22 @@ export function scanTarget(
   argv: string[],
   names: string[],
 ): string | undefined {
+  const index = firstPositionalIndex(argv);
+  const name = argv[index] === 'help' ? argv[index + 1] : argv[index];
+  return name !== undefined && names.includes(name) ? name : undefined;
+}
+
+function firstPositionalIndex(argv: string[]): number {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i] as string;
     if (a === '--conductor') {
       i++; // skip its value
       continue;
     }
-    if (a === 'help') {
-      const next = argv[i + 1];
-      return next !== undefined && names.includes(next) ? next : undefined;
-    }
     if (a.startsWith('-')) continue; // any other flag
-    return names.includes(a) ? a : undefined;
+    return i;
   }
-  return undefined;
+  return -1;
 }
 
 /** Add a describe-only stub for a not-loaded command so `--help` stays complete.
@@ -143,7 +145,7 @@ function addStub(
   argv: string[],
 ): void {
   program
-    .command(entry.name)
+    .command(entry.name, { hidden: entry.hidden ?? false })
     .description(pluginDescribe(entry))
     .allowUnknownOption(true)
     .allowExcessArguments(true)
@@ -281,6 +283,14 @@ export async function runHost(
   argv: string[],
   opts: { forceTarget?: string; bases?: string[] } = {},
 ): Promise<void> {
+  // Forward help to plugins that render their own complete option list.
+  const index = firstPositionalIndex(argv);
+  if (
+    argv[index] === 'help' &&
+    resolveCommands().some((c) => c.forwardHelp && c.name === argv[index + 1])
+  ) {
+    argv = [...argv.slice(0, index), ...argv.slice(index + 1), '--help'];
+  }
   const program = await buildHostProgram(argv, opts);
   try {
     await program.parseAsync(argv, { from: 'user' });

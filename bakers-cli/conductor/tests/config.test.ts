@@ -225,7 +225,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     expect(DEFAULT_AGENT_PROMPT).toContain('bakers_ticket_read');
     expect(DEFAULT_AGENT_PROMPT).toContain('MCP: tool_api__bakers_ticket_read');
     expect(DEFAULT_AGENT_PROMPT).toContain(
-      `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+      `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
     );
     expect(DEFAULT_AGENT_PROMPT).not.toContain('dropsh --format md read');
     expect(DEFAULT_AGENT_PROMPT).not.toContain('stays sandboxed');
@@ -283,7 +283,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
       .replaceAll('{ticketUuid}', 't-1');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -321,7 +321,7 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
   const NEUTRAL_CONTRACT = [
     'Read the ticket and all comments',
     'bakers_ticket_read',
-    `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+    `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
     './WORKFLOW.md',
     "that skill's {state} section",
     'Do not start or prepare a later state',

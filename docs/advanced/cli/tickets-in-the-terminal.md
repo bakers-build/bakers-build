@@ -13,7 +13,7 @@ bakers ui <identifier>
 `bakers ui <identifier> | cat` prints the same sections as text. The full record with every comment, through the `bakers_ticket_read` tool that every agent run starts with:
 
 ```sh
-bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
+bakers tools tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
 ```
 
 ## Runs
@@ -32,10 +32,10 @@ Each visit to a state is one run: a claim, a worktree, an agent session in a her
 One `bb_activity` row per event: `created`; `status_changed` with the step's summary and any closed run and its conductor; `claimed` for the first run outside qualification only; `run_ended` for a `failed`, `expired` or `cancelled` run; `assigned`, `review_requested` and `review_completed` when the assignee changes, a reviewer is added or a review is submitted (they can also be [mailed to you](/daily-work/email-notifications)). Later claims, unchanged saves, heartbeats and `done` runs add none. Visibility follows ticket view.
 
 ```sh
-bakers dropsh search bb_activity --bundle bb_activity --filter ticket_id.id:<ticket-uuid> --sort -drupal_internal__id --limit 20
+bakers tools tool_api__bakers_ticket_activity_list --data '{"ticket":"<identifier>","limit":20}'
 ```
 
-Filter a project with `ticket_id.project_id.id:<project-uuid>`. Newest first (`-drupal_internal__id`) stays stable for same-second rows. Clients cannot write these rows.
+Pass `project` (key or UUID) instead of `ticket` for a whole project's feed, and `offset` with the returned `next_offset` for the next page. Clients cannot write these rows. The tool reference is [bakers tools](/advanced/cli/tools).
 
 ## Answer a waiting agent
 
@@ -50,10 +50,10 @@ A run that shows `running` with no new comment is usually a blocked tab nobody h
 ## Freeze a ticket
 
 ```sh
-bakers dropsh update bb_ticket/bb_ticket/<ticket-uuid> --frozen true
+bakers tools tool_api__bakers_ticket_update --data '{"ticket":"<identifier>","frozen":true}'
 ```
 
-In the terminal UI, press `f` on the ticket; `--frozen false` or `f` again releases it. Freezing a whole project or machine is `bakers oven stop`.
+In the terminal UI, press `f` on the ticket; `"frozen":false` or `f` again releases it. Freezing a whole project or machine is `bakers oven stop`.
 
 The conductor that holds the ticket's worktree notices the change on its next poll and:
 

@@ -639,7 +639,7 @@ function buildConfigCommand(
               },
             ))
             ? 'A session for this connection already exists; verify it with bakers config check --scope connection --online.'
-            : 'Sign-in is the next step: run bakers dropsh auth login, then bakers config check --scope connection --online.'
+            : 'Sign-in is the next step: run bakers auth login, then bakers config check --scope connection --online.'
           : 'Online validation skipped because offline errors require repair or input was cancelled.';
         report.verification.online.reason = reason;
         report.verification.skipped.push({
