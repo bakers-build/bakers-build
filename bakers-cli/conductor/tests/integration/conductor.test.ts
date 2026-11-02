@@ -4,7 +4,7 @@
  *
  * In-process wiring: Conductor + DrupalBbRemote + FakeExecutor + FakeWorkspace.
  *
- * Fixture contract (provided by `ddev init --test`):
+ * Fixture contract (provided by `ddev init --provider recipe-test`):
  *   - project `bakers-e2e-project` (BB_E2E_PROJECT_UUID) with ticket
  *     GL-E2E-CONDUCTOR (BB_E2E_CONDUCTOR_TICKET_UUID) reset to state `working`,
  *     with ALL its bb_run rows deleted → freshly claimable.

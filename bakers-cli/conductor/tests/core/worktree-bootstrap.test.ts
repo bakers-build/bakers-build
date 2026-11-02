@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -64,7 +65,7 @@ const PARENT_CONFIG = `export default {
 function makeWorktreeFixture(): { parent: string; worktree: string } {
   const root = mkdtempSync(join(tmpdir(), 'bb-237-'));
   tmpRoots.push(root);
-  const parent = join(root, 'parent');
+  const parent = join(root, 'parent with spaces');
   const worktree = join(root, 'wt');
   mkdirSync(parent, { recursive: true });
   const git = (...args: string[]) =>
@@ -80,9 +81,16 @@ function makeWorktreeFixture(): { parent: string; worktree: string } {
     'utf8',
   );
   git('worktree', 'add', '-q', '-b', 'feat/bb-237-fixture', worktree);
+  mkdirSync(join(worktree, '.ddev'));
+  mkdirSync(join(worktree, 'scripts'));
+  copyFileSync(
+    join(repoRoot(), 'scripts/setup-worktree.mjs'),
+    join(worktree, 'scripts/setup-worktree.mjs'),
+  );
+  writeFileSync(join(worktree, '.ddev/config.yaml'), 'name: bakers\n');
   writeFileSync(
     join(worktree, '.env.ddev'),
-    'DDEV_WORKTREE_NAME=bb-237-fixture\nPLAYWRIGHT_BASE_URL=https://bb-237-fixture.ddev.site\n',
+    'LOCAL="line\nPLAYWRIGHT_BASE_URL=https://wrong.example\n"\nDDEV_WORKTREE_NAME=bb-237-fixture\nPLAYWRIGHT_BASE_URL=https://bb-237-fixture.ddev.site\n',
     'utf8',
   );
   return { parent, worktree };
@@ -212,5 +220,27 @@ describe('BB-237 worktree bootstrap completes (.ddev/worktree-post.sh)', () => {
       afterFirst.match(/bb-237-fixture\.ddev\.site/g)?.length,
       'exactly one worktree-local base_url',
     ).toBe(1);
+  });
+  it('refreshes missing env before a sentinel and refuses an inconsistent identity', () => {
+    const { worktree } = makeWorktreeFixture();
+    expect(runBootstrap(worktree).status).toBe(0);
+    rmSync(join(worktree, '.env.ddev'));
+    expect(runBootstrap(worktree).status).toBe(0);
+    expect(readFileSync(join(worktree, '.env.ddev'), 'utf8')).toContain(
+      'DDEV_WORKTREE_NAME=bb-237-fixture',
+    );
+    writeFileSync(
+      join(worktree, '.env.ddev'),
+      'DDEV_WORKTREE_NAME=other-name\n',
+    );
+    expect(runBootstrap(worktree).status).not.toBe(0);
+  });
+  it('propagates workspace setup failure without a success sentinel', () => {
+    const { worktree } = makeWorktreeFixture();
+    writeFileSync(join(worktree, 'scripts/setup-test-project.sh'), 'exit 7\n');
+    expect(runBootstrap(worktree).status).not.toBe(0);
+    expect(existsSync(join(worktree, '.bakers/.worktree-post-done'))).toBe(
+      false,
+    );
   });
 });

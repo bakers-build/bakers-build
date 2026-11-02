@@ -12,11 +12,10 @@
 composer.lock
 patches.lock.json
 .dropsh
-# keytec-ddev-addon runtime state: the env feed generated from .keytec-ai.yml
-# on every `ddev start` / `ddev init` (may carry tokens).
+# Legacy local environment files can carry private settings.
 /.ddev/.env.web
 
-# keytec-drupal-doctor tool artefacts (not config sources).
+# Local QA caches.
 .phpcs-cache
 .phpunit.cache/
 
@@ -24,3 +23,7 @@ patches.lock.json
 .claude/evals/
 /.editorconfig
 /.gitattributes
+
+/.env.ddev
+
+/.env.ddev.*.tmp

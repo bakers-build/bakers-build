@@ -1,12 +1,12 @@
 #!/bin/bash
-#ddev-generated
-## Description: Run phpmd mess detection on custom code (keytec)
+# Maintained by Bakers; derived from keytec/keytec-ddev-addon (installed 2026-08-18).
+## Description: Run phpmd mess detection on custom code (Bakers)
 ## Usage: phpmd
 set -e
 CR="${DDEV_COMPOSER_ROOT:-${DDEV_APPROOT:-/var/www/html}}"
 BIN="${CR}/vendor/bin/phpmd"
 if [ ! -x "${BIN}" ]; then
-  echo "phpmd not found at ${BIN}. Run: ddev qa-setup" >&2
+  echo "phpmd not found at ${BIN}. Run: ddev composer install" >&2
   exit 1
 fi
 DR="${DDEV_DOCROOT:-web}"

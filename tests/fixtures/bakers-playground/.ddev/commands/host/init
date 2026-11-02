@@ -1,108 +1,40 @@
 #!/bin/bash
-#ddev-generated
-## Description: Initialize the DB/site by dispatching to a DDEV provider (site + feature aware)
-## Usage: init [--site <name>] [--provider <name>]
-## Example: "ddev init --site shopde --provider <name>"
-#
-# Thin, site/feature-aware DB-init — a dumb dispatcher. `init` resolves site/feature/provider
-# from the keytec-ai overlay, then hands off to ONE `ddev pull <provider>`; the provider owns
-# the fetch AND its own per-site import (drush --uri). No provider name lives here — adding a
-# new source needs only a provider yaml. `--provider` overrides the configured default
-# (`init.default_sync_provider`); with no flag the configured default is used.
-# Layered config comes from `keytec-ai config to-env`:
-#   base <- .keytec-ai/sites/<site> <- .keytec-ai/features/<feature>.
-#   - Site    : per-invocation `--site` (-> KEYTEC_AI_SITE), default "default".
-#   - Feature : env-only. Persisted by init-worktree into .ddev/.env; sourced here so
-#               the HOST honours it (DDEV also injects .ddev/.env into the web
-#               container). Never a CLI flag.
-# No trust boundary: init dispatches to any provider. Whether a provider pulls anonymized or
-# raw data is the provider's / project's concern (see sanitize.pull_provider for the raw path).
+## Description: Reinstall the local minimal Drupal fixture (destroys its database)
+## Usage: init [--fresh]
+## Example: "ddev init"
 set -euo pipefail
-APPROOT="${DDEV_APPROOT:-$(pwd)}"
-
-# --- args ---
-SITE="${KEYTEC_AI_SITE:-default}"
-PROVIDER=""
-while [ $# -gt 0 ]; do
+while [ "$#" -gt 0 ]; do
   case "$1" in
-    --site)       SITE="${2:?--site requires a value}"; shift 2 ;;
-    --site=*)     SITE="${1#--site=}"; shift ;;
-    --provider)   PROVIDER="${2:?--provider requires a value}"; shift 2 ;;
-    --provider=*) PROVIDER="${1#--provider=}"; shift ;;
-    *) echo "usage: init [--site <name>] [--provider <name>]" >&2; exit 1 ;;
+    --fresh) shift ;;
+    *) echo "Unsupported fixture init argument: $1" >&2; exit 1 ;;
   esac
 done
-[ -n "${SITE}" ] || SITE=default
-export KEYTEC_AI_SITE="${SITE}"
-
-# --- feature (env-only) + layered config ---
-# Source .ddev/.env so the HOST sees KEYTEC_AI_FEATURE (persisted by init-worktree)
-# plus any secrets; then resolve base <- sites/<site> <- features/<feature>.
-# Skipped when a registry base_url / INIT_DEFAULT_SYNC_PROVIDER is already set (tests) or
-# the CLI is absent.
-if [ -f "${APPROOT}/.ddev/.env" ]; then set -a; . "${APPROOT}/.ddev/.env"; set +a; fi
-if [ -z "${REGISTRY_BASE_URL+set}${PROVIDERS_REGISTRY_BASE_URL+set}${INIT_DEFAULT_SYNC_PROVIDER+set}" ]; then
-  # Resolve layered config via keytec-ai (prefer a global install, else npx the package).
-  # Two rules the CLI version cannot be trusted to enforce for us:
-  #   1. SITE="default" is the "no named site" sentinel — resolve BASE config only and
-  #      NEVER leak KEYTEC_AI_SITE=default into the CLI. Older CLIs read that env var and
-  #      try to load a non-existent sites/default.yml → empty output → "no provider".
-  #      We drop KEYTEC_AI_SITE for the call and pass --site only for a real named site.
-  #   2. A real named overlay MUST resolve — a missing sites/<name>.yml fails LOUDLY here
-  #      instead of the CLI error being swallowed into an empty (== "no provider") env.
-  KEYTEC_AI_CLI=""
-  if command -v keytec-ai >/dev/null 2>&1; then KEYTEC_AI_CLI="keytec-ai"
-  elif command -v npx >/dev/null 2>&1; then KEYTEC_AI_CLI="npx -y keytec-ai-cli"; fi
-  if [ -n "${KEYTEC_AI_CLI}" ]; then
-    if [ "${SITE}" = "default" ]; then
-      # base-only; tolerate an absent/partial config (an explicit --provider or the
-      # later guard still applies). KEYTEC_AI_SITE=default is NEVER leaked to the CLI.
-      eval "$(env -u KEYTEC_AI_SITE ${KEYTEC_AI_CLI} config to-env 2>/dev/null)" || true
-    else
-      # a real named overlay MUST resolve — surface the CLI's error loudly, don't mask it.
-      _cfg_env="$(env -u KEYTEC_AI_SITE ${KEYTEC_AI_CLI} config to-env --site "${SITE}")" \
-        || { echo "ERROR: keytec-ai config resolution failed for --site '${SITE}' — is .keytec-ai/sites/${SITE}.yml present?" >&2; exit 1; }
-      eval "${_cfg_env}"
-    fi
-  fi
-fi
-
-# --- provider: explicit --provider else the configured default ---
-[ -n "${PROVIDER}" ] || PROVIDER="${INIT_DEFAULT_SYNC_PROVIDER:-}"
-[ -n "${PROVIDER}" ] || { echo "ERROR: no provider configured — pass --provider <name> or set init.default_sync_provider." >&2; exit 1; }
-
-# Test seam: report the resolved site/feature/provider without touching the DB or the
-# network. Placed after config resolution so it reports the real result.
-if [ "${INIT_DRY_RUN:-0}" = "1" ]; then
-  echo "site=${SITE} feature=${KEYTEC_AI_FEATURE:-} provider=${PROVIDER}"
-  echo "build=${INIT_BUILD:-}"
-  echo "deploy=${INIT_DEPLOY:-}"
-  exit 0
-fi
-
-# --- build phase (config-driven, hard-fail): codebase bring-up before DB provisioning.
-# The string is run verbatim; the project author writes the `ddev` prefix where wanted.
-if [ -n "${INIT_BUILD:-}" ]; then bash -c "${INIT_BUILD}"; fi
-
-# --- act: fast path first, SQL provider as the fallback ---------------------------
-# init is a dumb dispatcher — it owns NO registry/cache/snapshot logic. It first hands the DB
-# bring-up to the host snapshot provider (`snapshot-acquire`, which owns coord resolution, the
-# machine-global cache, download/eviction, and the host `ddev snapshot restore` volume-swap). Any
-# non-zero exit from it (no snapshot published, no registry configured, a download/corrupt-cache
-# error, or a failed restore) means "no fast path" → fall back to the SQL provider. Called by path
-# (not `ddev snapshot-acquire`) so it stays a plain host command, testable with a faked `ddev`.
-if bash "${APPROOT}/.ddev/commands/host/snapshot-acquire" --site "${SITE}"; then
-  :   # DB brought up from a snapshot — skip the SQL provider
-else
-  # Per-site DB targeting lives INSIDE the provider (drush --uri), reached via KEYTEC_AI_SITE.
-  # Import is never skipped: every provider lets DDEV import (built-in single-DB import, or the
-  # provider's own db_import_command for per-site / install providers).
-  ddev pull "${PROVIDER}" -y --environment="KEYTEC_AI_SITE=${SITE}" \
-    || { echo "provider '${PROVIDER}' pull failed — is it configured? (see 'ddev pull --list')" >&2; exit 4; }
-fi
-
-# --- deploy phase (config-driven, hard-fail): drush deploy etc. after the DB is provisioned.
-# `drush deploy` runs updatedb + config:import + cache:rebuild + deploy:hook, so it fully
-# covers post-provision cache work — no separate post/cache:rebuild step is needed.
-# KEYTEC_AI_SITE is exported, so a project can write `ddev drush ${KEYTEC_AI_SITE:+--uri=$KEYTEC_AI_SITE} deploy`.
-if [ -n "${INIT_DEPLOY:-}" ]; then bash -c "${INIT_DEPLOY}"; fi
+cd "${DDEV_APPROOT:-$(pwd)}"
+node scripts/setup-worktree.mjs
+# Check the registry before startup: an existing name must belong to this exact root.
+ddev list -j | node --input-type=module -e '
+import { readFileSync, realpathSync } from "node:fs";
+const root = realpathSync(".");
+const name = [...readFileSync(".env.ddev", "utf8").matchAll(/^DDEV_WORKTREE_NAME=(.*)$/gm)].at(-1)[1];
+const projects = JSON.parse(readFileSync(0, "utf8")).raw;
+if (!Array.isArray(projects)) throw new Error("Cannot verify DDEV registry");
+for (const project of projects) {
+  let path = project.approot;
+  try { path = realpathSync(path); } catch {}
+  if ((project.name === name && path !== root) || (path === root && project.name !== name)) {
+    throw new Error("DDEV name/approot collision; reconcile the registry before installing.");
+  }
+}
+'
+ddev describe -j | node --input-type=module -e '
+import { readFileSync, realpathSync } from "node:fs";
+const name = [...readFileSync(".env.ddev", "utf8").matchAll(/^DDEV_WORKTREE_NAME=(.*)$/gm)].at(-1)[1];
+const project = JSON.parse(readFileSync(0, "utf8")).raw;
+if (project.name !== name || realpathSync(project.approot) !== realpathSync(".")) {
+  throw new Error("Effective DDEV name/approot differs from prepared identity; refusing installation.");
+}
+'
+ddev start
+ddev composer install
+ddev drush site:install minimal -y
+ddev drush cr

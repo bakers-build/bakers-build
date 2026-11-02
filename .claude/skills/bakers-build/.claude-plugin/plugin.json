@@ -1,7 +1,7 @@
 {
   "name": "bakers",
   "description": "Composable bakers.build capabilities for ticket work, deployment, setup, upgrades, origin updates, and entity creation.",
-  "version": "0.49.3",
+  "version": "0.49.4",
   "author": { "name": "keytec", "url": "https://git.key-tec.de/bakers-build/bakers-build" },
   "license": "MIT",
   "skills": "./skills"

@@ -28,7 +28,9 @@ Never hand-patch a live server with `drush`. Fix config in both `config/sync/**`
 recipe `config/**`; entity displays, form displays and page layouts live in exactly those two
 places and never in a module's `config/install` or `config/optional`. Test the recipe first,
 check `config/sync` last at the same revision, and always name the `ddev init` provider
-(`WORKFLOW.md` › *provision*).
+(`WORKFLOW.md` › *provision*). Environment preparation is `node scripts/setup-worktree.mjs`;
+explicit `ddev init` reinstalls the selected database. Reuse/bootstrap preserves existing data.
+Project-owned QA wrappers require Composer dependencies, not addon installation or repair.
 
 ## Designbook owns the theme's artifacts
 

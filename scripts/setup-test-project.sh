@@ -25,20 +25,8 @@
 #                       Select existing local/remote branches only. Keep WORKFLOW.md
 #                       and local edits; never reset, create remote branches or push.
 #                       A failed checkout stops setup; only absent branches fall back.
-#     --workspace-only  the mode `ddev init-worktree` uses: THE WORKSPACE SIDE ONLY,
-#                       with no control-plane provisioning and no DDEV start. Steps
-#                       3, 4, 6 and 7 run; steps 2, 5, 8 and 9 are skipped. Step 2 is
-#                       the load-bearing exclusion — a worktree just built by
-#                       `ddev init-worktree` has the default world, in which the
-#                       project does not exist, so the unguarded script would take
-#                       its "not found" branch and run `ddev init --provider
-#                       recipe-test`, WIPING the database that bootstrap had just
-#                       built. Steps 5, 8 and 9 are control-plane writes only a
-#                       hand-driven run needs. A plain run performs all nine and
-#                       remains the command that prepares such a run. This mode needs
-#                       NO RUNNING DDEV: `ddev init-worktree` does not start the
-#                       worktree it configures, so when `ddev describe` cannot answer,
-#                       the project name and URL are derived (see step 1).
+#     --workspace-only  prepare the local playground checkout, CLI and connection;
+#                       start no DDEV, provision no world, write no control plane.
 #
 # It does NOT create a ticket and does NOT register a conductor. Those are yours:
 # the script hands you a working control plane and a working work workspace, and
@@ -84,10 +72,8 @@
 #  3. The control plane's OAuth2 keys live outside any mounted volume, so a
 #     `ddev stop`/`start` DESTROYS them and the session mint then fails with an
 #     HTTP 500 naming neither DDEV nor the cause. Step 8 repairs that silently.
-#  4. The fixture repo carries a project-owned, pre-addon `init-worktree` that
-#     overwrites the tracked `.ddev/config.yaml`, derives a name identical in
-#     every checkout, and provisions a Drupal site. It is deliberately NOT used;
-#     step 4 writes the addon-shaped git-ignored overlay itself.
+#  4. The fixture uses the same public env setup as the main checkout. Step 4
+#     gives new playground clones a path-hashed overlay and preserves existing names.
 #  5. A BARE `bakers` INSIDE THE WORKSPACE IS THIS CHECKOUT'S BUILD, and the mechanism
 #     is a file THIS SCRIPT WRITES: step 6 drops `<workspace>/.bakers-testbuild`, whose
 #     single line is this checkout's absolute path, and `~/.local/bin/bakers` walks up
@@ -448,20 +434,8 @@ start_ddev() {
 # -----------------------------------------------------------------------------
 step "1. control plane — this checkout's own bakers DDEV"
 # -----------------------------------------------------------------------------
-# DESCRIBE ONLY, and in `--workspace-only` not even that is guaranteed to answer.
-# `ddev init-worktree` deliberately does NOT start the worktree it configures —
-# `ddev init` owns the start — and this mode runs as its FINAL
-# step, in a worktree whose project is therefore neither running nor yet registered;
-# `ddev describe` then fails outright ("a project ... already exists for <parent>",
-# because the overlay is the only thing giving this checkout its own name).
-#
-# Nothing this mode does needs a running control plane: steps 2, 5, 8 and 9 are the
-# only ones that talk to it, and all four are skipped. So the name and URL are
-# DERIVED when describe cannot answer, exactly as `.ddev/worktree-post.sh` already
-# derives this worktree's base_url from DDEV_WORKTREE_NAME. That keeps the guard
-# below meaningful rather than bypassed: a `<name>.ddev.site` host is local by
-# construction. A FULL run still requires describe — it is about to write to that
-# control plane, so it must read it rather than assume it.
+# Workspace-only can derive identity without a registered/running DDEV project.
+# Full setup reads the local control plane before any write.
 described="$( ( cd "${ROOT}" && ddev describe -j 2>/dev/null ) | jq -c '.raw // empty' 2>/dev/null || true)"
 if [ -n "${described}" ]; then
   CP_NAME="$(printf '%s' "${described}" | jq -r '.name')"
@@ -476,20 +450,8 @@ else
     || die "'ddev describe' could not describe the checkout at ${ROOT}. A full run reads
        the control plane it is about to write to, so this is fatal here; 'ddev start' in
        the checkout, or run with --workspace-only, which needs no running DDEV."
-  # The project name, in falling order of authority: what init-worktree exported, the
-  # git-ignored per-checkout overlay it writes, then the tracked config (which names
-  # the PARENT project — last resort, and the reason the overlay exists at all).
-  CP_NAME="${DDEV_WORKTREE_NAME:-}"
-  if [ -z "${CP_NAME}" ] && [ -f "${ROOT}/.ddev/config.worktree.yaml" ]; then
-    CP_NAME="$(awk '/^name:/ { print $2; exit }' "${ROOT}/.ddev/config.worktree.yaml")"
-  fi
-  if [ -z "${CP_NAME}" ] && [ -f "${ROOT}/.ddev/config.yaml" ]; then
-    CP_NAME="$(awk '/^name:/ { print $2; exit }' "${ROOT}/.ddev/config.yaml")"
-  fi
-  [ -n "${CP_NAME}" ] \
-    || die "--workspace-only: 'ddev describe' answered nothing and no DDEV project name
-       could be read from DDEV_WORKTREE_NAME, .ddev/config.worktree.yaml or
-       .ddev/config.yaml, so the control-plane URL cannot be derived either."
+  ( cd "${ROOT}" && node scripts/setup-worktree.mjs )
+  CP_NAME="$(sed -n 's/^DDEV_WORKTREE_NAME=//p' "${ROOT}/.env.ddev" | tail -1)"
   CP_STATUS='not described'
   RAW_URL="https://${CP_NAME}.ddev.site"
 fi
@@ -522,17 +484,8 @@ say "${CP_NAME} at ${BASE_URL}"
 # -----------------------------------------------------------------------------
 step "2. the recipe-test world"
 # -----------------------------------------------------------------------------
-# Keyed on the project existing, not on a marker file — a marker survives a wiped
-# database. Provisioned only when absent: it is slow, and it would wipe a world the
-# operator may be mid-run against.
-#
-# THE LOAD-BEARING EXCLUSION OF `--workspace-only`. A worktree that
-# `ddev init-worktree` has just provisioned carries the default `existing-config`
-# world, in which the project does NOT exist — so the probe below would take its
-# "not found" branch and run `ddev init --provider recipe-test`, wiping the database
-# the bootstrap had just built and replacing the developer's branch site with the
-# e2e world. Nobody asked for that and re-running nothing recovers it. So the whole
-# step is skipped rather than made conditional on a guess about which world is live.
+# Reuse a bootstrapped test world. A different installed world is never reinstalled
+# automatically; only an unbootstrapped site can enter the explicit install path.
 if [ "${WORKSPACE_ONLY}" = 'yes' ]; then
   say "--workspace-only: skipped (this mode provisions no world and writes no"
   say "  control plane — see the header for why this exclusion is the important one)"
@@ -549,8 +502,9 @@ else
     if [ "${world_probe}" = 'yes' ]; then
       say "'${PROJECT}' already provisioned — skipping ddev init"
     else
-      say "project '${PROJECT}' not found — provisioning with the recipe-test provider"
-      ( cd "${ROOT}" && ddev init --provider recipe-test )
+      die "Drupal is already installed, but project '${PROJECT}' is absent. No data was changed.
+       To deliberately replace this local database with the test world, run:
+       ddev init --provider recipe-test"
     fi
   else
     say "Drupal is not bootstrapped — provisioning with the recipe-test provider"
@@ -666,22 +620,25 @@ step "4. the workspace's own DDEV"
 # the workspace lives inside the checkout and every bakers worktree has its own, so a
 # name derived from anything the clone itself carries (its committed `name:`, its
 # branch) would be identical across checkouts and two setups would fight over one
-# DDEV project. See fact 4 for why `ddev init-worktree` is not used here.
+# DDEV project. Preserve this identity on subsequent runs.
 WS_DDEV="bakers-pg-$(printf '%s' "${WORKSPACE}" | sha1sum | cut -c1-8)"
+# A symlink here would redirect the overlay write outside the workspace.
+for path in "${WORKSPACE}/.ddev" "${WORKSPACE}/.ddev/config.worktree.yaml"; do
+  [ ! -L "${path}" ] || die "refusing symlinked ${path}; replace it with a plain file or directory"
+done
 mkdir -p "${WORKSPACE}/.ddev"
-cat >"${WORKSPACE}/.ddev/config.worktree.yaml" <<YAML
-# GENERATED by scripts/setup-test-project.sh — git-ignored, never committed.
-# A DDEV overlay carrying only the key that must differ per checkout. DDEV deep-
-# merges every .ddev/config.*.yaml over config.yaml, so the committed
-# type/php_version/docroot of the fixture repo all survive.
-name: ${WS_DDEV}
-YAML
+if [ ! -e "${WORKSPACE}/.ddev/config.worktree.yaml" ]; then
+  printf 'name: %s\n' "${WS_DDEV}" >"${WORKSPACE}/.ddev/config.worktree.yaml"
+fi
+# The checkout's helper, not the clone's: a clone seeded before the migration has none.
+( cd "${WORKSPACE}" && node "${ROOT}/scripts/setup-worktree.mjs" )
+WS_DDEV="$(sed -n 's/^DDEV_WORKTREE_NAME=//p' "${WORKSPACE}/.env.ddev" | tail -1)"
 # DECLARED, NOT STARTED (BB-390). The workspace runs no Drupal of its own; its
 # DDEV exists purely so a skill under test can issue a real `ddev` command, which in
 # practice it never does. Writing the overlay costs nothing and is the only thing
 # giving the workspace a DDEV name that is unique per checkout, so it stays; the
 # `ddev start` is what this script stopped paying for on every setup and on every
-# `ddev init-worktree`. Start it by hand if a run needs it:
+# `bash .ddev/worktree-post.sh`. Start it by hand if a run needs it:
 #   cd ${WORKSPACE_RELPATH} && ddev start
 say "${WORKSPACE} (ddev project '${WS_DDEV}' declared, NOT started)"
 say "  start it only if a skill under test needs it: cd ${WORKSPACE_RELPATH} && ddev start"
@@ -711,7 +668,7 @@ Q_WS_BRANCH="$(php_str "${WS_BRANCH}")"
 # READING the clone's branch above is a local git read and always runs — the summary
 # reports it, and `--workspace-only` still wants it reported. What that mode skips is
 # THE WRITE: the project repo entry is control-plane state a hand-driven run sets up
-# once, and `ddev init-worktree` has no business touching the world on every worktree
+# once, and `bash .ddev/worktree-post.sh` has no business touching the world on every worktree
 # it creates.
 if [ "${WORKSPACE_ONLY}" = 'yes' ]; then
   say "--workspace-only: the clone works on '${WS_BRANCH}'; the project repo entry is"
@@ -789,7 +746,7 @@ done
 # BUILD WHEN NEEDED (BB-390). The assertions below used to be the whole of this
 # step, which made a missing or stale build a STOP SIGN where an action was
 # available: every worktree had to be built by hand (or by an unconditional build in
-# `ddev init-worktree`, paid for whether or not the ticket touches the CLI) before
+# `bash .ddev/worktree-post.sh`, paid for whether or not the ticket touches the CLI) before
 # this script would run at all. So the same probe now triggers the build instead of
 # refusing. What does NOT change is that a build which FAILS is fatal, and that the
 # assertions still run afterwards — they are what keeps a green skill test from being
@@ -1036,7 +993,7 @@ say "  → its addons, after_create hook and state slice are reviewed in that re
 # -----------------------------------------------------------------------------
 # `--workspace-only` ENDS HERE. Steps 8 and 9 are the two remaining control-plane
 # actions — repairing the OAuth2 keys and minting a session token — and both belong
-# to a hand-driven run that is about to drive a conductor. `ddev init-worktree`
+# to a hand-driven run that is about to drive a conductor. `bash .ddev/worktree-post.sh`
 # creates worktrees; it has no business logging a profile in on every one of them.
 # The closing text is its own, because the three next steps printed below assume the
 # repo entry and the session this mode deliberately did not create.

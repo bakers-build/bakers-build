@@ -1,32 +1,13 @@
-# bakers.build existing-config install provider (BB-142).
-#
-# Mirrors the server's CIM-from-config/sync install: `drush site:install --existing-config`
-# installs from the committed config/sync, so a plain `ddev init` boots the same site the
-# server's deploy (`drush cim`) produces — no recipe, no content seed. This is the DEFAULT
-# provider (`init.default_sync_provider: existing-config`).
-#
-# Nothing to fetch -> NO db_pull_command; the install runs as DDEV's import step
-# (db_import_command). Honours KEYTEC_AI_SITE (--uri) for multisite; the default site
-# imports with no --uri. Project-owned (this file carries no addon marker) — `ddev add-on get`
-# never touches it.
-#
-# Import output is teed to .ddev/.bakers-test/init-existing-config.log so a failing drush step
-# is recoverable even though DDEV swallows db_import output in non-interactive mode.
+# Project-owned default: install committed config/sync without recipes or content seeds.
 db_import_command:
   command: |
     set -u
     LOG=/var/www/html/.ddev/.bakers-test/init-existing-config.log
     mkdir -p /var/www/html/.ddev/.bakers-test
-    URI_ARG=""
-    if [ -n "${KEYTEC_AI_SITE:-}" ] && [ "${KEYTEC_AI_SITE}" != "default" ]; then
-      URI_ARG="--uri=${KEYTEC_AI_SITE}"
-    fi
-    {
-      echo "=== existing-config db_import ==="
-      echo "INIT_PROFILE=${INIT_PROFILE:-<unset>} KEYTEC_AI_SITE=${KEYTEC_AI_SITE:-<unset>}"
-      echo "PWD=$(pwd) whoami=$(whoami) drush=$(command -v drush || echo MISSING)"
+    (
       set -ex
-      drush ${URI_ARG} site:install --existing-config -y
-    } >"${LOG}" 2>&1 && rc=0 || rc=$?
+      drush site:install --existing-config -y
+    ) >"${LOG}" 2>&1
+    rc=$?
     cat "${LOG}" || true
     exit "${rc}"
