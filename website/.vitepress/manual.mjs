@@ -97,7 +97,6 @@ export const SIDEBAR = {
       ['Agent catalog', '/addons/agents'],
       ['Project info', '/addons/info'],
       ['Deployment tickets', '/addons/deployment'],
-      ['dropsh shell', '/addons/dropsh'],
     ]),
     group('Connection support', [
       ['Essentials', '/addons/essentials'],
@@ -158,7 +157,8 @@ export const SIDEBAR = {
       ['bakers oven', '/advanced/cli/conductor'],
       ['bakers ui', '/advanced/cli/ui'],
       ['bakers ui keys', '/advanced/cli/ui-keys'],
-      ['bakers dropsh', '/advanced/cli/dropsh'],
+      ['bakers tools', '/advanced/cli/tools'],
+      ['bakers auth', '/advanced/cli/auth'],
       ['bakers deployment', '/advanced/cli/deployment'],
     ]),
     group('Development', [

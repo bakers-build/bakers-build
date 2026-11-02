@@ -8,7 +8,7 @@ The control plane is a Drupal application. Its code lives in `web/modules/custom
 
 - **Entities.** Workspaces, teams, projects, tickets, comments, runs, conductors, machines, environments, measurements and the terms of the type, recipe and label vocabularies.
 - **State machines.** They are defined in code, in `bb_core.workflows.yml`: one ticket workflow, `bb_work`, which every ticket runs, one for runs and one for reviews. The kind of work is ticket data: a type, a recipe and labels; a deployment is a ticket of type `deployment`, a verification one of type `verification`. A state marked `claimable` may be picked up by a conductor. `done` and `cancelled` are never claimable. [Workflows and states](/skills-and-workflows/workflows-and-states) lists them.
-- **Access.** Everything goes through JSON:API, authenticated with OAuth. Agents, `bakers ui` and `bakers dropsh` all write through the same API; nothing writes behind it.
+- **Access.** Everything goes through the server's API, JSON:API and the named tools at `/mcp`, authenticated with OAuth. Agents, `bakers ui` and `bakers tools` all write through the server's API; nothing writes behind it.
 
 ### Claims
 

@@ -51,7 +51,7 @@ For publish-comment, create-ticket and transition-ticket, see
 [Test a skill's tool calls](../../docs/advanced/development/test-skill-tools.md). Seven cases exercise
 actual MCP calls against a local simulator, including exact Markdown, prior-art decisions, confirmation,
 uncertain publication, links-only transitions and a refused transition. `bakers(argv)` simulates
-`bakers dropsh tool <tool> --data @<file>` for the bakers tools in `contract-fixture.json`; it never
+`bakers tools <tool> --data @<file>` for the bakers tools in `contract-fixture.json`; it never
 executes a command or contacts a tracker, and a JSON:API command fails as outside the skill contract.
 Final prose cannot substitute for the recorded call trace. `cli-contract.mjs` runs the same argv through
 the repository CLI against a loopback MCP endpoint serving the same tool definitions, so the simulator

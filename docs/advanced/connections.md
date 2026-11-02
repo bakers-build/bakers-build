@@ -116,15 +116,15 @@ export default {
 ```
 
 ```sh
-bakers dropsh auth login
-bakers dropsh auth status
+bakers auth login
+bakers auth status
 ```
 
 The CLI prints a verification URL and a short code, then polls the token endpoint until you confirm it on any device. Sign-in proves authentication only; `bakers config check --scope all --online` also checks project access.
 
 ### Browser redirect
 
-A fragment that replaces the OAuth descriptor. Sign in with `bakers dropsh auth login`; the CLI opens the browser and listens on the callback port.
+A fragment that replaces the OAuth descriptor. Sign in with `bakers auth login`; the CLI opens the browser and listens on the callback port.
 
 ```js
 {
@@ -181,13 +181,15 @@ export default {
 
 Never paste a real secret into a ticket, a document or a committed file. A `client_secret` read from `process.env` works at run time, but `bakers config check` then reports the value as computed and exits incomplete. The plugin also offers `oauth2_password`; use it only where the operator explicitly enables that grant.
 
-Other profiles of one host: `bakers dropsh auth use <id>` switches the active profile and `--auth-profile <id>` overrides it for one command. Inline HTTP Basic (`@bakers-build/addon-auth-basic` with a `basic` token) exists for servers configured for it.
+Other profiles of one host: `bakers auth use <id>` switches the active profile and `--auth-profile <id>` overrides it for one command. Inline HTTP Basic (`@bakers-build/addon-auth-basic` with a `basic` token) exists for servers configured for it.
 
 ## Verify
 
 ```sh
 bakers config check --scope connection --online
-bakers dropsh auth status
+bakers auth status
 ```
+
+For one named connection, add its id: `bakers config check --scope connection --connection <id>` and `bakers auth status --connection <id>`. To see which named connections exist, list `~/.bakers/connections/`; each `<id>.js` there is one connection.
 
 The offline check proves the file's shape; `--online` proves the session and project access. A wrong server usually means the wrong selector: read the `Connection:` line before changing credentials.

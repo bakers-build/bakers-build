@@ -32,7 +32,7 @@ describe('ensureAuthenticated', () => {
     // ConductorLogger uses pino-style error(obj, msg) — the message is the second arg
     expect(log.error).toHaveBeenCalledWith(
       expect.any(Object),
-      expect.stringContaining("run 'bakers dropsh auth login'"),
+      expect.stringContaining("run 'bakers auth login'"),
     );
   });
 });

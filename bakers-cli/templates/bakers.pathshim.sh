@@ -21,7 +21,7 @@
 # measured: every worktree had to carry a full CLI build before any unrelated
 # `bakers` command worked in it, and a CLI change in the branch broke that
 # worktree's own tooling (a required config key added on a branch made
-# `bakers dropsh` unusable for reading the very ticket being worked on). The
+# `bakers tools` unusable for reading the very ticket being worked on). The
 # workspace is where the branch build is actually exercised, and now the only
 # place it is selected. Inside a checkout, run `./bakers-cli/bin/bakers` by explicit
 # path to exercise that build.

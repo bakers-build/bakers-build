@@ -87,7 +87,7 @@ For actual recorded calls, use [Test a skill's tool calls](/advanced/development
 
 ## Call profiles
 
-A tool-call profile parses the trace with `calls(context, fixture.simulation.files)` from `call-utils.mjs`: each `bakers dropsh tool` row gets a `mode` (`call`, `schema`, `list`), the wire `name` (`tool('bakers_ticket_read')` builds one) and its `args`. Reuse the shared checks rather than copying them:
+A tool-call profile parses the trace with `calls(context, fixture.simulation.files)` from `call-utils.mjs`: each `bakers tools` row gets a `mode` (`call`, `schema`, `list`), the wire `name` (`tool('bakers_ticket_read')` builds one) and its `args`. Reuse the shared checks rather than copying them:
 
 | Helper | Use |
 |---|---|

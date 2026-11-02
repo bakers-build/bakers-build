@@ -71,9 +71,14 @@ for (const [route, page] of pages) {
 }
 
 for (const [from, to] of Object.entries(ROUTES)) {
-  const page = pages.get(from)
+  const [fromPath, fromAnchor] = from.split('#')
+  const page = pages.get(fromPath)
   if (!page) report(from, 'legacy route has no redirect page')
-  else if (page.redirect !== to)
+  else if (fromAnchor) {
+    const [toPath, toAnchor] = to.split('#')
+    if (!page.redirect) report(from, 'anchor route on a content page; give it a routes.json path entry')
+    if (toAnchor && !pages.get(lookup(toPath))?.ids.has(toAnchor)) report(from, `redirect target ${to} has no such anchor`)
+  } else if (page.redirect !== to)
     report(from, page.redirect ? `redirects to ${page.redirect}, routes.json says ${to}` : 'is still a content page; delete its source or its routes.json entry')
   const target = lookup(to.split('#')[0])
   if (target === null) report(from, `redirect target ${to} does not exist`)

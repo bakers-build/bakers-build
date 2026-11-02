@@ -10,7 +10,7 @@
 
 Reference for `bakers.config.js`, the bakers.build **connection**
 config (BB-201): a dropsh-shaped `{ site, plugins }` read by `bakers ui`,
-`bakers dropsh`, and this conductor's auth. Connection host and credentials come
+`bakers tools`, `bakers auth`, and this conductor's auth. Connection host and credentials come
 from your user-global machine context (`~/.bakers/machine.config.js`). The engine
 wiring lives in the sibling [`conductor.config.js`](conductor.config.js)
 (engine-only).
@@ -22,7 +22,7 @@ used to sit in that file lives here instead. It is not tidiness; a larger file
 makes `bakers ui` fail to start.
 
 `bakers ui` re-execs itself under **Bun** (`bakers-cli/ui/src/bun-runtime.ts`), while
-`bakers dropsh` stays on Node. Since BB-448, `importConfig`
+`bakers tools` and `bakers auth` stay on Node. Since BB-448, `importConfig`
 (`bakers-cli/core/src/cli/import-config.ts`) loads a config not as a file but as a
 base64 `data:` URL, with `machine.config.js` and `conductor.config.local.js`
 inlined recursively as nested `data:` URLs of their own. Bun's module resolver
@@ -70,7 +70,7 @@ export default { workspace_id: '<bb_workspace uuid>' };
 Read the uuid with:
 
 ```bash
-bakers dropsh --format md list bb_workspace/bb_workspace
+bakers tools tool_api__bakers_workspace_list
 ```
 
 ## `addons[]` — UI extensions (BB-373)
@@ -95,9 +95,9 @@ public client `bakers-cli`, and scope `bb:session`. It sends no client secret.
 Sign in and select this profile with:
 
 ```bash
-bakers dropsh auth login --provider bakers
-bakers dropsh auth use bakers
-bakers dropsh auth status
+bakers auth login --provider bakers
+bakers auth use bakers
+bakers auth status
 ```
 
 The browser account determines the signed-in user. The `machine` profile uses
@@ -105,10 +105,10 @@ the local client ID and secret with `client_credentials` and `bb:session`.
 Both authentication methods remain available:
 
 ```bash
-bakers dropsh auth login --provider machine
-bakers dropsh auth use machine
+bakers auth login --provider machine
+bakers auth use machine
 # Switch back to browser OAuth:
-bakers dropsh auth use bakers
+bakers auth use bakers
 ```
 
 An explicitly selected profile overrides the configured browser default.

@@ -30,6 +30,8 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
       'title' => 'Clarified title',
       'description' => 'Clarified *ask*.',
       'conductor' => NULL,
+      'labels' => [],
+      'frozen' => FALSE,
     ], $out);
     $stored = $this->reload($ticket);
     self::assertSame('Clarified title', $stored->label());
@@ -61,7 +63,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $ticket = $this->ticket('TU-3');
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
-    ]), 'Give a title, a description or a conductor.');
+    ]), 'Give a title, a description, a conductor, labels to add or frozen.');
     self::assertSame('TU-3', $this->reload($ticket)->label());
   }
 
@@ -199,7 +201,70 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   public function testInputsAreLimitedToEditableFields(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_ticket_update');
-    self::assertSame(['ticket', 'title', 'description', 'conductor'], array_keys($definition->getInputDefinitions()));
+    self::assertSame(['ticket', 'title', 'description', 'conductor', 'labels_add', 'frozen'], array_keys($definition->getInputDefinitions()));
+  }
+
+  /**
+   * Labels are added by name; existing labels stay and duplicates merge.
+   */
+  public function testAddsLabelsKeepingExistingOnes(): void {
+    $keep = $this->term('label', 'keep');
+    $this->term('label', 'agent:astra');
+    $ticket = $this->ticket('TU-12', ['labels' => [$keep->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_add' => ['agent:astra', 'keep', 'agent:astra'],
+    ]));
+    self::assertSame(['keep', 'agent:astra'], $out['labels']);
+    $names = array_map(static fn ($term) => $term->label(), $this->reload($ticket)->get('labels')->referencedEntities());
+    self::assertSame(['keep', 'agent:astra'], $names);
+  }
+
+  /**
+   * A refused update leaves neither the ticket change nor a new label behind.
+   */
+  public function testRefusedUpdateCreatesNoLabel(): void {
+    $ticket = $this->ticket('TU-13');
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => '',
+      'labels_add' => ['brand-new'],
+    ]), 'Invalid input: title: ');
+    self::assertTrue($this->reload($ticket)->get('labels')->isEmpty());
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'brand-new']));
+  }
+
+  /**
+   * A workspace guest may not create a label through labels_add.
+   */
+  public function testGuestCreatesNoLabel(): void {
+    $ticket = $this->ticket('TU-14');
+    $guest = $this->account('guest', ['skill_user']);
+    $this->addMembership($this->workspace, $guest, ['guest']);
+    $this->addMembership($this->project->get('teams')->entity, $guest);
+    $this->container->get('current_user')->setAccount($guest);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_add' => ['brand-new'],
+    ]), 'may not create it');
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'brand-new']));
+  }
+
+  /**
+   * Freezing and unfreezing use the ticket's own freeze bookkeeping.
+   */
+  public function testFreezesAndUnfreezes(): void {
+    $ticket = $this->ticket('TU-14');
+    self::assertTrue($this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'frozen' => TRUE,
+    ]))['frozen']);
+    self::assertTrue($this->reload($ticket)->isFrozen());
+    self::assertFalse($this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'frozen' => FALSE,
+    ]))['frozen']);
+    self::assertFalse($this->reload($ticket)->isFrozen());
   }
 
   /**

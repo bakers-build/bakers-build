@@ -34,7 +34,7 @@ The executable is `bakers-conductor`.
                                               # DROPSH_CONFIG points to this
                                               # same file for inherited dropsh.
 ~/.config/dropsh/<host>.json                  # Session store only, managed by
-                                              # dropsh auth login/status.
+                                              # bakers auth login/status.
 ```
 
 The conductor uses a single config file. There is no separate plugin registry
@@ -115,20 +115,19 @@ Each `conductors[]` entry registers one conductor for one project. A single
 daemon process can serve multiple projects, sharing the same transport,
 session store, and spawn plugin.
 
-## Auth And Inherited dropsh
+## Auth
 
 Authenticate with the same config file:
 
 ```bash
-bakers-conductor --config ~/.config/bakers-conductor/conductor.config.js dropsh auth login --provider oauth2_client_credentials
-bakers-conductor --config ~/.config/bakers-conductor/conductor.config.js dropsh auth status
+bakers auth login --config ~/.config/bakers-conductor/conductor.config.js --provider oauth2_client_credentials
+bakers auth status --config ~/.config/bakers-conductor/conductor.config.js
 ```
 
-When the conductor config loads, the CLI mounts dropsh as
-`bakers-conductor dropsh <command>` and sets `DROPSH_CONFIG` to the loaded
-`conductor.config.js`. Agent sessions should use this binary. Raw `dropsh`
-also works when `DROPSH_CONFIG` is already present, but it is not the
-documented session interface.
+When the conductor config loads, the CLI sets `DROPSH_CONFIG` to the loaded
+`conductor.config.js`. Agent sessions call the server's named tools, natively
+through the MCP connector or with `bakers tools <wire name> --data @args.json`
+(see `docs/advanced/cli/tools.md`).
 
 The conductor passes `DROPSH_CONFIG`, `BB_RUN_UUID`, and `BB_TICKET_UUID`
 into every spawned session.
@@ -248,6 +247,6 @@ own run leases.
 
 The conductor never writes ticket content or ticket state. Ticket updates,
 comments, subticket creation, and footprint logs are agent-session write-back
-operations through `bakers-conductor dropsh ...`, guarded by session scope and
+operations through the server's named tools (`bakers tools`), guarded by session scope and
 Drupal validation. See [api.md](api.md) and SPEC section 13 for the broader
 security model.

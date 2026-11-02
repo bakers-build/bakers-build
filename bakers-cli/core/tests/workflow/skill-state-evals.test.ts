@@ -13,14 +13,13 @@ const ok = (stdout: unknown = '{}') => ({
   stdout: typeof stdout === 'string' ? stdout : JSON.stringify(stdout),
   stderr: '',
 });
-/** One `bakers dropsh tool tool_api__<id> --data <json>` call with its result. */
+/** One `bakers tools tool_api__<id> --data <json>` call with its result. */
 const call = (id: string, args: unknown, stdout?: unknown): Row => ({
   tool: 'bakers',
   arguments: {
     argv: [
       'bakers',
-      'dropsh',
-      'tool',
+      'tools',
       `tool_api__${id}`,
       '--data',
       JSON.stringify(args),

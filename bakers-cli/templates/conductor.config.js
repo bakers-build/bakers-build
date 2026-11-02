@@ -1,7 +1,7 @@
 // Canonical CONDUCTOR engine config for a bakers.build target repo (BB-215 addon
 // form). This is the CONDUCTOR surface only — the run machinery
 // (remote/executor/workspace/agent). The CONNECTION surface (site + auth +
-// renderer) lives in the sibling `bakers.config.js`; `bakers dropsh` reads only that
+// renderer) lives in the sibling `bakers.config.js`; `bakers tools` reads only that
 // small file (BB-201 split preserved). Local overrides
 // (`conductor.config.local.js`) still supply project/conductor_id and custom agent variants.
 //

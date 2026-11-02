@@ -37,7 +37,7 @@ Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example
 
    ```sh
    bakers init --scope all --machine-id <name> --user-id <operator> --base-url <server-url> --client-id bakers-cli --yes
-   bakers dropsh auth login
+   bakers auth login
    ```
 
    Device code suffices for this check, but the measured session expired after five minutes without refresh. For unattended operation, have an operator provision a machine consumer and use `--auth-type client_credentials --secret-env <NAME>` ([connections](/advanced/connections)). Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/advanced/machines)).

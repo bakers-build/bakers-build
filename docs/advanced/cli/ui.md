@@ -26,7 +26,7 @@ The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs
 
 ## Which control plane answers
 
-`bakers ui` loads its connection like `bakers dropsh`; the first match wins:
+`bakers ui` loads its connection like `bakers tools`; first match wins:
 
 1. `--config <path>`, else `$BB_CONFIG`, else `$DROPSH_CONFIG`.
 2. `--connection <id>`, else `$BB_CONNECTION` or `$DROPSH_CONNECTION`.

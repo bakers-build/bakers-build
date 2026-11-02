@@ -32,7 +32,7 @@ export async function createBbConnectionContext(
 ): Promise<import('dropsh').CommandContext> {
   const [
     { resolveAuth },
-    { createHttpClient, createJsonApiClient, PluginError },
+    { createHttpClient, createJsonApiClient, PluginError, AuthError },
   ] = await Promise.all([import('dropsh'), import('dropsh/plugin')]);
   // BB-607: a write whose response is lost may already have applied, and
   // dropsh's client retries every request after a network failure; a
@@ -56,6 +56,14 @@ export async function createBbConnectionContext(
       now: Date.now,
       ...(options.stateDir ? { stateDir: options.stateDir } : {}),
       ...(options.profile ? { profile: options.profile } : {}),
+    }).catch((error: unknown) => {
+      if (error instanceof AuthError) {
+        error.message = error.message.replace(
+          "Run 'dropsh auth login",
+          "Run 'bakers auth login",
+        );
+      }
+      throw error;
     }));
   const context = {
     http,
@@ -247,7 +255,7 @@ export async function verifyConfigConnections(
         related: [],
         statically_determined: false,
         remediation: authFailure
-          ? `Check credentials in ${shellQuote(file.path)}; run bakers dropsh --config ${shellQuote(file.path)} auth login, then ${recheck}.`
+          ? `Check credentials in ${shellQuote(file.path)}; run bakers auth login --config ${shellQuote(file.path)}, then ${recheck}.`
           : `Inspect ${shellQuote(file.path)}; run ${recheck}.`,
         recheck,
       });

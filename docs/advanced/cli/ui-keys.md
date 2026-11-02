@@ -51,7 +51,7 @@ Booting straight into a ticket, run, addon tab, or picker pushes no back-history
 
 ### Piping
 
-Without a TTY the command prints the route's content once and exits (honouring `--view`; an ambiguous `--here` prints its candidates; with no target, **My work**). There is no `projects:` target; `bakers dropsh search bb_project --bundle bb_project` prints the project list.
+Without a TTY the command prints the route's content once and exits (honouring `--view`; an ambiguous `--here` prints its candidates; with no target, **My work**). There is no `projects:` target; `bakers tools tool_api__bakers_project_list` prints the project list.
 
 ## Auto-refresh - the `.bakers/ui-refresh` signal
 

@@ -29,8 +29,8 @@ Install the `bakers` command, sign in and check your workspace access. Most peop
 4. **Sign in.** Open the displayed URL on any device and approve the code.
 
    ```sh
-   bakers dropsh auth login
-   bakers dropsh auth status
+   bakers auth login
+   bakers auth status
    ```
 
 5. **Verify the connection and workspace access.**

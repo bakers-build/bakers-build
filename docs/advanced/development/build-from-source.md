@@ -34,7 +34,7 @@ To use bakers.build, install the published CLI with `npm install -g @bakers-buil
 
 4. Sign in as described in [Install and sign in](/advanced/cli/install), calling `./bakers-cli/bin/bakers` in place of `bakers`.
 
-**Done when:** `./bakers-cli/bin/bakers --help` lists `conductor`, `ui`, `dropsh`, `deployment`, `agents`, `info` and `ports`. A source build reports the workspace version, currently `0.0.1`.
+**Done when:** `./bakers-cli/bin/bakers --help` lists `oven`, `ui`, `tools`, `auth`, `deployment`, `agents`, `info` and `ports`. A source build reports the workspace version, currently `0.0.1`.
 
 ## Rebuild after an edit
 
@@ -60,7 +60,7 @@ pnpm install && pnpm -r run build
 8. **Summary.** It prints next steps. They are out of date; use `bakers init` from [Install and sign in](/advanced/cli/install) instead.
 
 ::: warning The scaffold and the printed next steps are retired
-`bakers config check` reports the `oauth` keys that step 6 writes as dead keys, because sign-in is now `bakers init` and `bakers dropsh auth login`. Ignore the printed instructions to export a consumer secret, and delete the scaffold's `oauth` block if a check warns about it.
+`bakers config check` reports the `oauth` keys that step 6 writes as dead keys, because sign-in is now `bakers init` and `bakers auth login`. Ignore the printed instructions to export a consumer secret, and delete the scaffold's `oauth` block if a check warns about it.
 :::
 
 ## Monorepo layout

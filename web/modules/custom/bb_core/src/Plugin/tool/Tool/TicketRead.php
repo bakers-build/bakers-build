@@ -115,6 +115,63 @@ use Drupal\tool\TypedData\OutputDefinition;
         ],
       ),
     ),
+    'project' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Project'),
+      description: new TranslatableMarkup('The project UUID.'),
+      nullable: TRUE,
+    ),
+    'branch_name' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Branch name'),
+      description: new TranslatableMarkup('The ticket’s git branch.'),
+      nullable: TRUE,
+    ),
+    'base_branch' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Base branch'),
+      description: new TranslatableMarkup('The branch the ticket’s work is based on.'),
+      nullable: TRUE,
+    ),
+    'conductor' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Conductor'),
+      description: new TranslatableMarkup('The assigned conductor UUID.'),
+      nullable: TRUE,
+    ),
+    'frozen' => new OutputDefinition(
+      data_type: 'boolean',
+      label: new TranslatableMarkup('Frozen'),
+      description: new TranslatableMarkup('Whether the ticket is frozen for a release batch.'),
+    ),
+    'metrics' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Metrics'),
+      description: new TranslatableMarkup('The ticket’s metric rows; null when not readable.'),
+      nullable: TRUE,
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Metric'),
+        description: new TranslatableMarkup('One metric row.'),
+        property_definitions: [
+          'name' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Name'),
+            description: new TranslatableMarkup('The metric name.'),
+          ),
+          'value' => new OutputDefinition(
+            data_type: 'float',
+            label: new TranslatableMarkup('Value'),
+            description: new TranslatableMarkup('The numeric value.'),
+          ),
+          'unit' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Unit'),
+            description: new TranslatableMarkup('The unit.'),
+            required: FALSE,
+            nullable: TRUE,
+          ),
+        ],
+      ),
+    ),
     'comments' => new ListOutputDefinition(
       label: new TranslatableMarkup('Comments'),
       description: new TranslatableMarkup('The readable comments, oldest first.'),
@@ -194,6 +251,16 @@ final class TicketRead extends ToolBase {
         'uri' => $link['uri'],
         'title' => (string) $link['title'],
       ], $ticket->get('links')->getValue()),
+      'project' => $ticket->get('project_id')->entity?->uuid(),
+      'branch_name' => $ticket->get('branch_name')->value,
+      'base_branch' => $ticket->get('base_branch')->value,
+      'conductor' => $ticket->get('conductor_id')->entity?->access('view', $this->currentUser) ? $ticket->get('conductor_id')->entity->uuid() : NULL,
+      'frozen' => $ticket->isFrozen(),
+      'metrics' => $ticket->get('metrics')->access('view', $this->currentUser) ? array_map(static fn (array $row): array => [
+        'name' => $row['name'],
+        'value' => (float) $row['value'],
+        'unit' => $row['unit'] ?? NULL,
+      ], $ticket->get('metrics')->getValue()) : NULL,
       'comments' => $comments,
     ]);
   }

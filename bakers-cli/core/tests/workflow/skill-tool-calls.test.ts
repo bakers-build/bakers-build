@@ -7,6 +7,10 @@ import {
   readAttempt,
   sha256,
 } from '../../../../tests/skill-eval/artifacts.mjs';
+import {
+  calls,
+  commonChecks,
+} from '../../../../tests/skill-eval/call-utils.mjs';
 import { runSimulator } from '../../../../tests/skill-eval/cli-contract.mjs';
 import {
   loadFixture,
@@ -43,10 +47,10 @@ const bakers = (
   stderr = '',
 ): Row => ({
   tool: 'bakers',
-  arguments: { argv: ['bakers', 'dropsh', ...argv] },
+  arguments: { argv: ['bakers', ...argv] },
   result: result(stdout, exit_code, stderr),
 });
-/** `bakers dropsh tool tool_api__<id> --data <inline JSON>`. */
+/** `bakers tools tool_api__<id> --data <inline JSON>`. */
 const call = (
   id: string,
   args: unknown,
@@ -55,7 +59,7 @@ const call = (
   stderr = '',
 ) =>
   bakers(
-    ['tool', `tool_api__${id}`, '--data', JSON.stringify(args)],
+    ['tools', `tool_api__${id}`, '--data', JSON.stringify(args)],
     stdout,
     exit_code,
     stderr,
@@ -86,7 +90,7 @@ async function commentCase() {
       result: result(''),
     },
     bakers(
-      ['tool', 'tool_api__bakers_comment_publish', '--data', `@${argsFile}`],
+      ['tools', 'tool_api__bakers_comment_publish', '--data', `@${argsFile}`],
       {
         id: commentId,
         type: 'coding',
@@ -128,11 +132,47 @@ async function transitionCase(id = 'transition-ticket-calls') {
 }
 
 describe('skill call contracts', () => {
+  it('recognizes tools with connection selectors before and after the command', () => {
+    const trace = calls({
+      tool_trace: [
+        {
+          tool: 'bakers',
+          arguments: {
+            argv: [
+              'bakers',
+              '--connection',
+              'work',
+              'tools',
+              '--auth-profile=worker',
+              'tool_api__bakers_ticket_read',
+              '--data',
+              JSON.stringify({ ticket: ticketId }),
+            ],
+          },
+          result: result({ id: ticketId }),
+        },
+      ],
+    });
+    expect(trace[0]).toMatchObject({
+      mode: 'call',
+      name: 'tool_api__bakers_ticket_read',
+      args: { ticket: ticketId },
+    });
+    expect(failing(commonChecks(trace))).toEqual([]);
+  });
   it('confirms a comment from its result and never repeats a timed-out publication', async () => {
     const { fixture, profile, trace } = await commentCase();
     const grade = (rows: unknown[], f = fixture) =>
       failing(profile.checkOutput(f, 'Success', { tool_trace: rows }));
     expect(grade(trace)).toEqual([]);
+    const retired = structuredClone(trace);
+    retired[2]!.arguments.argv = [
+      'bakers',
+      'dropsh',
+      'tool',
+      ...retired[2]!.arguments.argv.slice(2),
+    ];
+    expect(grade(retired)).toContain('validated-call-surface');
     const refused = structuredClone(trace);
     refused[2]!.result = rejected(1, 'E_TOOL');
     expect(grade(refused)).toEqual(
@@ -186,7 +226,7 @@ describe('skill call contracts', () => {
       error('E_VALIDATION'),
     );
     const schema = bakers(
-      ['tool', 'tool_api__bakers_comment_publish', '--schema'],
+      ['tools', 'tool_api__bakers_comment_publish', '--schema'],
       { name: 'x' },
     );
     const recovered = [...trace.slice(0, 2), invalid, schema, trace[2]];
@@ -331,7 +371,7 @@ describe('skill call contracts', () => {
           4,
           error('E_VALIDATION'),
         ),
-        bakers(['tool', 'tool_api__bakers_comment_publish', '--schema'], {
+        bakers(['tools', 'tool_api__bakers_comment_publish', '--schema'], {
           name: 'x',
         }),
         trace[2],
@@ -518,8 +558,7 @@ describe('recipe and type on ticket creation', () => {
     ];
     const argvs = steps.map(([id, args]) => [
       'bakers',
-      'dropsh',
-      'tool',
+      'tools',
       `tool_api__${id}`,
       '--data',
       JSON.stringify(args),

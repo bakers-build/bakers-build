@@ -17,10 +17,16 @@ def load_server():
     return server
 
 
-TOOL = ['bakers', 'dropsh', 'tool']
+TOOL = ['bakers', 'tools']
 
 
 class ToolServerTests(unittest.TestCase):
+    def test_tools_accept_selectors_around_the_command(self):
+        simulation = load_server().Simulation({'simulation': {}})
+        selected = simulation.call('bakers', {'argv': ['bakers', '--connection', 'work', 'tools', '--auth-profile=worker']})
+        plain = simulation.call('bakers', {'argv': TOOL})
+        self.assertEqual(selected, plain)
+
     def test_seeded_comments_are_read_with_their_ticket(self):
         server = load_server()
         ticket = '11111111-1111-4111-8111-111111111111'
@@ -31,7 +37,7 @@ class ToolServerTests(unittest.TestCase):
 
     def test_jsonapi_commands_and_unprefixed_names_are_outside_the_contract(self):
         simulation = load_server().Simulation({'simulation': {'ticket': {'id': 'x', 'identifier': 'EVAL-20', 'state': 'plan'}}})
-        for verb in ['read', 'search', 'create', 'update', 'schema']:
+        for verb in ['read', 'search', 'create', 'update', 'delete', 'schema', 'tool']:
             rejected = simulation.call('bakers', {'argv': ['bakers', 'dropsh', verb, 'bb_ticket/bb_ticket/x']})
             self.assertEqual(rejected['exit_code'], 2)
             self.assertIn('not part of the skill contract', rejected['stderr'])

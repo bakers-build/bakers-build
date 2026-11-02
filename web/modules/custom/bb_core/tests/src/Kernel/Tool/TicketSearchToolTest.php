@@ -31,8 +31,19 @@ final class TicketSearchToolTest extends BakersToolTestBase {
         'title' => 'Fix the login form',
         'state' => 'qualification',
         'type' => 'bug',
+        'branch_name' => $title->get('branch_name')->value,
+        'base_branch' => 'main',
+        'parent' => NULL,
       ],
-      ['identifier' => $body->getIdentifier(), 'title' => 'Other', 'state' => 'qualification', 'type' => NULL],
+      [
+        'identifier' => $body->getIdentifier(),
+        'title' => 'Other',
+        'state' => 'qualification',
+        'type' => NULL,
+        'branch_name' => $body->get('branch_name')->value,
+        'base_branch' => 'main',
+        'parent' => NULL,
+      ],
     ], $rows);
 
     $values = ['query' => 'login', 'project' => $this->project->uuid()];
@@ -49,6 +60,30 @@ final class TicketSearchToolTest extends BakersToolTestBase {
     $this->assertFailure($this->runTool('bakers_ticket_search', ['query' => 'login', 'project' => $unknown]), $unknown);
     $this->container->get('current_user')->setAccount($this->account('outsider', ['skill_user']));
     self::assertSame([], $this->outputs($this->runTool('bakers_ticket_search', ['query' => 'login']))['tickets']);
+  }
+
+  /**
+   * An exact branch finds its one ticket with the parent the base comes from.
+   */
+  public function testBranchLookupIsExactAndNamesParent(): void {
+    $parent = $this->ticket('REL-1', ['branch_name' => 'release/1.2']);
+    $child = $this->ticket('CH-1', ['branch_name' => 'feat/ch-1', 'parent_id' => $parent->id()]);
+    $this->ticket('CH-2', ['branch_name' => 'feat/ch-1-more']);
+    $out = $this->outputs($this->runTool('bakers_ticket_search', [
+      'branch_name' => 'feat/ch-1',
+      'project' => $this->project->uuid(),
+    ]));
+    self::assertCount(1, $out['tickets']);
+    self::assertSame($child->getIdentifier(), $out['tickets'][0]['identifier']);
+    self::assertSame('release/1.2', $out['tickets'][0]['base_branch']);
+    self::assertSame($parent->getIdentifier(), $out['tickets'][0]['parent']);
+  }
+
+  /**
+   * A search needs a text or a branch.
+   */
+  public function testQueryOrBranchIsRequired(): void {
+    $this->assertFailure($this->runTool('bakers_ticket_search', []), 'Give a query or a branch_name.');
   }
 
 }

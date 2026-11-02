@@ -1,7 +1,7 @@
 {
   "name": "@bakers-build/addon-dropsh",
   "version": "0.0.1",
-  "description": "bakers.build dropsh command plugin: the `bakers dropsh` JSON:API shell bound to the split connection config.",
+  "description": "bakers.build tools and auth command plugins using the shared connection config.",
   "type": "module",
   "license": "MIT",
   "exports": {

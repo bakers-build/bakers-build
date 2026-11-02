@@ -53,7 +53,6 @@
 | [Agent catalog](/addons/agents) | Lists agent aliases and routes |
 | [Project info](/addons/info) | Current project and workspace as JSON |
 | [Deployment tickets](/addons/deployment) | Tickets in a release range |
-| [dropsh shell](/addons/dropsh) | JSON:API shell for the server |
 
 ## Connection support
 

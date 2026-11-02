@@ -12,7 +12,7 @@ Then inspect the effective checkout and connection context before retrying:
 git rev-parse --show-toplevel
 git worktree list --porcelain
 find . .. -path '*/.bakers/bakers.config.js' -type f -print 2>/dev/null
-bakers dropsh auth status
+bakers auth status
 ```
 
 Read the nearest `WORKFLOW.md`, confirm that the ticket belongs to this control plane, and retry the

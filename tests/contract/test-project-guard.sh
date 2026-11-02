@@ -466,7 +466,7 @@ grep -qxF '/workspaces/' "$ROOT/.gitignore" \
 # the summary is the last thing an operator reads before spending a real dispatch.
 summary="$(awk '/^cat <<SUMMARY$/ { inside = 1; next } inside && /^SUMMARY$/ { exit } inside { print }' "${SETUP}")"
 [ -n "${summary}" ] || fail "setup's completion summary could not be located"
-grep -q -- '--type_names chore --recipe_names matt' <<<"${summary}" \
+grep -qF '"type": "chore", "recipe": "matt"' <<<"${summary}" \
   || fail "setup's completion summary does not create the ticket with its type and recipe"
 # The committed bakers-playground conductor config owns the claim hook. The setup script
 # generates only the machine-local connection config now, so this contract must not assert

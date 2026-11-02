@@ -10,7 +10,7 @@ Each tool's wire name is `tool_api__<tool>` (`tool_api__bakers_ticket_read`).
 - **Otherwise** write the arguments to a JSON file and call it alone, with literal values; chaining sandboxes it:
 
   ```bash
-  bakers dropsh tool tool_api__<tool> --data @<args.json>
+  bakers tools tool_api__<tool> --data @<args.json>
   ```
 
   Write it, Markdown byte for byte, with a file tool or JSON encoder
@@ -22,8 +22,8 @@ Each tool's wire name is `tool_api__<tool>` (`tool_api__bakers_ticket_read`).
 |---|---|---|
 | 0 | success; JSON result on stdout | use the result |
 | 1 | the tool refused; the message names the cause | report it; correct only arguments the message shows wrong |
-| 3 | credentials rejected | `bakers dropsh auth status`, then report |
-| 4 | invalid arguments or unknown tool, nothing sent | fix the arguments against `bakers dropsh tool <tool> --schema` |
+| 3 | credentials rejected | `bakers auth status`, then report |
+| 4 | invalid arguments or unknown tool, nothing sent | fix the arguments against `bakers tools <tool> --schema` |
 | 5 | HTTP or protocol error | report it |
 
 **An error is not a negative**: a failed read or search found nothing out. A timed-out or exit-5 write
@@ -36,14 +36,14 @@ are term names, reused or created.
 
 | Operation | Tool | Arguments | Result |
 |---|---|---|---|
-| Read a ticket | `bakers_ticket_read` | `ticket` | `id`, `identifier`, `title`, `state`, `workflow`, `approval`, `description`, `type`, `recipe`, `labels`, `links`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
-| Search tickets | `bakers_ticket_search` | `query`, optional `project` | `tickets` (`identifier`, `title`, `state`, `type`) whose title or description contains `query`; newest first, at most 50 |
-| Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent` | `id`, `identifier`, initial `state` |
-| Edit a ticket | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor` (UUID) | saved values, others kept; closed refused |
+| Read a ticket | `bakers_ticket_read` | `ticket` | `id`, `identifier`, `title`, `state`, `workflow`, `approval`, `description`, `type`, `recipe`, `labels`, `links`, `project`, `branch_name`, `base_branch`, `conductor`, `frozen`, `metrics`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
+| Search tickets | `bakers_ticket_search` | `query` (title or description) or exact `branch_name`; optional `project` | `tickets` (`identifier`, `title`, `state`, `type`, `branch_name`, `base_branch`, `parent`); newest first, at most 50 |
+| Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name` | `id`, `identifier`, initial `state`, `branch_name` |
+| Edit a ticket | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor` (UUID), `labels_add` (names), `frozen` | saved values and `labels`; others kept; closed refused |
 | Set recipe and type | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | saved `recipe` and `type` |
 | Change state or add links | `bakers_ticket_transition` | `ticket`; `state`, `links` (`[{uri, title}]`) or both | saved `state` and all `links`; existing links kept, no duplicate `uri`; no `state` keeps it |
 | Publish a comment | `bakers_comment_publish` | `ticket`, `type`, `body` | new comment `id`, stored `type` |
 | Cancel runs | `bakers_run_cancel` | `ticket`, `reason` | `runs`: all active, or none |
 | Record a measurement | `bakers_metric_write` | `ticket`, `name`, `rows` (`[{name, value, unit}]`), optional `label` | all metric rows; rows outside `<name>.` kept |
-| Propose time | `bakers_time_propose` | `entries`; optional `project`, `account`; all UUIDs | `submission`, `worklogs` in entry order; a failing entry stores nothing |
-| List own worklogs | `bakers_worklog_list` | `from`, `to` (`Y-m-d`); optional `limit`, `offset` | `data` (worklogs), `next_offset` |
+
+Workspace, project, conductor, label, template, run, activity and time tools: [lookups](tools-lookup.md).

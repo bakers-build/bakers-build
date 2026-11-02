@@ -37,7 +37,7 @@ A ticket and a ticket template carry three term fields, each from a vocabulary o
 | `recipe` | `recipe` | one | a recipe name |
 | `labels` | `label` | several | `agent:<alias>`, plain tags |
 
-The field is called `ticket_type` because JSON:API reserves `type`. The type selects the recipe's variant. Workspace contributors and leads manage the terms under the workspace's settings, on the tabs Types, Recipes and Labels; guests may only view them. A term has no page of its own and cannot be deleted. Agents set the fields by name with [`bakers dropsh`](/advanced/cli/dropsh#targets-and-envelopes).
+The field is called `ticket_type` because JSON:API reserves `type`. The type selects the recipe's variant. Workspace contributors and leads manage the terms under the workspace's settings, on the tabs Types, Recipes and Labels; guests may only view them. A term has no page of its own and cannot be deleted. Agents set them by name with [`bakers_ticket_classify`](/advanced/cli/tools).
 
 An epic is a ticket of type `epic`. It groups child tickets, which do the work; the project overview lists epics by type.
 
