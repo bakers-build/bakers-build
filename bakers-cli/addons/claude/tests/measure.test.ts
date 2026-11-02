@@ -277,6 +277,8 @@ describe('claude-measure launch wrapper', () => {
 
 describe('ClaudeAgent measure', () => {
   it('wraps the launch in the measure script and appends the settings flags', () => {
+    // yolo's inline hooks settings take the --settings slot; the wrapper folds
+    // them into its profile file.
     const cmd = new ClaudeAgent({
       model: 'opus',
       measure: true,
@@ -284,7 +286,7 @@ describe('ClaudeAgent measure', () => {
       args: ['--verbose'],
     }).launchCommand('go');
     expect(cmd).toBe(
-      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${wrapper}' claude 'go' --model 'opus' --dangerously-skip-permissions '--verbose' '--setting-sources' 'project,local' '--settings' '.bakers/claude-measure.settings.json' '--strict-mcp-config' '--mcp-config' '{"mcpServers":{}}'`,
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${wrapper}' claude 'go' --model 'opus' --dangerously-skip-permissions --settings '{"hooks":{"PreToolUse":[{"matcher":"AskUserQuestion","hooks":[{"type":"command","command":"bakers hook ask-user-question"}]}]}}' '--verbose' '--setting-sources' 'project,local' '--strict-mcp-config' '--mcp-config' '{"mcpServers":{}}'`,
     );
   });
 
@@ -315,7 +317,7 @@ describe('ClaudeAgent measure', () => {
     expect(
       new ClaudeAgent({ model: 'opus', security: 'yolo' }).launchCommand('go'),
     ).toBe(
-      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions",
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions --settings '{"hooks":{"PreToolUse":[{"matcher":"AskUserQuestion","hooks":[{"type":"command","command":"bakers hook ask-user-question"}]}]}}'`,
     );
   });
 

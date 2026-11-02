@@ -9,6 +9,20 @@ import claudeAgentDefault, {
   encodeClaudeProjectDir,
 } from '../src/index.js';
 
+/** The hooks-only settings every mode without its own settings JSON carries. */
+const HOOKS_JSON = JSON.stringify({
+  hooks: {
+    PreToolUse: [
+      {
+        matcher: 'AskUserQuestion',
+        hooks: [{ type: 'command', command: 'bakers hook ask-user-question' }],
+      },
+    ],
+  },
+});
+const HOOKS_ARGV = ['--settings', HOOKS_JSON];
+const HOOKS_FLAG = ` --settings '${HOOKS_JSON}'`;
+
 describe('default export', () => {
   it('is the same factory reference as the named `claudeAgent` export', () => {
     expect(claudeAgentDefault).toBe(claudeAgent);
@@ -33,12 +47,12 @@ describe('ClaudeAgent.launchCommand', () => {
       security: 'yolo',
     });
     expect(agent.launchCommand('do the thing')).toBe(
-      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions" + HOOKS_FLAG,
     );
   });
   it('omits --model when no model is set', () => {
     expect(new ClaudeAgent({ security: 'yolo' }).launchCommand('x')).toBe(
-      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions" + HOOKS_FLAG,
     );
   });
   it('returns the bare command for an empty prompt', () => {
@@ -51,7 +65,7 @@ describe('ClaudeAgent.launchCommand', () => {
       'para one\n\npara two',
     );
     expect(cmd).toBe(
-      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'para one\n\npara two' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'para one\n\npara two' --dangerously-skip-permissions" + HOOKS_FLAG,
     );
   });
 });
@@ -183,13 +197,15 @@ describe('ClaudeAgent.launchCommand with a run identity', () => {
     const agent = new ClaudeAgent({ security: 'yolo' });
     const cmd = agent.launchCommand('do the thing', { sessionId: 'r-123' });
     expect(cmd).toBe(
-      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --dangerously-skip-permissions" +
+        HOOKS_FLAG +
+        " --session-id r-123",
     );
   });
   it('omits --session-id when no run is given (unchanged behaviour)', () => {
     const agent = new ClaudeAgent({ security: 'yolo' });
     expect(agent.launchCommand('x')).toBe(
-      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
+      "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions" + HOOKS_FLAG,
     );
   });
 });
@@ -216,6 +232,7 @@ describe('ClaudeAgent args and effort', () => {
       'claude',
       'task',
       '--dangerously-skip-permissions',
+      ...HOOKS_ARGV,
       '--effort',
       'medium',
       '--effort',
@@ -237,6 +254,7 @@ describe('ClaudeAgent args and effort', () => {
       '--model',
       'opus --injected',
       '--dangerously-skip-permissions',
+      ...HOOKS_ARGV,
     ]);
   });
 
@@ -257,6 +275,7 @@ describe('ClaudeAgent args and effort', () => {
       'claude',
       'x',
       '--dangerously-skip-permissions',
+      ...HOOKS_ARGV,
       '--model',
       'opus',
       '--effort',
@@ -275,6 +294,7 @@ describe('ClaudeAgent args and effort', () => {
       'claude',
       'x',
       '--dangerously-skip-permissions',
+      ...HOOKS_ARGV,
       '--model=opus',
       '--effort=high',
     ]);
@@ -293,6 +313,7 @@ describe('ClaudeAgent args and effort', () => {
     for (const flag of [
       '--session-id',
       '--session-id=abc',
+      '--resume',
       '--dangerously-skip-permissions',
       '--allow-dangerously-skip-permissions',
       '--permission-mode',
@@ -325,6 +346,7 @@ describe('ClaudeAgent args and effort', () => {
       'claude',
       'x',
       '--dangerously-skip-permissions',
+      ...HOOKS_ARGV,
       '--add-dir',
       '/home/cw/My Settings/a~b.json',
     ]);
@@ -446,13 +468,13 @@ describe('ClaudeAgent security: sandbox (default)', () => {
 });
 
 describe('ClaudeAgent security: system, yolo, custom', () => {
-  it('system adds no security flag', () => {
+  it('system adds only the hooks settings', () => {
     expect(
       captureArgv(
         'claude',
         new ClaudeAgent({ security: 'system' }).launchCommand('x'),
       ),
-    ).toEqual(['claude', 'x']);
+    ).toEqual(['claude', 'x', ...HOOKS_ARGV]);
   });
 
   it("yolo restores today's bypass launch and keeps denied env vars", () => {
@@ -461,17 +483,23 @@ describe('ClaudeAgent security: system, yolo, custom', () => {
       'claude',
       'x',
       '--dangerously-skip-permissions',
+      ...HOOKS_ARGV,
     ]);
     expect(agent.runEnvPolicy.drop).toBe(false);
   });
 
-  it('custom passes config verbatim as the only settings', () => {
+  it('custom passes config as the only settings, plus the ask hook', () => {
     const config = { permissions: { defaultMode: 'acceptEdits' } };
     const a = captureArgv(
       'claude',
       new ClaudeAgent({ security: 'custom', config }).launchCommand('x'),
     );
-    expect(a).toEqual(['claude', 'x', '--settings', JSON.stringify(config)]);
+    expect(a).toEqual([
+      'claude',
+      'x',
+      '--settings',
+      JSON.stringify({ ...config, ...JSON.parse(HOOKS_JSON) }),
+    ]);
   });
 });
 
@@ -588,5 +616,72 @@ describe('ClaudeAgent.sandboxPreflight', () => {
   it('skips the probe on macOS (Seatbelt is built in)', async () => {
     const { host: h } = host({ platform: 'darwin', tools: [] });
     expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+  });
+});
+
+describe('ClaudeAgent redirects the terminal dialog to the ticket question', () => {
+  const askHook = {
+    matcher: 'AskUserQuestion',
+    hooks: [{ type: 'command', command: 'bakers hook ask-user-question' }],
+  };
+  const settingsOf = (options: Record<string, unknown>) =>
+    JSON.parse(
+      flagValue(
+        captureArgv(
+          'claude',
+          new ClaudeAgent(options as never).launchCommand('x'),
+        ),
+        '--settings',
+      ),
+    );
+
+  it.each([
+    ['sandbox', {}],
+    ['system', { security: 'system' }],
+    ['yolo', { security: 'yolo' }],
+    [
+      'custom',
+      {
+        security: 'custom',
+        config: { permissions: { defaultMode: 'acceptEdits' } },
+      },
+    ],
+  ])('%s carries the AskUserQuestion PreToolUse hook', (_mode, options) => {
+    expect(settingsOf(options).hooks.PreToolUse).toContainEqual(askHook);
+  });
+
+  it('keeps the terminal dialog allowed for interactive runs', () => {
+    expect(settingsOf({}).permissions.allow).toContain('AskUserQuestion');
+  });
+
+  it("keeps a custom config's own hooks and settings", () => {
+    const own = {
+      matcher: 'Bash',
+      hooks: [{ type: 'command', command: 'audit' }],
+    };
+    const settings = settingsOf({
+      security: 'custom',
+      config: {
+        permissions: { defaultMode: 'acceptEdits' },
+        hooks: { PreToolUse: [own], Stop: [own] },
+      },
+    });
+    expect(settings.permissions).toEqual({ defaultMode: 'acceptEdits' });
+    expect(settings.hooks.PreToolUse).toEqual([own, askHook]);
+    expect(settings.hooks.Stop).toEqual([own]);
+  });
+});
+
+describe('ClaudeAgent resumes an earlier session', () => {
+  it('passes --resume in place of --session-id when the run resumes', () => {
+    const a = captureArgv(
+      'claude',
+      new ClaudeAgent({ security: 'system' }).launchCommand('x', {
+        sessionId: 'r-2',
+        resumeSessionId: 'r-1',
+      }),
+    );
+    expect(flagValue(a, '--resume')).toBe('r-1');
+    expect(a).not.toContain('--session-id');
   });
 });

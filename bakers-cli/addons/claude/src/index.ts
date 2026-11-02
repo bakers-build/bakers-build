@@ -53,11 +53,36 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
   mcp_servers: {},
 };
 
+/**
+ * In every mode, `AskUserQuestion` first asks `bakers hook ask-user-question`,
+ * which denies the terminal dialog in an autopilot run and points the agent to
+ * `bakers ticket ask`; elsewhere the dialog works as before.
+ */
+const ASK_HOOK = {
+  matcher: 'AskUserQuestion',
+  hooks: [{ type: 'command', command: 'bakers hook ask-user-question' }],
+};
+
+/** `hooks` with the ask hook appended to its PreToolUse entries. */
+function withAskHook(hooks: unknown): Record<string, unknown> {
+  const own =
+    hooks && typeof hooks === 'object' ? (hooks as Record<string, unknown>) : {};
+  const pre = Array.isArray(own.PreToolUse) ? own.PreToolUse : [];
+  return { ...own, PreToolUse: [...pre, ASK_HOOK] };
+}
+
 /** The launch flags a security mode owns (`docs/addons/claude.md`). */
 function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
-  if (mode === 'system') return [];
-  if (mode === 'yolo') return ['--dangerously-skip-permissions'];
-  if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  const hooksOnly = ['--settings', JSON.stringify({ hooks: withAskHook({}) })];
+  if (mode === 'system') return hooksOnly;
+  if (mode === 'yolo') return ['--dangerously-skip-permissions', ...hooksOnly];
+  if (mode === 'custom') {
+    const own = config as Record<string, unknown>;
+    return [
+      '--settings',
+      JSON.stringify({ ...own, hooks: withAskHook(own.hooks) }),
+    ];
+  }
   const settings = {
     sandbox: {
       enabled: true,
@@ -75,6 +100,7 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       network: { allowedDomains: sandbox.network },
     },
     disableClaudeAiConnectors: true,
+    hooks: withAskHook({}),
     // What is allowed here runs without a prompt; anything else, such as a
     // write to the protected `.claude/`, asks the human watching the run's
     // terminal (dontAsk would deny it, and no allow rule lifts that). Every
@@ -125,6 +151,7 @@ export interface ClaudeAgentOptions extends SecurityOptions {
 
 const CLAUDE_RESERVED = [
   '--session-id',
+  '--resume',
   '--dangerously-skip-permissions',
   '--allow-dangerously-skip-permissions',
   '--permission-mode',
@@ -194,7 +221,10 @@ export class ClaudeAgent implements BbAgent {
     // `getRunLog` can read that ONE file directly instead of scanning the
     // worktree-keyed directory by mtime — the scan is what let a
     // resumed/re-dispatched/reused worktree finalise a foreign transcript.
-    if (run?.sessionId) {
+    // A run that picks up a human answer continues the asking session.
+    if (run?.resumeSessionId) {
+      parts.push('--resume', shellQuote(run.resumeSessionId));
+    } else if (run?.sessionId) {
       parts.push('--session-id', run.sessionId);
     }
     parts.push(...this.args.map(shellQuote));
