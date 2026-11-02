@@ -188,8 +188,9 @@ if [ -n "$(value registry_token)" ]; then
     | docker login --username "$(value registry_user)" --password-stdin "$registry" >/dev/null \
     || skip "docker login to $registry failed"
 fi
-export PM_BOT_DATA="$DATA" PM_BOT_CLONE="$CLONE" PM_BOT_UID="$(id -u)" PM_BOT_GID="$(id -g)"
-export PM_BOT_IMAGE="$image"
+PM_BOT_UID="$(id -u)"
+PM_BOT_GID="$(id -g)"
+export PM_BOT_DATA="$DATA" PM_BOT_CLONE="$CLONE" PM_BOT_UID PM_BOT_GID PM_BOT_IMAGE="$image"
 docker compose -p "$PROJECT" -f "$COMPOSE" up -d --pull missing --remove-orphans \
   || skip "docker compose up failed (see above)"
 echo "pm-bot: running $image"
