@@ -16,7 +16,7 @@ A run executes text other people wrote (ticket title, description, comments, env
 | `yolo` | Full access, permissions and sandbox bypassed | yours | passed |
 | `custom` | Only your `config`, handed to the harness unchanged | as `config` says | dropped |
 
-The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security) and [Grok](/addons/grok#security) pages; Grok rejects `custom`. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
+The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security) and [OpenCode](/addons/opencode#security) pages; Grok and OpenCode reject `custom`. OpenCode has no OS sandbox, so its default is `system` and an explicit `security: 'sandbox'` fails loading. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
 ## Sandbox prerequisites
 
@@ -42,6 +42,8 @@ Install the Linux packages with your package manager:
 | pacman (Arch) | `sudo pacman -S --needed bubblewrap socat` |
 
 Other distributions: install the packages `bubblewrap` and `socat`.
+
+OpenCode has no OS sandbox on any platform; it defaults to `system` and rejects `sandbox` when loading, so `bakers oven check` never checks it.
 
 A host or container that forbids unprivileged user namespaces shows `bwrap cannot set up its sandbox: …` (Claude) or `codex sandbox cannot start: …` (Codex). Allow them on the host (on Ubuntu 24.04 and later, AppArmor restricts them), or run the conductor where they are allowed.
 
@@ -98,7 +100,7 @@ What it does not block:
 
 ## Ticket env vars
 
-Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Kimi, OpenCode, Pi) always drop with the default list:
+Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Kimi, Pi) always drop with the default list:
 
 `ANTHROPIC_*`, `OPENAI_*`, `CLAUDE_*`, `CODEX_*`, `NODE_OPTIONS`, `LD_*`, `DYLD_*`, `PATH`, `BASH_ENV`, `ENV`, `GIT_*`, `SSH_*`, `*_PROXY`, `*_proxy`
 
