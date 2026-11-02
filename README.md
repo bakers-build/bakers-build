@@ -18,70 +18,39 @@
 
 Start with the [bakers.build manual](docs/index.md) for setup, configuration and AI-assisted ticket work.
 
-## Install
+## Start using bakers.build
 
-### 1. The CLI (runtime)
+bakers.build is a **standalone application**: a Drupal control plane, a CLI/conductor on your
+machine and agent skills. It is not an installable module for arbitrary Drupal sites.
 
-The `bakers` CLI (conductor + write-back client) is published to npm as **`@bakers-build/bakers`** — its
-plugins (`@bakers-build/addon-*`) and `dropsh` come along as dependencies:
+- [Connect your chat client](docs/get-started/connector.md): use an existing server and your own
+  account; no developer machine setup is required.
+- [Set up your machine](docs/get-started/machine.md), then [set up a project](docs/get-started/connect-a-project.md):
+  install the CLI and skills, sign in and configure execution capacity.
+- [Join a project](docs/get-started/first-ticket.md): use existing membership and team capacity
+  without repeating project bootstrap.
+- [Run the server](docs/configuration/project/server.md): operator prerequisites and deployment.
+  Independent public installation remains subject to the [acceptance prerequisites and support matrix](docs/bakers/clean-install-acceptance.md).
 
-```bash
-npm install -g @bakers-build/bakers      # provides the `bakers` command (Linux / macOS / Windows)
-bakers --help
+For the CLI, use your selected candidate's exact package version and Node >=20.19:
+
+```sh
+npm install -g @bakers-build/bakers@<exact-version>
+bakers --version
+bakers init --base-url https://<your-server>
+bakers auth login
+bakers auth status
+bakers config check --scope connection --online
 ```
 
-### 2. The `/bakers` skill in Claude Code (recommended)
+`bakers init` configures machine identity and connection; project setup is a separate step. Follow
+[machine setup](docs/get-started/machine.md) for the required skill installation and agent prerequisites.
+A bare `next` tag, private cache or existing global install is not public candidate evidence.
 
-bakers.build ships its own Claude Code marketplace, so agents (and you) get the `/bakers` ticket-workflow
-skill. Add the marketplace and install the plugin:
-
-```
-/plugin marketplace add https://bakers.build/marketplace.json
-/plugin install bakers@bakers
-```
-
-Pull updates later with `/plugin marketplace update bakers`.
-
-### 3. Bootstrap a project
-
-**Default (guided, via the skill):** run `/bakers init` in Claude Code — it scaffolds
-`.bakers/conductor.config.js` + the user-global machine context, logs in (`dropsh auth`), and
-generates the repo's `WORKFLOW.md`.
-
-```
-/bakers init
-```
-
-**Or with the CLI directly** (no Claude):
-
-```bash
-bakers init --base-url <control-plane-url> --project <name>   # scaffold .bakers/conductor.config.js + machine context
-```
-
-### Run the conductor node
-
-```bash
-bakers oven start                                        # claim + dispatch loop (hosted in herdr)
-bakers oven start --foreground --log-level=debug         # run in the foreground
-```
-
-`bakers oven start` is the node agent itself — one per project checkout, tracked in a local
-registry (like `ddev`). There is no central daemon and no TCP.
-
-### Working on the CLI itself (dev build)
-
-When hacking on the conductor in this repo, call this checkout's build by explicit path instead of
-the global install:
-
-```bash
-cd bakers-cli && pnpm install && pnpm build:all   # build dist + plugins
-./bakers-cli/bin/bakers <cmd>                        # from the repo root: THIS checkout's build
-```
-
-A bare `bakers` inside a bakers checkout is the **released** CLI (BB-390): the `~/.local/bin/bakers`
-shim only selects a checkout's own build inside a skill-test workspace, so an unbuilt or broken
-branch build never breaks unrelated tooling in the worktree. There is no `bakers-dev`; BB-84
-retired it.
+To change the application, read [CONTRIBUTING](CONTRIBUTING.md), [SECURITY](SECURITY.md) and the
+[clean-install runbook](docs/bakers/clean-install-acceptance.md). Repository tests require Node
+>=22.22.0. Call a source build explicitly as `./bakers-cli/bin/bakers`; do not count it as the
+published CLI.
 
 ## The idea in one paragraph
 
