@@ -35,6 +35,7 @@ Success, in the owner's words, three months after an agency starts:
 Decided 2026-10-23:
 
 - **Open source and free:** the basic version is open source (MIT) and free to use.
+  *Correction 2026-11-02:* the server is GPL-2.0-or-later and only the CLI and skills are MIT; marketing copy says "open source" and links [licensing](../bakers/licensing.md) instead of "MIT".
 - **Two ways to run it:**
   - self-hosted;
   - hosted for the customer.

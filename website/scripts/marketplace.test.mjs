@@ -1,5 +1,6 @@
 // node --test website/scripts/marketplace.test.mjs
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -77,4 +78,19 @@ test('the zip holds the plugin root at its top level, contents unchanged', () =>
   assert.deepEqual([...files.keys()].sort(), ['.claude-plugin/plugin.json', 'skills/bb-demo/SKILL.md'])
   assert.equal(files.get('skills/bb-demo/SKILL.md').toString(), '# Demo skill\n'.repeat(50))
   assert.equal(files.get('.claude-plugin/plugin.json').toString(), '{"name":"bakers","version":"1.2.3"}\n')
+})
+
+test('the real plugin zip carries its licenses and exactly the tracked plugin files', () => {
+  const paths = fixture()
+  const pluginDir = new URL('../../.claude/skills/bakers-build/', import.meta.url).pathname
+  buildMarketplace({ ...paths, pluginDir })
+
+  const { version } = JSON.parse(readFileSync(join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8'))
+  const files = readZip(readFileSync(join(paths.outDir, 'plugins', `bakers-${version}.zip`)))
+  assert.match(files.get('LICENSE')?.toString() ?? '', /^MIT License\n\nCopyright \(c\) 2026 keytec GmbH\n/)
+  // bb-verdict derives from ponytail (MIT); its notice travels with the plugin.
+  assert.match(files.get('NOTICE')?.toString() ?? '', /ponytail[\s\S]*Copyright \(c\) 2026 DietrichGebert\n/)
+  // docs/bakers/licensing.md: only reviewed, tracked content ships; keytec's private skills never do.
+  const tracked = execFileSync('git', ['ls-files'], { cwd: pluginDir, encoding: 'utf8' }).split('\n').filter(Boolean)
+  assert.deepEqual([...files.keys()].sort(), tracked.sort())
 })

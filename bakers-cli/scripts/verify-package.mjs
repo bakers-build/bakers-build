@@ -44,7 +44,9 @@
 //      along with the addon;
 //   7. BB-582: no React package resolves from the installed
 //      `@bakers-build/addon-bakers-ui`, and its normal entry plus both optional demo
-//      entries import under the addon's own Bun.
+//      entries import under the addon's own Bun;
+//   8. every installed package keeps its declared license, LICENSE and NOTICE
+//      (docs/bakers/licensing.md).
 //
 // Run: `pnpm run verify:package` (from bakers-cli/). Exits non-zero on any
 // failure. Requires `dist/src` built for every package (`pnpm -r run build`);
@@ -156,6 +158,34 @@ function main() {
     ok(
       `all ${tarballs.length} tarballs installed together (no registry lookups needed)`,
     );
+
+    // Legal files must survive pack + install: the declared license, its text and
+    // any NOTICE, exactly as the source package (or the shared root LICENSE) has them.
+    TARGET_DIRS.forEach((src, i) => {
+      const installed = resolve(
+        proj,
+        'node_modules',
+        ...PUBLISH_PACKAGE_NAMES[i].split('/'),
+      );
+      const read = (p) => {
+        try {
+          return readFileSync(p, 'utf8');
+        } catch {
+          return undefined;
+        }
+      };
+      const name = PUBLISH_PACKAGE_NAMES[i];
+      const declared = JSON.parse(read(join(src, 'package.json'))).license;
+      if (JSON.parse(read(join(installed, 'package.json'))).license !== declared)
+        fail(`${name} installed with a license other than ${declared}`);
+      const license =
+        read(join(src, 'LICENSE')) ?? read(join(root, 'LICENSE'));
+      if (read(join(installed, 'LICENSE')) !== license)
+        fail(`${name} installed without its LICENSE text`);
+      if (read(join(installed, 'NOTICE')) !== read(join(src, 'NOTICE')))
+        fail(`${name} installed without its NOTICE`);
+    });
+    ok('every installed package carries its declared license, LICENSE and NOTICE');
 
     // The installed @bakers-build/addon-claude must ship the measure wrapper ClaudeAgent
     // resolves when measure: true, and that wrapper must write the state-group

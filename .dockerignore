@@ -13,6 +13,10 @@ web/themes/custom/*/dist/
 .idea/
 .vscode/
 
+# Design mocks are never runtime, and their moodboard screenshots carry no
+# redistribution rights (docs/bakers/licensing.md).
+.impeccable/
+
 # Built docs site; the docs-build stage builds its own.
 website/.vitepress/dist/
 website/.vitepress/cache/

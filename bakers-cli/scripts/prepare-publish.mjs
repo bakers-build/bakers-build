@@ -36,6 +36,7 @@
 // is rewritten to that version.
 import {
   cpSync,
+  existsSync,
   globSync,
   mkdirSync,
   readdirSync,
@@ -114,15 +115,31 @@ function assertFilesEntries(out, files, pkgName) {
 
 /**
  * Stage one workspace package into `<dir>/publish/`: write a fresh public
- * manifest (MIT, `publishConfig.access: public`, workspace refs rewritten to the
- * aligned version), copy every `files` entry from the package directory, and a
- * README + LICENSE. `readme` is 'npm' (ship README.npm.md — the end-user doc,
+ * manifest (the package's own license, `publishConfig.access: public`, workspace
+ * refs rewritten to the aligned version), copy every `files` entry from the
+ * package directory, a README, the LICENSE (own or root) and any NOTICE. Throws
+ * on a missing/UNLICENSED declaration or a non-MIT one without its own LICENSE. `readme` is 'npm' (ship README.npm.md — the end-user doc,
  * bakers meta only) or 'gen' (generate a short stub for core, the conductor, and
  * the addons). Throws if a `files` entry matches nothing in `publish/`.
  */
 export function stagePackage({ dir, readme = 'gen' }, version) {
   const abs = resolve(root, dir);
   const pkg = JSON.parse(readFileSync(resolve(abs, 'package.json'), 'utf8'));
+  // Declarations come from docs/bakers/licensing.md; never invent one at publish time.
+  if (!pkg.license || pkg.license === 'UNLICENSED') {
+    throw new Error(
+      `prepare-publish: ${pkg.name} has no publishable license declaration`,
+    );
+  }
+  const ownLicense = resolve(abs, 'LICENSE');
+  if (pkg.license !== 'MIT' && !existsSync(ownLicense)) {
+    throw new Error(
+      `prepare-publish: ${pkg.name} declares ${pkg.license} but ships no LICENSE of its own`,
+    );
+  }
+  // Third-party attributions the package must carry (e.g. Unicode data).
+  const notice = resolve(abs, 'NOTICE');
+  const hasNotice = existsSync(notice);
   const out = resolve(abs, 'publish');
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
@@ -132,11 +149,12 @@ export function stagePackage({ dir, readme = 'gen' }, version) {
     version,
     description: pkg.description,
     type: 'module',
-    license: 'MIT',
+    license: pkg.license,
     ...(pkg.engines ? { engines: pkg.engines } : {}),
     ...(pkg.bin ? { bin: pkg.bin } : {}),
     exports: pkg.exports,
-    files: pkg.files,
+    // npm pack ships NOTICE only when `files` lists it.
+    files: hasNotice ? [...pkg.files, 'NOTICE'] : pkg.files,
     publishConfig: { access: 'public' },
     repository: { type: 'git', url: REPO_URL, directory: `bakers-cli/${dir}` },
     ...(pkg.name === '@bakers-build/bakers'
@@ -171,7 +189,12 @@ export function stagePackage({ dir, readme = 'gen' }, version) {
         'https://git.key-tec.de/bakers-build/bakers-build (bakers-cli/).\n',
     );
   }
-  cpSync(resolve(root, 'LICENSE'), resolve(out, 'LICENSE'));
+  // A package's own LICENSE wins; the root text is the shared keytec MIT license.
+  cpSync(
+    existsSync(ownLicense) ? ownLicense : resolve(root, 'LICENSE'),
+    resolve(out, 'LICENSE'),
+  );
+  if (hasNotice) cpSync(notice, resolve(out, 'NOTICE'));
 
   assertFilesEntries(out, pkg.files, pkg.name);
 

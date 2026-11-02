@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@bakers-build/bakers"><img src="https://img.shields.io/npm/v/@bakers-build/bakers?color=12B886&label=%40bakers-ai%2Fbakers" alt="npm"></a>
   <img src="https://img.shields.io/badge/node-%E2%89%A520.19-1FA97A" alt="node">
-  <img src="https://img.shields.io/badge/license-MIT-0E7C63" alt="license">
+  <img src="https://img.shields.io/badge/license-GPL--2.0--or--later%20%7C%20MIT-0E7C63" alt="license: GPL-2.0-or-later (server), MIT (CLI and skills)">
 </p>
 
 ---
@@ -185,3 +185,14 @@ the team's develop control plane. Obtain your own credentials and workspace acce
 operator; inspect the effective connection before running commands. Follow [join a project](docs/advanced/cli/first-ticket.md)
 and then `WORKFLOW.md`. A team conductor may supply execution capacity. Local test work uses
 the playground set up by `scripts/setup-test-project.sh`.
+
+## License
+
+This repository holds components under different licenses, all © keytec GmbH unless noted:
+
+- **Server** (Drupal modules, theme, recipes, configuration): GPL-2.0-or-later, see [`LICENSE.txt`](LICENSE.txt).
+- **CLI** (`bakers-cli/`, the `@bakers-build/*` npm packages): MIT, see [`bakers-cli/LICENSE`](bakers-cli/LICENSE).
+- **`bakers` plugin skills** (`.claude/skills/bakers-build/`): MIT, see its `LICENSE`.
+
+Third-party material keeps its own license and notices. [Licensing](docs/bakers/licensing.md) maps every
+shipped component to its source, license and evidence, and lists what is not yet cleared for publication.

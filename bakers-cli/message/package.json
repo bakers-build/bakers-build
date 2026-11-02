@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "The InboxMessageHandler contract: a message type's definition (label, access, optional input) and its handler's one-Markdown result. Owns only the message shape, independent of addon/workspace/conductor concepts.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20.19"
   },

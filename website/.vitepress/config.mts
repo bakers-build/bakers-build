@@ -7,6 +7,7 @@ import { createRequire } from 'node:module'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { AREAS, SIDEBAR, SRC_EXCLUDE } from './manual.mjs'
+import { thirdPartyLicenses } from '../scripts/third-party.mjs'
 const require = createRequire(import.meta.url)
 const vitepressRequire = createRequire(require.resolve('vitepress/package.json'))
 const vueRoot = dirname(vitepressRequire.resolve('vue/package.json'))
@@ -72,7 +73,7 @@ export default withMermaid(
       css: { postcss: postcssConfig },
       resolve: { alias: { vue: vueRoot } },
       publicDir: fileURLToPath(new URL('../public', import.meta.url)),
-      plugins: [tailwindcss()],
+      plugins: [tailwindcss(), thirdPartyLicenses()],
     },
     sitemap: {
       // Prod is canonical; the develop docs host is not indexed under its own name.
