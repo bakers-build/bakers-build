@@ -55,7 +55,9 @@ export interface JsonApiCollection<
 export function requiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`missing env ${name} - run 'ddev init --test' first`);
+    throw new Error(
+      `missing env ${name} - run 'ddev init --provider recipe-test' first`,
+    );
   }
   return value;
 }

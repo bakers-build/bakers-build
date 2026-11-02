@@ -21,14 +21,14 @@ completion, then verify the base URL actually responds and the required site/pro
 before returning.
 
 **Do not bootstrap the worktree here.** Its creation, environment overlay, and CLI
-(`ddev init-worktree`) belong to the conductor's `after_create` hook. This adapter only brings
-the DB/site up and never runs `init-worktree` or invents a replacement setup hook.
+(`node scripts/setup-worktree.mjs` and `.ddev/worktree-post.sh`) belong to the conductor's `after_create` hook. This adapter only brings
+the DB/site up and never runs worktree bootstrap or invents a replacement setup hook.
 
 Return the live base URL and readiness, or explicit failures and their reasons.
 
 ## bb-phase-work
 
-Everything runs in the container: `ddev exec …`. Lint commands come from the keytec-ddev-addon
+Everything runs in the container: `ddev exec …`. Lint commands are project-owned DDEV wrappers
 (`ddev phpcs`, `ddev phpmd`, `ddev phpstan`).
 
 ## bb-phase-validate

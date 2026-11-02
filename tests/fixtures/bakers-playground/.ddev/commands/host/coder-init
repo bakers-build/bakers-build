@@ -20,16 +20,13 @@ if [ ! -d vendor ]; then
   ddev composer install
 fi
 
-# 3. Seed the main DB once via the doctor-managed `ddev init`.
-#    Use --fresh explicitly: the main checkout has no parent to snapshot from, so the
-#    project's snapshot default (used by per-issue worktrees) does not apply here.
-#    Idempotent: skip if the site already bootstraps.
+# Seed only an unbootstrapped site; reuse existing data.
 if ddev drush status --field=bootstrap 2>/dev/null | grep -qi successful; then
   echo "✓ DB already seeded"
 elif [ -x .ddev/commands/host/init ]; then
-  ddev init --fresh
+  ddev init
 else
-  echo "WARN: no 'ddev init' command — run 'keytec-drupal-doctor check-tools' to install it, then 'ddev coder-init' again." >&2
+  echo "WARN: no 'ddev init' command — restore the project-owned .ddev/commands/host/init, then retry." >&2
   exit 1
 fi
 

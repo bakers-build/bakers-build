@@ -9,7 +9,7 @@ ENV_FILE="${ARTIFACT_DIR}/env"
 CONDUCTOR_DIR=/var/www/html/bakers-cli
 
 if [ ! -f "${ENV_FILE}" ]; then
-  echo "ERROR: ${ENV_FILE} is missing. Run 'ddev init --test' first." >&2
+  echo "ERROR: ${ENV_FILE} is missing. Run 'ddev init --provider recipe-test' first." >&2
   exit 1
 fi
 

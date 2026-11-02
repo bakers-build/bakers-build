@@ -24,11 +24,8 @@ const local = await loadLocal();
 // connection config is kept out of the ticket branch through git's local
 // exclude file. WORKFLOW.md is NOT copied: it is a committed file of the fixture
 // repo, so the worktree checks it out from `origin/<base_branch>` itself.
-// Independent parts are SEQUENCED (`;`), never conjoined (`&&`). The previous
-// revision chained everything, so `ddev init-worktree` — which times out on a busy
-// docker host — silently took the skill link down with it and the agent ran the
-// main checkout's skills with no signal at all. `&&` survives only INSIDE a part,
-// where the next command genuinely needs the previous one.
+// Independent skill/client setup runs before env preparation. The final setup
+// command propagates failure to the executor without hiding it.
 //
 // Skills come FIRST and link the FLAT directory `.../bakers-build/skills`, not the bundle
 // `.../bakers-build`: the bundle carries no SKILL.md, and Claude Code loads
@@ -43,8 +40,8 @@ const parentSetupHook = [
   ['mkdir -p .bakers', 'cp -f "$parent/.bakers/bakers.config.js" .bakers/bakers.config.js', 'cp -f "$parent/.bakers/conductor.config.local.js" .bakers/conductor.config.local.js'].join(' && '),
   'exclude=$(git rev-parse --git-path info/exclude)',
   'for p in .bakers/bakers.config.js .bakers/conductor.config.local.js .claude/skills; do grep -qxF "$p" "$exclude" || echo "$p" >> "$exclude"; done',
-  // Last, and allowed to fail: a DDEV bring-up must never cost the agent its skills.
-  'ddev init-worktree || true',
+  // Last: independent skill/client setup survives an observable env setup failure.
+  'node scripts/setup-worktree.mjs',
 ].join('; ');
 
 // NO `states` KEY, and that is the point rather than an omission: an absent or empty

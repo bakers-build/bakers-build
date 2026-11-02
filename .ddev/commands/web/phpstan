@@ -1,12 +1,12 @@
 #!/bin/bash
-#ddev-generated
-## Description: Run phpstan static analysis (keytec)
+# Maintained by Bakers; derived from keytec/keytec-ddev-addon (installed 2026-08-18).
+## Description: Run phpstan static analysis (Bakers)
 ## Usage: phpstan [args...]
 set -e
 CR="${DDEV_COMPOSER_ROOT:-${DDEV_APPROOT:-/var/www/html}}"
 BIN="${CR}/vendor/bin/phpstan"
 if [ ! -x "${BIN}" ]; then
-  echo "phpstan not found at ${BIN}. Run: ddev qa-setup" >&2
+  echo "phpstan not found at ${BIN}. Run: ddev composer install" >&2
   exit 1
 fi
 exec "${BIN}" analyse -c "${DDEV_APPROOT}/phpstan.neon.dist" "$@"

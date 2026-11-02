@@ -22,9 +22,53 @@ for the gate:
 |---|---|
 | Core tests | Use Node >=22.22.0 and install the offline skill-evaluation dependency once with `npm ci --prefix tests/skill-eval`, as the CI conductor job does. |
 | Playwright checks | Install dependencies once with `cd tests/playwright && npm ci`. Installation uses the public npm registry without credentials. Unit/type checks need no browser or Drupal; discovery also works without a site using `PLAYWRIGHT_BASE_URL=http://127.0.0.1:9 npm test -- --list`. For browser checks, install Chromium with `npx playwright install chromium` as the run user and use recipe-test data. |
-| Drupal checks | Start with a verified `recipe-test` environment; otherwise `ddev init --provider recipe-test`. Then validate in order: (1) **recipe first** — run the project and ticket checks on `recipe-test` (installation-config changes need `--fresh`), never importing `config/sync` there; (2) **config/sync last** — on a disposable site run `ddev init --provider existing-config --fresh`, `ddev drush updb -y`, `ddev drush cim -y`, `ddev drush cr`, `ddev drush status` and verify the affected behavior, without applying recipes to make it pass; (3) record provider, command, result and revision for both at the **same revision**; a fix after step 2 returns to step 1. Always name the provider: plain `ddev init` means `existing-config`. |
+| Drupal checks | Start with a verified `recipe-test` environment; otherwise `ddev init --provider recipe-test`. Then validate in order: (1) **recipe first** — run the project and ticket checks on `recipe-test` (explicit initialization always reinstalls), never importing `config/sync` there; (2) **config/sync last** — on a disposable site run `ddev init --provider existing-config`, `ddev drush updb -y`, `ddev drush cim -y`, `ddev drush cr`, `ddev drush status` and verify the affected behavior, without applying recipes to make it pass; (3) record provider, command, result and revision for both at the **same revision**; a fix after step 2 returns to step 1. Always name the provider: plain `ddev init` means `existing-config`. |
 | Conductor or skill behavior | Isolated workspace: `scripts/setup-test-project.sh`; read its help and the fixture's committed workflow. Setup generates local configs. Commit the candidate workflow to the fixture branch and verify the dispatched worktree revision and that its run log shows `bb-workflow` and the recipe loaded. Register with `bakers oven once`; use the normal workspace connection to create and assign a local ticket (type `chore`, recipe `matt`) in `working`. Start Conductor with the default worker connection and observe the worker. Release the test setup with `scripts/teardown-test-project.sh`. |
 | Skill availability | Agent environment's own installation and discovery facilities. |
+
+## Local DDEV preparation
+
+Standard DDEV, Node, Composer and the existing Node package tools are sufficient; no DDEV addon
+or keytec-ai configuration tool is required. From the selected checkout root:
+
+```sh
+node scripts/setup-worktree.mjs       # public env/identity only; leaves DDEV stopped
+bash .ddev/worktree-post.sh           # also prepares the CLI/test workspace, when needed
+ddev init --provider recipe-test     # explicit database replacement, builds and seeds
+```
+
+The conductor calls `worktree-post.sh`, which prepares env before checking its bootstrap sentinel.
+The script copies missing parent client/audience settings, sets the worktree-local base URL, and
+runs `setup-test-project.sh --workspace-only`. Only that setup script owns the conditional CLI
+build. Hooks remain executor best-effort; a failed hook is not proof of a usable environment.
+
+`ddev init` defaults to `existing-config`; `recipe` installs the Bakers recipe and playground seed,
+while `recipe-test` installs that recipe and the test seed. It starts DDEV, installs Composer
+packages, builds the theme and installs locally through Drush or the recipe installer. It never
+pulls, downloads or imports a database. Every explicit init reinstalls the
+selected local database. Legacy `--fresh` is accepted with the same behavior. Bootstrap and
+workspace reuse never invoke init. An installed site missing the requested project fails with
+recovery guidance instead of being automatically reinstalled.
+
+Only `DDEV_WORKTREE_NAME` and its derived `PLAYWRIGHT_BASE_URL` are written to gitignored
+`.env.ddev`; `.ddev/config.worktree.yaml` carries the same name. Existing overlay/env names must
+agree. A primary checkout keeps its configured name; new linked worktrees use a bounded readable
+prefix and canonical-path hash. Playground clones retain their path-hashed overlay. Ambient host
+or ticket variables are never exported. Playwright precedence is explicit process URL, file URL,
+file name-derived URL, then ambient DDEV URL.
+
+Setup preserves unrelated bytes, including quoted multiline env values, and rejects unsupported
+selected values, conflicting identities and symlink outputs. Writes are atomic and private, with
+the overlay written first so retry repairs a missing env file. A per-worktree directory lock
+serializes setup. Retrying recovers a dead process's lock; a live or unrecognized lock fails
+with an actionable message instead of permitting overlapping writes. Keep legacy `.ddev/.env`
+and `.ddev/.env.web` private; they are no longer generated or read by project setup. Mixed local
+settings are never deleted automatically.
+
+The three retained QA commands (`phpcs`, `phpmd`, `phpstan`) use Composer's binaries and the
+project rulesets. Other addon QA commands and generic snapshot, multisite and config-feed
+machinery have been removed. The standalone playground uses its own `ddev init` for a minimal
+Drupal installation; it is not a full recipe-test control plane.
 
 ## Test selection
 

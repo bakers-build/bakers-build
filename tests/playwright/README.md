@@ -101,13 +101,11 @@ Installation, unit checks and discovery require only Node/npm. Browser execution
   not CI. `playwright.bdd.config.ts` resolves it through `resolve-base-url.ts`,
   in this order:
 
-  1. the keytec-ddev-addon's `ddev init-worktree` writes this worktree's DDEV
-     URL into a git-ignored `.env.ddev` at the repo root
-     (`PLAYWRIGHT_BASE_URL` / `DDEV_WORKTREE_NAME`) — this is the normal local
-     path, and the worktree's own statement wins;
-  2. failing that, `DDEV_PRIMARY_URL`, which DDEV exports inside the web
-     container. That is the CI path: the pipeline clones fresh and runs
-     `ddev init`, never `init-worktree`, so there is no `.env.ddev` there.
+  1. `node scripts/setup-worktree.mjs` writes this worktree's public identity and
+     derived URL into gitignored `.env.ddev` without starting DDEV.
+  2. The file URL (or its name-derived URL) wins over ambient `DDEV_PRIMARY_URL`.
+     An explicit `PLAYWRIGHT_BASE_URL` is still the highest-priority override.
+  3. Without a file, the resolver uses the container's `DDEV_PRIMARY_URL`.
 
   `PLAYWRIGHT_BASE_URL` in the environment still overrides both, for pointing
   the suite at a site that is not this worktree. It is an override, not the

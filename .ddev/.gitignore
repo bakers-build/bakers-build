@@ -1,2 +1,5 @@
 /config.worktree.yaml
 /.env
+/.setup-worktree.lock/
+/config.worktree.yaml.*.tmp
+/.setup-worktree-pending-*/

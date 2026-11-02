@@ -77,29 +77,10 @@ export default {
   // create. after_done: reclaim the worktree's DDEV project (containers + db)
   // once its ticket is done, before the conductor tears the worktree down.
   //
-  // after_create belt-and-suspenders (BB-142): `ddev init-worktree` runs the
-  // bakers bootstrap (copy the parent .bakers config, then the skill-test workspace
-  // setup) via the addon's init.worktree_post step — but the addon only surfaces
-  // INIT_WORKTREE_POST when `keytec-ai`/`npx` is reachable on the host; on a host
-  // lacking BOTH it silently skips (no post-step vs post-step-configured-but-not-
-  // surfaced are indistinguishable to the addon). So we ALSO invoke the post script
-  // explicitly here — it is sentinel-guarded (.bakers/.worktree-post-done) so the pair
-  // never repeats the work, and it guarantees dropsh auth regardless of host tooling.
-  //
-  // BB-390: the bootstrap no longer BUILDS the CLI unconditionally, and a working
-  // `bakers` in the worktree no longer depends on it doing so — the PATH shim runs the
-  // globally installed CLI inside a bakers checkout now. What the post step still does
-  // is wire up `workspaces/bakers-playground` (no DDEV started, no control-plane
-  // write), building only when a dist artifact is missing or stale.
-  //
-  // BB-237: the sentinel now carries a second load. after_create is no longer
-  // gated on a fresh create — the conductor also runs it on a reuse with no
-  // recorded successful after_create (BB-663) so a worktree that exists but
-  // was never provisioned converges — and the sentinel is what keeps that
-  // repeat a cheap no-op. Provisioned-ness is the SCRIPT's business, not the
-  // conductor's: core deliberately knows nothing about this path.
+  // The project bootstrap validates env before its sentinel, then prepares the
+  // local test workspace. It starts no DDEV; hook failures remain best-effort.
   hooks: {
-    after_create: 'ddev init-worktree; bash .ddev/worktree-post.sh',
+    after_create: 'bash .ddev/worktree-post.sh',
     after_done: 'ddev delete -Oy',
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },

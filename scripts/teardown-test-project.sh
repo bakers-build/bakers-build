@@ -252,7 +252,7 @@ for wt_root in "${WORKSPACE}/.bakers-worktrees" "${WORKSPACE}-worktrees"; do
     worktree="${ddev_dir%/.ddev}"
     # Guarded exactly like its sibling below, and for the same reason: a per-ticket
     # worktree carries the fixture's TRACKED .ddev/config.yaml and gets no overlay
-    # of its own unless something ran `init-worktree` there, so the name it would be
+    # of its own unless something ran `setup-worktree.mjs` there, so the name it would be
     # deleted under can belong to an unrelated checkout.
     if wt_ddev="$(harness_ddev_name "${worktree}")"; then
       say "reclaiming worktree ddev project '${wt_ddev}' in ${worktree}"
