@@ -74,7 +74,6 @@ node_modules/
 
 # conductor runtime log (written into the conductor config dir)
 /.bakers/log.txt
-/.bakers-import/log.txt
 # per-worktree bootstrap sentinel (BB-142 worktree-post.sh) — never commit
 /.bakers/.worktree-post-done
 # BB-376: the bakers ui auto-refresh signal — a bump file, never content

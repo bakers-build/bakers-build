@@ -24,15 +24,6 @@ async function loadLocal() {
   try {
     return (await import('./conductor.config.local.js')).default ?? {};
   } catch {}
-  try {
-    return (
-      (
-        await import(
-          `${process.env.HOME}/.config/conductor/conductor.config.local.js`
-        )
-      ).default ?? {}
-    );
-  } catch {}
   return {};
 }
 

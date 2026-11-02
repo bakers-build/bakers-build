@@ -73,7 +73,6 @@ export interface ConfigPlan {
 }
 const CURRENT = {
   machine: 3,
-  'legacy-machine': 3,
   // v1 is the first versioned conductor shape: the conductor owns only
   // remote/executor/workspace and declares no agent addons. Zero was the
   // implicit pre-versioned state (no @bakers-schema-version marker present).
@@ -134,7 +133,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
   const files = report.files;
   const machine = files.find((f) => f.kind === 'machine');
   const connection = files.find((f) => f.kind === 'connection');
-  const homeLocal = files.find((f) => f.kind === 'home-local');
   const local = files.find((f) => f.kind === 'local');
   if (options.operation === 'check') {
     const validated = validateConfigSources(
@@ -319,27 +317,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         }),
       ),
     );
-  const legacy = files.find((f) => f.kind === 'legacy-machine');
-  if (legacy?.selected && !protectedFile(legacy) && editors.has(legacy.path)) {
-    const old = editor(legacy);
-    const current = editors.get(machine.path);
-    if (!current) editors.set(machine.path, new ConfigSourceEditor(old.text));
-    else
-      for (const [key, p] of old.source.properties)
-        if (!key.includes('.') && !key.includes('[')) {
-          const other = current.property(key);
-          if (other && !sameValue(p, other))
-            problem(
-              legacy,
-              'conflicting_values',
-              key,
-              'Legacy and canonical machine values agree.',
-              [{ path: machine.path, key }],
-            );
-          else if (!other) current.set(key, old.expression(key) as string);
-        }
-    editors.delete(legacy.path);
-  }
 
   const machineEditor = editor(machine);
   const literalSubtreeIssue = (
@@ -814,8 +791,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
   }
   for (const file of files.filter(
     (candidate) =>
-      candidate.selected &&
-      ['conductor', 'local', 'home-local'].includes(candidate.kind),
+      candidate.selected && ['conductor', 'local'].includes(candidate.kind),
   )) {
     const source = editors.get(file.path);
     if (!source || protectedFile(file)) continue;
@@ -854,9 +830,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       editor(connection),
       editor(machine),
       connection,
-      homeLocal ? editors.get(homeLocal.path) : undefined,
-      homeLocal,
-      machine.selected,
       options.inputs,
       problem,
     );
@@ -907,8 +880,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     } else move(machine, key, connection, target);
   }
   for (const file of files) {
-    if (protectedFile(file) || !file.selected || file.kind === 'legacy-machine')
-      continue;
+    if (protectedFile(file) || !file.selected) continue;
     let e = editors.get(file.path);
     if (e && e.source.shape !== 'object') {
       problem(
@@ -991,11 +963,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         }
         if (e) e.stamp(3);
       }
-      if (
-        file.kind === 'conductor' ||
-        file.kind === 'local' ||
-        file.kind === 'home-local'
-      ) {
+      if (file.kind === 'conductor' || file.kind === 'local') {
         if (
           (!e || e.text.trim() === 'export default {};') &&
           file.required &&
@@ -1425,7 +1393,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       after_version:
         after === null
           ? null
-          : ['machine', 'legacy-machine'].includes(file.kind)
+          : file.kind === 'machine'
             ? 3
             : ['connection', 'project-connection'].includes(file.kind)
               ? 4
@@ -1564,9 +1532,6 @@ function replaceGeneratedMachineWiring(
   e: ConfigSourceEditor,
   machine: ConfigSourceEditor,
   file: ConfigFileReport,
-  local: ConfigSourceEditor | undefined,
-  localFile: ConfigFileReport | undefined,
-  machineSelected: boolean,
   inputs: ConfigPlanOptions['inputs'],
   problem: (
     file: ConfigFileReport,
@@ -1596,37 +1561,15 @@ function replaceGeneratedMachineWiring(
         `^(?:local\\.[^;]+\\?\\? )?machine\\.${key}(?: \\?\\? 'bakers-agent')?$`,
       ).test(declaration[1] ?? '')
     ) {
-      const localKey = key.startsWith('client_') ? `oauth.${key}` : key;
-      const override = local?.property(localKey);
-      const parent = localKey.startsWith('oauth.')
-        ? local?.property('oauth')
-        : undefined;
-      if (
-        local?.source.unknownKeys ||
-        (parent && !parent.staticallyDetermined) ||
-        (override && !override.staticallyDetermined)
-      ) {
-        problem(
-          localFile ?? file,
-          'unknown_value',
-          localKey,
-          'The generated home-local override is a known literal.',
-        );
-        continue;
-      }
-      const p = override?.value != null ? override : machine.property(key);
+      // The retired home-local sibling is absent (inventory refuses otherwise),
+      // so a generated `local.x ??` prefix evaluates to the machine value.
+      const p = machine.property(key);
       const input = key === 'workspace_id' ? inputs?.workspaceId : undefined;
       const value =
         p?.staticallyDetermined && p.value != null
           ? p.value
           : (input ?? (key === 'client_id' ? 'bakers-agent' : undefined));
-      if (value !== undefined) {
-        resolved.set(name, JSON.stringify(value));
-        // This generated expression proves the override won before migration.
-        // Removing the shadowed machine value requires its selected write scope.
-        if (override?.value != null && machine.property(key) && machineSelected)
-          machine.remove(key);
-      }
+      if (value !== undefined) resolved.set(name, JSON.stringify(value));
     }
   }
   for (const key of [...e.source.properties.keys()]) {

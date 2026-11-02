@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { shellQuote } from '../core/shell.js';
 import {
@@ -76,11 +75,8 @@ export function inventoryConfig(
   options: ConfigInventoryOptions = {},
 ): ConfigInventory {
   const operation = options.operation ?? 'check';
-  const home = resolve(options.home ?? homedir());
   // The `.bakers` root is core's decision (BB_HOME), not this function's; an
-  // explicit options.home still pins it, which is what fixtures rely on. `home`
-  // above stays the operating-system home because the legacy machine input
-  // below lives at ~/.config/conductor, outside `.bakers` entirely.
+  // explicit options.home still pins it, which is what fixtures rely on.
   const bakersRoot = homeBbDir(options.home);
   const cwd = resolve(options.cwd ?? process.cwd());
   const machinePath = resolve(
@@ -449,7 +445,7 @@ export function inventoryConfig(
           Number.isInteger(property.value) &&
           property.value > 0,
       );
-    if (kind === 'machine' || kind === 'legacy-machine') {
+    if (kind === 'machine') {
       for (const key of ['machine_id', 'user_id'])
         requireValue(
           key,
@@ -644,7 +640,7 @@ export function inventoryConfig(
           );
       }
     }
-    if (kind !== 'machine' && kind !== 'legacy-machine') {
+    if (kind !== 'machine') {
       for (const key of ['max_parallel', 'conductor.max_parallel', 'tunnel']) {
         const property = source.properties.get(key);
         if (property)
@@ -671,34 +667,29 @@ export function inventoryConfig(
 
   inspectFile(machinePath, 'machine', 'machine', true);
   inspectFile(connectionPath, 'connection', 'connection', true);
-  inspectFile(
-    join(dirname(connectionPath), 'conductor.config.local.js'),
-    'home-local',
-    'connection',
-    false,
-    'supplementary',
+  // Conductor configs live in the project only. Historical global connections
+  // imported this retired sibling, so migrating one past it unseen would
+  // silently switch server or account: refuse until it is gone.
+  const retiredLocal = join(
+    dirname(connectionPath),
+    'conductor.config.local.js',
   );
-  const legacy = join(home, '.config/conductor/conductor.config.machine.js');
-  // An explicit machine target does not authorize migration of another home's legacy input.
-  if (
-    !options.machinePath ||
-    machinePath === join(bakersRoot, 'machine.config.js')
-  ) {
-    // Keep an absent legacy file out of the report; it is never required.
-    try {
-      readFileSync(legacy);
-      inspectFile(legacy, 'legacy-machine', 'machine', false, 'supplementary');
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
-        inspectFile(
-          legacy,
-          'legacy-machine',
-          'machine',
-          false,
-          'supplementary',
-        );
-    }
-  }
+  if (existsSync(retiredLocal))
+    report.findings.push({
+      code: 'superseded_file',
+      severity: 'error',
+      stage: 'inventory',
+      path: retiredLocal,
+      key: null,
+      expected:
+        'No conductor config beside the global connection; conductor overrides live in the project .bakers/conductor.config.local.js.',
+      observed: null,
+      owner: 'connection',
+      related: [],
+      statically_determined: true,
+      remediation: `Move any values from ${shellQuote(retiredLocal)} into the machine, connection or project local config, then delete it.`,
+      recheck,
+    });
   if (projectRoot) {
     const bakersDir = join(projectRoot, '.bakers');
     let names: string[] = [];

@@ -1,5 +1,4 @@
 import { existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { homeBbDir } from './bakers-dir.js';
@@ -51,11 +50,6 @@ export interface MachineContext {
 /** Canonical machine-context path: `<BB_HOME or ~/.bakers>/machine.config.js`. */
 export function machineContextPath(): string {
   return join(homeBbDir(), 'machine.config.js');
-}
-
-/** Legacy machine-context path (pre-BB-201), historical migration input only. */
-export function legacyMachineContextPath(): string {
-  return join(homedir(), '.config', 'conductor', 'conductor.config.machine.js');
 }
 
 /** Resolve explicit or canonical current host context. */

@@ -67,7 +67,7 @@ describe('offline configuration inventory', () => {
     expect(report.findings.map((f) => f.key)).not.toContain('workspace_id');
   });
 
-  it('discovers a partial project and includes variants and local/legacy provenance', () => {
+  it('discovers a partial project and includes variants and local provenance', () => {
     mkdirSync(join(project, '.bakers'));
     const local = put(
       join(project, '.bakers/conductor.config.local.js'),
@@ -75,10 +75,6 @@ describe('offline configuration inventory', () => {
     );
     const variant = put(
       join(project, '.bakers/worker.conductor.config.js'),
-      'export default {};',
-    );
-    const legacy = put(
-      join(home, '.config/conductor/conductor.config.machine.js'),
       'export default {};',
     );
     const { report } = core.inventoryConfig({
@@ -100,11 +96,6 @@ describe('offline configuration inventory', () => {
           kind: 'conductor',
           role: 'primary',
           selected: true,
-        }),
-        expect.objectContaining({
-          path: legacy,
-          kind: 'legacy-machine',
-          role: 'supplementary',
         }),
         expect.objectContaining({
           path: join(project, '.bakers/bakers.config.js'),
@@ -499,30 +490,37 @@ describe('offline configuration inventory', () => {
     expect(report.findings[0]?.recheck).toContain("--config '");
     expect(report.findings[0]?.recheck).toContain(path);
   });
-  it('an explicit machine path does not select unrelated historical home credentials', () => {
+  // ~/.config/conductor belongs to other tools; bakers must not read it.
+  it('never inventories a conductor machine file under ~/.config/conductor', () => {
     const legacy = put(
       join(home, '.config/conductor/conductor.config.machine.js'),
       "export default {machine_id:'old',user_id:'old'};",
     );
-    const custom = put(
-      join(root, 'isolated-machine.js'),
-      "export default {machine_id:'fixture',user_id:'fixture',max_parallel:1};",
-    );
     expect(
       core
-        .inventoryConfig({
-          scope: 'machine',
-          home,
-          cwd: project,
-          machinePath: custom,
-        })
+        .inventoryConfig({ scope: 'all', home, cwd: project })
         .report.files.some((f) => f.path === legacy),
     ).toBe(false);
-    expect(
-      core
-        .inventoryConfig({ scope: 'machine', home, cwd: project })
-        .report.files.find((f) => f.path === legacy)?.selected,
-    ).toBe(true);
+  });
+  // A historical global connection imports this sibling; migrating past it unseen switches server or account.
+  it('refuses a retired conductor.config.local.js beside the global connection', () => {
+    const retired = put(
+      join(home, '.bakers/conductor.config.local.js'),
+      "export default {base_url:'https://other.test'};",
+    );
+    const { report } = core.inventoryConfig({
+      scope: 'connection',
+      home,
+      cwd: project,
+    });
+    expect(report.files.some((f) => f.path === retired)).toBe(false);
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({
+        code: 'superseded_file',
+        severity: 'error',
+        path: retired,
+      }),
+    );
   });
 
   it('requires no client_secret from a device-code descriptor, and still requires the client_id', () => {

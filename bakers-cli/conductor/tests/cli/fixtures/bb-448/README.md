@@ -22,9 +22,8 @@ All runtime fixture imports bind the generated home expression to a disposable t
 home before execution. No test overrides HOME or CODEX_HOME.
 
 `config-history.test.ts` covers every connection source family at global and project
-scope, the early combined engine split, legacy machine relocation, retained engine
-identity, partial independent machine/connection/project files, literal home-local
-precedence and changed-source refusal. `config-plan.test.ts` adds independently absent
+scope, the early combined engine split, retained engine identity, partial independent
+machine/connection/project files and refusal while a retired home-local override exists. `config-plan.test.ts` adds independently absent
 layers, narrow-scope prerequisites, computed/conflicting local inputs, capacity
 variants, engine-only connection shadow removal, private backups and idempotence.
 `host/tests/config.test.ts` covers scoped command initialization and readiness; core
