@@ -140,7 +140,7 @@ Options go in the addon entry's `with` object (or a `catalog` entry). The addon 
 | `@bakers-build/addon-kimi` | `kimi` | `model`, `args`; `effort` is ignored with a log line |
 | `@bakers-build/addon-opencode` | `opencode` | `model`, `args`; `effort` is ignored with a log line |
 | `@bakers-build/addon-pi` | `pi` | `model`, `provider`, `thinking` or `effort`, `approve`, `args` |
-| `@bakers-build/addon-grok` | `grok` (Grok CLI default) | `model`, `effort` (or legacy `reasoningEffort`), `args` |
+| `@bakers-build/addon-grok` | `grok` (Grok CLI default) | `model`, `effort` (or legacy `reasoningEffort`), `security`, `sandbox`, `env_deny`, `args` |
 
 Setting `model` on Claude publishes one custom candidate instead of `opus` and `sonnet`; on Codex it drops the four named variants. Run `bakers agents` to see what your release actually publishes.
 

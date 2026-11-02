@@ -1,11 +1,11 @@
 ---
 title: Run security
-description: How strictly Claude and Codex runs start on a machine - the security modes, what each harness sandbox blocks and what it does not, the ticket env var filter, the risk of loosening and operator-side isolation.
+description: How strictly Claude, Codex and Grok runs start on a machine - the security modes, what each harness sandbox blocks and what it does not, the ticket env var filter, the risk of loosening and operator-side isolation.
 ---
 
 # Run security
 
-A run executes text other people wrote (ticket title, description, comments, env vars) on your machine, so Claude and Codex runs start safe by default and only `machine.config.js` decides how strictly. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. There is no global or conductor-level setting. Where to set it: [Machines › Run security](/advanced/machines#run-security).
+A run executes text other people wrote (ticket title, description, comments, env vars) on your machine, so Claude, Codex and Grok runs start safe by default and only `machine.config.js` decides how strictly. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. There is no global or conductor-level setting. Where to set it: [Machines › Run security](/advanced/machines#run-security).
 
 ## Modes
 
@@ -16,7 +16,7 @@ A run executes text other people wrote (ticket title, description, comments, env
 | `yolo` | Full access, permissions and sandbox bypassed | yours | passed |
 | `custom` | Only your `config`, handed to the harness unchanged | as `config` says | dropped |
 
-The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security) and [Codex](/addons/codex#security) pages. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
+The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security) and [Grok](/addons/grok#security) pages; Grok rejects `custom`. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
 ## Sandbox prerequisites
 
@@ -28,10 +28,10 @@ bakers oven check
 
 It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. `system`, `yolo` and `custom` agents are not checked.
 
-| Platform | Claude | Codex |
-|---|---|---|
-| Linux | `bwrap` (package `bubblewrap`) and `socat`, and unprivileged user namespaces | its own `codex sandbox`, which needs unprivileged user namespaces |
-| macOS | nothing to install: the built-in Seatbelt sandbox | nothing to install: the built-in Seatbelt sandbox |
+| Platform | Claude | Codex | Grok |
+|---|---|---|---|
+| Linux | `bwrap` (package `bubblewrap`) and `socat`, and unprivileged user namespaces | its own `codex sandbox`, which needs unprivileged user namespaces | Landlock active in the kernel (`landlock` in `/sys/kernel/security/lsm`) |
+| macOS | nothing to install: the built-in Seatbelt sandbox | nothing to install: the built-in Seatbelt sandbox | nothing to install: the built-in Seatbelt sandbox |
 
 Install the Linux packages with your package manager:
 
@@ -79,9 +79,26 @@ What it does not block:
 - Network access to any host while `network` is not empty.
 - Not confirmed: whether `workspace-write` lets `git commit` write a worktree's shared `.git` directory outside the worktree (add it to `allow_write`, or use `custom`). The hook-trust bypass is not passed, so a project with Codex hooks may stop at Codex's trust prompt.
 
+## Grok in `sandbox` mode
+
+Grok starts with its built-in `workspace` profile in `acceptEdits` mode: edits and shell commands run without a prompt, MCP tools get a deny rule, and anything else asks you in the run's terminal.
+
+What the default blocks:
+
+- Shell commands that write outside the worktree, `~/.grok/` and the temp directory.
+- Every MCP tool, through the `MCPTool(*)` deny rule.
+- Claims while the sandbox cannot start; see [Sandbox prerequisites](#sandbox-prerequisites).
+
+What it does not block:
+
+- **Reads.** The `workspace` profile reads everywhere, so a command can still read `~/.ssh` and `~/.bakers`.
+- Network access to any host.
+- Likely blocked as well, so a default Grok run may fail at them: `git commit` in a worktree (its git directory lies outside the worktree) and `ddev`. Grok cannot take `allow_write` or `trusted_commands` from the command line; use `system` with your own `sandbox.toml` profile (`args: ['--sandbox', '<profile>']`), or `yolo`.
+- Not confirmed: the effect of the `Bash(*)` and `MCPTool(*)` rules, and whether Grok refuses to start when Landlock is missing.
+
 ## Ticket env vars
 
-Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Grok, Kimi, OpenCode, Pi) always drop with the default list:
+Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Kimi, OpenCode, Pi) always drop with the default list:
 
 `ANTHROPIC_*`, `OPENAI_*`, `CLAUDE_*`, `CODEX_*`, `NODE_OPTIONS`, `LD_*`, `DYLD_*`, `PATH`, `BASH_ENV`, `ENV`, `GIT_*`, `SSH_*`, `*_PROXY`, `*_proxy`
 
