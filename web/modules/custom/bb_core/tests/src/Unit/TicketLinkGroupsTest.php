@@ -116,9 +116,9 @@ final class TicketLinkGroupsTest extends UnitTestCase {
   /**
    * An UNKNOWN stored kind falls back to the URI classification.
    *
-   * The stored kind is authoritative when it is one of the known kinds; a value from
-   * before normalisation existed, or one an import wrote by hand, is not
-   * allowed to invent a new group or to vanish from the band.
+   * The stored kind is authoritative when it is one of the known kinds; a
+   * value from before normalisation existed, or one an import wrote by hand,
+   * is not allowed to invent a new group or to vanish from the band.
    */
   public function testAnUnknownStoredKindFallsBackToTheUri(): void {
     $groups = TicketLinkGroups::build([
