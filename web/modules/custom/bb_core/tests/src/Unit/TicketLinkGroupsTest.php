@@ -15,7 +15,7 @@ use PHPUnit\Framework\Attributes\Group;
  * THE GROUPING NEEDS NO NEW FIELD AND NO AGENT CONVENTION.
  * `LinkKind::fromUri()` already runs in `BbTicket::preSave()` through
  * `LinkNormalizer::normalize()`
- * and writes `options.bakers.kind`, and its seven values are exactly
+ * and writes `options.bakers.kind`, and its values are exactly
  * `link-group`'s `kind` enum (F8). So the map from kind to group is one
  * constant on one class, and everything else is already stored.
  *
@@ -37,7 +37,7 @@ final class TicketLinkGroupsTest extends UnitTestCase {
   private const LABELS = ['Code', 'Test results', 'Try it yourself', 'More'];
 
   /**
-   * All seven kinds land in four groups, in the fixed order.
+   * All kinds land in four groups, in the fixed order.
    */
   public function testTheFourGroupsInTheirFixedOrder(): void {
     $groups = TicketLinkGroups::build($this->oneLinkPerKind());
@@ -60,7 +60,7 @@ final class TicketLinkGroupsTest extends UnitTestCase {
         'Code' => [LinkKind::MR, LinkKind::BRANCH],
         'Test results' => [LinkKind::CI, LinkKind::REPORT],
         'Try it yourself' => [LinkKind::DDEV, LinkKind::DESIGN],
-        'More' => [LinkKind::DOC],
+        'More' => [LinkKind::DOC, LinkKind::CHAT],
       ],
       $this->kindsByLabel($groups),
     );
@@ -116,9 +116,9 @@ final class TicketLinkGroupsTest extends UnitTestCase {
   /**
    * An UNKNOWN stored kind falls back to the URI classification.
    *
-   * The stored kind is authoritative when it is one of the seven; a value from
+   * The stored kind is authoritative when it is one of the known kinds; a value from
    * before normalisation existed, or one an import wrote by hand, is not
-   * allowed to invent an eighth group or to vanish from the band.
+   * allowed to invent a new group or to vanish from the band.
    */
   public function testAnUnknownStoredKindFallsBackToTheUri(): void {
     $groups = TicketLinkGroups::build([
@@ -277,6 +277,7 @@ final class TicketLinkGroupsTest extends UnitTestCase {
       $this->link('https://example.com/designbook/index.html', 'Designbook'),
       $this->link('https://gitlab.example.com/g/g/-/tree/feat/x', 'Branch'),
       $this->link('https://gitlab.example.com/g/g/-/jobs/1/artifacts/file/r/index.html', 'Report'),
+      $this->link('https://acme.slack.com/archives/C0123ABCD/p1700000000000100', 'Slack thread'),
     ];
   }
 

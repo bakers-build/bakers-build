@@ -20,14 +20,14 @@ final class TicketLinkGroups {
    * The four groups, in the order the band lays them out, and their kinds.
    *
    * ONE CONSTANT AND ONE PLACE. A kind that appears in no group would vanish
-   * from the band silently, so the eighth kind's arrival is a change here and
+   * from the band silently, so a new kind's arrival is a change here and
    * nowhere else.
    */
   private const GROUPS = [
     'Code' => [LinkKind::MR, LinkKind::BRANCH],
     'Test results' => [LinkKind::CI, LinkKind::REPORT],
     'Try it yourself' => [LinkKind::DDEV, LinkKind::DESIGN],
-    'More' => [LinkKind::DOC],
+    'More' => [LinkKind::DOC, LinkKind::CHAT],
   ];
 
   /**
