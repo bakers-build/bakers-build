@@ -18,6 +18,8 @@ A run executes text other people wrote (ticket title, description, comments, env
 
 The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security) and [OpenCode](/addons/opencode#security) pages; Grok and OpenCode reject `custom`. OpenCode has no OS sandbox, so its default is `system` and an explicit `security: 'sandbox'` fails loading. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
+[Pi](/addons/pi) has no OS sandbox and takes only `system` (its default) and `custom`, which loads the extensions in `config.extensions`; `sandbox` and `yolo` fail loading before Pi starts.
+
 ## Sandbox prerequisites
 
 `sandbox` mode needs the harness's OS sandbox on the machine that runs the conductor. Check every enabled agent with:
@@ -100,7 +102,7 @@ What it does not block:
 
 ## Ticket env vars
 
-Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Kimi, Pi) always drop with the default list:
+Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Kimi) always drop with the default list:
 
 `ANTHROPIC_*`, `OPENAI_*`, `CLAUDE_*`, `CODEX_*`, `NODE_OPTIONS`, `LD_*`, `DYLD_*`, `PATH`, `BASH_ENV`, `ENV`, `GIT_*`, `SSH_*`, `*_PROXY`, `*_proxy`
 
