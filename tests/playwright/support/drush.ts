@@ -1,4 +1,25 @@
-import { Drush } from '@key-tec/playwright-core';
+import { execSync } from 'node:child_process';
+
+export const Drush = {
+  exec(command: string): string {
+    let runner = 'drush';
+    if (!process.env.DDEV_DOCROOT) {
+      try {
+        execSync('which drush', { stdio: 'ignore' });
+      } catch {
+        try {
+          execSync('which ddev', { stdio: 'ignore' });
+          runner = 'ddev drush';
+        } catch {
+          // Let native execution report the missing command, as before.
+        }
+      }
+    }
+    return execSync(`${runner} ${command}`, {
+      cwd: process.env.DRUSH_CWD || process.cwd(), encoding: 'utf-8', stdio: 'pipe',
+    });
+  },
+};
 
 /**
  * Runs one PHP snippet through drush and returns its output.

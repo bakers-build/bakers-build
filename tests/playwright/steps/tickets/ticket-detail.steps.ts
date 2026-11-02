@@ -7,8 +7,8 @@
 // so "the document was not reloaded" means one thing across both surfaces.
 //
 // THE SECOND CLICK IS THE ASSERTION. See the header of steps/team/team-islands.steps.ts.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { markDocument } from '../../support/shell';

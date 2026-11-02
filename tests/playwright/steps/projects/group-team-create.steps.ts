@@ -1,4 +1,4 @@
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { php } from '../../support/drush';

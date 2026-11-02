@@ -1,6 +1,6 @@
 // Direct visit vs boosted rail click must produce the same framed settings
 // surface, and must not dump a second shell under the content island.
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { php } from '../../support/drush';
 import { CONTENT_ISLAND } from '../../support/shell';

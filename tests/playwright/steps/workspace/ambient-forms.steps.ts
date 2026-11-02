@@ -1,5 +1,5 @@
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import { test, expect } from '../../bdd.fixtures';
 
 const { Given, When, Then } = createBdd(test);
@@ -17,14 +17,14 @@ Then('the autocomplete {string} offers only the current workspace', async ({ pag
     expect(JSON.stringify(suggestions)).not.toContain('API other');
 });
 
-When('the browser creates a scoped {string} named {string}', async ({ page, entityForm, backendTheme, apiClient }, kind: string, prefix: string) => {
+When('the browser creates a scoped {string} named {string}', async ({ page, apiClient }, kind: string, prefix: string) => {
     if (!['group', 'team', 'environment'].includes(kind)) throw new Error(`Unsupported form: ${kind}`);
     const name = `${prefix} ${crypto.randomUUID()}`;
     const type = `bb_${kind}`;
-    const form = entityForm(type, type);
-    await form.fill({ name }, backendTheme);
+    await page.locator('input[name="name[0][value]"]').fill(name);
     try {
-        await form.submit(backendTheme);
+        await page.locator('#gin-sticky-edit-submit, #edit-submit').first().click();
+        await page.waitForLoadState('networkidle');
     } finally {
         await apiClient.identify('site-admin');
         await apiClient.read(`/jsonapi/${type}/${type}?filter[name]=${encodeURIComponent(name)}`);

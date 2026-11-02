@@ -1,6 +1,6 @@
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect, type BrowserContext, type Page } from '@playwright/test';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import { createBdd } from 'playwright-bdd';
 import { test } from '../../bdd.fixtures';
 import world from '../../support/contract-world.json';

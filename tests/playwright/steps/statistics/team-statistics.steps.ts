@@ -10,7 +10,7 @@
 // The only evidence that Chart.js ran is the back-buffer, so these steps count
 // the distinct opaque colours in it. That is also what makes the colour-mode
 // scenario possible at all — the same read, before and after the switch.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 

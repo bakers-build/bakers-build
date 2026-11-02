@@ -1,5 +1,4 @@
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
 import { test, expect } from '../../bdd.fixtures';
 import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
 
@@ -23,10 +22,10 @@ Then('the stored ticket identifier still matches resource {string}', async ({ ap
     expect(document.data.attributes.identifier).toBe(apiClient.savedAttribute(name, 'identifier'));
 });
 
-When('the ticket is renamed through its form to {string}', async ({ entityForm, backendTheme }, title: string) => {
-    const form = entityForm('bb_ticket', 'bb_ticket');
-    await form.fill({ title }, backendTheme);
-    await form.submit(backendTheme);
+When('the ticket is renamed through its form to {string}', async ({ page }, title: string) => {
+    await page.locator('input[name="title[0][value]"]').fill(title);
+    await page.locator('#gin-sticky-edit-submit, #edit-submit').first().click();
+    await page.waitForLoadState('networkidle');
 });
 
 Then('the ticket routes resolve identifier, ID and UUID for {string}', async ({ page, apiClient }, name: string) => {

@@ -7,7 +7,7 @@
 // from projects-list.steps.ts; `I click the tab`, `the address ends with`,
 // `the document was not reloaded` and `the page heading is` from
 // support/steps/shell.steps.ts; the sign-in steps from support/steps.
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { php } from '../../support/drush';
 import { safe } from '../../support/listing';

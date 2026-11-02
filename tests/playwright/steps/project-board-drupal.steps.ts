@@ -1,5 +1,5 @@
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../bdd.fixtures';
+import { Drush } from '../support/drush';
 import { expect } from '@playwright/test';
 import { php } from '../support/drush';
 import { active, safe } from '../support/listing';

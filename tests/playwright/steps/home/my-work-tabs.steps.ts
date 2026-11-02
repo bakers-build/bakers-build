@@ -1,5 +1,5 @@
 import { expect, type Locator } from '@playwright/test';
-import { Given, Then, When } from '@key-tec/playwright-core/bdd';
+import { Given, Then, When } from '../../bdd.fixtures';
 import { CONTENT_ISLAND, markDocument } from '../../support/shell';
 
 // BB-481 — the three steps My work needs that the team suite does not

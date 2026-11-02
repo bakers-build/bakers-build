@@ -2,7 +2,7 @@
 // a person cancels the ticket or one run, and Settings hold the exceptions.
 // Every scenario creates its own disposable ticket through drush, so no seeded
 // fixture is changed and the suite stays re-runnable.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import { test } from '../../bdd.fixtures';

@@ -4,8 +4,8 @@
 // `I finish the onboarding wizard` starts on About you, opens setup, opens
 // the project page, and Finishes on Home. Nickname is required; remaining
 // identity and about-you fields are optional.
-import { When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect as baseExpect, type Page } from '@playwright/test';
 
 // HTMX step swaps can exceed Playwright's 5s default under a four-worker run.

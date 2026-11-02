@@ -1,4 +1,4 @@
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { placement } from './profile-administration.steps';
 import { assertRefreshedPlacements } from './repeated-profile.steps';

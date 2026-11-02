@@ -6,8 +6,8 @@
 // for that reason; what IS reused is `I am logged in as the account` from
 // `support/steps/accounts.steps.ts`. The `php`/`safe` helpers are local: a
 // snippet-runner has no state to share across files.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { DataTable } from 'playwright-bdd';
 import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, RAIL_ISLAND } from '../../support/shell';

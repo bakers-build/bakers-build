@@ -1,5 +1,5 @@
 // Canonical comment page: fixture-owned comments on a disposable ticket.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';

@@ -1,4 +1,4 @@
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from './drush';
 
 /**
  * Counts and membership identities for the four entities sign-up can create.

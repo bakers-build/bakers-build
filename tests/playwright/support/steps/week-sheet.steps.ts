@@ -3,7 +3,7 @@
 // features/manual-worklog.feature.
 import { randomUUID } from 'node:crypto';
 import { expect, type Locator, type Page } from '@playwright/test';
-import { Given, Then, When } from '@key-tec/playwright-core/bdd';
+import { Given, Then, When } from '../../bdd.fixtures';
 import { php } from '../drush';
 import { callTool, type ToolResult } from '../mcp';
 import { safe } from '../picker';

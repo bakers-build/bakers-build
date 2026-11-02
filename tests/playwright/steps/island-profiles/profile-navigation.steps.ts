@@ -1,4 +1,4 @@
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect, type Page, type Request } from '@playwright/test';
 import { markDocument } from '../../support/shell';
 

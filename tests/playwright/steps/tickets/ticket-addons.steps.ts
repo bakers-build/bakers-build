@@ -3,7 +3,7 @@
 // message, and the card shows the Markdown result — only to the requester who
 // sent it. The conductor and its addon are drush fixtures on a disposable
 // ticket, so no seeded fixture changes and the feature stays re-runnable.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';

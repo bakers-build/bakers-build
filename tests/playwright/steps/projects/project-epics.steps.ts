@@ -1,7 +1,7 @@
 // An epic with a closed child in a project, for the scenarios that filter a
 // project's figures by epic. The scenario owns both tickets: they are created
 // through drush and deleted after it, so no seeded fixture changes.
-import { Given } from '@key-tec/playwright-core/bdd';
+import { Given } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
 import type { Page } from '@playwright/test';
 import { test } from '../../bdd.fixtures';
