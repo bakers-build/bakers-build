@@ -28,15 +28,28 @@ describe('GitHub migration checks', () => {
         ...process.env,
         GIT_CONFIG_GLOBAL: join(dir, 'gitconfig'),
         GIT_CONFIG_NOSYSTEM: '1',
-        GIT_TEST_ASSUME_DIFFERENT_OWNER: '1',
         GITHUB_ENV: join(dir, 'env'),
         CI_PROJECT_DIR: '/host/path/not/mounted',
       };
       expect(
-        spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: dir, env })
-          .status,
+        spawnSync(
+          'git',
+          ['config', '--global', '--get-all', 'safe.directory'],
+          { cwd: dir, env },
+        ).status,
       ).not.toBe(0);
       execFileSync('sh', ['-eu', '-c', setup.run], { cwd: dir, env });
+      expect(
+        execFileSync(
+          'git',
+          ['config', '--global', '--get-all', 'safe.directory'],
+          {
+            cwd: dir,
+            env,
+            encoding: 'utf8',
+          },
+        ).trim(),
+      ).toBe(dir);
       expect(
         execFileSync('git', ['rev-parse', '--show-toplevel'], {
           cwd: dir,
