@@ -1353,8 +1353,10 @@ export class Conductor {
     const exists = chosen.agent.sessionExists?.bind(chosen.agent);
     if (!exists || !this.remote.fetchResumeContext) return undefined;
     try {
-      const { previousRun, questionAt } =
-        await this.remote.fetchResumeContext(t.uuid, run.runUuid);
+      const { previousRun, questionAt } = await this.remote.fetchResumeContext(
+        t.uuid,
+        run.runUuid,
+      );
       if (!previousRun || !questionAt) return undefined;
       if (previousRun.stateAtStart !== run.stateAtStart) return undefined;
       const asked = Date.parse(questionAt);

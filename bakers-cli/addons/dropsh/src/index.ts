@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import {
   type BbCommandHost,
   type BbCommandPlugin,
@@ -10,7 +11,6 @@ import {
 import { toolPlugin } from '@dropsh/plugin-tool';
 import { type Command, Help } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
-import { readFile } from 'node:fs/promises';
 import { askUserQuestionDecision } from './ask-user-question-hook.js';
 import { registerTemplateCommand } from './template.js';
 import { AskError, askQuestion, siteAskApi } from './ticket-ask.js';

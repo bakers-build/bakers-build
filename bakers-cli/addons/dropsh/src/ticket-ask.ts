@@ -104,7 +104,8 @@ export async function askQuestion(
 
     let label = await api.findLabel(QUESTION_LABEL, workspace);
     const created = label === null;
-    if (label === null) label = await api.createLabel(QUESTION_LABEL, workspace);
+    if (label === null)
+      label = await api.createLabel(QUESTION_LABEL, workspace);
     done.push('label');
 
     const labels = many(row, 'labels');
@@ -138,7 +139,9 @@ export async function askQuestion(
 }
 
 /** The `AskApi` over a bakers.build connection: MCP tools and JSON:API. */
-export function siteAskApi(ctx: CommandContext): AskApi & { close(): Promise<void> } {
+export function siteAskApi(
+  ctx: CommandContext,
+): AskApi & { close(): Promise<void> } {
   const tools = createToolClient({ auth: ctx.auth, baseUrl: ctx.baseUrl });
   const { client } = ctx;
   return {

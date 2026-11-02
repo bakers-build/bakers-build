@@ -66,7 +66,9 @@ const ASK_HOOK = {
 /** `hooks` with the ask hook appended to its PreToolUse entries. */
 function withAskHook(hooks: unknown): Record<string, unknown> {
   const own =
-    hooks && typeof hooks === 'object' ? (hooks as Record<string, unknown>) : {};
+    hooks && typeof hooks === 'object'
+      ? (hooks as Record<string, unknown>)
+      : {};
   const pre = Array.isArray(own.PreToolUse) ? own.PreToolUse : [];
   return { ...own, PreToolUse: [...pre, ASK_HOOK] };
 }

@@ -17,7 +17,10 @@ interface Row {
 
 /** An in-memory bakers.build site: the tool calls and the JSON:API resources the command uses. */
 function fakeSite(
-  options: { questionTerm?: 'here' | 'elsewhere' | 'none'; failPatch?: boolean } = {},
+  options: {
+    questionTerm?: 'here' | 'elsewhere' | 'none';
+    failPatch?: boolean;
+  } = {},
 ) {
   const rows = new Map<string, Row>();
   const put = (row: Row) => rows.set(`${row.type}/${row.id}`, row);
@@ -129,7 +132,8 @@ function fakeSite(
   };
 }
 
-const BODY = '# Question\n\nWhich storage?\n\n1. Redis (recommended)\n2. Files\n';
+const BODY =
+  '# Question\n\nWhich storage?\n\n1. Redis (recommended)\n2. Files\n';
 
 describe('bakers ticket ask', () => {
   it('publishes the question as one comment, labels the ticket Question and freezes it', async () => {
@@ -164,8 +168,8 @@ describe('bakers ticket ask', () => {
       .termsNamedQuestion()
       .filter(
         (t) =>
-          (t.relationships.workspace_id?.data as { id: string }).id ===
-          WORKSPACE,
+          (t.relationships.workspace_id?.data as { id?: string } | undefined)
+            ?.id === WORKSPACE,
       );
     expect(mine).toHaveLength(1);
     expect(result.label).toEqual({
