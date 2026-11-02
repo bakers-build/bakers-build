@@ -9,7 +9,5 @@
  * pages at the site root are covered by the default detection. */
 @source '.';
 @source '../../../docs/get-started';
-@source '../../../docs/daily-work';
-@source '../../../docs/skills-and-workflows';
 @source '../../../docs/addons';
-@source '../../../docs/advanced';
+@source '../../../docs/configuration';

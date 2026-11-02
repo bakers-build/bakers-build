@@ -17,9 +17,9 @@ import PillButton from '../primitives/PillButton.vue'
       every step.
     </p>
     <div class="sr dl3 flex flex-wrap justify-center gap-3.5">
-      <PillButton href="/get-started/install" variant="brand">Start with your agent</PillButton>
-      <PillButton href="/get-started/work-in-the-browser" variant="ghost">Start in the browser</PillButton>
-      <PillButton href="/get-started/is-bakers-right-for-us" variant="ghost">Is bakers.build right for us?</PillButton>
+      <PillButton href="/get-started/machine" variant="brand">Set up a machine</PillButton>
+      <PillButton href="/get-started/connector" variant="ghost">Set up a connector</PillButton>
+      <PillButton href="/get-started/connect-a-project" variant="ghost">Set up a project</PillButton>
     </div>
     <p class="sr dl4 mt-[26px] text-[15.5px] text-[color:var(--lp-text-3)]">Nothing to host to get started. Add worker machines when your laptop becomes the limit.</p>
   </div>

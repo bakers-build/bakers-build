@@ -22,8 +22,8 @@ import StarCanvas from '../primitives/StarCanvas.vue'
     </h2>
     <p class="sr dl1 relative z-[1] mb-8 text-[19px] text-[color:var(--lp-text-2)]">MIT licensed. Your agent, your machine, your rules.</p>
     <div class="sr dl2 relative z-[1]">
-      <PillButton href="/get-started/install" variant="brand">Start with your agent</PillButton>
-      <PillButton href="/get-started/work-in-the-browser" variant="ghost">Start in the browser</PillButton>
+      <PillButton href="/get-started/machine" variant="brand">Set up a machine</PillButton>
+      <PillButton href="/get-started/connector" variant="ghost">Set up a connector</PillButton>
     </div>
   </div>
 </template>

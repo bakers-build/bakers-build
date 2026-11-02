@@ -377,7 +377,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     self::assertInstanceOf(UserInterface::class, $account);
     $this->container->get('current_user')->setAccount($account);
 
-    $install = $this->docLines('docs/get-started/install.md');
+    $install = array_merge($this->docLines('docs/get-started/machine.md'), $this->docLines('docs/configuration/agents/skills.md'));
     $form_object = BbOnboardingWizardForm::create($this->container);
 
     $form_state = new FormState();
@@ -385,11 +385,11 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $step3 = $form_object->buildForm([], $form_state);
     $step3Commands = $this->commandsFromForm($step3);
     foreach ($step3Commands as $command) {
-      self::assertContains($command, $install, $command . ' must be a complete line in install.md.');
+      self::assertContains($command, $install, $command . ' must be a complete line in machine.md or skills.md.');
     }
-    self::assertNotContains('https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
+    self::assertNotContains('https://github.com/bakers-build/bakers-build.git', $step3Commands);
     self::assertContains('/plugin marketplace add https://bakers.build/marketplace.json', $step3Commands);
-    self::assertContains('codex plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
+    self::assertContains('codex plugin marketplace add https://github.com/bakers-build/bakers-build.git --ref main', $step3Commands);
     self::assertContains('codex plugin add bakers@bakers', $step3Commands);
     self::assertContains('Use `bakers:bb-init` to guide me through installing and setting up bakers.build.', $step3Commands);
     $pluginInstall = array_search('/plugin install bakers@bakers', $step3Commands, TRUE);
@@ -473,8 +473,8 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $step3 = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
     $commands = $this->commandsFromForm($step3);
     self::assertContains('/plugin marketplace add https://example.test/org/bakers-build.git', $commands);
-    self::assertContains('codex plugin marketplace add https://example.test/org/bakers-build.git', $commands);
-    self::assertNotContains('/plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git', $commands);
+    self::assertContains('codex plugin marketplace add https://example.test/org/bakers-build.git --ref main', $commands);
+    self::assertNotContains('/plugin marketplace add https://github.com/bakers-build/bakers-build.git', $commands);
   }
 
   /**
@@ -606,7 +606,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $blob = serialize($form);
     self::assertStringContainsString('bb_theme:link-group', $blob);
     self::assertStringContainsString('https://bakers.build/docs/get-started/', $blob);
-    self::assertStringContainsString('https://bakers.build/docs/get-started/install', $blob);
+    self::assertStringContainsString('https://bakers.build/docs/get-started/machine', $blob);
     self::assertStringContainsString('skill-wizard-', $blob);
   }
 

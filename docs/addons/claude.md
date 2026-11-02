@@ -1,16 +1,24 @@
 # Claude
 
-**Lets bakers.build run tickets with the Claude Code CLI.**
+Run tickets with Claude Code.
+
+## AI first
+
+Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+
+## Setup
+
+Follow the [vendor installation guide](https://docs.claude.com/en/docs/claude-code/setup), then authenticate `claude` as the conductor user and check it resolves on `PATH`.
 
 ## Enable it
 
-Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there.
+Add the harness only to `addons` in `~/.bakers/machine.config.js`.
 
 ```js
 addons: ['@bakers-build/addon-claude'],
 ```
 
-Without a `model` it publishes two aliases: `opus` for demanding work and `sonnet` for well-specified changes. Set `model` to publish one custom candidate instead:
+Default aliases: `opus` for demanding work and `sonnet` for well-specified changes. Set `model` for one custom candidate:
 
 ```js
 { use: '@bakers-build/addon-claude', with: { model: 'opus', effort: 'high' } }
@@ -25,13 +33,13 @@ Without a `model` it publishes two aliases: `opus` for demanding work and `sonne
 | `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'sandbox'` | How strictly a run starts; see [Security](#security). |
 | `sandbox` | object | see below | Only with `security: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
-| `env_deny` | string[] | the [default list](/advanced/run-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `env_deny` | string[] | the [default list](/configuration/agents/execution-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
 
-A run starts sandboxed unless you choose otherwise, because ticket text is written by other people. What each mode blocks and misses, `env_deny`, risks and machine isolation: [Run security](/advanced/run-security).
+Runs default to the OS sandbox. [Execution security](/configuration/agents/execution-security) owns boundaries, environment filtering and isolation risks.
 
 | `security` | Launch flags |
 |---|---|
@@ -73,6 +81,5 @@ bakers agents
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 
-More: [Choose agents and models](/advanced/configuration/agents-and-models), [Machines](/advanced/machines#harnesses).
+More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
 
-Source: [`bakers-cli/addons/claude`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/claude)

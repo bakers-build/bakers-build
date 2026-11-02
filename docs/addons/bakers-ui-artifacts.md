@@ -46,4 +46,4 @@ bakers ui
 "Add the Artifacts addon to my machine config without touching `agents`, then run the checks."
 :::
 
-Source: [`bakers-cli/addons/bakers-ui-artifacts`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/bakers-ui-artifacts)
+Package source in a checkout: `bakers-cli/addons/bakers-ui-artifacts`.

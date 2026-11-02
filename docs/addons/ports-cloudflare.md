@@ -55,4 +55,4 @@ Sharing a service returns a `https://<ticket>-<key>.<zone>` URL that serves it.
 - One account owns one tunnel. A second machine must not reconcile the same tunnel.
 - The token is redacted from errors and logs.
 
-Source: [`bakers-cli/addons/ports-cloudflare`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/ports-cloudflare)
+Package source in a checkout: `bakers-cli/addons/ports-cloudflare`.

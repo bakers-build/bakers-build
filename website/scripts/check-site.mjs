@@ -5,9 +5,9 @@
 // entry is not a one-hop redirect to a real page.
 //
 //   node scripts/check-site.mjs              check the whole site
-//   node scripts/check-site.mjs /advanced/   report only problems under a prefix
+//   node scripts/check-site.mjs /configuration/   report only problems under a prefix
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, posix, relative, sep } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const WEBSITE = fileURLToPath(new URL('..', import.meta.url))
@@ -29,10 +29,9 @@ function collect(dir) {
       .replace(/(^|\/)index\.html$/, '$1')
       .replace(/\.html$/, '')
     const refresh = html.match(/http-equiv="refresh" content="0;url=([^"]+)"/)
-    const content = html.match(/<div[^>]*class="vp-doc[\s\S]*?<\/main>/)?.[0] ?? ''
     pages.set(route, {
       ids: new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1])),
-      hrefs: [...content.matchAll(/<a\s[^>]*href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&')),
+      hrefs: [...html.matchAll(/<a\s[^>]*href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&')),
       redirect: refresh ? refresh[1] : null,
     })
   }
@@ -51,12 +50,13 @@ const report = (where, message) => problems.push({ where, message })
 
 for (const [route, page] of pages) {
   if (page.redirect) continue
-  const base = route.endsWith('/') ? route : `${posix.dirname(route)}/`.replace('//', '/')
   for (const href of page.hrefs) {
     if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//')) continue
-    const [path, fragment] = href.split('#')
+    const url = new URL(href, `https://manual.test${route}`)
+    const path = url.pathname
+    const fragment = url.hash.slice(1)
     if (ASSET.test(path)) continue
-    const target = path === '' ? route : lookup(posix.normalize(path.startsWith('/') ? path : base + path))
+    const target = lookup(path)
     if (target === null) {
       report(route, `links a missing page: ${href}`)
       continue
@@ -80,9 +80,12 @@ for (const [from, to] of Object.entries(ROUTES)) {
     if (toAnchor && !pages.get(lookup(toPath))?.ids.has(toAnchor)) report(from, `redirect target ${to} has no such anchor`)
   } else if (page.redirect !== to)
     report(from, page.redirect ? `redirects to ${page.redirect}, routes.json says ${to}` : 'is still a content page; delete its source or its routes.json entry')
-  const target = lookup(to.split('#')[0])
+  const url = new URL(to, 'https://manual.test')
+  const target = lookup(url.pathname)
   if (target === null) report(from, `redirect target ${to} does not exist`)
   else if (pages.get(target).redirect) report(from, `redirect target ${to} is itself a redirect; point at ${pages.get(target).redirect}`)
+  else if (url.hash && !pages.get(target).ids.has(decodeURIComponent(url.hash.slice(1))))
+    report(from, `redirect target has a missing anchor: ${to}`)
 }
 
 // The bundled frameworks' MIT notices live only in this file (scripts/third-party.mjs).

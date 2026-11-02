@@ -14,7 +14,7 @@ No options.
 
 ## Check it works
 
-There is nothing to run by hand. To set a ticket's type, recipe or labels by name yourself, use the named tools: `bakers_ticket_classify` for type and recipe, `bakers_ticket_update` with `labels_add` for labels ([bakers tools](/advanced/cli/tools)).
+There is nothing to run by hand. To set a ticket's type, recipe or labels by name yourself, use the named tools: `bakers_ticket_classify` for type and recipe, `bakers_ticket_update` with `labels_add` for labels ([bakers tools](/configuration/clients/tools)).
 
 ## Good to know
 
@@ -22,4 +22,4 @@ There is nothing to run by hand. To set a ticket's type, recipe or labels by nam
 - An unknown environment name stops the write; nothing is sent.
 - Environment names are unique only within a project, so they resolve against the ticket's project.
 
-Source: [`bakers-cli/addons/name-refs`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/name-refs)
+Package source in a checkout: `bakers-cli/addons/name-refs`.

@@ -10,7 +10,7 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers deploy
 
 ## Options
 
-No options. The command takes `--since <ref>` and `--to <ref>`; see [bakers deployment](/advanced/cli/deployment).
+No options. The command takes `--since <ref>` and `--to <ref>`; see [bakers deployment](/addons/deployment/reference).
 
 ## Check it works
 
@@ -27,4 +27,6 @@ bakers deployment tickets --since v1.4.0 --to develop
 - An identifier that does not resolve is listed under `unresolved`; it never fails the command.
 - The command only reads. It writes nothing to the server.
 
-Source: [`bakers-cli/addons/deployment`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/deployment)
+Package source in a checkout: `bakers-cli/addons/deployment`.
+
+Full command semantics and examples: [command reference](/addons/deployment/reference).

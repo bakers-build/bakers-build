@@ -7,6 +7,7 @@ import { createRequire } from 'node:module'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { AREAS, SIDEBAR, SRC_EXCLUDE } from './manual.mjs'
+import { redirectPage } from '../scripts/redirects.mjs'
 import { thirdPartyLicenses } from '../scripts/third-party.mjs'
 const require = createRequire(import.meta.url)
 const vitepressRequire = createRequire(require.resolve('vitepress/package.json'))
@@ -29,12 +30,6 @@ type Area = { label: string; link: string; icon: string; match?: string; externa
 const LEGACY_ROUTES: Record<string, string> = JSON.parse(
   readFileSync(fileURLToPath(new URL('../routes.json', import.meta.url)), 'utf8'),
 )
-// A `/old#anchor` key sends that anchor elsewhere; any other anchor is kept.
-const redirectPage = (to: string, anchors: Record<string, string>) =>
-  '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Page moved</title>' +
-  `<script>location.replace(${JSON.stringify(anchors)}[location.hash] || ${JSON.stringify(to)}${to.includes('#') ? '' : ' + location.hash'})</script>` +
-  `<meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=${to}">` +
-  `<link rel="canonical" href="${to}"></head><body><p>This page moved to <a href="${to}">${to}</a>.</p></body></html>\n`
 
 type BbThemeConfig = DefaultTheme.Config & {
   sidebarAreas: Area[]

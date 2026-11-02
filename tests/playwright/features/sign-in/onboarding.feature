@@ -169,7 +169,7 @@ Feature: The onboarding wizard before the workspace overview
     And the command "/plugin install bakers@bakers" is shown
     And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
     When I choose the "Codex" agent filter
-    Then the command "codex plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git" is shown
+    Then the command "codex plugin marketplace add https://github.com/bakers-build/bakers-build.git --ref main" is shown
     And the command "codex plugin add bakers@bakers" is shown
     And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
     And the setup page links to the documentation and Claude skills

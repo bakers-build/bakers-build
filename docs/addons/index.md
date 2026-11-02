@@ -1,6 +1,6 @@
 # Addons
 
-**bakers.build is swappable by design.** Agents, workspace managers, tunnels and tools are addons; tickets and states never change.
+Choose supported extensions by purpose.
 
 ## Agents
 
@@ -13,12 +13,12 @@
 | [OpenCode](/addons/opencode) | OpenCode harness |
 | [Pi](/addons/pi) | pi harness |
 
-## Execution and workspaces
+## Clients and workspaces
 
 | Addon | What it adds |
 |---|---|
 | [herdr](/addons/herdr) | Runs agents in herdr sessions and worktrees |
-| tuios | Coming soon |
+| [Orca](/addons/orca) | Local worktree UI and agent terminals |
 | [Git workspace](/addons/workspace-git) | Plain Git worktree per ticket |
 | [bakers.build server remote](/addons/remote-drupal) | Connects a conductor to the server |
 
@@ -30,8 +30,11 @@
 | [Named Cloudflare tunnel](/addons/ports-cloudflare) | Fixed names in your Cloudflare zone |
 | [Cloudflare Quick tunnel](/addons/ports-cloudflare-quick) | Random URL, no account |
 | [frp tunnel](/addons/ports-frp) | Fixed names through your frp server |
-| [DDEV discovery](/addons/ddev) | Finds DDEV services |
-| [Docker Compose discovery](/addons/docker-compose) | Finds Compose containers and ports |
+
+
+## Provisioning support
+
+[DDEV discovery](/addons/ddev) and [Compose discovery](/addons/docker-compose) find ports; they do not provision environments. Use [project hooks](/configuration/provisioning) for DDEV, Compose or native Node. Native Node is not an addon.
 
 ## Terminal UI
 
@@ -63,10 +66,6 @@
 | [Ambient workspace](/addons/workspace) | Fills in your workspace |
 | [HTTP Basic sign-in](/addons/auth-basic) | Fixed Basic auth token |
 
-## Internal and test
-
-| Addon | What it adds |
-|---|---|
-| [Fake conductor fixture](/addons/fake) | Test-only remote, executor and workspace |
+[Fake conductor fixture](/addons/fake) is test-only.
 
 [Configure addons](/addons/configure) · [Build your own](/addons/build/contracts)

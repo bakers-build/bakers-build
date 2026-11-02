@@ -228,7 +228,7 @@ the build under test.
 
 ## Configuration setup and upgrades
 
-Coming from the old CLI? Follow [Switch to the bakers CLI](../docs/advanced/cli/switch-to-bakers.md).
+Coming from the old CLI? Follow [Switch to the bakers CLI](../docs/configuration/clients/switch-to-bakers.md).
 
 Initialize the scopes you need:
 

@@ -20,10 +20,10 @@ const readme = readFileSync(join(here, '..', 'README.md'), 'utf8');
 // behavioral contracts cannot drift. The reference lives in the repository's
 // shared docs source as two pages read as one; a missing file must fail instead
 // of skipping assertions.
-const reference = ['ui.md', 'ui-keys.md']
+const reference = ['bakers-ui/reference.md', 'bakers-ui-keys.md']
   .map((page) =>
     readFileSync(
-      join(here, '..', '..', '..', '..', 'docs', 'advanced', 'cli', page),
+      join(here, '..', '..', '..', '..', 'docs', 'addons', page),
       'utf8',
     ),
   )

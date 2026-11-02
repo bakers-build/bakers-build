@@ -1,39 +1,38 @@
 <script setup lang="ts">
-// c-ways — three ways in, one per kind of reader: with your agent, in the
-// browser, for your team. Each card is three lines and one link.
+// Three entry situations, each leading directly to its setup task.
 import PillButton from '../primitives/PillButton.vue'
 import SectionHead from '../primitives/SectionHead.vue'
 
 const ways = [
   {
-    title: 'With your agent in the repo',
+    title: 'Work through chat',
     lines: [
-      'Describe a ticket; your agent writes it with checkable criteria.',
-      'Your conductor runs it on your machine, step by step.',
-      'You read each summary and give your verdict in the browser.',
+      'Project managers and customers connect their own chat account.',
+      'Create and plan tickets with the connector.',
+      'Follow results on the web while your team runs the work.',
     ],
-    href: '/get-started/install',
-    cta: 'Set up bakers.build',
+    href: '/get-started/connector',
+    cta: 'Set up a connector',
   },
   {
-    title: 'In the browser only',
+    title: 'Prepare your first machine',
     lines: [
-      'Connect claude.ai, Claude Desktop or Cowork once.',
-      'Create and qualify tickets in your chat, up to the spec.',
-      'Follow, answer and accept in the bakers.build web UI. Nothing to install.',
+      'Install the skills and let your AI guide machine setup.',
+      'Set up the worker once, then connect the first project.',
+      'Run a small ticket and verify its first summary.',
     ],
-    href: '/get-started/work-in-the-browser',
-    cta: 'Start in the browser',
+    href: '/get-started/machine',
+    cta: 'Set up a machine',
   },
   {
-    title: 'For your team',
+    title: 'Add a project to your machine',
     lines: [
-      'Connect the project once; your agent writes WORKFLOW.md.',
-      'Encode your checks, standards and method; swap agents and tools freely.',
-      'Add worker machines when a laptop becomes the limit.',
+      'Developers reuse a working machine and connection.',
+      'Choose its TUI, development environment and workflow.',
+      'Go straight to the first-ticket check.',
     ],
-    href: '/get-started/is-bakers-right-for-us',
-    cta: 'Check the fit',
+    href: '/get-started/connect-a-project',
+    cta: 'Set up a project',
   },
 ]
 </script>
@@ -43,8 +42,8 @@ const ways = [
     <SectionHead kicker="THREE WAYS IN">
       <template #title>Start where you are</template>
       <template #lead>
-        Developers start on their own machine, project managers in the
-        browser, leads with one question: does it fit us?
+        Connect your chat, prepare a developer machine, or add a project to a
+        machine that already works.
       </template>
     </SectionHead>
     <div class="sr dl2 mx-auto grid max-w-[1120px] grid-cols-3 gap-5 max-[860px]:grid-cols-1">

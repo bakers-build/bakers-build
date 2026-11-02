@@ -4,6 +4,14 @@
 
 For anyone whose machine should run tickets with the Grok CLI.
 
+## AI first
+
+Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+
+## Setup
+
+Follow the [vendor installation guide](https://docs.x.ai/build/overview), then authenticate `grok` as the conductor user and check it resolves on `PATH`.
+
 ## Enable it
 
 Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there. Keep the other fields there.
@@ -23,12 +31,12 @@ addons: [{ use: '@bakers-build/addon-grok', with: { model: 'grok-4.5' } }],
 | `reasoningEffort` | string | none | Older name for `effort`; `effort` wins. |
 | `security` | `'sandbox'` \| `'system'` \| `'yolo'` | `'sandbox'` | How strictly a run starts; see [Security](#security). `'custom'` fails loading. |
 | `sandbox` | object | see below | Only with `security: 'sandbox'`. Only the defaults are accepted. |
-| `env_deny` | string[] | the [default list](/advanced/run-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `env_deny` | string[] | the [default list](/configuration/agents/execution-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. A `-m`/`--model` here wins over `model`. |
 
 ## Security
 
-What each mode blocks and misses: [Run security](/advanced/run-security#grok-in-sandbox-mode).
+What each mode blocks and misses: [Run security](/configuration/agents/execution-security#grok-in-sandbox-mode).
 
 | `security` | Launch flags |
 |---|---|
@@ -63,9 +71,6 @@ bakers agents
 ## Good to know
 
 - Before `security` existed, Grok always ran with `--permission-mode bypassPermissions`. Set `security: 'yolo'` to keep that launch.
-- The addon starts `grok`; it does not install it or sign it in. The binary must be on `PATH`.
-- Listed in a conductor config, an agent addon is ignored with a warning.
 
-More: [Choose agents and models](/advanced/configuration/agents-and-models), [Machines](/advanced/machines#harnesses).
+More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
 
-Source: [`bakers-cli/addons/grok`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/grok)

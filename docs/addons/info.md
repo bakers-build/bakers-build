@@ -28,4 +28,4 @@ bakers info
 - A value it cannot resolve is `null` (or `[]`), never left out.
 - It never prompts and never writes to disk.
 
-Source: [`bakers-cli/addons/info`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/info)
+Package source in a checkout: `bakers-cli/addons/info`.

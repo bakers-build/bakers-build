@@ -9,59 +9,95 @@ export const SRC_EXCLUDE = [
   'bakers-metrics.md',
 ]
 
-// The five areas: the top navigation and the sidebar's icon strip.
+// Shared by desktop/mobile navigation and the sidebar area controls.
 export const AREAS = [
-  { label: 'Get started', link: '/get-started/', icon: 'guide' },
-  { label: 'Daily work', link: '/daily-work/', icon: 'guide' },
-  { label: 'Skills & Workflows', link: '/skills-and-workflows/', icon: 'guide' },
+  { label: 'Getting Started', link: '/get-started/', icon: 'guide' },
+  { label: 'Configuration', link: '/configuration/', icon: 'contributing' },
   { label: 'Addons', link: '/addons/', icon: 'reference' },
-  { label: 'Advanced', link: '/advanced/', icon: 'contributing' },
 ]
 
-const group = (text, items) => ({ text, items: items.map(([label, link]) => ({ text: label, link })) })
+const group = (text, items) => ({ text, items: items.map(([text, link]) => ({ text, link })) })
 
 export const SIDEBAR = {
   '/manual': [group('Documentation', AREAS.map((area) => [area.label, area.link]))],
   '/get-started/': [
-    group('Get started', [
+    group('Getting Started', [
       ['Overview', '/get-started/'],
-      ['What is bakers.build', '/get-started/what-is-bakers'],
-      ['Is bakers.build right for us?', '/get-started/is-bakers-right-for-us'],
-      ['Set up bakers.build', '/get-started/install'],
-      ['Connect your project', '/get-started/connect-a-project'],
-      ['Run your first ticket', '/get-started/first-ticket'],
-      ['Work in the browser', '/get-started/work-in-the-browser'],
+      ['Set up a connector', '/get-started/connector'],
+      ['Set up a machine', '/get-started/machine'],
+      ['Set up a project', '/get-started/connect-a-project'],
+      ['Run the first ticket', '/get-started/first-ticket'],
+    ]),
+    group('Daily work', [
+      ['Accept results', '/get-started/daily-work/accept-results'],
+      ['Create a ticket', '/get-started/daily-work/create-a-ticket'],
+      ['Follow a ticket', '/get-started/daily-work/follow-a-ticket'],
+      ['Freeze a ticket', '/get-started/daily-work/freeze-a-ticket'],
+      ['Record time', '/get-started/daily-work/record-time'],
+      ['See what the team works on', '/get-started/daily-work/team-overview'],
     ]),
   ],
-  '/daily-work/': [
-    group('Daily work', [['Overview', '/daily-work/']]),
-    group('Manage tickets', [
-      ['Create a ticket', '/daily-work/create-a-ticket'],
-      ['Follow a ticket', '/daily-work/follow-a-ticket'],
-      ['Email notifications', '/daily-work/email-notifications'],
-      ['Accept results', '/daily-work/accept-results'],
-      ['Freeze a ticket', '/daily-work/freeze-a-ticket'],
-      ['See what the team works on', '/daily-work/team-overview'],
+  '/configuration/': [
+    group('Connector', [
+      ['Configuration overview', '/configuration/'],
+      ['Connector', '/configuration/connector'],
+      ['Connections', '/configuration/connector/connections'],
+      ['Claude.ai connector limits and errors', '/configuration/connector/limits'],
+      ['Get emails about ticket activity', '/configuration/connector/notifications'],
+      ['Claude Project instructions (connector bundle)', '/configuration/connector/project-instructions'],
     ]),
-    group('More', [
-      ['Record time', '/daily-work/record-time'],
-      ['Work from claude.ai', '/daily-work/claude-ai'],
-      ['Who sees what', '/daily-work/who-sees-what'],
+    group('Machine', [
+      ['Machine', '/configuration/machine'],
+      ['Set up a Coder workspace', '/configuration/machine/coder-workspace'],
+      ['Update bakers.build', '/configuration/machine/updates'],
+      ['Set up a worker server', '/configuration/machine/worker-server'],
     ]),
-  ],
-  '/skills-and-workflows/': [
-    group('Skills & Workflows', [
-      ['Overview', '/skills-and-workflows/'],
-      ['How it works', '/skills-and-workflows/how-it-works'],
-      ['Configure your workflow', '/skills-and-workflows/write-workflow-md'],
-      ['Workflows and states', '/skills-and-workflows/workflows-and-states'],
-      ['Autopilot workflow', '/skills-and-workflows/autopilot'],
-      ['Ticket type, recipe and labels', '/skills-and-workflows/labels-and-work-types'],
+    group('Project', [
+      ['Project', '/configuration/project'],
+      ['Conductors', '/configuration/project/conductors'],
+      ['Conductor commands', '/configuration/project/conductor-commands'],
+      ['Contributing to bakers.build', '/configuration/project/contributing'],
+      ['Configuration migration', '/configuration/project/migration'],
+      ['Server', '/configuration/project/server'],
+    ]),
+    group('Provisioning', [
+      ['Provisioning', '/configuration/provisioning'],
+      ['Set up DDEV', '/configuration/provisioning/ddev'],
+      ['Docker Compose', '/configuration/provisioning/docker-compose'],
+      ['Add lifecycle hooks', '/configuration/provisioning/hooks'],
+      ['Set up Node.js', '/configuration/provisioning/node'],
+    ]),
+    group('Clients', [
+      ['Clients', '/configuration/clients'],
+      ['CLI commands', '/configuration/clients/cli'],
+      ['bakers tools', '/configuration/clients/tools'],
+      ['bakers auth', '/configuration/clients/auth'],
+      ['Switch to the bakers CLI', '/configuration/clients/switch-to-bakers'],
+      ['Troubleshooting', '/configuration/clients/troubleshooting'],
+    ]),
+    group('Agents', [
+      ['Agents', '/configuration/agents'],
+      ['Install the bakers skills', '/configuration/agents/skills'],
+      ['Run security', '/configuration/agents/execution-security'],
+      ['Agent policy reference', '/configuration/agents/reference'],
+    ]),
+    group('Workflows', [
+      ['Workflows', '/configuration/workflows'],
+      ['Autopilot workflow', '/configuration/workflows/autopilot'],
+      ['Ticket metrics', '/configuration/workflows/metrics'],
+      ['Write a recipe', '/configuration/workflows/recipes'],
+      ['Workflows and states', '/configuration/workflows/states'],
+      ['Ticket type, recipe and labels', '/configuration/workflows/types-recipes-labels'],
+      ['Configure your workflow', '/configuration/workflows/workflow-file'],
+    ]),
+    group('Security', [
+      ['Security', '/configuration/security'],
+      ['API keys and service accounts', '/configuration/security/credentials'],
     ]),
   ],
   '/addons/': [
     group('Addons', [
-      ['Overview', '/addons/'],
+      ['Addons', '/addons/'],
       ['Configure addons', '/addons/configure'],
     ]),
     group('Agents', [
@@ -72,31 +108,40 @@ export const SIDEBAR = {
       ['OpenCode', '/addons/opencode'],
       ['Pi', '/addons/pi'],
     ]),
-    group('Execution and workspaces', [
+    group('Clients and workspaces', [
       ['herdr', '/addons/herdr'],
+      ['herdr options', '/addons/herdr/options'],
+      ['Orca', '/addons/orca'],
+      ['Orca options', '/addons/orca/options'],
       ['Git workspace', '/addons/workspace-git'],
       ['bakers.build server remote', '/addons/remote-drupal'],
     ]),
-    group('Sharing previews and ports', [
+    group('Provisioning support (port discovery)', [
+      ['DDEV discovery', '/addons/ddev'],
+      ['Docker Compose discovery', '/addons/docker-compose'],
+    ]),
+    group('Ports and previews', [
       ['Ports', '/addons/ports'],
       ['Shared processes', '/addons/ports-services'],
       ['Named Cloudflare tunnel', '/addons/ports-cloudflare'],
       ['Cloudflare Quick tunnel', '/addons/ports-cloudflare-quick'],
       ['frp tunnel', '/addons/ports-frp'],
-      ['DDEV discovery', '/addons/ddev'],
-      ['Docker Compose discovery', '/addons/docker-compose'],
     ]),
     group('Terminal UI', [
       ['Terminal UI', '/addons/bakers-ui'],
+      ['bakers ui', '/addons/bakers-ui/reference'],
+      ['Add a screen as a tab', '/addons/bakers-ui/tabs'],
+      ['Tickets in the terminal', '/addons/bakers-ui/tickets'],
+      ['Use the terminal UI', '/addons/bakers-ui/usage'],
+      ['bakers ui keys', '/addons/bakers-ui-keys'],
       ['Artifacts', '/addons/bakers-ui-artifacts'],
     ]),
-    group('Time', [
-      ['Time evidence', '/addons/track'],
-    ]),
-    group('Commands', [
+    group('Commands and time', [
       ['Agent catalog', '/addons/agents'],
       ['Project info', '/addons/info'],
       ['Deployment tickets', '/addons/deployment'],
+      ['bakers deployment', '/addons/deployment/reference'],
+      ['Time evidence', '/addons/track'],
     ]),
     group('Connection support', [
       ['Essentials', '/addons/essentials'],
@@ -104,75 +149,12 @@ export const SIDEBAR = {
       ['Ambient workspace', '/addons/workspace'],
       ['HTTP Basic sign-in', '/addons/auth-basic'],
     ]),
-    group('Internal and test', [
+    group('Internal test fixture', [
       ['Fake conductor fixture', '/addons/fake'],
     ]),
     group('Build your own', [
       ['Addon contracts', '/addons/build/contracts'],
-      ['Addon actions', '/addons/build/actions'],
-    ]),
-  ],
-  '/advanced/': [
-    group('Configuration', [
-      ['Which file owns what', '/advanced/configuration/'],
-      ['Hooks', '/advanced/configuration/hooks'],
-      ['Agents and models', '/advanced/configuration/agents-and-models'],
-      ['Update bakers.build', '/advanced/configuration/update'],
-      ['claude.ai limits and errors', '/advanced/configuration/claude-connector-limits'],
-      ['claude.ai project instructions', '/advanced/configuration/claude-project-instructions'],
-      ['Origin labels', '/advanced/configuration/origin-labels'],
-    ]),
-    group('Operations', [
-      ['Overview', '/advanced/'],
-      ['Machines', '/advanced/machines'],
-      ['Run security', '/advanced/run-security'],
-      ['Connections', '/advanced/connections'],
-      ['Conductors', '/advanced/conductors'],
-      ['Set up a worker server', '/advanced/worker-server'],
-      ['Set up a Coder workspace', '/advanced/coder-workspace'],
-      ['Conductor configuration', '/advanced/conductor-config'],
-      ['Server', '/advanced/server'],
-      ['Configuration migration', '/advanced/migration'],
-      ['Ticket metrics', '/advanced/ticket-metrics'],
-      ['Hosted or self-run', '/advanced/hosted-or-self-run'],
-      ['Where your code and data live', '/advanced/where-your-data-lives'],
-      ['API keys and service accounts', '/advanced/api-keys'],
-    ]),
-    group('CLI setup', [
-      ['Install the CLI', '/advanced/cli/install'],
-      ['Switch to the bakers CLI', '/advanced/cli/switch-to-bakers'],
-      ['Prepare a machine', '/advanced/cli/prepare-machine'],
-      ['Check machine tools', '/advanced/cli/check-machine-tools'],
-      ['Set up herdr', '/advanced/cli/herdr'],
-      ['Set up DDEV', '/advanced/cli/ddev'],
-      ['Set up Node.js', '/advanced/cli/node'],
-      ['Connect a project by hand', '/advanced/cli/connect-a-project'],
-      ['Run tickets from the terminal', '/advanced/cli/first-ticket'],
-      ['Terminal UI', '/advanced/cli/terminal-ui'],
-      ['Tickets in the terminal', '/advanced/cli/tickets-in-the-terminal'],
-      ['Troubleshooting', '/advanced/cli/troubleshooting'],
-    ]),
-    group('CLI reference', [
-      ['Commands', '/advanced/cli/'],
-      ['bakers oven', '/advanced/cli/conductor'],
-      ['bakers ui', '/advanced/cli/ui'],
-      ['bakers ui keys', '/advanced/cli/ui-keys'],
-      ['bakers tools', '/advanced/cli/tools'],
-      ['bakers auth', '/advanced/cli/auth'],
-      ['bakers deployment', '/advanced/cli/deployment'],
-    ]),
-    group('Development', [
-      ['Overview', '/advanced/development/'],
-      ['Build from source', '/advanced/development/build-from-source'],
-      ['Skill contract', '/advanced/development/skill-contract'],
-      ['Write a recipe', '/advanced/development/write-a-step-skill'],
-      ['Test a skill', '/advanced/development/test-skills'],
-      ['Test skill tool calls', '/advanced/development/test-skill-tools'],
-      ['Add a skill test', '/advanced/development/add-skill-test'],
-      ['Test the coding outtake', '/advanced/development/test-run-outtake'],
-      ['Architecture', '/advanced/development/architecture'],
-      ['Islands and profiles', '/advanced/development/islands-and-profiles'],
-      ['Write the docs', '/advanced/development/write-docs'],
+      ['Write an addon with inbox messages', '/addons/build/actions'],
     ]),
   ],
 }
