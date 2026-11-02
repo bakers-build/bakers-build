@@ -70,3 +70,15 @@ This single sample does not establish full-pipeline runtime or cost.
 PHPUnit, browser/integration tests and config import continue using the images built
 once by `scripts/ci/github-image-gate.sh`; runner selection does not change the gates.
 Public fork execution remains unverified and must be checked before public cutover.
+
+## Private registry rehearsal
+
+`registry-rehearsal.yml` runs only on the dedicated `ci/ghcr-rehearsal` branch or
+explicit manual dispatch. It grants `packages: write` only to its image-gate job;
+PR checks retain read-only permissions. After the full Docker/PHPUnit/browser/config
+sequence passes, the same PHP, nginx and docs images are pushed to private
+`ghcr.io/bakers-build/bakers-rehearsal-{php,nginx,docs}` packages with SHA/run tags.
+The script rejects existing non-private packages before login, verifies visibility
+after publication, pulls by digest and checks the image ID against the tested image.
+Evidence is retained in `gate-reports/registry.txt`. No `latest`/`next` tags or
+application deployment is performed. Public release clearance remains separate.

@@ -9,6 +9,28 @@ const read = (path: string) =>
   readFileSync(new URL(`../../../../${path}`, import.meta.url), 'utf8');
 
 describe('GitHub migration checks', () => {
+  it('limits registry rehearsal to an explicit branch and publishes only after the image gate', () => {
+    const workflow = parse(read('.github/workflows/registry-rehearsal.yml'));
+    expect(workflow.on.push.branches).toEqual(['ci/ghcr-rehearsal']);
+    expect(workflow.on.pull_request).toBeUndefined();
+    const job = workflow.jobs.registry;
+    expect(job.permissions).toEqual({ contents: 'read', packages: 'write' });
+    const commands = job.steps
+      .map((step: { run?: string }) => step.run || '')
+      .join('\n');
+    expect(
+      commands.indexOf('bash scripts/ci/github-image-gate.sh'),
+    ).toBeLessThan(
+      commands.indexOf('bash scripts/ci/github-registry-rehearsal.sh'),
+    );
+    expect(
+      job.steps.find(
+        (step: { name?: string }) =>
+          step.name === 'Publish and pull private images',
+      ).if,
+    ).toBeUndefined();
+  });
+
   it.each([
     'docs_pages',
     'conductor',

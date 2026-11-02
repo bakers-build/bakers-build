@@ -1,0 +1,45 @@
+name: Private registry rehearsal
+on:
+  push:
+    branches: [ci/ghcr-rehearsal]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: registry-rehearsal
+  cancel-in-progress: false
+jobs:
+  registry:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 180
+    env:
+      DOMAIN: nginx
+      STACK_NAME: gate
+      DB_NAME: db
+      DB_USER: db
+      DB_PASSWORD: db
+      DB_ROOT_PASSWORD: root
+      DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
+      REGISTRY_IMAGE_PHP: bakers-gate/php:local
+      REGISTRY_IMAGE_NGINX: bakers-gate/nginx:local
+      REGISTRY_IMAGE_E2E: bakers-gate/e2e:local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build and test the same images
+        run: bash scripts/ci/github-image-gate.sh
+      - name: Publish and pull private images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci/github-registry-rehearsal.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: image-gate-evidence
+          path: gate-reports/
+          retention-days: 7
