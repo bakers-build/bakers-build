@@ -10,7 +10,10 @@ import {
 import { toolPlugin } from '@dropsh/plugin-tool';
 import { type Command, Help } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
+import { readFile } from 'node:fs/promises';
+import { askUserQuestionDecision } from './ask-user-question-hook.js';
 import { registerTemplateCommand } from './template.js';
+import { AskError, askQuestion, siteAskApi } from './ticket-ask.js';
 import { hideUnpublishedComments } from './unpublished-comments.js';
 
 export function dropshConfigHint(resolvedPath?: string): string {
@@ -228,3 +231,100 @@ function publicAlias(
 
 export const toolsCommandPlugin = publicAlias('tools', 'tool');
 export const authCommandPlugin = publicAlias('auth', 'auth');
+
+/** A connection context for the bakers.build commands beside dropsh. */
+async function siteContext(
+  host: BbCommandHost,
+  options: { config?: string; connection?: string },
+) {
+  const opts = {
+    ...(options.config ? { explicit: options.config } : {}),
+    ...(options.connection ? { connection: options.connection } : {}),
+  };
+  const connection = await loadReadyBbConnection(host, opts);
+  return createBbConnectionContext(connection, {
+    ...opts,
+    wrapHttp: hideUnpublishedComments,
+  });
+}
+
+/** `bakers ticket ask <ticket> --body <file.md>`: ask the humans on a ticket. */
+export const ticketCommandPlugin: BbCommandPlugin = {
+  kind: 'command',
+  name: 'ticket',
+  describe: 'ask the humans on a ticket a question and wait for the answer',
+  register(program: Command, host: BbCommandHost): void {
+    program
+      .command('ticket')
+      .description('Ticket operations for agents')
+      .command('ask <ticket>')
+      .description(
+        'Publish a question comment, label the ticket "Question" and freeze it',
+      )
+      .requiredOption('--body <file>', 'Markdown file holding the question')
+      .option('--connection <name>', 'bakers.build connection to use')
+      .option('--config <path>', 'connection config file')
+      .action(
+        async (
+          ticket: string,
+          flags: { body: string; connection?: string; config?: string },
+        ) => {
+          let api: ReturnType<typeof siteAskApi> | undefined;
+          try {
+            const body = await readFile(flags.body, 'utf8');
+            api = siteAskApi(await siteContext(host, flags));
+            const result = await askQuestion(api, ticket, body);
+            process.stdout.write(`${JSON.stringify(result)}\n`);
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            const done = error instanceof AskError ? error.done : [];
+            process.stderr.write(
+              `${JSON.stringify({ error: { message, done } })}\n`,
+            );
+            process.exitCode = 1;
+          } finally {
+            await api?.close();
+          }
+        },
+      );
+  },
+};
+
+async function drain(stream: NodeJS.ReadableStream): Promise<void> {
+  if ((stream as { isTTY?: boolean }).isTTY) return;
+  for await (const _ of stream);
+}
+
+/** `bakers hook ask-user-question`: Claude's PreToolUse hook on `AskUserQuestion`. */
+export const hookCommandPlugin: BbCommandPlugin = {
+  kind: 'command',
+  name: 'hook',
+  describe: 'agent hooks for conductor runs',
+  register(program: Command, host: BbCommandHost): void {
+    program
+      .command('hook')
+      .description('Agent hooks for conductor runs')
+      .command('ask-user-question')
+      .description(
+        'Deny the terminal dialog in autopilot runs and point to `bakers ticket ask`',
+      )
+      .option('--connection <name>', 'bakers.build connection to use')
+      .option('--config <path>', 'connection config file')
+      .action(async (flags: { connection?: string; config?: string }) => {
+        await drain(process.stdin);
+        const output = await askUserQuestionDecision(
+          process.env,
+          async (ticket) => {
+            const api = siteAskApi(await siteContext(host, flags));
+            try {
+              return await api.tool('bakers_ticket_read', { ticket });
+            } finally {
+              await api.close();
+            }
+          },
+        );
+        if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
+      });
+  },
+};

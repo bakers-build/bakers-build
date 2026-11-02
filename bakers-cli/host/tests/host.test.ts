@@ -42,7 +42,7 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
     if (saved === undefined) delete process.env.BB_COMMANDS;
     else process.env.BB_COMMANDS = saved;
   });
-  it('includes official aliases and the compatibility command', () => {
+  it('includes official aliases, the compatibility command and the hook', () => {
     delete process.env.BB_COMMANDS;
     expect(resolveCommands().map((c) => c.name)).toEqual([
       'oven',
@@ -50,6 +50,8 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
       'dropsh',
       'tools',
       'auth',
+      'ticket',
+      'hook',
       'deployment',
       'agents',
       'info',
