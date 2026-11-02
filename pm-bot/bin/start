@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Start the Hermes gateway and the poller detached. Logs, readable only by you:
+# $HERMES_HOME/logs/pm-bot-gateway.log and $HERMES_HOME/logs/pm-bot-poller.log, or
+# PM_BOT_GATEWAY_LOG and PM_BOT_POLLER_LOG when the env file sets them.
+# The pid files carry a pm-bot- prefix: Hermes writes its own gateway.pid.
+set -euo pipefail
+
+BOT="$(cd "$(dirname "$0")/.." && pwd)"
+set -a; . "$BOT/.env"; set +a
+: "${HERMES_HOME:?pm-bot/.env: HERMES_HOME is not set}"
+# Every user in the allowed channels, unless an allowlist names some.
+[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=true
+
+for tool in hermes node; do
+  command -v "$tool" >/dev/null || { echo "$tool is not on PATH: see pm-bot/README.md" >&2; exit 1; }
+done
+
+LOGS="$HERMES_HOME/logs"
+mkdir -p "$LOGS"
+chmod 700 "$HERMES_HOME" "$LOGS"
+GATEWAY_LOG="${PM_BOT_GATEWAY_LOG:-$LOGS/pm-bot-gateway.log}"
+POLLER_LOG="${PM_BOT_POLLER_LOG:-$LOGS/pm-bot-poller.log}"
+# A log outside $LOGS is not covered by its folder's mode.
+for log in "$GATEWAY_LOG" "$POLLER_LOG"; do
+  : >>"$log"
+  chmod 600 "$log"
+done
+
+. "$BOT/lib/running.sh"
+
+if running "$HERMES_HOME/pm-bot-gateway.pid" gateway; then
+  echo "gateway already running (pid $(cat "$HERMES_HOME/pm-bot-gateway.pid"))"
+else
+  nohup hermes gateway >"$GATEWAY_LOG" 2>&1 &
+  echo $! >"$HERMES_HOME/pm-bot-gateway.pid"
+  echo "gateway started (pid $!)"
+fi
+
+if running "$HERMES_HOME/pm-bot-poller.pid" poller.mjs; then
+  echo "poller already running (pid $(cat "$HERMES_HOME/pm-bot-poller.pid"))"
+else
+  nohup node "$BOT/poller/poller.mjs" >"$POLLER_LOG" 2>&1 &
+  echo $! >"$HERMES_HOME/pm-bot-poller.pid"
+  echo "poller started (pid $!)"
+fi
