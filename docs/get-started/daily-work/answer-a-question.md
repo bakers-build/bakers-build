@@ -12,4 +12,4 @@ The next run reads every comment after the question as the answer and continues 
 
 **Done when:** the label is gone, the ticket is unfrozen, and the next run's result reflects your answer.
 
-An agent in an autopilot run never waits on a terminal dialog: the question always goes to the ticket.
+An agent in an autopilot run never waits on a terminal dialog: with Claude, a `PreToolUse` hook (`bakers hook ask-user-question`) denies `AskUserQuestion` when the state approves automatically or the ticket carries the label *Autopilot*, and points the agent to `bakers ticket ask`. The resumed session launches with `--resume`.
