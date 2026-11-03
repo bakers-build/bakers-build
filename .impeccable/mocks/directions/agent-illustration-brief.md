@@ -12,7 +12,7 @@ Four tool figures, one per station of the line. They are the agents: they **work
 |---|---|---|---|
 | Plan | Kitchen scale with a paper ticket on its plate | careful, attentive | looks at the ticket, the dial needle moves |
 | Build | Oven with a terminal window `>_` (also the product mark) | diligent, calm, warm | steam rises, a prompt in the window |
-| Review | Magnifier | precise, curious, a second look | looks closely; the eye behind the lens is magnified |
+| Review | Magnifier | precise, curious, a second look | looks closely through the lens |
 | Ship | Bun (the finished roll) | content, done | sits ready, a small sparkle |
 
 Decided 2026-11-03: scale, oven and bun stay; the magnifier replaces the pastry brush, because glazing adds something while review checks it.
@@ -23,7 +23,7 @@ Fix in the current bun: it holds a small magnifier of its own. It goes, because 
 
 - **Monoline:** one rye stroke `#2B2116`, the same weight everywhere (about 3 px at a 120 px figure), round caps.
 - **Fill:** paper `#FFFDF8`. At most **one** flat accent per figure: butter `#F3CE3A`, lime `#BFE07A`, rose `#F4AFC0` or crust `#B8692E`.
-- **Eyes:** googly eyes, two circles with pupils that show where the figure looks. **A small, subtle smile** (a short shallow arc under the eyes, about half the eye span wide), no cheeks, no arms or legs. Decided 2026-11-03; the toast brand mark (359:862) is the reference.
+- **Eyes:** googly eyes, two circles of the same size with pupils that show where the figure looks. The eyes sit side by side with a small gap and never overlap. **A small, subtle smile** (a short shallow arc under the eyes, about half the eye span wide), no cheeks, no arms or legs. Decided 2026-11-03; the toast brand mark (359:862) is the reference.
 - **Action marks:** small strokes for sparks, steam or a "!", so the figure is visibly at work.
 - **Flat:** no gradients, no shadows, no 3D, no texture.
 - **One series:** same view (front or slight three-quarter), same proportions, same stroke weight, transparent background, square.
@@ -48,13 +48,13 @@ Final art may still go to an illustrator (brand foundation, section 10).
 
 **Base style.** Put this in front of every figure:
 
-> Flat monoline character illustration, single continuous dark brown outline (#2B2116), uniform medium stroke weight, rounded line caps, off-white fill (#FFFDF8), one flat accent color only, two round googly eyes with pupils, a small subtle smile, no cheeks, no arms, no legs, small action marks (sparks, steam lines), no gradients, no shadows, no 3D, no texture, transparent background, centered, square format, calm and capable, not cute, editorial food-brand style like graza.co
+> Flat monoline character illustration, single continuous dark brown outline (#2B2116), uniform medium stroke weight, rounded line caps, off-white fill (#FFFDF8), one flat accent color only, two round googly eyes of equal size side by side, not overlapping, with pupils, a small subtle smile, no cheeks, no arms, no legs, small action marks (sparks, steam lines), no gradients, no shadows, no 3D, no texture, transparent background, centered, square format, calm and capable, not cute, editorial food-brand style like graza.co
 
 **Per figure.** Append one of these:
 
 - **Scale:** "A kitchen scale character with a paper ticket on its plate, eyes looking attentively at the ticket, needle on the dial moving, accent color butter yellow (#F3CE3A)."
 - **Oven:** "A small oven character, its window shows a terminal prompt '>_', three gentle steam lines rising, eyes on the control panel, accent color crust brown (#B8692E) only on the window frame."
-- **Magnifier:** "A magnifying glass character, the lens is its face, one googly eye seen through the lens looks bigger than the other, a small shine mark on the glass, curious and attentive, accent color rose (#F4AFC0) on the handle."
+- **Magnifier:** "A magnifying glass character, the lens is its face, two equal googly eyes inside the lens, a small shine mark on the glass, curious and attentive, accent color rose (#F4AFC0) on the handle."
 - **Bun:** "A round bread roll character with a scored top, sitting ready, content and calm, small sparkle marks, accent color butter yellow (#F3CE3A) on the crust."
 
 **Consistency.** From the second figure on, add: "Same style, stroke weight and proportions as the reference image."
@@ -63,7 +63,7 @@ Final art may still go to an illustrator (brand foundation, section 10).
 
 - [ ] All four read as one series: same stroke, view and size.
 - [ ] One rye stroke, one accent, paper fill, no gradients.
-- [ ] Eyes and a small subtle smile, no cheeks. Reads as capable and friendly, not cute.
+- [ ] Two eyes of equal size that do not overlap, and a small subtle smile, no cheeks. Reads as capable and friendly, not cute.
 - [ ] Still recognizable at 22 px.
 - [ ] No random detail: every element shows what the station does.
 - [ ] SVG, transparent, no embedded raster.
