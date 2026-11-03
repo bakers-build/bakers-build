@@ -334,7 +334,10 @@ describe('virtual skill files', () => {
       '../../../../tests/skill-eval/fixtures.mjs'
     );
     const route = JSON.parse(
-      await readFile(new URL('fixtures/frame-recipe-route.json', evalRoot), 'utf8'),
+      await readFile(
+        new URL('fixtures/frame-recipe-route.json', evalRoot),
+        'utf8',
+      ),
     );
     const dir = await mkdtemp(join(tmpdir(), 'virtual-skill-'));
     const load = async (paths: string[]) => {

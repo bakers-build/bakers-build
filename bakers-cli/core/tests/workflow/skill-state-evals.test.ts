@@ -130,7 +130,11 @@ describe('ticket pingpong profile', () => {
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
     simulation: {
-      ticket: { id: ticket, identifier: 'EVAL-61', labels: ['ticket:pingpong'] },
+      ticket: {
+        id: ticket,
+        identifier: 'EVAL-61',
+        labels: ['ticket:pingpong'],
+      },
     },
     rubric: [{ id: 'probe', criterion: 'Probe.' }],
   });
@@ -160,7 +164,12 @@ describe('ticket pingpong profile', () => {
     state: 'working',
     review_status: 'Not OK',
   });
-  const back = [readTicket(), verdict('Not OK'), summary, transition('working')];
+  const back = [
+    readTicket(),
+    verdict('Not OK'),
+    summary,
+    transition('working'),
+  ];
 
   it('accepts one customer question with the label and the freeze', async () => {
     const q = fixture({ stop: 'question' });
@@ -177,9 +186,9 @@ describe('ticket pingpong profile', () => {
   });
   it('technical problem never asks the customer', async () => {
     const p = fixture({ stop: 'technical-problem' });
-    expect(await judge(p, 'Stopped.', [readTicket(), problem, reported])).toEqual(
-      [],
-    );
+    expect(
+      await judge(p, 'Stopped.', [readTicket(), problem, reported]),
+    ).toEqual([]);
     expect(
       await judge(p, 'Stopped.', [readTicket(), question, problem, reported]),
     ).toEqual(['pingpong-question']);
@@ -236,9 +245,9 @@ describe('ticket pingpong profile', () => {
     const decided =
       '## Decisions\n\n- Reuse `writeCsv`: it already serves two exports.';
     expect(await judge(decide, decided, [readTicket()])).toEqual([]);
-    expect(
-      await judge(decide, 'Reused the helper.', [readTicket()]),
-    ).toEqual(['pingpong-decision']);
+    expect(await judge(decide, 'Reused the helper.', [readTicket()])).toEqual([
+      'pingpong-decision',
+    ]);
   });
   it('rejects an incomplete expectation', async () => {
     for (const e of [
