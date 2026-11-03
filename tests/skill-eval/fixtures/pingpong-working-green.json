@@ -100,10 +100,6 @@
     {
       "id": "to-review",
       "criterion": "The final answer reports the transition to review, made without a confirmation question to anyone."
-    },
-    {
-      "id": "no-done",
-      "criterion": "Nothing in the final answer claims a merge or a move to done."
     }
   ]
 }

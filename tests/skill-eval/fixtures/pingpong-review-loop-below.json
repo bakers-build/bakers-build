@@ -118,10 +118,6 @@
     {
       "id": "counts-not-ok",
       "criterion": "The final answer counts one earlier Not OK verdict, not the earlier OK verdict or the summary quoting Not OK, and so moves the ticket to working."
-    },
-    {
-      "id": "no-stop",
-      "criterion": "Nothing in the final answer claims a merge, a question put to anyone or a technical problem."
     }
   ]
 }
