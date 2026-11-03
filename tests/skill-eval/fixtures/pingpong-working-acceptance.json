@@ -105,7 +105,7 @@
     },
     {
       "id": "content-only",
-      "criterion": "The question the final answer reports is about the result only: it names no command, test, commit, branch or other technical detail."
+      "criterion": "The final answer describes the question as covering what changed, how to check it and the tunnel link, and names no command, test, commit or branch as part of the question."
     }
   ]
 }
