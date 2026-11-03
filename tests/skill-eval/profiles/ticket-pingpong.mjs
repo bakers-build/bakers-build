@@ -17,6 +17,8 @@ export function validate(f) {
     'Expected expect.state working, review or done exactly for a transition');
   requireValue((e.stop === 'technical-problem') === nonempty(e.cause), 'Expected expect.cause exactly for a technical problem');
   requireValue(e.link === undefined || (e.stop === 'question' && nonempty(e.link)), 'Expected expect.link only for a user question');
+  requireValue(e.hidden === undefined || (e.link !== undefined && Array.isArray(e.hidden) && e.hidden.every(nonempty)),
+    'Expected expect.hidden as technical terms of an acceptance question');
   requireValue(e.stop !== 'none' || nonempty(e.decision), 'Expected expect.decision for a run that does not stop');
   requireValue(e.review_status === undefined || ['OK', 'Not OK'].includes(e.review_status), 'Expected review_status OK or Not OK');
 }
@@ -83,6 +85,11 @@ function analyze(f, output, context) {
   if (e.link) {
     checks.push(check('pingpong-link', String(arg(headed('Question')[0], 'body')).includes(e.link),
       `Put the tunnel link (${e.link}) in the user question`));
+  }
+  if (e.hidden) {
+    const body = String(arg(headed('Question')[0], 'body'));
+    checks.push(check('pingpong-plain', e.hidden.every(t => !body.includes(t)),
+      `Keep technical details (${e.hidden.join(', ')}) out of the acceptance question`));
   }
   return { checks, diagnostics };
 }

@@ -335,6 +335,23 @@ describe('ticket pingpong profile', () => {
       await judge(accept, 'Asked.', [readTicket(), question, asked]),
     ).toEqual(['pingpong-link']);
   });
+  it('keeps technical details out of the acceptance question', async () => {
+    const plain = fixture({
+      stop: 'question',
+      link: tunnel,
+      hidden: ['f00dfee', 'pull/61'],
+    });
+    expect(await judge(plain, 'Asked.', [readTicket(), shown, asked])).toEqual(
+      [],
+    );
+    const technical = comment(
+      'comment',
+      `# Question\n\nAll criteria pass at f00dfee. Try it at ${tunnel}.\n\n1. Accept (recommended)\n2. Ask for changes`,
+    );
+    expect(
+      await judge(plain, 'Asked.', [readTicket(), technical, asked]),
+    ).toEqual(['pingpong-plain']);
+  });
   it('run ends after the decisive write', async () => {
     expect(await judge(notOk, 'Back.', [...back, summary])).toEqual([
       'pingpong-run-ends',
