@@ -1,0 +1,30 @@
+name: Fork permission probe
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  fork_permissions:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Verify secret isolation and read-only token
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORK_SENTINEL: ${{ secrets.CI_FORK_SENTINEL }}
+          SOURCE_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          test "$SOURCE_REPOSITORY" != "$GITHUB_REPOSITORY"
+          test -z "$FORK_SENTINEL"
+          probe="ci/fork-token-probe-$GITHUB_RUN_ID"
+          jq -n --arg ref "refs/heads/$probe" --arg sha "$BASE_SHA" '{ref:$ref,sha:$sha}' > /tmp/probe.json
+          code=$(curl -sS -o /tmp/probe-response.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Content-Type: application/json' \
+            -X POST --data-binary @/tmp/probe.json "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/git/refs")
+          if [ "$code" = 201 ]; then
+            curl -fsS -X DELETE -H "Authorization: Bearer $GH_TOKEN" "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/git/refs/heads/$probe"
+            echo 'Unexpected repository write permission' >&2
+            exit 1
+          fi
+          test "$code" = 403
+          echo 'Fork has no repository secret; write attempt rejected with HTTP 403.'
