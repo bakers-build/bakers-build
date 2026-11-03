@@ -1,0 +1,61 @@
+{
+  "id": "ticket-answer-calls",
+  "synthetic": true,
+  "profile": "ticket-answer-calls",
+  "execution": "simulated-tools",
+  "skill": "bb-ticket-answer",
+  "references": [
+    "bb-workflow/references/tools.md"
+  ],
+  "input": {
+    "task": "You are the host agent of a conversation about bakers.build tickets. Apply the skill to the conversation below with the actual fixture tools, then give your one reply to the conversation.",
+    "host": {
+      "ticket": "EVAL-30",
+      "requester": "Mara Lind (U-MARA)"
+    },
+    "conversation": [
+      {
+        "from": "Jonas Berg (U-JONAS)",
+        "text": "About EVAL-30: leave cancelled invoices out, export only paid and open ones."
+      }
+    ]
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-30",
+      "title": "Export invoices as CSV",
+      "state": "working",
+      "workflow": "bb_work",
+      "type": "feature",
+      "recipe": "superpowers",
+      "description": "Operators export the invoice list as CSV from the invoice page.\n\nRequested by Mara Lind (U-MARA).\n",
+      "labels": [
+        "Question"
+      ],
+      "frozen": true
+    },
+    "comments": [
+      {
+        "id": "77777777-7777-4777-8777-000000000001",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "comment",
+        "body": "# Question\n\nShould the CSV export include cancelled invoices, or only paid and open ones?\n",
+        "created": "2026-01-01T01:00:00+00:00",
+        "author": "fixture-agent"
+      }
+    ],
+    "files": {}
+  },
+  "expect": {
+    "pass_on": true,
+    "answerer": "Jonas Berg",
+    "answer_phrase": "cancelled"
+  },
+  "rubric": [
+    {
+      "id": "reply-honest",
+      "criterion": "Replies in about one line that the answer reached ticket EVAL-30, named for Jonas Berg; claims nothing the tool trace does not show."
+    }
+  ]
+}

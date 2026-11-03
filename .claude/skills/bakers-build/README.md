@@ -22,6 +22,7 @@ field, a provision hint or a subagent start selects. Exactly thirteen ship:
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
 | `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
 | `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, change its scope, prepare time proposals. |
+| `@bakers-build/bb-ticket-answer` | Pass an answer to a ticket's open question back, in any host. |
 
 **The grid.** A run is state × phase. `qualification`, `plan`, `working` and `review` each have a
 state file under `skills/bb-workflow/references/` with exactly seven `## <phase>` sections, which

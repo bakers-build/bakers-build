@@ -843,3 +843,109 @@ describe('failed-fetch reporting', () => {
     ).toContain('reported-evidence');
   });
 });
+
+describe('answers to a ticket question', () => {
+  // Calls run through the simulator, so the graded results are the simulator's.
+  async function answerTrace(id: string, steps: Array<[string, unknown]>) {
+    const { fixture, profile } = await fixtureData(id);
+    const argvs = steps.map(([tool, args]) => [
+      'bakers',
+      'tools',
+      `tool_api__${tool}`,
+      '--data',
+      JSON.stringify(args),
+    ]);
+    const results = await runSimulator(
+      fixture.simulation,
+      argvs.map((argv) => ({ name: 'bakers', arguments: { argv } })),
+    );
+    const trace = argvs.map((argv, i) => ({
+      tool: 'bakers',
+      arguments: { argv },
+      result: results[i],
+    }));
+    const grade = (output: string, rows: unknown[] = trace) =>
+      failing(profile.checkOutput(fixture, output, { tool_trace: rows }));
+    return { grade, trace };
+  }
+  const read: [string, unknown] = ['bakers_ticket_read', { ticket: 'EVAL-30' }];
+  const answer = (body: string): [string, unknown] => [
+    'bakers_comment_publish',
+    { ticket: 'EVAL-30', type: 'comment', body },
+  ];
+  const unfreeze = (args: Record<string, unknown> = {}): [string, unknown] => [
+    'bakers_ticket_update',
+    { ticket: 'EVAL-30', labels_remove: ['Question'], frozen: false, ...args },
+  ];
+  const jonas = answer(
+    'Answered by Jonas Berg (U-JONAS):\n\nLeave cancelled invoices out.\n',
+  );
+
+  it('passes an answer on as one named comment, then labels_remove and frozen false', async () => {
+    const { grade, trace } = await answerTrace('ticket-answer-calls', [
+      read,
+      jonas,
+      unfreeze(),
+    ]);
+    expect(grade('Passed on.')).toEqual([]);
+    expect(grade('Passed on.', [trace[0], trace[2], trace[1]])).toContain(
+      'answer-passed-on',
+    );
+    expect(grade('Passed on.', trace.slice(1))).toContain('read-first');
+    const requester = await answerTrace('ticket-answer-calls', [
+      read,
+      answer(
+        'Answered by Mara Lind (U-MARA):\n\nLeave cancelled invoices out.\n',
+      ),
+      unfreeze(),
+    ]);
+    expect(requester.grade('Passed on.')).toContain('answer-passed-on');
+    const stillFrozen = await answerTrace('ticket-answer-calls', [
+      read,
+      jonas,
+      [
+        'bakers_ticket_update',
+        { ticket: 'EVAL-30', labels_remove: ['Question'] },
+      ],
+    ]);
+    expect(stillFrozen.grade('Passed on.')).toContain('answer-passed-on');
+    const extra = await answerTrace('ticket-answer-calls', [
+      read,
+      jonas,
+      unfreeze({ title: 'Renamed' }),
+    ]);
+    expect(extra.grade('Passed on.')).toContain('answer-passed-on');
+  });
+
+  it('passes nothing on for a settled question, a technical problem or a merge outside next', async () => {
+    for (const id of [
+      'ticket-answer-settled',
+      'ticket-answer-merge-main',
+      'ticket-answer-merge-untargeted',
+    ]) {
+      const held = await answerTrace(id, [read]);
+      expect(held.grade('Nothing passed on.')).toEqual([]);
+      const written = await answerTrace(id, [read, jonas, unfreeze()]);
+      expect(written.grade('Passed on.')).toContain('nothing-passed-on');
+    }
+    const technical = await answerTrace('ticket-answer-technical', [read]);
+    expect(technical.grade('A technical problem; keytec solves it.')).toEqual(
+      [],
+    );
+    expect(technical.grade('A technical problem.')).toEqual(['reply-names']);
+    const merge = await answerTrace('ticket-answer-merge', [
+      read,
+      answer('Answered by Jonas Berg (U-JONAS):\n\nYes, merge it.\n'),
+      unfreeze(),
+    ]);
+    expect(merge.grade('Passed on.')).toEqual([]);
+  });
+
+  it('calls only the seven bakers tools the skill names', async () => {
+    const { grade } = await answerTrace('ticket-answer-settled', [
+      read,
+      ['bakers_ticket_runs_list', { ticket: 'EVAL-30' }],
+    ]);
+    expect(grade('Settled.')).toContain('seven-tools');
+  });
+});

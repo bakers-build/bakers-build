@@ -1,0 +1,77 @@
+{
+  "id": "ticket-answer-technical",
+  "synthetic": true,
+  "profile": "ticket-answer-calls",
+  "execution": "simulated-tools",
+  "skill": "bb-ticket-answer",
+  "references": [
+    "bb-workflow/references/tools.md"
+  ],
+  "input": {
+    "task": "You are the host agent of a conversation about bakers.build tickets. Apply the skill to the conversation below with the actual fixture tools, then give your one reply to the conversation.",
+    "host": {
+      "ticket": "EVAL-30",
+      "requester": "Mara Lind (U-MARA)"
+    },
+    "conversation": [
+      {
+        "from": "Jonas Berg (U-JONAS)",
+        "text": "EVAL-30 is stuck. My answer: just restart the run with yesterday's database dump."
+      }
+    ]
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-30",
+      "title": "Export invoices as CSV",
+      "state": "working",
+      "workflow": "bb_work",
+      "type": "feature",
+      "recipe": "superpowers",
+      "description": "Operators export the invoice list as CSV from the invoice page.\n\nRequested by Mara Lind (U-MARA).\n",
+      "labels": [
+        "Question",
+        "technical problem"
+      ],
+      "frozen": true
+    },
+    "comments": [
+      {
+        "id": "77777777-7777-4777-8777-000000000001",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "comment",
+        "body": "# Question\n\nShould the CSV export include cancelled invoices, or only paid and open ones?\n",
+        "created": "2026-01-01T01:00:00+00:00",
+        "author": "fixture-agent"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000003",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "comment",
+        "body": "# Technical problem\n\nThe run cannot reach the project database; the environment has to be restored. Contact keytec.\n",
+        "created": "2026-01-01T03:00:00+00:00",
+        "author": "fixture-agent"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000004",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "summary",
+        "body": "Run stopped on a technical problem.\n",
+        "created": "2026-01-01T04:00:00+00:00",
+        "author": "fixture-agent"
+      }
+    ],
+    "files": {}
+  },
+  "expect": {
+    "pass_on": false,
+    "reply_names": "keytec"
+  },
+  "rubric": [
+    {
+      "id": "technical",
+      "criterion": "Explains in a short reply why nothing was passed on (a technical problem that keytec solves) and claims no ticket change. Shows the technical-problem note."
+    }
+  ]
+}

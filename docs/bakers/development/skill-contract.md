@@ -6,7 +6,7 @@ bakers.build ships no workflow engine and no loader. It ships skills, which are 
 
 ## Skills and references
 
-A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships thirteen:
+A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships fifteen:
 
 | Skill | Chosen by |
 |---|---|
@@ -19,6 +19,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-verdict` | the review state, as its subagent's start |
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person, for a ticket or time proposals |
+| `bb-ticket-answer` | a person or the host, for a ticket's open question or technical problem |
 
 Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, reading the ticket, publishing a comment, provisioning, verification, the browser surface, the intake and outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
 
