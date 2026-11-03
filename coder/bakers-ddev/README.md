@@ -129,7 +129,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 | `pm_bot_bakers_client_id` | yes | API key client ID |
 | `pm_bot_bakers_client_secret` | yes | API key secret (masked) |
 | `pm_bot_project` | yes | Project UUID |
-| `pm_bot_ticket_workflow` | no | `bb_work` (default), or `bb_autopilot` for automatic approvals |
+| `pm_bot_ticket_workflow` | no | Workflow of the tickets the bot creates, default `bb_work` |
 | `pm_bot_conductor` | no | Conductor UUID set on each new ticket |
 | `pm_bot_anthropic_api_key` | one of two | Anthropic API key (masked). Use it for a shared bot |
 | `pm_bot_claude_oauth_token` | one of two | Token from `claude setup-token`, for tests (masked). Set exactly one of the two |

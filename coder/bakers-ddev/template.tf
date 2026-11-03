@@ -265,7 +265,7 @@ data "coder_parameter" "pm_bot_project" {
 data "coder_parameter" "pm_bot_ticket_workflow" {
   name         = "pm_bot_ticket_workflow"
   display_name = "PM bot: ticket workflow"
-  description  = "Workflow of the tickets the bot creates: bb_work, or bb_autopilot for automatic approvals."
+  description  = "Workflow of the tickets the bot creates (default bb_work)."
   type         = "string"
   default      = "bb_work"
   mutable      = true
