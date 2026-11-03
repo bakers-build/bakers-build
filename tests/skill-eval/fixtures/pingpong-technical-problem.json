@@ -1,7 +1,7 @@
 {
   "id": "pingpong-technical-problem",
   "synthetic": true,
-  "profile": "ticket-pingpong",
+  "profile": "bb-pingpong",
   "execution": "simulated-tools",
   "skill": "bb-pingpong",
   "references": [

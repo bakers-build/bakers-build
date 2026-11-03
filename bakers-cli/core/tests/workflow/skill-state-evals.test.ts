@@ -119,14 +119,14 @@ describe('frame routing profile', () => {
   });
 });
 
-describe('ticket pingpong profile', () => {
+describe('bb-pingpong profile', () => {
   const fixture = (
     expect: Record<string, unknown>,
     simulation: Record<string, unknown> = {},
   ) => ({
     id: 'pingpong-probe',
     synthetic: true,
-    profile: 'ticket-pingpong',
+    profile: 'bb-pingpong',
     execution: 'simulated-tools',
     skill: 'bb-pingpong',
     references: [],
