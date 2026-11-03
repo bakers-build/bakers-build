@@ -46,18 +46,13 @@ recommended one marked. Then `bakers_ticket_update` with `labels_add: ["Question
 
 ## Technical problem
 
-One comment of type `comment` with exactly this shape:
+Record what failed, with its command and output, in the state's typed handoff. Then publish one
+comment of type `comment`, exactly:
 
 ```markdown
 # Technical problem
 
-<what failed, at which step>
-
-<evidence: command, output excerpt, revision>
-
-<what keytec must do to unblock it>
-
-This is not a question for you: please contact keytec, who will solve it and release the ticket.
+Please contact keytec.
 ```
 
 Then `bakers_ticket_update` with `labels_add: ["technical problem"]` and `frozen: true`; the

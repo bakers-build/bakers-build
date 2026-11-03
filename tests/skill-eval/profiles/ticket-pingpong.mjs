@@ -4,6 +4,8 @@ import { nonempty, requireValue } from '../validation.mjs';
 // A ticket:pingpong run: where it stops (user question, technical problem, transition, hold or
 // not at all), that a technical problem never reaches the user, and that nothing follows the stop.
 const STOPS = ['none', 'question', 'technical-problem', 'transition', 'hold'];
+// The user reads only this note; the cause and output go into the state's handoff.
+const KEYTEC = '# Technical problem\n\nPlease contact keytec.';
 
 export function validate(f) {
   validateTools(f, 'bb-ticket-pingpong');
@@ -39,9 +41,9 @@ function analyze(f, output, context) {
       e.stop === 'question' ? 'Ask one user question: a # Question comment, then the Question label and the freeze'
         : 'Ask the user nothing: no # Question comment and no Question label'),
     check('pingpong-technical-problem', e.stop === 'technical-problem'
-      ? raised('Technical problem', 'technical problem') && /contact keytec/i.test(arg(headed('Technical problem')[0], 'body'))
+      ? raised('Technical problem', 'technical problem') && arg(headed('Technical problem')[0], 'body').trim() === KEYTEC
       : absent('Technical problem', 'technical problem'),
-    e.stop === 'technical-problem' ? 'Report one technical problem: the comment with the keytec note, then the label and the freeze'
+    e.stop === 'technical-problem' ? 'Report one technical problem: exactly the keytec note, then the label and the freeze'
       : 'Report no technical problem'),
     check('pingpong-no-stop', ['question', 'technical-problem'].includes(e.stop) || !updates.some(c => arg(c, 'frozen') === true),
       'Freeze the ticket only for a user question or a technical problem'),

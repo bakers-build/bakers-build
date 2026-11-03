@@ -149,11 +149,9 @@ describe('ticket pingpong profile', () => {
     '# Question\n\nDoes the export include cancelled invoices?\n\n1. Yes (recommended)\n2. No',
   );
   const asked = update({ labels_add: ['Question'], frozen: true });
-  const keytec =
-    'This is not a question for you: please contact keytec, who will solve it and release the ticket.';
   const problem = comment(
     'comment',
-    `# Technical problem\n\n\`ddev start\` failed twice.\n\n${keytec}`,
+    '# Technical problem\n\nPlease contact keytec.\n',
   );
   const reported = update({ labels_add: ['technical problem'], frozen: true });
   const verdict = (status: string) =>
@@ -203,6 +201,17 @@ describe('ticket pingpong profile', () => {
       await judge(p, 'Stopped.', [
         readTicket(),
         comment('comment', '# Technical problem\n\nDocker is down.'),
+        reported,
+      ]),
+    ).toEqual(['pingpong-technical-problem']);
+    // The cause and output belong in the handoff; the user reads only the keytec note.
+    expect(
+      await judge(p, 'Stopped.', [
+        readTicket(),
+        comment(
+          'comment',
+          '# Technical problem\n\n`ddev start` failed: Docker is down.\n\nPlease contact keytec.',
+        ),
         reported,
       ]),
     ).toEqual(['pingpong-technical-problem']);
