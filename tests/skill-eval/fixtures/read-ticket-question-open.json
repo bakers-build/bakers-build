@@ -1,0 +1,50 @@
+{
+  "id": "read-ticket-question-open",
+  "synthetic": true,
+  "profile": "read-ticket-question",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow/references/read-ticket.md",
+  "references": [
+    "bb-workflow/references/tools.md"
+  ],
+  "input": {
+    "task": "A new working-state run starts on ticket EVAL-21. Read the ticket with the supplied skill and continue only as far as it allows. Tool calls are authorized only in this synthetic fixture.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111121",
+    "question_comment": "22222222-2222-4222-8222-000000000002"
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111121",
+      "identifier": "EVAL-21",
+      "state": "working",
+      "workflow": "bb_work",
+      "title": "Export the invoice list as CSV",
+      "description": "Offer a CSV export of the invoice list.",
+      "labels": ["Backend", "Question"],
+      "frozen": false
+    },
+    "comments": [
+      {
+        "id": "22222222-2222-4222-8222-000000000001",
+        "ticket": "11111111-1111-4111-8111-111111111121",
+        "type": "qualification",
+        "body": "Qualified as a feature. AC-1: The invoice list offers a CSV export.",
+        "created": "2026-01-01T09:00:00+00:00"
+      },
+      {
+        "id": "22222222-2222-4222-8222-000000000002",
+        "ticket": "11111111-1111-4111-8111-111111111121",
+        "type": "comment",
+        "body": "# Question\n\nShould the export keep the old CSV column order?\n\n1. Keep the old order (recommended)\n2. Follow the invoice list order\n\nAnswer in a comment, then remove the label *Question* and unfreeze the ticket.\n",
+        "created": "2026-01-01T10:00:00+00:00"
+      }
+    ],
+    "files": {}
+  },
+  "rubric": [
+    {
+      "id": "waits",
+      "criterion": "Recognizes the open question (the label Question is still on the ticket and no comment follows it), does no state work, and reports that it waits for an answer to the question comment."
+    }
+  ]
+}

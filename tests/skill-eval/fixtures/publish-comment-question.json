@@ -1,0 +1,47 @@
+{
+  "id": "publish-comment-question",
+  "synthetic": true,
+  "profile": "publish-comment-question",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow/references/publish-comment.md",
+  "references": [
+    "bb-workflow/references/ticket-writes.md",
+    "bb-workflow/references/tools.md"
+  ],
+  "input": {
+    "task": "You are in the working state of ticket EVAL-20 and need a decision before you can continue. Ask it the way the supplied skill prescribes, then end the run. Tool calls are authorized only in this synthetic fixture.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "question": "Should the invoice export keep the old CSV column order, or follow the new order of the invoice list?",
+    "context": "The confirmed scope asks for a CSV export of the invoice list but names no column order. Two customers import the old file into their bookkeeping; the new order matches the screen.",
+    "choices": [
+      "Keep the old column order, so existing imports keep working (recommended)",
+      "Follow the invoice list order, and tell the two customers"
+    ],
+    "observations": [
+      "The ticket, its comments, the repository and the confirmed scope were read; none of them settles the column order.",
+      "This is not a plan or verdict approval, a merge authorization, a prior-art hit or the coding gate."
+    ]
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-20",
+      "state": "working",
+      "workflow": "bb_work",
+      "title": "Export the invoice list as CSV",
+      "labels": ["Backend"],
+      "frozen": false
+    },
+    "files": {}
+  },
+  "rubric": [
+    {
+      "id": "question-shape",
+      "criterion": "The published comment states the question with its context, lists both choices as a numbered list with the recommended one marked, and tells the human to answer in a comment, remove the label Question and unfreeze the ticket."
+    },
+    {
+      "id": "run-ends",
+      "criterion": "After the label and freeze, the run ends: it prints the question and its comment id, and publishes no summary, transitions nothing and does no further work."
+    }
+  ]
+}
