@@ -141,7 +141,7 @@ Then('the user overview shows the name {string} and no developer title', async (
   const body = page.locator(CONTENT_ISLAND);
   await expect(body.locator('[data-person-mark]')).toHaveCount(1);
   await expect(body).toContainText(displayName);
-  await expect(body).not.toContainText('Developer title');
+  await expect(body).not.toContainText('Position');
 });
 
 Then('the user overview does not disclose the mail of {string}', async ({ page }, name: string) => {

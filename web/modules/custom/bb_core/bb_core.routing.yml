@@ -508,3 +508,17 @@ bb_core.onboarding:
     _title: 'What should we call you?'
   requirements:
     _user_is_logged_in: 'TRUE'
+
+# Position and background only, the profile a human sets in onboarding.
+# Access is the user entity operation `edit profile`, separate from `update`
+# (UserProfileAccessHooks); bearer clients are excluded.
+bb_core.user.profile:
+  path: '/user/{user}/profile'
+  defaults:
+    _entity_form: 'user.profile'
+    _title: 'Profile'
+  requirements:
+    _entity_access: 'user.edit profile'
+    user: '\d+'
+  options:
+    _auth: ['cookie']

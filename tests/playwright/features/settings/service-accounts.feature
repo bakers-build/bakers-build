@@ -56,6 +56,13 @@ Feature: Workspace service accounts settings tab
     Then the service account is listed as disabled
     And the service account offers no Manage API keys or Disable action
 
+  Scenario: The workspace administrator sets a service account's position and background
+    Given I am signed in as the workspace administrator
+    And I have created a service account named "profile-bot" through the Service Accounts screen
+    When I save the service account's profile with position "Release bot" and background "Ships tagged builds"
+    Then the service account is listed as active without its secret
+    And the service account's profile shows position "Release bot" and background "Ships tagged builds"
+
   @nojs
   Scenario: Creating a service account without JavaScript works through the full-page form
     Given I am signed in as the workspace administrator

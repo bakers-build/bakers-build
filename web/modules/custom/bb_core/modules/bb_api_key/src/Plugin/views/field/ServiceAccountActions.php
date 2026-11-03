@@ -17,8 +17,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * One row's account status badge and its actions menu.
  *
- * The menu links to the account's API keys page (the same list a person
- * sees for their own keys) and offers Disable.
+ * The menu links to the account's Profile (position and background), its
+ * API keys page (the same list a person sees for their own keys) and offers
+ * Disable.
  *
  * Status is read from the user here because core only shows another
  * account's `status` field to holders of `administer users`, which a
@@ -95,7 +96,7 @@ final class ServiceAccountActions extends FieldPluginBase {
   }
 
   /**
-   * The menu items: Manage API keys, Disable.
+   * The menu items: Profile, Manage API keys, Disable.
    *
    * @param \Drupal\user\UserInterface $user
    *   The service account.
@@ -106,7 +107,12 @@ final class ServiceAccountActions extends FieldPluginBase {
    *   The items, in order.
    */
   private function items(UserInterface $user, array $route): array {
+    $list = Url::fromRoute('view.bb_service_accounts.settings', ['bb_workspace' => $route['bb_workspace']])->toString();
     return [
+      [
+        'label' => (string) $this->t('Profile'),
+        'url' => Url::fromRoute('bb_core.user.profile', ['user' => $user->id()], ['query' => ['destination' => $list]])->toString(),
+      ],
       [
         'label' => (string) $this->t('Manage API keys'),
         'url' => Url::fromRoute('view.bb_api_keys.page', ['user' => $user->id()])->toString(),
