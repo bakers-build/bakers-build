@@ -49,8 +49,7 @@
         }
       ],
       "prior_art": "Ticket search for invoice/invoices and CSV: negative. Remote base check on origin/develop aaaaaaa: negative.",
-      "handoff_version": 1,
-      "provenance": "fixture-revision-1"
+      "handoff_version": 1
     }
   },
   "expect": {
