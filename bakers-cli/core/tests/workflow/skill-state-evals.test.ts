@@ -46,12 +46,12 @@ const readTicket = (fields = {}) =>
   call('bakers_ticket_read', { ticket }, { id: ticket, ...fields });
 
 async function judge(
-  id: string,
+  id: string | Record<string, any>,
   output: string,
   trace?: Row[],
   edit = (f: Record<string, any>) => f,
 ) {
-  const fixture = edit(await loadFixture(id));
+  const fixture = edit(typeof id === 'string' ? await loadFixture(id) : id);
   const profile = await loadProfile(fixture);
   const checks: Check[] = profile.checkOutput(fixture, output, {
     tool_trace: trace,
@@ -116,6 +116,138 @@ describe('frame routing profile', () => {
         intakeFile,
       ]),
     ).toEqual(['slot-markers', 'intake-read', 'stop-named']);
+  });
+});
+
+describe('ticket pingpong profile', () => {
+  const fixture = (expect: Record<string, unknown>) => ({
+    id: 'pingpong-probe',
+    synthetic: true,
+    profile: 'ticket-pingpong',
+    execution: 'simulated-tools',
+    skill: 'bb-ticket-pingpong',
+    references: [],
+    input: { task: 'Run the state.', ticket_uuid: ticket },
+    expect,
+    simulation: {
+      ticket: { id: ticket, identifier: 'EVAL-61', labels: ['ticket:pingpong'] },
+    },
+    rubric: [{ id: 'probe', criterion: 'Probe.' }],
+  });
+  const update = (args: Record<string, unknown>) =>
+    call(
+      'bakers_ticket_update',
+      { ticket, ...args },
+      { labels: args.labels_add ?? [], frozen: Boolean(args.frozen) },
+    );
+  const question = comment(
+    'comment',
+    '# Question\n\nDoes the export include cancelled invoices?\n\n1. Yes (recommended)\n2. No',
+  );
+  const asked = update({ labels_add: ['Question'], frozen: true });
+  const keytec =
+    'This is not a question for you: please contact keytec, who will solve it and release the ticket.';
+  const problem = comment(
+    'comment',
+    `# Technical problem\n\n\`ddev start\` failed twice.\n\n${keytec}`,
+  );
+  const reported = update({ labels_add: ['technical problem'], frozen: true });
+  const verdict = (status: string) =>
+    comment('review', `# Review\n\nStatus: **${status}**\n\nF1 ...`);
+  const summary = comment('summary');
+  const notOk = fixture({
+    stop: 'transition',
+    state: 'working',
+    review_status: 'Not OK',
+  });
+  const back = [readTicket(), verdict('Not OK'), summary, transition('working')];
+
+  it('accepts one customer question with the label and the freeze', async () => {
+    const q = fixture({ stop: 'question' });
+    expect(await judge(q, 'Asked.', [readTicket(), question, asked])).toEqual(
+      [],
+    );
+    expect(
+      await judge(q, 'Asked.', [
+        readTicket(),
+        question,
+        update({ labels_add: ['Question'] }),
+      ]),
+    ).toEqual(['pingpong-question']);
+  });
+  it('technical problem never asks the customer', async () => {
+    const p = fixture({ stop: 'technical-problem' });
+    expect(await judge(p, 'Stopped.', [readTicket(), problem, reported])).toEqual(
+      [],
+    );
+    expect(
+      await judge(p, 'Stopped.', [readTicket(), question, problem, reported]),
+    ).toEqual(['pingpong-question']);
+    expect(
+      await judge(p, 'Stopped.', [
+        readTicket(),
+        problem,
+        update({ labels_add: ['technical problem', 'Question'], frozen: true }),
+      ]),
+    ).toEqual(['pingpong-question']);
+    expect(
+      await judge(p, 'Stopped.', [
+        readTicket(),
+        comment('comment', '# Technical problem\n\nDocker is down.'),
+        reported,
+      ]),
+    ).toEqual(['pingpong-technical-problem']);
+  });
+  it('sends a Not OK verdict back to working', async () => {
+    expect(await judge(notOk, 'Back.', back)).toEqual([]);
+    expect(
+      await judge(notOk, 'Done.', [...back.slice(0, 3), transition('done')]),
+    ).toEqual(['pingpong-transition']);
+  });
+  it('holds an OK verdict in review without merging', async () => {
+    const hold = fixture({ stop: 'hold', review_status: 'OK' });
+    const ok = [readTicket(), verdict('OK'), summary];
+    expect(await judge(hold, 'Held.', ok)).toEqual([]);
+    expect(await judge(hold, 'Done.', [...ok, transition('done')])).toEqual([
+      'pingpong-transition',
+    ]);
+    expect(
+      await judge(hold, 'Held.', [...ok, update({ frozen: true })]),
+    ).toEqual(['pingpong-no-stop']);
+    expect(
+      await judge(hold, 'Held.', [readTicket(), verdict('Not OK'), summary]),
+    ).toEqual(['pingpong-review-status']);
+  });
+  it('run ends after the decisive write', async () => {
+    expect(await judge(notOk, 'Back.', [...back, summary])).toEqual([
+      'pingpong-run-ends',
+    ]);
+    expect(
+      await judge(fixture({ stop: 'question' }), 'Asked.', [
+        readTicket(),
+        question,
+        asked,
+        summary,
+      ]),
+    ).toEqual(['pingpong-run-ends']);
+  });
+  it('records a technical decision in the handoff', async () => {
+    const decide = fixture({ stop: 'none', decision: 'writeCsv' });
+    const decided =
+      '## Decisions\n\n- Reuse `writeCsv`: it already serves two exports.';
+    expect(await judge(decide, decided, [readTicket()])).toEqual([]);
+    expect(
+      await judge(decide, 'Reused the helper.', [readTicket()]),
+    ).toEqual(['pingpong-decision']);
+  });
+  it('rejects an incomplete expectation', async () => {
+    for (const e of [
+      { stop: 'merge' },
+      { stop: 'transition' },
+      { stop: 'none' },
+      { stop: 'hold', state: 'review' },
+    ])
+      await expect(judge(fixture(e), 'x', [readTicket()])).rejects.toThrow();
   });
 });
 
