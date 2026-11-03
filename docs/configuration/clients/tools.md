@@ -63,7 +63,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_ticket_read` | `ticket` (identifier or UUID) | A ticket with its comments, oldest first, as an agent run reads it first |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
 | `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name` | Create a ticket |
-| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `labels_add`, `frozen` | Edit a ticket; values not given are kept |
+| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `labels_add`, `labels_remove`, `frozen` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels |
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |
 | `bakers_ticket_template_run` | `template` (UUID); optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | Create a ticket from a ticket template |

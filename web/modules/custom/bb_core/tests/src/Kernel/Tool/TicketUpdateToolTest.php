@@ -63,7 +63,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $ticket = $this->ticket('TU-3');
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
-    ]), 'Give a title, a description, a conductor, labels to add or frozen.');
+    ]), 'Give a title, a description, a conductor, labels to add or remove, or frozen.');
     self::assertSame('TU-3', $this->reload($ticket)->label());
   }
 
@@ -201,7 +201,71 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   public function testInputsAreLimitedToEditableFields(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_ticket_update');
-    self::assertSame(['ticket', 'title', 'description', 'conductor', 'labels_add', 'frozen'], array_keys($definition->getInputDefinitions()));
+    self::assertSame(['ticket', 'title', 'description', 'conductor', 'labels_add', 'labels_remove', 'frozen'], array_keys($definition->getInputDefinitions()));
+  }
+
+  /**
+   * Labels are removed by name; every other label stays in its order.
+   */
+  public function testRemovesNamedLabelsKeepingOthers(): void {
+    $labels = array_map(fn ($name) => $this->term('label', $name)->id(), ['keep', 'Question', 'other']);
+    $ticket = $this->ticket('TU-15', ['labels' => $labels]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question'],
+    ]));
+    self::assertSame(['keep', 'other'], $out['labels']);
+    $names = array_map(static fn ($term) => $term->label(), $this->reload($ticket)->get('labels')->referencedEntities());
+    self::assertSame(['keep', 'other'], $names);
+  }
+
+  /**
+   * Removing a label the ticket lacks changes nothing and creates no term.
+   */
+  public function testRemoveIgnoresAbsentNames(): void {
+    $this->term('label', 'Question');
+    $ticket = $this->ticket('TU-16', ['labels' => [$this->term('label', 'keep')->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question', 'never-created'],
+    ]));
+    self::assertSame(['keep'], $out['labels']);
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'never-created']));
+  }
+
+  /**
+   * An answer takes the question label off and unfreezes in one call.
+   */
+  public function testRemoveWithFrozenFalse(): void {
+    $ticket = $this->ticket('TU-17', ['labels' => [$this->term('label', 'Question')->id()]]);
+    $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'frozen' => TRUE,
+    ]));
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question'],
+      'frozen' => FALSE,
+    ]));
+    self::assertFalse($out['frozen']);
+    self::assertSame([], $out['labels']);
+    $stored = $this->reload($ticket);
+    self::assertFalse($stored->isFrozen());
+    self::assertTrue($stored->get('labels')->isEmpty());
+  }
+
+  /**
+   * A label named in both lists is refused and the ticket stays as it was.
+   */
+  public function testSameLabelAddedAndRemovedIsRefused(): void {
+    $ticket = $this->ticket('TU-18', ['labels' => [$this->term('label', 'x')->id()]]);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_add' => ['x'],
+      'labels_remove' => ['x'],
+    ]), 'Label x is both added and removed.');
+    $names = array_map(static fn ($term) => $term->label(), $this->reload($ticket)->get('labels')->referencedEntities());
+    self::assertSame(['x'], $names);
   }
 
   /**
