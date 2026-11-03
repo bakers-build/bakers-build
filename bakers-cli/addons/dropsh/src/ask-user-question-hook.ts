@@ -1,3 +1,5 @@
+import { ASK_REDIRECT } from '@bakers-build/core';
+
 /** The ticket fields the hook decides on (`bakers_ticket_read`). */
 export interface HookTicket {
   labels?: unknown;
@@ -11,10 +13,6 @@ export interface PreToolUseOutput {
     permissionDecisionReason: string;
   };
 }
-
-/** Where a denied terminal dialog sends the agent: the ticket question. */
-export const ASK_REDIRECT =
-  'Nobody answers a terminal dialog in an autopilot run. Publish the question as a `comment` starting `# Question`, then `bakers_ticket_update` with `labels_add: ["Question"]` and `frozen: true`, and end the run (bb-workflow › publish-comment).';
 
 const deny = (reason: string): PreToolUseOutput => ({
   hookSpecificOutput: {

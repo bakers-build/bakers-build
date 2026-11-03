@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { ASK_REDIRECT, shellQuote } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
 import claudeAgentDefault, {
   ClaudeAgent,
@@ -9,19 +10,22 @@ import claudeAgentDefault, {
   encodeClaudeProjectDir,
 } from '../src/index.js';
 
+/** The ask hook's command: an older or missing `bakers` blocks the dialog. */
+const ASK_COMMAND = `bakers hook ask-user-question || { echo '${ASK_REDIRECT}' >&2; exit 2; }`;
+
 /** The hooks-only settings every mode without its own settings JSON carries. */
 const HOOKS_JSON = JSON.stringify({
   hooks: {
     PreToolUse: [
       {
         matcher: 'AskUserQuestion',
-        hooks: [{ type: 'command', command: 'bakers hook ask-user-question' }],
+        hooks: [{ type: 'command', command: ASK_COMMAND }],
       },
     ],
   },
 });
 const HOOKS_ARGV = ['--settings', HOOKS_JSON];
-const HOOKS_FLAG = ` --settings '${HOOKS_JSON}'`;
+const HOOKS_FLAG = ` --settings ${shellQuote(HOOKS_JSON)}`;
 
 describe('default export', () => {
   it('is the same factory reference as the named `claudeAgent` export', () => {
@@ -622,7 +626,7 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 describe('ClaudeAgent redirects the terminal dialog to the ticket question', () => {
   const askHook = {
     matcher: 'AskUserQuestion',
-    hooks: [{ type: 'command', command: 'bakers hook ask-user-question' }],
+    hooks: [{ type: 'command', command: ASK_COMMAND }],
   };
   const settingsOf = (options: Record<string, unknown>) =>
     JSON.parse(
@@ -648,6 +652,36 @@ describe('ClaudeAgent redirects the terminal dialog to the ticket question', () 
     ],
   ])('%s carries the AskUserQuestion PreToolUse hook', (_mode, options) => {
     expect(settingsOf(options).hooks.PreToolUse).toContainEqual(askHook);
+  });
+
+  it('blocks the dialog with the redirect when the hook cannot run', () => {
+    const command = settingsOf({}).hooks.PreToolUse.at(-1).hooks[0].command;
+    let status = 0;
+    let stderr = '';
+    try {
+      execFileSync('/bin/sh', ['-c', command], {
+        env: { PATH: '/nonexistent' },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (error) {
+      status = (error as { status: number }).status;
+      stderr = String((error as { stderr: Buffer }).stderr);
+    }
+    expect(status).toBe(2);
+    expect(stderr).toContain('# Question');
+    expect(stderr).toContain('bakers_ticket_update');
+  });
+
+  it('passes the hook decision through when bakers answers', async () => {
+    const bin = await mkdtemp(join(tmpdir(), 'bakers-hook-'));
+    await writeFile(join(bin, 'bakers'), '#!/bin/sh\necho decided\n', {
+      mode: 0o755,
+    });
+    const command = settingsOf({}).hooks.PreToolUse.at(-1).hooks[0].command;
+    const out = execFileSync('/bin/sh', ['-c', command], {
+      env: { PATH: `${bin}:/usr/bin:/bin` },
+    });
+    expect(String(out).trim()).toBe('decided');
   });
 
   it('keeps the terminal dialog allowed for interactive runs', () => {

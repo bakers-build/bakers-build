@@ -11,9 +11,29 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { ASK_REDIRECT, shellQuote } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
 import { ClaudeAgent } from '../src/index.js';
 import * as preset from '../src/preset.js';
+
+/** The hooks-only settings a yolo launch carries, quoted for the launch line. */
+const HOOKS_SETTINGS = shellQuote(
+  JSON.stringify({
+    hooks: {
+      PreToolUse: [
+        {
+          matcher: 'AskUserQuestion',
+          hooks: [
+            {
+              type: 'command',
+              command: `bakers hook ask-user-question || { echo '${ASK_REDIRECT}' >&2; exit 2; }`,
+            },
+          ],
+        },
+      ],
+    },
+  }),
+);
 
 const run = promisify(execFile);
 const measureDir = fileURLToPath(new URL('../measure/', import.meta.url));
@@ -286,7 +306,7 @@ describe('ClaudeAgent measure', () => {
       args: ['--verbose'],
     }).launchCommand('go');
     expect(cmd).toBe(
-      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${wrapper}' claude 'go' --model 'opus' --dangerously-skip-permissions --settings '{"hooks":{"PreToolUse":[{"matcher":"AskUserQuestion","hooks":[{"type":"command","command":"bakers hook ask-user-question"}]}]}}' '--verbose' '--setting-sources' 'project,local' '--strict-mcp-config' '--mcp-config' '{"mcpServers":{}}'`,
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${wrapper}' claude 'go' --model 'opus' --dangerously-skip-permissions --settings ${HOOKS_SETTINGS} '--verbose' '--setting-sources' 'project,local' '--strict-mcp-config' '--mcp-config' '{"mcpServers":{}}'`,
     );
   });
 
@@ -317,7 +337,7 @@ describe('ClaudeAgent measure', () => {
     expect(
       new ClaudeAgent({ model: 'opus', security: 'yolo' }).launchCommand('go'),
     ).toBe(
-      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions --settings '{"hooks":{"PreToolUse":[{"matcher":"AskUserQuestion","hooks":[{"type":"command","command":"bakers hook ask-user-question"}]}]}}'`,
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions --settings ${HOOKS_SETTINGS}`,
     );
   });
 

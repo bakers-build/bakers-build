@@ -119,6 +119,7 @@ export {
   type WorkspaceRecoveryOptions,
   workspaceSearchCommand,
 } from './cli/workspace-recovery.js';
+export { ASK_REDIRECT } from './core/ask-redirect.js';
 export {
   configHomeOf,
   defaultRootGitExec,

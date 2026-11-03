@@ -22,7 +22,7 @@ import {
   systemSandboxHost,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
-import { shellQuote } from '@bakers-build/core';
+import { ASK_REDIRECT, shellQuote } from '@bakers-build/core';
 import { parseClaudeTranscript } from './footprint.js';
 
 export { parseClaudeTranscript } from './footprint.js';
@@ -56,11 +56,17 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 /**
  * In every mode, `AskUserQuestion` first asks `bakers hook ask-user-question`,
  * which denies the terminal dialog in an autopilot run and points the agent to
- * `bakers ticket ask`; elsewhere the dialog works as before.
+ * the ticket question; elsewhere the dialog works as before. When the hook
+ * cannot run (an older or missing `bakers`), exit 2 blocks the dialog.
  */
 const ASK_HOOK = {
   matcher: 'AskUserQuestion',
-  hooks: [{ type: 'command', command: 'bakers hook ask-user-question' }],
+  hooks: [
+    {
+      type: 'command',
+      command: `bakers hook ask-user-question || { echo ${shellQuote(ASK_REDIRECT)} >&2; exit 2; }`,
+    },
+  ],
 };
 
 /** `hooks` with the ask hook appended to its PreToolUse entries. */
