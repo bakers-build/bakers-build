@@ -1,9 +1,43 @@
 <?php
 
-// Komodo deployment settings — included from settings.php when running in a deployed
-// Komodo container (DB_HOST is set there, absent under DDEV). Overrides the ddev-local
-// DB creds + salt with per-stack env vars, so ONE settings.php serves local + every
-// deploy environment. Nothing here is hardcoded per environment.
+/**
+ * @file
+ * Environment overrides for deployed containers.
+ */
+
+use Symfony\Component\HttpFoundation\Request;
+
+// Strict inputs are opt-in to preserve existing operator stacks.
+if (getenv('BB_SELF_HOSTED') === '1') {
+  foreach (['DOMAIN', 'DRUPAL_HASH_SALT', 'DRUPAL_TRUSTED_PROXY_SUBNET', 'MAIL_SMTP_DSN', 'MAIL_FROM_ADDRESS'] as $required) {
+    if (trim((string) getenv($required)) === '') {
+      throw new \RuntimeException('Missing required ' . $required);
+    }
+  }
+  if (!filter_var(getenv('DOMAIN'), FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+    throw new \RuntimeException('DOMAIN must be a DNS hostname without a scheme or path');
+  }
+  $proxy_subnet = explode('/', getenv('DRUPAL_TRUSTED_PROXY_SUBNET'));
+  if (count($proxy_subnet) !== 2 || !filter_var($proxy_subnet[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !ctype_digit($proxy_subnet[1]) || (int) $proxy_subnet[1] < 1 || (int) $proxy_subnet[1] > 32) {
+    throw new \RuntimeException('DRUPAL_TRUSTED_PROXY_SUBNET must be an IPv4 CIDR with prefix 1 through 32');
+  }
+  $smtp = parse_url(getenv('MAIL_SMTP_DSN'));
+  if ($smtp === FALSE || !in_array($smtp['scheme'] ?? '', ['smtp', 'smtps'], TRUE) || empty($smtp['host'])) {
+    throw new \RuntimeException('MAIL_SMTP_DSN must be an smtp or smtps URL with a host');
+  }
+  if (!filter_var(getenv('MAIL_FROM_ADDRESS'), FILTER_VALIDATE_EMAIL)) {
+    throw new \RuntimeException('MAIL_FROM_ADDRESS must be an email address');
+  }
+  $settings['trusted_host_patterns'] = [];
+  $settings['reverse_proxy'] = TRUE;
+  $settings['reverse_proxy_addresses'] = [getenv('DRUPAL_TRUSTED_PROXY_SUBNET')];
+  $settings['reverse_proxy_trusted_headers'] = Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PORT;
+}
+
+// Deployment settings — included from settings.php when running in a
+// deployed container (DB_HOST is set there, absent under DDEV). Overrides the
+// ddev-local DB creds + salt with per-stack env vars, so ONE settings.php
+// serves local + every deploy environment. Nothing here is hardcoded per environment.
 if (getenv('DB_HOST')) {
   $databases['default']['default'] = [
     'database' => getenv('DB_NAME'),
@@ -44,18 +78,18 @@ if (getenv('DRUPAL_HASH_SALT')) {
   $settings['hash_salt'] = getenv('DRUPAL_HASH_SALT');
 }
 
-// Reuses git.key-tec.de's SMTP account via core's own Symfony transport, switched
-// on by pointing system.mail's `mailer_dsn` at the parsed DSN — no contrib mailer
-// module involved. The backend stays `bb_html_mail`, which extends core's
+// Uses the operator's SMTP account via core's own Symfony transport, switched
+// on by pointing system.mail's `mailer_dsn` at the parsed DSN — no contrib
+// mailer module involved. The backend stays `bb_html_mail`, which extends core's
 // `symfony_mailer` plugin, so SMTP mail keeps the shared HTML envelope.
 //
 // `parse_url()` returns the userinfo components percent-ENCODED and never
 // decodes them, but the DSN must encode them: the SMTP username is an e-mail
-// address (`gitlab@keytec.de`), and its `@` has to be written `%40` or the
+// address (`mailer@example.org`), and its `@` has to be written `%40` or the
 // first `@` would be read as the userinfo/host separator. So the value here
 // is `rawurldecode()`d back to the literal credential before it reaches the
-// transport — without it Gmail authenticates against `gitlab%40keytec.de` and
-// returns `535 5.7.8 Username and Password not accepted`.
+// transport — without it the server authenticates against the encoded
+// address and returns `535 5.7.8 Username and Password not accepted`.
 if (getenv('MAIL_SMTP_DSN')) {
   $mail_dsn = parse_url((string) getenv('MAIL_SMTP_DSN'));
   if ($mail_dsn !== FALSE && isset($mail_dsn['scheme'], $mail_dsn['host'])) {
@@ -75,8 +109,8 @@ if (getenv('MAIL_FROM_ADDRESS')) {
   $config['system.site']['mail'] = getenv('MAIL_FROM_ADDRESS');
 }
 
-// Trust the per-stack deployment domain. DOMAIN is set per Komodo stack, so this ONE
-// file (baked into the shared image) serves every environment.
+// Trust the per-stack deployment domain. DOMAIN is set per stack, so this
+// ONE file (baked into the shared image) serves every environment.
 if (getenv('DOMAIN')) {
   $settings['trusted_host_patterns'][] = '^' . preg_quote(getenv('DOMAIN'), '/') . '$';
 }
