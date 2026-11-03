@@ -1,6 +1,6 @@
 # bakers.build — WORKFLOW
 
-Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
+Invoke `bakers:bb-workflow` and follow it for the ticket's current state. When the ticket's labels include `ticket:pingpong` and its state is `working` or `review`, invoke `bakers:bb-ticket-pingpong` too and follow it with the frame.
 
 ## bb-phase-provision
 
