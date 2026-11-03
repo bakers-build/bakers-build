@@ -93,11 +93,14 @@ describe('GitHub migration checks', () => {
   it('runs all gates on disposable runners without publication authority', () => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     expect(Object.keys(workflow.on)).toEqual([
+      'push',
       'pull_request',
       'workflow_dispatch',
     ]);
     expect(workflow.permissions).toEqual({ contents: 'read' });
+    expect(workflow.on.push.branches).toEqual(['next', 'main']);
     const required = [
+      'branch_policy',
       'phpcs',
       'phpmd',
       'phpstan',
