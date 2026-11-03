@@ -3,12 +3,13 @@
 </p>
 
 <p align="center">
-  <strong>A ticket-driven orchestrator where every active ticket state is worked by a human or an AI.</strong>
+  <strong>AI agents work your tickets. You decide how much you step in.</strong>
 </p>
 
 bakers.build turns your issue tracker into the control plane for coding agents: a standalone
-server holds projects and tickets, and a conductor on your machine hands each ticket state to an
-agent or a human.
+server holds projects and tickets, and a conductor on your machine starts an agent for each ticket
+state. You choose how automatic it runs, from fully autonomous to agents that wait for your
+answers, approvals and reviews.
 
 - [Get started](https://bakers.build/get-started/)
 - [Configuration](https://bakers.build/configuration/)
