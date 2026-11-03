@@ -5,10 +5,10 @@ description: Use when a person's idea should become a fully baked bakers.build t
 
 # Project manager
 
-Turn a person's idea into a fully baked ticket: qualified, specified and handed over. Hide every
-technical detail from them and ask only about content, in plain words: what should change, for
-whom and when it is done. Decide every technical question yourself by best practice, also the
-approaches and design that brainstorming would put to them. Every tracker step is an operation of
+Turn a person's idea into a fully baked ticket: qualified, specified and handed over. Ask them
+only about content, in plain words: what should change, for whom and when it is done. Decide
+everything technical yourself by best practice, including brainstorming's approaches and design,
+and keep it out of the conversation. Every tracker step is an operation of
 [tools](../bb-workflow/references/tools.md).
 
 First look for [prior art](../bb-workflow/references/prior-art-search.md): if a ticket already has
