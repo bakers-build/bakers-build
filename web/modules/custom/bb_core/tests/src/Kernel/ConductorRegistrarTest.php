@@ -21,8 +21,8 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  * Covers the server-side heartbeat upsert (self-heal).
  *
  * A heartbeat keys on conductor_id and the machine UUID in host_key: it
- * creates the conductor when missing, refreshes lease + reported load, links a machine,
- * and always brings it online.
+ * creates the conductor when missing, refreshes lease + reported load, links
+ * a machine, and always brings it online.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -292,7 +292,11 @@ final class ConductorRegistrarTest extends KernelTestBase {
    */
   public function testHeartbeatBindsAnUnboundConductor(): void {
     $owner = $this->createUser('owner-legacy');
-    $attrs = ['conductor_id' => 'legacy-unbound', 'host_key' => '420d48cb-0e1e-5e9d-bc96-3834f0e90931', 'project' => 'default-project'];
+    $attrs = [
+      'conductor_id' => 'legacy-unbound',
+      'host_key' => '420d48cb-0e1e-5e9d-bc96-3834f0e90931',
+      'project' => 'default-project',
+    ];
     $conductor = $this->registrar()->heartbeat($owner, $attrs);
     $conductor->set('machine', NULL)->save();
 

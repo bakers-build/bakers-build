@@ -51,8 +51,8 @@ final class ConductorRegistrar {
    *   The authenticated conductor owner.
    * @param array<string, mixed> $attrs
    *   Registration attributes: conductor_id, host_key (machine UUID),
-   *   machine_label, project, states, label, workspace_root, max_parallel, current_load,
-   *   lease_seconds, last_pid, conductor_name.
+   *   machine_label, project, states, label, workspace_root, max_parallel,
+   *   current_load, lease_seconds, last_pid, conductor_name.
    *
    * @return \Drupal\bb_core\Entity\BbConductorInterface
    *   The upserted conductor.
