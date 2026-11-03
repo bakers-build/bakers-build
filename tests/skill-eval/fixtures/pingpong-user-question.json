@@ -85,7 +85,7 @@
     },
     {
       "id": "freeze",
-      "criterion": "The final answer reports the Question label and frozen true as one ticket update."
+      "criterion": "The final answer reports the Question label and the freeze."
     },
     {
       "id": "content-only",
