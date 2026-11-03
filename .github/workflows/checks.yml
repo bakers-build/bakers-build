@@ -353,6 +353,7 @@ jobs:
           bash tests/contract/layout-components.sh
           bash tests/contract/data-display-components.sh
           bash tests/contract/token-discipline.sh
+          bash tests/contract/time-format.sh
           bash tests/contract/run-detail-overlay.sh
           bash tests/contract/island-links.sh
           node tests/contract/appearance.mjs
