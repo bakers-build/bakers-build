@@ -1,0 +1,326 @@
+{
+  "schema": 1,
+  "harness_sha": "",
+  "candidate": null,
+  "environment": {
+    "owner": "not supplied",
+    "host": "not supplied",
+    "os": "not supplied",
+    "architecture": "not supplied",
+    "tools": "not supplied"
+  },
+  "prerequisites": {
+    "clean_host": {
+      "status": "blocked",
+      "evidence": "Not yet established; record prerequisite and owner."
+    },
+    "public_artifacts": {
+      "status": "blocked",
+      "evidence": "Not yet established; record prerequisite and owner."
+    },
+    "clearance": {
+      "status": "blocked",
+      "evidence": "Not yet established; record prerequisite and owner."
+    },
+    "sandbox": {
+      "status": "blocked",
+      "evidence": "Not yet established; record prerequisite and owner."
+    },
+    "private_reporting": {
+      "status": "blocked",
+      "evidence": "Not yet established; record prerequisite and owner."
+    }
+  },
+  "cleanup": {
+    "status": "not_run",
+    "evidence": "Record resource ownership and cleanup, including unrelated sentinels."
+  },
+  "checks": [
+    {
+      "id": "P1",
+      "acs": [
+        "AC-1",
+        "AC-6",
+        "AC-7"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "P2",
+      "acs": [
+        "AC-1",
+        "AC-7"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "P3",
+      "acs": [
+        "AC-7"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "P4",
+      "acs": [
+        "AC-1",
+        "AC-5",
+        "AC-7"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "P5",
+      "acs": [
+        "AC-1",
+        "AC-7"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F1",
+      "acs": [
+        "AC-1",
+        "AC-6"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F2",
+      "acs": [
+        "AC-1",
+        "AC-3"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F3",
+      "acs": [
+        "AC-1",
+        "AC-7"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F4",
+      "acs": [
+        "AC-2"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F5",
+      "acs": [
+        "AC-3"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F6",
+      "acs": [
+        "AC-4"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F7",
+      "acs": [
+        "AC-4"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F8",
+      "acs": [
+        "AC-5"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F9",
+      "acs": [
+        "AC-6"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F10",
+      "acs": [
+        "AC-7"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    },
+    {
+      "id": "F11",
+      "acs": [
+        "AC-1",
+        "AC-3",
+        "AC-5",
+        "AC-6"
+      ],
+      "status": "not_run",
+      "actor": "not assigned",
+      "environment": "not supplied",
+      "candidate_id": "",
+      "command": "Record exact command or ordered actions from the runbook.",
+      "expected": "Record expected outcome.",
+      "observed": "Not run.",
+      "timestamp": "",
+      "evidence": "",
+      "reference": "Record prerequisite blocker or focused defect; use none only when inapplicable.",
+      "cleanup": "Not run."
+    }
+  ],
+  "clients": [],
+  "verdict": "BLOCKED"
+}

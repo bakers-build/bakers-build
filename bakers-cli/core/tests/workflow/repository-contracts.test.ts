@@ -9,6 +9,7 @@ const contract = (name: string) =>
 
 const CONTRACTS: Array<[string, string]> = [
   ['node', 'deploy-report-docs.mjs'],
+  ['bash', 'clean-install-acceptance.sh'],
   ['bash', 'pathshim-resolution.sh'],
   ['bash', 'phpunit-shard.sh'],
   ['bash', 'test-project-branch.sh'],
