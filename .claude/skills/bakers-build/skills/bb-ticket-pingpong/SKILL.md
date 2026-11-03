@@ -6,8 +6,7 @@ description: "Use when a ticket labelled `ticket:pingpong` runs in working or re
 # Ticket pingpong
 
 A ticket labelled `ticket:pingpong` works on its own from `working` on: run `@bakers-build/bb-workflow`
-as written and replace only the points where it would ask a person or wait for one. One run works one
-ticket and ends at its state write or its stop.
+as written and replace only the points where it would ask a person or wait for one.
 
 ## Decide or ask
 
