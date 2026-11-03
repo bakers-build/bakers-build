@@ -100,7 +100,7 @@ final class BbTicketFieldMap {
       ->setDisplayConfigurable('view', TRUE);
     $fields['frozen'] = BaseFieldDefinition::create('boolean')
       ->setLabel(new TranslatableMarkup('Frozen'))
-      ->setDescription(new TranslatableMarkup('When set, conductors skip this ticket at the next claim. An already-active run is not interrupted.'))
+      ->setDescription(new TranslatableMarkup('When set, conductors skip this ticket at the next claim. Setting it cancels the active runs.'))
       ->setDefaultValue(FALSE)
       ->setInitialValue(FALSE)
       ->setDisplayConfigurable('view', TRUE)
