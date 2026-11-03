@@ -10,7 +10,7 @@ Start from `skills/bb-init-project/references/WORKFLOW.template.md`. No CLI read
 skills; the agent environment's native skill mechanism loads them.
 
 **Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
-field, a provision hint or a subagent start selects. Exactly thirteen ship:
+field, a provision hint or a subagent start selects. Exactly fifteen ship:
 
 | Skill | Job |
 |---|---|
