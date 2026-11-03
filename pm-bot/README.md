@@ -9,33 +9,33 @@ It runs as one container from the image this folder builds, in a `bakers-ddev` C
 | `Dockerfile` | The bot's image: the official Hermes image at v0.22.5, pinned by digest, with this folder's content in `/opt/pm-bot` |
 | `entrypoint.sh` | The container's start, as the `hermes` user: checks the env, renders the configuration, puts the persona and skill into Hermes' home, runs the poller and the gateway |
 | `render.mjs` | Fills the configuration's `${…}` placeholders from the env; refuses an unset value or one that could change the YAML |
-| `config.template.yaml` | Hermes configuration: Slack, toolsets, approvals, the `clone-reader` and `pm-relay` MCP servers |
+| `config.template.yaml` | Hermes configuration: Slack, toolsets, approvals, the `clone-reader` MCP server and bakers.build's `/mcp` as the `bakers` server |
 | `SOUL.md` | The persona |
-| `skills/project-manager/` | Intake (prior art, clarify, code facts, create), status answers and answering relayed questions |
-| `relay/` | `pm-relay`, a local MCP server and the bot's only way into bakers.build: `create_ticket`, `answer_question`, `ticket_read`, `ticket_search`; no LLM |
+| `skills/project-manager/` | Intake (prior art, clarify, code facts, create and finish the ticket), status answers and passing answers back, each step a bakers tool call |
 | `poller/` | Posts state changes and open questions into ticket threads and opens sub-ticket threads; no LLM |
-| `lib/bakers-client.mjs` | The API-key sign-in and the JSON:API and tool calls the relay and the poller share |
+| `lib/bakers-client.mjs` | The poller's bakers tool calls on `/mcp`, with the API key as bearer |
 | `slack-app-manifest.yaml` | The Slack app, created in one step |
 | `.env.example` | The keys the container reads from its env file, which the Coder template writes |
 
-The bot's reach is limited by its tools and its container. It has no terminal, file, browser or web toolset; a filesystem MCP server that sees only a read-only, secret-free clone of the project's code; and `pm-relay`, whose tools are fixed operations. The container sees only Hermes' home and that clone, has no Docker socket and runs with almost every capability dropped.
+The bot's reach is limited by its tools and its container. It has no terminal, file, browser or web toolset; a filesystem MCP server that sees only a read-only, secret-free clone of the project's code; and six of bakers.build's own tools (ticket create, read, search, update and transition, and comment publish), with the rights of its service account. Make that account a member of the bot's project's team only: the skill acts on its project, and the account's membership is what bakers.build enforces. The container sees only Hermes' home and that clone, has no Docker socket and runs with almost every capability dropped.
 
 ## How it works
 
 - **One container, two processes.** The image keeps Hermes' own start: its bootstrap runs as root, maps the `hermes` user to the workspace user's UID and prepares `/opt/data`, then drops to `hermes`. `entrypoint.sh` then renders `config.yaml` and the skill's project reference, replaces `SOUL.md` and the `project-manager` skill in `/opt/data`, and runs `node poller/poller.mjs` and `hermes gateway run` side by side. When either exits, the container exits and Docker restarts it.
 - **What survives a start.** `/opt/data` is on the workspace's home volume. Sessions, memories, skills the bot learned and the poller's state stay; the configuration, the persona and the `project-manager` skill come from the image every time.
 - **The ticket's thread is a link.** A ticket created from Slack carries the thread's permalink as a link titled *Slack thread*; bakers.build stores it as kind `chat`. The bot and the poller read the channel and thread from the ticket's **first** `chat` link.
-- **Questions follow the ticket label protocol.** An agent asks by publishing a comment, adding the **Question** label to the ticket and freezing it. The open question is the newest comment that is not a `summary`, created at or before the ticket's `frozen_at`. The poller posts it into the thread once. Anyone in the channel may answer, an approval included; `answer_question` posts the answer as a comment headed *Answered in Slack by <name>:*, removes the label and unfreezes the ticket.
+- **Questions follow the ticket label protocol.** An agent asks by publishing a comment, adding the **Question** label to the ticket and freezing it. The open question is the newest comment that is not a `summary`, created at or before the ticket's `frozen_at`. The poller posts it into the thread once. Anyone in the channel may answer, an approval included; the bot checks the ticket is still frozen with the label, posts the answer as a comment headed *Answered in Slack by <name>:*, removes the label and unfreezes the ticket.
 - **Sub-tickets get their own thread.** For an open sub-ticket without a `chat` link, the poller opens a new thread in the channel of its nearest ancestor that has one, links it to the sub-ticket and posts one pointer into the parent's thread.
-- **Redeploys need no restart.** The relay and the poller sign in with the API key on demand and again after a 401 or a failed connection. While bakers.build is down, a poller pass fails and keeps its state file; the next pass catches up and posts nothing twice. Hermes talks to Slack over Socket Mode and to `pm-relay` over stdio, so neither connection depends on bakers.build.
-- **The relay reads the env file itself.** Hermes starts MCP servers with a filtered environment, so `pm-relay` gets the env file's path as its argument (`/opt/data/.env`).
+- **One credential, no sign-in.** Hermes and the poller send the service account's API key as the bearer on bakers.build's `/mcp`; there is no token to refresh. Hermes fills the header from the env file (`${env:BAKERS_API_KEY}` in the configuration), so the key never lands in `config.yaml`.
+- **Redeploys need no restart.** While bakers.build is down, a tool call fails: a poller pass fails and keeps its state file, and the next pass catches up and posts nothing twice; Hermes reconnects on its own. Hermes talks to Slack over Socket Mode, which does not depend on bakers.build.
+- **It needs a bakers.build with API keys as bearer, the project ticket list tool and `labels_remove`** on `bakers_ticket_update`.
 
 ## Develop
 
 ```sh
-node --test 'pm-bot/**/*.test.mjs'     # poller, relay, client and render, against stubs
-bash tests/contract/pm-bot.sh          # lock-down of the configuration, the Slack app and the compose file
-bash tests/contract/pm-bot-image.sh    # builds the image and starts it in check and run mode (Docker)
+node --test 'pm-bot/**/*.test.mjs'     # poller, client and render, against stubs
+bash tests/contract/pm-bot.sh          # lock-down of the configuration, the skill, the Slack app and the compose file
+bash tests/contract/pm-bot-image.sh    # builds the image; check mode against a /mcp stub, then run mode (Docker)
 ```
 
 GitHub CI runs the first two in `pm_bot` and the third in `image_gate`; the release then publishes the image to GHCR (the template's README › PM bot › The bot's version).
@@ -59,9 +59,9 @@ The bot keeps no memory and writes no skill without you. Review its proposals in
 
 | Symptom | Cause and fix |
 |---|---|
-| `token request failed: 401` in the container log | The API key is wrong, expired or deleted: create a new one and update its parameters |
+| `/mcp answered 401` in the container log | The API key is wrong or revoked, or its account is blocked: create a new key and update the `pm_bot_bakers_api_key` parameter |
 | `pass failed: … 503` or `ECONNREFUSED` in the container log | bakers.build is down or redeploying; the poller retries every pass on its own |
-| A step after `create` reports `failed` | The service account lacks update rights in the project, or a label name is taken: fix the rank, then add the label or link by hand |
+| The bot says the labels could not be added or the thread could not be linked | The service account lacks update rights in the project: fix its rank, then add the label or link by hand |
 | `pm-bot: missing: …` and the container restarting | The env file lacks a required key; check the workspace's skip line and parameters |
 | `render …: … may hold only …` | A parameter holds a character the configuration cannot take safely |
 | A relayed question never appears | The ticket has no `chat` link, lacks the **Question** label or is not frozen; `hermes send exited …` in the container log names the Slack error |
@@ -69,4 +69,4 @@ The bot keeps no memory and writes no skill without you. Review its proposals in
 ## Cut it off
 
 - **Stop it:** `docker compose -p pm-bot down` in the workspace, or empty its parameters so no start brings it back.
-- **Cut its access:** delete the service account's API key or disable the account. The relay and the poller stop working within five minutes, the lifetime of their last token.
+- **Cut its access:** delete the service account's API key or disable the account. The next tool call of the bot and the poller is refused.
