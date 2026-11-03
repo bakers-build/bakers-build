@@ -57,7 +57,7 @@ The rules for writing your own recipe or runtime guide are in the [skill contrac
 
 ## Ownership, choices and verification
 
-The ticket's Workflow setting chooses `bb_work` (human approval, the default) or `bb_autopilot`. Its recipe/type fields choose the engineering method/variant; Matt is the shipped default. The required repository entry is `WORKFLOW.md` invoking `bakers:bb-workflow`; its phase hints are optional and apply when the project needs them.
+Every work ticket runs `bb_work`. Its recipe/type fields choose the engineering method/variant; Matt is the shipped default. The required repository entry is `WORKFLOW.md` invoking `bakers:bb-workflow`; its phase hints are optional and apply when the project needs them.
 
 Minimal file:
 

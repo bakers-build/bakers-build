@@ -41,7 +41,7 @@ Every identifier in the log whose key was admitted that way is then collected, i
 
 ## Where it is used
 
-A deployment is a ticket of type `deployment` with the recipe `deploy-and-release`; it runs the workflow `bb_work`. Its `plan` step runs `bakers deployment tickets` from the environment's deployed ref to the frozen SHA and records `resolved[].uuid` in the ticket's `referenced_tickets`, listing any `unresolved` identifiers in the plan comment.
+A deployment is a ticket of type `deployment` with the recipe `deploy-and-release`; it runs the one workflow `bb_work` like every other ticket. Its `plan` step runs `bakers deployment tickets` from the environment's deployed ref to the frozen SHA and records `resolved[].uuid` in the ticket's `referenced_tickets`, listing any `unresolved` identifiers in the plan comment.
 
 ## Release
 
@@ -62,4 +62,4 @@ A breaking server change needs a raised `min_client_version` in the same batch; 
 
 ## Roll back
 
-Roll back by version: point the prod stack's images at the last good `:<version>` and redeploy, then revert through a merge request ([Server › Roll back](/configuration/project/server#roll-back)). A version tag is never moved or reused; the fix ships as the next version.
+Roll back by version: point the prod stack's images at the last good `:<version>` and redeploy, then revert through a merge request ([Komodo server › Roll back](/configuration/project/server-komodo#roll-back)). A version tag is never moved or reused; the fix ships as the next version.

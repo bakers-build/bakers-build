@@ -6,7 +6,9 @@ namespace Drupal\Tests\bb_core\Unit;
 
 use Drupal\Tests\UnitTestCase;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * The two install paths ship the same product configuration (BB-350 D8).
@@ -156,6 +158,84 @@ final class ShippedConfigDriftTest extends UnitTestCase {
       self::assertDoesNotMatchRegularExpression('/set (your|a) (new )?password|password:|username:/', $text);
       // The button is the one link; a second URL token would repeat it.
       self::assertLessThanOrEqual(1, preg_match_all('/\[(user|bakers|site):[a-z-]*url[a-z-]*\]/', $text));
+    }
+  }
+
+  /**
+   * The independent installation trusts only its host and ingress subnet.
+   *
+   * Runs isolated because trusted proxies are process-global Request state.
+   */
+  #[RunInSeparateProcess]
+  public function testSelfHostedTrustBoundary(): void {
+    $settings = $this->selfHostedSettings([]);
+    self::assertSame(['^app\\.example\\.test$'], $settings['trusted_host_patterns']);
+    self::assertSame(['172.30.42.0/24'], $settings['reverse_proxy_addresses']);
+    self::assertSame(26, $settings['reverse_proxy_trusted_headers']);
+    self::assertSame('private-test-salt', $settings['hash_salt']);
+    Request::setTrustedProxies($settings['reverse_proxy_addresses'], $settings['reverse_proxy_trusted_headers']);
+    foreach (['198.51.100.10' => 'http', '172.30.42.5' => 'https'] as $remote => $scheme) {
+      $request = Request::create('http://app.example.test', 'GET', [], [], [], [
+        'REMOTE_ADDR' => $remote,
+        'HTTP_X_FORWARDED_PROTO' => 'https',
+        'HTTP_X_FORWARDED_HOST' => 'attacker.example.test',
+      ]);
+      self::assertSame($scheme, $request->getScheme());
+      self::assertSame('app.example.test', $request->getHost());
+    }
+  }
+
+  /**
+   * Missing secrets and invalid host/proxy inputs fail closed.
+   */
+  public function testSelfHostedRejectsInvalidInputs(): void {
+    foreach ([
+      ['DRUPAL_HASH_SALT' => ''],
+      ['DOMAIN' => ''],
+      ['DOMAIN' => 'https://app.example.test/path'],
+      ['DRUPAL_TRUSTED_PROXY_SUBNET' => '0.0.0.0/0'],
+      ['DRUPAL_TRUSTED_PROXY_SUBNET' => 'invalid'],
+      ['MAIL_SMTP_DSN' => 'invalid'],
+    ] as $overrides) {
+      $error = NULL;
+      try {
+        $this->selfHostedSettings($overrides);
+      }
+      catch (\RuntimeException $exception) {
+        $error = $exception;
+      }
+      self::assertInstanceOf(\RuntimeException::class, $error, 'Invalid input accepted: ' . key($overrides));
+      self::assertStringContainsString((string) key($overrides), $error->getMessage());
+    }
+  }
+
+  /**
+   * Loads the shipped settings with a private, restored test environment.
+   */
+  private function selfHostedSettings(array $overrides): array {
+    $environment = array_replace([
+      'BB_SELF_HOSTED' => '1',
+      'DB_HOST' => 'db',
+      'DOMAIN' => 'app.example.test',
+      'DRUPAL_HASH_SALT' => 'private-test-salt',
+      'DRUPAL_TRUSTED_PROXY_SUBNET' => '172.30.42.0/24',
+      'MAIL_SMTP_DSN' => 'smtp://smtp.example.test:587',
+      'MAIL_FROM_ADDRESS' => 'sender@example.test',
+    ], $overrides);
+    $previous = [];
+    foreach ($environment as $name => $value) {
+      $previous[$name] = getenv($name);
+      putenv($name . '=' . $value);
+    }
+    try {
+      $settings = ['trusted_host_patterns' => ['.*']];
+      include $this->repositoryRoot() . '/web/sites/default/settings.komodo.php';
+      return $settings;
+    }
+    finally {
+      foreach ($previous as $name => $value) {
+        putenv($value === FALSE ? $name : $name . '=' . $value);
+      }
     }
   }
 

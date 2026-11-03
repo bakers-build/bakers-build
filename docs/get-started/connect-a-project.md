@@ -42,7 +42,7 @@ The AI proposes setup, readiness and cleanup; you confirm exact [hook commands](
 
 ## Choose the workflow
 
-Use [human approval](/configuration/workflows/states) or [autopilot](/configuration/workflows/autopilot); both retain merge authorization. Tickets select the workflow; `WORKFLOW.md` supplies project rules. Matt is the shipped recipe. Install every named skill.
+Tickets run [`bb_work`](/configuration/workflows/states); `WORKFLOW.md` supplies project rules. Matt is the shipped recipe. Install every named skill.
 
 ## What changes
 

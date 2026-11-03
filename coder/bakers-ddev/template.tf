@@ -20,7 +20,10 @@ variable "docker_host" {
 variable "image" {
   description = "Workspace image with tag: Ubuntu 24.04, user coder with passwordless sudo, Docker daemon started by the entrypoint, Node 22 with an npm prefix in the home, DDEV"
   type        = string
-  default     = "git.key-tec.de:5050/keytec/infra/coder-drupal-ddev-base:3.2.5"
+  validation {
+    condition     = length(trimspace(var.image)) > 0
+    error_message = "Supply a publicly pullable, versioned workspace image meeting the README requirements."
+  }
 }
 
 variable "cpu" {

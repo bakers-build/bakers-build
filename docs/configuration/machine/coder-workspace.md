@@ -5,6 +5,8 @@ description: "Give each person a long-lived Coder workspace that is a bakers.bui
 
 # Set up a Coder workspace
 
+Coder is optional and runs the client/workspace, not the [server](/configuration/project/server). You can use a local workstation without Coder or preview tunnels.
+
 Give each person a Coder workspace that works like a developer's own machine: Docker, DDEV, bakers.build, herdr, the agent CLIs and the tunnel clients are ready, and you sign in once.
 
 The `bakers-ddev` template provides one long-lived workspace per person. It starts without projects. Inside it, `/bb-init` signs you in, checks out your projects and starts one conductor per checkout. For a plain server instead, see [Set up a worker server](/configuration/machine/worker-server).
@@ -26,10 +28,10 @@ The image supplies tools; your private home stores identity, credentials and che
 
 ## Template, sign-in and project reference
 
-1. Push the template from `coder/bakers-ddev` in your operator-provided bakers.build source checkout. See the [operator prerequisites](/configuration/project/server). Its default image is not public: pass your own with `--variable image=<image>`. The template has no registry credentials, so the Docker host must be able to pull the image itself. The README lists the image requirements and the variables.
+1. Push the template from `coder/bakers-ddev` in your operator-provided bakers.build source checkout. See the [operator prerequisites](/configuration/project/server). There is no default image: supply a compatible prebuilt image with `--variable image=<image>`. The template has no registry credentials, so the Docker host must be able to pull it itself. No public workspace image is published, and the server images cannot be used as workspace images. The README lists the image requirements and the variables.
 
    ```sh
-   coder templates push bakers-ddev -d coder/bakers-ddev
+   coder templates push bakers-ddev -d coder/bakers-ddev --variable image=<workspace-image:version>
    ```
 
 2. Create your workspace and open a terminal in it.
@@ -39,7 +41,7 @@ The image supplies tools; your private home stores identity, credentials and che
    coder ssh <name>
    ```
 
-   The first start installs `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab`, `cloudflared`, `frpc` and `ss` into your home volume, and starts `herdr server`. The log is `/tmp/coder-startup-script.log`.
+   The first start installs `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab` and `ss` into your home volume, and starts `herdr server`. The log is `/tmp/coder-startup-script.log`.
 
 3. Sign in to your chosen agent and follow [skill installation](/configuration/agents/skills) for the bakers plugin. Open the agent from `~/projects` and run `/bb-init`. Trust that parent folder when asked so new worktrees inherit trust; otherwise the first run waits in its terminal. The wizard guides the remaining steps and confirms configuration writes.
 
@@ -83,9 +85,9 @@ The image supplies tools; your private home stores identity, credentials and che
    ssh-keyscan <git-host> >> ~/.ssh/known_hosts
    ```
 
-8. Choose a preview transport using its canonical setup: [Cloudflare Quick](/addons/ports-cloudflare-quick), [Named Cloudflare](/addons/ports-cloudflare), or [frp](/addons/ports-frp). Configure the Ports entry in the private machine file. Public URLs expose the running application; review [Security](/configuration/security#public-previews-and-ports) first.
+8. Optionally choose a preview transport (skip this step for local-only work) using its canonical setup: [Cloudflare Quick](/addons/ports-cloudflare-quick), [Named Cloudflare](/addons/ports-cloudflare), or [frp](/addons/ports-frp). Configure the Ports entry in the private machine file. Public URLs expose the running application; review [Security](/configuration/security#public-previews-and-ports) first.
 
-   **Coder lifecycle:** Named Cloudflare starts `cloudflared tunnel run` on every workspace startup while `~/.cloudflared/tunnel-token` exists. Cloudflare Quick needs no persistent connector. Keep its secrets in the home volume. For frp, use `~/.config/frp/frpc.json`, create the directory referenced by `includes`, and set `loginFailExit: false`: nothing restarts a client that exits when the server is unavailable. Restart the workspace after configuring it, or start the connector manually. The frp transport page owns its complete config and addon descriptor.
+   **Coder lifecycle:** Without provider configuration no tunnel client is installed or started. Named Cloudflare installs `cloudflared` and runs `cloudflared tunnel run` on every workspace startup while `~/.cloudflared/tunnel-token` exists. Cloudflare Quick needs an explicitly installed `cloudflared` but no persistent connector. A `~/.config/frp/frpc.json` likewise opts into installing and starting `frpc`; your config supplies your own zone and endpoint. Keep its secrets in the home volume. For frp, use `~/.config/frp/frpc.json`, create the directory referenced by `includes`, and set `loginFailExit: false`: nothing restarts a client that exits when the server is unavailable. Restart the workspace after configuring it, or start the connector manually. The frp transport page owns its complete config and addon descriptor.
 
 9. Check out your projects and start their conductors. One conductor serves one checkout ([Conductors](/configuration/project/conductors)). `/bb-init` lists your projects, clones each chosen one from its repository at its default branch into `~/projects/<key>`, configures it with `bb-init-project` and, after you confirm, starts its conductor in its own herdr tab. By hand:
 

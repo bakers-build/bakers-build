@@ -1,11 +1,21 @@
 ---
 title: Server
-description: For operators - what a bakers.build control plane consists of, how the repository tests and deploys it with Komodo, first install, sign-in and access, updates, releases and their image versions, verification, failure diagnosis and rollback.
+description: Install a standalone control plane from public release images with Docker Compose, Traefik HTTPS and persistent storage.
 ---
 
-# Server
+# Self-host the server
 
-A bakers.build control plane is a Drupal site deployed as one Docker Compose stack; this page is for the operator who provisions, updates or recovers it. Workstation setup needs none of this.
+The control plane runs on one Linux Docker host. It does not require Coder, FRP,
+Komodo, a private registry or a source build. Clients and workers are installed
+separately through [Get started](/get-started/machine). Existing operator-managed
+Komodo stacks retain their [current deployment procedure](/configuration/project/server-komodo).
+
+A release is a GitHub release `vX.Y.Z` of
+[`bakers-build/bakers-build`](https://github.com/bakers-build/bakers-build/releases).
+Its public images are `ghcr.io/bakers-build/bakers-build/php:X.Y.Z` and
+`ghcr.io/bakers-build/bakers-build/nginx:X.Y.Z`, pullable without a registry login. Install
+only a release; `latest`, `main` and `next` are moving channel tags, and `next`
+images are pre-release builds.
 
 ## AI first
 
@@ -17,127 +27,233 @@ install or update steps and verification; wait for explicit deployment
 authorization.
 ```
 
+## Host and release inputs
 
-## What runs
+Use a dedicated Linux Docker Engine host with Docker Compose v2.24.4 or newer,
+on `amd64` (the release images are published for `linux/amd64` only), and enough disk for the
+working data plus a separate backup. Select capacity based on your workload.
+Provide a DNS hostname pointing directly to this host (including correct AAAA
+records if present), inbound TCP 80/443, outbound HTTPS, and outbound access to
+your SMTP service. Disable any upstream TLS termination for the documented
+TLS-ALPN ACME challenge. Do not expose database or PHP ports.
 
-`docker-compose.yml` in the repository root is the ingress-agnostic base. Its services:
+Obtain these files from the same release tag, retaining paths, and pin both
+images by digest:
 
-| Service | Role |
+```sh
+set -euo pipefail
+VERSION=X.Y.Z  # the selected release, without the leading v
+for f in docker-compose.yml docker-compose.traefik.yml docker/self-host.yml docker/self-host.env.example; do
+  curl -fsSL --create-dirs -o "$f" "https://raw.githubusercontent.com/bakers-build/bakers-build/v$VERSION/$f"
+done
+for image in php nginx; do
+  docker buildx imagetools inspect "ghcr.io/bakers-build/bakers-build/$image:$VERSION" --format '{{.Name}}@{{.Manifest.Digest}}'; echo
+done
+```
+
+No checkout build toolchain is needed. Put the files in a private installation
+directory. Never run this path inside an existing operator's stack directory.
+The following commands use Bash from that directory:
+
+```sh
+set -euo pipefail
+umask 077
+cp docker/self-host.env.example .env
+chmod 600 .env
+```
+
+Edit `.env` before proceeding. Do not source it as a shell script. Compose reads
+it directly; single-quote values containing `$` to avoid interpolation.
+
+| Input | Value to provide |
 |---|---|
-| `init-perms` | One-shot root container that fixes ownership of the file volumes before PHP starts. |
-| `db` | MariaDB 10.11 on the `db` volume, with a health check. |
-| `deploy` | One-shot update: `drush deploy` (database updates, configuration import, cache rebuild, deploy hooks), then code-defined entity schema changes and OAuth key generation. It never installs. |
-| `install` | First install only. Profile-gated, so it never starts on a normal `up`. |
-| `php`, `nginx`, `cron` | The site, its web server and a `drush core:cron` loop (`CRON_INTERVAL`, default 300 seconds). They start only after `deploy` exits successfully. |
+| `COMPOSE_PROJECT_NAME` | Stable, unique project name; changing it selects different networks and volumes. |
+| `STACK_NAME` | Unique router name, normally the same as the project name. |
+| `DOMAIN`, `ACME_EMAIL` | Public hostname without scheme/path and certificate contact email. |
+| `TRAEFIK_SUBNET` | Unused private IPv4 CIDR for this project's ingress network. Check host/VPN routes and existing Docker networks first; e.g. `172.30.42.0/24` only if free. |
+| `REGISTRY_IMAGE_PHP`, `REGISTRY_IMAGE_NGINX` | The two pinned references printed above, e.g. `ghcr.io/bakers-build/bakers-build/php:X.Y.Z@sha256:…`. Both must come from the same release. |
+| `TRAEFIK_IMAGE` | Versioned public Traefik image; the example selects `traefik:v3.6.1`. |
+| `DB_NAME`, `DB_USER` | Application database and user. |
+| `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `DRUPAL_HASH_SALT` | Three independent private random values, e.g. generate each with `openssl rand -hex 32`. Retain them across updates/restores. |
+| `MAIL_SMTP_DSN`, `MAIL_FROM_ADDRESS` | Working SMTP URL and permitted sender. For example `smtp://user:password@smtp.example.org:587`; percent-encode credential characters. Use your provider's TLS settings; do not disable peer verification. |
+| `BB_OAUTH_GOOGLE_CLIENT_ID`, `BB_OAUTH_GOOGLE_CLIENT_SECRET` | Optional Google login credentials for this domain; otherwise empty. |
 
-Volumes hold the database, public files, private files, `/tmp` and the OAuth keys. Ingress is the overlay `docker-compose.traefik.yml` in both stacks' `file_paths`. Each host runs Traefik on the external network `traefik_proxy` with Let's Encrypt certificates through the TLS-ALPN challenge, so DNS must point straight at the host (Cloudflare: DNS only). `nginx` limits the open MCP client registration `/oauth/register` to 10 requests a minute with a burst of 5, one budget for all clients behind Traefik.
+Leave `COMPOSE_PROFILES` empty. The docs-site image is not required. Coder and FRP
+are not part of this stack. MariaDB retains the base stack's pinned version;
+the standalone helper is pinned in `docker/self-host.yml`.
 
-## Deployment path
-
-The repository tests and deploys through GitLab CI and Komodo; the images the merge gate tested are the images that deploy:
-
-1. A merge request push runs only the fast checks (lint, static analysis, CLI tests, contracts).
-2. Before the merge, the merge step plays the manual `gate` job. It refuses a branch not up to date with its target. `build` then builds `php`, `nginx` and the test images `php-test` and `e2e` once as `:tree-<git tree hash>`, and `phpunit`, `e2e` and `config_install` test them in parallel. *Pipelines must succeed* blocks the merge until all are green.
-3. On a `develop` or `main` push, `promote` tags the images of the commit's tree `:<branch>`, which the stack pulls, and `:<commit-sha>`: same digests, no rebuild. A merged up-to-date branch keeps its tree. Without a tree image, `promote` fails: that commit skipped the gate.
-4. The `deploy` job runs `keytec-ai deployer deploy`, a Komodo DeployStack it polls. `scripts/deploy/deploy-report.mjs` then prints the deployed commit and the server's `deploy` service log with its exit state, and smoke-checks TLS, the sign-in page, OAuth discovery and `/mcp`, retrying for up to three minutes; any failure fails the job. `develop` deploys the stack `bakers-develop` to `https://develop.dev.bakers.build` (server `dev2`), `main` deploys `bakers-prod` to `https://app.bakers.build` (server `bakers-prod`).
-5. The stacks are declared in git in `komodo/bakers.toml`, one `[[stack]]` per branch, and created by a Komodo Resource Sync. Each stack sets the server, repository and branch, `file_paths`, the domain, `STACK_NAME`, `DB_*`, the image references and its secrets.
-
-The pipeline needs the masked, protected project variables `KOMODO_URL`, `KOMODO_API_KEY`, `KOMODO_API_SECRET` and `NPM_TOKEN`. They reach only protected refs (`develop`, `main`, tags `v*`), so a feature branch can neither deploy nor publish. Komodo pulls the images with a project deploy token (`read_registry`), the stack's `registry_account`.
-
-Secrets are Komodo Variables referenced as `[[NAME]]` in the stack environment. `keytec-ai deployer provision-secrets` creates missing ones as random hex, idempotently. `MAIL_SMTP_DSN` and `MAIL_FROM_ADDRESS` must be real, or outbound mail and with it passwordless sign-in break; `MAIL_FROM_NAME` is `bakers.build`. The Google sign-in variables stay empty until a Google client is registered for the host. Keep an intentionally empty variable non-secret: Komodo redacts secret values, and an empty secret breaks the deploy.
-
-To add an installation, first agree DNS, TLS, storage, backups and secret ownership. Copy a `[[stack]]` in `komodo/bakers.toml`; change name, server, branch, domain, images and variable names (`[A-Za-z0-9_]`). Run `keytec-ai deployer provision-secrets`, review the Resource Sync diff, and sync before the first deploy and any `file_paths` change, or the stack can lose its ingress and answer 404 everywhere. Then point DNS and push the branch.
-
-## Outbound mail
-
-Every mail goes through the `bb_html_mail` backend: a branded HTML part plus a plain-text alternative. Without `MAIL_SMTP_DSN` it uses local sendmail; with it, `settings.komodo.php` sets only the SMTP transport. A per-module or per-key entry under `system.mail` › `interface` sends that mail without the template. When a mail arrives as plain text only, check:
+Define this function in every operator shell used below:
 
 ```sh
-drush config:get system.mail --include-overridden
+dc() {
+  docker compose --env-file .env -f docker-compose.yml \
+    -f docker-compose.traefik.yml -f docker/self-host.yml "$@"
+}
+dc config -q
 ```
 
-The account mail texts at `/admin/config/people/accounts` follow three conventions that shape the HTML part:
+Missing required values fail before startup. Full `docker compose config` output
+contains secrets; use `-q` for validation and keep diagnostic output private.
+The self-host overlay forwards domain, SMTP and strict security settings to all
+PHP services. Drupal accepts only `DOMAIN`, trusts forwarding only from the
+selected ingress subnet, ignores forwarded host headers and requires a salt.
+The DDEV and existing Komodo configuration paths retain their current behavior.
 
-- A first line `# Headline` becomes the heading; the subject keeps the product name.
-- A line `Label: [token-url]` becomes a button named *Label*. Each mail has at most one link.
-- A paragraph that is only the login code is shown in a box.
+## First install — empty project only
 
-The plain-text part keeps every line as written, without the `#`.
-
-## First install
-
-A new environment is installed once, deliberately, on the host, from the stack directory:
+Confirm this project has no existing data: inspect `dc ps -a` and
+`docker volume ls` before running install. **The install service drops and
+recreates the selected database. Never run it as an update or restore step.**
 
 ```sh
-docker compose --profile install run --rm install
+dc --profile install pull
+dc --profile install run --rm install
+dc up -d
+dc ps -a
+dc logs --tail 80 deploy
 ```
 
-This runs `site:install --existing-config`, which drops and recreates the database from `config/sync`, then the deploy hooks and OAuth key generation. Never run it against a live site. The new environment is empty: no content, no users besides the first admin.
+`install` is profile-gated. Normal startup runs the update-only `deploy` hook,
+then PHP, Nginx and cron; a failed hook keeps application services from starting.
+Named volumes preserve database, public/private files and OAuth signing keys.
+The `/tmp` volume is disposable. Do not use `down -v` or volume pruning.
 
-The first `deploy` job on an empty environment fails by design: the `deploy` service refuses an uninstalled site. Install, then re-run it.
+Traefik owns ports 80/443, redirects HTTP to HTTPS and requests/renews certificates
+with Let's Encrypt through TLS-ALPN on port 443. Its `acme` volume preserves
+certificate/account material. Its dashboard is disabled. The project-specific
+ingress network is created by Compose; no pre-existing company network is needed.
+Traefik discovers only this project's labelled containers. Its Docker socket
+mount is read-only, but Docker API access is still privileged: use a dedicated
+host and do not give untrusted containers access to that socket or ingress network.
 
-The first admin signs in once with a one-time link and then creates the first workspace and accounts in the web UI:
+Obtain the first administrator's one-time login link privately:
 
 ```sh
-docker compose exec php drush uli
+dc exec php /var/www/html/vendor/bin/drush --uri="https://YOUR_DOMAIN" uli
 ```
 
-## Sign-in and access
+Replace `YOUR_DOMAIN` with the configured hostname. Open the link, configure the
+owner's email, and create the initial workspace and memberships. Verify normal
+passwordless sign-in by receiving a real email. Google login is optional. Existing
+application permissions remain authoritative; do not give ordinary members admin
+rights to bypass an access failure. Connect clients with
+`bakers init --base-url https://YOUR_DOMAIN`.
 
-The install creates one OAuth consumer, and deploys never touch consumers. Manage them in the Drupal consumers UI at `/admin/config/services/consumer`.
+## Verify before opening access
 
-- **Device code and browser sign-in.** A shared public consumer `bakers-cli` has no secret; a person signs the CLI in with `bakers init`. `device_code` is the default and works over SSH and in containers.
-- **Service identities.** A user creates a key in the web UI and connects with `client_credentials` ([API keys](/configuration/security/credentials)).
-- **MCP clients.** Claude and other MCP clients register themselves at `/oauth/register`.
-- **Scope and rows.** Every token carries the umbrella scope `bb_session`, which is a ceiling. What a token reaches comes from the account's workspace membership and rank, so add each user to the right workspace and projects.
-- **Web sign-in.** Passwordless sign-in by mail works out of the box. Google sign-in needs `BB_OAUTH_GOOGLE_CLIENT_ID` and `BB_OAUTH_GOOGLE_CLIENT_SECRET`, registered for the host's own redirect URI; both are empty at launch.
+Check HTTP redirects to HTTPS, the certificate matches the hostname, the sign-in
+page and mail links use HTTPS, and normal/denied member access behaves as expected.
+A request with an unrelated Host must not reach the application. Spoofed forwarded
+headers from outside the ingress network must not be trusted. Verify OAuth discovery
+at `/.well-known/oauth-authorization-server` and MCP access at `/mcp` using the
+appropriate signed-in client. A server response alone is not a permission check.
 
-Give users the server URL and their login method through a private channel. They connect with `bakers init --base-url https://<your-domain>` ([Connections](/configuration/connector/connections)).
+Maintainers with the repository and Node can additionally run:
+
+```sh
+node scripts/deploy/deploy-report.mjs --smoke-only https://YOUR_DOMAIN
+```
+
+Record release versions, resolved digests, architecture, source revision and
+observations without login tokens or secrets. Maintainers exercise this guide's
+install, restart, backup, update and restore blocks against two published
+versions with the manual *Self-host lifecycle* GitHub Actions workflow
+(`scripts/ci/self-host-lifecycle.sh`); it substitutes a test ACME CA and mail
+catcher for the public CA and SMTP provider.
+
+## Restart and backup
+
+`dc restart php nginx cron traefik` restarts services without reinstalling. Verify
+records, public/private file access and OAuth identity afterwards.
+
+For a consistent backup, stop all application writers and ingress. Keep any
+external automation stopped too; do not run deploy/install during the backup.
+Use a fresh backup directory outside the installation directory and protect it:
+
+```sh
+set -euo pipefail
+umask 077
+backup="$(mktemp -d ../bakers-backup.XXXXXXXX)"
+dc stop traefik nginx php cron
+dc exec -T db sh -c 'exec mysqldump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' > "$backup/database.sql"
+dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/web/sites/default/files -cf - . > "$backup/public.tar"
+dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/private-files -cf - . > "$backup/private.tar"
+dc run --rm --no-deps -T --entrypoint tar php -C /var/www/oauth-keys -cf - . > "$backup/oauth.tar"
+dc run --rm --no-deps -T --entrypoint tar init-perms -C /acme -cf - . > "$backup/acme.tar"
+cp .env docker-compose.yml docker-compose.traefik.yml "$backup/"
+cp -R docker "$backup/"
+dc config --images > "$backup/images.txt"
+dc images --format json > "$backup/running-images.json"
+(cd "$backup" && sha256sum database.sql public.tar private.tar oauth.tar acme.tar > SHA256SUMS)
+touch "$backup/COMPLETE"
+dc start php nginx cron traefik
+```
+
+If a command fails, leave writers stopped until the cause is resolved. A directory
+without `COMPLETE` is not a completed backup. Copy completed backups to separate,
+access-controlled storage; they contain the database, private files, signing keys,
+certificate private keys and `.env` secrets. Do not commit or publish them.
 
 ## Update
 
-1. Record the deployed and target release. Back up the database and the file volumes, and the OAuth key volume.
-2. Merge through the gate; the pipeline promotes and deploys. To re-run the `deploy` service by hand, run `docker compose up -d` in the stack directory on the host.
-3. The `deploy` service applies database updates and imports `config/sync`. Configuration and schema changes travel only this way; never patch a live server with `drush`.
-4. Verify, as below.
-
-## Release
-
-CLI and server share one version, held only in the `v*` tag. A release is the prod deployment of a `deploy-and-release` ticket ([Release](/addons/deployment/reference#release)):
-
-1. The ticket branch `release/<identifier>`, reset to the frozen `develop` SHA with no commit of its own, merges into `main` through one merge request, its gate and a merge commit; the gate builds and tests the images of the branch's tree. The pipeline promotes them and deploys prod.
-2. The `release` job derives the version from the Conventional Commits merge request titles since the last version tag (`release:version`), tags `v0.2.0` on the merge's second parent, the frozen `develop` commit, and creates the GitLab release with the generated notes. A tagged commit or a range without `feat`, `fix` or breaking commit releases nothing.
-3. The tag pipeline's `publish:npm` publishes `@bakers-build/bakers` and its packages as `latest`, and `release_images` tags that commit's `:tree-<tree>` images `php` and `nginx` as `:0.2.0` and `:latest`. Never publish by hand.
-
-Nothing merges back: `develop` already contains the tagged commit.
-
-`php:0.2.0` is the server of `@bakers-build/bakers@0.2.0`. Release images carry the labels `org.opencontainers.image.version` and `org.opencontainers.image.revision`: the layers equal the deployed `:<commit-sha>`, the digest differs. `docker inspect <image>` shows them for what a host runs. The registry cleanup policy deletes `tree-*` tags after 30 days.
-
-Every `develop` deploy also publishes the CLI under the dist-tag `next` (`<next patch>-next.<pipeline number>`), matching the commit on dev.
-
-## Verify
-
-By hand:
+Take and verify the backup above first. Stop writers again with
+`dc stop traefik nginx php cron`. Read the release's supported upgrade path and
+replace the installation artifacts only as directed, then update both application
+image references to the matching release. Keep project identity, database inputs
+and salt unchanged. Do not independently upgrade MariaDB as part of an application
+update.
 
 ```sh
-node scripts/deploy/deploy-report.mjs --smoke-only https://<your-domain>
-bakers config check --scope all --online
+dc config -q
+dc pull
+dc run --rm --no-deps deploy
+dc up -d
 ```
 
-The online check proves sign-in and workspace access; then run a small ticket through an oven.
+If the update hook fails, do not reopen ingress. Resolve the failure or restore a
+matching backup. After success, compare pre/post-update record IDs, public/private
+file checksums and the OAuth public-key fingerprint, then repeat login and access
+checks. A code-only downgrade does not reverse database/schema changes.
 
-## Diagnose a failed deploy
+## Restore onto empty isolated storage
 
-If every path answers a plain-text `404 page not found`, the containers are not running: `php`, `nginx` and `cron` stay in state `Created` when `deploy` exits non-zero. On the host:
+Practice recovery in a **new installation directory and a different Compose
+project**, preferably on a separate host. Never restore over the source instance.
+Copy the completed backup's configuration and exact release files to the new
+directory, keep `.env` private, and redefine `dc` there. Verify `SHA256SUMS` in the
+backup directory and inspect the archive inventories before extraction.
+
+Set a new `COMPOSE_PROJECT_NAME` and `STACK_NAME`, a separate test hostname and an
+unused `TRAEFIK_SUBNET`. Retain the original database credentials, salt and exact
+image digests. Update optional provider redirect registrations if testing login
+on the new hostname. A new test hostname obtains its own ACME certificate; restore
+the saved ACME archive only for recovery of the original domain on its replacement
+host, with the original ingress stopped. Two hosts must not compete for that name.
+
+Check `dc ps -a` and the project-labelled volumes are absent before creating any
+storage. Explicitly select and inspect the destination project; never use existing
+operator volumes. Do **not** run the install service.
 
 ```sh
-docker ps -a --format '{{.Names}}\t{{.Status}}' | grep <stack>
-docker logs <stack>-deploy-1 2>&1 | tail -60
-cd /etc/komodo/stacks/<stack> && docker compose up -d
+set -euo pipefail
+# Set this to the complete, verified backup directory.
+backup=/absolute/path/to/backup
+test -f "$backup/COMPLETE"
+(cd "$backup" && sha256sum -c SHA256SUMS)
+dc config -q
+dc pull
+dc up -d --wait db
+dc run --rm --no-deps init-perms
+dc exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < "$backup/database.sql"
+dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/web/sites/default/files -xf - < "$backup/public.tar"
+dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/private-files -xf - < "$backup/private.tar"
+dc run --rm --no-deps -T --entrypoint tar php -C /var/www/oauth-keys -xf - < "$backup/oauth.tar"
+# Original-domain recovery only, before Traefik starts:
+# dc run --rm --no-deps -T --entrypoint tar init-perms -C /acme -xf - < "$backup/acme.tar"
+dc up -d
 ```
 
-A `Lock wait timeout exceeded` during configuration import is transient: retry with `docker compose up -d`. A PHP `Allowed memory size` failure is not a host out-of-memory kill; check the log and `State.OOMKilled` before changing capacity, and keep the CLI's 384 MiB ceiling.
-
-## Roll back
-
-Every release has a `:<version>` tag and every deployed commit a `:<commit-sha>` tag; the `deploy` job log names the deployed commit. To roll back code at once, set the stack's `REGISTRY_IMAGE_PHP` and `REGISTRY_IMAGE_NGINX` in Komodo to the last good version, such as `:0.1.0` (on dev: the last good `:<commit-sha>`), and redeploy the stack. The next Resource Sync puts `:<branch>` back, so follow up with a revert merge request. Database updates do not reverse themselves: when a release changed schema or data, restore the backups from step 1 of the update, redeploy the matching code and verify again. Record the recovery that worked.
+Verify record IDs, file checksums, private-file permissions, OAuth public-key
+fingerprint and sign-in against the source snapshot. Keep the source instance and
+backup intact. Failed-upgrade recovery uses this same matched image/data snapshot;
+switching traffic or changing production DNS is a separate operator decision.

@@ -91,7 +91,7 @@ final class TypeWorkflowsTest extends KernelTestBase {
   public function testTerminalTicketStatesPairsEachWorkflowWithItsTerminalStates(): void {
     $terminal = TypeWorkflows::terminalTicketStates();
 
-    foreach (['bb_work', 'bb_autopilot'] as $workflow_id) {
+    foreach (['bb_work'] as $workflow_id) {
       $this->assertArrayHasKey($workflow_id, $terminal);
       $states = $terminal[$workflow_id];
       sort($states);
@@ -134,12 +134,12 @@ final class TypeWorkflowsTest extends KernelTestBase {
     $manager = $this->container->get('plugin.manager.workflow');
     $definitions = $manager->getDefinitions();
 
-    // The four workflows this tree defines (the ticket workflows bb_work and
-    // bb_autopilot, bb_run and the review comment's bb_review).
-    // Asserted so that a fifth cannot arrive unnoticed: the phase table
+    // The three workflows this tree defines (the ticket workflow bb_work,
+    // bb_run and the review comment's bb_review).
+    // Asserted so that a fourth cannot arrive unnoticed: the phase table
     // below would then be incomplete and this count is what says so first.
     $this->assertSame([
-      'bb_work', 'bb_autopilot', 'bb_run', 'bb_review',
+      'bb_work', 'bb_run', 'bb_review',
     ], array_values(array_map('strval', array_keys($definitions))));
 
     $phases = [];
@@ -161,14 +161,6 @@ final class TypeWorkflowsTest extends KernelTestBase {
     // hide the day two workflows disagree about one.
     $this->assertSame([
       'bb_work' => [
-        'qualification' => 'prepare',
-        'plan' => 'prepare',
-        'working' => 'running',
-        'review' => 'review',
-        'done' => 'done',
-        'cancelled' => 'cancelled',
-      ],
-      'bb_autopilot' => [
         'qualification' => 'prepare',
         'plan' => 'prepare',
         'working' => 'running',
@@ -205,40 +197,6 @@ final class TypeWorkflowsTest extends KernelTestBase {
     $this->expectException(\LogicException::class);
     $this->expectExceptionMessage('bb_work');
     TypeWorkflows::phase('bb_work', 'nonexistent');
-  }
-
-  /**
-   * Autopilot approves its four claimable states; every other state is human.
-   *
-   * Walks every ticket workflow, so a new state or workflow is covered the
-   * moment it is declared, and an absent key reads as `human`.
-   */
-  public function testApprovalReadsTheStateDeclaration(): void {
-    $approvals = [];
-    foreach (['bb_work', 'bb_autopilot'] as $workflow_id) {
-      foreach (['qualification', 'plan', 'working', 'review', 'done', 'cancelled'] as $state) {
-        $approvals[$workflow_id][$state] = TypeWorkflows::approval($workflow_id, $state);
-      }
-    }
-    $this->assertSame([
-      'bb_work' => [
-        'qualification' => 'human',
-        'plan' => 'human',
-        'working' => 'human',
-        'review' => 'human',
-        'done' => 'human',
-        'cancelled' => 'human',
-      ],
-      'bb_autopilot' => [
-        'qualification' => 'automatic',
-        'plan' => 'automatic',
-        'working' => 'automatic',
-        'review' => 'automatic',
-        'done' => 'human',
-        'cancelled' => 'human',
-      ],
-    ], $approvals);
-    $this->assertSame('human', TypeWorkflows::approval('bb_run', 'running'));
   }
 
   /**

@@ -59,6 +59,7 @@ export const SIDEBAR = {
       ['Contributing to bakers.build', '/configuration/project/contributing'],
       ['Configuration migration', '/configuration/project/migration'],
       ['Server', '/configuration/project/server'],
+      ['Komodo server', '/configuration/project/server-komodo'],
     ]),
     group('Provisioning', [
       ['Provisioning', '/configuration/provisioning'],
@@ -83,7 +84,6 @@ export const SIDEBAR = {
     ]),
     group('Workflows', [
       ['Workflows', '/configuration/workflows'],
-      ['Autopilot workflow', '/configuration/workflows/autopilot'],
       ['Ticket metrics', '/configuration/workflows/metrics'],
       ['Write a recipe', '/configuration/workflows/recipes'],
       ['Workflows and states', '/configuration/workflows/states'],
