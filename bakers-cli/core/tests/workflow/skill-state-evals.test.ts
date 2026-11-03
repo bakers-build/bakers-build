@@ -120,7 +120,10 @@ describe('frame routing profile', () => {
 });
 
 describe('ticket pingpong profile', () => {
-  const fixture = (expect: Record<string, unknown>) => ({
+  const fixture = (
+    expect: Record<string, unknown>,
+    simulation: Record<string, unknown> = {},
+  ) => ({
     id: 'pingpong-probe',
     synthetic: true,
     profile: 'ticket-pingpong',
@@ -135,6 +138,7 @@ describe('ticket pingpong profile', () => {
         identifier: 'EVAL-61',
         labels: ['ticket:pingpong'],
       },
+      ...simulation,
     },
     rubric: [{ id: 'probe', criterion: 'Probe.' }],
   });
@@ -154,6 +158,20 @@ describe('ticket pingpong profile', () => {
     '# Technical problem\n\nPlease contact keytec.\n',
   );
   const reported = update({ labels_add: ['technical problem'], frozen: true });
+  const tunnel = 'https://eval-61-preview.example.invalid/invoices';
+  const shown = comment(
+    'comment',
+    `# Question\n\nThe invoice list now has an Export CSV button. Try it at ${tunnel}.\n\n1. Accept (recommended)\n2. Ask for changes`,
+  );
+  const mergeArgv = ['glab', 'mr', 'merge', '61', '--squash'];
+  const merged: Row = {
+    tool: 'glab',
+    arguments: { argv: mergeArgv },
+    result: ok('Merged MR 61\n'),
+  };
+  const commands = {
+    glab: [{ argv: mergeArgv, result: ok('Merged MR 61\n') }],
+  };
   const verdict = (status: string) =>
     comment('review', `# Review\n\nStatus: **${status}**\n\nF1 ...`);
   const summary = comment('summary');
@@ -183,10 +201,13 @@ describe('ticket pingpong profile', () => {
     ).toEqual(['pingpong-question']);
   });
   it('technical problem never asks the user', async () => {
-    const p = fixture({ stop: 'technical-problem' });
+    const p = fixture({
+      stop: 'technical-problem',
+      cause: 'Cannot connect to the Docker daemon',
+    });
     const handoff = comment(
-      'coding',
-      '# Coding handoff\n\n`ddev start` failed: the Docker daemon is not reachable.',
+      'comment',
+      '`ddev start` failed:\n\n```\nCannot connect to the Docker daemon at unix:///var/run/docker.sock.\n```',
     );
     expect(
       await judge(p, 'Stopped.', [readTicket(), handoff, problem, reported]),
@@ -231,6 +252,15 @@ describe('ticket pingpong profile', () => {
     expect(
       await judge(p, 'Stopped.', [readTicket(), problem, reported]),
     ).toEqual(['pingpong-cause-recorded']);
+    // The error output itself, not just a note that something failed.
+    expect(
+      await judge(p, 'Stopped.', [
+        readTicket(),
+        comment('comment', 'Blocked: the environment does not start.'),
+        problem,
+        reported,
+      ]),
+    ).toEqual(['pingpong-cause-recorded']);
   });
   it('sends a Not OK verdict back to working', async () => {
     expect(await judge(notOk, 'Back.', back)).toEqual([]);
@@ -238,19 +268,49 @@ describe('ticket pingpong profile', () => {
       await judge(notOk, 'Done.', [...back.slice(0, 3), transition('done')]),
     ).toEqual(['pingpong-transition']);
   });
-  it('holds an OK verdict in review without merging', async () => {
-    const hold = fixture({ stop: 'hold', review_status: 'OK' });
-    const ok = [readTicket(), verdict('OK'), summary];
-    expect(await judge(hold, 'Held.', ok)).toEqual([]);
-    expect(await judge(hold, 'Done.', [...ok, transition('done')])).toEqual([
+  it('merges an OK verdict once, then moves to done', async () => {
+    const done = fixture(
+      { stop: 'transition', state: 'done', review_status: 'OK' },
+      { commands },
+    );
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(
+      await judge(done, 'Merged.', [...passed, merged, transition('done')]),
+    ).toEqual([]);
+    expect(await judge(done, 'Done.', [...passed, transition('done')])).toEqual(
+      ['pingpong-merge'],
+    );
+    expect(
+      await judge(done, 'Done.', [...passed, transition('done'), merged]),
+    ).toEqual(['pingpong-merge']);
+    expect(
+      await judge(done, 'Merged.', [
+        ...passed,
+        merged,
+        merged,
+        transition('done'),
+      ]),
+    ).toEqual(['pingpong-merge']);
+    expect(await judge(done, 'Merged.', [...passed, merged])).toEqual([
       'pingpong-transition',
     ]);
+    // Any other run merges nothing; an undeclared command leaves the call surface too.
     expect(
-      await judge(hold, 'Held.', [...ok, update({ frozen: true })]),
-    ).toEqual(['pingpong-no-stop']);
+      await judge(notOk, 'Back.', [
+        ...back.slice(0, 3),
+        merged,
+        transition('working'),
+      ]),
+    ).toEqual(['validated-call-surface', 'pingpong-merge']);
+  });
+  it('puts the tunnel link in the acceptance question', async () => {
+    const accept = fixture({ stop: 'question', link: tunnel });
+    expect(await judge(accept, 'Asked.', [readTicket(), shown, asked])).toEqual(
+      [],
+    );
     expect(
-      await judge(hold, 'Held.', [readTicket(), verdict('Not OK'), summary]),
-    ).toEqual(['pingpong-review-status']);
+      await judge(accept, 'Asked.', [readTicket(), question, asked]),
+    ).toEqual(['pingpong-link']);
   });
   it('run ends after the decisive write', async () => {
     expect(await judge(notOk, 'Back.', [...back, summary])).toEqual([
@@ -277,19 +337,22 @@ describe('ticket pingpong profile', () => {
   it('rejects an incomplete expectation', async () => {
     for (const e of [
       { stop: 'merge' },
+      { stop: 'hold' },
       { stop: 'transition' },
+      { stop: 'transition', state: 'plan' },
       { stop: 'none' },
-      { stop: 'hold', state: 'review' },
+      { stop: 'technical-problem' },
+      { stop: 'transition', state: 'review', link: tunnel },
     ])
       await expect(judge(fixture(e), 'x', [readTicket()])).rejects.toThrow();
   });
-  it('the loop limit counts only earlier Not OK verdicts', async () => {
-    // One earlier Not OK, one OK and a summary quoting Not OK: an over-count raises a problem.
-    expect(await judge('pingpong-review-loop-below', 'Back.', back)).toEqual(
+  it('a third Not OK still goes back to working', async () => {
+    // Two earlier Not OK verdicts: no loop limit, so no technical problem.
+    expect(await judge('pingpong-review-third-not-ok', 'Back.', back)).toEqual(
       [],
     );
     expect(
-      await judge('pingpong-review-loop-below', 'Stopped.', [
+      await judge('pingpong-review-third-not-ok', 'Stopped.', [
         ...back.slice(0, 3),
         problem,
         reported,
@@ -300,17 +363,37 @@ describe('ticket pingpong profile', () => {
       'pingpong-transition',
     ]);
   });
-  it('a GREEN coding gate moves to review unattended', async () => {
+  it('a first GREEN pass asks for the acceptance', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
     expect(
-      await judge('pingpong-working-green', 'Moved.', [
+      await judge('pingpong-working-acceptance', 'Asked.', [
+        ...handedOff,
+        shown,
+        asked,
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('pingpong-working-acceptance', 'Moved.', [
+        ...handedOff,
+        transition('review'),
+      ]),
+    ).toEqual(['pingpong-question', 'pingpong-transition', 'pingpong-link']);
+  });
+  it('an accepted GREEN pass moves to review without asking', async () => {
+    const handedOff = [readTicket(), comment('coding'), summary];
+    expect(
+      await judge('pingpong-working-accepted', 'Moved.', [
         ...handedOff,
         transition('review'),
       ]),
     ).toEqual([]);
-    expect(await judge('pingpong-working-green', 'Held.', handedOff)).toEqual([
-      'pingpong-transition',
-    ]);
+    expect(
+      await judge('pingpong-working-accepted', 'Asked.', [
+        ...handedOff,
+        shown,
+        asked,
+      ]),
+    ).toEqual(['pingpong-question', 'pingpong-no-stop', 'pingpong-transition']);
   });
 });
 
