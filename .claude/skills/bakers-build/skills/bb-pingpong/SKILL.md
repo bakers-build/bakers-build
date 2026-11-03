@@ -30,9 +30,9 @@ In `working`, write a missing `spec`, `plan` or `test` in this run through
 [plan](../bb-workflow/references/plan.md)'s `work` and `deliver` and the recipe's plan slot, each
 carrying `Approval: ticket:pingpong`; the label confirms an existing `spec`. A GREEN pass of the
 [coding gate](../bb-workflow/references/coding-gate.md) asks, in place of the gate's question, for
-the user's one **acceptance**: a user question with what changed, how to check it and a tunnel link
-through [preview links](../bb-workflow/references/preview-links.md), or the merge request only when
-nothing runs. Work requested changes and ask again; once accepted, every GREEN pass transitions to
+the user's one **acceptance**: a user question with only what changed, how to check it and a tunnel
+link through [preview links](../bb-workflow/references/preview-links.md); the merge request replaces
+the link only when nothing runs. Work requested changes and ask again; once accepted, every GREEN pass transitions to
 `review`.
 
 In [review](../bb-workflow/references/review.md), the verdict needs no confirmation. On `OK`, merge
