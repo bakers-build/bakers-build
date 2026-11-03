@@ -33,7 +33,7 @@
       "No runtime account, browser, reproduction or agent override is required. No origin publication. Qualification approval is standing but state is restricted to qualification.",
       "For merge only: MR 30 targets develop, latest pipeline and required manual jobs passed, no conflict, mergeable. Source feat/eval-30 is this ticket’s short-lived branch; no other MR targets it and deletion is safe. Concrete merge authorization is already given. MR title is Document invoice export.",
       "Repository Git operations are fixture-only literal commands. Candidate base for diff is <candidate-sha>^; inspect the current file docs/invoices.md. The command catalog in the tool description is syntax, not evidence.",
-      "All qualification substeps other than prior-art search and publication are already completed and confirmed: method, classification (bb_chore, work:docs), acceptance quality gate, actors, agent recommendation (retain confirmed defaults), provenance fixture-revision-1, handoff_version 1. Reuse these observations; no unresolved catalog or method choice remains."
+      "All qualification substeps other than prior-art search and publication are already completed and confirmed: method, classification (bb_chore, work:docs), acceptance quality gate, actors, agent recommendation (retain confirmed defaults), handoff_version 1. Reuse these observations; no unresolved catalog or method choice remains."
     ],
     "workspace_uuid": "66666666-6666-4666-8666-666666666666",
     "project_uuid": "55555555-5555-4555-8555-555555555555"
