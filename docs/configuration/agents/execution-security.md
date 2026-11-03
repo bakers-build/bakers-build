@@ -16,9 +16,7 @@ A run executes text other people wrote (ticket title, description, comments, env
 | `yolo` | Full access, permissions and sandbox bypassed | yours | passed |
 | `custom` | Only your `config`, handed to the harness unchanged | as `config` says | dropped |
 
-The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security) and [OpenCode](/addons/opencode#security) pages; Grok and OpenCode reject `custom`. OpenCode has no OS sandbox, so its default is `system` and an explicit `security: 'sandbox'` fails loading. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
-
-[Pi](/addons/pi) has no OS sandbox and takes only `system` (its default) and `custom`, which loads the extensions in `config.extensions`; `sandbox` and `yolo` fail loading before Pi starts.
+The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so their default is `system` and an explicit `security: 'sandbox'` fails loading; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
 ## Sandbox prerequisites
 
