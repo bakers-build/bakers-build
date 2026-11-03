@@ -1,7 +1,0 @@
-name: 'bakers.build workflow approval test'
-type: module
-description: 'Declares a workflow state with an approval outside the vocabulary.'
-package: Testing
-core_version_requirement: ^11
-dependencies:
-  - bb_core:bb_core

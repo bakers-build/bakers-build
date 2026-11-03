@@ -2,8 +2,7 @@
 
 Read at working's `transition`. No ticket leaves `working` without passing it; a recipe never
 restates it. Working's `outtake` has already published the typed coding handoff and the `summary`
-and printed it, so the work is durable whichever way the gate goes. Under `approval: automatic`,
-[automatic approval](autopilot.md) answers steps 1–3 with `review`, within its repair-loop bound.
+and printed it, so the work is durable whichever way the gate goes.
 
 1. **Ask the human to confirm that summary and MR**, unless *Re-entry exception* applies. This
    question stops the run.

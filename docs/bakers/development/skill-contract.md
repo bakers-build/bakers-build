@@ -39,7 +39,7 @@ A run is **state × phase**. Every state run passes seven phases in order: `read
 
 It then resolves the recipe, renders the intake (`references/intake.md`) once and starts the state file's `## read`. A state without a state file stops the run and names the state.
 
-Every work ticket runs `qualification → plan → working → review → done`, in `bb_work` or in [`bb_autopilot`](/configuration/workflows/autopilot), which approves those gates automatically. A deployment and a verification are tickets of type `deployment` and `verification` whose recipes, `bb-recipe-deploy-and-release` and `bb-recipe-verify`, say what `plan`, `working` and `review` mean for them.
+Every ticket runs the one workflow `bb_work`: `qualification → plan → working → review → done`. A deployment and a verification are tickets of type `deployment` and `verification` whose recipes, `bb-recipe-deploy-and-release` and `bb-recipe-verify`, say what `plan`, `working` and `review` mean for them.
 
 `plan`, `working` and `review` first apply `references/ensure-qualification.md` and continue only on `qualified`. Provisioning is lazy: the runtime is brought up before the first action that needs it, and skipped when nothing does.
 

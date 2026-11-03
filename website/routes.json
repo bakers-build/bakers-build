@@ -169,7 +169,7 @@
   "/setup/updates/server": "/configuration/project/server",
   "/setup/user-and-access": "/get-started/machine",
   "/skills-and-workflows/": "/configuration/workflows",
-  "/skills-and-workflows/autopilot": "/configuration/workflows/autopilot",
+  "/skills-and-workflows/autopilot": "/configuration/workflows/states",
   "/skills-and-workflows/how-it-works": "/configuration/workflows#how-it-works",
   "/skills-and-workflows/labels-and-work-types": "/configuration/workflows/types-recipes-labels",
   "/skills-and-workflows/workflows-and-states": "/configuration/workflows/states",

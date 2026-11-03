@@ -59,7 +59,6 @@ type `summary`; print it.
 
 ## transition
 
-Obtain or reuse approval of the qualification handoff; under `approval: automatic`,
-[automatic approval](autopilot.md) gives it. Publish authorized
+Obtain or reuse approval of the qualification handoff. Publish authorized
 [origin status](origin-status.md) for `plan`, then perform one [transition](transition-ticket.md) to
 `plan` with its readback. STOP without starting the destination state.

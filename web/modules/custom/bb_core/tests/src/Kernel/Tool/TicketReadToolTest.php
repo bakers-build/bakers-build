@@ -44,7 +44,6 @@ final class TicketReadToolTest extends BakersToolTestBase {
     self::assertSame('TR-1', $out['title']);
     self::assertSame('qualification', $out['state']);
     self::assertSame('bb_work', $out['workflow']);
-    self::assertSame('human', $out['approval']);
     self::assertSame("## Goal\n", $out['description']);
     self::assertSame('feature', $out['type']);
     self::assertNull($out['recipe'] ?? NULL);
@@ -103,21 +102,6 @@ final class TicketReadToolTest extends BakersToolTestBase {
     ]);
     $conductor->save();
     return $conductor;
-  }
-
-  /**
-   * The approval mode is the current state's, read from the ticket workflow.
-   */
-  public function testApprovalFollowsTheTicketWorkflow(): void {
-    foreach (['bb_work' => 'human', 'bb_autopilot' => 'automatic'] as $workflow => $approval) {
-      $ticket = $this->ticket('TR-A-' . $workflow, ['workflow' => $workflow]);
-      $ticket->getState()->applyTransitionById('qualify');
-      $ticket->save();
-      $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]));
-      self::assertSame('plan', $out['state'], $workflow);
-      self::assertSame($workflow, $out['workflow']);
-      self::assertSame($approval, $out['approval'], $workflow);
-    }
   }
 
   /**
