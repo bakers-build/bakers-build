@@ -157,7 +157,7 @@ describe('bb-pingpong profile', () => {
   const asked = update({ labels_add: ['Question'], frozen: true });
   const problem = comment(
     'comment',
-    '# Technical problem\n\nPlease contact keytec.\n',
+    '# Technical problem\n\nPlease contact the developers.\n',
   );
   const reported = update({ labels_add: ['technical problem'], frozen: true });
   const tunnel = 'https://eval-61-preview.example.invalid/invoices';
@@ -250,14 +250,14 @@ describe('bb-pingpong profile', () => {
         reported,
       ]),
     ).toEqual(['pingpong-technical-problem']);
-    // The cause and output belong in the handoff; the user reads only the keytec note.
+    // The cause and output belong in the handoff; the user reads only the contact note.
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
         handoff,
         comment(
           'comment',
-          '# Technical problem\n\n`ddev start` failed: Docker is down.\n\nPlease contact keytec.',
+          '# Technical problem\n\n`ddev start` failed: Docker is down.\n\nPlease contact the developers.',
         ),
         reported,
       ]),
@@ -265,7 +265,7 @@ describe('bb-pingpong profile', () => {
     expect(
       await judge(p, 'Stopped.', [readTicket(), problem, reported]),
     ).toEqual(['pingpong-cause-recorded']);
-    // Only the exact heading is the keytec note; a longer heading is an ordinary comment.
+    // Only the exact heading is the contact note; a longer heading is an ordinary comment.
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),

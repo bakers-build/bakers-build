@@ -6,7 +6,7 @@ import { nonempty, requireValue } from '../validation.mjs';
 // follows the stop.
 const STOPS = ['none', 'question', 'technical-problem', 'transition'];
 // The user reads only this note; the error and its output go into an earlier comment.
-const KEYTEC = '# Technical problem\n\nPlease contact keytec.';
+const NOTE = '# Technical problem\n\nPlease contact the developers.';
 
 export function validate(f) {
   validateTools(f, 'bb-pingpong');
@@ -53,9 +53,9 @@ function analyze(f, output, context) {
       e.stop === 'question' ? 'Ask one user question: a # Question comment with the answer line, then the Question label and the freeze'
         : 'Ask the user nothing: no # Question comment and no Question label'),
     check('pingpong-technical-problem', e.stop === 'technical-problem'
-      ? raised('Technical problem', 'technical problem') && arg(headed('Technical problem')[0], 'body').trim() === KEYTEC
+      ? raised('Technical problem', 'technical problem') && arg(headed('Technical problem')[0], 'body').trim() === NOTE
       : absent('Technical problem', 'technical problem'),
-    e.stop === 'technical-problem' ? 'Report one technical problem: exactly the keytec note, then the label and the freeze'
+    e.stop === 'technical-problem' ? 'Report one technical problem: exactly the contact note, then the label and the freeze'
       : 'Report no technical problem'),
     check('pingpong-no-stop', ['question', 'technical-problem'].includes(e.stop) || !updates.some(c => arg(c, 'frozen') === true),
       'Freeze the ticket only for a user question or a technical problem'),
@@ -83,7 +83,7 @@ function analyze(f, output, context) {
     const note = headed('Technical problem')[0];
     checks.push(check('pingpong-cause-recorded', note && comments.some(c => c.index < note.index && succeeded(c) &&
       String(arg(c, 'body')).includes(e.cause)),
-    `Publish the error and its output (${e.cause}) in a comment before the keytec note`));
+    `Publish the error and its output (${e.cause}) in a comment before the contact note`));
   }
   if (e.link) {
     checks.push(check('pingpong-link', String(arg(headed('Question')[0], 'body')).includes(e.link),

@@ -21,7 +21,7 @@ as another; label `technical problem`.
 ```markdown
 # Technical problem
 
-Please contact keytec.
+Please contact the developers.
 ```
 
 In `working`, at a GREEN [coding gate](../bb-workflow/references/coding-gate.md), ask instead for
