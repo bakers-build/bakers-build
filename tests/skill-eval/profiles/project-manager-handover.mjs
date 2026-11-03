@@ -22,7 +22,7 @@ function analyze(f, context) {
   return { diagnostics, checks: [
     // Without the requester's approval no call is needed at all.
     ...commonChecks(trace, () => false, recovered).filter(c => e.hand_over || c.id !== 'actual-tool-calls'),
-    check('seven-tools', trace.filter(c => c.mode === 'call').every(c => SEVEN.includes(c.name)), 'Call only the seven bakers tools the skill names'),
+    check('seven-tools', trace.filter(c => c.mode === 'call').every(c => SEVEN.includes(c.name)), 'Call only the seven bakers tools the skill\'s operations map to'),
     ...(e.hand_over ? [
       check('handover-order', sent.length === 5 && is(qualification, 'bakers_comment_publish') && arg(qualification, 'type') === 'qualification' &&
         is(spec, 'bakers_comment_publish') && arg(spec, 'type') === 'spec' && is(classify, 'bakers_ticket_classify') &&
