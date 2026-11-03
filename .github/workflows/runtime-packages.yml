@@ -1,0 +1,33 @@
+name: Prepare runtime packages
+on:
+  push:
+    branches: [ci/ghcr-runtime-packages]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  copy:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Copy verified runtime images without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf %s "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          docker pull ghcr.io/bakers-build/bakers-rehearsal-php@sha256:aca2c0f8af3fec329ddfb58ad9748b02365705db69a1a4be020c25b7e27bb3f4
+          test "$(docker image inspect ghcr.io/bakers-build/bakers-rehearsal-php@sha256:aca2c0f8af3fec329ddfb58ad9748b02365705db69a1a4be020c25b7e27bb3f4 --format '{{.Id}}')" = sha256:80860a25730cca27fdddd52db8c7e9288f883f1696188ea66abb0d2b76a1b71b
+          docker tag ghcr.io/bakers-build/bakers-rehearsal-php@sha256:aca2c0f8af3fec329ddfb58ad9748b02365705db69a1a4be020c25b7e27bb3f4 ghcr.io/bakers-build/bakers-build/php:sha-06a51e0107c09df938ce2e4e5b8fcb134c04844c-verified
+          docker push ghcr.io/bakers-build/bakers-build/php:sha-06a51e0107c09df938ce2e4e5b8fcb134c04844c-verified
+          gh api orgs/bakers-build/packages/container/bakers-build%2Fphp --jq '{name,visibility,html_url}'
+          docker pull ghcr.io/bakers-build/bakers-rehearsal-nginx@sha256:6dbf9afb981a9825eba08791bd5b3e010e342a0a55d34faf920245b5c4ec77f2
+          test "$(docker image inspect ghcr.io/bakers-build/bakers-rehearsal-nginx@sha256:6dbf9afb981a9825eba08791bd5b3e010e342a0a55d34faf920245b5c4ec77f2 --format '{{.Id}}')" = sha256:3b87c667156b75e084841060b43bd10306fa470b39b6bab623d15e4e218ff166
+          docker tag ghcr.io/bakers-build/bakers-rehearsal-nginx@sha256:6dbf9afb981a9825eba08791bd5b3e010e342a0a55d34faf920245b5c4ec77f2 ghcr.io/bakers-build/bakers-build/nginx:sha-06a51e0107c09df938ce2e4e5b8fcb134c04844c-verified
+          docker push ghcr.io/bakers-build/bakers-build/nginx:sha-06a51e0107c09df938ce2e4e5b8fcb134c04844c-verified
+          gh api orgs/bakers-build/packages/container/bakers-build%2Fnginx --jq '{name,visibility,html_url}'
+          docker pull ghcr.io/bakers-build/bakers-rehearsal-docs@sha256:76db1cff15740eb550dbe95aeb7ca3088e8515fe2cd2a3aead7327a9acd09ad7
+          test "$(docker image inspect ghcr.io/bakers-build/bakers-rehearsal-docs@sha256:76db1cff15740eb550dbe95aeb7ca3088e8515fe2cd2a3aead7327a9acd09ad7 --format '{{.Id}}')" = sha256:67a01949f0dee61b90abf63baaf913c02e4cdf8a1a19d67da4a39afeacf11ab1
+          docker tag ghcr.io/bakers-build/bakers-rehearsal-docs@sha256:76db1cff15740eb550dbe95aeb7ca3088e8515fe2cd2a3aead7327a9acd09ad7 ghcr.io/bakers-build/bakers-build/docs:sha-06a51e0107c09df938ce2e4e5b8fcb134c04844c-verified
+          docker push ghcr.io/bakers-build/bakers-build/docs:sha-06a51e0107c09df938ce2e4e5b8fcb134c04844c-verified
+          gh api orgs/bakers-build/packages/container/bakers-build%2Fdocs --jq '{name,visibility,html_url}'
