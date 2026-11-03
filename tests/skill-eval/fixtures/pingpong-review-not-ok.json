@@ -95,15 +95,15 @@
   "rubric": [
     {
       "id": "verdict",
-      "criterion": "Publishes the verdict as a review comment with the line Status: **Not OK** and finding F1, and a summary."
+      "criterion": "The final answer reports the published review verdict Not OK with finding F1 (the missing header row) and a summary."
     },
     {
       "id": "back-to-working",
-      "criterion": "Transitions the ticket to working without asking anyone, then stops."
+      "criterion": "The final answer reports the transition to working, made without asking anyone, as the end of the run."
     },
     {
       "id": "no-merge",
-      "criterion": "Merges nothing and asks no question."
+      "criterion": "The final answer reports no merge and no question."
     }
   ]
 }

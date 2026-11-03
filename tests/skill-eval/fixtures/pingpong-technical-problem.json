@@ -81,15 +81,15 @@
   "rubric": [
     {
       "id": "technical-problem",
-      "criterion": "Publishes one # Technical problem comment naming the failed step, the Docker error as evidence and what keytec must do, ending with the note to contact keytec."
+      "criterion": "The final answer reports one # Technical problem comment for the failed ddev start (the Docker daemon error) with the note to contact keytec."
     },
     {
       "id": "label-freeze",
-      "criterion": "Then adds the technical problem label with frozen true in one ticket update and ends the run."
+      "criterion": "The final answer reports the technical problem label and frozen true, and that the run ends there."
     },
     {
       "id": "not-a-question",
-      "criterion": "Asks the customer nothing: no # Question comment, no Question label, no choices about Docker."
+      "criterion": "The final answer puts no question to the customer about Docker or the environment."
     }
   ]
 }

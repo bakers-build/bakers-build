@@ -112,15 +112,15 @@
   "rubric": [
     {
       "id": "verdict",
-      "criterion": "Publishes this run's verdict as a review comment with the line Status: **Not OK**."
+      "criterion": "The final answer reports this run's review verdict Not OK."
     },
     {
       "id": "counts-not-ok",
-      "criterion": "Counts only the earlier review comments with Status: **Not OK** (two), not the earlier OK verdict or summaries, and so raises a technical problem instead of a transition to working."
+      "criterion": "The final answer counts two earlier Not OK verdicts, not the earlier OK one, and so raises a technical problem instead of a transition to working."
     },
     {
       "id": "technical-problem",
-      "criterion": "The technical problem comment carries the keytec note, then the technical problem label and the freeze; no transition and no customer question follow."
+      "criterion": "The final answer reports the technical problem comment with the keytec note, the technical problem label and the freeze, and no transition or customer question."
     }
   ]
 }

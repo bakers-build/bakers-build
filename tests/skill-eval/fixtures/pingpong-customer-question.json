@@ -81,15 +81,15 @@
   "rubric": [
     {
       "id": "customer-question",
-      "criterion": "Puts the cancelled-invoices question to the customer as one # Question comment with context and numbered choices, one marked as recommended."
+      "criterion": "The final answer reports one customer question about whether the export includes cancelled invoices, published as a # Question comment with numbered choices, one recommended."
     },
     {
       "id": "freeze",
-      "criterion": "Then adds the Question label with frozen true in one ticket update, checks its readback and ends the run."
+      "criterion": "The final answer reports the Question label and frozen true as one ticket update, and that the run ends there."
     },
     {
       "id": "content-only",
-      "criterion": "The question is about what the export contains; it asks nothing technical and picks no answer itself."
+      "criterion": "The final answer shows the question is about what the export contains: it asks nothing technical and picks no answer itself."
     }
   ]
 }
