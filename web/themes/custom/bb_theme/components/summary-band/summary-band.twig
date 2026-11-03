@@ -21,8 +21,11 @@
    IT KNOWS NOTHING ABOUT WHAT IT SUMMARISES. The three questions are asked of a
    release, a run and a deployment in the same words; every region renders only
    when its slot is filled, so a caller with two of the three gets a band of
-   two. #}
-<div{{ (attributes ?: create_attribute()).addClass(['summary-band', 'flex', 'flex-col', 'gap-5', 'p-5', 'bg-surface-2', 'border', 'border-border', 'rounded-[var(--radius-sm,7px)]']) }}>
+   two.
+
+   ITS TEXT STARTS ON THE CANVAS EDGE. The band spans the full width, so its
+   horizontal inset is the canvas gutter, not a padding of its own. #}
+<div{{ (attributes ?: create_attribute()).addClass(['summary-band', 'flex', 'flex-col', 'gap-5', 'py-5', 'px-card', 'xl:px-gutter', 'bg-surface-2', 'border', 'border-border', 'rounded-[var(--radius-sm,7px)]']) }}>
   {% if flow %}
     <div class="summary-band__header flex items-center justify-between gap-[12px] flex-wrap">
       <div class="summary-band__flow min-w-0">{% block flow %}{{ flow }}{% endblock %}</div>

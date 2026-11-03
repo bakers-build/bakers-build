@@ -337,11 +337,12 @@ final class ProjectCreateActionTest extends KernelTestBase {
       $sources = $data['display']['workspace_list']['display_options']['display_extenders']['display_builder']['sources'] ?? NULL;
       self::assertIsArray($sources, "$where composes no workspace_list display_builder tree.");
 
-      $listing = $sources[0]['source']['component'] ?? [];
+      $canvas = $sources[0]['source']['component'] ?? [];
+      $listing = $canvas['slots']['main']['sources'][0]['source']['component'] ?? [];
       self::assertSame('bb_theme:zone', $listing['component_id'] ?? NULL, "$where does not compose the listing zone.");
       self::assertArrayNotHasKey(
         'header',
-        $listing['slots'] ?? [],
+        $canvas['slots'] ?? [],
         "$where still paints a page_header; the heading is the shell island.",
       );
       self::assertSame(

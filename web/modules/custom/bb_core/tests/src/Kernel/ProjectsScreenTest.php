@@ -244,7 +244,9 @@ final class ProjectsScreenTest extends KernelTestBase {
   private function listingContentSourceIds(string $view_id): array {
     $view = View::load($view_id);
     self::assertNotNull($view);
-    $sources = $view->getDisplay('workspace_list')['display_options']['display_extenders']['display_builder']['sources'][0]['source']['component']['slots']['content']['sources'] ?? [];
+    // The listing zone fills the main region of the screen's canvas.
+    $canvas = $view->getDisplay('workspace_list')['display_options']['display_extenders']['display_builder']['sources'][0]['source']['component'];
+    $sources = $canvas['slots']['main']['sources'][0]['source']['component']['slots']['content']['sources'] ?? [];
     return array_values(array_column($sources, 'source_id'));
   }
 

@@ -138,15 +138,16 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
     foreach (['recipes/bakers/config', 'config/sync'] as $path) {
       $root = dirname(__DIR__, 7) . '/' . $path;
       $canvas = Yaml::parseFile($root . '/views.view.groups.yml')['display']['workspace_list']['display_options']['display_extenders']['display_builder']['sources'][0]['source']['component'];
-      self::assertSame('bb_theme:zone', $canvas['component_id']);
-      self::assertArrayNotHasKey('actions', $canvas['slots'] ?? []);
+      $zone = $canvas['slots']['main']['sources'][0]['source']['component'];
+      self::assertSame('bb_theme:zone', $zone['component_id']);
+      self::assertArrayNotHasKey('actions', $zone['slots'] ?? []);
       // The search-and-sort toolbar (a `filters` component) leads; the exposed
       // form it binds to follows the pager, holding only hidden parts.
       self::assertSame(
         ['component', 'view_rows', 'view_pager', 'view_exposed'],
-        array_column($canvas['slots']['content']['sources'] ?? [], 'source_id'),
+        array_column($zone['slots']['content']['sources'] ?? [], 'source_id'),
       );
-      self::assertArrayNotHasKey('heading', $canvas['slots'] ?? []);
+      self::assertArrayNotHasKey('heading', $zone['slots'] ?? []);
 
       $header = Yaml::parseFile($root . '/island.profile.bb_shell.yml')['placements']['shell_page_header']['configuration']['component'];
       self::assertSame('bb_theme:page_header', $header['component_id']);
