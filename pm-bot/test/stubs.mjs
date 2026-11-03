@@ -1,5 +1,5 @@
 // Test stubs: a bakers.build server and the Slack Web API as real HTTP servers on
-// 127.0.0.1, so the client, relay and poller are tested through their own fetch
+// 127.0.0.1, so the client and poller are tested through their own fetch
 // calls. Each stub records every request it answered.
 
 import { createServer } from 'node:http';
@@ -19,18 +19,18 @@ function listen(handler, port = 0) {
 /**
  * A bakers.build stub.
  *
- * - `POST /oauth/token` mints `tok-1`, `tok-2`, … for the client `key`/`secret`.
+ * - Every request must carry `Authorization: Bearer <apiKey>` (default
+ *   `bb-test-key`); `revoke()` rejects it from then on with 401.
  * - `POST /mcp` speaks MCP over streamable HTTP; `tools[name](args)` answers a
- *   tools/call (throw an Error for a tool refusal).
- * - Everything else goes to `jsonapi(request)`, which returns `{status, body}`.
+ *   tools/call (throw an Error for a tool refusal). Results come as one
+ *   server-sent event, as the site answers, or as plain JSON with `sse: false`.
+ * - Any other path is a 404: the bot reaches bakers.build only through tools.
  * - `outage(n, status)` answers the next n requests with `status`; `down()` and
- *   `up()` close and reopen the port (connection refused); `revoke()` rejects
- *   every token minted so far with 401.
+ *   `up()` close and reopen the port (connection refused).
  */
-export async function bakersStub({ tools = {}, jsonapi = () => ({ status: 404, body: { errors: [] } }) } = {}) {
+export async function bakersStub({ tools = {}, apiKey = 'bb-test-key', sse = true } = {}) {
   const requests = [];
-  let minted = 0;
-  let valid = new Set();
+  let valid = true;
   let failures = [];
   const handler = async (r) => {
     const body = r.raw ? JSON.parse(r.raw.startsWith('{') ? r.raw : '{}') : undefined;
@@ -41,18 +41,9 @@ export async function bakersStub({ tools = {}, jsonapi = () => ({ status: 404, b
       return { status, body: { message: 'outage' } };
     }
     requests.push(request);
-    if (r.method === 'POST' && r.path === '/oauth/token') {
-      const form = new URLSearchParams(r.raw);
-      if (form.get('grant_type') !== 'client_credentials' || form.get('client_id') !== 'key' || form.get('client_secret') !== 'secret') {
-        return { status: 401, body: { error: 'invalid_client' } };
-      }
-      minted += 1;
-      valid.add(`tok-${minted}`);
-      return { body: { access_token: `tok-${minted}`, token_type: 'Bearer', expires_in: 300 } };
-    }
-    if (!valid.has(String(r.headers.authorization ?? '').replace(/^Bearer /, ''))) return { status: 401, body: { message: 'unauthorized' } };
-    if (r.path === '/mcp') return mcp(body);
-    return jsonapi(request);
+    if (!valid || r.headers.authorization !== `Bearer ${apiKey}`) return { status: 401, body: { message: 'unauthorized' } };
+    if (r.method === 'POST' && r.path === '/mcp') return mcp(body);
+    return { status: 404, body: { message: 'not found' } };
   };
   const mcp = async (message) => {
     if (message.id === undefined) return { status: 202 };
@@ -64,6 +55,8 @@ export async function bakersStub({ tools = {}, jsonapi = () => ({ status: 404, b
     if (!tool) return { body: { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `unknown tool ${name}` } } };
     try {
       const result = await tool(args);
+      const answer = { jsonrpc: '2.0', id: message.id, result: { content: [{ type: 'text', text: JSON.stringify(result) }], isError: false } };
+      if (!sse) return { body: answer };
       // As the site answers: one server-sent event.
       return {
         type: 'text/event-stream',
@@ -83,7 +76,7 @@ export async function bakersStub({ tools = {}, jsonapi = () => ({ status: 404, b
       failures = Array(n).fill(status);
     },
     revoke: () => {
-      valid = new Set();
+      valid = false;
     },
     down: () => new Promise((resolve) => (server.closeAllConnections(), server.close(resolve))),
     up: async () => {

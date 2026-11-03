@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The PM bot's poller. Every interval it reads the project's tickets from
-// bakers.build and, for each ticket whose first `chat` link is a Slack thread:
+// bakers.build through its tools and, for each ticket whose first `chat` link is a Slack thread:
 // posts each state change into that thread once, relays its open question once,
 // and opens a thread of its own for each sub-ticket. No LLM, no dependencies.
 //
@@ -62,55 +62,38 @@ export function hermesSend({ channel, thread_ts, text }) {
 export function createPoller({ client, slack, send, stateFile, project, messages, log = console }) {
   const stamp = () => new Date().toISOString();
 
+  // Every ticket of the project, page by page, through the bakers list tool.
   async function tickets() {
-    const query = new URLSearchParams({
-      'filter[project_id.id]': project,
-      include: 'labels',
-      'fields[bb_ticket--bb_ticket]': 'identifier,title,state,links,labels,frozen,frozen_at,parent_id,closed',
-      'fields[bb_term--label]': 'name',
-      'page[limit]': '50',
-    });
     const out = [];
-    let path = `/jsonapi/bb_ticket/bb_ticket?${query}`;
-    while (path) {
-      const page = await client.get(path);
-      const names = new Map((page.included ?? []).map((term) => [term.id, term.attributes.name]));
-      for (const row of page.data) {
-        const a = row.attributes;
+    let offset = 0;
+    while (offset !== null && offset !== undefined) {
+      const page = await client.tool('bakers_ticket_list', { project, limit: 50, offset });
+      for (const t of page.tickets) {
         out.push({
-          id: row.id,
-          identifier: a.identifier,
-          title: a.title,
-          state: a.state,
-          thread: chatThread(a.links),
-          labels: (row.relationships?.labels?.data ?? []).map((l) => names.get(l.id)).filter(Boolean),
-          frozen: Boolean(a.frozen),
-          frozen_at: a.frozen_at ?? null,
-          parent: row.relationships?.parent_id?.data?.id ?? null,
-          closed: Boolean(a.closed),
+          id: t.id,
+          identifier: t.identifier,
+          title: t.title,
+          state: t.state,
+          thread: chatThread(t.links),
+          labels: t.labels ?? [],
+          frozen: Boolean(t.frozen),
+          frozen_at: t.frozen_at ?? null,
+          parent: t.parent ?? null,
+          closed: Boolean(t.closed),
         });
       }
-      const next = page.links?.next?.href;
-      path = next ? ((u) => `${u.pathname}${u.search}`)(new URL(next)) : null;
+      offset = page.next_offset;
     }
     return out;
   }
 
+  // A ticket's comments, newest first, optionally of one type, from bakers_ticket_read.
   async function comments(ticketId, type) {
-    const query = new URLSearchParams({
-      'filter[ticket_id.id]': ticketId,
-      sort: '-created',
-      'page[limit]': '20',
-      'fields[bb_comment--bb_comment]': 'bb_comment_type,created,body',
-    });
-    if (type) query.set('filter[bb_comment_type]', type);
-    const page = await client.get(`/jsonapi/bb_comment/bb_comment?${query}`);
-    return page.data.map((c) => ({
-      id: c.id,
-      type: c.attributes.bb_comment_type,
-      created: c.attributes.created,
-      body: typeof c.attributes.body === 'string' ? c.attributes.body : (c.attributes.body?.value ?? ''),
-    }));
+    const ticket = await client.tool('bakers_ticket_read', { ticket: ticketId });
+    return (ticket.comments ?? [])
+      .filter((c) => !type || c.type === type)
+      .map((c) => ({ id: c.id, type: c.type, created: c.created, body: c.body ?? '' }))
+      .sort((a, b) => Date.parse(b.created) - Date.parse(a.created));
   }
 
   // The state file: {tickets: identifier → state, relayed: comment UUIDs,
@@ -251,7 +234,7 @@ if (isMain) {
     return value;
   };
   const poller = createPoller({
-    client: createBakersClient({ url: env('BAKERS_URL'), clientId: env('BAKERS_CLIENT_ID'), clientSecret: env('BAKERS_CLIENT_SECRET') }),
+    client: createBakersClient({ url: env('BAKERS_URL'), apiKey: env('BAKERS_API_KEY') }),
     slack: createSlack({ url: process.env.SLACK_API_URL || undefined, token: env('SLACK_BOT_TOKEN') }),
     send: hermesSend,
     stateFile: join(env('HERMES_HOME'), 'poller-state.json'),

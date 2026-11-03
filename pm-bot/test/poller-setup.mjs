@@ -11,8 +11,8 @@ import { slackStub } from './stubs.mjs';
 const messages = JSON.parse(readFileSync(new URL('../poller/messages.json', import.meta.url), 'utf8'));
 const quiet = { log: () => {}, error: () => {} };
 
-export async function setup(t) {
-  const s = await site();
+export async function setup(t, siteOptions = {}) {
+  const s = await site(siteOptions);
   const slack = await slackStub();
   t.after(s.close);
   t.after(slack.close);
@@ -20,7 +20,7 @@ export async function setup(t) {
   let sendFails = false;
   const stateFile = join(mkdtempSync(join(tmpdir(), 'pm-poller-')), 'poller-state.json');
   const poller = createPoller({
-    client: createBakersClient({ url: s.stub.url, clientId: 'key', clientSecret: 'secret' }),
+    client: createBakersClient({ url: s.stub.url, apiKey: 'bb-test-key' }),
     slack: createSlack({ url: slack.url, token: 'xoxb-test' }),
     send: async (message) => {
       if (sendFails) throw new Error('hermes send exited 1');

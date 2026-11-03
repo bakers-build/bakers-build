@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { setup } from '../test/poller-setup.mjs';
-import { thread } from '../test/site.mjs';
+import { PROJECT, thread } from '../test/site.mjs';
 
 const messages = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8'));
 
 function frozenWithQuestion(s, ticket, body = 'Should it run at 3 a.m.?') {
   const question = s.addComment(ticket, { body, created: '2026-11-02T10:00:00+00:00' });
-  Object.assign(ticket, { frozen: true, frozen_at: '2026-11-02T10:00:00+00:00', labels: ['label-question'] });
+  Object.assign(ticket, { frozen: true, frozen_at: '2026-11-02T10:00:00+00:00', labels: ['Question'] });
   return question;
 }
 
@@ -24,9 +24,23 @@ test('the first pass records the states and posts nothing; a later change is pos
   assert.deepEqual(slack.posts(), [{ channel: 'C0000000001', thread_ts: '1700000000.000100', text: messages.states.working }]);
 });
 
+test('the poller reads every page of the project\'s tickets, through bakers tools only', async (t) => {
+  const { s, slack, poller } = await setup(t, { pageSize: 2 });
+  s.addTicket({ state: 'plan', links: [thread('C0000000001')] });
+  s.addTicket({ state: 'plan', links: [thread('C0000000002')] });
+  const third = s.addTicket({ state: 'plan', links: [thread('C0000000003')] });
+  await poller.pass();
+  third.state = 'working';
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.channel), ['C0000000003']);
+  const lists = s.stub.calls('bakers_ticket_list');
+  assert.deepEqual(lists.slice(0, 2).map((a) => [a.project, a.offset ?? 0]), [[PROJECT, 0], [PROJECT, 2]]);
+  assert.ok(s.stub.requests.every((r) => r.path === '/mcp'), 'no request outside the bakers tools');
+});
+
 test('only the first chat link is the thread', async (t) => {
   const { s, slack, poller } = await setup(t);
-  const ticket = s.addTicket({ state: 'plan', links: [{ uri: 'https://example.com/spec', title: 'Spec', kind: 'doc' }, thread('C0000000002'), thread('C0000000001', '1700000000.000900')] });
+  const ticket = s.addTicket({ state: 'plan', links: [{ uri: 'https://example.com/spec', title: 'Spec' }, thread('C0000000002'), thread('C0000000001', '1700000000.000900')] });
   await poller.pass();
   ticket.state = 'working';
   await poller.pass();
@@ -106,7 +120,7 @@ test('a sub-ticket gets its own thread in the ancestor channel, its chat link an
   assert.deepEqual(posts[1], { channel: 'C0000000002', text: 'ACME-3 · Retry (sub-ticket of ACME-2)' });
   assert.equal(posts.filter((p) => p.thread_ts === '1800000000.000001').length, 1, 'the grandchild pointer goes into the child thread');
   const link = child.links[0];
-  assert.deepEqual([link.uri, link.title, link.kind], ['https://acme.slack.com/archives/C0000000002/p1800000000000001', 'Slack thread', 'chat']);
+  assert.deepEqual([link.uri, link.title], ['https://acme.slack.com/archives/C0000000002/p1800000000000001', 'Slack thread']);
   assert.equal(grandchild.links.length, 1);
   assert.equal(posts.filter((p) => !p.thread_ts).length, 2, 'one thread each, no more');
   assert.equal(posts.length, 4);
