@@ -298,7 +298,7 @@ class Simulation:
     def ticket_read(self, args):
         t = self.find(args['ticket'])
         return {**{k: t.get(k) for k in ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe', 'branch_name', 'conductor']},
-                'approval': t.get('approval', 'human'), 'labels': t['labels'], 'links': t['links'],
+                'labels': t['labels'], 'links': t['links'],
                 'project': CONTRACT['project'], 'base_branch': t.get('base_branch', 'main'), 'frozen': bool(t.get('frozen')),
                 'metrics': copy.deepcopy(t.get('metrics', [])),
                 'comments': [{'id': c['id'], 'type': c['type'], 'body': c['body'], 'created': c.get('created', '2026-01-01T00:00:00+00:00'),

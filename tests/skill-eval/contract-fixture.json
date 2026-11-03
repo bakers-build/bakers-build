@@ -992,7 +992,7 @@
           "workflow": {
             "type": "string",
             "minLength": 1,
-            "description": "The workflow id: bb_work, or bb_autopilot for automatic approvals.",
+            "description": "The workflow id, e.g. bb_work.",
             "title": "Workflow"
           },
           "project": {
@@ -1156,11 +1156,6 @@
             "type": "string",
             "description": "The workflow id.",
             "title": "Workflow"
-          },
-          "approval": {
-            "type": "string",
-            "description": "Who approves the current state's gates: automatic or human.",
-            "title": "Approval"
           },
           "description": {
             "oneOf": [

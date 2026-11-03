@@ -77,4 +77,4 @@ A ticket without a worktree on that machine gets no hook and no marker. The cond
 - **Parent.** A sub-ticket's base branch is its parent's branch; otherwise it is the project's default branch. It is computed, never set.
 - **Carrier ticket.** To base several tickets on a long-lived branch, create one ticket whose `branch_name` is that branch (writable only at creation) and hang the real tickets under it.
 
-A work ticket runs `bb_work`, or [`bb_autopilot`](/configuration/workflows/autopilot) when its approvals should be automatic. A deployment or a verification is a ticket with the type `deployment` or `verification` and its recipe.
+Every ticket runs the one workflow `bb_work`. A deployment or a verification is a ticket with the type `deployment` or `verification` and its recipe.

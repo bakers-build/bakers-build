@@ -21,7 +21,6 @@ import {
 import { listTerms } from '../../term/Data/terms.js';
 import type { OptionClients } from '../../transport.js';
 import { listUsersPreferringWrite, type User } from '../../user/Data/users.js';
-import { WORKFLOW_OPTIONS } from '../Data/workflow.js';
 import { ownFirst } from './create-data.js';
 import type { EditFormOptions } from './edit.js';
 import { loadReviewerOptions } from './reviewer-options.js';
@@ -114,7 +113,6 @@ export async function loadEditFormOptions(
     ticketTypes,
     recipes,
     labels,
-    workflows: WORKFLOW_OPTIONS,
     ...(reviewers.error === undefined
       ? {}
       : { errors: { reviewers: reviewers.error } }),

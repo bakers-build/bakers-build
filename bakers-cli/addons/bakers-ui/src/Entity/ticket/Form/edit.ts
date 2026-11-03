@@ -25,7 +25,6 @@ export type EditFieldId =
   | 'ticketType'
   | 'recipe'
   | 'labels'
-  | 'workflow'
   | 'submit'
   | 'cancelTicket';
 
@@ -38,9 +37,8 @@ export type EditFieldId =
  * `cancelled`, so no served fact carries the cancel edge. The precedent is
  * `STATE_FILTER_VALUES` in `Data/query.ts`, hardcoded for the same reason.
  *
- * One constant serves every ticket workflow because in each ticket workflow
- * (`bb_work`, `bb_autopilot`) `cancel.from` is exactly the set of non-terminal
- * states — so
+ * One constant serves every ticket workflow because in the ticket workflow
+ * (`bb_work`) `cancel.from` is exactly the set of non-terminal states — so
  * "non-terminal" and "the workflow permits cancelling" are the same
  * predicate, and no workflow id is needed to tell them apart.
  */
@@ -58,8 +56,7 @@ export const CANCEL_TICKET_ACTION_ID = 'cancelTicket';
  * The states no transition leaves, in every ticket workflow.
  *
  * The server's own definition (`TypeWorkflows::isTerminal` — "a state no
- * transition leaves") evaluates to exactly this pair for every ticket
- * workflow; `bb_autopilot` shares `bb_work`'s states and transitions.
+ * transition leaves") evaluates to exactly this pair for `bb_work`.
  */
 export const TERMINAL_TICKET_STATES: ReadonlySet<string> = new Set([
   'done',
@@ -76,8 +73,6 @@ export interface EditFormOptions {
   /** The `recipe` vocabulary, for the single-valued `recipe` (BAKERS-17). */
   recipes: Option[];
   labels: Option[];
-  /** The fixed ticket workflow enum (`WORKFLOW_OPTIONS`), not a read. */
-  workflows: Option[];
   errors?: { reviewers?: string | undefined } | undefined;
   /**
    * Parent candidates from the option loader (project-scoped typeahead). Absent
@@ -105,8 +100,6 @@ interface EditValues {
   ticketType: string | null;
   recipe: string | null;
   labels: ReadonlySet<string>;
-  /** The ticket's workflow id; null when the read carried none. */
-  workflow: string | null;
 }
 
 /** A JSON:API to-one linkage, or an explicit `null` for "remove it". */
@@ -214,21 +207,14 @@ const declareEditForm = (savable: boolean, cancellable: boolean) =>
       f.select('ticketType', 'Type', { from: 'ticketTypes', clearable: true }),
       f.select('recipe', 'Recipe', { from: 'recipes', clearable: true }),
       f.multi('labels', 'Labels', { from: 'labels' }),
-      // Not clearable: a ticket always runs one workflow. Both share their
-      // states, so a switch keeps the ticket's state.
-      f.select('workflow', 'Workflow', { from: 'workflows' }),
       ...(savable ? [f.action('Save', 'submit')] : []),
       ...(cancellable
         ? [f.action('Cancel ticket', CANCEL_TICKET_ACTION_ID)]
         : []),
     ],
     toObject: (v) => ({
-      // Ordinary Save never writes lifecycle state (D6/D7). The workflow is
-      // written only when known, never as an empty value.
-      attributes: {
-        ...timeAttributes(v),
-        ...(v.workflow === null ? {} : { workflow: v.workflow }),
-      },
+      // Ordinary Save never writes lifecycle state (D6/D7).
+      attributes: { ...timeAttributes(v) },
       relationships: {
         assignee_user_id: linkage('user--user', v.assignee),
         conductor_id: linkage('bb_conductor--bb_conductor', v.conductor),
@@ -309,7 +295,6 @@ export const EMPTY_EDIT_FORM_OPTIONS: EditFormOptions = {
   ticketTypes: [],
   recipes: [],
   labels: [],
-  workflows: [],
 };
 
 const relId = (document: TicketDetailDocument, name: string): string | null => {
@@ -342,11 +327,6 @@ const reviewersFromDocument = (
     };
   }
   return { ids: data.id ? new Set([data.id]) : new Set(), loaded: true };
-};
-
-const workflowValue = (document: TicketDetailDocument): string | null => {
-  const value = document.data?.attributes?.workflow;
-  return typeof value === 'string' && value !== '' ? value : null;
 };
 
 const timeValue = (document: TicketDetailDocument, name: string): string => {
@@ -399,7 +379,6 @@ export function initialEditForm(document: TicketDetailDocument): EditFormState {
     ticketType: relId(document, 'ticket_type'),
     recipe: relId(document, 'recipe'),
     labels: labelIds(document),
-    workflow: workflowValue(document),
   });
 }
 

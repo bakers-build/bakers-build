@@ -13,10 +13,6 @@ namespace Drupal\bb_core\Workflow;
  *
  * Static because `allowed_values_function` callbacks and entity code call it
  * without a construction seam; the workflow manager comes from the container.
- * It is the one reader of the workflow declarations, so each per-state key
- * gets its own method here.
- *
- * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 final class TypeWorkflows {
 
@@ -41,13 +37,6 @@ final class TypeWorkflows {
    * @var array<string>
    */
   public const PHASES = ['prepare', 'running', 'review', 'done', 'cancelled'];
-
-  /**
-   * Who gives a state's gate confirmation; the first is the default.
-   *
-   * @var array<string>
-   */
-  public const APPROVALS = ['human', 'automatic'];
 
   /**
    * Returns the metadata for a state as defined in the workflow definition.
@@ -113,38 +102,6 @@ final class TypeWorkflows {
       ));
     }
     return $phase;
-  }
-
-  /**
-   * Returns who gives the confirmation at a state's gate.
-   *
-   * Declared as `approval` beside the state's phase. An absent key means
-   * `human`, so a workflow opts in per state; an unknown value is a definition
-   * defect and throws, like phase().
-   *
-   * @param string $workflow_id
-   *   The workflow plugin ID.
-   * @param string $state
-   *   The state machine name.
-   *
-   * @return string
-   *   One of self::APPROVALS.
-   *
-   * @throws \LogicException
-   *   When the state declares a value outside self::APPROVALS.
-   */
-  public static function approval(string $workflow_id, string $state): string {
-    $approval = self::stateMetadata($workflow_id, $state)['approval'] ?? self::APPROVALS[0];
-    if (!is_string($approval) || !in_array($approval, self::APPROVALS, TRUE)) {
-      throw new \LogicException(sprintf(
-        'State "%s" of workflow "%s" declares an unknown `approval` (got %s). Use one of: %s.',
-        $state,
-        $workflow_id,
-        var_export($approval, TRUE),
-        implode(', ', self::APPROVALS),
-      ));
-    }
-    return $approval;
   }
 
   /**

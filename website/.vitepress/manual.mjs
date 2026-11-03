@@ -84,7 +84,6 @@ export const SIDEBAR = {
     ]),
     group('Workflows', [
       ['Workflows', '/configuration/workflows'],
-      ['Autopilot workflow', '/configuration/workflows/autopilot'],
       ['Ticket metrics', '/configuration/workflows/metrics'],
       ['Write a recipe', '/configuration/workflows/recipes'],
       ['Workflows and states', '/configuration/workflows/states'],

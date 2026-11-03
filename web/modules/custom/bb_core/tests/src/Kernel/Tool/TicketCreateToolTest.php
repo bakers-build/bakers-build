@@ -55,29 +55,6 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
-   * A ticket may choose bb_autopilot; an unknown workflow is refused.
-   */
-  public function testCreateChoosesTheWorkflow(): void {
-    $out = $this->outputs($this->runTool('bakers_ticket_create', [
-      'title' => 'Autopilot',
-      'workflow' => 'bb_autopilot',
-      'project' => $this->project->uuid(),
-    ]));
-    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
-    self::assertInstanceOf(BbTicketInterface::class, $stored);
-    self::assertSame('bb_autopilot', $stored->getWorkflow());
-    self::assertSame('qualification', $stored->get('state')->value);
-
-    $etm = $this->container->get('entity_type.manager');
-    $this->assertFailure($this->runTool('bakers_ticket_create', [
-      'title' => 'Unknown workflow',
-      'workflow' => 'bb_nonsense',
-      'project' => $this->project->uuid(),
-    ]), 'workflow');
-    self::assertEmpty($etm->getStorage('bb_ticket')->loadByProperties(['title' => 'Unknown workflow']));
-  }
-
-  /**
    * A carrier ticket keeps the given branch; others get the derived one.
    */
   public function testCarrierBranchIsKeptAndOtherwiseDerived(): void {
