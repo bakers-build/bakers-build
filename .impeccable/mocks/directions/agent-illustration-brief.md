@@ -1,6 +1,6 @@
 # bakers.build — Illustration brief: the four agent figures
 
-Status: brief for exploration, 2026-11-03. Figma working section: "Agenten · Werkzeug-Figuren (in Arbeit 03.11.)" (621:184) on the Strategy & Branding page. Current components: `CI A / Illustration / Agent · Waage` (324:155), `· Ofen` (324:189), `· Pinsel` (324:203), `CI A / Illustration / Arbeit · Brötchen` (324:256).
+Status: brief for exploration, 2026-11-03. Figma working section: "Agenten · Werkzeug-Figuren (in Arbeit 03.11.)" (621:184) on the Strategy & Branding page. Current components: `CI A / Illustration / Agent · Waage` (324:155), `· Ofen` (324:189), `CI A / Illustration / Arbeit · Brötchen` (324:256), and the draft `CI A / Illustration / Agent · Lupe (Entwurf 03.11.)` (622:254), which replaces the pastry brush (`· Pinsel`, 324:203) for review.
 
 ## Goal
 
@@ -12,10 +12,12 @@ Four tool figures, one per station of the line. They are the agents: they **work
 |---|---|---|---|
 | Plan | Kitchen scale with a paper ticket on its plate | careful, attentive | looks at the ticket, the dial needle moves |
 | Build | Oven with a terminal window `>_` (also the product mark) | diligent, calm, warm | steam rises, a prompt in the window |
-| Review | Pastry brush | precise, critical eye | glazing, a small spark or shine mark |
-| Ship | **Proposal: bread peel instead of the bun** | helpful, proud | slides a finished bun forward, as in shipping |
+| Review | Magnifier | precise, curious, a second look | looks closely; the eye behind the lens is magnified |
+| Ship | Bun (the finished roll) | content, done | sits ready, a small sparkle |
 
-The bun is the *result*, not an agent. A peel that brings the bun out tells "Done / Ship" better. The butter bun stays the brand mark.
+Decided 2026-11-03: scale, oven and bun stay; the magnifier replaces the pastry brush, because glazing adds something while review checks it.
+
+Fix in the current bun: it holds a small magnifier of its own and has a mouth ("o"). Both go: the magnifier now belongs to review, and the figures have no mouths.
 
 ## Style rules (from the CI contract, `.impeccable/surfaces/bakers-build-ci.md`)
 
@@ -52,8 +54,8 @@ Final art may still go to an illustrator (brand foundation, section 10).
 
 - **Scale:** "A kitchen scale character with a paper ticket on its plate, eyes looking attentively at the ticket, needle on the dial moving, accent color butter yellow (#F3CE3A)."
 - **Oven:** "A small oven character, its window shows a terminal prompt '>_', three gentle steam lines rising, eyes on the control panel, accent color crust brown (#B8692E) only on the window frame."
-- **Brush:** "A pastry brush character leaning at an angle, glazing with a small shine mark, eyes focused and slightly critical, accent color rose (#F4AFC0) on the bristles."
-- **Peel:** "A wooden bread peel character sliding a round golden bun forward, eyes proud, small sparkle marks, accent color lime green (#BFE07A) on the handle, bun in butter yellow (#F3CE3A)."
+- **Magnifier:** "A magnifying glass character, the lens is its face, one googly eye seen through the lens looks bigger than the other, a small shine mark on the glass, curious and attentive, accent color rose (#F4AFC0) on the handle."
+- **Bun:** "A round bread roll character with a scored top, sitting ready, content and calm, small sparkle marks, no mouth, accent color butter yellow (#F3CE3A) on the crust."
 
 **Consistency.** From the second figure on, add: "Same style, stroke weight and proportions as the reference image."
 
