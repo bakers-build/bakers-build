@@ -1,0 +1,44 @@
+# Self-hosted GitHub Actions runner for bakers-build/bakers-build on Komodo server
+# "runner2" (49.12.98.247), stack "bakers-github-runner" in komodo/bakers.toml.
+#
+# Ephemeral: the runner takes one job, deregisters and the container restarts with a
+# fresh registration (needs a PAT, not a 1-hour registration token). Jobs get Docker only
+# through the dind sidecar, never the host socket. The work dir is shared at the same path
+# so `container:`/`services:` bind mounts resolve inside dind.
+#
+# The repository is public: keep "Require approval for all external contributors" on,
+# otherwise a fork PR can run code here.
+services:
+  runner:
+    image: myoung34/github-runner:${RUNNER_IMAGE_TAG:-ubuntu-noble}
+    restart: unless-stopped
+    depends_on: [dind]
+    environment:
+      REPO_URL: https://github.com/bakers-build/bakers-build
+      RUNNER_SCOPE: repo
+      ACCESS_TOKEN: ${GITHUB_RUNNER_PAT:?}
+      RUNNER_NAME_PREFIX: runner2
+      RANDOM_RUNNER_SUFFIX: "true"
+      EPHEMERAL: "true"
+      LABELS: ${RUNNER_LABELS:-runner2,dind}
+      RUNNER_WORKDIR: /tmp/runner/work
+      DOCKER_HOST: tcp://dind:2375
+      DISABLE_AUTO_UPDATE: "true"
+    volumes:
+      - work:/tmp/runner/work
+
+  dind:
+    image: docker:27-dind
+    restart: unless-stopped
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""  # plain TCP, reachable only on this stack's network
+    command: ["--host=tcp://0.0.0.0:2375"]
+    volumes:
+      - work:/tmp/runner/work
+      # shortcut: images/build cache survive between jobs (faster), drop the volume if jobs from untrusted PRs ever run here
+      - dind-data:/var/lib/docker
+
+volumes:
+  work:
+  dind-data:

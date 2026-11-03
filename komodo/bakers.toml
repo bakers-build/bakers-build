@@ -148,3 +148,24 @@ MAIL_SMTP_DSN=[[BB_PROD_MAIL_SMTP_DSN]]
 MAIL_FROM_ADDRESS=[[BB_PROD_MAIL_FROM_ADDRESS]]
 MAIL_FROM_NAME=[[BB_PROD_MAIL_FROM_NAME]]
 """
+
+# Self-hosted GitHub Actions runner with Docker-in-Docker on Komodo server "runner2"
+# (49.12.98.247). Workflows opt in with `runs-on: [self-hosted, runner2]`.
+# BB_GITHUB_RUNNER_PAT: fine-grained PAT for bakers-build/bakers-build with
+# "Administration: read and write" (ephemeral runners re-register after every job).
+[[stack]]
+name = "bakers-github-runner"
+[stack.config]
+server           = "runner2"
+git_provider     = "github.com"
+git_account      = ""
+repo             = "bakers-build/bakers-build"
+branch           = "next"
+run_directory    = "docker/github-runner"
+file_paths       = ["docker-compose.yml"]
+auto_pull        = true
+webhook_enabled  = false
+poll_for_updates = false
+environment = """
+GITHUB_RUNNER_PAT=[[BB_GITHUB_RUNNER_PAT]]
+"""
