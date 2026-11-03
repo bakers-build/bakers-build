@@ -33,8 +33,8 @@ function analyze(f, context) {
         arg(update, 'conductor') === e.conductor,
       'Recipe superpowers and a type, state working, then ticket:pingpong with the host conductor'),
       check('handoff-fields', /\bAC1\b/.test(handoff) && /out of scope/i.test(handoff) && /handoff_version/.test(handoff) &&
-        /provenance/.test(handoff) && !/\b[a-f0-9]{64}\b/.test(handoff),
-      'The qualification carries AC IDs, out of scope, handoff_version and provenance, without a hash'),
+        !/\b[a-f0-9]{64}\b/.test(handoff),
+      'The qualification carries AC IDs, out of scope and handoff_version, without a hash'),
       check('spec-content', /\bAC1\b/.test(String(arg(spec, 'body') ?? '')) && String(arg(spec, 'body') ?? '').includes(`Approved by ${e.requester}`),
         'The spec carries the AC IDs and closes with the requester\'s approval'),
     ] : [

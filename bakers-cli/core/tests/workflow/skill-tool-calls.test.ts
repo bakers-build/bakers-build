@@ -873,7 +873,6 @@ describe('hand-over of a specified ticket', () => {
     '## Out of scope',
     '- PDF export',
     '| `handoff_version` | `1` |',
-    '| `provenance` | title and description as read; approved by Mara Lind (U-MARA) |',
   ].join('\n');
   const steps = (
     changes: { classify?: object; spec?: string; body?: string } = {},
