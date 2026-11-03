@@ -45,8 +45,13 @@ const transition = (state: string) =>
 const readTicket = (fields = {}) =>
   call('bakers_ticket_read', { ticket }, { id: ticket, ...fields });
 
-async function judge(id: string, output: string, trace?: Row[]) {
-  const fixture = await loadFixture(id);
+async function judge(
+  id: string,
+  output: string,
+  trace?: Row[],
+  edit = (f: Record<string, any>) => f,
+) {
+  const fixture = edit(await loadFixture(id));
   const profile = await loadProfile(fixture);
   const checks: Check[] = profile.checkOutput(fixture, output, {
     tool_trace: trace,
@@ -78,6 +83,26 @@ describe('frame routing profile', () => {
     expect(
       await judge('frame-recipe-route', intake, [...route, intakeFile]),
     ).toEqual(['intake-read']);
+  });
+  it('checks that WORKFLOW.md routes to a skill only when it applies', async () => {
+    const path = 'skills/bb-ticket-pingpong/SKILL.md';
+    const skill = (read: unknown) => (f: Record<string, any>) => ({
+      ...f,
+      expect: { ...f.expect, skill: { path, read } },
+    });
+    const withRead = [...route, file(path)];
+    expect(
+      await judge('frame-recipe-route', intake, withRead, skill(true)),
+    ).toEqual([]);
+    expect(
+      await judge('frame-recipe-route', intake, route, skill(true)),
+    ).toEqual(['skill-read']);
+    expect(
+      await judge('frame-recipe-route', intake, withRead, skill(false)),
+    ).toEqual(['skill-read']);
+    await expect(
+      judge('frame-recipe-route', intake, route, skill(undefined)),
+    ).rejects.toThrow();
   });
   it('requires the stop to name the missing recipe and substitute none', async () => {
     const stop = 'Stopped: bb-recipe-lean is not installed.';

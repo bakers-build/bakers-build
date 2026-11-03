@@ -328,6 +328,39 @@ describe('shared skill profiles', () => {
   });
 });
 
+describe('virtual skill files', () => {
+  it('serves a bundle skill to a tool fixture and refuses other paths', async () => {
+    const { loadFixture } = await import(
+      '../../../../tests/skill-eval/fixtures.mjs'
+    );
+    const route = JSON.parse(
+      await readFile(new URL('fixtures/frame-recipe-route.json', evalRoot), 'utf8'),
+    );
+    const dir = await mkdtemp(join(tmpdir(), 'virtual-skill-'));
+    const load = async (paths: string[]) => {
+      const path = join(dir, 'fixture.json');
+      await writeFile(
+        path,
+        JSON.stringify({
+          ...route,
+          virtual_references: [...route.virtual_references, ...paths],
+        }),
+      );
+      return loadFixture(path);
+    };
+    try {
+      const fixture = await load(['bb-verdict/SKILL.md']);
+      expect(fixture.simulation.files['skills/bb-verdict/SKILL.md']).toContain(
+        'name: bb-verdict',
+      );
+      await expect(load(['../x.md'])).rejects.toThrow();
+      await expect(load(['bb-x/notes.md'])).rejects.toThrow();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('shared offline execution', () => {
   it('replays missing-account and a newly added profile without editing the runner', async () => {
     const { loadFixture } = await import(
