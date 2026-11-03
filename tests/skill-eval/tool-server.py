@@ -357,6 +357,9 @@ class Simulation:
         return {'workspaces': self.rows('workspaces', [{'uuid': self.input.get('workspace_uuid') or CONTRACT['project'], 'name': 'fixture', 'slug': 'fixture'}]),
                 'next_offset': None}
 
+    def user_read(self, args):
+        return self.rows('user', {'uuid': '66666666-6666-4666-8666-666666666666', 'name': 'fixture', 'position': '', 'background': ''})
+
     def group_list(self, args):
         groups = [g for g in self.rows('groups', []) if not args.get('group') or g['uuid'] == args['group']]
         return {'groups': groups, 'next_offset': None}

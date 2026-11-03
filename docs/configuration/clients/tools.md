@@ -51,6 +51,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 
 | Tool | Arguments | What it does |
 |---|---|---|
+| `bakers_user_read` | none | Your own user: name, position and background, which say whom you work for |
 | `bakers_workspace_list` | `limit`, `offset` | The workspaces you can reach |
 | `bakers_group_list` | `workspace`; optional `group` | A workspace's groups, or one group's subgroups |
 | `bakers_group_create` | `workspace`, `name`; optional `description` | Create a group |

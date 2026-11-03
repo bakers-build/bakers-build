@@ -2174,6 +2174,41 @@
       }
     },
     {
+      "name": "tool_api__bakers_user_read",
+      "title": "Read your user",
+      "description": "Reads your own user: name, position and background, which say whom you work for.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Your user UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Your display name.",
+            "title": "Name"
+          },
+          "position": {
+            "type": "string",
+            "description": "Your position, or an empty string.",
+            "title": "Position"
+          },
+          "background": {
+            "type": "string",
+            "description": "What bakers.build should know about your background, or an empty string.",
+            "title": "Background"
+          }
+        }
+      }
+    },
+    {
       "name": "tool_api__bakers_worklog_list",
       "title": "List own worklogs",
       "description": "Returns the caller’s own non-voided worklogs between two civil dates (at most 378 days), with the readable projects and tickets they reference. A reference the caller cannot read is null and sets omitted.",
