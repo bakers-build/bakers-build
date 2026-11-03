@@ -49,10 +49,6 @@ const opts: EditFormOptions = {
     { id: LABEL_A, label: 'work:code' },
     { id: LABEL_B, label: 'work:docs' },
   ],
-  workflows: [
-    { id: 'bb_work', label: 'work' },
-    { id: 'bb_autopilot', label: 'autopilot' },
-  ],
 };
 
 function doc(
@@ -135,7 +131,7 @@ it('AC-1: prefills null for an unassigned ticket, and mixes', () => {
   expect(onlyCond.conductor).toBe(COND);
 });
 
-it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, parent, type, recipe, labels, workflow, save, cancelTicket', () => {
+it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, parent, type, recipe, labels, save, cancelTicket', () => {
   // BB-360: State select is gone; Parent + Labels sit before the dual actions.
   // BAKERS-17: Type and Recipe sit between them.
   // Cancel ticket is a dedicated action id — never `cancel` (Esc owns that intent).
@@ -149,7 +145,6 @@ it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, par
     'ticketType',
     'recipe',
     'labels',
-    'workflow',
     'submit',
     CANCEL_TICKET_ACTION_ID,
   ]);
@@ -160,7 +155,7 @@ it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, par
   expect(activeEditField(moveEditField(s, 1)).id).toBe('reviewers');
   expect(activeEditField(moveEditField(s, 2)).id).toBe('conductor');
   expect(moveEditField(s, -1).active).toBe(0);
-  expect(moveEditField(s, 99).active).toBe(11);
+  expect(moveEditField(s, 99).active).toBe(10);
 });
 
 // ---- AC-4: clearable, from both ends, in both directions --------------------
@@ -246,52 +241,6 @@ it('BAKERS-17: type and recipe prefill from the ticket and PATCH as to-one terms
       clearable: true,
     });
   }
-});
-
-describe('the workflow select', () => {
-  const withWorkflow = (workflow: string | undefined): TicketDetailDocument =>
-    doc(
-      { assignee: USER },
-      { attributes: workflow === undefined ? {} : { workflow } },
-    );
-
-  it('is a non-clearable select over the workflows bag', () => {
-    expect(EDIT_FIELDS.find((f) => f.id === 'workflow')).toMatchObject({
-      kind: 'select',
-      label: 'Workflow',
-    });
-    expect(EDIT_FIELDS.find((f) => f.id === 'workflow')?.clearable).toBeFalsy();
-  });
-
-  it('prefills from the ticket and PATCHes the chosen workflow', () => {
-    const form = initialEditForm(withWorkflow('bb_work'));
-    expect(form.workflow).toBe('bb_work');
-    expect(serializeEdit(form).attributes.workflow).toBe('bb_work');
-    expect(
-      serializeEdit({ ...form, workflow: 'bb_autopilot' }).attributes.workflow,
-    ).toBe('bb_autopilot');
-  });
-
-  it('cycles to bb_autopilot when it is the active field', () => {
-    const form = initialEditForm(withWorkflow('bb_work'));
-    const index = EDIT_FIELDS.findIndex((f) => f.id === 'workflow');
-    const cycled = cycleEdit(moveEditField(form, index), opts, 1);
-    expect(serializeEdit(cycled).attributes.workflow).toBe('bb_autopilot');
-  });
-
-  it('omits workflow when the ticket carried none, never writing an empty one', () => {
-    const form = initialEditForm(withWorkflow(undefined));
-    expect(form.workflow).toBeNull();
-    expect(serializeEdit(form).attributes).not.toHaveProperty('workflow');
-  });
-
-  it('the options loader offers both workflows without a read', async () => {
-    const options = await loadEditFormOptions({});
-    expect(options.workflows.map((o) => o.id)).toEqual([
-      'bb_work',
-      'bb_autopilot',
-    ]);
-  });
 });
 
 it('serializeEdit emits data: null for a cleared assignment field', () => {
@@ -530,7 +479,6 @@ describe('BB-360 — Cancel ticket and terminal declaration', () => {
         'ticketType',
         'recipe',
         'labels',
-        'workflow',
         'submit',
         CANCEL_TICKET_ACTION_ID,
       ]);
@@ -548,7 +496,6 @@ describe('BB-360 — Cancel ticket and terminal declaration', () => {
         'ticketType',
         'recipe',
         'labels',
-        'workflow',
         'submit',
       ]);
     expect(EDIT_FIELDS_TERMINAL.map((f) => f.id)).not.toContain(
@@ -627,7 +574,6 @@ describe("a closed ticket's edit popup", () => {
       'ticketType',
       'recipe',
       'labels',
-      'workflow',
     ]);
   });
 });

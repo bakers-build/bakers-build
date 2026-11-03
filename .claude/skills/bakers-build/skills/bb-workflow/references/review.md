@@ -30,8 +30,7 @@ none — the merge belongs to *transition*.
 
 Aggregate the result records and render once through [the outtake](outtake.md), reusing the MR link
 and distinguishing reused, agent and human observations; print it in full. Take the human's
-confirmation of the verdict; an unattended run has none to wait for, and under `approval: automatic`
-[automatic approval](autopilot.md) gives it. Then the credentialed parent
+confirmation of the verdict; an unattended run has none to wait for. Then the credentialed parent
 publishes the typed verdict through [publish comment](publish-comment.md) — full verdict, evidence
 and walkthrough — and the rendered outtake as its own `summary` comment, with any supplied
 [measurement](measurement.md), before origin publication and transition. A blocked or
@@ -52,8 +51,7 @@ On `Not OK`, use the causes from `@bakers-build/bb-verdict` › *The verdict*. W
 repair list, named. If any failing criterion carries the cause `criterion`, hold in `review`:
 present the causes and proposed rewrite, and take the operator's decision before proceeding. This
 also holds a mixed verdict; never route it to qualification automatically. An **unattended** run
-stops with its verdict and summary published, as at the coding gate, unless automatic approval gives
-the transition.
+stops with its verdict and summary published, as at the coding gate.
 
 On an authorized transition, publish [origin status](origin-status.md) before the final
 [state write](transition-ticket.md) and STOP. On a hold, report it without changing the state.
