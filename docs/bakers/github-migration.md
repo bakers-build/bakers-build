@@ -1,18 +1,17 @@
-# GitHub migration rehearsal
+# GitHub migration
 
-GitLab remains the development, npm publication and deployment authority during overlap.
-The GitHub workflow is a rehearsal: it grants only `contents: read`, uses disposable
-Blacksmith Ubuntu 24.04 runners, and has no registry login, publish token or deployment job.
-Do not transfer uncleared repository history to enable it.
+GitHub is public with `next` as its default branch and `main` as stable. Both have active PR,
+required-check and history-protection rules. GitLab still owns publication and live deployment
+until the explicit handover below; private customer branches remain there.
 
 ## Checks
 
-`.github/workflows/checks.yml` runs on pull requests and manual dispatch. All validation
+`.github/workflows/checks.yml` runs on `next`/`main` pushes, pull requests and manual dispatch. All validation
 jobs run without path filtering. The `required` aggregate fails if any prerequisite fails,
 is cancelled or is skipped. It must be configured as a required check with strict
 up-to-date branch protection before GitHub becomes authoritative. Repository policy must
 also require a merge commit for `main`, preserving the frozen release second parent.
-Neither repository setting has been applied by this change.
+These rules are active on both GitHub branches.
 
 The PHP, CLI, renderer (glibc and musl), theme/Storybook, configuration, compose, docs,
 skill-version and title checks retain the existing GitLab commands. The image gate builds
@@ -23,7 +22,7 @@ No registry credentials or shared deployment daemon are involved.
 
 Image configuration IDs, layer identities, candidate tree, workflow run and attempt are
 retained with the reports. These reports are evidence, not authorization to promote images.
-The current rehearsal does not retain transferable image archives or implement promotion.
+The private registry rehearsal transfers verified images and checks their digest and image ID.
 A real GitHub run must establish runner disk/time requirements and prove every gate before
 required-check enforcement is considered verified.
 
@@ -70,7 +69,8 @@ This single sample does not establish full-pipeline runtime or cost.
 
 PHPUnit, browser/integration tests and config import continue using the images built
 once by `scripts/ci/github-image-gate.sh`; runner selection does not change the gates.
-Public fork execution remains unverified and must be checked before public cutover.
+The public fork full check passed; a separate probe confirmed secrets were absent and a write
+to the base repository failed with HTTP 403.
 
 ## Private registry rehearsal
 
@@ -83,3 +83,35 @@ The script rejects existing non-private packages before login, verifies visibili
 after publication, pulls by digest and checks the image ID against the tested image.
 Evidence is retained in `gate-reports/registry.txt`. No `latest`/`next` tags or
 application deployment is performed. Public release clearance remains separate.
+
+## Publisher handover
+
+The prepared `release.yml` is disabled until repository variable `RELEASE_OWNER=github`.
+It accepts successful same-repository branch push checks only, serializes each branch without
+cancelling an active deployment, and uses the `release` environment. Its immutable plan artifact
+binds the version allocation to the candidate and is reused on retries. npm publication verifies
+existing package integrity and advances channel tags only after the complete package set exists.
+The release rebuilds and tests its images, publishes candidate digests, promotes branch image tags,
+deploys through Komodo, smoke-checks, then publishes npm. Stable releases tag the frozen second
+parent and publish GitHub release notes and versioned/latest images.
+
+Before enabling it:
+
+1. Resolve the open GitLab MR backlog; keep customer branches private. Merge the reviewed changes
+   through the normal working/review gates. Update the Bakers project repository/default to GitHub
+   and `next` only after those branches have a safe destination.
+2. Set the canonical GHCR packages `bakers-build/php`, `bakers-build/nginx`, `bakers-build/docs`
+   public in Package settings and verify anonymous pulls. The rehearsal packages stay private.
+3. Protect GitHub's `release` environment for `next` and `main` and transfer npm/Komodo credentials
+   into that environment. Update the versioned infra Resource Sync to GitHub/`next`, run the sync,
+   and verify the standard stacks keep their identities, data volumes and secrets.
+4. Install the GitLab `RELEASE_OWNER` guards, set its variable to `github`, and drain all existing
+   publication/deployment runs. Capture current production image digests and npm channel values.
+   Only then set GitHub's owner variable. Do not activate both publishers.
+5. Verify the first next deployment and full package set. Stable production changes only through
+   an explicit `next` → `main` promotion; do not relabel a next candidate as the old stable image.
+
+Rollback disables and drains GitHub first, then restores the recorded Komodo source/image digests
+and GitLab ownership. Never move a published version backwards or overwrite immutable npm versions.
+A failed partial npm attempt is resumed with its saved plan, not a freshly allocated version.
+Public repository approval does not close outstanding third-party image/license provenance items.

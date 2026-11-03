@@ -8,7 +8,7 @@ const script = new URL(
   '../../../../scripts/ci/github-image-gate.sh',
   import.meta.url,
 ).pathname;
-function gate(failure = '') {
+function gate(failure = '', overrides: Record<string, string> = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'github-gate-'));
   try {
     writeFileSync(
@@ -31,6 +31,7 @@ function gate(failure = '') {
         GITHUB_REF_NAME: 'develop',
         GITHUB_RUN_ID: '10',
         GITHUB_RUN_ATTEMPT: '1',
+        ...overrides,
       },
     });
     return {
@@ -42,6 +43,24 @@ function gate(failure = '') {
   }
 }
 describe('disposable image gate', () => {
+  it('labels workflow_run images with the verified source instead of the default branch', () => {
+    const result = gate('', {
+      CI_SOURCE_SHA: 'fedcba9876543210',
+      CI_SOURCE_REF: 'next',
+      CI_RELEASE_VERSION: '0.1.1-next.7',
+    });
+    expect(result.status).toBe(0);
+    expect(result.calls).toContain(
+      'org.opencontainers.image.revision=fedcba9876543210',
+    );
+    expect(result.calls).toContain(
+      'org.opencontainers.image.version=0.1.1-next.7',
+    );
+    expect(result.calls).toContain('CI_COMMIT_REF_NAME=next');
+    expect(result.calls).not.toContain(
+      'org.opencontainers.image.revision=0123456789abcdef',
+    );
+  });
   it('tests built images, recipe first, then a separate config database', () => {
     const result = gate();
     expect(result.status).toBe(0);

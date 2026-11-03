@@ -11,15 +11,15 @@
 name = "bakers-develop"
 [stack.config]
 server           = "dev2"
-git_provider     = "git.key-tec.de"
-git_account      = "keyki"
+git_provider     = "github.com"
+git_account      = ""
 repo             = "bakers-build/bakers-build"
-branch           = "develop"
+branch           = "next"
 run_directory    = "."
 file_paths       = ["docker-compose.yml", "docker-compose.traefik.yml"]
 auto_pull        = true
-registry_provider = "git.key-tec.de:5050"
-registry_account = "gitlab+deploy-token-30"
+registry_provider = "ghcr.io"
+registry_account = ""
 webhook_enabled  = false
 poll_for_updates = false
 extra_args       = ["--wait"]
@@ -32,13 +32,13 @@ DB_USER=bakers
 DB_PASSWORD=[[BB_DEVELOP_DB_PASSWORD]]
 DB_ROOT_PASSWORD=[[BB_DEVELOP_DB_ROOT_PW]]
 DRUPAL_HASH_SALT=[[BB_DEVELOP_HASH_SALT]]
-REGISTRY_IMAGE_PHP=git.key-tec.de:5050/bakers-build/bakers-build/php:develop
-REGISTRY_IMAGE_NGINX=git.key-tec.de:5050/bakers-build/bakers-build/nginx:develop
+REGISTRY_IMAGE_PHP=ghcr.io/bakers-build/bakers-build/php:next
+REGISTRY_IMAGE_NGINX=ghcr.io/bakers-build/bakers-build/nginx:next
 # The public docs and plugin marketplace (docs service, profile docs), content from develop.
 COMPOSE_PROFILES=docs
 DOCS_DOMAIN=docs-develop.dev.bakers.build
 DOCS_ALIAS_DOMAIN=docs-develop.dev.bakers.build
-REGISTRY_IMAGE_DOCS=git.key-tec.de:5050/bakers-build/bakers-build/docs:develop
+REGISTRY_IMAGE_DOCS=ghcr.io/bakers-build/bakers-build/docs:next
 # Auto-deploy runs UPDATE only (drush deploy); it never installs. The first install of
 # a fresh environment is a deliberate, profile-gated action, run once on the host:
 #   docker compose --profile install run --rm install
@@ -102,15 +102,15 @@ MAIL_FROM_NAME=[[BB_DEVELOP_MAIL_FROM_NAME]]
 name = "bakers-prod"
 [stack.config]
 server           = "bakers-prod"
-git_provider     = "git.key-tec.de"
-git_account      = "keyki"
+git_provider     = "github.com"
+git_account      = ""
 repo             = "bakers-build/bakers-build"
 branch           = "main"
 run_directory    = "."
 file_paths       = ["docker-compose.yml", "docker-compose.traefik.yml"]
 auto_pull        = true
-registry_provider = "git.key-tec.de:5050"
-registry_account = "gitlab+deploy-token-30"
+registry_provider = "ghcr.io"
+registry_account = ""
 webhook_enabled  = false
 poll_for_updates = false
 extra_args       = ["--wait"]
@@ -123,15 +123,15 @@ DB_USER=bakers
 DB_PASSWORD=[[BB_PROD_DB_PASSWORD]]
 DB_ROOT_PASSWORD=[[BB_PROD_DB_ROOT_PW]]
 DRUPAL_HASH_SALT=[[BB_PROD_HASH_SALT]]
-REGISTRY_IMAGE_PHP=git.key-tec.de:5050/bakers-build/bakers-build/php:main
-REGISTRY_IMAGE_NGINX=git.key-tec.de:5050/bakers-build/bakers-build/nginx:main
+REGISTRY_IMAGE_PHP=ghcr.io/bakers-build/bakers-build/php:main
+REGISTRY_IMAGE_NGINX=ghcr.io/bakers-build/bakers-build/nginx:main
 # The public docs and plugin marketplace (docs service, profile docs), content from the
 # released main. bakers.build and www.bakers.build: A records to this host, DNS only, like
 # app.bakers.build; www redirects to bakers.build.
 COMPOSE_PROFILES=docs
 DOCS_DOMAIN=bakers.build
 DOCS_ALIAS_DOMAIN=www.bakers.build
-REGISTRY_IMAGE_DOCS=git.key-tec.de:5050/bakers-build/bakers-build/docs:main
+REGISTRY_IMAGE_DOCS=ghcr.io/bakers-build/bakers-build/docs:main
 # Auto-deploy runs UPDATE only (drush deploy); it never installs — a bootstrap
 # false-negative can no longer wipe prod. The first install of this environment is a
 # deliberate, profile-gated action from config/sync, run once on the prod host:

@@ -9,6 +9,54 @@ const read = (path: string) =>
   readFileSync(new URL(`../../../../${path}`, import.meta.url), 'utf8');
 
 describe('GitHub migration checks', () => {
+  it('disables every GitLab publisher and deploy job before GitHub takes ownership', () => {
+    const old = parse(read('.gitlab-ci.yml'));
+    for (const job of [
+      'promote',
+      'release_images',
+      'publish:npm',
+      'publish:npm:next',
+      'deploy',
+      'release',
+    ]) {
+      expect(old[job].rules[0]).toEqual({
+        if: '$RELEASE_OWNER == "github"',
+        when: 'never',
+      });
+    }
+  });
+
+  it('publishes only successful same-repository branch pushes after exclusive handover', () => {
+    const workflow = parse(read('.github/workflows/release.yml'));
+    expect(workflow.on.workflow_run.branches).toEqual(['next', 'main']);
+    expect(workflow.on.pull_request).toBeUndefined();
+    const job = workflow.jobs.release;
+    for (const guard of [
+      "vars.RELEASE_OWNER == 'github'",
+      "workflow_run.event == 'push'",
+      "workflow_run.conclusion == 'success'",
+      'workflow_run.head_repository.full_name == github.repository',
+    ])
+      expect(job.if).toContain(guard);
+    expect(workflow.concurrency['cancel-in-progress']).toBe(false);
+    expect(job.environment).toBe('release');
+    const names = job.steps.map((step: { name?: string }) => step.name);
+    expect(names.indexOf('Deploy and smoke-check')).toBeGreaterThan(
+      names.indexOf('Publish verified public images'),
+    );
+    expect(names.indexOf('Publish complete npm package set')).toBeGreaterThan(
+      names.indexOf('Deploy and smoke-check'),
+    );
+    expect(names).toContain('Tag stable candidate and publish release notes');
+    expect(
+      job.steps.some(
+        (step: { uses?: string; if?: string }) =>
+          step.uses?.startsWith('actions/download-artifact@') &&
+          step.if?.includes('run_attempt'),
+      ),
+    ).toBe(true);
+  });
+
   it('limits registry rehearsal to an explicit branch and publishes only after the image gate', () => {
     const workflow = parse(read('.github/workflows/registry-rehearsal.yml'));
     expect(workflow.on.push.branches).toEqual(['ci/ghcr-rehearsal']);

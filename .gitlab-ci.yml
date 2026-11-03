@@ -856,6 +856,8 @@ promote:
   # $CI_COMMIT_BRANCH for a scheduled pipeline against a branch ref just like a
   # push, so without this a misdirected schedule would trigger a real deploy.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
 
@@ -889,6 +891,8 @@ release_images:
       done
   # Same tag rule and schedule guard as publish:npm.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+([-+].+)?$/ && $CI_PIPELINE_SOURCE != "schedule"'
 
 # Publish the conductor CLI to public npm as @bakers-build/bakers. Triggered ONLY by a
@@ -942,6 +946,8 @@ publish:npm:
   # against a branch, so without this a misdirected schedule would trigger a
   # real publish to public npm.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+([-+].+)?$/ && $CI_PIPELINE_SOURCE != "schedule"'
 
 deploy:
@@ -971,6 +977,8 @@ deploy:
   # See the same guard on the promote job above: excludes a schedule misdirected
   # at develop/main from triggering a real Komodo deploy.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
       variables:
         DEPLOY_STACK: bakers-develop
@@ -1005,6 +1013,8 @@ publish:npm:next:
       base=$( [ -n "$last" ] && echo "${last#v}" | awk -F. '{print $1"."$2"."$3+1}' || echo 0.1.0 )
       pnpm run release:semver "${base}-next.${CI_PIPELINE_IID}" --tag next
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
 
 # Release on a main push after prod deployed: `release:version` computes the next version from the
@@ -1037,4 +1047,6 @@ release:
       cat release-notes.md
       glab release create "v$version" --ref "$release_commit" --name "v$version" --notes-file release-notes.md
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'

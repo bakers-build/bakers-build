@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # Only for disposable CI runners: never point this at a deployment daemon.
 set -euo pipefail
+revision=${CI_SOURCE_SHA:-$GITHUB_SHA}
+source_ref=${CI_SOURCE_REF:-$GITHUB_REF_NAME}
 mkdir -p gate-reports
 images=(php php-test nginx docs)
+labels=()
+if [ -n "${CI_RELEASE_VERSION:-}" ]; then labels+=(--label "org.opencontainers.image.version=$CI_RELEASE_VERSION"); fi
 for image in "${images[@]}"; do
-  docker build --target "$image" --label "org.opencontainers.image.revision=$GITHUB_SHA" \
-    --build-arg "CI_COMMIT_REF_NAME=$GITHUB_REF_NAME" --build-arg "CI_COMMIT_SHORT_SHA=${GITHUB_SHA:0:8}" \
+  docker build "${labels[@]}" --target "$image" --label "org.opencontainers.image.revision=$revision" \
+    --build-arg "CI_COMMIT_REF_NAME=$source_ref" --build-arg "CI_COMMIT_SHORT_SHA=${revision:0:8}" \
     -t "bakers-gate/$image:local" .
 done
 docker build -f docker/e2e/Dockerfile -t bakers-gate/e2e:local .
 for image in php php-test nginx docs e2e; do
   docker image inspect "bakers-gate/$image:local" > "gate-reports/$image.json"
 done
-printf '%s\n' "commit=$GITHUB_SHA" "tree=$(git rev-parse 'HEAD^{tree}')" "run=$GITHUB_RUN_ID" "attempt=$GITHUB_RUN_ATTEMPT" > gate-reports/candidate.txt
+printf '%s\n' "commit=$revision" "tree=$(git rev-parse 'HEAD^{tree}')" "run=$GITHUB_RUN_ID" "attempt=$GITHUB_RUN_ATTEMPT" > gate-reports/candidate.txt
 
 docker run --name phpunit --user root -e SIMPLETEST_DB=sqlite://localhost/:memory: \
   bakers-gate/php-test:local sh -c 'cd /var/www/html && ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 8 --log-junit /tmp/junit.xml' || phpunit_status=$?
