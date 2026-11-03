@@ -34,8 +34,7 @@ scope cannot settle is a **customer question**. A technical matter you cannot re
 - Review `OK`: keep the ticket in `review`, STOP; the bot merges into `next` after the customer
   accepts.
 - Review `Not OK`, no `criterion` cause: origin status for `working`, transition to `working`, STOP.
-  When the ticket already carries two `review` comments with `Status: **Not OK**`: **technical
-  problem** instead.
+  When two earlier `review` comments carry `Status: **Not OK**`: **technical problem** instead.
 - Review `Not OK` with a `criterion` cause: **customer question**, the proposed rewrite as the
   recommended choice; no transition.
 - Missing persona, access or environment; a failed check outside scope; a refused transition; the
