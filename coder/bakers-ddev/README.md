@@ -81,6 +81,16 @@ A start that fails to download a tool stops the install script, marks the start 
 
 The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
 
+## Conductor autostart
+
+Conductors are yours to start, and a restart, rebuild or template update stops them. Switch on the workspace parameter **Start conductors on workspace start** (`conductor_autostart`, default off) and every start, after `herdr server`, runs `bakers oven start` in each `~/projects/*` checkout that has `.bakers/conductor.config.js`. Each conductor gets its own herdr tab, as when you start it by hand.
+
+```sh
+coder update <workspace> --parameter conductor_autostart=true
+```
+
+The startup log has one line per checkout: `conductors: started <path>`, or `conductors: failed <path>: <reason>` with the last line `bakers oven start` printed. A failed checkout never stops the start or the other checkouts. Without an answering `herdr server` within 60 seconds, the log says `conductors: skipped: herdr server not ready` and nothing starts. The checkout's sign-ins (bakers.build, the agent, git) must already be in place; the autostart only starts what you configured.
+
 ## PM bot
 
 For the Hermes requester experience, return to [Use your client](https://bakers.build/get-started/use-your-client#hermes). This section owns operator setup.
