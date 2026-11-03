@@ -5,10 +5,9 @@ description: "Use when a ticket labelled `ticket:pingpong` runs in working or re
 
 # Ticket pingpong
 
-The project-manager bot's **hand-over** puts a ticket in `working` with the label `ticket:pingpong`
-once the user has agreed its spec. Run `@bakers-build/bb-workflow` as written, GREEN and verdict
-included; replace only the points where it would ask a person or wait for one. One run
-works one ticket and ends after its state write or its stop; the conductor starts the next run.
+A ticket labelled `ticket:pingpong` works on its own from `working` on: run `@bakers-build/bb-workflow`
+as written and replace only the points where it would ask a person or wait for one. One run works one
+ticket and ends at its state write or its stop.
 
 ## Decide or ask
 
@@ -22,7 +21,7 @@ scope cannot settle is a **user question**. A technical matter you cannot resolv
 
 - `working` without a confirmed `spec`, `plan` or `test`: write the missing ones in this run
   through [plan](../bb-workflow/references/plan.md)'s `work` and `deliver` and the recipe's plan
-  slot, each carrying `Approval: ticket:pingpong`; the hand-over confirms the bot's `spec`. Continue
+  slot, each carrying `Approval: ticket:pingpong`; the label confirms an existing `spec`. Continue
   `working`.
 - Remote base check, `prior_art_hit`: **technical problem**.
 - [Coding gate](../bb-workflow/references/coding-gate.md), GREEN pass:
@@ -31,8 +30,7 @@ scope cannot settle is a **user question**. A technical matter you cannot resolv
 - Coding gate, RED pass that cannot reach GREEN within scope: **technical problem**.
 - [Review](../bb-workflow/references/review.md) outtake, the verdict's confirmation: nothing to wait
   for.
-- Review `OK`: keep the ticket in `review`, STOP; the bot merges into `next` after the user
-  accepts.
+- Review `OK`: keep the ticket in `review` and STOP; acceptance and merge happen outside this run.
 - Review `Not OK`, no `criterion` cause: origin status for `working`, transition to `working`, STOP.
   When two earlier `review` comments carry `Status: **Not OK**`: **technical problem** instead.
 - Review `Not OK` with a `criterion` cause: **user question**, the proposed rewrite as the

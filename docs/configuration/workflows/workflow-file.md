@@ -38,7 +38,7 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. The engineering method is not in this file; each ticket carries a [recipe](/configuration/workflows/types-recipes-labels). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
 
-A project whose project-manager bot hands tickets over with the label `ticket:pingpong` adds a second sentence to the entry line: "When the ticket's labels include `ticket:pingpong` and its state is `working` or `review`, invoke `bakers:bb-ticket-pingpong` too and follow it with the frame." Such a ticket then works on its own, asks the user only content questions through the ticket and reports technical problems to keytec. Leave the sentence out in a project without such a bot: nobody would answer its questions or merge its work.
+To let tickets labelled `ticket:pingpong` work on their own, add a second sentence to the entry line: "When the ticket's labels include `ticket:pingpong` and its state is `working` or `review`, invoke `bakers:bb-ticket-pingpong` too and follow it with the frame." Such a ticket then works on its own, asks the user only content questions through the ticket and reports technical problems to keytec. Leave the sentence out where nobody answers questions on tickets.
 
 ## Example
 
