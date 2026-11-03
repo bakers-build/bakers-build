@@ -1,4 +1,5 @@
 # Isolated one-slot capacity refusal fixture: reported load 0, counted occupancy 1.
+# Import the owner's workspace lead grant before validating assigned tickets.
 _meta:
   version: '1.0'
   entity_type: bb_conductor
@@ -7,6 +8,7 @@ _meta:
     25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
     262258a2-080f-4ab9-af1b-9028cef388da: bb_project
     b0d04b55-da86-57d1-afb9-b47856fc6c2c: bb_machine
+    91f870cb-0551-50b6-a87e-136b972ea46c: og_membership
 default:
   conductor_id:
   - value: claim-capacity-online
