@@ -25,8 +25,8 @@ Please contact keytec.
 ```
 
 In `working`, at a GREEN [coding gate](../bb-workflow/references/coding-gate.md), ask instead for
-the user's one **acceptance**: a user question for a non-technical reader with only what changed,
-how to check it and one link, the tunnel link from
+the user's one **acceptance**: a user question for a non-technical reader with only what changed
+and how to try it at exactly one URL, the tunnel link from
 [preview links](../bb-workflow/references/preview-links.md) or, if nothing runs, the merge request.
 Work requested changes and ask again; once accepted, GREEN transitions to `review`.
 
