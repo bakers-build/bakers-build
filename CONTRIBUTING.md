@@ -6,14 +6,15 @@ skills. It is not distributed as a module for arbitrary Drupal sites. Components
 
 ## Obtain a candidate
 
-Use the maintainer-confirmed public repository URL and immutable candidate SHA. Public source,
+Use the public repository `https://github.com/bakers-build/bakers-build` and an immutable
+candidate SHA. The contribution target is `next`; `main` is the stable release branch. Public source,
 packages, images and skill revisions must be available without company credentials. Do not
 substitute the internal remote or an installed developer shim when testing public installation.
 The [clean-install runbook](docs/bakers/clean-install-acceptance.md) records availability, explicit
 prerequisites and the current support limits. A missing public candidate blocks that acceptance.
 
 ```sh
-git clone <confirmed-public-repository-url> bakers
+git clone https://github.com/bakers-build/bakers-build.git bakers
 cd bakers
 git checkout --detach <candidate-sha>
 git switch -c chore/my-change
@@ -57,8 +58,7 @@ do not establish a clean public install or effective client sandbox protection.
 
 Keep the change focused, use English and add behavior coverage at the existing public seam where
 needed. Describe the user-visible result, commands actually run, immutable revision and remaining
-blockers. Follow the [commit/MR conventions](docs/bakers/git-and-delivery.md); use the current
-maintainer-designated contribution destination while public migration is pending. A draft is not
+blockers. Follow the [commit/MR conventions](docs/bakers/git-and-delivery.md); open a pull request against `next` in `bakers-build/bakers-build` on GitHub. A draft is not
 release acceptance. Never commit private connection files, tokens, login links or customer data.
 
 For work within an existing Bakers project, follow [join a project](docs/get-started/first-ticket.md)

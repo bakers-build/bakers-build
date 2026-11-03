@@ -24,6 +24,22 @@ contains its supported standalone provisioning path. The currently integrated le
 is not proof of an independent public service; do not replace missing upstream work with a new
 deployment platform. Record source/artifact availability and clearance references in F1.
 
+## Available public candidate
+
+The public repository is `https://github.com/bakers-build/bakers-build`; pull requests target
+`next`. The first published candidate selected for this acceptance is source/docs commit
+`e592274d00d112c9d4e13185ed37fb4a8458ab5c`, npm `0.5.1-next.842`, plugin `0.50.4`.
+Pin the full package integrity set and these runtime digests in the results:
+
+- `ghcr.io/bakers-build/bakers-build/php@sha256:fbb0c3de5873949ab0ab3ee52e907637a5294eea15f16ec8583a19b7c1ed73fa`
+- `ghcr.io/bakers-build/bakers-build/nginx@sha256:8dd1096ca2c5b1174ab3423f4f95a213e218528b1e03e2f0e484050d41c8955b`
+- `ghcr.io/bakers-build/bakers-build/docs@sha256:6eefaedaecb8e7f61dea1a7e9d777c6808a33eeafc8f40df270cca903927a805`
+
+Publication is available; it does not resolve the asset-provenance limitations recorded in
+[licensing](licensing.md). The standalone `docker/self-host.yml` path is not yet integrated into
+this candidate. Complete that upstream dependency before executing the corresponding install
+path; do not silently test an unpublished sibling branch instead.
+
 ## Evidence checker
 
 The checker only validates **recorded evidence**. It cannot verify that an operator's observations
@@ -134,12 +150,12 @@ these observed limitations are not silently repaired by the acceptance harness.
 
 | Combination | Acceptance status | Required evidence |
 |---|---|---|
-| Linux + public standalone Compose + local DDEV contributor checkout | BLOCKED until a cleared candidate and disposable host are supplied | F1–F3, P2/P5; exact OS/architecture and revision/date |
+| Linux + public standalone Compose + local DDEV contributor checkout | Public candidate available; BLOCKED on standalone integration, clearance and disposable host | F1–F3, P2/P5; exact OS/architecture and revision/date |
 | Connector-only setup | Not yet observed on that candidate | F4 with ordinary connector account |
 | First project + sandbox client | BLOCKED without supported client evidence | F5; reuse client-matrix tickets BAKERS-30–34 only for their recorded scope |
 | Existing-project member / guest / non-member | Not yet observed on that candidate | F6–F7 with separate accounts |
 | Coder, FRP, Komodo, other OS/client combinations | Optional and unverified by this baseline | Separate candidate-specific evidence; docs alone are not support proof |
-| Private security reporting | BLOCKED until route and maintainer ownership are verified | F8; no guessed mailbox/advisory URL |
+| Private security reporting | GitHub private reporting enabled; monitoring ownership pending | F8; no guessed mailbox/advisory URL |
 
 Before creating anything, record canonical roots, Compose project/volume names, DDEV site names,
 account/project/conductor IDs and credentials owned by this experiment. Export evidence before
