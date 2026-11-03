@@ -5,9 +5,6 @@ description: "Use when a ticket labelled `ticket:pingpong` runs in working or re
 
 # Ticket pingpong
 
-Change only the points where `@bakers-build/bb-workflow` would ask a person or wait for one;
-everything else runs as the frame says.
-
 ## Decide or ask
 
 The user is the only person you ask, and only about content: what should change and what done
