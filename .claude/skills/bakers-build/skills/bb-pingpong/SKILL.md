@@ -25,9 +25,9 @@ then this note as another; its label is `technical problem`.
 Please contact keytec.
 ```
 
-In `working`, write a missing `spec`, `plan` or `test` in this run through
+In `working`, write a missing `plan` or `test` in this run through
 [plan](../bb-workflow/references/plan.md)'s `work` and `deliver` and its recipe slot, with
-`Approval: ticket:pingpong`; the label confirms an existing `spec`. In place of the
+`Approval: ticket:pingpong`; the label confirms the existing `spec`. In place of the
 [coding gate](../bb-workflow/references/coding-gate.md)'s question, a GREEN pass asks for the
 user's one **acceptance**: a user question for a non-technical reader with only what changed, how
 to check it and one link, the tunnel link from
