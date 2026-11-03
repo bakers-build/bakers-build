@@ -1,21 +1,21 @@
 ---
 name: bb-ticket-pingpong
-description: "Use when a ticket labelled `ticket:pingpong` runs in working or review: it works on its own, decides technical questions itself, asks the customer only content questions through the ticket and reports technical problems to keytec."
+description: "Use when a ticket labelled `ticket:pingpong` runs in working or review: it works on its own, decides technical questions itself, asks the user only content questions through the ticket and reports technical problems to keytec."
 ---
 
 # Ticket pingpong
 
 The project-manager bot's **hand-over** puts a ticket in `working` with the label `ticket:pingpong`
-once the customer has agreed its spec. Run `@bakers-build/bb-workflow` as written, GREEN and verdict
+once the user has agreed its spec. Run `@bakers-build/bb-workflow` as written, GREEN and verdict
 included; replace only the points where it would ask a person or wait for one. One run
 works one ticket and ends after its state write or its stop; the conductor starts the next run.
 
 ## Decide or ask
 
-The customer is the only person you ask, and only about content: what should change and what done
+The user is the only person you ask, and only about content: what should change and what done
 looks like. Settle every technical question yourself and record each decision with its reason under
 `Decisions` in the state's typed handoff. A content question the ticket, repository and confirmed
-scope cannot settle is a **customer question**. A technical matter you cannot resolve is a
+scope cannot settle is a **user question**. A technical matter you cannot resolve is a
 **technical problem**. Reach a person only through the ticket.
 
 ## Where the frame would ask
@@ -31,11 +31,11 @@ scope cannot settle is a **customer question**. A technical matter you cannot re
 - Coding gate, RED pass that cannot reach GREEN within scope: **technical problem**.
 - [Review](../bb-workflow/references/review.md) outtake, the verdict's confirmation: nothing to wait
   for.
-- Review `OK`: keep the ticket in `review`, STOP; the bot merges into `next` after the customer
+- Review `OK`: keep the ticket in `review`, STOP; the bot merges into `next` after the user
   accepts.
 - Review `Not OK`, no `criterion` cause: origin status for `working`, transition to `working`, STOP.
   When two earlier `review` comments carry `Status: **Not OK**`: **technical problem** instead.
-- Review `Not OK` with a `criterion` cause: **customer question**, the proposed rewrite as the
+- Review `Not OK` with a `criterion` cause: **user question**, the proposed rewrite as the
   recommended choice; no transition.
 - Missing persona, access or environment; a failed check outside scope; a refused transition; the
   frame's stop rule: **technical problem**.
@@ -43,7 +43,7 @@ scope cannot settle is a **customer question**. A technical matter you cannot re
 
 The label authorizes each origin status above.
 
-## Customer question
+## User question
 
 Use the [question channel](../bb-workflow/references/publish-comment.md#a-question-for-a-human):
 one comment of type `comment` starting `# Question`, with context and numbered choices, the

@@ -1,5 +1,5 @@
 {
-  "id": "pingpong-customer-question",
+  "id": "pingpong-user-question",
   "synthetic": true,
   "profile": "ticket-pingpong",
   "execution": "simulated-tools",
@@ -62,7 +62,7 @@
         "id": "77777777-7777-4777-8777-000000000002",
         "ticket": "11111111-1111-4111-8111-111111111111",
         "type": "spec",
-        "body": "# Spec\n\nApproval: the customer agreed this spec with the project-manager bot.\n\nExport the invoice list as CSV from the invoice page: one row per invoice, columns number, date, customer, total.\n"
+        "body": "# Spec\n\nApproval: the user agreed this spec with the project-manager bot.\n\nExport the invoice list as CSV from the invoice page: one row per invoice, columns number, date, customer, total.\n"
       },
       {
         "id": "77777777-7777-4777-8777-000000000003",
@@ -80,8 +80,8 @@
   },
   "rubric": [
     {
-      "id": "customer-question",
-      "criterion": "The final answer reports one customer question about whether the export includes cancelled invoices, published as a # Question comment with numbered choices, one recommended."
+      "id": "user-question",
+      "criterion": "The final answer reports one user question about whether the export includes cancelled invoices, published as a # Question comment with numbered choices, one recommended."
     },
     {
       "id": "freeze",
@@ -89,7 +89,7 @@
     },
     {
       "id": "content-only",
-      "criterion": "The final answer shows the question is about what the export contains: it asks nothing technical and leaves the choice to the customer, a recommended option being allowed."
+      "criterion": "The final answer shows the question is about what the export contains: it asks nothing technical and leaves the choice to the user, a recommended option being allowed."
     }
   ]
 }

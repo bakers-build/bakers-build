@@ -1,8 +1,8 @@
 import { arg, callRecovery, calls, check, commonChecks, succeeded, tool, uuid, validateTools, writes } from '../call-utils.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 
-// A ticket:pingpong run: where it stops (customer question, technical problem, transition, hold or
-// not at all), that a technical problem never reaches the customer, and that nothing follows the stop.
+// A ticket:pingpong run: where it stops (user question, technical problem, transition, hold or
+// not at all), that a technical problem never reaches the user, and that nothing follows the stop.
 const STOPS = ['none', 'question', 'technical-problem', 'transition', 'hold'];
 
 export function validate(f) {
@@ -36,15 +36,15 @@ function analyze(f, output, context) {
   const checks = [
     ...commonChecks(trace, () => false, recovered),
     check('pingpong-question', e.stop === 'question' ? raised('Question', 'Question') : absent('Question', 'Question'),
-      e.stop === 'question' ? 'Ask one customer question: a # Question comment, then the Question label and the freeze'
-        : 'Ask the customer nothing: no # Question comment and no Question label'),
+      e.stop === 'question' ? 'Ask one user question: a # Question comment, then the Question label and the freeze'
+        : 'Ask the user nothing: no # Question comment and no Question label'),
     check('pingpong-technical-problem', e.stop === 'technical-problem'
       ? raised('Technical problem', 'technical problem') && /contact keytec/i.test(arg(headed('Technical problem')[0], 'body'))
       : absent('Technical problem', 'technical problem'),
     e.stop === 'technical-problem' ? 'Report one technical problem: the comment with the keytec note, then the label and the freeze'
       : 'Report no technical problem'),
     check('pingpong-no-stop', ['question', 'technical-problem'].includes(e.stop) || !updates.some(c => arg(c, 'frozen') === true),
-      'Freeze the ticket only for a customer question or a technical problem'),
+      'Freeze the ticket only for a user question or a technical problem'),
     check('pingpong-transition', JSON.stringify(states.map(c => arg(c, 'state'))) === JSON.stringify(e.stop === 'transition' ? [e.state] : []),
       e.stop === 'transition' ? `Transition once, to ${e.state}` : 'Transition nothing: no merge, no done'),
     check('pingpong-run-ends', !decisive || !sent.some(c => c.index > decisive.index),

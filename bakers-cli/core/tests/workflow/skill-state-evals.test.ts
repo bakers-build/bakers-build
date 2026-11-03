@@ -171,7 +171,7 @@ describe('ticket pingpong profile', () => {
     transition('working'),
   ];
 
-  it('accepts one customer question with the label and the freeze', async () => {
+  it('accepts one user question with the label and the freeze', async () => {
     const q = fixture({ stop: 'question' });
     expect(await judge(q, 'Asked.', [readTicket(), question, asked])).toEqual(
       [],
@@ -184,7 +184,7 @@ describe('ticket pingpong profile', () => {
       ]),
     ).toEqual(['pingpong-question']);
   });
-  it('technical problem never asks the customer', async () => {
+  it('technical problem never asks the user', async () => {
     const p = fixture({ stop: 'technical-problem' });
     expect(
       await judge(p, 'Stopped.', [readTicket(), problem, reported]),
