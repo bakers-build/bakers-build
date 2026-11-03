@@ -198,7 +198,7 @@
   @resize.window="reposition()"
   @scroll.window.capture="reposition()">
   {% if is_facet %}<label for="{{ picker_id }}" class="block pb-1.5 text-meta text-text-light">{{ field_name }}</label>{% endif %}
-  {% set trigger_classes = is_facet ? ['flex', 'items-center', 'gap-2', 'w-full', 'min-h-control', 'px-2', 'py-2', 'rounded-xs', 'border', 'border-control-border', 'bg-app', 'text-body', 'text-text', 'text-left', 'cursor-pointer', 'focus-visible:outline-2', 'focus-visible:outline-focus-ring'] : trigger_classes %}
+  {% set trigger_classes = is_facet ? ['flex', 'items-center', 'gap-2', 'w-full', 'min-h-control', 'px-2', 'py-2', 'rounded-xs', 'border', 'border-control-border', 'bg-app', 'text-body', 'text-text', 'text-left', 'cursor-pointer', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'] : trigger_classes %}
   <button type="button"{{ create_attribute().addClass(trigger_classes) }}
     id="{{ picker_id }}"
     data-option-picker-trigger

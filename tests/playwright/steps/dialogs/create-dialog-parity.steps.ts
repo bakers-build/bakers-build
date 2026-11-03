@@ -233,8 +233,10 @@ async function clickTrigger(page: Page, name: string): Promise<void> {
  * keyboard user types at once.
  */
 Then('focus is in the first field of the {string} create dialog', async ({ page }, name: string) => {
+  // Visible only: a closed picker's search field comes first in the DOM but cannot take focus.
   const first = openHull(page, surface(name))
     .locator('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)')
+    .filter({ visible: true })
     .first();
   await expect(first, 'Focus did not land in the dialog\'s first field').toBeFocused();
 });
