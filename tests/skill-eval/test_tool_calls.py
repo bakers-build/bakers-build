@@ -27,6 +27,11 @@ class ToolServerTests(unittest.TestCase):
         plain = simulation.call('bakers', {'argv': TOOL})
         self.assertEqual(selected, plain)
 
+    def test_a_relative_path_reads_the_same_virtual_file(self):
+        simulation = load_server().Simulation({'simulation': {'files': {'WORKFLOW.md': '# Project'}}})
+        self.assertEqual(simulation.call('read_file', {'path': './WORKFLOW.md'}), simulation.call('read_file', {'path': 'WORKFLOW.md'}))
+        self.assertEqual(simulation.call('read_file', {'path': './WORKFLOW.md'})['stdout'], '# Project')
+
     def test_seeded_comments_are_read_with_their_ticket(self):
         server = load_server()
         ticket = '11111111-1111-4111-8111-111111111111'
