@@ -1,6 +1,5 @@
 /** The ticket fields the hook decides on (`bakers_ticket_read`). */
 export interface HookTicket {
-  approval?: unknown;
   labels?: unknown;
 }
 
@@ -13,8 +12,9 @@ export interface PreToolUseOutput {
   };
 }
 
-const REDIRECT =
-  'Nobody answers a terminal dialog in an autopilot run. Ask on the ticket instead — write the question to a Markdown file and run `bakers ticket ask "$BB_ID" --body <file.md>`, then end the run (bakers.build bb-workflow › references/ask-human.md).';
+/** Where a denied terminal dialog sends the agent: the ticket question. */
+export const ASK_REDIRECT =
+  'Nobody answers a terminal dialog in an autopilot run. Publish the question as a `comment` starting `# Question`, then `bakers_ticket_update` with `labels_add: ["Question"]` and `frozen: true`, and end the run (bb-workflow › publish-comment).';
 
 const deny = (reason: string): PreToolUseOutput => ({
   hookSpecificOutput: {
@@ -26,9 +26,9 @@ const deny = (reason: string): PreToolUseOutput => ({
 
 /**
  * Decide an `AskUserQuestion` call. Outside a conductor run (no `BB_ID`) the
- * dialog stays usable. In a run it is denied when the ticket's state approves
- * automatically or the ticket carries the label "Autopilot", and also when the
- * ticket cannot be read: an unattended run must never wait on a terminal.
+ * dialog stays usable. In a run it is denied when the ticket carries the label
+ * "Autopilot", and also when the ticket cannot be read: an unattended run must
+ * never wait on a terminal.
  */
 export async function askUserQuestionDecision(
   env: { BB_ID?: string | undefined },
@@ -43,11 +43,10 @@ export async function askUserQuestionDecision(
     const message = error instanceof Error ? error.message : String(error);
     const reason = (message.split('\n')[0] ?? '').slice(0, 200);
     return deny(
-      `The run's ticket ${id} could not be read (${reason}), so this may be an autopilot run. ${REDIRECT}`,
+      `The run's ticket ${id} could not be read (${reason}), so this may be an autopilot run. ${ASK_REDIRECT}`,
     );
   }
   const labels = Array.isArray(ticket.labels) ? ticket.labels : [];
-  if (ticket.approval === 'automatic' || labels.includes('Autopilot'))
-    return deny(REDIRECT);
+  if (labels.includes('Autopilot')) return deny(ASK_REDIRECT);
   return null;
 }

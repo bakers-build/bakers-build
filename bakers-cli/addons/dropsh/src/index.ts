@@ -266,11 +266,6 @@ async function readSiteTicket(
   }
 }
 
-async function drain(stream: NodeJS.ReadableStream): Promise<void> {
-  if ((stream as { isTTY?: boolean }).isTTY) return;
-  for await (const _ of stream);
-}
-
 /** `bakers hook ask-user-question`: Claude's PreToolUse hook on `AskUserQuestion`. */
 export const hookCommandPlugin: BbCommandPlugin = {
   kind: 'command',
@@ -282,12 +277,11 @@ export const hookCommandPlugin: BbCommandPlugin = {
       .description('Agent hooks for conductor runs')
       .command('ask-user-question')
       .description(
-        'Deny the terminal dialog in autopilot runs and point to `bakers ticket ask`',
+        'Deny the terminal dialog in autopilot runs and point to the ticket question',
       )
       .option('--connection <name>', 'bakers.build connection to use')
       .option('--config <path>', 'connection config file')
       .action(async (flags: { connection?: string; config?: string }) => {
-        await drain(process.stdin);
         const output = await askUserQuestionDecision(
           process.env,
           async (ticket) =>
