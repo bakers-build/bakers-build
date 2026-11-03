@@ -6,7 +6,7 @@ bakers.build ships no workflow engine and no loader. It ships skills, which are 
 
 ## Skills and references
 
-A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships thirteen:
+A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships fifteen:
 
 | Skill | Chosen by |
 |---|---|
@@ -17,6 +17,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
 | `bb-runtime-ddev` | the project's `bb-phase-provision` hint |
 | `bb-verdict` | the review state, as its subagent's start |
+| `bb-ticket-pingpong` | the project's `WORKFLOW.md` entry line, for a ticket labelled `ticket:pingpong` in `working` or `review` |
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person, for a ticket or time proposals |
 
