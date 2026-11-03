@@ -145,6 +145,29 @@ export function encodeClaudeProjectDir(cwd: string): string {
   return cwd.replace(/[^a-zA-Z0-9]/g, '-');
 }
 
+/**
+ * The transcript lines this run wrote: drops every entry timestamped before
+ * the run's start. A forked session (`--resume … --fork-session`) copies the
+ * earlier run's entries with their original timestamps; counting them would
+ * record that run's turns twice and stretch `duration_s` over the wait for
+ * the human. Lines without a parseable timestamp are kept.
+ */
+function entriesSince(log: string, startedAtMs: number): string {
+  return log
+    .split('\n')
+    .filter((line) => {
+      try {
+        const ts = Date.parse(
+          (JSON.parse(line) as { timestamp?: string }).timestamp ?? '',
+        );
+        return !(ts < startedAtMs);
+      } catch {
+        return true;
+      }
+    })
+    .join('\n');
+}
+
 export interface ClaudeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
@@ -229,10 +252,13 @@ export class ClaudeAgent implements BbAgent {
     // `getRunLog` can read that ONE file directly instead of scanning the
     // worktree-keyed directory by mtime — the scan is what let a
     // resumed/re-dispatched/reused worktree finalise a foreign transcript.
-    // A run that picks up a human answer continues the asking session.
+    // A run that picks up a human answer continues the asking session as a
+    // fork under its own pinned id, so it never appends to the asking run's
+    // transcript.
     if (run?.resumeSessionId) {
-      parts.push('--resume', shellQuote(run.resumeSessionId));
-    } else if (run?.sessionId) {
+      parts.push('--resume', shellQuote(run.resumeSessionId), '--fork-session');
+    }
+    if (run?.sessionId) {
       parts.push('--session-id', run.sessionId);
     }
     parts.push(...this.args.map(shellQuote));
@@ -273,6 +299,16 @@ export class ClaudeAgent implements BbAgent {
   }
 
   async getRunLog(
+    worktreePath: string,
+    run?: AgentRunIdentity,
+  ): Promise<string> {
+    const log = await this.findRunLog(worktreePath, run);
+    const startedAtMs =
+      run?.startedAt !== undefined ? new Date(run.startedAt).getTime() : NaN;
+    return Number.isFinite(startedAtMs) ? entriesSince(log, startedAtMs) : log;
+  }
+
+  private async findRunLog(
     worktreePath: string,
     run?: AgentRunIdentity,
   ): Promise<string> {

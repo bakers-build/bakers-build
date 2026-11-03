@@ -707,7 +707,7 @@ describe('ClaudeAgent redirects the terminal dialog to the ticket question', () 
 });
 
 describe('ClaudeAgent resumes an earlier session', () => {
-  it('passes --resume in place of --session-id when the run resumes', () => {
+  it('forks the earlier session into the run’s own pinned session', () => {
     const a = captureArgv(
       'claude',
       new ClaudeAgent({ security: 'system' }).launchCommand('x', {
@@ -716,6 +716,51 @@ describe('ClaudeAgent resumes an earlier session', () => {
       }),
     );
     expect(flagValue(a, '--resume')).toBe('r-1');
-    expect(a).not.toContain('--session-id');
+    expect(a).toContain('--fork-session');
+    expect(flagValue(a, '--session-id')).toBe('r-2');
+  });
+
+  it('records only the resumed run’s own turns, not the forked earlier ones or the wait', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'claude-home-'));
+    const cwd = '/srv/ws/PROJ-RESUME';
+    const dir = join(home, '.claude', 'projects', encodeClaudeProjectDir(cwd));
+    await mkdir(dir, { recursive: true });
+    const turn = (timestamp: string, text: string, output_tokens: number) =>
+      JSON.stringify({
+        type: 'assistant',
+        timestamp,
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text }],
+          usage: { output_tokens },
+        },
+      });
+    const prompt = (timestamp: string, content: string) =>
+      JSON.stringify({
+        type: 'user',
+        timestamp,
+        message: { role: 'user', content },
+      });
+    // `--fork-session` copies the asking run's turns, with their original
+    // timestamps, into the new run's own file before its first turn.
+    await writeFile(
+      join(dir, 'r-2.jsonl'),
+      [
+        prompt('2026-01-01T09:00:00Z', 'work the ticket'),
+        turn('2026-01-01T09:10:00Z', 'I have a question', 1000),
+        prompt('2026-01-01T12:00:00Z', 'continue'),
+        turn('2026-01-01T12:00:30Z', 'using the answer', 7),
+      ].join('\n'),
+    );
+    const agent = new ClaudeAgent({}, home);
+    const log = await agent.getRunLog(cwd, {
+      sessionId: 'r-1',
+      attemptFamily: ['r-1', 'r-2'],
+      startedAt: new Date('2026-01-01T11:59:59Z'),
+    });
+    const footprint = agent.parseFootprint(log);
+    expect(footprint.tokens).toBe(7);
+    expect(footprint.agent_turns).toBe(1);
+    expect(footprint.duration_s).toBe(30);
   });
 });
