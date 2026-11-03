@@ -24,3 +24,10 @@ freshness only when the retained context was complete; when uncertain reload all
 
 When the read fails because the ticket does not resolve or credentials are rejected, read
 [troubleshooting](read-ticket-troubleshooting.md) before retrying. Return complete context. Choose no work or state and perform no mutation.
+
+## Questions
+
+The latest comment whose body starts with `# Question` is a **question**
+([publish comment](publish-comment.md)). While the label *Question* is on the ticket or no comment
+follows it, stop without writing and print `waiting for an answer to <comment id>`. Otherwise every
+comment after it is the answer: carry it into the step as a confirmed input.
