@@ -79,6 +79,14 @@ When('I visit my profile settings', async ({ page }) => {
   await page.goto(`/user/${uid}/edit`);
 });
 
+When('I visit my profile page', async ({ page }) => {
+  await page.goto(`/user/${uidOf('north-lead')}/profile`);
+});
+
+Then('I am on the profile route of {string}', async ({ page }, name: string) => {
+  await expect(page).toHaveURL(new RegExp(`/user/${uidOf(name)}/profile`));
+});
+
 When('I visit the user area of {string}', async ({ page }, name: string) => {
   await page.goto(`/user/${uidOf(name)}`);
 });
@@ -157,13 +165,18 @@ Then('the view and edit routes of {string} are denied to me', async ({ page }, n
   }
 });
 
-When(
-  'I fill in the profile with full name {string} and developer title {string}',
-  async ({ page }, fullName: string, title: string) => {
-    await page.locator('[name="field_full_name[0][value]"]').fill(fullName);
-    await page.locator('[name="field_developer_title[0][value]"]').fill(title);
-  },
-);
+When('I fill in the full name {string}', async ({ page }, fullName: string) => {
+  await page.locator('[name="field_full_name[0][value]"]').fill(fullName);
+});
+
+When('I fill in the position {string}', async ({ page }, title: string) => {
+  await page.locator('[name="field_developer_title[0][value]"]').fill(title);
+});
+
+Then('the edit form has no position or background field', async ({ page }) => {
+  await expect(page.locator('form.user-form')).toBeVisible();
+  await expect(page.locator('[name^="field_developer_title"], [name^="field_bb_background"]')).toHaveCount(0);
+});
 
 When('I save the profile form', async ({ page }) => {
   const navigation = page.waitForNavigation({ waitUntil: 'load' });

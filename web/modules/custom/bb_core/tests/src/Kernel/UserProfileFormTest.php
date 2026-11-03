@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Config\FileStorage;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\UserInterface;
@@ -86,6 +87,19 @@ final class UserProfileFormTest extends KernelTestBase {
   }
 
   /**
+   * Position and background are edited on Profile only, not on Account › Edit.
+   */
+  public function testAccountEditFormNoLongerHoldsTheProfileFields(): void {
+    $storage = new FileStorage(dirname($this->root) . '/config/sync');
+    $display = $storage->read('core.entity_form_display.user.user.default');
+    self::assertIsArray($display);
+    foreach (['field_developer_title', 'field_bb_background'] as $field) {
+      self::assertArrayNotHasKey($field, $display['content'], "$field leaves the edit form");
+      self::assertTrue($display['hidden'][$field] ?? FALSE, "$field is hidden on the edit form");
+    }
+  }
+
+  /**
    * Only the own account or `administer users` may edit a human's profile.
    */
   public function testEditProfileAccess(): void {
@@ -108,6 +122,7 @@ final class UserProfileFormTest extends KernelTestBase {
     self::assertSame('/user/{user}/profile', $route->getPath());
     self::assertSame(['cookie'], $route->getOption('_auth'));
     self::assertSame('user.edit profile', $route->getRequirement('_entity_access'));
+    self::assertTrue($route->getOption('_bb_user_area'), 'the profile page sits in the account area');
 
     $label = $this->container->get('entity_field.manager')->getFieldDefinitions('user', 'user')['field_developer_title']->getLabel();
     self::assertSame('Position', (string) $label);

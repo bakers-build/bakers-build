@@ -61,9 +61,9 @@ final class UserAreaRouteTest extends KernelTestBase {
   }
 
   /**
-   * The user route keeps core's View and Edit; listings are rail items.
+   * The user route adds only Profile to View and Edit; listings are rail items.
    */
-  public function testUserRouteHasNoBbLocalTask(): void {
+  public function testUserRouteHasOnlyTheProfileLocalTask(): void {
     $file = \Drupal::service('extension.list.module')->getPath('bb_core') . '/bb_core.links.task.yml';
     $definitions = Yaml::parseFile($file);
 
@@ -72,10 +72,9 @@ final class UserAreaRouteTest extends KernelTestBase {
       static fn (array $tab): bool => ($tab['base_route'] ?? NULL) === 'entity.user.canonical',
     );
 
-    self::assertSame([], $user_tabs);
+    self::assertSame(['bb_core.user.profile'], array_keys($user_tabs));
     self::assertArrayNotHasKey('view.conductors.user_list', $definitions);
     self::assertArrayNotHasKey('view.machines.user_list', $definitions);
-    self::assertArrayNotHasKey('bb_core.user.profile', $definitions);
     self::assertArrayNotHasKey('view.user_connections.page_1', $definitions);
   }
 

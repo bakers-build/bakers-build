@@ -11,13 +11,24 @@ Feature: The user area is split into a view route and an edit route
   Background:
     Given I am logged in as the account "north-lead"
 
-  Scenario: Full name and developer title save and survive a reload
+  Scenario: Full name saves and survives a reload
     When I visit my profile settings
-    And I fill in the profile with full name "Ada Lovelace" and developer title "Backend engineer"
+    And I fill in the full name "Ada Lovelace"
     And I save the profile form
     And I reload the page
     Then the full name field holds "Ada Lovelace"
-    And the developer title field holds "Backend engineer"
+
+  # Position and background moved from Edit to their own Profile tab.
+  Scenario: The Profile tab edits position, and Edit no longer holds the context questions
+    When I visit my user area
+    And I click the tab "Profile"
+    Then I am on the profile route of "north-lead"
+    When I fill in the position "Backend engineer"
+    And I save the profile form
+    And I reload the page
+    Then the developer title field holds "Backend engineer"
+    When I click the tab "Edit"
+    Then the edit form has no position or background field
 
   # Platform usernames, the activity and depth questions and the Social Auth
   # widget were removed; their controls must be absent, not merely unlabelled.
@@ -39,15 +50,14 @@ Feature: The user area is split into a view route and an edit route
     Then the profile form has no retired account fields
 
   # The context questions bakers.build hands to its AI assistants, and the notice that
-  # says so. Asserted here since the onboarding profile step that used to carry
-  # them was retired: this form is where they are edited now.
+  # says so. The Profile page is where they are edited now.
   Scenario: The AI-use notice precedes the context questions
-    When I visit my profile settings
+    When I visit my profile page
     Then the AI-use notice is shown before the context questions
 
   Scenario: The context answers save and survive a reload
     Given the account "north-lead" has no context answers
-    When I visit my profile settings
+    When I visit my profile page
     And I answer the context questions with:
       | What should bakers.build know about your background? | Drupal developer |
     And I save the profile form

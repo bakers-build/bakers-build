@@ -511,7 +511,8 @@ bb_core.onboarding:
 
 # Position and background only, the profile a human sets in onboarding.
 # Access is the user entity operation `edit profile`, separate from `update`
-# (UserProfileAccessHooks); bearer clients are excluded.
+# (UserProfileAccessHooks); bearer clients are excluded. A tab beside View and
+# Edit, inside the account area.
 bb_core.user.profile:
   path: '/user/{user}/profile'
   defaults:
@@ -522,3 +523,4 @@ bb_core.user.profile:
     user: '\d+'
   options:
     _auth: ['cookie']
+    _bb_user_area: TRUE
