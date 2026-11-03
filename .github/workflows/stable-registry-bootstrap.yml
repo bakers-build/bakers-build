@@ -1,0 +1,61 @@
+name: Preserve stable runtime images
+on:
+  push:
+    branches: [ci/stable-registry-bootstrap]
+permissions:
+  contents: read
+concurrency:
+  group: stable-registry-bootstrap
+  cancel-in-progress: false
+jobs:
+  copy:
+    environment: registry-migration
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITLAB_REGISTRY_TOKEN: ${{ secrets.GITLAB_REGISTRY_TOKEN }}
+    steps:
+      - name: Copy the running stable images without rebuilding
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/bakers-build/bakers-build/git/ref/heads/main --jq .object.sha)" = 7220b1477b1c8c2adaf5191ebe71ee49bb192f16
+          printf '%s' "$GITLAB_REGISTRY_TOKEN" | docker login git.key-tec.de:5050 -u gitlab+deploy-token-30 --password-stdin
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          anonymous=$(mktemp -d)
+          trap 'docker logout ghcr.io >/dev/null 2>&1; docker logout git.key-tec.de:5050 >/dev/null 2>&1; rm -rf "$anonymous"' EXIT
+          mkdir -p evidence
+          for image in php nginx docs; do
+            case "$image" in
+            php) digest=sha256:aa5769b8cce1c5980134a6e4d6350e63721a26fe730173db20a891e4c9a8dd41 ;;
+            nginx) digest=sha256:e49972c3ec518c23c98c35b576c5237912a47a415981e033c5f02742323bfa48 ;;
+            docs) digest=sha256:2b301326d77f33e47610c81fc17233b39ffd9103812d52473c4a2249da11728c ;;
+            esac
+            source="git.key-tec.de:5050/bakers-build/bakers-build/$image@$digest"
+            base="ghcr.io/bakers-build/bakers-build/$image"
+            gh api "orgs/bakers-build/packages/container/bakers-build%2F$image" --jq .visibility | grep -qx public
+            docker manifest inspect "$source" > "evidence/$image-source.json"
+            jq '{config:.config.digest,layers:[.layers[].digest]}' "evidence/$image-source.json" > "evidence/$image-expected.json"
+            if docker --config "$anonymous" manifest inspect "$base:main" > existing.json 2>/dev/null; then
+              jq '{config:.config.digest,layers:[.layers[].digest]}' existing.json > existing-content.json
+              diff -u "evidence/$image-expected.json" existing-content.json
+            fi
+            docker pull "$source"
+            for tag in stable-bootstrap-7220b1477b1c8c2adaf5191ebe71ee49bb192f16 main; do
+              target="$base:$tag"
+              docker tag "$source" "$target"
+              docker push "$target"
+              docker --config "$anonymous" manifest inspect "$target" > "evidence/$image-$tag.json"
+              jq '{config:.config.digest,layers:[.layers[].digest]}' "evidence/$image-$tag.json" > actual-content.json
+              diff -u "evidence/$image-expected.json" actual-content.json
+              printf '%s %s %s\n' "$image" "$source" "$target" >> evidence/copied.txt
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stable-bootstrap-evidence
+          path: evidence/
+          retention-days: 90
