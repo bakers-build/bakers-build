@@ -21,7 +21,7 @@ owner).
 | Route | Who | What |
 |---|---|---|
 | `POST /jsonapi/bakers/inbox/send` | any signed-in user | `{ticket, message_id, payload}`; 201, 403 when the handler denies, 422 on veto or no handler |
-| `GET /jsonapi/bakers/inbox/{conductor}` (conductor UUID) | the conductor's owner | pending messages with their worktree path, plus the conductor's open worktrees |
+| `GET /jsonapi/bakers/inbox/{conductor_id}` | the conductor's owner | pending messages with their worktree path, plus the conductor's open worktrees |
 | `POST /jsonapi/bakers/inbox/{message}/result` | the conductor's owner | `{status, result}`; 422 on a backward status or a handler veto |
 
 ## Message contract

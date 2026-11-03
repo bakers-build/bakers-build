@@ -183,6 +183,7 @@ final class WorkspaceReadScopeOwnerCompositionTest extends KernelTestBase {
    */
   private function createOwnedConductorAndRun(UserInterface $account, string $name, ?int $project_id = NULL): array {
     $values = [
+      'conductor_id' => $name,
       'label' => $name,
       'owner_user_id' => $account->id(),
     ];

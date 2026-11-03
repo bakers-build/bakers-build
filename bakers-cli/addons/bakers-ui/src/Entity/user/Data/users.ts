@@ -3,7 +3,6 @@
 // as picker rows says so itself — that is `create-form-data.ts` / `edit-form-data.ts`,
 // and the boundary guard in `tests/boundary.test.ts` keeps this file on the data side
 // of the line. The two read strategies are both just reading, so both live here.
-import { isUuid } from '@bakers-build/core';
 import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import type {
   DropshClient,
@@ -243,8 +242,7 @@ export async function resolveWhoCandidate(
   name: string,
 ): Promise<ListOutcome<WhoCandidate>> {
   const params = new DrupalJsonApiParams();
-  // `bakers ui` passes the signed-in user's UUID (api.me()); a name still works.
-  params.addFilter(isUuid(name) ? 'id' : 'name', name);
+  params.addFilter('name', name);
   params.addPageLimit(WHO_PAGE_SIZE);
   const outcome = await fetchWhoCandidates(client, params);
   return { ...outcome, rows: outcome.rows.slice(0, 1) };

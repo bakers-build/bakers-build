@@ -294,17 +294,6 @@ it('resolveWhoCandidate filters name EXACTLY — no CONTAINS — and pages at WH
   expect(s).toContain(`page[limit]=${WHO_PAGE_SIZE}`);
 });
 
-it('resolveWhoCandidate filters a user UUID (the signed-in identity) by id', async () => {
-  const client = fakeClient({ documents: { 'user/user': { data: [] } } });
-  await resolveWhoCandidate(client, '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
-  const params = client.requests[0]?.params as {
-    getQueryString(): string;
-  };
-  const s = decodeURIComponent(params.getQueryString());
-  expect(s).toContain('filter[id]=0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
-  expect(s).not.toContain('filter[name]');
-});
-
 it('resolveWhoCandidate returns at most the FIRST match, mapped like a Who candidate', async () => {
   const client = fakeClient({
     documents: {

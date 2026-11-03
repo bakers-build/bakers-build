@@ -78,7 +78,7 @@ final class InboxResourceTest extends KernelTestBase {
     $done = $this->send($this->guest, 'test.echo', ['text' => 'b']);
     self::assertSame([], $this->writeResult($done, 'done', ['markdown' => 'ok']));
 
-    $data = $this->pendingData($this->conductorOwner, $this->conductor->uuid());
+    $data = $this->pendingData($this->conductorOwner, (string) $this->conductor->get('conductor_id')->value);
     self::assertCount(1, $data['messages']);
     self::assertSame($pending->uuid(), $data['messages'][0]['id']);
     self::assertSame('test.echo', $data['messages'][0]['message_id']);
@@ -91,7 +91,7 @@ final class InboxResourceTest extends KernelTestBase {
     $this->container->get('current_user')->setAccount($foreignOwner);
     try {
       $this->resource(InboxPendingResource::class)
-        ->process(Request::create('/', 'GET'), $this->conductor->uuid());
+        ->process(Request::create('/', 'GET'), (string) $this->conductor->get('conductor_id')->value);
       self::fail('A foreign account must not read another conductor inbox.');
     }
     catch (AccessDeniedHttpException) {
@@ -110,7 +110,7 @@ final class InboxResourceTest extends KernelTestBase {
       ->fields(['changed' => \Drupal::time()->getRequestTime() - 600])
       ->condition('id', $stale->id())
       ->execute();
-    $this->pendingData($this->conductorOwner, $this->conductor->uuid());
+    $this->pendingData($this->conductorOwner, (string) $this->conductor->get('conductor_id')->value);
     $stale = $this->reloadMessage($stale);
     self::assertSame('failed', $stale->status());
     self::assertSame('The conductor did not answer in time.', $stale->result()['markdown'] ?? NULL);
@@ -203,10 +203,10 @@ final class InboxResourceTest extends KernelTestBase {
    * @return array<string, mixed>
    *   The decoded data object.
    */
-  private function pendingData(AccountInterface $account, string $conductor): array {
+  private function pendingData(AccountInterface $account, string $conductor_id): array {
     $this->container->get('current_user')->setAccount($account);
     $response = $this->resource(InboxPendingResource::class)
-      ->process(Request::create('/', 'GET'), $conductor);
+      ->process(Request::create('/', 'GET'), $conductor_id);
     self::assertSame(200, $response->getStatusCode());
     $object = $response->getResponseData()->getData()->getIterator()->current();
     self::assertInstanceOf(ResourceObject::class, $object);

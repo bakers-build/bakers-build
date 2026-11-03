@@ -101,6 +101,7 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
     $etm = $this->container->get('entity_type.manager');
     $name = 'node-' . $this->randomMachineName();
     $conductor = $etm->getStorage('bb_conductor')->create([
+      'conductor_id' => $name,
       'label' => $name,
       'owner_user_id' => $this->actor->id(),
       'status' => 'online',

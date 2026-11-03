@@ -64,6 +64,7 @@ final class AddonOverviewFormatterTest extends KernelTestBase {
     $this->elsewhereOwner = $this->createAccount('elsewhere-owner', ['register bakers conductor']);
     $this->workspaceMember('a', $this->elsewhereOwner, 'contributor');
     $elsewhere = $this->createEntity('bb_conductor', [
+      'conductor_id' => 'node-elsewhere',
       'label' => 'node-elsewhere',
       'project_id' => $this->fixture('b', 'bb_project')->id(),
       'owner_user_id' => $this->elsewhereOwner->id(),

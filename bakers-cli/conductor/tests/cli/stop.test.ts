@@ -35,7 +35,7 @@ vi.mock('dropsh', async (orig) => {
  * conductor's row, prove the process is really it, signal it.
  *
  * BB-450 D1: the proof is process identity (a live pid whose command line
- * identifies a bakers conductor, owned by this user) plus a machine UUID match —
+ * identifies a bakers conductor, owned by this user) plus a `host_key` match —
  * never the process's working directory, which only ever coincided with
  * `workspace_root` over a herdr spawn.
  */
@@ -104,17 +104,17 @@ describe('bakers oven stop', () => {
     expect(out.join('\n')).toContain('recycled');
   });
 
-  it("never signals a conductor of another machine: it is not this checkout's", async () => {
+  it("refuses to signal a conductor whose host_key is not this machine's", async () => {
     const probe = fakeProbe({
       4242: { cmdline: CONDUCTOR_CMDLINE, uid: process.getuid?.() ?? 0 },
     });
 
     await run(['stop'], probe, [
-      row({ lastPid: 4242, machineId: 'someone-elses-box' }),
+      row({ lastPid: 4242, hostKey: 'someone-elses-box' }),
     ]);
 
     expect(probe.sent).toEqual([]);
-    expect(out.join('\n')).toContain('nothing to stop');
+    expect(out.join('\n')).toContain('host_key');
   });
 
   it('reports plainly when the conductor never recorded a pid', async () => {
@@ -135,7 +135,7 @@ describe('bakers oven stop', () => {
     await run(['stop'], probe, []);
 
     expect(probe.sent).toEqual([]);
-    expect(out.join('\n')).toContain('no conductor bakers/conductor');
+    expect(out.join('\n')).toContain('mid-stop');
   });
 
   it('reports a stray record naming the same checkout, and never signals it', async () => {
@@ -193,7 +193,7 @@ describe('bakers oven stop', () => {
   // (`commands/conductor.ts:126-128`): config discovery is bypassed entirely,
   // not exercised. What this DOES pin: the verification `cmdStop` performs
   // once it has a config — a live pid, a conductor command line, this
-  // caller's uid, a matching machine UUID — reads no cwd at all, proven by
+  // caller's uid, a matching `host_key` — reads no cwd at all, proven by
   // moving the process across three real directories while nothing else
   // changes. `ProcProbe`/`SignalVerifiedInput` carry no cwd member
   // (`core/src/core/proc.ts:7-20`), so there is no field left for a cwd
@@ -263,7 +263,7 @@ export default {
     const machineConfig = `
 export default {
   machine_id: '${HOST}',
-  label: 'cw-dev-box',
+  label: 'cw-laptop',
   base_url: 'http://web',
   client_id: 'c',
   client_secret: 's',
@@ -289,7 +289,10 @@ export default {
         writeFileSync(join(dir, 'bakers.config.js'), connectionConfig);
       }
 
-      const remote = new StopRemote([row({ lastPid: 4242 })]);
+      // The id is derived: machine UUID + project + variant.
+      const remote = new StopRemote([
+        row({ id: `${HOST}-bakers-conductor`, lastPid: 4242 }),
+      ]);
       const originalCwd = process.cwd();
       try {
         for (const dir of [repoRoot, repoBbDir, linkedWorktree]) {
@@ -325,8 +328,7 @@ export default {
       workspaceRoot: WORKSPACE,
       leaseExpiresAt: 0,
       maxParallel: 1,
-      variant: 'conductor',
-      machineId: HOST,
+      hostKey: HOST,
       ...over,
     };
   }
@@ -354,14 +356,15 @@ export default {
       executor: fakeExecutor(),
       agent: [{ agent: claudeAgent() }],
       workspace: fakeWorkspace(),
+      label: 'stop test',
       project: 'bakers',
       states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: HOST,
-      variant: 'conductor',
+      conductor_id: 'mid-stop',
+      host_key: HOST,
       config_path: join(home, 'conductor.config.js'),
     } as ConductorFileConfig;
   }

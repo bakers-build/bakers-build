@@ -450,10 +450,15 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
   }
 
   const mcPath = machineContextPath();
-  // The machine context still supplies identity (`user_id`) + the agent binary;
-  // it is NOT the connection any more — core resolves that.
-  const machine: Partial<MachineContext> =
-    deps.machine ?? (await readMachineContext(mcPath).catch(() => ({})));
+  // The machine context supplies the agent binary; it is NOT the connection
+  // any more — core resolves that. A stale file stops here, naming bakers init.
+  let machine: Partial<MachineContext>;
+  try {
+    machine = deps.machine ?? (await readMachineContext(mcPath));
+  } catch (err) {
+    fail(err instanceof Error ? err.message : String(err));
+    return;
+  }
 
   const rooting = resolveProjectRooting(cwd, homedir());
   const conductorPath = rooting.bakersDir

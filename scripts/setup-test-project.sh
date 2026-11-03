@@ -963,8 +963,8 @@ JS
 # and survives every run of this script.
 #
 # WHAT IS STILL GENERATED IS THE LOCAL OVERRIDE, and it carries no identity: the
-# conductor is this machine + the project + the variant, keyed by the control
-# plane. It names only the project this run provisioned. Everything structural
+# conductor is this machine + the project + the variant, its id derived at
+# runtime. It names only the project this run provisioned. Everything structural
 # stays in the fixture repo. The file is untracked and already listed in
 # `hide_from_git`.
 cat >"${WORKSPACE}/.bakers/conductor.config.local.js" <<JS

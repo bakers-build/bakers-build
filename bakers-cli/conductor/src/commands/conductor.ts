@@ -30,6 +30,7 @@ import { authStatus } from 'dropsh';
 import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
 import { Conductor } from '../core/conductor.js';
+import { hostKeyOf } from '../core/host-key.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
   type ResolvedAgent,
@@ -178,28 +179,16 @@ function checkoutRootOf(config: ConductorFileConfig): Promise<string> {
 }
 
 /**
- * How lifecycle commands name this checkout's conductor before the control
- * plane has a record of it: project + variant (the machine is this one).
+ * The conductor's identity (bb_conductor.conductor_id), derived by the
+ * loader from the machine UUID, project and variant; lifecycle commands read
+ * it here, never re-derive.
  */
-function conductorNameOf(config: ConductorFileConfig): string {
-  return `${config.project}/${config.variant}`;
-}
-
-/**
- * This checkout's own conductor record: the one the server keys by this
- * machine's UUID + project + variant. No config carries a conductor id.
- */
-export function ownConductorOf(
-  rows: ConductorStatus[],
-  config: ConductorFileConfig,
-): ConductorStatus | undefined {
-  if (!config.machine_id) return undefined;
-  return rows.find(
-    (c) =>
-      c.machineId === config.machine_id &&
-      c.project === config.project &&
-      c.variant === config.variant,
-  );
+function conductorIdOf(config: ConductorFileConfig): string {
+  const id = config.conductor_id;
+  if (id === undefined || id.trim() === '') {
+    throw new Error('machine.config.js has no machine_id; run bakers init');
+  }
+  return id;
 }
 
 /**
@@ -265,8 +254,8 @@ type StatusLabel = ConductorLiveness;
  *
  * BB-473: `deriveConductorLiveness` MUST NOT change — it also classifies
  * REMOTE conductors this machine cannot probe. This function additionally
- * probes the LOCAL pid, when both `thisMachineId` is given and it is this
- * conductor's own machine (`hub.machineId === thisMachineId`) with a positive
+ * probes the LOCAL pid, when both `thisHostKey` is given and it is this
+ * conductor's own host (`hub.hostKey === thisHostKey`) with a positive
  * `lastPid` on record. `verifyConductorProcess` (the read-only half of the
  * pid-signal proof; BB-450 D1) either leaves the record's word alone
  * (host-mismatch / no-pid / an unverifiable platform, or a genuinely live,
@@ -277,7 +266,7 @@ type StatusLabel = ConductorLiveness;
  */
 function classify(
   hub: ConductorStatus,
-  thisMachineId?: string,
+  thisHostKey?: string,
   probe?: ProcProbe,
 ): StatusLabel {
   const recordDerived = deriveConductorLiveness(
@@ -285,8 +274,8 @@ function classify(
     Math.floor(Date.now() / 1000),
   );
   if (
-    !thisMachineId ||
-    hub.machineId !== thisMachineId ||
+    !thisHostKey ||
+    hub.hostKey !== thisHostKey ||
     !Number.isInteger(hub.lastPid) ||
     (hub.lastPid ?? 0) <= 0
   ) {
@@ -294,8 +283,8 @@ function classify(
   }
   const verified = verifyConductorProcess({
     pid: hub.lastPid,
-    hostKey: hub.machineId,
-    thisHostKey: thisMachineId,
+    hostKey: hub.hostKey,
+    thisHostKey,
     ...(probe ? { probe } : {}),
   });
   return !verified.ok && verified.reason === 'stale-pid'
@@ -304,12 +293,10 @@ function classify(
 }
 
 interface LsRow {
-  /** The conductor's entity UUID. */
   id: string;
   project: string;
   label: string;
-  variant: string;
-  /** The checkout it last registered from; '' when it never reported one. */
+  /** The `.bakers` dir it last registered from; '' when it never reported one. */
   workspaceRoot: string;
   status: StatusLabel;
 }
@@ -317,7 +304,7 @@ interface LsRow {
 async function buildLsRows(
   remote: BbRemote,
   config: ConductorFileConfig | undefined,
-  onlyOwn?: boolean,
+  onlyId?: string,
   probe?: ProcProbe,
 ): Promise<LsRow[]> {
   let hub: ConductorStatus[] = [];
@@ -327,18 +314,18 @@ async function buildLsRows(
     hub = [];
   }
   // BB-473: the local-pid probe in `classify` needs to know THIS machine's
-  // UUID (to gate it to rows that are this machine's own conductor).
-  const thisMachineId = config?.machine_id;
-  const own = onlyOwn && config ? ownConductorOf(hub, config) : undefined;
+  // host_key (to gate it to rows that are this machine's own conductor) —
+  // `config` used to be ignored here, which is why `ls`/`status` never probed
+  // the local pid at all and relied purely on the record.
+  const thisHostKey = config ? hostKeyOf(config) : undefined;
   return hub
-    .filter((c) => !onlyOwn || c === own)
+    .filter((c) => !onlyId || c.id === onlyId)
     .map((c) => ({
       id: c.id,
       project: c.project,
       label: c.label,
-      variant: c.variant,
       workspaceRoot: c.workspaceRoot,
-      status: classify(c, thisMachineId, probe),
+      status: classify(c, thisHostKey, probe),
     }));
 }
 
@@ -349,7 +336,7 @@ function printRows(rows: LsRow[]): void {
   }
   for (const r of rows) {
     console.log(
-      `${r.label}\t${r.status}\t${r.project}\t${r.variant}\t${r.workspaceRoot}\t${r.id}`,
+      `${r.label}\t${r.status}\t${r.project}\t${r.workspaceRoot}\t${r.id}`,
     );
   }
 }
@@ -437,7 +424,7 @@ async function cmdReap(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
  * entity-derived check (`classify(existing) === 'online'`), liveness here is
  * proven by an actual pid probe (`verifyConductorProcess`) of the recorded
  * `last_pid` — a stale record whose process is dead never blocks a fresh
- * start, and a record of another machine never blocks
+ * start, and a record whose `host_key` differs from this host's never blocks
  * one either, since `verifyConductorProcess` refuses to confirm a pid it
  * cannot attribute to this host. Returns `true` when the caller must stop
  * (this process refused, or a `--force` restart failed) — never a signal:
@@ -445,20 +432,19 @@ async function cmdReap(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
  */
 async function refuseIfAlreadyRunning(
   remote: BbRemote,
-  config: ConductorFileConfig,
+  id: string,
+  thisHostKey: string,
   force: boolean,
   deps: BbCliDeps,
 ): Promise<boolean> {
-  const id = conductorNameOf(config);
-  const thisMachineId = config.machine_id ?? '';
-  const existing = ownConductorOf(await remote.listConductors('me'), config);
+  const existing = (await remote.listConductors('me')).find((c) => c.id === id);
   if (!existing) return false;
 
   const probe = deps.procProbe ?? defaultProcProbe();
   const verified = verifyConductorProcess({
     pid: existing.lastPid,
-    hostKey: existing.machineId,
-    thisHostKey: thisMachineId,
+    hostKey: existing.hostKey,
+    thisHostKey,
     probe,
   });
   if (!verified.ok) return false;
@@ -474,8 +460,8 @@ async function refuseIfAlreadyRunning(
 
   const stopOutcome = signalVerifiedProcess({
     pid: existing.lastPid,
-    hostKey: existing.machineId,
-    thisHostKey: thisMachineId,
+    hostKey: existing.hostKey,
+    thisHostKey,
     signal: 'SIGTERM',
     probe,
   });
@@ -490,8 +476,8 @@ async function refuseIfAlreadyRunning(
   if (!(await waitForNotRunning(probe, stopOutcome.pid, deps))) {
     const killOutcome = signalVerifiedProcess({
       pid: existing.lastPid,
-      hostKey: existing.machineId,
-      thisHostKey: thisMachineId,
+      hostKey: existing.hostKey,
+      thisHostKey,
       signal: 'SIGKILL',
       probe,
     });
@@ -524,9 +510,10 @@ async function cmdStartForeground(
   const logger = loggerFor(checkoutRoot, log);
   if (!(await ensureAuthenticated(config, logger))) return;
   const remote = await resolveRemote(deps, config);
-  const id = conductorNameOf(config);
-  const thisMachineId = config.machine_id ?? '';
-  if (await refuseIfAlreadyRunning(remote, config, force, deps)) return;
+  const id = conductorIdOf(config);
+  const thisHostKey = hostKeyOf(config);
+  if (await refuseIfAlreadyRunning(remote, id, thisHostKey, force, deps))
+    return;
   const executor = deps.executor ?? (await selectExecutor(config, logger));
   const workspace = deps.workspace ?? (await selectWorkspace(config, logger));
   const agents = deps.agents ?? (await selectAgents(config));
@@ -766,7 +753,7 @@ function heartbeatAgeSeconds(row: ConductorStatus): number | undefined {
  */
 async function waitForFreshHeartbeat(
   remote: BbRemote,
-  config: ConductorFileConfig,
+  id: string,
   priorPid: number | undefined,
   priorLastSeen: number | undefined,
   deps: BbCliDeps,
@@ -775,7 +762,7 @@ async function waitForFreshHeartbeat(
   const attempts = deps.startPollAttempts ?? START_POLL_MAX_ATTEMPTS;
   const sleep = deps.sleep ?? realSleep;
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const row = ownConductorOf(await remote.listConductors('me'), config);
+    const row = (await remote.listConductors('me')).find((c) => c.id === id);
     if (
       row &&
       classify(row) === 'online' &&
@@ -828,7 +815,7 @@ async function waitForNotRunning(
 
 /**
  * `bakers oven start` reports exactly one of three outcomes (BB-450
- * AC-12): **started**, naming the pid and the machine; **already running**,
+ * AC-12): **started**, naming the pid and `host_key`; **already running**,
  * naming the live pid and its heartbeat age; **failed**, naming the reason.
  * `failed` sets a non-zero exit status so a script can tell the three apart.
  *
@@ -857,14 +844,14 @@ async function cmdStartBody(
     }
   } catch {}
   const remote = await resolveRemote(deps, config);
-  const id = conductorNameOf(config);
-  const thisMachineId = config.machine_id ?? '';
+  const id = conductorIdOf(config);
+  const thisHostKey = hostKeyOf(config);
 
   // Block on the DERIVED status, not the raw one. A crashed conductor keeps
   // `status: online` on its record until the cron reaper notices the lapsed
   // lease, and those are precisely the minutes in which someone wants to
   // restart it. Only a conductor that is actually alive refuses a second start.
-  const existing = ownConductorOf(await remote.listConductors('me'), config);
+  const existing = (await remote.listConductors('me')).find((c) => c.id === id);
   // Captured before any stop/kill below: the pid this start must NOT report
   // as its own (BB-450 review B8) — the killed conductor's under `--force`,
   // a stale or absent one on a plain start.
@@ -887,8 +874,8 @@ async function cmdStartBody(
     const probe = deps.procProbe ?? defaultProcProbe();
     const stopOutcome = signalVerifiedProcess({
       pid: existing.lastPid,
-      hostKey: existing.machineId,
-      thisHostKey: thisMachineId,
+      hostKey: existing.hostKey,
+      thisHostKey,
       signal: 'SIGTERM',
       probe,
     });
@@ -903,8 +890,8 @@ async function cmdStartBody(
     if (!(await waitForNotRunning(probe, stopOutcome.pid, deps))) {
       const killOutcome = signalVerifiedProcess({
         pid: existing.lastPid,
-        hostKey: existing.machineId,
-        thisHostKey: thisMachineId,
+        hostKey: existing.hostKey,
+        thisHostKey,
         signal: 'SIGKILL',
         probe,
       });
@@ -970,7 +957,7 @@ async function cmdStartBody(
 
   const started = await waitForFreshHeartbeat(
     remote,
-    config,
+    id,
     priorPid,
     priorLastSeen,
     deps,
@@ -985,7 +972,7 @@ async function cmdStartBody(
     return;
   }
   console.log(
-    `started conductor ${id} (pid ${started.lastPid ?? 'unknown'}, host ${started.machineLabel || thisMachineId})`,
+    `started conductor ${id} (pid ${started.lastPid ?? 'unknown'}, host ${started.hostKey ?? thisHostKey})`,
   );
 }
 
@@ -1028,11 +1015,11 @@ export function strayConductorsOf(
 async function cmdStop(deps: BbCliDeps, now: boolean): Promise<void> {
   const config = await resolveConfig(deps);
   const remote = await resolveRemote(deps, config);
-  const id = conductorNameOf(config);
-  const thisMachineId = config.machine_id ?? '';
+  const id = conductorIdOf(config);
+  const thisHostKey = hostKeyOf(config);
 
   const rows = await remote.listConductors('me');
-  const row = ownConductorOf(rows, config);
+  const row = rows.find((c) => c.id === id);
   if (!row) {
     console.log(
       `no conductor ${id} on the control plane — nothing to stop (it may never have started)`,
@@ -1050,8 +1037,8 @@ async function cmdStop(deps: BbCliDeps, now: boolean): Promise<void> {
   const signal: NodeJS.Signals = now ? 'SIGKILL' : 'SIGTERM';
   const outcome = signalVerifiedProcess({
     pid: row.lastPid,
-    hostKey: row.machineId,
-    thisHostKey: thisMachineId,
+    hostKey: row.hostKey,
+    thisHostKey,
     signal,
     ...(deps.procProbe ? { probe: deps.procProbe } : {}),
   });
@@ -1081,7 +1068,8 @@ async function cmdLs(deps: BbCliDeps): Promise<void> {
 async function cmdStatus(deps: BbCliDeps): Promise<void> {
   const config = await resolveConfig(deps);
   const remote = await resolveRemote(deps, config);
-  const rows = await buildLsRows(remote, config, true, deps.procProbe);
+  const id = conductorIdOf(config);
+  const rows = await buildLsRows(remote, config, id, deps.procProbe);
   printRows(rows);
 }
 

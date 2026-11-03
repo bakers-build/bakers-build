@@ -22,19 +22,18 @@ import type { Ticket } from './plugins/remote.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {
+  /** Display label, sent once at registration: `<machine label> · <project>[/<variant>]`. */
+  label: string;
   /**
-   * This machine's UUID (`machine.config.js` machine_id, lowercase). Absent
-   * until `bakers init` wrote it; registration then fails naming `bakers init`.
+   * Conductor registration key (bb_conductor.conductor_id), derived at load
+   * time as `<machine_id>-<project>-<variant>` and never written to a config.
+   * Absent until `bakers init` gave the machine its UUID.
    */
-  machine_id?: string;
+  conductor_id?: string;
+  /** The selected config file's stem: `conductor` for `conductor.config.js`. */
+  variant: string;
   /** This machine's display label (`machine.config.js` label). */
   machine_label?: string;
-  /**
-   * The selected config file's stem: `conductor` for `conductor.config.js`,
-   * `shop` for `shop.conductor.config.js`. With the machine and the project it
-   * keys the conductor on the server.
-   */
-  variant: string;
   /** Project name (bb_project.name); resolved at registration. */
   project: string;
   /**
@@ -60,6 +59,8 @@ export interface ConductorSettings {
    * Runtime-derived; ticket and project env cannot override it.
    */
   tunnel?: boolean;
+  /** This machine's UUID (bb_machine.host_key), from `machine.config.js` machine_id. */
+  host_key?: string;
   poll_interval_ms: number;
   lease_seconds: number;
   /**

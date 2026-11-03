@@ -22,16 +22,15 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Route;
 
 /**
  * A conductor registers the addon definitions it runs.
  *
- * `{conductor: <conductor UUID>, addons: [definition…]}`. Each valid
- * definition lists the conductor on the row of its (name, version) holding an
- * identical definition (same keys, values and key order), or on a new one;
- * the conductor leaves every other row. A differing definition never locks
+ * `{conductor_id, addons: [definition…]}`. Each valid definition lists the
+ * conductor on the row of its (name, version) holding an identical
+ * definition (same keys, values and key order), or on a new one; the
+ * conductor leaves every other row. A differing definition never locks
  * another conductor out of a version. The answer names each accepted and
  * rejected addon; it is a 422 only when every sent addon was rejected.
  */
@@ -83,7 +82,7 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
     // Decoded as objects: an associative decode cannot tell {} from [].
     $body = json_decode($request->getContent());
     $attributes = is_object($body) && isset($body->data->attributes) ? $body->data->attributes : new \stdClass();
-    $conductor = $this->ownConductor($attributes);
+    $conductor = $this->ownConductor((string) ($attributes->conductor_id ?? ''));
     $workspace = $this->workspaceResolver->resolve($conductor);
     if (!$workspace instanceof BbWorkspaceInterface) {
       throw new NotFoundHttpException('The conductor has no resolvable workspace.');
@@ -229,15 +228,11 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
   }
 
   /**
-   * The conductor the attributes name by UUID, owned by the current user.
+   * The conductor with that registration id, owned by the current user.
    */
-  private function ownConductor(object $attributes): BbConductorInterface {
-    if (isset($attributes->conductor_id)) {
-      throw new UnprocessableEntityHttpException('conductor_id is no longer accepted; update bakers and run `bakers init`.');
-    }
-    $uuid = (string) ($attributes->conductor ?? '');
-    $conductors = $uuid === '' ? [] : $this->entityTypeManager->getStorage('bb_conductor')
-      ->loadByProperties(['uuid' => $uuid]);
+  private function ownConductor(string $conductor_id): BbConductorInterface {
+    $conductors = $conductor_id === '' ? [] : $this->entityTypeManager->getStorage('bb_conductor')
+      ->loadByProperties(['conductor_id' => $conductor_id]);
     $conductor = reset($conductors);
     if (!$conductor instanceof BbConductorInterface) {
       throw new NotFoundHttpException('No such conductor.');

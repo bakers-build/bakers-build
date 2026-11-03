@@ -31,7 +31,7 @@ export default {
 };
 ```
 
-The file carries no identity and is identical for everyone. A conductor is identified by machine + project + variant: the machine's `machine_id` from the [machine file](/configuration/machine), `bakers.project`, and the variant, which is the config file's stem (`conductor` for `conductor.config.js`, `review` for `review.conductor.config.js`). On its first heartbeat the server finds or creates the conductor for that key and returns its UUID, which the conductor uses for its lifetime and `bakers oven ls` prints. The server names a new conductor `<machine label> · <project label>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card.
+The file carries no identity and is identical for everyone. A conductor is identified by machine + project + variant: the machine's `machine_id` from the [machine file](/configuration/machine), `bakers.project`, and the variant, which is the config file's stem (`conductor` for `conductor.config.js`, `review` for `review.conductor.config.js`). bakers derives the conductor id `<machine_id>-<project>-<variant>` from them at runtime; it is never written to a config, and `bakers oven ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card.
 
 ## Fields
 
@@ -39,7 +39,7 @@ The file carries no identity and is identical for everyone. A conductor is ident
 |---|---|
 | `bakers.project` | Required. The project name as a string literal; the loader reads it without running the file, so no variables or spreads. |
 | `bakers.workspace` | Workspace name. Required only when the project name exists in more than one workspace; the error names the candidates. |
-| `conductor_id`, `machine_id`, `label` | Rejected; run `bakers init`. The conductor's identity comes from the machine, the project and the variant; its label is set on the server. |
+| `conductor_id`, `machine_id`, `label` | Rejected; run `bakers init`. The conductor's identity comes from the machine, the project and the variant; its label is set when it first registers. |
 | `remote`, `executor`, `workspace` | Engine slots: `{ plugin, export?, with? }`. Each must resolve, from a slot or from `addons`. |
 | `addons` | Packages that contribute the slots: a name, or `{ use, with }`. A direct slot beats an addon; otherwise the last contributor wins with a warning. |
 | `states` | Workflow states this conductor serves. Omitted or empty serves every claimable state. |

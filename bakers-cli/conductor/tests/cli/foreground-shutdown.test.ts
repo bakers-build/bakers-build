@@ -59,7 +59,7 @@ describe('bakers oven start --foreground shutdown', () => {
 
     await runForeground(remote);
 
-    expect(remote.statusWrites).toEqual([['fake-conductor-uuid', 'offline']]);
+    expect(remote.statusWrites).toEqual([['mid-fg', 'offline']]);
   });
 
   it('reports its pid while running, so a cockpit can stop it', async () => {
@@ -104,14 +104,14 @@ describe('bakers oven start --foreground shutdown', () => {
       executor: fakeExecutor(),
       agent: [{ agent: claudeAgent() }],
       workspace: fakeWorkspace(),
+      label: 'foreground test',
       project: 'bakers',
       states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5,
       lease_seconds: 300,
-      machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-      variant: 'conductor',
+      conductor_id: 'mid-fg',
       config_path: join(home, 'conductor.config.js'),
     } as ConductorFileConfig;
   }

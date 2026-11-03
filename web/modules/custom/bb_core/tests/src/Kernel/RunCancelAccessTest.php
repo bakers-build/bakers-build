@@ -155,6 +155,7 @@ final class RunCancelAccessTest extends KernelTestBase {
 
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')
       ->create([
+        'conductor_id' => 'access-node',
         'label' => 'access-node',
         'owner_user_id' => $owner->id(),
         'status' => 'online',

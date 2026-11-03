@@ -106,6 +106,7 @@ trait InboxWorldTrait {
    */
   protected function createConductor(string $id, UserInterface $owner): BbConductorInterface {
     $conductor = $this->createEntity('bb_conductor', [
+      'conductor_id' => $id,
       'label' => $id,
       'project_id' => $this->fixture('a', 'bb_project')->id(),
       'owner_user_id' => $owner->id(),

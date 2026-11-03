@@ -70,8 +70,8 @@ final class EntityDetailActivitiesTest extends KernelTestBase {
       'teams' => [$team->id()],
     ]);
     $other = $this->entity('bb_project', ['name' => 'Other', 'key' => 'OTD']);
-    $machine_a = $this->entity('bb_machine', ['name' => 'Machine A']);
-    $machine_b = $this->entity('bb_machine', ['name' => 'Machine B']);
+    $machine_a = $this->entity('bb_machine', ['name' => 'Machine A', 'host_key' => 'host-a']);
+    $machine_b = $this->entity('bb_machine', ['name' => 'Machine B', 'host_key' => 'host-b']);
     $this->fixture = [
       'group' => $group,
       'team' => $team,
@@ -291,6 +291,7 @@ final class EntityDetailActivitiesTest extends KernelTestBase {
    */
   private function conductor(string $id, int|string|null $machine_id): ContentEntityInterface {
     return $this->entity('bb_conductor', [
+      'conductor_id' => $id,
       'label' => $id,
       'owner_user_id' => 1,
       'status' => 'online',

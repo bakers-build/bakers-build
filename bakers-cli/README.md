@@ -368,7 +368,7 @@ distinguish the two outcomes.
 
 ## Conductor lifecycle: identity, not paths (BB-450)
 
-`bakers oven stop` finds its conductor by machine UUID, project and variant from the
+`bakers oven stop` finds its conductor by its `conductor_id` (machine UUID, project and variant) in the
 control-plane record — never by comparing the signalled process's working directory against
 `workspace_root`. That means `stop` (and `start`) work identically from the project root, from
 `.bakers/`, or from a linked worktree. Before signalling, the pid is verified as a live process
@@ -406,7 +406,7 @@ single lone config → it (back-compat); else resolution errors and names the av
 the selector. `--conductor` wins over `$BB_CONDUCTOR`, and an explicit `--config <path>` /
 `$BB_CONDUCTOR_CONFIG` still wins over both. Two `conductor.config.js` cannot coexist in one
 dir, so an ambiguous default is structurally impossible. A config sets no identity: the
-server keys each conductor by machine UUID + `bakers.project` + variant (the file stem), so
+`conductor_id` is derived from machine UUID + `bakers.project` + variant (the file stem), so
 co-located conductors are distinct by construction. A config with `conductor_id`, `machine_id`
 or `label` is rejected; run `bakers init`. This is how a Drupal **multisite** repo maps
 each site to its own bakers.build project. Full model: [`CONFIG.md`](CONFIG.md) › *Multiple conductors per repo*.

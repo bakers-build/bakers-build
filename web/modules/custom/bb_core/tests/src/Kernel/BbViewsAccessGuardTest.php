@@ -209,6 +209,7 @@ final class BbViewsAccessGuardTest extends KernelTestBase {
     $other->save();
 
     $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => 'foreign',
       'label' => 'foreign',
       'owner_user_id' => $other->id(),
       'project_id' => $this->project()->id(),

@@ -14,9 +14,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * An agent can view host capacity (bb_machine) by its UUID.
+ * An agent can view host capacity (bb_machine) by host_key.
  *
- * Claim dispatch reads machineCapacity(machine UUID) as the agent OAuth client
+ * Claim dispatch reads machineCapacity(hostKey) as the agent OAuth client
  * (BB-353 AC4). Without `view bb_machine` the JSON:API filter returns
  * empty/403, capacity is null, and the shared host budget falls back to the
  * local activeRunCount only.
@@ -145,6 +145,7 @@ final class AgentMachineAccessTest extends KernelTestBase {
       ->getStorage('bb_machine')
       ->create([
         'name' => 'dev box',
+        'host_key' => 'dev-box',
         'max_parallel' => 4,
         'owner_user_id' => $owner->id(),
       ]);
@@ -168,11 +169,11 @@ final class AgentMachineAccessTest extends KernelTestBase {
   }
 
   /**
-   * A machine UUID query returns the row only when view is granted.
+   * Host_key query returns the row only when view is granted.
    *
    * Mirrors the machineCapacity JSON:API filter the claim loop issues.
    */
-  public function testAgentMachineUuidQuerySeesOwnedMachine(): void {
+  public function testAgentHostKeyQuerySeesOwnedMachine(): void {
     $this->createUser();
 
     $workspace = $this->container->get('entity_type.manager')
@@ -188,6 +189,7 @@ final class AgentMachineAccessTest extends KernelTestBase {
       ->getStorage('bb_machine')
       ->create([
         'name' => 'query host',
+        'host_key' => 'shared-host',
         'max_parallel' => 3,
         'owner_user_id' => $agent->id(),
       ]);
@@ -195,13 +197,13 @@ final class AgentMachineAccessTest extends KernelTestBase {
 
     $this->assertSame(
       [(int) $machine->id()],
-      $this->uuidQueryIds($agent, (string) $machine->uuid()),
-      'the owning agent must see the machine by UUID',
+      $this->hostKeyQueryIds($agent, 'shared-host'),
+      'the owning agent must see the machine by host_key',
     );
     $this->assertSame(
       [],
-      $this->uuidQueryIds($stranger, (string) $machine->uuid()),
-      'without ownership the UUID query must return no rows',
+      $this->hostKeyQueryIds($stranger, 'shared-host'),
+      'without ownership the host_key query must return no rows',
     );
   }
 
@@ -263,12 +265,12 @@ final class AgentMachineAccessTest extends KernelTestBase {
   }
 
   /**
-   * Access-checked entity query for bb_machine by UUID, as $account.
+   * Access-checked entity query for bb_machine by host_key, as $account.
    *
    * @return list<int>
    *   Matching machine ids.
    */
-  private function uuidQueryIds(AccountInterface $account, string $uuid): array {
+  private function hostKeyQueryIds(AccountInterface $account, string $host_key): array {
     // Entity query access uses the current user.
     $this->container->get('account_switcher')->switchTo($account);
     try {
@@ -276,7 +278,7 @@ final class AgentMachineAccessTest extends KernelTestBase {
         ->getStorage('bb_machine')
         ->getQuery()
         ->accessCheck(TRUE)
-        ->condition('uuid', $uuid)
+        ->condition('host_key', $host_key)
         ->execute();
     }
     finally {

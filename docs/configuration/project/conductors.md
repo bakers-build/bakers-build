@@ -25,7 +25,7 @@ A conductor starts without a `WORKFLOW.md`, but then logs a warning and dispatch
 
 | Command | What it does |
 |---|---|
-| `bakers oven start` | Hands the loop to herdr, waits for the first fresh heartbeat and prints the conductor UUID, pid and host. |
+| `bakers oven start` | Hands the loop to herdr, waits for the first fresh heartbeat and prints the conductor id, pid and host. |
 | `bakers oven status` | One line for this checkout's conductor. |
 | `bakers oven ls` | One line for every conductor you own on the control plane, on any machine. |
 | `bakers oven stop` | Sends `SIGTERM`; the process POSTs its own `/offline` lifecycle operation on the way out. |
@@ -43,7 +43,7 @@ bakers oven stop
 
 `stop --now` sends `SIGKILL` instead. A killed process cannot write `offline`, so the status changes when its lease expires. Stop signals the process itself, so run it on the host where the conductor runs; other hosts refuse. Runs already started keep going in their own herdr tabs. The control plane that protects server-maintained conductor fields needs this CLI: older generic status PATCH callers fail.
 
-`status` and `ls` print tab-separated columns: label, liveness, project, variant, workspace root, conductor UUID. Liveness is derived the same way in the CLI, in `bakers ui` and on the server:
+`status` and `ls` print tab-separated columns: label, liveness, project, workspace root, conductor id (`<machine_id>-<project>-<variant>`). Liveness is derived the same way in the CLI, in `bakers ui` and on the server:
 
 | Word | Meaning |
 |---|---|
@@ -53,7 +53,7 @@ bakers oven stop
 
 The `bakers ui` Conductors tab shows the same list; see [bakers ui](/addons/bakers-ui/reference). The web UI has two listings: opening the person mark swaps the rail to Account, Conductors (`/user/{user}/conductors`, the conductors assigned to that account) and Machines (`/user/{user}/machines`), and `/{workspace}/project/{key}/conductors` is the conductors assigned to that project (Title search, status and reported load). Opening a row shows Overview at `/{workspace}/conductor/{id}`: Activities, the ticket activities of this conductor's own runs, newest first, with a **Refresh** button, beside one Identity card. An activity counts for a conductor only through its run, never through the ticket's later assignment, so work stays with the conductor and machine that did it; an activity without a run is in no conductor's or machine's feed. Activities list only tickets you may inspect.
 
-The Identity card edits the label with its own **Save** and shows the conductor UUID, variant, project, machine label and owner read-only. The Overview shows none of the conductor's served states, status, last seen and load: the heartbeat writes status, last seen and load, and the served states are set when the conductor first registers and change only through the administrative edit form or the API. Only the owner edits; other readers see the values only. **Disable conductor** and **Enable conductor** below the card change Activity after a confirmation; an inactive conductor can still be online. A conductor is the machine + project + variant: another machine registers its own conductor, and a machine UUID owned by another account is refused. Disabling stops new assignments and claims and reassigns or clears eligible pending tickets; work already in flight is not cancelled. Enabling restores eligibility without moving tickets back or starting a process. Create, delete, capacity and the full administrative edit form stay under `/admin/bakers/conductor`.
+The Identity card edits the label with its own **Save** and shows the conductor id, project, machine and owner read-only. The Overview shows none of the conductor's served states, status, last seen and load: the heartbeat writes status, last seen and load, and the served states are set when the conductor first registers and change only through the administrative edit form or the API. Only the owner edits; other readers see the values only. **Disable conductor** and **Enable conductor** below the card change Activity after a confirmation; an inactive conductor can still be online. A conductor is the machine + project + variant, so another machine registers its own conductor id. Disabling stops new assignments and claims and reassigns or clears eligible pending tickets; work already in flight is not cancelled. Enabling restores eligibility without moving tickets back or starting a process. Create, delete, capacity and the full administrative edit form stay under `/admin/bakers/conductor`.
 
 ## What a cycle does
 

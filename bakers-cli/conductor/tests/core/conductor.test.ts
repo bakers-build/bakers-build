@@ -33,9 +33,7 @@ import type {
   BbExecutor,
   BbRemote,
   BbWorkspace,
-  ClaimOptions,
   ConductorFileConfig,
-  ConductorRegistration,
   HookContext,
   HookListener,
   HookListenerContext,
@@ -171,7 +169,6 @@ const fakeAgent: BbAgent = {
 const resolved = (a: BbAgent): ResolvedAgent[] => [{ id: a.id, agent: a }];
 
 const CHECKOUT = '/tmp/bakers-conductor-test-checkout';
-const MACHINE = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
 
 function makeConfig(
   overrides: Partial<ConductorFileConfig> = {},
@@ -182,9 +179,11 @@ function makeConfig(
     executor: fakeExecutor(),
     agent: [{ agent: claudeAgent() }],
     workspace: fakeWorkspace(),
-    machine_id: MACHINE,
-    machine_label: 'test-machine',
-    variant: 'conductor',
+    label: 'test label',
+    // conductor_id is required (BB-353); a default here keeps every
+    // pre-existing test that does not care about identity unaffected by
+    // BB-450 D5 removing the directory-derived id fallback.
+    conductor_id: 'bakers-test-conductor',
     project: 'bakers',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
@@ -371,9 +370,9 @@ describe('Conductor', () => {
     );
   });
 
-  it('takes its id from the conductor UUID the server returns at registration', async () => {
+  it('exposes the id from config.conductor_id — no directory-derived fallback (BB-450 D5)', () => {
     const conductor = new Conductor(
-      makeConfig(),
+      makeConfig({ conductor_id: 'cw-dev-box-bakers' }),
       new FakeBbRemote(),
       new FakeExecutor({ outcome: 'exited' }),
       new FakeWorkspace(),
@@ -381,14 +380,12 @@ describe('Conductor', () => {
       spyLogger().log,
       CHECKOUT,
     );
-    expect(() => conductor.id).toThrow(/not registered/);
-    await conductor.start();
-    expect(conductor.id).toBe('fake-conductor-uuid');
+    expect(conductor.id).toBe('cw-dev-box-bakers');
   });
 
-  it('refuses to register without a machine UUID, naming bakers init', async () => {
+  it('throws naming bakers init rather than deriving an id from the checkout directory when the machine has no UUID', () => {
     const conductor = new Conductor(
-      makeConfig({ machine_id: undefined }),
+      makeConfig({ conductor_id: undefined }),
       new FakeBbRemote(),
       new FakeExecutor({ outcome: 'exited' }),
       new FakeWorkspace(),
@@ -396,7 +393,7 @@ describe('Conductor', () => {
       spyLogger().log,
       CHECKOUT,
     );
-    await expect(conductor.start()).rejects.toThrow(/bakers init/);
+    expect(() => conductor.id).toThrow('run bakers init');
   });
 
   it('dispatches up to max_parallel and records markRunning per dispatch', async () => {
@@ -460,7 +457,7 @@ describe('Conductor', () => {
     };
     const remote = new FakeBbRemote(seed);
     // Peer conductors already fill the host budget (current_load >= max_parallel).
-    remote.seedMachineLoad(MACHINE, { currentLoad: 2, maxParallel: 2 });
+    remote.seedMachineLoad('dev-box', { currentLoad: 2, maxParallel: 2 });
     for (const i of [1, 2]) {
       remote.queue.push({
         runUuid: `r-${i}`,
@@ -474,6 +471,8 @@ describe('Conductor', () => {
     const conductor = await startedConductor(
       makeConfig({
         max_parallel: 2,
+        host_key: 'dev-box',
+        conductor_id: 'cw-dev-box-bakers',
       }),
       remote,
       executor,
@@ -495,7 +494,7 @@ describe('Conductor', () => {
     };
     const remote = new FakeBbRemote(seed);
     // Peer holds 1 of 2 slots; this process may claim only one more.
-    remote.seedMachineLoad(MACHINE, { currentLoad: 1, maxParallel: 2 });
+    remote.seedMachineLoad('dev-box', { currentLoad: 1, maxParallel: 2 });
     for (const i of [1, 2, 3]) {
       remote.queue.push({
         runUuid: `r-${i}`,
@@ -509,6 +508,8 @@ describe('Conductor', () => {
     const conductor = await startedConductor(
       makeConfig({
         max_parallel: 2,
+        host_key: 'dev-box',
+        conductor_id: 'cw-dev-box-bakers',
       }),
       remote,
       executor,
@@ -520,58 +521,35 @@ describe('Conductor', () => {
     expect(remote.calls.markRunning).toHaveLength(1);
   });
 
-  it('registers by machine UUID + label, project and variant, and claims, polls and filters by the returned UUID', async () => {
+  it('registration uses config.host_key (MachineContext stem), not hyphen-split of conductor_id', async () => {
     class RecordingRemote extends FakeBbRemote {
-      regs: ConductorRegistration[] = [];
-      ids: string[] = [];
-      override async registerConductor(
-        reg: ConductorRegistration,
-      ): Promise<string> {
-        this.regs.push(reg);
-        return super.registerConductor(reg);
-      }
-      override async heartbeat(
-        reg: ConductorRegistration,
-        load: number,
-        lease?: number,
-      ): Promise<string> {
-        this.regs.push(reg);
-        return super.heartbeat(reg, load, lease);
-      }
-      override async activeRunCount(id: string): Promise<number> {
-        this.ids.push(id);
-        return super.activeRunCount(id);
-      }
-      override async claimNext(claim: ClaimOptions) {
-        this.ids.push(claim.conductorId);
-        return super.claimNext(claim);
-      }
-      override async fetchInbox(id: string) {
-        this.ids.push(id);
-        return super.fetchInbox(id);
+      lastReg?: {
+        id: string;
+        host_key?: string;
+      };
+      override async registerConductor(reg: {
+        id: string;
+        host_key?: string;
+      }): Promise<string> {
+        this.lastReg = { id: reg.id, host_key: reg.host_key };
+        return super.registerConductor(reg as never);
       }
     }
     const remote = new RecordingRemote();
+    // Project segment contains a hyphen so naive split of conductor_id would
+    // mis-derive host as "laptop-my" instead of the explicit MachineContext stem.
     await startedConductor(
-      makeConfig({ variant: 'shop', max_parallel: 1 }),
+      makeConfig({
+        conductor_id: 'cw-laptop-my-app',
+        host_key: 'laptop',
+        max_parallel: 1,
+      }),
       remote,
       new RecordingExecutor(),
-    ).then((conductor) => conductor.tick());
+    );
 
-    expect(remote.regs.length).toBeGreaterThan(1);
-    for (const reg of remote.regs) {
-      expect(reg).toMatchObject({
-        machine_id: MACHINE,
-        machine_label: 'test-machine',
-        project: 'bakers',
-        variant: 'shop',
-      });
-      expect(reg).not.toHaveProperty('id');
-      expect(reg).not.toHaveProperty('host_key');
-      expect(reg).not.toHaveProperty('conductor_id');
-    }
-    expect(remote.ids.length).toBeGreaterThan(0);
-    expect(new Set(remote.ids)).toEqual(new Set(['fake-conductor-uuid']));
+    expect(remote.lastReg?.id).toBe('cw-laptop-my-app');
+    expect(remote.lastReg?.host_key).toBe('laptop');
   });
 
   it('dispatches the highest-priority agent and persists its id (BB-144)', async () => {

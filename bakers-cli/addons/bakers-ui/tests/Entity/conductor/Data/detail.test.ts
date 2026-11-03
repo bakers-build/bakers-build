@@ -8,18 +8,15 @@ const detail = {
   id: 'C1',
   label: 'cw-framework',
   workspaceRoot: '/tmp/does-not-exist',
-  machineId: 'host-a',
+  hostKey: 'host-a',
 } as never;
 
 describe('the log block', () => {
-  it('is mine only when the machine UUID matches, never on an absent one', () => {
+  it('is mine only when the host key matches, never on an absent key', () => {
     expect(isMine(detail, 'host-a')).toBe(true);
     expect(isMine(detail, 'host-b')).toBe(false);
     expect(
-      isMine(
-        { ...(detail as object), machineId: undefined } as never,
-        'host-a',
-      ),
+      isMine({ ...(detail as object), hostKey: undefined } as never, 'host-a'),
     ).toBe(false);
     expect(isMine(detail, undefined)).toBe(false);
   });

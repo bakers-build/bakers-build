@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * Records a conductor heartbeat, upserting the registration server-side.
  *
- * Keys on machine + project + variant, so it never 404s: a vanished
+ * Keys on conductor_id, so it never 404s: a vanished
  * registration is recreated, an existing one is refreshed and brought online.
  * This moves the self-heal to the server — the conductor CLI just posts and
  * reads status.

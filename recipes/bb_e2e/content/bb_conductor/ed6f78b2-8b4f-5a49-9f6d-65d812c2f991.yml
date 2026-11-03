@@ -10,8 +10,8 @@ _meta:
     b76b40df-436c-5d3d-9bf1-5745fa621a7a: bb_project
     7710d75c-ed4e-4e99-85b8-d1a306c2e3cf: user
 default:
-  variant:
-  - value: conductor
+  conductor_id:
+  - value: api-contract-conductor
   label:
   - value: API contract conductor
   status:

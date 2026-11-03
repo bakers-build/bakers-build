@@ -14,7 +14,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 const conductor = (id: string, owner: string, machineId?: string) => ({
   type: 'bb_conductor--bb_conductor',
   id,
-  attributes: { label: id },
+  attributes: { label: id, conductor_id: `${owner}-box-bakers` },
   relationships: {
     owner_user_id: { data: { id: owner } },
     ...(machineId
@@ -35,7 +35,7 @@ const THIS_MACHINE = 'machine-host-a';
 const includedMachine = {
   type: 'bb_machine--bb_machine',
   id: THIS_MACHINE,
-  attributes: { name: 'host-a', max_parallel: 5 },
+  attributes: { host_key: 'host-a', max_parallel: 5 },
 };
 
 const queryOf = (params: unknown): string =>
@@ -89,7 +89,7 @@ function harness(options: { currentUser?: string; users?: unknown } = {}) {
         },
         collection: vi.fn(),
       },
-      conductorProcess: { thisMachineId: async () => THIS_MACHINE },
+      conductorProcess: { thisHostKey: async () => 'host-a' },
       ...(options.currentUser === undefined
         ? {}
         : { currentUser: options.currentUser }),

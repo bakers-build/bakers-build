@@ -25,8 +25,8 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
  * Represents a bakers.build machine — host capacity for concurrent runs.
  *
  * Capacity (max_parallel / current_load) is owned by the host, not by each
- * per-project conductor. The entity uuid is the CLI's machine_id; name is its
- * display label.
+ * per-project conductor. host_key is the machine-context stem; it is not the
+ * composed conductor registration key.
  */
 #[ContentEntityType(
   id: 'bb_machine',
@@ -89,6 +89,14 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
     $fields['name'] = static::nameBaseFieldDefinition(0);
+    // Host identity from machine-context machine_id (stem, not composed).
+    $fields['host_key'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Host key'))
+      ->setRequired(TRUE)
+      ->setSetting('max_length', 255)
+      ->addConstraint('UniqueField')
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayOptions('form', ['type' => 'string_textfield', 'weight' => 1]);
     $fields['max_parallel'] = BaseFieldDefinition::create('integer')
       ->setLabel(new TranslatableMarkup('Max parallel'))
       ->setDefaultValue(1)
@@ -130,6 +138,21 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
    */
   public function setName(string $name): static {
     $this->set('name', $name);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getHostKey(): string {
+    return (string) $this->get('host_key')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setHostKey(string $host_key): static {
+    $this->set('host_key', $host_key);
     return $this;
   }
 

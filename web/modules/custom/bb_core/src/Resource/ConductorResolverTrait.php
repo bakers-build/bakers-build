@@ -9,7 +9,6 @@ use Drupal\bb_core\Entity\BbConductorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * Resolves the conductor registration owned by the authenticated user.
@@ -26,13 +25,12 @@ trait ConductorResolverTrait {
   /**
    * Resolves the conductor entity owned by the authenticated user.
    *
-   * The request body's `conductor` attribute is the conductor UUID the
-   * heartbeat returned. Throws HTTP exceptions when the user lacks
-   * permission, the body carries an old CLI's identity, or no matching
-   * conductor of the user exists.
+   * Optionally filters by the conductor_id attribute (legacy machine_id alias)
+   * included in the request body. Throws HTTP exceptions when the user lacks
+   * permission or no matching conductor registration exists.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The incoming HTTP request carrying the conductor attribute.
+   *   The incoming HTTP request, possibly containing a conductor_id attribute.
    *
    * @return \Drupal\bb_core\Entity\BbConductorInterface
    *   The matching conductor entity.
@@ -40,8 +38,6 @@ trait ConductorResolverTrait {
    * @throws \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException
    *   When the current user does not have the 'claim bakers tickets'
    *   permission.
-   * @throws \Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException
-   *   When the body carries `conductor_id` or `machine_id`, or no conductor.
    * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
    *   When no conductor registration is found for the current user.
    */
@@ -50,24 +46,39 @@ trait ConductorResolverTrait {
       throw new AccessDeniedHttpException('The current user may not claim bakers.build tickets.');
     }
     $attributes = $this->requestAttributes($request);
-    foreach (['conductor_id', 'machine_id'] as $stale) {
-      if (array_key_exists($stale, $attributes)) {
-        throw new UnprocessableEntityHttpException(sprintf('%s is no longer accepted; update bakers and run `bakers init`.', $stale));
-      }
+    $query = $this->entityTypeManager->getStorage('bb_conductor')->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('owner_user_id', $this->currentUser->id())
+      ->range(0, 1);
+    $registrationId = $this->registrationIdFromAttributes($attributes);
+    if ($registrationId !== '') {
+      $query->condition('conductor_id', $registrationId);
     }
-    $uuid = $attributes['conductor'] ?? NULL;
-    if (!is_string($uuid) || $uuid === '') {
-      throw new UnprocessableEntityHttpException('conductor (the conductor UUID) is required.');
+    $ids = $query->execute();
+    if ($ids === []) {
+      throw new NotFoundHttpException('No bakers.build conductor registration found for the current user.');
     }
-    $conductors = $this->entityTypeManager->getStorage('bb_conductor')->loadByProperties([
-      'uuid' => $uuid,
-      'owner_user_id' => $this->currentUser->id(),
-    ]);
-    $conductor = reset($conductors);
+    $conductor = $this->entityTypeManager->getStorage('bb_conductor')->load(reset($ids));
     if (!$conductor instanceof BbConductorInterface) {
       throw new NotFoundHttpException('No bakers.build conductor registration found for the current user.');
     }
     return $conductor;
+  }
+
+  /**
+   * Reads conductor_id, accepting legacy machine_id as an alias.
+   *
+   * @param array<string, mixed> $attributes
+   *   Request data.attributes map.
+   */
+  private function registrationIdFromAttributes(array $attributes): string {
+    if (isset($attributes['conductor_id']) && is_string($attributes['conductor_id']) && $attributes['conductor_id'] !== '') {
+      return $attributes['conductor_id'];
+    }
+    if (isset($attributes['machine_id']) && is_string($attributes['machine_id']) && $attributes['machine_id'] !== '') {
+      return $attributes['machine_id'];
+    }
+    return '';
   }
 
   /**

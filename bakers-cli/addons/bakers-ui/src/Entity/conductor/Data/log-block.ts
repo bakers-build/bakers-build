@@ -11,18 +11,18 @@ export interface ConductorLog {
 
 /**
  * Whether the log block should tail a real file — true only when the
- * detail's own machine UUID matches THIS process's. An absent key on
+ * detail's own machine host_key matches THIS process's. An absent key on
  * either side is never waved through as a match: an unproven identity is
  * refused, the same rule the Conductors list's `mine` uses.
  */
 export function isMine(
   detail: ConductorDetail,
-  thisMachineId: string | undefined,
+  thisHostKey: string | undefined,
 ): boolean {
   return (
-    detail.machineId !== undefined &&
-    thisMachineId !== undefined &&
-    detail.machineId === thisMachineId
+    detail.hostKey !== undefined &&
+    thisHostKey !== undefined &&
+    detail.hostKey === thisHostKey
   );
 }
 

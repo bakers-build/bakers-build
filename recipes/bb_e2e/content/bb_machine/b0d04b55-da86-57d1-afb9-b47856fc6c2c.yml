@@ -8,6 +8,8 @@ _meta:
 default:
   name:
   - value: claim-capacity-host
+  host_key:
+  - value: claim-capacity-host
   max_parallel:
   - value: 1
   current_load:

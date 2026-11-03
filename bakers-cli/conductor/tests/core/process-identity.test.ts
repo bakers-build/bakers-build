@@ -82,7 +82,7 @@ describe('conductor process identity', () => {
     const a = makeConductor(defaultRemote);
     const b = makeConductor(shopRemote, {
       config_path: `${CHECKOUT}/shop.conductor.config.js`,
-      variant: 'shop',
+      conductor_id: 'mid-shop',
     });
     a.claimServeProcess();
     b.claimServeProcess();
@@ -129,13 +129,13 @@ function makeConductor(
   return new Conductor(
     {
       site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
+      label: 'identity test',
       project: 'bakers',
       states: ['working'],
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-      variant: 'conductor',
+      conductor_id: 'mid-default',
       config_path: `${CHECKOUT}/conductor.config.js`,
       ...overrides,
     } as any,

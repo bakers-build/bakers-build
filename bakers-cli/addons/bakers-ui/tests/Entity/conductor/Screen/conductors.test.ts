@@ -18,6 +18,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 const conductor = (over: Record<string, unknown> = {}) => ({
   id: 'c-1',
   label: 'cw-framework',
+  machine_id: 'cw-framework',
   status: 'online',
   workspace_root: '/nowhere/.bakers',
   last_seen: Math.floor(Date.now() / 1000),
@@ -29,7 +30,9 @@ const conductor = (over: Record<string, unknown> = {}) => ({
 
 // BB-450 B12 (regression fix, not this file's own concern): `activate()`
 // now refuses on `!row.mine`, so every row this harness answers must sideload
-// a `machine` whose UUID matches the process host's `thisMachineId()` below.
+// a `machine` whose `host_key` matches the process host's `thisHostKey()`
+// below — the same 'test-host' both sides already agreed on before B12, but
+// only the process host stubbed it; the wire read never carried it.
 const MACHINE = 'machine-1';
 
 function harness(rows: ReturnType<typeof conductor>[] = [conductor()]) {
@@ -99,7 +102,7 @@ function harness(rows: ReturnType<typeof conductor>[] = [conductor()]) {
               {
                 id: MACHINE,
                 type: 'bb_machine--bb_machine',
-                attributes: { name: 'test-host', max_parallel: 5 },
+                attributes: { host_key: 'test-host', max_parallel: 5 },
               },
             ],
             meta: { count: rows.length },
@@ -107,14 +110,14 @@ function harness(rows: ReturnType<typeof conductor>[] = [conductor()]) {
         },
       } as unknown as DropshClient,
       baseUrl: 'http://web',
-      // BB-450 B10: `load()` now resolves THIS machine's machine UUID through
+      // BB-450 B10: `load()` now resolves THIS machine's host_key through
       // the process host before every read. Faked so the suite never touches
       // the real `~/.bakers/machine.config.js` — the same hazard
       // `conductor/tests/config.test.ts` already names for the CLI side.
       conductorProcess: {
         start: async () => ({ ok: true, message: 'not exercised here' }),
         stop: async () => ({ ok: true, message: 'not exercised here' }),
-        thisMachineId: async () => MACHINE,
+        thisHostKey: async () => 'test-host',
       },
       currentUser: 'cw',
     },

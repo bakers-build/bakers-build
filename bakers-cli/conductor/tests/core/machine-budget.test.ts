@@ -44,7 +44,7 @@ import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { Conductor } from '../../src/core/conductor.js';
 
 const CHECKOUT = '/tmp/bakers-conductor-budget-checkout';
-const HOST = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
+const HOST = 'dev-box';
 
 const fakeAgent: BbAgent = {
   id: 'claude',
@@ -70,9 +70,8 @@ function makeConfig(
     executor: fakeExecutor(),
     agent: [{ agent: claudeAgent() }],
     workspace: fakeWorkspace(),
-    machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-    machine_label: 'test-machine',
-    variant: 'conductor',
+    label: 'test label',
+    conductor_id: 'bakers-test-conductor',
     project: 'bakers',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
@@ -190,7 +189,8 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     const a = await startedConductor(
       makeConfig({
         max_parallel: 2,
-        machine_id: HOST,
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-shop',
         project: 'shop',
       }),
       remote,
@@ -199,7 +199,8 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     const b = await startedConductor(
       makeConfig({
         max_parallel: 2,
-        machine_id: HOST,
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-bibb',
         project: 'bibb',
       }),
       remote,
@@ -221,7 +222,8 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     const a = await startedConductor(
       makeConfig({
         max_parallel: 2,
-        machine_id: HOST,
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-shop',
         project: 'shop',
       }),
       remote,
@@ -242,7 +244,8 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     const a = await startedConductor(
       makeConfig({
         max_parallel: 1,
-        machine_id: HOST,
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-shop',
         project: 'shop',
       }),
       remote,
@@ -251,7 +254,8 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     const b = await startedConductor(
       makeConfig({
         max_parallel: 3,
-        machine_id: HOST,
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-bibb',
         project: 'bibb',
       }),
       remote,
@@ -278,7 +282,8 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     const a = await startedConductor(
       makeConfig({
         max_parallel: 3,
-        machine_id: HOST,
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-solo',
         project: 'solo',
       }),
       remote,
@@ -301,7 +306,8 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     const a = await startedConductor(
       makeConfig({
         max_parallel: 2,
-        machine_id: HOST,
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-breach',
         project: 'breach',
       }),
       remote,

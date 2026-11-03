@@ -36,7 +36,12 @@ const conductorResource = {
 const machineResource = {
   id: MACHINE_ID,
   type: 'bb_machine--bb_machine',
-  attributes: { name: 'test-host', current_load: 1, max_parallel: 5 },
+  attributes: {
+    name: 'cw-laptop',
+    host_key: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+    current_load: 1,
+    max_parallel: 5,
+  },
 };
 const ticketResource = {
   id: 't-538',
@@ -98,7 +103,7 @@ function fakeContext(): ScreenContext {
     conductorProcess: {
       start: async () => ({ ok: true, message: '' }),
       stop: async () => ({ ok: true, message: '' }),
-      thisMachineId: async () => MACHINE_ID,
+      thisHostKey: async () => 'test-host',
     },
   } as never;
   return {
@@ -146,6 +151,9 @@ it('prints every tab of the conductor scope when piped', async () => {
   const lines = await pipeConductor();
   const text = lines.join('\n');
   expect(text).toContain('bakers.build conductor — cw-framework');
+  // AC-5: the machine shows its label, never its UUID.
+  expect(text).toContain('Machine: cw-laptop');
+  expect(text).not.toContain('0b6f3c1e');
   expect(text).toContain('Held work');
   expect(text).toContain('BB-538');
   expect(text).toContain('Assigned');

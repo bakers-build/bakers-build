@@ -16,9 +16,9 @@ Create a named connection with `bakers config init --scope connection --connecti
 ## Fields
 
 ```js
-// @bakers-schema-version 4
+// @bakers-schema-version 1
 export default {
-  schema_version: 4,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   workspace_id: '00000000-0000-4000-8000-000000000000',
   plugins: [{ plugin: '@bakers-build/addon-essentials' }],
@@ -92,9 +92,9 @@ A connection declares one `@dropsh/plugin-oauth2` entry with `id: 'bakers'` and 
 What `bakers init` writes:
 
 ```js
-// @bakers-schema-version 4
+// @bakers-schema-version 1
 export default {
-  schema_version: 4,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },
@@ -156,9 +156,9 @@ bakers init --auth-type client_credentials --client-id <id> --secret-env BB_CLIE
 The CLI writes the secret into the private file:
 
 ```js
-// @bakers-schema-version 4
+// @bakers-schema-version 1
 export default {
-  schema_version: 4,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },

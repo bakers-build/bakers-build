@@ -507,6 +507,7 @@ function assignmentLines(
   );
   const conductorLabel =
     asString(conductor?.attributes?.label) ??
+    asString(conductor?.attributes?.machine_id) ??
     knownLabel(labels?.conductors, conductorId) ??
     conductorId;
 

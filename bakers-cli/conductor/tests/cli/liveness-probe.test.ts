@@ -31,7 +31,7 @@ vi.mock('dropsh', async (orig) => {
  * defect 2): `deriveConductorLiveness` (core) is record-only and MUST NOT
  * change (it also classifies conductors on other hosts this machine cannot
  * probe) — `classify()` additionally consults an injected `ProcProbe` when
- * the row is this machine's own conductor (`machineId` matches) with a
+ * the row is this machine's own conductor (`hostKey` matches) with a
  * positive `lastPid` on record.
  */
 describe('bakers oven ls/status: local pid probe (BB-473)', () => {
@@ -74,8 +74,7 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
       workspaceRoot: join(home, '.bakers'),
       leaseExpiresAt: nowS + 300,
       maxParallel: 1,
-      variant: 'conductor',
-      machineId: HOST,
+      hostKey: HOST,
       ...over,
     };
   }
@@ -115,14 +114,15 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
       executor: fakeExecutor(),
       agent: [{ agent: claudeAgent() }],
       workspace: fakeWorkspace(),
+      label: 'liveness test',
       project: 'bakers',
       states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: HOST,
-      variant: 'conductor',
+      conductor_id: 'mid-liveness',
+      host_key: HOST,
       config_path: join(home, '.bakers', 'conductor.config.js'),
     } as ConductorFileConfig;
   }
@@ -166,13 +166,12 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
     expect(text).not.toContain('online');
   });
 
-  // R9: machine mismatch → probe never invoked; row equals what
+  // R9: hostKey mismatch → probe never invoked; row equals what
   // deriveConductorLiveness alone returns.
   it('R9: a foreign-host conductor is never probed; classification matches deriveConductorLiveness alone', async () => {
     const probe = fakeProbe({}); // would report the pid dead, if ever asked.
-    const foreignRow = row({ machineId: 'other-host', lastPid: 9999 });
-    // `status` shows only this machine's own conductor; `ls` lists them all.
-    await runLs([foreignRow], probe);
+    const foreignRow = row({ hostKey: 'other-host', lastPid: 9999 });
+    await runStatus([foreignRow], probe);
 
     const expected = deriveConductorLiveness(
       foreignRow,
@@ -234,7 +233,7 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
         }),
       ],
       [row({ lastPid: 9999 }), fakeProbe({})],
-      [row({ machineId: 'other-host', lastPid: 9999 }), fakeProbe({})],
+      [row({ hostKey: 'other-host', lastPid: 9999 }), fakeProbe({})],
       [row({ lastPid: undefined }), fakeProbe({})],
       [row({ lastPid: 4242 }), fakeProbe({}, { supported: false })],
     ];

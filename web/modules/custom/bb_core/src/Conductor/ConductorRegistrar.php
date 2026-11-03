@@ -19,10 +19,10 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 /**
  * Upserts a conductor registration on heartbeat — server-side self-heal.
  *
- * A heartbeat is authoritative: it finds or (re)creates the machine by its
- * UUID and the owner's conductor by machine + project + variant (healed after
- * a delete/wipe), refreshes its lease timestamps and load, and brings it
- * online. Concurrent-run capacity is written on the machine only.
+ * A heartbeat is authoritative: it (re)creates the owner's conductor by
+ * conductor_id if it is missing (healed after a delete/wipe), refreshes its
+ * lease timestamps and load, links it to a bb_machine host row, and brings
+ * it online. Concurrent-run capacity is written on the machine only.
  */
 final class ConductorRegistrar {
 
@@ -50,30 +50,30 @@ final class ConductorRegistrar {
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The authenticated conductor owner.
    * @param array<string, mixed> $attrs
-   *   Registration attributes: machine_id, machine_label, project, variant,
-   *   states, workspace_root, max_parallel, current_load, lease_seconds,
-   *   last_pid, conductor_name.
+   *   Registration attributes: conductor_id, host_key (machine UUID),
+   *   machine_label, project, states, label, workspace_root, max_parallel, current_load,
+   *   lease_seconds, last_pid, conductor_name.
    *
    * @return \Drupal\bb_core\Entity\BbConductorInterface
    *   The upserted conductor.
    */
   public function heartbeat(AccountInterface $owner, array $attrs): BbConductorInterface {
-    $machineId = $this->registration->machineId($attrs);
-    $variant = $this->registration->variant($attrs);
+    $conductorId = $this->registration->conductorId($attrs);
+    $hostKey = $this->registration->hostKey($attrs);
     // Resolved on every heartbeat, so an owner who lost access is refused
     // before any write.
     $projectId = $this->registration->projectId($attrs, $owner);
-    // One registration per key at a time: between this read and the save
-    // below, a concurrent first registration could otherwise create a second
-    // conductor for the same key. A short overlap (poll during a tick) waits
-    // once before it is refused.
-    $lock_name = 'bb_conductor_register:' . $machineId . ':' . $projectId . ':' . $variant;
+    // One registration per identity at a time: between this read and the
+    // save below, a concurrent first registration from another host could
+    // otherwise bind the identity to its own machine. A short overlap (poll
+    // during a tick) waits once before it is refused.
+    $lock_name = 'bb_conductor_register:' . $owner->id() . ':' . $conductorId;
     if (!$this->lock->acquire($lock_name)
       && ($this->lock->wait($lock_name, 5) || !$this->lock->acquire($lock_name))) {
-      throw new ConflictHttpException(sprintf('Conductor "%s" of this machine is being registered concurrently; retry.', $variant));
+      throw new ConflictHttpException(sprintf('Conductor "%s" is being registered concurrently; retry.', $conductorId));
     }
     try {
-      return $this->register($owner, $machineId, $projectId, $variant, $attrs);
+      return $this->register($owner, $conductorId, $hostKey, $projectId, $attrs);
     }
     finally {
       $this->lock->release($lock_name);
@@ -81,25 +81,28 @@ final class ConductorRegistrar {
   }
 
   /**
-   * Upserts the machine and the conductor while holding the key lock.
+   * Upserts the conductor and its machine while holding the identity lock.
    *
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The authenticated conductor owner.
-   * @param string $machineId
-   *   The machine UUID.
+   * @param string $conductorId
+   *   Registration key.
+   * @param string $hostKey
+   *   The registering host.
    * @param int $projectId
    *   Project entity id.
-   * @param string $variant
-   *   The conductor variant.
    * @param array<string, mixed> $attrs
    *   Registration attributes.
    */
-  private function register(AccountInterface $owner, string $machineId, int $projectId, string $variant, array $attrs): BbConductorInterface {
-    $machine = $this->loadOrCreateMachine($owner, $machineId, $attrs);
+  private function register(AccountInterface $owner, string $conductorId, string $hostKey, int $projectId, array $attrs): BbConductorInterface {
+    $existing = $this->load($owner, $conductorId);
+    if ($existing !== NULL) {
+      $this->refuseRebinding($owner, $existing, $hostKey, $projectId, (string) $attrs['project']);
+    }
+    $machine = $this->loadOrCreateMachine($owner, $hostKey, $attrs);
     $machine->save();
 
-    $conductor = $this->load($owner, (int) $machine->id(), $projectId, $variant)
-      ?? $this->create($owner, $machine, $projectId, $variant, $attrs);
+    $conductor = $existing ?? $this->create($owner, $conductorId, $projectId, $attrs);
 
     $now = $this->time->getRequestTime();
     $lease = isset($attrs['lease_seconds']) && is_numeric($attrs['lease_seconds'])
@@ -117,6 +120,7 @@ final class ConductorRegistrar {
     elseif ($conductor->isNew()) {
       $conductor->set('reported_load', 0);
     }
+    $conductor->set('machine', $machine->id());
     foreach ($this->refreshableValues($attrs) as $field => $value) {
       $conductor->set($field, $value);
     }
@@ -125,6 +129,40 @@ final class ConductorRegistrar {
 
     $this->recomputeMachineLoad($machine);
     return $conductor;
+  }
+
+  /**
+   * Refuses a heartbeat that would rebind an existing conductor.
+   *
+   * Runs before any write so the established binding, its history and the
+   * loads stay untouched.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The authenticated conductor owner.
+   * @param \Drupal\bb_core\Entity\BbConductorInterface $existing
+   *   The owner's conductor for this conductor_id.
+   * @param string $hostKey
+   *   The registering host.
+   * @param int $projectId
+   *   The project resolved for the heartbeat.
+   * @param string $project
+   *   The project name the heartbeat sent.
+   */
+  private function refuseRebinding(AccountInterface $owner, BbConductorInterface $existing, string $hostKey, int $projectId, string $project): void {
+    // Access was checked for the named project only; a conductor moved to
+    // another project keeps heartbeating only while its owner may use that one.
+    $stored = (int) $existing->get('project_id')->target_id;
+    if ($stored !== $projectId && !$this->registration->mayRegister($owner, $stored)) {
+      throw $this->registration->notFound($project);
+    }
+    // Another machine means another conductor.
+    $bound = $existing->getMachine();
+    if ($bound !== NULL && (string) $bound->get('host_key')->value !== $hostKey) {
+      throw new UnprocessableEntityHttpException(sprintf(
+        'Conductor "%s" is bound to another machine; register this machine with another conductor id.',
+        $existing->get('conductor_id')->value,
+      ));
+    }
   }
 
   /**
@@ -146,16 +184,14 @@ final class ConductorRegistrar {
   }
 
   /**
-   * Loads the owner's conductor of that key, or NULL when none exists.
+   * Loads the owner's conductor by conductor_id, or NULL when none exists.
    */
-  private function load(AccountInterface $owner, int $machineId, int $projectId, string $variant): ?BbConductorInterface {
+  private function load(AccountInterface $owner, string $conductorId): ?BbConductorInterface {
     $storage = $this->entityTypeManager->getStorage('bb_conductor');
     $ids = $storage->getQuery()
       ->accessCheck(FALSE)
       ->condition('owner_user_id', $owner->id())
-      ->condition('machine', $machineId)
-      ->condition('project_id', $projectId)
-      ->condition('variant', $variant)
+      ->condition('conductor_id', $conductorId)
       ->range(0, 1)
       ->execute();
     if ($ids === []) {
@@ -166,26 +202,20 @@ final class ConductorRegistrar {
   }
 
   /**
-   * Creates a conductor; its label is derived here once and never again.
+   * Creates (heals) a conductor from the heartbeat's registration attributes.
    *
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The conductor owner.
-   * @param \Drupal\bb_core\Entity\BbMachineInterface $machine
-   *   The machine it runs on.
+   * @param string $conductorId
+   *   Registration key.
    * @param int $projectId
    *   Project entity id.
-   * @param string $variant
-   *   The conductor variant.
    * @param array<string, mixed> $attrs
    *   Registration attributes.
    */
-  private function create(AccountInterface $owner, BbMachineInterface $machine, int $projectId, string $variant, array $attrs): BbConductorInterface {
-    $project = $this->entityTypeManager->getStorage('bb_project')->load($projectId);
-    $label = $machine->label() . ' · ' . $project?->label() . ($variant === 'conductor' ? '' : '/' . $variant);
+  private function create(AccountInterface $owner, string $conductorId, int $projectId, array $attrs): BbConductorInterface {
     $values = [
-      'label' => $label,
-      'variant' => $variant,
-      'machine' => $machine->id(),
+      'conductor_id' => $conductorId,
       'owner_user_id' => $owner->id(),
       'project_id' => $projectId,
       'status' => 'online',
@@ -198,7 +228,7 @@ final class ConductorRegistrar {
   }
 
   /**
-   * Loads or creates the owner's machine and refreshes its name.
+   * Loads or creates the owner's machine for a host_key.
    *
    * The budget (`max_parallel`) is set only when the row is first created —
    * from the registering conductor's config, or 1 as a last resort — and is
@@ -208,34 +238,33 @@ final class ConductorRegistrar {
    *
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The machine owner.
-   * @param string $machineId
-   *   The machine UUID.
+   * @param string $hostKey
+   *   The MachineContext host stem.
    * @param array<string, mixed> $attrs
-   *   Registration attributes: `machine_label`, and `max_parallel` at
-   *   creation only.
-   *
-   * @throws \Symfony\Component\HttpKernel\Exception\ConflictHttpException
-   *   When the machine belongs to another user.
+   *   Registration attributes, read for `max_parallel` and `machine_label`
+   *   at creation only.
    */
-  private function loadOrCreateMachine(AccountInterface $owner, string $machineId, array $attrs): BbMachineInterface {
-    $label = isset($attrs['machine_label']) && is_string($attrs['machine_label']) && $attrs['machine_label'] !== ''
-      ? $attrs['machine_label']
-      : NULL;
+  private function loadOrCreateMachine(AccountInterface $owner, string $hostKey, array $attrs): BbMachineInterface {
     $storage = $this->entityTypeManager->getStorage('bb_machine');
-    $machines = $storage->loadByProperties(['uuid' => $machineId]);
-    $machine = reset($machines);
-    if ($machine instanceof BbMachineInterface) {
-      if ((int) $machine->get('owner_user_id')->target_id !== (int) $owner->id()) {
-        throw new ConflictHttpException('This machine_id belongs to another user; run `bakers init` on this machine.');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('owner_user_id', $owner->id())
+      ->condition('host_key', $hostKey)
+      ->range(0, 1)
+      ->execute();
+    if ($ids !== []) {
+      $machine = $storage->load(reset($ids));
+      if ($machine instanceof BbMachineInterface) {
+        return $machine;
       }
-      return $label === NULL ? $machine : $machine->setName($label);
     }
     $max_parallel = isset($attrs['max_parallel']) && is_numeric($attrs['max_parallel'])
       ? (int) $attrs['max_parallel']
       : 1;
+    $label = isset($attrs['machine_label']) && is_string($attrs['machine_label']) ? trim($attrs['machine_label']) : '';
     $machine = $storage->create([
-      'uuid' => $machineId,
-      'name' => $label ?? $machineId,
+      'name' => $label !== '' ? $label : $hostKey,
+      'host_key' => $hostKey,
       'owner_user_id' => $owner->id(),
       'max_parallel' => $max_parallel,
       'current_load' => 0,
@@ -277,6 +306,9 @@ final class ConductorRegistrar {
    */
   private function optionalConductorValues(array $attrs): array {
     $values = [];
+    if (isset($attrs['label']) && is_string($attrs['label'])) {
+      $values['label'] = $attrs['label'];
+    }
     if (isset($attrs['workspace_root']) && is_string($attrs['workspace_root'])) {
       $values['workspace_root'] = $attrs['workspace_root'];
     }

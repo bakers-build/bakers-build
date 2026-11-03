@@ -95,8 +95,8 @@ const ticketIdentifier = (document: TicketDetailDocument): string =>
   asString(document.data?.attributes?.identifier) ?? '—';
 
 /**
- * The conductor that owns the run: the sideloaded include's label, else the
- * raw uuid, else an explicit dash. The same ladder the
+ * The conductor that owns the run: the sideloaded include's label, else its
+ * `machine_id`, else the raw uuid, else an explicit dash. The same ladder the
  * ticket's Assignment section uses — `bb_conductor` is owner-gated for
  * `session`, so the include is genuinely absent for someone else's conductor and
  * a uuid is ugly but true (BB-233).
@@ -110,7 +110,11 @@ function conductorLabel(
   const included = (document.included ?? []).find(
     (r) => r.type === 'bb_conductor--bb_conductor' && r.id === id,
   );
-  return asString(included?.attributes?.label) ?? id;
+  return (
+    asString(included?.attributes?.label) ??
+    asString(included?.attributes?.machine_id) ??
+    id
+  );
 }
 
 /** `#<id> · <ticket> · <state>` — the run screen's header-box title row. */

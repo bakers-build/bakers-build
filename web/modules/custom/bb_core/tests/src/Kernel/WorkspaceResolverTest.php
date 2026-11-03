@@ -88,6 +88,7 @@ final class WorkspaceResolverTest extends KernelTestBase {
       'body' => 'hello',
     ]);
     $conductor = $this->create('bb_conductor', [
+      'conductor_id' => 'reg-acme',
       'label' => 'Acme conductor',
       'project_id' => $project->id(),
     ]);
@@ -156,14 +157,14 @@ final class WorkspaceResolverTest extends KernelTestBase {
         'body' => 'orphan chain',
       ]),
       'conductor without project' => $this->create('bb_conductor', [
-        'label' => 'reg-no-project',
+        'conductor_id' => 'reg-no-project',
       ]),
       'conductor whose project has no group' => $this->create('bb_conductor', [
-        'label' => 'reg-no-group',
+        'conductor_id' => 'reg-no-group',
         'project_id' => $orphan_project->id(),
       ]),
       'conductor whose group has no workspace' => $this->create('bb_conductor', [
-        'label' => 'reg-no-workspace',
+        'conductor_id' => 'reg-no-workspace',
         'project_id' => $grouped_project->id(),
       ]),
     ];
@@ -191,6 +192,7 @@ final class WorkspaceResolverTest extends KernelTestBase {
     $workspace = $this->create('bb_workspace', ['name' => 'Acme', 'slug' => 'acme']);
     $machine = $this->create('bb_machine', [
       'name' => 'Acme host',
+      'host_key' => 'host-acme',
     ]);
 
     self::assertNull($this->resolver->resolve($workspace));

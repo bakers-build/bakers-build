@@ -428,6 +428,7 @@ final class TicketActionFormTest extends KernelTestBase {
     $owner = $etm->getStorage('user')->create(['name' => $this->randomMachineName()]);
     $owner->save();
     $conductor = $etm->getStorage('bb_conductor')->create([
+      'conductor_id' => $this->randomMachineName(),
       'label' => 'srv',
       'owner_user_id' => $owner->id(),
       'status' => 'online',

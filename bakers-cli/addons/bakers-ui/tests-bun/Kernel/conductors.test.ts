@@ -30,13 +30,10 @@ const BOLD = createTextAttributes({ bold: true });
 describe('the Conductors screen', () => {
   const WORKSPACE = '/tmp/bakers-conductors-test/.bakers';
 
-  it('lists the conductors of the control plane by label, with the machine label', async () => {
+  it('lists the conductors of the control plane', async () => {
     const tui = await openConductors();
 
     expect(text(tui)).toContain('cw-framework');
-    // The MACHINE column shows the machine's label, not an id.
-    expect(text(tui)).toContain('cw-laptop');
-    expect(text(tui)).not.toContain(MACHINE_UUID);
     // BB-450 D11: the fresh word is `online`, the server's own word.
     expect(text(tui)).toContain('online');
 
@@ -162,7 +159,7 @@ describe('the Conductors screen', () => {
 
   it('reports a refused start (host-mismatch) in the footer instead of discarding it (BB-450 review B6)', async () => {
     const host = fakeHost({
-      result: { ok: false, message: 'refused: foreign machine UUID' },
+      result: { ok: false, message: 'refused: foreign host_key' },
     });
     const tui = await openConductors({
       host,
@@ -174,7 +171,7 @@ describe('the Conductors screen', () => {
     await tui.renderOnce();
 
     expect(host.starts.length).toBe(1);
-    expect(text(tui)).toContain('refused: foreign machine UUID');
+    expect(text(tui)).toContain('refused: foreign host_key');
 
     await quit(tui);
   });
@@ -226,16 +223,16 @@ describe('the Conductors screen', () => {
     await quit(tui);
   });
 
-  it('marks a conductor whose machine UUID is not this machine view-only, before any key is pressed (BB-450 review B6/B10)', async () => {
-    const host = fakeHost({ thisMachineId: 'some-other-machine' });
+  it('marks a conductor whose host_key is not this machine view-only, before any key is pressed (BB-450 review B6/B10)', async () => {
+    const host = fakeHost({ thisHostKey: 'cw-framework' });
     const tui = await openConductors({
       host,
       // SAME workspace_root as the default fixture — deliberately, per
       // BB-281 Finding 2: two `bb_conductor` records can name one
       // checkout under DIFFERENT machines. `isLocal` (a path check) cannot
-      // tell these apart; only the machine UUID can (B10).
+      // tell these apart; only the machine's `host_key` can (B10).
       rows: [conductorDoc()],
-      machines: [machineDoc()],
+      machines: [machineDoc({ host_key: 'some-other-machine' })],
     });
 
     // The footer already states it BEFORE any key is pressed — BB-375's
@@ -258,16 +255,16 @@ describe('the Conductors screen', () => {
   });
 
   it('opens the conductor detail scope for a foreign row too, and its Log tab says there is none here', async () => {
-    const host = fakeHost({ thisMachineId: 'some-other-machine' });
+    const host = fakeHost({ thisHostKey: 'cw-framework' });
     const tui = await openConductors({
       host,
       // SAME workspace_root as the default fixture — this machine really has
       // a directory there (BB-281 Finding 2's shape) — only the machine's
-      // machine differs. `isLocal`'s filesystem check alone cannot tell this
+      // host_key differs. `isLocal`'s filesystem check alone cannot tell this
       // row apart from a truly local one, which is exactly what let B12 tail
       // THIS machine's own log under a foreign conductor's heading.
       rows: [conductorDoc()],
-      machines: [machineDoc()],
+      machines: [machineDoc({ host_key: 'some-other-machine' })],
     });
 
     // Enter is no longer gated on `mine` (D1/D12): it opens the conductor
@@ -397,21 +394,21 @@ describe('the Conductors screen', () => {
   interface FakeHostOptions {
     neverResolves?: boolean;
     result?: ConductorActionResult;
-    /** BB-450 B10: THIS machine's own machine UUID, as `start`/`stop` see it. */
-    thisMachineId?: string;
+    /** BB-450 B10: THIS machine's own host_key, as `start`/`stop` see it. */
+    thisHostKey?: string;
   }
 
   interface FakeHost extends ConductorProcessHost {
     starts: Array<{ workspaceRoot: string; conductorName: string | undefined }>;
-    stops: Array<{ pid: number | undefined; machineId: string | undefined }>;
+    stops: Array<{ pid: number | undefined; hostKey: string | undefined }>;
   }
 
   /**
-   * A fake `ConductorProcessHost` that answers `thisMachineId()` from a fixed
-   * value (BB-450 B10) — never `defaultThisMachineId()`'s real
+   * A fake `ConductorProcessHost` that answers `thisHostKey()` from a fixed
+   * value (BB-450 B10) — never `defaultThisHostKey()`'s real
    * `~/.bakers/machine.config.js` read, which would make this suite as
    * non-deterministic as `conductor/tests/config.test.ts` names for the CLI
-   * side. Defaults to `MACHINE_UUID`, matching {@link conductorDoc}'s
+   * side. Defaults to `'cw-framework'`, matching {@link conductorDoc}'s
    * default machine so the existing start/stop cases stay `mine: true`
    * without every one of them naming the value.
    */
@@ -433,8 +430,8 @@ describe('the Conductors screen', () => {
         stops.push(input);
         return answer();
       },
-      async thisMachineId() {
-        return options.thisMachineId ?? MACHINE_UUID;
+      async thisHostKey() {
+        return options.thisHostKey ?? 'cw-framework';
       },
     };
   }
@@ -449,13 +446,15 @@ describe('the Conductors screen', () => {
     type: 'bb_conductor--bb_conductor',
     attributes: {
       label: 'cw-framework',
+      machine_id: 'cw-framework',
       status: 'online',
       workspace_root: WORKSPACE,
       last_seen: Math.floor(Date.now() / 1000),
       lease_expires_at: Math.floor(Date.now() / 1000) + 300,
       last_pid: 4242,
       conductor_name: 'conductor',
-      // The machine is a relationship; its UUID is the sideloaded machine's id.
+      // NO host_key here (BB-450 B7): bb_conductor carries no such field
+      // in reality. It lives on the sideloaded machine below.
       current_load: 0,
       max_parallel: 5,
       ...attrs,
@@ -468,7 +467,7 @@ describe('the Conductors screen', () => {
   const machineDoc = (attrs: Record<string, unknown> = {}) => ({
     id: MACHINE_UUID,
     type: 'bb_machine--bb_machine',
-    attributes: { name: 'cw-laptop', max_parallel: 5, ...attrs },
+    attributes: { host_key: 'cw-framework', max_parallel: 5, ...attrs },
   });
 
   async function openConductors(
@@ -494,7 +493,7 @@ describe('the Conductors screen', () => {
     // `·` phase deterministically instead of racing a real setTimeout.
     if (opts.now) services.now = opts.now;
     // BB-450 B10: always a FAKE host, even when the test does not care
-    // about start/stop — `load()` now resolves `thisMachineId()` on every
+    // about start/stop — `load()` now resolves `thisHostKey()` on every
     // read, and the real default would touch this machine's actual
     // `~/.bakers/machine.config.js`.
     const host = opts.host ?? fakeHost();
@@ -520,7 +519,7 @@ describe('the Conductors screen', () => {
    *
    * `client.get` is the one THIS screen uses: BB-353 moved
    * the conductor read onto the raw JSON:API path so host capacity (and,
-   * since BB-450, the machine) can be sideloaded (`include=machine`), and
+   * since BB-450, `host_key`) can be sideloaded (`include=machine`), and
    * `conductorDoc` is already a raw resource, so it needs no projection
    * there. The `collection` route stays for the form adapters that still
    * read conductors through it. Only the raw path counts as a read, because

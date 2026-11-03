@@ -15,7 +15,7 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
- * Resolves machine, variant, project and workspace for a conductor heartbeat.
+ * Resolves project, host_key, and workspace for a conductor heartbeat.
  */
 final class HeartbeatRegistrationResolver {
 
@@ -28,36 +28,30 @@ final class HeartbeatRegistrationResolver {
   }
 
   /**
-   * Resolves the machine UUID, refusing the identities of an old CLI.
+   * Resolves conductor_id; a payload without one comes from a stale CLI.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
-   *
-   * @return string
-   *   The lowercase machine UUID.
    */
-  public function machineId(array $attrs): string {
-    foreach (['conductor_id', 'host_key'] as $stale) {
-      if (array_key_exists($stale, $attrs)) {
-        throw new UnprocessableEntityHttpException(sprintf('%s is no longer accepted; update bakers and run `bakers init`.', $stale));
-      }
+  public function conductorId(array $attrs): string {
+    if (isset($attrs['conductor_id']) && is_string($attrs['conductor_id']) && $attrs['conductor_id'] !== '') {
+      return $attrs['conductor_id'];
     }
-    $machineId = $attrs['machine_id'] ?? NULL;
-    if (!is_string($machineId) || !Uuid::isValid($machineId)) {
-      throw new UnprocessableEntityHttpException('machine_id must be the machine UUID; run `bakers init`.');
-    }
-    return strtolower($machineId);
+    throw new UnprocessableEntityHttpException('conductor_id is required; update bakers and run bakers init.');
   }
 
   /**
-   * Resolves the variant, `conductor` when absent.
+   * Resolves host_key, the machine UUID that bakers init generates.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
    */
-  public function variant(array $attrs): string {
-    $variant = $attrs['variant'] ?? NULL;
-    return is_string($variant) && $variant !== '' ? $variant : 'conductor';
+  public function hostKey(array $attrs): string {
+    $hostKey = isset($attrs['host_key']) && is_string($attrs['host_key']) ? strtolower($attrs['host_key']) : '';
+    if (!Uuid::isValid($hostKey)) {
+      throw new UnprocessableEntityHttpException('host_key must be the machine UUID; run bakers init.');
+    }
+    return $hostKey;
   }
 
   /**

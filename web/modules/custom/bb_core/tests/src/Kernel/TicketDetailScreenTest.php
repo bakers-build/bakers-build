@@ -1364,6 +1364,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $owner = $etm->getStorage('user')->create(['name' => 'conductor-owner']);
     $owner->save();
     $conductor = $etm->getStorage('bb_conductor')->create([
+      'conductor_id' => 'cw-framework',
       'label' => 'cw-framework',
       'owner_user_id' => $owner->id(),
       'status' => 'online',
@@ -1620,11 +1621,12 @@ final class TicketDetailScreenTest extends KernelTestBase {
   private function createRun(string $state, string $from, int $started, ?int $duration = NULL) {
     $etm = $this->container->get('entity_type.manager');
     $conductor = $etm->getStorage('bb_conductor')
-      ->loadByProperties(['label' => 'srv01-bakers']);
+      ->loadByProperties(['conductor_id' => 'srv01-bakers']);
     if ($conductor === []) {
       $owner = $etm->getStorage('user')->create(['name' => 'run-owner']);
       $owner->save();
       $entity = $etm->getStorage('bb_conductor')->create([
+        'conductor_id' => 'srv01-bakers',
         'label' => 'srv01-bakers',
         'owner_user_id' => $owner->id(),
         'status' => 'online',

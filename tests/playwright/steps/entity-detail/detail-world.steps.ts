@@ -94,8 +94,8 @@ Given('I edit a disposable detail world', async ({ page, authProvider, apiClient
       '\\Drupal\\og\\Og::createMembership($w, $lead)->setRoles([$etm->getStorage("og_role")->load("bb_workspace-bb_workspace-lead")])->save();',
       '\\Drupal\\og\\Og::createMembership($t, $lead)->setRoles([$etm->getStorage("og_role")->load("bb_team-bb_team-lead")])->save();',
       `$p = $etm->getStorage("bb_project")->create(["name" => "Detail project ${suffix}", "key" => "${key}", "description" => "Seeded project text", "repository" => ["url" => "https://example.com/detail.git", "default_branch" => "main"], "group_id" => $g->id(), "teams" => [$t->id()], "owner_user_id" => $owner->id()]); $p->save();`,
-      `$m = $etm->getStorage("bb_machine")->create(["name" => "Detail machine ${suffix}", "owner_user_id" => $lead->id(), "max_parallel" => 2]); $m->save();`,
-      `$c = $etm->getStorage("bb_conductor")->create(["label" => "Detail conductor ${suffix}", "owner_user_id" => $lead->id(), "status" => "online", "project_id" => $p->id(), "machine" => $m->id(), "states" => ["working"]]); $c->save();`,
+      `$m = $etm->getStorage("bb_machine")->create(["name" => "Detail machine ${suffix}", "host_key" => "detail-${suffix}-a", "owner_user_id" => $lead->id(), "max_parallel" => 2]); $m->save();`,
+      `$c = $etm->getStorage("bb_conductor")->create(["conductor_id" => "detail-${suffix}-a", "label" => "Detail conductor ${suffix}", "owner_user_id" => $lead->id(), "status" => "online", "project_id" => $p->id(), "machine" => $m->id(), "states" => ["working"]]); $c->save();`,
       '\\Drupal::service("cache.static")->deleteAll();',
       '$all = ["machine" => $m, "group" => $g, "project" => $p, "team" => $t, "conductor" => $c];',
       'print json_encode([',
@@ -151,8 +151,8 @@ Given('the world has a second machine with its own conductor', async () => {
   const out = php(
     [
       '$etm = \\Drupal::entityTypeManager();',
-      `$m = $etm->getStorage("bb_machine")->create(["name" => "Second machine ${w.suffix}", "owner_user_id" => ${Number(w.lead)}, "max_parallel" => 2]); $m->save();`,
-      `$c = $etm->getStorage("bb_conductor")->create(["label" => "Second conductor ${w.suffix}", "owner_user_id" => ${Number(w.lead)}, "status" => "online", "project_id" => ${Number(w.ids.project)}, "machine" => $m->id(), "states" => ["working"]]); $c->save();`,
+      `$m = $etm->getStorage("bb_machine")->create(["name" => "Second machine ${w.suffix}", "host_key" => "detail-${w.suffix}-b", "owner_user_id" => ${Number(w.lead)}, "max_parallel" => 2]); $m->save();`,
+      `$c = $etm->getStorage("bb_conductor")->create(["conductor_id" => "detail-${w.suffix}-b", "label" => "Second conductor ${w.suffix}", "owner_user_id" => ${Number(w.lead)}, "status" => "online", "project_id" => ${Number(w.ids.project)}, "machine" => $m->id(), "states" => ["working"]]); $c->save();`,
       'print json_encode(["machine" => [(string) $m->id(), $m->toUrl()->toString()], "conductor" => [(string) $c->id(), $c->toUrl()->toString()]]);',
     ].join(' '),
   );

@@ -34,6 +34,7 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
+import { hostKeyOf } from './host-key.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 
@@ -261,22 +262,20 @@ export class Conductor {
   }
 
   /**
-   * The conductor's entity UUID, which the server returns at registration
-   * (keyed by machine + project + variant). No config carries an id.
+   * `conductor_id` is derived by the loader from the machine UUID, project and
+   * variant; there is no directory-derived fallback (BB-450 D5).
    */
-  get id(): string {
-    if (!this.uuid) throw new Error('conductor not registered yet');
-    return this.uuid;
+  get id() {
+    const id = this.config.conductor_id;
+    if (id === undefined || id.trim() === '') {
+      throw new Error('machine.config.js has no machine_id; run bakers init');
+    }
+    return id;
   }
 
-  /** This machine's UUID from machine.config.js; `bakers init` writes it. */
-  private get machineId(): string {
-    const id = this.config.machine_id;
-    if (!id)
-      throw new Error(
-        'machine.config.js has no machine_id; run bakers init to generate one',
-      );
-    return id;
+  /** This machine's UUID, bb_machine.host_key. */
+  private get hostKey(): string {
+    return hostKeyOf(this.config);
   }
 
   /**
@@ -305,12 +304,15 @@ export class Conductor {
   /** This conductor's registration payload, built from config. */
   private registration(): ConductorRegistration {
     const base: ConductorRegistration = {
-      machine_id: this.machineId,
-      machine_label: this.config.machine_label ?? '',
+      id: this.id,
+      host_key: this.hostKey,
       project: this.config.project,
-      variant: this.config.variant,
       states: this.config.states,
       workspace: this.checkoutRoot,
+      label: this.config.label,
+      ...(this.config.machine_label
+        ? { machine_label: this.config.machine_label }
+        : {}),
       max_parallel: this.config.max_parallel,
     };
     if (!this.ownsServeProcess) return base;
@@ -382,9 +384,8 @@ export class Conductor {
   async produce(): Promise<void> {
     if (!this.uuid) throw new Error('not started');
     let count = await this.remote.activeRunCount(this.id);
-    // A heartbeat is the server-side self-heal: it upserts by machine +
-    // project + variant (so it never 404s and recreates a vanished
-    // registration) and refreshes the
+    // A heartbeat is the server-side self-heal: it upserts by conductor_id (so
+    // it never 404s and recreates a vanished registration) and refreshes the
     // lease — no client-side re-register, no separate status read. It also
     // recomputes bb_machine.current_load (peers + this process's load).
     await this.remote.heartbeat(
@@ -396,7 +397,7 @@ export class Conductor {
     // process's active runs. After the heartbeat above, machine.current_load
     // includes peers + self; each claim below increments the local view so
     // pending dispatches count without a second round-trip.
-    const capacity = await this.remote.machineCapacity(this.machineId);
+    const capacity = await this.remote.machineCapacity(this.hostKey);
     let machineLoad = capacity?.currentLoad ?? count;
     // BB-464 D3: gate on the MACHINE's own budget, not this conductor's
     // config — the machine row is the one authority a shared host agrees on;
@@ -966,9 +967,6 @@ export class Conductor {
    * the core needs no per-call-site try/catch around it.
    */
   async reap(): Promise<void> {
-    // `bakers oven reap` runs without start(): registering resolves this
-    // conductor's UUID (machine + project + variant) for the work list.
-    this.uuid ??= await this.remote.registerConductor(this.registration());
     await this.enqueueReap();
     await this.queue.drain();
   }

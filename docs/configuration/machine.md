@@ -30,7 +30,7 @@ export default {
 |---|---|
 | `schema_version` | Current schema is 1. The `// @bakers-schema-version 1` header and this field must agree. Any other version fails loading; run `bakers init`. |
 | `machine_id` | Required. A UUID that `bakers init` generates once; never chosen by hand. It is this host's key on the server, so each machine has its own. Any case loads and is lowercased; a value that is not a UUID fails loading. |
-| `label` | Display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. The server refreshes the machine's name from it on every heartbeat. |
+| `label` | Display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers; rename it there afterwards. |
 | `max_parallel` | Positive integer, required by `bakers config check`. The conductor runtime falls back to `1` when it is missing or invalid. The budget is shared by every conductor on this host, not granted per project. |
 | `tunnel` | Optional literal boolean, default `false`. See below. |
 | `agents` | Object, described in the next section. An array is invalid. |

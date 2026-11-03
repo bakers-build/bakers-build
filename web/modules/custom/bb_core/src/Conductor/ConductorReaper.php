@@ -58,9 +58,8 @@ final class ConductorReaper {
       $conductor->setStatus('offline');
       $conductor->save();
       $count++;
-      $this->logger->info('Conductor @conductor (@uuid) marked offline: lease expired.', [
-        '@conductor' => $conductor->label(),
-        '@uuid' => $conductor->uuid(),
+      $this->logger->info('Conductor @machine marked offline: lease expired.', [
+        '@machine' => $conductor->getConductorId(),
       ]);
     }
     return $count;

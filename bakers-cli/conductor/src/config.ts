@@ -348,6 +348,32 @@ function optionalPositiveInteger(
 }
 
 /**
+ * A conductor is machine + project + variant: its registration key and label
+ * are derived here and never written to a config.
+ */
+function identityOf(
+  machine: { machine_id?: string; label?: string },
+  project: string,
+  variant: string,
+): Pick<
+  ConductorFileConfig,
+  'label' | 'conductor_id' | 'host_key' | 'machine_label'
+> {
+  const suffix = variant === 'conductor' ? '' : `/${variant}`;
+  const label = machine.label?.trim() || undefined;
+  return {
+    label: `${label ? `${label} · ` : ''}${project}${suffix}`,
+    ...(machine.machine_id
+      ? {
+          host_key: machine.machine_id,
+          conductor_id: `${machine.machine_id}-${project}-${variant}`,
+        }
+      : {}),
+    ...(label ? { machine_label: label } : {}),
+  };
+}
+
+/**
  * Load the ENGINE half of a conductor config (BB-201 split model). Reads
  * remote/executor/agent/workspace + project/states/prompt/
  * scheduler/hooks — and deliberately NOT `site` or the auth `plugins`, which now
@@ -426,6 +452,7 @@ export async function loadConductorConfig(
       ? Math.floor(machineCtx.max_parallel)
       : 1;
   const tunnel = machineCtx.tunnel === true;
+  const variant = stemForConfigFile(basename(configPath)) ?? 'conductor';
 
   // BB-215: discover the conductor `addons: []` surface (last-wins singletons,
   // agent candidate list). A pre-existing per-slot descriptor still loads and
@@ -721,11 +748,8 @@ export async function loadConductorConfig(
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
     ...(processHost !== undefined ? { processHost } : {}),
     bakers,
-    ...(machineCtx.machine_id ? { machine_id: machineCtx.machine_id } : {}),
-    ...(typeof machineCtx.label === 'string'
-      ? { machine_label: machineCtx.label }
-      : {}),
-    variant: stemForConfigFile(basename(configPath)) ?? 'conductor',
+    ...identityOf(machineCtx, project, variant),
+    variant,
     project,
     states,
     prompt:

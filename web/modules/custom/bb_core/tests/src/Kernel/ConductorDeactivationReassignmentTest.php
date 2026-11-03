@@ -375,6 +375,7 @@ final class ConductorDeactivationReassignmentTest extends ClaimKernelTestBase {
    */
   private function createCandidate(string $id, ?int $lastSeen = NULL): BbConductorInterface {
     $candidate = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => $id,
       'label' => $id,
       'owner_user_id' => $this->conductor->get('owner_user_id')->target_id,
       'project_id' => $this->conductor->get('project_id')->target_id,

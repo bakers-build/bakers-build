@@ -21,34 +21,28 @@ final class ConductorListToolTest extends BakersToolTestBase {
    * Only the project's conductors, by label.
    */
   public function testListsTheProjectsConductors(): void {
-    $this->installEntitySchema('bb_machine');
-    $machine = $this->entity('bb_machine', ['name' => 'cw-laptop', 'owner_user_id' => $this->actor->id()]);
-    $online = $this->conductor('b-online', (int) $this->project->id(), 'online', TRUE, ['machine' => $machine->id()]);
-    $offline = $this->conductor('a-offline', (int) $this->project->id(), 'offline', FALSE, ['variant' => 'shop']);
+    $online = $this->conductor('b-online', (int) $this->project->id(), 'online');
+    $offline = $this->conductor('a-offline', (int) $this->project->id(), 'offline', FALSE);
     $other = $this->entity('bb_project', [
       'name' => 'other-project',
       'group_id' => $this->project->get('group_id')->target_id,
       'teams' => $this->project->get('teams')->getValue(),
     ]);
     $this->conductor('c-elsewhere', (int) $other->id(), 'online');
-    $row = static fn (ContentEntityInterface $conductor, string $variant, ?string $machine, bool $active, string $status): array => [
+    $row = static fn (ContentEntityInterface $conductor, bool $active, string $status): array => [
       'uuid' => $conductor->uuid(),
+      'conductor_id' => $conductor->get('conductor_id')->value,
       'label' => $conductor->label(),
-      'variant' => $variant,
-      'machine' => $machine,
       'active' => $active,
       'status' => $status,
     ];
     self::assertSame([
-      'conductors' => [
-        $row($offline, 'shop', NULL, FALSE, 'offline'),
-        $row($online, 'conductor', 'cw-laptop', TRUE, 'online'),
-      ],
+      'conductors' => [$row($offline, FALSE, 'offline'), $row($online, TRUE, 'online')],
       'next_offset' => NULL,
     ], $this->outputs($this->runTool('bakers_conductor_list', ['project' => 'TOOLPROJEC'])));
 
     $first = $this->outputs($this->runTool('bakers_conductor_list', ['project' => $this->project->uuid(), 'limit' => 1]));
-    self::assertSame([$row($offline, 'shop', NULL, FALSE, 'offline')], $first['conductors']);
+    self::assertSame([$row($offline, FALSE, 'offline')], $first['conductors']);
     self::assertSame(1, $first['next_offset']);
   }
 
@@ -72,22 +66,10 @@ final class ConductorListToolTest extends BakersToolTestBase {
 
   /**
    * A conductor of the given project owned by the actor.
-   *
-   * @param string $label
-   *   The label.
-   * @param int $project_id
-   *   The project id.
-   * @param string $status
-   *   The status.
-   * @param bool $active
-   *   Whether it is active.
-   * @param array<string, mixed> $values
-   *   Further field values.
-   *
-   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
    */
-  private function conductor(string $label, int $project_id, string $status, bool $active = TRUE, array $values = []): ContentEntityInterface {
-    return $this->entity('bb_conductor', $values + [
+  private function conductor(string $label, int $project_id, string $status, bool $active = TRUE): ContentEntityInterface {
+    return $this->entity('bb_conductor', [
+      'conductor_id' => $this->randomMachineName(),
       'label' => $label,
       'owner_user_id' => $this->actor->id(),
       'active' => $active,

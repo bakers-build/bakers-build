@@ -8,8 +8,8 @@ _meta:
     afa9b1da-0df1-51d0-8156-52d2d90c2b85: user
     7d2d4fed-8c58-560b-9824-8292c0f19269: og_membership
 default:
-  variant:
-  - value: conductor
+  conductor_id:
+  - value: api-pagination-other
   label:
   - value: API pagination other
   project_id:

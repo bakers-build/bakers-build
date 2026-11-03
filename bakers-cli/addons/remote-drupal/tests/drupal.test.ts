@@ -149,7 +149,11 @@ describe('DrupalBbRemote', () => {
     const active = await remote.fetchActiveRuns('cond-id');
 
     expect(api.collection).toHaveBeenCalledWith('bb_run');
-    expect(col.where).toHaveBeenCalledWith('conductor_id.id', '=', 'cond-id');
+    expect(col.where).toHaveBeenCalledWith(
+      'conductor_id.conductor_id',
+      '=',
+      'cond-id',
+    );
     expect(col.whereIn).toHaveBeenCalledWith('state', ['claimed', 'running']);
     expect(active).toEqual([
       {
@@ -181,7 +185,7 @@ describe('DrupalBbRemote', () => {
     expect(col.count).toHaveBeenCalled();
   });
 
-  it('machineCapacity reads bb_machine by its machine UUID (BB-353 D5)', async () => {
+  it('machineCapacity reads bb_machine by host_key (BB-353 D5)', async () => {
     const col = fakeCollection({
       first: fakeResource('machine-uuid', {
         max_parallel: 4,
@@ -191,21 +195,15 @@ describe('DrupalBbRemote', () => {
     const collection = vi.fn(() => col);
     const remote = new DrupalBbRemote(fakeClient({ collection }));
 
-    expect(
-      await remote.machineCapacity('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30'),
-    ).toEqual({
+    expect(await remote.machineCapacity('dev-box')).toEqual({
       maxParallel: 4,
       currentLoad: 3,
     });
     expect(collection).toHaveBeenCalledWith('bb_machine');
-    expect(col.where).toHaveBeenCalledWith(
-      'id',
-      '=',
-      '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-    );
+    expect(col.where).toHaveBeenCalledWith('host_key', '=', 'dev-box');
   });
 
-  it('machineCapacity returns null when no machine matches the UUID', async () => {
+  it('machineCapacity returns null when no machine matches host_key', async () => {
     const col = fakeCollection({ first: null });
     const remote = new DrupalBbRemote(
       fakeClient({ collection: vi.fn(() => col) }),
@@ -220,8 +218,8 @@ describe('DrupalBbRemote', () => {
       fakeResource(
         'cond-uuid-1',
         {
+          conductor_id: 'host-a-bakers',
           label: 'main',
-          variant: 'conductor',
           status: 'online',
           last_seen: 1_700_000_000,
           reported_load: 1,
@@ -235,8 +233,8 @@ describe('DrupalBbRemote', () => {
       fakeResource(
         'cond-uuid-2',
         {
+          conductor_id: 'host-a-shop',
           label: 'shop',
-          variant: 'shop',
           status: 'offline',
           last_seen: 0,
           reported_load: 0,
@@ -256,7 +254,7 @@ describe('DrupalBbRemote', () => {
         return fakeResource('machine-uuid', {
           max_parallel: 4,
           current_load: 1,
-          name: 'host-a',
+          host_key: 'host-a',
         });
       }
       return fakeResource(id);
@@ -274,25 +272,25 @@ describe('DrupalBbRemote', () => {
     expect(resource).toHaveBeenCalledWith('bb_machine', 'machine-uuid');
   });
 
-  it('listConductors keys each row by its entity UUID and reads the machine UUID and label from bb_machine', async () => {
+  it('listConductors resolves hostKey from the related bb_machine, never from bb_conductor (BB-450 B7)', async () => {
+    // bb_conductor carries no host_key field at all — filter[host_key]
+    // against it is a server-side 400. The value lives on bb_machine, one
+    // relationship hop away, same as max_parallel.
     const conductorRows = [
       fakeResource(
         'cond-uuid-1',
         {
-          label: 'cw-laptop · bakers',
-          variant: 'shop',
+          conductor_id: 'host-a-bakers',
+          label: 'main',
           status: 'online',
           last_seen: 1_700_000_000,
         },
-        {
-          project_id: 'proj-uuid',
-          machine: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-        },
+        { project_id: 'proj-uuid', machine: 'machine-uuid' },
       ),
       fakeResource(
         'cond-uuid-2',
-        { label: 'orphan', status: 'offline' },
-        // No machine relationship → no machine identity, not invented.
+        { conductor_id: 'no-machine', label: 'orphan', status: 'offline' },
+        // No machine relationship → no hostKey, not invented.
         { project_id: 'proj-uuid' },
       ),
     ];
@@ -301,13 +299,10 @@ describe('DrupalBbRemote', () => {
       if (type === 'bb_project' && id === 'proj-uuid') {
         return fakeResource('proj-uuid', { name: 'bakers' });
       }
-      if (
-        type === 'bb_machine' &&
-        id === '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30'
-      ) {
-        return fakeResource('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', {
+      if (type === 'bb_machine' && id === 'machine-uuid') {
+        return fakeResource('machine-uuid', {
           max_parallel: 4,
-          name: 'cw-laptop',
+          host_key: 'cw-framework',
         });
       }
       return fakeResource(id);
@@ -318,18 +313,8 @@ describe('DrupalBbRemote', () => {
 
     const listed = await remote.listConductors();
 
-    expect(listed[0]).toMatchObject({
-      id: 'cond-uuid-1',
-      label: 'cw-laptop · bakers',
-      variant: 'shop',
-      project: 'bakers',
-      machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-      machineLabel: 'cw-laptop',
-    });
-    expect(listed[1]?.id).toBe('cond-uuid-2');
-    expect(listed[1]?.variant).toBe('conductor');
-    expect(listed[1]?.machineId).toBeUndefined();
-    expect(listed[1]?.machineLabel).toBeUndefined();
+    expect(listed[0]?.hostKey).toBe('cw-framework');
+    expect(listed[1]?.hostKey).toBeUndefined();
   });
 
   it('resolveTicketByIdentifier scopes by project uuid AND identifier, caches the project', async () => {
@@ -414,14 +399,15 @@ describe('DrupalBbRemote', () => {
 
     const claimed = await remote.claimNext({
       leaseSeconds: 300,
-      conductorId: 'cond-uuid',
+      conductorId: 'c1',
     });
 
     expect(api.post).toHaveBeenCalledWith('bakers/claim-next', {
       data: {
         attributes: {
           lease_seconds: 300,
-          conductor: 'cond-uuid',
+          conductor_id: 'c1',
+          machine_id: 'c1',
         },
       },
     });
@@ -801,12 +787,13 @@ describe('DrupalBbRemote', () => {
     const remote = new DrupalBbRemote(api);
 
     const uuid = await remote.registerConductor({
-      machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+      id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-conductor',
+      host_key: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
       machine_label: 'cw-laptop',
       project: 'bakers',
-      variant: 'shop',
       states: ['todo'],
       workspace: '/checkout',
+      label: 'cw-laptop · bakers',
       max_parallel: 2,
     });
 
@@ -817,15 +804,17 @@ describe('DrupalBbRemote', () => {
     const body = post.mock.calls[0]?.[1] as {
       data: { attributes: Record<string, unknown> };
     };
-    expect(body.data.attributes).toEqual({
-      machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+    expect(body.data.attributes).toMatchObject({
+      conductor_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-conductor',
+      host_key: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
       machine_label: 'cw-laptop',
       project: 'bakers',
-      variant: 'shop',
       states: ['todo'],
       workspace_root: '/checkout',
+      label: 'cw-laptop · bakers',
       max_parallel: 2,
     });
+    expect(body.data.attributes).not.toHaveProperty('current_load');
   });
 
   it('registerConductor fails when the heartbeat document omits data.id', async () => {
@@ -836,12 +825,11 @@ describe('DrupalBbRemote', () => {
 
     await expect(
       remote.registerConductor({
-        machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-        machine_label: 'cw-laptop',
+        id: 'machine-1',
         project: 'bakers',
-        variant: 'conductor',
         states: ['todo'],
         workspace: '/checkout',
+        label: 'lbl',
         max_parallel: 2,
       }),
     ).rejects.toThrow(/data\.id/);
@@ -856,12 +844,11 @@ describe('DrupalBbRemote', () => {
 
     const status = await remote.heartbeat(
       {
-        machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-        machine_label: 'cw-laptop',
+        id: 'machine-1',
         project: 'bakers',
-        variant: 'conductor',
         states: ['todo'],
         workspace: '/checkout',
+        label: 'lbl',
         max_parallel: 2,
       },
       2,
@@ -875,14 +862,11 @@ describe('DrupalBbRemote', () => {
       data: { attributes: Record<string, unknown> };
     };
     expect(body.data.attributes).toMatchObject({
-      machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+      conductor_id: 'machine-1',
       project: 'bakers',
-      variant: 'conductor',
       current_load: 2,
       lease_seconds: 300,
     });
-    expect(body.data.attributes).not.toHaveProperty('conductor_id');
-    expect(body.data.attributes).not.toHaveProperty('host_key');
   });
 
   it('heartbeat defaults to online when the response omits a status', async () => {
@@ -891,12 +875,11 @@ describe('DrupalBbRemote', () => {
 
     const status = await remote.heartbeat(
       {
-        machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-        machine_label: 'l',
+        id: 'm',
         project: 'bakers',
-        variant: 'conductor',
         states: [],
         workspace: '/c',
+        label: 'l',
         max_parallel: 1,
       },
       0,
@@ -906,15 +889,17 @@ describe('DrupalBbRemote', () => {
   });
 
   it('setConductorStatus POSTs the entity-bound offline operation, never a status PATCH', async () => {
+    const col = fakeCollection({ first: fakeResource('drupal-uuid') });
     const post = vi.fn(async () => ({
       data: { id: 'drupal-uuid', attributes: { status: 'offline' } },
     }));
     const update = vi.fn(async () => fakeResource('x'));
-    const api = fakeClient({ post, update });
+    const api = fakeClient({ collection: vi.fn(() => col), post, update });
     const remote = new DrupalBbRemote(api);
 
-    await remote.setConductorStatus('drupal-uuid', 'offline');
+    await remote.setConductorStatus('machine-1', 'offline');
 
+    expect(col.where).toHaveBeenCalledWith('conductor_id', '=', 'machine-1');
     expect(post).toHaveBeenCalledTimes(1);
     expect(post.mock.calls[0]?.[0]).toBe('bb_conductor/drupal-uuid/offline');
     expect(update).not.toHaveBeenCalled();
@@ -1223,14 +1208,14 @@ describe('DrupalBbRemote', () => {
     expect(uncleanedCol.where).toHaveBeenCalledWith('closed', '=', '1');
     expect(uncleanedCol.where).toHaveBeenCalledWith('cleaned_up', '=', '0');
     expect(uncleanedCol.where).toHaveBeenCalledWith(
-      'conductor_id.id',
+      'conductor_id.conductor_id',
       '=',
       'machine-1',
     );
     expect(neverWrittenCol.where).toHaveBeenCalledWith('closed', '=', '1');
     expect(neverWrittenCol.notExists).toHaveBeenCalledWith('cleaned_up');
     expect(neverWrittenCol.where).toHaveBeenCalledWith(
-      'conductor_id.id',
+      'conductor_id.conductor_id',
       '=',
       'machine-1',
     );
@@ -1358,7 +1343,7 @@ describe('DrupalBbRemote', () => {
 
     for (const col of [uncleanedCol, neverWrittenCol]) {
       expect(col.where).toHaveBeenCalledWith(
-        'conductor_id.id',
+        'conductor_id.conductor_id',
         '=',
         'machine-1',
       );

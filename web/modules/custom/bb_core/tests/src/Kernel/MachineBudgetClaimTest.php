@@ -101,6 +101,7 @@ final class MachineBudgetClaimTest extends KernelTestBase {
     $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')
       ->create([
         'name' => $hostKey,
+        'host_key' => $hostKey,
         'owner_user_id' => $owner->id(),
         'max_parallel' => $maxParallel,
         'current_load' => 0,
@@ -116,6 +117,7 @@ final class MachineBudgetClaimTest extends KernelTestBase {
   private function createConductor(UserInterface $owner, string $conductorId, BbMachineInterface $machine): BbConductorInterface {
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')
       ->create([
+        'conductor_id' => $conductorId,
         'label' => $conductorId,
         'owner_user_id' => $owner->id(),
         'status' => 'online',

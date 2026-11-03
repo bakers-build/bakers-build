@@ -35,7 +35,7 @@ their PHP validation methods are retired along with it.
 
 | Route | Who | What |
 |---|---|---|
-| `POST /jsonapi/bakers/addons` | conductor owner | `{conductor, addons}` (`conductor` = the conductor UUID; `conductor_id` → 422 naming `bakers init`); per addon accepted (UUID) or rejected (reason); 422 when all were rejected |
+| `POST /jsonapi/bakers/addons` | conductor owner | `{conductor_id, addons}`; per addon accepted (UUID) or rejected (reason); 422 when all were rejected |
 | `GET /jsonapi/bakers/addons/ticket/{ticket}` | ticket viewer | the read model `bakers ui` renders |
 
 ## The ticket addons card

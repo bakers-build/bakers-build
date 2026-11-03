@@ -638,6 +638,37 @@ describe('cmdUi connection resolution (BB-219)', () => {
     process.exitCode = saved;
   });
 
+  it('errors naming bakers init when the machine file is stale', async () => {
+    const saved = process.exitCode;
+    const savedHome = process.env.HOME;
+    process.exitCode = 0;
+    process.env.HOME = tmp;
+    mkdirSync(join(tmp, '.bakers'), { recursive: true });
+    writeFileSync(
+      join(tmp, '.bakers', 'machine.config.js'),
+      "export default { user_id: 'cw', machine_id: 'framework' };\n",
+    );
+    let called = false;
+    const err: string[] = [];
+    try {
+      await cmdUi({
+        agentHost: fakeHost().host,
+        cwd: tmp,
+        stderr: (s) => err.push(s),
+        loadConnection: fakeLoader().load,
+        runUi: async () => {
+          called = true;
+        },
+      });
+      expect(called).toBe(false);
+      expect(process.exitCode).toBe(1);
+      expect(err.join('')).toContain('bakers init');
+    } finally {
+      process.env.HOME = savedHome;
+      process.exitCode = saved;
+    }
+  });
+
   it('--print-config still exits 1 on an unresolvable connection, and says why', async () => {
     const saved = process.exitCode;
     process.exitCode = 0;

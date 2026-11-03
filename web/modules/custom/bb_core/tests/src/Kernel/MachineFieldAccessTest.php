@@ -91,6 +91,7 @@ final class MachineFieldAccessTest extends KernelTestBase {
       ->getStorage('bb_machine')
       ->create([
         'name' => 'Alpha',
+        'host_key' => 'host-alpha',
         'owner_user_id' => $owner->id(),
         'max_parallel' => 4,
         'current_load' => 1,
@@ -139,6 +140,34 @@ final class MachineFieldAccessTest extends KernelTestBase {
         sprintf('%s stays editable for an admin.', $field),
       );
     }
+  }
+
+  /**
+   * Host key is writable while the machine is new, frozen once saved.
+   */
+  public function testHostKeyIsWritableAtCreateOnly(): void {
+    $owner = $this->createBbUser('create-owner', ['update own bb_machine']);
+    $new = $this->container->get('entity_type.manager')
+      ->getStorage('bb_machine')
+      ->create([
+        'name' => 'Beta',
+        'owner_user_id' => $owner->id(),
+        'max_parallel' => 1,
+      ]);
+    $this->assertInstanceOf(BbMachineInterface::class, $new);
+
+    $this->assertTrue(
+      $new->get('host_key')->access('edit', $owner),
+      'host_key must stay settable on a machine that has not been saved yet.',
+    );
+
+    $new->setHostKey('host-beta');
+    $new->save();
+    $this->assertSame('host-beta', $new->getHostKey());
+    $this->assertFalse(
+      $new->get('host_key')->access('edit', $owner),
+      'host_key must be frozen once the machine exists.',
+    );
   }
 
 }

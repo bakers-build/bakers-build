@@ -202,6 +202,7 @@ trait WorkspaceReadScopeTestTrait {
     ]);
     $machine = $this->createEntity('bb_machine', [
       'name' => "machine-$side",
+      'host_key' => "host-$side",
       'owner_user_id' => $owner_id,
     ]);
     // One label per side, so cross-workspace term isolation and the ticket's
@@ -213,6 +214,7 @@ trait WorkspaceReadScopeTestTrait {
       'owner_user_id' => $owner_id,
     ]);
     $conductor = $this->createEntity('bb_conductor', [
+      'conductor_id' => "node-$side",
       'label' => "node-$side",
       'project_id' => $project->id(),
       'machine' => $machine->id(),

@@ -64,6 +64,7 @@ final class EntityDetailCardFormTest extends KernelTestBase {
     $this->owner = $this->account('card-owner', ['view own bb_machine', 'update own bb_machine']);
     $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')->create([
       'name' => 'Alpha',
+      'host_key' => 'host-alpha',
       'owner_user_id' => $this->owner->id(),
       'max_parallel' => 4,
     ]);
@@ -82,7 +83,7 @@ final class EntityDetailCardFormTest extends KernelTestBase {
     self::assertArrayHasKey('max_parallel', $identity);
     self::assertArrayNotHasKey('current_load', $identity);
     self::assertArrayHasKey('submit', $identity['actions']);
-    self::assertStringContainsString((string) $this->machine->uuid(), $this->readOnlyText($identity));
+    self::assertStringContainsString('host-alpha', $this->readOnlyText($identity));
     self::assertStringContainsString('Current load', $this->readOnlyText($identity));
     self::assertSame(['identity'], BbEntityDetailCardForm::operations('bb_machine'));
   }
@@ -140,7 +141,7 @@ final class EntityDetailCardFormTest extends KernelTestBase {
   public function testSnapshotIsBoundToItsEntity(): void {
     [$alpha, $state] = $this->open('identity');
     $this->machine = $this->machine->createDuplicate();
-    $this->machine->save();
+    $this->machine->set('host_key', 'host-beta')->save();
     [$beta, , $builder] = $this->open('identity');
     $state->setFormObject($builder);
     $this->post($alpha, $state);

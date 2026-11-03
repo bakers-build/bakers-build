@@ -1,7 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   DropshClient,
   RendererServices,
@@ -26,16 +23,18 @@ vi.mock('../src/Kernel/tui-kernel.js', () => ({ runTicketTui }));
 
 const { default: bakersUiPlugin } = await import('../src/plugin.js');
 
-const MACHINE = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
-
 const CONDUCTORS = {
   data: [
     {
       id: 'c-1',
       type: 'bb_conductor--bb_conductor',
-      attributes: { workspace_root: '/repos/bakers' },
+      attributes: {
+        // BB-353: registration key is conductor_id (legacy machine_id still
+        // accepted by selectOwnConductor during cutover).
+        conductor_id: 'cw-framework',
+        workspace_root: '/repos/bakers/.bakers',
+      },
       relationships: {
-        machine: { data: { id: MACHINE, type: 'bb_machine' } },
         project_id: { data: { id: 'p-1', type: 'bb_project' } },
       },
     },
@@ -76,20 +75,8 @@ async function optionsHandedToKernel(
   return call[3] as TuiOptions;
 }
 
-let bbHome: string;
 beforeEach(() => {
   runTicketTui.mockClear();
-  // This machine's UUID comes from machine.config.js under BB_HOME.
-  bbHome = mkdtempSync(join(tmpdir(), 'bakers-ui-own-'));
-  writeFileSync(
-    join(bbHome, 'machine.config.js'),
-    `export default { machine_id: '${MACHINE}', label: 'cw-laptop' };\n`,
-  );
-  vi.stubEnv('BB_HOME', bbHome);
-});
-afterEach(() => {
-  vi.unstubAllEnvs();
-  rmSync(bbHome, { recursive: true, force: true });
 });
 
 describe('run() hands the kernel this checkout’s project + conductor (F1)', () => {
@@ -99,7 +86,7 @@ describe('run() hands the kernel this checkout’s project + conductor (F1)', ()
     });
 
     expect(opts.project).toBe('bakers');
-    expect(opts.ownConductorId).toBe('c-1');
+    expect(opts.ownConductorMachineId).toBe('cw-framework');
   });
 
   it('leaves both unset when no bakersDir was handed over', async () => {
@@ -108,7 +95,7 @@ describe('run() hands the kernel this checkout’s project + conductor (F1)', ()
     const opts = await optionsHandedToKernel({});
 
     expect(opts.project).toBeUndefined();
-    expect(opts.ownConductorId).toBeUndefined();
+    expect(opts.ownConductorMachineId).toBeUndefined();
   });
 
   it('leaves both unset when no record names this dir', async () => {
@@ -117,7 +104,7 @@ describe('run() hands the kernel this checkout’s project + conductor (F1)', ()
     });
 
     expect(opts.project).toBeUndefined();
-    expect(opts.ownConductorId).toBeUndefined();
+    expect(opts.ownConductorMachineId).toBeUndefined();
   });
 
   it('an explicit --project wins over the resolved one', async () => {
@@ -130,7 +117,7 @@ describe('run() hands the kernel this checkout’s project + conductor (F1)', ()
 
     expect(opts.project).toBe('shop');
     // The conductor id has no flag, so it still resolves.
-    expect(opts.ownConductorId).toBe('c-1');
+    expect(opts.ownConductorMachineId).toBe('cw-framework');
   });
 
   it('a failed read leaves the defaults unset and still boots', async () => {
@@ -152,6 +139,6 @@ describe('run() hands the kernel this checkout’s project + conductor (F1)', ()
     expect(runTicketTui).toHaveBeenCalledOnce();
     const opts = runTicketTui.mock.calls[0]?.[3] as TuiOptions;
     expect(opts.project).toBeUndefined();
-    expect(opts.ownConductorId).toBeUndefined();
+    expect(opts.ownConductorMachineId).toBeUndefined();
   });
 });

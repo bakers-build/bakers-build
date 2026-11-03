@@ -302,6 +302,7 @@ final class CommentTicketEditAccessExemptionTest extends KernelTestBase {
   private function claim(BbTicketInterface $ticket, UserInterface $owner): void {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')->create([
+        'conductor_id' => 'node-' . $owner->id(),
         'label' => 'node-' . $owner->id(),
         'owner_user_id' => $owner->id(),
         'status' => 'online',

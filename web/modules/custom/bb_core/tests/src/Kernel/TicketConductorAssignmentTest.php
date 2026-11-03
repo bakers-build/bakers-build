@@ -193,6 +193,7 @@ final class TicketConductorAssignmentTest extends KernelTestBase {
   private function createConductor(string $machineId, array $states = ['plan', 'working']): BbConductorInterface {
     $owner = $this->createConductorUser('owner-' . $machineId);
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => $machineId,
       'label' => $machineId,
       'owner_user_id' => $owner->id(),
       'status' => 'online',

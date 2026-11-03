@@ -8,8 +8,8 @@ _meta:
     262258a2-080f-4ab9-af1b-9028cef388da: bb_project
     b0d04b55-da86-57d1-afb9-b47856fc6c2c: bb_machine
 default:
-  variant:
-  - value: conductor
+  conductor_id:
+  - value: claim-capacity-offline
   label:
   - value: claim-capacity-offline
   status:

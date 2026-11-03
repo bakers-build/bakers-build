@@ -10,21 +10,18 @@ export interface AddonDefinitionV2 {
   messages: Record<string, MessageDefinition>;
 }
 
-/**
- * A conductor registration: the server finds or creates the conductor keyed by
- * machine + project + variant and answers with its entity UUID.
- */
 export interface ConductorRegistration {
-  /** This machine's UUID (machine.config.js machine_id); the bb_machine uuid. */
-  machine_id: string;
-  /** This machine's display label; the server refreshes bb_machine.name from it. */
-  machine_label: string;
+  /** Conductor process registration key (bb_conductor.conductor_id). */
+  id: string;
+  /** This machine's UUID (bb_machine.host_key / MachineContext.machine_id). */
+  host_key?: string;
+  /** This machine's display label; names a newly created bb_machine. */
+  machine_label?: string;
   project: string;
-  /** The selected config stem (`conductor` for the default config). */
-  variant: string;
   /** Empty = serve all claimable states in the project (BB-207). */
   states: string[];
   workspace: string;
+  label: string;
   max_parallel: number;
   /**
    * The pid of the serve-loop process, when this conductor *is* that process.
@@ -101,13 +98,9 @@ export interface ActiveRun {
 }
 
 export interface ConductorStatus {
-  /** The conductor's entity UUID — its only id. */
   id: string;
   project: string;
-  /** Display label; never a key. */
   label: string;
-  /** The config stem it registered with; `conductor` when unset. */
-  variant: string;
   status: string;
   lastSeen: number;
   load: number;
@@ -126,14 +119,12 @@ export interface ConductorStatus {
   /** The config stem it was started from, as `--conductor <name>` takes it. */
   conductorName?: string;
   /**
-   * The UUID of the machine this conductor runs on (BB-450 AC-4) —
-   * `signalVerifiedProcess()` compares it against this machine's own, so
-   * lifecycle commands can never signal a conductor on another host. Absent
-   * when the record has no machine.
+   * The MachineContext host stem (bb_machine.host_key) this record last
+   * heartbeat with (BB-450 AC-4) — `signalVerifiedProcess()` compares it
+   * against this machine's own, so lifecycle commands can never signal a
+   * conductor on another host. Empty when never reported.
    */
-  machineId?: string;
-  /** That machine's display label. */
-  machineLabel?: string;
+  hostKey?: string;
 }
 
 export interface FinalizableRun {
@@ -211,7 +202,7 @@ export interface TicketMetric {
  * (BB-89). Since BB-451 the server closes every terminal ticket on its own
  * save, so "finished" collapses to `closed = 1`; `cleaned_up=0` (or never
  * written at all) means the herdr worktree still needs reclaiming. The
- * reconciliation is NOT scoped to a conductor's UUID, so it also
+ * reconciliation is NOT scoped to a conductor's machine_id, so it also
  * surfaces tickets whose conductor was down at close or whose `conductor_id`
  * was reassigned.
  */
@@ -313,7 +304,7 @@ export interface BbRemote {
   /**
    * Records a heartbeat server-side: POSTs the heartbeat resource
    * (recreating a vanished registration), refreshes last_seen/lease/load,
-   * and brings the conductor online. Keyed on machine + project + variant, so it never
+   * and brings the conductor online. Keyed on conductor_id, so it never
    * 404s — the self-heal lives on the server, not the client. Returns the
    * resulting status (`online` | `offline`).
    */
@@ -327,13 +318,13 @@ export interface BbRemote {
   listConductors(owner?: 'me'): Promise<ConductorStatus[]>;
   activeRunCount(conductorId: string): Promise<number>;
   /**
-   * Shared host capacity for this machine UUID (bb_machine, BB-353 D5).
+   * Shared host capacity for this `host_key` (bb_machine, BB-353 D5).
    * After a heartbeat that reported this process's load, `currentLoad` is the
    * sum of online conductors on the machine (peers + self). Null when the
    * control plane has no machine row yet — callers fall back to local count.
    */
   machineCapacity(
-    machineId: string,
+    hostKey: string,
   ): Promise<{ maxParallel: number; currentLoad: number } | null>;
   fetchActiveRuns(conductorId: string): Promise<ActiveRun[]>;
   claimNext(claim: ClaimOptions): Promise<ClaimedRun | ClaimWithheld | null>;

@@ -28,15 +28,15 @@ display:
     display_options:
       title: Conductors
       fields:
-        uuid:
-          id: uuid
+        conductor_id:
+          id: conductor_id
           table: bb_conductor
-          field: uuid
+          field: conductor_id
           relationship: none
           group_type: group
           admin_label: ''
           entity_type: bb_conductor
-          entity_field: uuid
+          entity_field: conductor_id
           plugin_id: field
           label: ''
           exclude: true
@@ -140,7 +140,7 @@ display:
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
-          empty: '{{ uuid }}'
+          empty: '{{ conductor_id }}'
           hide_empty: false
           empty_zero: false
           hide_alter_empty: false

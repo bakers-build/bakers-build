@@ -133,14 +133,14 @@ describe('bakers oven check / start sandbox report', () => {
       executor: fakeExecutor(),
       agent: [],
       workspace: fakeWorkspace(),
+      label: 'check test',
       project: 'bakers',
       states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-      variant: 'conductor',
+      conductor_id: 'mid-check',
       config_path: join(home, '.bakers', 'conductor.config.js'),
     };
   }

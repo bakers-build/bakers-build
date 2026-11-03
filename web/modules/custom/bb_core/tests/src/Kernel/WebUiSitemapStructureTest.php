@@ -171,6 +171,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     self::assertInstanceOf(BbProjectInterface::class, $project);
     $this->project = $project;
     $conductor = $this->create('bb_conductor', [
+      'conductor_id' => 'reg-sitemap',
       'label' => 'Sitemap conductor',
       'project_id' => $project->id(),
     ]);
@@ -420,6 +421,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
 
     $machine = $this->create('bb_machine', [
       'name' => 'Sitemap host',
+      'host_key' => 'host-sitemap',
       'owner_user_id' => $this->accounts['lead']->id(),
     ]);
     self::assertInstanceOf(BbMachineInterface::class, $machine);

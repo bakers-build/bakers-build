@@ -93,6 +93,7 @@ final class MachineOverviewTest extends KernelTestBase {
 
     $labelled = $this->create('bb_machine', [
       'name' => 'Alpha',
+      'host_key' => 'host-alpha',
       'owner_user_id' => $this->accounts['lead']->id(),
       'max_parallel' => 4,
       'current_load' => 1,
@@ -200,15 +201,14 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * Overview renders the machine UUID and capacity.
+   * Overview renders host key and capacity.
    */
-  public function testOverviewRendersUuidAndCapacity(): void {
+  public function testOverviewRendersHostKeyAndCapacity(): void {
     $this->installOverviewDisplay();
     $this->container->get('account_switcher')->switchTo($this->accounts['lead']);
     $html = $this->renderFull($this->labelled);
-    self::assertStringNotContainsString('Host key', $html);
-    self::assertStringContainsString('UUID', $html);
-    self::assertStringContainsString($this->labelled->uuid(), $html);
+    self::assertStringContainsString('Host key', $html);
+    self::assertStringContainsString('host-alpha', $html);
     self::assertStringContainsString('Max parallel', $html);
     self::assertStringContainsString('4', $html);
     self::assertStringContainsString('Current load', $html);
@@ -243,7 +243,7 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The admin form has no host key and keeps current load for the admin.
+   * The admin form locks host key and keeps current load for the admin.
    */
   public function testAdminEditFormKeepsCurrentLoadForTheInstanceAdmin(): void {
     $this->actAs($this->createAccount('instance-admin', ['administer bakers']));
@@ -251,7 +251,9 @@ final class MachineOverviewTest extends KernelTestBase {
 
     self::assertArrayHasKey('name', $form);
     self::assertArrayHasKey('max_parallel', $form);
-    self::assertArrayNotHasKey('host_key', $form);
+    self::assertFalse($form['host_key']['#access']);
+    self::assertSame('host-alpha', $form['host_key_display']['value']['#props']['label']);
+    self::assertSame('lock', $form['host_key_display']['value']['#props']['icon']);
     self::assertArrayHasKey('current_load', $form);
     self::assertNotFalse($form['current_load']['#access'] ?? TRUE);
   }

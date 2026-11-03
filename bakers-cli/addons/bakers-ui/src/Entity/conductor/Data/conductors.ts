@@ -32,12 +32,10 @@ import { type ConductorStatus, deriveConductorStatus } from './liveness.js';
 /** One conductor of the control plane, as this renderer needs it. */
 export interface Conductor {
   id: string;
-  /** Never empty — the uuid is the last fallback, so nothing renders as blank. */
+  /** Never empty and never an id: a blank label reads `(unnamed)`. */
   label: string;
-  /** The UUID of the machine the conductor runs on. */
+  /** The registration key (`<machine uuid>-<project>-<variant>`); never displayed. */
   machineId: string | undefined;
-  /** The config stem it registered with (`conductor` for the default). */
-  variant: string;
   /** Liveness, as the control plane reports it. */
   status: string | undefined;
   /** Operator-set lifecycle flag; inactive conductors are never assignable. */
@@ -53,9 +51,8 @@ const str = (v: unknown): string | undefined =>
 
 const toConductor = (r: Resource): Conductor => ({
   id: r.id,
-  label: str(r.attr('label')) ?? r.id,
-  machineId: r.rel('machine') ?? undefined,
-  variant: str(r.attr('variant')) ?? 'conductor',
+  label: str(r.attr('label')) ?? '(unnamed)',
+  machineId: str(r.attr('conductor_id')) ?? str(r.attr('machine_id')),
   status: str(r.attr('status')),
   active: r.attr('active') !== false,
   projectId: r.rel('project_id'),
@@ -128,6 +125,14 @@ export interface ConductorRow extends Conductor {
   lastPid: number | undefined;
   /** The config stem it was started from, as `--conductor <name>` takes it. */
   conductorName: string | undefined;
+  /**
+   * The MachineContext host stem this record last heartbeat with (BB-450
+   * AC-4/B7) — what a stop compares against this machine's own before
+   * signalling. Resolved from the related `bb_machine` (`host_key` is that
+   * entity's field, never `bb_conductor`'s), never from the conductor row
+   * itself.
+   */
+  hostKey: string | undefined;
   /** The sideloaded machine's name — its display label. */
   machineLabel: string | undefined;
   /** Liveness, derived — never the raw `status`. */
@@ -143,15 +148,15 @@ export interface ConductorRow extends Conductor {
    */
   isLocal: boolean;
   /**
-   * Whether this row's `machineId` is THIS machine's UUID (BB-450 B10) —
+   * Whether this row's `hostKey` matches THIS machine's own (BB-450 B10) —
    * the identity gate for starting/stopping and for the view-only marking.
    *
    * Deliberately distinct from {@link isLocal}: two `bb_conductor` records
    * can name the SAME `workspace_root` under different machines (BB-281
    * Finding 2), which makes `isLocal` true for both — a path is not proof of
    * identity, which is the whole thesis this ticket is built on. `false` when
-   * the machine is absent: an unproven identity is never treated as this
-   * machine's own.
+   * `hostKey` is absent (a record from before BB-450, or an unreadable
+   * machine): an unproven identity is never treated as this machine's own.
    */
   mine: boolean;
 }
@@ -296,8 +301,8 @@ export const CONDUCTOR_TABLE = {
       get: (row: ConductorRow) => row.label,
     },
     {
-      // The machine's label (BB-232 AC-1): one project's conductors on two
-      // machines share a project and often a workspace_root.
+      // Its OWN column (BB-232 AC-1): two conductors of one repo share a
+      // project and a workspace_root; the machine's label separates them.
       key: 'machine',
       label: 'MACHINE',
       width: MACHINE_ID_WIDTH,
@@ -433,12 +438,12 @@ export interface ConductorRowContext {
   /** Whether a path exists on this machine. */
   exists: (path: string) => boolean;
   /**
-   * THIS machine's UUID (BB-450 B10), resolved once by the caller before the
-   * read — the same `machine.config.js` value `signalVerifiedProcess` compares
-   * against. Compared against each row's `machineId` to derive
-   * {@link ConductorRow.mine}.
+   * THIS machine's own `host_key` (BB-450 B10), resolved once by the caller
+   * before the read — the same MachineContext value `signalVerifiedProcess`
+   * and the CLI's `hostKeyOf(config)` compare against. Compared against each
+   * row's own `hostKey` to derive {@link ConductorRow.mine}.
    */
-  thisMachineId: string;
+  thisHostKey: string;
 }
 
 const num = (v: unknown): number | undefined =>
@@ -497,14 +502,23 @@ function capacityOf(
   };
 }
 
-/** The sideloaded machine's name — its display label. */
-function machineLabelOf(
+/**
+ * `host_key` from the sideloaded machine (BB-450 B7) — `bb_conductor`
+ * carries no such field at all; `filter[host_key]` against it is a
+ * server-side 400. Reading `raw.attributes.host_key` here would repeat the
+ * exact defect the CLI's `listConductors()` had: always `undefined` in
+ * reality, present only in a fixture that hand-writes it on the wrong entity.
+ */
+function machineOf(
   raw: JsonApiResource,
   machinesById: Map<string, JsonApiResource>,
-): string | undefined {
+): { hostKey: string | undefined; machineLabel: string | undefined } {
   const machineId = singleRelId(raw.relationships?.machine);
   const machine = machineId ? machinesById.get(machineId) : undefined;
-  return str(machine?.attributes?.name);
+  return {
+    hostKey: str(machine?.attributes?.host_key),
+    machineLabel: str(machine?.attributes?.name),
+  };
 }
 
 const toConductorRow = (
@@ -519,9 +533,9 @@ const toConductorRow = (
   const lastSeen = toUnixSeconds(r.attr('last_seen')) ?? 0;
   const leaseExpiresAt = toUnixSeconds(r.attr('lease_expires_at')) ?? 0;
   const { currentLoad, maxParallel } = capacityOf(raw, machinesById);
-  const conductor = toConductor(r);
+  const { hostKey, machineLabel } = machineOf(raw, machinesById);
   return {
-    ...conductor,
+    ...toConductor(r),
     workspaceRoot,
     lastSeen,
     leaseExpiresAt,
@@ -529,7 +543,8 @@ const toConductorRow = (
     maxParallel,
     lastPid: num(r.attr('last_pid')),
     conductorName: str(r.attr('conductor_name')),
-    machineLabel: machineLabelOf(raw, machinesById),
+    hostKey,
+    machineLabel,
     // `present: true` because the row IS a control-plane record — which is why
     // `registry-only` can never come out of this screen.
     derivedStatus: deriveConductorStatus(
@@ -544,11 +559,9 @@ const toConductorRow = (
     // A conductor that never reported a workspace cannot be local, whatever the
     // filesystem would say about an empty path.
     isLocal: workspaceRoot !== '' && ctx.exists(workspaceRoot),
-    // BB-450 B10: an absent machine is never waved through as "mine" — an
+    // BB-450 B10: an absent hostKey is never waved through as "mine" — an
     // unproven identity is refused, the same rule signalVerifiedProcess uses.
-    mine:
-      conductor.machineId !== undefined &&
-      conductor.machineId === ctx.thisMachineId,
+    mine: hostKey !== undefined && hostKey === ctx.thisHostKey,
   };
 };
 

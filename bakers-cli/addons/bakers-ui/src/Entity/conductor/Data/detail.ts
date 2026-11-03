@@ -24,8 +24,8 @@ export interface ConductorDetail {
   lastSeen: number;
   currentLoad: number;
   maxParallel: number;
-  /** THIS record's machine UUID, for the `mine` derivation. */
-  machineId: string | undefined;
+  /** THIS record's machine host_key, for the `mine` derivation. */
+  hostKey: string | undefined;
 }
 
 const str = (v: unknown): string | undefined =>
@@ -57,9 +57,15 @@ export async function loadConductorDetail(
   const machineAttrs = machine?.attributes ?? {};
   const lastSeen = toUnixSeconds(attrs.last_seen) ?? 0;
   const leaseExpiresAt = toUnixSeconds(attrs.lease_expires_at) ?? 0;
+  const hostKey = str(machineAttrs.host_key);
   return {
     id: raw.id ?? conductorId,
-    label: str(attrs.label) ?? raw.id ?? conductorId,
+    label:
+      str(attrs.label) ??
+      str(attrs.conductor_id) ??
+      str(attrs.machine_id) ??
+      raw.id ??
+      conductorId,
     conductorName: str(attrs.conductor_name),
     machineLabel: str(machineAttrs.name) ?? '',
     projectLabel: singleRelId(raw, 'project_id') ?? '',
@@ -77,7 +83,7 @@ export async function loadConductorDetail(
     lastSeen,
     currentLoad: num(machineAttrs.current_load) ?? num(attrs.current_load) ?? 0,
     maxParallel: num(machineAttrs.max_parallel) ?? num(attrs.max_parallel) ?? 0,
-    machineId: machineId ?? undefined,
+    hostKey,
   };
 }
 

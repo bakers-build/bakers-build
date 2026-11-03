@@ -82,6 +82,7 @@ final class MetricSessionScopeWriteTest extends KernelTestBase {
    */
   private function createConductor(UserInterface $owner, string $machine_id): BbConductorInterface {
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => $machine_id,
       'label' => $machine_id,
       'owner_user_id' => $owner->id(),
       'status' => 'online',

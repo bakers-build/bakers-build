@@ -7,8 +7,6 @@
 
 declare(strict_types=1);
 
-use Drupal\Core\Field\BaseFieldDefinition;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Install\CliConsumer;
 use Drupal\bb_core\Install\DefaultWorkspace;
 
@@ -21,31 +19,4 @@ use Drupal\bb_core\Install\DefaultWorkspace;
 function bb_core_install(): void {
   DefaultWorkspace::ensure();
   CliConsumer::ensure();
-}
-
-/**
- * Keys conductors by machine, project and variant; machines by UUID.
- *
- * Drops the conductor's `conductor_id` string and the machine's `host_key`
- * without migrating them; existing conductors get variant `conductor`.
- */
-function bb_core_update_11001(): void {
-  $manager = \Drupal::entityDefinitionUpdateManager();
-  foreach (['bb_conductor' => 'conductor_id', 'bb_machine' => 'host_key'] as $entity_type_id => $field_name) {
-    $definition = $manager->getFieldStorageDefinition($field_name, $entity_type_id);
-    if ($definition !== NULL) {
-      $manager->uninstallFieldStorageDefinition($definition);
-    }
-  }
-  if ($manager->getFieldStorageDefinition('variant', 'bb_conductor') === NULL) {
-    $variant = BaseFieldDefinition::create('string')
-      ->setLabel(new TranslatableMarkup('Variant'))
-      ->setRequired(TRUE)
-      ->setDefaultValue('conductor')
-      ->setInitialValue('conductor')
-      ->setSetting('max_length', 255)
-      ->setDisplayConfigurable('form', TRUE)
-      ->setDisplayConfigurable('view', TRUE);
-    $manager->installFieldStorageDefinition('variant', 'bb_conductor', 'bb_core', $variant);
-  }
 }

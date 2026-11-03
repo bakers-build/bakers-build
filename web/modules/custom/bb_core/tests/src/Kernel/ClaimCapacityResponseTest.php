@@ -35,6 +35,7 @@ final class ClaimCapacityResponseTest extends ClaimKernelTestBase {
     $this->installEntitySchema('bb_machine');
     $machine = $etm->getStorage('bb_machine')->create([
       'name' => 'capacity',
+      'host_key' => 'capacity',
       'owner_user_id' => $this->conductor->get('owner_user_id')->target_id,
       'max_parallel' => 9,
       'current_load' => 7,
@@ -42,7 +43,7 @@ final class ClaimCapacityResponseTest extends ClaimKernelTestBase {
     $machine->save();
     $this->conductor->set('machine', $machine->id())->save();
     $sibling = $this->conductor->createDuplicate();
-    $sibling->set('label', 'offline-sibling')->set('status', 'offline')->save();
+    $sibling->set('conductor_id', 'offline-sibling')->set('status', 'offline')->save();
     $target = $this->seedAssignedTicket('review', 'CAPACITY-TARGET');
     for ($i = 0; $i < 9; $i++) {
       $ticket = $this->seedAssignedTicket('working', 'CAPACITY-' . $i);
@@ -56,7 +57,7 @@ final class ClaimCapacityResponseTest extends ClaimKernelTestBase {
     $this->assertInstanceOf(AccountInterface::class, $owner);
     $resource = new ClaimNextResource($etm, $owner, $this->claimService);
     $request = Request::create('/jsonapi/bakers/claim-next', 'POST', [], [], [], [],
-      json_encode(['data' => ['attributes' => ['conductor' => $this->conductor->uuid()]]], JSON_THROW_ON_ERROR));
+      json_encode(['data' => ['attributes' => ['conductor_id' => 'node-base']]], JSON_THROW_ON_ERROR));
     for ($poll = 0; $poll < 2; $poll++) {
       $response = $resource->process($request);
       $this->assertSame(200, $response->getStatusCode());

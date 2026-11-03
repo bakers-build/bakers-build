@@ -1,7 +1,7 @@
 @feature:conductor-properties
 Feature: A conductor owner edits and disables a conductor on its Overview
   The conductor Overview is a detail page: Activities beside one Identity
-  card. Its label is editable; variant, project, machine, owner and UUID are
+  card. Its label is editable; conductor ID, project, machine and owner are
   read-only, and Disable or Enable sits below it. The page shows none of the
   conductor's states, status, last seen and load: the heartbeat writes the
   last three, the states are set at registration. The owner saves the label with its own Save and disables or enables
@@ -22,8 +22,7 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     And the detail page has no "Reported load" card
     And the detail page has no "Live occupancy" card
     And the "Identity" card offers "Label" with Save
-    And the "Identity" card shows "Variant" as "conductor"
-    And the "Identity" card shows "UUID" as "1f1764cf-f41e-4077-8495-2bce8ed508b2"
+    And the "Identity" card shows "Conductor ID" as "bdd-properties-conductor"
     And the "Identity" card has no row "States"
     When I set "Label" to "Owner renamed conductor" in the "Identity" card
     And I save the "Identity" card

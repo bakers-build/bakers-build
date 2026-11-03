@@ -22,7 +22,7 @@ Given('the session actor owns a running lease for ticket {string}', async ({ api
     await apiClient.send('POST', '/jsonapi/bb_conductor/bb_conductor', JSON.stringify({
         data: {
             type: 'bb_conductor--bb_conductor',
-            attributes: { label: 'BDD session conductor', status: 'online' },
+            attributes: { conductor_id: `bdd-session-${ticket}`, label: 'BDD session conductor', status: 'online' },
             relationships: {
                 owner_user_id: { data: { type: 'user--user', id: apiClient.fixtureId('user.session') } },
                 project_id: { data: { type: 'bb_project--bb_project', id: apiClient.fixtureId('project.home') } },

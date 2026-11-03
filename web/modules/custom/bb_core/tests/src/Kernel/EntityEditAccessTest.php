@@ -287,14 +287,14 @@ final class EntityEditAccessTest extends KernelTestBase {
         $machine,
         $owner,
         ['name', 'max_parallel'],
-        ['current_load', 'owner_user_id'],
+        ['current_load', 'host_key', 'owner_user_id'],
       ],
       [
         $conductor,
         $owner,
         ['label', 'active', 'states'],
         [
-          'variant', 'owner_user_id', 'project_id', 'machine', 'status',
+          'conductor_id', 'owner_user_id', 'project_id', 'machine', 'status',
           'reported_load', 'last_seen', 'lease_expires_at', 'workspace_root',
           'last_pid', 'conductor_name',
         ],
@@ -372,6 +372,7 @@ final class EntityEditAccessTest extends KernelTestBase {
     $unsaved_conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
+        'conductor_id' => 'cnd-new',
         'label' => 'new conductor',
         'owner_user_id' => $owner->id(),
         'project_id' => $home['project']->id(),
@@ -657,6 +658,7 @@ final class EntityEditAccessTest extends KernelTestBase {
       ->getStorage('bb_machine')
       ->create([
         'name' => 'owner box',
+        'host_key' => 'owner-box-' . $workspace->id() . '-' . $owner_id,
         'max_parallel' => 5,
         'owner_user_id' => $owner_id,
       ]);
@@ -672,6 +674,7 @@ final class EntityEditAccessTest extends KernelTestBase {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
+        'conductor_id' => 'cnd-' . $project->id() . '-' . $owner_id,
         'label' => 'owner conductor',
         'owner_user_id' => $owner_id,
         'status' => 'online',

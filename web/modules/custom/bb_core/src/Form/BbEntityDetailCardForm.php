@@ -52,14 +52,14 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
       'identity' => ['edit' => [], 'show' => ['description']],
     ],
     'bb_machine' => [
-      'identity' => ['edit' => ['name', 'max_parallel'], 'show' => ['owner_user_id', 'current_load', 'uuid']],
+      'identity' => ['edit' => ['name', 'max_parallel'], 'show' => ['host_key', 'owner_user_id', 'current_load']],
     ],
     // The heartbeat writes status and load; states are set at registration
     // and changed in the administrative form or the API, not on a card.
     'bb_conductor' => [
       'identity' => [
         'edit' => ['label'],
-        'show' => ['variant', 'project_id', 'machine', 'owner_user_id', 'uuid'],
+        'show' => ['conductor_id', 'project_id', 'machine', 'owner_user_id'],
       ],
     ],
     // Project Settings edit a project; its detail cards only show it.

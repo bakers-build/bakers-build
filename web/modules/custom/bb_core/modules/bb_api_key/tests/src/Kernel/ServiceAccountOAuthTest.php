@@ -530,7 +530,7 @@ final class ServiceAccountOAuthTest extends KernelTestBase {
       (string) json_encode([
         'data' => [
           'type' => 'bb_conductor--bb_conductor',
-          'attributes' => ['label' => 'bot-node'],
+          'attributes' => ['conductor_id' => 'bot-node', 'label' => 'bot-node'],
           'relationships' => [
             'project_id' => ['data' => ['type' => 'bb_project--bb_project', 'id' => $this->projectA->uuid()]],
             'owner_user_id' => ['data' => ['type' => 'user--user', 'id' => $serviceUser->uuid()]],
@@ -551,7 +551,7 @@ final class ServiceAccountOAuthTest extends KernelTestBase {
       (string) json_encode([
         'data' => [
           'type' => 'bb_conductor--bb_conductor',
-          'attributes' => ['label' => 'bot-node-2'],
+          'attributes' => ['conductor_id' => 'bot-node-2', 'label' => 'bot-node-2'],
           'relationships' => [
             'project_id' => ['data' => ['type' => 'bb_project--bb_project', 'id' => $this->projectA->uuid()]],
             'owner_user_id' => ['data' => ['type' => 'user--user', 'id' => $serviceUser->uuid()]],

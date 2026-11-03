@@ -73,8 +73,7 @@ describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
       leaseExpiresAt: now + 300,
       maxParallel: 1,
       lastPid: 4242,
-      variant: 'conductor',
-      machineId: HOST,
+      hostKey: HOST,
       ...over,
     };
   }
@@ -112,14 +111,15 @@ describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
       executor: fakeExecutor(),
       agent: [{ agent: claudeAgent() }],
       workspace: fakeWorkspace(),
+      label: 'foreground duplicate test',
       project: 'bakers',
       states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5,
       lease_seconds: 300,
-      machine_id: HOST,
-      variant: 'conductor',
+      conductor_id: 'mid-fg',
+      host_key: HOST,
       config_path: join(home, 'conductor.config.js'),
     } as ConductorFileConfig;
   }

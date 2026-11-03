@@ -72,13 +72,13 @@ function setup(agent: BbAgent) {
     executor: fakeExecutor(),
     agent: [],
     workspace: fakeWorkspace(),
-    machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-    machine_label: 'test-machine',
-    variant: 'conductor',
+    label: 'test',
+    conductor_id: 'bakers-test-conductor',
     project: 'bakers',
     states: ['todo'],
     prompt: DEFAULT_AGENT_PROMPT,
     max_parallel: 1,
+    host_key: 'test-box',
     poll_interval_ms: 5000,
     lease_seconds: 300,
     config_path: '/tmp/bakers-preflight-test/conductor.config.js',
@@ -136,9 +136,7 @@ describe('sandbox preflight gate', () => {
     };
     const { conductor, remote, logs } = setup(agent);
     await conductor.start();
-    remote.seedMachineLoad('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', {
-      currentLoad: 1,
-    }); // a peer fills the budget of 1
+    remote.seedMachineLoad('test-box', { currentLoad: 1 }); // a peer fills the budget of 1
     probes = 0;
     await conductor.tick();
     expect(probes).toBe(0);

@@ -394,8 +394,8 @@ describe('loadConductorConfig', () => {
   it('reads no identity from the project config', async () => {
     const path = writeConfig(VALID);
     const config = await loadConductorConfig(path);
-    expect(config).not.toHaveProperty('conductor_id');
-    expect(config).not.toHaveProperty('label');
+    // The default machine file has no machine_id yet: no id can be derived.
+    expect(config.conductor_id).toBeUndefined();
     expect(config.variant).toBe('conductor');
     expect(config.project).toBe('bakers');
     expect(config.states).toEqual(['todo', 'working']);
@@ -409,19 +409,28 @@ describe('loadConductorConfig', () => {
     expect((config as { site?: unknown }).site).toBeUndefined();
   });
 
-  it('takes the machine UUID (lowercased) and label from machine.config.js', async () => {
+  it('derives the conductor id and label from the machine, project and variant', async () => {
     writeFileSync(
       join(process.env.HOME as string, '.bakers/machine.config.js'),
       `export default { machine_id: '0B6F3C1E-9A2D-4E57-8C41-2F7D9E5A1B30', label: 'cw-laptop', addons: ['@bakers-build/addon-codex'] };`,
     );
-    const config = await loadConductorConfig(writeConfig(VALID));
-    expect(config.machine_id).toBe('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
+    const path = writeConfig(VALID);
+    const config = await loadConductorConfig(path);
+    expect(config.host_key).toBe('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
     expect(config.machine_label).toBe('cw-laptop');
-  });
+    expect(config.conductor_id).toBe(
+      '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-conductor',
+    );
+    expect(config.label).toBe('cw-laptop · bakers');
 
-  it('takes the variant from the selected config stem', async () => {
-    const shop = writeNamedConfigBeside(writeConfig(VALID), 'shop', VALID);
-    expect((await loadConductorConfig(shop)).variant).toBe('shop');
+    const shop = await loadConductorConfig(
+      writeNamedConfigBeside(path, 'shop', VALID),
+    );
+    expect(shop.variant).toBe('shop');
+    expect(shop.conductor_id).toBe(
+      '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-shop',
+    );
+    expect(shop.label).toBe('cw-laptop · bakers/shop');
   });
 
   it.each([

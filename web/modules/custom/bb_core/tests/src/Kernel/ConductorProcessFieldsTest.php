@@ -32,11 +32,6 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
   use OgScopeFixtureTrait;
 
   /**
-   * The registering machine's UUID.
-   */
-  private const MACHINE = '9c2e4f60-1b3d-4a5e-8f70-6d5c4b3a2918';
-
-  /**
    * {@inheritdoc}
    *
    * @var array<string>
@@ -86,7 +81,8 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
     $owner = $this->createUser('owner-create');
 
     $conductor = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
+      'conductor_id' => 'mid-create',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'workspace_root' => '/checkout/.bakers',
       'last_pid' => 4242,
@@ -112,7 +108,8 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
     $owner = $this->createUser('owner-refresh');
 
     $first = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
+      'conductor_id' => 'mid-refresh',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'workspace_root' => '/first/.bakers',
       'last_pid' => 1111,
@@ -120,7 +117,8 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
     ]);
 
     $second = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
+      'conductor_id' => 'mid-refresh',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'workspace_root' => '/second/.bakers',
       'last_pid' => 2222,
@@ -148,14 +146,16 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
     $owner = $this->createUser('owner-preserve');
 
     $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
+      'conductor_id' => 'mid-preserve',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'last_pid' => 3333,
       'conductor_name' => 'conductor',
     ]);
 
     $after = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
+      'conductor_id' => 'mid-preserve',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
     ]);
 
@@ -170,7 +170,8 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
     $owner = $this->createUser('owner-absent');
 
     $conductor = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
+      'conductor_id' => 'mid-absent',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
     ]);
 
@@ -185,7 +186,8 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
     $owner = $this->createUser('owner-typed');
 
     $conductor = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
+      'conductor_id' => 'mid-typed',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'last_pid' => 'not-a-pid',
       'conductor_name' => ['not', 'a', 'string'],

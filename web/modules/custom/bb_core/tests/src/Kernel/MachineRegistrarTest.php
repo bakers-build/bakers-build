@@ -22,11 +22,6 @@ final class MachineRegistrarTest extends KernelTestBase {
   use OgScopeFixtureTrait;
 
   /**
-   * The registering machine's UUID.
-   */
-  private const MACHINE = '6f1d2c3b-4a59-4e68-9d7c-8b0a1f2e3d4c';
-
-  /**
    * {@inheritdoc}
    *
    * @var array<string>
@@ -55,14 +50,14 @@ final class MachineRegistrarTest extends KernelTestBase {
   }
 
   /**
-   * A heartbeat creates the machine under the sent UUID and links it.
+   * Heartbeat with conductor_id + host_key creates and links a machine.
    */
   public function testHeartbeatCreatesMachineAndLinksConductor(): void {
     $this->seedProjectChain('proj-a');
     $owner = $this->createUser('owner');
     $conductor = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
-      'machine_label' => 'host-a',
+      'conductor_id' => 'uid-host-proj-a',
+      'host_key' => '645ab895-b76a-5ada-8177-739c5b8ac740',
       'project' => 'proj-a',
       'max_parallel' => 2,
       'current_load' => 1,
@@ -70,8 +65,7 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $machine = $conductor->getMachine();
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
-    $this->assertSame(self::MACHINE, $machine->uuid());
-    $this->assertSame('host-a', $machine->label());
+    $this->assertSame('645ab895-b76a-5ada-8177-739c5b8ac740', $machine->getHostKey());
     $this->assertSame((int) $owner->id(), (int) $machine->get('owner_user_id')->target_id);
     $this->assertSame(2, $machine->getMaxParallel());
     $this->assertSame(1, $machine->getCurrentLoad());
@@ -85,8 +79,8 @@ final class MachineRegistrarTest extends KernelTestBase {
     $this->seedProjectChain('proj-cap');
     $owner = $this->createUser('owner-cap');
     $conductor = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
-      'machine_label' => 'host-cap',
+      'conductor_id' => 'cap-1',
+      'host_key' => '0289a3e3-5766-57c0-a359-820c240bf0c8',
       'project' => 'proj-cap',
       'max_parallel' => 9,
       'current_load' => 4,
@@ -107,8 +101,8 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $this->expectException(UnprocessableEntityHttpException::class);
     $this->registrar()->heartbeat($this->createUser('owner-orphan'), [
-      'machine_id' => self::MACHINE,
-      'machine_label' => 'host-orphan',
+      'conductor_id' => 'orphan-mid',
+      'host_key' => 'f4799fa5-9687-54eb-992b-eeca667d4c5a',
       'project' => 'orphan-project',
     ]);
   }
@@ -125,8 +119,8 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $owner = $this->createUser('owner-explicit');
     $conductor = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
-      'machine_label' => 'host-explicit',
+      'conductor_id' => 'explicit-mid',
+      'host_key' => 'dcc6761d-b670-5a15-a42f-84ece51643a4',
       'project' => 'proj-explicit',
       'workspace' => $own->uuid(),
     ]);
@@ -142,8 +136,8 @@ final class MachineRegistrarTest extends KernelTestBase {
     $this->seedProjectChain('proj-budget');
     $owner = $this->createUser('owner-budget');
     $first = $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
-      'machine_label' => 'host-budget',
+      'conductor_id' => 'budget-a',
+      'host_key' => '4c6ed82f-e38a-52e2-845c-0470de2a88cd',
       'project' => 'proj-budget',
       'max_parallel' => 2,
     ]);
@@ -153,15 +147,14 @@ final class MachineRegistrarTest extends KernelTestBase {
     $machine->save();
 
     $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
-      'machine_label' => 'host-budget',
+      'conductor_id' => 'budget-a',
+      'host_key' => '4c6ed82f-e38a-52e2-845c-0470de2a88cd',
       'project' => 'proj-budget',
       'max_parallel' => 3,
     ]);
     $this->registrar()->heartbeat($owner, [
-      'machine_id' => self::MACHINE,
-      'machine_label' => 'host-budget',
-      'variant' => 'budget-b',
+      'conductor_id' => 'budget-b',
+      'host_key' => '4c6ed82f-e38a-52e2-845c-0470de2a88cd',
       'project' => 'proj-budget',
       'max_parallel' => 9,
     ]);

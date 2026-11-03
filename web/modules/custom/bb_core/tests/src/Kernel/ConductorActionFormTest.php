@@ -61,6 +61,7 @@ final class ConductorActionFormTest extends KernelTestBase {
     $project = $etm->getStorage('bb_project')->create(['name' => 'Platform', 'workspace_id' => $workspace->id()]);
     $project->save();
     $conductor = $etm->getStorage('bb_conductor')->create([
+      'conductor_id' => 'reg-alpha',
       'label' => 'Alpha',
       'project_id' => $project->id(),
       'status' => 'online',

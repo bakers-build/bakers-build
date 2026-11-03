@@ -144,9 +144,9 @@ export class CreateTicketFormScreen extends AsyncModalScreen<CreateFormOptions> 
       ...(ownerOutcome.kind === 'resolved'
         ? { ownerUserId: ownerOutcome.id }
         : {}),
-      ...(context.services.ownConductorId === undefined
+      ...(context.services.ownConductorMachineId === undefined
         ? {}
-        : { ownConductorId: context.services.ownConductorId }),
+        : { ownConductorMachineId: context.services.ownConductorMachineId }),
       ...(context.services.workspaceId === undefined
         ? {}
         : { workspaceId: context.services.workspaceId }),

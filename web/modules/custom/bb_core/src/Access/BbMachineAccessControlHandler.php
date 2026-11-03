@@ -9,6 +9,8 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\EntityHandlerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\bb_core\Entity\BbMachineInterface;
@@ -107,6 +109,30 @@ final class BbMachineAccessControlHandler extends EntityAccessControlHandler imp
         ->addCacheableDependency($entity);
     }
     return NULL;
+  }
+
+  /**
+   * Host key is frozen after save; other fields follow the saved-row allowlist.
+   *
+   * Host key is settable while the machine is new (admin add, registrar
+   * create) and frozen afterwards, the same shape as ticket `branch_name`.
+   * Current load, owner, created and changed stay on the saved-row
+   * allowlist: ordinary editors cannot write them, instance admins can.
+   * JSON:API PATCH consults field access alone; server-side saves are
+   * unaffected.
+   *
+   * {@inheritdoc}
+   */
+  protected function checkFieldAccess($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL): AccessResultInterface {
+    if ($operation !== 'edit' || $field_definition->getName() !== 'host_key') {
+      return parent::checkFieldAccess($operation, $field_definition, $account, $items);
+    }
+    $machine = $items?->getEntity();
+    if (!$machine instanceof BbMachineInterface || $machine->isNew()) {
+      return parent::checkFieldAccess($operation, $field_definition, $account, $items);
+    }
+    return AccessResult::forbidden('The host key is frozen once the machine exists.')
+      ->addCacheableDependency($machine);
   }
 
 }

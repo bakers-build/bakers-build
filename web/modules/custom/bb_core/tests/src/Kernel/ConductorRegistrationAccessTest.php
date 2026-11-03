@@ -29,13 +29,6 @@ final class ConductorRegistrationAccessTest extends KernelTestBase {
   use WorkspaceReadScopeTestTrait;
 
   /**
-   * Machine UUID per owner id.
-   *
-   * @var array<int, string>
-   */
-  private array $machines = [];
-
-  /**
    * {@inheritdoc}
    *
    * @var array<string>
@@ -201,26 +194,43 @@ final class ConductorRegistrationAccessTest extends KernelTestBase {
   }
 
   /**
-   * Naming another visible project registers there, not the lost conductor.
+   * Naming another visible project does not keep a lost conductor online.
    */
   public function testOwnerWhoLostAccessCannotHeartbeatThroughAnotherProject(): void {
     $owner = $this->dualContributor();
-    [$shared_a, $shared_b] = $this->createSharedProjects();
+    [$shared_a] = $this->createSharedProjects();
     $conductor = $this->heartbeat($owner, 'shared', ['workspace' => 'workspace-a', 'current_load' => 1]);
     foreach (['bb_team', 'bb_workspace'] as $group) {
       Og::getMembership($this->fixture('a', $group), $owner, OgMembershipInterface::ALL_STATES)?->delete();
     }
     $this->container->get('cache.static')->deleteAll();
 
-    self::assertNotNull($this->refusal($owner, 'shared', ['workspace' => 'workspace-a', 'current_load' => 4]));
-    $other = $this->heartbeat($owner, 'shared', ['current_load' => 4]);
+    $refusal = $this->refusal($owner, 'shared', ['current_load' => 4]);
 
-    self::assertNotSame($conductor->id(), $other->id(), 'The lost conductor must not be rebound to another project.');
-    self::assertSame((string) $shared_b, (string) $other->get('project_id')->target_id);
+    self::assertNotNull($refusal, 'The heartbeat must be refused, not rebound to another project.');
+    self::assertSame('bakers.build project "shared" not found.', $refusal->getMessage());
     $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->loadUnchanged($conductor->id());
     self::assertInstanceOf(BbConductorInterface::class, $reloaded);
     self::assertSame((string) $shared_a, (string) $reloaded->get('project_id')->target_id);
     self::assertSame(1, (int) $reloaded->get('reported_load')->value, 'A refused heartbeat writes nothing.');
+  }
+
+  /**
+   * A conductor moved to another project its owner may use keeps heartbeating.
+   */
+  public function testConductorMovedToAnotherAccessibleProjectKeepsHeartbeating(): void {
+    $owner = $this->dualContributor();
+    [, $shared_b] = $this->createSharedProjects();
+    $conductor = $this->heartbeat($owner, 'shared', ['workspace' => 'workspace-a', 'current_load' => 1]);
+    $conductor->set('project_id', $shared_b)->save();
+
+    $refusal = $this->refusal($owner, 'shared', ['workspace' => 'workspace-a', 'current_load' => 4]);
+
+    self::assertNull($refusal, 'The moved conductor must keep heartbeating.');
+    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->loadUnchanged($conductor->id());
+    self::assertInstanceOf(BbConductorInterface::class, $reloaded);
+    self::assertSame((string) $shared_b, (string) $reloaded->get('project_id')->target_id, 'The stored binding is kept.');
+    self::assertSame(4, (int) $reloaded->get('reported_load')->value);
   }
 
   /**
@@ -285,10 +295,9 @@ final class ConductorRegistrationAccessTest extends KernelTestBase {
    *   Further heartbeat attributes.
    */
   private function heartbeat(UserInterface $owner, string $project, array $extra = []): BbConductorInterface {
-    $this->machines[(int) $owner->id()] ??= $this->container->get('uuid')->generate();
     return $this->container->get('bb_core.conductor_registrar')->heartbeat($owner, $extra + [
-      'machine_id' => $this->machines[(int) $owner->id()],
-      'machine_label' => 'host-' . $owner->getAccountName(),
+      'conductor_id' => 'cond-' . $owner->getAccountName(),
+      'host_key' => vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(md5($owner->getAccountName()), 4)),
       'project' => $project,
     ]);
   }

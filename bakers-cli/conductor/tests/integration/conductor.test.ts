@@ -90,14 +90,15 @@ const E2E_STATES = ['working'];
 
 function makeConfig(baseUrl: string): ConductorFileConfig {
   return {
-    // A conductor is machine + project + variant: this fixed machine UUID +
-    // the e2e project + the default variant key the dispatch conductor
-    // (labelled `bakers-e2e-dispatch-node`) that GL-E2E-CONDUCTOR is
-    // assigned to. It is separate from `bakers-e2e-node` (which owns the
-    // seeded DROPSH/writeback runs) so it starts with zero active runs.
-    machine_id: 'e2e00000-0000-4000-8000-000000000001',
-    machine_label: 'bakers-e2e-dispatch-node',
-    variant: 'conductor',
+    label: 'e2e-conductor',
+    // Pin to the dedicated seeded conductor (recipe: bb_conductor conductor_id
+    // `bakers-e2e-dispatch-node`) that GL-E2E-CONDUCTOR is pre-assigned to via
+    // conductor_id — the run-start trigger. registerConductor upserts by
+    // conductor_id (config machine_id is the legacy alias), so this process
+    // resolves to that exact entity. It is separate from `bakers-e2e-node` (which
+    // owns the seeded DROPSH/writeback runs) so this conductor starts with zero
+    // active runs.
+    machine_id: 'bakers-e2e-dispatch-node',
     project: E2E_PROJECT_NAME,
     states: E2E_STATES,
     prompt: DEFAULT_AGENT_PROMPT,
@@ -288,7 +289,7 @@ describe('Conductor integration — claim → dispatch → running', () => {
 $etm = \\Drupal::entityTypeManager();
 $tickets = $etm->getStorage('bb_ticket')->loadByProperties(['identifier' => 'GL-E2E-CONDUCTOR']);
 $ticket = reset($tickets);
-$conductors = $etm->getStorage('bb_conductor')->loadByProperties(['label' => 'bakers-e2e-dispatch-node']);
+$conductors = $etm->getStorage('bb_conductor')->loadByProperties(['conductor_id' => 'bakers-e2e-dispatch-node']);
 $conductor = reset($conductors);
 $ticket->set('state', 'review')->save();
 $run = $etm->getStorage('bb_run')->create([

@@ -129,18 +129,13 @@ describe('playground teardown ownership', () => {
 
   afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-  // A conductor is machine + project + variant: the purge finds this
-  // machine by its UUID and its conductor by that key, never by a string id.
-  it('purges the conductor keyed by this machine UUID, the project and the default variant', () => {
+  // The conductor id is derived: machine UUID + project + default variant.
+  it('purges the conductor whose id is derived from this machine, the project and the variant', () => {
     run('--keep-clone');
     const php = readFileSync(join(root, 'purge.php'), 'utf8');
     expect(php).toContain(
-      "getStorage('bb_machine')->loadByProperties(['uuid' => '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30'])",
+      "getStorage('bb_conductor')->loadByProperties(['conductor_id' => '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-e2e-project-conductor'])",
     );
-    expect(php).toContain(
-      "'machine' => $machine->id(), 'project_id' => $project->id(), 'variant' => 'conductor'",
-    );
-    expect(php).not.toContain("'conductor_id' =>");
   });
 
   it('preserves the registered parent when the configured workspace is unregistered', () => {

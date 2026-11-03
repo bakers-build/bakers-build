@@ -107,11 +107,13 @@ final class OwnerGrantQueryAccessTest extends KernelTestBase {
 
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
     $mine = $storage->create([
+      'conductor_id' => 'mine',
       'label' => 'mine',
       'owner_user_id' => $owner->id(),
     ]);
     $mine->save();
     $theirs = $storage->create([
+      'conductor_id' => 'theirs',
       'label' => 'theirs',
       'owner_user_id' => $stranger->id(),
     ]);
@@ -153,6 +155,7 @@ final class OwnerGrantQueryAccessTest extends KernelTestBase {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
     foreach (['a', 'b'] as $name) {
       $storage->create([
+        'conductor_id' => $name,
         'label' => $name,
         'owner_user_id' => $other->id(),
         'project_id' => $project->id(),
@@ -198,6 +201,7 @@ final class OwnerGrantQueryAccessTest extends KernelTestBase {
     $other = $this->createUserWithPermissions('other2', ['register bakers conductor']);
 
     $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => 'c',
       'label' => 'c',
       'owner_user_id' => $other->id(),
     ])->save();
@@ -219,6 +223,7 @@ final class OwnerGrantQueryAccessTest extends KernelTestBase {
   private function createRunOwnedBy(UserInterface $account, string $name): ContentEntityInterface {
     $entity_type_manager = $this->container->get('entity_type.manager');
     $conductor = $entity_type_manager->getStorage('bb_conductor')->create([
+      'conductor_id' => $name,
       'label' => $name,
       'owner_user_id' => $account->id(),
     ]);
@@ -268,6 +273,7 @@ final class OwnerGrantQueryAccessTest extends KernelTestBase {
     ]);
     $ticket->save();
     $conductor = $entity_type_manager->getStorage('bb_conductor')->create([
+      'conductor_id' => 'c-other',
       'label' => 'c-other',
       'owner_user_id' => $other->id(),
       'project_id' => $project->id(),

@@ -10,16 +10,21 @@ use Drupal\Core\Session\AccountInterface;
  * Defines the interface for bakers.build conductor entities.
  *
  * A conductor is an agent registration that can claim and execute bakers.build
- * tickets. Each conductor is keyed by machine + project + variant, has a
+ * tickets. Each conductor has a unique conductor_id registration key, a
  * lifecycle status, and one or more states that determine which tickets it may
  * run. Concurrent-run capacity is owned by the linked bb_machine.
  */
 interface BbConductorInterface extends BbContentEntityInterface {
 
   /**
-   * Returns the variant: the stem of the conductor's config file.
+   * Returns the unique conductor registration key.
    */
-  public function getVariant(): string;
+  public function getConductorId(): string;
+
+  /**
+   * Sets the unique conductor registration key.
+   */
+  public function setConductorId(string $conductor_id): static;
 
   /**
    * Returns the current lifecycle status of this conductor.
