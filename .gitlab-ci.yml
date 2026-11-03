@@ -136,11 +136,6 @@ before_script:
   - coder/bakers-ddev/pm-bot.compose.yaml
   - tests/contract/pm-bot*
   - .gitlab-ci.yml
-.changes_pm_bot_image: &changes_pm_bot_image
-  - pm-bot/**/*
-  - coder/bakers-ddev/pm-bot.compose.yaml
-  - tests/contract/pm-bot-image.sh
-  - .gitlab-ci.yml
 .changes_coder_pm_bot: &changes_coder_pm_bot
   - coder/**/*
   - pm-bot/**/*
@@ -405,31 +400,6 @@ pm_bot:
     expire_in: 1 week
     reports:
       junit: junit-pm-bot.xml
-
-# The PM bot's image (pm-bot/Dockerfile): built, started once in check mode and in run mode
-# with the template's compose hardening (tests/contract/pm-bot-image.sh), then pushed as
-# pm-bot:<commit>. The template variable pm_bot_image pins it by tag and the digest printed
-# last (coder/bakers-ddev/README.md › PM bot).
-pm_bot_image:
-  stage: test
-  image: docker:26
-  tags:
-    - deploy
-  needs: []
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes: *changes_pm_bot_image
-    - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE == "push"'
-      changes: *changes_pm_bot_image
-  before_script:
-    - apk add --no-cache bash git
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-  script:
-    - image="$CI_REGISTRY_IMAGE/pm-bot:$CI_COMMIT_SHA"
-    - docker build --label "org.opencontainers.image.revision=$CI_COMMIT_SHA" -t "$image" pm-bot
-    - bash tests/contract/pm-bot-image.sh "$image"
-    - docker push "$image"
-    - echo "pm_bot_image=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image" | sed "s|@|:$CI_COMMIT_SHA@|")"
 
 coder_pm_bot:
   stage: test
