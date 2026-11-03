@@ -93,11 +93,11 @@
   "rubric": [
     {
       "id": "verdict",
-      "criterion": "Publishes the verdict as a review comment with the line Status: **OK**, and a summary."
+      "criterion": "The final answer reports the published review verdict OK and a summary."
     },
     {
       "id": "holds",
-      "criterion": "Keeps the ticket in review: no merge, no merge question, no transition and no freeze."
+      "criterion": "The final answer reports the ticket staying in review."
     }
   ]
 }
