@@ -75,6 +75,7 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
       'view.bb_ticket_templates.project_list' => 'Reusable ticket recipes for this project.',
       'view.bb_service_accounts.settings' => 'Non-human automation accounts bound to this workspace, with their role, team and managed API keys.',
       'bb_core.my_work.stats' => 'Your own figures — always visible to you',
+      'bb_core.user.profile' => 'bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.',
     ];
     if (isset($fixed[$route])) {
       return $fixed[$route];

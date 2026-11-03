@@ -50,7 +50,7 @@ Feature: The user area is split into a view route and an edit route
     Then the profile form has no retired account fields
 
   # The context questions bakers.build hands to its AI assistants, and the notice that
-  # says so. The Profile page is where they are edited now.
+  # says so as the page's description. The Profile page is where they are edited now.
   Scenario: The AI-use notice precedes the context questions
     When I visit my profile page
     Then the AI-use notice is shown before the context questions

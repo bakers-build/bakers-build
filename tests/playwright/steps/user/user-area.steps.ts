@@ -231,7 +231,8 @@ Then('the profile form has no retired account fields', async ({ page }) => {
 });
 
 Then('the AI-use notice is shown before the context questions', async ({ page }) => {
-  const notice = page.getByText(AI_USE_NOTICE);
+  // The notice is the page header's description line, above the form.
+  const notice = page.locator(PAGE_HEADER_ISLAND).getByText(AI_USE_NOTICE);
   const firstQuestion = page.getByLabel('What should bakers.build know about your background?', { exact: true });
   await expect(notice).toBeVisible();
   await expect(firstQuestion).toBeVisible();
