@@ -11,13 +11,13 @@ under `Decisions` in the handoff.
 
 Reach the user only through the ticket: publish the comments, add the label, freeze the ticket and
 end the run. A
-**[user question](../bb-workflow/references/publish-comment.md#a-question-for-a-human)**, on
-content the ticket, repository and confirmed scope cannot settle, is one `comment` headed
-`# Question` with the question, its context, numbered choices with the recommended one marked, and
-last the line "Answer in a comment, then remove the label *Question* and unfreeze the ticket.";
-label `Question`. A **technical problem**, anything technical you cannot resolve, is one comment
-headed `# Error` with the error message and its output, then this note as another; label
-`technical problem`.
+**[user question](../bb-workflow/references/publish-comment.md#a-question-for-a-human)** asks what
+should change or what done looks like, when the ticket, repository and confirmed scope leave it
+open. It is one `comment` headed `# Question` with the question, its context, numbered choices with
+the recommended one marked, and last the line "Answer in a comment, then remove the label
+*Question* and unfreeze the ticket."; its label is `Question`. A **technical problem** is anything
+technical you cannot resolve: one comment headed `# Error` with the error message and its output,
+then this note as another; its label is `technical problem`.
 
 ```markdown
 # Technical problem
@@ -36,5 +36,5 @@ Work requested changes and ask again; once accepted, GREEN transitions to `revie
 
 In [review](../bb-workflow/references/review.md), the verdict needs no confirmation. `OK` with the
 acceptance on the ticket merges and transitions to `done`; without it, ask for the acceptance.
-`Not OK`, or a failed merge gate, goes back to `working`; a `criterion` cause is instead a user
-question on the proposed rewrite.
+`Not OK`, or a failed merge gate, goes back to `working`; a `criterion` cause instead becomes a user
+question that proposes the rewritten criterion.
