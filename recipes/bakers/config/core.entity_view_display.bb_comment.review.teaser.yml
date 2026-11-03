@@ -5,6 +5,7 @@ dependencies:
     - bb_core.bb_comment_type.review
     - core.entity_view_mode.bb_comment.teaser
   module:
+    - bb_core
     - display_builder
     - text
   enforced:

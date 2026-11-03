@@ -68,8 +68,9 @@ done < <(git grep -nE "$php_pattern" -- 'web/modules/custom/*.php' 'web/modules/
 twig_hits=$(git grep -nE '\|[[:space:]]*date\(|format_date' -- 'web/themes/custom/*.twig' 'web/modules/custom/*.twig' || true)
 [[ -n $twig_hits ]] && report 'Twig formats a date' "$twig_hits"
 
-# Drupal's own admin listings keep core formatters: they are not product UI.
-config_allow='views\.view\.(files|groups|projects|runs|tickets|user_admin_people|machines)\.yml'
+# Core's own admin screens (/admin/content/files, /admin/people/list) keep core
+# formatters: they are not product UI.
+config_allow='views\.view\.(files|user_admin_people)\.yml'
 config_hits=$(git grep -nE '^[[:space:]]*type: timestamp(_ago)?$' -- config/sync recipes/bakers/config | grep -Ev "/$config_allow:" || true)
 [[ -n $config_hits ]] && report 'config uses a core timestamp formatter instead of bb_time' "$config_hits"
 

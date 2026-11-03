@@ -150,7 +150,6 @@ final class TicketRunDeriver {
     return $this->date->duration($closed - $started);
   }
 
-
   /**
    * Assignee presentation values.
    *

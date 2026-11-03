@@ -80,7 +80,7 @@ final class BbTimeFormatter extends FormatterBase {
     foreach ($items as $delta => $item) {
       $timestamp = (int) $item->get('value')->getValue();
       if ($timestamp > 0) {
-        $elements[$delta] = $this->date->time($timestamp, (bool) $this->getSetting('date_only'));
+        $elements[$delta] = $this->getSetting('date_only') ? $this->date->dateElement($timestamp) : $this->date->time($timestamp);
       }
     }
     return $elements;

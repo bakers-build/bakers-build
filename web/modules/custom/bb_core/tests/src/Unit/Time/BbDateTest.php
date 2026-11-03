@@ -28,7 +28,7 @@ final class BbDateTest extends UnitTestCase {
    */
   #[DataProvider('labels')]
   public function testLabel(string $stamp, string $expected): void {
-    self::assertSame($expected, $this->bakersDate()->label(strtotime($stamp)));
+    self::assertSame($expected, $this->bakersDate()->label((int) strtotime($stamp)));
   }
 
   /**
@@ -53,20 +53,20 @@ final class BbDateTest extends UnitTestCase {
    */
   public function testDateOnly(): void {
     $date = $this->bakersDate();
-    self::assertSame('22 Jun', $date->date(strtotime('2026-06-22T10:00:00Z')));
-    self::assertSame('6 Jan 2025', $date->date(strtotime('2025-01-06T10:00:00Z')));
+    self::assertSame('22 Jun', $date->date((int) strtotime('2026-06-22T10:00:00Z')));
+    self::assertSame('6 Jan 2025', $date->date((int) strtotime('2025-01-06T10:00:00Z')));
   }
 
   /**
    * The time element carries ISO `datetime` and the full stamp as `title`.
    */
   public function testTimeElement(): void {
-    $element = $this->bakersDate()->time(strtotime('2026-06-15T13:30:00Z'));
+    $element = $this->bakersDate()->time((int) strtotime('2026-06-08T13:30:00Z'));
     self::assertSame('bb_theme:time', $element['#component']);
     self::assertSame([
-      'datetime' => '2026-06-15T13:30:00+00:00',
-      'title' => 'Mon, 15 Jun 2026, 13:30 UTC',
-      'label' => '15 Jun, 13:30',
+      'datetime' => '2026-06-08T13:30:00+00:00',
+      'title' => 'Mon, 8 Jun 2026, 13:30 UTC',
+      'label' => '8 Jun, 13:30',
     ], $element['#props']);
   }
 
@@ -74,7 +74,7 @@ final class BbDateTest extends UnitTestCase {
    * A relative label expires with its interval.
    */
   public function testRelativeTimeCarriesMaxAge(): void {
-    $element = $this->bakersDate()->time(strtotime('2026-06-22T10:00:00Z'));
+    $element = $this->bakersDate()->time((int) strtotime('2026-06-22T10:00:00Z'));
     self::assertSame('2 hours ago', $element['#props']['label']);
     self::assertSame(3600, $element['#cache']['max-age']);
   }

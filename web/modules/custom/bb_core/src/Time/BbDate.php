@@ -44,19 +44,13 @@ final class BbDate {
    *
    * @param int $timestamp
    *   Unix timestamp.
-   * @param bool $dateOnly
-   *   TRUE for a calendar date ("6 Jan"), never relative.
    *
    * @return array<string, mixed>
    *   A component render array; a relative label carries its max-age.
    */
-  public function time(int $timestamp, bool $dateOnly = FALSE): array {
-    $relative = $dateOnly ? NULL : $this->relative($timestamp);
-    $element = [
-      '#type' => 'component',
-      '#component' => 'bb_theme:time',
-      '#props' => $this->props($timestamp, $dateOnly, $relative),
-    ];
+  public function time(int $timestamp): array {
+    $relative = $this->relative($timestamp);
+    $element = $this->element($timestamp, $relative?->getString() ?? $this->absolute($timestamp));
     if ($relative) {
       $element['#cache']['max-age'] = $relative->getCacheMaxAge();
     }
@@ -64,35 +58,49 @@ final class BbDate {
   }
 
   /**
-   * The `time` cell of a `bb_theme:table` or `bb_theme:list` row.
-   *
-   * shortcut: a cell is plain data and carries no max-age, so a relative
-   * label ages until the surrounding render expires; move cells to
-   * render arrays if a cached screen shows stale "ago" labels.
+   * The `bb_theme:time` element for a calendar date ("6 Jan"), never relative.
    *
    * @param int $timestamp
    *   Unix timestamp.
-   * @param bool $dateOnly
-   *   TRUE for a calendar date, never relative.
+   *
+   * @return array<string, mixed>
+   *   A component render array.
+   */
+  public function dateElement(int $timestamp): array {
+    return $this->element($timestamp, $this->date($timestamp));
+  }
+
+  /**
+   * The `time` cell of a `bb_theme:table` or `bb_theme:list` row.
+   *
+   * @param int $timestamp
+   *   Unix timestamp.
    *
    * @return array<string, string>
    *   The cell: `kind`, `label`, `datetime`, `title`.
    */
-  public function cell(int $timestamp, bool $dateOnly = FALSE): array {
-    return ['kind' => 'time'] + $this->props($timestamp, $dateOnly, $dateOnly ? NULL : $this->relative($timestamp));
+  public function cell(int $timestamp): array {
+    // shortcut: a cell is plain data and carries no max-age, so a relative
+    // label ages until the surrounding render expires; move cells to render
+    // arrays if a cached screen shows stale "ago" labels.
+    return ['kind' => 'time'] + $this->element($timestamp, $this->label($timestamp))['#props'];
   }
 
   /**
-   * The `bb_theme:time` props.
+   * The `bb_theme:time` element with a given label.
    *
-   * @return array<string, string>
-   *   `datetime`, `title` and `label`.
+   * @return array<string, mixed>
+   *   The component render array.
    */
-  private function props(int $timestamp, bool $dateOnly, ?FormattedDateDiff $relative): array {
+  private function element(int $timestamp, string $label): array {
     return [
-      'datetime' => $this->dateFormatter->format($timestamp, 'custom', 'c'),
-      'title' => $this->dateFormatter->format($timestamp, 'custom', 'D, j M Y, H:i T'),
-      'label' => $relative?->getString() ?? ($dateOnly ? $this->date($timestamp) : $this->absolute($timestamp)),
+      '#type' => 'component',
+      '#component' => 'bb_theme:time',
+      '#props' => [
+        'datetime' => $this->dateFormatter->format($timestamp, 'custom', 'c'),
+        'title' => $this->dateFormatter->format($timestamp, 'custom', 'D, j M Y, H:i T'),
+        'label' => $label,
+      ],
     ];
   }
 
@@ -155,14 +163,17 @@ final class BbDate {
     $diff = $ahead
       ? $this->dateFormatter->formatTimeDiffUntil($timestamp, $options)
       : $this->dateFormatter->formatTimeDiffSince($timestamp, $options);
+    // `return_as_object` yields an object; the interface still types a string.
+    $interval = $diff instanceof FormattedDateDiff ? $diff->getString() : $diff;
+    $maxAge = $diff instanceof FormattedDateDiff ? $diff->getCacheMaxAge() : 0;
     $label = $ahead
-      ? $this->t('in @interval', ['@interval' => $diff->getString()])
-      : $this->t('@interval ago', ['@interval' => $diff->getString()]);
-    return new FormattedDateDiff((string) $label, $diff->getCacheMaxAge());
+      ? $this->t('in @interval', ['@interval' => $interval])
+      : $this->t('@interval ago', ['@interval' => $interval]);
+    return new FormattedDateDiff((string) $label, $maxAge);
   }
 
   /**
-   * "15 Jun, 13:30", or "15 Jun 2025" in another year.
+   * The absolute label: "15 Jun, 13:30", or "15 Jun 2025" in another year.
    */
   private function absolute(int $timestamp): string {
     return $this->dateFormatter->format($timestamp, 'custom', $this->sameYear($timestamp) ? 'j M, H:i' : 'j M Y');

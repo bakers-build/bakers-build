@@ -44,11 +44,8 @@ final class BbTimeFormatterTest extends KernelTestBase {
   public function testFormatterRendersTimeElement(): void {
     $stamp = (int) strtotime('2020-06-15T13:30:00Z');
     $entity = EntityTest::create(['created' => $stamp]);
-    $build = $this->container->get('entity_display.repository')
-      ->getViewDisplay('entity_test', 'entity_test', 'default')
-      ->setComponent('created', ['type' => 'bb_time'])
-      ->build($entity);
-    $html = (string) $this->container->get('renderer')->renderInIsolation($build['created'][0]);
+    $build = $entity->get('created')->view(['type' => 'bb_time', 'label' => 'hidden']);
+    $html = (string) $this->container->get('renderer')->renderInIsolation($build[0]);
     self::assertStringContainsString('<time', $html);
     self::assertStringContainsString('datetime="2020-06-15T13:30:00+00:00"', $html);
     self::assertStringContainsString('title="Mon, 15 Jun 2020, 13:30 UTC"', $html);
