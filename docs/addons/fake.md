@@ -20,4 +20,4 @@ No options for users. The test-only settings are in the source.
 
 bakers.build's conductor tests pass with it.
 
-Source: [`bakers-cli/addons/fake`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/fake)
+Package source in a checkout: `bakers-cli/addons/fake`.

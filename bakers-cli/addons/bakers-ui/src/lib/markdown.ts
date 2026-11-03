@@ -27,7 +27,7 @@
 // why GFM tables are an explicit degradation rather than an omission.
 //
 // The supported subset and the named degradations are written out for the
-// operator in the package `README.md` and in `docs/advanced/cli/ui.md`
+// operator in the package `README.md` and in `docs/addons/bakers-ui/reference.md`
 // (D10/AC-4). What follows is the same list as code.
 //
 // ---------------------------------------------------------------------------
@@ -552,7 +552,7 @@ function blockLine(source: string, blockStart: boolean): MarkdownLine {
  * the row opens a code block whose info string is metadata rather than content,
  * and telling it apart from a closed fence would need look-ahead this one-line-at-
  * a-time pass does not have. It is a NAMED degradation, written out for the
- * operator in the README and in `docs/advanced/cli/ui.md` (AC-4).
+ * operator in the README and in `docs/addons/bakers-ui/reference.md` (AC-4).
  *
  * CRLF IS NORMALISED FIRST, and that is not cosmetic. Every block rule anchors
  * with `$` and matches with `.`, and neither reaches past a trailing `\r`, so a

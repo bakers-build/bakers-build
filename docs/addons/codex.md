@@ -1,8 +1,14 @@
 # Codex
 
-**Lets bakers.build run tickets with the OpenAI Codex CLI.**
+Run tickets with the OpenAI Codex CLI.
 
-For anyone whose machine should run tickets with Codex.
+## AI first
+
+Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+
+## Setup
+
+Follow the [vendor installation guide](https://learn.chatgpt.com/docs/codex/cli), then authenticate `codex` as the conductor user and check it resolves on `PATH`.
 
 ## Enable it
 
@@ -23,12 +29,12 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 | `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'sandbox'` | How strictly a run starts; see [Security](#security). |
 | `sandbox` | object | see below | Only with `security: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
-| `env_deny` | string[] | the [default list](/advanced/run-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `env_deny` | string[] | the [default list](/configuration/agents/execution-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
 
-A run starts sandboxed unless you choose otherwise, because ticket text is written by other people. What each mode blocks and misses, `env_deny`, risks and machine isolation: [Run security](/advanced/run-security).
+Runs default to the OS sandbox. [Execution security](/configuration/agents/execution-security) owns boundaries, environment filtering and isolation risks.
 
 | `security` | Launch flags |
 |---|---|
@@ -61,9 +67,7 @@ bakers agents
 ## Good to know
 
 - `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox` and `--dangerously-bypass-hook-trust` are reserved; putting them in `args` fails loading.
-- The addon starts `codex`; it does not install it or sign it in. The binary must be on `PATH`.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 
-More: [Choose agents and models](/advanced/configuration/agents-and-models), [Machines](/advanced/machines#harnesses).
+More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
 
-Source: [`bakers-cli/addons/codex`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/codex)

@@ -7,7 +7,8 @@
     "build": "node scripts/check-pages.mjs && vitepress build && node scripts/check-site.mjs && node scripts/marketplace.mjs",
     "check:pages": "node scripts/check-pages.mjs",
     "check:site": "node scripts/check-site.mjs",
-    "preview": "vitepress preview"
+    "preview": "vitepress preview",
+    "test": "node --test scripts/manual.test.mjs scripts/marketplace.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

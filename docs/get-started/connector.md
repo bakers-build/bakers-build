@@ -1,0 +1,49 @@
+# Set up a connector
+
+Create and plan tickets through chat, then follow and accept work in the web UI. Your team's workers do the building; this path needs no developer machine setup.
+
+**You need:** your server address, your own bakers.build account with workspace access, and an MCP chat client supporting OAuth, such as Claude, ChatGPT or Cursor. Connector availability and settings depend on the client and plan.
+
+## AI first: ask your chat to guide you
+
+```text
+Guide me through https://bakers.build/get-started/connector for this
+chat client. Help me find its MCP settings; I will enter my server URL
+and complete my own sign-in. Then verify access to my project.
+```
+
+Your chat can explain the steps; you enable the connector and authorize access yourself. Local setup skills are for developer agents and are not required for this chat-only path.
+
+## What happens in the background
+
+The client registers with your server and receives access for your account. It can use tools within your permissions; it installs no worker or project environment.
+
+## Connect your account
+
+1. Open your client's custom MCP connector settings. In claude.ai, use **Settings → Connectors → Add custom connector**.
+2. Enter your server's `/mcp` endpoint, for example `https://app.bakers.build/mcp`.
+3. Leave client ID and secret empty: the client registers automatically. Save, sign in with **your own account**, and approve access. Never borrow a teammate's credentials.
+4. Enable the connector in your conversation. In a claude.ai Project, also add the [project instructions](/configuration/connector/project-instructions). An organization owner may add a shared connector, but each person still signs in individually.
+
+## Verify
+
+Ask your chat:
+
+```text
+Use the bakers.build connector to search for a ticket in my project,
+then read that ticket and its comments. Tell me which project it belongs to.
+```
+
+**Done when:** the tools return a ticket you can also open on your team's bakers.build website, in the intended workspace. If the project has no tickets, ask the connector to confirm accessible projects before creating one. A permission failure means missing access: ask your workspace lead. It is not a reason to share credentials.
+
+## Start working
+
+```text
+Create a bakers.build ticket for <what I need and why>.
+```
+
+Confirm the scope when asked. Feature and chore intake can reach `plan` through chat; bug diagnosis, coding and review use your team's agents. Open the ticket on the web to read summaries and record your verdict. Questions during a run appear in the worker's terminal; ticket comments reach the next step.
+
+**Next:** [Create a ticket](/get-started/daily-work/create-a-ticket), [follow it](/get-started/daily-work/follow-a-ticket), or [accept results](/get-started/daily-work/accept-results).
+
+Connection errors: [Connector configuration](/configuration/connector) and [client limits](/configuration/connector/limits). The CLI's private connection file is a separate setup.

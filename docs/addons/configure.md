@@ -4,6 +4,17 @@
 
 Which addons exist, and what each one needs, is on its own page in the [catalog](/addons/).
 
+## AI first
+
+```text
+Read https://bakers.build/addons/configure.
+Read this addon’s canonical bakers.build documentation and my current
+configuration. Explain its role and owning config file, propose the smallest
+change, then verify it. Keep client/workspace pairs together and environment
+hooks separate.
+```
+
+
 ## Which file takes `addons`
 
 The machine file `~/.bakers/machine.config.js` and the project file `.bakers/conductor.config.js` each carry one `addons` list, read the same way. **The addon decides where it may be listed**; its catalog page says which files it allows.

@@ -1,12 +1,38 @@
 # herdr
 
-**Runs each ticket's agent in a herdr terminal session, in its own Git worktree.**
+Run each ticket's agent in a visible herdr terminal and its own Git worktree. Development tooling remains independent of the client.
 
-For projects whose conductor should start agents in visible herdr tabs and panes.
+## AI first
 
-## Enable it
+```text
+Read https://bakers.build/addons/herdr.
+Use herdr as this project’s client. Check its installation and default
+session, propose its paired executor/workspace addon entry, and verify it
+with bakers oven check. Preserve the project’s environment hooks.
+```
 
-List the package once in `addons` of the project's `.bakers/conductor.config.js`. One entry wires both the executor and the workspace; the same `with` goes to both.
+The reference below explains the commands and configuration changes.
+
+## Setup
+
+Install herdr using its [installation guide](https://herdr.dev/docs/install/). bakers.build requires version 0.7 or later on the conductor's `PATH`.
+
+```sh
+herdr --version
+herdr
+```
+
+From another terminal as the same user:
+
+```sh
+herdr workspace list
+```
+
+The default session must answer; a named session uses a separate socket. A headless host uses `herdr server`; [worker servers](/configuration/machine/worker-server) covers startup ordering.
+
+## Configuration
+
+List the package once in `.bakers/conductor.config.js`; one entry supplies both executor and workspace:
 
 ```js
 addons: [
@@ -21,29 +47,12 @@ addons: [
 ],
 ```
 
-## Options
+No `with` options are required. [Options and layouts](/addons/herdr/options) owns all defaults, placeholders, panes and launch timeouts. Keep this pair together; do not combine the herdr executor with Git-only workspace.
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `root` | string | from Git's common directory | Main clone path. |
-| `worktreeDir` | string | `.bakers-worktrees` | Worktree directory, relative to the root. |
-| `baseBranch` | string | remote-tracking branch of the checked-out branch | Base ref for new ticket branches. |
-| `open` | object | runs `bakers ui --ticket {identifier}` | Layout of a fresh worktree's first tab. `{}` leaves a bare tab. Keys: `command`, `panes`, `tabLabel`, `panelLabel`. |
-| `default` | object | built-in layout | Per-run layout: `tabLabel`, `workspaceLabel`, `panelLabel`, `panes`. |
-| `states.<state>` | object | none | Per-run layout for one state; beats `default`. |
-| `launchWatch` | object | `startTimeoutMs: 60000`, `timeoutMs: 4000` | How long to wait for the launch to start, then how long an immediate agent exit fails the run. |
+## Verify
 
-Label placeholders and pane fields are in [herdr options](/advanced/conductor-config#herdr-options).
+Run `bakers oven check`, then [a first ticket](/get-started/first-ticket). Its agent must open in a herdr tab named after its identifier, within the ticket worktree. A frozen ticket shows a `bb_frozen` sidebar token; resuming clears it.
 
-## Check it works
+Harness commands run through non-interactive `/bin/sh`, so binaries must resolve through `PATH`; shell aliases are not loaded.
 
-A ticket picked up by this conductor opens a herdr tab named after its identifier, inside the ticket's worktree.
-
-## Good to know
-
-- The herdr executor pairs only with the herdr workspace. Do not add [Git workspace](/addons/workspace-git) next to it.
-- The agent command runs through non-interactive `/bin/sh`, so the harness must resolve through `PATH`.
-- When a ticket is frozen, its herdr workspace shows a `bb_frozen` sidebar token; resuming clears it.
-- Setup of herdr itself: [Set up herdr](/advanced/cli/herdr).
-
-Source: [`bakers-cli/addons/herdr`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/herdr)
+Package source in a checkout: `bakers-cli/addons/herdr`.

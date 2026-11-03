@@ -7,20 +7,34 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
+  type ResolvedSecurity,
+  type RunEnvPolicy,
   resolveAgentCliOptions,
+  resolveSecurityOptions,
+  type SandboxOptions,
+  type SecurityOptions,
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
 import { parseOpencodeTranscript } from './footprint.js';
 
 export { parseOpencodeTranscript } from './footprint.js';
 
-export interface OpencodeAgentOptions {
+export interface OpencodeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
   args?: string[];
 }
 
 const OPENCODE_RESERVED = ['--prompt', '--auto'] as const;
+
+/** Only satisfies the shared resolver: sandbox mode is rejected before any key is used. */
+const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
+  trusted_commands: [],
+  deny_read: [],
+  allow_write: [],
+  network: ['*'],
+  mcp_servers: {},
+};
 
 const OPENCODE_KNOWN: readonly KnownOptionSpec[] = [
   { kind: 'model', flags: ['--model', '-m'] },
@@ -66,11 +80,29 @@ export class OpencodeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
+  private readonly security: ResolvedSecurity;
+  readonly runEnvPolicy: RunEnvPolicy;
 
   constructor(
     options: OpencodeAgentOptions = {},
     private readonly storageRoot: string = defaultOpencodeStorageRoot(),
   ) {
+    // OpenCode has no OS sandbox, so its default is system, not the shared sandbox.
+    this.security = resolveSecurityOptions(
+      { ...options, security: options.security ?? 'system' },
+      SANDBOX_DEFAULTS,
+    );
+    this.runEnvPolicy = this.security.runEnvPolicy;
+    if (this.security.mode === 'sandbox') {
+      throw new Error(
+        "OpenCode has no OS sandbox, so security: 'sandbox' cannot be enforced; leave security unset or set 'system' (your own OpenCode configuration) or 'yolo'",
+      );
+    }
+    if (this.security.mode === 'custom') {
+      throw new Error(
+        "OpenCode has no config hand-off for security: 'custom'; use security: 'system' with your own OpenCode configuration",
+      );
+    }
     const cli = resolveAgentCliOptions(
       options,
       OPENCODE_RESERVED,
@@ -97,7 +129,10 @@ export class OpencodeAgent implements BbAgent {
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));
     }
-    parts.push('--auto');
+    // Auto-approval is not protection: only yolo gets it.
+    if (this.security.mode === 'yolo') {
+      parts.push('--auto');
+    }
     parts.push(...this.args.map(shellQuote));
     return parts.join(' ');
   }

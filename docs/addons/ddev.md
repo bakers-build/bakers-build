@@ -29,6 +29,6 @@ bakers ports list
 - It has no CMS-specific rules. A project that needs a particular `Host` header handles that itself.
 - Linux only. It does not need root.
 
-More: [Set up DDEV](/advanced/cli/ddev).
+More: [Set up DDEV](/configuration/provisioning/ddev).
 
-Source: [`bakers-cli/addons/ddev`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/ddev)
+Package source in a checkout: `bakers-cli/addons/ddev`.

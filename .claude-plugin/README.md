@@ -1,4 +1,4 @@
-# bakers.build Claude Code Marketplace
+# bakers.build agent marketplace
 
 Standalone marketplace for the bakers.build agent-side `bakers` skill — independent of the keytec
 marketplace (`laws-of-robotics`).
@@ -16,17 +16,16 @@ Claude Code (v2.1.224 or later), without git or an account:
 (`website/scripts/marketplace.mjs`) writes that catalog from this file, with the plugin as a zip
 behind an `archive` source pinned by sha256.
 
-From git, as Codex installs it:
+Codex, from the public GitHub repository:
 
-```
-/plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git
-/plugin install bakers@bakers
+```sh
+codex plugin marketplace add https://github.com/bakers-build/bakers-build --ref main
+codex plugin add bakers@bakers
 ```
 
-`git.key-tec.de` is a self-hosted GitLab — pass the **full git clone URL**, not a scheme-less
-`host/owner/repo` shorthand (which only works for GitHub). The repo is public, so the HTTPS URL
-above clones without credentials; if you prefer SSH, use `git@git.key-tec.de:bakers-build/bakers-build.git`
-(needs your key on the host).
+Always select `main` for stable skills, independently of the repository's default branch.
+See the [installation guide](https://bakers.build/configuration/agents/skills)
+for existing registrations, verification and updates.
 
 ## What ships
 

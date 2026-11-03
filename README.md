@@ -182,7 +182,7 @@ flowchart TB
 
 Repository: `bakers-build/bakers-build`; bakers.build project: `bakers`. The committed `.bakers` configuration targets
 the team's develop control plane. Obtain your own credentials and workspace access from the
-operator; inspect the effective connection before running commands. Follow [join a project](docs/advanced/cli/first-ticket.md)
+operator; inspect the effective connection before running commands. Follow [join a project](docs/get-started/first-ticket.md)
 and then `WORKFLOW.md`. A team conductor may supply execution capacity. Local test work uses
 the playground set up by `scripts/setup-test-project.sh`.
 

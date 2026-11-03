@@ -29,6 +29,6 @@ A read through the connection succeeds instead of answering 401.
 - The token is a secret. Keep it out of committed files.
 - Sign-in and sign-out are not supported; the token is always treated as signed in.
 
-More: [Connections](/advanced/connections).
+More: [Connections](/configuration/connector/connections).
 
-Source: [`bakers-cli/addons/auth-basic`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/auth-basic)
+Package source in a checkout: `bakers-cli/addons/auth-basic`.
