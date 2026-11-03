@@ -37,6 +37,7 @@
     "designbook-drupal@designbook": true,
     "designbook-css-tailwind@designbook": true,
     "designbook-figma@designbook": true,
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "superpowers@superpowers-dev": true
   }
 }

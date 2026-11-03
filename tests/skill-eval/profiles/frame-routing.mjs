@@ -10,6 +10,8 @@ export function validate(f) {
   requireValue(uuid(f.input.ticket_uuid) && f.simulation.ticket?.id === f.input.ticket_uuid, 'Expected the simulated ticket');
   requireValue(typeof e?.recipe?.path === 'string' && typeof e.recipe.read === 'boolean' && Array.isArray(e.markers) &&
     Array.isArray(e.absent), 'Expected expect.recipe {path, read}, markers and absent');
+  requireValue(e.skill === undefined || (typeof e.skill?.path === 'string' && typeof e.skill.read === 'boolean'),
+    'Expected expect.skill {path, read}');
   requireValue(Boolean(e.stop) !== Boolean(e.intake), 'Expect either a stop identifier or an intake gate');
   requireValue(f.virtual_references?.includes(INTAKE), 'Serve the intake as a virtual file so its reads are counted');
 }
@@ -29,5 +31,7 @@ export function checkOutput(f, output, context) {
     e.stop
       ? check('stop-named', output.includes(e.stop), 'Stop and name the exact identifier that failed')
       : check('intake-rendered', output.includes(e.intake), 'Render the intake with its target gate; no write starts the state'),
+    ...(e.skill ? [check('skill-read', skillReads.some(c => c.arguments.path === e.skill.path) === e.skill.read,
+      e.skill.read ? 'Load the skill WORKFLOW.md names for this ticket\'s labels and state' : 'Load no skill whose WORKFLOW.md condition does not hold')] : []),
   ];
 }

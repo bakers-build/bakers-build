@@ -111,7 +111,6 @@ Build the qualification handoff with every required field:
   must be denied), or `no login needed`. Ask when the right persona is unclear; never pick an
   administrator for convenience.
 - `handoff_version` — `1` for a first qualification, incremented on any requalification.
-- `provenance` — what the acceptance criteria were derived from (title/description as read).
 
 Publish it with `bakers_comment_publish`, `type: "qualification"`. The returned `id` is the only
 confirmation needed. A definite failure: report it and stop. A timeout: treat it as unresolved and
