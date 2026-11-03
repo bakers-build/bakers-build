@@ -919,7 +919,7 @@ describe('hand-over of a specified ticket', () => {
 
   it('publishes qualification and spec, then classifies, moves to working and adds ticket:pingpong', async () => {
     const { grade, trace } = await simulatedTrace(
-      'ticket-specify-handover',
+      'project-manager-handover',
       steps(),
     );
     expect(grade('Work on EVAL-31 starts.')).toEqual([]);
@@ -933,29 +933,32 @@ describe('hand-over of a specified ticket', () => {
       ]),
     ).toContain('handover-order');
     const matt = await simulatedTrace(
-      'ticket-specify-handover',
+      'project-manager-handover',
       steps({ classify: { recipe: 'matt' } }),
     );
     expect(matt.grade('Work on EVAL-31 starts.')).toContain(
       'handover-arguments',
     );
     const hashed = await simulatedTrace(
-      'ticket-specify-handover',
+      'project-manager-handover',
       steps({ body: `${qualification}\n${'a'.repeat(64)}` }),
     );
     expect(hashed.grade('Work on EVAL-31 starts.')).toContain('handoff-fields');
     const unsigned = await simulatedTrace(
-      'ticket-specify-handover',
+      'project-manager-handover',
       steps({ spec: '## Acceptance criteria\n\nAC1\n' }),
     );
     expect(unsigned.grade('Work on EVAL-31 starts.')).toContain('spec-content');
   });
 
   it("changes nothing on another person's approval, without any call", async () => {
-    const { grade } = await simulatedTrace('ticket-specify-other-approval', []);
+    const { grade } = await simulatedTrace(
+      'project-manager-other-approval',
+      [],
+    );
     expect(grade('Only Mara can approve.')).toEqual([]);
     const handed = await simulatedTrace(
-      'ticket-specify-other-approval',
+      'project-manager-other-approval',
       steps(),
     );
     expect(handed.grade('Work starts.')).toContain('nothing-handed-over');

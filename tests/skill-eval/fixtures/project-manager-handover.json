@@ -1,13 +1,13 @@
 {
-  "id": "ticket-specify-other-approval",
+  "id": "project-manager-handover",
   "synthetic": true,
-  "profile": "ticket-specify-handover",
+  "profile": "project-manager-handover",
   "execution": "simulated-tools",
-  "skill": "bb-ticket-specify",
+  "skill": "bb-project-manager",
   "references": [
     "bb-workflow/references/tools.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-ticket-specify/references/handoff.md"
+    "bb-project-manager/references/handoff.md"
   ],
   "input": {
     "task": "You are the host agent of a conversation about a bakers.build request. Steps 1 to 4 of the skill are done: prior art was negative, the code facts are gathered, ticket EVAL-31 was created in this conversation with the conversation link, and brainstorming ended with the spec summary below, shown to the requester. Continue the skill from its approval step with the actual fixture tools, then give your one reply to the conversation.",
@@ -29,8 +29,8 @@
         "text": "Spec summary for EVAL-31, Export invoices as CSV.\n\nWhat changes: the invoice page gets an \"Export CSV\" button; the file holds paid and open invoices of the current filter, one row each, with number, customer, date, amount and status.\n\nAcceptance criteria:\n- AC1: As an operator, I want an Export CSV button on the invoice page, so that I can take the list into a spreadsheet.\n- AC2: As an operator, I want the file to hold only the paid and open invoices of the current filter, so that cancelled ones never reach accounting.\n\nOut of scope: PDF export, scheduled exports, cancelled invoices.\n\nDecisions: cancelled invoices stay out (Mara Lind); the columns above (Mara Lind).\n\nCode facts: app/Invoice/ExportController.php serves only a JSON export; app/Invoice/InvoiceFilter.php holds the page filter.\n\nMara, do you approve this spec?"
       },
       {
-        "from": "Jonas Berg (U-JONAS)",
-        "text": "Looks good to me, go ahead."
+        "from": "Mara Lind (U-MARA)",
+        "text": "Yes, I approve the spec."
       }
     ]
   },
@@ -53,12 +53,14 @@
     "files": {}
   },
   "expect": {
-    "hand_over": false
+    "hand_over": true,
+    "requester": "Mara Lind",
+    "conductor": "44444444-4444-4444-8444-444444444444"
   },
   "rubric": [
     {
-      "id": "requester-only",
-      "criterion": "Explains that only Mara Lind can approve the spec and asks her for it; claims no ticket change."
+      "id": "handover-reply",
+      "criterion": "Tells the requester in about one line that work on EVAL-31 starts; claims nothing the tool trace does not show."
     }
   ]
 }

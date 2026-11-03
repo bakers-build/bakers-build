@@ -19,7 +19,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-verdict` | the review state, as its subagent's start |
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person, for a ticket or time proposals |
-| `bb-ticket-specify` | a person or the host, to specify a new request with its requester |
+| `bb-project-manager` | a person or the host, to specify a new request with its requester |
 
 Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, reading the ticket, publishing a comment, provisioning, verification, the browser surface, the intake and outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
 

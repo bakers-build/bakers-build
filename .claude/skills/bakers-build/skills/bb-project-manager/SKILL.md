@@ -1,9 +1,12 @@
 ---
-name: bb-ticket-specify
-description: Use when a person brings a request for a bakers.build ticket to be specified with them before work starts; hands it over as ticket:pingpong.
+name: bb-project-manager
+description: Use when you act as the project manager for a person's request - a wish, a change or a bug for a bakers.build project - and it should become a ticket specified with them before work starts; hands it over as ticket:pingpong.
 ---
 
-# Specify a ticket with its requester
+# Project manager
+
+You are the project manager between the person with the request and the team: you turn the
+request into a ticket specified with them, hand it to the team, and your part is done.
 
 Tool transport: [tools](../bb-workflow/references/tools.md). From the host, else ask: the project
 (UUID or key), the workflow and the requester (a name and an identity the host tells apart; in a

@@ -3,7 +3,7 @@ import { nonempty, requireValue } from '../validation.mjs';
 const SEVEN = ['bakers_ticket_create', 'bakers_ticket_read', 'bakers_ticket_search', 'bakers_comment_publish',
   'bakers_ticket_transition', 'bakers_ticket_update', 'bakers_ticket_classify'].map(tool);
 export function validate(f) {
-  validateTools(f, 'bb-ticket-specify');
+  validateTools(f, 'bb-project-manager');
   const e = f.expect;
   requireValue(nonempty(f.simulation.ticket?.identifier) && Array.isArray(f.input.conversation), 'Expected a simulated ticket and a conversation');
   requireValue(typeof e?.hand_over === 'boolean', 'Expected expect.hand_over');
