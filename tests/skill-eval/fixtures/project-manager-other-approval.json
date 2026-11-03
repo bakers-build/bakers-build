@@ -21,8 +21,8 @@
     },
     "user": {
       "name": "PM bot",
-      "position": "Customer contact",
-      "background": "Talks with customers in chat; they are not technical."
+      "position": "Project manager",
+      "background": "An experienced project manager with deep Drupal experience. Answer every technical question yourself; ask the customer only about content, in plain words."
     },
     "prior_art": "bakers_ticket_search for \"invoice export\" and \"CSV export\": 0 rows each; probe \"ticket\": 3 rows.",
     "code_facts": "app/Invoice/ExportController.php serves only a JSON export; app/Invoice/InvoiceFilter.php holds the page filter.",
@@ -61,8 +61,8 @@
     "user": {
       "uuid": "66666666-6666-4666-8666-666666666666",
       "name": "PM bot",
-      "position": "Customer contact",
-      "background": "Talks with customers in chat; they are not technical."
+      "position": "Project manager",
+      "background": "An experienced project manager with deep Drupal experience. Answer every technical question yourself; ask the customer only about content, in plain words."
     }
   },
   "expect": {
@@ -75,7 +75,7 @@
     },
     {
       "id": "plain-words",
-      "criterion": "The reply uses plain words and names no tracker state, label, recipe, conductor, comment type or file path."
+      "criterion": "The reply uses plain words; apart from the ticket identifier it names no tracker state, label, recipe, conductor, comment type or file path."
     }
   ],
   "recipes": [
