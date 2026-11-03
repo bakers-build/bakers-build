@@ -18,6 +18,7 @@ import type {
   InboxMessage,
   InboxSnapshot,
   RemotePlugin,
+  ResumeContext,
   RunMetrics,
   RunWriteAttributes,
   Ticket,
@@ -41,6 +42,8 @@ export interface FakeSeedRun {
   closed?: boolean;
   /** Id of the agent that ran (BB-144) — routes footprint parsing at finalize. */
   agent?: string;
+  /** When the run started (ISO 8601). */
+  startedAt?: string;
 }
 
 export interface FakeSeedTicket {
@@ -79,6 +82,8 @@ export interface FakeSeedTicket {
   conductorId?: string;
   /** Whether the ticket is frozen (held out of claiming). */
   frozen?: boolean;
+  /** When the latest `# Question` comment was published (ISO 8601). */
+  questionAt?: string;
 }
 
 export interface FakeRemoteSeed {
@@ -198,6 +203,7 @@ export class FakeBbRemote implements BbRemote {
           : {}),
         ...(r.agent !== undefined ? { agent: r.agent } : {}),
         ...(r.closed !== undefined ? { closed: r.closed } : {}),
+        ...(r.startedAt !== undefined ? { startedAt: r.startedAt } : {}),
       });
       this.queue.push({
         runUuid: r.runUuid,
@@ -528,6 +534,25 @@ export class FakeBbRemote implements BbRemote {
         identifier: t.identifier,
         worktreePath: this.latestRun(ticketUuid).worktreePath,
       }));
+  }
+
+  async fetchResumeContext(
+    ticketUuid: string,
+    runUuid: string,
+  ): Promise<ResumeContext> {
+    const previous = [...this.runs.values()]
+      .filter((r) => r.ticketUuid === ticketUuid && r.runUuid !== runUuid)
+      .sort((a, b) => b.runId - a.runId)[0];
+    return {
+      previousRun: previous
+        ? {
+            runUuid: previous.runUuid,
+            stateAtStart: previous.stateAtStart,
+            startedAt: previous.startedAt ?? '',
+          }
+        : null,
+      questionAt: this.tickets[ticketUuid]?.questionAt ?? null,
+    };
   }
 
   async appendRunNote(runUuid: string, note: string): Promise<void> {

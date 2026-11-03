@@ -42,7 +42,7 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
     if (saved === undefined) delete process.env.BB_COMMANDS;
     else process.env.BB_COMMANDS = saved;
   });
-  it('includes official aliases and the compatibility command', () => {
+  it('includes official aliases, the compatibility command and the hook', () => {
     delete process.env.BB_COMMANDS;
     expect(resolveCommands().map((c) => c.name)).toEqual([
       'oven',
@@ -50,6 +50,7 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
       'dropsh',
       'tools',
       'auth',
+      'hook',
       'deployment',
       'agents',
       'info',
@@ -204,6 +205,7 @@ it('DEFAULT_COMMANDS names the split command packages', () => {
   expect(DEFAULT_COMMANDS.map((c) => c.plugin)).toEqual([
     '@bakers-build/conductor/commands/conductor',
     '@bakers-build/ui',
+    '@bakers-build/addon-dropsh',
     '@bakers-build/addon-dropsh',
     '@bakers-build/addon-dropsh',
     '@bakers-build/addon-dropsh',

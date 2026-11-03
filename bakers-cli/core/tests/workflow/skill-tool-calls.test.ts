@@ -216,6 +216,84 @@ describe('skill call contracts', () => {
       'uncertain-write-not-repeated',
     );
   });
+  it('asks a question with one comment, then labels and freezes the ticket', async () => {
+    const { fixture, profile } = await fixtureData('publish-comment-question');
+    const body =
+      '# Question\n\nKeep the old column order?\n\n1. Keep it (recommended)\n2. Follow the list\n\nAnswer in a comment, then remove the label *Question* and unfreeze the ticket.\n';
+    const publish = call(
+      'bakers_comment_publish',
+      { ticket: 'EVAL-20', type: 'comment', body },
+      { id: commentId, type: 'comment' },
+    );
+    const update = call(
+      'bakers_ticket_update',
+      { ticket: 'EVAL-20', labels_add: ['Question'], frozen: true },
+      { identifier: 'EVAL-20', labels: ['Backend', 'Question'], frozen: true },
+    );
+    const grade = (rows: Row[], output = `Asked in ${commentId}.`) =>
+      failing(profile.checkOutput(fixture, output, { tool_trace: rows }));
+    expect(grade([publish, update])).toEqual([]);
+    expect(grade([publish])).toContain('question-label-freeze');
+    expect(grade([update, publish])).toContain('question-label-freeze');
+    const unfrozen = structuredClone(update);
+    unfrozen.arguments.argv[4] = JSON.stringify({
+      ticket: 'EVAL-20',
+      labels_add: ['Question'],
+    });
+    expect(grade([publish, unfrozen])).toContain('question-label-freeze');
+    const summary = call(
+      'bakers_comment_publish',
+      { ticket: 'EVAL-20', type: 'summary', body: 'Done.' },
+      { id: '22222222-2222-4222-8222-000000000009', type: 'summary' },
+    );
+    expect(grade([publish, update, summary])).toEqual(
+      expect.arrayContaining(['question-comment', 'question-run-ends']),
+    );
+    const moved = call(
+      'bakers_ticket_transition',
+      { ticket: 'EVAL-20', state: 'review' },
+      { state: 'review', links: [] },
+    );
+    expect(grade([publish, update, moved])).toContain('question-run-ends');
+    const plain = structuredClone(publish);
+    plain.arguments.argv[4] = JSON.stringify({
+      ticket: 'EVAL-20',
+      type: 'comment',
+      body: 'Keep the old column order?',
+    });
+    expect(grade([plain, update])).toEqual(
+      expect.arrayContaining([
+        'question-comment',
+        'question-choices',
+        'question-answer-line',
+      ]),
+    );
+    expect(grade([publish, update], 'Asked.')).toContain('question-id-printed');
+  });
+  it('waits on an open question without writing', async () => {
+    const { fixture, profile } = await fixtureData('read-ticket-question-open');
+    const read = call(
+      'bakers_ticket_read',
+      { ticket: fixture.input.ticket_uuid },
+      { id: fixture.input.ticket_uuid, labels: ['Question'], comments: [] },
+    );
+    const waiting = `waiting for an answer to ${fixture.input.question_comment}`;
+    const grade = (rows: Row[], output = waiting) =>
+      failing(profile.checkOutput(fixture, output, { tool_trace: rows }));
+    expect(grade([read])).toEqual([]);
+    expect(grade([read], 'Continuing with the plan.')).toContain(
+      'question-waits',
+    );
+    const write = call(
+      'bakers_comment_publish',
+      { ticket: fixture.input.ticket_uuid, type: 'comment', body: 'Hi' },
+      { id: commentId, type: 'comment' },
+    );
+    expect(grade([read, write])).toContain('question-no-write');
+    expect(grade([])).toEqual(
+      expect.arrayContaining(['actual-tool-calls', 'question-read']),
+    );
+  });
   it('passes one call rejected before sending, a schema lookup and a successful retry with a call-quality warning', async () => {
     const { fixture, profile, trace, body } = await commentCase();
     const invalid = call(

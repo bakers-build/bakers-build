@@ -5252,3 +5252,106 @@ describe('action queue', () => {
     expect(done).toBe(true);
   });
 });
+
+describe('Conductor — resume after a ticket question', () => {
+  /** The identities a dispatch launched with, for one earlier run r-1 and a queued r-2. */
+  async function dispatch(options: {
+    previousState?: string;
+    previousStartedAt?: string;
+    questionAt?: string;
+    existing?: string[];
+  }): Promise<(AgentRunIdentity | undefined)[]> {
+    const launchedWith: (AgentRunIdentity | undefined)[] = [];
+    const existing = new Set(options.existing ?? []);
+    const agent: BbAgent = {
+      id: 'claude',
+      launchCommand: (p: string, run?: AgentRunIdentity) => {
+        launchedWith.push(run);
+        return p === '' ? 'claude' : `claude '${p}'`;
+      },
+      getRunLog: async () => '',
+      parseFootprint: (log: string) => parseClaudeTranscript(log),
+      sessionExists: async (_worktreePath: string, sessionId: string) =>
+        existing.has(sessionId),
+    };
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'working',
+          ...(options.questionAt ? { questionAt: options.questionAt } : {}),
+        },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: options.previousState ?? 'working',
+          state: 'done',
+          closed: true,
+          startedAt: options.previousStartedAt ?? '2026-11-02T10:00:00Z',
+        },
+      ],
+    });
+    remote.queue.length = 0;
+    remote.queue.push({
+      runUuid: 'r-2',
+      runId: 2,
+      ticketUuid: 't-1',
+      stateAtStart: 'working',
+      handler: 'code',
+    });
+    const conductor = new Conductor(
+      makeConfig(),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(agent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    return launchedWith;
+  }
+
+  it('resumes the asking session when the question is newer than the previous same-state run', async () => {
+    expect(
+      await dispatch({
+        questionAt: '2026-11-02T10:30:00Z',
+        existing: ['r-1', attemptSessionId('r-1', 1)],
+      }),
+    ).toEqual([
+      { sessionId: 'r-2', resumeSessionId: attemptSessionId('r-1', 1) },
+    ]);
+  });
+
+  it('starts fresh when the previous run was in another state', async () => {
+    expect(
+      await dispatch({
+        previousState: 'plan',
+        questionAt: '2026-11-02T10:30:00Z',
+        existing: ['r-1'],
+      }),
+    ).toEqual([{ sessionId: 'r-2' }]);
+  });
+
+  it('starts fresh when the previous session is not on this machine', async () => {
+    expect(
+      await dispatch({ questionAt: '2026-11-02T10:30:00Z', existing: [] }),
+    ).toEqual([{ sessionId: 'r-2' }]);
+  });
+
+  it('starts fresh when the latest question is older than the previous run', async () => {
+    expect(
+      await dispatch({ questionAt: '2026-11-02T09:00:00Z', existing: ['r-1'] }),
+    ).toEqual([{ sessionId: 'r-2' }]);
+  });
+
+  it('starts fresh when the ticket has no question', async () => {
+    expect(await dispatch({ existing: ['r-1'] })).toEqual([
+      { sessionId: 'r-2' },
+    ]);
+  });
+});

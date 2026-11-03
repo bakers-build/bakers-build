@@ -122,6 +122,13 @@ export interface AgentRunIdentity {
    * single-`sessionId` behaviour.
    */
   attemptFamily?: string[];
+  /**
+   * An earlier session of this ticket to continue instead of starting fresh:
+   * set when the run picks up a human answer to a ticket question. An agent
+   * that can resume continues it as a copy still pinned to `sessionId`, so the
+   * run keeps a transcript of its own; others ignore it.
+   */
+  resumeSessionId?: string;
 }
 
 export interface BbAgent {

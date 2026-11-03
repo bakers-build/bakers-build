@@ -22,7 +22,7 @@ import {
   systemSandboxHost,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
-import { shellQuote } from '@bakers-build/core';
+import { ASK_REDIRECT, shellQuote } from '@bakers-build/core';
 import { parseClaudeTranscript } from './footprint.js';
 
 export { parseClaudeTranscript } from './footprint.js';
@@ -53,11 +53,44 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
   mcp_servers: {},
 };
 
+/**
+ * In every mode, `AskUserQuestion` first asks `bakers hook ask-user-question`,
+ * which denies the terminal dialog in an autopilot run and points the agent to
+ * the ticket question; elsewhere the dialog works as before. When the hook
+ * cannot run (an older or missing `bakers`), exit 2 blocks the dialog.
+ */
+const ASK_HOOK = {
+  matcher: 'AskUserQuestion',
+  hooks: [
+    {
+      type: 'command',
+      command: `bakers hook ask-user-question || { echo ${shellQuote(ASK_REDIRECT)} >&2; exit 2; }`,
+    },
+  ],
+};
+
+/** `hooks` with the ask hook appended to its PreToolUse entries. */
+function withAskHook(hooks: unknown): Record<string, unknown> {
+  const own =
+    hooks && typeof hooks === 'object'
+      ? (hooks as Record<string, unknown>)
+      : {};
+  const pre = Array.isArray(own.PreToolUse) ? own.PreToolUse : [];
+  return { ...own, PreToolUse: [...pre, ASK_HOOK] };
+}
+
 /** The launch flags a security mode owns (`docs/addons/claude.md`). */
 function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
-  if (mode === 'system') return [];
-  if (mode === 'yolo') return ['--dangerously-skip-permissions'];
-  if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  const hooksOnly = ['--settings', JSON.stringify({ hooks: withAskHook({}) })];
+  if (mode === 'system') return hooksOnly;
+  if (mode === 'yolo') return ['--dangerously-skip-permissions', ...hooksOnly];
+  if (mode === 'custom') {
+    const own = config as Record<string, unknown>;
+    return [
+      '--settings',
+      JSON.stringify({ ...own, hooks: withAskHook(own.hooks) }),
+    ];
+  }
   const settings = {
     sandbox: {
       enabled: true,
@@ -75,6 +108,7 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       network: { allowedDomains: sandbox.network },
     },
     disableClaudeAiConnectors: true,
+    hooks: withAskHook({}),
     // What is allowed here runs without a prompt; anything else, such as a
     // write to the protected `.claude/`, asks the human watching the run's
     // terminal (dontAsk would deny it, and no allow rule lifts that). Every
@@ -111,6 +145,29 @@ export function encodeClaudeProjectDir(cwd: string): string {
   return cwd.replace(/[^a-zA-Z0-9]/g, '-');
 }
 
+/**
+ * The transcript lines this run wrote: drops every entry timestamped before
+ * the run's start. A forked session (`--resume … --fork-session`) copies the
+ * earlier run's entries with their original timestamps; counting them would
+ * record that run's turns twice and stretch `duration_s` over the wait for
+ * the human. Lines without a parseable timestamp are kept.
+ */
+function entriesSince(log: string, startedAtMs: number): string {
+  return log
+    .split('\n')
+    .filter((line) => {
+      try {
+        const ts = Date.parse(
+          (JSON.parse(line) as { timestamp?: string }).timestamp ?? '',
+        );
+        return !(ts < startedAtMs);
+      } catch {
+        return true;
+      }
+    })
+    .join('\n');
+}
+
 export interface ClaudeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
@@ -125,6 +182,7 @@ export interface ClaudeAgentOptions extends SecurityOptions {
 
 const CLAUDE_RESERVED = [
   '--session-id',
+  '--resume',
   '--dangerously-skip-permissions',
   '--allow-dangerously-skip-permissions',
   '--permission-mode',
@@ -194,6 +252,12 @@ export class ClaudeAgent implements BbAgent {
     // `getRunLog` can read that ONE file directly instead of scanning the
     // worktree-keyed directory by mtime — the scan is what let a
     // resumed/re-dispatched/reused worktree finalise a foreign transcript.
+    // A run that picks up a human answer continues the asking session as a
+    // fork under its own pinned id, so it never appends to the asking run's
+    // transcript.
+    if (run?.resumeSessionId) {
+      parts.push('--resume', shellQuote(run.resumeSessionId), '--fork-session');
+    }
     if (run?.sessionId) {
       parts.push('--session-id', run.sessionId);
     }
@@ -235,6 +299,16 @@ export class ClaudeAgent implements BbAgent {
   }
 
   async getRunLog(
+    worktreePath: string,
+    run?: AgentRunIdentity,
+  ): Promise<string> {
+    const log = await this.findRunLog(worktreePath, run);
+    const startedAtMs =
+      run?.startedAt !== undefined ? new Date(run.startedAt).getTime() : NaN;
+    return Number.isFinite(startedAtMs) ? entriesSince(log, startedAtMs) : log;
+  }
+
+  private async findRunLog(
     worktreePath: string,
     run?: AgentRunIdentity,
   ): Promise<string> {

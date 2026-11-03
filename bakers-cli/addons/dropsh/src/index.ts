@@ -7,9 +7,10 @@ import {
   loadReadyBbConnection,
   type WorkspaceRecoveryOptions,
 } from '@bakers-build/core';
-import { toolPlugin } from '@dropsh/plugin-tool';
+import { createToolClient, toolPlugin } from '@dropsh/plugin-tool';
 import { type Command, Help } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
+import { askUserQuestionDecision } from './ask-user-question-hook.js';
 import { registerTemplateCommand } from './template.js';
 import { hideUnpublishedComments } from './unpublished-comments.js';
 
@@ -228,3 +229,65 @@ function publicAlias(
 
 export const toolsCommandPlugin = publicAlias('tools', 'tool');
 export const authCommandPlugin = publicAlias('auth', 'auth');
+
+/** A connection context for the bakers.build commands beside dropsh. */
+async function siteContext(
+  host: BbCommandHost,
+  options: { config?: string; connection?: string },
+) {
+  const opts = {
+    ...(options.config ? { explicit: options.config } : {}),
+    ...(options.connection ? { connection: options.connection } : {}),
+  };
+  const connection = await loadReadyBbConnection(host, opts);
+  return createBbConnectionContext(connection, {
+    ...opts,
+    wrapHttp: hideUnpublishedComments,
+  });
+}
+
+/** Read a ticket through the site's `bakers_ticket_read` tool. */
+async function readSiteTicket(
+  ctx: Awaited<ReturnType<typeof siteContext>>,
+  ticket: string,
+): Promise<Record<string, unknown>> {
+  const tools = createToolClient({ auth: ctx.auth, baseUrl: ctx.baseUrl });
+  try {
+    const result = await tools.call('tool_api__bakers_ticket_read', { ticket });
+    if (result.isError) {
+      const text = (result.content as { type: string; text?: string }[])
+        .map((c) => c.text ?? '')
+        .join(' ');
+      throw new Error(`bakers_ticket_read refused: ${text}`);
+    }
+    return (result.structuredContent ?? {}) as Record<string, unknown>;
+  } finally {
+    await tools.close();
+  }
+}
+
+/** `bakers hook ask-user-question`: Claude's PreToolUse hook on `AskUserQuestion`. */
+export const hookCommandPlugin: BbCommandPlugin = {
+  kind: 'command',
+  name: 'hook',
+  describe: 'agent hooks for conductor runs',
+  register(program: Command, host: BbCommandHost): void {
+    program
+      .command('hook')
+      .description('Agent hooks for conductor runs')
+      .command('ask-user-question')
+      .description(
+        'Deny the terminal dialog in autopilot runs and point to the ticket question',
+      )
+      .option('--connection <name>', 'bakers.build connection to use')
+      .option('--config <path>', 'connection config file')
+      .action(async (flags: { connection?: string; config?: string }) => {
+        const output = await askUserQuestionDecision(
+          process.env,
+          async (ticket) =>
+            readSiteTicket(await siteContext(host, flags), ticket),
+        );
+        if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
+      });
+  },
+};

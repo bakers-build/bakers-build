@@ -21,6 +21,7 @@ import type {
   FrozenTicket,
   InboxSnapshot,
   RemotePlugin,
+  ResumeContext,
   RunMetrics,
   RunWriteAttributes,
   Ticket,
@@ -899,6 +900,42 @@ export class DrupalBbRemote implements BbRemote {
       }
     }
     return { runUuid: '', worktreePath: '' };
+  }
+
+  async fetchResumeContext(
+    ticketUuid: string,
+    runUuid: string,
+  ): Promise<ResumeContext> {
+    const runs = await this.api
+      .collection('bb_run')
+      .where('ticket_id.id', '=', ticketUuid)
+      .fields(['state_at_start', 'started_at', 'drupal_internal__id'])
+      .sort('-drupal_internal__id')
+      .page(2)
+      .list();
+    const previous = runs.find((r) => r.id !== runUuid);
+    // The latest question: a comment whose Markdown starts with `# Question`.
+    const question = await this.api
+      .collection('bb_comment--bb_comment')
+      .where('ticket_id.id', '=', ticketUuid)
+      .where('body.value', 'STARTS_WITH', '# Question')
+      .fields(['created'])
+      .sort('-created')
+      .first();
+    const startedAt = previous?.attr<string | number>('started_at');
+    const created = question?.attr<string | number>('created');
+    const iso = (v: string | number | undefined): string =>
+      typeof v === 'number' ? new Date(v * 1000).toISOString() : (v ?? '');
+    return {
+      previousRun: previous
+        ? {
+            runUuid: previous.id,
+            stateAtStart: previous.attr<string>('state_at_start') ?? '',
+            startedAt: iso(startedAt),
+          }
+        : null,
+      questionAt: created === undefined ? null : iso(created),
+    };
   }
 
   async appendRunNote(runUuid: string, note: string): Promise<void> {

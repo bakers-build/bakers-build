@@ -44,9 +44,9 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 | `security` | Launch flags |
 |---|---|
 | `sandbox` | `--permission-mode default --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
-| `system` | none: your own Claude settings apply unchanged |
-| `yolo` | `--dangerously-skip-permissions`, the launch before `security` existed |
-| `custom` | `--settings '<config as JSON>'`, nothing else |
+| `system` | `--settings '<ask hook>'` |
+| `yolo` | `--dangerously-skip-permissions --settings '<ask hook>'` |
+| `custom` | `--settings '<config + ask hook>'` |
 
 `sandbox` keys and their defaults:
 
@@ -76,8 +76,9 @@ bakers agents
 
 - Runs start with `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1`: plugins declared in `.claude/settings.json` install before the first turn.
 - The addon starts `claude`; it does not install it or sign it in. The binary must be on `PATH` for a non-interactive shell; an alias is not loaded.
-- bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
+- bakers.build owns `--session-id`, `--resume`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` was removed; setting it fails loading. Use `security: 'yolo'` for the old bypass.
+- [Ask hook](/get-started/daily-work/answer-a-question): *Autopilot* tickets get no terminal dialog; a failing `bakers` blocks it.
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 

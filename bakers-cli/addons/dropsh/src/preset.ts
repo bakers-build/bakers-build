@@ -24,4 +24,10 @@ export const commands: BbPreset['commands'] = (acc) => [
     forwardHelp: true,
     describe: 'manage connection authentication and profiles',
   },
+  {
+    name: 'hook',
+    plugin: '@bakers-build/addon-dropsh',
+    export: 'hookCommandPlugin',
+    describe: 'agent hooks for conductor runs',
+  },
 ];
