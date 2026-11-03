@@ -95,6 +95,7 @@ node_modules/
 .bakers/local-ddev.bakers.config.js
 .pnpm-store
 /.env.ddev
+/.env
 
 # Transient run artifacts: reports, logs, screenshots, throwaway probe scripts.
 # Written per ticket, never committed, reaped with the worktree at `done`.

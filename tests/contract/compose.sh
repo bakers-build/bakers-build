@@ -27,15 +27,64 @@ pass() { echo "ok: $*"; }
 
 render() {
   local overlay="$1"; shift
-  DOMAIN=dummy.example.test \
+  COMPOSE_PROJECT_NAME=bakers-contract DOMAIN=dummy.example.test \
   STACK_NAME=dummy-stack \
   DB_NAME=dummy DB_USER=dummy DB_PASSWORD=dummy-pw DB_ROOT_PASSWORD=dummy-root-pw \
   DRUPAL_HASH_SALT=dummy-salt \
   REGISTRY_IMAGE_PHP=dummy/php:dummy REGISTRY_IMAGE_NGINX=dummy/nginx:dummy \
   REGISTRY_IMAGE_E2E=dummy/e2e:dummy REGISTRY_IMAGE_DOCS=dummy/docs:dummy \
   DOCS_DOMAIN=docs.example.test DOCS_ALIAS_DOMAIN=www.docs.example.test \
-    docker compose -f docker-compose.yml -f "$overlay" "$@" config
+    docker compose -f docker-compose.yml -f "$overlay" "$@" config ${RENDER_FORMAT:+--format=$RENDER_FORMAT}
 }
+
+# The independent path uses the same services and volumes, with its own ingress.
+self_host_render() {
+  TRAEFIK_IMAGE=traefik:v3.6.1 ACME_EMAIL=operator@example.test \
+  TRAEFIK_SUBNET=172.30.42.0/24 MAIL_SMTP_DSN=smtp://mail.example.test:587 \
+  MAIL_FROM_ADDRESS=sender@example.test \
+    render docker-compose.traefik.yml -f docker/self-host.yml "$@"
+}
+RENDER_FORMAT=json self_host_render | python3 -c '
+import json, sys
+c = json.load(sys.stdin)
+s = c["services"]
+assert "traefik" in s and "install" not in s and "docs" not in s
+assert set(c["volumes"]) == {"db", "public_files", "private_files", "tmp_files", "oauth_keys", "acme"}
+for name in ("php", "cron", "deploy"):
+    e = s[name]["environment"]
+    assert e["BB_SELF_HOSTED"] == "1"
+    assert e["DOMAIN"] == "dummy.example.test"
+    assert e["DRUPAL_TRUSTED_PROXY_SUBNET"] == "172.30.42.0/24"
+    assert not s[name].get("ports")
+assert not s["db"].get("ports")
+assert not s["nginx"].get("ports")
+assert {str(p["published"]) for p in s["traefik"]["ports"]} == {"80", "443"}
+assert c["networks"]["traefik_proxy"].get("external", False) is False
+assert s["nginx"]["labels"]["traefik.docker.network"] == c["networks"]["traefik_proxy"]["name"]
+assert any(v["source"] == "oauth_keys" for v in s["cron"]["volumes"])
+'
+pass "independent stack isolates ingress, preserves storage and forwards strict settings"
+
+# No ambient environment or cached private references can satisfy missing inputs.
+python3 <<'PYTEST'
+import os, subprocess
+values = dict(COMPOSE_PROJECT_NAME="bakers-contract", STACK_NAME="bakers-contract",
+    DOMAIN="app.example.test", ACME_EMAIL="operator@example.test", TRAEFIK_SUBNET="172.30.42.0/24",
+    TRAEFIK_IMAGE="traefik:v3.6.1", REGISTRY_IMAGE_PHP="ghcr.io/example/php:1.0.0",
+    REGISTRY_IMAGE_NGINX="ghcr.io/example/nginx:1.0.0", DB_NAME="dummy", DB_USER="dummy",
+    DB_PASSWORD="dummy", DB_ROOT_PASSWORD="dummy", DRUPAL_HASH_SALT="dummy",
+    MAIL_SMTP_DSN="smtp://smtp.example.test:587", MAIL_FROM_ADDRESS="sender@example.test")
+command = ["docker", "compose", "--env-file", "/dev/null", "-f", "docker-compose.yml",
+    "-f", "docker-compose.traefik.yml", "-f", "docker/self-host.yml", "config", "-q"]
+env = {"PATH": os.environ["PATH"], **values}
+result = subprocess.run(command, env=env, capture_output=True, text=True)
+assert result.returncode == 0, result.stderr
+for name in values.keys() - {"COMPOSE_PROJECT_NAME"}:
+    result = subprocess.run(command, env={**env, name: ""}, capture_output=True, text=True)
+    assert result.returncode != 0, f"Missing {name} was accepted"
+    assert name in result.stderr, result.stderr
+PYTEST
+pass "independent installation rejects every missing required input"
 
 # Both stacks use the same Traefik overlay; a second ingress overlay is drift.
 overlays="$(ls docker-compose.*.yml)"
@@ -137,5 +186,58 @@ if [ -n "$nginx_image" ] && docker image inspect "$nginx_image" >/dev/null 2>&1;
     && pass "nginx extra conf parses ($nginx_image)" \
     || fail "nginx -t failed for docker/nginx/oauth-discovery.conf + oauth-register-zone.conf"
 fi
+
+# Loading the distributed workspace configuration must not enable a provider.
+node --input-type=module <<'JS'
+import assert from 'node:assert/strict';
+import { mkdtempSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
+const previous = process.env.BB_HOME;
+try {
+  process.env.BB_HOME = dir;
+  writeFileSync(join(dir, 'package.json'), '{"type":"module"}');
+  copyFileSync('.bakers/conductor.config.js', join(dir, 'conductor.mjs'));
+  const config = (await import(pathToFileURL(join(dir, 'conductor.mjs')))).default;
+  assert.deepEqual(config.addons, [], 'default workspace must not register FRP');
+  const frp = { zone: 'preview.example.test', clientConfigPath: '/operator/frpc.json', adminPort: 7400, adminUser: 'operator', adminPassword: 'dummy' };
+  writeFileSync(join(dir, 'conductor.config.local.js'), `export default ${JSON.stringify({frp})}`);
+  const selected = (await import(`${pathToFileURL(join(dir, 'conductor.mjs'))}?selected`)).default;
+  assert.deepEqual(selected.addons[0].with.transport.with, frp);
+} finally {
+  if (previous === undefined) delete process.env.BB_HOME; else process.env.BB_HOME = previous;
+  rmSync(dir, {recursive: true, force: true});
+}
+JS
+pass "workspace preview requires explicit local provider configuration"
+
+# Coder startup must not download or start unselected tunnel providers.
+node --input-type=module <<'JS'
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+const dir = mkdtempSync(join(tmpdir(), 'bakers-coder-'));
+try {
+  const bin = join(dir, 'bin'); mkdirSync(bin);
+  for (const tool of ['ss', 'bakers', 'herdr', 'claude', 'codex', 'cursor-agent', 'gh', 'glab', 'setsid', 'nohup']) {
+    writeFileSync(join(bin, tool), '#!/bin/sh\nexit 0\n', {mode: 0o755});
+  }
+  writeFileSync(join(bin, 'curl'), '#!/bin/sh\necho unexpected-download >&2\nexit 91\n', {mode: 0o755});
+  const result = spawnSync('bash', ['coder/bakers-ddev/scripts/install.sh'], {
+    encoding: 'utf8', env: {HOME: dir, TMPDIR: dir, PATH: `${bin}:/usr/bin:/bin`, FRP_VERSION: 'unused', CLOUDFLARED_VERSION: 'unused'}
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /(?:frpc|cloudflared): installing/);
+  const template = readFileSync('coder/bakers-ddev/template.tf', 'utf8');
+  const image = template.match(/variable "image" \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(image, 'image input exists');
+  assert.doesNotMatch(image, /default\s*=/, 'Coder image must be explicitly supplied');
+} finally { rmSync(dir, {recursive: true, force: true}); }
+JS
+pass "Coder requires an image and leaves tunnel providers unselected"
 
 pass "compose.sh"

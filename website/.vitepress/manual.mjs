@@ -59,6 +59,7 @@ export const SIDEBAR = {
       ['Contributing to bakers.build', '/configuration/project/contributing'],
       ['Configuration migration', '/configuration/project/migration'],
       ['Server', '/configuration/project/server'],
+      ['Komodo server', '/configuration/project/server-komodo'],
     ]),
     group('Provisioning', [
       ['Provisioning', '/configuration/provisioning'],

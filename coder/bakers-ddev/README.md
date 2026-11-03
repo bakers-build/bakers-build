@@ -1,17 +1,19 @@
 # bakers-ddev Coder template
 
+Coder is an optional client/workspace provider, separate from the [control-plane server](../../docs/configuration/project/server.md). A local workstation needs neither Coder nor preview tunnels.
+
 One long-lived Coder workspace per person that is a bakers.build worker, like a developer's own machine. The template provides the machine and the tools. Signing in, checking out projects and starting conductors happen inside the workspace through `/bb-init`, which follows the [guide](../../docs/configuration/machine/coder-workspace.md).
 
 A workspace is one Sysbox container with its own Docker daemon, a home volume and a Docker volume. The agent runs [`scripts/install.sh`](scripts/install.sh) on every start. It installs each missing tool into the home volume, then starts `herdr server`.
 
 ## Tools
 
-`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab`, `cloudflared` and `frpc`. Docker and DDEV come from the image.
+`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `frpc` and `cloudflared` are installed and started only when their operator configuration files exist.
 
 ## Prerequisites
 
 - A Coder deployment with a Docker host on amd64 that has the [Sysbox](https://github.com/nestybox/sysbox) runtime (`sysbox-runc`).
-- The Docker host can pull the workspace image without credentials from the template: the image is public, already on the host, or the host ran `docker login` for its registry.
+- A compatible public prebuilt workspace image that the Docker host can pull anonymously, without relying on a cached private image. No compatible public client release has yet been verified for this template; selecting an arbitrary public image does not satisfy its entrypoint/tool contract.
 
 ## Image requirements
 
@@ -27,11 +29,11 @@ The home volume starts empty. Docker copies `/home/coder` of the image into it o
 
 ## Variables
 
-Set them at push time with `--variable name=value`. All have defaults.
+Set them at push time with `--variable name=value`. `image` is required; other inputs have defaults.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `image` | an internal image of the template's author | Workspace image with tag. The default is not public: set your own image that meets the requirements above |
+| `image` | required | Public prebuilt workspace image with a version tag or digest, meeting the requirements above |
 | `docker_host` | `unix:///var/run/docker.sock` | Docker socket of the Coder server |
 | `cpu` | 4 | Relative CPU weight (cores x 1024), 1 to 32. It is not a limit |
 | `memory` | 8 | Memory limit in GB, 2 to 128. Two DDEV projects, the Docker daemon and the agent CLIs can exceed 8 GB: raise it for heavier use |
@@ -49,17 +51,21 @@ Set them at push time with `--variable name=value`. All have defaults.
 ## Push
 
 ```sh
-coder templates push bakers-ddev -d coder/bakers-ddev
-```
-
-With another image:
-
-```sh
 coder templates push bakers-ddev -d coder/bakers-ddev \
   --variable image=registry.example.org/team/workspace-base:1.0.0
 ```
 
 Coder gives a new template to everyone by default. Restrict it in the Coder UI if needed. Create a workspace with `coder create <name> --template bakers-ddev`, then continue with the [guide](../../docs/configuration/machine/coder-workspace.md).
+
+## Optional previews
+
+Without provider configuration no tunnel client is downloaded or started. For FRP,
+create `~/.config/frp/frpc.json` with your server and credentials. For named
+Cloudflare, create `~/.cloudflared/tunnel-token`. Protect these files and restart
+the workspace to install/start the selected client. For Cloudflare Quick, install
+`cloudflared` explicitly before selecting that transport; it needs no token file.
+The transport configuration must supply your own zone and endpoint; no company
+preview zone is provided. Local development works without any of these providers.
 
 ## Updating versions
 
