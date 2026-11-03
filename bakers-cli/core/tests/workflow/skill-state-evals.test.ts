@@ -258,6 +258,35 @@ describe('ticket pingpong profile', () => {
     ])
       await expect(judge(fixture(e), 'x', [readTicket()])).rejects.toThrow();
   });
+  it('the loop limit counts only earlier Not OK verdicts', async () => {
+    // One earlier Not OK, one OK and a summary quoting Not OK: an over-count raises a problem.
+    expect(await judge('pingpong-review-loop-below', 'Back.', back)).toEqual(
+      [],
+    );
+    expect(
+      await judge('pingpong-review-loop-below', 'Stopped.', [
+        ...back.slice(0, 3),
+        problem,
+        reported,
+      ]),
+    ).toEqual([
+      'pingpong-technical-problem',
+      'pingpong-no-stop',
+      'pingpong-transition',
+    ]);
+  });
+  it('a GREEN coding gate moves to review unattended', async () => {
+    const handedOff = [readTicket(), comment('coding'), summary];
+    expect(
+      await judge('pingpong-working-green', 'Moved.', [
+        ...handedOff,
+        transition('review'),
+      ]),
+    ).toEqual([]);
+    expect(await judge('pingpong-working-green', 'Held.', handedOff)).toEqual([
+      'pingpong-transition',
+    ]);
+  });
 });
 
 describe('classify profile', () => {
