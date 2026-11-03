@@ -1,13 +1,11 @@
 # Handoff templates
 
-Fill every field from the conversation; `<…>` marks a value.
-
 ## `qualification`
 
 ```markdown
 ## Outcome
 
-<what the requester gets, in one paragraph>
+<what the requester gets>
 
 ## Acceptance
 
@@ -17,20 +15,20 @@ Gate: <n> criteria checked, <n> passed.
 
 ## Out of scope
 
-- <each boundary, or none with the reason>
+- <boundary, or none with the reason>
 
 ## Handoff metadata
 
 | Field | Value |
 |---|---|
-| `recipe` | `superpowers`: specified with the requester |
+| `recipe` | `superpowers` |
 | `ticket_type` | `feature`, `bug` or `chore` |
-| `reproduction` | the bug's reproducible condition, otherwise `not_required` |
-| `scenario_required` | `true` when the behaviour needs a browser path, otherwise `false` |
-| `test_as` | who tests and what each should see, or `no login needed` |
-| `prior_art` | each searched spelling and its outcome (`negative` or `error`), and the probe |
+| `reproduction` | the bug's condition, else `not_required` |
+| `scenario_required` | `true` for a browser path, else `false` |
+| `test_as` | who tests and what each sees, or `no login needed` |
+| `prior_art` | each spelling with its outcome, and the probe |
 | `handoff_version` | `1` |
-| `provenance` | title and description as read; approved by <name> (<identity>) in <the conversation link, or the conversation> |
+| `provenance` | title and description as read; approved by <name> (<identity>) in <conversation link, or the conversation> |
 ```
 
 ## `spec`
@@ -42,7 +40,7 @@ Gate: <n> criteria checked, <n> passed.
 
 ## Acceptance criteria
 
-<the AC IDs of the qualification>
+<the qualification's AC IDs>
 
 ## Out of scope
 
