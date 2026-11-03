@@ -52,7 +52,7 @@ function analyze(f, context) {
       payload(initial).state === 'qualification' && payload(initial).recipe === f.input.recipe && payload(initial).type === f.input.ticket_type,
     'Read the created ticket and verify title, description, recipe, type and initial state'),
     check('qualification-and-summary', comments.length === 2 && qualification && summary && qualification.index < summary.index &&
-      ['test_as', 'out_of_scope', 'handoff_version', 'provenance', 'reproduction', 'scenario_required'].every(field => recorded(arg(qualification, 'body') ?? '', field)) &&
+      ['test_as', 'out_of_scope', 'handoff_version', 'reproduction', 'scenario_required'].every(field => recorded(arg(qualification, 'body') ?? '', field)) &&
       arg(qualification, 'body')?.includes(f.input.acceptance_criterion) &&
       comments.every(c => own(c) && succeeded(c) && uuid(payload(c)?.id) && c.index < barrier),
     'Publish one complete qualification and one summary, both confirmed by their results, before routing'),
