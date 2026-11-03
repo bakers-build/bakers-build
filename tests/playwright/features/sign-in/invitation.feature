@@ -21,7 +21,7 @@ Feature: A workspace invitation
     When I continue from the identity step
     And I finish the onboarding wizard
     Then the overview offers joining "bakers"
-    And the create action stands 20 pixels below the content above it
+    And the create action stands 16 pixels below the content above it
     When I join the invited workspace "bakers"
     And I choose the workspace "/bakers/tickets"
     Then the address is "/bakers/tickets"

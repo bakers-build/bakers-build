@@ -308,7 +308,7 @@ Then(
     await expect(item).toBeVisible();
     await expect(item.locator('[data-person-mark]')).toHaveText(account.charAt(0).toUpperCase());
     await expect(item.locator('[data-list-region="headline"] [data-cell="person"]')).toHaveCount(1);
-    await expect(item.locator('[data-list-region="meta"] [data-cell="joined"]')).toHaveText(/joined \d{4}-\d{2}-\d{2}/);
+    await expect(item.locator('[data-list-region="meta"] [data-cell="joined"]')).toHaveText(/joined \d{1,2} [A-Z][a-z]{2}( \d{4})?$/);
     const right = item.locator('[data-list-region="right"]');
     expect(await right.locator('[data-cell]').evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-cell'))))
       .toEqual(expect.arrayContaining(['role', 'remove']));

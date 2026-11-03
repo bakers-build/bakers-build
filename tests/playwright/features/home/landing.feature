@@ -98,13 +98,14 @@ Feature: The site root lands the operator on their own My work
     And the address is "/bakers/tickets"
 
   # The create action is its own row under the chooser, not glued to the last
-  # card: the overview body is a zone whose `md` gap is the space-5 step.
+  # card: the overview body is a zone whose `md` gap is the `card` spacing role
+  # (4 spacing steps: 16 pixels, 24 at cozy density).
   @landing @chooser
   Scenario: The create action stands apart from the chooser
     Given I am logged in as "Administrator"
     When I open the site root
     Then the workspace chooser is present
-    And the create action stands 20 pixels below the content above it
+    And the create action stands 16 pixels below the content above it
     When the layout density is cozy
     Then the create action stands 24 pixels below the content above it
 
@@ -113,11 +114,11 @@ Feature: The site root lands the operator on their own My work
     Given the viewport is 360 pixels wide
     And I am logged in as "Administrator"
     When I open the site root
-    Then the create action stands 20 pixels below the content above it
+    Then the create action stands 16 pixels below the content above it
     And the page does not overflow horizontally
 
   @landing
   Scenario: The create action stands apart from the empty state
     Given I am logged in as the account "no-bakery"
     When I open the site root
-    Then the create action stands 20 pixels below the content above it
+    Then the create action stands 16 pixels below the content above it
