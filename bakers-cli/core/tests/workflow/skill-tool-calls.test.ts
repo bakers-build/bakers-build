@@ -952,7 +952,10 @@ describe('hand-over of a specified ticket', () => {
       ]),
     ).toContain('handover-order');
     expect(
-      grade('Work on EVAL-31 starts.', [...trace.slice(0, 2), ...trace.slice(4)]),
+      grade('Work on EVAL-31 starts.', [
+        ...trace.slice(0, 2),
+        ...trace.slice(4),
+      ]),
     ).toContain('handover-order');
     const fixed = await simulatedTrace(
       'project-manager-handover',
