@@ -46,8 +46,8 @@ recommended one marked. Then `bakers_ticket_update` with `labels_add: ["Question
 
 ## Technical problem
 
-Record what failed, with its command and output, in the state's typed handoff. Then publish one
-comment of type `comment`, exactly:
+First the ticket shows what failed, with its command and output: publish the state's typed handoff
+now unless one already says it. Then publish one comment of type `comment`, exactly:
 
 ```markdown
 # Technical problem

@@ -62,6 +62,12 @@ function analyze(f, output, context) {
     checks.push(check('pingpong-decision', output.includes('Decisions') && output.includes(e.decision),
       `Record the technical decision (${e.decision}) under Decisions in the handoff`));
   }
+  if (e.stop === 'technical-problem') {
+    const note = headed('Technical problem')[0];
+    checks.push(check('pingpong-cause-recorded', note && comments.some(c => c.index < note.index && succeeded(c) &&
+      !/^\s*# (Question|Technical problem)\b/.test(arg(c, 'body') ?? '')),
+    'Publish what failed in the ticket before the keytec note'));
+  }
   return { checks, diagnostics };
 }
 

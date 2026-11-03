@@ -184,15 +184,26 @@ describe('ticket pingpong profile', () => {
   });
   it('technical problem never asks the user', async () => {
     const p = fixture({ stop: 'technical-problem' });
+    const handoff = comment(
+      'coding',
+      '# Coding handoff\n\n`ddev start` failed: the Docker daemon is not reachable.',
+    );
     expect(
-      await judge(p, 'Stopped.', [readTicket(), problem, reported]),
+      await judge(p, 'Stopped.', [readTicket(), handoff, problem, reported]),
     ).toEqual([]);
     expect(
-      await judge(p, 'Stopped.', [readTicket(), question, problem, reported]),
+      await judge(p, 'Stopped.', [
+        readTicket(),
+        handoff,
+        question,
+        problem,
+        reported,
+      ]),
     ).toEqual(['pingpong-question']);
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
+        handoff,
         problem,
         update({ labels_add: ['technical problem', 'Question'], frozen: true }),
       ]),
@@ -200,6 +211,7 @@ describe('ticket pingpong profile', () => {
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
+        handoff,
         comment('comment', '# Technical problem\n\nDocker is down.'),
         reported,
       ]),
@@ -208,6 +220,7 @@ describe('ticket pingpong profile', () => {
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
+        handoff,
         comment(
           'comment',
           '# Technical problem\n\n`ddev start` failed: Docker is down.\n\nPlease contact keytec.',
@@ -215,6 +228,9 @@ describe('ticket pingpong profile', () => {
         reported,
       ]),
     ).toEqual(['pingpong-technical-problem']);
+    expect(
+      await judge(p, 'Stopped.', [readTicket(), problem, reported]),
+    ).toEqual(['pingpong-cause-recorded']);
   });
   it('sends a Not OK verdict back to working', async () => {
     expect(await judge(notOk, 'Back.', back)).toEqual([]);
