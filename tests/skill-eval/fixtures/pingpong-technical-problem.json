@@ -3,7 +3,7 @@
   "synthetic": true,
   "profile": "ticket-pingpong",
   "execution": "simulated-tools",
-  "skill": "bb-ticket-pingpong",
+  "skill": "bb-pingpong",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",

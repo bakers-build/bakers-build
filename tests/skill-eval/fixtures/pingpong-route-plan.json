@@ -10,7 +10,7 @@
   ],
   "virtual_references": [
     "bb-workflow/references/intake.md",
-    "bb-ticket-pingpong/SKILL.md"
+    "bb-pingpong/SKILL.md"
   ],
   "recipes": [
     "bb-recipe-probe"
@@ -18,7 +18,7 @@
   "input": {
     "task": "Read ./WORKFLOW.md, load the bakers.build skill its loader names for this ticket's work type and state, and execute only that skill's plan section. For this check, run the frame's Routing for this ticket through the intake, then stop before the state file's `read` phase. Return the intake, or the stop report. This is unattended.",
     "ticket_uuid": "11111111-1111-4111-8111-111111111111",
-    "installed_skills": "Installed skills are readable with read_file at skills/<name>/SKILL.md. Installed: bb-recipe-probe, bb-ticket-pingpong. No other skill file is installed. Frame references not supplied above are readable with read_file at skills/bb-workflow/references/<file>.md.",
+    "installed_skills": "Installed skills are readable with read_file at skills/<name>/SKILL.md. Installed: bb-recipe-probe, bb-pingpong. No other skill file is installed. Frame references not supplied above are readable with read_file at skills/bb-workflow/references/<file>.md.",
     "workspace_uuid": "66666666-6666-4666-8666-666666666666",
     "project_uuid": "55555555-5555-4555-8555-555555555555"
   },
@@ -28,7 +28,7 @@
       "read": true
     },
     "skill": {
-      "path": "skills/bb-ticket-pingpong/SKILL.md",
+      "path": "skills/bb-pingpong/SKILL.md",
       "read": false
     },
     "markers": [
@@ -58,13 +58,13 @@
       ]
     },
     "files": {
-      "WORKFLOW.md": "# Fixture project - WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state. When the ticket's labels include `ticket:pingpong` and its state is `working` or `review`, invoke `bakers:bb-ticket-pingpong` too and follow it with the frame.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
+      "WORKFLOW.md": "# Fixture project - WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state. When the ticket's labels include `ticket:pingpong` and its state is `working` or `review`, invoke `bakers:bb-pingpong` too and follow it with the frame.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
     }
   },
   "rubric": [
     {
       "id": "not-in-plan",
-      "criterion": "Loads no bb-ticket-pingpong: the WORKFLOW.md clause applies in working and review only, and the ticket is in plan."
+      "criterion": "Loads no bb-pingpong: the WORKFLOW.md clause applies in working and review only, and the ticket is in plan."
     },
     {
       "id": "plan-slot",

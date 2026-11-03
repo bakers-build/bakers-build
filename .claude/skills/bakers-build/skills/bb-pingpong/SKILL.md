@@ -1,5 +1,5 @@
 ---
-name: bb-ticket-pingpong
+name: bb-pingpong
 description: "Use when a ticket labelled `ticket:pingpong` runs in working or review: it works on its own, decides technical questions itself, asks the user only content questions through the ticket and reports technical problems to keytec."
 ---
 

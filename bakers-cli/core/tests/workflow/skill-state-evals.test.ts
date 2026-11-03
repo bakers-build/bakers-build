@@ -85,7 +85,7 @@ describe('frame routing profile', () => {
     ).toEqual(['intake-read']);
   });
   it('checks that WORKFLOW.md routes to a skill only when it applies', async () => {
-    const path = 'skills/bb-ticket-pingpong/SKILL.md';
+    const path = 'skills/bb-pingpong/SKILL.md';
     const skill = (read: unknown) => (f: Record<string, any>) => ({
       ...f,
       expect: { ...f.expect, skill: { path, read } },
@@ -125,7 +125,7 @@ describe('ticket pingpong profile', () => {
     synthetic: true,
     profile: 'ticket-pingpong',
     execution: 'simulated-tools',
-    skill: 'bb-ticket-pingpong',
+    skill: 'bb-pingpong',
     references: [],
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
