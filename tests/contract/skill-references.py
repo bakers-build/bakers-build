@@ -7,10 +7,10 @@ import tempfile
 
 repo = Path(__file__).resolve().parents[2]
 root = repo / '.claude/skills/bakers-build'
-SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-prepare-time',
-          'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers', 'bb-recipe-verify',
-          'bb-runtime-ddev',
-          'bb-scope-change', 'bb-project-manager', 'bb-upgrade-project', 'bb-verdict', 'bb-workflow')
+SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-pingpong',
+          'bb-prepare-time', 'bb-project-manager', 'bb-recipe-deploy-and-release', 'bb-recipe-matt',
+          'bb-recipe-superpowers', 'bb-recipe-verify', 'bb-runtime-ddev', 'bb-scope-change',
+          'bb-upgrade-project', 'bb-verdict', 'bb-workflow')
 STATES = ('qualification', 'plan', 'working', 'review')
 PHASES = ('read', 'provision', 'work', 'validate', 'deliver', 'outtake', 'transition')
 # Skills that became bb-workflow references or were deleted; none may be named anywhere.

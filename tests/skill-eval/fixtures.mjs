@@ -38,11 +38,12 @@ async function installRecipes(fixture) {
   }
 }
 
-/** Tool fixtures may serve frame references as virtual files, so the trace counts each read. */
+/** Tool fixtures may serve frame references and bundle skills as virtual files, so the trace counts each read. */
 async function installReferences(fixture) {
   if (fixture.virtual_references === undefined) return;
+  const servable = path => reference(path) || /^bb-[a-z0-9-]+\/SKILL\.md$/.test(path);
   requireValue(fixture.execution === 'simulated-tools' && Array.isArray(fixture.virtual_references) &&
-    fixture.virtual_references.every(reference), 'Expected virtual_references as frame reference paths of a tool fixture');
+    fixture.virtual_references.every(servable), 'Expected virtual_references as frame reference or bundle skill paths of a tool fixture');
   for (const path of fixture.virtual_references) {
     fixture.simulation.files[`skills/${path}`] = await readFile(new URL(`../../.claude/skills/bakers-build/skills/${path}`, import.meta.url), 'utf8');
   }
