@@ -1,6 +1,6 @@
 # The PM bot: Hermes at the version the bot is written for, with the bot's content baked in.
-# CI (pm_bot_image) builds and pushes it; the bakers-ddev Coder template runs it
-# (coder/bakers-ddev/README.md › PM bot).
+# GitHub CI builds and checks it (image_gate) and the release publishes it to GHCR; the
+# bakers-ddev Coder template runs it (coder/bakers-ddev/README.md › PM bot).
 #
 # The base keeps its own start chain: s6-overlay runs Hermes' bootstrap as root (remapping
 # the hermes user to HERMES_UID/HERMES_GID, preparing /opt/data), then runs entrypoint.sh as

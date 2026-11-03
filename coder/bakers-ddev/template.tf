@@ -111,19 +111,19 @@ variable "frp_version" {
 }
 
 variable "pm_bot_image" {
-  description = "The PM bot's image, tag and digest (<registry>/<path>:<tag>@sha256:<digest>; README › PM bot). Empty: no workspace runs the bot"
+  description = "The PM bot's image, tag and digest (ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>; README › PM bot). Empty: no workspace runs the bot"
   type        = string
   default     = ""
 }
 
 variable "pm_bot_registry_user" {
-  description = "User name of the deploy token for pm_bot_image's registry"
+  description = "User name for pm_bot_image's registry; empty for the public GHCR image"
   type        = string
   default     = ""
 }
 
 variable "pm_bot_registry_token" {
-  description = "Deploy token (read_registry) for pm_bot_image's registry; empty for a public registry"
+  description = "Token for pm_bot_image's registry (e.g. a GitHub token with read:packages); empty for the public GHCR image"
   type        = string
   default     = ""
   sensitive   = true

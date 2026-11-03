@@ -38,7 +38,7 @@ bash tests/contract/pm-bot.sh          # lock-down of the configuration, the Sla
 bash tests/contract/pm-bot-image.sh    # builds the image and starts it in check and run mode (Docker)
 ```
 
-CI runs the first two in `pm_bot` and the third in `pm_bot_image`, which then pushes the image (the template's README › PM bot › The bot's version).
+GitHub CI runs the first two in `pm_bot` and the third in `image_gate`; the release then publishes the image to GHCR (the template's README › PM bot › The bot's version).
 
 ## Test it by hand
 

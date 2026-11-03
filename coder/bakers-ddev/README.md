@@ -49,8 +49,8 @@ Set them at push time with `--variable name=value`. `image` is required; other i
 | `cloudflared_version` | 2026.10.2 | cloudflared release |
 | `frp_version` | 0.68.0 | frp release, the version the bakers.build frp transport is written against |
 | `pm_bot_image` | empty | The PM bot's image with tag and digest, `<registry>/<path>:<tag>@sha256:<digest>` ([PM bot › The bot's version](#4-the-bots-version)). Empty: no workspace runs the bot |
-| `pm_bot_registry_user` | empty | User name of the deploy token for `pm_bot_image`'s registry |
-| `pm_bot_registry_token` | empty | Deploy token (`read_registry`) for that registry. Sensitive; empty for a public registry |
+| `pm_bot_registry_user` | empty | User name for `pm_bot_image`'s registry. Empty for the public GHCR image |
+| `pm_bot_registry_token` | empty | Token for that registry, for example a GitHub token with `read:packages` for a private package. Sensitive; empty for the public GHCR image |
 
 ## Push
 
@@ -159,22 +159,24 @@ On the command line, use the space form shown above: a `--parameter` value with 
 
 ### 4. The bot's version
 
-The bot's image is `pm-bot/Dockerfile`: the official Hermes image at the version the bot is written for, with the bot's files baked in. CI (`pm_bot_image`) builds it for every merge request and `develop` commit that changes `pm-bot/`, checks it and pushes `pm-bot:<commit>` to the project's registry. Its last log line is the value to pin:
+The bot's image is `pm-bot/Dockerfile`: the official Hermes image at the version the bot is written for, with the bot's files baked in. GitHub CI builds and checks it in `image_gate` with the other images, and the release publishes it as a public package beside them: `ghcr.io/bakers-build/bakers-build/pm-bot`, tagged with the commit and the branch (`next`, `main`), and on `main` also with the version and `latest`. Pin a tag with its digest:
 
-```text
-pm_bot_image=git.key-tec.de:5050/bakers-build/bakers-build/pm-bot:<commit>@sha256:<digest>
+```sh
+docker buildx imagetools inspect ghcr.io/bakers-build/bakers-build/pm-bot:<tag> --format '{{.Manifest.Digest}}'
 ```
 
-Push the template with it and a deploy token with `read_registry` for that registry, then update or restart each workspace:
+```text
+pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
+```
+
+Push the template with it, then update or restart each workspace. The package is public, so the registry variables stay empty:
 
 ```sh
 coder templates push bakers-ddev -d coder/bakers-ddev \
-  --variable pm_bot_image=git.key-tec.de:5050/bakers-build/bakers-build/pm-bot:<commit>@sha256:<digest> \
-  --variable pm_bot_registry_user=<deploy token user> \
-  --variable pm_bot_registry_token=<deploy token>
+  --variable pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
 ```
 
-The script refuses an image without its digest. It logs in with the token on `docker login`'s stdin, so the token stays in the workspace user's Docker configuration (`~/.docker/config.json`) and never reaches the bot's env file or container.
+The script refuses an image without its digest. For an image in a private registry, also set `pm_bot_registry_user` and `pm_bot_registry_token`. The script logs in with the token on `docker login`'s stdin, so the token stays in the workspace user's Docker configuration (`~/.docker/config.json`) and never reaches the bot's env file or container.
 
 ### Logs and skip lines
 
