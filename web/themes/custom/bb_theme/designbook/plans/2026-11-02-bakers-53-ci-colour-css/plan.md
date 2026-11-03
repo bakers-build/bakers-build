@@ -23095,7 +23095,7 @@ Context: [ctx:cli-surface]
 ### Step: guard-css
 Context: [ctx:cli-surface]
 
-- [ ] guard-css — guard
+- [x] guard-css — guard
 
   Instruction: task:guard-css
 
@@ -23141,7 +23141,7 @@ Context: [ctx:cli-surface]
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
 ### Step: generate-index
 Context: [ctx:cli-surface, ctx:css-mapping]

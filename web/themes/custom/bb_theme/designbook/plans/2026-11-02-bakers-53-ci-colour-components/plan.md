@@ -5827,7 +5827,7 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
 ### Step: refresh-components
 Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, ctx:component-contract-index, ctx:sdc-components]
 
-- [ ] refresh-components — refresh
+- [x] refresh-components — refresh
 
   Instruction: task:refresh-components
 
@@ -5920,12 +5920,12 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
 ### Step: validate
 Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, ctx:playwright-validate, ctx:component-contract-index, ctx:sdc-components]
 
-- [ ] validate — bb-theme-action-mode-toggle--default
+- [x] validate — bb-theme-action-mode-toggle--default
 
   Instruction: task:validate
 
@@ -5952,9 +5952,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-person--default
+- [x] validate — bb-theme-data-display-person--default
 
   Instruction: task:validate
 
@@ -5981,9 +5981,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-badge--default
+- [x] validate — bb-theme-data-display-badge--default
 
   Instruction: task:validate
 
@@ -6010,9 +6010,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-board-card--default
+- [x] validate — bb-theme-data-display-board-card--default
 
   Instruction: task:validate
 
@@ -6039,9 +6039,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-list--default
+- [x] validate — bb-theme-data-display-list--default
 
   Instruction: task:validate
 
@@ -6068,9 +6068,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-table--default
+- [x] validate — bb-theme-data-display-table--default
 
   Instruction: task:validate
 
@@ -6097,9 +6097,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-event--default
+- [x] validate — bb-theme-data-display-event--default
 
   Instruction: task:validate
 
@@ -6126,9 +6126,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-note--default
+- [x] validate — bb-theme-data-display-note--default
 
   Instruction: task:validate
 
@@ -6155,9 +6155,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-message--default
+- [x] validate — bb-theme-data-display-message--default
 
   Instruction: task:validate
 
@@ -6184,9 +6184,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-action-button--default
+- [x] validate — bb-theme-action-button--default
 
   Instruction: task:validate
 
@@ -6213,9 +6213,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-link-group--default
+- [x] validate — bb-theme-data-display-link-group--default
 
   Instruction: task:validate
 
@@ -6242,9 +6242,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-data-display-state-flow--default
+- [x] validate — bb-theme-data-display-state-flow--default
 
   Instruction: task:validate
 
@@ -6271,9 +6271,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — bb-theme-form-label--default
+- [x] validate — bb-theme-form-label--default
 
   Instruction: task:validate
 
@@ -6300,5 +6300,5 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 

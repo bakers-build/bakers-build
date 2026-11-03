@@ -57,7 +57,7 @@ assert.equal(legacy.attrs.has('data-skin'), false, 'a stored bakers-theme has no
 assert.equal(legacy.window.bakersSetTheme, undefined)
 
 // No skin code left in the theme.
-const skipped = new Set(['node_modules', 'dist', 'plans'])
+const skipped = new Set(['node_modules', 'dist', 'storybook-static', 'plans'])
 const files = dir => readdirSync(dir).flatMap(name => {
   const path = `${dir}/${name}`
   if (skipped.has(name)) return []
