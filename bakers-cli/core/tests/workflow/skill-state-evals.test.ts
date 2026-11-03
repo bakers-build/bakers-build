@@ -148,9 +148,11 @@ describe('ticket pingpong profile', () => {
       { ticket, ...args },
       { labels: args.labels_add ?? [], frozen: Boolean(args.frozen) },
     );
+  const answer =
+    'Answer in a comment, then remove the label *Question* and unfreeze the ticket.';
   const question = comment(
     'comment',
-    '# Question\n\nDoes the export include cancelled invoices?\n\n1. Yes (recommended)\n2. No',
+    `# Question\n\nDoes the export include cancelled invoices?\n\n1. Yes (recommended)\n2. No\n\n${answer}`,
   );
   const asked = update({ labels_add: ['Question'], frozen: true });
   const problem = comment(
@@ -161,7 +163,7 @@ describe('ticket pingpong profile', () => {
   const tunnel = 'https://eval-61-preview.example.invalid/invoices';
   const shown = comment(
     'comment',
-    `# Question\n\nThe invoice list now has an Export CSV button. Try it at ${tunnel}.\n\n1. Accept (recommended)\n2. Ask for changes`,
+    `# Question\n\nThe invoice list now has an Export CSV button. Try it at ${tunnel}.\n\n1. Accept (recommended)\n2. Ask for changes\n\n${answer}`,
   );
   const mergeArgv = ['glab', 'mr', 'merge', '61', '--squash'];
   const merged: Row = {
@@ -197,6 +199,17 @@ describe('ticket pingpong profile', () => {
         readTicket(),
         question,
         update({ labels_add: ['Question'] }),
+      ]),
+    ).toEqual(['pingpong-question']);
+    // Without the answer line nobody knows to unfreeze the ticket, and the run never resumes.
+    expect(
+      await judge(q, 'Asked.', [
+        readTicket(),
+        comment(
+          'comment',
+          '# Question\n\nCancelled invoices too?\n\n1. Yes\n2. No',
+        ),
+        asked,
       ]),
     ).toEqual(['pingpong-question']);
   });
@@ -346,7 +359,7 @@ describe('ticket pingpong profile', () => {
     );
     const technical = comment(
       'comment',
-      `# Question\n\nAll criteria pass at f00dfee. Try it at ${tunnel}.\n\n1. Accept (recommended)\n2. Ask for changes`,
+      `# Question\n\nAll criteria pass at f00dfee. Try it at ${tunnel}.\n\n1. Accept (recommended)\n2. Ask for changes\n\n${answer}`,
     );
     expect(
       await judge(plain, 'Asked.', [readTicket(), technical, asked]),

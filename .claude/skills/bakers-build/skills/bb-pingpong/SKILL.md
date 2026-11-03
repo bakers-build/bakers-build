@@ -11,8 +11,10 @@ Settle every technical question yourself with the best implementation, and recor
 with its reason under `Decisions` in the state's handoff. Ask the user only about content the
 ticket, repository and confirmed scope cannot settle, as a **user question** through the
 [question channel](../bb-workflow/references/publish-comment.md#a-question-for-a-human): one
-comment of type `comment` headed `# Question`, with the question, its context and numbered choices,
-the recommended one marked; then add the label `Question`, freeze the ticket and end the run.
+comment of type `comment` headed `# Question`, with the question, its context, numbered choices
+with the recommended one marked, and last the line "Answer in a comment, then remove the label
+*Question* and unfreeze the ticket."; then add the label `Question`, freeze the ticket and end the
+run.
 Anything technical you cannot resolve is a **technical problem**.
 
 In `working`, write a missing `spec`, `plan` or `test` in this run through
@@ -26,8 +28,10 @@ request takes the link's place. Work requested changes and ask again; once accep
 pass transitions to `review`.
 
 In [review](../bb-workflow/references/review.md), the verdict needs no confirmation. `OK` merges and
-transitions to `done`. `Not OK` without a `criterion` cause, or a failed merge gate, goes back to
-`working` to be fixed. A `criterion` cause is a user question recommending the proposed rewrite.
+transitions to `done` once the user has accepted the result; with no acceptance on the ticket, ask
+for it first, as in `working`. `Not OK` without a `criterion` cause, or a failed merge gate, goes
+back to `working` to be fixed. A `criterion` cause is a user question recommending the proposed
+rewrite.
 
 For a technical problem, publish the error message and its output as one comment, then this note
 for the user as another; add the label `technical problem`, freeze the ticket and end the run:

@@ -46,8 +46,11 @@ function analyze(f, output, context) {
   const checks = [
     // The fixture's git/glab commands are on the call surface; anything else is not.
     ...commonChecks(trace.filter(c => !declared(c)), () => false, recovered),
-    check('pingpong-question', e.stop === 'question' ? raised('Question', 'Question') : absent('Question', 'Question'),
-      e.stop === 'question' ? 'Ask one user question: a # Question comment, then the Question label and the freeze'
+    // The answer line tells whoever answers in the tracker to unfreeze the ticket, so the run resumes.
+    check('pingpong-question', e.stop === 'question'
+      ? raised('Question', 'Question') && /unfreeze/i.test(arg(headed('Question')[0], 'body'))
+      : absent('Question', 'Question'),
+      e.stop === 'question' ? 'Ask one user question: a # Question comment with the answer line, then the Question label and the freeze'
         : 'Ask the user nothing: no # Question comment and no Question label'),
     check('pingpong-technical-problem', e.stop === 'technical-problem'
       ? raised('Technical problem', 'technical problem') && arg(headed('Technical problem')[0], 'body').trim() === KEYTEC
