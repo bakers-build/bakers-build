@@ -89,7 +89,7 @@ function toolModel(simulation) {
     },
     ticket_read: a => {
       const t = find(a.ticket);
-      return { ...pick(t, ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe', 'branch_name', 'conductor']), approval: t.approval ?? 'human', labels: t.labels, links: t.links,
+      return { ...pick(t, ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe', 'branch_name', 'conductor']), labels: t.labels, links: t.links,
         project: contractFixture.project, base_branch: t.base_branch ?? 'main', frozen: Boolean(t.frozen), metrics: structuredClone(t.metrics ?? []),
         comments: comments.filter(c => c.ticket === t.id).map(c => ({ id: c.id, type: c.type, body: c.body,
           created: c.created ?? '2026-01-01T00:00:00+00:00', author: c.author ?? 'fixture-agent' })) };

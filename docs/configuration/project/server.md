@@ -155,8 +155,11 @@ node scripts/deploy/deploy-report.mjs --smoke-only https://YOUR_DOMAIN
 ```
 
 Record release versions, resolved digests, architecture, source revision and
-observations without login tokens or secrets. No public-image lifecycle run has
-yet been recorded for this path.
+observations without login tokens or secrets. Maintainers exercise this guide's
+install, restart, backup, update and restore blocks against two published
+versions with the manual *Self-host lifecycle* GitHub Actions workflow
+(`scripts/ci/self-host-lifecycle.sh`); it substitutes a test ACME CA and mail
+catcher for the public CA and SMTP provider.
 
 ## Restart and backup
 
