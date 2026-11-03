@@ -47,16 +47,18 @@ included in core tests. Ticket-specific functional checks apply separately.
 
 ## bb-phase-deliver
 
-PHPUnit and browser E2E run once, in the CI merge gate, immediately before the merge request is
-merged, against the images that deploy:
+PHPUnit, browser E2E and config import run against the built Docker images in CI.
 
-1. Bring the branch up to date with its target (rebase or merge), push, and wait for the fast checks.
-2. Play the manual `gate` job of the newest merge request pipeline. `build` builds the images once;
-   `phpunit`, `e2e` and `config_install` run against them in parallel.
-3. Merge only when the whole pipeline is green; GitLab blocks the merge until it is. A red gate job
-   is a failed check: fix it on the branch and play the gate again on the new pipeline.
+For GitHub, update the branch from its target, push and wait for the complete `GitHub checks`
+workflow, including `image_gate` and the required aggregate `required`. A failed gate blocks the
+PR; fix it on the branch and require green checks on the new revision. Protected `next` accepts
+squashed feature PRs. Stable `main` accepts merge commits only from this repository's `next`,
+preserving its tree and second parent.
 
-Local runs are for debugging a failure or selecting affected tests, never a substitute for the gate
+For a project still using GitLab, play the newest MR pipeline's manual `gate` after fast checks.
+Its `build`, `phpunit`, `e2e` and `config_install` jobs must all succeed before merging.
+
+Local runs are for debugging, never a substitute for the CI gate
 ([testing](docs/bakers/testing.md)).
 
 ### Before merge

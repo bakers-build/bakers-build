@@ -1,8 +1,9 @@
+For GitHub, substitute [GitHub client operations](github-delivery.md); shared gates and handoff still apply.
+
 # Merge the MR (gated)
 
-Read at review's `transition` on `OK`, or the coding gate's authorized `done`; run in the parent.
-Subagents hold no credentials. The merge writes no ticket state, runs no tests and publishes no
-comments. `Not OK` and non-`done` destinations leave the MR unmerged.
+Run in the parent only at authorized `done`; otherwise leave unmerged. No tests, comments or ticket
+state writes.
 
 ## Input
 
@@ -26,7 +27,7 @@ comments. `Not OK` and non-`done` destinations leave the MR unmerged.
    `prior_art_hit` or an unresolved check error returns `blocked`.
 4. Merge call succeeds, followed by verified results below.
 
-Report the first failed gate with its reason and remedy.
+Report the first failure and remedy.
 
 ## Merge
 
