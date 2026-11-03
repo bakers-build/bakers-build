@@ -78,7 +78,7 @@ bakers agents
 - The addon starts `claude`; it does not install it or sign it in. The binary must be on `PATH` for a non-interactive shell; an alias is not loaded.
 - bakers.build owns `--session-id`, `--resume`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` was removed; setting it fails loading. Use `security: 'yolo'` for the old bypass.
-- [Ask hook](/daily-work/answer-a-question): no terminal dialog in autopilot runs.
+- Ask hook: on a ticket labelled *Autopilot*, `bakers hook ask-user-question` denies the terminal dialog and points the agent to the [ticket question](/get-started/daily-work/answer-a-question). When `bakers` is missing or too old to run it, the dialog is blocked too.
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 

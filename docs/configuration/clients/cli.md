@@ -1,6 +1,6 @@
 # CLI commands
 
-The `bakers` command is one program with twelve top-level commands; this page lists them all and covers the setup and configuration commands in detail, while the larger ones have a page of their own.
+The `bakers` command is one program with thirteen top-level commands; this page lists them all and covers the setup and configuration commands in detail, while the larger ones have a page of their own.
 
 Options and subcommands are copied from `bakers --help` and the help of each command; run `bakers <command> --help` on your installed version for its complete output.
 
@@ -28,6 +28,7 @@ Options and subcommands are copied from `bakers --help` and the help of each com
 | `bakers agents` | Print the locally resolved agent catalog as JSON |
 | `bakers info` | Print the resolved project and workspace context as JSON |
 | `bakers ports` | List a ticket worktree's running services and share them over a tunnel |
+| `bakers hook` | Agent hooks for conductor runs: `ask-user-question` denies Claude's terminal dialog on a ticket labelled *Autopilot* |
 | `bakers help [command]` | Show help |
 
 ## Install and update
