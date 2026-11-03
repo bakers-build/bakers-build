@@ -33,6 +33,15 @@ jobs:
           persist-credentials: false
       - name: Build and test the same images
         run: bash scripts/ci/github-image-gate.sh
+      - name: Export tested runtime images
+        run: bash scripts/ci/github-image-export.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-images-${{ github.run_attempt }}
+          path: verified-images/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
       - name: Publish and pull private images
         env:
           GH_TOKEN: ${{ github.token }}
@@ -41,5 +50,41 @@ jobs:
         if: always()
         with:
           name: image-gate-evidence
+          path: gate-reports/
+          retention-days: 7
+
+  transfer:
+    needs: registry
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+    env:
+      RELEASE_HEAD: ${{ github.sha }}
+      SOURCE_RUN_ID: ${{ github.run_id }}
+      SOURCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+      CI_SOURCE_SHA: ${{ github.sha }}
+      CI_RELEASE_VERSION: 0.0.0-rehearsal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-images-${{ github.run_attempt }}
+          path: verified-images
+      - name: Import exact tested images on another runner
+        run: bash scripts/ci/github-image-import.sh
+      - name: Verify stable metadata and layer identity across retries
+        run: |
+          bash scripts/ci/github-image-label.sh
+          for image in php nginx docs; do docker image inspect "bakers-gate/$image:local" --format '{{.Id}}'; done > first-ids
+          bash scripts/ci/github-image-import.sh
+          bash scripts/ci/github-image-label.sh
+          for image in php nginx docs; do docker image inspect "bakers-gate/$image:local" --format '{{.Id}}'; done > second-ids
+          diff -u first-ids second-ids
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: image-transfer-evidence
           path: gate-reports/
           retention-days: 7

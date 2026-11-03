@@ -22,6 +22,8 @@ jobs:
     env:
       RELEASE_HEAD: ${{ github.event.workflow_run.head_sha }}
       RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+      SOURCE_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
       GH_TOKEN: ${{ github.token }}
       PNPM_CONFIG_MINIMUM_RELEASE_AGE: '0'
       PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: 'true'
@@ -86,8 +88,16 @@ jobs:
           echo "CI_SOURCE_SHA=$(jq -r .commit release-plan/plan.json)" >> "$GITHUB_ENV"
           echo "CI_SOURCE_REF=$RELEASE_BRANCH" >> "$GITHUB_ENV"
           echo "CI_RELEASE_VERSION=$(jq -r .version release-plan/plan.json)" >> "$GITHUB_ENV"
-      - name: Build and test release images
-        run: bash scripts/ci/github-image-gate.sh
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-images-${{ github.event.workflow_run.run_attempt }}
+          path: verified-images
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Import tested runtime images
+        run: bash scripts/ci/github-image-import.sh
+      - name: Add reproducible release metadata without changing tested layers
+        run: bash scripts/ci/github-image-label.sh
       - name: Reject superseded release
         run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_BRANCH" --jq .object.sha)" = "$RELEASE_HEAD"
       - name: Publish verified public images

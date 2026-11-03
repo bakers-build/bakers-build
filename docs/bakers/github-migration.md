@@ -91,7 +91,9 @@ It accepts successful same-repository branch push checks only, serializes each b
 cancelling an active deployment, and uses the `release` environment. Its immutable plan artifact
 binds the version allocation to the candidate and is reused on retries. npm publication verifies
 existing package integrity and advances channel tags only after the complete package set exists.
-The release rebuilds and tests its images, publishes candidate digests, promotes branch image tags,
+The release imports the successful source run’s image archive and checks its commit, tree, run,
+attempt, checksum and image IDs. Version/revision labels are reproducible and may change the image
+config; the tested filesystem layers must remain identical. It publishes candidate digests, promotes branch image tags,
 deploys through Komodo, smoke-checks, then publishes npm. Stable releases tag the frozen second
 parent and publish GitHub release notes and versioned/latest images.
 

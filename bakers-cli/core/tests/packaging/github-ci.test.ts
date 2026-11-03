@@ -40,6 +40,20 @@ describe('GitHub migration checks', () => {
       expect(job.if).toContain(guard);
     expect(workflow.concurrency['cancel-in-progress']).toBe(false);
     expect(job.environment).toBe('release');
+    const imported = job.steps.find(
+      (step: { uses?: string; with?: { 'run-id'?: string } }) =>
+        step.uses?.startsWith('actions/download-artifact@') &&
+        step.with?.['run-id'],
+    );
+    expect(imported.with['run-id']).toBe('${{ github.event.workflow_run.id }}');
+    expect(imported.with.name).toContain('workflow_run.run_attempt');
+    const releaseCommands = job.steps
+      .map((step: { run?: string }) => step.run ?? '')
+      .join('\n');
+    expect(releaseCommands).not.toContain('github-image-gate.sh');
+    expect(releaseCommands).toContain('github-image-import.sh');
+    expect(releaseCommands).toContain('github-image-label.sh');
+
     const names = job.steps.map((step: { name?: string }) => step.name);
     expect(names.indexOf('Deploy and smoke-check')).toBeGreaterThan(
       names.indexOf('Publish verified public images'),
