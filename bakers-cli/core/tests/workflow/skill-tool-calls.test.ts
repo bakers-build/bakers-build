@@ -875,7 +875,13 @@ describe('hand-over of a specified ticket', () => {
     '| `handoff_version` | `1` |',
   ].join('\n');
   const steps = (
-    changes: { classify?: object; spec?: string; body?: string } = {},
+    changes: {
+      classify?: object;
+      spec?: string;
+      body?: string;
+      test?: string;
+      labels?: string[];
+    } = {},
   ): Array<[string, unknown]> => [
     [
       'bakers_comment_publish',
@@ -896,11 +902,27 @@ describe('hand-over of a specified ticket', () => {
       },
     ],
     [
+      'bakers_comment_publish',
+      {
+        ticket: 'EVAL-31',
+        type: 'plan',
+        body: '### Task 1: Export CSV button (AC1)\n',
+      },
+    ],
+    [
+      'bakers_comment_publish',
+      {
+        ticket: 'EVAL-31',
+        type: 'test',
+        body: changes.test ?? '| F1 | AC1 | the button exports the list |\n',
+      },
+    ],
+    [
       'bakers_ticket_classify',
       {
         ticket: 'EVAL-31',
         type: 'feature',
-        recipe: 'superpowers',
+        recipe: 'pair',
         ...changes.classify,
       },
     ],
@@ -909,13 +931,13 @@ describe('hand-over of a specified ticket', () => {
       'bakers_ticket_update',
       {
         ticket: 'EVAL-31',
-        labels_add: ['ticket:pingpong'],
+        labels_add: changes.labels ?? ['pingpong'],
         conductor: '44444444-4444-4444-8444-444444444444',
       },
     ],
   ];
 
-  it('publishes qualification and spec, then classifies, moves to working and adds ticket:pingpong', async () => {
+  it('publishes qualification, spec, plan and test, then classifies with the picked recipe, moves to working and adds pingpong', async () => {
     const { grade, trace } = await simulatedTrace(
       'project-manager-handover',
       steps(),
@@ -923,18 +945,27 @@ describe('hand-over of a specified ticket', () => {
     expect(grade('Work on EVAL-31 starts.')).toEqual([]);
     expect(
       grade('Work on EVAL-31 starts.', [
-        trace[0],
-        trace[1],
-        trace[3],
-        trace[2],
+        ...trace.slice(0, 4),
+        trace[5],
         trace[4],
+        trace[6],
       ]),
     ).toContain('handover-order');
-    const matt = await simulatedTrace(
+    expect(
+      grade('Work on EVAL-31 starts.', [...trace.slice(0, 2), ...trace.slice(4)]),
+    ).toContain('handover-order');
+    const fixed = await simulatedTrace(
       'project-manager-handover',
-      steps({ classify: { recipe: 'matt' } }),
+      steps({ classify: { recipe: 'superpowers' } }),
     );
-    expect(matt.grade('Work on EVAL-31 starts.')).toContain(
+    expect(fixed.grade('Work on EVAL-31 starts.')).toContain(
+      'handover-arguments',
+    );
+    const labelled = await simulatedTrace(
+      'project-manager-handover',
+      steps({ labels: ['ticket:pingpong'] }),
+    );
+    expect(labelled.grade('Work on EVAL-31 starts.')).toContain(
       'handover-arguments',
     );
     const hashed = await simulatedTrace(
@@ -947,6 +978,11 @@ describe('hand-over of a specified ticket', () => {
       steps({ spec: '## Acceptance criteria\n\nAC1\n' }),
     );
     expect(unsigned.grade('Work on EVAL-31 starts.')).toContain('spec-content');
+    const untested = await simulatedTrace(
+      'project-manager-handover',
+      steps({ test: '| F1 | the button exports the list |\n' }),
+    );
+    expect(untested.grade('Work on EVAL-31 starts.')).toContain('plan-content');
   });
 
   it("changes nothing on another person's approval, without any call", async () => {
