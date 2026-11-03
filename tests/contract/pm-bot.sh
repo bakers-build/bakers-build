@@ -10,17 +10,18 @@
 #     only the bot's own toolsets
 #   - memory writes and self-written skills wait for approval
 #   - one shared session per thread, not per user
-#   - there is no direct bakers.build MCP server and no OAuth client: pm-relay,
-#     signed in with an API key, is the bot's only way into bakers.build
+#   - bakers.build is reached only through its own MCP endpoint: the remote
+#     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
+#     Hermes fills from the env file, exactly six bakers tools, no OAuth
 #   - the clone reader is a pinned filesystem server with read tools only
-#   - pm-relay is the image's relay, reading the bot's env file, with exactly
-#     its four tools, and the relay lists those four
+#   - nothing in pm-bot/ is a relay, calls JSON:API or exchanges a token, and the
+#     skill carries the relay's operations as bakers tool calls
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
-#   - poller, relay and client call no LLM
+#   - poller and client call no LLM
 #   - the Slack app neither reads nor opens direct messages
 #   - persona, skill and scripts name no customer; only .env.example may
-#   - the relay passes answers on without a "Correct?" confirmation round
+#   - the bot passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
 #   - the env file is ignored and no committed file holds a token
 #   - the bot has no install script (pm-bot/bin/, lib/running.sh)
@@ -42,7 +43,7 @@ BOT=pm-bot
 TEMPLATE="$BOT/config.template.yaml"
 for f in "$TEMPLATE" "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
-         "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/relay/server.mjs" "$BOT/lib/bakers-client.mjs" \
+         "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/lib/bakers-client.mjs" \
          "$BOT/slack-app-manifest.yaml"; do
   [ -f "$f" ] || fail "$f is missing"
 done
@@ -63,10 +64,10 @@ disabled = set(cfg.get("agent", {}).get("disabled_toolsets") or [])
 for ts in ["terminal", "code_execution", "browser", "web", "delegation", "file", "cronjob"]:
     need(ts in disabled, f"agent.disabled_toolsets lacks {ts}")
 
-allowed = {"skills", "memory", "session_search", "mcp-clone-reader", "mcp-pm-relay"}
+allowed = {"skills", "memory", "session_search", "mcp-clone-reader", "mcp-bakers"}
 slack_ts = set((cfg.get("platform_toolsets") or {}).get("slack") or [])
 need(slack_ts, "platform_toolsets.slack is empty or missing")
-need("mcp-pm-relay" in slack_ts, "platform_toolsets.slack lacks mcp-pm-relay")
+need("mcp-bakers" in slack_ts, "platform_toolsets.slack lacks mcp-bakers")
 need(slack_ts <= allowed, f"platform_toolsets.slack enables {sorted(slack_ts - allowed)}")
 need(not (slack_ts & disabled), "a Slack toolset is also disabled")
 
@@ -78,12 +79,12 @@ for key in ("allow_admin_from", "group_allow_admin_from"):
     need(slack.get(key) == "${SLACK_ADMIN_USERS}", f"slack.{key} does not limit slash commands to SLACK_ADMIN_USERS")
 
 servers = cfg.get("mcp_servers") or {}
-need(set(servers) == {"clone-reader", "pm-relay"}, f"mcp_servers are {sorted(servers)}, not clone-reader and pm-relay")
+need(set(servers) == {"clone-reader", "bakers"}, f"mcp_servers are {sorted(servers)}, not clone-reader and bakers")
 for name, server in servers.items():
     need("auth" not in server and "oauth" not in server, f"{name} signs in with OAuth")
-    need("url" not in server, f"{name} is a remote server; bakers.build is reached through pm-relay only")
 
 reader = servers.get("clone-reader") or {}
+need("url" not in reader, "clone-reader is a remote server")
 args = [str(a) for a in reader.get("args") or []]
 pkg = [a for a in args if a.startswith("@modelcontextprotocol/server-filesystem@")]
 need(pkg and pkg[0].rsplit("@", 1)[1][:1].isdigit(), "clone-reader is not a pinned @modelcontextprotocol/server-filesystem")
@@ -92,16 +93,21 @@ read_only = {"read_text_file", "list_directory", "directory_tree", "search_files
 rtools = set((reader.get("tools") or {}).get("include") or [])
 need(rtools and rtools <= read_only, f"clone-reader includes {sorted(rtools - read_only)}")
 
-# The bot's only way into bakers.build: the relay baked into the image, reading the env file.
-relay = servers.get("pm-relay") or {}
-need(relay.get("command") == "node", "pm-relay is not started with node")
-need([str(a) for a in relay.get("args") or []] == ["/opt/pm-bot/relay/server.mjs", "${HERMES_HOME}/.env"],
-     "pm-relay is not the image's /opt/pm-bot/relay/server.mjs with ${HERMES_HOME}/.env")
-need(sorted((relay.get("tools") or {}).get("include") or []) == ["answer_question", "create_ticket", "ticket_read", "ticket_search"],
-     "pm-relay does not include exactly create_ticket, answer_question, ticket_read and ticket_search")
+# The bot's only way into bakers.build: the site's own MCP endpoint, the API key as a
+# static bearer. Hermes fills ${env:…} from the env file; render.mjs leaves it alone,
+# so the key never lands in config.yaml.
+bakers = servers.get("bakers") or {}
+need(bakers.get("url") == "${BAKERS_URL}/mcp", "bakers is not ${BAKERS_URL}/mcp")
+need("command" not in bakers, "bakers is started as a local process")
+need(bakers.get("headers") == {"Authorization": "Bearer ${env:BAKERS_API_KEY}"},
+     "bakers does not send exactly Authorization: Bearer ${env:BAKERS_API_KEY}")
+six = ["tool_api__bakers_comment_publish", "tool_api__bakers_ticket_create", "tool_api__bakers_ticket_read",
+       "tool_api__bakers_ticket_search", "tool_api__bakers_ticket_transition", "tool_api__bakers_ticket_update"]
+need(sorted((bakers.get("tools") or {}).get("include") or []) == six,
+     "bakers does not include exactly the six tools: ticket create, read, search, update, transition and comment publish")
 
 # Hermes adds resource and prompt utility calls to every MCP server unless they are switched off.
-for name, server in (("clone-reader", reader), ("pm-relay", relay)):
+for name, server in (("clone-reader", reader), ("bakers", bakers)):
     tfilter = server.get("tools") or {}
     for family in ("resources", "prompts"):
         need(tfilter.get(family) is False, f"{name} tools.{family} is not false")
@@ -112,17 +118,23 @@ sys.exit(1 if errors else 0)
 PY
 pass "configuration template keeps the lock-down"
 
-# The relay itself lists exactly the four tools the configuration includes.
-tools="$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node --input-type=module -e '
-  import { createRelay } from "./pm-bot/relay/server.mjs";
-  import { createInterface } from "node:readline";
-  const relay = createRelay({ client: null, env: {} });
-  for await (const line of createInterface({ input: process.stdin })) {
-    const { result } = await relay.handle(JSON.parse(line));
-    console.log(result.tools.map((t) => t.name).sort().join(","));
-  }')"
-[ "$tools" = "answer_question,create_ticket,ticket_read,ticket_search" ] || fail "pm-relay lists $tools"
-pass "pm-relay lists exactly create_ticket, answer_question, ticket_read and ticket_search"
+# No relay, no JSON:API and no token exchange: bakers tools are the only way in.
+if [ -e "$BOT/relay" ] || git grep --untracked -nIE 'pm-relay|/jsonapi|/oauth/token|client_credentials|BAKERS_CLIENT_(ID|SECRET)|create_ticket|answer_question' -- "$BOT"; then
+  fail "pm-bot/ still has the relay, a JSON:API call, a token exchange or a relay tool"
+fi
+pass "no relay, JSON:API call or token exchange in pm-bot/"
+
+# The relay's fixed operations are the skill's procedure, as bakers tool calls.
+SKILL="$BOT/skills/project-manager/SKILL.md"
+for word in bakers_ticket_create bakers_ticket_read bakers_ticket_search bakers_ticket_update \
+  bakers_ticket_transition bakers_comment_publish labels_add labels_remove 'Requested in Slack by' \
+  'Answered in Slack by' Question; do
+  grep -qF "$word" "$SKILL" || fail "$SKILL does not name $word"
+done
+if grep -nE '\b(type|recipe)\b.*bakers_ticket_classify|bakers_ticket_classify' "$SKILL"; then
+  fail "$SKILL classifies tickets"
+fi
+pass "the skill carries intake, answer and status as bakers tool calls"
 
 python3 - "$BOT/slack-app-manifest.yaml" <<'PY' || fail "Slack app manifest lets the bot read or open direct messages (see above)"
 import sys, yaml
@@ -156,10 +168,10 @@ grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=tr
 pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 
 # The poller and the relay relay; they never call a model.
-if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/relay" "$BOT/lib"; then
-  fail "poller, relay or client call an LLM"
+if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib"; then
+  fail "poller or client call an LLM"
 fi
-pass "poller, relay and client make no LLM call"
+pass "poller and client make no LLM call"
 
 # Customer specifics live in the env file only; .env.example may show them as examples.
 if git grep --untracked -nIiE 'pnf|park ?(and|&|n) ?fly' -- "$BOT" ":!$BOT/.env.example"; then
@@ -167,14 +179,14 @@ if git grep --untracked -nIiE 'pnf|park ?(and|&|n) ?fly' -- "$BOT" ":!$BOT/.env.
 fi
 pass "no customer literal outside .env.example"
 
-# The relay passes a clear answer on at once; a confirmation round must not come back.
+# The bot passes a clear answer on at once; a confirmation round must not come back.
 if git grep -nIiE 'correct\?|confirm' -- "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/README.md"; then
   fail "persona, skill or runbook asks the thread to confirm an answer before passing it on"
 fi
-pass "relay passes answers on without a confirmation round"
+pass "the bot passes answers on without a confirmation round"
 
 # AI agents work the tickets through bakers.build; customer wording describes events, not a team.
-if git grep -nIiwE 'team' -- "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/poller/messages.json" "$BOT/relay/server.mjs"; then
+if git grep -nIiwE 'team' -- "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/poller/messages.json"; then
   fail "customer wording credits a team"
 fi
 pass "customer wording says what happens, not what a team does"

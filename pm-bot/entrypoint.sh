@@ -9,7 +9,8 @@
 #      its restart policy starts it again.
 #
 #   entrypoint.sh [run]   start the bot (the image's default)
-#   entrypoint.sh check   steps 1-3, then print the versions and exit (CI's image check)
+#   entrypoint.sh check   steps 1-3, then print the versions, test the connection to
+#                         bakers.build's MCP endpoint and exit (CI's image check)
 set -euo pipefail
 
 BOT=/opt/pm-bot
@@ -17,7 +18,7 @@ DATA="${HERMES_HOME:-/opt/data}"
 mode="${1:-run}"
 
 REQUIRED=(SLACK_BOT_TOKEN SLACK_APP_TOKEN SLACK_ALLOWED_CHANNELS SLACK_ADMIN_USERS
-  SLACK_WORKSPACE_URL BAKERS_URL BAKERS_CLIENT_ID BAKERS_CLIENT_SECRET PM_BOT_PROJECT
+  SLACK_WORKSPACE_URL BAKERS_URL BAKERS_API_KEY PM_BOT_PROJECT
   PM_BOT_TICKET_WORKFLOW PM_BOT_MODEL PM_BOT_CLONE_DIR)
 missing=()
 for key in "${REQUIRED[@]}"; do
@@ -27,6 +28,8 @@ done
 
 # Every user in the allowed channels, unless an allowlist names some.
 [ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=true
+# The conductor is optional; the render refuses empty values, so the skill reads "none".
+export PM_BOT_CONDUCTOR_TEXT="${PM_BOT_CONDUCTOR:-none}"
 
 node "$BOT/render.mjs" "$BOT/config.template.yaml" "$DATA/config.yaml"
 install -m 644 "$BOT/SOUL.md" "$DATA/SOUL.md"
@@ -43,12 +46,20 @@ if [ "$mode" = check ]; then
   version="$(hermes --version)"
   echo "${version%%$'\n'*}"
   echo "node $(node --version)"
-  # pm-relay exactly as the rendered config starts it, asked for its tools.
-  mapfile -t relay < <(awk '/^  pm-relay:/ { on = 1; next } on && /^  [^ ]/ { on = 0 }
-    on && /^    command: / { print $2 } on && /^      - / { print $2 }' "$DATA/config.yaml")
-  tools="$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | "${relay[@]}" \
-    | node -e 'let s="";process.stdin.on("data",(d)=>(s+=d)).on("end",()=>console.log(JSON.parse(s).result.tools.map((t)=>t.name).sort().join(",")))')"
-  echo "pm-relay tools: $tools"
+  # bakers.build's MCP endpoint exactly as the rendered config reaches it, with the key
+  # Hermes fills from the env file: connected ...
+  hermes mcp test bakers
+  # ... and the tools Hermes registers from it, through its own include filter.
+  (cd /opt/hermes && .venv/bin/python - <<'PY'
+from hermes_cli.mcp_config import _get_mcp_servers, _probe_single_server
+from tools.mcp_tool_registration import _make_tool_filter
+
+config = _get_mcp_servers()["bakers"]
+keep = _make_tool_filter("bakers", config)
+names = sorted(name for name, _ in _probe_single_server("bakers", config) if keep(name))
+print("bakers tools: " + ",".join(names))
+PY
+  )
   exit 0
 fi
 [ "$mode" = run ] || { echo "usage: entrypoint.sh [run|check]" >&2; exit 2; }

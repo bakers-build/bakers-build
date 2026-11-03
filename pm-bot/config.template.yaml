@@ -36,11 +36,11 @@ platform_toolsets:
     - memory
     - session_search
     - mcp-clone-reader
-    - mcp-pm-relay
+    - mcp-bakers
 
 agent:
-  # Every toolset that can change the system or reach beyond pm-relay and the
-  # read-only clone. Code access goes through the clone-reader MCP server instead
+  # Every toolset that can change the system or reach beyond bakers.build's tools and
+  # the read-only clone. Code access goes through the clone-reader MCP server instead
   # of the file toolset, which cannot be limited to one directory.
   disabled_toolsets:
     - terminal
@@ -87,20 +87,22 @@ mcp_servers:
         - search_files
         - get_file_info
 
-  # bakers.build: the relay baked into the bot's image (pm-bot/relay/). It is the bot's
-  # only way into bakers.build and signs in with the service account's API key from the
-  # env file named by its argument; its tools are fixed operations without an LLM. No
-  # "slack" in the name: Hermes would read it as a Slack toolset.
-  pm-relay:
-    command: node
-    args:
-      - /opt/pm-bot/relay/server.mjs
-      - ${HERMES_HOME}/.env
+  # bakers.build: its own MCP endpoint, the bot's only way in. The service account's API
+  # key is the bearer; Hermes fills ${env:BAKERS_API_KEY} from $HERMES_HOME/.env, and the
+  # entrypoint's render leaves that form alone, so the key never lands in this file.
+  # Exactly the six tools the project-manager skill calls; never bakers_ticket_classify:
+  # the bot sets no type or recipe.
+  bakers:
+    url: ${BAKERS_URL}/mcp
+    headers:
+      Authorization: "Bearer ${env:BAKERS_API_KEY}"
     tools:
       resources: false
       prompts: false
       include:
-        - create_ticket
-        - answer_question
-        - ticket_read
-        - ticket_search
+        - tool_api__bakers_ticket_create
+        - tool_api__bakers_ticket_read
+        - tool_api__bakers_ticket_search
+        - tool_api__bakers_ticket_update
+        - tool_api__bakers_ticket_transition
+        - tool_api__bakers_comment_publish

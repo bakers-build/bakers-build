@@ -31,3 +31,10 @@ test('the rendered text keeps no placeholder', () => {
   assert.equal(out, 'a: one\nb: "$HOME"\n');
   assert.doesNotMatch(out, /\$\{/);
 });
+
+test('a ${env:…} reference is left for Hermes, so the key it names never reaches the output', () => {
+  const env = { BAKERS_URL: 'https://bakers.example.com', BAKERS_API_KEY: 'bb-secret' };
+  const out = render('url: ${BAKERS_URL}/mcp\nAuthorization: "Bearer ${env:BAKERS_API_KEY}"\n', env);
+  assert.equal(out, 'url: https://bakers.example.com/mcp\nAuthorization: "Bearer ${env:BAKERS_API_KEY}"\n');
+  assert.doesNotMatch(out, /bb-secret/);
+});
