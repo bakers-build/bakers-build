@@ -124,6 +124,81 @@ describe('PiAgent.launchCommand', () => {
   });
 });
 
+describe('Pi security', () => {
+  it.each([
+    {},
+    { security: 'system' },
+  ] as const)('uses the ordinary launch for %j', async (options) => {
+    const { PiAgent } = await loadPiModule();
+    const agent = new PiAgent(options);
+    expect(agent.launchCommand('task', { sessionId: 'run-abc' })).toBe(
+      "pi 'task' --session-dir .bakers/pi-sessions/run-abc",
+    );
+    expect(agent.launchCommand('')).toBe('pi');
+  });
+
+  it('drops denied ticket env vars, with env_deny replacing the list', async () => {
+    const { PiAgent } = await loadPiModule();
+    expect(new PiAgent().runEnvPolicy.drop).toBe(true);
+    expect(new PiAgent({ env_deny: ['FOO_*'] }).runEnvPolicy).toEqual({
+      drop: true,
+      deny: ['FOO_*'],
+    });
+  });
+
+  it('loads only the configured extensions in custom mode', async () => {
+    const { PiAgent } = await loadPiModule();
+    const agent = new PiAgent({
+      security: 'custom',
+      config: { extensions: ['./sandbox.ts', 'builtin:gondolin'] },
+      args: ['--verbose'],
+    });
+    expect(agent.launchCommand('task', { sessionId: 'run-abc' })).toBe(
+      "pi 'task' --session-dir .bakers/pi-sessions/run-abc --no-extensions -e './sandbox.ts' -e 'builtin:gondolin' '--verbose'",
+    );
+    expect(agent.launchCommand('')).toBe(
+      "pi --no-extensions -e './sandbox.ts' -e 'builtin:gondolin'",
+    );
+  });
+
+  it.each([
+    'sandbox',
+    'yolo',
+  ])('rejects security %s while loading the addon', async (security) => {
+    const { piAgent } = await loadPiModule();
+    expect(() => piAgent({ security })).toThrow(
+      `Pi does not support security: '${security}'`,
+    );
+  });
+
+  it.each([
+    ['an unknown mode', { security: 'sandbbox' }, /security must be one of/],
+    ['null', { security: null }, /security must be a string/],
+    ['custom without config', { security: 'custom' }, /requires config/],
+    ['config outside custom', { config: { extensions: ['x'] } }, /only valid/],
+    ['a sandbox block', { security: 'system', sandbox: {} }, /only valid/],
+    ['no extensions', { security: 'custom', config: {} }, /extensions/],
+    [
+      'empty extensions',
+      { security: 'custom', config: { extensions: [] } },
+      /extensions/,
+    ],
+    [
+      'a non-string extension',
+      { security: 'custom', config: { extensions: [1] } },
+      /extensions/,
+    ],
+    [
+      'an unknown config key',
+      { security: 'custom', config: { extensions: ['x'], tools: [] } },
+      /nothing else/,
+    ],
+  ])('rejects %s', async (_name, options, error) => {
+    const { piAgent } = await loadPiModule();
+    expect(() => piAgent(options as never)).toThrow(error);
+  });
+});
+
 function captureArgv(binary: string, command: string): string[] {
   const output = execFileSync(
     'bash',
