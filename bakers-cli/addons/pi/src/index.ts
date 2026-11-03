@@ -7,7 +7,11 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
+  type RunEnvPolicy,
   resolveAgentCliOptions,
+  resolveSecurityOptions,
+  type SecurityMode,
+  type SecurityOptions,
   validateOptionalBoolean,
   validateOptionalString,
 } from '@bakers-build/conductor/contract';
@@ -48,7 +52,11 @@ export function encodePiHomeSessionSlug(cwd: string): string {
   return `-${cwd.replaceAll('/', '-')}--`;
 }
 
-export interface PiAgentOptions {
+/**
+ * `security` is `system` (default) or `custom`; `custom`'s `config` is
+ * `{ extensions: string[] }`, each passed as `-e`. Pi has no OS sandbox.
+ */
+export interface PiAgentOptions extends SecurityOptions {
   model?: string;
   provider?: string;
   thinking?: string;
@@ -121,19 +129,72 @@ async function newestJsonl(dir: string, minMtimeMs?: number): Promise<string> {
   }
 }
 
+const NO_SANDBOX_DEFAULTS = {
+  trusted_commands: [],
+  deny_read: [],
+  allow_write: [],
+  network: [],
+  mcp_servers: {},
+};
+
+/**
+ * Pi has no OS sandbox and no permission gate, so only `system` (the default)
+ * and `custom` exist; `custom` loads the operator's own extensions, e.g. one
+ * that sandboxes Pi's tools.
+ */
+function piSecurity(options: PiAgentOptions): {
+  extensions: string[] | undefined;
+  runEnvPolicy: RunEnvPolicy;
+} {
+  const { mode, config, runEnvPolicy } = resolveSecurityOptions(
+    {
+      ...options,
+      security: (validateOptionalString(options.security, 'security') ??
+        'system') as SecurityMode,
+    },
+    NO_SANDBOX_DEFAULTS,
+  );
+  if (mode === 'system') return { extensions: undefined, runEnvPolicy };
+  if (mode !== 'custom') {
+    throw new Error(
+      `Pi does not support security: '${mode}'; use 'system' or 'custom'`,
+    );
+  }
+  const keys = Object.keys(config ?? {});
+  const extensions = config?.extensions;
+  if (
+    keys.some((key) => key !== 'extensions') ||
+    !Array.isArray(extensions) ||
+    extensions.length === 0 ||
+    extensions.some(
+      (e) => typeof e !== 'string' || e === '' || e.includes('\0'),
+    )
+  ) {
+    throw new Error(
+      "Pi security: 'custom' needs config: { extensions: ['<path or builtin:name>', ...] } and nothing else",
+    );
+  }
+  return { extensions: [...extensions], runEnvPolicy };
+}
+
 export class PiAgent implements BbAgent {
   readonly id = 'pi';
+  readonly runEnvPolicy: RunEnvPolicy;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly provider: string | undefined;
   private readonly thinking: string | undefined;
   private readonly approve: boolean;
+  /** `custom` mode's extensions; `undefined` in `system` mode. */
+  private readonly extensions: string[] | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
 
   constructor(
     options: PiAgentOptions = {},
     private readonly home: string = homedir(),
   ) {
+    ({ extensions: this.extensions, runEnvPolicy: this.runEnvPolicy } =
+      piSecurity(options));
     const cli = resolveAgentCliOptions(options, PI_RESERVED, PI_KNOWN);
     this.args = cli.args;
     this.model = cli.model;
@@ -146,7 +207,7 @@ export class PiAgent implements BbAgent {
 
   launchCommand(prompt: string, run?: AgentRunIdentity): string {
     if (prompt === '') {
-      return 'pi';
+      return ['pi', ...this.extensionFlags()].join(' ');
     }
     // Positional prompt → an attachable interactive TUI (no `-p`/`--print`,
     // which would leave the herdr pane without a session to attach to). Order:
@@ -170,8 +231,18 @@ export class PiAgent implements BbAgent {
     if (this.approve) {
       parts.push('--approve');
     }
+    parts.push(...this.extensionFlags());
     parts.push(...this.args.map(shellQuote));
     return parts.join(' ');
+  }
+
+  /** `custom` only: just the configured extensions load (explicit -e survives --no-extensions). */
+  private extensionFlags(): string[] {
+    if (this.extensions === undefined) return [];
+    return [
+      '--no-extensions',
+      ...this.extensions.flatMap((extension) => ['-e', shellQuote(extension)]),
+    ];
   }
 
   async getRunLog(

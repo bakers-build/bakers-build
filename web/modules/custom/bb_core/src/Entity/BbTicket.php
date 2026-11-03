@@ -150,6 +150,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
   /**
    * {@inheritdoc}
    *
+   * Freezing cancels every active run, so a frozen ticket has no live agent.
    * A changed conductor cancels the runs still active on another one, so the
    * new conductor can claim the ticket. Server side: the editor's run access
    * plays no part.
@@ -161,6 +162,12 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     $original = $this->getOriginal();
     if (!$update || !$original instanceof BbTicketInterface) {
       return;
+    }
+    // Before the conductor check, so a save doing both leaves the freeze note.
+    if ($this->isFrozen() && !$original->isFrozen()) {
+      foreach (TicketInterventions::activeRuns($this, \Drupal::entityTypeManager()) as $run) {
+        TicketInterventions::cancelRun($run, 'frozen by ' . \Drupal::currentUser()->getAccountName());
+      }
     }
     $conductor = (int) $this->get('conductor_id')->target_id;
     if ($conductor === (int) $original->get('conductor_id')->target_id) {

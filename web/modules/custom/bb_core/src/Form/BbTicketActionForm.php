@@ -124,7 +124,7 @@ final class BbTicketActionForm extends EntityForm {
     $action = ['kind' => 'freeze', 'frozen' => $frozen ? '1' : '0'];
     return $frozen
       ? [
-        $this->t('@ticket will not be claimed until it is unfrozen. An already-active run is not interrupted.', [
+        $this->t('@ticket will not be claimed until it is unfrozen. Its active run is ended.', [
           '@ticket' => $label,
         ]),
         $this->actionButton('bb_confirm', (string) $this->t('Freeze ticket'), $action, 'neutral'),

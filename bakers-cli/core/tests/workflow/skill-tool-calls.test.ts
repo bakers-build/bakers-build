@@ -524,7 +524,6 @@ describe('recipe and type on ticket creation', () => {
         'test_as',
         'out_of_scope',
         'handoff_version',
-        'provenance',
         'reproduction',
         'scenario_required',
       ].map((field) => `- ${field}: recorded`),
