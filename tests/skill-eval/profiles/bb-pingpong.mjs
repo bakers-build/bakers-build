@@ -1,7 +1,7 @@
 import { arg, callRecovery, calls, check, commonChecks, succeeded, tool, uuid, validateTools, writes } from '../call-utils.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 
-// A ticket:pingpong run: where it stops (user question, technical problem, transition or not at
+// A pingpong run: where it stops (user question, technical problem, transition or not at
 // all), that a technical problem never reaches the user, that only done merges, and that nothing
 // follows the stop.
 const STOPS = ['none', 'question', 'technical-problem', 'transition'];

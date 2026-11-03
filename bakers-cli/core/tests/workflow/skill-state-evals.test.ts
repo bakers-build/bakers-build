@@ -136,7 +136,7 @@ describe('bb-pingpong profile', () => {
       ticket: {
         id: ticket,
         identifier: 'EVAL-61',
-        labels: ['ticket:pingpong'],
+        labels: ['pingpong'],
       },
       ...simulation,
     },

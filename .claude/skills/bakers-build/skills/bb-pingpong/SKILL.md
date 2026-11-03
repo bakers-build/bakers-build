@@ -1,11 +1,11 @@
 ---
 name: bb-pingpong
-description: "Use when a ticket labelled `ticket:pingpong` runs in working or review: carry it to done on your own."
+description: "Use when a ticket labelled `pingpong` runs in working or review: carry it to done on your own."
 ---
 
 # Pingpong
 
-The label `ticket:pingpong` authorizes every transition, its origin status and the merge. Decide
+The label `pingpong` authorizes every transition, its origin status and the merge. Decide
 technical questions yourself and record each with its reason under `Decisions` in the handoff.
 
 Reach the user only through the ticket: publish the comments, add the label, freeze the ticket and

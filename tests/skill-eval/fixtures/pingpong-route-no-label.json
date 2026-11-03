@@ -56,13 +56,13 @@
       "labels": []
     },
     "files": {
-      "WORKFLOW.md": "# Fixture project - WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state. When the ticket's labels include `ticket:pingpong` and its state is `working` or `review`, invoke `bakers:bb-pingpong` too and follow it with the frame.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
+      "WORKFLOW.md": "# Fixture project - WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state. When the ticket's labels include `pingpong` and its state is `working` or `review`, invoke `bakers:bb-pingpong` too and follow it with the frame.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
     }
   },
   "rubric": [
     {
       "id": "frame-only",
-      "criterion": "Loads no bb-pingpong: the ticket has no ticket:pingpong label, so routing matches frame-recipe-route."
+      "criterion": "Loads no bb-pingpong: the ticket has no pingpong label, so routing matches frame-recipe-route."
     },
     {
       "id": "general-slot",

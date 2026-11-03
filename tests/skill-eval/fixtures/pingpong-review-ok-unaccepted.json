@@ -53,7 +53,7 @@
       "type": "feature",
       "recipe": "probe",
       "labels": [
-        "ticket:pingpong"
+        "pingpong"
       ],
       "links": [
         {
