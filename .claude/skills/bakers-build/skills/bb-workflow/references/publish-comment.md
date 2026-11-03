@@ -27,9 +27,10 @@ coding gate) keep their own flows. Ask a question on the ticket:
 1. Publish one comment of type `comment` whose body is `# Question`, then the question with its
    context, then the choices as a numbered list with the recommended one marked, then the line
    "Answer in a comment, then remove the label *Question* and unfreeze the ticket."
-2. Call `bakers_ticket_update` with `ticket`, `labels_add: ["Question"]` and `frozen: true`. The
-   result lists `Question` in `labels` and `frozen: true`.
+2. Call `bakers_ticket_update` with `ticket`, `labels_add: ["Question"]` and `frozen: true`. Check
+   that the result lists `Question` in `labels` and `frozen: true`.
 3. End the run: print the question and its comment id, with no summary, no transition and no state
    change.
 
-A failed or uncertain update stops the run as blocked; the published comment stands.
+A failed or uncertain update stops the run as blocked; the published comment stands as the only
+question comment.
