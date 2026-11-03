@@ -8,8 +8,6 @@ _meta:
 default:
   name:
   - value: API edit host
-  host_key:
-  - value: api-edit-host
   max_parallel:
   - value: 4
   current_load:

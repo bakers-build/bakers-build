@@ -387,7 +387,6 @@ final class ProjectActivityFeedTest extends KernelTestBase {
    */
   private function conductor(string $label): BbConductorInterface {
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => $label,
       'label' => $label,
       'owner_user_id' => 1,
       'status' => 'online',

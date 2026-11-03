@@ -33,7 +33,7 @@ describe('DrupalBbRemote — addon inbox messages', () => {
     const remote = new DrupalBbRemote(client({ post }));
     const out = await remote.registerAddons('node-1', [definition]);
     expect(post).toHaveBeenCalledWith('bakers/addons', {
-      data: { attributes: { conductor_id: 'node-1', addons: [definition] } },
+      data: { attributes: { conductor: 'node-1', addons: [definition] } },
     });
     expect(out.accepted).toEqual([
       { name: 'fake', version: '0.0.1', id: 'a-1' },

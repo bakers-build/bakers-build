@@ -151,7 +151,6 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->installEntitySchema('bb_machine');
     $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')->create([
       'name' => 'Alpha',
-      'host_key' => 'host-alpha',
       'owner_user_id' => 1,
       'max_parallel' => 1,
     ]);

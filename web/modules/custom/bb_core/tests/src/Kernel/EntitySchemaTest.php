@@ -170,7 +170,6 @@ final class EntitySchemaTest extends KernelTestBase {
     $project->save();
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
     $node = $storage->create([
-      'conductor_id' => 'cw-laptop',
       'label' => 'CW Laptop',
       'owner_user_id' => 1,
       'status' => 'online',
@@ -186,7 +185,8 @@ final class EntitySchemaTest extends KernelTestBase {
 
     $loaded = $storage->load($node->id());
     $this->assertInstanceOf(BbConductorInterface::class, $loaded);
-    $this->assertSame('cw-laptop', $loaded->getConductorId());
+    $this->assertSame('conductor', $loaded->getVariant());
+    $this->assertFalse($loaded->hasField('conductor_id'));
     $this->assertSame('online', $loaded->getStatus());
     $this->assertContains('human_input', $loaded->getStates());
     $this->assertSame('list_string', $loaded->get('states')->getFieldDefinition()->getType());
@@ -280,7 +280,7 @@ final class EntitySchemaTest extends KernelTestBase {
   public function testConductorStateValuesAreValidated(): void {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
     $node = $storage->create([
-      'conductor_id' => 'invalid-state',
+      'label' => 'invalid-state',
       'owner_user_id' => 1,
       'states' => ['does_not_exist'],
     ]);
@@ -289,7 +289,7 @@ final class EntitySchemaTest extends KernelTestBase {
     $this->assertGreaterThan(0, count($violations->getByField('states')));
 
     $terminal = $storage->create([
-      'conductor_id' => 'terminal-state',
+      'label' => 'terminal-state',
       'owner_user_id' => 1,
       'states' => ['done'],
     ]);

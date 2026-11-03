@@ -6,9 +6,9 @@ namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\tool\Attribute\Tool;
 use Drupal\tool\ExecutableResult;
 use Drupal\tool\Tool\ToolBase;
@@ -60,15 +60,21 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('UUID'),
             description: new TranslatableMarkup('The conductor UUID, as bakers_ticket_update takes it.'),
           ),
-          'conductor_id' => new OutputDefinition(
-            data_type: 'string',
-            label: new TranslatableMarkup('Conductor ID'),
-            description: new TranslatableMarkup('The process registration key.'),
-          ),
           'label' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Label'),
             description: new TranslatableMarkup('The conductor label.'),
+            nullable: TRUE,
+          ),
+          'variant' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Variant'),
+            description: new TranslatableMarkup('The stem of the conductor config file the conductor runs from.'),
+          ),
+          'machine' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Machine'),
+            description: new TranslatableMarkup('The label of the machine the conductor runs on.'),
             nullable: TRUE,
           ),
           'active' => new OutputDefinition(
@@ -111,14 +117,15 @@ final class ConductorList extends ToolBase {
     [$ids, $next] = $this->page($query, $values);
     $conductors = [];
     foreach ($storage->loadMultiple($ids) as $conductor) {
-      assert($conductor instanceof ContentEntityInterface);
+      assert($conductor instanceof BbConductorInterface);
       if (!$conductor->access('view', $this->currentUser)) {
         continue;
       }
       $conductors[] = [
         'uuid' => $conductor->uuid(),
-        'conductor_id' => (string) $conductor->get('conductor_id')->value,
         'label' => $conductor->get('label')->value,
+        'variant' => $conductor->getVariant(),
+        'machine' => $conductor->getMachine()?->label(),
         'active' => (bool) $conductor->get('active')->value,
         'status' => (string) $conductor->get('status')->value,
       ];

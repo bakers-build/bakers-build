@@ -93,7 +93,6 @@ final class TicketReadToolTest extends BakersToolTestBase {
    */
   private function conductor(string $id): EntityInterface {
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => $id,
       'label' => $id,
       'owner_user_id' => $this->actor->id(),
       'active' => TRUE,

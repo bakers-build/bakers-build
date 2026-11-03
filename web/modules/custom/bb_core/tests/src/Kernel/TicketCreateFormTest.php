@@ -100,7 +100,6 @@ final class TicketCreateFormTest extends KernelTestBase {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
-        'conductor_id' => 'cw-framework',
         'label' => 'cw-framework',
         // An instance admin: a conductor is offered only while its owner can
         // work in the project.
@@ -334,7 +333,7 @@ final class TicketCreateFormTest extends KernelTestBase {
       ->create(['name' => 'A different project']);
     $other_project->save();
     $foreign_conductor = $this->conductor->createDuplicate();
-    $foreign_conductor->set('conductor_id', 'foreign-conductor');
+    $foreign_conductor->set('label', 'foreign-conductor');
     $foreign_conductor->set('project_id', $other_project->id());
     $foreign_conductor->save();
 
@@ -516,7 +515,7 @@ final class TicketCreateFormTest extends KernelTestBase {
     $other_project = $this->project->createDuplicate();
     $other_project->save();
     $other_conductor = $this->conductor->createDuplicate();
-    $other_conductor->set('conductor_id', 'other-project-conductor');
+    $other_conductor->set('label', 'other-project-conductor');
     $other_conductor->set('project_id', $other_project->id());
     $other_conductor->save();
 
@@ -915,7 +914,7 @@ final class TicketCreateFormTest extends KernelTestBase {
     $other_project = $this->project->createDuplicate();
     $other_project->save();
     $other_conductor = $this->conductor->createDuplicate();
-    $other_conductor->set('conductor_id', 'other-project-conductor');
+    $other_conductor->set('label', 'other-project-conductor');
     $other_conductor->set('project_id', $other_project->id());
     $other_conductor->save();
 

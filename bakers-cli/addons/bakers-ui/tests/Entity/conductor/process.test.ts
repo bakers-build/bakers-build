@@ -13,7 +13,7 @@ import {
  */
 describe('conductor process host', () => {
   const WORKSPACE = '/home/dev/bakers/.bakers';
-  const HOST_KEY = 'cw-framework';
+  const MACHINE_ID = 'cw-framework';
 
   const host = (over: Parameters<typeof createConductorProcessHost>[0] = {}) =>
     createConductorProcessHost({
@@ -21,7 +21,7 @@ describe('conductor process host', () => {
       signal: vi.fn(() => ({ ok: true as const, pid: 1, signal: 'SIGTERM' })),
       // Never the real ~/.bakers/machine.config.js — a unit test must not read
       // the developer's actual machine identity.
-      thisHostKey: async () => HOST_KEY,
+      thisMachineId: async () => MACHINE_ID,
       ...over,
     });
 
@@ -33,7 +33,7 @@ describe('conductor process host', () => {
       await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: 'conductor',
-        hostKey: HOST_KEY,
+        machineId: MACHINE_ID,
       });
 
       expect(spawn).toHaveBeenCalledOnce();
@@ -50,7 +50,7 @@ describe('conductor process host', () => {
       await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: 'shop',
-        hostKey: HOST_KEY,
+        machineId: MACHINE_ID,
       });
 
       expect(spawn.mock.calls[0]?.[0].env.BB_CONDUCTOR).toBe('shop');
@@ -66,7 +66,7 @@ describe('conductor process host', () => {
       await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: 'shop',
-        hostKey: HOST_KEY,
+        machineId: MACHINE_ID,
       });
 
       expect(spawn.mock.calls[0]?.[0].env.BB_CONDUCTOR_CONFIG).toBe('');
@@ -79,7 +79,7 @@ describe('conductor process host', () => {
       await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: undefined,
-        hostKey: HOST_KEY,
+        machineId: MACHINE_ID,
       });
 
       expect(spawn.mock.calls[0]?.[0].env.BB_CONDUCTOR).toBeUndefined();
@@ -95,7 +95,7 @@ describe('conductor process host', () => {
       const out = await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: 'conductor',
-        hostKey: HOST_KEY,
+        machineId: MACHINE_ID,
       });
 
       expect(out.ok).toBe(false);
@@ -119,7 +119,7 @@ describe('conductor process host', () => {
       const out = await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: 'conductor',
-        hostKey: HOST_KEY,
+        machineId: MACHINE_ID,
       });
 
       expect(out.ok).toBe(false);
@@ -144,7 +144,7 @@ describe('conductor process host', () => {
         .start({
           workspaceRoot: WORKSPACE,
           conductorName: 'shop',
-          hostKey: HOST_KEY,
+          machineId: MACHINE_ID,
         })
         .then((r) => {
           done = true;
@@ -164,30 +164,30 @@ describe('conductor process host', () => {
     // machine's conductor whose workspace path happened to also exist on this
     // disk (the ordinary case for one operator with several machines) started
     // THIS machine's conductor instead, silently. `stop` never had this hole:
-    // it already runs the row's `hostKey` through `signalVerifiedProcess`.
-    it("refuses to start a conductor whose host_key is not this machine's, and never spawns", async () => {
+    // it already runs the row's `machineId` through `signalVerifiedProcess`.
+    it("refuses to start a conductor whose machine UUID is not this machine's, and never spawns", async () => {
       const spawn = vi.fn();
       const h = host({ spawn });
 
       const out = await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: 'conductor',
-        hostKey: 'someone-elses-box',
+        machineId: 'someone-elses-box',
       });
 
       expect(out.ok).toBe(false);
-      expect(out.message).toContain('host_key');
+      expect(out.message).toContain('is not this machine');
       expect(spawn).not.toHaveBeenCalled();
     });
 
-    it('refuses to start when the row carries no host_key at all', async () => {
+    it('refuses to start when the row carries no machine UUID at all', async () => {
       const spawn = vi.fn();
       const h = host({ spawn });
 
       const out = await h.start({
         workspaceRoot: WORKSPACE,
         conductorName: 'conductor',
-        hostKey: undefined,
+        machineId: undefined,
       });
 
       expect(out.ok).toBe(false);
@@ -211,7 +211,7 @@ describe('conductor process host', () => {
         const out = await h.start({
           workspaceRoot: WORKSPACE,
           conductorName: 'anerkennungsportal',
-          hostKey: HOST_KEY,
+          machineId: MACHINE_ID,
           id: 'conductor-uuid',
           priorLastSeen: 100,
           client: fakeClient,
@@ -235,7 +235,7 @@ describe('conductor process host', () => {
         const out = await h.start({
           workspaceRoot: WORKSPACE,
           conductorName: 'anerkennungsportal',
-          hostKey: HOST_KEY,
+          machineId: MACHINE_ID,
           id: 'conductor-uuid',
           priorLastSeen: 100,
           client: fakeClient,
@@ -255,7 +255,7 @@ describe('conductor process host', () => {
         const out = await h.start({
           workspaceRoot: WORKSPACE,
           conductorName: 'conductor',
-          hostKey: HOST_KEY,
+          machineId: MACHINE_ID,
         });
 
         expect(out.ok).toBe(true);
@@ -299,7 +299,7 @@ describe('conductor process host', () => {
   });
 
   describe('stop', () => {
-    it("signals the verified pid, resolving this machine's host_key itself", async () => {
+    it("signals the verified pid, resolving this machine's machine UUID itself", async () => {
       const signal = vi.fn(() => ({
         ok: true as const,
         pid: 4242,
@@ -307,13 +307,13 @@ describe('conductor process host', () => {
       }));
       const h = host({ signal });
 
-      const out = await h.stop({ pid: 4242, hostKey: HOST_KEY });
+      const out = await h.stop({ pid: 4242, machineId: MACHINE_ID });
 
       expect(out.ok).toBe(true);
       expect(signal).toHaveBeenCalledWith({
         pid: 4242,
-        hostKey: HOST_KEY,
-        thisHostKey: HOST_KEY,
+        machineId: MACHINE_ID,
+        thisMachineId: MACHINE_ID,
         signal: 'SIGTERM',
       });
     });
@@ -327,7 +327,7 @@ describe('conductor process host', () => {
         })),
       });
 
-      const out = await h.stop({ pid: 4242, hostKey: HOST_KEY });
+      const out = await h.stop({ pid: 4242, machineId: MACHINE_ID });
 
       expect(out.ok).toBe(false);
       expect(out.message).toContain('not a bakers conductor');
@@ -337,7 +337,7 @@ describe('conductor process host', () => {
       const spawn = vi.fn();
       const h = host({ spawn });
 
-      await h.stop({ pid: 4242, hostKey: HOST_KEY });
+      await h.stop({ pid: 4242, machineId: MACHINE_ID });
 
       expect(spawn).not.toHaveBeenCalled();
     });

@@ -97,7 +97,6 @@ final class ActivityMailAssignedTest extends ActivityMailKernelTestBase {
     $owner = $this->recipient('a', 'owner-a');
     $this->tick($owner, ['assigned']);
     $conductor = $this->createEntity('bb_conductor', [
-      'conductor_id' => 'node-own',
       'label' => 'node-own',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
       'machine' => $this->fixture('a', 'bb_machine')->id(),

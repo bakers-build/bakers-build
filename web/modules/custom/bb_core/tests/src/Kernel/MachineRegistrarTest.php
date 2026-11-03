@@ -22,6 +22,11 @@ final class MachineRegistrarTest extends KernelTestBase {
   use OgScopeFixtureTrait;
 
   /**
+   * The registering machine's UUID.
+   */
+  private const MACHINE = '6f1d2c3b-4a59-4e68-9d7c-8b0a1f2e3d4c';
+
+  /**
    * {@inheritdoc}
    *
    * @var array<string>
@@ -50,14 +55,14 @@ final class MachineRegistrarTest extends KernelTestBase {
   }
 
   /**
-   * Heartbeat with conductor_id + host_key creates and links a machine.
+   * A heartbeat creates the machine under the sent UUID and links it.
    */
   public function testHeartbeatCreatesMachineAndLinksConductor(): void {
     $this->seedProjectChain('proj-a');
     $owner = $this->createUser('owner');
     $conductor = $this->registrar()->heartbeat($owner, [
-      'conductor_id' => 'uid-host-proj-a',
-      'host_key' => 'host-a',
+      'machine_id' => self::MACHINE,
+      'machine_label' => 'host-a',
       'project' => 'proj-a',
       'max_parallel' => 2,
       'current_load' => 1,
@@ -65,7 +70,8 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $machine = $conductor->getMachine();
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
-    $this->assertSame('host-a', $machine->getHostKey());
+    $this->assertSame(self::MACHINE, $machine->uuid());
+    $this->assertSame('host-a', $machine->label());
     $this->assertSame((int) $owner->id(), (int) $machine->get('owner_user_id')->target_id);
     $this->assertSame(2, $machine->getMaxParallel());
     $this->assertSame(1, $machine->getCurrentLoad());
@@ -79,8 +85,8 @@ final class MachineRegistrarTest extends KernelTestBase {
     $this->seedProjectChain('proj-cap');
     $owner = $this->createUser('owner-cap');
     $conductor = $this->registrar()->heartbeat($owner, [
-      'conductor_id' => 'cap-1',
-      'host_key' => 'host-cap',
+      'machine_id' => self::MACHINE,
+      'machine_label' => 'host-cap',
       'project' => 'proj-cap',
       'max_parallel' => 9,
       'current_load' => 4,
@@ -101,8 +107,8 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $this->expectException(UnprocessableEntityHttpException::class);
     $this->registrar()->heartbeat($this->createUser('owner-orphan'), [
-      'conductor_id' => 'orphan-mid',
-      'host_key' => 'host-orphan',
+      'machine_id' => self::MACHINE,
+      'machine_label' => 'host-orphan',
       'project' => 'orphan-project',
     ]);
   }
@@ -119,8 +125,8 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $owner = $this->createUser('owner-explicit');
     $conductor = $this->registrar()->heartbeat($owner, [
-      'conductor_id' => 'explicit-mid',
-      'host_key' => 'host-explicit',
+      'machine_id' => self::MACHINE,
+      'machine_label' => 'host-explicit',
       'project' => 'proj-explicit',
       'workspace' => $own->uuid(),
     ]);
@@ -136,8 +142,8 @@ final class MachineRegistrarTest extends KernelTestBase {
     $this->seedProjectChain('proj-budget');
     $owner = $this->createUser('owner-budget');
     $first = $this->registrar()->heartbeat($owner, [
-      'conductor_id' => 'budget-a',
-      'host_key' => 'host-budget',
+      'machine_id' => self::MACHINE,
+      'machine_label' => 'host-budget',
       'project' => 'proj-budget',
       'max_parallel' => 2,
     ]);
@@ -147,14 +153,15 @@ final class MachineRegistrarTest extends KernelTestBase {
     $machine->save();
 
     $this->registrar()->heartbeat($owner, [
-      'conductor_id' => 'budget-a',
-      'host_key' => 'host-budget',
+      'machine_id' => self::MACHINE,
+      'machine_label' => 'host-budget',
       'project' => 'proj-budget',
       'max_parallel' => 3,
     ]);
     $this->registrar()->heartbeat($owner, [
-      'conductor_id' => 'budget-b',
-      'host_key' => 'host-budget',
+      'machine_id' => self::MACHINE,
+      'machine_label' => 'host-budget',
+      'variant' => 'budget-b',
       'project' => 'proj-budget',
       'max_parallel' => 9,
     ]);

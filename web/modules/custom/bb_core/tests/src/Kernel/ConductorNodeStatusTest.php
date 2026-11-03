@@ -32,7 +32,7 @@ final class ConductorNodeStatusTest extends BbEntityKernelTestBase {
    */
   private function makeConductor(string $machine, int $project, string $status, ?int $lastSeen): BbConductorInterface {
     $values = [
-      'conductor_id' => $machine,
+      'label' => $machine,
       'project_id' => $project,
       'status' => $status,
     ];

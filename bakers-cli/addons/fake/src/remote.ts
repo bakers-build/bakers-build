@@ -72,7 +72,7 @@ export interface FakeSeedTicket {
   /** The ticket's `metrics` rows. */
   metrics?: TicketMetric[];
   /**
-   * machine_id of the conductor this ticket is assigned to (BB-121). Omit to
+   * UUID of the conductor this ticket is assigned to (BB-121). Omit to
    * mean "belongs to the querying conductor" (the common case for reaper tests);
    * set an explicit value to test conductor-scoping, or `''` for unassigned.
    */
@@ -132,6 +132,11 @@ interface FakeMachineState {
   conductorLoads: Map<string, number>;
 }
 
+/** The server's conductor key: machine + project + variant. */
+function conductorKey(reg: ConductorRegistration): string {
+  return `${reg.machine_id}/${reg.project}/${reg.variant}`;
+}
+
 export class FakeBbRemote implements BbRemote {
   readonly calls: {
     markRunning: MarkRunningCall[];
@@ -160,7 +165,7 @@ export class FakeBbRemote implements BbRemote {
   private conductorStatus = 'online';
   /** Stable counter for assigning numeric ids to unseeded runs. */
   private runIdCounter = 0;
-  /** Host machines keyed by host_key (BB-353 D5 shared budget). */
+  /** Host machines keyed by machine UUID (BB-353 D5 shared budget). */
   private readonly machines = new Map<string, FakeMachineState>();
 
   /** Addon definitions as last registered. */
@@ -213,7 +218,7 @@ export class FakeBbRemote implements BbRemote {
     this.conductorStatus = 'online';
     // Ensure the host machine exists so machineCapacity is readable after
     // registration even before the first heartbeat with a non-zero load.
-    this.touchMachine(reg.host_key ?? reg.id, reg.id, 0, reg.max_parallel);
+    this.touchMachine(reg.machine_id, conductorKey(reg), 0, reg.max_parallel);
     return 'fake-conductor-uuid';
   }
 
@@ -226,8 +231,8 @@ export class FakeBbRemote implements BbRemote {
     // replaces this conductor's contribution to machine.current_load (D5).
     this.conductorStatus = 'online';
     this.touchMachine(
-      reg.host_key ?? reg.id,
-      reg.id,
+      reg.machine_id,
+      conductorKey(reg),
       currentLoad,
       reg.max_parallel,
     );
@@ -275,10 +280,10 @@ export class FakeBbRemote implements BbRemote {
    * replaces only that conductor's contribution and keeps the peer load.
    */
   seedMachineLoad(
-    hostKey: string,
+    machineId: string,
     opts: { currentLoad: number; maxParallel?: number },
   ): void {
-    const m = this.machines.get(hostKey) ?? {
+    const m = this.machines.get(machineId) ?? {
       maxParallel: opts.maxParallel ?? 1,
       conductorLoads: new Map<string, number>(),
     };
@@ -286,13 +291,13 @@ export class FakeBbRemote implements BbRemote {
     if (opts.maxParallel !== undefined) {
       m.maxParallel = opts.maxParallel;
     }
-    this.machines.set(hostKey, m);
+    this.machines.set(machineId, m);
   }
 
   async machineCapacity(
-    hostKey: string,
+    machineId: string,
   ): Promise<{ maxParallel: number; currentLoad: number } | null> {
-    const m = this.machines.get(hostKey);
+    const m = this.machines.get(machineId);
     if (!m) return null;
     let currentLoad = 0;
     for (const load of m.conductorLoads.values()) {
@@ -302,12 +307,12 @@ export class FakeBbRemote implements BbRemote {
   }
 
   private touchMachine(
-    hostKey: string,
+    machineId: string,
     conductorId: string,
     load: number,
     maxParallel: number,
   ): void {
-    const existing = this.machines.get(hostKey);
+    const existing = this.machines.get(machineId);
     if (existing) {
       // BB-464 D2 (mirrored): the budget is set once, at machine creation,
       // and never rewritten by a later heartbeat — otherwise two conductors
@@ -316,7 +321,7 @@ export class FakeBbRemote implements BbRemote {
       existing.conductorLoads.set(conductorId, load);
       return;
     }
-    this.machines.set(hostKey, {
+    this.machines.set(machineId, {
       maxParallel:
         Number.isFinite(maxParallel) && maxParallel >= 1 ? maxParallel : 1,
       conductorLoads: new Map<string, number>([[conductorId, load]]),

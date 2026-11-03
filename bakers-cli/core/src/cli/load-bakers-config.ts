@@ -24,6 +24,7 @@ import {
   projectConductorConfigPath,
   readUiEntryLayers,
 } from './layered-ui-entries.js';
+import { assertSchemaVersion1 } from './machine-context.js';
 import { resolveModuleEslintStyle } from './resolve-module.js';
 
 /**
@@ -433,6 +434,7 @@ export async function loadBbConnectionBootstrap(
       `bakers connection config default export must be an object (${configPath})`,
     );
   }
+  assertSchemaVersion1(configPath, raw);
 
   const site = isRecord(raw.site) ? raw.site : {};
   const baseUrl = typeof site.base_url === 'string' ? site.base_url : '';

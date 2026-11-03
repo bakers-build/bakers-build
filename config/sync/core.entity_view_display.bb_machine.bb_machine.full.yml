@@ -85,7 +85,6 @@ mode: full
 content: {  }
 hidden:
   current_load: true
-  host_key: true
   max_parallel: true
   name: true
   owner_user_id: true

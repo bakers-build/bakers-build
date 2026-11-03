@@ -2,6 +2,12 @@
 
 The maintained reference is [Configuration](../docs/configuration/index.md).
 
+A machine is a UUID plus a label: `bakers init` generates `machine_id` once in
+`~/.bakers/machine.config.js` and asks for its `label`. A conductor is machine + project +
+variant (the config file's stem) and has no id in any config; the server returns its UUID on
+registration. See [Machines](../docs/configuration/machine.md) and
+[Conductor configuration](../docs/configuration/project.md).
+
 The herdr executor runs the agent command with non-interactive `sh`. The harness
 binary must resolve through `PATH`; a shell alias or function is not loaded.
 See [Conductor configuration](../docs/addons/herdr/options.md).

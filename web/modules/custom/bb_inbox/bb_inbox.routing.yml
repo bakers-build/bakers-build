@@ -11,7 +11,7 @@ bb_inbox.send:
     _user_is_logged_in: 'TRUE'
 
 bb_inbox.pending:
-  path: '/%jsonapi%/bakers/inbox/{conductor_id}'
+  path: '/%jsonapi%/bakers/inbox/{conductor}'
   methods: ['GET']
   defaults:
     _jsonapi_resource: Drupal\bb_inbox\Resource\InboxPendingResource

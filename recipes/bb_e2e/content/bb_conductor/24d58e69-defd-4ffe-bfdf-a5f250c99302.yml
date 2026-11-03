@@ -18,9 +18,9 @@ default:
   # not help: the importer's guard is `empty($entity->getOwnerId())`, and
   # empty(0) is TRUE, so an explicit anonymous owner is overwritten just the
   # same. The User column therefore has no empty case left to assert.
-  conductor_id:
+  variant:
     -
-      value: "orphan-node"
+      value: "conductor"
   label:
     -
       value: "orphan-node"

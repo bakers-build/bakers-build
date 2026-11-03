@@ -22,19 +22,19 @@ import type { Ticket } from './plugins/remote.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {
-  /** Default: `${project} @ ${checkoutRoot}`. */
-  label: string;
   /**
-   * Stable conductor registration key (bb_conductor.conductor_id). Composed
-   * as `${user_id}-${host}-${project}` from the machine context. Set it to pin
-   * a conductor to a known identity — e.g. so a ticket can be pre-assigned to
-   * it (conductor assignment is the run-start trigger).
-   */
-  conductor_id?: string;
-  /**
-   * @deprecated BB-353 — alias for `conductor_id` during cutover.
+   * This machine's UUID (`machine.config.js` machine_id, lowercase). Absent
+   * until `bakers init` wrote it; registration then fails naming `bakers init`.
    */
   machine_id?: string;
+  /** This machine's display label (`machine.config.js` label). */
+  machine_label?: string;
+  /**
+   * The selected config file's stem: `conductor` for `conductor.config.js`,
+   * `shop` for `shop.conductor.config.js`. With the machine and the project it
+   * keys the conductor on the server.
+   */
+  variant: string;
   /** Project name (bb_project.name); resolved at registration. */
   project: string;
   /**
@@ -60,12 +60,6 @@ export interface ConductorSettings {
    * Runtime-derived; ticket and project env cannot override it.
    */
   tunnel?: boolean;
-  /**
-   * Host identity stem (bb_machine.host_key). Sourced from
-   * MachineContext.machine_id — not derived by hyphen-splitting conductor_id
-   * (that mis-parses when project or host segments contain hyphens).
-   */
-  host_key?: string;
   poll_interval_ms: number;
   lease_seconds: number;
   /**

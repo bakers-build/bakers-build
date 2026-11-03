@@ -36,7 +36,7 @@ const conductorResource = {
 const machineResource = {
   id: MACHINE_ID,
   type: 'bb_machine--bb_machine',
-  attributes: { host_key: 'test-host', current_load: 1, max_parallel: 5 },
+  attributes: { name: 'test-host', current_load: 1, max_parallel: 5 },
 };
 const ticketResource = {
   id: 't-538',
@@ -98,7 +98,7 @@ function fakeContext(): ScreenContext {
     conductorProcess: {
       start: async () => ({ ok: true, message: '' }),
       stop: async () => ({ ok: true, message: '' }),
-      thisHostKey: async () => 'test-host',
+      thisMachineId: async () => MACHINE_ID,
     },
   } as never;
   return {

@@ -22,7 +22,7 @@ use Symfony\Component\Routing\Route;
 final class BbConductorRouteProvider extends AdminHtmlRouteProvider {
 
   /**
-   * Titles the conductor, falling back to its registration id when blank.
+   * Titles the conductor, falling back to its UUID when blank.
    *
    * Core's `EntityController::title()` titles the FIRST entity parameter, and
    * on `/_workspace/{bb_workspace}/conductor/{bb_conductor}` that is the
@@ -30,7 +30,7 @@ final class BbConductorRouteProvider extends AdminHtmlRouteProvider {
    */
   public static function title(BbConductorInterface $bb_conductor): string {
     $label = trim((string) $bb_conductor->label());
-    return $label !== '' ? $label : $bb_conductor->getConductorId();
+    return $label !== '' ? $label : (string) $bb_conductor->uuid();
   }
 
   /**

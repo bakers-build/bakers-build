@@ -34,6 +34,9 @@ const conductor = (
   ownerUserId: string | null | undefined = undefined,
 ): ReturnType<typeof toResource> => {
   const relationships: Record<string, { data?: { id: string } | null }> = {};
+  const { __machine: machine, ...attributes } = attrs;
+  if (typeof machine === 'string')
+    relationships.machine = { data: { id: machine } };
   if (project !== null) {
     relationships.project_id = { data: { id: project } };
   }
@@ -45,7 +48,7 @@ const conductor = (
   return toResource({
     id,
     type: 'bb_conductor--bb_conductor',
-    attributes: attrs,
+    attributes,
     ...(Object.keys(relationships).length > 0 ? { relationships } : {}),
   });
 };
@@ -54,27 +57,28 @@ const rows = () => ({
   bb_conductor: [
     conductor('c1', {
       label: 'cw-framework',
-      machine_id: 'm1',
+      __machine: 'm1',
       status: 'running',
     }),
-    conductor('c2', { label: 'tom', machine_id: 'mine', status: 'offline' }),
+    conductor('c2', { label: 'tom', __machine: 'mine', status: 'offline' }),
     conductor(
       'c3',
-      { label: 'elsewhere', machine_id: 'm3', status: 'running' },
+      { label: 'elsewhere', __machine: 'm3', status: 'running' },
       OTHER_PROJECT,
     ),
   ],
 });
 
-it('a conductor carries id, label, machineId, status and its project', async () => {
+it('a conductor carries id, label, machine UUID, variant, status and its project', async () => {
   const client = fakeClient({
     rows: {
       bb_conductor: [
         conductor(
           'c1',
           {
-            label: 'cw-framework',
-            machine_id: 'cw-framework@box',
+            label: 'cw-laptop · bakers',
+            __machine: 'machine-uuid',
+            variant: 'shop',
             status: 'running',
           },
           'p1',
@@ -85,8 +89,9 @@ it('a conductor carries id, label, machineId, status and its project', async () 
   expect((await listConductors(client)).rows).toEqual([
     {
       id: 'c1',
-      label: 'cw-framework',
-      machineId: 'cw-framework@box',
+      label: 'cw-laptop · bakers',
+      machineId: 'machine-uuid',
+      variant: 'shop',
       status: 'running',
       active: true,
       projectId: 'p1',
@@ -96,20 +101,18 @@ it('a conductor carries id, label, machineId, status and its project', async () 
   expect(client.collections).toEqual(['bb_conductor/bb_conductor']);
 });
 
-it('the label falls back label → machine_id → uuid, and an unlinked project is null', async () => {
+it('the label falls back to the uuid, the variant to `conductor`, and an unlinked project is null', async () => {
   const client = fakeClient({
     rows: {
-      bb_conductor: [
-        conductor('c2', { machine_id: 'box-2' }, null),
-        conductor('c3', {}, null),
-      ],
+      bb_conductor: [conductor('c3', {}, null)],
     },
   });
-  const [noLabel, bare] = (await listConductors(client)).rows;
-  expect(noLabel?.label).toBe('box-2');
-  expect(noLabel?.projectId).toBeNull();
-  expect(noLabel?.status).toBeUndefined();
+  const [bare] = (await listConductors(client)).rows;
   expect(bare?.label).toBe('c3');
+  expect(bare?.variant).toBe('conductor');
+  expect(bare?.projectId).toBeNull();
+  expect(bare?.status).toBeUndefined();
+  expect(bare?.machineId).toBeUndefined();
 });
 
 it('listConductors returns the collection AS IT IS — every project, plain labels', async () => {
@@ -190,17 +193,14 @@ const cockpitConductor = (
   type: 'bb_conductor--bb_conductor',
   attributes: {
     label: 'cw-framework',
-    conductor_id: 'cw-framework',
     status: 'online',
     workspace_root: '/home/dev/bakers/.bakers',
     last_seen: 1_000_000,
     lease_expires_at: 1_000_300,
     last_pid: 4242,
     conductor_name: 'conductor',
-    // NO host_key here (BB-450 B7): bb_conductor carries no such field in
-    // reality — filter[host_key] against it is a server-side 400. Writing one
-    // on this fixture would hide the exact defect B7 named: a test that could
-    // not tell a correct read from the broken one.
+    // The machine is a RELATIONSHIP: its UUID is the related
+    // bb_machine's id, never an attribute of the conductor.
     ...attrs,
   },
   relationships: {
@@ -215,7 +215,7 @@ const cockpitMachine = (attrs: Record<string, unknown> = {}) => ({
   id: MACHINE,
   type: 'bb_machine--bb_machine',
   attributes: {
-    host_key: 'cw-dev-box',
+    name: 'cw-dev-box',
     current_load: 2,
     max_parallel: 5,
     ...attrs,
@@ -236,7 +236,7 @@ const cockpitDoc = (
 const rowCtx = {
   now: 1_000_010,
   exists: () => true,
-  thisHostKey: 'cw-dev-box',
+  thisMachineId: MACHINE,
 };
 
 it('carries the fields the cockpit renders, with capacity from the machine', async () => {
@@ -252,8 +252,9 @@ it('carries the fields the cockpit renders, with capacity from the machine', asy
   expect(c?.leaseExpiresAt).toBe(1_000_300);
   expect(c?.lastPid).toBe(4242);
   expect(c?.conductorName).toBe('conductor');
-  // BB-450 AC-4: the host_key a stop compares against this machine's own.
-  expect(c?.hostKey).toBe('cw-dev-box');
+  // BB-450 AC-4: the machine UUID a stop compares against this machine's own.
+  expect(c?.machineId).toBe(MACHINE);
+  expect(c?.machineLabel).toBe('cw-dev-box');
   // Spec D5/D10: utilization from conductor.machine, not conductor attrs.
   expect(c?.currentLoad).toBe(2);
   expect(c?.maxParallel).toBe(5);
@@ -329,7 +330,7 @@ it('derives liveness through the shared deriver', async () => {
   const [old] = (
     await listConductorRowPage(
       client,
-      { now: 1_900_000, exists: () => true, thisHostKey: 'cw-dev-box' },
+      { now: 1_900_000, exists: () => true, thisMachineId: MACHINE },
       {},
     )
   ).rows;
@@ -357,7 +358,7 @@ it('marks a row local only when its workspace exists on this machine', async () 
       {
         now: 1_000_010,
         exists: (p: string) => p === '/home/dev/bakers/.bakers',
-        thisHostKey: 'cw-dev-box',
+        thisMachineId: 'cw-dev-box',
       },
       {},
     )
@@ -367,35 +368,39 @@ it('marks a row local only when its workspace exists on this machine', async () 
   const [elsewhere] = (
     await listConductorRowPage(
       client,
-      { now: 1_000_010, exists: () => false, thisHostKey: 'cw-dev-box' },
+      { now: 1_000_010, exists: () => false, thisMachineId: MACHINE },
       {},
     )
   ).rows;
   expect(elsewhere?.isLocal).toBe(false);
 });
 
-it('marks a row `mine` only when its host_key matches THIS machine, never from a path (BB-450 B10)', async () => {
+it('marks a row `mine` only when its machine UUID matches THIS machine, never from a path (BB-450 B10)', async () => {
   const client = fakeClient({
     documents: {
-      'bb_conductor/bb_conductor': cockpitDoc({}, { host_key: 'cw-dev-box' }),
+      'bb_conductor/bb_conductor': cockpitDoc(),
     },
   });
   const [own] = (
     await listConductorRowPage(
       client,
-      { now: 1_000_010, exists: () => true, thisHostKey: 'cw-dev-box' },
+      { now: 1_000_010, exists: () => true, thisMachineId: MACHINE },
       {},
     )
   ).rows;
   expect(own?.mine).toBe(true);
 
   // Same workspace_root, so `isLocal` alone cannot tell them apart — a
-  // DIFFERENT machine's host_key is what makes this row foreign (BB-281
+  // DIFFERENT machine UUID is what makes this row foreign (BB-281
   // Finding 2: two records naming one checkout under different machines).
   const [foreign] = (
     await listConductorRowPage(
       client,
-      { now: 1_000_010, exists: () => true, thisHostKey: 'some-other-machine' },
+      {
+        now: 1_000_010,
+        exists: () => true,
+        thisMachineId: 'some-other-machine',
+      },
       {},
     )
   ).rows;
@@ -403,7 +408,7 @@ it('marks a row `mine` only when its host_key matches THIS machine, never from a
   expect(foreign?.isLocal).toBe(true);
 });
 
-it('never treats an absent host_key as `mine`, even against an empty thisHostKey', async () => {
+it('never treats an absent machine UUID as `mine`, even against an empty thisMachineId', async () => {
   const client = fakeClient({
     documents: {
       'bb_conductor/bb_conductor': cockpitDoc({}, null),
@@ -412,11 +417,11 @@ it('never treats an absent host_key as `mine`, even against an empty thisHostKey
   const [c] = (
     await listConductorRowPage(
       client,
-      { now: 1_000_010, exists: () => true, thisHostKey: '' },
+      { now: 1_000_010, exists: () => true, thisMachineId: '' },
       {},
     )
   ).rows;
-  expect(c?.hostKey).toBeUndefined();
+  expect(c?.machineId).toBeUndefined();
   expect(c?.mine).toBe(false);
 });
 
@@ -430,7 +435,6 @@ it('reads a row written before the process fields existed', async () => {
             type: 'bb_conductor--bb_conductor',
             attributes: {
               label: 'old',
-              machine_id: 'm9',
               status: 'online',
             },
           },
@@ -443,18 +447,18 @@ it('reads a row written before the process fields existed', async () => {
   const [c] = (
     await listConductorRowPage(
       client,
-      { now: 1_000_010, exists: () => false, thisHostKey: 'cw-dev-box' },
+      { now: 1_000_010, exists: () => false, thisMachineId: MACHINE },
       {},
     )
   ).rows;
 
   expect(c?.lastPid).toBeUndefined();
   expect(c?.conductorName).toBeUndefined();
-  expect(c?.hostKey).toBeUndefined();
+  expect(c?.machineId).toBeUndefined();
   expect(c?.workspaceRoot).toBe('');
   // No workspace_root cannot be local, whatever the filesystem says.
   expect(c?.isLocal).toBe(false);
-  // No hostKey on record ⇒ never `mine`, whatever thisHostKey happens to be.
+  // No machineId on record ⇒ never `mine`, whatever thisMachineId happens to be.
   expect(c?.mine).toBe(false);
   expect(c?.currentLoad).toBe(0);
   expect(c?.maxParallel).toBe(0);
@@ -485,7 +489,7 @@ it('rejects on a failed cockpit read — the screen layer is what swallows it', 
 const CONDUCTOR_ROW: ConductorRow = {
   id: 'c-1',
   label: 'cw-framework',
-  machineId: 'cw-framework',
+  variant: 'conductor',
   status: 'online',
   projectId: 'p-1',
   workspaceRoot: '/home/dev/bakers/.bakers',
@@ -495,7 +499,8 @@ const CONDUCTOR_ROW: ConductorRow = {
   maxParallel: 5,
   lastPid: 4242,
   conductorName: 'conductor',
-  hostKey: 'cw-dev-box',
+  machineId: 'mmmmmmmm-0000-0000-0000-000000000001',
+  machineLabel: 'cw-dev-box',
   derivedStatus: 'online',
   isLocal: true,
   mine: true,
@@ -644,19 +649,12 @@ it('renders a conductor that never reported a pid without inventing one', () => 
   expect(line).toContain('-');
 });
 
-it('falls back to the machine id when a conductor carries no label', () => {
-  expect(
-    conductorRowText([{ ...CONDUCTOR_ROW, label: '', machineId: 'mid-7' }]),
-  ).toContain('mid-7');
-});
-
-// BB-232 review finding F4. AC-1 and spec D2 both list `machine_id` as a
-// column; it was only a fallback for an empty label. Live that mattered: two
-// rows shared a project AND a workspace_root, and were distinguishable only
-// because one label happened to carry its path.
-it('renders machine_id as its own column, beside the label', () => {
+// BB-232 review finding F4: MACHINE is its own column
+// and shows the machine's LABEL; two conductors of one project on two machines
+// share a project and often a workspace_root.
+it('renders the machine label as its own column, beside the conductor label', () => {
   const tree = conductorTree([
-    { ...CONDUCTOR_ROW, label: 'framework', machineId: 'cw-abc123-bakers' },
+    { ...CONDUCTOR_ROW, label: 'framework', machineLabel: 'cw-laptop' },
   ]);
 
   expect(
@@ -667,41 +665,35 @@ it('renders machine_id as its own column, beside the label', () => {
     // BB-345 — the leading blank is the column SEPARATOR, which is a column of
     // this cell now rather than the row's Yoga gap, so that a selected row's
     // highlight can paint it. MACHINE is the second column, so it carries one.
-  ).toEqual([' cw-abc123-bakers']);
+  ).toEqual([' cw-laptop']);
 });
 
-it('separates two rows that agree on everything but their machine_id', () => {
+it('separates two rows that agree on everything but their machine', () => {
   const rowsIn = [
-    { ...CONDUCTOR_ROW, id: 'c-1', label: '', machineId: 'cw-one-bakers' },
-    { ...CONDUCTOR_ROW, id: 'c-2', label: '', machineId: 'cw-two-bakers' },
+    { ...CONDUCTOR_ROW, id: 'c-1', machineLabel: 'cw-laptop' },
+    { ...CONDUCTOR_ROW, id: 'c-2', machineLabel: 'cw-desktop' },
   ];
 
-  expect(conductorRowText(rowsIn, {}, 'c-1')).toContain('cw-one-bakers');
-  expect(conductorRowText(rowsIn, {}, 'c-2')).toContain('cw-two-bakers');
-  expect(conductorRowText(rowsIn, {}, 'c-1')).not.toBe(
-    conductorRowText(rowsIn, {}, 'c-2'),
-  );
+  expect(conductorRowText(rowsIn, {}, 'c-1')).toContain('cw-laptop');
+  expect(conductorRowText(rowsIn, {}, 'c-2')).toContain('cw-desktop');
 });
 
-it('elides a long machine_id on the LEFT — the head is the shared user id', () => {
+it('elides a long machine label on the LEFT, keeping its tail', () => {
   const line = conductorRowText([
     {
       ...CONDUCTOR_ROW,
-      machineId:
-        '3b72a85c-4455-4c86-b207-bdcc7de4fdc6-workstation-bakers-framework',
+      machineLabel: 'a-very-long-machine-name-workstation-bakers',
     },
   ]);
 
-  // Every row of a user-scoped control plane repeats the same user uuid, so the
-  // tail is the only part that tells one conductor from another.
-  expect(line).toContain('bakers-framework');
-  expect(line).not.toContain('3b72a85c-4455');
+  expect(line).toContain('workstation-bakers');
+  expect(line).not.toContain('a-very-long');
 });
 
-it('renders a conductor that never reported a machine_id without inventing one', () => {
+it('renders a conductor without a known machine without inventing one', () => {
   expect(
     conductorRowText([
-      { ...CONDUCTOR_ROW, label: 'nameless', machineId: undefined },
+      { ...CONDUCTOR_ROW, label: 'nameless', machineLabel: undefined },
     ]),
   ).not.toContain('undefined');
 });
@@ -737,18 +729,8 @@ describe('toConductor owner (BB-460 D8)', () => {
     const client = fakeClient({
       rows: {
         bb_conductor: [
-          conductor(
-            'c1',
-            { label: 'mine', conductor_id: 'cw-fw-bakers' },
-            PROJECT,
-            'user-cw',
-          ),
-          conductor(
-            'c2',
-            { label: 'ownerless', conductor_id: 'x-y-z' },
-            PROJECT,
-            null,
-          ),
+          conductor('c1', { label: 'mine' }, PROJECT, 'user-cw'),
+          conductor('c2', { label: 'ownerless' }, PROJECT, null),
         ],
       },
     });
@@ -757,7 +739,11 @@ describe('toConductor owner (BB-460 D8)', () => {
   });
 });
 
-const PAGE_CTX = { now: 1_000_000, exists: () => false, thisHostKey: 'host-a' };
+const PAGE_CTX = {
+  now: 1_000_000,
+  exists: () => false,
+  thisMachineId: 'host-a',
+};
 
 const queryOf = (params: unknown): string =>
   decodeURIComponent((params as { getQueryString(): string }).getQueryString());

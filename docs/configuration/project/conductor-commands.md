@@ -69,7 +69,7 @@ A start on a machine where an enabled agent cannot start its sandbox prints `war
 Both print tab-separated columns, `status` only for this checkout's conductor and `ls` for every conductor you own, on any machine:
 
 ```
-<conductor_id>	<liveness>	<project>	<label>	<workspace_root>
+<label>	<liveness>	<project>	<variant>	<workspace_root>	<uuid>
 ```
 
 Liveness is derived, and uses the same three words as the cockpit and the control plane: `online` (heartbeating within its lease), `stale` (registered as online, but the heartbeat is older than 600 seconds or the lease has lapsed, which is what a crash looks like) and `offline` (shut down cleanly). For a conductor on this host whose recorded process no longer exists, the listing reports `offline`. With no conductors, the output is `no conductors on the control plane`. The `bakers oven ls --help` text says "on this machine"; the listing is not limited to it.

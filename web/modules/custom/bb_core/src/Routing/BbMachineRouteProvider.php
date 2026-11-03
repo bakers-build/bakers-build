@@ -22,14 +22,14 @@ use Symfony\Component\Routing\Route;
 final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
 
   /**
-   * Titles the machine, falling back to its host key when the name is blank.
+   * Titles the machine, falling back to its UUID when the name is blank.
    *
    * Core's `EntityController::title()` titles the FIRST entity parameter, and
    * on `/user/{user}/machine/{bb_machine}` that is the account.
    */
   public static function title(BbMachineInterface $bb_machine): string {
     $label = trim((string) $bb_machine->label());
-    return $label !== '' ? $label : $bb_machine->getHostKey();
+    return $label !== '' ? $label : (string) $bb_machine->uuid();
   }
 
   /**

@@ -176,7 +176,7 @@ export async function loadProjectRows({
   const ctx: ConductorRowContext = {
     now,
     exists: () => false,
-    thisHostKey: '',
+    thisMachineId: '',
   };
   // Every page, or no list: a failed page never yields a truncated one.
   const conductors: ConductorRow[] = [];

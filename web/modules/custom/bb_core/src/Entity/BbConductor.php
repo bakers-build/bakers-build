@@ -27,7 +27,7 @@ use Drupal\user\EntityOwnerTrait;
 /**
  * Represents a bakers.build conductor — an agent execution environment.
  *
- * A conductor registers itself per project with a unique conductor_id and the
+ * A conductor registers itself per machine, project and variant with the
  * workflow states it handles, and exposes an optional HTTP endpoint URL so
  * the server can push work to it. Status and lease timestamps are managed
  * by the claim API. Concurrent-run capacity lives on the linked bb_machine,
@@ -97,15 +97,15 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
-    // Process registration key (composed ${user_id}-${host}-${project}).
-    // Not `machine_id`, which would collide with the host concept
-    // (bb_machine.host_key / MachineContext.machine_id).
-    $fields['conductor_id'] = BaseFieldDefinition::create('string')
-      ->setLabel(new TranslatableMarkup('Conductor ID'))
+    // Registration key with machine and project: the stem of the conductor's
+    // config file (`conductor.config.js` is `conductor`).
+    $fields['variant'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Variant'))
       ->setRequired(TRUE)
-      ->addConstraint('UniqueField')
+      ->setDefaultValue('conductor')
+      ->setSetting('max_length', 255)
       ->setDisplayConfigurable('form', TRUE)
-      ->setDisplayOptions('form', ['type' => 'string_textfield', 'weight' => 0]);
+      ->setDisplayConfigurable('view', TRUE);
     $fields['label'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Label'))
       ->setDisplayConfigurable('form', TRUE)
@@ -183,7 +183,7 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
     // workspace it belongs to when a repo holds several.
     //
     // last_pid is machine-local data in a user-scoped entity. That is sound
-    // only because a conductor_id identifies one conductor on one machine; a
+    // only because a conductor identifies one process config on one machine; a
     // pid read from another machine's row means nothing here, which is why
     // the UI only acts on rows whose workspace_root exists locally.
     $fields['last_pid'] = BaseFieldDefinition::create('integer')
@@ -203,16 +203,8 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
   /**
    * {@inheritdoc}
    */
-  public function getConductorId(): string {
-    return (string) $this->get('conductor_id')->value;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setConductorId(string $conductor_id): static {
-    $this->set('conductor_id', $conductor_id);
-    return $this;
+  public function getVariant(): string {
+    return (string) $this->get('variant')->value;
   }
 
   /**

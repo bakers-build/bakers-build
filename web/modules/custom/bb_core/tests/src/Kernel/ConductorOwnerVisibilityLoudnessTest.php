@@ -158,7 +158,6 @@ final class ConductorOwnerVisibilityLoudnessTest extends KernelTestBase {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
-        'conductor_id' => 'mid-ownerless',
         'label' => 'mid-ownerless',
         'status' => 'online',
         'project_id' => $project->id(),
@@ -172,7 +171,6 @@ final class ConductorOwnerVisibilityLoudnessTest extends KernelTestBase {
     $second = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
-        'conductor_id' => 'mid-projectless',
         'label' => 'mid-projectless',
         'owner_user_id' => $owner->id(),
         'status' => 'online',
@@ -303,7 +301,6 @@ final class ConductorOwnerVisibilityLoudnessTest extends KernelTestBase {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
-        'conductor_id' => $machine_id,
         'label' => $machine_id,
         'owner_user_id' => $owner->id(),
         'status' => 'online',

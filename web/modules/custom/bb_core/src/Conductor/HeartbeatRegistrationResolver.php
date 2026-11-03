@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Conductor;
 
+use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Access\BbRankCapabilityInterface;
@@ -14,7 +15,7 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
- * Resolves project, host_key, and workspace for a conductor heartbeat.
+ * Resolves machine, variant, project and workspace for a conductor heartbeat.
  */
 final class HeartbeatRegistrationResolver {
 
@@ -27,38 +28,36 @@ final class HeartbeatRegistrationResolver {
   }
 
   /**
-   * Resolves conductor_id, accepting legacy machine_id as alias.
+   * Resolves the machine UUID, refusing the identities of an old CLI.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
+   *
+   * @return string
+   *   The lowercase machine UUID.
    */
-  public function conductorId(array $attrs): string {
-    if (isset($attrs['conductor_id']) && is_string($attrs['conductor_id']) && $attrs['conductor_id'] !== '') {
-      return $attrs['conductor_id'];
+  public function machineId(array $attrs): string {
+    foreach (['conductor_id', 'host_key'] as $stale) {
+      if (array_key_exists($stale, $attrs)) {
+        throw new UnprocessableEntityHttpException(sprintf('%s is no longer accepted; update bakers and run `bakers init`.', $stale));
+      }
     }
-    if (isset($attrs['machine_id']) && is_string($attrs['machine_id']) && $attrs['machine_id'] !== '') {
-      return $attrs['machine_id'];
+    $machineId = $attrs['machine_id'] ?? NULL;
+    if (!is_string($machineId) || !Uuid::isValid($machineId)) {
+      throw new UnprocessableEntityHttpException('machine_id must be the machine UUID; run `bakers init`.');
     }
-    throw new UnprocessableEntityHttpException('conductor_id is required.');
+    return strtolower($machineId);
   }
 
   /**
-   * Resolves host_key from attrs or derives a stem from conductor_id.
+   * Resolves the variant, `conductor` when absent.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
-   * @param string $conductorId
-   *   Resolved conductor registration key.
    */
-  public function hostKey(array $attrs, string $conductorId): string {
-    if (isset($attrs['host_key']) && is_string($attrs['host_key']) && $attrs['host_key'] !== '') {
-      return $attrs['host_key'];
-    }
-    $parts = explode('-', $conductorId);
-    if (count($parts) >= 3 && $parts[0] !== '' && $parts[1] !== '') {
-      return implode('-', array_slice($parts, 1, -1)) ?: $conductorId;
-    }
-    return $conductorId;
+  public function variant(array $attrs): string {
+    $variant = $attrs['variant'] ?? NULL;
+    return is_string($variant) && $variant !== '' ? $variant : 'conductor';
   }
 
   /**

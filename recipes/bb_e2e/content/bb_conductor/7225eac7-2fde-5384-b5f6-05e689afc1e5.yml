@@ -8,8 +8,8 @@ _meta:
     445bc635-cc04-5de3-bf29-1c5f88adae29: user
     59d5d39f-a8e4-54a6-a1c9-7f3d7920010f: og_membership
 default:
-  conductor_id:
-  - value: api-pagination-home
+  variant:
+  - value: conductor
   label:
   - value: API pagination home
   project_id:

@@ -102,7 +102,6 @@ final class ProjectBoardViewTest extends KernelTestBase {
     $working = $this->createTicket($this->projectA, 'BOARD-WORK', 'coding', FALSE, $conductor_a->id());
     $done = $this->createTicket($this->projectA, 'BOARD-DONE', 'cancelled', TRUE, $conductor_a->id());
     $other_conductor = $this->createEntity('bb_conductor', [
-      'conductor_id' => 'node-a-board',
       'label' => 'node-a-board',
       'status' => 'online',
       'project_id' => $this->projectA->id(),

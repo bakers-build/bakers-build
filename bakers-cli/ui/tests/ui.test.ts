@@ -20,8 +20,8 @@ import { cmdUi, type RunBbUiOptions } from '../src/ui.js';
 // All seams are injected here.
 
 const machine = {
-  machine_id: 'host',
-  user_id: 'cw',
+  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+  label: 'host',
 };
 
 function fakeHost(): { host: AgentLaunchHost; launched: string[] } {
@@ -554,18 +554,39 @@ describe('cmdUi connection resolution (BB-219)', () => {
 
   // ── unchanged behaviour ───────────────────────────────────────────────────
 
-  it('passes the current user through from the machine context', async () => {
+  it('passes the signed-in user (api.me()) through as the current user', async () => {
     makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
       machine,
       agentHost: fakeHost().host,
       cwd: tmp,
+      buildWriteClient: async () => ({ me: async () => 'user-uuid' }),
       runUi: async (o) => {
         opts = o;
       },
     });
-    expect(opts?.currentUser).toBe('cw');
+    expect(opts?.currentUser).toBe('user-uuid');
+  });
+
+  it('runs without a current user when the identity cannot be read', async () => {
+    makeProject(tmp, 'https://project.test');
+    let opts: RunBbUiOptions | undefined;
+    await cmdUi({
+      machine,
+      agentHost: fakeHost().host,
+      cwd: tmp,
+      buildWriteClient: async () => ({
+        me: async () => {
+          throw new Error('offline');
+        },
+      }),
+      runUi: async (o) => {
+        opts = o;
+      },
+    });
+    expect(opts).toBeDefined();
+    expect(opts).not.toHaveProperty('currentUser');
   });
 
   it('adapts the herdr host prompt→command (default claude)', async () => {

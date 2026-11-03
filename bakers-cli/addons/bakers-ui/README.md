@@ -571,7 +571,7 @@ await runBbUi({
   project,             // default project (opaque group), from the registry
   agents,              // herdr-backed host, already adapted prompt→command
   currentUser,         // preselected new-ticket assignee
-  ownConductorMachineId,
+  ownConductorId,
   buildProgram,        // dropsh's real buildProgram, injected
   // renderer,         // optional override; defaults to this package's plugin
 });

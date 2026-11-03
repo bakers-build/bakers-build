@@ -103,7 +103,6 @@ final class MachineUserListingTest extends KernelTestBase {
 
     $labelled = $this->create('bb_machine', [
       'name' => 'Alpha',
-      'host_key' => 'host-alpha',
       'owner_user_id' => $this->accounts['lead']->id(),
       'max_parallel' => 4,
       'current_load' => 1,
@@ -113,7 +112,6 @@ final class MachineUserListingTest extends KernelTestBase {
 
     $colleague = $this->create('bb_machine', [
       'name' => 'Colleague',
-      'host_key' => 'host-colleague',
       'owner_user_id' => $this->accounts['contributor']->id(),
     ]);
     self::assertInstanceOf(BbMachineInterface::class, $colleague);
@@ -121,7 +119,6 @@ final class MachineUserListingTest extends KernelTestBase {
 
     $foreign = $this->create('bb_machine', [
       'name' => 'Foreign',
-      'host_key' => 'host-foreign',
       'owner_user_id' => $this->accounts['lead']->id(),
     ]);
     self::assertInstanceOf(BbMachineInterface::class, $foreign);
@@ -129,13 +126,11 @@ final class MachineUserListingTest extends KernelTestBase {
 
     $orphan = $this->create('bb_machine', [
       'name' => 'Orphan',
-      'host_key' => 'host-orphan',
     ]);
     self::assertInstanceOf(BbMachineInterface::class, $orphan);
     $this->orphan = $orphan;
 
     $this->create('bb_conductor', [
-      'conductor_id' => 'alpha-node',
       'label' => 'Alpha node',
       'machine' => $this->labelled->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -249,7 +244,6 @@ final class MachineUserListingTest extends KernelTestBase {
 
     self::assertSame(['max_parallel', 'current_load'], $this->cellIds($item, 'right'));
     self::assertSame(['4 parallel slots', '1 load'], $this->badgeTitles($item));
-    self::assertStringContainsString('host-alpha', $this->region($item, 'meta'));
     $right_meta = $this->region($item, 'right_meta');
     self::assertStringContainsString('Owner', $right_meta);
     self::assertStringContainsString('lead', $right_meta);

@@ -1,5 +1,8 @@
 import { EventEmitter } from 'node:events';
-import { afterEach, describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import bakersUiPlugin from '../src/plugin.js';
 import type {
   Collection,
@@ -191,16 +194,35 @@ describe('the tui renderer resolves the deep link in run() (AC-3)', () => {
 // no JSON:API client, so it hands over the `.bakers` dir it is standing in and the
 // renderer turns it into a project name + this machine's conductor id.
 describe('the tui renderer resolves this checkout’s conductor in run() (D9)', () => {
+  // This machine's UUID comes from machine.config.js under BB_HOME.
+  let bbHome: string;
+  beforeEach(() => {
+    bbHome = mkdtempSync(join(tmpdir(), 'bakers-ui-plugin-'));
+    writeFileSync(
+      join(bbHome, 'machine.config.js'),
+      "export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw-laptop' };\n",
+    );
+    vi.stubEnv('BB_HOME', bbHome);
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    rmSync(bbHome, { recursive: true, force: true });
+  });
   const CONDUCTORS = {
     data: [
       {
         id: 'c-1',
         type: 'bb_conductor--bb_conductor',
         attributes: {
-          machine_id: 'cw-framework',
-          workspace_root: '/repos/bakers/.bakers',
+          workspace_root: '/repos/bakers',
         },
         relationships: {
+          machine: {
+            data: {
+              id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+              type: 'bb_machine',
+            },
+          },
           project_id: { data: { id: 'p-1', type: 'bb_project' } },
         },
       },

@@ -3,9 +3,9 @@
 > **This repo no longer commits `bakers.config.js`.** It pointed every checkout at the
 > develop control plane (dev2); bakers's own tickets now live on prod
 > (`https://app.bakers.build`), so `bakers` falls back to each developer's
-> `~/.bakers/bakers.config.js`. The conductor identity is composed from
-> `~/.bakers/machine.config.js` as `<user_id>-<machine_id>-bakers` unless a gitignored
-> `.bakers/conductor.config.local.js` (`export default { conductor_id: '<id>' }`) overrides it. The notes below
+> `~/.bakers/bakers.config.js`. The committed `conductor.config.js` carries
+> no identity: the server keys the conductor by this machine's `machine_id` UUID (written by
+> `bakers init` to `~/.bakers/machine.config.js`), the project and the variant. The notes below
 > still apply to any project-level `bakers.config.js`.
 
 Reference for `bakers.config.js`, the bakers.build **connection**
@@ -44,7 +44,7 @@ So: **add explanation here, not there.** If `bakers ui` starts failing with
 ## `schema_version` (BB-216)
 
 The connection-config schema version, kept in sync with the `@bakers-schema-version`
-marker in the file header so `bakers upgrade` can migrate a stale-shape config.
+marker in the file header; any version other than 1 fails loading, naming `bakers init`.
 
 ## `workspace_id` — the ambient workspace (BB-351)
 

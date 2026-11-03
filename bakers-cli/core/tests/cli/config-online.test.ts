@@ -88,7 +88,7 @@ beforeEach(async () => {
   );
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {machine_id:'host',user_id:'operator',max_parallel:1};",
+    "export default {machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:1};",
   );
   writeFileSync(
     join(cwd, '.bakers/conductor.config.js'),
@@ -136,7 +136,7 @@ it('verifies a fresh OAuth connection after login through the real dropsh provid
   const path = join(home, '.bakers/bakers.config.js');
   writeFileSync(
     path,
-    `export default {schema_version:4,site:{base_url:'${base}',jsonapi_prefix:'/jsonapi'},workspace_id:'${id}',plugins:[{plugin:${JSON.stringify(oauth)},export:'oauth2Plugin',with:{id:'bakers',default:true,type:'oauth2_client_credentials',scope:'bb:session',client_id:'fixture-client',client_secret:'fixture-secret',token_url:'${base}/oauth/token'}}]};`,
+    `export default {schema_version:1,site:{base_url:'${base}',jsonapi_prefix:'/jsonapi'},workspace_id:'${id}',plugins:[{plugin:${JSON.stringify(oauth)},export:'oauth2Plugin',with:{id:'bakers',default:true,type:'oauth2_client_credentials',scope:'bb:session',client_id:'fixture-client',client_secret:'fixture-secret',token_url:'${base}/oauth/token'}}]};`,
   );
   const { runAuthLogin } = await import(
     pathToFileURL(join(dirname(dropsh), 'commands/auth.js')).href

@@ -9,8 +9,8 @@ _meta:
     db58173e-ed5d-50cf-af02-2943a2803c36: user
     f9b3d7a5-6204-4f28-eb76-1d3a5c9e2f64: bb_machine
 default:
-  conductor_id:
-  - value: api-edit-conductor
+  variant:
+  - value: conductor
   label:
   - value: API edit conductor
   status:

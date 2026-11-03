@@ -10,7 +10,7 @@
 // It takes the RESOLVER as an argument rather than importing it.
 // `tests/boundary.test.ts` G2 forbids a `Data/` module reaching another slice,
 // and `resolveWhoCandidate` lives in the user slice; the screens inject it, as
-// they already inject `exists` and `thisHostKey` into `ConductorRowContext`.
+// they already inject `exists` and `thisMachineId` into `ConductorRowContext`.
 
 import type { ListFilterBadge } from '../../../Component/list-chrome/index.js';
 import type { DropshClient } from '../../../types.js';

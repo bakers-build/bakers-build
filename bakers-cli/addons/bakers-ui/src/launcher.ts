@@ -62,7 +62,7 @@ export interface BbUiLauncherOptions {
   /**
    * BB-232 (D9): the `.bakers` dir the entry is standing in. The renderer's
    * `run()` resolves it against the control plane into the default `project`
-   * and `ownConductorMachineId`; the entry cannot, holding no JSON:API client.
+   * and `ownConductorId`; the entry cannot, holding no JSON:API client.
    * An explicit `project` above still wins.
    */
   bakersDir?: string | undefined;
@@ -80,8 +80,8 @@ export interface BbUiLauncherOptions {
   agents?: TuiAgentService | undefined;
   /** Preselected new-ticket assignee (this machine's user id). */
   currentUser?: string | undefined;
-  /** This machine's conductor `machine_id` — preselected in the new-ticket form. */
-  ownConductorMachineId?: string | undefined;
+  /** This checkout's conductor UUID — preselected in the new-ticket form. */
+  ownConductorId?: string | undefined;
   /** Config override for the ticket-create agent's base prompt. */
   createPrompt?: string | undefined;
   /** Injected dropsh `buildProgram` (the entry passes dropsh's real one). */
@@ -153,8 +153,8 @@ export async function runBbUi(opts: BbUiLauncherOptions): Promise<void> {
     ...(opts.currentUser !== undefined
       ? { currentUser: opts.currentUser }
       : {}),
-    ...(opts.ownConductorMachineId !== undefined
-      ? { ownConductorMachineId: opts.ownConductorMachineId }
+    ...(opts.ownConductorId !== undefined
+      ? { ownConductorId: opts.ownConductorId }
       : {}),
     ...(opts.createPrompt !== undefined
       ? { createPrompt: opts.createPrompt }

@@ -68,14 +68,14 @@ final class InboxPendingResource extends ResourceBase implements ContainerInject
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request.
-   * @param string $conductor_id
-   *   The conductor's registration id (its `conductor_id` field).
+   * @param string $conductor
+   *   The conductor UUID.
    *
    * @return \Drupal\jsonapi\ResourceResponse
    *   200 with `messages`.
    */
-  public function process(Request $request, string $conductor_id): ResourceResponse {
-    $conductor = $this->ownConductor($conductor_id);
+  public function process(Request $request, string $conductor): ResourceResponse {
+    $conductor = $this->ownConductor($conductor);
     $this->failStaleRunning($conductor);
     $paths = [];
     $messages = [];
@@ -100,11 +100,11 @@ final class InboxPendingResource extends ResourceBase implements ContainerInject
   }
 
   /**
-   * The conductor with that registration id, owned by the current user.
+   * The conductor with that UUID, owned by the current user.
    */
-  private function ownConductor(string $conductor_id): BbConductorInterface {
+  private function ownConductor(string $uuid): BbConductorInterface {
     $conductors = $this->entityTypeManager->getStorage('bb_conductor')
-      ->loadByProperties(['conductor_id' => $conductor_id]);
+      ->loadByProperties(['uuid' => $uuid]);
     $conductor = reset($conductors);
     if (!$conductor instanceof BbConductorInterface) {
       throw new NotFoundHttpException('No such conductor.');

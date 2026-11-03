@@ -32,8 +32,8 @@ export class ConductorLogScreen extends AsyncScreen<LogView> {
     const detail = await readConductorDetail(context, conductorId);
     const host =
       context.services?.conductorProcess ?? createConductorProcessHost();
-    const thisHostKey = await host.thisHostKey();
-    const block = logBlockFor(detail, isMine(detail, thisHostKey));
+    const thisMachineId = await host.thisMachineId();
+    const block = logBlockFor(detail, isMine(detail, thisMachineId));
     return { label: detail.label, ...block };
   }
 

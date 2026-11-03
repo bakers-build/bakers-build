@@ -288,7 +288,6 @@ final class ConductorByTicketProjectSelectionTest extends KernelTestBase {
     $owner = $this->createUser(['administer bakers'], 'owner-' . $machineId);
     $this->assertInstanceOf(UserInterface::class, $owner);
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => $machineId,
       'label' => $machineId,
       'owner_user_id' => $owner->id(),
       'status' => 'online',

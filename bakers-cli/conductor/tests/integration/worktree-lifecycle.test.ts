@@ -135,8 +135,9 @@ const stubAgent: BbAgent = {
  */
 function makeConfig(baseUrl: string): ConductorFileConfig {
   return {
-    label: 'e2e-worktree-lifecycle',
-    machine_id: DISPATCH_MACHINE_ID,
+    machine_id: 'e2e00000-0000-4000-8000-000000000001',
+    machine_label: DISPATCH_MACHINE_ID,
+    variant: 'conductor',
     project: E2E_PROJECT,
     states: ['working'],
     prompt: '',
@@ -168,7 +169,7 @@ function mintTicket(
 $etm = \\Drupal::entityTypeManager();
 $first = static fn(array $r) => $r ? reset($r) : null;
 $project = $first($etm->getStorage('bb_project')->loadByProperties(['name' => '${E2E_PROJECT}']));
-$conductor = $first($etm->getStorage('bb_conductor')->loadByProperties(['conductor_id' => '${DISPATCH_MACHINE_ID}']));
+$conductor = $first($etm->getStorage('bb_conductor')->loadByProperties(['label' => '${DISPATCH_MACHINE_ID}']));
 if (!$project || !$conductor) { fwrite(STDERR, 'missing e2e project or dispatch conductor - run ddev init --provider recipe-test'); exit(1); }
 $t = $etm->getStorage('bb_ticket')->create([
   'identifier' => '${identifier}',

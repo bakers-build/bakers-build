@@ -29,7 +29,7 @@ final class ConductorNodeStatesLabelTest extends BbEntityKernelTestBase {
    */
   private function makeConductor(string $machine, int $project, array $states): BbConductorInterface {
     $c = \Drupal::entityTypeManager()->getStorage('bb_conductor')->create([
-      'conductor_id' => $machine,
+      'label' => $machine,
       'project_id' => $project,
       'states' => $states,
     ]);

@@ -116,8 +116,8 @@ When('I visit the former edit address of the machine {string}', async ({ page },
   expect(response?.status()).toBe(200);
 });
 
-Then('the machine Overview shows its host key, max parallel and current load', async ({ page }) => {
-  await expect(cardRow(page, 'Identity', 'Host key')).toContainText('e2e-host', { timeout: 10000 });
+Then('the machine Overview shows its UUID, max parallel and current load', async ({ page }) => {
+  await expect(cardRow(page, 'Identity', 'UUID')).toContainText('dbm00000-0000-4000-8000-000000000001', { timeout: 10000 });
   await expect(cardField(page, 'Identity', 'Max parallel')).toBeVisible();
   await expect(cardRow(page, 'Identity', 'Current load')).toBeVisible();
 });

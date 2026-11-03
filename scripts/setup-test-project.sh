@@ -7,9 +7,10 @@
 #                                 [--fixture-repo <url>]
 #   scripts/teardown-test-project.sh          # gives it all back
 #
-#     --project <name>  the bb_project of the recipe-test world to wire up. It is
-#                       also what the conductor's machine_id is composed from, so
-#                       teardown must be given the SAME name or it purges nothing.
+#     --project <name>  the bb_project of the recipe-test world to wire up. With
+#                       this machine and the default variant it keys the
+#                       conductor, so teardown must be given the SAME name or it
+#                       purges nothing.
 #                       Default: bakers-e2e-project.
 #     --fixture-repo <url>
 #                       clone the fixture project from this remote instead of the
@@ -60,7 +61,7 @@
 #     The fixture now commits a real BB-204 loader AND a real engine config, so both
 #     are hand-maintained there and this script leaves them alone. What remains
 #     generated is machine-local and untracked: the CONNECTION config (secrets, this
-#     run's control plane) and `.bakers/conductor.config.local.js` (project + machine_id).
+#     run's control plane) and `.bakers/conductor.config.local.js` (the project).
 #     The old arrangement cost a run: two authors for one path, `--skip-worktree`
 #     hiding the difference, and a correct committed fix silently overwritten on the
 #     next setup. A generated file that shadows a tracked one hides its own damage.
@@ -314,8 +315,8 @@ while [ $# -gt 0 ]; do
 done
 
 # `--project` names a bb_project and is reached by more sinks than PHP: it is
-# interpolated into the generated JS engine config and into the composed
-# machine_id. Escaping it per sink would mean three escapers; a machine name has
+# interpolated into the generated JS engine config. Escaping it per sink would
+# mean several escapers; a machine name has
 # no business carrying a quote, so it is refused at the door instead — which
 # leaves php_str responsible only for the values this script cannot constrain
 # (a git URL, a branch name).
@@ -871,30 +872,31 @@ say "wrote .bakers-testbuild → ${ROOT} (a bare 'bakers' in the workspace is no
 # -----------------------------------------------------------------------------
 step "7. generate the two machine-local files — neither of them committed"
 # -----------------------------------------------------------------------------
-# `machine_id` is REQUIRED (an engine config missing it fails to load) and is
-# composed exactly as `bakers conductor init` composes it:
-# ${user_id}-${machine_id}-${project} from ~/.bakers/machine.config.js. The context is
-# IMPORTED rather than pattern-matched, because that is what the CLI itself does and
-# a regex over a JS module hits comments and nested keys. Only these two fields are
-# read; the context's own base_url is a REMOTE control plane and is deliberately
-# ignored.
-machine_identity="$(MC="${HOME}/.bakers/machine.config.js" node -e '
+# The conductor is this machine + the project + the variant: no id is composed or
+# written. The machine is `~/.bakers/machine.config.js`, which `bakers init` owns;
+# when it is absent this writes one the same way — a generated UUID and a label —
+# so the run has a machine to register under. The context is IMPORTED rather than
+# pattern-matched, because that is what the CLI itself does. An old machine file
+# (a `user_id`, a non-UUID `machine_id`) is refused, exactly as the CLI refuses it.
+MACHINE_FILE="${BB_HOME:-${HOME}/.bakers}/machine.config.js"
+machine_identity="$(MC="${MACHINE_FILE}" LABEL="$(hostname -s 2>/dev/null || echo "${CP_NAME}")" node -e '
+  const fs = require("node:fs");
+  const path = require("node:path");
   const p = process.env.MC;
-  import("node:fs").then(async (fs) => {
-    if (!fs.existsSync(p)) return process.stdout.write("\t");
-    try {
-      const d = (await import("file://" + p)).default ?? {};
-      process.stdout.write(`${d.user_id ?? ""}\t${d.machine_id ?? ""}`);
-    } catch { process.stdout.write("\t"); }
-  });' 2>/dev/null || printf '\t')"
-MACHINE_USER="$(printf '%s' "${machine_identity}" | cut -f1)"
-MACHINE_HOST="$(printf '%s' "${machine_identity}" | cut -f2)"
-[ -n "${MACHINE_HOST}" ] || MACHINE_HOST="${CP_NAME}"
-if [ -n "${MACHINE_USER}" ]; then
-  MACHINE_ID="${MACHINE_USER}-${MACHINE_HOST}-${PROJECT}"
-else
-  MACHINE_ID="${MACHINE_HOST}-${PROJECT}"
-fi
+  (async () => {
+    if (!fs.existsSync(p)) {
+      fs.mkdirSync(path.dirname(p), { recursive: true });
+      const id = require("node:crypto").randomUUID();
+      fs.writeFileSync(p, `// @bakers-schema-version 1\nexport default {\n  schema_version: 1,\n  machine_id: ${JSON.stringify(id)},\n  label: ${JSON.stringify(process.env.LABEL)},\n  max_parallel: 1,\n};\n`, { mode: 0o600 });
+    }
+    const d = (await import("file://" + p)).default ?? {};
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if ("user_id" in d || !uuid.test(d.machine_id ?? "")) process.exit(3);
+    process.stdout.write(`${d.machine_id.toLowerCase()}\t${d.label ?? ""}`);
+  })().catch(() => process.exit(2));')" \
+  || die "${MACHINE_FILE} is not a current machine file (UUID machine_id, no user_id) — run 'bakers init'"
+MACHINE_ID="$(printf '%s' "${machine_identity}" | cut -f1)"
+MACHINE_LABEL="$(printf '%s' "${machine_identity}" | cut -f2)"
 
 mkdir -p "${WORKSPACE}/.bakers"
 
@@ -912,14 +914,14 @@ mkdir -p "${WORKSPACE}/.bakers"
 # no default scopes, and silently inherit that default when there is one.
 cat >"${WORKSPACE}/.bakers/bakers.config.js" <<JS
 // GENERATED by scripts/setup-test-project.sh — do not commit
-// @bakers-schema-version 3
+// @bakers-schema-version 1
 // The CONNECTION surface (BB-201): a dropsh-shaped { site, plugins } read by
 // 'bakers ui', 'bakers tools', 'bakers auth', and the conductor's auth.
 //
 // plugins[] is consumed by DROPSH, whose resolver has no sole-function auto-pick,
 // so @dropsh/plugin-oauth2 entries MUST name export: 'oauth2Plugin'.
 export default {
-  schema_version: 3,
+  schema_version: 1,
   site: { base_url: '${BASE_URL}', jsonapi_prefix: '/jsonapi' },
   // BB-495: OPTIONAL and top-level — a sibling of \`site\`, never a member of it
   // and never an addon's \`with\`. It is \`bakers ui\`-facing only: the UI attaches
@@ -960,22 +962,18 @@ JS
 # state slice — now lives in the fixture repo alone, is reviewable in its own history,
 # and survives every run of this script.
 #
-# WHAT IS STILL GENERATED IS THE MACHINE OVERRIDE, and it is the reason the split
-# works: the committed config reads `project` and `machine_id` from
-# `.bakers/conductor.config.local.js` (`local.project ?? …`, `local.machine_id`), and
-# `machine_id` is REQUIRED — an engine config missing it fails to load. Those two are
-# the only values that cannot be committed, because they identify THIS machine and the
-# control plane this run provisioned. Everything structural stays in the fixture repo;
-# only the per-machine identity is written here. The file is untracked and already
-# listed in `hide_from_git`.
+# WHAT IS STILL GENERATED IS THE LOCAL OVERRIDE, and it carries no identity: the
+# conductor is this machine + the project + the variant, keyed by the control
+# plane. It names only the project this run provisioned. Everything structural
+# stays in the fixture repo. The file is untracked and already listed in
+# `hide_from_git`.
 cat >"${WORKSPACE}/.bakers/conductor.config.local.js" <<JS
 // GENERATED by scripts/setup-test-project.sh — do not commit
-// The per-machine override the committed .bakers/conductor.config.js reads. It carries
-// ONLY the two values that identify this machine's run; addons, hooks and the state
-// slice belong to the committed config and are deliberately absent here.
+// The local override the committed .bakers/conductor.config.js reads. It carries no
+// identity; addons, hooks and the state slice belong to the committed config and are
+// deliberately absent here.
 export default {
   project: '${PROJECT}',
-  machine_id: '${MACHINE_ID}',
 };
 JS
 
@@ -992,7 +990,7 @@ JS
 # name (`provision`, `work`, `validate`, `deliver`). A `## Checks` table is never read,
 # so a run reports no project check at all.
 say "generated .bakers/bakers.config.js and .bakers/conductor.config.local.js"
-say "machine_id: ${MACHINE_ID}"
+say "machine: ${MACHINE_LABEL} (${MACHINE_ID})"
 say ".bakers/conductor.config.js is COMMITTED in the fixture repo — not written here"
 say "  → its addons, after_create hook and state slice are reviewed in that repo"
 
@@ -1014,7 +1012,7 @@ workspace ready (--workspace-only)
   workspace       ${WORKSPACE}
   workspace ddev  ${WS_DDEV}   (declared, NOT started)
   base branch     ${WS_BRANCH}   (read from the clone; not written to the world)
-  machine_id      ${MACHINE_ID}
+  machine         ${MACHINE_LABEL} (${MACHINE_ID})
   bakers binary     a bare 'bakers' inside the workspace IS this checkout's build,
                   via ${WORKSPACE_RELPATH}/.bakers-testbuild
 
@@ -1121,7 +1119,7 @@ setup complete
   workspace       ${WORKSPACE}
   workspace ddev  ${WS_DDEV}  (declared, NOT started — 'cd ${WORKSPACE_RELPATH} && ddev start')
   base branch     ${WS_BRANCH}  (every per-ticket worktree is cut from this)
-  machine_id      ${MACHINE_ID}
+  machine         ${MACHINE_LABEL} (${MACHINE_ID})
   bakers binary     a bare 'bakers' in the workspace IS this checkout's build, because
                   ${WORKSPACE_RELPATH}/.bakers-testbuild names it (BB-390)
 
@@ -1135,9 +1133,10 @@ The ticket is yours. Three steps, and the last one spends real agent money.
 
        cd ${WORKSPACE} && bakers oven once
 
-  2. Create a chore ticket (recipe matt) in project '${PROJECT}' and set its conductor_id to
-     the conductor carrying machine_id '${MACHINE_ID}'. The claim keys on that
-     field, so without it nothing is ever claimed. Use the same connection as
+  2. Create a chore ticket (recipe matt) in project '${PROJECT}' and assign it to
+     this machine's conductor of that project (label '${MACHINE_LABEL} · …',
+     variant 'conductor'). The claim keys on that assignment, so without it
+     nothing is ever claimed. Use the same connection as
      registration; no separate assignment permission or auth profile is needed.
 
        echo '{"query": "${PROJECT}"}' > query.json
@@ -1149,7 +1148,7 @@ The ticket is yours. Three steps, and the last one spends real agent money.
        bakers tools tool_api__bakers_project_read --data @project.json
        bakers tools tool_api__bakers_conductor_list --data @project.json
 
-     Pick the conductor whose conductor_id is '${MACHINE_ID}', then:
+     Pick the conductor whose machine is '${MACHINE_LABEL}' and variant 'conductor', then:
 
        echo '{"title": "Conductor verification", "workflow": "bb_work", "type": "chore", "recipe": "matt", "project": "<project-uuid>"}' > ticket.json
        bakers tools tool_api__bakers_ticket_create --data @ticket.json

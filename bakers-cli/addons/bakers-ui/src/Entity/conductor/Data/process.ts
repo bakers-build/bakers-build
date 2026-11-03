@@ -35,17 +35,17 @@ export interface ConductorProcessDeps {
   spawn?: (request: SpawnRequest) => void | Promise<void>;
   signal?: (input: {
     pid: number | undefined;
-    hostKey: string | undefined;
-    thisHostKey: string;
+    machineId: string | undefined;
+    thisMachineId: string;
     signal: NodeJS.Signals;
   }) => SignalOutcome;
   /**
-   * This machine's own host_key (MachineContext.machine_id), read once per
-   * stop. Injected for tests; defaults to the real `~/.bakers/machine.config.js`
-   * (BB-450 D1 — `signalVerifiedProcess` refuses a `host_key` mismatch, so a
+   * This machine's UUID (MachineContext.machine_id), read once per stop.
+   * Injected for tests; defaults to the real `~/.bakers/machine.config.js`
+   * (BB-450 D1 — `signalVerifiedProcess` refuses a machine mismatch, so a
    * stop needs this machine's own value to compare against).
    */
-  thisHostKey?: () => Promise<string>;
+  thisMachineId?: () => Promise<string>;
   /**
    * BB-477 AC-5: how `start` learns whether the spawn actually came online,
    * injected so tests need no timers or network. Defaults to
@@ -65,9 +65,9 @@ export interface ConductorProcessHost {
   start(input: {
     workspaceRoot: string;
     conductorName: string | undefined;
-    /** The row's `host_key` (BB-450 review B5) — verified against this
+    /** The row's machine UUID (BB-450 review B5) — verified against this
      *  machine's own before anything is spawned. */
-    hostKey: string | undefined;
+    machineId: string | undefined;
     /**
      * BB-477 AC-5: the conductor's own record id and its `last_seen`
      * captured before the spawn, and the client to poll with. Present only
@@ -80,26 +80,26 @@ export interface ConductorProcessHost {
   }): Promise<ConductorActionResult>;
   stop(input: {
     pid: number | undefined;
-    hostKey: string | undefined;
+    machineId: string | undefined;
   }): Promise<ConductorActionResult>;
   /**
-   * THIS machine's own `host_key` (BB-450 B10) — the same value `start`/
+   * THIS machine's UUID (BB-450 B10) — the same value `start`/
    * `stop` already verify against, exposed so the Conductors screens can key
    * their `mine` row projection and their `actions()` gate on the identical
    * seam rather than resolving it a second, divergent way.
    */
-  thisHostKey(): Promise<string>;
+  thisMachineId(): Promise<string>;
 }
 
 /**
- * This machine's host_key, from the same MachineContext the CLI reads.
+ * This machine's UUID, from the same MachineContext the CLI reads.
  *
  * Exported so the Conductors screens (BB-450 B10) can key their view-only
- * marking and their `actions()` gate on IDENTITY — this row's `host_key`
+ * marking and their `actions()` gate on IDENTITY — this row's machine UUID
  * against this machine's own — rather than on `isLocal`'s filesystem check,
  * which two machines whose checkouts share a path can both satisfy.
  */
-export async function defaultThisHostKey(): Promise<string> {
+export async function defaultThisMachineId(): Promise<string> {
   const ctx = await readMachineContext(machineContextPath());
   return ctx.machine_id ?? '';
 }
@@ -120,8 +120,21 @@ export function createConductorProcessHost(
   deps: ConductorProcessDeps = {},
 ): ConductorProcessHost {
   const spawn = deps.spawn ?? defaultSpawn;
-  const signal = deps.signal ?? signalVerifiedProcess;
-  const thisHostKey = deps.thisHostKey ?? defaultThisHostKey;
+  const signal =
+    deps.signal ??
+    ((input: {
+      pid: number | undefined;
+      machineId: string | undefined;
+      thisMachineId: string;
+      signal: NodeJS.Signals;
+    }) =>
+      signalVerifiedProcess({
+        pid: input.pid,
+        hostKey: input.machineId,
+        thisHostKey: input.thisMachineId,
+        signal: input.signal,
+      }));
+  const thisMachineId = deps.thisMachineId ?? defaultThisMachineId;
   const fetchLastSeen = deps.fetchLastSeen ?? fetchConductorLastSeen;
   const sleep =
     deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
@@ -129,11 +142,11 @@ export function createConductorProcessHost(
   const heartbeatPollIntervalMs = deps.heartbeatPollIntervalMs ?? 1000;
 
   return {
-    thisHostKey,
+    thisMachineId,
     async start({
       workspaceRoot,
       conductorName,
-      hostKey,
+      machineId,
       id,
       priorLastSeen,
       client,
@@ -146,13 +159,13 @@ export function createConductorProcessHost(
       // ROW naming another machine's conductor silently started this
       // machine's OWN one instead, composed from `workspaceRoot` alone with no
       // identity at all. `stop` never had this hole — it already runs through
-      // `signalVerifiedProcess`'s `host_key` check downstream — so `start`
+      // `signalVerifiedProcess`'s machine check downstream — so `start`
       // gets the same verification here, the one place both actions now share.
-      const expected = await thisHostKey();
-      if (!hostKey || hostKey !== expected) {
+      const expected = await thisMachineId();
+      if (!machineId || machineId !== expected) {
         return {
           ok: false,
-          message: `conductor's host_key (${hostKey ?? '(none)'}) is not this machine's (${expected}) — refusing to start a conductor on another host`,
+          message: `conductor's machine (${machineId ?? '(none)'}) is not this machine (${expected}) — refusing to start a conductor on another host`,
         };
       }
       try {
@@ -213,11 +226,11 @@ export function createConductorProcessHost(
       }
     },
 
-    async stop({ pid, hostKey }) {
+    async stop({ pid, machineId }) {
       const outcome = signal({
         pid,
-        hostKey,
-        thisHostKey: await thisHostKey(),
+        machineId,
+        thisMachineId: await thisMachineId(),
         signal: 'SIGTERM',
       });
       return outcome.ok

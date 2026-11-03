@@ -13,7 +13,7 @@ needs every page.
 | List projects | `bakers_project_list` | optional `workspace`, `group`, `query` | `projects` (`uuid`, `key`, `name`, `group`) |
 | Read a project | `bakers_project_read` | `project` (key or UUID) | `uuid`, `key`, `name`, `description`, `group`, `teams`, `repository`, `coder_config` |
 | Create a project | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository` (`url`, `default_branch`, `branch_convention`), `coder_config` | as read |
-| List conductors | `bakers_conductor_list` | `project` (key or UUID) | `conductors` (`uuid`, `conductor_id`, `label`, `active`, `status`) |
+| List conductors | `bakers_conductor_list` | `project` (key or UUID) | `conductors` (`uuid`, `label`, `variant`, `machine`, `active`, `status`) |
 | List labels | `bakers_label_list` | `workspace`; optional `query` | `labels` (`uuid`, `name`) |
 | Run a template | `bakers_ticket_template_run` | `template`; optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | `uuid`, `identifier` |
 | List runs | `bakers_ticket_runs_list` | `ticket` | `runs` (`uuid`, `state`, `state_at_start`, `agent`, `conductor`, `started_at`, `closed`); newest first |

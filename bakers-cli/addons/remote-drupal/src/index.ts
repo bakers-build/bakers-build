@@ -171,12 +171,11 @@ export class DrupalBbRemote implements BbRemote {
   ) {}
 
   async fetchActiveRuns(id: string): Promise<ActiveRun[]> {
-    // The conductor identity `id` is the registration key (conductor_id).
-    // bb_run links to its owning conductor via the `conductor_id` entity-ref;
-    // filter on the related conductor's registration string field.
+    // `id` is the conductor's entity UUID; bb_run links to it through the
+    // `conductor_id` entity-ref.
     const rows = await this.api
       .collection('bb_run')
-      .where('conductor_id.conductor_id', '=', id)
+      .where('conductor_id.id', '=', id)
       .whereIn('state', ACTIVE)
       .fields(['state', 'state_at_start', 'worktree_path'])
       .page(100)
@@ -195,10 +194,9 @@ export class DrupalBbRemote implements BbRemote {
   }
 
   async activeRunCount(id: string): Promise<number> {
-    // Filter on the related conductor's registration string field.
     return this.api
       .collection('bb_run')
-      .where('conductor_id.conductor_id', '=', id)
+      .where('conductor_id.id', '=', id)
       .whereIn('state', ACTIVE)
       .fields(['drupal_internal__id'])
       .page(100)
@@ -206,14 +204,13 @@ export class DrupalBbRemote implements BbRemote {
   }
 
   async machineCapacity(
-    hostKey: string,
+    machineId: string,
   ): Promise<{ maxParallel: number; currentLoad: number } | null> {
     // Shared host budget (BB-353 D5): read bb_machine after heartbeat so
-    // current_load is peers + this process. Filter on host_key (MachineContext
-    // stem), not the composed conductor_id.
+    // current_load is peers + this process. The machine UUID is its entity id.
     const row = await this.api
       .collection('bb_machine')
-      .where('host_key', '=', hostKey)
+      .where('id', '=', machineId)
       .fields(['max_parallel', 'current_load'])
       .first();
     if (!row) return null;
@@ -228,10 +225,8 @@ export class DrupalBbRemote implements BbRemote {
       data: {
         attributes: {
           lease_seconds: c.leaseSeconds,
-          // Server (`ConductorResolverTrait`) narrows to the caller's conductor
-          // by conductor_id (legacy machine_id still accepted).
-          conductor_id: c.conductorId,
-          machine_id: c.conductorId,
+          // The server narrows to the caller's conductor by its entity UUID.
+          conductor: c.conductorId,
         },
       },
     })) as {
@@ -425,12 +420,12 @@ export class DrupalBbRemote implements BbRemote {
     return (await this.api.post('bakers/heartbeat', {
       data: {
         attributes: {
-          conductor_id: reg.id,
-          host_key: reg.host_key ?? reg.id,
+          machine_id: reg.machine_id,
+          machine_label: reg.machine_label,
           project: reg.project,
+          variant: reg.variant,
           states: reg.states,
           workspace_root: reg.workspace,
-          label: reg.label,
           max_parallel: reg.max_parallel,
           ...processIdentity(reg),
           ...(extras.current_load !== undefined
@@ -476,7 +471,7 @@ export class DrupalBbRemote implements BbRemote {
     try {
       doc = await this.api.post('bakers/addons', {
         data: {
-          attributes: { conductor_id: conductorId, addons: definitions },
+          attributes: { conductor: conductorId, addons: definitions },
         },
       });
     } catch (err) {
@@ -536,7 +531,7 @@ export class DrupalBbRemote implements BbRemote {
   async getConductorStatus(id: string): Promise<string | null> {
     const c = await this.api
       .collection('bb_conductor')
-      .where('conductor_id', '=', id)
+      .where('id', '=', id)
       .fields(['status'])
       .first();
     return c ? (c.attr<string>('status') ?? null) : null;
@@ -546,15 +541,8 @@ export class DrupalBbRemote implements BbRemote {
     if (status !== 'offline') {
       throw new Error(`setConductorStatus: unsupported status "${status}"`);
     }
-    const c = await this.api
-      .collection('bb_conductor')
-      .where('conductor_id', '=', id)
-      .first();
-    if (!c) {
-      return;
-    }
-    await this.api.post(`bb_conductor/${c.id}/offline`, {
-      data: { type: 'bb_conductor--bb_conductor', id: c.id },
+    await this.api.post(`bb_conductor/${id}/offline`, {
+      data: { type: 'bb_conductor--bb_conductor', id },
     });
   }
 
@@ -567,14 +555,12 @@ export class DrupalBbRemote implements BbRemote {
     // Resolve each distinct project once rather than per row: a machine
     // typically runs several conductors of the same project.
     const projectNames = new Map<string, string>();
-    // Host capacity and host_key both live on bb_machine (BB-353):
-    // `bb_conductor` carries neither `max_parallel` nor `host_key` as a
-    // field — `filter[host_key]` against `bb_conductor` is a 400, the field
-    // does not exist there (BB-450 B7). Resolve both off the one related
-    // machine, once per distinct machine rather than once per row.
+    // Host capacity and the machine label live on bb_machine (BB-353):
+    // resolve both off the one related machine, once per distinct machine
+    // rather than once per row.
     const machineDetails = new Map<
       string,
-      { maxParallel: number; hostKey: string }
+      { maxParallel: number; name: string }
     >();
     for (const r of rows) {
       const projectUuid = r.rel('project_id');
@@ -592,18 +578,15 @@ export class DrupalBbRemote implements BbRemote {
       // written before BB-232 legitimately carries neither.
       const pid = r.attr<number>('last_pid');
       const name = r.attr<string>('conductor_name');
-      // BB-450 AC-4/B7: host_key is the related bb_machine's field, not
-      // bb_conductor's — the host gate `signalVerifiedProcess()` needs had
-      // no input at all without resolving it through the relationship.
-      const machine = machineDetails.get(r.rel('machine') ?? '');
-      const hostKey = machine?.hostKey;
+      // BB-450 AC-4: the machine UUID is the relationship's target id — the
+      // input of the host gate `signalVerifiedProcess()`.
+      const machineId = r.rel('machine') ?? undefined;
+      const machine = machineDetails.get(machineId ?? '');
       return {
-        id:
-          r.attr<string>('conductor_id') ??
-          r.attr<string>('machine_id') ??
-          r.id,
+        id: r.id,
         project: projectNames.get(r.rel('project_id') ?? '') ?? '',
         label: r.attr<string>('label') ?? '',
+        variant: r.attr<string>('variant') || 'conductor',
         status: r.attr<string>('status') ?? '',
         // ISO-8601 over the wire, not the unix integer the field name implies.
         lastSeen: toUnixSeconds(r.attr('last_seen')) ?? 0,
@@ -619,7 +602,8 @@ export class DrupalBbRemote implements BbRemote {
         ...(typeof name === 'string' && name !== ''
           ? { conductorName: name }
           : {}),
-        ...(typeof hostKey === 'string' && hostKey !== '' ? { hostKey } : {}),
+        ...(machineId ? { machineId } : {}),
+        ...(machine?.name ? { machineLabel: machine.name } : {}),
       };
     });
   }
@@ -697,7 +681,7 @@ export class DrupalBbRemote implements BbRemote {
   private async finalizableRunsInState(id: string, state: string) {
     return this.api
       .collection('bb_run')
-      .where('conductor_id.conductor_id', '=', id)
+      .where('conductor_id.id', '=', id)
       .where('state', '=', state)
       .where('closed', '=', '0')
       .fields([
@@ -787,13 +771,13 @@ export class DrupalBbRemote implements BbRemote {
     // looser operator (BB-364 D1, absorbed here). The collection builder has
     // no OR across DIFFERENT conditions on the same field, so the two stay
     // separate AND-queries merged + de-duped by uuid. The `conductor_id`
-    // relationship carries the assigned conductor's `machine_id` — the same
+    // relationship targets the assigned conductor's UUID — the same
     // nested filter the sibling reaper queries (`fetchFinalizableRuns` etc.)
     // use.
     const fields = ['branch_name', 'state', 'base_branch', 'links'];
     const uncleaned = await this.api
       .collection('bb_ticket')
-      .where('conductor_id.conductor_id', '=', id)
+      .where('conductor_id.id', '=', id)
       .where('closed', '=', '1')
       .where('cleaned_up', '=', '0')
       .fields(fields)
@@ -801,7 +785,7 @@ export class DrupalBbRemote implements BbRemote {
       .list();
     const neverWritten = await this.api
       .collection('bb_ticket')
-      .where('conductor_id.conductor_id', '=', id)
+      .where('conductor_id.id', '=', id)
       .where('closed', '=', '1')
       .notExists('cleaned_up')
       .fields(fields)
@@ -834,7 +818,7 @@ export class DrupalBbRemote implements BbRemote {
     // Follow links.next if a conductor ever holds that many.
     const rows = await this.api
       .collection('bb_ticket')
-      .where('conductor_id.conductor_id', '=', id)
+      .where('conductor_id.id', '=', id)
       .where('closed', '=', '0')
       .where('frozen', '=', '1')
       .fields(['identifier'])
@@ -971,24 +955,24 @@ export class DrupalBbRemote implements BbRemote {
   }
 
   /**
-   * Host concurrent-run budget and `host_key` for a machine uuid (BB-353,
+   * Host concurrent-run budget and display name for a machine uuid (BB-353,
    * BB-450). Both live on `bb_machine`, never on `bb_conductor`.
    *
    * Best-effort: an unreadable or missing machine degrades to
-   * `{maxParallel: 0, hostKey: ''}` so the row still lists; capacity and
-   * identity are never invented from a conductor field.
+   * `{maxParallel: 0, name: ''}` so the row still lists; capacity is never
+   * invented from a conductor field.
    */
   private async machineDetails(
     uuid: string,
-  ): Promise<{ maxParallel: number; hostKey: string }> {
+  ): Promise<{ maxParallel: number; name: string }> {
     try {
       const m = await this.api.resource('bb_machine', uuid);
       return {
         maxParallel: m.attr<number>('max_parallel') ?? 0,
-        hostKey: m.attr<string>('host_key') ?? '',
+        name: m.attr<string>('name') ?? '',
       };
     } catch {
-      return { maxParallel: 0, hostKey: '' };
+      return { maxParallel: 0, name: '' };
     }
   }
 

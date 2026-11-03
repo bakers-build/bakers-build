@@ -13,7 +13,7 @@ export interface ConductorDetail {
   label: string;
   /** The `--conductor <name>` stem it was started from, if reported. */
   conductorName: string | undefined;
-  /** The sideloaded machine's own label, or its host_key, or ''. */
+  /** The sideloaded machine's name (its label), or ''. */
   machineLabel: string;
   /** The linked project's uuid, or '' when unlinked — no project read here. */
   projectLabel: string;
@@ -24,8 +24,8 @@ export interface ConductorDetail {
   lastSeen: number;
   currentLoad: number;
   maxParallel: number;
-  /** THIS record's machine host_key, for the `mine` derivation. */
-  hostKey: string | undefined;
+  /** THIS record's machine UUID, for the `mine` derivation. */
+  machineId: string | undefined;
 }
 
 const str = (v: unknown): string | undefined =>
@@ -57,17 +57,11 @@ export async function loadConductorDetail(
   const machineAttrs = machine?.attributes ?? {};
   const lastSeen = toUnixSeconds(attrs.last_seen) ?? 0;
   const leaseExpiresAt = toUnixSeconds(attrs.lease_expires_at) ?? 0;
-  const hostKey = str(machineAttrs.host_key);
   return {
     id: raw.id ?? conductorId,
-    label:
-      str(attrs.label) ??
-      str(attrs.conductor_id) ??
-      str(attrs.machine_id) ??
-      raw.id ??
-      conductorId,
+    label: str(attrs.label) ?? raw.id ?? conductorId,
     conductorName: str(attrs.conductor_name),
-    machineLabel: str(machineAttrs.label) ?? hostKey ?? '',
+    machineLabel: str(machineAttrs.name) ?? '',
     projectLabel: singleRelId(raw, 'project_id') ?? '',
     workspaceRoot: str(attrs.workspace_root) ?? '',
     lastPid: num(attrs.last_pid),
@@ -83,7 +77,7 @@ export async function loadConductorDetail(
     lastSeen,
     currentLoad: num(machineAttrs.current_load) ?? num(attrs.current_load) ?? 0,
     maxParallel: num(machineAttrs.max_parallel) ?? num(attrs.max_parallel) ?? 0,
-    hostKey,
+    machineId: machineId ?? undefined,
   };
 }
 

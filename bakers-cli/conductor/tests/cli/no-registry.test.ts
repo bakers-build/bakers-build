@@ -37,6 +37,8 @@ vi.mock('dropsh', async (orig) => {
  * pointing at a directory that no longer existed and another at a checkout the
  * control plane had long since superseded.
  */
+const MACHINE = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
+
 describe('the local conductor registry is gone', () => {
   let home: string;
   let out: string[];
@@ -129,6 +131,25 @@ describe('the local conductor registry is gone', () => {
     expect(text).toContain('alpha');
   });
 
+  it('ls prints label, status, project, variant, workspace root and UUID, in that order', async () => {
+    await run(
+      ['ls'],
+      [
+        row({
+          id: 'cond-uuid',
+          label: 'cw-laptop · bakers/shop',
+          variant: 'shop',
+          status: 'offline',
+          workspaceRoot: '/repo',
+        }),
+      ],
+    );
+
+    expect(out).toEqual([
+      'cw-laptop · bakers/shop\toffline\tbakers\tshop\t/repo\tcond-uuid',
+    ]);
+  });
+
   it('ls speaks the shared liveness vocabulary, not the old CLI one', async () => {
     const nowS = Math.floor(Date.now() / 1000);
     await run(
@@ -167,9 +188,11 @@ describe('the local conductor registry is gone', () => {
 
   function row(over: Partial<ConductorStatus>): ConductorStatus {
     return {
-      id: 'mid-registry',
+      id: 'cond-registry',
       project: 'bakers',
       label: 'registry test',
+      variant: 'conductor',
+      machineId: MACHINE,
       status: 'online',
       lastSeen: 0,
       load: 0,
@@ -208,14 +231,14 @@ describe('the local conductor registry is gone', () => {
       executor: fakeExecutor(),
       agent: [{ agent: claudeAgent() }],
       workspace: fakeWorkspace(),
-      label: 'registry test',
       project: 'bakers',
+      variant: 'conductor',
       states: ['working'],
       prompt: DEFAULT_AGENT_PROMPT,
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: 'mid-registry',
+      machine_id: MACHINE,
       config_path: join(home, '.bakers', 'conductor.config.js'),
     } as ConductorFileConfig;
   }

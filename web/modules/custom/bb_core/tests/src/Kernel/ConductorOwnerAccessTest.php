@@ -78,7 +78,6 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
     $this->addMembership($this->fixture('b', 'bb_workspace'), $this->owner, ['contributor']);
     $this->addMembership($this->fixture('b', 'bb_team'), $this->owner);
     $conductor = $this->createEntity('bb_conductor', [
-      'conductor_id' => 'node-owner',
       'label' => 'node-owner',
       'status' => 'online',
       'project_id' => $this->fixture('b', 'bb_project')->id(),
@@ -246,7 +245,6 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
    */
   public function testDeactivationDoesNotMoveTicketToSiblingWithoutAccess(): void {
     $sibling = $this->createEntity('bb_conductor', [
-      'conductor_id' => 'node-sibling',
       'label' => 'node-sibling',
       'status' => 'online',
       'project_id' => $this->fixture('b', 'bb_project')->id(),
@@ -375,7 +373,6 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
     $this->addMembership($this->fixture('b', 'bb_workspace'), $member, ['contributor']);
     $this->addMembership($this->fixture('b', 'bb_team'), $member);
     $conductor = $this->createEntity('bb_conductor', [
-      'conductor_id' => "node-$name",
       'label' => "node-$name",
       'status' => 'online',
       'project_id' => $this->fixture('b', 'bb_project')->id(),

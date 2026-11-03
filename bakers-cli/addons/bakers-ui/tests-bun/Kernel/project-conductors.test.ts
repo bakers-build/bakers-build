@@ -42,12 +42,12 @@ describe('the project-scoped Conductors tab', () => {
 
   interface FakeHostOptions {
     result?: ConductorActionResult;
-    thisHostKey?: string;
+    thisMachineId?: string;
   }
 
   interface FakeHost extends ConductorProcessHost {
     starts: Array<{ workspaceRoot: string; conductorName: string | undefined }>;
-    stops: Array<{ pid: number | undefined; hostKey: string | undefined }>;
+    stops: Array<{ pid: number | undefined; machineId: string | undefined }>;
   }
 
   /** Same fixed-value contract as the root screen's fake (BB-450 B10) —
@@ -66,8 +66,8 @@ describe('the project-scoped Conductors tab', () => {
         stops.push(input);
         return options.result ?? { ok: true, message: 'done' };
       },
-      async thisHostKey() {
-        return options.thisHostKey ?? 'cw-framework';
+      async thisMachineId() {
+        return options.thisMachineId ?? MACHINE_UUID;
       },
     };
   }
@@ -80,7 +80,6 @@ describe('the project-scoped Conductors tab', () => {
     type: 'bb_conductor--bb_conductor',
     attributes: {
       label: 'cw-framework',
-      machine_id: 'cw-framework',
       status: 'online',
       workspace_root: WORKSPACE,
       last_seen: Math.floor(Date.now() / 1000),
@@ -102,7 +101,7 @@ describe('the project-scoped Conductors tab', () => {
   const machineDoc = (attrs: Record<string, unknown> = {}) => ({
     id: MACHINE_UUID,
     type: 'bb_machine--bb_machine',
-    attributes: { host_key: 'cw-framework', max_parallel: 5, ...attrs },
+    attributes: { name: 'cw-laptop', max_parallel: 5, ...attrs },
   });
 
   /**
@@ -246,15 +245,15 @@ describe('the project-scoped Conductors tab', () => {
   });
 
   it('opens the conductor detail scope for a foreign row too, and its Log tab says there is none here', async () => {
-    const host = fakeHost({ thisHostKey: 'cw-framework' });
+    const host = fakeHost({ thisMachineId: 'some-other-machine' });
     const tui = await openProjectConductors({
       host,
       // SAME workspace_root as the default fixture (BB-281 Finding 2's
-      // shape) — only the machine's host_key differs, so `isLocal` alone
+      // shape) — only the machine UUID differs, so `isLocal` alone
       // could not catch this, which is exactly what let B12 tail THIS
       // machine's own log under a foreign conductor's heading.
       rows: [conductorDoc()],
-      machines: [machineDoc({ host_key: 'some-other-machine' })],
+      machines: [machineDoc()],
     });
 
     // Enter now opens the conductor detail scope for every row (D1) — the
@@ -316,15 +315,15 @@ describe('the project-scoped Conductors tab', () => {
     await quit(tui);
   });
 
-  it('marks a conductor whose host_key is not this machine view-only, before any key is pressed, and hides Start/Stop (BB-450 review B9/B10)', async () => {
-    const host = fakeHost({ thisHostKey: 'cw-framework' });
+  it('marks a conductor whose machine UUID is not this machine view-only, before any key is pressed, and hides Start/Stop (BB-450 review B9/B10)', async () => {
+    const host = fakeHost({ thisMachineId: 'some-other-machine' });
     const tui = await openProjectConductors({
       host,
       // SAME workspace_root as the default fixture (BB-281 Finding 2's
-      // shape) — only the machine's host_key differs, so isLocal alone could
+      // shape) — only the machine UUID differs, so isLocal alone could
       // not catch this.
       rows: [conductorDoc()],
-      machines: [machineDoc({ host_key: 'some-other-machine' })],
+      machines: [machineDoc()],
     });
 
     expect(text(tui)).toContain('view-only');

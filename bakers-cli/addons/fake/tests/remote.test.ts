@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { FakeBbRemote } from '../src/remote.js';
 
+const MACHINE = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
+
 describe('FakeBbRemote', () => {
   it('claimNext drains the seeded queue then returns null', async () => {
     const remote = new FakeBbRemote({
@@ -129,24 +131,24 @@ describe('FakeBbRemote', () => {
   // contributions after heartbeat (peer seed + this process).
   it('machineCapacity sums peer seed + this conductor load after heartbeat (BB-353 D5)', async () => {
     const remote = new FakeBbRemote();
-    remote.seedMachineLoad('dev-box', { currentLoad: 2, maxParallel: 3 });
-    expect(await remote.machineCapacity('dev-box')).toEqual({
+    remote.seedMachineLoad(MACHINE, { currentLoad: 2, maxParallel: 3 });
+    expect(await remote.machineCapacity(MACHINE)).toEqual({
       maxParallel: 3,
       currentLoad: 2,
     });
     await remote.heartbeat(
       {
-        id: 'cw-dev-box-bakers',
-        host_key: 'dev-box',
+        machine_id: MACHINE,
+        machine_label: 'dev-box',
         project: 'bakers',
+        variant: 'conductor',
         states: ['coding'],
         workspace: '/w',
-        label: 'l',
         max_parallel: 3,
       },
       1,
     );
-    expect(await remote.machineCapacity('dev-box')).toEqual({
+    expect(await remote.machineCapacity(MACHINE)).toEqual({
       maxParallel: 3,
       currentLoad: 3,
     });
@@ -159,14 +161,20 @@ describe('FakeBbRemote', () => {
     });
     expect(
       await remote.registerConductor({
-        id: 'm',
+        machine_id: MACHINE,
+        machine_label: 'l',
         project: 'p',
+        variant: 'conductor',
         states: ['todo'],
         workspace: '/w',
-        label: 'l',
         max_parallel: 1,
       }),
     ).toBe('fake-conductor-uuid');
+    // Registration makes the machine's capacity readable by its UUID.
+    expect(await remote.machineCapacity(MACHINE)).toEqual({
+      maxParallel: 1,
+      currentLoad: 0,
+    });
     expect(await remote.getTicket('t-1')).toEqual({
       uuid: 't-1',
       identifier: 'GL-1',

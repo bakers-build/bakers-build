@@ -1,6 +1,6 @@
 # Machines
 
-`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/configuration/agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (host key, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. Create, delete and the admin collection stay under `/admin/bakers/machine`.
+`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/configuration/agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. Create, delete and the admin collection stay under `/admin/bakers/machine`.
 
 ## Location
 
@@ -14,11 +14,11 @@
 ## Minimal example
 
 ```js
-// @bakers-schema-version 3
+// @bakers-schema-version 1
 export default {
-  schema_version: 3,
-  machine_id: 'alex-laptop',
-  user_id: 'alex',
+  schema_version: 1,
+  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+  label: 'alex-laptop',
   max_parallel: 1,
   addons: ['@bakers-build/addon-codex'],
 };
@@ -28,14 +28,15 @@ export default {
 
 | Field | Meaning and default |
 |---|---|
-| `schema_version` | Current schema is 3. The `// @bakers-schema-version 3` header and this field must agree. `bakers config upgrade` raises older files. |
-| `machine_id` | Required. Identifies this host; use a different value on every machine. Letters, digits, dot, underscore and hyphen, starting with a letter or digit. |
-| `user_id` | Required. The local operator name, not the bakers.build account. Same character rules. The generated conductor identity is `<user_id>-<machine_id>-<project>`. |
+| `schema_version` | Current schema is 1. The `// @bakers-schema-version 1` header and this field must agree. Any other version fails loading; run `bakers init`. |
+| `machine_id` | Required. A UUID that `bakers init` generates once; never chosen by hand. It is this host's key on the server, so each machine has its own. Any case loads and is lowercased; a value that is not a UUID fails loading. |
+| `label` | Display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. The server refreshes the machine's name from it on every heartbeat. |
 | `max_parallel` | Positive integer, required by `bakers config check`. The conductor runtime falls back to `1` when it is missing or invalid. The budget is shared by every conductor on this host, not granted per project. |
 | `tunnel` | Optional literal boolean, default `false`. See below. |
 | `agents` | Object, described in the next section. An array is invalid. |
 | `addons` | This host's addons, the same entry shape as a conductor config's `addons`: a package name or `{ use, alias?, with? }` (`name` and `options` are accepted aliases of `use` and `with`). Agent harnesses go here and are the source of agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. See [Configure addons](/addons/configure). |
-| `agents.addons`, `ports` | Retired. Loading fails with the exact replacement; `bakers config upgrade --scope machine` moves both into `addons`. |
+| `user_id` | Rejected; run `bakers init`. The server takes the owner from the sign-in. |
+| `agents.addons`, `ports` | Retired. Loading fails with the exact replacement; move both into `addons`. |
 
 Server URLs and credentials do not belong here. `bakers config check` reports `base_url`, `client_id`, `client_secret` and `workspace_id` in this file as misplaced; they live in the [connection](/configuration/connector/connections). A `max_parallel` or `tunnel` in a connection or conductor file is misplaced the same way.
 

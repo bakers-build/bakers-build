@@ -60,7 +60,7 @@ final class AdminViewsConfigTest extends KernelTestBase {
     'bb_conductors' => [
       'path' => 'admin/bakers/conductors',
       'fields' => [
-        'owner_user_id', 'conductor_id', 'status', 'active', 'utilization', 'last_seen',
+        'owner_user_id', 'label', 'status', 'active', 'utilization', 'last_seen',
         'project_id', 'operations',
       ],
       'exposed' => ['status'],

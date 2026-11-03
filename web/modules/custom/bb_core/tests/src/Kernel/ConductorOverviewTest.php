@@ -180,12 +180,10 @@ final class ConductorOverviewTest extends KernelTestBase {
 
     $host = $this->create('bb_machine', [
       'name' => 'Host',
-      'host_key' => 'host-alpha',
       'owner_user_id' => $this->accounts['lead']->id(),
       'max_parallel' => 4,
     ]);
     $labelled = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-alpha',
       'label' => 'Alpha',
       'project_id' => $this->homeProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -197,7 +195,6 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->labelled = $labelled;
 
     $blank = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-blank',
       'label' => '',
       'project_id' => $this->homeProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -208,7 +205,6 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->blank = $blank;
 
     $colleague = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-colleague',
       'label' => 'Colleague',
       'project_id' => $this->homeProject->id(),
       'owner_user_id' => $this->accounts['contributor']->id(),
@@ -217,7 +213,6 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->colleague = $colleague;
 
     $extra = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-extra',
       'label' => 'Extra',
       'project_id' => $this->extraProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -226,7 +221,6 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->extra = $extra;
 
     $foreign = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-foreign',
       'label' => 'Foreign',
       'project_id' => $this->otherProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -235,7 +229,6 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->foreign = $foreign;
 
     $orphan = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-orphan',
       'label' => 'Orphan',
     ]);
     self::assertInstanceOf(BbConductorInterface::class, $orphan);
@@ -262,7 +255,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     );
     self::assertTrue(class_exists(BbConductorRouteProvider::class));
     self::assertSame('Alpha', BbConductorRouteProvider::title($this->labelled));
-    self::assertSame('reg-blank', BbConductorRouteProvider::title($this->blank));
+    self::assertSame($this->blank->uuid(), BbConductorRouteProvider::title($this->blank));
   }
 
   /**
@@ -309,7 +302,6 @@ final class ConductorOverviewTest extends KernelTestBase {
     $owner = $this->createAccount('owner', ['register bakers conductor']);
     $this->addMembership($this->home, $owner, ['contributor']);
     $mine = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-mine',
       'label' => 'Mine',
       'project_id' => $this->homeProject->id(),
       'owner_user_id' => $owner->id(),
@@ -644,7 +636,6 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->freezeTime();
     $this->actAs($this->accounts['lead']);
     $sibling = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-sibling',
       'label' => 'Sibling',
       'project_id' => $this->homeProject->id(),
     ]);
@@ -760,7 +751,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->actAs($this->accounts['lead']);
     $unsaved = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
-      ->create(['conductor_id' => 'reg-unsaved', 'label' => 'Unsaved']);
+      ->create(['label' => 'Unsaved']);
     self::assertInstanceOf(BbConductorInterface::class, $unsaved);
     self::assertSame([], $this->occupancySource($unsaved)->getPropValue());
 

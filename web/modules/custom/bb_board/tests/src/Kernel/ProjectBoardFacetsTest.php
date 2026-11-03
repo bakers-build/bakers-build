@@ -120,7 +120,6 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     $this->alice = $this->createAccount('alice');
     $this->bob = $this->createAccount('bob');
     $ownerless = $this->createEntity('bb_conductor', [
-      'conductor_id' => 'node-a-ownerless',
       'label' => 'node-a-ownerless',
       'status' => 'online',
       'project_id' => $this->project->id(),

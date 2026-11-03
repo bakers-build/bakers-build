@@ -210,7 +210,7 @@ final class AddonMessagePanelTest extends KernelTestBase {
     $pending = InboxPendingResource::create($this->container);
     $pending->setResourceResponseFactory($this->container->get('jsonapi_resources.resource_response_factory'));
     $pending->setDocumentExtractor($this->container->get('jsonapi_resources.document_extractor'));
-    $object = $pending->process(Request::create('/', 'GET'), (string) $this->conductor->get('conductor_id')->value)
+    $object = $pending->process(Request::create('/', 'GET'), $this->conductor->uuid())
       ->getResponseData()->getData()->getIterator()->current();
     self::assertInstanceOf(ResourceObject::class, $object);
     self::assertSame([$message->uuid()], array_column($object->getField('messages'), 'id'));

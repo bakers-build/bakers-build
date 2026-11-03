@@ -105,7 +105,6 @@ final class RunCancelToolTest extends BakersToolTestBase {
   private function seedRun(BbTicketInterface $ticket, string $state, UserInterface $owner): BbRunInterface {
     $etm = $this->container->get('entity_type.manager');
     $conductor = $etm->getStorage('bb_conductor')->create([
-      'conductor_id' => 'node-' . $owner->id(),
       'label' => 'node-' . $owner->id(),
       'owner_user_id' => $owner->id(),
       'status' => 'online',

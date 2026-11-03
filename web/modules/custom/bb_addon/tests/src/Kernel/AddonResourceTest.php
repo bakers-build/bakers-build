@@ -19,6 +19,7 @@ use Drupal\Tests\bb_inbox\Kernel\InboxWorldTrait;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * Registration and the ticket read model.
@@ -79,7 +80,6 @@ final class AddonResourceTest extends KernelTestBase {
   public function testOtherWorkspaceRegistrationIsIsolated(): void {
     $ownerB = $this->workspaceMember('b', $this->createAccount('owner-b', ['register bakers conductor']), 'contributor');
     $conductorB = $this->createEntity('bb_conductor', [
-      'conductor_id' => 'node-owner-b',
       'label' => 'node-owner-b',
       'project_id' => $this->fixture('b', 'bb_project')->id(),
       'owner_user_id' => $ownerB->id(),
@@ -292,6 +292,24 @@ final class AddonResourceTest extends KernelTestBase {
   }
 
   /**
+   * A registration naming its conductor by an old CLI's key is refused.
+   */
+  public function testRegistrationByConductorIdNamesBakersInit(): void {
+    $this->container->get('current_user')->setAccount($this->conductorOwner);
+    try {
+      $this->resource(AddonsRegisterResource::class)->process($this->jsonRequest([
+        'conductor_id' => $this->conductor->label(),
+        'addons' => [self::portsDefinition('1.0.0')],
+      ]));
+      self::fail('A conductor_id registration was accepted.');
+    }
+    catch (UnprocessableEntityHttpException $e) {
+      self::assertStringContainsString('bakers init', $e->getMessage());
+    }
+    self::assertSame([], $this->addons());
+  }
+
+  /**
    * Posts a registration; returns status and data.
    *
    * @param \Drupal\bb_core\Entity\BbConductorInterface $conductor
@@ -307,7 +325,7 @@ final class AddonResourceTest extends KernelTestBase {
   private function registerAddons(BbConductorInterface $conductor, array $definitions, ?AccountInterface $account = NULL): array {
     $this->container->get('current_user')->setAccount($account ?? $this->conductorOwner);
     $response = $this->resource(AddonsRegisterResource::class)->process($this->jsonRequest([
-      'conductor_id' => $conductor->get('conductor_id')->value,
+      'conductor' => $conductor->uuid(),
       'addons' => $definitions,
     ]));
     return [$response->getStatusCode(), $this->data($response, ['accepted', 'rejected'])];

@@ -35,7 +35,7 @@ if (tool === 'git') {
   if (args.join(' ') === 'rev-parse --show-toplevel') console.log(root);
   else if (args.at(-1) !== 'prune') process.exit(1);
 } else if (tool === 'node') {
-  process.stdout.write('tester\\thost');
+  process.stdout.write('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
 } else if (tool === 'bakers') {
   if (args.join(' ') !== 'oven stop --now') process.exit(1);
 } else if (tool === 'ddev') {
@@ -129,13 +129,18 @@ describe('playground teardown ownership', () => {
 
   afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-  // Catch the removed entity field being sent to the Drupal boundary again.
-  it('purges through the canonical conductor identity field', () => {
+  // A conductor is machine + project + variant: the purge finds this
+  // machine by its UUID and its conductor by that key, never by a string id.
+  it('purges the conductor keyed by this machine UUID, the project and the default variant', () => {
     run('--keep-clone');
     const php = readFileSync(join(root, 'purge.php'), 'utf8');
     expect(php).toContain(
-      "getStorage('bb_conductor')->loadByProperties(['conductor_id' => 'tester-host-bakers-e2e-project'])",
+      "getStorage('bb_machine')->loadByProperties(['uuid' => '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30'])",
     );
+    expect(php).toContain(
+      "'machine' => $machine->id(), 'project_id' => $project->id(), 'variant' => 'conductor'",
+    );
+    expect(php).not.toContain("'conductor_id' =>");
   });
 
   it('preserves the registered parent when the configured workspace is unregistered', () => {

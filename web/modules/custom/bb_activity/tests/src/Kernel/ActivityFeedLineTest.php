@@ -79,9 +79,8 @@ final class ActivityFeedLineTest extends KernelTestBase {
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     $this->ticket = $ticket;
-    $machine = $this->entity('bb_machine', ['name' => 'Machine', 'host_key' => 'host-feed']);
+    $machine = $this->entity('bb_machine', ['name' => 'Machine']);
     $this->conductor = $this->entity('bb_conductor', [
-      'conductor_id' => 'feed-node',
       'label' => 'feed-node',
       'owner_user_id' => 1,
       'status' => 'online',

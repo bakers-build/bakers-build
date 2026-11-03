@@ -21,9 +21,9 @@ default:
   # BB-79 AC-2 fixture: linked to a machine at full capacity (load == max).
   # Every other seeded conductor's machine is idle, so without this one the
   # listing has no full-vs-idle pair and the criterion is untestable.
-  conductor_id:
+  variant:
     -
-      value: "srv02-bakers-busy"
+      value: "conductor"
   label:
     -
       value: "srv02-bakers-busy"

@@ -6,9 +6,10 @@
 #
 #     --project <name>  the bb_project whose tickets and runs are purged. It must
 #                       match the name `setup` ran with, because the purge is scoped
-#                       to the conductor whose conductor_id is composed FROM it — a
-#                       different name identifies a different conductor and purges
-#                       nothing. Default: bakers-e2e-project.
+#                       to this machine's conductor of that project (machine +
+#                       project + variant) — a different name identifies a
+#                       different conductor and purges nothing.
+#                       Default: bakers-e2e-project.
 #     --keep-clone      reclaim the DDEV projects and the control-plane entities but
 #                       LEAVE the clone at workspaces/bakers-playground and its local
 #                       origin workspaces/bakers-playground.git on disk. For
@@ -20,13 +21,13 @@
 #   * the CONTROL-PLANE DDEV. It is the checkout's own development environment;
 #     reclaiming it because a test finished would be a surprise. Use `ddev delete`
 #     yourself if you want that.
-#   * the world's RECIPE FIXTURES. The purge is scoped to the conductor carrying
-#     this machine's own conductor_id, so `GL-E2E-CONDUCTOR` and every fixture ticket
+#   * the world's RECIPE FIXTURES. The purge is scoped to this machine's own
+#     conductor of the project, so `GL-E2E-CONDUCTOR` and every fixture ticket
 #     CI depends on survive.
 #
 # AND IT REFUSES RATHER THAN GUESSES, twice over:
 #
-#   * with no conductor matching the conductor_id there is no marker distinguishing
+#   * with no conductor matching this machine there is no marker distinguishing
 #     this machine's tickets from the world's fixtures, so NOTHING is deleted and
 #     the count that was kept is reported;
 #   * no `ddev delete` runs unless an explicitly named, registered `bakers-pg-`
@@ -137,29 +138,20 @@ fi
 # -----------------------------------------------------------------------------
 step "2. the control-plane entities — scoped to this machine's conductor"
 # -----------------------------------------------------------------------------
-# Composed exactly as setup composes it, so the two cannot disagree about which
-# conductor's work is being reclaimed. See setup step 7 for why the machine context
-# is imported rather than pattern-matched.
-machine_identity="$(MC="${HOME}/.bakers/machine.config.js" node -e '
+# The conductor is this machine (its UUID from machine.config.js) + the project
+# + the default variant — the key the control plane registered it under. See
+# setup step 7 for why the machine context is imported rather than
+# pattern-matched.
+MACHINE_ID="$(MC="${HOME}/.bakers/machine.config.js" node -e '
   const p = process.env.MC;
   import("node:fs").then(async (fs) => {
-    if (!fs.existsSync(p)) return process.stdout.write("\t");
+    if (!fs.existsSync(p)) return;
     try {
       const d = (await import("file://" + p)).default ?? {};
-      process.stdout.write(`${d.user_id ?? ""}\t${d.machine_id ?? ""}`);
-    } catch { process.stdout.write("\t"); }
-  });' 2>/dev/null || printf '\t')"
-MACHINE_USER="$(printf '%s' "${machine_identity}" | cut -f1)"
-MACHINE_HOST="$(printf '%s' "${machine_identity}" | cut -f2)"
-if [ -z "${MACHINE_HOST}" ]; then
-  MACHINE_HOST="$( ( cd "${ROOT}" && ddev describe -j 2>/dev/null ) | jq -r '.raw.name // ""')"
-fi
-if [ -n "${MACHINE_USER}" ]; then
-  MACHINE_ID="${MACHINE_USER}-${MACHINE_HOST}-${PROJECT}"
-else
-  MACHINE_ID="${MACHINE_HOST}-${PROJECT}"
-fi
-say "conductor_id: ${MACHINE_ID}"
+      process.stdout.write(d.machine_id ?? "");
+    } catch {}
+  });' 2>/dev/null || true)"
+say "machine_id: ${MACHINE_ID:-(none)}"
 
 # Pre-escaped for the PHP snippet below — see php_str. The machine context is a JS
 # file the operator owns, so neither of these two values is constrained the way
@@ -190,12 +182,14 @@ if ( cd "${ROOT}" && ddev describe -j >/dev/null 2>&1 ); then
       print \"nothing to purge: no bb_project named '${Q_PROJECT}'\" . PHP_EOL;
       return;
     }
-    \$cs = \$etm->getStorage('bb_conductor')->loadByProperties(['conductor_id' => '${Q_MACHINE_ID}']);
+    \$ms = \$etm->getStorage('bb_machine')->loadByProperties(['uuid' => '${Q_MACHINE_ID}']);
+    \$machine = reset(\$ms);
+    \$cs = \$machine ? \$etm->getStorage('bb_conductor')->loadByProperties(['machine' => \$machine->id(), 'project_id' => \$project->id(), 'variant' => 'conductor']) : [];
     \$conductor = reset(\$cs);
     \$in_project = \$ts->loadByProperties(['project_id' => \$project->id()]);
     if (!\$conductor) {
-      print 'refusing to purge: no bb_conductor with conductor_id ' .
-        \"'${Q_MACHINE_ID}' — nothing identifiable to delete, kept \" .
+      print 'refusing to purge: no bb_conductor of machine ' .
+        \"'${Q_MACHINE_ID}' in this project — nothing identifiable to delete, kept \" .
         count(\$in_project) . ' ticket(s)' . PHP_EOL;
       return;
     }

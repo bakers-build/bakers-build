@@ -144,7 +144,6 @@ final class ClaimActivityTest extends KernelTestBase {
     string $status = 'online',
   ): BbConductorInterface {
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => $machine_id,
       'label' => $machine_id,
       'owner_user_id' => $owner->id(),
       'status' => $status,

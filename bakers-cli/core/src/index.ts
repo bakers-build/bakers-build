@@ -88,6 +88,8 @@ export {
 } from './cli/load-bakers-config.js';
 export {
   type AgentRoutes,
+  assertSchemaVersion1,
+  isUuid,
   type MachineContext,
   machineContextPath,
   readMachineContext,
@@ -125,7 +127,6 @@ export {
   deriveCheckoutRoot,
   type RootGitExec,
 } from './core/checkout-root.js';
-export { conductorId } from './core/conductor-id.js';
 export {
   CommandRunner,
   ExecError,

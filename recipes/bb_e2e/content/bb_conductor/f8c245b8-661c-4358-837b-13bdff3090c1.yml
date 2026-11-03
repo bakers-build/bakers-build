@@ -8,9 +8,9 @@ _meta:
     25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
     262258a2-080f-4ab9-af1b-9028cef388da: bb_project
 default:
-  conductor_id:
+  variant:
     -
-      value: bakers-e2e-dispatch-node
+      value: "conductor"
   label:
     -
       value: bakers-e2e-dispatch-node

@@ -24,7 +24,6 @@ describe('the conductor detail scope', () => {
     type: 'bb_conductor--bb_conductor',
     attributes: {
       label: 'cw-framework',
-      machine_id: 'cw-framework',
       status: 'online',
       workspace_root: WORKSPACE,
       last_seen: NOW,
@@ -44,7 +43,7 @@ describe('the conductor detail scope', () => {
     id: MACHINE_UUID,
     type: 'bb_machine--bb_machine',
     attributes: {
-      host_key: 'cw-framework',
+      name: 'cw-laptop',
       current_load: 1,
       max_parallel: 5,
       ...attrs,
@@ -94,11 +93,11 @@ describe('the conductor detail scope', () => {
     relationships: {},
   });
 
-  function fakeHost(thisHostKey = 'cw-framework'): ConductorProcessHost {
+  function fakeHost(thisMachineId = MACHINE_UUID): ConductorProcessHost {
     return {
       start: async () => ({ ok: true, message: 'not exercised here' }),
       stop: async () => ({ ok: true, message: 'not exercised here' }),
-      thisHostKey: async () => thisHostKey,
+      thisMachineId: async () => thisMachineId,
     };
   }
 

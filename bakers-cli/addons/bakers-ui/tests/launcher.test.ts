@@ -10,7 +10,7 @@ import type { TuiAgentService } from '../src/types.js';
 // dropsh `buildProgram` (returning a program that records its argv) and a faked
 // renderer factory (recording its options), assert `runBbUi`:
 //  (a) builds the program from connection.authPlugins + the renderer instance,
-//  (b) passes agents/currentUser/ownConductorMachineId/createPrompt/project/cwd
+//  (b) passes agents/currentUser/ownConductorId/createPrompt/project/cwd
 //      into the renderer factory (→ the renderer's services),
 //  (c) runs the `--format tui search bb_project …` seed.
 
@@ -48,7 +48,7 @@ async function runWithFakes(over: Partial<BbUiLauncherOptions> = {}) {
     project: 'bakers',
     agents: fakeAgents(),
     currentUser: 'cw',
-    ownConductorMachineId: 'cw-host-bakers',
+    ownConductorId: 'cw-host-bakers',
     createPrompt: 'work this',
     buildProgram: (o) => {
       builtWith = o;
@@ -103,7 +103,7 @@ describe('runBbUi (BB-194 AC-4)', () => {
       cwd: '/home/dev',
       project: 'bakers',
       currentUser: 'cw',
-      ownConductorMachineId: 'cw-host-bakers',
+      ownConductorId: 'cw-host-bakers',
       createPrompt: 'work this',
     });
     expect(rendererOpts?.agents).toBeDefined();

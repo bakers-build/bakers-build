@@ -149,7 +149,7 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
   /**
    * Creates a Drupal user with conductor registration and claim permissions.
    */
-  private function createConductorUser(string $name): UserInterface {
+  protected function createConductorUser(string $name): UserInterface {
     $role_id = 'conductor_' . str_replace('-', '_', $name);
     $this->container->get('entity_type.manager')
       ->getStorage('user_role')
@@ -169,14 +169,13 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
    */
   protected function createConductor(
     UserInterface $owner,
-    string $machine_id,
+    string $label,
     array $states = ['plan', 'working'],
   ): BbConductorInterface {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
-        'conductor_id' => $machine_id,
-        'label' => $machine_id,
+        'label' => $label,
         'owner_user_id' => $owner->id(),
         'status' => 'online',
         'project_id' => $this->projectId,

@@ -43,7 +43,7 @@ Feature: Entity detail pages save each card on its own
     When I open the machine detail page
     Then the detail page has no "Capacity" card
     And the "Identity" card offers "Max parallel" with Save
-    And the "Identity" card shows "Host key" as "detail-"
+    And the "Identity" card has no row "Host key"
     And the "Identity" card shows "Current load" as "0"
     When I set "Name" to "Machine on one card" in the "Identity" card
     And I set "Max parallel" to "7" in the "Identity" card
@@ -126,7 +126,7 @@ Feature: Entity detail pages save each card on its own
       | group.edit           | Identity      | identity      | Description  | —                        | 404    |
       | project.edit         | Properties    | properties    | Key          | EDP1                     | 404    |
       | team.home            | Identity      | identity      | Workspace    | Northside Bakery         | 403    |
-      | conductor.properties | Identity      | identity      | Conductor ID | bdd-properties-conductor | 403    |
+      | conductor.properties | Identity      | identity      | UUID         | 1f1764cf-f41e-4077-8495-2bce8ed508b2 | 403    |
 
   Scenario Outline: A reader of another workspace gets no detail page of <fixture>
     Given I am logged in as the account "south-contributor"

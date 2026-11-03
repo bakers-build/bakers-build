@@ -59,7 +59,7 @@ Feature: Ticket activity JSON:API contract
     When the API client creates a "bb_work" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"bdd-activity-{saved.ticket}","label":"BDD activity claim","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"label":"BDD activity claim","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
@@ -71,7 +71,7 @@ Feature: Ticket activity JSON:API contract
     Given the API client is "fixture-claim-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
-      {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-{saved.ticket}","lease_seconds":600}}}
+      {"data":{"type":"bakers-claim","attributes":{"conductor":"{saved.conductor}","lease_seconds":600}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "run"
@@ -82,7 +82,7 @@ Feature: Ticket activity JSON:API contract
     Then the API response status is 200
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
-      {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-{saved.ticket}","lease_seconds":600}}}
+      {"data":{"type":"bakers-claim","attributes":{"conductor":"{saved.conductor}","lease_seconds":600}}}
       """
     Then the API response status is 409
     Given the API client is "site-admin"
@@ -103,7 +103,7 @@ Feature: Ticket activity JSON:API contract
     When the API client creates a "bb_work" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"bdd-activity-later-{saved.ticket}","label":"BDD later claim","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"label":"BDD later claim","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
@@ -115,7 +115,7 @@ Feature: Ticket activity JSON:API contract
     Given the API client is "fixture-claim-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
-      {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-later-{saved.ticket}","lease_seconds":600}}}
+      {"data":{"type":"bakers-claim","attributes":{"conductor":"{saved.conductor}","lease_seconds":600}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "first-run"
@@ -126,7 +126,7 @@ Feature: Ticket activity JSON:API contract
     Then the API response status is 200
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
-      {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-later-{saved.ticket}","lease_seconds":600}}}
+      {"data":{"type":"bakers-claim","attributes":{"conductor":"{saved.conductor}","lease_seconds":600}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "second-run"
@@ -142,7 +142,7 @@ Feature: Ticket activity JSON:API contract
     When the API client creates a "bb_work" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"bdd-activity-failed-{saved.ticket}","label":"BDD failed run","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"label":"BDD failed run","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
@@ -154,7 +154,7 @@ Feature: Ticket activity JSON:API contract
     Given the API client is "fixture-claim-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
-      {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-failed-{saved.ticket}","lease_seconds":600}}}
+      {"data":{"type":"bakers-claim","attributes":{"conductor":"{saved.conductor}","lease_seconds":600}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "run"
@@ -174,7 +174,7 @@ Feature: Ticket activity JSON:API contract
     When the API client creates a "bb_work" ticket in "home" as "ticket"
     When the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"bdd-activity-race-{saved.ticket}","label":"BDD race claim","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"label":"BDD race claim","states":["plan"],"status":"online"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.claim-owner}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
@@ -185,7 +185,7 @@ Feature: Ticket activity JSON:API contract
     Then the API response status is 200
     When two API clients "fixture-claim-owner" send "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim" at once:
       """
-      {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-race-{saved.ticket}","lease_seconds":600}}}
+      {"data":{"type":"bakers-claim","attributes":{"conductor":"{saved.conductor}","lease_seconds":600}}}
       """
     Then the concurrent responses are 201 and 409
     Given the API client is "site-admin"

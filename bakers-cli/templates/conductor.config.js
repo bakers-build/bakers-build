@@ -2,8 +2,10 @@
 // form). This is the CONDUCTOR surface only — the run machinery
 // (remote/executor/workspace/agent). The CONNECTION surface (site + auth +
 // renderer) lives in the sibling `bakers.config.js`; `bakers tools` reads only that
-// small file (BB-201 split preserved). Local overrides
-// (`conductor.config.local.js`) still supply project/conductor_id and custom agent variants.
+// small file (BB-201 split preserved). The file carries no identity: a conductor
+// is this machine (`~/.bakers/machine.config.js`) + this project + the variant
+// (this file's stem). Local overrides (`conductor.config.local.js`) supply only
+// local values such as the project name.
 //
 // Storybook-style `addons: []` — each entry names a package; the addon's own
 // `./preset` self-declares what it contributes (its `.kind`), so there is NO
@@ -31,10 +33,8 @@ const local = await loadLocal();
 
 export default {
   project: local.project ?? 'bakers-playground',
-  // conductor_id is REQUIRED (composed from the machine context + project); a
-  // committed per-repo config sets it. Host capacity is machine.config.js
-  // max_parallel (BB-353). See bakers-cli/CONFIG.md.
-  conductor_id: local.conductor_id ?? local.machine_id,
+  // Host capacity is machine.config.js max_parallel (BB-353). See
+  // bakers-cli/CONFIG.md.
   // Optional state narrowing (BB-207): serves every claimable state in the
   // project by default; add a `states` array to restrict this conductor.
   // Self-declaring addons (BB-215): each package contributes its own slots.

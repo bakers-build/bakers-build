@@ -171,7 +171,6 @@ final class ConductorReaperTest extends KernelTestBase {
   private function createConductor(string $machineId, string $status, ?int $leaseExpiresAt): BbConductorInterface {
     $owner = $this->createUser('owner-' . $machineId);
     $values = [
-      'conductor_id' => $machineId,
       'label' => $machineId,
       'owner_user_id' => $owner->id(),
       'status' => $status,

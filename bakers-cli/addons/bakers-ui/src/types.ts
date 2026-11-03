@@ -142,8 +142,8 @@ export interface RendererServices {
    * test flaky.
    */
   now?: () => number;
-  /** This machine's conductor `machine_id` — preselected in the new-ticket form. */
-  ownConductorMachineId?: string;
+  /** This checkout's conductor UUID — preselected in the new-ticket form. */
+  ownConductorId?: string;
   /** Config override for the ticket-create agent's base prompt. */
   createPrompt?: string;
   /**
@@ -326,7 +326,7 @@ export interface TuiOptions {
   /**
    * BB-232 (D9): the `.bakers` dir the entry is standing in, UNRESOLVED. The
    * plugin's `run()` matches it against each conductor's `workspace_root` and
-   * fills `project` + `ownConductorMachineId` from the record it finds — the two
+   * fills `project` + `ownConductorId` from the record it finds — the two
    * values the deleted `~/.bakers/conductors.json` used to supply. Absent outside
    * any project, and never read by the kernel itself.
    */
@@ -348,7 +348,7 @@ export interface TuiOptions {
   currentUser?: string;
   /** Workspace-lead capability resolved by the plugin before routing starts. */
   isWorkspaceAdmin?: boolean;
-  ownConductorMachineId?: string;
+  ownConductorId?: string;
   createPrompt?: string;
   /** BB-223: the unresolved deep-link target, as it arrived from the CLI. */
   initialRoute?: UiInitialRoute | undefined;

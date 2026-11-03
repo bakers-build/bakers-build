@@ -18,9 +18,9 @@ _meta:
     dbf00000-0000-4000-8000-000000000001: bb_project
     dbd10000-0000-4000-8000-000000000002: og_membership
 default:
-  conductor_id:
+  variant:
     -
-      value: "srv01-bakers"
+      value: "conductor"
   label:
     -
       value: "srv01-bakers"

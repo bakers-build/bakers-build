@@ -71,11 +71,11 @@ const TICKET_FORM = 'form#bb-ticket-create-form';
 const DIALOG = `dialog[data-dialog]:has(${TICKET_FORM})`;
 
 /**
- * The conductor_id every "pick a conductor" scenario picks.
+ * The conductor label every "pick a conductor" scenario picks.
  *
  * The exact fixture `TicketCreateFormTest::setUp()` already builds for the
  * same field (`web/modules/custom/bb_core/tests/src/Kernel/TicketCreateFormTest.php`):
- * a project, and a conductor named `cw-framework` in it. Reusing the same
+ * a project, and a conductor labelled `cw-framework` in it. Reusing the same
  * name is deliberate — the PHP suite and this browser suite are asserting the
  * same picker against the same fixture shape, not two different ones that
  * happen to look alike.
@@ -91,13 +91,13 @@ const CONDUCTOR_ID = 'cw-framework';
  * rows in the "Conductor" panel this suite opens.
  *
  * Idempotent like `Given the ticket index is up to date`: a second run of
- * the suite must not fail on a UniqueField violation for `conductor_id`.
+ * the suite must not create a second conductor of that label.
  */
 function ensureConductorFixture(): void {
   php(
     [
       '$etm = \\Drupal::entityTypeManager();',
-      `$existing = $etm->getStorage("bb_conductor")->loadByProperties(["conductor_id" => "${CONDUCTOR_ID}"]);`,
+      `$existing = $etm->getStorage("bb_conductor")->loadByProperties(["label" => "${CONDUCTOR_ID}"]);`,
       'if (!$existing) {',
       '$storage = $etm->getStorage("bb_project");',
       '$projects = $storage->loadMultiple();',
@@ -110,7 +110,6 @@ function ensureConductorFixture(): void {
       '$project = $storage->create(["name" => "BB-420 fixture project"]);',
       '$project->save(); }',
       '$conductor = $etm->getStorage("bb_conductor")->create([',
-      `"conductor_id" => "${CONDUCTOR_ID}",`,
       `"label" => "${CONDUCTOR_ID}",`,
       // Uid 1, an instance admin: a conductor is offered only while its owner can work in the project.
       '"owner_user_id" => 1,',
@@ -376,8 +375,8 @@ Then('the {string} pill reads {string}', async ({ page }, field: string, value: 
  * Resolves what a reference field actually submits for a picked label.
  *
  * `ReferenceOptions::for()` keys every candidate by its TARGET ENTITY ID —
- * `conductor.id()`, a numeric primary key — never by `conductor_id`, the
- * human-legible string this scenario picks by. That is the same split every
+ * `conductor.id()`, a numeric primary key — never by the conductor label,
+ * the human-legible string this scenario picks by. That is the same split every
  * other picker in this suite reads by: `ticket-list.steps.ts`'s facets are
  * picked by label and asserted by the machine value underneath it. A
  * `conductor_id` field is the one submitted name this scenario knows to resolve
@@ -391,10 +390,10 @@ function resolvedSubmittedValue(name: string, label: string): string {
   }
   const id = php(
     '$c = current(\\Drupal::entityTypeManager()->getStorage("bb_conductor")' +
-      `->loadByProperties(["conductor_id" => "${safe(label)}"])); print $c ? $c->id() : "";`,
+      `->loadByProperties(["label" => "${safe(label)}"])); print $c ? $c->id() : "";`,
   );
   if (!id) {
-    throw new Error(`No bb_conductor with conductor_id "${label}" exists in the seeded world.`);
+    throw new Error(`No bb_conductor labelled "${label}" exists in the seeded world.`);
   }
   return id;
 }
@@ -908,7 +907,7 @@ function loadCreatedTicketFacts(
       'if (!$t) { print ""; } else {',
       '$c = $t->get("conductor_id")->entity;',
       '$p = $t->get("project_id")->entity;',
-      'print $t->get("workflow")->value . "|" . $t->get("state")->value . "|" . ($c ? $c->get("conductor_id")->value : "") . "|" . ($p ? $p->label() : "");',
+      'print $t->get("workflow")->value . "|" . $t->get("state")->value . "|" . ($c ? $c->label() : "") . "|" . ($p ? $p->label() : "");',
       '}',
     ].join(' '),
   );

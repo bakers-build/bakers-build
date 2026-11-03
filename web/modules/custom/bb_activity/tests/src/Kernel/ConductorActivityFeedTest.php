@@ -142,12 +142,10 @@ final class ConductorActivityFeedTest extends KernelTestBase {
 
     $host = $this->create('bb_machine', [
       'name' => 'Host',
-      'host_key' => 'host-alpha',
       'owner_user_id' => $this->accounts['lead']->id(),
       'max_parallel' => 4,
     ]);
     $labelled = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-alpha',
       'label' => 'Alpha',
       'project_id' => $this->homeProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -159,7 +157,6 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     $this->labelled = $labelled;
 
     $blank = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-blank',
       'label' => '',
       'project_id' => $this->homeProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -169,7 +166,6 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     self::assertInstanceOf(BbConductorInterface::class, $blank);
 
     $colleague = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-colleague',
       'label' => 'Colleague',
       'project_id' => $this->homeProject->id(),
       'owner_user_id' => $this->accounts['contributor']->id(),
@@ -178,7 +174,6 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     $this->colleague = $colleague;
 
     $extra = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-extra',
       'label' => 'Extra',
       'project_id' => $this->extraProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -186,7 +181,6 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     self::assertInstanceOf(BbConductorInterface::class, $extra);
 
     $foreign = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-foreign',
       'label' => 'Foreign',
       'project_id' => $this->otherProject->id(),
       'owner_user_id' => $this->accounts['lead']->id(),
@@ -194,7 +188,6 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     self::assertInstanceOf(BbConductorInterface::class, $foreign);
 
     $orphan = $this->create('bb_conductor', [
-      'conductor_id' => 'reg-orphan',
       'label' => 'Orphan',
     ]);
     self::assertInstanceOf(BbConductorInterface::class, $orphan);

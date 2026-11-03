@@ -116,7 +116,6 @@ final class RunLeaseGuardTest extends KernelTestBase {
    */
   private function createConductor(UserInterface $owner, string $machine_id): BbConductorInterface {
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => $machine_id,
       'label' => $machine_id,
       'owner_user_id' => $owner->id(),
       'status' => 'online',
@@ -198,7 +197,6 @@ final class RunLeaseGuardTest extends KernelTestBase {
     $this->container->get('current_user')->setAccount($owner);
 
     $foreign = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => 'node-foreign',
       'label' => 'Foreign',
       'owner_user_id' => $other->id(),
     ]);

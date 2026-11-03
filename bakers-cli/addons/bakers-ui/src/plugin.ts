@@ -4,6 +4,16 @@ import { loadWorkspaceMemberships } from './Entity/workspace/Data/members.js';
 import { resolveRoute } from './route.js';
 import type { RendererServices, TuiOptions } from './types.js';
 
+/** This machine's UUID from `machine.config.js`; undefined when unreadable. */
+async function thisMachineId(): Promise<string | undefined> {
+  try {
+    const { readMachineContext } = await import('@bakers-build/core');
+    return (await readMachineContext()).machine_id;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Options the launcher passes into the factory (a superset of the injected
  *  intent-level agent service so `bakers ui` can drive launch/list/focus/…). */
 export type BbUiOptions = TuiOptions;
@@ -48,7 +58,11 @@ export default function bakersUiPlugin(options: BbUiOptions = {}) {
           const own =
             options.bakersDir === undefined
               ? undefined
-              : await readOwnConductor(services.client, options.bakersDir);
+              : await readOwnConductor(
+                  services.client,
+                  options.bakersDir,
+                  await thisMachineId(),
+                );
           // BB-472: the active workspace's NAME, read once here beside `own` —
           // best-effort, exactly like `machineDetails` in the Drupal remote: an
           // unreadable workspace degrades to no chrome suffix, never a boot
@@ -93,9 +107,9 @@ export default function bakersUiPlugin(options: BbUiOptions = {}) {
             ...(options.project === undefined && own?.project !== undefined
               ? { project: own.project }
               : {}),
-            ...(options.ownConductorMachineId === undefined &&
-            own?.machineId !== undefined
-              ? { ownConductorMachineId: own.machineId }
+            ...(options.ownConductorId === undefined &&
+            own?.conductorId !== undefined
+              ? { ownConductorId: own.conductorId }
               : {}),
             // Optional at every hop — omitting the key is the My work path.
             ...(route !== undefined ? { route } : {}),

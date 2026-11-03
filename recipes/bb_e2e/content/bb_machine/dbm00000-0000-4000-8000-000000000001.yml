@@ -8,9 +8,6 @@ default:
   name:
     -
       value: "e2e default host"
-  host_key:
-    -
-      value: "e2e-host"
   max_parallel:
     -
       value: 1

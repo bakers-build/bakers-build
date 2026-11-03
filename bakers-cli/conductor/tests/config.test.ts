@@ -120,7 +120,6 @@ export default {
   executor: slot('executor'),
   workspace: slot('workspace'),
   bakers: { project: 'bakers' },
-  machine_id: 'test-machine',
   states: ['todo', 'working'],
 };
 `;
@@ -204,7 +203,6 @@ export default {
   workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
   plugins:   [ { plugin: './fixture.js', export: 'mkPlugin', with: { id: 'session' } } ],
   bakers: { project: 'bakers' },
-  machine_id: 'test-machine',
   states: ['todo', 'working'],
 ${extra}};
 `;
@@ -393,13 +391,12 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
 });
 
 describe('loadConductorConfig', () => {
-  it('reads machine_id from the config and defaults the label to it', async () => {
+  it('reads no identity from the project config', async () => {
     const path = writeConfig(VALID);
     const config = await loadConductorConfig(path);
-    // Legacy machine_id is accepted as conductor_id; label defaults to it.
-    expect(config.conductor_id).toBe('test-machine');
-    expect(config.machine_id).toBe('test-machine');
-    expect(config.label).toBe(config.conductor_id);
+    expect(config).not.toHaveProperty('conductor_id');
+    expect(config).not.toHaveProperty('label');
+    expect(config.variant).toBe('conductor');
     expect(config.project).toBe('bakers');
     expect(config.states).toEqual(['todo', 'working']);
     // Engine max_parallel is ignored; capacity comes from machine context (default 1).
@@ -412,33 +409,40 @@ describe('loadConductorConfig', () => {
     expect((config as { site?: unknown }).site).toBeUndefined();
   });
 
-  it('accepts a label override from the raw config', async () => {
-    const withLabel = VALID.replace(
+  it('takes the machine UUID (lowercased) and label from machine.config.js', async () => {
+    writeFileSync(
+      join(process.env.HOME as string, '.bakers/machine.config.js'),
+      `export default { machine_id: '0B6F3C1E-9A2D-4E57-8C41-2F7D9E5A1B30', label: 'cw-laptop', addons: ['@bakers-build/addon-codex'] };`,
+    );
+    const config = await loadConductorConfig(writeConfig(VALID));
+    expect(config.machine_id).toBe('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
+    expect(config.machine_label).toBe('cw-laptop');
+  });
+
+  it('takes the variant from the selected config stem', async () => {
+    const shop = writeNamedConfigBeside(writeConfig(VALID), 'shop', VALID);
+    expect((await loadConductorConfig(shop)).variant).toBe('shop');
+  });
+
+  it.each([
+    ['conductor_id', "'cw-framework'"],
+    ['machine_id', "'cw-laptop'"],
+    ['label', "'my custom label'"],
+  ])('rejects a project config carrying %s, naming bakers init', async (key, value) => {
+    const stale = VALID.replace(
       "bakers: { project: 'bakers' },",
-      "bakers: { project: 'bakers' },\n  label: 'my custom label',",
+      `bakers: { project: 'bakers' },\n  ${key}: ${value},`,
     );
-    const config = await loadConductorConfig(writeConfig(withLabel));
-    expect(config.label).toBe('my custom label');
+    await expect(loadConductorConfig(writeConfig(stale))).rejects.toThrow(
+      new RegExp(`${key}.*bakers init`),
+    );
   });
 
-  it('pins machine_id from the config and uses it as the default label', async () => {
-    const withId = VALID.replace(
-      "machine_id: 'test-machine',",
-      "machine_id: 'cw-framework',",
+  it('rejects a project config at a schema version other than 1, naming bakers init', async () => {
+    const stale = `// @bakers-schema-version 2\n${VALID}`;
+    await expect(loadConductorConfig(writeConfig(stale))).rejects.toThrow(
+      /bakers init/,
     );
-    const config = await loadConductorConfig(writeConfig(withId));
-    expect(config.machine_id).toBe('cw-framework');
-    expect(config.label).toBe('cw-framework');
-  });
-
-  it('an explicit label overrides the machine_id default', async () => {
-    const withBoth = VALID.replace(
-      "machine_id: 'test-machine',",
-      "machine_id: 'cw-framework',\n  label: 'my custom label',",
-    );
-    const config = await loadConductorConfig(writeConfig(withBoth));
-    expect(config.machine_id).toBe('cw-framework');
-    expect(config.label).toBe('my custom label');
   });
 
   it('accepts a prompt override from the raw config', async () => {
@@ -473,7 +477,7 @@ describe('loadConductorConfig', () => {
   ])('carries machine tunnel %s onto the engine config', async (field, expected) => {
     writeFileSync(
       join(process.env.HOME as string, '.bakers/machine.config.js'),
-      `export default { machine_id: 'host', user_id: 'op', max_parallel: 1, addons: ['@bakers-build/addon-codex']${field ? `, ${field}` : ''} };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'op', max_parallel: 1, addons: ['@bakers-build/addon-codex']${field ? `, ${field}` : ''} };`,
     );
     const config = await loadConductorConfig(writeConfig(VALID));
     expect(config.tunnel).toBe(expected);
@@ -482,7 +486,7 @@ describe('loadConductorConfig', () => {
   it('does not coerce a non-boolean machine tunnel value to true', async () => {
     writeFileSync(
       join(process.env.HOME as string, '.bakers/machine.config.js'),
-      `export default { machine_id: 'host', user_id: 'op', max_parallel: 1, tunnel: 'true', addons: ['@bakers-build/addon-codex'] };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'op', max_parallel: 1, tunnel: 'true', addons: ['@bakers-build/addon-codex'] };`,
     );
     const config = await loadConductorConfig(writeConfig(VALID));
     expect(config.tunnel).toBe(false);
@@ -522,46 +526,8 @@ describe('loadConductorConfig', () => {
       VALID.replace('export default {', 'export default {max_parallel: 2,'),
     );
     await expect(loadConductorConfig(path)).rejects.toThrow(
-      /max_parallel.*machine.config.js.*bakers config upgrade --scope all/,
+      /max_parallel.*machine.config.js.*move it there/,
     );
-  });
-});
-
-// BB-126: multiple named .bakers/*.config.js in one repo. machine_id is
-// REQUIRED — the config must set it (there is no derived fallback). Each config
-// carries its own machine_id (a committed config composes it from the machine
-// context + its own project), so co-located conductors are independent by
-// authoring, and a config that omits it fails loudly instead of silently
-// sharing an identity.
-describe('machine_id is required (BB-126)', () => {
-  it('throws a clear error when machine_id is missing', async () => {
-    const bad = VALID.replace("machine_id: 'test-machine',", '');
-    await expect(loadConductorConfig(writeConfig(bad))).rejects.toThrow(
-      /conductor_id/,
-    );
-  });
-
-  it('throws when machine_id is present but empty', async () => {
-    const bad = VALID.replace(
-      "machine_id: 'test-machine',",
-      "machine_id: '  ',",
-    );
-    await expect(loadConductorConfig(writeConfig(bad))).rejects.toThrow(
-      /conductor_id/,
-    );
-  });
-
-  it('co-located named configs are independent — each has its own machine_id', async () => {
-    const legacy = writeConfig(VALID); // machine_id: 'test-machine'
-    const shop = writeNamedConfigBeside(
-      legacy,
-      'shop',
-      VALID.replace("machine_id: 'test-machine',", "machine_id: 'shop-id',"),
-    );
-    const shopCfg = await loadConductorConfig(shop);
-    const legacyCfg = await loadConductorConfig(legacy);
-    expect(shopCfg.machine_id).toBe('shop-id');
-    expect(shopCfg.machine_id).not.toBe(legacyCfg.machine_id);
   });
 });
 
@@ -594,7 +560,6 @@ describe('BB-218 AC-6: engine loader warns on leftover site/plugins', () => {
       ).replace('  max_parallel: 2,\n', ''),
     );
     const { warnings, result } = await capture(() => loadConductorConfig(path));
-    // machine_id legacy alias also warns (BB-353); filter to the site/plugins one.
     const siteWarn = warnings.filter((w) => /site|plugins/.test(w));
     expect(siteWarn).toHaveLength(1);
     expect(siteWarn[0]).toContain(path);
@@ -605,10 +570,11 @@ describe('BB-218 AC-6: engine loader warns on leftover site/plugins', () => {
   });
 
   it('a clean engine config (no site/plugins) emits no warning', async () => {
-    // conductor_id (not legacy machine_id) and no engine max_parallel → clean.
-    const clean = VALID.replace("  site: { base_url: 'http://web' },\n", '')
-      .replace("machine_id: 'test-machine',", "conductor_id: 'test-machine',")
-      .replace('  max_parallel: 2,\n', '');
+    // No engine max_parallel → clean.
+    const clean = VALID.replace(
+      "  site: { base_url: 'http://web' },\n",
+      '',
+    ).replace('  max_parallel: 2,\n', '');
     const { warnings } = await capture(() =>
       loadConductorConfig(writeConfig(clean)),
     );
@@ -782,7 +748,7 @@ const clientSecret = local.oauth?.client_secret;
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
 export default {
   site: { base_url: baseUrl },
-  bakers: { project: 'bakers' }, machine_id: 'test-machine', states: ['working'],
+  bakers: { project: 'bakers' }, states: ['working'],
   remote: { plugin: './plugin.js' },
   executor: slot('executor'), addons: ['@bakers-build/addon-codex'], workspace: slot('workspace'),
   plugins: [{ plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: { token_url: \`\${baseUrl}/x\`, client_id: clientId, client_secret: clientSecret } }],
@@ -1080,7 +1046,6 @@ export default {
   addons: ['@bakers-build/addon-codex'],
   workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
   bakers: { project: 'bakers' },
-  machine_id: 'test-machine',
   states: ['todo', 'working'],
 };
 `,
@@ -1104,7 +1069,6 @@ export default {
   addons: ['@bakers-build/addon-codex'],
   workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
   bakers: { project: 'bakers' },
-  machine_id: 'test-machine',
   states: ['todo', 'working'],
 };
 `,
@@ -1125,7 +1089,7 @@ export default {
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
   remote:{ plugin:'./def.js', with:{ id:'from-default' } },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1142,7 +1106,7 @@ export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machin
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
   remote:{ plugin:'./sole.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1158,7 +1122,7 @@ export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machin
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
   remote:{ plugin:'./fixture.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1188,7 +1152,7 @@ export default mkRemote;`,
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
   remote:{ plugin:'./plugin.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
     );
@@ -1278,7 +1242,7 @@ export default mkRemote;`,
     );
     const withStates = `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, machine_id:'test-machine', states:['working'],
+export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
   remote:{ plugin:'./plugin.js' },
   executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`;
     const file = join(dir, 'conductor.config.js');
@@ -1384,7 +1348,6 @@ export default {
   executor: slot('executor'),
   workspace: slot('workspace'),
   bakers: { project: 'bakers' },
-  conductor_id: 'test-machine',
 };
 `;
   const writeMachine = (body: string) => {
@@ -1562,7 +1525,6 @@ export default {
   executor: slot('executor'),
   workspace: slot('workspace'),${extraAddons ? `\n  addons: [${extraAddons}],` : ''}
   bakers: { project: 'bakers' },
-  conductor_id: 'test-machine',
 };
 `;
   const writeMachine = (body: string) => {
@@ -1711,7 +1673,6 @@ export default {
   executor: slot('executor'),
   workspace: slot('workspace'),
   bakers: { project: 'bakers' },
-  conductor_id: 'test-machine',
 };
 `;
   const writeMachine = (body: string) => {

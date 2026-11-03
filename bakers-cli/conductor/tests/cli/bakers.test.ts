@@ -74,9 +74,10 @@ function makeConfig(
     default_agent: 'claude',
     routes: { default: { '*': 'claude' } },
     workspace: fakeWorkspace(),
-    label: 'test label',
     project: 'bakers',
-    machine_id: 'test-machine',
+    machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+    machine_label: 'test-machine',
+    variant: 'conductor',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
     max_parallel: 2,
@@ -209,7 +210,7 @@ describe('bakers oven start (herdr path)', () => {
   });
 
   it('reports STARTED, with pid and host, once a fresh heartbeat arrives', async () => {
-    const remote = new HeartbeatAfterSpawnRemote({ id: 'test-machine' });
+    const remote = new HeartbeatAfterSpawnRemote({ id: 'cond-uuid' });
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
@@ -224,7 +225,7 @@ describe('bakers oven start (herdr path)', () => {
     expect(
       lines.some(
         (l) =>
-          l.includes('started conductor test-machine') &&
+          l.includes('started conductor bakers/conductor') &&
           l.includes('pid 4242') &&
           l.includes('host test-host'),
       ),
@@ -234,7 +235,7 @@ describe('bakers oven start (herdr path)', () => {
 
   it('reports ALREADY RUNNING with the live pid and heartbeat age, and never spawns', async () => {
     const remote = new HeartbeatAfterSpawnRemote({
-      id: 'test-machine',
+      id: 'cond-uuid',
       alreadyRunning: true,
     });
     const herdr = new FakeHerdrHost();
@@ -260,18 +261,18 @@ describe('bakers oven start (herdr path)', () => {
 });
 
 describe('bakers oven start --force (BB-450 D10)', () => {
-  // Must match hostKeyOf(makeConfig()) — no explicit host_key, so it falls
-  // back to the conductor_id/machine_id itself.
-  const HOST = 'test-machine';
+  // Must match makeConfig().machine_id: the row is this machine's conductor.
+  const HOST = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
   const CONDUCTOR_CMDLINE =
     'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   function runningRow(over: Partial<ConductorStatus> = {}): ConductorStatus {
     const now = Math.floor(Date.now() / 1000);
     return {
-      id: 'test-machine',
+      id: 'cond-uuid',
       project: 'bakers',
       label: 'test',
+      variant: 'conductor',
       status: 'online',
       lastSeen: now,
       load: 0,
@@ -279,7 +280,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
       leaseExpiresAt: now + 300,
       maxParallel: 1,
       lastPid: 4242,
-      hostKey: HOST,
+      machineId: HOST,
       ...over,
     };
   }
@@ -372,13 +373,13 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     expect(herdr.spawned).toHaveLength(1);
     expect(
       lines.some((l) =>
-        l.includes('stopped conductor test-machine for restart'),
+        l.includes('stopped conductor bakers/conductor for restart'),
       ),
     ).toBe(true);
     expect(
       lines.some(
         (l) =>
-          l.includes('started conductor test-machine') &&
+          l.includes('started conductor bakers/conductor') &&
           l.includes('pid 9999'),
       ),
     ).toBe(true);
@@ -431,7 +432,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     expect(
       lines.some(
         (l) =>
-          l.includes('started conductor test-machine') &&
+          l.includes('started conductor bakers/conductor') &&
           l.includes('pid 9999'),
       ),
     ).toBe(true);
@@ -504,7 +505,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
   });
 
   it('behaves as a plain start (no stop, no message) when nothing is running yet', async () => {
-    const remote = new HeartbeatAfterSpawnRemote({ id: 'test-machine' });
+    const remote = new HeartbeatAfterSpawnRemote({ id: 'cond-uuid' });
     const herdr = new FakeHerdrHost();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
@@ -519,14 +520,14 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     }
     expect(lines.some((l) => l.includes('stopped conductor'))).toBe(false);
     expect(
-      lines.some((l) => l.includes('started conductor test-machine')),
+      lines.some((l) => l.includes('started conductor bakers/conductor')),
     ).toBe(true);
     expect(process.exitCode).toBeUndefined();
   });
 
   // BB-450 AC-3 — the same-conductor-from-any-directory guarantee `stop.test.ts`
   // pins for `stop` also holds for `start`: the already-running detection reads the
-  // config's own `conductor_id`/`host_key`, never the process's cwd, so a repeated
+  // config's own machine UUID + project + variant, never the process's cwd, so a repeated
   // `start` reports the same outcome from the repository root, `.bakers/`, or a linked
   // worktree.
   it('reports the same already-running conductor from the repository root, from .bakers/, and from a linked worktree', async () => {
@@ -542,7 +543,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
       for (const dir of [repoRoot, bakersConfigDir, linkedWorktree]) {
         process.chdir(dir);
         const remote = new HeartbeatAfterSpawnRemote({
-          id: 'test-machine',
+          id: 'cond-uuid',
           alreadyRunning: true,
         });
         const herdr = new FakeHerdrHost();
@@ -598,7 +599,9 @@ class HeartbeatAfterSpawnRemote extends FakeBbRemote {
         leaseExpiresAt: now + 300,
         maxParallel: 1,
         lastPid: 4242,
-        hostKey: 'test-host',
+        variant: 'conductor',
+        machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+        machineLabel: 'test-host',
       },
     ];
   }
@@ -643,7 +646,7 @@ describe('bakers oven start — herdr seam (BB-222)', () => {
       logSpy.mockRestore();
     }
     const [call] = herdr.spawned;
-    expect(call.label).toBe('bakers-conductor:test-machine');
+    expect(call.label).toBe('bakers-conductor:bakers/conductor');
     expect(call.cwd).toBe(CHECKOUT);
     expect(call.cmd).toBe(
       'BB_CONDUCTOR_LOG=file bakers oven start --foreground --no-update-check',
@@ -718,7 +721,7 @@ describe('bakers oven start — herdr seam (BB-222)', () => {
       {},
       {
         config: makeConfig({
-          machine_id: 'pm-minipm-anerkennungsportal',
+          variant: 'anerkennungsportal',
           config_path: join(
             CHECKOUT,
             '.bakers',
@@ -735,7 +738,7 @@ describe('bakers oven start — herdr seam (BB-222)', () => {
       logSpy.mockRestore();
     }
     const [call] = herdr.spawned;
-    expect(call.label).toBe('bakers-conductor:pm-minipm-anerkennungsportal');
+    expect(call.label).toBe('bakers-conductor:bakers/anerkennungsportal');
     expect(call.cmd).toContain('--conductor anerkennungsportal');
   });
 

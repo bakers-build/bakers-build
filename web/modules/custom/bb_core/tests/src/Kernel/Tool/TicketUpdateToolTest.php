@@ -285,7 +285,6 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   private function conductor(int $project_id): ContentEntityInterface {
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => $this->randomMachineName(),
       'label' => "conductor-$project_id",
       'owner_user_id' => $this->actor->id(),
       'active' => TRUE,

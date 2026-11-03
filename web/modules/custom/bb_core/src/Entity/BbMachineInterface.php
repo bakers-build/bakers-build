@@ -23,16 +23,6 @@ interface BbMachineInterface extends BbContentEntityInterface {
   public function setName(string $name): static;
 
   /**
-   * Returns the host identity stem (machine-context machine_id).
-   */
-  public function getHostKey(): string;
-
-  /**
-   * Sets the host identity stem.
-   */
-  public function setHostKey(string $host_key): static;
-
-  /**
    * Returns the maximum concurrent runs allowed on this host.
    */
   public function getMaxParallel(): int;

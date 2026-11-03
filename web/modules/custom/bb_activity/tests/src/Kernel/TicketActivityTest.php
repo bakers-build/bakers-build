@@ -392,7 +392,6 @@ final class TicketActivityTest extends ActivityEntityKernelTestBase {
     $project = reset($projects);
     $this->assertNotFalse($project);
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => 'activity-conductor',
       'label' => 'activity-conductor',
       'owner_user_id' => $this->writer->id(),
       'status' => 'online',

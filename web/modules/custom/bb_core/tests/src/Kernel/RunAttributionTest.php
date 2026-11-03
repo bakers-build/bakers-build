@@ -207,7 +207,7 @@ final class RunAttributionTest extends KernelTestBase {
    */
   private function createConductor(UserInterface $owner, ?int $projectId = -1): BbConductorInterface {
     $values = [
-      'conductor_id' => 'node-' . $owner->getAccountName(),
+      'label' => 'node-' . $owner->getAccountName(),
       'owner_user_id' => $owner->id(),
       'states' => ['coding'],
     ];

@@ -45,7 +45,6 @@ final class TicketTemplateRunToolTest extends BakersToolTestBase {
     $template = $this->template();
     $label = $this->term('label', 'nightly');
     $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
-      'conductor_id' => 'node-a',
       'label' => 'node-a',
       'owner_user_id' => $this->actor->id(),
       'status' => 'online',

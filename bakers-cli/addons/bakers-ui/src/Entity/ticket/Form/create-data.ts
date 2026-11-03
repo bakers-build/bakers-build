@@ -50,7 +50,7 @@ export { parentLabel } from './parent-source.js';
 /** Hints from the launcher used to preselect the machine's own user + conductor. */
 export interface CreateFormHints {
   currentUser?: string | undefined;
-  ownConductorMachineId?: string | undefined;
+  ownConductorId?: string | undefined;
   /**
    * The project the parent candidates are scoped to (BB-257 D8).
    *
@@ -122,12 +122,9 @@ const termSource = (
  */
 export function conductorOptionSource(
   client: DropshClient,
-  hints: Pick<
-    CreateFormHints,
-    'projectId' | 'ownerUserId' | 'ownConductorMachineId'
-  >,
+  hints: Pick<CreateFormHints, 'projectId' | 'ownerUserId' | 'ownConductorId'>,
 ): OptionSource {
-  const { projectId, ownerUserId, ownConductorMachineId } = hints;
+  const { projectId, ownerUserId, ownConductorId } = hints;
   return {
     bag: 'conductors',
     async load() {
@@ -148,8 +145,8 @@ export function conductorOptionSource(
       const byOwner = ownerUserId
         ? ownFirst(assignable, (c) => c.ownerUserId === ownerUserId)
         : assignable;
-      const rows = ownConductorMachineId
-        ? ownFirst(byOwner, (c) => c.machineId === ownConductorMachineId)
+      const rows = ownConductorId
+        ? ownFirst(byOwner, (c) => c.id === ownConductorId)
         : byOwner;
       return { options: rows.map(toOption), error: outcome.error };
     },
@@ -202,13 +199,8 @@ export function createFormSources(
   client: DropshClient,
   hints: CreateFormHints = {},
 ): OptionSources {
-  const {
-    currentUser,
-    ownConductorMachineId,
-    ownerUserId,
-    projectId,
-    workspaceId,
-  } = hints;
+  const { currentUser, ownConductorId, ownerUserId, projectId, workspaceId } =
+    hints;
   const sources: Record<string, OptionSource> = {
     assignee: {
       bag: 'users',
@@ -233,7 +225,7 @@ export function createFormSources(
     conductor: conductorOptionSource(client, {
       projectId,
       ownerUserId,
-      ownConductorMachineId,
+      ownConductorId,
     }),
     ticketType: termSource(client, 'ticketTypes', TYPE_VOCABULARY),
     recipe: termSource(client, 'recipes', RECIPE_VOCABULARY),

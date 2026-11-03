@@ -89,7 +89,7 @@ export class ProjectConductorsScreen extends ListScreen<
     const client = context.services.client;
     const host =
       context.services.conductorProcess ?? createConductorProcessHost();
-    const thisHostKey = await host.thisHostKey();
+    const thisMachineId = await host.thisMachineId();
     this.ownerId = undefined;
     this.identityReason = '';
     if (this.mine) {
@@ -109,7 +109,7 @@ export class ProjectConductorsScreen extends ListScreen<
     const rowCtx = {
       now: context.nowSeconds?.() ?? Math.floor(Date.now() / 1000),
       exists: existsSync,
-      thisHostKey,
+      thisMachineId,
     };
     const rows = await listConductorRowPage(client, rowCtx, query, page);
     // AC-2 — the difference of two SERVER totals, never of two row counts: a
@@ -280,11 +280,11 @@ export class ProjectConductorsScreen extends ListScreen<
           ? host.start({
               workspaceRoot: row.workspaceRoot,
               conductorName: row.conductorName,
-              hostKey: row.hostKey,
+              machineId: row.machineId,
             })
           : host.stop({
               pid: row.lastPid,
-              hostKey: row.hostKey,
+              machineId: row.machineId,
             }),
       refresh: (ctx) => this.reload(ctx),
       setStatus: (status) => {

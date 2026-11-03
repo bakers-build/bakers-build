@@ -7,7 +7,7 @@ Feature: Label relationships and conductor states
     When the API client creates a "bb_work" ticket in "home" as "ticket"
     And the API client sends "POST" to "/jsonapi/bb_conductor/bb_conductor":
       """
-      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"conductor_id":"bdd-taxonomy-{saved.ticket}","label":"BDD taxonomy","states":["plan"]},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.conductor-owner}"}}}}}
+      {"data":{"type":"bb_conductor--bb_conductor","attributes":{"label":"BDD taxonomy","states":["plan"]},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"owner_user_id":{"data":{"type":"user--user","id":"{user.conductor-owner}"}}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"

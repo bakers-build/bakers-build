@@ -82,7 +82,6 @@ final class AssigneeFromConductorTest extends KernelTestBase {
     $conductor = $this->container->get('entity_type.manager')
       ->getStorage('bb_conductor')
       ->create([
-        'conductor_id' => $machine_id,
         'label' => $machine_id,
         // 0 is anonymous, i.e. "no owner": BB-305 made owner_user_id the
         // entity's owner key and core stores an entity-key column NOT NULL.

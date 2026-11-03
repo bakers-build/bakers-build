@@ -98,3 +98,4 @@ hidden:
   node_states_label: true
   node_status: true
   search_api_excerpt: true
+  variant: true

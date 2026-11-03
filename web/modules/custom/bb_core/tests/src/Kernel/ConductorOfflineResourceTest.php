@@ -233,10 +233,11 @@ final class ConductorOfflineResourceTest extends KernelTestBase {
   /**
    * Creates an online conductor with a nonzero reported load.
    */
-  private function onlineConductor(UserInterface $owner, string $conductorId): BbConductorInterface {
+  private function onlineConductor(UserInterface $owner, string $variant): BbConductorInterface {
     return $this->container->get('bb_core.conductor_registrar')->heartbeat($owner, [
-      'conductor_id' => $conductorId,
-      'host_key' => 'host-' . $conductorId,
+      'machine_id' => $this->container->get('uuid')->generate(),
+      'machine_label' => 'host-' . $variant,
+      'variant' => $variant,
       'project' => 'default-project',
       'current_load' => 2,
     ]);

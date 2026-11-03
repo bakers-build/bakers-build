@@ -15,20 +15,17 @@ const res = (id: string, attrs: Record<string, unknown>): Resource =>
 /** The bundle this popup offers as its labels (D3) — the fixture key it needs. */
 const LABELS = 'bb_term/label';
 
-it('preselects the own user (by name) and own conductor (by machine_id)', async () => {
+it('preselects the own user (by name) and own conductor (by its UUID)', async () => {
   const client = fakeClient({
     rows: {
       user: [res('u1', { name: 'other' }), res('u2', { name: 'cw' })],
-      bb_conductor: [
-        res('c1', { machine_id: 'm1', label: 'one' }),
-        res('c2', { machine_id: 'mine', label: 'mine' }),
-      ],
+      bb_conductor: [res('c1', { label: 'one' }), res('c2', { label: 'mine' })],
       [LABELS]: [res('l1', { name: 'bug' })],
     },
   });
   const opts = await loadCreateFormOptions(client, {
     currentUser: 'cw',
-    ownConductorMachineId: 'mine',
+    ownConductorId: 'c2',
     // BB-664 F4: the conductor source needs a project in scope now.
     projectId: 'p1',
   });
@@ -95,20 +92,20 @@ it('own-first matches the machine`s user by UUID too, not only by username', asy
   ).toEqual(['u2', 'u0', 'u1']);
 });
 
-it('own-first orders conductors by machine_id and leaves the rest in server order', async () => {
+it('own-first orders conductors by UUID and leaves the rest in server order', async () => {
   const client = fakeClient({
     rows: {
       bb_conductor: [
-        res('c1', { machine_id: 'm1', label: 'one' }),
-        res('c2', { machine_id: 'mine', label: 'mine' }),
-        res('c3', { machine_id: 'm3', label: 'three' }),
+        res('c1', { label: 'one' }),
+        res('c2', { label: 'mine' }),
+        res('c3', { label: 'three' }),
       ],
     },
   });
   expect(
     (
       await loadCreateFormOptions(client, {
-        ownConductorMachineId: 'mine',
+        ownConductorId: 'c2',
         projectId: 'p1',
       })
     ).conductors.map((c) => c.id),
@@ -123,7 +120,7 @@ it('own-first orders conductors by machine_id and leaves the rest in server orde
 
 it('D16 (BB-664 F4): without a project id the conductor ring is empty, not every conductor', async () => {
   const client = fakeClient({
-    rows: { bb_conductor: [res('c1', { machine_id: 'm1', label: 'one' })] },
+    rows: { bb_conductor: [res('c1', { label: 'one' })] },
   });
   const opts = await loadCreateFormOptions(client);
   expect(opts.conductors).toEqual([]);
@@ -169,7 +166,6 @@ it('every option is a PLAIN `{id, label}` — no status suffix, nothing else', a
         res('c1', {
           label: 'cw-framework',
           status: 'running',
-          machine_id: 'm1',
         }),
       ],
       [LABELS]: [res('t1', { name: 'bug' })],
@@ -371,11 +367,11 @@ it('AC-4: every bag failing at once reports every bag, not one collapse', async 
 });
 
 it('orders conductors owner-first, this checkout ahead of my others (AC-14)', async () => {
-  const conductor = (id: string, machineId: string, owner: string | null) =>
+  const conductor = (id: string, owner: string | null) =>
     toResource({
       type: 'bb_conductor--bb_conductor',
       id,
-      attributes: { label: id, conductor_id: machineId },
+      attributes: { label: id },
       relationships: {
         owner_user_id: { data: owner === null ? null : { id: owner } },
       },
@@ -383,17 +379,17 @@ it('orders conductors owner-first, this checkout ahead of my others (AC-14)', as
   const client = fakeClient({
     rows: {
       bb_conductor: [
-        conductor('tom', 'tom-mac-bakers', 'user-tm'),
-        conductor('mine-elsewhere', 'cw-laptop-bakers', 'user-cw'),
-        conductor('nobody', 'x-y-z', null),
-        conductor('mine-here', 'cw-fw-bakers', 'user-cw'),
+        conductor('tom', 'user-tm'),
+        conductor('mine-elsewhere', 'user-cw'),
+        conductor('nobody', null),
+        conductor('mine-here', 'user-cw'),
       ],
     },
   });
   const options = await loadCreateFormOptions(client, {
     currentUser: 'cw',
     ownerUserId: 'user-cw',
-    ownConductorMachineId: 'cw-fw-bakers',
+    ownConductorId: 'mine-here',
     projectId: 'p1',
   });
   expect(options.conductors.map((c) => c.id)).toEqual([
@@ -538,7 +534,7 @@ it('conductorOptionSource is the same read createFormSources composes, callable 
     '../../../../src/Entity/ticket/Form/create-data.js'
   );
   const client = fakeClient({
-    rows: { bb_conductor: [res('c1', { machine_id: 'm1', label: 'one' })] },
+    rows: { bb_conductor: [res('c1', { label: 'one' })] },
   });
   expect(await conductorOptionSource(client, {}).load('')).toEqual({
     options: [],
