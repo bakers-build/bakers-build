@@ -317,7 +317,8 @@ final class TicketActionFormTest extends KernelTestBase {
   public function testFreezeTicketIsConfirmed(): void {
     $ticket = $this->ticket('bb_work', 'working');
     $this->askFreeze(TRUE);
-    $this->actionForm($ticket);
+    $form = $this->actionForm($ticket);
+    self::assertStringContainsString('Its active run is ended.', (string) $form['question']['#slots']['body']['#plain_text'], 'The dialog names the consequence.');
     self::assertFalse($this->reload($ticket)->isFrozen(), 'The confirmation page writes nothing.');
 
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
