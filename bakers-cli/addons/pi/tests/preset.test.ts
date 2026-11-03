@@ -14,4 +14,9 @@ describe('pi catalog', () => {
       { model: 'custom-model' },
     ]);
   });
+  it('rejects sandbox mode passed through addon options', () => {
+    expect(() => agents([], { security: 'sandbox' })).toThrow(
+      "Pi does not support security: 'sandbox'",
+    );
+  });
 });

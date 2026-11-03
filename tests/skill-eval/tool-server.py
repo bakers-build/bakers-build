@@ -210,6 +210,9 @@ class Simulation:
             return result(error='Undeclared fixture command', code=2)
         if name == 'read_file':
             path = arguments.get('path')
+            # A worktree-relative ./ names the same file, as on a real filesystem.
+            if isinstance(path, str) and path.startswith('./'):
+                path = path[2:]
             if path not in self.files:
                 return result(error='No such virtual fixture file', code=2)
             return result(self.files[path])
