@@ -24,13 +24,11 @@ as another; label `technical problem`.
 Please contact keytec.
 ```
 
-In `working`, write a missing `plan` or `test` as [plan](../bb-workflow/references/plan.md) does,
-with `Approval: ticket:pingpong`; the label confirms the `spec`. At a GREEN
-[coding gate](../bb-workflow/references/coding-gate.md), ask instead for the user's one
-**acceptance**: a user question for a non-technical reader with only what changed, how to check it
-and one link, the tunnel link from [preview links](../bb-workflow/references/preview-links.md) or,
-if nothing runs, the merge request. Work requested changes and ask again; once accepted, GREEN
-transitions to `review`.
+In `working`, at a GREEN [coding gate](../bb-workflow/references/coding-gate.md), ask instead for
+the user's one **acceptance**: a user question for a non-technical reader with only what changed,
+how to check it and one link, the tunnel link from
+[preview links](../bb-workflow/references/preview-links.md) or, if nothing runs, the merge request.
+Work requested changes and ask again; once accepted, GREEN transitions to `review`.
 
 In [review](../bb-workflow/references/review.md), the verdict needs no confirmation. `OK` merges and
 transitions to `done` once the ticket holds the user's acceptance; otherwise ask for it. `Not OK`,
