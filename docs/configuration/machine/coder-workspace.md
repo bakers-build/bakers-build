@@ -119,7 +119,7 @@ Host <name>.coder
 
 ## After a workspace restart
 
-Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and DDEV projects do not come back by themselves. Run `ddev start` and `bakers oven start --foreground` again in each checkout, in a herdr tab, and share a preview again with `bakers ports up`.
+Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. DDEV projects do not come back by themselves, and conductors only with the workspace parameter `conductor_autostart` on (the template README's *Conductor autostart*). Otherwise run `bakers oven start --foreground` again in each checkout, in a herdr tab. Run `ddev start` where you need a site, and share a preview again with `bakers ports up`.
 
 ## Update a tool
 
