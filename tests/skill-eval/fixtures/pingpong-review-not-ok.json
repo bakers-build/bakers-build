@@ -103,7 +103,7 @@
     },
     {
       "id": "no-merge",
-      "criterion": "The final answer reports no merge and no question."
+      "criterion": "Nothing in the final answer claims a merge or a question put to anyone."
     }
   ]
 }

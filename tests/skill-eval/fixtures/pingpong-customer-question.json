@@ -89,7 +89,7 @@
     },
     {
       "id": "content-only",
-      "criterion": "The final answer shows the question is about what the export contains: it asks nothing technical and picks no answer itself."
+      "criterion": "The final answer shows the question is about what the export contains: it asks nothing technical and leaves the choice to the customer, a recommended option being allowed."
     }
   ]
 }
