@@ -23,7 +23,7 @@ field, a provision hint or a subagent start selects. Exactly sixteen ship:
 | `@bakers-build/bb-pingpong` | Loaded by the `WORKFLOW.md` entry line for a ticket labelled `pingpong` in `working` or `review`: it carries the ticket to `done` on its own, asks the user only content questions and one acceptance, and refers technical problems to the developers. |
 | `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
 | `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, change its scope, prepare time proposals. |
-| `@bakers-build/bb-project-manager` | Specify a new request with its requester and hand the ticket over as `ticket:pingpong`, in any host. |
+| `@bakers-build/bb-project-manager` | Specify a new request with its requester and hand the ticket over as `pingpong`, in any host. |
 
 **The grid.** A run is state × phase. `qualification`, `plan`, `working` and `review` each have a
 state file under `skills/bb-workflow/references/` with exactly seven `## <phase>` sections, which

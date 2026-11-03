@@ -36,7 +36,6 @@ are term names, reused or created.
 
 | Operation | Tool | Arguments | Result |
 |---|---|---|---|
-| Read your user | `bakers_user_read` | none | `uuid`, `name`, `position`, `background`; empty where unset |
 | Read a ticket | `bakers_ticket_read` | `ticket` | `id`, `identifier`, `title`, `state`, `workflow`, `description`, `type`, `recipe`, `labels`, `links`, `project`, `branch_name`, `base_branch`, `conductor`, `frozen`, `metrics`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
 | Search tickets | `bakers_ticket_search` | `query` (title or description) or exact `branch_name`; optional `project` | `tickets` (`identifier`, `title`, `state`, `type`, `branch_name`, `base_branch`, `parent`); newest first, at most 50 |
 | Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name` | `id`, `identifier`, initial `state`, `branch_name` |
@@ -47,4 +46,4 @@ are term names, reused or created.
 | Cancel runs | `bakers_run_cancel` | `ticket`, `reason` | `runs`: all active, or none |
 | Record a measurement | `bakers_metric_write` | `ticket`, `name`, `rows` (`[{name, value, unit}]`), optional `label` | all metric rows; rows outside `<name>.` kept |
 
-Workspace, project, conductor, label, template, run, activity and time tools: [lookups](tools-lookup.md).
+User, workspace, project, conductor, label, template, run, activity and time tools: [lookups](tools-lookup.md).
