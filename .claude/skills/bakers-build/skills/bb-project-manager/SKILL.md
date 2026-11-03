@@ -16,8 +16,11 @@ summary of what changes, the acceptance criteria and what stays out. Nobody else
 the first of several separate wishes; each other one is a new request. If the requester drops the
 wish, cancel the ticket.
 
-After the yes, publish the `qualification` from its [template](references/handoff.md), then the
-`spec` with brainstorming's design, the AC IDs and last `Approved by <name> (<identity>).` Then
-hand the ticket over: set type and recipe as in the qualification, move it to `working`, and last
-add the label `ticket:pingpong` and the host's conductor, if any. Reply
-`Work on <identifier> starts.`
+After the yes, publish the `qualification`: the acceptance criteria as `AC1`, `AC2`, ... ("As a
+<role>, I want ..., so that ..."), what stays out, and a table of `recipe` `superpowers`,
+`ticket_type` (`feature`, `bug` or `chore`), `reproduction` (`not_required` unless a bug),
+`scenario_required` (`true` only for a browser path), `test_as` (who tests, or `no login needed`)
+and `handoff_version` `1`. Then publish the `spec` with brainstorming's design, the AC IDs and last
+`Approved by <name> (<identity>).` Then hand the ticket over: set type and recipe as in the
+qualification, move it to `working`, and last add the label `ticket:pingpong` and the host's
+conductor, if any. Reply `Work on <identifier> starts.`
