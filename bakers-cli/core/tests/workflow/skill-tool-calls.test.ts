@@ -844,30 +844,30 @@ describe('failed-fetch reporting', () => {
   });
 });
 
+// Calls run through the simulator, so the graded results are the simulator's.
+async function simulatedTrace(id: string, steps: Array<[string, unknown]>) {
+  const { fixture, profile } = await fixtureData(id);
+  const argvs = steps.map(([tool, args]) => [
+    'bakers',
+    'tools',
+    `tool_api__${tool}`,
+    '--data',
+    JSON.stringify(args),
+  ]);
+  const results = await runSimulator(
+    fixture.simulation,
+    argvs.map((argv) => ({ name: 'bakers', arguments: { argv } })),
+  );
+  const trace = argvs.map((argv, i) => ({
+    tool: 'bakers',
+    arguments: { argv },
+    result: results[i],
+  }));
+  const grade = (output: string, rows: unknown[] = trace) =>
+    failing(profile.checkOutput(fixture, output, { tool_trace: rows }));
+  return { grade, trace };
+}
 describe('answers to a ticket question', () => {
-  // Calls run through the simulator, so the graded results are the simulator's.
-  async function answerTrace(id: string, steps: Array<[string, unknown]>) {
-    const { fixture, profile } = await fixtureData(id);
-    const argvs = steps.map(([tool, args]) => [
-      'bakers',
-      'tools',
-      `tool_api__${tool}`,
-      '--data',
-      JSON.stringify(args),
-    ]);
-    const results = await runSimulator(
-      fixture.simulation,
-      argvs.map((argv) => ({ name: 'bakers', arguments: { argv } })),
-    );
-    const trace = argvs.map((argv, i) => ({
-      tool: 'bakers',
-      arguments: { argv },
-      result: results[i],
-    }));
-    const grade = (output: string, rows: unknown[] = trace) =>
-      failing(profile.checkOutput(fixture, output, { tool_trace: rows }));
-    return { grade, trace };
-  }
   const read: [string, unknown] = ['bakers_ticket_read', { ticket: 'EVAL-30' }];
   const answer = (body: string): [string, unknown] => [
     'bakers_comment_publish',
@@ -882,7 +882,7 @@ describe('answers to a ticket question', () => {
   );
 
   it('passes an answer on as one named comment, then labels_remove and frozen false', async () => {
-    const { grade, trace } = await answerTrace('ticket-answer-calls', [
+    const { grade, trace } = await simulatedTrace('ticket-answer-calls', [
       read,
       jonas,
       unfreeze(),
@@ -892,7 +892,7 @@ describe('answers to a ticket question', () => {
       'answer-passed-on',
     );
     expect(grade('Passed on.', trace.slice(1))).toContain('read-first');
-    const requester = await answerTrace('ticket-answer-calls', [
+    const requester = await simulatedTrace('ticket-answer-calls', [
       read,
       answer(
         'Answered by Mara Lind (U-MARA):\n\nLeave cancelled invoices out.\n',
@@ -900,7 +900,7 @@ describe('answers to a ticket question', () => {
       unfreeze(),
     ]);
     expect(requester.grade('Passed on.')).toContain('answer-passed-on');
-    const stillFrozen = await answerTrace('ticket-answer-calls', [
+    const stillFrozen = await simulatedTrace('ticket-answer-calls', [
       read,
       jonas,
       [
@@ -909,7 +909,7 @@ describe('answers to a ticket question', () => {
       ],
     ]);
     expect(stillFrozen.grade('Passed on.')).toContain('answer-passed-on');
-    const extra = await answerTrace('ticket-answer-calls', [
+    const extra = await simulatedTrace('ticket-answer-calls', [
       read,
       jonas,
       unfreeze({ title: 'Renamed' }),
@@ -923,17 +923,17 @@ describe('answers to a ticket question', () => {
       'ticket-answer-merge-main',
       'ticket-answer-merge-untargeted',
     ]) {
-      const held = await answerTrace(id, [read]);
+      const held = await simulatedTrace(id, [read]);
       expect(held.grade('Nothing passed on.')).toEqual([]);
-      const written = await answerTrace(id, [read, jonas, unfreeze()]);
+      const written = await simulatedTrace(id, [read, jonas, unfreeze()]);
       expect(written.grade('Passed on.')).toContain('nothing-passed-on');
     }
-    const technical = await answerTrace('ticket-answer-technical', [read]);
+    const technical = await simulatedTrace('ticket-answer-technical', [read]);
     expect(technical.grade('A technical problem; keytec solves it.')).toEqual(
       [],
     );
     expect(technical.grade('A technical problem.')).toEqual(['reply-names']);
-    const merge = await answerTrace('ticket-answer-merge', [
+    const merge = await simulatedTrace('ticket-answer-merge', [
       read,
       answer('Answered by Jonas Berg (U-JONAS):\n\nYes, merge it.\n'),
       unfreeze(),
@@ -942,10 +942,105 @@ describe('answers to a ticket question', () => {
   });
 
   it('calls only the seven bakers tools the skill names', async () => {
-    const { grade } = await answerTrace('ticket-answer-settled', [
+    const { grade } = await simulatedTrace('ticket-answer-settled', [
       read,
       ['bakers_ticket_runs_list', { ticket: 'EVAL-30' }],
     ]);
     expect(grade('Settled.')).toContain('seven-tools');
+  });
+});
+
+describe('hand-over of a specified ticket', () => {
+  const qualification = [
+    '## Acceptance',
+    '- **AC1:** As an operator, I want an Export CSV button.',
+    '## Out of scope',
+    '- PDF export',
+    '| `handoff_version` | `1` |',
+    '| `provenance` | title and description as read; approved by Mara Lind (U-MARA) |',
+  ].join('\n');
+  const steps = (
+    changes: { classify?: object; spec?: string; body?: string } = {},
+  ): Array<[string, unknown]> => [
+    [
+      'bakers_comment_publish',
+      {
+        ticket: 'EVAL-31',
+        type: 'qualification',
+        body: changes.body ?? qualification,
+      },
+    ],
+    [
+      'bakers_comment_publish',
+      {
+        ticket: 'EVAL-31',
+        type: 'spec',
+        body:
+          changes.spec ??
+          '## Acceptance criteria\n\nAC1\n\nApproved by Mara Lind (U-MARA).\n',
+      },
+    ],
+    [
+      'bakers_ticket_classify',
+      {
+        ticket: 'EVAL-31',
+        type: 'feature',
+        recipe: 'superpowers',
+        ...changes.classify,
+      },
+    ],
+    ['bakers_ticket_transition', { ticket: 'EVAL-31', state: 'working' }],
+    [
+      'bakers_ticket_update',
+      {
+        ticket: 'EVAL-31',
+        labels_add: ['ticket:pingpong'],
+        conductor: '44444444-4444-4444-8444-444444444444',
+      },
+    ],
+  ];
+
+  it('publishes qualification and spec, then classifies, moves to working and adds ticket:pingpong', async () => {
+    const { grade, trace } = await simulatedTrace(
+      'ticket-specify-handover',
+      steps(),
+    );
+    expect(grade('Work on EVAL-31 starts.')).toEqual([]);
+    expect(
+      grade('Work on EVAL-31 starts.', [
+        trace[0],
+        trace[1],
+        trace[3],
+        trace[2],
+        trace[4],
+      ]),
+    ).toContain('handover-order');
+    const matt = await simulatedTrace(
+      'ticket-specify-handover',
+      steps({ classify: { recipe: 'matt' } }),
+    );
+    expect(matt.grade('Work on EVAL-31 starts.')).toContain(
+      'handover-arguments',
+    );
+    const hashed = await simulatedTrace(
+      'ticket-specify-handover',
+      steps({ body: `${qualification}\n${'a'.repeat(64)}` }),
+    );
+    expect(hashed.grade('Work on EVAL-31 starts.')).toContain('handoff-fields');
+    const unsigned = await simulatedTrace(
+      'ticket-specify-handover',
+      steps({ spec: '## Acceptance criteria\n\nAC1\n' }),
+    );
+    expect(unsigned.grade('Work on EVAL-31 starts.')).toContain('spec-content');
+  });
+
+  it("changes nothing on another person's approval, without any call", async () => {
+    const { grade } = await simulatedTrace('ticket-specify-other-approval', []);
+    expect(grade('Only Mara can approve.')).toEqual([]);
+    const handed = await simulatedTrace(
+      'ticket-specify-other-approval',
+      steps(),
+    );
+    expect(handed.grade('Work starts.')).toContain('nothing-handed-over');
   });
 });
