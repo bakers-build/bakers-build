@@ -252,6 +252,18 @@ describe('ticket pingpong profile', () => {
     expect(
       await judge(p, 'Stopped.', [readTicket(), problem, reported]),
     ).toEqual(['pingpong-cause-recorded']);
+    // Only the exact heading is the keytec note; a longer heading is an ordinary comment.
+    expect(
+      await judge(p, 'Stopped.', [
+        readTicket(),
+        comment(
+          'comment',
+          '# Technical problem details\n\n```\nCannot connect to the Docker daemon at unix:///var/run/docker.sock.\n```',
+        ),
+        problem,
+        reported,
+      ]),
+    ).toEqual([]);
     // The error output itself, not just a note that something failed.
     expect(
       await judge(p, 'Stopped.', [
@@ -294,6 +306,17 @@ describe('ticket pingpong profile', () => {
     expect(await judge(done, 'Merged.', [...passed, merged])).toEqual([
       'pingpong-transition',
     ]);
+    // Merge's caller handoff may append its evidence as a second verdict with the same status.
+    const addendum = [merged, verdict('OK'), summary, transition('done')];
+    expect(await judge(done, 'Merged.', [...passed, ...addendum])).toEqual([]);
+    expect(
+      await judge(done, 'Merged.', [
+        ...passed,
+        merged,
+        verdict('Not OK'),
+        transition('done'),
+      ]),
+    ).toEqual(['pingpong-review-status']);
     // Any other run merges nothing; an undeclared command leaves the call surface too.
     expect(
       await judge(notOk, 'Back.', [

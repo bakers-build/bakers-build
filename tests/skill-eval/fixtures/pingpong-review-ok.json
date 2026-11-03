@@ -118,6 +118,11 @@
           ],
           "result": {
             "exit_code": 0,
+            "stdout": "dddddddddddddddddddddddddddddddddddddddd\n",
+            "stderr": ""
+          },
+          "before_merge": {
+            "exit_code": 0,
             "stdout": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
             "stderr": ""
           }

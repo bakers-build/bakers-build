@@ -30,7 +30,8 @@ function analyze(f, output, context) {
   const of = id => sent.filter(c => c.name === tool(id));
   const comments = of('bakers_comment_publish'), updates = of('bakers_ticket_update');
   const states = of('bakers_ticket_transition').filter(c => arg(c, 'state'));
-  const headed = heading => comments.filter(c => new RegExp(`^\\s*# ${heading}\\b`).test(arg(c, 'body') ?? ''));
+  // The heading is the comment's whole first line: `# Technical problem details` is an ordinary comment.
+  const headed = heading => comments.filter(c => new RegExp(`^\\s*# ${heading}[ \\t]*(\\n|$)`).test(arg(c, 'body') ?? ''));
   const labelled = label => updates.filter(c => (arg(c, 'labels_add') ?? []).includes(label));
   // One comment under the heading, then one succeeded update adding the label and freezing the ticket.
   const raised = (heading, label) => {
@@ -64,9 +65,10 @@ function analyze(f, output, context) {
   ];
   if (e.review_status) {
     const reviews = comments.filter(c => arg(c, 'type') === 'review');
-    checks.push(check('pingpong-review-status', reviews.length === 1 &&
-      String(arg(reviews[0], 'body')).split('\n').some(l => l.trim() === `Status: **${e.review_status}**`),
-    `Publish one review verdict with Status: **${e.review_status}**`));
+    // Merge's caller handoff may append its evidence as a further verdict; each keeps the status.
+    checks.push(check('pingpong-review-status', reviews.length > 0 &&
+      reviews.every(r => String(arg(r, 'body')).split('\n').some(l => l.trim() === `Status: **${e.review_status}**`)),
+    `Publish the review verdict with Status: **${e.review_status}**`));
   }
   if (e.decision) {
     checks.push(check('pingpong-decision', output.includes('Decisions') && output.includes(e.decision),
