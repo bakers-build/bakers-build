@@ -9,11 +9,12 @@
 # Asserts:
 #   - no bot parameter set: one "no bot configured" line, compose down, no up
 #   - a missing required parameter or template variable is named
-#   - exactly one model credential; UUIDs, URLs, the image pin and Slack ID
-#     lists are checked; lists separated by commas, spaces or both become one
+#   - exactly one model credential; UUIDs, URLs, the image pin, the bakers.build
+#     API key and Slack ID lists are checked; lists separated by commas, spaces or both become one
 #     comma list
 #   - a complete configuration writes the env file (mode 600, every key the
-#     container reads, no repository or registry token), refreshes the
+#     container reads, the API key as BAKERS_API_KEY and no OAuth client keys,
+#     no repository or registry token), refreshes the
 #     secret-free clone, logs in to the registry with the token on stdin only
 #     and brings the compose project up with the pinned image
 #   - empty allowed users serve everyone; a list serves only those users
@@ -74,11 +75,11 @@ IMAGE="registry.example.test:5050/bakers/pm-bot:abc123@$DIGEST"
 # Secrets: unique values, so a leak is found by a plain grep.
 BOT_TOKEN=xoxb-secret-bot-4711
 APP_TOKEN=xapp-secret-app-4712
-CLIENT_SECRET=client-secret-4713
+BAKERS_KEY=bb-api-key-secret-4713
 API_KEY=sk-ant-secret-4714
 REPO_TOKEN=repo-token-secret-4715
 REGISTRY_TOKEN=registry-token-secret-4716
-SECRETS=("$BOT_TOKEN" "$APP_TOKEN" "$CLIENT_SECRET" "$API_KEY" "$REPO_TOKEN" "$REGISTRY_TOKEN")
+SECRETS=("$BOT_TOKEN" "$APP_TOKEN" "$BAKERS_KEY" "$API_KEY" "$REPO_TOKEN" "$REGISTRY_TOKEN")
 
 # A fresh home per case. Sets R; run sets OUT and STATUS.
 R=""
@@ -92,7 +93,7 @@ CLONE() { echo "$R/.pm-bot/clone"; }
 
 # Every PM_BOT_* variable starts empty; a case sets the ones it needs.
 PARAMS=(SLACK_BOT_TOKEN SLACK_APP_TOKEN SLACK_ALLOWED_CHANNELS SLACK_ALLOWED_USERS SLACK_ADMIN_USERS
-  SLACK_WORKSPACE_URL SLACK_HOME_CHANNEL BAKERS_URL BAKERS_CLIENT_ID BAKERS_CLIENT_SECRET PROJECT
+  SLACK_WORKSPACE_URL SLACK_HOME_CHANNEL BAKERS_URL BAKERS_API_KEY PROJECT
   TICKET_WORKFLOW CONDUCTOR ANTHROPIC_API_KEY CLAUDE_OAUTH_TOKEN MODEL REPO_URL REPO_USER REPO_TOKEN
   IMAGE REGISTRY_USER REGISTRY_TOKEN)
 
@@ -114,8 +115,8 @@ FULL=(
   PM_BOT_SLACK_BOT_TOKEN="$BOT_TOKEN" PM_BOT_SLACK_APP_TOKEN="$APP_TOKEN"
   PM_BOT_SLACK_ALLOWED_CHANNELS="C0000000001" PM_BOT_SLACK_ADMIN_USERS="U0000000009"
   PM_BOT_SLACK_WORKSPACE_URL="https://example.slack.com"
-  PM_BOT_BAKERS_URL="https://bakers.example.test" PM_BOT_BAKERS_CLIENT_ID="bakers-key-test"
-  PM_BOT_BAKERS_CLIENT_SECRET="$CLIENT_SECRET" PM_BOT_PROJECT="00000000-0000-4000-8000-000000000000"
+  PM_BOT_BAKERS_URL="https://bakers.example.test" PM_BOT_BAKERS_API_KEY="$BAKERS_KEY"
+  PM_BOT_PROJECT="00000000-0000-4000-8000-000000000000"
   PM_BOT_TICKET_WORKFLOW=bb_work PM_BOT_MODEL=claude-sonnet-5-5 PM_BOT_ANTHROPIC_API_KEY="$API_KEY"
   PM_BOT_IMAGE="$IMAGE" PM_BOT_REGISTRY_USER=deploy PM_BOT_REGISTRY_TOKEN="$REGISTRY_TOKEN"
 )
@@ -155,7 +156,7 @@ pass "no bot parameter set: no bot configured, down, no up"
 # --- 2. Missing parameters ----------------------------------------------------
 fresh missing
 run PM_BOT_SLACK_BOT_TOKEN="$BOT_TOKEN" PM_BOT_TICKET_WORKFLOW=bb_work PM_BOT_MODEL=claude-sonnet-5-5
-expect_skip missing "missing parameters: pm_bot_slack_app_token pm_bot_slack_allowed_channels pm_bot_slack_admin_users pm_bot_slack_workspace_url pm_bot_bakers_url pm_bot_bakers_client_id pm_bot_bakers_client_secret pm_bot_project pm_bot_image (template variable)"
+expect_skip missing "missing parameters: pm_bot_slack_app_token pm_bot_slack_allowed_channels pm_bot_slack_admin_users pm_bot_slack_workspace_url pm_bot_bakers_url pm_bot_bakers_api_key pm_bot_project pm_bot_image (template variable)"
 no_leak missing
 fresh noimage
 run "${FULL[@]}" PM_BOT_IMAGE=
@@ -187,12 +188,13 @@ check_value admins "pm_bot_slack_admin_users must list Slack IDs" "PM_BOT_SLACK_
 check_value home "pm_bot_slack_home_channel must be a Slack ID" "PM_BOT_SLACK_HOME_CHANNEL=C01 C02"
 check_value slackurl "pm_bot_slack_workspace_url must be an https:// URL" PM_BOT_SLACK_WORKSPACE_URL=example.slack.com
 check_value bakersurl "pm_bot_bakers_url must be an https:// or http:// URL" PM_BOT_BAKERS_URL=bakers.example.test
-check_value unsafe "pm_bot_bakers_client_id may hold only" "PM_BOT_BAKERS_CLIENT_ID=a\"b"
+check_value unsafe "pm_bot_ticket_workflow may hold only" "PM_BOT_TICKET_WORKFLOW=a\"b"
+check_value keyspace "pm_bot_bakers_api_key must be one word" "PM_BOT_BAKERS_API_KEY=bb key 4713"
 check_value tagonly "pm_bot_image must name its digest" "PM_BOT_IMAGE=registry.example.test/bakers/pm-bot:abc123"
 check_value repocred "pm_bot_repo_url carries credentials" "PM_BOT_REPO_URL=https://u@git.example.test/x.git"
 check_value repohttp "pm_bot_repo_url must be an https:// URL" "PM_BOT_REPO_URL=git@git.example.test:x.git"
 check_value repotoken "pm_bot_repo_token needs pm_bot_repo_url" PM_BOT_REPO_TOKEN="$REPO_TOKEN"
-pass "UUIDs, URLs, the image pin and Slack ID lists are checked"
+pass "UUIDs, URLs, the image pin, the API key and Slack ID lists are checked"
 
 # --- 5. A complete configuration ---------------------------------------------
 # The clone runs against a local repository: the script accepts file:// only
@@ -206,13 +208,14 @@ ENVFILE="$(DATA)/.env"
 for line in "SLACK_BOT_TOKEN=$BOT_TOKEN" "SLACK_APP_TOKEN=$APP_TOKEN" SLACK_ALLOWED_CHANNELS=C01,C02,C03,C04 \
   SLACK_ALLOWED_USERS= GATEWAY_ALLOW_ALL_USERS=true SLACK_ADMIN_USERS=U0000000009 \
   SLACK_WORKSPACE_URL=https://example.slack.com SLACK_HOME_CHANNEL= BAKERS_URL=https://bakers.example.test \
-  BAKERS_CLIENT_ID=bakers-key-test "BAKERS_CLIENT_SECRET=$CLIENT_SECRET" \
+  "BAKERS_API_KEY=$BAKERS_KEY" \
   PM_BOT_PROJECT=00000000-0000-4000-8000-000000000000 PM_BOT_TICKET_WORKFLOW=bb_work PM_BOT_CONDUCTOR= \
   "ANTHROPIC_API_KEY=$API_KEY" CLAUDE_CODE_OAUTH_TOKEN= PM_BOT_MODEL=claude-sonnet-5-5 \
   HERMES_HOME=/opt/data PM_BOT_CLONE_DIR=/opt/clone; do
   grep -qxF -- "$line" "$ENVFILE" || fail "full: env file lacks $line"
 done
 ! grep -q '^PM_BOT_REPO' "$ENVFILE" || fail "full: the env file names the repository"
+! grep -q '^BAKERS_CLIENT_' "$ENVFILE" || fail "full: the env file holds OAuth client keys"
 ! grep -qF -- "$REPO_TOKEN" "$ENVFILE" || fail "full: the repository token is in the env file"
 ! grep -qF -- "$REGISTRY_TOKEN" "$ENVFILE" || fail "full: the registry token is in the env file"
 [ -f "$(CLONE)/web/modules/custom/prices/prices.module" ] || fail "full: the clone is missing the code"

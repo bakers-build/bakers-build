@@ -35,8 +35,7 @@ declare -A ENV_KEYS=(
   [slack_workspace_url]=SLACK_WORKSPACE_URL
   [slack_home_channel]=SLACK_HOME_CHANNEL
   [bakers_url]=BAKERS_URL
-  [bakers_client_id]=BAKERS_CLIENT_ID
-  [bakers_client_secret]=BAKERS_CLIENT_SECRET
+  [bakers_api_key]=BAKERS_API_KEY
   [project]=PM_BOT_PROJECT
   [ticket_workflow]=PM_BOT_TICKET_WORKFLOW
   [conductor]=PM_BOT_CONDUCTOR
@@ -46,7 +45,7 @@ declare -A ENV_KEYS=(
 )
 # In this order in the missing-parameters line.
 REQUIRED=(slack_bot_token slack_app_token slack_allowed_channels slack_admin_users
-  slack_workspace_url bakers_url bakers_client_id bakers_client_secret project
+  slack_workspace_url bakers_url bakers_api_key project
   ticket_workflow model)
 
 value() { local var="PM_BOT_${1^^}"; printf '%s' "${!var:-}"; }
@@ -72,8 +71,8 @@ cd / || exit 0
 # Parameters with a default (model, ticket workflow) and the template variables do not count.
 configured=false
 for name in slack_bot_token slack_app_token slack_allowed_channels slack_allowed_users \
-  slack_admin_users slack_workspace_url slack_home_channel bakers_url bakers_client_id \
-  bakers_client_secret project conductor anthropic_api_key claude_oauth_token repo_url \
+  slack_admin_users slack_workspace_url slack_home_channel bakers_url bakers_api_key \
+  project conductor anthropic_api_key claude_oauth_token repo_url \
   repo_user repo_token; do
   [ -z "$(value "$name")" ] || configured=true
 done
@@ -115,8 +114,12 @@ done
 [[ "$(value slack_workspace_url)" == https://* ]] || skip "pm_bot_slack_workspace_url must be an https:// URL"
 [[ "$(value bakers_url)" =~ ^https?:// ]] || skip "pm_bot_bakers_url must be an https:// or http:// URL"
 
+# The API key's format is the site's: any characters but whitespace, one line in the env file.
+[[ "$(value bakers_api_key)" =~ ^[^[:space:]]+$ ]] || skip "pm_bot_bakers_api_key must be one word, without spaces or line breaks"
+
 unsafe=()
 for name in "${!ENV_KEYS[@]}" repo_url repo_user repo_token registry_user registry_token; do
+  [ "$name" != bakers_api_key ] || continue
   v="$(value "$name")"
   [ -z "$v" ] || [[ "$v" =~ $SAFE ]] || unsafe+=("pm_bot_$name")
 done

@@ -98,8 +98,8 @@ It has no Docker socket and every capability dropped except the four Hermes' sta
 
 As a bakers.build workspace administrator:
 
-1. **Workspace → Service accounts → Add**: an account for the bot, with a rank that may create and update tickets, in the team that sees the project.
-2. On that account, create an API key. Its client ID and secret go into `pm_bot_bakers_client_id` and `pm_bot_bakers_client_secret`.
+1. **Workspace → Service accounts → Add**: an account for the bot, with a rank that may create and update tickets, as a member of the bot's project's team only. The bot reaches bakers.build only through its tools on `/mcp`, with this account's rights, so the membership is its reach.
+2. On that account, create an API key. It goes into `pm_bot_bakers_api_key`; the bot sends it as the bearer on `/mcp`. The site must accept an API key as bearer and offer the project ticket list tool and `labels_remove` on `bakers_ticket_update`.
 3. Note the project's UUID for `pm_bot_project`. To have new tickets qualified at once, also note a conductor's UUID for `pm_bot_conductor`.
 
 ### 2. The Slack app
@@ -114,7 +114,7 @@ At api.slack.com/apps, choose **Create New App → From a manifest**, pick your 
 
 ### 3. Parameters
 
-Set these in the workspace form, or with `--parameter` on `coder create` and `coder update`. A changed value takes effect on the next start, and `coder update` restarts the workspace. Values may hold letters, digits and `. _ ~ : / , @ + = % -` only.
+Set these in the workspace form, or with `--parameter` on `coder create` and `coder update`. A changed value takes effect on the next start, and `coder update` restarts the workspace. Values may hold letters, digits and `. _ ~ : / , @ + = % -` only; the API key may hold any character but spaces and line breaks.
 
 | Parameter | Required | Value |
 |---|---|---|
@@ -126,8 +126,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 | `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for thread permalinks |
 | `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel |
 | `pm_bot_bakers_url` | yes | The bakers.build server, `https://…` |
-| `pm_bot_bakers_client_id` | yes | API key client ID |
-| `pm_bot_bakers_client_secret` | yes | API key secret (masked) |
+| `pm_bot_bakers_api_key` | yes | The service account's API key (masked) |
 | `pm_bot_project` | yes | Project UUID |
 | `pm_bot_ticket_workflow` | no | Workflow of the tickets the bot creates, default `bb_work` |
 | `pm_bot_conductor` | no | Conductor UUID set on each new ticket |
@@ -147,8 +146,7 @@ coder create pm --template bakers-ddev \
   --parameter pm_bot_slack_admin_users=U0123456789 \
   --parameter pm_bot_slack_workspace_url=https://example.slack.com \
   --parameter pm_bot_bakers_url=https://bakers.example.com \
-  --parameter pm_bot_bakers_client_id=… \
-  --parameter pm_bot_bakers_client_secret=… \
+  --parameter pm_bot_bakers_api_key=… \
   --parameter pm_bot_project=00000000-0000-4000-8000-000000000000 \
   --parameter pm_bot_anthropic_api_key=sk-ant-…
 

@@ -228,25 +228,14 @@ data "coder_parameter" "pm_bot_bakers_url" {
   form_type    = "input"
 }
 
-data "coder_parameter" "pm_bot_bakers_client_id" {
-  name         = "pm_bot_bakers_client_id"
-  display_name = "PM bot: API key client ID"
-  description  = "Client ID of the API key of the bot's service account."
+data "coder_parameter" "pm_bot_bakers_api_key" {
+  name         = "pm_bot_bakers_api_key"
+  display_name = "PM bot: bakers.build API key"
+  description  = "API key of the bot's service account, sent as the bearer on bakers.build's /mcp."
   type         = "string"
   default      = ""
   mutable      = true
   order        = 9
-  form_type    = "input"
-}
-
-data "coder_parameter" "pm_bot_bakers_client_secret" {
-  name         = "pm_bot_bakers_client_secret"
-  display_name = "PM bot: API key secret"
-  description  = "Client secret of that API key."
-  type         = "string"
-  default      = ""
-  mutable      = true
-  order        = 10
   form_type    = "input"
   styling      = jsonencode({ mask_input = true })
 }
@@ -385,8 +374,7 @@ resource "coder_agent" "main" {
     PM_BOT_SLACK_WORKSPACE_URL    = data.coder_parameter.pm_bot_slack_workspace_url.value
     PM_BOT_SLACK_HOME_CHANNEL     = data.coder_parameter.pm_bot_slack_home_channel.value
     PM_BOT_BAKERS_URL             = data.coder_parameter.pm_bot_bakers_url.value
-    PM_BOT_BAKERS_CLIENT_ID       = data.coder_parameter.pm_bot_bakers_client_id.value
-    PM_BOT_BAKERS_CLIENT_SECRET   = data.coder_parameter.pm_bot_bakers_client_secret.value
+    PM_BOT_BAKERS_API_KEY         = data.coder_parameter.pm_bot_bakers_api_key.value
     PM_BOT_PROJECT                = data.coder_parameter.pm_bot_project.value
     PM_BOT_TICKET_WORKFLOW        = data.coder_parameter.pm_bot_ticket_workflow.value
     PM_BOT_CONDUCTOR              = data.coder_parameter.pm_bot_conductor.value
