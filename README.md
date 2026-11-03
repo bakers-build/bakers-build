@@ -3,13 +3,13 @@
 </p>
 
 <p align="center">
-  <strong>AI agents work your tickets. You decide how much you step in.</strong>
+  <strong>Keep your issue tracker. Give your AI agents a workbench.</strong>
 </p>
 
-bakers.build turns your issue tracker into the control plane for coding agents: a standalone
-server holds projects and tickets, and a conductor on your machine starts an agent for each ticket
-state. You choose how automatic it runs, from fully autonomous to agents that wait for your
-answers, approvals and reviews.
+Your team keeps planning in the issue tracker it already uses. bakers.build is the ticket system
+for the agents' workbench: each task moves through states such as plan, coding and review, an AI
+agent works every state, and you decide how much you step in, from fully autonomous to approving
+each step.
 
 - [Get started](https://bakers.build/get-started/)
 - [Configuration](https://bakers.build/configuration/)
