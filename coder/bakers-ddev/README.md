@@ -79,7 +79,7 @@ A start that fails to download a tool stops the install script, marks the start 
 
 ## Logs
 
-The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
+The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/bakers-conductors.log` holds the [conductor autostart](#conductor-autostart)'s background retries. `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
 
 ## Conductor autostart
 
@@ -89,7 +89,7 @@ Conductors are yours to start, and a restart, rebuild or template update stops t
 coder update <workspace> --parameter conductor_autostart=true
 ```
 
-The startup log has one line per checkout: `conductors: started <path>`, or `conductors: failed <path>: <reason>` with the last line `bakers oven start` printed. A failed checkout never stops the start or the other checkouts. Without an answering `herdr server` within 60 seconds, the log says `conductors: skipped: herdr server not ready` and nothing starts. The checkout's sign-ins (bakers.build, the agent, git) must already be in place; the autostart only starts what you configured.
+The startup log has one line per checkout: `conductors: started <path>` once `bakers oven status` shows it `online`, or `conductors: failed <path>: <reason>` with the last line `bakers oven start` printed. A stopped workspace kills its conductors before they can report themselves offline, so for some minutes after a restart `bakers oven start` takes the dead conductor for a live one and starts nothing. Such a checkout logs `conductors: waiting <path>: <reason>` and is retried every 30 seconds in the background, for up to 12 minutes, until it is online; those lines go to `/tmp/bakers-conductors.log`. A failed checkout never stops the start or the other checkouts. Without an answering `herdr server` within 60 seconds, the log says `conductors: skipped: herdr server not ready` and nothing starts. The checkout's sign-ins (bakers.build, the agent, git) must already be in place; the autostart only starts what you configured.
 
 ## PM bot
 
