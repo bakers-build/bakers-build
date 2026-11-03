@@ -533,7 +533,6 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
       'dropsh',
       'tools',
       'auth',
-      'ticket',
       'hook',
     ]);
     // each descriptor carries a describe (for --help stubs)

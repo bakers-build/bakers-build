@@ -25,12 +25,6 @@ export const commands: BbPreset['commands'] = (acc) => [
     describe: 'manage connection authentication and profiles',
   },
   {
-    name: 'ticket',
-    plugin: '@bakers-build/addon-dropsh',
-    export: 'ticketCommandPlugin',
-    describe: 'ask the humans on a ticket a question and wait for the answer',
-  },
-  {
     name: 'hook',
     plugin: '@bakers-build/addon-dropsh',
     export: 'hookCommandPlugin',

@@ -50,7 +50,6 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
       'dropsh',
       'tools',
       'auth',
-      'ticket',
       'hook',
       'deployment',
       'agents',
@@ -206,6 +205,7 @@ it('DEFAULT_COMMANDS names the split command packages', () => {
   expect(DEFAULT_COMMANDS.map((c) => c.plugin)).toEqual([
     '@bakers-build/conductor/commands/conductor',
     '@bakers-build/ui',
+    '@bakers-build/addon-dropsh',
     '@bakers-build/addon-dropsh',
     '@bakers-build/addon-dropsh',
     '@bakers-build/addon-dropsh',

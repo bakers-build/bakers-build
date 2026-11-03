@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import {
   type BbCommandHost,
   type BbCommandPlugin,
@@ -8,12 +7,11 @@ import {
   loadReadyBbConnection,
   type WorkspaceRecoveryOptions,
 } from '@bakers-build/core';
-import { toolPlugin } from '@dropsh/plugin-tool';
+import { createToolClient, toolPlugin } from '@dropsh/plugin-tool';
 import { type Command, Help } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
 import { askUserQuestionDecision } from './ask-user-question-hook.js';
 import { registerTemplateCommand } from './template.js';
-import { AskError, askQuestion, siteAskApi } from './ticket-ask.js';
 import { hideUnpublishedComments } from './unpublished-comments.js';
 
 export function dropshConfigHint(resolvedPath?: string): string {
@@ -248,48 +246,25 @@ async function siteContext(
   });
 }
 
-/** `bakers ticket ask <ticket> --body <file.md>`: ask the humans on a ticket. */
-export const ticketCommandPlugin: BbCommandPlugin = {
-  kind: 'command',
-  name: 'ticket',
-  describe: 'ask the humans on a ticket a question and wait for the answer',
-  register(program: Command, host: BbCommandHost): void {
-    program
-      .command('ticket')
-      .description('Ticket operations for agents')
-      .command('ask <ticket>')
-      .description(
-        'Publish a question comment, label the ticket "Question" and freeze it',
-      )
-      .requiredOption('--body <file>', 'Markdown file holding the question')
-      .option('--connection <name>', 'bakers.build connection to use')
-      .option('--config <path>', 'connection config file')
-      .action(
-        async (
-          ticket: string,
-          flags: { body: string; connection?: string; config?: string },
-        ) => {
-          let api: ReturnType<typeof siteAskApi> | undefined;
-          try {
-            const body = await readFile(flags.body, 'utf8');
-            api = siteAskApi(await siteContext(host, flags));
-            const result = await askQuestion(api, ticket, body);
-            process.stdout.write(`${JSON.stringify(result)}\n`);
-          } catch (error) {
-            const message =
-              error instanceof Error ? error.message : String(error);
-            const done = error instanceof AskError ? error.done : [];
-            process.stderr.write(
-              `${JSON.stringify({ error: { message, done } })}\n`,
-            );
-            process.exitCode = 1;
-          } finally {
-            await api?.close();
-          }
-        },
-      );
-  },
-};
+/** Read a ticket through the site's `bakers_ticket_read` tool. */
+async function readSiteTicket(
+  ctx: Awaited<ReturnType<typeof siteContext>>,
+  ticket: string,
+): Promise<Record<string, unknown>> {
+  const tools = createToolClient({ auth: ctx.auth, baseUrl: ctx.baseUrl });
+  try {
+    const result = await tools.call('tool_api__bakers_ticket_read', { ticket });
+    if (result.isError) {
+      const text = (result.content as { type: string; text?: string }[])
+        .map((c) => c.text ?? '')
+        .join(' ');
+      throw new Error(`bakers_ticket_read refused: ${text}`);
+    }
+    return (result.structuredContent ?? {}) as Record<string, unknown>;
+  } finally {
+    await tools.close();
+  }
+}
 
 async function drain(stream: NodeJS.ReadableStream): Promise<void> {
   if ((stream as { isTTY?: boolean }).isTTY) return;
@@ -315,14 +290,8 @@ export const hookCommandPlugin: BbCommandPlugin = {
         await drain(process.stdin);
         const output = await askUserQuestionDecision(
           process.env,
-          async (ticket) => {
-            const api = siteAskApi(await siteContext(host, flags));
-            try {
-              return await api.tool('bakers_ticket_read', { ticket });
-            } finally {
-              await api.close();
-            }
-          },
+          async (ticket) =>
+            readSiteTicket(await siteContext(host, flags), ticket),
         );
         if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
       });
