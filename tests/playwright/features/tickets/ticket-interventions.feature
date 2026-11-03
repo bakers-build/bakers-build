@@ -23,14 +23,16 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
     Then the disposable ticket is in state "cancelled"
     And the page says "is now Cancelled"
 
-  Scenario: Freeze ticket asks first and names the stall
-    Given a disposable "bb_work" ticket in state "working"
+  Scenario: Freeze ticket asks first, ends the run and names the stall
+    Given a disposable "bb_work" ticket in state "working" with a running run
     When I visit the disposable ticket
     Then the ticket page offers "Freeze ticket"
     When I open "Freeze ticket"
     Then a dialog asks "will not be claimed"
+    And a dialog asks "active run is ended"
     When I choose "Freeze ticket" in the dialog
     Then the page says "is frozen"
+    And the disposable run is "cancelled"
     And the inspector names the stall "frozen"
     When I visit the disposable ticket
     Then the ticket page offers "Unfreeze ticket"
