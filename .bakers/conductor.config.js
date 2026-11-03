@@ -84,26 +84,19 @@ export default {
     after_done: 'ddev delete -Oy',
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
-  // The Ports addon's inbox (contract 2): this conductor registers its
-  // `tunnel` message, answers it from the ticket's inline addons card (web)
-  // and addon card (`bakers ui`) with a Markdown list of shared tunnels. It
-  // fills no slot. `services` lets `bakers ports` share the VitePress docs dev
-  // server (`cd website && pnpm dev`) as `docs`. Tunnels go through the team's
-  // frp server under `*.preview.keytec.de`; each developer's frpc client
-  // config path and admin API credentials come from `local.frp`
-  // (conductor.config.local.js), never from this file.
-  addons: [
+  // Preview is opt-in; the FRP transport validates the operator's complete settings.
+  addons: local.frp ? [
     {
       use: '@bakers-build/addon-ports',
       with: {
         services: [{ key: 'docs', match: 'vitepress' }],
         transport: {
           use: '@bakers-build/addon-ports-frp',
-          with: { zone: 'preview.keytec.de', ...local.frp },
+          with: local.frp,
         },
       },
     },
-  ],
+  ] : [],
   // Layout per workflow state: project = workspace, run = tab.
   // No hard-wired diff pane for `review`: the review diff surface is hunk
   // (BB-55) — agent-driven + opt-in in the human's interactive pane

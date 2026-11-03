@@ -6,6 +6,8 @@ Choose the project's TUI and development environment afterwards in [project setu
 
 **You need:** your own account, workspace access, server URL, and an installed, signed-in [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup). Use your existing agent. A chat-only connector cannot install local tools.
 
+Running your own control plane? Follow the separate [server installation](/configuration/project/server). This machine setup can run on a local workstation; Coder and shared preview tunnels are optional.
+
 <span id="skill-wizard-—-recommended"></span>
 <span id="use-the-guided-setup"></span>
 
