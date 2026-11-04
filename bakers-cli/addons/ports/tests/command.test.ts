@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Command } from 'commander';
@@ -712,5 +713,121 @@ describe('ports list with the retired machine ports key', () => {
       `tunnel sharing off (${PORTS_RETIRED}) — listing only\n`,
     );
     process.exitCode = undefined;
+  });
+});
+
+describe('ports up/down/status/reap through the conductor (AC5, AC6)', () => {
+  async function run(args: string[], wt: string, home: string) {
+    vi.stubEnv('BB_HOME', home);
+    const out: string[] = [];
+    const spy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: string | Uint8Array) => {
+        out.push(String(chunk));
+        return true;
+      });
+    try {
+      const program = new Command();
+      registerPorts(program, () => wt);
+      await program.parseAsync(['ports', ...args], { from: 'user' });
+    } finally {
+      spy.mockRestore();
+      vi.unstubAllEnvs();
+    }
+    const exitCode = process.exitCode;
+    process.exitCode = undefined;
+    return { out: out.join(''), exitCode };
+  }
+
+  function endpoint(home: string, body: object): void {
+    mkdirSync(join(home, 'conductors'), { recursive: true });
+    writeFileSync(join(home, 'conductors', 'c1.json'), JSON.stringify(body));
+  }
+
+  it('fails naming the conductor and writes no state when none runs', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'bakers-ports-home-'));
+    const wt = mkdtempSync(join(tmpdir(), 'bakers-ports-wt-'));
+    for (const args of [['up', 'web'], ['down'], ['status'], ['reap']]) {
+      const { out, exitCode } = await run(args, wt, home);
+      expect(out).toMatch(/no running conductor.*bakers oven start/);
+      expect(exitCode).toBe(1);
+    }
+    // A dead pid is no conductor either.
+    endpoint(home, {
+      url: 'http://127.0.0.1:9',
+      operatorToken: 't',
+      workspaceRoot: '/',
+      pid: 2 ** 22 + 7,
+    });
+    expect((await run(['up', 'web'], wt, home)).out).toMatch(
+      /no running conductor/,
+    );
+    expect(readdirSync(home).sort()).toEqual(['conductors']);
+  });
+
+  it("calls the conductor's tool with the operator token, cwd and ticket, and prints its answer", async () => {
+    const home = mkdtempSync(join(tmpdir(), 'bakers-ports-home-'));
+    const wt = mkdtempSync(join(tmpdir(), 'bakers-ports-wt-'));
+    const seen: unknown[] = [];
+    const server = createServer((req, res) => {
+      let body = '';
+      req.on('data', (c) => {
+        body += c;
+      });
+      req.on('end', () => {
+        const parsed = JSON.parse(body);
+        seen.push({ auth: req.headers.authorization, url: req.url, ...parsed });
+        res.writeHead(parsed.tool === 'ports_down' ? 422 : 200, {
+          'content-type': 'application/json',
+        });
+        res.end(
+          JSON.stringify(
+            parsed.tool === 'ports_status'
+              ? {
+                  text: JSON.stringify([
+                    {
+                      service: 'web',
+                      status: 'applied',
+                      local: 'http://x',
+                      url: 'https://u',
+                    },
+                  ]),
+                }
+              : parsed.tool === 'ports_down'
+                ? { error: 'nothing to stop' }
+                : { text: 'shared at https://u' },
+          ),
+        );
+      });
+    });
+    await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+    const { port } = server.address() as { port: number };
+    endpoint(home, {
+      url: `http://127.0.0.1:${port}`,
+      operatorToken: 'op-token',
+      workspaceRoot: tmpdir(),
+      pid: process.pid,
+    });
+    try {
+      const up = await run(['up', 'web', '--ticket', 'BB-7'], wt, home);
+      expect(up).toEqual({ out: 'shared at https://u\n', exitCode: undefined });
+      expect(seen[0]).toEqual({
+        auth: 'Bearer op-token',
+        url: '/call',
+        tool: 'ports_up',
+        args: { service: 'web' },
+        worktree: wt,
+        ticket: 'BB-7',
+      });
+      expect((await run(['status'], wt, home)).out).toBe(
+        'web\thttps://u\tapplied\n',
+      );
+      expect(await run(['down', 'web'], wt, home)).toEqual({
+        out: 'nothing to stop\n',
+        exitCode: 1,
+      });
+    } finally {
+      server.close();
+    }
   });
 });
