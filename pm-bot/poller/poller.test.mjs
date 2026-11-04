@@ -75,7 +75,7 @@ test('an open question is relayed into its thread exactly once, keyed by the com
       identifier: 'ACME-1',
       channel: 'C0000000001',
       thread_ts: '1700000000.000100',
-      text: 'The implementation of the "Price updater" ticket has a question:\n\nShould it run at 3 a.m.?',
+      text: 'ACME-1 · "Price updater" has a question:\n\nShould it run at 3 a.m.?',
     },
   ]);
   assert.deepEqual(state().relayed, [question.id]);

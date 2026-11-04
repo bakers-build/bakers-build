@@ -9,7 +9,7 @@
   },
   "testHint": "Where and how to test:",
   "noTestHint": "The ticket does not say yet where or how to test this.",
-  "questionLead": "The implementation of the \"{title}\" ticket has a question:",
+  "questionLead": "{identifier} · \"{title}\" has a question:",
   "subTicketThread": "{identifier} · {title} (sub-ticket of {parent})",
   "subTicketPointer": "{identifier} · {title} continues in its own thread: {permalink}"
 }

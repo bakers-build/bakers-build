@@ -11,7 +11,7 @@ Decide the branch from the message:
 
 - a **request**, something should change or be built → *Intake*;
 - a **status question**, how is it going, when, what happened → *Status*;
-- a **reply to a relayed question**, the thread holds a post "The implementation of the "…" ticket has a question:" → *Answer*.
+- a **reply to a relayed question**, the thread holds a post "<identifier> · "<title>" has a question:" → *Answer*.
 
 ## The current thread
 
@@ -59,10 +59,10 @@ Creating the ticket is your last move on it: bakers.build qualifies it and moves
 
 ## Answer
 
-The poller posts a ticket's open question into its thread: a fixed lead-in naming the ticket, then the question word for word. Anyone in the thread may answer it, an approval such as the merge included.
+The poller posts a ticket's open question into its thread: a fixed lead-in naming the ticket by identifier and title, then the question word for word. Anyone in the thread may answer it, an approval such as the merge included.
 
 1. **Settle it.** Help the thread reach one clear answer: explain the question in plain words, add facts from the code. Ask back in the thread, and pass nothing on yet, while the answer is unclear, contradicts itself or an earlier answer, or leaves part of the question open.
-2. **Check it is still open.** Read the ticket named in the lead-in with `bakers_ticket_read`. It waits for an answer only while it is `frozen` and carries the label `Question`. Otherwise the question is already settled: say so in one line and stop.
+2. **Check it is still open.** Read the ticket with `bakers_ticket_read`, passing the identifier from the lead-in. It waits for an answer only while it is `frozen` and carries the label `Question`. Otherwise the question is already settled: say so in one line and stop.
 3. **Pass it on**, at once and in this order:
    1. `bakers_comment_publish` with the ticket, `type: comment` and `body` "Answered in Slack by <the answerer's display name>:", a blank line, then the answer complete and in the answerer's words;
    2. `bakers_ticket_update` with the ticket, `labels_remove: ["Question"]` and `frozen: false`.

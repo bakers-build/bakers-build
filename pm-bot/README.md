@@ -45,7 +45,7 @@ GitHub CI runs the first two in `pm_bot` and the third in `image_gate`; the rele
 On a workspace running the bot:
 
 1. Mention the bot with a request: it creates a ticket in the project, replies with the identifier, and the ticket shows the thread under **More** as a chat link.
-2. Ask a question on that ticket as an agent would: a comment, then the **Question** label and the frozen flag. Within `PM_BOT_POLL_INTERVAL` seconds (default 15) it appears in the thread behind *The implementation of the "…" ticket has a question:*; `docker compose -p pm-bot restart` posts no second copy.
+2. Ask a question on that ticket as an agent would: a comment, then the **Question** label and the frozen flag. Within `PM_BOT_POLL_INTERVAL` seconds (default 15) it appears in the thread behind *<identifier> · "<title>" has a question:*; `docker compose -p pm-bot restart` posts no second copy.
 3. Answer it in the thread as any channel member: the ticket gets the comment *Answered in Slack by <you>:*, loses the label and is unfrozen.
 4. Move the ticket on: each new state appears once in the thread. Create a sub-ticket: it gets its own thread and a pointer in the parent's.
 5. Restart the bakers.build site while the bot runs, then send a new request: it is answered without restarting the bot.

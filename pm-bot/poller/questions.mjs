@@ -25,7 +25,7 @@ export function openQuestion(ticket, comments) {
  * @param {Array<{ticket: {identifier: string, title: string, thread: {channel: string, thread_ts: string}}, question: {id: string, body: string}}>} open
  *   the open questions of threaded tickets
  * @param {boolean} complete every frozen ticket was read; only then are answered questions forgotten
- * @param {string} lead the lead-in; `{title}` becomes the ticket title
+ * @param {string} lead the lead-in; `{identifier}` and `{title}` become the ticket's
  * @returns {{posts: Array<{question: string, identifier: string, channel: string, thread_ts: string, text: string}>, relayed: string[]}}
  *   add each posted question to `relayed` after its post succeeded
  */
@@ -38,7 +38,7 @@ export function relay(relayed, open, complete, lead) {
       identifier: ticket.identifier,
       channel: ticket.thread.channel,
       thread_ts: ticket.thread.thread_ts,
-      text: `${lead.replace('{title}', () => escape(ticket.title))}\n\n${escape(question.body)}`,
+      text: `${lead.replace('{identifier}', () => escape(ticket.identifier)).replace('{title}', () => escape(ticket.title))}\n\n${escape(question.body)}`,
     }));
   if (!complete) return { posts, relayed: [...relayed] };
   const still = new Set(open.map(({ question }) => question.id));

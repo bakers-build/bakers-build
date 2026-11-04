@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { openQuestion, relay } from './questions.mjs';
 
-const lead = 'The implementation of the "{title}" ticket has a question:';
+const lead = '{identifier} · "{title}" has a question:';
 const frozen = { frozen: true, frozen_at: '2026-11-02T10:00:00+00:00', labels: ['Question'] };
 const comment = (id, type, created, body = `Body ${id}`) => ({ id, type, created, body });
 
@@ -30,7 +30,7 @@ test('a ticket that is not frozen or lacks the Question label has no open questi
 
 const ticket = { identifier: 'ACME-1', title: 'Price <updater> & $& co', thread: { channel: 'C1', thread_ts: '1700000000.000100' } };
 
-test('an open question is posted behind the lead-in into the ticket thread, with Slack markup escaped', () => {
+test('an open question is posted behind a lead-in naming the ticket by identifier and title, with Slack markup escaped', () => {
   const { posts } = relay([], [{ ticket, question: comment('c-2', 'comment', '', 'Run at <!channel> 3 a.m.?') }], true, lead);
   assert.deepEqual(posts, [
     {
@@ -38,7 +38,7 @@ test('an open question is posted behind the lead-in into the ticket thread, with
       identifier: 'ACME-1',
       channel: 'C1',
       thread_ts: '1700000000.000100',
-      text: 'The implementation of the "Price &lt;updater&gt; &amp; $&amp; co" ticket has a question:\n\nRun at &lt;!channel&gt; 3 a.m.?',
+      text: 'ACME-1 · "Price &lt;updater&gt; &amp; $&amp; co" has a question:\n\nRun at &lt;!channel&gt; 3 a.m.?',
     },
   ]);
 });
