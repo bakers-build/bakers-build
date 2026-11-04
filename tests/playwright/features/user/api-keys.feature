@@ -42,3 +42,26 @@ Feature: Self-service API keys in the user area
     Then they receive a 403
     When an anonymous visitor visits my API keys page
     Then they are redirected to the login form
+
+  Scenario: Copy reports failure when the clipboard is denied and never submits the dialog
+    When I visit my API keys page
+    And I create an API key named "Clipboard" expiring in 90 days
+    And I set the viewport to 390 by 844
+    And clipboard writes fail
+    And I press the copy button "Copy the client ID"
+    Then the copy status of "Copy the client ID" is "Copy failed. Select the command and copy it yourself."
+    And the created API key's client ID and secret are shown
+    When I set the viewport to 1280 by 800
+    And clipboard writes succeed
+    And I press the copy button "Copy the client ID" with the keyboard
+    Then the copy status of "Copy the client ID" is "Copied"
+    And the clipboard holds the command of "Copy the client ID"
+    And the created API key's client ID and secret are shown
+
+  Scenario: Copy reports failure when the clipboard API is unavailable
+    When I visit my API keys page
+    And I create an API key named "Clipboard-missing" expiring in 90 days
+    And the clipboard API is unavailable
+    And I press the copy button "Copy the client ID"
+    Then the copy status of "Copy the client ID" is "Copy failed. Select the command and copy it yourself."
+    And the created API key's client ID and secret are shown

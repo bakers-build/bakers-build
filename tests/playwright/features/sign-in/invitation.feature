@@ -70,8 +70,7 @@ Feature: A workspace invitation
     And I sign in with the e-mail code for the invited address
     And I continue from the identity step
     And I continue from the about-you step
-    And I continue from the setup step
-    Then the project step is present
+    Then the setup guide step is present
     And only the home finish action is offered
     When I finish the setup guide
     Then the overview offers joining "bakers"
