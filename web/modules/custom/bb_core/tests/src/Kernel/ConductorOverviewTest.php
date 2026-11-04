@@ -39,6 +39,8 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 #[RunTestsInSeparateProcesses]
 final class ConductorOverviewTest extends KernelTestBase {
 
+  use DanglingReferenceTrait;
+
   use ShippedDisplayTrait;
 
   use OgScopeFixtureTrait;
@@ -732,7 +734,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     $ticket = $this->ticketOn($this->homeProject, 'Deleted occupancy');
     $identifier = $ticket->getIdentifier();
     $this->runOn($this->labelled, $ticket, 'running', self::FROZEN_NOW);
-    $ticket->delete();
+    $this->removeRowsOnly($ticket);
 
     $html = $this->occupancyHtml($this->labelled);
     self::assertStringContainsString('Live occupancy: 1', $html);

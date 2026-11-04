@@ -42,6 +42,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 final class ProjectsViewAmbientScopeTest extends KernelTestBase {
 
+  use DanglingReferenceTrait;
+
   use WorkspaceReadScopeTestTrait;
   use ProjectsViewTestTrait;
 
@@ -238,7 +240,7 @@ final class ProjectsViewAmbientScopeTest extends KernelTestBase {
       'group_id' => $group->id(),
       'owner_user_id' => $this->createAccount('surviving-owner')->id(),
     ]);
-    $group->delete();
+    $this->removeRowsOnly($group);
 
     $account = $this->createAccount('scope-bypasser', [
       'administer bakers', 'view bb_project',

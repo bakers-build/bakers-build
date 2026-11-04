@@ -192,10 +192,10 @@ final class ProjectsScreenTest extends KernelTestBase {
       self::assertFalse((bool) ($general['autosubmit_exclude_textfield'] ?? TRUE), "$view_id must autosubmit its text field.");
 
       $ids = $this->listingContentSourceIds($view_id);
-      // The search-and-sort toolbar leads, before the rows; the exposed form
-      // it binds to follows, holding only hidden parts.
+      // Status messages lead, then the search-and-sort toolbar before the
+      // rows; the exposed form it binds to follows, holding only hidden parts.
       self::assertSame(
-        ['component', 'view_rows', 'view_pager', 'view_exposed'],
+        ['block', 'component', 'view_rows', 'view_pager', 'view_exposed'],
         $ids,
         "$view_id must place the search toolbar before the rows.",
       );
