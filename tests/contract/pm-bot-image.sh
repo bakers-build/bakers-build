@@ -20,7 +20,8 @@
 #     session are kept
 #   - a missing required key stops the start and is named
 #   - run mode, with the capabilities and options of the template's compose
-#     file: the poller and exactly one gateway run, as hermes
+#     file: the poller and exactly one gateway run, as hermes, on the first
+#     start and again on a start over the same data directory
 # Needs Docker.
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -116,21 +117,40 @@ out="$(start --rm -e PM_BOT_PROJECT= -e SLACK_ADMIN_USERS= "$IMAGE" check 2>&1)"
 grep -q 'missing: SLACK_ADMIN_USERS PM_BOT_PROJECT' <<<"$out" || { echo "$out" >&2; fail "the missing keys are not named"; }
 pass "a missing key stops the start and is named"
 
-start -d --name "$name" "$IMAGE" >/dev/null || fail "the image does not start"
-procs=""
-for _ in $(seq 1 30); do
-  sleep 2
-  [ "$(docker inspect -f '{{.State.Running}}' "$name")" = true ] || break
-  procs="$(docker exec "$name" ps -eo user=,args= 2>/dev/null)" || continue
-  grep -q 'poller.mjs' <<<"$procs" && grep -qE 'gateway run$' <<<"$procs" && break
-done
-grep -qE '^hermes .*node /opt/pm-bot/poller/poller.mjs' <<<"$procs" \
-  || { docker logs "$name" 2>&1 | tail -30 >&2; fail "the poller does not run as hermes"; }
-grep -qE '^hermes .*gateway run$' <<<"$procs" || { docker logs "$name" 2>&1 | tail -30 >&2; fail "the gateway does not run as hermes"; }
-sleep 5
-gateways="$(docker exec "$name" ps -eo args= | grep -cE 'hermes_cli.main.*gateway' || true)"
-[ "$gateways" = 1 ] || { docker exec "$name" ps -eo user=,args= >&2; fail "$gateways gateways run, not one"; }
-[ "$(docker inspect -f '{{.State.Running}}' "$name")" = true ] || fail "the container stopped"
-pass "one container runs the poller and exactly one gateway, as hermes"
+# Starts the bot in a new container on the data volume, as a workspace start does, and
+# checks that the poller and exactly one gateway run in it, as hermes.
+run_bot() {
+  docker rm -f "$name" >/dev/null 2>&1 || true
+  start -d --name "$name" "$IMAGE" >/dev/null || fail "the image does not start ($1)"
+  procs=""
+  for _ in $(seq 1 30); do
+    sleep 2
+    [ "$(docker inspect -f '{{.State.Running}}' "$name")" = true ] || break
+    procs="$(docker exec "$name" ps -eo user=,args= 2>/dev/null)" || continue
+    grep -q 'poller.mjs' <<<"$procs" && grep -qE 'gateway run$' <<<"$procs" && break
+  done
+  grep -qE '^hermes .*node /opt/pm-bot/poller/poller.mjs' <<<"$procs" \
+    || { docker logs "$name" 2>&1 | tail -30 >&2; fail "the poller does not run as hermes ($1)"; }
+  grep -qE '^hermes .*gateway run$' <<<"$procs" || { docker logs "$name" 2>&1 | tail -30 >&2; fail "the gateway does not run as hermes ($1)"; }
+  sleep 10
+  procs="$(docker exec "$name" ps -eo user=,args=)"
+  grep -qE '^hermes .*node /opt/pm-bot/poller/poller.mjs' <<<"$procs" \
+    || { docker logs "$name" 2>&1 | tail -30 >&2; fail "the poller stopped ($1)"; }
+  # Hermes' own supervised gateway runs as python -c with sys.argv[0]='hermes', the entrypoint's
+  # as hermes_cli.main ... gateway run; together they must be one.
+  gateways="$(grep -cE "hermes_cli.main.*gateway|sys.argv\[0\]='hermes'" <<<"$procs" || true)"
+  [ "$gateways" = 1 ] || { echo "$procs" >&2; fail "$gateways gateways run, not one ($1)"; }
+  [ "$(docker inspect -f '{{.State.Running}}' "$name")" = true ] || fail "the container stopped ($1)"
+  pass "one container runs the poller and exactly one gateway, as hermes ($1)"
+}
+run_bot "first start"
+# A workspace stop kills the container without a clean exit, so the gateway's state file
+# still says "running", the state a gateway connected to Slack writes. The test's gateway never
+# reaches Slack, so the state is set to that after the kill. The next start must still run the
+# gateway beside the poller, not hand it to Hermes' own supervisor and lose the poller.
+docker kill -s KILL "$name" >/dev/null
+in_data 'test -f /d/gateway_state.json && sed -i -E "s/\"gateway_state\": *\"[a-z_]+\"/\"gateway_state\": \"running\"/" /d/gateway_state.json && grep -q "\"gateway_state\": \"running\"" /d/gateway_state.json' \
+  || fail "the killed gateway left no state file to restart from"
+run_bot "start after the container was killed"
 
 echo "OK: pm-bot image check holds"
