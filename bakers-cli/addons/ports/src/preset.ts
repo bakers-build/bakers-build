@@ -5,7 +5,7 @@
 // (BB-201). In a conductor's `addons[]` the same package contributes its
 // `inbox` (contract 2, see below): the `tunnel` message's Markdown result is
 // rendered in the ticket's addon card in the web UI and in `bakers ui`, and the
-// handler runs on the conductor's machine.
+// conductor answers it with the `ports_up` tool on its machine.
 
 import type { Preset } from '@bakers-build/conductor/contract';
 import type { BbPreset } from '@bakers-build/core';
@@ -29,8 +29,8 @@ export const inbox: Preset['inbox'] = {
   messages: {
     tunnel: { label: 'Share tunnels', access: 'view' },
   },
-  handlers: (options) =>
-    import('./inbox.js').then((m) => m.handlersFor(options)),
+  // Shares every eligible service through the same tool agents use.
+  bindings: { tunnel: { tool: 'ports_up', args: {} } },
 };
 
 // Configurable on either level; the machine entry's with wins.

@@ -1,7 +1,7 @@
 // BB-676 spec v5 — shared "bring up everything eligible" predicate AND I/O
-// loop (`shareAll`, pass-6 review cleanup), used by both the `tunnel` inbox
-// message and `bakers ports up` with no service key, so the two "share
-// everything" entry points cannot drift apart.
+// loop (`shareAll`, pass-6 review cleanup), used by both the `ports_up` tool
+// (which the `tunnel` inbox message is bound to) and `bakers ports up` with no
+// service key, so the two "share everything" entry points cannot drift apart.
 
 import type { ClaimedDiscovery, ClaimedService } from './claims.js';
 

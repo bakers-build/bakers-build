@@ -23,8 +23,8 @@ import {
 
 /**
  * Resolution bases rooted at the running `bakers` HOST install, usable from
- * both the CLI (which gets a `BbCommandHost`) and the inbox handler (which
- * does not: `oven start`/`once` dispatches inbox messages from inside
+ * both the CLI (which gets a `BbCommandHost`) and the conductor tools (which
+ * does not: `oven start`/`once` dispatches tool calls from inside
  * the SAME long-running `bakers` process, never a subprocess). The three
  * built-in transport packages are declared only on `bakers-cli/host/package.json`
  * (never on `@bakers-build/addon-ports`, which would cycle back through

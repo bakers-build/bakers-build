@@ -245,7 +245,7 @@ export function currentBranch(worktree: string): string | null {
 }
 
 /** Resolve the ports addon entry's transport for `worktree` via the SAME shared
- *  loader the inbox uses (`config.ts`'s `loadPortsTransport`) — one code
+ *  loader the conductor tools use (`config.ts`'s `loadPortsTransport`) — one code
  *  path for both, so a missing package, invalid settings, or unsupported
  *  contract always yields the same bounded, redacted diagnostic no matter
  *  which entry point asked. Never falls back to another transport: a

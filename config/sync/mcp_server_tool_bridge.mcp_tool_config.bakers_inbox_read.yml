@@ -1,0 +1,7 @@
+uuid: c862ac3f-61c0-472c-abf2-7c4b9f6ef29e
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_inbox_read
+tool_id: bakers_inbox_read
+description: null

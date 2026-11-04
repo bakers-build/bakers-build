@@ -4,7 +4,8 @@ The ports feature (BB-475, BB-661, BB-676, BB-681): discover a ticket
 worktree's **addon-claimed** services and share one over the machine's
 **configured tunnel transport** — from the shell (`bakers ports …`), and as a
 single contract-2 **inbox message**, `tunnel` ("Share tunnels"), a conductor
-runs when someone sends it from a ticket's inline message card. It carries
+answers with its `ports_up` tool when someone sends it from a ticket's inline
+message card. It carries
 **no terminal UI** of its own: both render from its `inbox.messages`
 definition, served by the bakers.build server. List it in the `addons` of a conductor
 config to enable the message.
