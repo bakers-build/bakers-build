@@ -181,13 +181,12 @@ describe('offline configuration inventory', () => {
       cwd: project,
     });
     expect(report.findings.map((finding) => finding.key)).toEqual(
-      expect.arrayContaining([
-        'machine_id',
-        'label',
-        'max_parallel',
-        'client_secret',
-      ]),
+      expect.arrayContaining(['machine_id', 'label', 'client_secret']),
     );
+    // The run budget is a backend setting: no check reads it.
+    expect(
+      report.findings.some((finding) => finding.key === 'max_parallel'),
+    ).toBe(false);
     expect(
       report.findings.find((finding) => finding.key === 'client_secret'),
     ).toMatchObject({
@@ -421,39 +420,6 @@ describe('offline configuration inventory', () => {
     });
     expect(report.findings.map((finding) => finding.key)).toEqual(
       expect.arrayContaining(['site.base_url', 'plugins[0].plugin']),
-    );
-  });
-
-  it('attributes conflicting capacity values to both origins and blocks a cross-scope repair', () => {
-    const machine = put(
-      join(home, '.bakers/machine.config.js'),
-      "export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 2 };",
-    );
-    const conductor = put(
-      join(project, '.bakers/conductor.config.js'),
-      "export default { conductor_id: 'cw-host-project', max_parallel: 3 };",
-    );
-    const { report } = core.inventoryConfig({
-      scope: 'project',
-      home,
-      cwd: project,
-    });
-    expect(report.findings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: 'conflicting_values',
-          path: conductor,
-          key: 'max_parallel',
-          observed: 3,
-          related: [
-            expect.objectContaining({ path: machine, key: 'max_parallel' }),
-          ],
-        }),
-        expect.objectContaining({
-          code: 'out_of_scope_write_required',
-          remediation: expect.stringContaining('Move max_parallel into'),
-        }),
-      ]),
     );
   });
 
@@ -785,6 +751,28 @@ describe('offline configuration inventory', () => {
         }),
       ]),
     );
+  });
+
+  it('neither requires max_parallel on the machine nor reports it elsewhere', () => {
+    put(
+      join(home, '.bakers/machine.config.js'),
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
+    );
+    put(
+      join(home, '.bakers/bakers.config.js'),
+      "export default {schema_version:1,site:{base_url:'https://example.test'},plugins:[],max_parallel:3};",
+    );
+    mkdirSync(join(project, '.bakers'));
+    put(
+      join(project, '.bakers/conductor.config.js'),
+      'export default {max_parallel:3,conductor:{max_parallel:3}};',
+    );
+    for (const scope of ['machine', 'connection', 'project'] as const) {
+      const { report } = core.inventoryConfig({ scope, home, cwd: project });
+      expect(
+        report.findings.filter((f) => f.key?.includes('max_parallel')),
+      ).toEqual([]);
+    }
   });
 
   it('reports tunnel policy from an explicit machine path', () => {

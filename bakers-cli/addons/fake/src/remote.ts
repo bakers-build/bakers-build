@@ -213,7 +213,7 @@ export class FakeBbRemote implements BbRemote {
     this.conductorStatus = 'online';
     // Ensure the host machine exists so machineCapacity is readable after
     // registration even before the first heartbeat with a non-zero load.
-    this.touchMachine(reg.host_key ?? reg.id, reg.id, 0, reg.max_parallel);
+    this.touchMachine(reg.host_key ?? reg.id, reg.id, 0);
     return 'fake-conductor-uuid';
   }
 
@@ -225,12 +225,7 @@ export class FakeBbRemote implements BbRemote {
     // Mirrors the server: a heartbeat always brings the conductor online and
     // replaces this conductor's contribution to machine.current_load (D5).
     this.conductorStatus = 'online';
-    this.touchMachine(
-      reg.host_key ?? reg.id,
-      reg.id,
-      currentLoad,
-      reg.max_parallel,
-    );
+    this.touchMachine(reg.host_key ?? reg.id, reg.id, currentLoad);
     return this.conductorStatus;
   }
 
@@ -305,20 +300,16 @@ export class FakeBbRemote implements BbRemote {
     hostKey: string,
     conductorId: string,
     load: number,
-    maxParallel: number,
   ): void {
     const existing = this.machines.get(hostKey);
     if (existing) {
-      // BB-464 D2 (mirrored): the budget is set once, at machine creation,
-      // and never rewritten by a later heartbeat — otherwise two conductors
-      // configured with different max_parallel values flip the host budget
-      // back and forth with whichever process heartbeat last.
+      // Mirrors the server: a heartbeat never changes the budget.
       existing.conductorLoads.set(conductorId, load);
       return;
     }
     this.machines.set(hostKey, {
-      maxParallel:
-        Number.isFinite(maxParallel) && maxParallel >= 1 ? maxParallel : 1,
+      // Mirrors the server's bb_machine default.
+      maxParallel: 5,
       conductorLoads: new Map<string, number>([[conductorId, load]]),
     });
   }

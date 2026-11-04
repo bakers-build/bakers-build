@@ -104,7 +104,7 @@ final class MachineEntityTest extends KernelTestBase {
   }
 
   /**
-   * Max parallel and current load default to 1 and 0 when omitted.
+   * Max parallel and current load default to 5 and 0 when omitted.
    */
   public function testCapacityDefaults(): void {
     $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')
@@ -114,7 +114,7 @@ final class MachineEntityTest extends KernelTestBase {
       ]);
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
     $machine->save();
-    $this->assertSame(1, $machine->getMaxParallel());
+    $this->assertSame(5, $machine->getMaxParallel());
     $this->assertSame(0, $machine->getCurrentLoad());
   }
 

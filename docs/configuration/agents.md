@@ -24,7 +24,7 @@ for the agents I choose. Keep working settings and verify the result.
 
    The JSON lists each alias with its harness and model, plus `enabled_agents`, `default_agent` and `routes`. An alias is one selectable harness and model, such as `opus` or `codex`. `bakers agents` neither installs a harness nor checks its login.
 
-2. Name your harnesses in `~/.bakers/machine.config.js`. Keep the identity and capacity fields that `bakers init` wrote and edit `addons` and the `agents` object. A complete file that uses Codex for coding and Claude Opus for review:
+2. Name your harnesses in `~/.bakers/machine.config.js`. Keep the identity fields that `bakers init` wrote and edit `addons` and the `agents` object. A complete file that uses Codex for coding and Claude Opus for review:
 
    ```js
    // @bakers-schema-version 1
@@ -32,7 +32,6 @@ for the agents I choose. Keep working settings and verify the result.
      schema_version: 1,
      machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
      label: 'alex-laptop',
-     max_parallel: 1,
      addons: ['@bakers-build/addon-codex', '@bakers-build/addon-claude'],
      agents: {
        enabled: ['codex', 'opus'],

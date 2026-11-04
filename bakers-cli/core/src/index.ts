@@ -93,6 +93,7 @@ export {
   machineContextPath,
   readMachineContext,
   resolveMachineContextPath,
+  warnIgnoredMaxParallel,
 } from './cli/machine-context.js';
 export { corePackageRoot } from './cli/paths.js';
 export { resolveModuleEslintStyle } from './cli/resolve-module.js';

@@ -41,7 +41,6 @@ interface ConfigOptions {
   dryRun?: boolean;
   projectConnection?: string;
   label?: string;
-  maxParallel?: string;
   baseUrl?: string;
   clientId?: string;
   workspaceId?: string;
@@ -293,7 +292,6 @@ function buildConfigCommand(
           '--label <name>',
           'machine display label (default: the short hostname)',
         )
-        .option('--max-parallel <number>', 'positive integer host capacity')
         .option('--base-url <url>', 'connection server URL')
         .option('--client-id <id>', 'OAuth client identifier')
         .option('--workspace-id <uuid>', 'explicit workspace UUID')
@@ -356,8 +354,6 @@ function buildConfigCommand(
         const value = options[key];
         if (value !== undefined) inputs[key] = value;
       }
-      if (options.maxParallel !== undefined)
-        inputs.maxParallel = Number(options.maxParallel);
       // Without a terminal to ask, the machine label is the short hostname.
       const defaultLabel = hostname().split('.')[0];
       if (!interactive && inputs.label === undefined && defaultLabel)

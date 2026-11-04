@@ -16,6 +16,7 @@ import {
   scanTopLevelProperties,
   scopeAddons,
   stemForConfigFile,
+  warnIgnoredMaxParallel,
 } from '@bakers-build/core';
 import { readBbProjectSelection } from './cli/project-context.js';
 import type { HookListener, HookName } from './plugins/executor.js';
@@ -118,7 +119,6 @@ type RawConfig = {
   project?: unknown;
   states?: unknown;
   prompt?: unknown;
-  max_parallel?: unknown;
   poll_interval_ms?: unknown;
   lease_seconds?: unknown;
   hooks?: ConductorFileConfig['hooks'];
@@ -438,19 +438,9 @@ export async function loadConductorConfig(
   const states = Array.isArray(config.states)
     ? config.states.map((state) => requireNonEmptyString(state, 'states'))
     : [];
-  // Host capacity has one owner. Stale engine values need an explicit migration.
-  if (config.max_parallel !== undefined) {
-    throw new Error(
-      `${configPath}: misplaced max_parallel belongs in ${machineContextPath()}; move it there`,
-    );
-  }
+  warnIgnoredMaxParallel(configPath, config);
   const machineCtx = await readMachineContext();
-  const maxParallel =
-    typeof machineCtx.max_parallel === 'number' &&
-    Number.isFinite(machineCtx.max_parallel) &&
-    machineCtx.max_parallel >= 1
-      ? Math.floor(machineCtx.max_parallel)
-      : 1;
+  warnIgnoredMaxParallel(machineContextPath(), machineCtx);
   const tunnel = machineCtx.tunnel === true;
   const variant = stemForConfigFile(basename(configPath)) ?? 'conductor';
 
@@ -756,7 +746,6 @@ export async function loadConductorConfig(
       typeof config.prompt === 'string' && config.prompt.trim() !== ''
         ? config.prompt
         : DEFAULT_AGENT_PROMPT,
-    max_parallel: maxParallel,
     tunnel,
     poll_interval_ms: optionalPositiveInteger(
       config.poll_interval_ms,

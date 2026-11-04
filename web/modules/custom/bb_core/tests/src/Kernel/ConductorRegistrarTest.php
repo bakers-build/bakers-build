@@ -100,7 +100,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
     $this->assertSame('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', $machine->getHostKey());
     $this->assertSame('cw-laptop', $machine->label());
-    $this->assertSame(3, $machine->getMaxParallel());
+    $this->assertSame(5, $machine->getMaxParallel());
     $this->assertSame(1, $machine->getCurrentLoad());
   }
 
