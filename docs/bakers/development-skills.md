@@ -16,7 +16,7 @@ testing and login methods from the project; its login commands moved to `ddev-lo
 and its duplicate test guidance was removed in favor of `testing.md`.
 
 The maintainer removed the full native Claude/Codex discovery and real-worker scenarios and
-the local website/theme gates from this ticket's completion requirements. Their earlier
+the local docs-site/theme gates from this ticket's completion requirements. Their earlier
 observations remain evidence, and untested compatibility remains unverified. Core/lint,
 static references, plugin version, permission/profile tests and source-rights review remain
 required. This ticket-specific waiver changes no repository-wide or CI policy.

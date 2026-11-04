@@ -7,6 +7,8 @@ export const SRC_EXCLUDE = [
   'bakers/**',
   'conductor/**',
   'bakers-metrics.md',
+  // The site's own dependencies live beside the pages.
+  'node_modules/**',
 ]
 
 // Shared by desktop/mobile navigation and the sidebar area controls.

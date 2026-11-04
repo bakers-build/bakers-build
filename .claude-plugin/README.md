@@ -13,7 +13,7 @@ Claude Code (v2.1.224 or later), without git or an account:
 ```
 
 `https://docs-develop.dev.bakers.build/marketplace.json` serves `develop`. The docs build
-(`website/scripts/marketplace.mjs`) writes that catalog from this file, with the plugin as a zip
+(`docs/scripts/marketplace.mjs`) writes that catalog from this file, with the plugin as a zip
 behind an `archive` source pinned by sha256.
 
 Codex, from the public GitHub repository:

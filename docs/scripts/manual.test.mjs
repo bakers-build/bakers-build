@@ -75,8 +75,8 @@ test('accepts a direct redirect to an existing anchor', t => {
 function navigation(t, mutate = () => {}) {
   const root = mkdtempSync(join(tmpdir(), 'manual-nav-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
-  mkdirSync(join(root, 'website/scripts'), { recursive: true })
-  mkdirSync(join(root, 'website/.vitepress'), { recursive: true })
+  mkdirSync(join(root, 'docs/scripts'), { recursive: true })
+  mkdirSync(join(root, 'docs/.vitepress'), { recursive: true })
   const areas = [
     { label: 'Getting Started', link: '/get-started/' },
     { label: 'Configuration', link: '/configuration/' },
@@ -95,9 +95,9 @@ function navigation(t, mutate = () => {}) {
   sidebar['/get-started/'][0].items.push({ link: '/get-started/' })
   sidebar['/configuration/'][0].items.push({ link: '/configuration/' })
   mutate(areas, sidebar)
-  copyFileSync(new URL('./check-pages.mjs', import.meta.url), join(root, 'website/scripts/check-pages.mjs'))
-  writeFileSync(join(root, 'website/.vitepress/manual.mjs'), `export const AREAS = ${JSON.stringify(areas)}; export const SIDEBAR = ${JSON.stringify(sidebar)}; export const SRC_EXCLUDE = ['bakers/**'];`)
-  return spawnSync(process.execPath, [join(root, 'website/scripts/check-pages.mjs')], { encoding: 'utf8' })
+  copyFileSync(new URL('./check-pages.mjs', import.meta.url), join(root, 'docs/scripts/check-pages.mjs'))
+  writeFileSync(join(root, 'docs/.vitepress/manual.mjs'), `export const AREAS = ${JSON.stringify(areas)}; export const SIDEBAR = ${JSON.stringify(sidebar)}; export const SRC_EXCLUDE = ['bakers/**'];`)
+  return spawnSync(process.execPath, [join(root, 'docs/scripts/check-pages.mjs')], { encoding: 'utf8' })
 }
 
 test('requires the three manual areas and primary configuration topics', t => {

@@ -1,4 +1,4 @@
-// node --test website/scripts/third-party.test.mjs
+// node --test docs/scripts/third-party.test.mjs
 import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

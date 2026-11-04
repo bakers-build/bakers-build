@@ -25,14 +25,14 @@ import { expect, it } from 'vitest';
 // with it. Keeping them apart also keeps the failure messages honest — a
 // reader who breaks this check is told about a source tree, not about a README.
 //
-// DELIBERATELY OUT OF DOMAIN: `docs/`, `website/` and this ticket's evidence
+// DELIBERATELY OUT OF DOMAIN: `docs/` and this ticket's evidence
 // files. Those are RECORDS. `docs/specs/BB-239|241|255|272|285`, the
 // `docs/superpowers/` plans and specs, `docs/evidence/BB-340` and
 // `docs/specs/DRAFT-bakers-ui-entity-slices.spec.md` (whose own header declares it
 // measured on a named branch on a named date, and not scheduled work) state what
 // was true when they were written and must not be rewritten to match today's
 // code. The two documents that DO state the present — `README.md` and
-// `website/reference/bakers-ui.md` — stay pinned by `readme.test.ts`, which
+// `docs/addons/bakers-ui.md` — stay pinned by `readme.test.ts`, which
 // asserts their claims sentence by sentence rather than grepping them.
 
 const here = dirname(fileURLToPath(import.meta.url));

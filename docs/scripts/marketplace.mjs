@@ -79,6 +79,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   buildMarketplace({
     pluginDir: repo('.claude/skills/bakers-build'),
     catalogFile: repo('.claude-plugin/marketplace.json'),
-    outDir: repo('website/.vitepress/dist'),
+    outDir: repo('docs/.vitepress/dist'),
   })
 }

@@ -43,10 +43,10 @@ shared installation. Ordinary provider accounts are needed only for the paths us
 Contracts referencing rendered theme assets also require `(cd web/themes/custom/bb_theme &&
 pnpm install --frozen-lockfile && pnpm build)` before their checks.
 
-For documentation, install website dependencies and run its existing build and tests:
+For documentation, install the site dependencies in `docs/` and run its existing build and tests:
 
 ```sh
-(cd website && pnpm install --frozen-lockfile && pnpm build && pnpm test)
+(cd docs && pnpm install --frozen-lockfile && pnpm build && pnpm test)
 ```
 
 Read [CLAUDE.md](CLAUDE.md), [WORKFLOW.md](WORKFLOW.md), [conventions](docs/bakers/conventions.md)

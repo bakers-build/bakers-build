@@ -39,7 +39,6 @@ type BbThemeConfig = DefaultTheme.Config & {
 
 export default withMermaid(
   defineConfigWithTheme<BbThemeConfig>({
-    srcDir: '../docs',
     srcExclude: SRC_EXCLUDE,
     rewrites: { 'index.md': 'manual.md', 'landing.md': 'index.md' },
     outDir: './.vitepress/dist',
@@ -64,7 +63,7 @@ export default withMermaid(
     lang: 'en-US',
     cleanUrls: true,
     vite: {
-      // srcDir is outside website; keep the theme CSS isolation config explicit.
+      // Keep the theme CSS isolation config explicit.
       css: { postcss: postcssConfig },
       resolve: { alias: { vue: vueRoot } },
       publicDir: fileURLToPath(new URL('../public', import.meta.url)),

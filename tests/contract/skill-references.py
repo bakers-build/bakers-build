@@ -115,13 +115,13 @@ def layout(directory):
     """Copy the plugin as installed, plus the repository texts that may not name a retired skill."""
     scan = Path(directory)
     shutil.copytree(root / 'skills', scan / 'skills')
-    shutil.copytree(repo / 'docs', scan / 'docs')
+    shutil.copytree(repo / 'docs', scan / 'docs', ignore=shutil.ignore_patterns('node_modules', '.vitepress', 'scripts', 'public'))
     shutil.copytree(repo / 'tests/skill-eval/fixtures', scan / 'fixtures')
     shutil.copytree(repo / 'tests/skill-eval/recipes', scan / 'recipes')
     for source, name in ((root / 'README.md', 'README.md'), (repo / 'WORKFLOW.md', 'WORKFLOW.md'),
                          (repo / 'tests/fixtures/bakers-playground/WORKFLOW.md', 'playground.WORKFLOW.md'),
                          (repo / 'tests/skill-eval/fixtures.json', 'fixtures.json'),
-                         (repo / 'website/.vitepress/manual.mjs', 'manual.mjs')):
+                         (repo / 'docs/.vitepress/manual.mjs', 'manual.mjs')):
         shutil.copy(source, scan / name)
     return scan
 
