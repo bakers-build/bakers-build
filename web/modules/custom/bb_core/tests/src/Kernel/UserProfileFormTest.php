@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Config\FileStorage;
+use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Core\StringTranslation\Translator\StaticTranslation;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Route;
 
 /**
  * The Profile page edits a user's position and background.
@@ -30,7 +35,7 @@ final class UserProfileFormTest extends KernelTestBase {
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
     'field', 'og',
-    'link', 'text', 'bb_core',
+    'link', 'text', 'ui_patterns', 'bb_core',
   ];
 
   /**
@@ -126,6 +131,26 @@ final class UserProfileFormTest extends KernelTestBase {
 
     $label = $this->container->get('entity_field.manager')->getFieldDefinitions('user', 'user')['field_developer_title']->getLabel();
     self::assertSame('Position', (string) $label);
+  }
+
+  /**
+   * The Profile page's AI-use notice goes through string translation.
+   */
+  public function testProfileDescriptionIsTranslatable(): void {
+    $notice = 'bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.';
+    $this->container->get('string_translation')->addTranslator(new StaticTranslation([
+      'en' => ['' => [$notice => 'Übersetzter Hinweis']],
+    ]));
+    $request = Request::create('/user/2/profile');
+    $request->setSession($this->container->get('request_stack')->getSession());
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, 'bb_core.user.profile');
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, new Route('/user/{user}/profile'));
+    $this->container->get('request_stack')->push($request);
+    $this->container->get('current_route_match')->resetRouteMatch();
+
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_page_header_description', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    self::assertSame('Übersetzter Hinweis', (string) $source->getPropValue());
   }
 
 }

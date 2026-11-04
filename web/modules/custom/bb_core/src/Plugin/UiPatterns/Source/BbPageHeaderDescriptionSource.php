@@ -70,15 +70,15 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
     // Screens that say what they hold; the Billing and Templates tabs
     // instead of the project caption.
     $fixed = [
-      'bb_track.account' => 'Who recorded time on this project is billed to',
-      'view.bb_api_keys.page' => 'Keys that let a script, pipeline or other tool act as this account, with exactly its permissions. Dates are UTC.',
-      'view.bb_ticket_templates.project_list' => 'Reusable ticket recipes for this project.',
-      'view.bb_service_accounts.settings' => 'Non-human automation accounts bound to this workspace, with their role, team and managed API keys.',
-      'bb_core.my_work.stats' => 'Your own figures — always visible to you',
-      'bb_core.user.profile' => 'bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.',
+      'bb_track.account' => $this->t('Who recorded time on this project is billed to'),
+      'view.bb_api_keys.page' => $this->t('Keys that let a script, pipeline or other tool act as this account, with exactly its permissions. Dates are UTC.'),
+      'view.bb_ticket_templates.project_list' => $this->t('Reusable ticket recipes for this project.'),
+      'view.bb_service_accounts.settings' => $this->t('Non-human automation accounts bound to this workspace, with their role, team and managed API keys.'),
+      'bb_core.my_work.stats' => $this->t('Your own figures — always visible to you'),
+      'bb_core.user.profile' => $this->t('bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.'),
     ];
     if (isset($fixed[$route])) {
-      return $fixed[$route];
+      return (string) $fixed[$route];
     }
     $project = $this->routeMatch->getParameter('bb_project');
     if ($project instanceof BbProjectInterface) {
