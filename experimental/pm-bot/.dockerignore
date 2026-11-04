@@ -4,7 +4,6 @@
 !config.template.yaml
 !render.mjs
 !entrypoint.sh
-!skills/**
 !relay/**
 !poller/**
 !lib/**

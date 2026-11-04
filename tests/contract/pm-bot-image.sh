@@ -13,11 +13,13 @@
 #     ${env:BAKERS_API_KEY} Hermes fills, and without the key itself; Hermes
 #     connects to bakers.build's /mcp (a stub of it, pm-bot-mcp-stub.mjs, in a
 #     container of the same image) with the key as bearer and takes exactly the
-#     eight included tools; with a wrong key the check fails; the skill's project
-#     reference is rendered
-#   - SOUL.md and the project-manager skill in the data directory are the
-#     image's (a hand edit to SOUL.md is restored); a learned skill and a
-#     session are kept
+#     eight included tools; with a wrong key the check fails
+#   - the shipped skills (bb-create-ticket, both recipes and the upstream method
+#     skills) are installed, the bundle version is printed, every relative link
+#     in them resolves, the upstream ones match pm-bot-upstream.sha256 (their
+#     pinned commits) and a leftover project-manager skill is removed
+#   - SOUL.md in the data directory is the image's (a hand edit is restored);
+#     a learned skill and a session are kept
 #   - a missing required key stops the start and is named
 #   - run mode, with the capabilities and options of the template's compose
 #     file: the poller and exactly one gateway run, as hermes, on the first
@@ -69,6 +71,7 @@ in_data() { docker run --rm -i -v "$volume:/d" --entrypoint sh "$IMAGE" -c "$1";
 # The env file points at the stub, as the Coder script writes it for a real site.
 sed "s|^BAKERS_URL=.*|BAKERS_URL=$BAKERS_URL|" experimental/pm-bot/test/fixture.env | in_data "umask 077; cat >/d/.env; mkdir -p /d/skills/learned /d/sessions
   echo kept >/d/skills/learned/SKILL.md; echo kept >/d/sessions/one.json; echo 'hand edit' >/d/SOUL.md
+  mkdir -p /d/skills/project-manager; echo old >/d/skills/project-manager/SKILL.md
   chown -R $OWNER:$OWNER /d"
 
 # The compose file's hardening, as docker run options.
@@ -105,13 +108,37 @@ grep -qE 'Connection failed.*(401|[Uu]nauthori)' <<<"$out" || { echo "$out" >&2;
 in_data "sed -i 's/^BAKERS_API_KEY=.*/BAKERS_API_KEY=$key/' /d/.env"
 pass "a wrong API key fails the check"
 
-ref=/d/skills/project-manager/references
-in_data "[ ! -e $ref/project.template.md ] && grep -qF $BAKERS_URL $ref/project.md" \
-  || fail "the skill's project reference was not rendered"
-in_data 'cat /d/skills/project-manager/SKILL.md' | cmp -s - experimental/pm-bot/skills/project-manager/SKILL.md \
-  || fail "the project-manager skill is not the image's"
+grep -qx 'skills: bb-create-ticket,bb-recipe-matt,bb-recipe-superpowers,brainstorming,grilling,writing-plans' <<<"$out" \
+  || { echo "$out" >&2; fail "the installed skills are not exactly the shipped six"; }
+grep -qE '^bakers skills [0-9]+\.[0-9]+\.[0-9]+$' <<<"$out" || { echo "$out" >&2; fail "the bundle version is not printed"; }
+in_data '[ ! -e /d/skills/project-manager ]' || fail "the old project-manager skill was not removed"
+pass "the shipped skills are installed, the bundle version printed and project-manager removed"
+
+# Every relative Markdown link of the installed shipped skills resolves; web links and anchors
+# aside. Hermes' own bundled skills in the same directory are not ours to check.
+in_data 'cd /d/skills && node --input-type=module -e "
+import { readFileSync, statSync, readdirSync } from \"node:fs\";
+import { dirname, join } from \"node:path\";
+const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)]);
+let bad = 0;
+const shipped = readdirSync(\"/opt/pm-bot/skills\").flatMap((name) => walk(name));
+for (const f of shipped.filter((f) => f.endsWith(\".md\"))) {
+  for (const [, l] of readFileSync(f, \"utf8\").matchAll(/\\]\\(\\s*<?([^)\\s>]+)>?/g)) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(l) || l.startsWith(\"#\")) continue;
+    const t = join(dirname(f), decodeURI(l.split(\"#\")[0]));
+    try { if (!statSync(t).isFile()) throw 0; } catch { console.error(f + \" -> \" + l); bad++; }
+  }
+}
+process.exit(bad ? 1 : 0);
+"' || fail "a shipped skill links a missing file"
+pass "every link in the shipped skills resolves"
+
+in_data 'cd /d/skills && sha256sum -c --quiet' <tests/contract/pm-bot-upstream.sha256 \
+  || fail "an upstream skill differs from its pinned commit"
+pass "the upstream skills are byte-equal to their pinned commits"
+
 in_data 'cat /d/SOUL.md' | cmp -s - experimental/pm-bot/SOUL.md || fail "SOUL.md is not the image's (hand edit kept?)"
-pass "SOUL.md and the project-manager skill are the image's"
+pass "SOUL.md is the image's"
 
 [ "$(in_data 'cat /d/skills/learned/SKILL.md /d/sessions/one.json')" = "kept
 kept" ] || fail "a learned skill or a session was lost"

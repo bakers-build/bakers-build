@@ -14,8 +14,8 @@
 #     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
 #     Hermes fills from the env file, exactly eight bakers tools, no OAuth
 #   - the clone reader is a pinned filesystem server with read tools only
-#   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token, and the
-#     skill carries the relay's operations as bakers tool calls
+#   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token
+#   - the bot carries no skill of its own (experimental/pm-bot/skills/)
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller and client call no LLM
@@ -42,7 +42,7 @@ pass() { echo "ok: $*"; }
 
 BOT=experimental/pm-bot
 TEMPLATE="$BOT/config.template.yaml"
-for f in "$TEMPLATE" "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/.env.example" \
+for f in "$TEMPLATE" "$BOT/SOUL.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
          "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/lib/bakers-client.mjs" \
          "$BOT/slack-app-manifest.yaml"; do
@@ -126,17 +126,9 @@ if [ -e "$BOT/relay" ] || git grep --untracked -nIE 'pm-relay|/jsonapi|/oauth/to
 fi
 pass "no relay, JSON:API call or token exchange in experimental/pm-bot/"
 
-# The relay's fixed operations are the skill's procedure, as bakers tool calls.
-SKILL="$BOT/skills/project-manager/SKILL.md"
-for word in bakers_ticket_create bakers_ticket_read bakers_ticket_search bakers_ticket_update \
-  bakers_ticket_transition bakers_comment_publish labels_add labels_remove 'Requested in Slack by' \
-  'Answered in Slack by' Question; do
-  grep -qF "$word" "$SKILL" || fail "$SKILL does not name $word"
-done
-if grep -nE '\b(type|recipe)\b.*bakers_ticket_classify|bakers_ticket_classify' "$SKILL"; then
-  fail "$SKILL classifies tickets"
-fi
-pass "the skill carries intake, answer and status as bakers tool calls"
+# The bot carries no skill of its own: the image ships bb-create-ticket and its method skills.
+[ ! -e "$BOT/skills" ] || fail "$BOT/skills is back; the bot ships the bundle's skills instead"
+pass "no bot-owned skill"
 
 python3 - "$BOT/slack-app-manifest.yaml" <<'PY' || fail "Slack app manifest lets the bot read or open direct messages (see above)"
 import sys, yaml
@@ -182,13 +174,13 @@ fi
 pass "no customer literal outside .env.example"
 
 # The bot passes a clear answer on at once; a confirmation round must not come back.
-if git grep -nIiE 'correct\?|confirm' -- "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/README.md"; then
+if git grep -nIiE 'correct\?|confirm' -- "$BOT/SOUL.md" "$BOT/README.md"; then
   fail "persona, skill or runbook asks the thread to confirm an answer before passing it on"
 fi
 pass "the bot passes answers on without a confirmation round"
 
 # AI agents work the tickets through bakers.build; customer wording describes events, not a team.
-if git grep -nIiwE 'team' -- "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/poller/messages.json"; then
+if git grep -nIiwE 'team' -- "$BOT/SOUL.md" "$BOT/poller/messages.json"; then
   fail "customer wording credits a team"
 fi
 pass "customer wording says what happens, not what a team does"
