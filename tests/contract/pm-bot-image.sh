@@ -13,12 +13,16 @@
 #     ${env:BAKERS_API_KEY} Hermes fills, and without the key itself; Hermes
 #     connects to bakers.build's /mcp (a stub of it, pm-bot-mcp-stub.mjs, in a
 #     container of the same image) with the key as bearer and takes exactly the
-#     six included tools; with a wrong key the check fails; the skill's project
-#     reference is rendered
-#   - SOUL.md and the project-manager skill in the data directory are the
-#     image's (a hand edit to SOUL.md is restored); a learned skill and a
-#     session are kept
-#   - a missing required key stops the start and is named
+#     eight included tools; with a wrong key the check fails
+#   - the shipped skills (bb-create-ticket, both recipes and the upstream method
+#     skills) are installed, the bundle version is printed, every relative link
+#     in them resolves, the upstream ones match pm-bot-upstream.sha256 (their
+#     pinned commits) and a leftover project-manager skill is removed
+#   - SOUL.md in the data directory is rendered from the image's template (a hand
+#     edit is replaced), with no placeholder or key left;
+#     a learned skill and a session are kept
+#   - a missing required key stops the start and is named, and so does more than
+#     one allowed channel
 #   - run mode, with the capabilities and options of the template's compose
 #     file: the poller and exactly one gateway run, as hermes, on the first
 #     start and again on a start over the same data directory
@@ -40,7 +44,11 @@ pass() { echo "ok: $*"; }
 IMAGE="${1:-}"
 if [ -z "$IMAGE" ]; then
   IMAGE=pm-bot:check
-  docker build -q -t "$IMAGE" experimental/pm-bot >/dev/null || fail "docker build experimental/pm-bot failed"
+  # The skill contexts: this repository's bundle, superpowers v7.0.0 and mattpocock/skills v1.3.2.
+  docker build -q -t "$IMAGE" \
+    --build-context bundle=.claude/skills/bakers-build \
+    --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3 \
+    --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0 experimental/pm-bot >/dev/null || fail "docker build experimental/pm-bot failed"
 fi
 
 volume="pm-bot-check-$$"
@@ -65,6 +73,7 @@ in_data() { docker run --rm -i -v "$volume:/d" --entrypoint sh "$IMAGE" -c "$1";
 # The env file points at the stub, as the Coder script writes it for a real site.
 sed "s|^BAKERS_URL=.*|BAKERS_URL=$BAKERS_URL|" experimental/pm-bot/test/fixture.env | in_data "umask 077; cat >/d/.env; mkdir -p /d/skills/learned /d/sessions
   echo kept >/d/skills/learned/SKILL.md; echo kept >/d/sessions/one.json; echo 'hand edit' >/d/SOUL.md
+  mkdir -p /d/skills/project-manager; echo old >/d/skills/project-manager/SKILL.md
   chown -R $OWNER:$OWNER /d"
 
 # The compose file's hardening, as docker run options.
@@ -86,14 +95,14 @@ config="$(in_data 'cat /d/config.yaml')" || fail "config.yaml was not rendered"
 ! grep -v -F '${env:BAKERS_API_KEY}' <<<"$config" | grep -n '\${' || fail "config.yaml keeps a placeholder"
 grep -q 'Bearer ${env:BAKERS_API_KEY}' <<<"$config" || fail "config.yaml does not leave the API key to Hermes"
 ! grep -qF "$key" <<<"$config" || fail "config.yaml holds the API key"
-grep -q 'C0000000001,C0000000002' <<<"$config" || fail "config.yaml lacks the allowed channels"
+grep -q 'allowed_channels: C0000000001$' <<<"$config" || fail "config.yaml lacks the one allowed channel"
 grep -qF "url: $BAKERS_URL/mcp" <<<"$config" || fail "config.yaml does not reach bakers.build's /mcp"
 pass "config.yaml rendered, no placeholder left but the key Hermes fills, no key in it"
 
 grep -q 'Connected' <<<"$out" || { echo "$out" >&2; fail "Hermes does not connect to /mcp with the API key"; }
-grep -qx 'bakers tools: tool_api__bakers_comment_publish,tool_api__bakers_ticket_create,tool_api__bakers_ticket_read,tool_api__bakers_ticket_search,tool_api__bakers_ticket_transition,tool_api__bakers_ticket_update' <<<"$out" \
-  || { echo "$out" >&2; fail "Hermes does not register exactly the six included tools of the seven offered"; }
-pass "Hermes connects to /mcp with the API key as bearer and takes exactly the six tools"
+grep -qx 'bakers tools: tool_api__bakers_comment_publish,tool_api__bakers_ticket_classify,tool_api__bakers_ticket_create,tool_api__bakers_ticket_read,tool_api__bakers_ticket_search,tool_api__bakers_ticket_transition,tool_api__bakers_ticket_update,tool_api__bakers_user_read' <<<"$out" \
+  || { echo "$out" >&2; fail "Hermes does not register exactly the eight included tools of the nine offered"; }
+pass "Hermes connects to /mcp with the API key as bearer and takes exactly the eight tools"
 
 in_data "sed -i 's/^BAKERS_API_KEY=.*/BAKERS_API_KEY=wrong-key/' /d/.env"
 out="$(start --rm -e BAKERS_API_KEY=wrong-key "$IMAGE" check 2>&1)" && { echo "$out" >&2; fail "check passed with a wrong API key"; }
@@ -101,13 +110,43 @@ grep -qE 'Connection failed.*(401|[Uu]nauthori)' <<<"$out" || { echo "$out" >&2;
 in_data "sed -i 's/^BAKERS_API_KEY=.*/BAKERS_API_KEY=$key/' /d/.env"
 pass "a wrong API key fails the check"
 
-ref=/d/skills/project-manager/references
-in_data "[ ! -e $ref/project.template.md ] && grep -qF $BAKERS_URL $ref/project.md" \
-  || fail "the skill's project reference was not rendered"
-in_data 'cat /d/skills/project-manager/SKILL.md' | cmp -s - experimental/pm-bot/skills/project-manager/SKILL.md \
-  || fail "the project-manager skill is not the image's"
-in_data 'cat /d/SOUL.md' | cmp -s - experimental/pm-bot/SOUL.md || fail "SOUL.md is not the image's (hand edit kept?)"
-pass "SOUL.md and the project-manager skill are the image's"
+grep -qx 'skills: bb-create-ticket,bb-recipe-matt,bb-recipe-superpowers,brainstorming,grilling,writing-plans' <<<"$out" \
+  || { echo "$out" >&2; fail "the installed skills are not exactly the shipped six"; }
+grep -qE '^bakers skills [0-9]+\.[0-9]+\.[0-9]+$' <<<"$out" || { echo "$out" >&2; fail "the bundle version is not printed"; }
+in_data '[ ! -e /d/skills/project-manager ]' || fail "the old project-manager skill was not removed"
+pass "the shipped skills are installed, the bundle version printed and project-manager removed"
+
+# Every relative Markdown link of the installed shipped skills resolves to a file inside the
+# linking skill's own folder, the only files Hermes' skill_view serves; web links and anchors
+# aside. Hermes' own bundled skills in the same directory are not ours to check.
+in_data 'cd /d/skills && node --input-type=module -e "
+import { readFileSync, statSync, readdirSync } from \"node:fs\";
+import { dirname, join } from \"node:path\";
+const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)]);
+let bad = 0;
+const shipped = readdirSync(\"/opt/pm-bot/skills\").flatMap((name) => walk(name));
+for (const f of shipped.filter((f) => f.endsWith(\".md\"))) {
+  for (const [, l] of readFileSync(f, \"utf8\").matchAll(/\\]\\(\\s*<?([^)\\s>]+)>?/g)) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(l) || l.startsWith(\"#\")) continue;
+    const t = join(dirname(f), decodeURI(l.split(\"#\")[0]));
+    const own = f.split(\"/\")[0] + \"/\";
+    try { if (!t.startsWith(own) || !statSync(t).isFile()) throw 0; } catch { console.error(f + \" -> \" + l); bad++; }
+  }
+}
+process.exit(bad ? 1 : 0);
+"' || fail "a shipped skill links a missing file or one outside its folder"
+pass "every link in the shipped skills resolves inside its skill folder"
+
+in_data 'cd /d/skills && sha256sum -c --quiet' <tests/contract/pm-bot-upstream.sha256 \
+  || fail "an upstream skill differs from its pinned commit"
+pass "the upstream skills are byte-equal to their pinned commits"
+
+soul="$(in_data 'cat /d/SOUL.md')" || fail "SOUL.md was not rendered"
+! grep -qF 'hand edit' <<<"$soul" || fail "SOUL.md keeps a hand edit"
+! grep -n '\${' <<<"$soul" || fail "SOUL.md keeps a placeholder"
+! grep -qF "$key" <<<"$soul" || fail "SOUL.md holds the API key"
+grep -qF "$(sed -n 's/^PM_BOT_PROJECT=//p' experimental/pm-bot/test/fixture.env)" <<<"$soul" || fail "SOUL.md lacks the project"
+pass "SOUL.md is rendered from the image's template: no hand edit, placeholder or key, the project in it"
 
 [ "$(in_data 'cat /d/skills/learned/SKILL.md /d/sessions/one.json')" = "kept
 kept" ] || fail "a learned skill or a session was lost"
@@ -116,6 +155,10 @@ pass "learned skills and sessions kept"
 out="$(start --rm -e PM_BOT_PROJECT= -e SLACK_ADMIN_USERS= "$IMAGE" check 2>&1)" && fail "check passed without PM_BOT_PROJECT"
 grep -q 'missing: SLACK_ADMIN_USERS PM_BOT_PROJECT' <<<"$out" || { echo "$out" >&2; fail "the missing keys are not named"; }
 pass "a missing key stops the start and is named"
+
+out="$(start --rm -e SLACK_ALLOWED_CHANNELS=C0000000001,C0000000002 "$IMAGE" check 2>&1)" && fail "check passed with two channels"
+grep -q 'SLACK_ALLOWED_CHANNELS must name exactly one channel' <<<"$out" || { echo "$out" >&2; fail "two channels are not refused by name"; }
+pass "more than one channel stops the start: the thread link needs the one channel's ID"
 
 # Starts the bot in a new container on the data volume, as a workspace start does, and
 # checks that the poller and exactly one gateway run in it, as hermes.

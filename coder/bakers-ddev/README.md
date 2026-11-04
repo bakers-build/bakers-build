@@ -92,15 +92,16 @@ The bot is one container, `pm-bot`, on the workspace's own Docker daemon, from t
 | `~/.pm-bot/data` | `/opt/data`, read-write | Hermes' home: sessions, memories, learned skills, the poller's state and the env file. Kept across starts and rebuilds |
 | `~/.pm-bot/clone` | `/opt/clone`, read-only | A clone of the project's repository without env files, settings, keys and certificates |
 
-It has no Docker socket and every capability dropped except the four Hermes' start needs to drop to its own user, which runs as the workspace user's UID. Every start rewrites the env file from the parameters, and the container rewrites `config.yaml`, `SOUL.md` and the `project-manager` skill from the image: edits to them are lost; sessions, memories and other skills stay.
+It has no Docker socket and every capability dropped except the four Hermes' start needs to drop to its own user, which runs as the workspace user's UID. Every start rewrites the env file from the parameters, and the container rewrites `config.yaml`, `SOUL.md` and the shipped skills (`bb-create-ticket`, its recipes and their method skills) from the image and removes the retired `project-manager` skill: edits to them are lost; sessions, memories and learned skills stay.
 
 ### 1. The bot's service account
 
 As a bakers.build workspace administrator:
 
 1. **Workspace → Service accounts → Add**: an account for the bot, with a rank that may create and update tickets, as a member of the bot's project's team only. The bot reaches bakers.build only through its tools on `/mcp`, with this account's rights, so the membership is its reach.
-2. On that account, create an API key. It goes into `pm_bot_bakers_api_key`; the bot sends it as the bearer on `/mcp`. The site must accept an API key as bearer and offer the project ticket list tool and `labels_remove` on `bakers_ticket_update`.
-3. Note the project's UUID for `pm_bot_project`. To have new tickets qualified at once, also note a conductor's UUID for `pm_bot_conductor`.
+2. On that account's profile, set its **position** and **background**: `bb-create-ticket` reads its own user first and works the way they say. For example, position *Project manager*, background *Specifies every idea with its requester before work starts and answers technical questions itself.*
+3. On that account, create an API key. It goes into `pm_bot_bakers_api_key`; the bot sends it as the bearer on `/mcp`. The site must accept an API key as bearer and offer the project ticket list tool, `bakers_user_read` and `labels_remove` on `bakers_ticket_update`.
+4. Note the project's UUID for `pm_bot_project`. To have new tickets qualified at once, also note a conductor's UUID for `pm_bot_conductor`.
 
 ### 2. The Slack app
 
@@ -108,7 +109,7 @@ At api.slack.com/apps, choose **Create New App → From a manifest**, pick your 
 
 1. **Basic Information → App-Level Tokens:** generate a token with the `connections:write` scope. That is the app token (`xapp-…`) for `pm_bot_slack_app_token`.
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
-3. Invite the bot to the project's channels (`/invite @<bot>`). Their channel IDs (channel name → **View channel details**, at the bottom) go into `pm_bot_slack_allowed_channels`.
+3. Invite the bot to the project's channel (`/invite @<bot>`). Its channel ID (channel name → **View channel details**, at the bottom) goes into `pm_bot_slack_allowed_channels`. The bot serves exactly one channel: Hermes shows it a channel's name, not its ID, and the thread link it writes into a ticket needs the ID. With more than one ID the container refuses to start.
 4. Copy the operators' member IDs (profile → **⋮ → Copy member ID**) into `pm_bot_slack_admin_users`.
 5. Optional: create a private channel with only the operators in it and invite the bot. That is Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`).
 
@@ -120,7 +121,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 |---|---|---|
 | `pm_bot_slack_bot_token` | yes | Bot token, `xoxb-…` (masked) |
 | `pm_bot_slack_app_token` | yes | App token, `xapp-…` (masked) |
-| `pm_bot_slack_allowed_channels` | yes | Channel IDs the bot answers in. Messages in any other channel are ignored |
+| `pm_bot_slack_allowed_channels` | yes | The one channel ID the bot answers in. Messages in any other channel are ignored |
 | `pm_bot_slack_allowed_users` | no | Member IDs the bot answers. Empty: every user in the allowed channels. Set: only these users |
 | `pm_bot_slack_admin_users` | yes | Operators' member IDs: the only users who may run Hermes slash commands |
 | `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for thread permalinks |
@@ -142,7 +143,7 @@ Channel and member IDs are separated by spaces, commas or both. On the command l
 coder create pm --template bakers-ddev \
   --parameter pm_bot_slack_bot_token=xoxb-… \
   --parameter pm_bot_slack_app_token=xapp-… \
-  --parameter "pm_bot_slack_allowed_channels=C0123456789 C0987654321" \
+  --parameter "pm_bot_slack_allowed_channels=C0123456789" \
   --parameter pm_bot_slack_admin_users=U0123456789 \
   --parameter pm_bot_slack_workspace_url=https://example.slack.com \
   --parameter pm_bot_bakers_url=https://bakers.example.com \

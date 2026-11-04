@@ -12,10 +12,11 @@
 #   - one shared session per thread, not per user
 #   - bakers.build is reached only through its own MCP endpoint: the remote
 #     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
-#     Hermes fills from the env file, exactly six bakers tools, no OAuth
+#     Hermes fills from the env file, exactly eight bakers tools, no OAuth
 #   - the clone reader is a pinned filesystem server with read tools only
-#   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token, and the
-#     skill carries the relay's operations as bakers tool calls
+#   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token
+#   - the bot carries no skill of its own (experimental/pm-bot/skills/); SOUL.template.md gives
+#     bb-create-ticket its host context and carries status and the answer path
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller and client call no LLM
@@ -25,6 +26,7 @@
 #   - customer wording says what happens, not what a team does
 #   - the env file is ignored and no committed file holds a token
 #   - the bot has no install script (experimental/pm-bot/bin/, lib/running.sh)
+#   - every image build line passes the bundle and the two pinned upstream skill contexts
 #   - the template's compose service runs the image with exactly two mounts
 #     (data read-write, clone read-only), no Docker socket, restart
 #     unless-stopped, every capability dropped but the ones Hermes' bootstrap
@@ -41,7 +43,7 @@ pass() { echo "ok: $*"; }
 
 BOT=experimental/pm-bot
 TEMPLATE="$BOT/config.template.yaml"
-for f in "$TEMPLATE" "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/.env.example" \
+for f in "$TEMPLATE" "$BOT/SOUL.template.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
          "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/lib/bakers-client.mjs" \
          "$BOT/slack-app-manifest.yaml"; do
@@ -101,10 +103,11 @@ need(bakers.get("url") == "${BAKERS_URL}/mcp", "bakers is not ${BAKERS_URL}/mcp"
 need("command" not in bakers, "bakers is started as a local process")
 need(bakers.get("headers") == {"Authorization": "Bearer ${env:BAKERS_API_KEY}"},
      "bakers does not send exactly Authorization: Bearer ${env:BAKERS_API_KEY}")
-six = ["tool_api__bakers_comment_publish", "tool_api__bakers_ticket_create", "tool_api__bakers_ticket_read",
-       "tool_api__bakers_ticket_search", "tool_api__bakers_ticket_transition", "tool_api__bakers_ticket_update"]
-need(sorted((bakers.get("tools") or {}).get("include") or []) == six,
-     "bakers does not include exactly the six tools: ticket create, read, search, update, transition and comment publish")
+eight = ["tool_api__bakers_comment_publish", "tool_api__bakers_ticket_classify", "tool_api__bakers_ticket_create",
+         "tool_api__bakers_ticket_read", "tool_api__bakers_ticket_search", "tool_api__bakers_ticket_transition",
+         "tool_api__bakers_ticket_update", "tool_api__bakers_user_read"]
+need(sorted((bakers.get("tools") or {}).get("include") or []) == eight,
+     "bakers does not include exactly the eight tools")
 
 # Hermes adds resource and prompt utility calls to every MCP server unless they are switched off.
 for name, server in (("clone-reader", reader), ("bakers", bakers)):
@@ -124,17 +127,19 @@ if [ -e "$BOT/relay" ] || git grep --untracked -nIE 'pm-relay|/jsonapi|/oauth/to
 fi
 pass "no relay, JSON:API call or token exchange in experimental/pm-bot/"
 
-# The relay's fixed operations are the skill's procedure, as bakers tool calls.
-SKILL="$BOT/skills/project-manager/SKILL.md"
-for word in bakers_ticket_create bakers_ticket_read bakers_ticket_search bakers_ticket_update \
-  bakers_ticket_transition bakers_comment_publish labels_add labels_remove 'Requested in Slack by' \
-  'Answered in Slack by' Question; do
-  grep -qF "$word" "$SKILL" || fail "$SKILL does not name $word"
+# The bot carries no skill of its own: the image ships bb-create-ticket and its method skills.
+[ ! -e "$BOT/skills" ] || fail "$BOT/skills is back; the bot ships the bundle's skills instead"
+pass "no bot-owned skill"
+
+# SOUL.md is the skill's host: its host context, the routing, status and the answer path.
+SOUL="$BOT/SOUL.template.md"
+[ ! -e "$BOT/SOUL.md" ] || fail "$BOT/SOUL.md is back; the entrypoint renders SOUL.template.md"
+for word in bb-create-ticket 'Slack user' /archives/ labels_remove frozen 'Answered in Slack by' Question \
+  'technical problem' mcp_bakers__tool_api__ bakers_ticket_search bakers_ticket_read 'your user' bakers_user_read 'not in a checkout' '${PM_BOT_PROJECT}' \
+  '${PM_BOT_TICKET_WORKFLOW}' '${PM_BOT_CONDUCTOR_TEXT}' '${SLACK_WORKSPACE_URL}/archives/${SLACK_ALLOWED_CHANNELS}/p'; do
+  grep -qF -- "$word" "$SOUL" || fail "$SOUL does not name $word"
 done
-if grep -nE '\b(type|recipe)\b.*bakers_ticket_classify|bakers_ticket_classify' "$SKILL"; then
-  fail "$SKILL classifies tickets"
-fi
-pass "the skill carries intake, answer and status as bakers tool calls"
+pass "SOUL.template.md gives bb-create-ticket its host context and carries status and answers"
 
 python3 - "$BOT/slack-app-manifest.yaml" <<'PY' || fail "Slack app manifest lets the bot read or open direct messages (see above)"
 import sys, yaml
@@ -180,13 +185,13 @@ fi
 pass "no customer literal outside .env.example"
 
 # The bot passes a clear answer on at once; a confirmation round must not come back.
-if git grep -nIiE 'correct\?|confirm' -- "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/README.md"; then
+if git grep -nIiE 'correct\?|confirm' -- "$BOT/SOUL.template.md" "$BOT/README.md"; then
   fail "persona, skill or runbook asks the thread to confirm an answer before passing it on"
 fi
 pass "the bot passes answers on without a confirmation round"
 
 # AI agents work the tickets through bakers.build; customer wording describes events, not a team.
-if git grep -nIiwE 'team' -- "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/poller/messages.json"; then
+if git grep -nIiwE 'team' -- "$BOT/SOUL.template.md" "$BOT/poller/messages.json"; then
   fail "customer wording credits a team"
 fi
 pass "customer wording says what happens, not what a team does"
@@ -204,6 +209,23 @@ if [ -e "$BOT/bin" ] || [ -e "$BOT/lib/running.sh" ] || [ -n "$(git ls-files "$B
   fail "$BOT/bin/ or $BOT/lib/running.sh is back"
 fi
 pass "no install script for the bot"
+
+# The image's skills come from three named build contexts: this repository's bundle and two
+# upstreams pinned by commit. Every build of the image passes them, the same way.
+CONTEXTS=(--build-context bundle=.claude/skills/bakers-build
+  --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3
+  --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0)
+for f in scripts/ci/github-image-gate.sh tests/contract/pm-bot-image.sh "$BOT/README.md"; do
+  # Join continued lines, then take each docker build whose context is $BOT.
+  lines="$(sed -e ':a' -e '/\\$/N; s/\\\n//; ta' "$f" | grep -E "docker build .* $BOT( |\$)" || true)"
+  [ -n "$lines" ] || fail "$f has no docker build of $BOT"
+  while IFS= read -r line; do
+    for ((i = 1; i < ${#CONTEXTS[@]}; i += 2)); do
+      grep -qF -- "${CONTEXTS[i]}" <<<"$line" || fail "an image build line lacks a pinned skill context: $f: ${CONTEXTS[i]}"
+    done
+  done <<<"$lines"
+done
+pass "every image build line passes the bundle and the pinned upstream skill contexts"
 
 COMPOSE=coder/bakers-ddev/pm-bot.compose.yaml
 [ -f "$COMPOSE" ] || fail "$COMPOSE is missing"
