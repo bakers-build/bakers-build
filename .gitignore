@@ -130,4 +130,4 @@ node_modules/
 /.bakers/private-audit/
 
 # The PM bot env file: secrets.
-/pm-bot/.env
+/experimental/pm-bot/.env

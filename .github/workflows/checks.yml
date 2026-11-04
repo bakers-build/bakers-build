@@ -406,7 +406,7 @@ jobs:
         run: |-
           set -eu
           apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml
-          node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'pm-bot/**/*.test.mjs'
+          node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
           bash tests/contract/pm-bot.sh
   coder_pm_bot:
     runs-on: blacksmith-4vcpu-ubuntu-2404

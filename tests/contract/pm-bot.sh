@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Lock-down and configurability contract for the Hermes PM bot (pm-bot/).
+# Lock-down and configurability contract for the Hermes PM bot (experimental/pm-bot/).
 #
 #   bash tests/contract/pm-bot.sh
 #
@@ -14,7 +14,7 @@
 #     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
 #     Hermes fills from the env file, exactly six bakers tools, no OAuth
 #   - the clone reader is a pinned filesystem server with read tools only
-#   - nothing in pm-bot/ is a relay, calls JSON:API or exchanges a token, and the
+#   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token, and the
 #     skill carries the relay's operations as bakers tool calls
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
@@ -24,7 +24,7 @@
 #   - the bot passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
 #   - the env file is ignored and no committed file holds a token
-#   - the bot has no install script (pm-bot/bin/, lib/running.sh)
+#   - the bot has no install script (experimental/pm-bot/bin/, lib/running.sh)
 #   - the template's compose service runs the image with exactly two mounts
 #     (data read-write, clone read-only), no Docker socket, restart
 #     unless-stopped, every capability dropped but the ones Hermes' bootstrap
@@ -39,7 +39,7 @@ cd "$ROOT"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 pass() { echo "ok: $*"; }
 
-BOT=pm-bot
+BOT=experimental/pm-bot
 TEMPLATE="$BOT/config.template.yaml"
 for f in "$TEMPLATE" "$BOT/SOUL.md" "$BOT/skills/project-manager/SKILL.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
@@ -120,9 +120,9 @@ pass "configuration template keeps the lock-down"
 
 # No relay, no JSON:API and no token exchange: bakers tools are the only way in.
 if [ -e "$BOT/relay" ] || git grep --untracked -nIE 'pm-relay|/jsonapi|/oauth/token|client_credentials|BAKERS_CLIENT_(ID|SECRET)|create_ticket|answer_question' -- "$BOT"; then
-  fail "pm-bot/ still has the relay, a JSON:API call, a token exchange or a relay tool"
+  fail "experimental/pm-bot/ still has the relay, a JSON:API call, a token exchange or a relay tool"
 fi
-pass "no relay, JSON:API call or token exchange in pm-bot/"
+pass "no relay, JSON:API call or token exchange in experimental/pm-bot/"
 
 # The relay's fixed operations are the skill's procedure, as bakers tool calls.
 SKILL="$BOT/skills/project-manager/SKILL.md"
@@ -175,7 +175,7 @@ pass "poller and client make no LLM call"
 
 # Customer specifics live in the env file only; .env.example may show them as examples.
 if git grep --untracked -nIiE 'pnf|park ?(and|&|n) ?fly' -- "$BOT" ":!$BOT/.env.example"; then
-  fail "a customer literal appears in pm-bot/ outside .env.example"
+  fail "a customer literal appears in experimental/pm-bot/ outside .env.example"
 fi
 pass "no customer literal outside .env.example"
 

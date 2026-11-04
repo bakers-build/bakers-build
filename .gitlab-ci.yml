@@ -132,13 +132,13 @@ before_script:
   - .claude/skills/bakers-build/skills/**/*
   - .gitlab-ci.yml
 .changes_pm_bot: &changes_pm_bot
-  - pm-bot/**/*
+  - experimental/pm-bot/**/*
   - coder/bakers-ddev/pm-bot.compose.yaml
   - tests/contract/pm-bot*
   - .gitlab-ci.yml
 .changes_coder_pm_bot: &changes_coder_pm_bot
   - coder/**/*
-  - pm-bot/**/*
+  - experimental/pm-bot/**/*
   - tests/contract/coder-pm-bot.sh
   - .gitlab-ci.yml
 .changes_docs: &changes_docs
@@ -379,7 +379,7 @@ conductor:
     reports:
       junit: bakers-cli/junit-vitest.xml
 
-# The Slack PM bot (pm-bot/): its node tests against Slack and bakers.build stubs,
+# The Slack PM bot (experimental/pm-bot/): its node tests against Slack and bakers.build stubs,
 # and its contract script. Node only, no Drupal, no LLM.
 pm_bot:
   stage: test
@@ -393,7 +393,7 @@ pm_bot:
   before_script: []
   script:
     - apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml
-    - node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'pm-bot/**/*.test.mjs'
+    - node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
     - bash tests/contract/pm-bot.sh
   artifacts:
     when: always

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The PM bot container's start, as the hermes user after Hermes' own bootstrap
-# (pm-bot/Dockerfile). On every start it:
+# (experimental/pm-bot/Dockerfile). On every start it:
 #   1. checks the required env (from the data directory's .env) and names what is missing;
 #   2. renders config.yaml and the skill's project reference from the env (render.mjs);
 #   3. puts SOUL.md and the project-manager skill into the data directory, replacing them;

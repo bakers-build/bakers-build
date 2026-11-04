@@ -10,6 +10,6 @@ Agents work your tickets, step by step, while you stay in charge.
 
 Start directly with [chat access](/get-started/connector), [your first machine](/get-started/machine), or [another project on a prepared machine](/get-started/connect-a-project).
 
-To run the project-manager bot in Slack, follow [`pm-bot/README.md`](https://github.com/bakers-build/bakers-build/blob/next/pm-bot/README.md).
+To run the project-manager bot in Slack, follow [`experimental/pm-bot/README.md`](https://github.com/bakers-build/bakers-build/blob/next/experimental/pm-bot/README.md).
 
 The site is published from `develop`, so it can describe features the latest release does not have yet; the version row names the commit it was built from.

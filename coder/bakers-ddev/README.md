@@ -83,7 +83,7 @@ The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its conta
 
 ## PM bot
 
-The workspace can run the bakers.build PM bot ([`pm-bot/`](../../pm-bot/README.md)): a Hermes gateway that answers in Slack, and a poller that posts ticket changes into their Slack threads. Its settings are workspace parameters. Set them once; every start, restart, rebuild and template update brings the bot back with them. A workspace with every PM bot parameter empty runs no bot and starts as before.
+The workspace can run the bakers.build PM bot ([`experimental/pm-bot/`](../../experimental/pm-bot/README.md)): a Hermes gateway that answers in Slack, and a poller that posts ticket changes into their Slack threads. Its settings are workspace parameters. Set them once; every start, restart, rebuild and template update brings the bot back with them. A workspace with every PM bot parameter empty runs no bot and starts as before.
 
 The bot is one container, `pm-bot`, on the workspace's own Docker daemon, from the image the template variable `pm_bot_image` pins. On every start, [`scripts/pm-bot.sh`](scripts/pm-bot.sh) checks the parameters, writes the bot's env file, refreshes the clone of the project's repository and runs `docker compose up` with [`pm-bot.compose.yaml`](pm-bot.compose.yaml). The container restarts on its own (`unless-stopped`) and sees two directories of the home volume, nothing else:
 
@@ -104,7 +104,7 @@ As a bakers.build workspace administrator:
 
 ### 2. The Slack app
 
-At api.slack.com/apps, choose **Create New App → From a manifest**, pick your workspace and paste [`pm-bot/slack-app-manifest.yaml`](../../pm-bot/slack-app-manifest.yaml) from the bakers.build revision of the image. It sets up Socket Mode, the bot scopes and the message events.
+At api.slack.com/apps, choose **Create New App → From a manifest**, pick your workspace and paste [`experimental/pm-bot/slack-app-manifest.yaml`](../../experimental/pm-bot/slack-app-manifest.yaml) from the bakers.build revision of the image. It sets up Socket Mode, the bot scopes and the message events.
 
 1. **Basic Information → App-Level Tokens:** generate a token with the `connections:write` scope. That is the app token (`xapp-…`) for `pm_bot_slack_app_token`.
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
@@ -157,7 +157,7 @@ On the command line, use the space form shown above: a `--parameter` value with 
 
 ### 4. The bot's version
 
-The bot's image is `pm-bot/Dockerfile`: the official Hermes image at the version the bot is written for, with the bot's files baked in. GitHub CI builds and checks it in `image_gate` with the other images, and the release publishes it as a public package beside them: `ghcr.io/bakers-build/bakers-build/pm-bot`, tagged with the commit and the branch (`next`, `main`), and on `main` also with the version and `latest`. Pin a tag with its digest:
+The bot's image is `experimental/pm-bot/Dockerfile`: the official Hermes image at the version the bot is written for, with the bot's files baked in. GitHub CI builds and checks it in `image_gate` with the other images, and the release publishes it as a public package beside them: `ghcr.io/bakers-build/bakers-build/pm-bot`, tagged with the commit and the branch (`next`, `main`), and on `main` also with the version and `latest`. Pin a tag with its digest:
 
 ```sh
 docker buildx imagetools inspect ghcr.io/bakers-build/bakers-build/pm-bot:<tag> --format '{{.Manifest.Digest}}'

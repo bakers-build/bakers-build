@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Smoke test of the PM bot's image (pm-bot/Dockerfile).
+# Smoke test of the PM bot's image (experimental/pm-bot/Dockerfile).
 #
 #   bash tests/contract/pm-bot-image.sh [IMAGE]
 #
-# Without IMAGE it builds pm-bot/ as pm-bot:check first. The data directory
+# Without IMAGE it builds experimental/pm-bot/ as pm-bot:check first. The data directory
 # is a Docker volume seeded as the Coder script leaves it (owned by uid 1000,
 # .env mode 600), so the test runs the same against a local daemon and CI's
 # Docker-in-Docker. It asserts:
@@ -40,7 +40,7 @@ pass() { echo "ok: $*"; }
 IMAGE="${1:-}"
 if [ -z "$IMAGE" ]; then
   IMAGE=pm-bot:check
-  docker build -q -t "$IMAGE" pm-bot >/dev/null || fail "docker build pm-bot failed"
+  docker build -q -t "$IMAGE" experimental/pm-bot >/dev/null || fail "docker build experimental/pm-bot failed"
 fi
 
 volume="pm-bot-check-$$"
@@ -52,8 +52,8 @@ docker volume create "$volume" >/dev/null
 docker network create "$net" >/dev/null
 
 # bakers.build's /mcp, stubbed: it answers only the fixture's API key.
-key="$(sed -n 's/^BAKERS_API_KEY=//p' pm-bot/test/fixture.env)"
-[ -n "$key" ] || fail "pm-bot/test/fixture.env has no BAKERS_API_KEY"
+key="$(sed -n 's/^BAKERS_API_KEY=//p' experimental/pm-bot/test/fixture.env)"
+[ -n "$key" ] || fail "experimental/pm-bot/test/fixture.env has no BAKERS_API_KEY"
 docker run -d --name "$stub" --network "$net" -e STUB_KEY="$key" --entrypoint node "$IMAGE" \
   --input-type=module -e "$(cat tests/contract/pm-bot-mcp-stub.mjs)" >/dev/null || fail "the /mcp stub does not start"
 BAKERS_URL="http://$stub:8080"
@@ -63,7 +63,7 @@ in_data() { docker run --rm -i -v "$volume:/d" --entrypoint sh "$IMAGE" -c "$1";
 
 # What the Coder script and a running bot leave behind, and what must survive the next start.
 # The env file points at the stub, as the Coder script writes it for a real site.
-sed "s|^BAKERS_URL=.*|BAKERS_URL=$BAKERS_URL|" pm-bot/test/fixture.env | in_data "umask 077; cat >/d/.env; mkdir -p /d/skills/learned /d/sessions
+sed "s|^BAKERS_URL=.*|BAKERS_URL=$BAKERS_URL|" experimental/pm-bot/test/fixture.env | in_data "umask 077; cat >/d/.env; mkdir -p /d/skills/learned /d/sessions
   echo kept >/d/skills/learned/SKILL.md; echo kept >/d/sessions/one.json; echo 'hand edit' >/d/SOUL.md
   chown -R $OWNER:$OWNER /d"
 
@@ -72,7 +72,7 @@ caps=(--cap-drop ALL)
 while read -r cap; do caps+=(--cap-add "$cap"); done < <(sed -n 's/^ *- \([A-Z_]*\) *# cap$/\1/p' "$COMPOSE")
 [ ${#caps[@]} -gt 2 ] || fail "no capability list in $COMPOSE"
 start() {
-  docker run --env-file pm-bot/test/fixture.env -e BAKERS_URL="$BAKERS_URL" --network "$net" -e HERMES_UID=$OWNER -e HERMES_GID=$OWNER \
+  docker run --env-file experimental/pm-bot/test/fixture.env -e BAKERS_URL="$BAKERS_URL" --network "$net" -e HERMES_UID=$OWNER -e HERMES_GID=$OWNER \
     -v "$volume:/opt/data" "${caps[@]}" --security-opt no-new-privileges:true "$@"
 }
 
@@ -104,9 +104,9 @@ pass "a wrong API key fails the check"
 ref=/d/skills/project-manager/references
 in_data "[ ! -e $ref/project.template.md ] && grep -qF $BAKERS_URL $ref/project.md" \
   || fail "the skill's project reference was not rendered"
-in_data 'cat /d/skills/project-manager/SKILL.md' | cmp -s - pm-bot/skills/project-manager/SKILL.md \
+in_data 'cat /d/skills/project-manager/SKILL.md' | cmp -s - experimental/pm-bot/skills/project-manager/SKILL.md \
   || fail "the project-manager skill is not the image's"
-in_data 'cat /d/SOUL.md' | cmp -s - pm-bot/SOUL.md || fail "SOUL.md is not the image's (hand edit kept?)"
+in_data 'cat /d/SOUL.md' | cmp -s - experimental/pm-bot/SOUL.md || fail "SOUL.md is not the image's (hand edit kept?)"
 pass "SOUL.md and the project-manager skill are the image's"
 
 [ "$(in_data 'cat /d/skills/learned/SKILL.md /d/sessions/one.json')" = "kept

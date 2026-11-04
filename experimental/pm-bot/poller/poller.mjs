@@ -4,10 +4,10 @@
 // posts each state change into that thread once, relays its open question once,
 // and opens a thread of its own for each sub-ticket. No LLM, no dependencies.
 //
-//   node pm-bot/poller/poller.mjs          # loop
-//   node pm-bot/poller/poller.mjs --once   # one pass, then exit
+//   node experimental/pm-bot/poller/poller.mjs          # loop
+//   node experimental/pm-bot/poller/poller.mjs --once   # one pass, then exit
 //
-// Configuration comes from the environment (pm-bot/.env, see .env.example).
+// Configuration comes from the environment (experimental/pm-bot/.env, see .env.example).
 // While bakers.build is unreachable a pass fails, is logged and keeps the state
 // file as it was; the next pass catches up, so nothing is lost or posted twice.
 

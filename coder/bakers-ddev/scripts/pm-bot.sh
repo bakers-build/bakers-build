@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the PM bot (pm-bot/ of bakers.build: Hermes gateway and poller) in this workspace as one
+# Run the PM bot (experimental/pm-bot/ of bakers.build: Hermes gateway and poller) in this workspace as one
 # Docker Compose service from the pinned bot image (pm-bot.compose.yaml). install.sh runs it as
 # coder on every start, after its services.
 #

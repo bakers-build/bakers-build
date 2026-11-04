@@ -2,7 +2,7 @@
 
 The PM bot is a project manager for one bakers.build project in Slack, built on [Hermes Agent](https://github.com/NousResearch/hermes-agent). In its allowed channels it turns requests into bakers.build tickets, answers status questions, posts into a ticket's thread when its state changes, relays agent questions into that thread and passes the thread's answers back.
 
-It runs as one container from the image this folder builds, in a `bakers-ddev` Coder workspace configured by workspace parameters. To set it up and run it, follow [the template's README › PM bot](../coder/bakers-ddev/README.md#pm-bot).
+It runs as one container from the image this folder builds, in a `bakers-ddev` Coder workspace configured by workspace parameters. To set it up and run it, follow [the template's README › PM bot](../../coder/bakers-ddev/README.md#pm-bot).
 
 | Part | What it is |
 |---|---|
@@ -33,7 +33,7 @@ The bot's reach is limited by its tools and its container. It has no terminal, f
 ## Develop
 
 ```sh
-node --test 'pm-bot/**/*.test.mjs'     # poller, client and render, against stubs
+node --test 'experimental/pm-bot/**/*.test.mjs'     # poller, client and render, against stubs
 bash tests/contract/pm-bot.sh          # lock-down of the configuration, the skill, the Slack app and the compose file
 bash tests/contract/pm-bot-image.sh    # builds the image; check mode against a /mcp stub, then run mode (Docker)
 ```

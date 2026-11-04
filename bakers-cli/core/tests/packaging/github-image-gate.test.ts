@@ -87,11 +87,11 @@ describe('disposable image gate', () => {
     );
     expect(result.calls).not.toMatch(/docker (push|login)|compose pull/);
   });
-  it('builds the PM bot image from pm-bot/ and checks that same image before the browser suite', () => {
+  it('builds the PM bot image from experimental/pm-bot/ and checks that same image before the browser suite', () => {
     const result = gate();
     expect(result.status).toBe(0);
     expect(result.calls).toMatch(
-      /build .*-t bakers-gate\/pm-bot:local pm-bot\n/,
+      /build .*-t bakers-gate\/pm-bot:local experimental\/pm-bot\n/,
     );
     expect(result.calls).toContain(
       'images:pm-bot-image.sh bakers-gate/pm-bot:local',
