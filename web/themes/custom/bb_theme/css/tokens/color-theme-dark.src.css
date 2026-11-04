@@ -45,7 +45,7 @@
     --color-state-lease-ink: #F2C49C;
     --color-state-offline-ink: #CDBFA9;
     --color-state-ink: #17120B;
-    --color-avatar-b: var(--color-lime);
-    --color-avatar-c: #E3B48A;
-    --color-avatar-d: #BCB3A6;
+    --color-avatar-lime: var(--color-lime);
+    --color-avatar-peach: #E3B48A;
+    --color-avatar-stone: #BCB3A6;
 }

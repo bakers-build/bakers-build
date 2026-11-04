@@ -44,14 +44,14 @@
 {% set profile = variant == 'profile' %}
 {# Avatars have their own fills, so a person never reads as a state. #}
 {% set color_map = {
-  'running': 'bg-avatar-a',
-  'attention': 'bg-avatar-b',
-  'unassigned': 'bg-avatar-a',
-  'lease': 'bg-avatar-c',
-  'offline': 'bg-avatar-d'
+  'running': 'bg-avatar-rose',
+  'attention': 'bg-avatar-lime',
+  'unassigned': 'bg-avatar-rose',
+  'lease': 'bg-avatar-peach',
+  'offline': 'bg-avatar-stone'
 } %}
 {% set size_classes = profile ? 'w-20 h-20 text-display' : (size == 'md' ? 'w-7 h-7 text-eyebrow' : 'w-6 h-6 text-eyebrow') %}
-{% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'leading-none', 'font-bold', 'text-state-ink', size_classes, color_map[color]|default('bg-avatar-a')] %}
+{% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'leading-none', 'font-bold', 'text-state-ink', size_classes, color_map[color]|default('bg-avatar-rose')] %}
 {% set stack_gap = profile ? 'gap-3' : (size == 'md' ? 'gap-2' : 'gap-1') %}
 {% set root_classes = profile ? ['flex', 'flex-col', 'items-center', 'text-center', stack_gap, 'min-w-0'] : ['inline-flex', 'items-center', stack_gap, 'min-w-0'] %}
 {% set identity %}

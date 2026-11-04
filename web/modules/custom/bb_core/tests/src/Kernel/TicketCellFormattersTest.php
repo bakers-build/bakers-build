@@ -268,7 +268,7 @@ final class TicketCellFormattersTest extends KernelTestBase {
     self::assertStringContainsString('Unassigned', $html);
     self::assertStringContainsString('data-component-id="bb_theme:person"', $html);
     self::assertMatchesRegularExpression('/data-person-mark[^>]*>\?</', $html);
-    self::assertStringContainsString('bg-avatar-d', $html);
+    self::assertStringContainsString('bg-avatar-stone', $html);
   }
 
   /**

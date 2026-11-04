@@ -112,7 +112,7 @@ for (const [mode, colors] of Object.entries(palette)) {
   for (const ink of ['text', 'text-light', 'text-faint']) for (const bg of ['app', 'surface', 'surface-2', 'surface-3', 'input']) check(ink, bg, 4.5)
   check('on-primary', 'primary', 4.5)
   for (const state of ['attention', 'running', 'unassigned', 'lease', 'offline']) check(`state-${state}-ink`, `state-${state}-tint`, 4.5)
-  for (const bg of ['state-attention', 'state-review', 'state-done', 'avatar-a', 'avatar-b', 'avatar-c', 'avatar-d']) check('state-ink', bg, 4.5)
+  for (const bg of ['state-attention', 'state-review', 'state-done', 'avatar-rose', 'avatar-lime', 'avatar-peach', 'avatar-stone']) check('state-ink', bg, 4.5)
   const marks = ['control-border', 'focus-ring', 'state-attention-mark', 'state-running', 'state-unassigned', ...'abcdef'.split('').map(s => `chart-series-${s}`)]
   for (const mark of marks) for (const bg of ['surface', 'surface-2']) check(mark, bg, 3)
 }

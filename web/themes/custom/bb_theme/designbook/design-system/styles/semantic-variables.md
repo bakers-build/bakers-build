@@ -53,10 +53,10 @@ comment for the exact classification rule.
 | `component.gate.body` | style | Gate role: body |
 | `component.shell.offset` | style | Shell role: offset |
 | `semantic.color.app` | style | Outermost page/app background colour |
-| `semantic.color.avatar-a` | style | Color role: avatar-a |
-| `semantic.color.avatar-b` | style | Color role: avatar-b |
-| `semantic.color.avatar-c` | style | Color role: avatar-c |
-| `semantic.color.avatar-d` | style | Color role: avatar-d |
+| `semantic.color.avatar-lime` | style | Color role: avatar-lime |
+| `semantic.color.avatar-peach` | style | Color role: avatar-peach |
+| `semantic.color.avatar-rose` | style | Color role: avatar-rose |
+| `semantic.color.avatar-stone` | style | Color role: avatar-stone |
 | `semantic.color.border` | style | Default border colour |
 | `semantic.color.border-2` | style | Secondary (lighter) border colour |
 | `semantic.color.canvas` | style | Drawing/board canvas background colour |

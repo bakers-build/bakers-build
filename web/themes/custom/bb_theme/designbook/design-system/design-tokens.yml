@@ -336,19 +336,19 @@ semantic:
       $description: >-
         Ink for text placed on a state fill (state-attention, state-review,
         state-done, avatar-*). Every pair reaches 4.5:1 in both modes.
-    avatar-a:
+    avatar-rose:
       $value: '{primitive.style.color.rose}'
       $type: color
       $description: Avatar initials fill behind state-ink text.
-    avatar-b:
+    avatar-lime:
       $value: '#CFE69A'
       $type: color
       $description: Avatar initials fill behind state-ink text.
-    avatar-c:
+    avatar-peach:
       $value: '#EAC6A4'
       $type: color
       $description: Avatar initials fill behind state-ink text.
-    avatar-d:
+    avatar-stone:
       $value: '#D9D3C9'
       $type: color
       $description: Avatar initials fill behind state-ink text.
@@ -758,15 +758,15 @@ themes:
           $description: >-
             Ink for text placed on a state fill (state-attention, state-review,
             state-done, avatar-*). Every pair reaches 4.5:1 in both modes.
-        avatar-b:
+        avatar-lime:
           $value: '{primitive.style.color.lime}'
           $type: color
           $description: Avatar initials fill behind state-ink text.
-        avatar-c:
+        avatar-peach:
           $value: '#E3B48A'
           $type: color
           $description: Avatar initials fill behind state-ink text.
-        avatar-d:
+        avatar-stone:
           $value: '#BCB3A6'
           $type: color
           $description: Avatar initials fill behind state-ink text.

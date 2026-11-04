@@ -16,7 +16,7 @@
 4. **Butter means "waits for you", and nothing else in light mode.**
    - **Light mode:** butter appears only as a fill with rye text. It is never a dot or line on a light ground (1.5:1). Selection, the active tab and primary buttons are rye.
    - **Dark mode:** butter is also the primary colour.
-5. **Avatars get their own tokens.** Today `person.twig` colours initials with state colours, so a person can look like the "unassigned" error state. New tokens `avatar-a`…`avatar-d` replace them.
+5. **Avatars get their own tokens.** Today `person.twig` colours initials with state colours, so a person can look like the "unassigned" error state. New tokens named after their colours, `avatar-rose`, `avatar-lime`, `avatar-peach` and `avatar-stone`, replace them.
 6. **Type:** Spline Sans for text, Spline Sans Mono for IDs, states and numbers, and Bricolage Grotesque only for page titles.
 
 ## Tokens
@@ -62,10 +62,10 @@ The CSS name is `--color-<token>`. The values were exported from Figma on 2026-1
 | type-feature | #718F39 | #BFE07A |
 | type-bug | #C8432F | #E8644E |
 | type-chore | #B8692E | #D28A50 |
-| **avatar-a** (new) | #F4AFC0 | #F4AFC0 |
-| **avatar-b** (new) | #CFE69A | #BFE07A |
-| **avatar-c** (new) | #EAC6A4 | #E3B48A |
-| **avatar-d** (new) | #D9D3C9 | #BCB3A6 |
+| **avatar-rose** (new) | #F4AFC0 | #F4AFC0 |
+| **avatar-lime** (new) | #CFE69A | #BFE07A |
+| **avatar-peach** (new) | #EAC6A4 | #E3B48A |
+| **avatar-stone** (new) | #D9D3C9 | #BCB3A6 |
 | chart-series-a…f | #B8692E · #718F39 · #A28317 · #DE5779 · #C8432F · #6E5D49 | #D28A50 · #BFE07A · #F3CE3A · #F4AFC0 · #E8644E · #A8977E |
 | chart-flow-new | #B8692E | #D28A50 |
 | chart-flow-done | #718F39 | #BFE07A |
@@ -96,7 +96,7 @@ I measured every text and background pair in both Figma boards. Light has 28 pai
 | `state-lease-ink` on `state-lease-tint` | 7.5:1 | 7.8:1 | 4.5:1 |
 | `state-running-ink` on `state-running-tint` | 10.3:1 | 9.2:1 | 4.5:1 |
 | `state-offline-ink` on `state-offline-tint` | 8.4:1 | 8.0:1 | 4.5:1 |
-| `state-ink` on `avatar-a` (lowest avatar) | 8.8:1 | 10.4:1 | 4.5:1 |
+| `state-ink` on `avatar-rose` (lowest avatar) | 8.8:1 | 10.4:1 | 4.5:1 |
 | `state-ink` on `state-review` | 8.8:1 | 10.4:1 | 4.5:1 |
 | `state-ink` on `state-done` | 10.6:1 | 12.6:1 | 4.5:1 |
 | `control-border` on `surface` | 4.1:1 | 4.2:1 | 3:1 |
@@ -122,7 +122,7 @@ Do them in this order: 1 and 2 belong together, and 3 to 5 build on them.
    - Add the brand colours (flour, rye, butter, lime, rose, crust, muted) as primitives in `primitive-color.src.css` and alias them.
    - Mirror the changes in `design-tokens.yml`.
 3. **Add the new tokens and use them.**
-   - Add `state-attention-mark`, `state-review`, `state-done` and `avatar-a`…`d`.
+   - Add `state-attention-mark`, `state-review`, `state-done` and `avatar-rose`, `avatar-lime`, `avatar-peach`, `avatar-stone`.
    - In `components/person/person.twig`, point `color_map` at the avatar tokens instead of the state colours.
    - Switch the "waits for you" dots and lines to `state-attention-mark`.
    - Give the review state `state-review`.
