@@ -219,7 +219,6 @@ describe('offline configuration inventory', () => {
   });
 
   it.each([
-    ['a non-UUID machine_id', `machine_id: 'host', label: 'cw'`, 'machine_id'],
     [
       'a retired user_id',
       `machine_id: '%s', label: 'cw', user_id: 'cw'`,

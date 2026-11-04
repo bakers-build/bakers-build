@@ -877,7 +877,7 @@ step "7. generate the two machine-local files — neither of them committed"
 # when it is absent this writes one the same way — a generated UUID and a label —
 # so the run has a machine to register under. The context is IMPORTED rather than
 # pattern-matched, because that is what the CLI itself does. An old machine file
-# (a `user_id`, a non-UUID `machine_id`) is refused, exactly as the CLI refuses it.
+# (a `user_id`) is refused, exactly as the CLI refuses it.
 MACHINE_FILE="${BB_HOME:-${HOME}/.bakers}/machine.config.js"
 machine_identity="$(MC="${MACHINE_FILE}" LABEL="$(hostname -s 2>/dev/null || echo "${CP_NAME}")" node -e '
   const fs = require("node:fs");
@@ -891,10 +891,11 @@ machine_identity="$(MC="${MACHINE_FILE}" LABEL="$(hostname -s 2>/dev/null || ech
     }
     const d = (await import("file://" + p)).default ?? {};
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if ("user_id" in d || !uuid.test(d.machine_id ?? "")) process.exit(3);
-    process.stdout.write(`${d.machine_id.toLowerCase()}\t${d.label ?? ""}`);
+    if ("user_id" in d || typeof d.machine_id !== "string" || d.machine_id === "") process.exit(3);
+    const id = uuid.test(d.machine_id) ? d.machine_id.toLowerCase() : d.machine_id;
+    process.stdout.write(`${id}\t${d.label ?? ""}`);
   })().catch(() => process.exit(2));')" \
-  || die "${MACHINE_FILE} is not a current machine file (UUID machine_id, no user_id) — run 'bakers init'"
+  || die "${MACHINE_FILE} is not a current machine file (a machine_id, no user_id) — run 'bakers init' to rewrite it"
 MACHINE_ID="$(printf '%s' "${machine_identity}" | cut -f1)"
 MACHINE_LABEL="$(printf '%s' "${machine_identity}" | cut -f2)"
 

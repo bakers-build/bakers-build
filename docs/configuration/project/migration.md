@@ -43,7 +43,9 @@ A generated file or current schema marker does not prove a working conductor. Af
 
 ## Old configuration
 
-Every file starts at schema version 1, and the upgrade has no migration steps. A file at another schema version, a project config with `conductor_id`, `machine_id` or `label`, a machine file with `user_id`, or a `machine_id` that is not a UUID fails loading with a message naming `bakers init`. Run `bakers init` to write current files; it generates the machine's UUID and asks for its label ([Machines](/configuration/machine)).
+Every file starts at schema version 1, and the upgrade has no migration steps. A file at another schema version, a project config with `conductor_id`, `machine_id` or `label`, or a machine file with `user_id` fails loading with a message naming `bakers init`. `bakers init` rewrites an old machine file in place: it keeps `machine_id`, drops `user_id`, asks for a `label` and sets version 1; a new machine gets a generated UUID ([Machines](/configuration/machine)).
+
+Because the conductor id is now derived from the machine, the project and the variant, the first `bakers oven start` after the upgrade comes with a new id. When this machine, project and variant already have a conductor under its old id, the start offers it once: take it over and it keeps its tickets, runs and freeze state ([conductor commands](/configuration/project/conductor-commands#start)).
 
 ## Read a finding as a repair instruction
 

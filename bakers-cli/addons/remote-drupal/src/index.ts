@@ -29,11 +29,15 @@ import type {
 } from '@bakers-build/conductor/contract';
 import {
   AmbiguousProjectNameError,
+  ConductorTakeoverRequired,
   resolveBbProjectContext,
 } from '@bakers-build/conductor/contract';
 import type { MessageResult } from '@bakers-build/message';
 
-export { AmbiguousProjectNameError } from '@bakers-build/conductor/contract';
+export {
+  AmbiguousProjectNameError,
+  ConductorTakeoverRequired,
+} from '@bakers-build/conductor/contract';
 export { createRunLogHttp, RunLogSizeError } from './run-log-http.js';
 
 import type { BbProjectSelection } from '@bakers-build/conductor/project-context';
@@ -428,6 +432,8 @@ export class DrupalBbRemote implements BbRemote {
           conductor_id: reg.id,
           host_key: reg.host_key ?? reg.id,
           ...(reg.machine_label ? { machine_label: reg.machine_label } : {}),
+          ...(reg.adopt ? { adopt: reg.adopt } : {}),
+          ...(reg.create_new ? { create_new: true } : {}),
           project: reg.project,
           states: reg.states,
           workspace_root: reg.workspace,
@@ -448,7 +454,21 @@ export class DrupalBbRemote implements BbRemote {
   }
 
   async registerConductor(reg: ConductorRegistration): Promise<string> {
-    const res = await this.postHeartbeatRegistration(reg);
+    let res: Awaited<ReturnType<typeof this.postHeartbeatRegistration>>;
+    try {
+      res = await this.postHeartbeatRegistration(reg);
+    } catch (err) {
+      if (!(err instanceof HttpError) || err.status !== 409) throw err;
+      const detail = (err.body as { errors?: Array<{ detail?: unknown }> })
+        ?.errors?.[0]?.detail;
+      const message = typeof detail === 'string' ? detail : err.message;
+      throw new ConductorTakeoverRequired(
+        message,
+        [...message.matchAll(/--adopt ([0-9a-f-]{36})/g)].map(
+          (m) => m[1] ?? '',
+        ),
+      );
+    }
     const id = res?.data?.id;
     if (typeof id !== 'string' || id === '') {
       throw new Error('registerConductor: heartbeat response omitted data.id');

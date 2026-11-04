@@ -214,6 +214,32 @@ function renderPrompt(
     .replaceAll('{ticketUuid}', values.ticketUuid);
 }
 
+/**
+ * A conductor's registration payload, built from its config: what the engine
+ * heartbeats with, and what `oven start` registers before it spawns one.
+ * `conductor_name` is the variant (the config stem, derived through core's
+ * own mapping), which the control plane matches a takeover on.
+ */
+export function registrationOf(
+  config: ConductorFileConfig,
+  checkoutRoot: string,
+): ConductorRegistration {
+  const stem = config.config_path
+    ? stemForConfigFile(basename(config.config_path))
+    : undefined;
+  return {
+    id: config.conductor_id ?? '',
+    ...(config.host_key ? { host_key: config.host_key } : {}),
+    project: config.project,
+    states: config.states,
+    workspace: checkoutRoot,
+    label: config.label,
+    ...(config.machine_label ? { machine_label: config.machine_label } : {}),
+    max_parallel: config.max_parallel,
+    conductor_name: stem ?? config.variant,
+  };
+}
+
 export class Conductor {
   private uuid: string | null = null;
   /**
@@ -303,36 +329,20 @@ export class Conductor {
 
   /** This conductor's registration payload, built from config. */
   private registration(): ConductorRegistration {
-    const base: ConductorRegistration = {
+    // `this.id` throws, naming bakers init, before anything is sent.
+    const { conductor_name, ...base } = {
+      ...registrationOf(this.config, this.checkoutRoot),
       id: this.id,
-      host_key: this.hostKey,
-      project: this.config.project,
-      states: this.config.states,
-      workspace: this.checkoutRoot,
-      label: this.config.label,
-      ...(this.config.machine_label
-        ? { machine_label: this.config.machine_label }
-        : {}),
-      max_parallel: this.config.max_parallel,
     };
-    if (!this.ownsServeProcess) return base;
-    return {
-      ...base,
-      last_pid: process.pid,
-      ...(this.conductorName ? { conductor_name: this.conductorName } : {}),
-    };
-  }
-
-  /**
-   * The stem of the config file this conductor was loaded from.
-   *
-   * Derived through core's own mapping rather than by slicing the filename
-   * here, so the CLI and the conductor cannot disagree about which files count
-   * as a conductor config.
-   */
-  private get conductorName(): string | undefined {
-    const path = this.config.config_path;
-    return path ? stemForConfigFile(basename(path)) : undefined;
+    // Only the serve process reports its identity; poll and reap must not
+    // overwrite the running conductor's pid.
+    return this.ownsServeProcess
+      ? {
+          ...base,
+          last_pid: process.pid,
+          ...(conductor_name ? { conductor_name } : {}),
+        }
+      : base;
   }
 
   async start() {

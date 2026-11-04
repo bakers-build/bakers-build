@@ -122,7 +122,6 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
   });
 
   it.each([
-    ['a non-UUID machine_id', `machine_id: 'cw-laptop'`],
     ['a user_id key', `machine_id: '${UUID}', user_id: 'cw'`],
     ['schema_version 3', `schema_version: 3, machine_id: '${UUID}'`],
   ])('readMachineContext rejects %s naming bakers init', async (_, body) => {
@@ -138,6 +137,15 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
       `// @bakers-schema-version 3\nexport default { machine_id: '${UUID}' };\n`,
     );
     await expect(readMachineContext(p)).rejects.toThrow(/bakers init/);
+  });
+
+  it('readMachineContext keeps an existing non-UUID machine_id as it is', async () => {
+    const p = join(tmp, 'existing.config.js');
+    writeFileSync(
+      p,
+      `export default { schema_version: 1, machine_id: 'Framework', label: 'l' };\n`,
+    );
+    expect((await readMachineContext(p)).machine_id).toBe('Framework');
   });
 
   it('readMachineContext accepts schema version 1', async () => {

@@ -8,6 +8,7 @@ import { HttpError } from 'dropsh/plugin';
 import { describe, expect, it, vi } from 'vitest';
 import {
   AmbiguousProjectNameError,
+  ConductorTakeoverRequired,
   createRunLogFetcher,
   DrupalBbRemote,
   drupalRemote,
@@ -815,6 +816,59 @@ describe('DrupalBbRemote', () => {
       max_parallel: 2,
     });
     expect(body.data.attributes).not.toHaveProperty('current_load');
+  });
+
+  it('registerConductor turns a takeover 409 into the offered conductors', async () => {
+    const detail =
+      'This machine, project and variant already have "cw-framework" (bakers oven start --adopt 1cdd3fcb-2156-4e3c-877d-52665142268c); take it over, or create a new conductor with bakers oven start --new.';
+    const post = vi.fn(async () => {
+      throw new HttpError(409, 'HTTP 409', {
+        errors: [{ status: '409', detail }],
+      });
+    });
+    const remote = new DrupalBbRemote(fakeClient({ post }));
+
+    const refused = remote.registerConductor({
+      id: 'framework-bakers-conductor',
+      host_key: 'framework',
+      project: 'bakers',
+      states: [],
+      workspace: '/checkout',
+      label: 'lbl',
+      max_parallel: 1,
+    });
+
+    await expect(refused).rejects.toBeInstanceOf(ConductorTakeoverRequired);
+    await expect(refused).rejects.toMatchObject({
+      message: detail,
+      adoptable: ['1cdd3fcb-2156-4e3c-877d-52665142268c'],
+    });
+  });
+
+  it('registerConductor forwards the takeover decision', async () => {
+    const post = vi.fn(async () => ({
+      data: { id: 'drupal-uuid', attributes: { status: 'online' } },
+    }));
+    const remote = new DrupalBbRemote(fakeClient({ post }));
+    const reg = {
+      id: 'framework-bakers-conductor',
+      host_key: 'framework',
+      project: 'bakers',
+      states: [],
+      workspace: '/checkout',
+      label: 'lbl',
+      max_parallel: 1,
+    };
+
+    await remote.registerConductor({ ...reg, adopt: 'old-uuid' });
+    await remote.registerConductor({ ...reg, create_new: true });
+
+    const attrs = (n: number) =>
+      (post.mock.calls[n]?.[1] as { data?: { attributes?: object } })?.data
+        ?.attributes;
+    expect(attrs(0)).toMatchObject({ adopt: 'old-uuid' });
+    expect(attrs(0)).not.toHaveProperty('create_new');
+    expect(attrs(1)).toMatchObject({ create_new: true });
   });
 
   it('registerConductor fails when the heartbeat document omits data.id', async () => {

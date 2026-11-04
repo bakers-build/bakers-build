@@ -147,7 +147,8 @@ MACHINE_UUID="$(MC="${HOME}/.bakers/machine.config.js" node -e '
     if (!fs.existsSync(p)) return;
     try {
       const d = (await import("file://" + p)).default ?? {};
-      process.stdout.write(String(d.machine_id ?? "").toLowerCase());
+      const id = String(d.machine_id ?? "");
+      process.stdout.write(/^[0-9a-f-]{36}$/i.test(id) ? id.toLowerCase() : id);
     } catch {}
   });' 2>/dev/null || true)"
 [ -n "${MACHINE_UUID}" ] || die "no machine_id in ~/.bakers/machine.config.js; run bakers init"

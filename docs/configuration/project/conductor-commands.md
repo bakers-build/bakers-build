@@ -32,7 +32,7 @@ BB_LOG_LEVEL=debug bakers oven once
 
 | Subcommand | Options | What it does |
 |---|---|---|
-| `start` | `--foreground`, `--no-update-check`, `--force` | Start the conductor loop |
+| `start` | `--foreground`, `--no-update-check`, `--force`, `--adopt <uuid>`, `--new` | Start the conductor loop |
 | `once` | none | Run one conductor cycle, then exit |
 | `check` | none | Check that every enabled agent can start its sandbox |
 | `status` | none | One line for this checkout's conductor |
@@ -46,6 +46,7 @@ By default `start` launches the loop in a herdr pane (handle `bakers-conductor:<
 
 - `--foreground` runs the loop in this process instead. It refuses to start while a verified live conductor already serves the checkout. Every foreground start, and every CI or non-TTY start, prints an update notice only and never prompts.
 - `--no-update-check` skips the lookup, cache, prompt and notice; the version banner still prints.
+- When the control plane does not know this conductor's id yet but this machine, project and variant already have a conductor under another id (for example from before the upgrade), `start` asks once in a terminal whether to take it over; it keeps its tickets and runs. Without a terminal it stops and names `--adopt <uuid>` (take it over) and `--new` (register another conductor).
 - `--force` turns "already running" into a restart: a verified `SIGTERM`, a grace period, then `SIGKILL`, then the normal start. It fails rather than starting a second conductor when the running one cannot be verified or stopped.
 
 An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. The procedure, decline window, rerun and failure behaviour are in [Update bakers.build](/configuration/machine/updates).

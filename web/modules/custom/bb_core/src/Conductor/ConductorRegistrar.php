@@ -95,7 +95,8 @@ final class ConductorRegistrar {
    *   Registration attributes.
    */
   private function register(AccountInterface $owner, string $conductorId, string $hostKey, int $projectId, array $attrs): BbConductorInterface {
-    $existing = $this->load($owner, $conductorId);
+    $existing = $this->load($owner, $conductorId)
+      ?? $this->takeOver($owner, $conductorId, $hostKey, $projectId, $attrs);
     if ($existing !== NULL) {
       $this->refuseRebinding($owner, $existing, $hostKey, $projectId, (string) $attrs['project']);
     }
@@ -163,6 +164,73 @@ final class ConductorRegistrar {
         $existing->get('conductor_id')->value,
       ));
     }
+  }
+
+  /**
+   * Finds the conductor a new conductor_id replaces, or NULL to create one.
+   *
+   * A conductor_id is derived from machine + project + variant, so a new one
+   * for a combination that already has a conductor (registered under an
+   * older id) is offered for takeover instead of silently duplicated. The
+   * client decides once: `adopt` (that conductor's UUID) moves it to the new
+   * id with its tickets and runs; `create_new` registers another conductor.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The authenticated conductor owner.
+   * @param string $conductorId
+   *   The new registration key.
+   * @param string $hostKey
+   *   The registering machine.
+   * @param int $projectId
+   *   Project entity id.
+   * @param array<string, mixed> $attrs
+   *   Registration attributes: `conductor_name` (the variant), `adopt`,
+   *   `create_new`.
+   */
+  private function takeOver(AccountInterface $owner, string $conductorId, string $hostKey, int $projectId, array $attrs): ?BbConductorInterface {
+    if (!empty($attrs['create_new'])) {
+      return NULL;
+    }
+    $variant = $this->variant($attrs['conductor_name'] ?? NULL);
+    $storage = $this->entityTypeManager->getStorage('bb_conductor');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('owner_user_id', $owner->id())
+      ->condition('project_id', $projectId)
+      ->condition('machine.entity.host_key', $hostKey)
+      ->execute();
+    $matches = array_filter(
+      $storage->loadMultiple($ids),
+      fn ($c) => $c instanceof BbConductorInterface && $this->variant($c->get('conductor_name')->value) === $variant,
+    );
+    $adopt = isset($attrs['adopt']) && is_string($attrs['adopt']) ? $attrs['adopt'] : '';
+    if ($adopt !== '') {
+      foreach ($matches as $match) {
+        if ($match->uuid() === $adopt) {
+          $match->set('conductor_id', $conductorId);
+          return $match;
+        }
+      }
+      throw new UnprocessableEntityHttpException(sprintf('Conductor %s is not your conductor for this machine, project and variant.', $adopt));
+    }
+    if ($matches === []) {
+      return NULL;
+    }
+    $offers = array_map(
+      fn (BbConductorInterface $c) => sprintf('"%s" (bakers oven start --adopt %s)', $c->label(), $c->uuid()),
+      $matches,
+    );
+    throw new ConflictHttpException(sprintf(
+      'This machine, project and variant already have %s; take it over, or create a new conductor with bakers oven start --new.',
+      implode(', ', $offers),
+    ));
+  }
+
+  /**
+   * The variant a conductor_name stands for; empty is the default config.
+   */
+  private function variant(mixed $conductorName): string {
+    return is_string($conductorName) && $conductorName !== '' ? $conductorName : 'conductor';
   }
 
   /**

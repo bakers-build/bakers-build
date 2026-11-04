@@ -73,7 +73,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
 
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-heal',
-      'host_key' => '0B6F3C1E-9A2D-4E57-8C41-2F7D9E5A1B30',
+      'host_key' => '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
       'machine_label' => 'cw-laptop',
       'project' => 'default-project',
       'states' => ['diagnose', 'coding'],
@@ -128,9 +128,127 @@ final class ConductorRegistrarTest extends KernelTestBase {
   public static function staleIdentityProvider(): array {
     return [
       'legacy machine_id as conductor' => [['machine_id' => 'cw-framework', 'host_key' => self::HOST]],
-      'string host_key' => [['conductor_id' => 'cw-framework', 'host_key' => 'framework']],
       'no host_key' => [['conductor_id' => 'u-framework-bakers']],
     ];
+  }
+
+  /**
+   * An existing machine keeps its string host key.
+   */
+  public function testHeartbeatKeepsAnExistingStringHostKey(): void {
+    $conductor = $this->registrar()->heartbeat($this->createUser('owner-string'), [
+      'conductor_id' => 'cw-framework',
+      'host_key' => 'framework',
+      'project' => 'default-project',
+    ]);
+    $this->assertSame('framework', $conductor->getMachine()?->getHostKey());
+  }
+
+  /**
+   * A new id for a known machine + project + variant is offered for takeover.
+   *
+   * The 409 names the matching conductor and creates nothing.
+   */
+  public function testHeartbeatOffersTheMatchingConductorForTakeover(): void {
+    $owner = $this->createUser('owner-takeover');
+    $old = $this->legacyConductor($owner);
+    try {
+      $this->registrar()->heartbeat($owner, $this->derivedAttrs());
+      $this->fail('A matching conductor must be offered, not duplicated.');
+    }
+    catch (ConflictHttpException $e) {
+      $this->assertStringContainsString('--adopt ' . $old->uuid(), $e->getMessage());
+      $this->assertStringContainsString('--new', $e->getMessage());
+    }
+    $this->assertSame(1, $this->conductorCount());
+  }
+
+  /**
+   * Taking over keeps the conductor and its tickets and moves it to the new id.
+   */
+  public function testHeartbeatAdoptsTheMatchingConductor(): void {
+    $owner = $this->createUser('owner-adopt');
+    $old = $this->legacyConductor($owner);
+    $adopted = $this->registrar()->heartbeat($owner, ['adopt' => $old->uuid()] + $this->derivedAttrs());
+    $this->assertSame($old->id(), $adopted->id());
+    $this->assertSame('framework-default-project-conductor', $adopted->getConductorId());
+    $this->assertSame(1, $this->conductorCount());
+    // Taken over once: the next heartbeat finds it by its new id.
+    $again = $this->registrar()->heartbeat($owner, $this->derivedAttrs());
+    $this->assertSame($old->id(), $again->id());
+  }
+
+  /**
+   * Adopting a conductor that is not a match is refused.
+   */
+  public function testHeartbeatRefusesAdoptingAnotherConductor(): void {
+    $owner = $this->createUser('owner-adopt-other');
+    $this->legacyConductor($owner);
+    $other = $this->registrar()->heartbeat($owner, [
+      'conductor_id' => 'elsewhere',
+      'host_key' => self::HOST,
+      'project' => 'default-project',
+    ]);
+    $this->expectException(UnprocessableEntityHttpException::class);
+    $this->registrar()->heartbeat($owner, ['adopt' => $other->uuid()] + $this->derivedAttrs());
+  }
+
+  /**
+   * Declining the takeover creates a second conductor.
+   */
+  public function testHeartbeatCreatesAnotherConductorWhenAsked(): void {
+    $owner = $this->createUser('owner-new');
+    $old = $this->legacyConductor($owner);
+    $new = $this->registrar()->heartbeat($owner, ['create_new' => TRUE] + $this->derivedAttrs());
+    $this->assertNotSame($old->id(), $new->id());
+    $this->assertSame(2, $this->conductorCount());
+  }
+
+  /**
+   * Another variant is no match, so nothing is asked.
+   */
+  public function testHeartbeatCreatesAnotherVariantWithoutAsking(): void {
+    $owner = $this->createUser('owner-variant');
+    $this->legacyConductor($owner);
+    $this->registrar()->heartbeat($owner, [
+      'conductor_id' => 'framework-default-project-shop',
+      'conductor_name' => 'shop',
+    ] + $this->derivedAttrs());
+    $this->assertSame(2, $this->conductorCount());
+  }
+
+  /**
+   * A conductor registered before the upgrade: string id, no variant recorded.
+   */
+  private function legacyConductor(UserInterface $owner): BbConductorInterface {
+    return $this->registrar()->heartbeat($owner, [
+      'conductor_id' => 'cw-framework',
+      'host_key' => 'framework',
+      'project' => 'default-project',
+    ]);
+  }
+
+  /**
+   * The heartbeat of the upgraded CLI on the same machine.
+   *
+   * @return array<string, string>
+   *   Its identity attributes.
+   */
+  private function derivedAttrs(): array {
+    return [
+      'conductor_id' => 'framework-default-project-conductor',
+      'host_key' => 'framework',
+      'project' => 'default-project',
+      'conductor_name' => 'conductor',
+    ];
+  }
+
+  /**
+   * Counts every conductor.
+   */
+  private function conductorCount(): int {
+    return (int) $this->container->get('entity_type.manager')->getStorage('bb_conductor')
+      ->getQuery()->accessCheck(FALSE)->count()->execute();
   }
 
   /**
@@ -376,6 +494,8 @@ final class ConductorRegistrarTest extends KernelTestBase {
       'conductor_id' => 'agg-b',
       'host_key' => 'f6135178-679a-5895-8e2c-ea8fc71a30f0',
       'project' => 'default-project',
+      // A second conductor of one machine and project is another variant.
+      'conductor_name' => 'shop',
       'current_load' => 3,
       'max_parallel' => 5,
     ]);
@@ -480,6 +600,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
       'conductor_id' => 'mid-off',
       'host_key' => '065bec2b-5b04-59ee-a96f-6f0eb12bcafd',
       'project' => 'default-project',
+      'conductor_name' => 'shop',
       'current_load' => 2,
       'lease_seconds' => 300,
     ]);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Conductor;
 
-use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Access\BbRankCapabilityInterface;
@@ -41,17 +40,18 @@ final class HeartbeatRegistrationResolver {
   }
 
   /**
-   * Resolves host_key, the machine UUID that bakers init generates.
+   * Resolves host_key, the machine_id of machine.config.js.
+   *
+   * New machines get a UUID from bakers init; existing ones keep their id.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
    */
   public function hostKey(array $attrs): string {
-    $hostKey = isset($attrs['host_key']) && is_string($attrs['host_key']) ? strtolower($attrs['host_key']) : '';
-    if (!Uuid::isValid($hostKey)) {
-      throw new UnprocessableEntityHttpException('host_key must be the machine UUID; run bakers init.');
+    if (isset($attrs['host_key']) && is_string($attrs['host_key']) && $attrs['host_key'] !== '') {
+      return $attrs['host_key'];
     }
-    return $hostKey;
+    throw new UnprocessableEntityHttpException('host_key is required; update bakers and run bakers init.');
   }
 
   /**

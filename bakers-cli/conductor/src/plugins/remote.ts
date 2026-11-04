@@ -39,6 +39,27 @@ export interface ConductorRegistration {
    * conductor in a repo that holds several.
    */
   conductor_name?: string;
+  /**
+   * The answer to {@link ConductorTakeoverRequired}: take over this conductor
+   * (its UUID), or register another one (`create_new`).
+   */
+  adopt?: string;
+  create_new?: boolean;
+}
+
+/**
+ * A registration the control plane refused because this machine, project and
+ * variant already have a conductor under another id. `adoptable` are the
+ * UUIDs it offers; the message says how to decide.
+ */
+export class ConductorTakeoverRequired extends Error {
+  override readonly name = 'ConductorTakeoverRequired';
+  constructor(
+    message: string,
+    readonly adoptable: string[],
+  ) {
+    super(message);
+  }
 }
 
 export interface ClaimOptions {

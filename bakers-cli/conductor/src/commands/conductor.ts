@@ -29,7 +29,7 @@ import { Command } from 'commander';
 import { authStatus } from 'dropsh';
 import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
-import { Conductor } from '../core/conductor.js';
+import { Conductor, registrationOf } from '../core/conductor.js';
 import { hostKeyOf } from '../core/host-key.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
@@ -40,7 +40,12 @@ import {
   selectWorkspace,
 } from '../plugins/plugins.js';
 import type { HerdrHost } from '../plugins/process-host.js';
-import type { BbRemote, ConductorStatus } from '../plugins/remote.js';
+import type {
+  BbRemote,
+  ConductorRegistration,
+  ConductorStatus,
+  ConductorTakeoverRequired,
+} from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
@@ -107,7 +112,10 @@ export interface BbCliDeps {
   stdoutIsTTY?: boolean;
   /** Environment for CI / selector detection. Defaults to process.env. */
   env?: NodeJS.ProcessEnv;
-  /** One prompt line; empty string is default yes. Reject to cancel. */
+  /**
+   * One prompt line (the update and the takeover question); empty string is
+   * default yes. Reject to cancel.
+   */
   askUpdate?: (question: string) => Promise<string>;
   /** Invoke `bakers` with an argv array (no binary name). */
   runBb?: (args: string[]) => Promise<void>;
@@ -504,6 +512,7 @@ async function cmdStartForeground(
   deps: BbCliDeps,
   log: LogOpts = {},
   force = false,
+  choice: TakeoverChoice = {},
 ): Promise<void> {
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
@@ -514,6 +523,12 @@ async function cmdStartForeground(
   const thisHostKey = hostKeyOf(config);
   if (await refuseIfAlreadyRunning(remote, id, thisHostKey, force, deps))
     return;
+  // This process is the conductor: its takeover registration carries its pid.
+  const serve = {
+    ...registrationOf(config, checkoutRoot),
+    last_pid: process.pid,
+  };
+  if (!(await settleTakeover(deps, remote, serve, choice))) return;
   const executor = deps.executor ?? (await selectExecutor(config, logger));
   const workspace = deps.workspace ?? (await selectWorkspace(config, logger));
   const agents = deps.agents ?? (await selectAgents(config));
@@ -585,6 +600,75 @@ async function defaultAskUpdate(question: string): Promise<string> {
   }
 }
 
+/** Whether a human can answer a question on this terminal. */
+function isInteractive(deps: BbCliDeps): boolean {
+  return (
+    (deps.stdinIsTTY ?? Boolean(process.stdin.isTTY)) &&
+    (deps.stdoutIsTTY ?? Boolean(process.stdout.isTTY)) &&
+    !(deps.env ?? process.env).CI
+  );
+}
+
+/** `oven start --adopt <uuid>` / `--new`: the takeover decision, given up front. */
+export interface TakeoverChoice {
+  adopt?: string;
+  createNew?: boolean;
+}
+
+/**
+ * Settles, once, a conductor whose derived id the control plane does not know
+ * yet: registering it either succeeds, or the control plane offers the
+ * conductor this machine, project and variant already have under an older id.
+ * A terminal asks whether to take it over; without one the start stops with
+ * the control plane's own `--adopt`/`--new` hint. After this the id is known,
+ * so no later start (nor the herdr child, which has no terminal) asks again.
+ * Returns false when the start must stop.
+ */
+async function settleTakeover(
+  deps: BbCliDeps,
+  remote: BbRemote,
+  registration: ConductorRegistration,
+  choice: TakeoverChoice,
+): Promise<boolean> {
+  const id = registration.id;
+  if ((await remote.listConductors('me')).some((c) => c.id === id)) return true;
+  const reg = {
+    ...registration,
+    ...(choice.adopt ? { adopt: choice.adopt } : {}),
+    ...(choice.createNew ? { create_new: true } : {}),
+  };
+  try {
+    await remote.registerConductor(reg);
+    return true;
+  } catch (caught) {
+    // By name: the remote addon may load its own copy of the contract class.
+    if ((caught as Error)?.name !== 'ConductorTakeoverRequired') throw caught;
+    const err = caught as ConductorTakeoverRequired;
+    const [adopt] = err.adoptable;
+    if (!isInteractive(deps) || err.adoptable.length !== 1 || !adopt) {
+      console.error(err.message);
+      process.exitCode = 1;
+      return false;
+    }
+    const ask = deps.askUpdate ?? defaultAskUpdate;
+    let answer: string;
+    try {
+      answer = (await ask(`${err.message}\nTake it over? [Y/n]`))
+        .trim()
+        .toLowerCase();
+    } catch {
+      console.error('Start cancelled.');
+      process.exitCode = 1;
+      return false;
+    }
+    const take = answer === '' || answer === 'y' || answer === 'yes';
+    await remote.registerConductor(
+      take ? { ...reg, adopt } : { ...reg, create_new: true },
+    );
+    return true;
+  }
+}
+
 async function cmdStart(
   deps: BbCliDeps,
   log: LogOpts = {},
@@ -611,11 +695,7 @@ async function cmdStart(
       ? updateNotice(current, result.latestVersion)
       : null;
     const env = deps.env ?? process.env;
-    const interactive =
-      !foreground &&
-      (deps.stdinIsTTY ?? Boolean(process.stdin.isTTY)) &&
-      (deps.stdoutIsTTY ?? Boolean(process.stdout.isTTY)) &&
-      !env.CI;
+    const interactive = !foreground && isInteractive(deps);
     if (notice && interactive && result.declined !== true) {
       console.log(
         'Installing accepts the newer release and runs configuration migration.',
@@ -829,6 +909,7 @@ async function cmdStartBody(
   deps: BbCliDeps,
   log: LogOpts,
   force = false,
+  choice: TakeoverChoice = {},
 ): Promise<void> {
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
@@ -913,8 +994,17 @@ async function cmdStartBody(
     console.log(`stopped conductor ${id} for restart (--force)`);
   }
 
-  // The conductor registers itself with the control plane on start(); there is
-  // no local file to write, and nothing left that a second list could add.
+  // The herdr child has no terminal, so a takeover is settled here first.
+  if (
+    !existing &&
+    !(await settleTakeover(
+      deps,
+      remote,
+      registrationOf(config, checkoutRoot),
+      choice,
+    ))
+  )
+    return;
   const handle = `bakers-conductor:${id}`;
 
   const fgFlags = [
@@ -1132,15 +1222,31 @@ Examples:
         'a second conductor if the running one cannot be verified or stopped.',
       false,
     )
+    .option(
+      '--adopt <uuid>',
+      'take over the conductor this machine, project and variant already have',
+    )
+    .option('--new', 'register a new conductor instead of taking one over')
     .action(async function (
       this: Command,
-      opts: { foreground: boolean; updateCheck: boolean; force: boolean },
+      opts: {
+        foreground: boolean;
+        updateCheck: boolean;
+        force: boolean;
+        adopt?: string;
+        new?: boolean;
+      },
     ) {
+      const choice: TakeoverChoice = {
+        ...(opts.adopt ? { adopt: opts.adopt } : {}),
+        ...(opts.new ? { createNew: true } : {}),
+      };
+      const body = opts.foreground ? cmdStartForeground : cmdStartBody;
       await cmdStart(
         deps,
         logOptsOf(this),
         opts.updateCheck,
-        opts.foreground ? cmdStartForeground : cmdStartBody,
+        (d, l, f) => body(d, l, f, choice),
         opts.force,
         opts.foreground,
       );

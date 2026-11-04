@@ -75,6 +75,7 @@ export function isUuid(value: unknown): value is string {
 export function assertSchemaVersion1(
   path: string,
   raw: Record<string, unknown>,
+  remedy = 'remove the file and run bakers init',
 ): void {
   let text = '';
   try {
@@ -89,14 +90,15 @@ export function assertSchemaVersion1(
   const other = versions.find((version) => version !== 1);
   if (other !== undefined)
     throw new Error(
-      `${path}: schema version ${String(other)} is not supported; remove the file and run bakers init`,
+      `${path}: schema version ${String(other)} is not supported; ${remedy}`,
     );
 }
 
 /**
  * Import an existing context module's default export, or `{}` if absent/broken.
- * A stale identity (`user_id`, a non-UUID `machine_id`, a schema version other
- * than 1) throws, naming `bakers init`.
+ * An old file (`user_id`, a schema version other than 1) throws, naming
+ * `bakers init`, which rewrites it in place. An existing machine keeps its
+ * `machine_id` as it is; only a UUID is normalised to lowercase.
  */
 export async function readMachineContext(
   path?: string,
@@ -113,18 +115,14 @@ export async function readMachineContext(
   }
   if (!raw || typeof raw !== 'object') return {};
   const ctx = raw as Record<string, unknown>;
-  assertSchemaVersion1(resolved, ctx);
+  assertSchemaVersion1(resolved, ctx, 'run bakers init to rewrite it');
   if ('user_id' in ctx)
     throw new Error(
-      `${resolved}: user_id is retired (the server takes the owner from sign-in); remove the file and run bakers init`,
-    );
-  if (ctx.machine_id !== undefined && !isUuid(ctx.machine_id))
-    throw new Error(
-      `${resolved}: machine_id must be a UUID; remove the file and run bakers init`,
+      `${resolved}: user_id is retired (the server takes the owner from sign-in); run bakers init to rewrite the file`,
     );
   return {
     ...(ctx as Partial<MachineContext>),
-    ...(typeof ctx.machine_id === 'string'
+    ...(isUuid(ctx.machine_id)
       ? { machine_id: ctx.machine_id.toLowerCase() }
       : {}),
   };

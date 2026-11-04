@@ -156,6 +156,8 @@ final class MachineRegistrarTest extends KernelTestBase {
       'conductor_id' => 'budget-b',
       'host_key' => '4c6ed82f-e38a-52e2-845c-0470de2a88cd',
       'project' => 'proj-budget',
+      // A second conductor of one machine and project is another variant.
+      'conductor_name' => 'shop',
       'max_parallel' => 9,
     ]);
 

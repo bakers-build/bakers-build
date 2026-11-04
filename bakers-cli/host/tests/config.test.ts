@@ -165,6 +165,23 @@ it('initializes machine only with a generated UUID and the given label, and keep
     before,
   );
 });
+it('rewrites an existing machine file in place, keeping its machine_id', async () => {
+  mkdirSync(join(home, '.bakers'), { recursive: true });
+  writeFileSync(
+    join(home, '.bakers/machine.config.js'),
+    "// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'framework', user_id: 'cw', max_parallel: 2 };\n",
+  );
+  const args = ['init', '--scope', 'machine', '--format', 'json'];
+  const report = await run([...args, '--label', 'cw-laptop']);
+  expect(report.result).toBe('ok');
+  const machine = await machineFile();
+  expect(machine.machine_id).toBe('framework');
+  expect(machine.label).toBe('cw-laptop');
+  expect(machine.max_parallel).toBe(2);
+  expect(machine.schema_version).toBe(1);
+  expect(machine).not.toHaveProperty('user_id');
+  expect((await run(args)).changes).toEqual([]);
+});
 it('labels the machine with the short hostname when no terminal can ask', async () => {
   const report = await run(['init', '--scope', 'machine', '--format', 'json']);
   expect(report.result).toBe('ok');
@@ -335,18 +352,18 @@ it.each([
     expected: 'scope_required',
   },
   {
-    // The machine has no input left to ask for (its UUID is generated, its
-    // label defaults to the hostname); a stale machine_id is reported instead.
+    // The machine has no input left to ask for (its label defaults to the
+    // hostname); the retired user_id is planned away instead.
     name: 'upgrade with a stale machine identity',
     args: ['upgrade', '--scope', 'machine', '--dry-run'],
     prepare: () => {
       mkdirSync(join(home, '.bakers'));
       writeFileSync(
         join(home, '.bakers/machine.config.js'),
-        `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(join(root, 'preview-imported'))}, 'unexpected'); export default {machine_id:'host'};`,
+        `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(join(root, 'preview-imported'))}, 'unexpected'); export default {machine_id:'host', user_id:'cw'};`,
       );
     },
-    expected: 'invalid_value',
+    expected: 'user_id',
   },
 ])('preview never prompts at the command boundary: $name', async (row) => {
   row.prepare();

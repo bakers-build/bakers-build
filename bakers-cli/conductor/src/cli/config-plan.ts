@@ -134,9 +134,9 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     (f) =>
       (['scope', 'syntax', 'inventory'].includes(f.stage) &&
         f.code !== 'missing_required_file') ||
-      ['unsupported_schema_version', 'version_marker_disagreement'].includes(
-        f.code,
-      ),
+      // An old machine file is rewritten below, keeping its machine_id.
+      (f.code === 'unsupported_schema_version' && f.path !== machine?.path) ||
+      f.code === 'version_marker_disagreement',
   );
   const recheck =
     configRecheckCommand(
@@ -762,6 +762,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     }
     try {
       if (file.kind === 'machine') {
+        editor(file).remove('user_id');
         fill(file, 'machine_id', randomUUID());
         fill(file, 'label', options.inputs?.label);
         fill(file, 'max_parallel', options.inputs?.maxParallel);
