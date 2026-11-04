@@ -329,19 +329,13 @@ export class Conductor {
   /** This conductor's registration payload, built from config. */
   private registration(): ConductorRegistration {
     // `this.id` throws, naming bakers init, before anything is sent.
-    const { conductor_name, ...base } = {
+    const base = {
       ...registrationOf(this.config, this.checkoutRoot),
       id: this.id,
     };
-    // Only the serve process reports its identity; poll and reap must not
-    // overwrite the running conductor's pid.
-    return this.ownsServeProcess
-      ? {
-          ...base,
-          last_pid: process.pid,
-          ...(conductor_name ? { conductor_name } : {}),
-        }
-      : base;
+    // Only the serve process reports its pid; poll and reap must not
+    // overwrite the running conductor's.
+    return this.ownsServeProcess ? { ...base, last_pid: process.pid } : base;
   }
 
   async start() {

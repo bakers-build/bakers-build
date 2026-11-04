@@ -92,14 +92,16 @@ final class ConductorTakeover {
     if ($matches === []) {
       return NULL;
     }
+    $start = $variant === 'conductor' ? 'bakers oven start' : sprintf('bakers --conductor %s oven start', $variant);
     $offers = array_map(
-      fn (BbConductorInterface $c) => sprintf('"%s" (bakers oven start --adopt %s)', $c->label(), $c->uuid()),
+      fn (BbConductorInterface $c) => sprintf('"%s" (%s --adopt %s)', $c->label(), $start, $c->uuid()),
       $matches,
     );
     throw new ConductorTakeoverOffer(
       sprintf(
-        'This machine, project and variant already have %s; take it over, or create a new conductor with bakers oven start --new.',
+        'This machine, project and variant already have %s; take it over, or create a new conductor with %s --new.',
         implode(', ', $offers),
+        $start,
       ),
       array_values(array_map(
         fn (BbConductorInterface $c) => [
@@ -111,6 +113,22 @@ final class ConductorTakeover {
         $matches,
       )),
     );
+  }
+
+  /**
+   * Returns the reloaded conductor to adopt, or refuses one that changed.
+   *
+   * The match was read before the old id's lock was held; a heartbeat, an
+   * edit or another adopt may have changed the conductor since.
+   */
+  public function unchanged(BbConductorInterface $match, mixed $fresh): BbConductorInterface {
+    $fields = ['conductor_id', 'owner_user_id', 'project_id', 'machine'];
+    if (!$fresh instanceof BbConductorInterface
+      || $this->variant($fresh->get('conductor_name')->value) !== $this->variant($match->get('conductor_name')->value)
+      || array_filter($fields, fn ($f) => $fresh->get($f)->getValue() != $match->get($f)->getValue()) !== []) {
+      throw new ConflictHttpException('The conductor to take over changed meanwhile; retry.');
+    }
+    return $fresh;
   }
 
   /**

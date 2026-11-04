@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Lock\DatabaseLockBackend;
 use Drupal\Core\Lock\LockBackendAbstract;
 use Drupal\bb_core\Conductor\ConductorRegistrar;
@@ -11,10 +12,12 @@ use Drupal\bb_core\Conductor\ConductorTakeoverOffer;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\user\RoleInterface;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -45,6 +48,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
     'field', 'og',
+    'serialization', 'jsonapi', 'jsonapi_resources',
     'link', 'text', 'bb_core',
   ];
 
@@ -60,7 +64,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
-    $this->installConfig(['user']);
+    $this->installConfig(['user', 'jsonapi']);
     $this->installOgScopeFixture();
     $this->createUser('uid1-dummy');
     $this->createProjectWithWorkspace('default-project');
@@ -172,6 +176,30 @@ final class ConductorRegistrarTest extends KernelTestBase {
   }
 
   /**
+   * The takeover offer reaches the client as a JSON:API 409 over HTTP.
+   */
+  public function testHeartbeatEndpointAnswersTheOfferWith409(): void {
+    $owner = $this->createUser('owner-takeover-http');
+    $old = $this->legacyConductor($owner);
+    user_role_grant_permissions(RoleInterface::AUTHENTICATED_ID, ['register bakers conductor']);
+    $this->config('jsonapi.settings')->set('read_only', FALSE)->save();
+    $this->container->get('current_user')->setAccount($owner);
+    $request = Request::create('/jsonapi/bakers/heartbeat', 'POST', [], [], [], [
+      'CONTENT_TYPE' => 'application/vnd.api+json',
+      'HTTP_ACCEPT' => 'application/vnd.api+json',
+      'HTTP_X_BAKERS_CLIENT' => 'bakers/99.0.0',
+    ],
+      json_encode(['data' => ['attributes' => $this->derivedAttrs()]], JSON_THROW_ON_ERROR));
+
+    $response = $this->container->get('http_kernel')->handle($request);
+
+    $this->assertSame(409, $response->getStatusCode(), (string) $response->getContent());
+    $body = json_decode((string) $response->getContent(), TRUE, 512, JSON_THROW_ON_ERROR);
+    $this->assertSame($old->uuid(), $body['errors'][0]['meta']['candidates'][0]['uuid']);
+    $this->assertSame(1, $this->conductorCount());
+  }
+
+  /**
    * Adopting waits for a heartbeat still running under the conductor's old id.
    *
    * Otherwise an old CLI could save the conductor back under its old id.
@@ -180,7 +208,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-adopt-race');
     $old = $this->legacyConductor($owner);
     $other_request = new DatabaseLockBackend($this->container->get('database'));
-    self::assertTrue($other_request->acquire('bb_conductor_register:' . $owner->id() . ':cw-framework'));
+    self::assertTrue($other_request->acquire('bb_conductor_register:cw-framework'));
     try {
       $this->lockingRegistrar()->heartbeat($owner, ['adopt' => $old->uuid()] + $this->derivedAttrs());
       $this->fail('Adopting during a registration under the old id was not refused.');
@@ -191,6 +219,92 @@ final class ConductorRegistrarTest extends KernelTestBase {
       $other_request->releaseAll();
     }
     $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->loadUnchanged($old->id());
+    $this->assertInstanceOf(BbConductorInterface::class, $reloaded);
+    $this->assertSame('cw-framework', $reloaded->getConductorId());
+  }
+
+  /**
+   * Another owner registering the same conductor_id at once is refused.
+   *
+   * Otherwise both pass the foreign-owner check and one id gets two owners.
+   */
+  public function testConcurrentRegistrationByAnotherOwnerIsRefused(): void {
+    $owner = $this->createUser('owner-same-id');
+    $other_request = new DatabaseLockBackend($this->container->get('database'));
+    self::assertTrue($other_request->acquire('bb_conductor_register:shared-id'));
+    try {
+      $this->lockingRegistrar()->heartbeat($owner, [
+        'conductor_id' => 'shared-id',
+        'host_key' => self::HOST,
+        'project' => 'default-project',
+      ]);
+      $this->fail('A registration under a conductor_id another owner is registering was not refused.');
+    }
+    catch (ConflictHttpException) {
+    }
+    finally {
+      $other_request->releaseAll();
+    }
+    $this->assertSame(0, $this->conductorCount());
+  }
+
+  /**
+   * A conductor that stopped matching before its lock was taken stays as is.
+   */
+  public function testAdoptIsRefusedWhenTheConductorChangedMeanwhile(): void {
+    $owner = $this->createUser('owner-adopt-changed');
+    $old = $this->legacyConductor($owner);
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
+    // Another request moves the conductor to variant `shop` just before the
+    // old id's lock is granted.
+    $lock = new class($storage, (int) $old->id()) extends LockBackendAbstract {
+
+      public function __construct(private readonly EntityStorageInterface $storage, private readonly int $id) {}
+
+      /**
+       * {@inheritdoc}
+       */
+      public function acquire($name, $timeout = 30.0) {
+        $conductor = $this->storage->loadUnchanged($this->id);
+        if (str_ends_with($name, ':cw-framework') && $conductor instanceof BbConductorInterface) {
+          $conductor->set('conductor_name', 'shop')->save();
+        }
+        return TRUE;
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function lockMayBeAvailable($name) {
+        return TRUE;
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function release($name): void {}
+
+      /**
+       * {@inheritdoc}
+       */
+      public function releaseAll($lockId = NULL): void {}
+
+    };
+    $registrar = new ConductorRegistrar(
+      $this->container->get('entity_type.manager'),
+      $this->container->get('datetime.time'),
+      $lock,
+      $this->container->get('bb_core.workspace_read_scope'),
+      $this->container->get('bb_core.rank_capability'),
+      $this->container->get('bb_core.workspace_resolver'),
+    );
+    try {
+      $registrar->heartbeat($owner, ['adopt' => $old->uuid()] + $this->derivedAttrs());
+      $this->fail('A conductor that no longer matches was adopted.');
+    }
+    catch (ConflictHttpException) {
+    }
+    $reloaded = $storage->loadUnchanged($old->id());
     $this->assertInstanceOf(BbConductorInterface::class, $reloaded);
     $this->assertSame('cw-framework', $reloaded->getConductorId());
   }
@@ -247,6 +361,17 @@ final class ConductorRegistrarTest extends KernelTestBase {
       'conductor_name' => 'shop',
     ] + $this->derivedAttrs());
     $this->assertSame(2, $this->conductorCount());
+  }
+
+  /**
+   * The offer for a named variant names the start that selects it.
+   */
+  public function testVariantOfferNamesItsStart(): void {
+    $owner = $this->createUser('owner-variant-offer');
+    $shop = ['conductor_name' => 'shop'];
+    $old = $this->registrar()->heartbeat($owner, $shop + $this->legacyAttrs());
+    $this->expectExceptionMessage('bakers --conductor shop oven start --adopt ' . $old->uuid());
+    $this->registrar()->heartbeat($owner, ['conductor_id' => 'framework-default-project-shop'] + $shop + $this->derivedAttrs());
   }
 
   /**
@@ -375,7 +500,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
   public function testConcurrentRegistrationOfOneConductorIdIsRefused(): void {
     $owner = $this->createUser('owner-race');
     $other_request = new DatabaseLockBackend($this->container->get('database'));
-    self::assertTrue($other_request->acquire('bb_conductor_register:' . $owner->id() . ':race-cid'));
+    self::assertTrue($other_request->acquire('bb_conductor_register:race-cid'));
 
     try {
       // Kernel tests wire a NullLockBackend; this registrar locks for real.
@@ -535,6 +660,15 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $named->set('name', 'Desk')->save();
     $kept = $this->registrar()->heartbeat($owner, ['machine_label' => 'other'] + $this->legacyAttrs())->getMachine();
     $this->assertSame('Desk', $kept?->label());
+  }
+
+  /**
+   * A machine label longer than the name field is cut to fit.
+   */
+  public function testHeartbeatCutsAnOverlongMachineLabel(): void {
+    $owner = $this->createUser('owner-long-label');
+    $machine = $this->registrar()->heartbeat($owner, ['machine_label' => str_repeat('ä', 300)] + $this->legacyAttrs())->getMachine();
+    $this->assertSame(str_repeat('ä', 255), $machine?->label());
   }
 
   /**

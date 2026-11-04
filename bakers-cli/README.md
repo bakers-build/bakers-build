@@ -406,7 +406,7 @@ single lone config → it (back-compat); else resolution errors and names the av
 the selector. `--conductor` wins over `$BB_CONDUCTOR`, and an explicit `--config <path>` /
 `$BB_CONDUCTOR_CONFIG` still wins over both. Two `conductor.config.js` cannot coexist in one
 dir, so an ambiguous default is structurally impossible. A config sets no identity: the
-`conductor_id` is derived from machine UUID + `bakers.project` + variant (the file stem), so
+`conductor_id` is derived from the machine id + `bakers.project` + variant (the file stem), so
 co-located conductors are distinct by construction. A config with `conductor_id`, `machine_id`
 or `label` is rejected; run `bakers init`. This is how a Drupal **multisite** repo maps
 each site to its own bakers.build project. Full model: [`CONFIG.md`](CONFIG.md) › *Multiple conductors per repo*.

@@ -762,6 +762,7 @@ describe('bakers oven start — herdr seam (BB-222)', () => {
 });
 
 const OLD = '1cdd3fcb-2156-4e3c-877d-52665142268c';
+const OTHER = '8a0f2b6e-3c4d-4e5f-9a1b-2c3d4e5f6a7b';
 
 /**
  * A control plane that already has this machine's conductor of the project
@@ -770,7 +771,10 @@ const OLD = '1cdd3fcb-2156-4e3c-877d-52665142268c';
 class TakeoverRemote extends FakeBbRemote {
   readonly registrations: ConductorRegistration[] = [];
 
-  constructor(private readonly known = false) {
+  constructor(
+    private readonly known = false,
+    private readonly adoptable = [OLD],
+  ) {
     super();
   }
 
@@ -798,7 +802,7 @@ class TakeoverRemote extends FakeBbRemote {
     if (!reg.adopt && !reg.create_new) {
       throw new ConductorTakeoverRequired(
         `This machine, project and variant already have "cw-framework" (bakers oven start --adopt ${OLD}); take it over, or create a new conductor with bakers oven start --new.`,
-        [OLD],
+        this.adoptable,
       );
     }
     return super.registerConductor(reg);
@@ -867,6 +871,34 @@ describe('bakers oven start — taking over an existing conductor', () => {
     expect(process.exitCode).toBe(1);
     expect(errors).toContain(`--adopt ${OLD}`);
     expect(errors).toContain('--new');
+  });
+
+  it('lets a terminal pick one of several conductors', async () => {
+    const remote = new TakeoverRemote(false, [OLD, OTHER]);
+    const asked: string[] = [];
+    const { spawned } = await start(remote, {
+      ...tty,
+      askUpdate: async (q) => {
+        asked.push(q);
+        return '2';
+      },
+    });
+    expect(asked).toHaveLength(1);
+    expect(asked[0]).toContain(`2) ${OTHER}`);
+    expect(remote.registrations[1]?.adopt).toBe(OTHER);
+    expect(spawned).toBe(1);
+  });
+
+  it('refuses --adopt together with --new', async () => {
+    const remote = new TakeoverRemote();
+    const { spawned, errors } = await start(remote, {}, [
+      '--adopt',
+      OLD,
+      '--new',
+    ]);
+    expect(spawned).toBe(0);
+    expect(remote.registrations).toHaveLength(0);
+    expect(errors).toMatch(/--adopt.*--new|--new.*--adopt/);
   });
 
   it('takes the decision from --adopt and --new without asking', async () => {

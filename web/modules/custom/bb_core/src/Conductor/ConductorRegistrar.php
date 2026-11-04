@@ -69,7 +69,7 @@ final class ConductorRegistrar {
     // Resolved on every heartbeat, so an owner who lost access is refused
     // before any write.
     $projectId = $this->registration->projectId($attrs, $owner);
-    return $this->locked($owner, $conductorId, fn () => $this->register($owner, $conductorId, $hostKey, $projectId, $attrs));
+    return $this->locked($conductorId, fn () => $this->register($owner, $conductorId, $hostKey, $projectId, $attrs));
   }
 
   /**
@@ -79,15 +79,15 @@ final class ConductorRegistrar {
    * could otherwise bind the identity to its own machine. A short overlap
    * (poll during a tick) waits once before it is refused.
    *
-   * @param \Drupal\Core\Session\AccountInterface $owner
-   *   The authenticated conductor owner.
    * @param string $conductorId
    *   The registration key to lock.
    * @param callable(): \Drupal\bb_core\Entity\BbConductorInterface $step
    *   The step to run under the lock.
    */
-  private function locked(AccountInterface $owner, string $conductorId, callable $step): BbConductorInterface {
-    $lock_name = 'bb_conductor_register:' . $owner->id() . ':' . $conductorId;
+  private function locked(string $conductorId, callable $step): BbConductorInterface {
+    // Owner-less: two owners registering one id must not both pass
+    // ConductorTakeover::refuseForeignConductorId().
+    $lock_name = 'bb_conductor_register:' . $conductorId;
     if (!$this->lock->acquire($lock_name)
       && ($this->lock->wait($lock_name, 5) || !$this->lock->acquire($lock_name))) {
       throw new ConflictHttpException(sprintf('Conductor "%s" is being registered concurrently; retry.', $conductorId));
@@ -121,11 +121,8 @@ final class ConductorRegistrar {
       $match = $this->takeover->match($owner, $hostKey, $projectId, $attrs);
       if ($match !== NULL) {
         // An old CLI may still heartbeat under the adopted conductor's old id.
-        return $this->locked($owner, (string) $match->get('conductor_id')->value, function () use ($owner, $match, $conductorId, $hostKey, $projectId, $attrs) {
-          $fresh = $this->entityTypeManager->getStorage('bb_conductor')->loadUnchanged($match->id());
-          if (!$fresh instanceof BbConductorInterface) {
-            throw new ConflictHttpException('The conductor to take over was deleted; retry.');
-          }
+        return $this->locked((string) $match->get('conductor_id')->value, function () use ($owner, $match, $conductorId, $hostKey, $projectId, $attrs) {
+          $fresh = $this->takeover->unchanged($match, $this->entityTypeManager->getStorage('bb_conductor')->loadUnchanged($match->id()));
           $fresh->set('conductor_id', $conductorId);
           return $this->upsert($owner, $fresh, $conductorId, $hostKey, $projectId, $attrs);
         });
@@ -300,7 +297,8 @@ final class ConductorRegistrar {
    *   `machine_label` at creation and while the name is still the host key.
    */
   private function loadOrCreateMachine(AccountInterface $owner, string $hostKey, array $attrs): BbMachineInterface {
-    $label = is_string($attrs['machine_label'] ?? NULL) ? trim($attrs['machine_label']) : '';
+    // The name field holds 255 characters.
+    $label = is_string($attrs['machine_label'] ?? NULL) ? mb_substr(trim($attrs['machine_label']), 0, 255) : '';
     $storage = $this->entityTypeManager->getStorage('bb_machine');
     $ids = $storage->getQuery()
       ->accessCheck(FALSE)

@@ -618,7 +618,8 @@ export interface TakeoverChoice {
  * Settles, once, a conductor whose derived id the control plane does not know
  * yet: registering it either succeeds, or the control plane offers the
  * conductor this machine, project and variant already have under an older id.
- * A terminal asks whether to take it over; without one the start stops with
+ * A terminal asks whether to take it over (or which, when there are several);
+ * any other answer than a choice or no cancels. Without one the start stops with
  * the control plane's own `--adopt`/`--new` hint. After this the id is known,
  * so no later start (nor the herdr child, which has no terminal) asks again.
  * Returns false when the start must stop.
@@ -643,26 +644,35 @@ async function settleTakeover(
     // By name: the remote addon may load its own copy of the contract class.
     if ((caught as Error)?.name !== 'ConductorTakeoverRequired') throw caught;
     const err = caught as ConductorTakeoverRequired;
-    const [adopt] = err.adoptable;
-    if (!isInteractive(deps) || err.adoptable.length !== 1 || !adopt) {
+    const { adoptable } = err;
+    if (!isInteractive(deps) || adoptable.length === 0) {
       console.error(err.message);
       process.exitCode = 1;
       return false;
     }
-    const ask = deps.askUpdate ?? defaultAskUpdate;
+    const one = adoptable.length === 1;
+    const question = one
+      ? `${err.message}\nTake it over? [Y/n]`
+      : `${err.message}\n${adoptable.map((uuid, i) => `${i + 1}) ${uuid}`).join('\n')}\nTake over which? [1-${adoptable.length}, n for a new one]`;
     let answer: string;
     try {
-      answer = (await ask(`${err.message}\nTake it over? [Y/n]`))
+      answer = (await (deps.askUpdate ?? defaultAskUpdate)(question))
         .trim()
         .toLowerCase();
     } catch {
+      answer = 'cancel';
+    }
+    const adopt =
+      one && ['', 'y', 'yes'].includes(answer)
+        ? adoptable[0]
+        : adoptable[Number(answer) - 1];
+    if (!adopt && answer !== 'n' && answer !== 'no') {
       console.error('Start cancelled.');
       process.exitCode = 1;
       return false;
     }
-    const take = answer === '' || answer === 'y' || answer === 'yes';
     await remote.registerConductor(
-      take ? { ...reg, adopt } : { ...reg, create_new: true },
+      adopt ? { ...reg, adopt } : { ...reg, create_new: true },
     );
     return true;
   }
@@ -1236,6 +1246,11 @@ Examples:
         new?: boolean;
       },
     ) {
+      if (opts.adopt && opts.new) {
+        console.error('Choose either --adopt <uuid> or --new, not both.');
+        process.exitCode = 1;
+        return;
+      }
       const choice: TakeoverChoice = {
         ...(opts.adopt ? { adopt: opts.adopt } : {}),
         ...(opts.new ? { createNew: true } : {}),
