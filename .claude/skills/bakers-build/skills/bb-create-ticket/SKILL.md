@@ -9,8 +9,7 @@ First read your user: it says whether to specify and which questions you answer 
 requester only the rest. Every tracker step is an operation of
 [tools](../bb-workflow/references/tools.md).
 
-The host supplies the project, the workflow and the requester: a name and a distinct identity. It
-may add a conversation link, a conductor and the wish to specify. In a checkout, apply
+The host may add a conversation link, a conductor and the wish to specify. In a checkout, apply
 [checkout](references/checkout.md). An existing or resumed ticket is read, never replaced.
 
 ## Create
