@@ -19,7 +19,8 @@ export async function setup(t, siteOptions = {}) {
   const sent = [];
   let sendFails = false;
   const stateFile = join(mkdtempSync(join(tmpdir(), 'pm-poller-')), 'poller-state.json');
-  const poller = createPoller({
+  // A fresh poller on the same state file, as after a restart.
+  const start = () => createPoller({
     client: createBakersClient({ url: s.stub.url, apiKey: 'bb-test-key' }),
     slack: createSlack({ url: slack.url, token: 'xoxb-test' }),
     send: async (message) => {
@@ -31,7 +32,8 @@ export async function setup(t, siteOptions = {}) {
     messages,
     log: quiet,
   });
+  const poller = start();
   const state = () => JSON.parse(readFileSync(stateFile, 'utf8'));
-  return { s, slack, sent, poller, state, failSend: (value) => (sendFails = value) };
+  return { s, slack, sent, poller, state, restart: start, failSend: (value) => (sendFails = value) };
 }
 

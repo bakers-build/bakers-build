@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // The PM bot's poller. Every interval it reads the project's tickets from
 // bakers.build through its tools and, for each ticket whose first `chat` link is a Slack thread:
-// posts each state change into that thread once, relays its open question once,
-// and opens a thread of its own for each sub-ticket. No LLM, no dependencies.
+// posts each state change into that thread once, relays its open question or
+// technical problem once, and opens a thread of its own for each sub-ticket. No LLM, no dependencies.
 //
 //   node experimental/pm-bot/poller/poller.mjs          # loop
 //   node experimental/pm-bot/poller/poller.mjs --once   # one pass, then exit
@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { createBakersClient } from '../lib/bakers-client.mjs';
 import { diff, reachedDone } from './diff.mjs';
 import { pollInterval } from './interval.mjs';
-import { escape, openQuestion, relay } from './questions.mjs';
+import { escape, openNote, QUESTION_LABEL, relay, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
 import { chatThread, pendingSubTickets } from './tickets.mjs';
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
@@ -41,8 +41,8 @@ export function createSlack({ url = 'https://slack.com/api', token }) {
   };
 }
 
-// A relayed question goes through Hermes, which also adds it to the thread's
-// session: the agent knows the question when someone in the thread answers.
+// A relayed note goes through Hermes, which also adds it to the thread's
+// session: the agent knows the question or technical problem when someone in the thread answers.
 export function hermesSend({ channel, thread_ts, text }) {
   return new Promise((resolve, reject) => {
     const child = spawn('hermes', ['send', '--to', `slack:${channel}:${thread_ts}`, '--quiet', '--file', '-'], { stdio: ['pipe', 'ignore', 'pipe'] });
@@ -56,7 +56,7 @@ export function hermesSend({ channel, thread_ts, text }) {
 
 /**
  * @param {{client: ReturnType<typeof createBakersClient>, slack: ReturnType<typeof createSlack>,
- *   send: (message: {question: string, identifier: string, channel: string, thread_ts: string, text: string}) => Promise<void>,
+ *   send: (message: {comment: string, kind: 'question' | 'technical_problem', identifier: string, channel: string, thread_ts: string, text: string}) => Promise<void>,
  *   stateFile: string, project: string, messages: any, log?: {log: Function, error: Function}}} options
  */
 export function createPoller({ client, slack, send, stateFile, project, messages, log = console }) {
@@ -133,28 +133,31 @@ export function createPoller({ client, slack, send, stateFile, project, messages
     state.tickets = next;
   }
 
-  async function relayQuestions(state, current) {
+  // Questions and technical problems share one relay and one record of relayed comments.
+  async function relayNotes(state, current) {
     const open = [];
     let complete = true;
-    for (const ticket of current.filter((t) => t.thread && t.frozen && t.labels.includes('Question'))) {
+    const noted = (t) => t.labels.includes(QUESTION_LABEL) || t.labels.includes(TECHNICAL_PROBLEM_LABEL);
+    for (const ticket of current.filter((t) => t.thread && t.frozen && noted(t))) {
       try {
-        const question = openQuestion(ticket, await comments(ticket.id));
-        if (question) open.push({ ticket, question });
+        const note = openNote(ticket, await comments(ticket.id));
+        if (note) open.push({ ticket, note });
       } catch (error) {
         complete = false;
-        log.error(`${stamp()} question of ${ticket.identifier}: ${error.message}`);
+        log.error(`${stamp()} note of ${ticket.identifier}: ${error.message}`);
       }
     }
-    const selected = relay(state.relayed, open, complete, messages.questionLead);
+    const leads = { question: messages.questionLead, technical_problem: messages.technicalProblemLead };
+    const selected = relay(state.relayed, open, complete, leads);
     state.relayed = selected.relayed;
-    for (const q of selected.posts) {
+    for (const post of selected.posts) {
       try {
-        await send(q);
-        state.relayed.push(q.question);
-        log.log(`${stamp()} relayed question ${q.question} of ${q.identifier}`);
+        await send(post);
+        state.relayed.push(post.comment);
+        log.log(`${stamp()} relayed ${post.kind} ${post.comment} of ${post.identifier}`);
       } catch (error) {
         // Not recorded, so the next pass retries it.
-        log.error(`${stamp()} question ${q.question} of ${q.identifier}: ${error.message}`);
+        log.error(`${stamp()} ${post.kind} ${post.comment} of ${post.identifier}: ${error.message}`);
       }
     }
   }
@@ -213,8 +216,8 @@ export function createPoller({ client, slack, send, stateFile, project, messages
       const current = await tickets();
       await subTicketThreads(state, current);
       await postStates(state, current);
-      // Questions are relayed on the first pass too: they wait for an answer.
-      await relayQuestions(state, current);
+      // Notes are relayed on the first pass too: they wait for an answer or for keytec.
+      await relayNotes(state, current);
       await writeState(state);
     } catch (error) {
       // bakers.build unreachable: the state file stays as it was, the next pass catches up.

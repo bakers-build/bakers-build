@@ -12,6 +12,12 @@ function frozenWithQuestion(s, ticket, body = 'Should it run at 3 a.m.?') {
   return question;
 }
 
+function frozenWithTechnicalProblem(s, ticket, body = 'The test database refuses the connection. Please contact keytec.') {
+  const note = s.addComment(ticket, { body, created: '2026-11-02T10:00:00+00:00' });
+  Object.assign(ticket, { frozen: true, frozen_at: '2026-11-02T10:00:00+00:00', labels: ['technical problem'] });
+  return note;
+}
+
 test('the first pass records the states and posts nothing; a later change is posted once, naming the state', async (t) => {
   const { s, slack, poller, state } = await setup(t);
   const ticket = s.addTicket({ state: 'qualification', links: [thread()] });
@@ -71,7 +77,8 @@ test('an open question is relayed into its thread exactly once, keyed by the com
   await poller.pass();
   assert.deepEqual(sent, [
     {
-      question: question.id,
+      comment: question.id,
+      kind: 'question',
       identifier: 'ACME-1',
       channel: 'C0000000001',
       thread_ts: '1700000000.000100',
@@ -79,6 +86,55 @@ test('an open question is relayed into its thread exactly once, keyed by the com
     },
   ]);
   assert.deepEqual(state().relayed, [question.id]);
+});
+
+test('a technical problem is relayed into its thread exactly once, behind its own lead-in', async (t) => {
+  const { s, sent, poller, state } = await setup(t);
+  const ticket = s.addTicket({ title: 'Price updater', state: 'working', links: [thread()] });
+  const note = frozenWithTechnicalProblem(s, ticket);
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(sent, [
+    {
+      comment: note.id,
+      kind: 'technical_problem',
+      identifier: 'ACME-1',
+      channel: 'C0000000001',
+      thread_ts: '1700000000.000100',
+      text: 'The work on the "Price updater" ticket is stuck on a technical problem that keytec has to solve:\n\nThe test database refuses the connection. Please contact keytec.',
+    },
+  ]);
+  assert.deepEqual(state().relayed, [note.id]);
+});
+
+test('a ticket labelled Question and technical problem gets only the technical-problem post', async (t) => {
+  const { s, sent, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  frozenWithTechnicalProblem(s, ticket);
+  ticket.labels = ['Question', 'technical problem'];
+  await poller.pass();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].kind, 'technical_problem');
+  assert.ok(!sent[0].text.includes('has a question:'));
+});
+
+test('a technical problem is not posted again by a restarted poller', async (t) => {
+  const { s, sent, poller, restart } = await setup(t);
+  frozenWithTechnicalProblem(s, s.addTicket({ state: 'working', links: [thread()] }));
+  await poller.pass();
+  await restart().pass();
+  assert.equal(sent.length, 1);
+});
+
+test('a question and a technical problem open at once are each relayed once', async (t) => {
+  const { s, sent, poller, state } = await setup(t);
+  const question = frozenWithQuestion(s, s.addTicket({ state: 'working', links: [thread()] }));
+  const note = frozenWithTechnicalProblem(s, s.addTicket({ state: 'working', links: [thread('C0000000002')] }));
+  await poller.pass();
+  await poller.pass();
+  await poller.pass();
+  assert.equal(sent.length, 2);
+  assert.deepEqual([...state().relayed].sort(), [question.id, note.id].sort());
 });
 
 test('a failed relay is retried on the next pass and then sent once', async (t) => {
