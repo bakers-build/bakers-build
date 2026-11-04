@@ -11,7 +11,7 @@ A connection is a private file that names one bakers.build server and how you si
 | Relocate | `BB_HOME` names the `.bakers` directory itself and moves both. See [Machines](/configuration/machine#location). |
 | Permissions | The CLI writes them with mode `0600`. Keep them outside Git. |
 
-Create a named connection with `bakers config init --scope connection --connection <id>`. Tokens never live in these files: sign-in stores them in dropsh's per-host session store under `~/.config/dropsh/`, mode `0600`.
+Create a named connection with `bakers config init --scope connection --connection <id>`. Tokens never live in these files: sign-in stores them in dropsh's per-host session store under `~/.config/dropsh/`, mode `0600`. For isolated source-build runs, set an absolute `XDG_CONFIG_HOME` to store tokens in `$XDG_CONFIG_HOME/dropsh/`; use the same value for login, CLI and conductor. This source workspace patches dropsh 0.8.2; published packages require the equivalent upstream fix.
 
 ## Fields
 
