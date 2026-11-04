@@ -25,6 +25,7 @@
 #   - customer wording says what happens, not what a team does
 #   - the env file is ignored and no committed file holds a token
 #   - the bot has no install script (experimental/pm-bot/bin/, lib/running.sh)
+#   - every image build line passes the bundle and the two pinned upstream skill contexts
 #   - the template's compose service runs the image with exactly two mounts
 #     (data read-write, clone read-only), no Docker socket, restart
 #     unless-stopped, every capability dropped but the ones Hermes' bootstrap
@@ -205,6 +206,23 @@ if [ -e "$BOT/bin" ] || [ -e "$BOT/lib/running.sh" ] || [ -n "$(git ls-files "$B
   fail "$BOT/bin/ or $BOT/lib/running.sh is back"
 fi
 pass "no install script for the bot"
+
+# The image's skills come from three named build contexts: this repository's bundle and two
+# upstreams pinned by commit. Every build of the image passes them, the same way.
+CONTEXTS=(--build-context bundle=.claude/skills/bakers-build
+  --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3
+  --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0)
+for f in scripts/ci/github-image-gate.sh tests/contract/pm-bot-image.sh "$BOT/README.md"; do
+  # Join continued lines, then take each docker build whose context is pm-bot.
+  lines="$(sed -e ':a' -e '/\\$/N; s/\\\n//; ta' "$f" | grep -E 'docker build .* pm-bot( |$)' || true)"
+  [ -n "$lines" ] || fail "$f has no docker build of pm-bot"
+  while IFS= read -r line; do
+    for ((i = 1; i < ${#CONTEXTS[@]}; i += 2)); do
+      grep -qF -- "${CONTEXTS[i]}" <<<"$line" || fail "an image build line lacks a pinned skill context: $f: ${CONTEXTS[i]}"
+    done
+  done <<<"$lines"
+done
+pass "every image build line passes the bundle and the pinned upstream skill contexts"
 
 COMPOSE=coder/bakers-ddev/pm-bot.compose.yaml
 [ -f "$COMPOSE" ] || fail "$COMPOSE is missing"

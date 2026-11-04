@@ -38,6 +38,15 @@ bash tests/contract/pm-bot.sh          # lock-down of the configuration, the ski
 bash tests/contract/pm-bot-image.sh    # builds the image; check mode against a /mcp stub, then run mode (Docker)
 ```
 
+Build the image from the repository root. Its skills come from three named build contexts: this repository's skill bundle and two upstream skill repositories pinned by commit (superpowers `v7.0.0`, mattpocock/skills `v1.3.2`), so building needs GitHub access:
+
+```sh
+docker build -t pm-bot:local \
+  --build-context bundle=.claude/skills/bakers-build \
+  --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3 \
+  --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0 pm-bot
+```
+
 GitHub CI runs the first two in `pm_bot` and the third in `image_gate`; the release then publishes the image to GHCR (the template's README › PM bot › The bot's version).
 
 ## Test it by hand

@@ -40,7 +40,11 @@ pass() { echo "ok: $*"; }
 IMAGE="${1:-}"
 if [ -z "$IMAGE" ]; then
   IMAGE=pm-bot:check
-  docker build -q -t "$IMAGE" experimental/pm-bot >/dev/null || fail "docker build experimental/pm-bot failed"
+  # The skill contexts: this repository's bundle, superpowers v7.0.0 and mattpocock/skills v1.3.2.
+  docker build -q -t "$IMAGE" \
+    --build-context bundle=.claude/skills/bakers-build \
+    --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3 \
+    --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0 experimental/pm-bot >/dev/null || fail "docker build experimental/pm-bot failed"
 fi
 
 volume="pm-bot-check-$$"

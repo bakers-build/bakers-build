@@ -14,7 +14,12 @@ for image in "${images[@]}"; do
 done
 docker build -f docker/e2e/Dockerfile -t bakers-gate/e2e:local .
 # The PM bot (experimental/pm-bot/Dockerfile): its own build context, smoke-tested in check and run mode.
-docker build "${labels[@]}" --label "org.opencontainers.image.revision=$revision" -t bakers-gate/pm-bot:local experimental/pm-bot
+# Its skills: this repository's bundle and two upstreams pinned by commit (superpowers v7.0.0,
+# mattpocock/skills v1.3.2).
+docker build "${labels[@]}" --label "org.opencontainers.image.revision=$revision" -t bakers-gate/pm-bot:local \
+  --build-context bundle=.claude/skills/bakers-build \
+  --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3 \
+  --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0 experimental/pm-bot
 bash tests/contract/pm-bot-image.sh bakers-gate/pm-bot:local
 for image in php php-test nginx docs e2e pm-bot; do
   docker image inspect "bakers-gate/$image:local" > "gate-reports/$image.json"
