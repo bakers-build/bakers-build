@@ -127,7 +127,9 @@ export async function loadTools(
       if (!entry) throw new Error(`unknown tool ${name}`);
       const valid = validateArgs(entry.def.input, args);
       if (!valid.ok)
-        throw new Error(`${name}: invalid arguments: ${valid.errors.join('; ')}`);
+        throw new Error(
+          `${name}: invalid arguments: ${valid.errors.join('; ')}`,
+        );
       const signal = options.signal ?? new AbortController().signal;
       return entry.handler({
         ...binding,

@@ -10,7 +10,6 @@ import type { ResolvedBbProjectContext } from './bakers-project-context.js';
 import type { BbProjectSelection } from './cli/project-context.js';
 import type { HookListener } from './plugins/executor.js';
 import type { LoadedInbox } from './plugins/message.js';
-import type { ToolRegistry } from './plugins/tools.js';
 import type {
   AgentCandidate,
   ExecutorPlugin,
@@ -20,6 +19,7 @@ import type {
 } from './plugins/plugins.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import type { ToolRegistry } from './plugins/tools.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {

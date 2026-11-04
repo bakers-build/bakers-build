@@ -577,6 +577,9 @@ importers:
       '@dropsh/plugin-oauth2':
         specifier: ^0.8.2
         version: 0.8.2(dropsh@0.8.2(patch_hash=50e2bc365918a3fc358150f6c87ed4b4b6f19d512e76074d245fe805662d5c88))
+      '@modelcontextprotocol/sdk':
+        specifier: 1.32.1
+        version: 1.32.1(zod@4.6.7)
       commander:
         specifier: ^12.1.0
         version: 12.1.0

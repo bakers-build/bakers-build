@@ -21,7 +21,6 @@ import {
 import { readBbProjectSelection } from './cli/project-context.js';
 import type { HookListener, HookName } from './plugins/executor.js';
 import { type LoadedInbox, loadInbox } from './plugins/message.js';
-import { loadTools } from './plugins/tools.js';
 import type {
   AgentCandidate,
   AgentPlugin,
@@ -35,6 +34,7 @@ import {
 } from './plugins/preset.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import { loadTools } from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`

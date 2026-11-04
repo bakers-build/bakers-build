@@ -67,14 +67,6 @@ export {
   validateRequestPayload,
 } from './plugins/message.js';
 export type {
-  AddonTools,
-  ToolBinding,
-  ToolDefinition,
-  ToolHandler,
-  ToolRequest,
-  ToolResult,
-} from './plugins/tools.js';
-export type {
   AgentCandidate,
   AgentPlugin,
   ExecutorDeps,
@@ -127,6 +119,14 @@ export {
   sandboxFailures,
   systemSandboxHost,
 } from './plugins/sandbox-preflight.js';
+export type {
+  AddonTools,
+  ToolBinding,
+  ToolDefinition,
+  ToolHandler,
+  ToolRequest,
+  ToolResult,
+} from './plugins/tools.js';
 export type {
   BbWorkspace,
   EnsuredWorkspace,
