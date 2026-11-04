@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The bread-slice mark (Figma "Bildmarke · Brotscheibe"), composed from its two
+// The bread-slice logo mark (the Figma brand-mark frame), composed from its two
 // exported layers at the positions the design gives them.
 defineProps<{ size: number; radius: number }>()
 </script>

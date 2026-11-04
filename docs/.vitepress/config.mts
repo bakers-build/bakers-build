@@ -92,13 +92,13 @@ export default withMermaid(
           href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Spline+Sans:wght@400;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap',
         },
       ],
-      // Sets html.landing-page before first paint, so the landing's light
+      // Sets html.landing-page before first paint on / and /de/, so the landing's light
       // chrome applies from the first frame and the docs styles never flash
       // on it. Landing.vue keeps owning the class for client-side route changes.
       [
         'script',
         {},
-        "if(location.pathname==='/'||location.pathname==='/index.html'){document.documentElement.classList.add('landing-page')}",
+        "if(/^\\/(de\\/?)?(index(\\.html)?)?$/.test(location.pathname)){document.documentElement.classList.add('landing-page')}",
       ],
     ],
     themeConfig: {

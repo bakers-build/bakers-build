@@ -104,8 +104,8 @@ export default {
     app.component('Landing', Landing)
     app.component('DocTiles', DocTiles)
     app.component('DocQuickLinks', DocQuickLinks)
-    // Takes over the plugin's `Mermaid` registration (D7: our colours in both
-    // schemes, fonts awaited before the first render).
+    // Takes over the plugin's `Mermaid` registration (D7: our colours, fonts
+    // awaited before the first render).
     app.component('Mermaid', BbMermaid)
     installDiagramZoom()
   },

@@ -1,9 +1,8 @@
 <script setup lang="ts">
-const points = [
-  { icon: 'icon-basket', text: 'Set which checks must pass before the merge.' },
-  { icon: 'icon-scroll', text: 'Add your own skills for your stack, from the offer to the launch.' },
-  { icon: 'icon-pen', text: 'The recipe goes through code review like everything else.' },
-]
+import type { Copy } from './copy'
+
+const props = defineProps<{ t: Copy }>()
+const points = props.t.recipe.points.map((text, i) => ({ icon: ['icon-basket', 'icon-scroll', 'icon-pen'][i], text }))
 const excerpt = [
   ['## Loaded skills', true],
   ['- @bakers-build/essential-skills', false],
@@ -18,13 +17,13 @@ const excerpt = [
 
 <template>
   <section id="recipe" class="scroll-mt-4 border-b-[1.5px] border-dashed border-[color:var(--lp-rule)]">
-    <div class="lp-wrap grid items-center gap-16 py-[88px] lg:grid-cols-[minmax(0,602px)_minmax(0,662px)] lg:justify-between">
+    <div class="lp-wrap grid items-center gap-12 py-12 md:py-[88px] lg:gap-16 lg:grid-cols-[minmax(0,602px)_minmax(0,662px)] lg:justify-between">
       <div>
-        <h2 class="lp-display m-0 max-w-[571px] text-balance text-[38px] font-extrabold leading-[0.95] tracking-[-2.4px] md:text-[60px]">
-          Change the recipe, and the line changes.
+        <h2 class="lp-display m-0 max-w-[571px] text-[38px] font-extrabold leading-[0.95] tracking-[-2.4px] md:text-[60px]">
+          {{ t.recipe.title }}
         </h2>
         <p class="m-0 mt-5 max-w-[587px] text-[19px] leading-[1.55] text-[color:var(--lp-ink-2)]">
-          How your line works lives in WORKFLOW.md next to your code. No migration, no support ticket.
+          {{ t.recipe.text }}
         </p>
         <ul class="m-0 mt-7 grid max-w-[444px] list-none gap-[14px] p-0">
           <li v-for="p in points" :key="p.icon" class="relative pl-[30px] text-[17px] leading-[25.5px]">

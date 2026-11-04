@@ -1,6 +1,6 @@
 /* The landing page's theme layer: tokens and the few recipes several sections
- * share, values from the Figma frame (file sr31HfHNWbCeNsxvXbt4wv, EN frame
- * 606:39). Everything else is Tailwind utilities in the section components.
+ * share, values from the Figma design (file sr31HfHNWbCeNsxvXbt4wv, section
+ * 667:258). Everything else is Tailwind utilities in the section components.
  * The whole site is light only (`appearance: false` in config.mts). */
 
 :root {
@@ -27,7 +27,7 @@
 .lp-wrap {
   margin-inline: auto;
   max-width: 1440px;
-  padding-inline: 16px;
+  padding-inline: 20px;
 }
 @media (min-width: 768px) {
   .lp-wrap {
@@ -78,18 +78,6 @@
   background: var(--lp-paper);
 }
 
-/* The install command box. */
-.lp-code {
-  border: 1.5px solid var(--lp-ink);
-  border-radius: 8px;
-  background: var(--lp-paper);
-  padding: 8px 12px;
-  font-family: var(--lp-mono);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow-x: auto;
-}
-
 :where(.lp a) {
   color: inherit;
 }
@@ -99,9 +87,8 @@
   border-radius: 6px;
 }
 
-/* VitePress chrome while the landing is mounted: the page is light in both
- * appearance modes. The class is set before first paint (config.mts) and
- * removed on route leave (Landing.vue). */
+/* VitePress chrome while the landing is mounted. The class is set before first
+ * paint (config.mts) and removed on route leave (Landing.vue). */
 html.landing-page {
   color-scheme: light;
   background: var(--lp-flour);

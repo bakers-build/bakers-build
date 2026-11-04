@@ -20,9 +20,10 @@ const AREA_INDEX = new Set([
   'configuration/index.md',
 ])
 const MAIN_AREAS = ['get-started/', 'addons/']
-// landing.md renders the Vue landing page; index.md is /manual, reached from the nav.
-const NO_PROSE = new Set(['landing.md'])
-const NO_SIDEBAR = new Set(['index.md', 'landing.md'])
+// landing.md and de/index.md render the Vue landing page (EN, DE); index.md is /manual,
+// reached from the nav.
+const NO_PROSE = new Set(['landing.md', 'de/index.md'])
+const NO_SIDEBAR = new Set(['index.md', 'landing.md', 'de/index.md'])
 
 function limitFor(rel) {
   if (AREA_INDEX.has(rel)) return 250
