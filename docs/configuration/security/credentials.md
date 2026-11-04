@@ -30,6 +30,27 @@ bakers config init --scope connection --auth-type client_credentials --client-id
 
 Use a personal key for CI jobs and scripts that should act as you. When you leave a team, revoking your keys is enough: nothing else holds them.
 
+### Use a key as bearer on `/mcp`
+
+A client that can only send a fixed header and cannot refresh a token, such as a bot reading its settings from an env file, may send the key itself to the MCP endpoint:
+
+```http
+POST /mcp
+Authorization: Bearer <client id>:<secret>
+```
+
+The client id and secret are the two values the key dialog shows, joined by one `:`. A service account's key works the same way.
+
+| Fact | Value |
+|---|---|
+| Acts as | The key's owner with their current permissions, exactly like a token from the key |
+| Lifetime | The key's own: until it is revoked or disabled, its expiry date passes, or its owner is blocked. There is no 300-second token limit |
+| Refused | Every such case, a wrong secret and an unknown key get `401` with `error="invalid_token"`; nothing falls back to anonymous access |
+| Where | `/mcp` only. JSON:API and every other path still need an exchanged token |
+| Token exchange | Unchanged; clients that refresh tokens keep doing so |
+
+Every request checks the key again, so revoking it cuts the client off on its next call. Keep the header value as secret as the secret itself.
+
 ## Machine identities
 
 A conductor on a server has no person to approve a sign-in code, so it uses a client-credentials connection issued by the instance operator. It identifies the machine, not a user, and holds the ranks that machine's account was given.

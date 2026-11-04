@@ -121,6 +121,18 @@ final class ApiKeyOAuthTest extends KernelTestBase {
   }
 
   /**
+   * The decorator around a stubbed inner provider, with real collaborators.
+   */
+  private function provider(AuthenticationProviderInterface $inner): ApiKeyAuthenticationProvider {
+    return new ApiKeyAuthenticationProvider(
+      $inner,
+      $this->container->get(ApiKeyManager::class),
+      $this->container->get('simple_oauth.repositories.client'),
+      $this->container->get('entity_type.manager'),
+    );
+  }
+
+  /**
    * A valid managed token's identity converts to the exact owner account.
    */
   public function testManagedTokenConvertsToOwnerSubject(): void {
@@ -137,7 +149,7 @@ final class ApiKeyOAuthTest extends KernelTestBase {
     $inner = $this->createMock(AuthenticationProviderInterface::class);
     $inner->method('authenticate')->willReturn($tokenUser);
 
-    $provider = new ApiKeyAuthenticationProvider($inner, $manager);
+    $provider = $this->provider($inner);
     $account = $provider->authenticate(Request::create('/oauth/token'));
 
     $this->assertInstanceOf(AccountInterface::class, $account);
@@ -168,8 +180,7 @@ final class ApiKeyOAuthTest extends KernelTestBase {
     $inner = $this->createMock(AuthenticationProviderInterface::class);
     $inner->method('authenticate')->willReturn($tokenUser);
 
-    $manager = $this->container->get(ApiKeyManager::class);
-    $provider = new ApiKeyAuthenticationProvider($inner, $manager);
+    $provider = $this->provider($inner);
     $account = $provider->authenticate(Request::create('/oauth/token'));
 
     $this->assertSame($tokenUser, $account);
@@ -195,7 +206,7 @@ final class ApiKeyOAuthTest extends KernelTestBase {
     $inner = $this->createMock(AuthenticationProviderInterface::class);
     $inner->method('authenticate')->willReturn($tokenUser);
 
-    $provider = new ApiKeyAuthenticationProvider($inner, $manager);
+    $provider = $this->provider($inner);
 
     $this->expectException(OAuthUnauthorizedHttpException::class);
     $provider->authenticate(Request::create('/oauth/token'));
@@ -248,8 +259,7 @@ final class ApiKeyOAuthTest extends KernelTestBase {
     $inner = $this->createMock(AuthenticationProviderInterface::class);
     $inner->method('authenticate')->willReturn($owner);
 
-    $manager = $this->container->get(ApiKeyManager::class);
-    $provider = new ApiKeyAuthenticationProvider($inner, $manager);
+    $provider = $this->provider($inner);
     $account = $provider->authenticate(Request::create('/'));
 
     $this->assertSame($owner, $account);
