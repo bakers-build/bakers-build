@@ -6,6 +6,7 @@ needs every page.
 
 | Operation | Tool | Arguments | Result |
 |---|---|---|---|
+| Read your user | `bakers_user_read` | none | `uuid`, `name`, `position`, `background`; empty where unset |
 | List workspaces | `bakers_workspace_list` | none; works before a workspace is chosen | `workspaces` (`uuid`, `name`, `slug`) |
 | List groups | `bakers_group_list` | `workspace`; optional `group` | `groups` (`uuid`, `name`, `description`) |
 | Create a group | `bakers_group_create` | `workspace`, `name`; optional `description` | saved `uuid`, `name`, `description` |

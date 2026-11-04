@@ -48,9 +48,10 @@ and `--output <new-report.html>`. The operator guide shows HTTP serving and cond
 through `bakers ports` when the tunnel policy is enabled. Serving remains separate from offline replay.
 
 For publish-comment, create-ticket and transition-ticket, see
-[Test a skill's tool calls](../../docs/bakers/development/test-skill-tools.md). Seven cases exercise
+[Test a skill's tool calls](../../docs/bakers/development/test-skill-tools.md). Twelve cases exercise
 actual MCP calls against a local simulator, including exact Markdown, prior-art decisions, confirmation,
-uncertain publication, links-only transitions and a refused transition. `bakers(argv)` simulates
+uncertain publication, links-only transitions, a refused transition, and a requester's conversation from
+its start to the hand-over. `bakers(argv)` simulates
 `bakers tools <tool> --data @<file>` for the bakers tools in `contract-fixture.json`; it never
 executes a command or contacts a tracker, and a JSON:API command fails as outside the skill contract.
 Final prose cannot substitute for the recorded call trace. `cli-contract.mjs` runs the same argv through
