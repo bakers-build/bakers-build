@@ -21,7 +21,8 @@
 #   - SOUL.md in the data directory is rendered from the image's template (a hand
 #     edit is replaced), with no placeholder or key left;
 #     a learned skill and a session are kept
-#   - a missing required key stops the start and is named
+#   - a missing required key stops the start and is named, and so does more than
+#     one allowed channel
 #   - run mode, with the capabilities and options of the template's compose
 #     file: the poller and exactly one gateway run, as hermes, on the first
 #     start and again on a start over the same data directory
@@ -94,7 +95,7 @@ config="$(in_data 'cat /d/config.yaml')" || fail "config.yaml was not rendered"
 ! grep -v -F '${env:BAKERS_API_KEY}' <<<"$config" | grep -n '\${' || fail "config.yaml keeps a placeholder"
 grep -q 'Bearer ${env:BAKERS_API_KEY}' <<<"$config" || fail "config.yaml does not leave the API key to Hermes"
 ! grep -qF "$key" <<<"$config" || fail "config.yaml holds the API key"
-grep -q 'C0000000001,C0000000002' <<<"$config" || fail "config.yaml lacks the allowed channels"
+grep -q 'allowed_channels: C0000000001$' <<<"$config" || fail "config.yaml lacks the one allowed channel"
 grep -qF "url: $BAKERS_URL/mcp" <<<"$config" || fail "config.yaml does not reach bakers.build's /mcp"
 pass "config.yaml rendered, no placeholder left but the key Hermes fills, no key in it"
 
@@ -152,6 +153,10 @@ pass "learned skills and sessions kept"
 out="$(start --rm -e PM_BOT_PROJECT= -e SLACK_ADMIN_USERS= "$IMAGE" check 2>&1)" && fail "check passed without PM_BOT_PROJECT"
 grep -q 'missing: SLACK_ADMIN_USERS PM_BOT_PROJECT' <<<"$out" || { echo "$out" >&2; fail "the missing keys are not named"; }
 pass "a missing key stops the start and is named"
+
+out="$(start --rm -e SLACK_ALLOWED_CHANNELS=C0000000001,C0000000002 "$IMAGE" check 2>&1)" && fail "check passed with two channels"
+grep -q 'SLACK_ALLOWED_CHANNELS must name exactly one channel' <<<"$out" || { echo "$out" >&2; fail "two channels are not refused by name"; }
+pass "more than one channel stops the start: the thread link needs the one channel's ID"
 
 # Starts the bot in a new container on the data volume, as a workspace start does, and
 # checks that the poller and exactly one gateway run in it, as hermes.

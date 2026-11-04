@@ -109,7 +109,7 @@ At api.slack.com/apps, choose **Create New App → From a manifest**, pick your 
 
 1. **Basic Information → App-Level Tokens:** generate a token with the `connections:write` scope. That is the app token (`xapp-…`) for `pm_bot_slack_app_token`.
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
-3. Invite the bot to the project's channels (`/invite @<bot>`). Their channel IDs (channel name → **View channel details**, at the bottom) go into `pm_bot_slack_allowed_channels`.
+3. Invite the bot to the project's channel (`/invite @<bot>`). Its channel ID (channel name → **View channel details**, at the bottom) goes into `pm_bot_slack_allowed_channels`. The bot serves exactly one channel: Hermes shows it a channel's name, not its ID, and the thread link it writes into a ticket needs the ID. With more than one ID the container refuses to start.
 4. Copy the operators' member IDs (profile → **⋮ → Copy member ID**) into `pm_bot_slack_admin_users`.
 5. Optional: create a private channel with only the operators in it and invite the bot. That is Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`).
 
@@ -121,7 +121,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 |---|---|---|
 | `pm_bot_slack_bot_token` | yes | Bot token, `xoxb-…` (masked) |
 | `pm_bot_slack_app_token` | yes | App token, `xapp-…` (masked) |
-| `pm_bot_slack_allowed_channels` | yes | Channel IDs the bot answers in. Messages in any other channel are ignored |
+| `pm_bot_slack_allowed_channels` | yes | The one channel ID the bot answers in. Messages in any other channel are ignored |
 | `pm_bot_slack_allowed_users` | no | Member IDs the bot answers. Empty: every user in the allowed channels. Set: only these users |
 | `pm_bot_slack_admin_users` | yes | Operators' member IDs: the only users who may run Hermes slash commands |
 | `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for thread permalinks |
@@ -143,7 +143,7 @@ Channel and member IDs are separated by spaces, commas or both. On the command l
 coder create pm --template bakers-ddev \
   --parameter pm_bot_slack_bot_token=xoxb-… \
   --parameter pm_bot_slack_app_token=xapp-… \
-  --parameter "pm_bot_slack_allowed_channels=C0123456789 C0987654321" \
+  --parameter "pm_bot_slack_allowed_channels=C0123456789" \
   --parameter pm_bot_slack_admin_users=U0123456789 \
   --parameter pm_bot_slack_workspace_url=https://example.slack.com \
   --parameter pm_bot_bakers_url=https://bakers.example.com \

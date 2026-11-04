@@ -27,6 +27,11 @@ for key in "${REQUIRED[@]}"; do
   [ -n "${!key:-}" ] || missing+=("$key")
 done
 [ ${#missing[@]} -eq 0 ] || { echo "pm-bot: missing: ${missing[*]}" >&2; exit 1; }
+# The bot serves one channel: Hermes shows the model a channel's name, not its ID, and the
+# thread link SOUL.md has the bot build needs the ID.
+case "$SLACK_ALLOWED_CHANNELS" in
+  *[,\ ]*) echo "pm-bot: SLACK_ALLOWED_CHANNELS must name exactly one channel" >&2; exit 1 ;;
+esac
 
 # Every user in the allowed channels, unless an allowlist names some.
 [ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=true
