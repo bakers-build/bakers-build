@@ -38,6 +38,7 @@
     "designbook-css-tailwind@designbook": true,
     "designbook-figma@designbook": true,
     "ponytail@ponytail": true,
-    "superpowers@superpowers-dev": true
+    "superpowers@superpowers-dev": true,
+    "superpowers@claude-plugins-official": false
   }
 }
