@@ -220,9 +220,10 @@ export class DrupalBbRemote implements BbRemote {
       .where('host_key', '=', hostKey)
       .fields(['max_parallel', 'current_load'])
       .first();
-    if (!row) return null;
+    const maxParallel = row?.attr<number>('max_parallel');
+    if (!row || maxParallel == null) return null;
     return {
-      maxParallel: row.attr<number>('max_parallel') ?? 1,
+      maxParallel,
       currentLoad: row.attr<number>('current_load') ?? 0,
     };
   }
@@ -438,7 +439,6 @@ export class DrupalBbRemote implements BbRemote {
           states: reg.states,
           workspace_root: reg.workspace,
           label: reg.label,
-          max_parallel: reg.max_parallel,
           ...processIdentity(reg),
           ...(extras.current_load !== undefined
             ? { current_load: extras.current_load }

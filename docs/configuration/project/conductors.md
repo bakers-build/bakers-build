@@ -62,7 +62,7 @@ The loop repeats every `poll_interval_ms` (default 5000). Each cycle:
 1. Heartbeats its registration with its active-run count and reads the host budget.
 2. Finalises runs the control plane has closed: captures each transcript and footprint, uploads them and closes the hosted tab.
 3. Reaps worktrees of closed tickets that were not cleaned up.
-4. Claims tickets one at a time while the host is below `max_parallel`, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, runs the `after_create` hook, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
+4. Claims tickets one at a time while the machine is below its run budget, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, runs the `after_create` hook, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
 
 A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker.
 
@@ -78,7 +78,7 @@ A conductor claims tickets that:
 - have no open blockers and no live claim;
 - are not frozen.
 
-Eligible tickets are taken by priority (lower value first), then oldest first. Capacity belongs to the host: `max_parallel` in the machine file is shared by every conductor on that host, and the server refuses claims above it. The default is 1 when the machine file sets none.
+Eligible tickets are taken by priority (lower value first), then oldest first. Capacity belongs to the machine: its run budget (`max_parallel`) is set in the backend on the machine form, starts at 5 for a new machine, is shared by every conductor on that host, and the server refuses claims above it. A conductor reads it on every tick, so a change needs no restart; when the machine row cannot be read, it claims nothing that tick.
 
 ## Logs
 
@@ -129,7 +129,7 @@ Each config is its own variant (its stem), so each is a separate conductor with 
 
 A team host provides execution capacity so project managers need no conductor of their own.
 
-1. Prepare the host: herdr with a running session, the agent harnesses, repository access, and a machine file from `bakers init` (its own `machine_id`, a UUID for a new machine, and `label`) and a `max_parallel` that fits the hardware ([Machines](/configuration/machine)).
+1. Prepare the host: herdr with a running session, the agent harnesses, repository access, and a machine file from `bakers init` (its own `machine_id`, a UUID for a new machine, and `label`) ([Machines](/configuration/machine)); after its first start, set the machine's run budget in the backend to fit the hardware.
 2. Give the host a service identity: a connection with the `client_credentials` profile and a secret kept in an environment variable ([Connections](/configuration/connector/connections)). The identity needs workspace and project access.
 3. Clone each project on the host, commit its `.bakers/conductor.config.js`, and start one conductor per checkout with `bakers oven start`. Under a service manager, run `bakers oven start --foreground` with herdr already running.
 4. Check `bakers oven ls` from any machine, assign a small ticket to the conductor and confirm a run appears.

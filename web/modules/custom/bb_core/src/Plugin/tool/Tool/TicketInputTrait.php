@@ -84,12 +84,7 @@ trait TicketInputTrait {
    */
   protected function term(?BbWorkspaceInterface $workspace, string $vid, string $name): ContentEntityInterface {
     $storage = $this->entities()->getStorage('bb_term');
-    $ids = $workspace === NULL ? [] : $storage->getQuery()->accessCheck(TRUE)
-      ->condition('vid', $vid)
-      ->condition('name', $name)
-      ->condition('workspace_id', $workspace->id())
-      ->range(0, 1)
-      ->execute();
+    $ids = $this->termIds($workspace, $vid, [$name]);
     if ($ids) {
       $term = $storage->load(reset($ids));
       assert($term instanceof ContentEntityInterface);
@@ -103,6 +98,27 @@ trait TicketInputTrait {
     $this->assertValid($term);
     $term->save();
     return $term;
+  }
+
+  /**
+   * The ids of existing terms with these names in the workspace vocabulary.
+   *
+   * @param \Drupal\bb_core\Entity\BbWorkspaceInterface|null $workspace
+   *   The workspace; none matches nothing.
+   * @param string $vid
+   *   The vocabulary.
+   * @param array<string> $names
+   *   Term names, matched as the name field compares them.
+   *
+   * @return array<int|string, int|string>
+   *   The matching term ids.
+   */
+  protected function termIds(?BbWorkspaceInterface $workspace, string $vid, array $names): array {
+    return $workspace === NULL || !$names ? [] : $this->entities()->getStorage('bb_term')->getQuery()->accessCheck(TRUE)
+      ->condition('vid', $vid)
+      ->condition('name', $names, 'IN')
+      ->condition('workspace_id', $workspace->id())
+      ->execute();
   }
 
 }

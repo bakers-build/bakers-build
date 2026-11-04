@@ -104,12 +104,16 @@ function toolModel(simulation) {
           parent: tickets.find(p => p.id === t.parent)?.identifier ?? null })) };
     },
     ticket_update: a => {
-      if (['title', 'description', 'conductor', 'labels_add', 'frozen'].every(f => a[f] == null)) {
-        throw new Refused('Give a title, a description, a conductor, labels to add or frozen.');
+      if (['title', 'description', 'conductor', 'labels_add', 'labels_remove', 'frozen'].every(f => a[f] == null)) {
+        throw new Refused('Give a title, a description, a conductor, labels to add or remove, or frozen.');
       }
+      const removed = a.labels_remove ?? [];
+      const both = (a.labels_add ?? []).find(label => removed.includes(label));
+      if (both !== undefined) throw new Refused(`Label ${both} is both added and removed.`);
       const t = find(a.ticket);
       for (const f of ['title', 'description', 'conductor', 'frozen']) if (a[f] != null) t[f] = a[f];
       for (const label of a.labels_add ?? []) if (!t.labels.includes(label)) t.labels.push(label);
+      t.labels = t.labels.filter(label => !removed.includes(label));
       return { ...pick(t, ['identifier', 'title', 'description', 'conductor']), labels: [...t.labels], frozen: Boolean(t.frozen) };
     },
     ticket_create: a => {

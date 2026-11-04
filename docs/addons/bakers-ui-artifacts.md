@@ -14,7 +14,6 @@ export default {
   schema_version: 1,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
   label: 'alex-laptop',
-  max_parallel: 1,
   addons: ['@bakers-build/addon-claude', '@bakers-build/addon-bakers-ui-artifacts'],
 };
 ```

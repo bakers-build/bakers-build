@@ -35,6 +35,7 @@ props:
               - ddev
               - design
               - doc
+              - chat
           target:
             type: string
             title: Link target

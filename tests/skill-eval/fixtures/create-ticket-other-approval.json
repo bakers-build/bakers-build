@@ -1,0 +1,89 @@
+{
+  "id": "create-ticket-other-approval",
+  "synthetic": true,
+  "profile": "create-ticket-handover",
+  "execution": "simulated-tools",
+  "skill": "bb-create-ticket",
+  "references": [
+    "bb-workflow/references/tools.md",
+    "bb-workflow/references/tools-lookup.md",
+    "bb-workflow/references/prior-art-search.md",
+    "bb-workflow/references/classify.md",
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/qualification.md",
+    "bb-workflow/references/specify.md",
+    "bb-workflow/references/plan.md"
+  ],
+  "input": {
+    "task": "You are the host agent of a conversation about a bakers.build request. Prior art, creation and specifying are done: you read your user, prior art was negative, ticket EVAL-31 was created in this conversation with the conversation link, you picked the recipe bb-recipe-pair, and its plan method ended with the spec summary below, shown to the requester. Continue the skill from the approval with the actual fixture tools, then give your one reply to the conversation.",
+    "host": {
+      "project": "55555555-5555-4555-8555-555555555555",
+      "workflow": "bb_work",
+      "conductor": "44444444-4444-4444-8444-444444444444",
+      "requester": "Mara Lind (U-MARA)",
+      "conversation_link": "https://chat.example.invalid/c/eval-31"
+    },
+    "user": {
+      "name": "PM bot",
+      "position": "Project manager",
+      "background": "An experienced project manager with deep Drupal experience. Specify every idea with the requester. Answer every technical question yourself; ask the customer only about content, in plain words."
+    },
+    "prior_art": "bakers_ticket_search for \"invoice export\" and \"CSV export\": 0 rows each; probe \"ticket\": 3 rows.",
+    "code_facts": "app/Invoice/ExportController.php serves only a JSON export; app/Invoice/InvoiceFilter.php holds the page filter.",
+    "conversation": [
+      {
+        "from": "Mara Lind (U-MARA)",
+        "text": "Operators need to export the invoice list as CSV for accounting."
+      },
+      {
+        "from": "host agent",
+        "text": "Spec summary for EVAL-31, Export invoices as CSV.\n\nWhat changes: the invoice page gets an \"Export CSV\" button; the file holds paid and open invoices of the current filter, one row each, with number, customer, date, amount and status.\n\nAcceptance criteria:\n- AC1: As an operator, I want an Export CSV button on the invoice page, so that I can take the list into a spreadsheet.\n- AC2: As an operator, I want the file to hold only the paid and open invoices of the current filter, so that cancelled ones never reach accounting.\n\nOut of scope: PDF export, scheduled exports, cancelled invoices.\n\nDecisions: cancelled invoices stay out (Mara Lind); the columns above (Mara Lind).\n\nDo you approve this spec?"
+      },
+      {
+        "from": "Jonas Berg (U-JONAS)",
+        "text": "Yes, I approve the spec."
+      }
+    ],
+    "workspace_uuid": "77777777-7777-4777-8777-777777777771"
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-31",
+      "title": "Export invoices as CSV",
+      "state": "qualification",
+      "workflow": "bb_work",
+      "labels": [],
+      "links": [
+        {
+          "uri": "https://chat.example.invalid/c/eval-31",
+          "title": "Conversation"
+        }
+      ],
+      "description": "## Request\n\n> Operators need to export the invoice list as CSV for accounting.\n\n## Current behaviour\n\nThe invoice page offers a JSON export only.\n\n## Wanted\n\nA CSV export of the invoice list.\n\nRequested by Mara Lind (U-MARA).\n"
+    },
+    "files": {},
+    "user": {
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "name": "PM bot",
+      "position": "Project manager",
+      "background": "An experienced project manager with deep Drupal experience. Specify every idea with the requester. Answer every technical question yourself; ask the customer only about content, in plain words."
+    }
+  },
+  "expect": {
+    "hand_over": false
+  },
+  "rubric": [
+    {
+      "id": "requester-only",
+      "criterion": "Explains that only Mara Lind can approve the spec and asks her for it; claims no ticket change."
+    },
+    {
+      "id": "plain-words",
+      "criterion": "The reply uses plain words; apart from the ticket identifier it names no tracker state, label, recipe, conductor, comment type or file path, and reports no tracker action such as publishing, creating or moving."
+    }
+  ],
+  "recipes": [
+    "bb-recipe-pair"
+  ]
+}

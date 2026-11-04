@@ -1881,7 +1881,7 @@
     {
       "name": "tool_api__bakers_ticket_update",
       "title": "Update a ticket",
-      "description": "Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added by name, existing ones kept) and/or frozen flag; fields left out keep their values. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.",
+      "description": "Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept) and/or frozen flag; fields left out keep their values. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1940,6 +1940,20 @@
               "title": "Label"
             },
             "title": "Labels to add"
+          },
+          "labels_remove": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Label names to remove; names the ticket does not carry are ignored. Every other label is kept.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One label name.",
+              "title": "Label"
+            },
+            "title": "Labels to remove"
           },
           "frozen": {
             "oneOf": [
@@ -2155,6 +2169,41 @@
               "title": "Worklog UUID"
             },
             "title": "Worklog UUIDs"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_user_read",
+      "title": "Read your user",
+      "description": "Reads your own user: name, position and background, which describe you.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Your user UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Your display name.",
+            "title": "Name"
+          },
+          "position": {
+            "type": "string",
+            "description": "Your position, or an empty string.",
+            "title": "Position"
+          },
+          "background": {
+            "type": "string",
+            "description": "What bakers.build should know about your background, or an empty string.",
+            "title": "Background"
           }
         }
       }

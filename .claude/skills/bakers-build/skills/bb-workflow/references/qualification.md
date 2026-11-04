@@ -43,7 +43,8 @@ complete `qualification` handoff: Outcome, Acceptance, Out of scope, then Handof
 Acceptance holds stable AC IDs, the gate's passed/rewritten tally, previous wording for rewrites and
 explicit assumptions; that tally is not a passed implementation test. Required fields:
 
-- `acceptance_criteria`: exhaustive role-named, checkable conditions.
+- `acceptance_criteria`: exhaustive role-named, checkable conditions; a confirmed intake's criteria
+  word for word.
 - `out_of_scope`: explicit boundary, including a reasoned none.
 - `recipe` and `ticket_type`, with the reason for the recipe choice.
 - `reproduction`: bug condition, otherwise `not_required`.

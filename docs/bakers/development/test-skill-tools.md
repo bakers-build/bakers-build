@@ -23,6 +23,11 @@ Evaluate the actual tool calls made by publish-comment, create-ticket and transi
    | `publish-comment-uncertain` | Report the lost response (exit 5) as unresolved and never publish again; a body that lost a trailing newline fails |
    | `create-ticket-calls` | Search two spellings and prove an empty one with the `ticket` probe, create with `recipe` and `type` by name, read it back, publish qualification and summary, then route once to `plan` |
    | `create-ticket-prior-art` | Read the returned candidate in full and stop without mutations |
+   | `create-ticket-conversation-start` | Read the user before any write, search, create the ticket in the host's project and add the conversation link; publish nothing and ask the requester only about content |
+   | `create-ticket-handover` | After the requester's yes: `qualification`, `spec`, `plan`, `test` and `summary`, then the picked recipe with `feature` or `chore`, `working`, and last the host's conductor, never `pingpong`; only the nine tools the skill's operations map to |
+   | `create-ticket-no-conductor` | The same hand-over without a host conductor: the project's conductors are read and the reply asks which one runs the ticket |
+   | `create-ticket-other-approval` | Another person's clear yes changes nothing |
+   | `create-ticket-bug` | An approved bug gets `qualification` and `summary`, type `bug` with the picked recipe, and ends in `plan` without `pingpong` |
    | `transition-ticket-calls` | Read the state, call `bakers_ticket_transition` once with the supplied `state` and the links to add, then read back state and every link |
    | `transition-ticket-links-only` | Send `links` without `state`, keep every existing link, and verify |
    | `transition-ticket-rejected` | Preserve the refusal (exit 1, `E_TOOL`) and never retry another destination |

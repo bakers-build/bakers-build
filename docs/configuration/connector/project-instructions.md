@@ -17,8 +17,11 @@ re-derive this file; do not hand-edit it out of sync with them.
 
 - Agent routing (`bb-workflow` › `references/agent-choice.md`) — needs `bakers agents`, a local CLI command;
   no MCP tool exposes it. The connector never proposes or writes an `agent:*` label.
-- The `working`-shortcut path in `bb-create-ticket` ("a fully specified intake goes straight to
-  `working`") — out of scope; this bundle never transitions past `plan`.
+- The `working` paths in `bb-create-ticket` (specifying with the requester and handing over to
+  `working`, and a confirmed intake with `spec`, `plan` and `test`) — out of scope; this bundle
+  never transitions past `plan`.
+- The checkout steps of `bb-create-ticket` (parent from the branch, the intake's conductor, origin
+  status) — they need a local checkout.
 - Bug tickets and diagnosis — out of scope; this bundle handles tickets of type `feature` or
   `chore` only.
 - Terminal retrospective (`done`/`cancelled` job rating) — the rating interview belongs to a

@@ -5,8 +5,8 @@ mkdir -p verified-images
 jq -n --arg commit "$GITHUB_SHA" --arg tree "$(git rev-parse 'HEAD^{tree}')" \
   --arg run "$GITHUB_RUN_ID" --arg attempt "$GITHUB_RUN_ATTEMPT" \
   '{commit:$commit,tree:$tree,run:$run,attempt:$attempt}' > verified-images/candidate.json
-for image in php nginx docs; do
+for image in php nginx docs pm-bot; do
   docker image inspect "bakers-gate/$image:local" > "verified-images/$image.json"
 done
-docker save bakers-gate/php:local bakers-gate/nginx:local bakers-gate/docs:local | gzip -1 > verified-images/images.tar.gz
+docker save bakers-gate/php:local bakers-gate/nginx:local bakers-gate/docs:local bakers-gate/pm-bot:local | gzip -1 > verified-images/images.tar.gz
 (cd verified-images && sha256sum images.tar.gz > SHA256SUMS)

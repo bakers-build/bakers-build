@@ -50,11 +50,6 @@ export interface ConductorSettings {
    */
   prompt: string;
   /**
-   * Host concurrent-run budget. Sourced from machine context max_parallel
-   * (BB-353); engine-config leftovers are ignored with a warning.
-   */
-  max_parallel: number;
-  /**
    * Machine preview-link policy. True when `machine.config.js` sets `tunnel: true`.
    * Runtime-derived; ticket and project env cannot override it.
    */

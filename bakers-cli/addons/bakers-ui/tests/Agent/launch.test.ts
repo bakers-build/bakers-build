@@ -40,10 +40,12 @@ it('shortName falls back to "New ticket" with no workflow at all', () => {
   expect(shortName(payload({ workflow: null }))).toBe('New ticket');
 });
 
-it('create launch points at WORKFLOW.md and carries no BB_ID', () => {
+it('create launch points at WORKFLOW.md and bb-create-ticket and carries no BB_ID', () => {
   const req = buildCreateLaunch({ project: 'bakers', cwd: '/repo' });
   expect(req.prompt).toMatch(/WORKFLOW\.md/);
-  expect(req.prompt).toMatch(/Create ticket/);
+  expect(req.prompt).toMatch(/bb-create-ticket/);
+  expect(req.prompt).toMatch(/\$BB_NEW_TICKET_INPUT/);
+  expect(req.prompt).toMatch(/Do not start work on the new ticket\./);
   expect(req.env.BB_ID).toBeUndefined();
   expect(req.env.BB_PROJECT).toBe('bakers');
   expect(req.group).toBe('bakers');

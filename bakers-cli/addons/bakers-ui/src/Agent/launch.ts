@@ -1,5 +1,5 @@
 // Ticket-create launch request (AC-3). Pressing `n` starts an embedded agent
-// that runs the bakers.build `ticket:create` workflow. This module is pure: it builds
+// that follows WORKFLOW.md and `bb-create-ticket`. This module is pure: it builds
 // the launch intent (prompt + env) the TUI hands to the injected agent host
 // (`services.agents.launch`); the host (herdr) owns transport + layout. No
 // node-pty / @xterm, no session object.
@@ -8,16 +8,17 @@ import type { CreateFormPayload } from '../Entity/ticket/Form/create.js';
 import type { TuiAgentService } from '../types.js';
 
 const CREATE_PROMPT =
-  'Read the repository\'s WORKFLOW.md and follow its "Create ticket" section to ' +
-  'create a new bakers.build ticket. Do not start work on the new ticket.';
+  "Read the repository's WORKFLOW.md and follow it, then use the bb-create-ticket " +
+  'skill to create a new bakers.build ticket from the intake in ' +
+  '$BB_NEW_TICKET_INPUT. Do not start work on the new ticket.';
 
 /** The launch intent passed to {@link TuiAgentService.launch}. */
 export type CreateLaunch = Parameters<TuiAgentService['launch']>[0];
 
 /**
  * Build the `ticket:create` launch intent for a project. The prompt is a pure
- * pointer to WORKFLOW.md (the pre-filled form is passed via
- * `$BB_NEW_TICKET_INPUT`); `BB_ID` is never inherited (a create must not be
+ * pointer to WORKFLOW.md and `bb-create-ticket` (the pre-filled form is passed
+ * via `$BB_NEW_TICKET_INPUT`); `BB_ID` is never inherited (a create must not be
  * bound to a claimed ticket).
  */
 export function buildCreateLaunch(opts: {
