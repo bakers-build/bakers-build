@@ -62,6 +62,8 @@ export default withMermaid(
       'bakers.build — an AI-native ticket workflow: a Drupal control plane and the @bakers-build/bakers conductor CLI.',
     lang: 'en-US',
     cleanUrls: true,
+    // Light only, landing and docs alike: no dark mode, no appearance toggle.
+    appearance: false,
     vite: {
       // Keep the theme CSS isolation config explicit.
       css: { postcss: postcssConfig },
@@ -73,24 +75,16 @@ export default withMermaid(
       // Prod is canonical; the develop docs host is not indexed under its own name.
       hostname: 'https://bakers.build',
     },
-    // BB-427 D7: dark code blocks in both colour modes, as on Storybook's docs.
+    // Code blocks on the landing's ink run-log surface (docs.css).
     markdown: {
       theme: 'github-dark',
     },
     head: [
       ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
-      // BB-427 D7: Nunito Sans for the documentation pages (docs.css scopes
-      // it away from the landing). Preconnect first, then the stylesheet.
+      // Google Fonts: preconnect first, then the stylesheet.
       ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
       ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-      [
-        'link',
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&display=swap',
-        },
-      ],
-      // The landing page's families (Figma design): display, text and mono.
+      // The site's families (the landing's Figma design): display, text and mono.
       [
         'link',
         {
@@ -110,15 +104,11 @@ export default withMermaid(
     themeConfig: {
       // No socialLinks, no editLink — the repo host is internal-only; CTAs
       // point at npm.
-      // The nav logo is the bakers.build mark plus the green wordmark, without the
-      // tagline (unreadable at nav height); it works on light and dark alike,
-      // so the text title is off.
-      logo: '/logo-nav.svg',
       sidebarAreas: AREAS as Area[],
       docsVersion: DOCS_VERSION,
       releasesUrl: RELEASES_URL,
-      // Kept as text for assistive technology; docs.css hides it visually on
-      // the documentation pages, where the logo carries the wordmark.
+      // Kept as text for assistive technology; docs.css hides it visually, and
+      // theme/index.ts renders the landing's mark and wordmark in its place.
       siteTitle: 'bakers.build',
       outline: { level: [2, 3], label: 'On this page' },
       docFooter: { prev: 'Previous', next: 'Next' },
@@ -138,14 +128,13 @@ export default withMermaid(
         },
       },
     },
-    // vitepress-plugin-mermaid: render fenced ```mermaid blocks. Mermaid's
-    // own theme follows the site theme (dark is forced in dark mode).
-    // Mermaid 11's "neo" look (soft shadow, rounded nodes, thin edges). The
-    // colours come from theme/mermaid-theme.ts through BbMermaid.vue, which
-    // renders every diagram on the `base` theme in both colour schemes.
+    // vitepress-plugin-mermaid: render fenced ```mermaid blocks in Mermaid
+    // 11's "neo" look (soft shadow, rounded nodes, thin edges). The colours
+    // come from theme/mermaid-theme.ts through BbMermaid.vue, which renders
+    // every diagram on the `base` theme.
     mermaid: {
       look: 'neo',
-      fontFamily: "'Nunito Sans', 'Inter', ui-sans-serif, system-ui, sans-serif",
+      fontFamily: "'Spline Sans', ui-sans-serif, system-ui, sans-serif",
       fontSize: 15,
     },
     mermaidPlugin: { class: 'mermaid' },

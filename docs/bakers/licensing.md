@@ -40,7 +40,7 @@ clear those assets; source confirmation remains open under B3.
 | Theme SVG icons and generated sprite | `bb_theme/assets/icons/src/`, `dist/icons/sprite.svg` | Feather/Lucide matches recorded in `assets/icons/NOTICE`; remaining provenance, including `google.svg`, unconfirmed | Feather MIT / Lucide ISC texts retained; unknown origins remain blocked | `assets/icons/NOTICE`, included by the theme notice generator; B3 |
 | The `bb-verdict` skill, derived from the ponytail skill collection | `.claude/skills/bakers-build/skills/bb-verdict/SKILL.md` | ponytail by Dietrich Gebert (github.com/DietrichGebert), LICENSE identical in 5.3.2 and 5.3.3 | MIT, © 2026 DietrichGebert | `.claude/skills/bakers-build/NOTICE`, shipped in the plugin zip |
 
-The docs site ships no font files. Nunito Sans loads from Google Fonts at runtime and is not redistributed. The theme
+The docs site ships no font files. Bricolage Grotesque, Spline Sans and Spline Sans Mono load from Google Fonts at runtime and are not redistributed. The theme
 imports `vitepress/theme-without-fonts`, so VitePress's bundled Inter (SIL OFL 1.1) stays out of `dist`, and
 `check-site.mjs` fails the build on any font file there.
 

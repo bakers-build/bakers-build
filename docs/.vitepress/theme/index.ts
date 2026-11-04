@@ -6,18 +6,19 @@
 // globally registered <Landing /> rendered by the hero-less `layout: home`
 // landing.md.
 //
-// docs.css (BB-427 D7) is the documentation pages' look — the Storybook-docs
-// system on the bakers.build brand. It is imported AFTER the default theme so its
+// docs.css is the documentation pages' look in the landing's brand, light
+// only. It is imported AFTER the default theme so its
 // equal-specificity overrides win by order, and every rule in it is scoped
 // away from `html.landing-page`, so the landing is untouched.
 import './tailwind.css'
 import './landing.css'
-// Without its bundled Inter files: Nunito Sans comes from Google Fonts, Inter is only a
-// fallback, and shipping Inter would need its OFL notice (docs/bakers/licensing.md).
+// Without its bundled Inter files: the site's fonts come from Google Fonts, and shipping
+// Inter would need its OFL notice (docs/bakers/licensing.md).
 import DefaultTheme from 'vitepress/theme-without-fonts'
 import './docs.css'
 import { h } from 'vue'
 import Landing from './landing/Landing.vue'
+import LogoMark from './landing/LogoMark.vue'
 import SidebarAreas from './components/SidebarAreas.vue'
 import BbMermaid from './components/BbMermaid.vue'
 import DocTiles from './components/DocTiles.vue'
@@ -88,9 +89,16 @@ export default {
   extends: DefaultTheme,
   // The docs sidebar opens with the area strip and the version row (D7),
   // through the default theme's own slot — no Layout fork.
+  // The nav title shows the landing's mark and wordmark (the text title stays
+  // for assistive tech, hidden by docs.css).
   Layout: () =>
     h(DefaultTheme.Layout, null, {
       'sidebar-nav-before': () => h(SidebarAreas),
+      'nav-bar-title-before': () =>
+        h('span', { class: 'bb-wordmark', 'aria-hidden': 'true' }, [
+          h(LogoMark, { size: 32, radius: 7 }),
+          h('span', null, ['bakers', h('span', { class: 'bb-wordmark__dot' }, '.'), 'build']),
+        ]),
     }),
   enhanceApp({ app }) {
     app.component('Landing', Landing)

@@ -1,7 +1,7 @@
 /* The landing page's theme layer: tokens and the few recipes several sections
  * share, values from the Figma frame (file sr31HfHNWbCeNsxvXbt4wv, EN frame
  * 606:39). Everything else is Tailwind utilities in the section components.
- * The landing is light only, whatever the VitePress appearance toggle says. */
+ * The whole site is light only (`appearance: false` in config.mts). */
 
 :root {
   --lp-flour: #f5ebda;
