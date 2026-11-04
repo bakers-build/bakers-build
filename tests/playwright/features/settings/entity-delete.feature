@@ -12,22 +12,23 @@ Feature: Deleting an entity where it is managed
     When I open the page where the disposable entity is managed
     Then the disposable entity offers its Delete action
     When I open the Delete action of the disposable entity
-    Then the delete page names "<named>"
+    Then the delete page is titled after the disposable entity
+    And the delete page names "<named>"
     When I confirm the deletion
     Then the page confirms the disposable entity was deleted
     And the disposable entity no longer exists
 
     Examples:
       | kind        | named                          |
-      | project     | Are you sure                   |
-      | team        | Are you sure                   |
-      | group       | Are you sure                   |
-      | environment | Are you sure                   |
+      | project     | This action cannot be undone   |
+      | team        | This action cannot be undone   |
+      | group       | This action cannot be undone   |
+      | environment | This action cannot be undone   |
       | label       | These will be detached from it |
-      | template    | Are you sure                   |
+      | template    | This action cannot be undone   |
       | ticket      | These will also be deleted     |
-      | comment     | Are you sure                   |
-      | invite      | Are you sure                   |
+      | comment     | This action cannot be undone   |
+      | invite      | This action cannot be undone   |
 
   Scenario: A project that still has tickets cannot be deleted
     Given a disposable "busy project" exists in the Northside workspace

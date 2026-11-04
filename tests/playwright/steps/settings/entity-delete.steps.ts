@@ -74,6 +74,10 @@ Then('the delete page names {string}', async ({ page }, text: string) => {
   await expect(page.locator('main, body').first()).toContainText(text);
 });
 
+Then('the delete page is titled after the disposable entity', async ({ page }) => {
+  await expect(page.getByRole('heading', { level: 1 }).first()).toContainText(`Delete ${subject(page).label}`);
+});
+
 Then('the delete page offers no confirm button', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0);
 });

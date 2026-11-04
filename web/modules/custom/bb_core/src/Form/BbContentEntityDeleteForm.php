@@ -6,8 +6,10 @@ namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityDeleteForm;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\EntityDeleteRules;
@@ -44,6 +46,9 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
    */
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $form = parent::buildForm($form, $form_state);
+    // A native round trip: a boosted submit would swap the redirect target
+    // into the island instead of leaving the page of a deleted entity.
+    $form['#attributes']['data-hx-boost'] = 'false';
     $references = $this->deleteRules->references($this->getEntity());
     $lists = [
       EntityDeleteRules::BLOCK => $this->t('Cannot be deleted while these still use it:'),
@@ -128,6 +133,21 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
     return $entity->hasLinkTemplate('canonical') || $entity->hasLinkTemplate('edit-form')
       ? parent::getCancelUrl()
       : $this->getRedirectUrl();
+  }
+
+  /**
+   * Titles a workspace delete route by the entity it deletes.
+   *
+   * Core's deleteTitle() titles the route's first entity, the workspace.
+   */
+  public function title(RouteMatchInterface $route_match): TranslatableMarkup {
+    [$entity_type_id] = explode('.', (string) $route_match->getRouteObject()?->getDefault('_entity_form'));
+    $entity = $route_match->getParameter($entity_type_id);
+    return $this->t('Delete @label', [
+      '@label' => $entity instanceof EntityInterface
+        ? ($entity->label() ?: $entity->getEntityType()->getSingularLabel())
+        : $this->t('item'),
+    ]);
   }
 
   /**
