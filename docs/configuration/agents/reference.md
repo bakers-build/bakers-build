@@ -90,11 +90,11 @@ Modes, blocks, env var filter, risks and isolation: [Run security](/configuratio
 Codex for coding, Claude Opus for review, a `careful` route that uses Opus throughout:
 
 ```js
-// @bakers-schema-version 3
+// @bakers-schema-version 1
 export default {
-  schema_version: 3,
-  machine_id: 'alex-laptop',
-  user_id: 'alex',
+  schema_version: 1,
+  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+  label: 'alex-laptop',
   max_parallel: 1,
   addons: ['@bakers-build/addon-codex', '@bakers-build/addon-claude'],
   agents: {
@@ -117,7 +117,7 @@ export default {
 
 ## Old keys and verification
 
-Agent addons in a conductor config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. `bakers config upgrade --scope all` moves supported old policy here ([migration](/configuration/project/migration)).
+Agent addons in a conductor config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. Move that policy here by hand ([migration](/configuration/project/migration)).
 
 ```sh
 bakers config check --scope machine

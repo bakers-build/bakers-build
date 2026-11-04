@@ -9,7 +9,6 @@ Run a repository command or an addon's listener at a worktree's lifecycle points
    ```js
    export default {
      bakers: { project: 'demo' },
-     conductor_id: 'alex-alex-laptop-demo',
      addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
      hooks: {
        after_create: 'pnpm install --frozen-lockfile',

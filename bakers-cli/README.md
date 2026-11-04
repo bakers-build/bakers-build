@@ -147,8 +147,9 @@ and runs eight idempotent steps:
    the shim), it warns about that too (BB-84).
 6. **Config scaffold** — writes `.bakers/conductor.config.local.js` from
    `bakers-cli/templates/conductor.config.local.js`. If the file already exists it is left
-   untouched. Interactive shells are prompted for `machine_id` (default: short hostname)
-   and `oauth.client_id` (default: `bakers-agent`); non-interactive shells use the defaults.
+   untouched. Interactive shells are prompted for `oauth.client_id` (default: `bakers-agent`);
+   non-interactive shells use the default. The file carries no identity: the machine's id
+   and label come from `bakers init`.
    **No secret is ever written** — the scaffold reads `client_secret` from
    `process.env.BB_CONSUMER_SECRET`.
 7. **herdr run-session plugins** — links the repo-local **spiceedit** herdr plugin
@@ -367,12 +368,12 @@ distinguish the two outcomes.
 
 ## Conductor lifecycle: identity, not paths (BB-450)
 
-`bakers oven stop` finds its conductor by `conductor_id` and `host_key` from the
+`bakers oven stop` finds its conductor by its `conductor_id` (machine id, project and variant) in the
 control-plane record — never by comparing the signalled process's working directory against
 `workspace_root`. That means `stop` (and `start`) work identically from the project root, from
 `.bakers/`, or from a linked worktree. Before signalling, the pid is verified as a live process
 whose command line identifies a bakers-conductor foreground loop, owned by the same OS user, on a
-`host_key` that matches this machine's own — never a colleague's conductor on another host, and
+machine whose id matches this machine's own `machine_id` — never a colleague's conductor on another host, and
 never a recycled pid that happens to share the number. With no pid on record, `stop` refuses and
 says so; it never guesses which process to signal.
 
@@ -387,7 +388,7 @@ stopped, `--force` **fails** rather than starting a second conductor on the same
 
 A `.bakers/` dir may hold **several** configs — the default `conductor.config.js` plus any
 `<variant>.conductor.config.js` — each a complete config bound to its own `bb_project` and its
-own conductor (own `machine_id`, claims, worktrees). **Naming rule (BB-137):** a file is a
+own conductor (own variant, claims, worktrees). **Naming rule (BB-137):** a file is a
 conductor config **iff** it is exactly `conductor.config.js` or ends with `.conductor.config.js`
 (so `vite.config.js` and the near-miss `myconductor.config.js` are ignored). This is a **clean
 break** from the earlier `<name>.config.js` variant naming — old variant files must be renamed.
@@ -404,10 +405,10 @@ With no selector: `conductor.config.js` present → it is the default (used auto
 single lone config → it (back-compat); else resolution errors and names the available stems plus
 the selector. `--conductor` wins over `$BB_CONDUCTOR`, and an explicit `--config <path>` /
 `$BB_CONDUCTOR_CONFIG` still wins over both. Two `conductor.config.js` cannot coexist in one
-dir, so an ambiguous default is structurally impossible. Each config must set its own
-`conductor_id` (composed from the machine context + its `bakers.project`); it is required — there is no
-derived fallback — so
-co-located conductors are distinct by construction. This is how a Drupal **multisite** repo maps
+dir, so an ambiguous default is structurally impossible. A config sets no identity: the
+`conductor_id` is derived from the machine id + `bakers.project` + variant (the file stem), so
+co-located conductors are distinct by construction. A config with `conductor_id`, `machine_id`
+or `label` is rejected; run `bakers init`. This is how a Drupal **multisite** repo maps
 each site to its own bakers.build project. Full model: [`CONFIG.md`](CONFIG.md) › *Multiple conductors per repo*.
 
 ## Rebuilding after editing sources
@@ -511,8 +512,7 @@ the overlay for `$SPICEEDIT_FILE`. Everything degrades gracefully: a missing
   `@dropsh/*`) when a `bakers tools …` or `bakers auth …` command loads the config → the resolution farm or the
   addon build is missing/stale. **Re-run `bakers-cli/scripts/setup.sh`.**
 - **`ERR_MODULE_NOT_FOUND: Cannot find package '@bakers-build/plugin-<name>'`** → the config still
-  names a pre-BB-224 addon package. Run **`bakers config upgrade`** (`--dry-run` first) to rewrite the
-  `.bakers/` configs to the `@bakers-build/addon-*` names.
+  names a pre-BB-224 addon package. Rename it to the `@bakers-build/addon-*` name in the `.bakers/` configs.
 - **`bakers: command not found`** → `~/.local/bin` is not on your `PATH`. Add it:
   `export PATH="$HOME/.local/bin:$PATH"`.
 - **`bakers: not in a bakers worktree and no global bakers on PATH`** → you are outside any bakers.build

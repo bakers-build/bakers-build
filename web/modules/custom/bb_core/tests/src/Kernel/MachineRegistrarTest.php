@@ -57,7 +57,7 @@ final class MachineRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner');
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'uid-host-proj-a',
-      'host_key' => 'host-a',
+      'host_key' => '645ab895-b76a-5ada-8177-739c5b8ac740',
       'project' => 'proj-a',
       'max_parallel' => 2,
       'current_load' => 1,
@@ -65,7 +65,7 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $machine = $conductor->getMachine();
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
-    $this->assertSame('host-a', $machine->getHostKey());
+    $this->assertSame('645ab895-b76a-5ada-8177-739c5b8ac740', $machine->getHostKey());
     $this->assertSame((int) $owner->id(), (int) $machine->get('owner_user_id')->target_id);
     $this->assertSame(2, $machine->getMaxParallel());
     $this->assertSame(1, $machine->getCurrentLoad());
@@ -80,7 +80,7 @@ final class MachineRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-cap');
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'cap-1',
-      'host_key' => 'host-cap',
+      'host_key' => '0289a3e3-5766-57c0-a359-820c240bf0c8',
       'project' => 'proj-cap',
       'max_parallel' => 9,
       'current_load' => 4,
@@ -102,7 +102,7 @@ final class MachineRegistrarTest extends KernelTestBase {
     $this->expectException(UnprocessableEntityHttpException::class);
     $this->registrar()->heartbeat($this->createUser('owner-orphan'), [
       'conductor_id' => 'orphan-mid',
-      'host_key' => 'host-orphan',
+      'host_key' => 'f4799fa5-9687-54eb-992b-eeca667d4c5a',
       'project' => 'orphan-project',
     ]);
   }
@@ -120,7 +120,7 @@ final class MachineRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-explicit');
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'explicit-mid',
-      'host_key' => 'host-explicit',
+      'host_key' => 'dcc6761d-b670-5a15-a42f-84ece51643a4',
       'project' => 'proj-explicit',
       'workspace' => $own->uuid(),
     ]);
@@ -137,7 +137,7 @@ final class MachineRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-budget');
     $first = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'budget-a',
-      'host_key' => 'host-budget',
+      'host_key' => '4c6ed82f-e38a-52e2-845c-0470de2a88cd',
       'project' => 'proj-budget',
       'max_parallel' => 2,
     ]);
@@ -148,14 +148,16 @@ final class MachineRegistrarTest extends KernelTestBase {
 
     $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'budget-a',
-      'host_key' => 'host-budget',
+      'host_key' => '4c6ed82f-e38a-52e2-845c-0470de2a88cd',
       'project' => 'proj-budget',
       'max_parallel' => 3,
     ]);
     $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'budget-b',
-      'host_key' => 'host-budget',
+      'host_key' => '4c6ed82f-e38a-52e2-845c-0470de2a88cd',
       'project' => 'proj-budget',
+      // A second conductor of one machine and project is another variant.
+      'conductor_name' => 'shop',
       'max_parallel' => 9,
     ]);
 

@@ -48,7 +48,7 @@ The image supplies tools; your private home stores identity, credentials and che
 4. Sign in to bakers.build. An unattended conductor needs a machine consumer that an operator issues ([connections](/configuration/connector/connections)); give its secret to this command only. `bakers init` writes it into a private file under `~/.bakers`.
 
    ```sh
-   BB_CLIENT_SECRET='<issued secret>' bakers init --scope all --machine-id <name> --user-id <operator> \
+   BB_CLIENT_SECRET='<issued secret>' bakers init --scope all --label <name> \
      --base-url <server-url> --auth-type client_credentials --client-id <id> --secret-env BB_CLIENT_SECRET --yes
    bakers auth login
    ```

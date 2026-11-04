@@ -110,6 +110,7 @@ export type {
   TicketMetric,
   UncleanTicket,
 } from './plugins/remote.js';
+export { ConductorTakeoverRequired } from './plugins/remote.js';
 export {
   installCommand,
   lastLine,

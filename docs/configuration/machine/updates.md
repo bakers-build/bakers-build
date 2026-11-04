@@ -33,7 +33,7 @@ Refresh [skills](/configuration/agents/skills#updates) separately from the CLI. 
    bakers config upgrade --scope all --dry-run
    ```
 
-   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, a future schema version, or a missing identity input. [Configuration migration](/configuration/project/migration) explains each finding.
+   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, or a future schema version. A file from an older release fails with a message naming `bakers init`; run it to write current files. [Configuration migration](/configuration/project/migration) explains each finding.
 
 3. Apply it, check it, and confirm nothing is left:
 
@@ -43,7 +43,7 @@ Refresh [skills](/configuration/agents/skills#updates) separately from the CLI. 
    bakers config upgrade --scope all --dry-run
    ```
 
-   Apply rechecks the files, writes a private backup `<file>.bakers.bak` next to each changed file, and replaces the file atomically. Do not commit the backups. The last preview must show no change; a remaining `unknown_value` warning about a computed `conductor_id` is not a change. An offline `ok` proves only the file shape; `--online` proves sign-in and project access, and "online skipped" is not a pass.
+   Apply rechecks the files, writes a private backup `<file>.bakers.bak` next to each changed file, and replaces the file atomically. Do not commit the backups. The last preview must show no change. An offline `ok` proves only the file shape; `--online` proves sign-in and project access, and "online skipped" is not a pass.
 
 4. Update the shared project files in a branch, never on the default branch. Ask your AI to run the `bb-upgrade-project` skill, which keeps the repository's `WORKFLOW.md` policy, moves an old `## Loaded skills` layout to the entry line and phase sections, and confirms that every skill the file names is installed. Review the diff.
 

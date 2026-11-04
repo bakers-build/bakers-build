@@ -1,6 +1,7 @@
 // Template for a per-developer conductor override. `bakers-cli/scripts/setup.sh`
 // (the bootstrap) copies this to .bakers/conductor.config.local.js, filling in the
-// machine_id / client_id values below. This template is committed; the generated
+// client_id value below. It carries no identity: the conductor is this machine +
+// project + variant. This template is committed; the generated
 // .bakers/conductor.config.local.js is gitignored and loaded only if present
 // (see loadLocal() in .bakers/conductor.config.js).
 //
@@ -14,7 +15,6 @@
 //
 //   bakers auth login
 export default {
-  conductor_id: '__MACHINE_ID__',
   oauth: {
     client_id: '__CLIENT_ID__',
     client_secret: process.env.BB_CONSUMER_SECRET,

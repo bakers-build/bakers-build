@@ -73,6 +73,6 @@ bakers info
 bakers oven check
 ```
 
-**Done when:** identities match, skills and client are ready, private files are ignored and application readiness passes. Keep conductor identity unique per host.
+**Done when:** identities match, skills and client are ready, private files are ignored and application readiness passes.
 
 **Next:** [Run the first ticket](/get-started/first-ticket).

@@ -249,7 +249,8 @@ final class MachineUserListingTest extends KernelTestBase {
 
     self::assertSame(['max_parallel', 'current_load'], $this->cellIds($item, 'right'));
     self::assertSame(['4 parallel slots', '1 load'], $this->badgeTitles($item));
-    self::assertStringContainsString('host-alpha', $this->region($item, 'meta'));
+    // The host key is the machine UUID; listings show the label only.
+    self::assertStringNotContainsString('host-alpha', $html);
     $right_meta = $this->region($item, 'right_meta');
     self::assertStringContainsString('Owner', $right_meta);
     self::assertStringContainsString('lead', $right_meta);

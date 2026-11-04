@@ -523,7 +523,7 @@ tui_musl:
     # indicator in a plain scalar, and an unquoted line here took the whole
     # pipeline to `failed` with zero jobs.
     - 'mkdir -p ~/.bakers'
-    - 'echo "export default { schema_version: 4, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/bakers.config.js'
+    - 'echo "export default { schema_version: 1, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/bakers.config.js'
     - node bin/bakers ui --print-config
     # PRODUCT leg (A1) — no OPENTUI_LIBC in this environment. Asserts our own detection
     # says musl, that it sets the variable, and that libopentui.so then really opens.

@@ -13,7 +13,7 @@ export interface ConductorDetail {
   label: string;
   /** The `--conductor <name>` stem it was started from, if reported. */
   conductorName: string | undefined;
-  /** The sideloaded machine's own label, or its host_key, or ''. */
+  /** The sideloaded machine's name (its label), or ''. */
   machineLabel: string;
   /** The linked project's uuid, or '' when unlinked — no project read here. */
   projectLabel: string;
@@ -67,7 +67,7 @@ export async function loadConductorDetail(
       raw.id ??
       conductorId,
     conductorName: str(attrs.conductor_name),
-    machineLabel: str(machineAttrs.label) ?? hostKey ?? '',
+    machineLabel: str(machineAttrs.name) ?? '',
     projectLabel: singleRelId(raw, 'project_id') ?? '',
     workspaceRoot: str(attrs.workspace_root) ?? '',
     lastPid: num(attrs.last_pid),
