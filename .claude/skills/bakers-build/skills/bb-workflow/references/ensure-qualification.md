@@ -7,14 +7,13 @@ and adjudicate it against the current ticket. Return one of exactly two machine-
 `qualified` or `returned_to_qualification`. This guard is quiet when the handoff is valid: emit only
 the literal `qualified`, with no findings, narrative, outtake, comment, or transition.
 
-**When the handoff is valid** — present, current (its `provenance` matches the ticket's current
-qualification-relevant inputs), complete (every required field present, optional fields explicitly
-`not_required`), and internally consistent with the ticket — return `qualified` and change
-**nothing**. The ticket state is left exactly as it is so the current state continues with its
-next phase.
+**When the handoff is valid** — the ticket has a `recipe`, a `type` and the state being entered,
+and its latest `qualification` handoff carries `acceptance_criteria` — return `qualified` and
+change **nothing**. The ticket state is left exactly as it is so the current state continues with
+its next phase.
 
-**When the handoff is missing, stale, incomplete, or contradictory** — emit the structured findings
-and do all of the following, then stop:
+**When the recipe, type, state or acceptance criteria are missing**, including a missing handoff —
+emit one structured finding per defect and do all of the following, then stop:
 
 1. Publish **all** structured findings naming each defect (which field, why it fails).
 2. Publish the honest summary; invoke authorized [origin status](origin-status.md) with `qualification`.

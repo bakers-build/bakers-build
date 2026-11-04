@@ -42,7 +42,7 @@ ambiguous results remain unresolved.
 Creation intake is the qualification confirmation; avoid a second human qualify pass.
 Apply [agent choice](../bb-workflow/references/agent-choice.md).
 Publish exactly `qualification` through [publish comment](../bb-workflow/references/publish-comment.md), using every required field from
-[qualification](../bb-workflow/references/qualification.md) › *outtake*, including `test_as`, `out_of_scope`, `handoff_version`, provenance,
+[qualification](../bb-workflow/references/qualification.md) › *outtake*, including `test_as`, `out_of_scope`, `handoff_version`,
 reproduction, `scenario_required`, recipe choice and prior-art evidence. Follow
 [result records](../bb-workflow/references/results.md) for missing user/environment questions.
 Use explicit `not_required`/`false` where applicable.

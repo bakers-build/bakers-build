@@ -52,7 +52,6 @@ explicit assumptions; that tally is not a passed implementation test. Required f
 - searched terms, and each prior-art check's outcome (`negative`, `prior_art_hit` or `error`) with
   its evidence and the checked revision.
 - `handoff_version`: monotonically increasing; requalification supersedes older versions.
-- `provenance`: hash of title, description, type, recipe, labels and ticket revision.
 
 Second, render the handoff through [the outtake](outtake.md) and publish that as its own comment of
 type `summary`; print it.

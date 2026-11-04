@@ -10,7 +10,7 @@ Start from `skills/bb-init-project/references/WORKFLOW.template.md`. No CLI read
 skills; the agent environment's native skill mechanism loads them.
 
 **Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
-field, a provision hint or a subagent start selects. Exactly thirteen ship:
+field, a provision hint or a subagent start selects. Exactly fifteen ship:
 
 | Skill | Job |
 |---|---|
@@ -20,6 +20,7 @@ field, a provision hint or a subagent start selects. Exactly thirteen ship:
 | `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
 | `@bakers-build/bb-runtime-ddev` | Runtime guide: provision, run, lint, test and persona logins in DDEV; named in a `## bb-phase-provision` hint. |
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
+| `@bakers-build/bb-pingpong` | Loaded by the `WORKFLOW.md` entry line for a ticket labelled `pingpong` in `working` or `review`: it carries the ticket to `done` on its own, asks the user only content questions and one acceptance, and refers technical problems to the developers. |
 | `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
 | `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, change its scope, prepare time proposals. |
 
