@@ -2176,7 +2176,7 @@
     {
       "name": "tool_api__bakers_user_read",
       "title": "Read your user",
-      "description": "Reads your own user: name, position and background, which say whom you work for.",
+      "description": "Reads your own user: name, position and background, which describe you.",
       "inputSchema": {
         "type": "object",
         "properties": {},

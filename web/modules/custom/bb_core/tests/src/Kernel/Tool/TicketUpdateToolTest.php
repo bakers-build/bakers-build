@@ -85,14 +85,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   public function testReaderWithoutUpdateAccessFails(): void {
     $ticket = $this->ticket('TU-5');
-    $etm = $this->container->get('entity_type.manager');
-    $etm->getStorage('user_role')->create(['id' => 'viewer', 'label' => 'Viewer'])->save();
-    user_role_grant_permissions('viewer', ['view bb_ticket', 'view bb_project']);
-    $reader = $this->account('reader', ['viewer']);
-    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
-      $this->addMembership($team, $reader);
-    }
-    $this->container->get('current_user')->setAccount($reader);
+    $this->actAsReader();
     self::assertSame('TU-5', $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['title']);
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
@@ -234,6 +227,32 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A name resolves through the lookup labels_add uses, not only its spelling.
+   */
+  public function testRemoveResolvesNamesLikeAdd(): void {
+    $labels = array_map(fn ($name) => $this->term('label', $name)->id(), ['keep', 'Question']);
+    $ticket = $this->ticket('TU-19', ['labels' => $labels]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['question'],
+    ]));
+    self::assertSame(['keep'], $out['labels']);
+  }
+
+  /**
+   * A reader without update access may not remove labels either.
+   */
+  public function testReaderCannotRemoveLabels(): void {
+    $ticket = $this->ticket('TU-20', ['labels' => [$this->term('label', 'Question')->id()]]);
+    $this->actAsReader();
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question'],
+    ]), 'You may not change labels of ticket');
+    self::assertFalse($this->reload($ticket)->get('labels')->isEmpty());
+  }
+
+  /**
    * An answer takes the question label off and unfreezes in one call.
    */
   public function testRemoveWithFrozenFalse(): void {
@@ -342,6 +361,20 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
       'title' => 'Rewritten history',
     ]), sprintf('Ticket %s is closed and can no longer be changed.', $ticket->getIdentifier()));
     self::assertSame('TU-6', $this->reload($ticket)->label());
+  }
+
+  /**
+   * Acts as a reading-team member who may view but not update tickets.
+   */
+  private function actAsReader(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'viewer', 'label' => 'Viewer'])->save();
+    user_role_grant_permissions('viewer', ['view bb_ticket', 'view bb_project']);
+    $reader = $this->account('reader', ['viewer']);
+    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
+      $this->addMembership($team, $reader);
+    }
+    $this->container->get('current_user')->setAccount($reader);
   }
 
   /**

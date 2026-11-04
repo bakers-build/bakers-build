@@ -241,10 +241,11 @@ final class TicketUpdate extends ToolBase {
    * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
    *   The ticket being changed.
    * @param array<string> $names
-   *   Label names; names the ticket lacks are ignored.
+   *   Label names, resolved like labels_add; absent ones are ignored.
    */
   private function removeLabels(BbTicketInterface $ticket, array $names): void {
-    $ticket->get('labels')->filter(static fn ($item) => !in_array($item->entity?->label(), $names, TRUE));
+    $ids = $this->termIds($ticket->getProject()?->getGroup()?->getWorkspace(), 'label', $names);
+    $ticket->get('labels')->filter(static fn ($item) => !in_array($item->target_id, $ids));
   }
 
   /**

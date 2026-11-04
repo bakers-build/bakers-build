@@ -21,7 +21,7 @@ use Drupal\user\UserInterface;
 #[Tool(
   id: 'bakers_user_read',
   label: new TranslatableMarkup('Read your user'),
-  description: new TranslatableMarkup('Reads your own user: name, position and background, which say whom you work for.'),
+  description: new TranslatableMarkup('Reads your own user: name, position and background, which describe you.'),
   operation: ToolOperation::Read,
   output_definitions: [
     'uuid' => new OutputDefinition(
