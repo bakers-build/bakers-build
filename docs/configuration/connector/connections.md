@@ -11,14 +11,14 @@ A connection is a private file that names one bakers.build server and how you si
 | Relocate | `BB_HOME` names the `.bakers` directory itself and moves both. See [Machines](/configuration/machine#location). |
 | Permissions | The CLI writes them with mode `0600`. Keep them outside Git. |
 
-Create a named connection with `bakers config init --scope connection --connection <id>`. Tokens never live in these files: sign-in stores them in dropsh's per-host session store under `~/.config/dropsh/`, mode `0600`.
+Create a named connection with `bakers config init --scope connection --connection <id>`. Tokens never live in these files: sign-in stores them in dropsh's per-host session store under `~/.config/dropsh/`, mode `0600`. For isolated source-build runs, set an absolute `XDG_CONFIG_HOME` to store tokens in `$XDG_CONFIG_HOME/dropsh/`; use the same value for login, CLI and conductor. This source workspace patches dropsh 0.8.2; published packages require the equivalent upstream fix.
 
 ## Fields
 
 ```js
-// @bakers-schema-version 4
+// @bakers-schema-version 1
 export default {
-  schema_version: 4,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   workspace_id: '00000000-0000-4000-8000-000000000000',
   plugins: [{ plugin: '@bakers-build/addon-essentials' }],
@@ -92,9 +92,9 @@ A connection declares one `@dropsh/plugin-oauth2` entry with `id: 'bakers'` and 
 What `bakers init` writes:
 
 ```js
-// @bakers-schema-version 4
+// @bakers-schema-version 1
 export default {
-  schema_version: 4,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },
@@ -156,9 +156,9 @@ bakers init --auth-type client_credentials --client-id <id> --secret-env BB_CLIE
 The CLI writes the secret into the private file:
 
 ```js
-// @bakers-schema-version 4
+// @bakers-schema-version 1
 export default {
-  schema_version: 4,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },

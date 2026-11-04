@@ -41,7 +41,7 @@ change before applying it. Leave project tooling for project setup.
 
 The skill checks Git, host [Node.js ≥20.19 and npm](/configuration/provisioning/node), the agent and its [sandbox prerequisites](/configuration/agents/execution-security#sandbox-prerequisites). Container Node does not supply the host CLI.
 
-It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. Machine identity and the local operator name are separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connector/connections) explains storage. Correct existing settings are reused.
+It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connector/connections) explains storage. Correct existing settings are reused.
 
 ## Install and sign in
 

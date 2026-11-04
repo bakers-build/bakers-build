@@ -35,7 +35,7 @@ if (tool === 'git') {
   if (args.join(' ') === 'rev-parse --show-toplevel') console.log(root);
   else if (args.at(-1) !== 'prune') process.exit(1);
 } else if (tool === 'node') {
-  process.stdout.write('tester\\thost');
+  process.stdout.write('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
 } else if (tool === 'bakers') {
   if (args.join(' ') !== 'oven stop --now') process.exit(1);
 } else if (tool === 'ddev') {
@@ -129,12 +129,12 @@ describe('playground teardown ownership', () => {
 
   afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-  // Catch the removed entity field being sent to the Drupal boundary again.
-  it('purges through the canonical conductor identity field', () => {
+  // The conductor id is derived: machine UUID + project + default variant.
+  it('purges the conductor whose id is derived from this machine, the project and the variant', () => {
     run('--keep-clone');
     const php = readFileSync(join(root, 'purge.php'), 'utf8');
     expect(php).toContain(
-      "getStorage('bb_conductor')->loadByProperties(['conductor_id' => 'tester-host-bakers-e2e-project'])",
+      "getStorage('bb_conductor')->loadByProperties(['conductor_id' => '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-e2e-project-conductor'])",
     );
   });
 

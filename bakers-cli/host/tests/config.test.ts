@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { createServer } from 'node:http';
-import { tmpdir } from 'node:os';
+import { hostname, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { afterEach, beforeEach, expect, it } from 'vitest';
@@ -59,11 +59,11 @@ function seed() {
   mkdirSync(join(home, '.bakers'));
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:1,machine_id:'host',user_id:'operator',max_parallel:2};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2};",
   );
   writeFileSync(
     join(home, '.bakers/bakers.config.js'),
-    `export default {schema_version:4,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[]};`,
+    `export default {schema_version:1,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[]};`,
   );
 }
 it('checks a named connection with id, selector and field provenance', async () => {
@@ -72,7 +72,7 @@ it('checks a named connection with id, selector and field provenance', async () 
   mkdirSync(join(home, '.bakers/connections'));
   writeFileSync(
     path,
-    "export default {schema_version:4,site:{base_url:'https://staging.test'},plugins:[{plugin:'@bakers-build/addon-essentials'}]};",
+    "export default {schema_version:1,site:{base_url:'https://staging.test'},plugins:[{plugin:'@bakers-build/addon-essentials'}]};",
   );
   const report = await run([
     'check',
@@ -95,7 +95,7 @@ it('checks a named connection with id, selector and field provenance', async () 
   });
   expect(report.connection_resolution.fields).toEqual(
     expect.arrayContaining([
-      { key: 'schema_version', value: 4, source: path },
+      { key: 'schema_version', value: 1, source: path },
       { key: 'site.base_url', value: 'https://staging.test', source: path },
       {
         key: 'site.jsonapi_prefix',
@@ -115,7 +115,7 @@ it('reports the computed effective JSON:API prefix without inventing a default',
   const path = join(home, '.bakers/bakers.config.js');
   writeFileSync(
     path,
-    `const prefix = '/custom'; export default { schema_version: 4, site: { base_url: 'https://example.test', jsonapi_prefix: prefix }, plugins: [] };`,
+    `const prefix = '/custom'; export default { schema_version: 1, site: { base_url: 'https://example.test', jsonapi_prefix: prefix }, plugins: [] };`,
   );
   const report = await run([
     'check',
@@ -142,33 +142,66 @@ it('requires explicit noninteractive init scope and reports all canonical choice
   expect(process.exitCode).toBe(1);
   expect(existsSync(join(home, '.bakers'))).toBe(false);
 });
-it('initializes machine only, preserves existing values and converges', async () => {
-  const args = [
-    'init',
-    '--scope',
-    'machine',
-    '--machine-id',
-    'host',
-    '--user-id',
-    'operator',
-    '--format',
-    'json',
-  ];
-  const first = await run(args);
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+async function machineFile() {
+  const path = join(home, '.bakers/machine.config.js');
+  return (await import(`${path}?t=${Date.now()}-${Math.random()}`)).default;
+}
+it('initializes machine only with a generated UUID and the given label, and keeps both on a re-run', async () => {
+  const args = ['init', '--scope', 'machine', '--format', 'json'];
+  const first = await run([...args, '--label', 'cw-laptop']);
   expect(first.result).toBe('ok');
   expect(first.verification.online.status).toBe('not_applicable');
   expect(existsSync(join(home, '.bakers/bakers.config.js'))).toBe(false);
+  const machine = await machineFile();
+  expect(machine.machine_id).toMatch(UUID_V4);
+  expect(machine.label).toBe('cw-laptop');
+  expect(machine).not.toHaveProperty('user_id');
   const before = readFileSync(join(home, '.bakers/machine.config.js'), 'utf8');
-  const second = await run([...args, '--machine-id', 'other']);
+  const second = await run([...args, '--label', 'other']);
   expect(second.changes).toEqual([]);
   expect(readFileSync(join(home, '.bakers/machine.config.js'), 'utf8')).toBe(
     before,
   );
 });
-it('never invents a host identity in noninteractive mode', async () => {
+it('rewrites an existing machine file in place, keeping its machine_id', async () => {
+  mkdirSync(join(home, '.bakers'), { recursive: true });
+  writeFileSync(
+    join(home, '.bakers/machine.config.js'),
+    "// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'framework', user_id: 'cw', max_parallel: 2 };\n",
+  );
+  const args = ['init', '--scope', 'machine', '--format', 'json'];
+  const report = await run([...args, '--label', 'cw-laptop']);
+  expect(report.result).toBe('ok');
+  const machine = await machineFile();
+  expect(machine.machine_id).toBe('framework');
+  expect(machine.label).toBe('cw-laptop');
+  expect(machine.max_parallel).toBe(2);
+  expect(machine.schema_version).toBe(1);
+  expect(machine).not.toHaveProperty('user_id');
+  expect((await run(args)).changes).toEqual([]);
+});
+it('labels the machine with the short hostname when no terminal can ask', async () => {
   const report = await run(['init', '--scope', 'machine', '--format', 'json']);
-  expect(report.result).toBe('blocked');
-  expect(existsSync(join(home, '.bakers/machine.config.js'))).toBe(false);
+  expect(report.result).toBe('ok');
+  const machine = await machineFile();
+  expect(machine.machine_id).toMatch(UUID_V4);
+  expect(machine.label).toBe(hostname().split('.')[0]);
+});
+it.each([
+  '--machine-id',
+  '--user-id',
+])('no longer accepts the hand-chosen identity flag %s', async (flag) => {
+  const program = new Command().exitOverride();
+  program.configureOutput({ writeErr: () => {} });
+  config.registerConfig(program, { cwd, home, isTTY: false });
+  await expect(
+    program.parseAsync(['config', 'init', '--scope', 'machine', flag, 'x'], {
+      from: 'user',
+    }),
+  ).rejects.toMatchObject({ code: 'commander.unknownOption' });
+  expect(existsSync(join(home, '.bakers'))).toBe(false);
 });
 it.each([
   'user',
@@ -319,16 +352,18 @@ it.each([
     expected: 'scope_required',
   },
   {
-    name: 'upgrade with unresolved machine inputs',
+    // The machine has no input left to ask for (its label defaults to the
+    // hostname); the retired user_id is planned away instead.
+    name: 'upgrade with a stale machine identity',
     args: ['upgrade', '--scope', 'machine', '--dry-run'],
     prepare: () => {
       mkdirSync(join(home, '.bakers'));
       writeFileSync(
         join(home, '.bakers/machine.config.js'),
-        `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(join(root, 'preview-imported'))}, 'unexpected'); export default {machine_id:'host'};`,
+        `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(join(root, 'preview-imported'))}, 'unexpected'); export default {machine_id:'host', user_id:'cw'};`,
       );
     },
-    expected: 'missing_required_key',
+    expected: 'user_id',
   },
 ])('preview never prompts at the command boundary: $name', async (row) => {
   row.prepare();
@@ -406,9 +441,7 @@ it('bakers init is not blocked by the project layer inside a project checkout', 
       'bakers-cli',
       '--workspace-id',
       workspace,
-      '--machine-id',
-      'host',
-      '--user-id',
+      '--label',
       'operator',
     ],
     { from: 'user' },
@@ -455,7 +488,7 @@ it('upgrade migrates applicable shared files and reports offline success without
   const connection = join(home, '.bakers/bakers.config.js');
   writeFileSync(
     machine,
-    "export default {machine_id:'host',user_id:'operator',max_parallel:2};",
+    "export default {machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2};",
   );
   writeFileSync(
     connection,
@@ -524,10 +557,10 @@ it('a prepared connection with no authenticated session is incomplete with curre
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
 });
-it('interactive initialization asks for the selected scope and missing local identity only', async () => {
+it('interactive initialization asks for the selected scope and the machine label only', async () => {
   let output = '';
   const questions: string[] = [];
-  const answers = ['machine', 'selected-host', 'operator'];
+  const answers = ['machine', 'selected-host'];
   const program = new Command().exitOverride();
   config.registerConfig(program, {
     cwd,
@@ -544,10 +577,13 @@ it('interactive initialization asks for the selected scope and missing local ide
   });
   await program.parseAsync(['config', 'init'], { from: 'user' });
   expect(output).toContain('bakers config init: ok');
-  expect(questions).toHaveLength(3);
-  expect(
-    readFileSync(join(home, '.bakers/machine.config.js'), 'utf8'),
-  ).toContain('selected-host');
+  expect(questions).toEqual([
+    'Configuration scope (machine, connection, project, all)',
+    `Machine label [${hostname().split('.')[0]}]`,
+  ]);
+  const machine = await machineFile();
+  expect(machine.label).toBe('selected-host');
+  expect(machine.machine_id).toMatch(UUID_V4);
   expect(existsSync(join(home, '.bakers/bakers.config.js'))).toBe(false);
 });
 it('fresh interactive connection initialization collects OAuth inputs and verifies them', async () => {
@@ -845,7 +881,7 @@ it.each([
   const path = join(home, '.bakers/machine.config.js');
   writeFileSync(
     path,
-    `export default {schema_version:3,machine_id:'host',user_id:'operator',max_parallel:2,${field}};`,
+    `export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,${field}};`,
   );
   const json = await run(['check', '--scope', 'machine', '--format', 'json']);
   expect(json.machine_policy).toEqual({ tunnel: expected, source: path });
@@ -859,7 +895,7 @@ it('check --scope machine reports unresolved tunnel policy for invalid literals'
   const path = join(home, '.bakers/machine.config.js');
   writeFileSync(
     path,
-    "export default {schema_version:3,machine_id:'host',user_id:'operator',max_parallel:2,tunnel:'true'};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,tunnel:'true'};",
   );
   const json = await run(['check', '--scope', 'machine', '--format', 'json']);
   expect(json.machine_policy).toEqual({ tunnel: null, source: path });
@@ -887,7 +923,7 @@ it('check --scope connection does not take tunnel policy from a connection file'
   seed();
   writeFileSync(
     join(home, '.bakers/bakers.config.js'),
-    `export default {schema_version:4,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[],tunnel:true};`,
+    `export default {schema_version:1,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[],tunnel:true};`,
   );
   const json = await run([
     'check',
@@ -913,7 +949,7 @@ it('check --machine-path reports tunnel policy from the selected file', async ()
   const path = join(root, 'other-machine.js');
   writeFileSync(
     path,
-    "export default {schema_version:3,machine_id:'other',user_id:'operator',max_parallel:1,tunnel:true};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'other',max_parallel:1,tunnel:true};",
   );
   const json = await run([
     'check',
@@ -1071,7 +1107,7 @@ it('reads the grant off the OAuth plugin even when an earlier plugin carries its
   const baseUrl = 'https://example.test';
   writeFileSync(
     join(home, '.bakers/bakers.config.js'),
-    `export default {schema_version:4,site:{base_url:'${baseUrl}'},workspace_id:'${workspace}',plugins:[
+    `export default {schema_version:1,site:{base_url:'${baseUrl}'},workspace_id:'${workspace}',plugins:[
       {plugin:'@bakers-build/addon-essentials', with:{type:'oauth2_client_credentials'}},
       {plugin:'@dropsh/plugin-oauth2', export:'oauth2Plugin', with:{
         id:'bakers', default:true, type:'oauth2_device_code',
@@ -1192,7 +1228,7 @@ it('reports an addon in a scope it does not allow', async () => {
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:3,machine_id:'host',user_id:'operator',max_parallel:2,addons:['@bakers-build/addon-herdr']};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,addons:['@bakers-build/addon-herdr']};",
   );
   const report = await run([
     'check',
@@ -1217,7 +1253,7 @@ it('config check --online reports addon_with_invalid at addons[0].with.services[
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:3,machine_id:'host',user_id:'operator',max_parallel:2,addons:[{use:'@bakers-build/addon-ports',with:{services:[{key:'Docs!',match:'vitepress'}]}}]};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,addons:[{use:'@bakers-build/addon-ports',with:{services:[{key:'Docs!',match:'vitepress'}]}}]};",
   );
   const report = await run([
     'check',
@@ -1243,7 +1279,7 @@ it('offline check skips the scope check with an info finding', async () => {
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:3,machine_id:'host',user_id:'operator',max_parallel:2,addons:['@bakers-build/addon-herdr']};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,addons:['@bakers-build/addon-herdr']};",
   );
   const report = await run(['check', '--scope', 'machine', '--format', 'json']);
   expect(

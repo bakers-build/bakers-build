@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   type AgentFootprint,
   type AgentPlugin,
@@ -141,12 +142,10 @@ function rejectUnsupportedSandbox(sandbox: Required<SandboxOptions>): void {
       "Grok has no command exception narrowed to executable, arguments and directory for sandbox.trusted_commands; use security: 'system' with your own sandbox.toml profile",
     );
   }
-  for (const key of ['deny_read', 'allow_write'] as const) {
-    if (sandbox[key].length > 0) {
-      throw new Error(
-        `Grok needs a sandbox.toml profile for sandbox.${key}, which bakers.build does not write; use security: 'system' with args: ['--sandbox', '<profile>']`,
-      );
-    }
+  if (sandbox.deny_read.length > 0) {
+    throw new Error(
+      'Grok sandbox.deny_read is unsupported; leave deny_read empty',
+    );
   }
 }
 
@@ -199,10 +198,34 @@ export class GrokAgent implements BbAgent {
       );
     }
     rejectUnsupportedSandbox(this.security.sandbox);
+    for (const path of this.security.sandbox.allow_write) {
+      if (
+        (!isAbsolute(path) && !path.startsWith('~/')) ||
+        path.trim() !== path ||
+        /[?*[]/.test(path) ||
+        [...path].some((c) => c.charCodeAt(0) < 32)
+      ) {
+        throw new Error(
+          'sandbox.allow_write requires literal absolute or ~/ directory paths without whitespace edges or glob characters',
+        );
+      }
+    }
     const reserved =
       this.security.mode === 'sandbox' ? GROK_SANDBOX_RESERVED : GROK_RESERVED;
-    const cli = resolveAgentCliOptions(options, reserved, GROK_KNOWN);
-    rejectClusteredReserved(cli.args, reserved);
+    const launchReserved = this.security.sandbox.allow_write.length
+      ? [
+          ...reserved,
+          '--continue',
+          '-c',
+          '--resume',
+          '-r',
+          '--fork-session',
+          '--restore-code',
+          '--leader-socket',
+        ]
+      : reserved;
+    const cli = resolveAgentCliOptions(options, launchReserved, GROK_KNOWN);
+    rejectClusteredReserved(cli.args, launchReserved);
     if (this.security.mode === 'sandbox') rejectBareArgs(cli.args);
     this.args = cli.args;
     this.model = cli.model;
@@ -238,6 +261,23 @@ export class GrokAgent implements BbAgent {
     if (prompt !== '') {
       parts.push(...this.args.map(shellQuote));
     }
+    if (this.security.sandbox.allow_write.length) {
+      const launcher = fileURLToPath(
+        new URL(
+          import.meta.url.endsWith('.ts')
+            ? './managed-launch.ts'
+            : './managed-launch.js',
+          import.meta.url,
+        ),
+      );
+      return [
+        shellQuote(process.execPath),
+        shellQuote(launcher),
+        shellQuote(join(this.home, '.grok')),
+        shellQuote(JSON.stringify(this.security.sandbox.allow_write)),
+        ...parts,
+      ].join(' ');
+    }
     return parts.join(' ');
   }
 
@@ -249,7 +289,7 @@ export class GrokAgent implements BbAgent {
     }
     return [
       '--sandbox',
-      'workspace',
+      this.security.sandbox.allow_write.length ? 'bakers-managed' : 'workspace',
       '--permission-mode',
       'acceptEdits',
       '--allow',
@@ -272,6 +312,13 @@ export class GrokAgent implements BbAgent {
         ok: false,
         cause: `Grok's sandbox does not support ${host.platform}`,
         fix: fallback,
+      };
+    }
+    if (this.security.sandbox.allow_write.length && !host.onPath('bwrap')) {
+      return {
+        ok: false,
+        cause: 'Managed Grok profiles need bubblewrap to protect sandbox.toml',
+        fix: 'install bubblewrap and keep security: sandbox',
       };
     }
     const probe = await host.run('grep', [

@@ -21,22 +21,6 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
-  field_bb_background:
-    type: string_textarea
-    weight: 33
-    region: content
-    settings:
-      rows: 3
-      placeholder: ''
-    third_party_settings: {  }
-  field_developer_title:
-    type: string_textfield
-    weight: -7
-    region: content
-    settings:
-      size: 60
-      placeholder: ''
-    third_party_settings: {  }
   field_full_name:
     type: string_textfield
     weight: 0
@@ -64,5 +48,7 @@ content:
       preview_image_style: avatar
     third_party_settings: {  }
 hidden:
+  field_bb_background: true
+  field_developer_title: true
   field_onboarding_completed: true
   social_auth: true

@@ -78,6 +78,16 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     expect(JSON.stringify(fields)).not.toContain('private-id');
   });
 
+  it('refuses a connection whose schema version is not 1, naming bakers init', async () => {
+    writeFileSync(
+      join(bakersDir(), 'bakers.config.js'),
+      `// @bakers-schema-version 4\nexport default { schema_version: 4, site: { base_url: 'https://x.test' }, plugins: [] };`,
+    );
+    await expect(loadBbConfig(host, { cwd: tmp })).rejects.toThrow(
+      /bakers init/,
+    );
+  });
+
   it('reads site + already-constructed plugins from a project bakers.config.js', async () => {
     const d = bakersDir();
     writeFileSync(

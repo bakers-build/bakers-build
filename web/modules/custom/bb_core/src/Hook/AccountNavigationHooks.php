@@ -11,7 +11,7 @@ use Drupal\Core\Url;
 use Drupal\bb_core\Navigation\AccountWorkspaceContext;
 
 /**
- * Preserves the validated origin between the account's View and Edit tabs.
+ * Preserves the validated origin between the account's own tabs.
  */
 final class AccountNavigationHooks {
 
@@ -46,7 +46,7 @@ final class AccountNavigationHooks {
       foreach ($tabs as &$tab) {
         $url = $tab['#link']['url'] ?? NULL;
         if (!$url instanceof Url || !$url->isRouted()
-          || !in_array($url->getRouteName(), ['entity.user.canonical', 'entity.user.edit_form'], TRUE)) {
+          || !in_array($url->getRouteName(), AccountWorkspaceContext::ROUTES, TRUE)) {
           continue;
         }
         $query = $url->getOption('query') ?? [];

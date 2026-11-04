@@ -197,14 +197,12 @@ project's conductors.
 ## The Conductors tab (BB-232)
 
 The root tab bar reads `Dashboard · Projects · Conductors`. The Conductors screen lists every
-`bb_conductor` the connected control plane holds for you — label, `machine_id`, project,
+`bb_conductor` the connected control plane holds for you — label, machine label, project,
 derived liveness (`running | stale | offline`), age, workspace and last known pid.
 
-`machine_id` is a column of its own, not just the fallback for a missing label: two conductors
-of one repo share a project *and* a workspace, and it is the only thing that tells them apart.
-Both it and the workspace path are shortened from the **left**, because a `machine_id` is
-composed (`user-machine-project`) and the control plane is scoped to one user — so every row
-repeats the same head, and only the tail distinguishes.
+A conductor is this machine + project + variant; its label names all three, so two conductors
+of one repo on one machine differ by their variant. The workspace path is shortened from the
+**left**, because only its tail distinguishes rows.
 
 | Key | What it does |
 |---|---|

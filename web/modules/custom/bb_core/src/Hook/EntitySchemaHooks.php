@@ -32,6 +32,7 @@ use Drupal\bb_core\Field\SinceLabelItemList;
 use Drupal\bb_core\Field\StallReasonItemList;
 use Drupal\bb_core\Field\StateFlowItemList;
 use Drupal\bb_core\Field\WorkStateItemList;
+use Drupal\bb_core\Form\UserProfileForm;
 use Drupal\bb_core\Plugin\Validation\Constraint\BbGroupScopeConstraint;
 use Drupal\bb_core\Plugin\views\field\BbEntityOperations;
 use Drupal\bb_core\Storage\DisplayBuilderInstanceStorage;
@@ -66,7 +67,8 @@ final class EntitySchemaHooks {
   /**
    * Implements hook_entity_type_alter().
    *
-   * Puts bakers.build's own access handler on og_membership.
+   * Puts bakers.build's own access handler on og_membership, and the
+   * user entity's `profile` form (position and background only).
    *
    * OG reserves membership reads to permissions the `bb:session` scope
    * cannot carry, so rosters were unreadable to machine identities. A
@@ -82,6 +84,7 @@ final class EntitySchemaHooks {
    */
   #[Hook('entity_type_alter')]
   public function entityTypeAlter(array &$entity_types): void {
+    ($entity_types['user'] ?? NULL)?->setFormClass('profile', UserProfileForm::class);
     if (isset($entity_types['display_builder_instance'])) {
       $entity_types['display_builder_instance']->setHandlerClass('storage', DisplayBuilderInstanceStorage::class);
     }

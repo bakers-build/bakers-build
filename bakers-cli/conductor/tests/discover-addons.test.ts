@@ -47,7 +47,6 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
   it('wires remote/executor/workspace from addons[] and agents from the machine', async () => {
     const file = writeConductorConfig(`export default {
   bakers: { project: 'demo' },
-  machine_id: 'addons-test',
   states: ['working'],
   addons: [
     '@bakers-build/addon-remote-drupal',
@@ -76,7 +75,7 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
 
   it('a herdr entry listed ONCE wires executor + workspace (retires herdrWorkspace export)', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -88,7 +87,7 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
 
   it('an explicit herdr executor slot still contributes a process host', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
   executor: { plugin: '@bakers-build/addon-herdr' },
   workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
@@ -102,7 +101,7 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
     // addon-remote-drupal would contribute the drupal remote; the explicit slot
     // overrides it.
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
   remote: { kind: 'remote', id: 'explicit-remote', requiredModules: [] },
 };
@@ -139,7 +138,7 @@ export const hooks = (acc) => [...acc, {
     writeFileSync(
       file,
       `export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './parent.mjs', './parent.mjs'],
   hooks: { before_run: 'echo shell' },
 };
@@ -178,7 +177,7 @@ export const hooks = (acc) => [...acc, {
       .replace(/^import type .*\n/m, '')
       .replace(": Preset['hooks']", '');
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './guide.mjs'],
 };
 `);
@@ -211,7 +210,7 @@ export const hooks = () => { throw new Error('machine hook accumulator ran'); };
     machine.agentAddons = ['@bakers-build/addon-codex', hooky];
     try {
       const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -238,7 +237,7 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
     ];
     try {
       const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -269,7 +268,7 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
     writeFileSync(
       file,
       `export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './bad.mjs'],
 };
 `,
@@ -338,7 +337,7 @@ describe('addon inbox discovery (contract 2, BB-661)', () => {
 
   it('loadConductorConfig loads the discovered inbox and passes `with` to its handlers', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', ${JSON.stringify(entry)}],
 };
 `);

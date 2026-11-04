@@ -34,7 +34,7 @@ A connection file (`bakers.config.js` or `connections/<id>.js`) has its own `add
 
 Tabs appear in the order machine, connection, conductor. The conductor level is read from the project whose `.bakers/` holds the selected connection, else from the project you run `bakers ui` in. Addons are not installed by configuration: a package must already resolve where the CLI runs. The entry forms (`use`, `with`) and the `scopes` declaration are in [Addon contracts](/addons/build/contracts).
 
-Machine files written before this rule carry `agents.addons` or a top-level `ports`. Both are retired: loading fails with the exact replacement, and `bakers config upgrade --scope machine` moves them into `addons`.
+Machine files written before this rule carry `agents.addons` or a top-level `ports`. Both are retired: loading fails with the exact replacement to paste into `addons`.
 
 Fragment for a connection or conductor `addons` list; append to what is there:
 

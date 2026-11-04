@@ -313,7 +313,7 @@ jobs:
           pnpm run build:all
           ./addons/bakers-ui/node_modules/.bin/bun --version
           mkdir -p ~/.bakers
-          echo "export default { schema_version: 4, site: { base_url: 'https://ci.invalid' }, workspace_id: '00000000-0000-4000-8000-000000000000' };" > ~/.bakers/bakers.config.js
+          echo "export default { schema_version: 1, site: { base_url: 'https://ci.invalid' }, workspace_id: '00000000-0000-4000-8000-000000000000' };" > ~/.bakers/bakers.config.js
           node bin/bakers ui --print-config
           ./addons/bakers-ui/node_modules/.bin/bun -e ' const { applyOpentuiLibc, nodeLibcFamily } = await import(`${process.cwd()}/ui/dist/src/bun-runtime.js`); if (nodeLibcFamily() !== "musl") throw new Error(`libc detection said ${nodeLibcFamily()}, expected musl`); applyOpentuiLibc(process.env); if (process.env.OPENTUI_LIBC !== "musl") throw new Error("applyOpentuiLibc did not set OPENTUI_LIBC"); const { createTestRenderer } = await import("@opentui/core/testing"); await createTestRenderer({ width: 20, height: 5 }); console.log("A1: musl auto-detected, libopentui.so loaded, no manual step"); '
 

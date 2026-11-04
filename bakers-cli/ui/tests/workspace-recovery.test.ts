@@ -233,7 +233,12 @@ it('starts the renderer even with no workspace configured, during automation', a
   });
   expect(error).toBe('');
   expect(rendered).toBe(true);
-  expect(f.requests).toHaveLength(1);
+  // The token and the signed-in identity (`api.me()`, the current user) —
+  // no workspace discovery.
+  expect(f.requests).toEqual([
+    'POST /oauth/token undefined',
+    'GET /jsonapi/ Bearer fixture-token',
+  ]);
 });
 
 // BB-472: `--workspace` selects at startup, for this process only.

@@ -84,7 +84,8 @@ const stubAgent: BbAgent = {
 function makeConfig(configPath: string): ConductorFileConfig {
   return {
     label: 'bb-237-bootstrap-dispatch',
-    machine_id: 'bb-237-int-node',
+    conductor_id: 'bb-237-int-node',
+    host_key: 'bb-237-int-host',
     project: 'bb-237-int',
     states: ['working'],
     prompt: '',

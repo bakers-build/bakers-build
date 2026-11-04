@@ -96,7 +96,7 @@ it('a conductor carries id, label, machineId, status and its project', async () 
   expect(client.collections).toEqual(['bb_conductor/bb_conductor']);
 });
 
-it('the label falls back label → machine_id → uuid, and an unlinked project is null', async () => {
+it('a blank label shows no id, and an unlinked project is null', async () => {
   const client = fakeClient({
     rows: {
       bb_conductor: [
@@ -106,10 +106,10 @@ it('the label falls back label → machine_id → uuid, and an unlinked project 
     },
   });
   const [noLabel, bare] = (await listConductors(client)).rows;
-  expect(noLabel?.label).toBe('box-2');
+  expect(noLabel?.label).toBe('(unnamed)');
   expect(noLabel?.projectId).toBeNull();
   expect(noLabel?.status).toBeUndefined();
-  expect(bare?.label).toBe('c3');
+  expect(bare?.label).toBe('(unnamed)');
 });
 
 it('listConductors returns the collection AS IT IS — every project, plain labels', async () => {
@@ -215,6 +215,7 @@ const cockpitMachine = (attrs: Record<string, unknown> = {}) => ({
   id: MACHINE,
   type: 'bb_machine--bb_machine',
   attributes: {
+    name: 'cw-laptop',
     host_key: 'cw-dev-box',
     current_load: 2,
     max_parallel: 5,
@@ -254,6 +255,8 @@ it('carries the fields the cockpit renders, with capacity from the machine', asy
   expect(c?.conductorName).toBe('conductor');
   // BB-450 AC-4: the host_key a stop compares against this machine's own.
   expect(c?.hostKey).toBe('cw-dev-box');
+  // AC-5: the machine's label, for the MACHINE column.
+  expect(c?.machineLabel).toBe('cw-laptop');
   // Spec D5/D10: utilization from conductor.machine, not conductor attrs.
   expect(c?.currentLoad).toBe(2);
   expect(c?.maxParallel).toBe(5);
@@ -496,6 +499,7 @@ const CONDUCTOR_ROW: ConductorRow = {
   lastPid: 4242,
   conductorName: 'conductor',
   hostKey: 'cw-dev-box',
+  machineLabel: 'cw-laptop',
   derivedStatus: 'online',
   isLocal: true,
   mine: true,
@@ -644,19 +648,11 @@ it('renders a conductor that never reported a pid without inventing one', () => 
   expect(line).toContain('-');
 });
 
-it('falls back to the machine id when a conductor carries no label', () => {
-  expect(
-    conductorRowText([{ ...CONDUCTOR_ROW, label: '', machineId: 'mid-7' }]),
-  ).toContain('mid-7');
-});
-
-// BB-232 review finding F4. AC-1 and spec D2 both list `machine_id` as a
-// column; it was only a fallback for an empty label. Live that mattered: two
-// rows shared a project AND a workspace_root, and were distinguishable only
-// because one label happened to carry its path.
-it('renders machine_id as its own column, beside the label', () => {
+// BB-232 review finding F4: two rows can share a project AND a
+// workspace_root; the MACHINE column tells them apart, by the machine's label.
+it('renders the machine label as its own column, beside the label', () => {
   const tree = conductorTree([
-    { ...CONDUCTOR_ROW, label: 'framework', machineId: 'cw-abc123-bakers' },
+    { ...CONDUCTOR_ROW, label: 'framework', machineLabel: 'cw-laptop' },
   ]);
 
   expect(
@@ -667,41 +663,35 @@ it('renders machine_id as its own column, beside the label', () => {
     // BB-345 — the leading blank is the column SEPARATOR, which is a column of
     // this cell now rather than the row's Yoga gap, so that a selected row's
     // highlight can paint it. MACHINE is the second column, so it carries one.
-  ).toEqual([' cw-abc123-bakers']);
+  ).toEqual([' cw-laptop']);
 });
 
-it('separates two rows that agree on everything but their machine_id', () => {
+it('separates two rows that agree on everything but their machine', () => {
   const rowsIn = [
-    { ...CONDUCTOR_ROW, id: 'c-1', label: '', machineId: 'cw-one-bakers' },
-    { ...CONDUCTOR_ROW, id: 'c-2', label: '', machineId: 'cw-two-bakers' },
+    { ...CONDUCTOR_ROW, id: 'c-1', machineLabel: 'cw-laptop' },
+    { ...CONDUCTOR_ROW, id: 'c-2', machineLabel: 'cw-server' },
   ];
 
-  expect(conductorRowText(rowsIn, {}, 'c-1')).toContain('cw-one-bakers');
-  expect(conductorRowText(rowsIn, {}, 'c-2')).toContain('cw-two-bakers');
-  expect(conductorRowText(rowsIn, {}, 'c-1')).not.toBe(
-    conductorRowText(rowsIn, {}, 'c-2'),
-  );
+  expect(conductorRowText(rowsIn, {}, 'c-1')).toContain('cw-laptop');
+  expect(conductorRowText(rowsIn, {}, 'c-2')).toContain('cw-server');
 });
 
-it('elides a long machine_id on the LEFT — the head is the shared user id', () => {
+it('never shows the registration key, whose head is the machine UUID', () => {
   const line = conductorRowText([
     {
       ...CONDUCTOR_ROW,
-      machineId:
-        '3b72a85c-4455-4c86-b207-bdcc7de4fdc6-workstation-bakers-framework',
+      machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-conductor',
     },
   ]);
 
-  // Every row of a user-scoped control plane repeats the same user uuid, so the
-  // tail is the only part that tells one conductor from another.
-  expect(line).toContain('bakers-framework');
-  expect(line).not.toContain('3b72a85c-4455');
+  expect(line).not.toContain('0b6f3c1e');
+  expect(line).not.toContain('bakers-conductor');
 });
 
-it('renders a conductor that never reported a machine_id without inventing one', () => {
+it('renders a conductor whose machine is unknown without inventing one', () => {
   expect(
     conductorRowText([
-      { ...CONDUCTOR_ROW, label: 'nameless', machineId: undefined },
+      { ...CONDUCTOR_ROW, label: 'nameless', machineLabel: undefined },
     ]),
   ).not.toContain('undefined');
 });

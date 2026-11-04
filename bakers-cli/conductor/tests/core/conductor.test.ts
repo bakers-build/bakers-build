@@ -383,9 +383,9 @@ describe('Conductor', () => {
     expect(conductor.id).toBe('cw-dev-box-bakers');
   });
 
-  it('throws rather than deriving an id from the checkout directory when neither conductor_id nor machine_id is set', () => {
+  it('throws naming bakers init rather than deriving an id from the checkout directory when the machine has no UUID', () => {
     const conductor = new Conductor(
-      makeConfig({ conductor_id: undefined, machine_id: undefined }),
+      makeConfig({ conductor_id: undefined }),
       new FakeBbRemote(),
       new FakeExecutor({ outcome: 'exited' }),
       new FakeWorkspace(),
@@ -393,7 +393,7 @@ describe('Conductor', () => {
       spyLogger().log,
       CHECKOUT,
     );
-    expect(() => conductor.id).toThrow('conductor config has no conductor_id');
+    expect(() => conductor.id).toThrow('run bakers init');
   });
 
   it('dispatches up to max_parallel and records markRunning per dispatch', async () => {
