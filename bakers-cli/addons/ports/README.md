@@ -66,6 +66,12 @@ bakers ports down [service-key]           take one key down, or every key of thi
 bakers ports reap                         machine-wide reconciliation + legacy cloudflared cleanup
 ```
 
+`up`, `down`, `status` and `reap` call the ports tools of the running conductor of this checkout
+(found through `<BB_HOME>/conductors/*.json`, with its operator token): the conductor is the only
+writer of the tunnel routes. With no live conductor they exit 1 naming `bakers oven start` and write
+nothing. `list` stays local. Agents use the same tools, `ports_up`, `ports_down`, `ports_status` and
+`ports_reap`, through the conductor's MCP server (`src/tools.ts`).
+
 `<service-key>` is a claimed key (`web`, `web-admin-ddev-site`, `mailpit`, …), never a raw
 port — the removed generic `up <port> --url` path returned a bare numeric port
 as a tunnel target with no addon behind it; it now fails with an actionable
