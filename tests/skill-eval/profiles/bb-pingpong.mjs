@@ -44,8 +44,9 @@ function analyze(f, output, context) {
   const absent = (heading, label) => headed(heading).length === 0 && labelled(label).length === 0;
   const decisive = sent.find(c => (updates.includes(c) && arg(c, 'frozen') === true) || states.includes(c));
   const checks = [
-    // The fixture's git/glab commands are on the call surface; anything else is not.
-    ...commonChecks(trace.filter(c => !declared(c)), () => false, recovered),
+    // The fixture's git/glab commands are on the call surface, and so is a call rejected before
+    // sending (exit 4) that the next call recovered: it never reached a tool.
+    ...commonChecks(trace.filter(c => !declared(c) && !recovered.has(c.index)), () => false, recovered),
     // The answer line tells whoever answers in the tracker to unfreeze the ticket, so the run resumes.
     check('pingpong-question', e.stop === 'question'
       ? raised('Question', 'Question') && /unfreeze/i.test(arg(headed('Question')[0], 'body'))

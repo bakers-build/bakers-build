@@ -165,7 +165,7 @@ data "coder_parameter" "pm_bot_slack_app_token" {
 data "coder_parameter" "pm_bot_slack_allowed_channels" {
   name         = "pm_bot_slack_allowed_channels"
   display_name = "PM bot: allowed channels"
-  description  = "Slack channel IDs the bot answers in, separated by spaces or commas (C0123 C0456)."
+  description  = "The one Slack channel ID the bot answers in (C0123). The bot refuses to start with more."
   type         = "string"
   default      = ""
   mutable      = true

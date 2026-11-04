@@ -87,11 +87,11 @@ describe('disposable image gate', () => {
     );
     expect(result.calls).not.toMatch(/docker (push|login)|compose pull/);
   });
-  it('builds the PM bot image from experimental/pm-bot/ and checks that same image before the browser suite', () => {
+  it('builds the PM bot image from experimental/pm-bot/ with its pinned skill contexts and checks that same image before the browser suite', () => {
     const result = gate();
     expect(result.status).toBe(0);
     expect(result.calls).toMatch(
-      /build .*-t bakers-gate\/pm-bot:local experimental\/pm-bot\n/,
+      /build .*-t bakers-gate\/pm-bot:local --build-context bundle=\.claude\/skills\/bakers-build --build-context superpowers=https:\/\/github\.com\/obra\/superpowers\.git#bb92a77741419a4ab5f06e711a283343f1ada0c3 --build-context mattpocock=https:\/\/github\.com\/mattpocock\/skills\.git#d1478fcb140db0b93c0c8df17bcfd311844749d0 experimental\/pm-bot\n/,
     );
     expect(result.calls).toContain(
       'images:pm-bot-image.sh bakers-gate/pm-bot:local',

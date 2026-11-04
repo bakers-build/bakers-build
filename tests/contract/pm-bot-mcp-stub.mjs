@@ -1,6 +1,6 @@
 // A stand-in for bakers.build's /mcp in the PM bot's image check (pm-bot-image.sh): MCP
 // over streamable HTTP on port 8080, answering only `Authorization: Bearer <BAKERS_API_KEY>`
-// and listing seven bakers tools, one more than the bot's config includes. No dependencies;
+// and listing nine bakers tools, one more than the bot's config includes. No dependencies;
 // the check passes this file to `node -e` in a container of the bot's own image.
 import { createServer } from 'node:http';
 
@@ -13,6 +13,8 @@ const TOOLS = [
   'bakers_ticket_transition',
   'bakers_comment_publish',
   'bakers_ticket_classify',
+  'bakers_user_read',
+  'bakers_run_cancel',
 ].map((name) => ({ name: `tool_api__${name}`, description: `${name} (stub)`, inputSchema: { type: 'object', properties: {} } }));
 
 createServer(async (req, res) => {

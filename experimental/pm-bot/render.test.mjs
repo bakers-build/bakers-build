@@ -38,3 +38,20 @@ test('a ${env:…} reference is left for Hermes, so the key it names never reach
   assert.equal(out, 'url: https://bakers.example.com/mcp\nAuthorization: "Bearer ${env:BAKERS_API_KEY}"\n');
   assert.doesNotMatch(out, /bb-secret/);
 });
+
+test('SOUL.template.md renders from the fixture env with no placeholder left', async () => {
+  const { readFileSync } = await import('node:fs');
+  const env = Object.fromEntries(
+    readFileSync(new URL('./test/fixture.env', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((line) => /^[A-Z_]+=/.test(line))
+      .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
+  );
+  // The entrypoint turns an empty PM_BOT_CONDUCTOR into the word the template shows.
+  env.PM_BOT_CONDUCTOR_TEXT = env.PM_BOT_CONDUCTOR || 'none';
+  const out = render(readFileSync(new URL('./SOUL.template.md', import.meta.url), 'utf8'), env);
+  assert.doesNotMatch(out, /\$\{/);
+  assert.match(out, new RegExp(env.PM_BOT_PROJECT));
+  assert.match(out, /`none`/);
+  assert.doesNotMatch(out, new RegExp(env.BAKERS_API_KEY));
+});

@@ -213,6 +213,33 @@ describe('bb-pingpong profile', () => {
       ]),
     ).toEqual(['pingpong-question']);
   });
+  it('a call rejected before sending and then recovered stays on the call surface', async () => {
+    const q = fixture({ stop: 'question' });
+    const rejected: Row = {
+      tool: 'bakers',
+      arguments: {
+        argv: [
+          'bakers',
+          'tools',
+          'tool_api__bakers_ticket_read',
+          '--data',
+          '@/dev/null',
+        ],
+      },
+      result: {
+        exit_code: 4,
+        stdout: '',
+        stderr: '{"error":{"code":"E_VALIDATION"}}',
+      },
+    };
+    expect(
+      await judge(q, 'Asked.', [rejected, readTicket(), question, asked]),
+    ).toEqual([]);
+    // Unrecovered, the rejection still fails.
+    expect(
+      await judge(q, 'Asked.', [readTicket(), question, asked, rejected]),
+    ).not.toEqual([]);
+  });
   it('technical problem never asks the user', async () => {
     const p = fixture({
       stop: 'technical-problem',
