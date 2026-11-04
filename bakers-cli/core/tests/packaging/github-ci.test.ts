@@ -76,7 +76,7 @@ describe('GitHub migration checks', () => {
     expect(workflow.on.push.branches).toEqual(['ci/ghcr-rehearsal']);
     expect(workflow.on.pull_request).toBeUndefined();
     const job = workflow.jobs.registry;
-    expect(job['runs-on']).toBe('blacksmith-8vcpu-ubuntu-2404');
+    expect(job['runs-on']).toEqual(['self-hosted', 'github-runner-1']);
     expect(job.permissions).toEqual({ contents: 'read', packages: 'write' });
     const commands = job.steps
       .map((step: { run?: string }) => step.run || '')
