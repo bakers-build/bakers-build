@@ -26,6 +26,7 @@ Feature: Deleting an entity where it is managed
       | environment | This action cannot be undone   |
       | label       | These will be detached from it |
       | template    | This action cannot be undone   |
+      | trigger     | This action cannot be undone   |
       | ticket      | These will also be deleted     |
       | comment     | This action cannot be undone   |
       | invite      | This action cannot be undone   |
@@ -50,11 +51,13 @@ Feature: Deleting an entity where it is managed
       | north-guest | environment |
       | north-guest | label       |
       | north-guest | template    |
+      | north-guest | trigger     |
       | north-guest | ticket      |
       | south-lead  | project     |
       | south-lead  | team        |
       | south-lead  | label       |
       | south-lead  | invite      |
+      | south-lead  | trigger     |
       | north-lead  | machine     |
       | north-lead  | conductor   |
       | north-lead  | workspace   |
