@@ -8,7 +8,7 @@ request from prior-art search through qualification to `plan`. See
 this bundle.
 
 **Source of truth.** This bundle derives from `.claude/skills/bakers-build/skills/{bb-create-ticket,
-bb-workflow}/SKILL.md`, `bb-create-ticket/references/handoff.md` and the `bb-workflow` references `read-ticket.md`, `publish-comment.md`,
+bb-workflow}/SKILL.md` and the `bb-workflow` references `read-ticket.md`, `publish-comment.md`,
 `transition-ticket.md`, `prior-art-search.md`, `tools.md`, `qualification.md` and
 `ensure-qualification.md`. When those files change,
 re-derive this file; do not hand-edit it out of sync with them.
@@ -20,8 +20,8 @@ re-derive this file; do not hand-edit it out of sync with them.
 - The `working` paths in `bb-create-ticket` (specifying with the requester and handing over to
   `working`, and a confirmed intake with `spec`, `plan` and `test`) — out of scope; this bundle
   never transitions past `plan`.
-- The checkout steps (`bb-create-ticket/references/checkout.md`: parent from the branch, conductor,
-  origin status) — they need a local checkout.
+- The checkout steps of `bb-create-ticket` (parent from the branch, the intake's conductor, origin
+  status) — they need a local checkout.
 - Bug tickets and diagnosis — out of scope; this bundle handles tickets of type `feature` or
   `chore` only.
 - Terminal retrospective (`done`/`cancelled` job rating) — the rating interview belongs to a
