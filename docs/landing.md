@@ -1,10 +1,12 @@
 ---
-# The landing page (wayfinder ticket 08): a hero-less `layout: home` page
-# rendering the hand-built theme/landing/ component tree (the vitejs.dev
-# pattern). markdownStyles off so the components render unconstrained.
+# The landing page: a hero-less `layout: home` page rendering the theme's
+# landing/ component tree, which brings its own navigation (navbar off).
+# markdownStyles off so the components render unconstrained.
 layout: home
+navbar: false
 markdownStyles: false
-title: Agents work the tickets. You keep the workflow.
+title: You're the baker. Agents run the line.
+description: Agents work every ticket on your own machines, and a person decides at every station. Open source, self-hosted or hosted, both free.
 ---
 
 <Landing />

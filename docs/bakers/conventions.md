@@ -9,6 +9,10 @@ Every document, code comment, skill, user-facing string (`t()`, route titles, co
 literals), Designbook story, scene and sample value is English, and so are the tests asserting
 them. Translate German content when you touch it.
 
+One exception: the public landing page has a German copy set
+(`docs/.vitepress/theme/landing/copy.ts`, served at `/de/`). Only that landing copy may be German;
+the docs pages, code, comments and tests stay English.
+
 ## Stay as close to standard Drupal as possible
 
 Core/contrib configuration and existing extension points before custom PHP. A listing is a View

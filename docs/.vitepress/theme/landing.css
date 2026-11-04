@@ -1,0 +1,104 @@
+/* The landing page's theme layer: tokens and the few recipes several sections
+ * share, values from the Figma design (file sr31HfHNWbCeNsxvXbt4wv, section
+ * 667:258). Everything else is Tailwind utilities in the section components.
+ * The whole site is light only (`appearance: false` in config.mts). */
+
+:root {
+  --lp-flour: #f5ebda;
+  --lp-paper: #fffdf8;
+  --lp-ink: #2b2116;
+  --lp-ink-2: #5a4a38;
+  --lp-ink-3: #6e5d49;
+  --lp-butter: #f3ce3a;
+  --lp-crust: #b8692e;
+  --lp-sprout: #bfe07a;
+  --lp-rose: #f4afc0;
+  --lp-rule: rgba(43, 33, 22, 0.32);
+  --lp-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --lp-sans: 'Spline Sans', ui-sans-serif, system-ui, sans-serif;
+  --lp-mono: 'Spline Sans Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.lp {
+  background: var(--lp-flour);
+  color: var(--lp-ink);
+  font-family: var(--lp-sans);
+}
+.lp-wrap {
+  margin-inline: auto;
+  max-width: 1440px;
+  padding-inline: 20px;
+}
+@media (min-width: 768px) {
+  .lp-wrap {
+    padding-inline: 56px;
+  }
+}
+
+/* Bricolage Grotesque at the optical sizes the design sets. */
+.lp-display {
+  font-family: var(--lp-display);
+  font-variation-settings: 'opsz' 96;
+}
+.lp-title {
+  font-family: var(--lp-display);
+  font-variation-settings: 'opsz' 14;
+  font-weight: 700;
+}
+.lp-mono {
+  font-family: var(--lp-mono);
+}
+
+/* Buttons: butter (hero), ink (bands, hosted card), paper (add-ons card). */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid var(--lp-ink);
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 15px;
+  white-space: nowrap;
+  color: var(--lp-ink);
+  background: var(--lp-butter);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.lp-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--lp-ink);
+}
+.lp-btn--ink {
+  background: var(--lp-ink);
+  color: var(--lp-flour);
+}
+.lp-btn--paper {
+  background: var(--lp-paper);
+}
+
+:where(.lp a) {
+  color: inherit;
+}
+.lp :focus-visible {
+  outline: 3px solid var(--lp-ink);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* VitePress chrome while the landing is mounted. The class is set before first
+ * paint (config.mts) and removed on route leave (Landing.vue). */
+html.landing-page {
+  color-scheme: light;
+  background: var(--lp-flour);
+  --vp-c-bg: var(--lp-flour);
+  --vp-c-bg-alt: var(--lp-flour);
+}
+html.landing-page .VPHome {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+html.landing-page .VPContent.is-home {
+  padding-top: 0;
+}

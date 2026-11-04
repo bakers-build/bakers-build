@@ -10,7 +10,7 @@ related_targets: []
 ## Scope and mode
 - New visual world for the rebrand to bakers.build: logo, color, type, illustration, components.
 - Surfaces:
-  - website/landing (**Persuade**);
+  - the landing page in `docs/.vitepress/theme/landing/` (**Persuade**);
   - web app and `bakers ui` terminal (**Operate**);
   - docs (**Read**).
 - Approved composition: `.impeccable/mocks/directions/a-kombi.html` (approved by the user 2026-10-22). Supporting files: `logo-avatare.html`, `brand.js`, `bakers-line.js`.

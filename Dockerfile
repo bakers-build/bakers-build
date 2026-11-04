@@ -7,7 +7,7 @@
 # built here. Pin pnpm 11.5.2 (the version the wodby web image runs, and the one
 # the committed lockfile installs cleanly — pnpm 9 trips over the overrides entry).
 FROM node:22-bookworm-slim AS theme
-# The repository layout is kept so vite.config.js finds website/scripts/third-party.mjs.
+# The repository layout is kept so vite.config.js finds docs/scripts/third-party.mjs.
 WORKDIR /repo/web/themes/custom/bb_theme
 # CI=true: non-interactive (no purge-confirm TTY prompt). verify-deps-before-run=false:
 # pnpm 11 otherwise re-checks deps before `pnpm build` and tries to reinstall — the
@@ -23,7 +23,7 @@ COPY web/themes/custom/bb_theme/package.json \
      web/themes/custom/bb_theme/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY web/themes/custom/bb_theme ./
-COPY website/scripts/third-party.mjs /repo/website/scripts/third-party.mjs
+COPY docs/scripts/third-party.mjs /repo/docs/scripts/third-party.mjs
 RUN pnpm build
 
 # --- PHP / Drupal stage ---
@@ -82,23 +82,22 @@ COPY --chown=root docker/nginx/oauth-discovery.conf /etc/nginx/oauth-discovery.c
 COPY --chown=root docker/nginx/oauth-register-zone.conf /etc/nginx/conf.d/oauth-register-zone.conf
 
 # --- Docs site build stage ---
-# The VitePress site (docs/ through website/) plus the plugin marketplace: marketplace.json and
-# plugins/bakers-<version>.zip (website/scripts/marketplace.mjs). Same pnpm pin and settings as
+# The VitePress site (docs/) plus the plugin marketplace: marketplace.json and
+# plugins/bakers-<version>.zip (docs/scripts/marketplace.mjs). Same pnpm pin and settings as
 # the theme stage; pnpm 11 fails on esbuild's ignored build script without the last one.
 FROM node:22-bookworm-slim AS docs-build
-WORKDIR /repo/website
+WORKDIR /repo/docs
 ENV CI=true \
     npm_config_verify_deps_before_run=false \
     PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 \
     PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS=true
 RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
-COPY website/package.json website/pnpm-lock.yaml website/pnpm-workspace.yaml ./
+COPY docs/package.json docs/pnpm-lock.yaml docs/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY docs /repo/docs
-COPY website /repo/website
 COPY .claude-plugin /repo/.claude-plugin
 COPY .claude/skills/bakers-build /repo/.claude/skills/bakers-build
-# The sidebar's version row (website/.vitepress/config.mts): target branch and commit.
+# The sidebar's version row (docs/.vitepress/config.mts): target branch and commit.
 ARG CI_COMMIT_REF_NAME CI_COMMIT_SHORT_SHA
 RUN pnpm build
 
@@ -106,7 +105,7 @@ RUN pnpm build
 FROM nginx:1.27.5-alpine AS docs
 COPY docker/docs/default.conf /etc/nginx/conf.d/default.conf
 COPY --chmod=0755 docker/docs/marketplace-host.sh /docker-entrypoint.d/40-marketplace-host.sh
-COPY --from=docs-build /repo/website/.vitepress/dist /usr/share/nginx/html
+COPY --from=docs-build /repo/docs/.vitepress/dist /usr/share/nginx/html
 
 # --- PHPUnit stage (CI merge gate only, never deployed) ---
 # The shipped `php` image plus the dev dependencies, so the gate's `phpunit` job runs

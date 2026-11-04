@@ -143,7 +143,6 @@ before_script:
   - .gitlab-ci.yml
 .changes_docs: &changes_docs
   - docs/**/*
-  - website/**/*
   - .gitlab-ci.yml
 
 # Linters run only in merge request pipelines, not on branch pushes (e.g.
@@ -227,8 +226,8 @@ docs_pages:
       changes: *changes_docs
   before_script: []
   script:
-    - node website/scripts/check-pages.mjs
-    - node --test website/scripts/manual.test.mjs website/scripts/marketplace.test.mjs website/scripts/third-party.test.mjs
+    - node docs/scripts/check-pages.mjs
+    - node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
 
 # The MR title becomes the squash subject, from which `release:version` derives version and
 # release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a

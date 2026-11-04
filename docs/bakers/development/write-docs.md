@@ -1,6 +1,6 @@
 # Write the docs
 
-The public manual is Markdown under `docs/`, rendered by VitePress from `website/`. It has exactly three areas, defined in `website/.vitepress/manual.mjs`:
+The public manual is Markdown under `docs/`, rendered by VitePress from `docs/.vitepress/`. It has exactly three areas, defined in `docs/.vitepress/manual.mjs`:
 
 | Area | Reader task | Folder |
 |---|---|---|
@@ -30,12 +30,12 @@ Each fact has one canonical home. Repeat only essential safety instructions at t
 
 Frontmatter, fenced code, link destinations and HTML do not count. Split by useful topic when a page exceeds its limit. Every rendered manual page needs a sidebar entry. Keep all eight Configuration topic groups as siblings.
 
-A moved page keeps a one-hop alias in `website/routes.json`. Internal links use canonical destinations. Preserve meaningful old fragments with explicit anchors or fragment targets. Before moving content, save the source/route inventory and audit every disposition so missing redirects cannot disappear from the checker's input.
+A moved page keeps a one-hop alias in `docs/routes.json`. Internal links use canonical destinations. Preserve meaningful old fragments with explicit anchors or fragment targets. Before moving content, save the source/route inventory and audit every disposition so missing redirects cannot disappear from the checker's input.
 
 ## Checks and publication
 
 ```sh
-cd website
+cd docs
 pnpm build
 node --test scripts/manual.test.mjs scripts/marketplace.test.mjs
 ```
