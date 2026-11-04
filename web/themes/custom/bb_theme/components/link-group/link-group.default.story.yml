@@ -12,3 +12,6 @@ props:
       passed: 128
       failed: 0
       duration: 4m 12s
+    - url: https://example.slack.com/archives/C0123ABCD/p1700000000000100
+      title: Slack thread
+      kind: chat
