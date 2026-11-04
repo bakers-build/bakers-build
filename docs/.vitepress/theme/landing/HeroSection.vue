@@ -62,7 +62,7 @@ const rows = [stations.slice(0, 2), stations.slice(2)]
 </template>
 
 <style scoped>
-/* The counter the stations stand on (Figma "Theke"). */
+/* The counter the stations stand on. */
 .lp-counter {
   position: absolute;
   left: -16px;

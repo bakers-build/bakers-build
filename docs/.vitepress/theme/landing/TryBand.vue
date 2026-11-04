@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// The closing butter band: sign-up and the install command side by side as one group
-// (Figma "Abschluss · Testen", "CTA-Gruppe"), stacked on phones.
+// The closing butter band: sign-up and the install command side by side as one group,
+// stacked on phones.
 import InstallCommand from './InstallCommand.vue'
 import { SIGN_UP_URL, type Copy } from './copy'
 

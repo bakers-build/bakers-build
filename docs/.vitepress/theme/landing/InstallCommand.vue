@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The install command box with its copy control (Figma "Install-Befehl · kopierbar"),
+// The install command box with its copy control,
 // optionally under a mono label. `tall` is the CTA groups' 47 px box beside the button.
 import { ref } from 'vue'
 import { INSTALL, type Copy } from './copy'
