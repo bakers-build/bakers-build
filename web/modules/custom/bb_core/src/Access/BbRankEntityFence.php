@@ -39,6 +39,7 @@ final class BbRankEntityFence {
     'bb_group' => 'workspace_id',
     'bb_team' => 'workspace_id',
     'bb_term' => 'workspace_id',
+    'bb_invite' => 'workspace_id',
     'bb_ticket' => 'project_id',
     'bb_ticket_template' => 'project_id',
     'bb_ticket_trigger' => 'workspace_id',
