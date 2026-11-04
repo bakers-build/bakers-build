@@ -194,7 +194,6 @@ describe('offline scoped configuration plan and apply', () => {
     const machine = renderHostMachine({
       machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
       label: 'operator',
-      maxParallel: 2,
     });
     const conductor = renderCommittedConfig({
       project: 'demo',
@@ -207,6 +206,8 @@ describe('offline scoped configuration plan and apply', () => {
     expect(machine).toContain('// @bakers-schema-version 1');
     expect(machine).toContain('schema_version: 1');
     expect(machine).not.toMatch(/^\s*agents:/m);
+    // The run budget is a backend setting.
+    expect(machine).not.toContain('max_parallel');
     expect(conductor).toContain(
       "addons: [{ use: '@bakers-build/addon-herdr' }, { use: '@bakers-build/addon-claude', alias: 'opus' }]",
     );
@@ -716,7 +717,7 @@ export default {
     const plan = service.planConfig({
       ...w,
       scope: 'machine',
-      inputs: { label: 'operator', maxParallel: 3 },
+      inputs: { label: 'operator' },
     });
     expect(service.applyConfigPlan(plan).result).toBe('ok');
     // The existing UUID survives (a re-run never replaces it); biome
@@ -768,11 +769,10 @@ it('check reports actual missing keys and never plans a repair', () => {
     operation: 'check',
     scope: 'machine',
   });
-  expect(
-    plan.report.findings.some(
-      (f) => f.code === 'missing_required_key' && f.key === 'max_parallel',
-    ),
-  ).toBe(true);
+  // The run budget is a backend setting, never a required machine key.
+  expect(plan.report.findings.some((f) => f.key === 'max_parallel')).toBe(
+    false,
+  );
   expect(plan.writes).toEqual([]);
   expect(plan.report.changes).toEqual([]);
 });
@@ -1037,7 +1037,7 @@ it('does not treat project initialization as complete with broken prerequisites'
   service.applyConfigPlan(plan);
   expect(existsSync(w.engine)).toBe(false);
 });
-it('applies the default capacity to a machine that names none', () => {
+it('upgrade adds no max_parallel to a machine that names none', () => {
   const w = world();
   writeFileSync(
     w.machine,
@@ -1045,7 +1045,13 @@ it('applies the default capacity to a machine that names none', () => {
   );
   const plan = service.planConfig({ ...w, scope: 'machine' });
   expect(service.applyConfigPlan(plan).result).toBe('ok');
-  expect(readFileSync(w.machine, 'utf8')).toMatch(/max_parallel["']?\s*:\s*1/);
+  expect(readFileSync(w.machine, 'utf8')).not.toContain('max_parallel');
+});
+it('upgrade leaves a leftover max_parallel alone', () => {
+  const w = world();
+  const plan = service.planConfig({ ...w, scope: 'machine' });
+  expect(service.applyConfigPlan(plan).result).toBe('ok');
+  expect(readFileSync(w.machine, 'utf8')).toMatch(/max_parallel:\s*2/);
 });
 it('blocks computed machine credentials without printing secret-bearing expressions', () => {
   const w = world();
@@ -1296,9 +1302,10 @@ it.each([
   const config = (
     await import(`${pathToFileURL(selected).href}?repair=${Date.now()}`)
   ).default;
+  if (layer === 'machine') expect(config).not.toHaveProperty('max_parallel');
   expect(config).toMatchObject(
     layer === 'machine'
-      ? { label: 'operator', max_parallel: 1 }
+      ? { label: 'operator' }
       : layer === 'connection'
         ? { workspace_id: workspace }
         : {

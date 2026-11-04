@@ -50,15 +50,14 @@ ${inputs.workspaceId ? `  workspace_id: ${JSON.stringify(inputs.workspaceId)},\n
 export function renderHostMachine(inputs: {
   machineId: string;
   label?: string;
-  maxParallel: number;
 }): string {
   return `// @bakers-schema-version 1
-// Local host identity and capacity. Server credentials belong to bakers.config.js.
+// Local host identity. The run budget is set on the machine in the backend;
+// server credentials belong to bakers.config.js.
 export default {
  schema_version: 1,
  machine_id: ${JSON.stringify(inputs.machineId)},
-${inputs.label ? ` label: ${JSON.stringify(inputs.label)},\n` : ''} max_parallel: ${inputs.maxParallel},
-};
+${inputs.label ? ` label: ${JSON.stringify(inputs.label)},\n` : ''}};
 `;
 }
 
@@ -89,7 +88,7 @@ export function renderCommittedConfig(inputs: {
 
 export default {
   bakers: { project: ${JSON.stringify(inputs.project)}${inputs.bakersWorkspace ? `, workspace: ${JSON.stringify(inputs.bakersWorkspace)}` : ''} },
-  // Host capacity lives on machine.config.js as max_parallel — do not set it here.
+  // The run budget (max_parallel) is set on the machine in the backend.
   // Set to false to keep this conductor's transcripts out of the log store
   // (e.g. large, uninteresting, or subject to a local policy). Default true;
   // metrics are unaffected either way.

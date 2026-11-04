@@ -142,7 +142,6 @@ describe('FakeBbRemote', () => {
         states: ['coding'],
         workspace: '/w',
         label: 'l',
-        max_parallel: 3,
       },
       1,
     );
@@ -164,9 +163,10 @@ describe('FakeBbRemote', () => {
         states: ['todo'],
         workspace: '/w',
         label: 'l',
-        max_parallel: 1,
       }),
     ).toBe('fake-conductor-uuid');
+    // Mirrors the server: a new machine starts with the default budget.
+    expect((await remote.machineCapacity('m'))?.maxParallel).toBe(5);
     expect(await remote.getTicket('t-1')).toEqual({
       uuid: 't-1',
       identifier: 'GL-1',

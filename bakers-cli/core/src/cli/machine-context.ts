@@ -28,11 +28,6 @@ export interface MachineContext {
   machine_id: string;
   /** Display name for people; never a key. */
   label: string;
-  /**
-   * Host concurrent-run budget (BB-353). Optional; consumers default to 1.
-   * Source of truth for capacity — not the engine conductor.config.js.
-   */
-  max_parallel?: number;
   /** Optional selection policy for the agents the machine `addons[]` contribute. */
   agents?: MachineAgentPolicy;
   /**
@@ -47,6 +42,17 @@ export interface MachineContext {
    * Omitted or false keeps the original local URL.
    */
   tunnel?: boolean;
+}
+
+/**
+ * Warn once that a leftover `max_parallel` in a config file is ignored: the
+ * run budget is set on the machine in the backend.
+ */
+export function warnIgnoredMaxParallel(path: string, raw: object): void {
+  if ('max_parallel' in raw)
+    console.warn(
+      `warning: max_parallel in ${path} is ignored; the run budget is set on the machine in the backend.`,
+    );
 }
 
 /** Canonical machine-context path: `<BB_HOME or ~/.bakers>/machine.config.js`. */

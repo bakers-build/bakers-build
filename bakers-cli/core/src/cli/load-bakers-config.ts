@@ -24,7 +24,10 @@ import {
   projectConductorConfigPath,
   readUiEntryLayers,
 } from './layered-ui-entries.js';
-import { assertSchemaVersion1 } from './machine-context.js';
+import {
+  assertSchemaVersion1,
+  warnIgnoredMaxParallel,
+} from './machine-context.js';
 import { resolveModuleEslintStyle } from './resolve-module.js';
 
 /**
@@ -435,6 +438,7 @@ export async function loadBbConnectionBootstrap(
     );
   }
   assertSchemaVersion1(configPath, raw);
+  warnIgnoredMaxParallel(configPath, raw);
 
   const site = isRecord(raw.site) ? raw.site : {};
   const baseUrl = typeof site.base_url === 'string' ? site.base_url : '';

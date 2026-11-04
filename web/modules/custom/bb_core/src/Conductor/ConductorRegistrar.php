@@ -57,8 +57,8 @@ final class ConductorRegistrar {
    *   The authenticated conductor owner.
    * @param array<string, mixed> $attrs
    *   Registration attributes: conductor_id, host_key (the machine_id),
-   *   machine_label, project, states, label, workspace_root, max_parallel,
-   *   current_load, lease_seconds, last_pid, conductor_name.
+   *   machine_label, project, states, label, workspace_root, current_load,
+   *   lease_seconds, last_pid, conductor_name.
    *
    * @return \Drupal\bb_core\Entity\BbConductorInterface
    *   The upserted conductor.
@@ -282,19 +282,16 @@ final class ConductorRegistrar {
   /**
    * Loads or creates the owner's machine for a host_key.
    *
-   * The budget (`max_parallel`) is set only when the row is first created —
-   * from the registering conductor's config, or 1 as a last resort — and is
-   * never rewritten by a later heartbeat, so two conductors on one host with
-   * different `max_parallel` cannot flip the budget; it changes only through
-   * the machine admin form.
+   * The budget (`max_parallel`) is a backend setting: a new machine takes the
+   * field default and only the machine form changes it; heartbeats never do.
    *
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The machine owner.
    * @param string $hostKey
    *   The machine_id from machine.config.js.
    * @param array<string, mixed> $attrs
-   *   Registration attributes: `max_parallel` at creation only;
-   *   `machine_label` at creation and while the name is still the host key.
+   *   Registration attributes: `machine_label` at creation and while the
+   *   name is still the host key.
    */
   private function loadOrCreateMachine(AccountInterface $owner, string $hostKey, array $attrs): BbMachineInterface {
     // The name field holds 255 characters.
@@ -316,14 +313,10 @@ final class ConductorRegistrar {
         return $machine;
       }
     }
-    $max_parallel = isset($attrs['max_parallel']) && is_numeric($attrs['max_parallel'])
-      ? (int) $attrs['max_parallel']
-      : 1;
     $machine = $storage->create([
       'name' => $label !== '' ? $label : $hostKey,
       'host_key' => $hostKey,
       'owner_user_id' => $owner->id(),
-      'max_parallel' => $max_parallel,
       'current_load' => 0,
     ]);
     if (!$machine instanceof BbMachineInterface) {
