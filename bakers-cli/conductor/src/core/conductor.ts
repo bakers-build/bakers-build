@@ -34,7 +34,6 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
-import { hostKeyOf } from './host-key.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 
@@ -214,6 +213,32 @@ function renderPrompt(
     .replaceAll('{ticketUuid}', values.ticketUuid);
 }
 
+/**
+ * A conductor's registration payload, built from its config: what the engine
+ * heartbeats with, and what `oven start` registers before it spawns one.
+ * `conductor_name` is the variant (the config stem, derived through core's
+ * own mapping), which the control plane matches a takeover on.
+ */
+export function registrationOf(
+  config: ConductorFileConfig,
+  checkoutRoot: string,
+): ConductorRegistration {
+  const stem = config.config_path
+    ? stemForConfigFile(basename(config.config_path))
+    : undefined;
+  return {
+    id: config.conductor_id ?? '',
+    ...(config.host_key ? { host_key: config.host_key } : {}),
+    project: config.project,
+    states: config.states,
+    workspace: checkoutRoot,
+    label: config.label,
+    ...(config.machine_label ? { machine_label: config.machine_label } : {}),
+    max_parallel: config.max_parallel,
+    conductor_name: stem ?? config.variant,
+  };
+}
+
 export class Conductor {
   private uuid: string | null = null;
   /**
@@ -262,26 +287,20 @@ export class Conductor {
   }
 
   /**
-   * `conductor_id` is required and the loader throws without it (BB-353), so
-   * there is no directory-derived fallback here (BB-450 D5) — that fallback
-   * was the mechanism by which one checkout came to be registered under two
-   * different ids.
+   * `conductor_id` is derived by the loader from the machine UUID, project and
+   * variant; there is no directory-derived fallback (BB-450 D5).
    */
   get id() {
-    const id = this.config.conductor_id ?? this.config.machine_id;
+    const id = this.config.conductor_id;
     if (id === undefined || id.trim() === '') {
-      throw new Error('conductor config has no conductor_id');
+      throw new Error('machine.config.js has no machine_id; run bakers init');
     }
     return id;
   }
 
-  /**
-   * Host stem for bb_machine.host_key. Prefer config.host_key from
-   * MachineContext.machine_id; fall back to a best-effort parse of the composed
-   * conductor_id only when the loader could not supply the stem.
-   */
+  /** This machine's id (machine_id), bb_machine.host_key. */
   private get hostKey(): string {
-    return hostKeyOf(this.config);
+    return this.config.host_key?.trim() ?? '';
   }
 
   /**
@@ -309,33 +328,14 @@ export class Conductor {
 
   /** This conductor's registration payload, built from config. */
   private registration(): ConductorRegistration {
-    const base: ConductorRegistration = {
+    // `this.id` throws, naming bakers init, before anything is sent.
+    const base = {
+      ...registrationOf(this.config, this.checkoutRoot),
       id: this.id,
-      host_key: this.hostKey,
-      project: this.config.project,
-      states: this.config.states,
-      workspace: this.checkoutRoot,
-      label: this.config.label,
-      max_parallel: this.config.max_parallel,
     };
-    if (!this.ownsServeProcess) return base;
-    return {
-      ...base,
-      last_pid: process.pid,
-      ...(this.conductorName ? { conductor_name: this.conductorName } : {}),
-    };
-  }
-
-  /**
-   * The stem of the config file this conductor was loaded from.
-   *
-   * Derived through core's own mapping rather than by slicing the filename
-   * here, so the CLI and the conductor cannot disagree about which files count
-   * as a conductor config.
-   */
-  private get conductorName(): string | undefined {
-    const path = this.config.config_path;
-    return path ? stemForConfigFile(basename(path)) : undefined;
+    // Only the serve process reports its pid; poll and reap must not
+    // overwrite the running conductor's.
+    return this.ownsServeProcess ? { ...base, last_pid: process.pid } : base;
   }
 
   async start() {

@@ -21,7 +21,7 @@ export type ConfigFindingCode =
   | 'unknown_value'
   | 'invalid_value'
   | 'version_marker_disagreement'
-  | 'future_schema_version'
+  | 'unsupported_schema_version'
   | 'misplaced_key'
   | 'conflicting_values'
   | 'out_of_scope_write_required'

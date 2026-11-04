@@ -1,3 +1,4 @@
+// @bakers-schema-version 1
 // Canonical conductor config for the bakers repo itself (dogfood). Targets the
 // deployed develop control-plane (develop.dev.bakers.build). Auth is OAuth2
 // client_credentials against simple_oauth (consumer `bakers-agent`), exposed as
@@ -31,45 +32,21 @@
 // `@bakers-build/addon-{claude,codex,grok,kimi,opencode,pi}`). The only `export:` left is for
 // a package shipping MORE than one slot: `@bakers-build/addon-herdr` default-exports
 // the EXECUTOR, so the workspace slot names `export: 'herdrWorkspace'`
-// (BB-139). `bakers upgrade` rewrites a pre-BB-224 config that still names the
-// deleted barrel or a `@bakers-build/plugin-*` package.
-
-async function loadMachine() {
-  try {
-    return (await import(`${process.env.BB_HOME ?? `${process.env.HOME}/.bakers`}/machine.config.js`)).default ?? {};
-  } catch {}
-  return {};
-}
+// (BB-139).
 
 async function loadLocal() {
   try { return (await import('./conductor.config.local.js')).default ?? {}; } catch {}
   return {};
 }
 
-const machine = await loadMachine();
+// Optional, gitignored; carries local values such as the FRP transport (`frp`),
+// never an identity. The conductor is keyed by machine id + project + variant.
 const local = await loadLocal();
-// Same composition as the generated project config (config-templates.ts), so
-// `bakers init` alone yields a conductor_id; the local file still overrides it.
-const composedConductorId =
-  machine.user_id && machine.machine_id
-    ? `${machine.user_id}-${machine.machine_id}-bakers`
-    : undefined;
 
 export default {
   bakers: { project: 'bakers' },
-  // BB-353 renamed the engine key `machine_id` → `conductor_id`, and gave host
-  // capacity a SINGLE owner: `max_parallel` in the machine context
-  // (~/.bakers/machine.config.js). This file was the dogfood config that the
-  // migration missed — `bakers-cli/templates/conductor.config.js` had already been
-  // converted — so it kept both stale keys and every `bakers oven …` command
-  // in this repo died at load with
-  // `misplaced max_parallel belongs in …/machine.config.js`
-  // (`bakers-cli/conductor/src/config.ts:316`, an unconditional throw). Do NOT
-  // reintroduce `max_parallel` here: `bakers config upgrade` cannot repair it
-  // either, because the upgrader only relocates a KNOWN LITERAL and every value
-  // in this file is a `local.*` expression — it reports
-  // `unknown_value [max_parallel]` and refuses the whole plan.
-  conductor_id: local.conductor_id ?? local.machine_id ?? composedConductorId,
+  // Host capacity has a SINGLE owner: `max_parallel` in ~/.bakers/machine.config.js
+  // (BB-353). Do NOT add `max_parallel` here; loading rejects it.
   // Lifecycle hooks are executor-owned + best-effort (BB-84): the executor
   // invokes each (after_create/before_run/after_done), logs loudly + continues
   // on failure, and never wedges a run — so they live at the config TOP LEVEL,

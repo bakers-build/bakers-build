@@ -136,7 +136,8 @@ const stubAgent: BbAgent = {
 function makeConfig(baseUrl: string): ConductorFileConfig {
   return {
     label: 'e2e-worktree-lifecycle',
-    machine_id: DISPATCH_MACHINE_ID,
+    conductor_id: DISPATCH_MACHINE_ID,
+    host_key: 'bakers-e2e-dispatch-host',
     project: E2E_PROJECT,
     states: ['working'],
     prompt: '',

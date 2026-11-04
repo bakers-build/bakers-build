@@ -86,7 +86,7 @@ export interface RunBbUiOptions {
   /**
    * The `.bakers` dir of the project the ui was started in, when there is one.
    *
-   * Replaces the `ownConductorMachineId` the local registry used to supply
+   * Replaces the `ownConductorId` the local registry used to supply
    * (BB-232): the renderer matches this against each conductor's
    * `workspace_root` to find which record is this machine's own — it holds the
    * JSON:API client, and this entry does not.
@@ -450,10 +450,15 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
   }
 
   const mcPath = machineContextPath();
-  // The machine context still supplies identity (`user_id`) + the agent binary;
-  // it is NOT the connection any more — core resolves that.
-  const machine: Partial<MachineContext> =
-    deps.machine ?? (await readMachineContext(mcPath).catch(() => ({})));
+  // The machine context supplies the agent binary; it is NOT the connection
+  // any more — core resolves that. A stale file stops here, naming bakers init.
+  let machine: Partial<MachineContext>;
+  try {
+    machine = deps.machine ?? (await readMachineContext(mcPath));
+  } catch (err) {
+    fail(err instanceof Error ? err.message : String(err));
+    return;
+  }
 
   const rooting = resolveProjectRooting(cwd, homedir());
   const conductorPath = rooting.bakersDir
@@ -589,6 +594,12 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
     );
   }
 
+  // The current user is whoever this connection signs in as; best-effort, a
+  // cockpit that cannot read it runs without the "mine" filters.
+  const currentUser = await (writeClient as { me?: () => Promise<string> })
+    ?.me?.()
+    .catch(() => undefined);
+
   const project = deps.project;
 
   // AC-7, always on: the resolution lands in the log even when the TUI takes
@@ -679,7 +690,7 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
       cwd: rooting.cwd,
       ...(project !== undefined ? { project } : {}),
       agents,
-      ...(machine.user_id ? { currentUser: machine.user_id } : {}),
+      ...(currentUser ? { currentUser } : {}),
       ...(rooting.bakersDir ? { bakersDir: rooting.bakersDir } : {}),
       ...(resolved.workspace_id ? { workspaceId: resolved.workspace_id } : {}),
       configPath: resolved.config_path,

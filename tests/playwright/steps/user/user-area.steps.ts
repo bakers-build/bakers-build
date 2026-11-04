@@ -79,6 +79,14 @@ When('I visit my profile settings', async ({ page }) => {
   await page.goto(`/user/${uid}/edit`);
 });
 
+When('I visit the profile page of {string}', async ({ page }, name: string) => {
+  await page.goto(`/user/${uidOf(name)}/profile`);
+});
+
+Then('I am on the profile route of {string}', async ({ page }, name: string) => {
+  await expect(page).toHaveURL(new RegExp(`/user/${uidOf(name)}/profile`));
+});
+
 When('I visit the user area of {string}', async ({ page }, name: string) => {
   await page.goto(`/user/${uidOf(name)}`);
 });
@@ -141,7 +149,7 @@ Then('the user overview shows the name {string} and no developer title', async (
   const body = page.locator(CONTENT_ISLAND);
   await expect(body.locator('[data-person-mark]')).toHaveCount(1);
   await expect(body).toContainText(displayName);
-  await expect(body).not.toContainText('Developer title');
+  await expect(body).not.toContainText('Position');
 });
 
 Then('the user overview does not disclose the mail of {string}', async ({ page }, name: string) => {
@@ -157,13 +165,18 @@ Then('the view and edit routes of {string} are denied to me', async ({ page }, n
   }
 });
 
-When(
-  'I fill in the profile with full name {string} and developer title {string}',
-  async ({ page }, fullName: string, title: string) => {
-    await page.locator('[name="field_full_name[0][value]"]').fill(fullName);
-    await page.locator('[name="field_developer_title[0][value]"]').fill(title);
-  },
-);
+When('I fill in the full name {string}', async ({ page }, fullName: string) => {
+  await page.locator('[name="field_full_name[0][value]"]').fill(fullName);
+});
+
+When('I fill in the position {string}', async ({ page }, title: string) => {
+  await page.locator('[name="field_developer_title[0][value]"]').fill(title);
+});
+
+Then('the edit form has no position or background field', async ({ page }) => {
+  await expect(page.locator('form.user-form')).toBeVisible();
+  await expect(page.locator('[name^="field_developer_title"], [name^="field_bb_background"]')).toHaveCount(0);
+});
 
 When('I save the profile form', async ({ page }) => {
   const navigation = page.waitForNavigation({ waitUntil: 'load' });
@@ -218,7 +231,8 @@ Then('the profile form has no retired account fields', async ({ page }) => {
 });
 
 Then('the AI-use notice is shown before the context questions', async ({ page }) => {
-  const notice = page.getByText(AI_USE_NOTICE);
+  // The notice is the page header's description line, above the form.
+  const notice = page.locator(PAGE_HEADER_ISLAND).getByText(AI_USE_NOTICE);
   const firstQuestion = page.getByLabel('What should bakers.build know about your background?', { exact: true });
   await expect(notice).toBeVisible();
   await expect(firstQuestion).toBeVisible();

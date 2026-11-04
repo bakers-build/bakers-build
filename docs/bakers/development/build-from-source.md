@@ -55,7 +55,7 @@ pnpm install && pnpm -r run build
 3. **Build.** It calls `tsc` for each package in dependency order: `core`, then `conductor`, then every folder under `addons/`, then `ui`, then `host`. The conductor comes before the addons because every conductor addon imports its contract. The addon `workspace-git` is forced first because `herdr` depends on it.
 4. **Resolution farm.** It links every package into the repository's `node_modules/@bakers-build/` under its real package name, and the `@dropsh/*` packages beside it, so a `.bakers/conductor.config.js` can resolve its bare imports.
 5. **PATH shim.** It copies `bakers-cli/templates/bakers.pathshim.sh` to `~/.local/bin/bakers`. This writes outside the repository. A different `bakers` already there is left untouched and the script prints the command that replaces it.
-6. **Local scaffold.** It writes `.bakers/conductor.config.local.js` from a template, asking for a machine id and an OAuth client id in an interactive shell. The file is gitignored. See the warning below.
+6. **Local scaffold.** It writes `.bakers/conductor.config.local.js` from a template, asking for an OAuth client id in an interactive shell. It carries no identity; `bakers init` generates the machine UUID. The file is gitignored. See the warning below.
 7. **herdr plugin.** When `herdr` is on the PATH it links the repository's `spiceedit` plugin. This is best effort and never fails the bootstrap.
 8. **Summary.** It prints next steps. They are out of date; use `bakers init` from [Install and sign in](/get-started/machine) instead.
 

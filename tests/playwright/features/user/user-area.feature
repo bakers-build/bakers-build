@@ -11,13 +11,12 @@ Feature: The user area is split into a view route and an edit route
   Background:
     Given I am logged in as the account "north-lead"
 
-  Scenario: Full name and developer title save and survive a reload
+  Scenario: Full name saves and survives a reload
     When I visit my profile settings
-    And I fill in the profile with full name "Ada Lovelace" and developer title "Backend engineer"
+    And I fill in the full name "Ada Lovelace"
     And I save the profile form
     And I reload the page
     Then the full name field holds "Ada Lovelace"
-    And the developer title field holds "Backend engineer"
 
   # Platform usernames, the activity and depth questions and the Social Auth
   # widget were removed; their controls must be absent, not merely unlabelled.
@@ -37,23 +36,6 @@ Feature: The user area is split into a view route and an edit route
   Scenario: The edit form shows none of the removed account items
     When I visit my profile settings
     Then the profile form has no retired account fields
-
-  # The context questions bakers.build hands to its AI assistants, and the notice that
-  # says so. Asserted here since the onboarding profile step that used to carry
-  # them was retired: this form is where they are edited now.
-  Scenario: The AI-use notice precedes the context questions
-    When I visit my profile settings
-    Then the AI-use notice is shown before the context questions
-
-  Scenario: The context answers save and survive a reload
-    Given the account "north-lead" has no context answers
-    When I visit my profile settings
-    And I answer the context questions with:
-      | What should bakers.build know about your background? | Drupal developer |
-    And I save the profile form
-    And I reload the page
-    Then the context questions hold:
-      | What should bakers.build know about your background? | Drupal developer |
 
   Scenario: A linked account sees its mail locked with a provenance note
     Given the account "north-lead" is linked to an oauth provider

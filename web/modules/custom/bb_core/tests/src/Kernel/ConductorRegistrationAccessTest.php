@@ -297,7 +297,7 @@ final class ConductorRegistrationAccessTest extends KernelTestBase {
   private function heartbeat(UserInterface $owner, string $project, array $extra = []): BbConductorInterface {
     return $this->container->get('bb_core.conductor_registrar')->heartbeat($owner, $extra + [
       'conductor_id' => 'cond-' . $owner->getAccountName(),
-      'host_key' => 'host-' . $owner->getAccountName(),
+      'host_key' => vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(md5($owner->getAccountName()), 4)),
       'project' => $project,
     ]);
   }

@@ -515,7 +515,6 @@ console.log(m[1]);
       join(proj, '.bakers', 'conductor.config.js'),
       `export default {
     bakers: { project: 'demo' },
-    conductor_id: 'verify-package',
     states: ['coding'],
     remote: { plugin: '@bakers-build/addon-remote-drupal' },
     executor: { plugin: '@bakers-build/addon-herdr' },
@@ -562,7 +561,6 @@ console.log(m[1]);
       join(proj, '.bakers-addons', 'conductor.config.js'),
       `export default {
     bakers: { project: 'demo-addons' },
-    conductor_id: 'verify-addons',
     states: ['coding'],
     addons: [
       '@bakers-build/addon-remote-drupal',

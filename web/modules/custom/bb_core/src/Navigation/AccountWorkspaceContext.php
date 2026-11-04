@@ -20,6 +20,11 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 final class AccountWorkspaceContext {
 
+  /**
+   * The account's own tabs: View, Edit and Profile.
+   */
+  public const ROUTES = ['entity.user.canonical', 'entity.user.edit_form', 'bb_core.user.profile'];
+
   public function __construct(
     private readonly RouteMatchInterface $routeMatch,
     private readonly RequestStack $requestStack,
@@ -33,7 +38,7 @@ final class AccountWorkspaceContext {
    */
   public function isOwnProfile(): bool {
     $account = $this->routeMatch->getParameter('user');
-    return in_array($this->routeMatch->getRouteName(), ['entity.user.canonical', 'entity.user.edit_form'], TRUE)
+    return in_array($this->routeMatch->getRouteName(), self::ROUTES, TRUE)
       && $account instanceof UserInterface
       && $this->currentUser->isAuthenticated()
       && (string) $account->id() === (string) $this->currentUser->id();

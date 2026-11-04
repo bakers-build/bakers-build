@@ -327,6 +327,37 @@ When('I disable that service account', async ({ page }) => {
   await expect(accountRow(page)).toContainText('Disabled');
 });
 
+const POSITION_LABEL = 'Position';
+const BACKGROUND_LABEL = 'What should bakers.build know about your background?';
+
+/** Opens the account's Profile page through its row menu. */
+async function openProfilePage(page: Page): Promise<void> {
+  await page.goto(servicedAccountsPath());
+  await pickRowAction(page, 'Profile');
+  await expect(page).toHaveURL(/\/user\/\d+\/profile/);
+}
+
+When(
+  "I save the service account's profile with position {string} and background {string}",
+  async ({ page }, position: string, background: string) => {
+    await openProfilePage(page);
+    await page.getByLabel(POSITION_LABEL, { exact: true }).fill(position);
+    await page.getByLabel(BACKGROUND_LABEL).fill(background);
+    await page.getByRole('button', { name: 'Save' }).click();
+    // Saving returns to the Service Accounts list.
+    await expect(page).toHaveURL(/\/settings\/service-accounts/);
+  },
+);
+
+Then(
+  "the service account's profile shows position {string} and background {string}",
+  async ({ page }, position: string, background: string) => {
+    await openProfilePage(page);
+    await expect(page.getByLabel(POSITION_LABEL, { exact: true })).toHaveValue(position);
+    await expect(page.getByLabel(BACKGROUND_LABEL)).toHaveValue(background);
+  },
+);
+
 Then('the service account is listed as disabled', async ({ page }) => {
   await page.goto(servicedAccountsPath());
   await expect(accountRow(page)).toContainText('Disabled');

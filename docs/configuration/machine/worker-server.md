@@ -53,7 +53,7 @@ This example assumes a project already chose herdr and DDEV. Other projects keep
 5. Register and sign in:
 
    ```sh
-   bakers init --scope all --machine-id <name> --user-id <operator> --base-url <server-url> --client-id bakers-cli --yes
+   bakers init --scope all --label <name> --base-url <server-url> --client-id bakers-cli --yes
    bakers auth login
    ```
 

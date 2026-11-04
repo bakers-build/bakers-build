@@ -19,7 +19,6 @@ final class BbMachineListBuilder extends EntityListBuilder {
   public function buildHeader(): array {
     return [
       'name' => $this->t('Name'),
-      'host_key' => $this->t('Host key'),
       'load' => $this->t('Load'),
     ] + parent::buildHeader();
   }
@@ -31,7 +30,6 @@ final class BbMachineListBuilder extends EntityListBuilder {
     assert($entity instanceof BbMachineInterface);
     return [
       'name' => $entity->label(),
-      'host_key' => $entity->getHostKey(),
       'load' => $entity->getCurrentLoad() . ' / ' . $entity->getMaxParallel(),
     ] + parent::buildRow($entity);
   }

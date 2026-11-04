@@ -27,11 +27,11 @@ for the agents I choose. Keep working settings and verify the result.
 2. Name your harnesses in `~/.bakers/machine.config.js`. Keep the identity and capacity fields that `bakers init` wrote and edit `addons` and the `agents` object. A complete file that uses Codex for coding and Claude Opus for review:
 
    ```js
-   // @bakers-schema-version 3
+   // @bakers-schema-version 1
    export default {
-     schema_version: 3,
-     machine_id: 'alex-laptop',
-     user_id: 'alex',
+     schema_version: 1,
+     machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+     label: 'alex-laptop',
      max_parallel: 1,
      addons: ['@bakers-build/addon-codex', '@bakers-build/addon-claude'],
      agents: {
@@ -75,7 +75,7 @@ The conductor and `bakers agents` fail with one of these messages; `bakers confi
 | Message | Cause and fix |
 |---|---|
 | `machine.config.js addons[] must resolve a non-empty catalog of aliased agents` | No harness addon. Add one to `addons` of `machine.config.js`. |
-| `machine agents.addons is retired: …` | An older machine file. Run `bakers config upgrade --scope machine`, which moves the entries into `addons`. |
+| `machine agents.addons is retired: …` | An older machine file. Run `bakers init` to write a current one. |
 | `effective agent catalog is empty after agents filters` | `enabled` or `disabled` removed every alias. |
 | `agents.default_agent names unavailable alias '<alias>'` | `default_agent` is not among the enabled aliases. |
 | `agents.enabled names unknown alias '<alias>'` | Typo, or the addon that publishes it is missing. |

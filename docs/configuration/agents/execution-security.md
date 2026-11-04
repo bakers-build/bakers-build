@@ -30,7 +30,7 @@ It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <
 
 | Platform | Claude | Codex | Grok |
 |---|---|---|---|
-| Linux | `bwrap` (package `bubblewrap`) and `socat`, and unprivileged user namespaces | its own `codex sandbox`, which needs unprivileged user namespaces | Landlock active in the kernel (`landlock` in `/sys/kernel/security/lsm`) |
+| Linux | `bwrap` (package `bubblewrap`) and `socat`, and unprivileged user namespaces | its own `codex sandbox`, which needs unprivileged user namespaces | Landlock active in the kernel (`landlock` in `/sys/kernel/security/lsm`), plus `bwrap` for `allow_write` |
 | macOS | nothing to install: the built-in Seatbelt sandbox | nothing to install: the built-in Seatbelt sandbox | nothing to install: the built-in Seatbelt sandbox |
 
 Install the Linux packages with your package manager:
@@ -83,11 +83,11 @@ What it does not block:
 
 ## Grok in `sandbox` mode
 
-Grok starts with its built-in `workspace` profile in `acceptEdits` mode: edits and shell commands run without a prompt, MCP tools get a deny rule, and anything else asks you in the run's terminal.
+Grok starts with its built-in `workspace` profile in `acceptEdits` mode, or a managed profile extending it when `sandbox.allow_write` is nonempty. MCP tools get a deny rule. Terminal commands can still ask for approval despite the `Bash(*)` allow rule; an unattended run may wait or cancel.
 
 What the default blocks:
 
-- Shell commands that write outside the worktree, `~/.grok/` and the temp directory.
+- Shell commands that write outside the worktree, `~/.grok/`, the temp directories and explicit `allow_write` directories.
 - Every MCP tool, through the `MCPTool(*)` deny rule.
 - Claims while the sandbox cannot start; see [Sandbox prerequisites](#sandbox-prerequisites).
 
@@ -95,8 +95,9 @@ What it does not block:
 
 - **Reads.** The `workspace` profile reads everywhere, so a command can still read `~/.ssh` and `~/.bakers`.
 - Network access to any host.
-- Likely blocked as well, so a default Grok run may fail at them: `git commit` in a worktree (its git directory lies outside the worktree) and `ddev`. Grok cannot take `allow_write` or `trusted_commands` from the command line; use `system` with your own `sandbox.toml` profile (`args: ['--sandbox', '<profile>']`), or `yolo`.
-- Not confirmed: the effect of the `Bash(*)` and `MCPTool(*)` rules, and whether Grok refuses to start when Landlock is missing.
+- `allow_write` includes Git hooks/configuration in granted directories; it provides no Docker isolation.
+- Managed profiles require Grok 1.0.70+ and native configuration protection. See [profile lifecycle](/addons/grok#security).
+- Unverified: MCP enforcement, macOS managed profiles and unattended DDEV execution. Failed custom-profile startup never permits bypassing the sandbox.
 
 ## Ticket env vars
 

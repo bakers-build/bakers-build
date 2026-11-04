@@ -109,7 +109,7 @@ final class TicketRunDeriver {
   }
 
   /**
-   * Machine id of the conductor holding the active lease, or empty string.
+   * Label of the conductor holding the active lease, or empty string.
    */
   public function claimMachine(BbTicketInterface $ticket): string {
     $run = $this->latestActiveRun($ticket);
@@ -117,7 +117,7 @@ final class TicketRunDeriver {
       return '';
     }
     $conductor = $run->get('conductor_id')->entity;
-    return $conductor instanceof BbConductorInterface ? $conductor->getConductorId() : '';
+    return $conductor instanceof BbConductorInterface ? (string) $conductor->label() : '';
   }
 
   /**

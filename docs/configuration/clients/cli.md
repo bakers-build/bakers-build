@@ -49,7 +49,7 @@ bakers auth login
 | `--client-id <id>` | OAuth client identifier |
 | `--auth-type <type>` | `device` (default, no secret) or `client_credentials` (internal and CI use) |
 | `--secret-env <name>` | Environment variable holding the OAuth secret |
-| `--machine-id <id>`, `--user-id <id>`, `--max-parallel <number>` | Host identity, operator and capacity |
+| `--label <name>`, `--max-parallel <number>` | Machine label (default: short hostname) and capacity; `bakers init` generates the machine UUID |
 | `--workspace-id <uuid>` | Explicit workspace UUID |
 | `--connection <id>` | Write or use the named connection `~/.bakers/connections/<id>.js` |
 | `--config <file>`, `--machine-path <file>` | Override the connection or machine file location |
@@ -76,7 +76,7 @@ The three subcommands share one set of scopes, `machine`, `connection`, `project
 | `check` | Validate offline; with `--online`, also authenticate and verify each workspace. Changes nothing. |
 | `upgrade` | Migrate the selected scope without changing existing values. `--dry-run` previews. See [Configuration migration](/configuration/project/migration). |
 
-`init` and `upgrade` also take `--dry-run`, `--machine-id`, `--user-id`, `--max-parallel`, `--base-url`, `--client-id`, `--workspace-id`, `--secret-env` and `--auth-type` as above, plus:
+`init` and `upgrade` also take `--dry-run`, `--label`, `--max-parallel`, `--base-url`, `--client-id`, `--workspace-id`, `--secret-env` and `--auth-type` as above, plus:
 
 | Option | Meaning |
 |---|---|

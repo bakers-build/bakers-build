@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
@@ -55,5 +56,18 @@ describe('templates — every addon spec resolves (BB-215 addon form)', () => {
     }
     // essentials is always present (auth entries are local-config gated).
     expect(specsOf(config.addons)).toContain('@bakers-build/addon-essentials');
+  });
+
+  it('templates carry no conductor or machine identity', async () => {
+    for (const name of ['conductor.config.js', 'conductor.config.local.js']) {
+      const url = new URL(`../../templates/${name}`, import.meta.url);
+      const config = (await import(url.href)).default as Record<
+        string,
+        unknown
+      >;
+      for (const key of ['conductor_id', 'machine_id', 'label'])
+        expect(config, `${name} ${key}`).not.toHaveProperty(key);
+      expect(readFileSync(url, 'utf8')).not.toContain('loadMachine');
+    }
   });
 });

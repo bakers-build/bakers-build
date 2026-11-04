@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_api_key\Kernel;
 
 use Drupal\Component\Serialization\Yaml;
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_api_key\ServiceAccountManager;
@@ -199,6 +201,13 @@ final class ServiceAccountListingTest extends KernelTestBase {
     self::assertStringContainsString('1 key · until ', $rendered, 'each account must summarize its keys');
     self::assertStringContainsString('Manage API keys', $rendered, 'an active account must link to its API keys page');
     self::assertStringContainsString('Disable', $rendered, 'an active account must offer Disable');
+    $profile = Url::fromRoute('bb_core.user.profile', ['user' => $own['user']->id()], [
+      'query' => ['destination' => Url::fromRoute('view.bb_service_accounts.settings', ['bb_workspace' => $this->workspace->getSlug()])->toString()],
+    ])->toString();
+    $profileAt = strpos($rendered, Html::escape($profile));
+    self::assertIsInt($profileAt, 'an active account must link to its Profile, returning to this list');
+    self::assertLessThan(strpos($rendered, 'Manage API keys'), $profileAt, 'Profile comes first');
+    self::assertStringNotContainsString('/user/' . $disabled['user']->id() . '/profile', $rendered, 'a disabled account offers no Profile');
   }
 
   /**

@@ -123,10 +123,11 @@ describe('the local conductor registry is gone', () => {
       [row({ id: 'mid-a', project: 'bakers', label: 'alpha' })],
     );
 
-    const text = out.join('\n');
-    expect(text).toContain('mid-a');
-    expect(text).toContain('bakers');
-    expect(text).toContain('alpha');
+    // The label leads; the registration key is the last column (AC-2, AC-5).
+    const line = out.find((l) => l.includes('mid-a')) ?? '';
+    expect(line.split('\t')[0]).toBe('alpha');
+    expect(line.split('\t').slice(1, 3)).toContain('bakers');
+    expect(line.split('\t').at(-1)).toBe('mid-a');
   });
 
   it('ls speaks the shared liveness vocabulary, not the old CLI one', async () => {
@@ -215,7 +216,7 @@ describe('the local conductor registry is gone', () => {
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: 'mid-registry',
+      conductor_id: 'mid-registry',
       config_path: join(home, '.bakers', 'conductor.config.js'),
     } as ConductorFileConfig;
   }

@@ -20,8 +20,8 @@ import { cmdUi, type RunBbUiOptions } from '../src/ui.js';
 // All seams are injected here.
 
 const machine = {
-  machine_id: 'host',
-  user_id: 'cw',
+  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+  label: 'host',
 };
 
 function fakeHost(): { host: AgentLaunchHost; launched: string[] } {
@@ -554,18 +554,39 @@ describe('cmdUi connection resolution (BB-219)', () => {
 
   // ── unchanged behaviour ───────────────────────────────────────────────────
 
-  it('passes the current user through from the machine context', async () => {
+  it('passes the signed-in user (api.me()) through as the current user', async () => {
     makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
       machine,
       agentHost: fakeHost().host,
       cwd: tmp,
+      buildWriteClient: async () => ({ me: async () => 'user-uuid' }),
       runUi: async (o) => {
         opts = o;
       },
     });
-    expect(opts?.currentUser).toBe('cw');
+    expect(opts?.currentUser).toBe('user-uuid');
+  });
+
+  it('runs without a current user when the identity cannot be read', async () => {
+    makeProject(tmp, 'https://project.test');
+    let opts: RunBbUiOptions | undefined;
+    await cmdUi({
+      machine,
+      agentHost: fakeHost().host,
+      cwd: tmp,
+      buildWriteClient: async () => ({
+        me: async () => {
+          throw new Error('offline');
+        },
+      }),
+      runUi: async (o) => {
+        opts = o;
+      },
+    });
+    expect(opts).toBeDefined();
+    expect(opts).not.toHaveProperty('currentUser');
   });
 
   it('adapts the herdr host prompt→command (default claude)', async () => {
@@ -615,6 +636,37 @@ describe('cmdUi connection resolution (BB-219)', () => {
     expect(process.exitCode).toBe(1);
     expect(err.join('')).toContain('requires site.base_url');
     process.exitCode = saved;
+  });
+
+  it('errors naming bakers init when the machine file is stale', async () => {
+    const saved = process.exitCode;
+    const savedHome = process.env.HOME;
+    process.exitCode = 0;
+    process.env.HOME = tmp;
+    mkdirSync(join(tmp, '.bakers'), { recursive: true });
+    writeFileSync(
+      join(tmp, '.bakers', 'machine.config.js'),
+      "export default { user_id: 'cw', machine_id: 'framework' };\n",
+    );
+    let called = false;
+    const err: string[] = [];
+    try {
+      await cmdUi({
+        agentHost: fakeHost().host,
+        cwd: tmp,
+        stderr: (s) => err.push(s),
+        loadConnection: fakeLoader().load,
+        runUi: async () => {
+          called = true;
+        },
+      });
+      expect(called).toBe(false);
+      expect(process.exitCode).toBe(1);
+      expect(err.join('')).toContain('bakers init');
+    } finally {
+      process.env.HOME = savedHome;
+      process.exitCode = saved;
+    }
   });
 
   it('--print-config still exits 1 on an unresolvable connection, and says why', async () => {
