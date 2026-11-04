@@ -78,7 +78,6 @@ export default withMermaid(
       theme: 'github-dark',
     },
     head: [
-      ['meta', { name: 'theme-color', content: '#0a0118' }],
       ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
       // BB-427 D7: Nunito Sans for the documentation pages (docs.css scopes
       // it away from the landing). Preconnect first, then the stylesheet.
@@ -91,12 +90,17 @@ export default withMermaid(
           href: 'https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&display=swap',
         },
       ],
-      // Pre-paint gate for the landing page (like the prototype's `.js`
-      // class): sets html.landing-page BEFORE first paint so the .sr
-      // initial states (hidden, translateY) and the dark VP-nav palette
-      // apply from the first frame — no visible-then-animate flash while
-      // Vue hydrates. Landing.vue keeps owning the class for client-side
-      // route enter/leave.
+      // The landing page's families (Figma design): display, text and mono.
+      [
+        'link',
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Spline+Sans:wght@400;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap',
+        },
+      ],
+      // Sets html.landing-page before first paint, so the landing's light
+      // chrome applies from the first frame and the docs styles never flash
+      // on it. Landing.vue keeps owning the class for client-side route changes.
       [
         'script',
         {},

@@ -1,112 +1,117 @@
-/* bakers.build theme layer (wayfinder ticket 08) — the cross-component pieces of
- * the landing design, values 1:1 from the approved prototype
- * (.scratch/bakers-docs-site/prototypes/landing-prototype.html):
- *   - design tokens
- *   - the shared gradient-text recipes (badge/kicker, HUMAN, headline)
- *   - the .sr scroll-reveal classes (staggered entrances)
- *   - VitePress chrome overrides while the landing page is mounted
- * Component-specific CSS lives in each SFC's own <style> block; everything
- * Tailwind utilities can express is utility classes in the templates. */
+/* The landing page's theme layer: tokens and the few recipes several sections
+ * share, values from the Figma frame (file sr31HfHNWbCeNsxvXbt4wv, EN frame
+ * 606:39). Everything else is Tailwind utilities in the section components.
+ * The landing is light only, whatever the VitePress appearance toggle says. */
 
-/* ---------- design tokens ---------- */
 :root {
-  --lp-bg: #0a0118; /* wope.com page background */
-  --lp-panel-border: rgba(255, 255, 255, 0.09);
-  --lp-text-1: #ecebf5;
-  --lp-text-2: #a3a1b8;
-  --lp-text-3: #67657e;
-  --lp-human: #ffc98f;
-  --lp-mint: #7fefd2;
+  --lp-flour: #f5ebda;
+  --lp-paper: #fffdf8;
+  --lp-ink: #2b2116;
+  --lp-ink-2: #5a4a38;
+  --lp-ink-3: #6e5d49;
+  --lp-butter: #f3ce3a;
+  --lp-crust: #b8692e;
+  --lp-sprout: #bfe07a;
+  --lp-rose: #f4afc0;
+  --lp-rule: rgba(43, 33, 22, 0.32);
+  --lp-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --lp-sans: 'Spline Sans', ui-sans-serif, system-ui, sans-serif;
+  --lp-mono: 'Spline Sans Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* ---------- gradient text recipes (dual layer + blend — no utility) ---------- */
-/* Reflect's badge/kicker gradient under a white screen blend, 1:1; used by
- * badge pills, pipeline WHO labels, chat bubble tags, strip glyphs,
- * concept card headings */
-.lp-badge-text {
-  background:
-    linear-gradient(0deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)),
-    linear-gradient(90.01deg, #e59cff 0.01%, #ba9cff 50.01%, #9cb2ff 100%);
-  background-blend-mode: normal, screen;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+.lp {
+  background: var(--lp-flour);
+  color: var(--lp-ink);
+  font-family: var(--lp-sans);
 }
-/* the warm HUMAN variant (pipeline review stage, human chat bubbles) */
-.lp-human-text {
-  background: linear-gradient(115deg, #ffc98f, #ff9f7c);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+.lp-wrap {
+  margin-inline: auto;
+  max-width: 1440px;
+  padding-inline: 16px;
 }
-/* Reflect's headline gradient 180deg #fff -> rgba(255,255,255,.7)
- * (hero h1, section h2s, CTA h2) */
-.lp-headline {
-  background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-
-/* ---------- scroll reveals (.sr) ---------- */
-/* gated on html.landing-page (added on mount) so SSR/no-JS paints content */
-@media (prefers-reduced-motion: no-preference) {
-  html.landing-page .sr {
-    opacity: 0;
-    transform: translateY(26px);
-    transition:
-      opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  html.landing-page .sr.in {
-    opacity: 1;
-    transform: none;
-  }
-  html.landing-page .sr.dl1 {
-    transition-delay: 0.1s;
-  }
-  html.landing-page .sr.dl2 {
-    transition-delay: 0.2s;
-  }
-  html.landing-page .sr.dl3 {
-    transition-delay: 0.3s;
-  }
-  html.landing-page .sr.dl4 {
-    transition-delay: 0.4s;
+@media (min-width: 768px) {
+  .lp-wrap {
+    padding-inline: 56px;
   }
 }
 
-/* ---------- VitePress chrome while the landing page is mounted ----------
- * The landing is pinned dark (prototype decision); the VP navbar sits on
- * top of it, so its palette is re-based here for BOTH appearance modes.
- * Docs pages are untouched (the class is removed on route leave). */
+/* Bricolage Grotesque at the optical sizes the design sets. */
+.lp-display {
+  font-family: var(--lp-display);
+  font-variation-settings: 'opsz' 96;
+}
+.lp-title {
+  font-family: var(--lp-display);
+  font-variation-settings: 'opsz' 14;
+  font-weight: 700;
+}
+.lp-mono {
+  font-family: var(--lp-mono);
+}
+
+/* Buttons: butter (hero), ink (bands, hosted card), paper (add-ons card). */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid var(--lp-ink);
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-family: var(--lp-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 15px;
+  white-space: nowrap;
+  color: var(--lp-ink);
+  background: var(--lp-butter);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.lp-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--lp-ink);
+}
+.lp-btn--ink {
+  background: var(--lp-ink);
+  color: var(--lp-flour);
+}
+.lp-btn--paper {
+  background: var(--lp-paper);
+}
+
+/* The install command box. */
+.lp-code {
+  border: 1.5px solid var(--lp-ink);
+  border-radius: 8px;
+  background: var(--lp-paper);
+  padding: 8px 12px;
+  font-family: var(--lp-mono);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+:where(.lp a) {
+  color: inherit;
+}
+.lp :focus-visible {
+  outline: 3px solid var(--lp-ink);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* VitePress chrome while the landing is mounted: the page is light in both
+ * appearance modes. The class is set before first paint (config.mts) and
+ * removed on route leave (Landing.vue). */
 html.landing-page {
-  background: #0a0118;
-  color-scheme: dark;
-  --vp-c-bg: #0a0118;
-  --vp-c-bg-alt: #0a0118;
-  --vp-c-bg-elv: #171029;
-  --vp-c-bg-soft: #171029;
-  --vp-c-text-1: #ecebf5;
-  --vp-c-text-2: #a3a1b8;
-  --vp-c-text-3: #67657e;
-  --vp-c-divider: rgba(255, 255, 255, 0.08);
-  --vp-c-gutter: rgba(255, 255, 255, 0.08);
-  --vp-c-neutral: #ffffff;
-  --vp-c-neutral-inverse: #000000;
-  --vp-c-brand-1: #d3c4ff;
-  --vp-c-brand-2: #ba9cff;
-  --vp-c-brand-3: #8f68ff;
-  --vp-c-brand-soft: rgba(164, 143, 255, 0.16);
-  --vp-nav-bg-color: rgba(10, 1, 24, 0.7);
-}
-html.landing-page .VPNavBar:not(.home) {
-  background-color: rgba(10, 1, 24, 0.7);
+  color-scheme: light;
+  background: var(--lp-flour);
+  --vp-c-bg: var(--lp-flour);
+  --vp-c-bg-alt: var(--lp-flour);
 }
 html.landing-page .VPHome {
   margin-bottom: 0;
   padding-bottom: 0;
+}
+html.landing-page .VPContent.is-home {
+  padding-top: 0;
 }

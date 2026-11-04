@@ -2,9 +2,9 @@
 // loads before the default theme CSS so preflight sits under VitePress's
 // own base styles; postcss.config.mjs isolates those with :where() so
 // utilities win. landing.css is the theme layer of the custom landing
-// (tokens, shared gradient recipes, VP chrome overrides); the page itself
-// is the globally registered <Landing /> rendered by the hero-less
-// `layout: home` index.md (wayfinder ticket 08).
+// (tokens, shared recipes, VP chrome overrides); the page itself is the
+// globally registered <Landing /> rendered by the hero-less `layout: home`
+// landing.md.
 //
 // docs.css (BB-427 D7) is the documentation pages' look — the Storybook-docs
 // system on the bakers.build brand. It is imported AFTER the default theme so its
