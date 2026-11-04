@@ -79,8 +79,8 @@ When('I visit my profile settings', async ({ page }) => {
   await page.goto(`/user/${uid}/edit`);
 });
 
-When('I visit my profile page', async ({ page }) => {
-  await page.goto(`/user/${uidOf('north-lead')}/profile`);
+When('I visit the profile page of {string}', async ({ page }, name: string) => {
+  await page.goto(`/user/${uidOf(name)}/profile`);
 });
 
 Then('I am on the profile route of {string}', async ({ page }, name: string) => {
