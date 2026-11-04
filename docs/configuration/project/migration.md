@@ -15,7 +15,7 @@ Every `bakers config` command takes `--scope`:
 
 | Scope | Files | Current schema |
 |---|---|---|
-| `machine` | `machine.config.js` in the bakers.build home: host identity, capacity, agents | 1 |
+| `machine` | `machine.config.js` in the bakers.build home: host identity, agents | 1 |
 | `connection` | The selected connection file: server and sign-in | 1 |
 | `project` | The checkout's `.bakers/` files: conductor configs and the local selector | 1 (conductor configs) |
 | `all` | All of them | - |

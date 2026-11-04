@@ -234,7 +234,6 @@ export function registrationOf(
     workspace: checkoutRoot,
     label: config.label,
     ...(config.machine_label ? { machine_label: config.machine_label } : {}),
-    max_parallel: config.max_parallel,
     conductor_name: stem ?? config.variant,
   };
 }
@@ -402,10 +401,15 @@ export class Conductor {
     // pending dispatches count without a second round-trip.
     const capacity = await this.remote.machineCapacity(this.hostKey);
     let machineLoad = capacity?.currentLoad ?? count;
-    // BB-464 D3: gate on the MACHINE's own budget, not this conductor's
-    // config — the machine row is the one authority a shared host agrees on;
-    // falling back to config.max_parallel only when the row is unreadable.
-    const maxParallel = capacity?.maxParallel ?? this.config.max_parallel;
+    // The machine row is the only budget; when it is unreadable, claim
+    // nothing this tick and retry on the next.
+    const maxParallel = capacity?.maxParallel ?? 0;
+    if (!capacity) {
+      this.logger.warn(
+        { conductorId: this.id },
+        'machine budget unreadable; claiming nothing this tick',
+      );
+    }
     this.logger.info(
       {
         conductorId: this.id,
@@ -415,7 +419,7 @@ export class Conductor {
       },
       'conductor tick',
     );
-    if (machineLoad > maxParallel) {
+    if (capacity && machineLoad > maxParallel) {
       // BB-464 D4: a breach is its own signal, not merely the reason no
       // further claim was made — this server-side ceiling (TicketClaimService)
       // is the actual guard; this is visibility into how it was reached.

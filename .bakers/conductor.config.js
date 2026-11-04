@@ -45,8 +45,8 @@ const local = await loadLocal();
 
 export default {
   bakers: { project: 'bakers' },
-  // Host capacity has a SINGLE owner: `max_parallel` in ~/.bakers/machine.config.js
-  // (BB-353). Do NOT add `max_parallel` here; loading rejects it.
+  // The run budget (`max_parallel`) is set on the machine in the backend,
+  // default 5. A `max_parallel` here is ignored with a warning.
   // Lifecycle hooks are executor-owned + best-effort (BB-84): the executor
   // invokes each (after_create/before_run/after_done), logs loudly + continues
   // on failure, and never wedges a run — so they live at the config TOP LEVEL,

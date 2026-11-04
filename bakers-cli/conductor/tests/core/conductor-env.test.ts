@@ -72,7 +72,8 @@ function makeConfig(
     project: 'bakers',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
-    max_parallel: 2,
+    // The budget lives on the fake machine row for this host (default 5).
+    host_key: 'test-host',
     poll_interval_ms: 5000,
     lease_seconds: 300,
     config_path: `${CHECKOUT}/conductor.config.js`,

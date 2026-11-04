@@ -33,8 +33,8 @@ const local = await loadLocal();
 
 export default {
   project: local.project ?? 'bakers-playground',
-  // Host capacity is machine.config.js max_parallel (BB-353). See
-  // bakers-cli/CONFIG.md.
+  // The run budget (max_parallel) is set on the machine in the backend,
+  // default 5. See bakers-cli/CONFIG.md.
   // Optional state narrowing (BB-207): serves every claimable state in the
   // project by default; add a `states` array to restrict this conductor.
   // Self-declaring addons (BB-215): each package contributes its own slots.

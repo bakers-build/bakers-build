@@ -73,7 +73,6 @@ export default {
       // Placeholders: {identifier}, {state}, {runUuid}.
       prompt: 'You are working ticket {identifier}, current state: {state}. Read the ticket and all comments, then execute only the ordered "State: {state}" section of ./WORKFLOW.md. Do not start or prepare a later state.',
       workspace: '/srv/bakers/workspaces/platform',
-      max_parallel: 2,
       poll_interval_ms: 5000,
       lease_seconds: 300,
       retry: {
@@ -102,7 +101,6 @@ Config keys:
 | `conductors[].workspace` | yes | none | Root directory for ticket workspaces. |
 | `conductors[].label` | no | machine ID | Human label for the Drupal conductor entity. |
 | `conductors[].prompt` | no | built-in project-instruction pointer | Agent prompt template. Placeholders: `{identifier}`, `{state}`, `{runUuid}`. The Conductor names no agent skill and does not parse the file; projects compose any capabilities directly in `WORKFLOW.md`. |
-| `conductors[].max_parallel` | no | `1` | Local concurrent run limit for this project entry. |
 | `conductors[].poll_interval_ms` | no | `5000` | Delay between daemon ticks. |
 | `conductors[].lease_seconds` | no | `300` | Lease duration requested for conductor and run leases. |
 | `conductors[].retry.base_backoff_ms` | no | `2000` | Initial retry delay after failed plugin state. |
