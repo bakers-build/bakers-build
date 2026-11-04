@@ -2,8 +2,8 @@
 # The PM bot container's start, as the hermes user after Hermes' own bootstrap
 # (experimental/pm-bot/Dockerfile). On every start it:
 #   1. checks the required env (from the data directory's .env) and names what is missing;
-#   2. renders config.yaml from the env (render.mjs);
-#   3. puts SOUL.md and the shipped skills (bb-create-ticket, its recipes and their method
+#   2. renders config.yaml and SOUL.md, with the skill's host context, from the env (render.mjs);
+#   3. puts the shipped skills (bb-create-ticket, its recipes and their method
 #      skills, with the bundle files they link to) into the data directory, replacing them,
 #      and removes the retired project-manager skill; sessions, memories, learned skills and
 #      the poller state stay;
@@ -30,11 +30,11 @@ done
 
 # Every user in the allowed channels, unless an allowlist names some.
 [ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=true
-# The conductor is optional; the render refuses empty values, so the skill reads "none".
+# The conductor is optional; the render refuses empty values, so SOUL.md reads "none".
 export PM_BOT_CONDUCTOR_TEXT="${PM_BOT_CONDUCTOR:-none}"
 
 node "$BOT/render.mjs" "$BOT/config.template.yaml" "$DATA/config.yaml"
-install -m 644 "$BOT/SOUL.md" "$DATA/SOUL.md"
+node "$BOT/render.mjs" "$BOT/SOUL.template.md" "$DATA/SOUL.md"
 # The shipped skills replace their copies, entry by entry; learned skills stay. The bot's
 # own project-manager skill gave way to them.
 mkdir -p "$DATA/skills"

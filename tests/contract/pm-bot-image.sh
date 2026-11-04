@@ -18,7 +18,8 @@
 #     skills) are installed, the bundle version is printed, every relative link
 #     in them resolves, the upstream ones match pm-bot-upstream.sha256 (their
 #     pinned commits) and a leftover project-manager skill is removed
-#   - SOUL.md in the data directory is the image's (a hand edit is restored);
+#   - SOUL.md in the data directory is rendered from the image's template (a hand
+#     edit is replaced), with no placeholder or key left;
 #     a learned skill and a session are kept
 #   - a missing required key stops the start and is named
 #   - run mode, with the capabilities and options of the template's compose
@@ -137,8 +138,12 @@ in_data 'cd /d/skills && sha256sum -c --quiet' <tests/contract/pm-bot-upstream.s
   || fail "an upstream skill differs from its pinned commit"
 pass "the upstream skills are byte-equal to their pinned commits"
 
-in_data 'cat /d/SOUL.md' | cmp -s - experimental/pm-bot/SOUL.md || fail "SOUL.md is not the image's (hand edit kept?)"
-pass "SOUL.md is the image's"
+soul="$(in_data 'cat /d/SOUL.md')" || fail "SOUL.md was not rendered"
+! grep -qF 'hand edit' <<<"$soul" || fail "SOUL.md keeps a hand edit"
+! grep -n '\${' <<<"$soul" || fail "SOUL.md keeps a placeholder"
+! grep -qF "$key" <<<"$soul" || fail "SOUL.md holds the API key"
+grep -qF "$(sed -n 's/^PM_BOT_PROJECT=//p' experimental/pm-bot/test/fixture.env)" <<<"$soul" || fail "SOUL.md lacks the project"
+pass "SOUL.md is rendered from the image's template: no hand edit, placeholder or key, the project in it"
 
 [ "$(in_data 'cat /d/skills/learned/SKILL.md /d/sessions/one.json')" = "kept
 kept" ] || fail "a learned skill or a session was lost"

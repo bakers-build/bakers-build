@@ -1,6 +1,6 @@
 # Only the bot's content goes into the image: no tests, fixtures, docs or env file.
 *
-!SOUL.md
+!SOUL.template.md
 !config.template.yaml
 !render.mjs
 !entrypoint.sh

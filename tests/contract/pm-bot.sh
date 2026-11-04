@@ -15,7 +15,8 @@
 #     Hermes fills from the env file, exactly eight bakers tools, no OAuth
 #   - the clone reader is a pinned filesystem server with read tools only
 #   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token
-#   - the bot carries no skill of its own (experimental/pm-bot/skills/)
+#   - the bot carries no skill of its own (experimental/pm-bot/skills/); SOUL.template.md gives
+#     bb-create-ticket its host context and carries status and the answer path
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller and client call no LLM
@@ -42,7 +43,7 @@ pass() { echo "ok: $*"; }
 
 BOT=experimental/pm-bot
 TEMPLATE="$BOT/config.template.yaml"
-for f in "$TEMPLATE" "$BOT/SOUL.md" "$BOT/.env.example" \
+for f in "$TEMPLATE" "$BOT/SOUL.template.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
          "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/lib/bakers-client.mjs" \
          "$BOT/slack-app-manifest.yaml"; do
@@ -130,6 +131,16 @@ pass "no relay, JSON:API call or token exchange in experimental/pm-bot/"
 [ ! -e "$BOT/skills" ] || fail "$BOT/skills is back; the bot ships the bundle's skills instead"
 pass "no bot-owned skill"
 
+# SOUL.md is the skill's host: its host context, the routing, status and the answer path.
+SOUL="$BOT/SOUL.template.md"
+[ ! -e "$BOT/SOUL.md" ] || fail "$BOT/SOUL.md is back; the entrypoint renders SOUL.template.md"
+for word in bb-create-ticket 'Slack user' /archives/ labels_remove frozen 'Answered in Slack by' Question \
+  'technical problem' mcp_bakers__tool_api__ bakers_ticket_search bakers_ticket_read '${PM_BOT_PROJECT}' \
+  '${PM_BOT_TICKET_WORKFLOW}' '${PM_BOT_CONDUCTOR_TEXT}' '${SLACK_WORKSPACE_URL}'; do
+  grep -qF -- "$word" "$SOUL" || fail "$SOUL does not name $word"
+done
+pass "SOUL.template.md gives bb-create-ticket its host context and carries status and answers"
+
 python3 - "$BOT/slack-app-manifest.yaml" <<'PY' || fail "Slack app manifest lets the bot read or open direct messages (see above)"
 import sys, yaml
 
@@ -174,13 +185,13 @@ fi
 pass "no customer literal outside .env.example"
 
 # The bot passes a clear answer on at once; a confirmation round must not come back.
-if git grep -nIiE 'correct\?|confirm' -- "$BOT/SOUL.md" "$BOT/README.md"; then
+if git grep -nIiE 'correct\?|confirm' -- "$BOT/SOUL.template.md" "$BOT/README.md"; then
   fail "persona, skill or runbook asks the thread to confirm an answer before passing it on"
 fi
 pass "the bot passes answers on without a confirmation round"
 
 # AI agents work the tickets through bakers.build; customer wording describes events, not a team.
-if git grep -nIiwE 'team' -- "$BOT/SOUL.md" "$BOT/poller/messages.json"; then
+if git grep -nIiwE 'team' -- "$BOT/SOUL.template.md" "$BOT/poller/messages.json"; then
   fail "customer wording credits a team"
 fi
 pass "customer wording says what happens, not what a team does"
