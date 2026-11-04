@@ -1,6 +1,5 @@
 import { exec, spawn } from 'node:child_process';
 import {
-  chmod,
   mkdir,
   mkdtemp,
   readFile,
@@ -153,15 +152,38 @@ it('preserves concurrent operator edits and reports the profile that requires cl
 
 it('reports unwritable profile storage as a filesystem error instead of a busy run', async () => {
   const f = await fixture();
-  await chmod(f.grokHome, 0o500);
-  try {
-    await expect(execute(f.command, f.options)).rejects.toMatchObject({
-      code: 1,
-      stderr: expect.stringContaining('EACCES'),
-    });
-  } finally {
-    await chmod(f.grokHome, 0o700);
+  // chmod cannot force EACCES when the CI container runs as root.
+  const preload = join(f.home, 'deny-lock.cjs');
+  await writeFile(
+    preload,
+    `const fs = require('node:fs/promises');
+const { syncBuiltinESMExports } = require('node:module');
+const open = fs.open;
+fs.open = async (path, ...args) => {
+  if (path === ${JSON.stringify(join(f.grokHome, '.bakers-profile.lock'))}) {
+    throw Object.assign(new Error('EACCES: permission denied, open ' + path), { code: 'EACCES' });
   }
+  return open(path, ...args);
+};
+syncBuiltinESMExports();
+`,
+  );
+  await expect(
+    execute(f.command, {
+      ...f.options,
+      env: {
+        ...f.options.env,
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require=${preload}`,
+      },
+    }),
+  ).rejects.toMatchObject({
+    code: 1,
+    stdout: '',
+    stderr: expect.stringContaining('EACCES'),
+  });
+  expect(await readFile(join(f.grokHome, 'sandbox.toml'), 'utf8')).toBe(
+    f.original,
+  );
 });
 
 it('fails closed for a concurrent run and cleans up after termination', async () => {
