@@ -377,7 +377,11 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
       excludedCommands: ['bakers *', 'git *', 'ddev *'],
-      filesystem: { denyRead: ['~/.ssh', '~/.bakers'], allowWrite: [] },
+      filesystem: {
+        denyRead: ['~/.ssh', '~/.bakers'],
+        allowWrite: [],
+        denyWrite: [],
+      },
       network: { allowedDomains: ['*'] },
     });
     expect(settings.disableClaudeAiConnectors).toBe(true);
@@ -415,6 +419,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     expect(settings.sandbox.filesystem).toEqual({
       denyRead: ['~/.aws', '/etc/secret', '~/.netrc'],
       allowWrite: ['/srv/cache'],
+      denyWrite: [],
     });
     expect(settings.sandbox.network.allowedDomains).toEqual([
       'api.anthropic.com',
@@ -465,7 +470,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
         ['-C', main, 'rev-parse', '--path-format=absolute', '--git-dir'],
         { encoding: 'utf8' },
       ).trim();
-      const allowWrite = (path: string) =>
+      const filesystem = (path: string) =>
         JSON.parse(
           flagValue(
             captureArgv(
@@ -476,15 +481,26 @@ describe('ClaudeAgent security: sandbox (default)', () => {
             ),
             '--settings',
           ),
-        ).sandbox.filesystem.allowWrite;
-      expect(allowWrite(worktree)).toEqual([
+        ).sandbox.filesystem;
+      const own = join(common, 'worktrees', 'work');
+      expect(filesystem(worktree).allowWrite).toEqual([
         '/srv/cache',
-        join(common, 'worktrees', 'work'),
+        own,
         join(common, 'objects'),
         join(common, 'refs'),
         join(common, 'logs'),
       ]);
-      expect(allowWrite(main)).toEqual(['/srv/cache', common]);
+      // The redirects inside the own git dir stay unwritable.
+      expect(filesystem(worktree).denyWrite).toEqual([
+        join(own, 'commondir'),
+        join(own, 'gitdir'),
+      ]);
+      expect(filesystem(main).allowWrite).toEqual(['/srv/cache', common]);
+      expect(filesystem(main).denyWrite).toEqual([
+        join(common, 'config'),
+        join(common, 'hooks'),
+        join(common, 'worktrees'),
+      ]);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

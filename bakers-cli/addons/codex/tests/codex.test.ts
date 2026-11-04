@@ -178,6 +178,20 @@ function gitEntries(profile: string | undefined): Record<string, string> {
   return entries;
 }
 
+/**
+ * A Git write grant. Codex mounts a read-only `.git`, `.agents`, `.codex` and
+ * `.aws` into every writable entry, creating each missing one in the real
+ * repository; granting them write is what stops it.
+ */
+function grant(root: string): Record<string, string> {
+  return Object.fromEntries(
+    ['', '/.git', '/.agents', '/.codex', '/.aws'].map((name) => [
+      `${root}${name}`,
+      'write',
+    ]),
+  );
+}
+
 async function homeWithCodexMcp(): Promise<string> {
   const home = await mkdtemp(join(tmpdir(), 'codex-home-'));
   await mkdir(join(home, '.codex'), { recursive: true });
@@ -240,10 +254,10 @@ describe('CodexAgent security: sandbox (default)', () => {
       expect(own.startsWith(join(common, 'worktrees'))).toBe(true);
       // The run writes its own git dir and the shared objects, refs and reflogs.
       expect(gitEntries(profile)).toEqual({
-        [own]: 'write',
-        [join(common, 'objects')]: 'write',
-        [join(common, 'refs')]: 'write',
-        [join(common, 'logs')]: 'write',
+        ...grant(own),
+        ...grant(join(common, 'objects')),
+        ...grant(join(common, 'refs')),
+        ...grant(join(common, 'logs')),
         // Redirects an unsandboxed Git command follows stay read-only.
         [join(own, 'commondir')]: 'read',
         [join(own, 'gitdir')]: 'read',
@@ -265,7 +279,7 @@ describe('CodexAgent security: sandbox (default)', () => {
           mainArgv.find((arg) => arg.startsWith('permissions.bakers=')),
         ),
       ).toEqual({
-        [common]: 'write',
+        ...grant(common),
         [join(common, 'config')]: 'read',
         [join(common, 'hooks')]: 'read',
         [join(common, 'worktrees')]: 'read',

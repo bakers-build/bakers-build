@@ -65,6 +65,11 @@ function securityFlags(
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
   if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  // Git metadata only for a known workspace; the conductor always passes one.
+  const git =
+    workspacePath === undefined
+      ? { write: [], protect: [] }
+      : gitSandboxPaths(workspacePath);
   const settings = {
     sandbox: {
       enabled: true,
@@ -77,13 +82,8 @@ function securityFlags(
       ),
       filesystem: {
         denyRead: sandbox.deny_read,
-        // Git metadata only for a known workspace; the conductor always passes one.
-        allowWrite: [
-          ...sandbox.allow_write,
-          ...(workspacePath === undefined
-            ? []
-            : gitSandboxPaths(workspacePath).write),
-        ],
+        allowWrite: [...sandbox.allow_write, ...git.write],
+        denyWrite: git.protect,
       },
       network: { allowedDomains: sandbox.network },
     },

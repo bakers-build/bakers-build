@@ -191,7 +191,13 @@ export class CodexAgent implements BbAgent {
     // Filesystem overrides replace inherited entries, so retain workspace protections explicitly.
     const filesystem = [
       '":workspace_roots" = { ".git" = "read", ".agents" = "read", ".codex" = "read", ".aws" = "read" }',
-      ...git.write.map((path) => `${JSON.stringify(path)} = "write"`),
+      // Codex mounts a read-only `.git`, `.agents`, `.codex` and `.aws` into every
+      // writable entry and creates each missing one; inside Git metadata, grant them.
+      ...git.write.flatMap((path) =>
+        ['', '/.git', '/.agents', '/.codex', '/.aws'].map(
+          (name) => `${JSON.stringify(path + name)} = "write"`,
+        ),
+      ),
       ...git.protect.map((path) => `${JSON.stringify(path)} = "read"`),
     ];
     const profile = `{ extends = ":workspace", filesystem = { ${filesystem.join(', ')} }, workspace_roots = { ${roots.join(', ')} }, network = { enabled = ${sandbox.network.length > 0} } }`;

@@ -63,9 +63,9 @@ What the default blocks:
 
 What it does not block:
 
-- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `ddev exec …` leaves the sandbox; that is the price of a working workflow. Remove a command you do not need.
+- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `ddev exec …` leaves the sandbox. Remove a command you do not need.
 - With `network: ['*']`, a sandboxed command can still reach any host.
-- Not confirmed: whether `--strict-mcp-config` also hides MCP servers that plugins bring.
+- Unconfirmed: whether `--strict-mcp-config` hides plugin MCP servers.
 
 ## Codex in `sandbox` mode
 
@@ -83,7 +83,9 @@ What it does not block:
 
 ## Git metadata in Codex and Claude sandboxes
 
-A linked worktree's run writes its own Git dir and the shared `objects`, `refs` and `logs`, never the shared `.git` itself. A main checkout's run writes its `.git`. Codex marks only existing `config`, `hooks`, `commondir` and similar entries read-only: a sandbox covers a missing one with an empty file that breaks Git. An `allow_write` entry in a `.git` is ignored with a warning. Setting an upstream needs the trusted `git`.
+A linked worktree's run writes its own Git dir plus the shared `objects`, `refs` and `logs`; a main checkout's run, its `.git`. Only existing protected entries (`config`, `hooks`, `commondir`, …) are named; a sandbox covers a missing one with an empty file that breaks Git. `allow_write` entries in a `.git` are ignored, with a warning. Setting an upstream needs the trusted `git`.
+
+Known limit: in a linked worktree, Claude Code holds an empty `config.lock` in the shared `.git` during sandboxed commands, failing `git worktree add`.
 
 At run end the conductor ends the processes carrying the run's `BB_RUN_UUID` (Linux).
 
