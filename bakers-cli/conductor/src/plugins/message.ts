@@ -13,6 +13,7 @@ import {
   validateMessageDefinition,
 } from '@bakers-build/message';
 import type { Ticket } from './remote.js';
+import type { ToolResult } from './tools.js';
 
 /** What a handler gets: its own request identity plus the ticket's worktree. */
 export interface InboxMessageRequest {
@@ -29,6 +30,11 @@ export interface InboxMessageRequest {
   logger: ConductorLogger;
   /** Aborts when the handler runs past its timeout. */
   signal: AbortSignal;
+  /** Call an addon tool on this worktree; absent when no addon declares tools. */
+  callTool?: (
+    name: string,
+    args?: Record<string, unknown>,
+  ) => Promise<ToolResult>;
 }
 
 export type InboxMessageHandler = (

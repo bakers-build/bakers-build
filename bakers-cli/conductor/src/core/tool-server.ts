@@ -20,9 +20,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { CONDUCTOR_TOOLS_SERVER } from '../plugins/agent.js';
 import type { ToolBinding, ToolRegistry } from '../plugins/tools.js';
-
-export const TOOL_SERVER_NAME = 'bakers-conductor';
 
 export interface ToolServer {
   /** The MCP endpoint. */
@@ -81,7 +80,7 @@ export async function startToolServer(
 
   const mcpServer = (binding: ToolBinding): Server => {
     const server = new Server(
-      { name: TOOL_SERVER_NAME, version: '1.0.0' },
+      { name: CONDUCTOR_TOOLS_SERVER, version: '1.0.0' },
       { capabilities: { tools: {} } },
     );
     server.setRequestHandler(ListToolsRequestSchema, async () => ({

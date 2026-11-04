@@ -21,6 +21,8 @@ export {
   type AgentFootprint,
   type AgentRunIdentity,
   type BbAgent,
+  CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOLS_SERVER,
   DEFAULT_ENV_DENY,
   emptyAgentFootprint,
   matchesEnvDeny,

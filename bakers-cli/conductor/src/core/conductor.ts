@@ -30,12 +30,14 @@ import type {
   UncleanTicket,
 } from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
+import type { ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
+import { startToolServer, type ToolServer } from './tool-server.js';
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -257,6 +259,11 @@ export class Conductor {
   /** The per-item work each tick enqueues. */
   private readonly queue: ActionQueue;
 
+  /** The local MCP server for addon tools; only the serve process runs one. */
+  private toolServer: ToolServer | undefined;
+  /** The live run token per run UUID, revoked when the run is finalised. */
+  private readonly runTokens = new Map<string, string>();
+
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
 
@@ -275,6 +282,7 @@ export class Conductor {
       remote,
       logger,
       (ticket) => this.runEnv(ticket, undefined, ticket.state),
+      config.tools,
     );
     this.queue = new ActionQueue(logger);
   }
@@ -335,6 +343,48 @@ export class Conductor {
     // Only the serve process reports its pid; poll and reap must not
     // overwrite the running conductor's.
     return this.ownsServeProcess ? { ...base, last_pid: process.pid } : base;
+  }
+
+  /**
+   * Starts the tool server when an addon declares tools. Only the serve
+   * process calls this; `endpointFile` publishes it to the CLI.
+   */
+  async startTools(endpointFile?: string): Promise<void> {
+    if (!this.config.tools || this.toolServer) return;
+    this.toolServer = await startToolServer({
+      registry: this.config.tools,
+      workspaceRoot: this.checkoutRoot,
+      logger: this.logger,
+      ...(endpointFile ? { endpointFile } : {}),
+    });
+    this.logger.info(
+      { conductorId: this.config.conductor_id, url: this.toolServer.url },
+      'tool server started',
+    );
+  }
+
+  async stopTools(): Promise<void> {
+    await this.toolServer?.stop();
+    this.toolServer = undefined;
+    this.runTokens.clear();
+  }
+
+  /** A fresh token for this run's worktree; a re-dispatch replaces the old one. */
+  private issueRunTools(
+    runUuid: string,
+    binding: ToolBinding,
+  ): { url: string; token: string } | undefined {
+    if (!this.toolServer) return undefined;
+    this.revokeRunTools(runUuid);
+    const token = this.toolServer.issueRunToken(binding);
+    this.runTokens.set(runUuid, token);
+    return { url: this.toolServer.url, token };
+  }
+
+  private revokeRunTools(runUuid: string): void {
+    const token = this.runTokens.get(runUuid);
+    if (token) this.toolServer?.revokeRunToken(token);
+    this.runTokens.delete(runUuid);
   }
 
   async start() {
@@ -567,6 +617,7 @@ export class Conductor {
       const uploadedLog =
         (this.config.capture_logs ?? true) ? captured.log : '';
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+      this.revokeRunTools(r.runUuid);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',
@@ -1491,7 +1542,16 @@ export class Conductor {
         );
       }
     }
-    const command = chosen.agent.launchCommand(prompt, identity, ws.path);
+    const tools = this.issueRunTools(run.runUuid, {
+      worktreePath: ws.path,
+      ticket: t,
+    });
+    const command = chosen.agent.launchCommand(
+      prompt,
+      identity,
+      ws.path,
+      tools ? { url: tools.url } : undefined,
+    );
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,
@@ -1505,7 +1565,8 @@ export class Conductor {
       workspacePath: ws.path,
       instructions: ws.instructions,
       command,
-      env,
+      // The token travels in the env, never in argv or the launch log.
+      env: tools ? { ...env, BB_CONDUCTOR_TOKEN: tools.token } : env,
     });
     launch.started = true;
     this.logger.info(
@@ -1544,6 +1605,7 @@ export class Conductor {
     launched: boolean,
   ): Promise<void> {
     const runUuid = ctx.run?.uuid ?? '';
+    this.revokeRunTools(runUuid);
     try {
       if (launched && this.executor.capabilities().persistent) {
         try {
