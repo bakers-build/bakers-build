@@ -49,7 +49,7 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 |---|---|---|
 | `allow_write` | `[]` | Additional profile workspace roots; a leading `~/` is expanded |
 | `network` | `['*']` | network on when not empty; Codex has no host list, so any non-empty value allows every host |
-| `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled |
+| `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled; `bakers-conductor`, the conductor's [agent tools](/addons/build/tools), is added at launch and always stays on |
 | `trusted_commands`, `deny_read` | `[]` | Codex has no equivalent; a non-empty list fails loading rather than promise a protection Codex does not give |
 
 Needs Codex 0.166.0+. Writable: Git directories, not config or hooks; read-only: `.agents`, `.codex`, `.aws`.

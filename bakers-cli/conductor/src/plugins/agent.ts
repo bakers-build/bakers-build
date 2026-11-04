@@ -124,6 +124,11 @@ export interface AgentRunIdentity {
   attemptFamily?: string[];
 }
 
+/** The MCP server name agents see for the conductor's addon tools. */
+export const CONDUCTOR_TOOLS_SERVER = 'bakers-conductor';
+/** The run env var holding the run's bearer token for that server. */
+export const CONDUCTOR_TOKEN_ENV = 'BB_CONDUCTOR_TOKEN';
+
 export interface BbAgent {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
@@ -150,11 +155,16 @@ export interface BbAgent {
    * a resumed/re-dispatched/reused worktree finalise a FOREIGN transcript.
    * `workspacePath` is the dispatch workspace, for harness permissions that need
    * its Git metadata paths rather than the conductor's own working directory.
+   *
+   * `tools`, when given, is the conductor's MCP server for this run
+   * ({@link CONDUCTOR_TOOLS_SERVER}); its bearer token is in the run env as
+   * {@link CONDUCTOR_TOKEN_ENV}. An agent that cannot add an MCP server ignores it.
    */
   launchCommand(
     prompt: string,
     run?: AgentRunIdentity,
     workspacePath?: string,
+    tools?: { url: string },
   ): string;
   /**
    * Locate and read this agent's run transcript for a run that executed in

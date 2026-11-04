@@ -2,11 +2,27 @@
 
 **Finds a worktree's DDEV services and names them, so Ports can share them.**
 
-It is a support library. You do not enable it on its own; [Ports](/addons/ports) uses it.
+[Ports](/addons/ports) uses it to claim services. Listed in a conductor's `addons`, it also gives agents tools for their worktree's DDEV project.
 
 ## Enable it
 
-Nothing to enable — used by [Ports](/addons/ports).
+For discovery, nothing to enable — used by [Ports](/addons/ports). For the agent tools, add it to the machine or project `addons`:
+
+```js
+addons: ['@bakers-build/addon-ddev'],
+```
+
+## Agent tools
+
+Every claude and codex run gets these tools on its own worktree, the DDEV approot:
+
+| Tool | Does |
+|---|---|
+| `ddev_status()` | `ddev describe` as a summary: name, status, primary URL, services. |
+| `ddev_start()` | `ddev start`, up to 10 minutes. |
+| `ddev_exec(command)` | Runs `command` in the web container, up to 5 minutes. |
+
+Answers carry the exit code and the last 64 KB of output; a non-zero exit is a tool error.
 
 ## Options
 

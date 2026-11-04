@@ -157,6 +157,7 @@ export const SIDEBAR = {
     group('Build your own', [
       ['Addon contracts', '/addons/build/contracts'],
       ['Write an addon with inbox messages', '/addons/build/actions'],
+      ['Write an addon with agent tools', '/addons/build/tools'],
     ]),
   ],
 }

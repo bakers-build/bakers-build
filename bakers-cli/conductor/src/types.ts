@@ -19,6 +19,7 @@ import type {
 } from './plugins/plugins.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import type { ToolRegistry } from './plugins/tools.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {
@@ -113,6 +114,8 @@ export interface ConductorFileConfig extends ConductorSettings {
    * validated at load (BB-661). Absent means none.
    */
   inboxAddons?: LoadedInbox[];
+  /** Agent tools from the conductor `addons[]` `tools` exports. Absent means none. */
+  tools?: ToolRegistry;
   /**
    * Conductor process host from the `processHosts` accumulator (last wins).
    * Absent when no addon contributed one — `bakers oven start` then fails

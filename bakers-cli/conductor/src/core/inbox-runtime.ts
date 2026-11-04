@@ -8,6 +8,7 @@ import type { ConductorLogger } from '@bakers-build/core';
 import { type MessageResult, validateResult } from '@bakers-build/message';
 import type { LoadedInbox } from '../plugins/message.js';
 import type { BbRemote, InboxMessage, Ticket } from '../plugins/remote.js';
+import type { ToolRegistry } from '../plugins/tools.js';
 import type { ActionQueue } from './action-queue.js';
 
 /** Per-handler timeout; the request's `signal` aborts after it. */
@@ -31,6 +32,7 @@ export class InboxRuntime {
     private readonly remote: BbRemote,
     private readonly logger: ConductorLogger,
     private readonly env: (ticket: Ticket) => Promise<Record<string, string>>,
+    private readonly tools?: ToolRegistry,
   ) {}
 
   /** Whether this conductor runs no contract-2 addon. */
@@ -132,6 +134,17 @@ export class InboxRuntime {
           env: await this.env(ticket),
           logger: this.logger,
           signal: controller.signal,
+          ...(this.tools
+            ? {
+                callTool: (name: string, args?: Record<string, unknown>) =>
+                  (this.tools as ToolRegistry).call(
+                    name,
+                    args,
+                    { worktreePath, ticket },
+                    { signal: controller.signal, logger: this.logger },
+                  ),
+              }
+            : {}),
         }),
         timeout,
       ]);

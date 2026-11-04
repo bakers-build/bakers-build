@@ -30,3 +30,10 @@ processes) imports them from here rather than redeclaring them — the dependenc
 ## Platform
 
 Linux only (inherits `@bakers-build/addon-docker-compose`'s constraint); nothing here needs root.
+
+## Agent tools
+
+`./preset` exports `tools` (`src/tools.ts`): `ddev_status`, `ddev_start` and `ddev_exec(command)`,
+run with `cwd` = the run's bound worktree. Listed in a conductor's `addons[]`, the conductor serves
+them through its MCP server. Timeouts are 10 minutes for `start` and 5 otherwise; answers carry the
+exit code and the last 64 KB of output.

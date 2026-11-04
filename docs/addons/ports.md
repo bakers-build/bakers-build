@@ -47,7 +47,7 @@ bakers ports down [service-key]
 bakers ports reap                         # machine-wide reconciliation
 ```
 
-`list` shows a claimed service; `up` returns a public URL that serves it.
+`list` shows a claimed service; `up` returns a public URL. Others need the [conductor](/addons/build/tools).
 :::
 
 ## Good to know

@@ -34,6 +34,7 @@ import {
 } from './plugins/preset.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import { loadTools } from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`
@@ -498,6 +499,11 @@ export async function loadConductorConfig(
   const wired = resolveConductorSlots(discovered);
   const hookListeners = validateHookListeners(discovered.hooks);
   const inboxAddons = await loadInboxAddons(discovered.addonInbox);
+  // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
+  const tools =
+    discovered.addonTools.length > 0
+      ? await loadTools(discovered.addonTools)
+      : undefined;
   // Explicit executor/workspace descriptors still load those slots, but they
   // skip addons[] discovery — so a pre-BB-215 config never contributes a
   // process host unless we load that package's processHosts accumulator too.
@@ -736,6 +742,7 @@ export async function loadConductorConfig(
     workspace,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
+    ...(tools !== undefined ? { tools } : {}),
     ...(processHost !== undefined ? { processHost } : {}),
     bakers,
     ...identityOf(machineCtx, project, variant),
