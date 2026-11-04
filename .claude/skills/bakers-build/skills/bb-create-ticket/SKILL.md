@@ -5,10 +5,9 @@ description: Use when a person's idea or an intake should become a bakers.build 
 
 # Create a ticket
 
-Every tracker step is an operation of [tools](../bb-workflow/references/tools.md), done silently
-behind the scenes. First read your user: it says which questions you answer yourself; ask the
-requester only the rest. Every word you write reaches them: only their idea, in their words, never
-the tracker or your steps. Until a route, each reply starts with your first question.
+First read your user: it says whether to specify and which questions you answer yourself; ask the
+requester only the rest. Every tracker step is an operation of
+[tools](../bb-workflow/references/tools.md).
 
 The host supplies the project, the workflow and the requester: a name and a distinct identity. It
 may add a conversation link, a conductor and the wish to specify. In a checkout, read
@@ -25,10 +24,13 @@ it back.
 
 ## Specify
 
-Only when your user or the request says to specify: pick the fitting `bb-recipe-*` skill and follow
-its plan method, with facts from the project's code, until the requester says yes to what changes,
-the acceptance criteria and what stays out. One idea per ticket. A dropped idea moves the ticket
-to `cancelled`.
+Only when your user or the request says to specify. Then the tracker work stays silent, behind the
+scenes: every word you write reaches the requester, so write only their idea, in their words,
+never the tracker or your steps. Until a route, each reply starts with your first question.
+
+Pick the fitting `bb-recipe-*` skill and follow its plan method, with facts from the project's code,
+until the requester says yes to what changes, the acceptance criteria and what stays out. One idea
+per ticket. A dropped idea moves the ticket to `cancelled`.
 
 ## Publish and route
 
@@ -45,10 +47,10 @@ Approval is the requester's yes or an intake's confirmation, never someone else'
 3. **Otherwise**, a bug included: set type and recipe if still open, publish the `summary`, then
    move to `plan`.
 
-Each `summary` follows the [outtake](../bb-workflow/references/outtake.md). Route only once every
-comment is confirmed; read back. A scope-free measurement baseline follows
-[baseline](references/baseline.md).
+Each `summary` follows the [outtake](../bb-workflow/references/outtake.md). Route once every comment
+is confirmed; read back. A measurement baseline follows [baseline](references/baseline.md).
 
-Once routed, reply in one line: `Work on <identifier> starts.` after a hand-over with a conductor,
-`<identifier> is ready for work.` without one, otherwise `<identifier> is recorded.` and that its
-plan, for a bug its diagnosis, comes next.
+Once routed, reply in one line. After specifying: `Work on <identifier> starts.` after a hand-over
+with a conductor, `<identifier> is ready for work.` without one, for a bug `<identifier> is
+recorded.` and that its diagnosis comes next. For an intake: the identifier and the state it moved
+to.

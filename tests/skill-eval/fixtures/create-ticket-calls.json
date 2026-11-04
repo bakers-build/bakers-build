@@ -56,6 +56,10 @@
     {
       "id": "honest-initial-routing",
       "criterion": "Reports only the observed creation/routing or the blocking prior-art result. Does not invent implementation, spec work or a transition that the tool trace did not establish."
+    },
+    {
+      "id": "intake-reply",
+      "criterion": "Names the ticket identifier and the state it was routed to."
     }
   ]
 }
