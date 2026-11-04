@@ -21,6 +21,7 @@ import {
 import { readBbProjectSelection } from './cli/project-context.js';
 import type { HookListener, HookName } from './plugins/executor.js';
 import { type LoadedInbox, loadInbox } from './plugins/message.js';
+import { loadTools } from './plugins/tools.js';
 import type {
   AgentCandidate,
   AgentPlugin,
@@ -498,6 +499,11 @@ export async function loadConductorConfig(
   const wired = resolveConductorSlots(discovered);
   const hookListeners = validateHookListeners(discovered.hooks);
   const inboxAddons = await loadInboxAddons(discovered.addonInbox);
+  // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
+  const tools =
+    discovered.addonTools.length > 0
+      ? await loadTools(discovered.addonTools)
+      : undefined;
   // Explicit executor/workspace descriptors still load those slots, but they
   // skip addons[] discovery — so a pre-BB-215 config never contributes a
   // process host unless we load that package's processHosts accumulator too.
@@ -736,6 +742,7 @@ export async function loadConductorConfig(
     workspace,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
+    ...(tools !== undefined ? { tools } : {}),
     ...(processHost !== undefined ? { processHost } : {}),
     bakers,
     ...identityOf(machineCtx, project, variant),

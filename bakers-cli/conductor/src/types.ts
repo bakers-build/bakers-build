@@ -10,6 +10,7 @@ import type { ResolvedBbProjectContext } from './bakers-project-context.js';
 import type { BbProjectSelection } from './cli/project-context.js';
 import type { HookListener } from './plugins/executor.js';
 import type { LoadedInbox } from './plugins/message.js';
+import type { ToolRegistry } from './plugins/tools.js';
 import type {
   AgentCandidate,
   ExecutorPlugin,
@@ -113,6 +114,8 @@ export interface ConductorFileConfig extends ConductorSettings {
    * validated at load (BB-661). Absent means none.
    */
   inboxAddons?: LoadedInbox[];
+  /** Agent tools from the conductor `addons[]` `tools` exports. Absent means none. */
+  tools?: ToolRegistry;
   /**
    * Conductor process host from the `processHosts` accumulator (last wins).
    * Absent when no addon contributed one — `bakers oven start` then fails
