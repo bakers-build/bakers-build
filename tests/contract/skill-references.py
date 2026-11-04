@@ -7,16 +7,16 @@ import tempfile
 
 repo = Path(__file__).resolve().parents[2]
 root = repo / '.claude/skills/bakers-build'
-SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-prepare-time',
-          'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers', 'bb-recipe-verify',
-          'bb-runtime-ddev',
-          'bb-scope-change', 'bb-pingpong', 'bb-upgrade-project', 'bb-verdict', 'bb-workflow')
+SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-pingpong',
+          'bb-prepare-time', 'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers',
+          'bb-recipe-verify', 'bb-runtime-ddev', 'bb-scope-change', 'bb-upgrade-project', 'bb-verdict',
+          'bb-workflow')
 STATES = ('qualification', 'plan', 'working', 'review')
 PHASES = ('read', 'provision', 'work', 'validate', 'deliver', 'outtake', 'transition')
 # Skills that became bb-workflow references or were deleted; none may be named anywhere.
 RETIRED = ('bb-acceptance', 'bb-ensure-qualification', 'bb-merge-mr', 'bb-post-deployment',
-           'bb-prepare-deployment', 'bb-publish-comment', 'bb-publish-origin-feedback',
-           'bb-publish-origin-status', 'bb-qualify-ticket', 'bb-read-ticket', 'bb-record-measurement',
+           'bb-prepare-deployment', 'bb-project-manager', 'bb-publish-comment',
+           'bb-publish-origin-feedback', 'bb-publish-origin-status', 'bb-qualify-ticket', 'bb-read-ticket', 'bb-record-measurement',
            'bb-resolve-environment', 'bb-review-ticket', 'bb-run-intake', 'bb-run-outtake', 'bb-scenario',
            'bb-summarize-verification', 'bb-transition-ticket', 'bb-verify-on-environment',
            'bb-verify-playwright-cli', 'bb-verify-tests')

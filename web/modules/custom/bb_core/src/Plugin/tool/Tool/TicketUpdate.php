@@ -26,7 +26,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[Tool(
   id: 'bakers_ticket_update',
   label: new TranslatableMarkup('Update a ticket'),
-  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added by name, existing ones kept) and/or frozen flag; fields left out keep their values. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.'),
+  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept) and/or frozen flag; fields left out keep their values. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -58,6 +58,17 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     'labels_add' => new ListInputDefinition(
       label: new TranslatableMarkup('Labels to add'),
       description: new TranslatableMarkup('Label names to add, e.g. agent:claude; created in the ticket’s workspace when missing and allowed. Existing labels are kept.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Label'),
+        description: new TranslatableMarkup('One label name.'),
+        constraints: ['NotBlank' => []],
+      ),
+    ),
+    'labels_remove' => new ListInputDefinition(
+      label: new TranslatableMarkup('Labels to remove'),
+      description: new TranslatableMarkup('Label names to remove; names the ticket does not carry are ignored. Every other label is kept.'),
       required: FALSE,
       item_definition: new InputDefinition(
         data_type: 'string',
@@ -138,6 +149,7 @@ final class TicketUpdate extends ToolBase {
     'description' => 'description',
     'conductor' => 'conductor_id',
     'labels_add' => 'labels',
+    'labels_remove' => 'labels',
     'frozen' => 'frozen',
   ];
 
@@ -151,7 +163,11 @@ final class TicketUpdate extends ToolBase {
       static fn ($value) => $value !== NULL,
     );
     if (!$given) {
-      throw new \InvalidArgumentException('Give a title, a description, a conductor, labels to add or frozen.');
+      throw new \InvalidArgumentException('Give a title, a description, a conductor, labels to add or remove, or frozen.');
+    }
+    $both = array_intersect($given['labels_add'] ?? [], $given['labels_remove'] ?? []);
+    if ($both) {
+      throw new \InvalidArgumentException(sprintf('Label %s is both added and removed.', reset($both)));
     }
     // Closed tickets deny every field edit; say why before the access check.
     if ($this->readableTicket($values['ticket'])->isClosed()) {
@@ -164,6 +180,10 @@ final class TicketUpdate extends ToolBase {
       foreach ($given as $input => $value) {
         if ($input === 'labels_add') {
           $this->addLabels($ticket, $value);
+          continue;
+        }
+        if ($input === 'labels_remove') {
+          $this->removeLabels($ticket, $value);
           continue;
         }
         $ticket->set(self::FIELDS[$input], match ($input) {
@@ -213,6 +233,19 @@ final class TicketUpdate extends ToolBase {
         $present[] = $label->id();
       }
     }
+  }
+
+  /**
+   * Drops the named labels, keeping every other one in its order.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed.
+   * @param array<string> $names
+   *   Label names, resolved like labels_add; absent ones are ignored.
+   */
+  private function removeLabels(BbTicketInterface $ticket, array $names): void {
+    $ids = $this->termIds($ticket->getProject()?->getGroup()?->getWorkspace(), 'label', $names);
+    $ticket->get('labels')->filter(static fn ($item) => !in_array($item->target_id, $ids));
   }
 
   /**

@@ -792,6 +792,72 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
   );
 
   it(
+    'update-labels: labels are added and removed by name, absent names ignored, one name in both lists refused',
+    async () => {
+      const simulation = (await loadFixture('qualify-classify-default'))
+        .simulation;
+      const { files, call } = script();
+      const steps = [
+        call('bakers_ticket_update', {
+          ticket: ticketId,
+          labels_add: ['keep', 'Question', 'other'],
+          frozen: true,
+        }),
+        call('bakers_ticket_update', {
+          ticket: ticketId,
+          labels_remove: ['Question', 'never-created'],
+          frozen: false,
+        }),
+        call('bakers_ticket_read', { ticket: ticketId }),
+        call('bakers_ticket_update', {
+          ticket: ticketId,
+          labels_add: ['x'],
+          labels_remove: ['x'],
+        }),
+        call('bakers_ticket_update', { ticket: ticketId }),
+        call('bakers_ticket_read', { ticket: ticketId }),
+      ];
+      const { real, sim, endpoint } = await pair(simulation, steps, files);
+      const checks = [
+        ...agreeAll(real, sim),
+        check(
+          'remove-arguments',
+          same(
+            sent(endpoint, 'bakers_ticket_update')[1]?.json?.params?.arguments,
+            {
+              ticket: ticketId,
+              labels_remove: ['Question', 'never-created'],
+              frozen: false,
+            },
+          ),
+          'The call sends the names to remove and the freeze flag as given',
+        ),
+        check(
+          'remove-keeps-others',
+          same(json(real[0]!)?.labels, ['keep', 'Question', 'other']) &&
+            same(json(real[1]!)?.labels, ['keep', 'other']) &&
+            json(real[1]!)?.frozen === false &&
+            same(json(real[2]!)?.labels, ['keep', 'other']),
+          'Removal drops only the named labels, ignores absent ones and keeps the order; readback agrees',
+        ),
+        check(
+          'refusals',
+          real[3]!.exit_code === 1 &&
+            error(real[3]!)?.message === 'Label x is both added and removed.' &&
+            real[4]!.exit_code === 1 &&
+            error(real[4]!)?.message ===
+              'Give a title, a description, a conductor, labels to add or remove, or frozen.' &&
+            same(json(real[5]!)?.labels, ['keep', 'other']),
+          'A name in both lists and an empty call are refused; nothing changes',
+        ),
+        ...boundary(endpoint),
+      ];
+      expect(failing(checks), observed(steps, real, sim)).toEqual([]);
+    },
+    MS,
+  );
+
+  it(
     'metric-write: replaces only its namespace, keeps other rows, returns a unit-less row and adds the label once',
     async () => {
       const simulation = (await loadFixture('transition-ticket-calls'))

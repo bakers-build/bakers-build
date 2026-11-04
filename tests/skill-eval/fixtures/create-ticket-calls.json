@@ -5,17 +5,14 @@
   "execution": "simulated-tools",
   "skill": "bb-create-ticket",
   "references": [
-    "bb-workflow/SKILL.md",
+    "bb-workflow/references/tools.md",
+    "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-workflow/references/read-ticket.md",
-    "bb-workflow/references/publish-comment.md",
-    "bb-workflow/references/transition-ticket.md",
-    "bb-workflow/references/qualification.md",
-    "bb-workflow/references/boundaries.md",
-    "bb-workflow/references/results.md",
-    "bb-workflow/references/outtake.md",
     "bb-workflow/references/classify.md",
-    "bb-workflow/references/agent-choice.md"
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/qualification.md",
+    "bb-workflow/references/agent-choice.md",
+    "bb-workflow/references/origin-status.md"
   ],
   "input": {
     "task": "Create the new confirmed feature intake using actual fixture tools, perform the required prior-art search, publish qualification and summary, and route it once. No confirmed design, implementation or test plan exists. Stop after initial routing.",
@@ -46,12 +43,22 @@
   "simulation": {
     "files": {
       "/fixture/description.md": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n"
+    },
+    "user": {
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "name": "Dana Developer",
+      "position": "Developer",
+      "background": "Develops this project; ask technical questions too."
     }
   },
   "rubric": [
     {
       "id": "honest-initial-routing",
       "criterion": "Reports only the observed creation/routing or the blocking prior-art result. Does not invent implementation, spec work or a transition that the tool trace did not establish."
+    },
+    {
+      "id": "intake-reply",
+      "criterion": "Names the ticket identifier and the state it was routed to."
     }
   ]
 }
