@@ -58,7 +58,7 @@ On a workspace running the bot, with the service user's profile set, and two mem
 1. **Specify and hand over.** The requester mentions the bot with a feature request and answers its questions in the thread. The ticket linked to the thread is specified in plain words; after the requester's "yes" it carries the `spec`, `plan` and `test` comments with *Approved by <name> (Slack user <ID>)*, a type and recipe, the conductor, the label `pingpong` and the state `working`.
 2. **Only the requester's yes.** On the next request, the second member answers "yes" to the summary first: nothing on the ticket changes. The requester's "yes" then hands it over.
 3. **An answer from anyone.** On a ticket with a thread, publish a `# Question` comment, add the **Question** label and freeze it. Within `PM_BOT_POLL_INTERVAL` seconds (default 15) it appears in the thread; `docker compose -p pm-bot restart` posts no second copy. The second member answers: the ticket gets *Answered in Slack by <name> (Slack user <ID>):* with the answer, loses the label and is unfrozen.
-4. **A technical problem stays.** Publish a technical-problem note, add the label `technical problem` and freeze the ticket; reply in the thread. Nothing is written to the ticket; the bot points to the developers.
+4. **A technical problem stays.** Publish a technical-problem note, add the label `technical problem` and freeze the ticket. The note appears once in the thread behind `The work on the "<title>" ticket is stuck on a technical problem that keytec has to solve:`, also when the ticket carries **Question** as well; `docker compose -p pm-bot restart` posts no second copy. Reply in the thread: nothing is written to the ticket; the bot points to the developers.
 5. **Status in plain words.** Ask "how is <identifier> going?" in the channel: the bot answers with the state in plain words and two or three sentences from the latest summary, without state names, comment types or criteria IDs.
 
 Also check the poller and the limits: each new state appears once in the thread; a sub-ticket gets its own thread and a pointer in the parent's; after a restart of the bakers.build site a new request is answered without restarting the bot; in a channel the bot is not allowed in, it does not answer.
@@ -77,7 +77,7 @@ The bot keeps no memory and writes no skill without you. Review its proposals in
 | `pm-bot: missing: …` and the container restarting | The env file lacks a required key; check the workspace's skip line and parameters |
 | `pm-bot: SLACK_ALLOWED_CHANNELS must name exactly one channel` | `pm_bot_slack_allowed_channels` lists more than one channel; the bot serves one |
 | `render …: … may hold only …` | A parameter holds a character the configuration cannot take safely |
-| A relayed question never appears | The ticket has no `chat` link, lacks the **Question** label or is not frozen; `hermes send exited …` in the container log names the Slack error |
+| A relayed question or technical problem never appears | The ticket has no `chat` link, lacks the **Question** or **technical problem** label or is not frozen; `hermes send exited …` in the container log names the Slack error |
 
 ## Cut it off
 
