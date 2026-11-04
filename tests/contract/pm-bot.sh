@@ -216,9 +216,9 @@ CONTEXTS=(--build-context bundle=.claude/skills/bakers-build
   --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3
   --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0)
 for f in scripts/ci/github-image-gate.sh tests/contract/pm-bot-image.sh "$BOT/README.md"; do
-  # Join continued lines, then take each docker build whose context is pm-bot.
-  lines="$(sed -e ':a' -e '/\\$/N; s/\\\n//; ta' "$f" | grep -E 'docker build .* pm-bot( |$)' || true)"
-  [ -n "$lines" ] || fail "$f has no docker build of pm-bot"
+  # Join continued lines, then take each docker build whose context is $BOT.
+  lines="$(sed -e ':a' -e '/\\$/N; s/\\\n//; ta' "$f" | grep -E "docker build .* $BOT( |\$)" || true)"
+  [ -n "$lines" ] || fail "$f has no docker build of $BOT"
   while IFS= read -r line; do
     for ((i = 1; i < ${#CONTEXTS[@]}; i += 2)); do
       grep -qF -- "${CONTEXTS[i]}" <<<"$line" || fail "an image build line lacks a pinned skill context: $f: ${CONTEXTS[i]}"
