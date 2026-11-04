@@ -135,7 +135,7 @@ pass "no bot-owned skill"
 SOUL="$BOT/SOUL.template.md"
 [ ! -e "$BOT/SOUL.md" ] || fail "$BOT/SOUL.md is back; the entrypoint renders SOUL.template.md"
 for word in bb-create-ticket 'Slack user' /archives/ labels_remove frozen 'Answered in Slack by' Question \
-  'technical problem' mcp_bakers__tool_api__ bakers_ticket_search bakers_ticket_read '${PM_BOT_PROJECT}' \
+  'technical problem' mcp_bakers__tool_api__ bakers_ticket_search bakers_ticket_read 'your user' bakers_user_read 'not in a checkout' '${PM_BOT_PROJECT}' \
   '${PM_BOT_TICKET_WORKFLOW}' '${PM_BOT_CONDUCTOR_TEXT}' '${SLACK_WORKSPACE_URL}/archives/${SLACK_ALLOWED_CHANNELS}/p'; do
   grep -qF -- "$word" "$SOUL" || fail "$SOUL does not name $word"
 done
