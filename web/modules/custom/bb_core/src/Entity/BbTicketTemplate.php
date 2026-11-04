@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
@@ -48,7 +48,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
       'default' => BbTicketTemplateForm::class,
       'add' => BbTicketTemplateForm::class,
       'edit' => BbTicketTemplateForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
     'route_provider' => ['html' => BbTicketTemplateRouteProvider::class],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_activity\Kernel;
 
+use Drupal\Tests\bb_core\Kernel\DanglingReferenceTrait;
 use Drupal\Tests\bb_core\Kernel\WorkspaceReadScopeTestTrait;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
@@ -27,6 +28,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('bb_activity')]
 #[RunTestsInSeparateProcesses]
 final class TicketActivityAccessTest extends KernelTestBase {
+
+  use DanglingReferenceTrait;
 
   use ActivityKindTestTrait;
 
@@ -160,7 +163,7 @@ final class TicketActivityAccessTest extends KernelTestBase {
    */
   public function testDanglingTicketForbidsView(): void {
     $activity = $this->statusActivity('a');
-    $this->fixture('a', 'bb_ticket')->delete();
+    $this->removeRowsOnly($this->fixture('a', 'bb_ticket'));
     $this->container->get('entity_type.manager')
       ->getAccessControlHandler('bb_activity')
       ->resetCache();

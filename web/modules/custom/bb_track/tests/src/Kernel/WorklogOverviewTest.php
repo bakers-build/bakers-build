@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_track\Kernel;
 
+use Drupal\Tests\bb_core\Kernel\DanglingReferenceTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Url;
@@ -39,6 +40,8 @@ use Symfony\Component\Yaml\Yaml;
 #[Group('bb_track')]
 #[RunTestsInSeparateProcesses]
 final class WorklogOverviewTest extends KernelTestBase {
+
+  use DanglingReferenceTrait;
 
   use OgScopeFixtureTrait;
   use TeamWorldTrait;
@@ -309,7 +312,7 @@ final class WorklogOverviewTest extends KernelTestBase {
       'duration_seconds' => 4500,
       'description' => 'Gone project',
     ]);
-    $this->projectP->delete();
+    $this->removeRowsOnly($this->projectP);
     $view = $this->overview($this->employee, [
       'mode' => 'day',
       'date' => '2026-10-06',
@@ -410,7 +413,7 @@ final class WorklogOverviewTest extends KernelTestBase {
       'project_id' => $gone_project->id(),
     ]);
     LegacyWorklogFixture::save($gone);
-    $gone_project->delete();
+    $this->removeRowsOnly($gone_project);
 
     $view = $this->calendar('personal', $w['M'], ['user' => $w['M']], ['mode' => 'day', 'date' => '2026-12-08']);
     $ids = $this->rowIds($view);

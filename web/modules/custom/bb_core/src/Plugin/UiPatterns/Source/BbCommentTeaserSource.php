@@ -63,6 +63,21 @@ final class BbCommentTeaserSource extends SourcePluginBase implements ContainerF
       'timestamp' => $this->date->normal($comment->getCreatedTime()),
       'body' => $comment->get('body')->processed,
     ], static fn (mixed $value): bool => $value !== '' && $value !== NULL);
+    $links = [
+      [
+        'url' => $comment->toUrl()->toString(),
+        'title' => BbCommentRouteProvider::title($comment),
+        'target' => '_self',
+      ],
+    ];
+    $delete = $comment->access('delete', NULL, TRUE);
+    if ($delete->isAllowed()) {
+      $links[] = [
+        'url' => $comment->toUrl('delete-form')->toString(),
+        'title' => (string) $this->t('Delete'),
+        'target' => '_self',
+      ];
+    }
     $build = [
       'event' => [
         '#type' => 'component',
@@ -74,18 +89,13 @@ final class BbCommentTeaserSource extends SourcePluginBase implements ContainerF
         '#component' => 'bb_theme:link-group',
         '#props' => [
           'label' => (string) $this->t('Comment'),
-          'links' => [
-            [
-              'url' => $comment->toUrl()->toString(),
-              'title' => BbCommentRouteProvider::title($comment),
-              'target' => '_self',
-            ],
-          ],
+          'links' => $links,
         ],
       ],
     ];
     CacheableMetadata::createFromRenderArray($build)
       ->addCacheableDependency($comment)
+      ->addCacheableDependency($delete)
       ->addCacheContexts(['user'])
       ->applyTo($build);
     return $build;

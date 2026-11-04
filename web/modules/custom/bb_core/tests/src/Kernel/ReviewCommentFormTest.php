@@ -112,8 +112,8 @@ final class ReviewCommentFormTest extends KernelTestBase {
 
     $this->setCurrentUser($actors['reviewer']);
     $author_form = $this->form($review);
-    self::assertArrayNotHasKey('accept', $author_form['actions']);
-    self::assertArrayNotHasKey('reject', $author_form['actions']);
+    self::assertArrayNotHasKey('accept', $author_form['actions'] ?? []);
+    self::assertArrayNotHasKey('reject', $author_form['actions'] ?? []);
   }
 
   /**

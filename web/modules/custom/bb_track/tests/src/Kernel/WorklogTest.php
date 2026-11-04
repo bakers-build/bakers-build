@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_track\Kernel;
 
+use Drupal\Tests\bb_core\Kernel\DanglingReferenceTrait;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\bb_core\Entity\BbGroupInterface;
@@ -27,6 +28,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('bb_track')]
 #[RunTestsInSeparateProcesses]
 final class WorklogTest extends KernelTestBase {
+
+  use DanglingReferenceTrait;
 
   use OgScopeFixtureTrait;
   use UserCreationTrait;
@@ -419,9 +422,9 @@ final class WorklogTest extends KernelTestBase {
     ]);
     $project_id = (int) $this->projectP->id();
     $ticket_id = (int) $this->ticketT->id();
-    $this->ticketT->delete();
-    $this->projectP->delete();
-    $this->groupG1->delete();
+    $this->removeRowsOnly($this->ticketT);
+    $this->removeRowsOnly($this->projectP);
+    $this->removeRowsOnly($this->groupG1);
     $this->reload($entry);
     self::assertSame($project_id, (int) $entry->get('project_id')->target_id);
     self::assertSame($ticket_id, (int) $entry->get('ticket_id')->target_id);

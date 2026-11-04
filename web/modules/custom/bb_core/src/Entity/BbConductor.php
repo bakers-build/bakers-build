@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Session\AccountInterface;
@@ -51,7 +51,7 @@ use Drupal\user\EntityOwnerTrait;
       'default' => BbConductorForm::class,
       'add' => BbConductorForm::class,
       'edit' => BbConductorForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
       // The Overview's card and its Disable/Enable confirmation.
       'identity' => BbEntityDetailCardForm::class,
       'action' => BbConductorActionForm::class,

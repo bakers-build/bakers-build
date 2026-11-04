@@ -352,7 +352,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $tenancyInvite = $this->container->get('bb_core.workspace_invite');
     self::assertInstanceOf(WorkspaceInvite::class, $tenancyInvite);
 
-    $built = $tenancyInvite->inviteItems([$invite], TRUE, 'revoke_invite_');
+    $built = $tenancyInvite->inviteItems([$invite], TRUE);
 
     $state = $built['items'][0]['cells']['state'];
     self::assertSame('Expired', $state['label']);
@@ -1044,7 +1044,8 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $tenancyInvite = $this->container->get('bb_core.workspace_invite');
     self::assertInstanceOf(WorkspaceInvite::class, $tenancyInvite);
 
-    $items = $tenancyInvite->inviteItems([$ranked, $legacy, $stale], TRUE, 'revoke_invite_')['items'];
+    // Unsaved rows: labels only, no revoke control that needs a saved id.
+    $items = $tenancyInvite->inviteItems([$ranked, $legacy, $stale], FALSE)['items'];
 
     self::assertSame(['Admin', 'Platform'], [$items[0]['cells']['role']['label'], $items[0]['cells']['team']['value']]);
     self::assertSame(['Member', 'No team'], [$items[1]['cells']['role']['label'], $items[1]['cells']['team']['value']]);
