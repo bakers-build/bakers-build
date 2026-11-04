@@ -3,7 +3,7 @@ client instructions below; preserve all shared gates and handoff requirements.
 
 ## Coding and review handoff
 
-Commit and push the scoped change, then create or update its MR with explicit `--target-branch
+Commit and push the scoped change (`git push -u origin <branch_name>`), then create or update its MR with explicit `--target-branch
 <base_branch>`. Follow project commit and MR conventions. Immediately persist the resolved MR URL in
 the ticket's `links` through [transition ticket](transition-ticket.md)'s *Links-only write*: pass
 the ticket UUID and MR, with no destination. Preserve existing links, deduplicate by URI, and verify

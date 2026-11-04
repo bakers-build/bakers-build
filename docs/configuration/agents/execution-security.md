@@ -83,11 +83,11 @@ What it does not block:
 
 ## Git metadata in Codex and Claude sandboxes
 
-A linked worktree's run writes its own Git dir plus the shared `objects`, `refs` and `logs`; a main checkout's run, its `.git`. Only existing protected entries (`config`, `hooks`, `commondir`, …) are named; a sandbox covers a missing one with an empty file that breaks Git. `allow_write` entries in a `.git` are ignored, with a warning. Setting an upstream needs the trusted `git`.
+A linked worktree's run writes its own Git dir plus the shared `objects`, `refs` and `logs`; a main checkout's run, its `.git`. Only existing protected entries (`config`, `hooks`, `commondir`, …) are named; a sandbox covers a missing one with an empty file that breaks Git. `allow_write` entries inside `.git` are ignored with a warning. Setting an upstream needs the trusted `git`.
 
-Known limit: in a linked worktree, Claude Code holds an empty `config.lock` in the shared `.git` during sandboxed commands; see [`set_git_auto_setup_merge`](/configuration/project#fields).
+Known limit (reported upstream): in a linked worktree, Claude Code creates empty `config.lock`, `config.worktree`, `remotes/`, `branches/` in the shared `.git`; all but `config.lock` persist. See [`set_git_auto_setup_merge`](/configuration/project#fields).
 
-At run end the conductor ends the processes carrying the run's `BB_RUN_UUID` (Linux).
+At run end the conductor ends processes carrying the run's `BB_RUN_UUID` (Linux).
 
 ## Grok in `sandbox` mode
 
