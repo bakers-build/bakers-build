@@ -1,11 +1,11 @@
 ---
 title: Configuration migration
-description: How bakers config upgrade moves old configuration into current ownership - scopes, preview, apply, verification, and what each diagnostic code asks you to repair.
+description: How bakers config upgrade completes current configuration - scopes, preview, apply, verification, and what each diagnostic code asks you to repair.
 ---
 
 # Configuration migration
 
-`bakers config upgrade` moves supported old configuration into the files that own it today, and `bakers config check` tells you whether the result is valid.
+`bakers config upgrade` fills missing template slots in current configuration files, and `bakers config check` tells you whether the result is valid.
 
 The everyday update steps are on [Update bakers.build](/configuration/machine/updates); this page is the detail behind them: scopes, how preview and apply behave, and how to read each finding as a repair instruction.
 
@@ -15,12 +15,12 @@ Every `bakers config` command takes `--scope`:
 
 | Scope | Files | Current schema |
 |---|---|---|
-| `machine` | `machine.config.js` in the bakers.build home: host identity, capacity, agents | 3 |
-| `connection` | The selected connection file: server and sign-in | 4 |
+| `machine` | `machine.config.js` in the bakers.build home: host identity, capacity, agents | 1 |
+| `connection` | The selected connection file: server and sign-in | 1 |
 | `project` | The checkout's `.bakers/` files: conductor configs and the local selector | 1 (conductor configs) |
 | `all` | All of them | - |
 
-A move between owners, for example `max_parallel` from a conductor config to the machine file, needs `--scope all`, because one scope may not write another. `--path <directory>` selects the project root; it does not replace the home directory. `--machine-path` and `--config` override the machine and connection files, and `--connection <id>` picks a named connection. Nothing under `~/.config/conductor` is read; a machine that only has a file there runs `bakers init` once. A leftover `~/.bakers/conductor.config.local.js` blocks every scope until its values move to the machine, connection or project local config and the file is deleted.
+A write to another scope's file needs `--scope all`, because one scope may not write another. `--path <directory>` selects the project root; it does not replace the home directory. `--machine-path` and `--config` override the machine and connection files, and `--connection <id>` picks a named connection. Nothing under `~/.config/conductor` is read; a machine that only has a file there runs `bakers init` once. A leftover `~/.bakers/conductor.config.local.js` blocks every scope until its values move to the machine, connection or project local config and the file is deleted.
 
 ## Preview, apply, check
 
@@ -33,7 +33,7 @@ bakers config upgrade --scope all --connection team --dry-run
 
 Replace `team` with your connection name. Run these from the checkout, inspect the first report before applying, and expect the last preview to show no change: a second successful upgrade is a no-op.
 
-- **Preview** (`--dry-run`) parses the source without executing it and makes no writes, backups, imports or network calls. The report lists file states, fingerprints, redacted diffs, the schema step of each file (`schema 2 -> 3`) and findings.
+- **Preview** (`--dry-run`) parses the source without executing it and makes no writes, backups, imports or network calls. The report lists file states, fingerprints, redacted diffs, the schema of each file and findings.
 - **Apply** rechecks each file's fingerprint and stops with `changed_since_planning` if a file moved since the plan. It writes a private non-overwriting backup `<file>.bakers.bak` (mode 0600), then replaces the file atomically. If a write fails it restores the files already changed and names any it could not restore.
 - **Check** validates offline by default. `--online` authenticates and verifies each selected workspace (not applicable to the machine scope), and resolves each machine and project `addons` entry to report one listed in a file its addon does not allow; offline, that step is skipped with an `addon_scope_skipped` info finding. An offline `ok` says the local shape is valid, and a report that says online was skipped is not a successful online check.
 
@@ -41,18 +41,11 @@ Replace `team` with your connection name. Run these from the checkout, inspect t
 
 A generated file or current schema marker does not prove a working conductor. After migrating, confirm the agent catalog with `bakers agents` and start a worker only when it lists what you expect. Schema versions belong to the configuration format, not the npm release, so never fix a failure by editing only `schema_version`; the actual shape must match.
 
-## What the planner moves
+## Old configuration
 
-| Old shape | Becomes |
-|---|---|
-| Top-level `project` and `bb_workspace` in a conductor config | `bakers: { project, workspace }` |
-| Conductor `machine_id` | `conductor_id` |
-| `max_parallel` and `tunnel` in a conductor config or local file | The machine file; a differing value in both files is a `conflicting_values` finding |
-| Connection keys (`base_url`, `client_id`, `client_secret`, `workspace_id`) in a machine file | The connection file |
-| `agent`, `agents`, `default_agent`, `agent_routes` in a conductor config | Dropped from the conductor config; agent policy lives in machine `agents`, so confirm it afterwards |
-| `site` and `plugins` in a conductor config | Left in place, ignored at runtime with a warning; delete them by hand |
-| Machine `agents.addons` | Appended to the machine's top-level `addons` (an entry already there with the same package and `alias` is kept once); `agents` keeps its policy keys |
-| Machine top-level `ports` | The `with` of the `@bakers-build/addon-ports` entry in the machine's `addons`, added or filled in. A computed value, or an entry that already has a `with`, is left for you to move by hand |
+Every file starts at schema version 1, and the upgrade has no migration steps. A file at another schema version, a project config with `conductor_id`, `machine_id` or `label`, or a machine file with `user_id` fails loading with a message naming `bakers init`. `bakers init` rewrites an old machine file in place: it keeps `machine_id`, drops `user_id`, asks for a `label` and sets version 1; a new machine gets a generated UUID ([Machines](/configuration/machine)).
+
+Because the conductor id is now derived from the machine, the project and the variant, the first `bakers oven start` after the upgrade comes with a new id. When this machine, project and variant already have a conductor under its old id, the start offers it once: take it over and it keeps its tickets, runs and freeze state ([conductor commands](/configuration/project/conductor-commands#start)).
 
 ## Read a finding as a repair instruction
 
@@ -70,11 +63,11 @@ Each finding has a `code`, the file and key, what was expected and a recheck com
 | `missing_required_key`, `invalid_value` | A required key is absent or has the wrong type. Online, `invalid_value` means the connection or its plugins failed to load. | Set the named key; a missing `site.base_url` belongs in the connection file, not the machine file. Online, inspect the connection file and recheck. |
 | `version_marker_disagreement` | The header marker and the `schema_version` field differ. | Reconcile both with the file's real shape. |
 | `future_schema_version` | The file is newer than this CLI. | Install a newer bakers.build release; do not downgrade the marker. |
-| `misplaced_key` | A key sits in a file that does not own it. | Run `bakers config upgrade --scope all`. |
+| `misplaced_key` | A key sits in a file that does not own it. | Move it into the file the finding names. |
 | `conflicting_values` | Source and destination hold different values. | Decide which is intended, edit the other to match, and retry. |
 | `out_of_scope_write_required` | The repair must write outside the selected scope. | Re-run with `--scope all`. |
 | `dead_key` | A key in `conductor.config.local.js` is no longer read, such as `base_url` or `oauth`. | Remove it after confirming the connection holds the intended value. |
-| `retired_key` | Machine `agents.addons` or top-level `ports`; loading fails until it moves. The remediation shows the exact `addons: [...]` fragment. | Run `bakers config upgrade --scope machine`, or paste the fragment. |
+| `retired_key` | Machine `agents.addons` or top-level `ports`; loading fails until it moves. The remediation shows the exact `addons: [...]` fragment. | Paste the fragment. |
 | `addon_scope_not_allowed` | An `addons` entry sits in a file its addon does not allow (`--online` only); it is not loaded there. | Move the entry to the file the finding names. |
 | `addon_scope_skipped` | Info: an offline check did not resolve `addons` entries, so their scopes were not checked. | Run `bakers config check --online` to check them. |
 | `superseded_file` | A legacy project connection override is still supported. | Create a named connection and select it in `.bakers/connection.config.local.js`. |

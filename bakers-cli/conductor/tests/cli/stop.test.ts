@@ -45,7 +45,7 @@ describe('bakers oven stop', () => {
   const originalHome = process.env.BB_HOME;
   const originalLog = process.env.BB_CONDUCTOR_LOG;
   const WORKSPACE = '/home/dev/project';
-  const HOST = 'cw-dev-box';
+  const HOST = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
   const CONDUCTOR_CMDLINE =
     'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
@@ -250,7 +250,6 @@ export default {
   executor: slot('executor'),
   workspace: slot('workspace'),
   bakers: { project: 'bakers' },
-  conductor_id: 'mid-stop',
   states: ['working'],
 };
 `;
@@ -264,7 +263,7 @@ export default {
     const machineConfig = `
 export default {
   machine_id: '${HOST}',
-  user_id: 'u1',
+  label: 'cw-laptop',
   base_url: 'http://web',
   client_id: 'c',
   client_secret: 's',
@@ -290,7 +289,10 @@ export default {
         writeFileSync(join(dir, 'bakers.config.js'), connectionConfig);
       }
 
-      const remote = new StopRemote([row({ lastPid: 4242 })]);
+      // The id is derived: machine UUID + project + variant.
+      const remote = new StopRemote([
+        row({ id: `${HOST}-bakers-conductor`, lastPid: 4242 }),
+      ]);
       const originalCwd = process.cwd();
       try {
         for (const dir of [repoRoot, repoBbDir, linkedWorktree]) {
@@ -361,7 +363,7 @@ export default {
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: 'mid-stop',
+      conductor_id: 'mid-stop',
       host_key: HOST,
       config_path: join(home, 'conductor.config.js'),
     } as ConductorFileConfig;

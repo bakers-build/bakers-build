@@ -9,7 +9,7 @@ dependencies:
 id: bb_conductors
 label: 'bakers.build conductors'
 module: views
-description: 'Administrative table of all bakers.build conductors: User, Conductor ID, Status, States, Load, Heartbeat and the per-row entity operations. Overrides the entity list builder at /admin/bakers/conductors.'
+description: 'Administrative table of all bakers.build conductors: User, Label, Status, States, Load, Heartbeat and the per-row entity operations. Overrides the entity list builder at /admin/bakers/conductors.'
 tag: ''
 base_table: bb_conductor
 base_field: id
@@ -47,17 +47,17 @@ display:
           group_rows: true
           multi_type: separator
           separator: ', '
-        conductor_id:
-          id: conductor_id
+        label:
+          id: label
           table: bb_conductor
-          field: conductor_id
+          field: label
           relationship: none
           group_type: group
           admin_label: ''
           entity_type: bb_conductor
-          entity_field: conductor_id
+          entity_field: label
           plugin_id: field
-          label: 'Conductor ID'
+          label: Label
           exclude: false
           alter:
             alter_text: false
@@ -198,15 +198,15 @@ display:
           empty: true
           content: 'No bakers.build conductors found.'
       sorts:
-        conductor_id:
-          id: conductor_id
+        label:
+          id: label
           table: bb_conductor
-          field: conductor_id
+          field: label
           relationship: none
           group_type: group
           admin_label: ''
           entity_type: bb_conductor
-          entity_field: conductor_id
+          entity_field: label
           plugin_id: standard
           order: ASC
           expose:
@@ -222,12 +222,12 @@ display:
           default_row_class: true
           columns:
             owner_user_id: owner_user_id
-            conductor_id: conductor_id
+            label: label
             status: status
             utilization: utilization
             last_seen: last_seen
             operations: operations
-          default: conductor_id
+          default: label
           info:
             owner_user_id:
               sortable: false
@@ -235,7 +235,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            conductor_id:
+            label:
               sortable: true
               default_sort_order: asc
               align: ''

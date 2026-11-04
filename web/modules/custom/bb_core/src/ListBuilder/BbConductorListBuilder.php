@@ -20,7 +20,7 @@ final class BbConductorListBuilder extends EntityListBuilder {
    */
   public function buildHeader(): array {
     return [
-      'conductor_id' => $this->t('Conductor ID'),
+      'label' => $this->t('Label'),
       'status' => $this->t('Status'),
     ] + parent::buildHeader();
   }
@@ -31,7 +31,7 @@ final class BbConductorListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     assert($entity instanceof BbConductorInterface);
     return [
-      'conductor_id' => $entity->getConductorId(),
+      'label' => $entity->label(),
       'status' => $entity->getStatus(),
     ] + parent::buildRow($entity);
   }

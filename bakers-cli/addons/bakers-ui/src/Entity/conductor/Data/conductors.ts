@@ -32,9 +32,9 @@ import { type ConductorStatus, deriveConductorStatus } from './liveness.js';
 /** One conductor of the control plane, as this renderer needs it. */
 export interface Conductor {
   id: string;
-  /** Never empty — the uuid is the last fallback, so nothing renders as blank. */
+  /** Never empty and never an id: a blank label reads `(unnamed)`. */
   label: string;
-  /** The machine the conductor runs on. */
+  /** The registration key (`<machine uuid>-<project>-<variant>`); never displayed. */
   machineId: string | undefined;
   /** Liveness, as the control plane reports it. */
   status: string | undefined;
@@ -51,12 +51,7 @@ const str = (v: unknown): string | undefined =>
 
 const toConductor = (r: Resource): Conductor => ({
   id: r.id,
-  label:
-    str(r.attr('label')) ??
-    str(r.attr('conductor_id')) ??
-    str(r.attr('machine_id')) ??
-    r.id,
-  // Registration key (BB-353 renamed machine_id → conductor_id).
+  label: str(r.attr('label')) ?? '(unnamed)',
   machineId: str(r.attr('conductor_id')) ?? str(r.attr('machine_id')),
   status: str(r.attr('status')),
   active: r.attr('active') !== false,
@@ -138,6 +133,8 @@ export interface ConductorRow extends Conductor {
    * itself.
    */
   hostKey: string | undefined;
+  /** The sideloaded machine's name — its display label. */
+  machineLabel: string | undefined;
   /** Liveness, derived — never the raw `status`. */
   derivedStatus: ConductorStatus;
   /**
@@ -145,8 +142,7 @@ export interface ConductorRow extends Conductor {
    *
    * The control plane is user-scoped, not machine-scoped, so a user's other
    * machines' conductors appear in this list. They are shown rather than
-   * hidden — filtering by machine_id would mean substring-matching a composed
-   * string. This is a FILESYSTEM fact only (used to decide whether the log
+   * hidden. This is a FILESYSTEM fact only (used to decide whether the log
    * tail can read a local file); it is not an identity gate — see {@link mine}
    * for that.
    */
@@ -171,10 +167,9 @@ export interface ConductorRow extends Conductor {
  *
  * A CONTENT decision, which is why it is a cell accessor and not a layout
  * member: a cell's `truncate` can only drop the RIGHT, and both values it is
- * applied to carry their distinguishing part in the TAIL. A composed
- * `machine_id` is `${user_id}-${machine_id}-${project}`, so every row of a
- * user-scoped control plane repeats the same user uuid at the head; conductor
- * workspaces all share `/home/<user>/projects/…`. Eliding the right would leave
+ * applied to carry their distinguishing part in the TAIL: conductor
+ * workspaces all share `/home/<user>/projects/…`, and a machine label is cut
+ * the same way for one column budget. Eliding the right would leave
  * every row looking identical.
  *
  * THAT IS WHY `MACHINE` AND `WORKSPACE` KEEP FIXED BUDGETS while `NAME` grows.
@@ -188,7 +183,7 @@ export interface ConductorRow extends Conductor {
 const elideLeft = (value: string, width: number): string =>
   value.length <= width ? value : `…${value.slice(value.length - (width - 1))}`;
 
-/** How much width the machine_id column gets before {@link elideLeft} cuts it. */
+/** How much width the machine label column gets before {@link elideLeft} cuts it. */
 const MACHINE_ID_WIDTH = 20;
 /**
  * The same, for the workspace path column — and the column that PAYS for this
@@ -302,20 +297,18 @@ export const CONDUCTOR_TABLE = {
       width: 0,
       min: 20,
       grow: 2,
-      fields: ['label', 'machine_id'],
-      get: (row: ConductorRow) =>
-        row.label !== '' ? row.label : (row.machineId ?? ''),
+      fields: ['label'],
+      get: (row: ConductorRow) => row.label,
     },
     {
-      // Its OWN column, not merely the label's fallback (BB-232 AC-1): two
-      // conductors of one repo share a project and a workspace_root, and the
-      // machine_id is the only thing that separates them.
+      // Its OWN column (BB-232 AC-1): two conductors of one repo share a
+      // project and a workspace_root; the machine's label separates them.
       key: 'machine',
       label: 'MACHINE',
       width: MACHINE_ID_WIDTH,
-      fields: ['machine_id'],
+      fields: ['machine'],
       get: (row: ConductorRow) =>
-        elideLeft(row.machineId ?? '', MACHINE_ID_WIDTH),
+        elideLeft(row.machineLabel ?? '', MACHINE_ID_WIDTH),
     },
     {
       /**
@@ -447,7 +440,7 @@ export interface ConductorRowContext {
   /**
    * THIS machine's own `host_key` (BB-450 B10), resolved once by the caller
    * before the read — the same MachineContext value `signalVerifiedProcess`
-   * and the CLI's `hostKeyOf(config)` compare against. Compared against each
+   * and the CLI's `config.host_key` compare against. Compared against each
    * row's own `hostKey` to derive {@link ConductorRow.mine}.
    */
   thisHostKey: string;
@@ -516,13 +509,16 @@ function capacityOf(
  * exact defect the CLI's `listConductors()` had: always `undefined` in
  * reality, present only in a fixture that hand-writes it on the wrong entity.
  */
-function hostKeyOf(
+function machineOf(
   raw: JsonApiResource,
   machinesById: Map<string, JsonApiResource>,
-): string | undefined {
+): { hostKey: string | undefined; machineLabel: string | undefined } {
   const machineId = singleRelId(raw.relationships?.machine);
   const machine = machineId ? machinesById.get(machineId) : undefined;
-  return str(machine?.attributes?.host_key);
+  return {
+    hostKey: str(machine?.attributes?.host_key),
+    machineLabel: str(machine?.attributes?.name),
+  };
 }
 
 const toConductorRow = (
@@ -537,7 +533,7 @@ const toConductorRow = (
   const lastSeen = toUnixSeconds(r.attr('last_seen')) ?? 0;
   const leaseExpiresAt = toUnixSeconds(r.attr('lease_expires_at')) ?? 0;
   const { currentLoad, maxParallel } = capacityOf(raw, machinesById);
-  const hostKey = hostKeyOf(raw, machinesById);
+  const { hostKey, machineLabel } = machineOf(raw, machinesById);
   return {
     ...toConductor(r),
     workspaceRoot,
@@ -548,6 +544,7 @@ const toConductorRow = (
     lastPid: num(r.attr('last_pid')),
     conductorName: str(r.attr('conductor_name')),
     hostKey,
+    machineLabel,
     // `present: true` because the row IS a control-plane record — which is why
     // `registry-only` can never come out of this screen.
     derivedStatus: deriveConductorStatus(

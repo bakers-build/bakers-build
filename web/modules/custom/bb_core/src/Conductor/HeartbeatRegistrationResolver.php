@@ -27,7 +27,7 @@ final class HeartbeatRegistrationResolver {
   }
 
   /**
-   * Resolves conductor_id, accepting legacy machine_id as alias.
+   * Resolves conductor_id; a payload without one comes from a stale CLI.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
@@ -36,29 +36,22 @@ final class HeartbeatRegistrationResolver {
     if (isset($attrs['conductor_id']) && is_string($attrs['conductor_id']) && $attrs['conductor_id'] !== '') {
       return $attrs['conductor_id'];
     }
-    if (isset($attrs['machine_id']) && is_string($attrs['machine_id']) && $attrs['machine_id'] !== '') {
-      return $attrs['machine_id'];
-    }
-    throw new UnprocessableEntityHttpException('conductor_id is required.');
+    throw new UnprocessableEntityHttpException('conductor_id is required; update bakers and run bakers init.');
   }
 
   /**
-   * Resolves host_key from attrs or derives a stem from conductor_id.
+   * Resolves host_key, the machine_id of machine.config.js.
+   *
+   * New machines get a UUID from bakers init; existing ones keep their id.
    *
    * @param array<string, mixed> $attrs
    *   Registration attributes.
-   * @param string $conductorId
-   *   Resolved conductor registration key.
    */
-  public function hostKey(array $attrs, string $conductorId): string {
+  public function hostKey(array $attrs): string {
     if (isset($attrs['host_key']) && is_string($attrs['host_key']) && $attrs['host_key'] !== '') {
       return $attrs['host_key'];
     }
-    $parts = explode('-', $conductorId);
-    if (count($parts) >= 3 && $parts[0] !== '' && $parts[1] !== '') {
-      return implode('-', array_slice($parts, 1, -1)) ?: $conductorId;
-    }
-    return $conductorId;
+    throw new UnprocessableEntityHttpException('host_key is required; update bakers and run bakers init.');
   }
 
   /**

@@ -18,9 +18,11 @@ import {
   fakeRemote,
   fakeWorkspace,
 } from '@bakers-build/addon-fake';
-import type {
-  ConductorFileConfig,
-  ConductorStatus,
+import {
+  type ConductorFileConfig,
+  type ConductorRegistration,
+  type ConductorStatus,
+  ConductorTakeoverRequired,
 } from '@bakers-build/conductor/contract';
 import type { ProcProbe } from '@bakers-build/core';
 import {
@@ -76,7 +78,8 @@ function makeConfig(
     workspace: fakeWorkspace(),
     label: 'test label',
     project: 'bakers',
-    machine_id: 'test-machine',
+    conductor_id: 'test-machine',
+    host_key: 'test-machine',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
     max_parallel: 2,
@@ -260,8 +263,7 @@ describe('bakers oven start (herdr path)', () => {
 });
 
 describe('bakers oven start --force (BB-450 D10)', () => {
-  // Must match hostKeyOf(makeConfig()) — no explicit host_key, so it falls
-  // back to the conductor_id/machine_id itself.
+  // Must match makeConfig's host_key.
   const HOST = 'test-machine';
   const CONDUCTOR_CMDLINE =
     'node /usr/local/bin/bakers oven start --foreground --no-update-check';
@@ -718,7 +720,7 @@ describe('bakers oven start — herdr seam (BB-222)', () => {
       {},
       {
         config: makeConfig({
-          machine_id: 'pm-minipm-anerkennungsportal',
+          conductor_id: 'pm-minipm-anerkennungsportal',
           config_path: join(
             CHECKOUT,
             '.bakers',
@@ -756,6 +758,164 @@ describe('bakers oven start — herdr seam (BB-222)', () => {
     expect(herdr.spawned[0].cmd).toBe(
       'BB_CONDUCTOR_LOG=file bakers oven start --foreground --no-update-check',
     );
+  });
+});
+
+const OLD = '1cdd3fcb-2156-4e3c-877d-52665142268c';
+const OTHER = '8a0f2b6e-3c4d-4e5f-9a1b-2c3d4e5f6a7b';
+
+/**
+ * A control plane that already has this machine's conductor of the project
+ * under an older id: it offers it until the start decides.
+ */
+class TakeoverRemote extends FakeBbRemote {
+  readonly registrations: ConductorRegistration[] = [];
+
+  constructor(
+    private readonly known = false,
+    private readonly adoptable = [OLD],
+  ) {
+    super();
+  }
+
+  override async listConductors(): Promise<ConductorStatus[]> {
+    if (!this.known) return [];
+    return [
+      {
+        id: 'test-machine',
+        project: 'bakers',
+        label: 'test',
+        status: 'offline',
+        lastSeen: 0,
+        load: 0,
+        workspaceRoot: CHECKOUT,
+        leaseExpiresAt: 0,
+        maxParallel: 1,
+      },
+    ];
+  }
+
+  override async registerConductor(
+    reg: ConductorRegistration,
+  ): Promise<string> {
+    this.registrations.push(reg);
+    if (!reg.adopt && !reg.create_new) {
+      throw new ConductorTakeoverRequired(
+        `This machine, project and variant already have "cw-framework" (bakers oven start --adopt ${OLD}); take it over, or create a new conductor with bakers oven start --new.`,
+        this.adoptable,
+      );
+    }
+    return super.registerConductor(reg);
+  }
+}
+
+describe('bakers oven start — taking over an existing conductor', () => {
+  const start = async (
+    remote: TakeoverRemote,
+    extra: Partial<BbCliDeps> = {},
+    args: string[] = [],
+  ) => {
+    const deps = makeDeps({}, { remote, ...extra });
+    const out = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await runConductorCli(
+        ['oven', 'start', '--no-update-check', ...args],
+        deps,
+      );
+      return {
+        spawned: (deps.herdr as FakeHerdrHost).spawned.length,
+        errors: err.mock.calls.flat().join('\n'),
+      };
+    } finally {
+      out.mockRestore();
+      err.mockRestore();
+    }
+  };
+  const tty = { stdinIsTTY: true, stdoutIsTTY: true, env: {} };
+
+  it('asks once in a terminal and takes the conductor over on yes', async () => {
+    const remote = new TakeoverRemote();
+    const asked: string[] = [];
+    const { spawned } = await start(remote, {
+      ...tty,
+      askUpdate: async (q) => {
+        asked.push(q);
+        return '';
+      },
+    });
+    expect(asked).toHaveLength(1);
+    expect(asked[0]).toContain('cw-framework');
+    expect(remote.registrations[0]?.conductor_name).toBe('conductor');
+    expect(remote.registrations[1]?.adopt).toBe(OLD);
+    expect(spawned).toBe(1);
+  });
+
+  it('registers a new conductor on no', async () => {
+    const remote = new TakeoverRemote();
+    const { spawned } = await start(remote, {
+      ...tty,
+      askUpdate: async () => 'n',
+    });
+    expect(remote.registrations[1]?.create_new).toBe(true);
+    expect(spawned).toBe(1);
+  });
+
+  it('stops without a terminal, naming --adopt and --new', async () => {
+    const remote = new TakeoverRemote();
+    const { spawned, errors } = await start(remote, {
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+    });
+    expect(spawned).toBe(0);
+    expect(process.exitCode).toBe(1);
+    expect(errors).toContain(`--adopt ${OLD}`);
+    expect(errors).toContain('--new');
+  });
+
+  it('lets a terminal pick one of several conductors', async () => {
+    const remote = new TakeoverRemote(false, [OLD, OTHER]);
+    const asked: string[] = [];
+    const { spawned } = await start(remote, {
+      ...tty,
+      askUpdate: async (q) => {
+        asked.push(q);
+        return '2';
+      },
+    });
+    expect(asked).toHaveLength(1);
+    expect(asked[0]).toContain(`2) ${OTHER}`);
+    expect(remote.registrations[1]?.adopt).toBe(OTHER);
+    expect(spawned).toBe(1);
+  });
+
+  it('refuses --adopt together with --new', async () => {
+    const remote = new TakeoverRemote();
+    const { spawned, errors } = await start(remote, {}, [
+      '--adopt',
+      OLD,
+      '--new',
+    ]);
+    expect(spawned).toBe(0);
+    expect(remote.registrations).toHaveLength(0);
+    expect(errors).toMatch(/--adopt.*--new|--new.*--adopt/);
+  });
+
+  it('takes the decision from --adopt and --new without asking', async () => {
+    const adopting = new TakeoverRemote();
+    await start(adopting, {}, ['--adopt', OLD]);
+    expect(adopting.registrations[0]?.adopt).toBe(OLD);
+
+    const creating = new TakeoverRemote();
+    await start(creating, {}, ['--new']);
+    expect(creating.registrations[0]?.create_new).toBe(true);
+  });
+
+  it('asks nothing once the conductor is known by its id', async () => {
+    const remote = new TakeoverRemote(true);
+    const { spawned } = await start(remote, tty);
+    expect(remote.registrations).toHaveLength(0);
+    expect(spawned).toBe(1);
   });
 });
 

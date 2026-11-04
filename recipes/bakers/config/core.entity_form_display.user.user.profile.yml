@@ -1,0 +1,41 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.user.profile
+    - field.field.user.user.field_bb_background
+    - field.field.user.user.field_developer_title
+    - field.field.user.user.field_full_name
+    - field.field.user.user.field_onboarding_completed
+    - field.field.user.user.user_picture
+  module:
+    - user
+id: user.user.profile
+targetEntityType: user
+bundle: user
+mode: profile
+content:
+  field_bb_background:
+    type: string_textarea
+    weight: 5
+    region: content
+    settings:
+      rows: 3
+      placeholder: ''
+    third_party_settings: {  }
+  field_developer_title:
+    type: string_textfield
+    weight: 4
+    region: content
+    settings:
+      size: 60
+      placeholder: 'e.g. Product Lead'
+    third_party_settings: {  }
+hidden:
+  account: true
+  field_full_name: true
+  field_onboarding_completed: true
+  language: true
+  social_auth: true
+  timezone: true
+  user_picture: true

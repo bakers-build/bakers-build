@@ -23,8 +23,6 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  * conductor_id if it is missing (healed after a delete/wipe), refreshes its
  * lease timestamps and load, links it to a bb_machine host row, and brings
  * it online. Concurrent-run capacity is written on the machine only.
- * Legacy payload key machine_id is accepted as an alias
- * for conductor_id during cutover.
  */
 final class ConductorRegistrar {
 
@@ -35,6 +33,11 @@ final class ConductorRegistrar {
    */
   private readonly HeartbeatRegistrationResolver $registration;
 
+  /**
+   * Maps a new conductor_id onto an existing conductor, or refuses it.
+   */
+  private readonly ConductorTakeover $takeover;
+
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
@@ -44,6 +47,7 @@ final class ConductorRegistrar {
     WorkspaceResolverInterface $workspaceResolver,
   ) {
     $this->registration = new HeartbeatRegistrationResolver($entityTypeManager, $readScope, $rankCapability, $workspaceResolver);
+    $this->takeover = new ConductorTakeover($entityTypeManager);
   }
 
   /**
@@ -52,30 +56,44 @@ final class ConductorRegistrar {
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The authenticated conductor owner.
    * @param array<string, mixed> $attrs
-   *   Registration attributes: conductor_id (or legacy machine_id), host_key,
-   *   project, states, label, workspace_root, max_parallel, current_load,
-   *   lease_seconds, last_pid, conductor_name.
+   *   Registration attributes: conductor_id, host_key (the machine_id),
+   *   machine_label, project, states, label, workspace_root, max_parallel,
+   *   current_load, lease_seconds, last_pid, conductor_name.
    *
    * @return \Drupal\bb_core\Entity\BbConductorInterface
    *   The upserted conductor.
    */
   public function heartbeat(AccountInterface $owner, array $attrs): BbConductorInterface {
     $conductorId = $this->registration->conductorId($attrs);
-    $hostKey = $this->registration->hostKey($attrs, $conductorId);
+    $hostKey = $this->registration->hostKey($attrs);
     // Resolved on every heartbeat, so an owner who lost access is refused
     // before any write.
     $projectId = $this->registration->projectId($attrs, $owner);
-    // One registration per identity at a time: between this read and the
-    // save below, a concurrent first registration from another host could
-    // otherwise bind the identity to its own machine. A short overlap (poll
-    // during a tick) waits once before it is refused.
-    $lock_name = 'bb_conductor_register:' . $owner->id() . ':' . $conductorId;
+    return $this->locked($conductorId, fn () => $this->register($owner, $conductorId, $hostKey, $projectId, $attrs));
+  }
+
+  /**
+   * Runs one registration step while holding the lock for a conductor_id.
+   *
+   * Between a read and its save, a concurrent registration from another host
+   * could otherwise bind the identity to its own machine. A short overlap
+   * (poll during a tick) waits once before it is refused.
+   *
+   * @param string $conductorId
+   *   The registration key to lock.
+   * @param callable(): \Drupal\bb_core\Entity\BbConductorInterface $step
+   *   The step to run under the lock.
+   */
+  private function locked(string $conductorId, callable $step): BbConductorInterface {
+    // Owner-less: two owners registering one id must not both pass
+    // ConductorTakeover::refuseForeignConductorId().
+    $lock_name = 'bb_conductor_register:' . $conductorId;
     if (!$this->lock->acquire($lock_name)
       && ($this->lock->wait($lock_name, 5) || !$this->lock->acquire($lock_name))) {
       throw new ConflictHttpException(sprintf('Conductor "%s" is being registered concurrently; retry.', $conductorId));
     }
     try {
-      return $this->register($owner, $conductorId, $hostKey, $projectId, $attrs);
+      return $step();
     }
     finally {
       $this->lock->release($lock_name);
@@ -83,7 +101,7 @@ final class ConductorRegistrar {
   }
 
   /**
-   * Upserts the conductor and its machine while holding the identity lock.
+   * Finds, takes over or creates the conductor for a registration.
    *
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The authenticated conductor owner.
@@ -98,6 +116,38 @@ final class ConductorRegistrar {
    */
   private function register(AccountInterface $owner, string $conductorId, string $hostKey, int $projectId, array $attrs): BbConductorInterface {
     $existing = $this->load($owner, $conductorId);
+    if ($existing === NULL) {
+      $this->takeover->refuseForeignConductorId($owner, $conductorId);
+      $match = $this->takeover->match($owner, $hostKey, $projectId, $attrs);
+      if ($match !== NULL) {
+        // An old CLI may still heartbeat under the adopted conductor's old id.
+        return $this->locked((string) $match->get('conductor_id')->value, function () use ($owner, $match, $conductorId, $hostKey, $projectId, $attrs) {
+          $fresh = $this->takeover->unchanged($match, $this->entityTypeManager->getStorage('bb_conductor')->loadUnchanged($match->id()));
+          $fresh->set('conductor_id', $conductorId);
+          return $this->upsert($owner, $fresh, $conductorId, $hostKey, $projectId, $attrs);
+        });
+      }
+    }
+    return $this->upsert($owner, $existing, $conductorId, $hostKey, $projectId, $attrs);
+  }
+
+  /**
+   * Upserts the conductor and its machine while holding the identity lock.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $owner
+   *   The authenticated conductor owner.
+   * @param \Drupal\bb_core\Entity\BbConductorInterface|null $existing
+   *   The conductor to refresh, or NULL to create one.
+   * @param string $conductorId
+   *   Registration key.
+   * @param string $hostKey
+   *   The registering host.
+   * @param int $projectId
+   *   Project entity id.
+   * @param array<string, mixed> $attrs
+   *   Registration attributes.
+   */
+  private function upsert(AccountInterface $owner, ?BbConductorInterface $existing, string $conductorId, string $hostKey, int $projectId, array $attrs): BbConductorInterface {
     if ($existing !== NULL) {
       $this->refuseRebinding($owner, $existing, $hostKey, $projectId, (string) $attrs['project']);
     }
@@ -241,11 +291,14 @@ final class ConductorRegistrar {
    * @param \Drupal\Core\Session\AccountInterface $owner
    *   The machine owner.
    * @param string $hostKey
-   *   The MachineContext host stem.
+   *   The machine_id from machine.config.js.
    * @param array<string, mixed> $attrs
-   *   Registration attributes, read for `max_parallel` at creation only.
+   *   Registration attributes: `max_parallel` at creation only;
+   *   `machine_label` at creation and while the name is still the host key.
    */
   private function loadOrCreateMachine(AccountInterface $owner, string $hostKey, array $attrs): BbMachineInterface {
+    // The name field holds 255 characters.
+    $label = is_string($attrs['machine_label'] ?? NULL) ? mb_substr(trim($attrs['machine_label']), 0, 255) : '';
     $storage = $this->entityTypeManager->getStorage('bb_machine');
     $ids = $storage->getQuery()
       ->accessCheck(FALSE)
@@ -256,6 +309,10 @@ final class ConductorRegistrar {
     if ($ids !== []) {
       $machine = $storage->load(reset($ids));
       if ($machine instanceof BbMachineInterface) {
+        // A machine registered before it had a label is named after its key.
+        if ($label !== '' && $machine->label() === $hostKey) {
+          $machine->set('name', $label);
+        }
         return $machine;
       }
     }
@@ -263,7 +320,7 @@ final class ConductorRegistrar {
       ? (int) $attrs['max_parallel']
       : 1;
     $machine = $storage->create([
-      'name' => $hostKey,
+      'name' => $label !== '' ? $label : $hostKey,
       'host_key' => $hostKey,
       'owner_user_id' => $owner->id(),
       'max_parallel' => $max_parallel,

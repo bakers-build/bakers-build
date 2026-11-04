@@ -152,6 +152,7 @@ section is absent on every other site.
 | `fixture-api-session` | site role `api_session`, Northside contributor, North Crew | Session writeback and comments over JSON:API |
 | `fixture-api-stats-outsider` | site role `api_statistics_outsider` | Statistics access matrix |
 | `fixture-crew-mate` | North Crew and South Crew, no workspace | Personal and team time across workspaces; scenarios grant it the team lead rank |
+| `fixture-profile` | no workspace | Saves its own position and background on the Profile tab |
 | `fixture-team-lead` | Northside contributor, North Crew lead | Team-lead edit rights and team time |
 | `fixture-workspace-only` | Northside member, no team | Workspace membership without project authority |
 | `fixture-time-contributor` | Northside contributor, owner of Personal time crew | Personal time, work schedule and activity input; owns a crew, so it may read its own statistics |

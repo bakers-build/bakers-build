@@ -100,7 +100,28 @@ function validateConductorSources(
       );
       const finding = report.findings.at(-1);
       if (finding)
-        finding.remediation = `Run bakers config upgrade --scope project, then ${recheck}.`;
+        finding.remediation = `Move ${legacy} to bakers.${legacy === 'project' ? 'project' : 'workspace'} in ${shellQuote(file.path)}, then run ${recheck}.`;
+    }
+    // A conductor is machine + project + variant: no project file names an id.
+    for (const [source, path] of [
+      [editor, file.path],
+      [localEditor, localFile?.path],
+    ] as const) {
+      if (!source || !path) continue;
+      for (const key of ['conductor_id', 'machine_id', 'label']) {
+        const property = source.property(key);
+        if (!property) continue;
+        add(
+          'retired_key',
+          key,
+          'No identity in a project config: a conductor is machine + project + variant.',
+          property,
+          path,
+        );
+        const finding = report.findings.at(-1);
+        if (finding)
+          finding.remediation = `Remove ${key} from ${shellQuote(path)}; the machine identity comes from bakers init.`;
+      }
     }
     const bakers = editor.property('bakers');
     const bakersExpression = editor.expression('bakers');
@@ -118,65 +139,15 @@ function validateConductorSources(
       );
       const finding = report.findings.at(-1);
       if (finding)
-        finding.remediation = `Run bakers config upgrade --scope project, then ${recheck}.`;
+        finding.remediation = `Write bakers as a literal object without spreads in ${shellQuote(file.path)}, then run ${recheck}.`;
     }
-    const validateIdentity = (key: 'bakers.project' | 'conductor_id') => {
-      const property =
-        editor.property(key) ??
-        (key === 'conductor_id' ? editor.property('machine_id') : undefined);
-      const expression = property ? editor.expression(property.key) : undefined;
-      const generatedConductor =
-        key === 'conductor_id' &&
-        /^(?:local\.(?:conductor_id|machine_id)\s*\?\?\s*)+(?:composedConductorId|composedMachineId)$/.test(
-          expression ?? '',
-        ) &&
-        /const composed(?:Conductor|Machine)Id\s*=/.test(editor.text) &&
-        /machine\.user_id/.test(editor.text) &&
-        /machine\.machine_id/.test(editor.text);
-      if (generatedConductor) {
-        if (!localEditor) return;
-        const localMatches = (expression ?? '').matchAll(
-          /local\.(conductor_id|machine_id)\s*\?\?/g,
-        );
-        for (const match of localMatches) {
-          const localKey = match[1];
-          if (!localKey) continue;
-          const override = localEditor.property(localKey);
-          if (!override) {
-            if (!localEditor.source.unknownKeys) continue;
-            add(
-              'unknown_value',
-              localKey,
-              'A nonempty effective conductor identity.',
-              undefined,
-              localFile?.path ?? file.path,
-            );
-            return;
-          }
-          if (override.staticallyDetermined && override.value === null)
-            continue;
-          if (
-            override.staticallyDetermined &&
-            typeof override.value === 'string' &&
-            override.value.trim() !== ''
-          )
-            return;
-          add(
-            override.staticallyDetermined ? 'invalid_value' : 'unknown_value',
-            localKey,
-            'A nonempty effective conductor identity.',
-            override,
-            localFile?.path ?? file.path,
-          );
-          return;
-        }
-        return;
-      }
+    const validateIdentity = (key: 'bakers.project') => {
+      const property = editor.property(key);
       if (!property) {
         add(
           editor.source.unknownKeys ? 'unknown_value' : 'missing_required_key',
           key,
-          `A nonempty conductor ${key === 'bakers.project' ? 'project' : 'identity'}.`,
+          'A nonempty conductor project.',
         );
       } else if (
         property.staticallyDetermined &&
@@ -188,13 +159,12 @@ function validateConductorSources(
         add(
           property.staticallyDetermined ? 'invalid_value' : 'unknown_value',
           key,
-          `A nonempty conductor ${key === 'bakers.project' ? 'project' : 'identity'}.`,
+          'A nonempty conductor project.',
           property,
         );
       }
     };
     validateIdentity('bakers.project');
-    validateIdentity('conductor_id');
 
     const addon = editor.property('addons');
     const addonSlots = new Set<string>();

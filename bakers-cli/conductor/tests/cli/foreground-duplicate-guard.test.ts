@@ -118,7 +118,8 @@ describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
       max_parallel: 1,
       poll_interval_ms: 5,
       lease_seconds: 300,
-      machine_id: 'mid-fg',
+      conductor_id: 'mid-fg',
+      host_key: HOST,
       config_path: join(home, 'conductor.config.js'),
     } as ConductorFileConfig;
   }

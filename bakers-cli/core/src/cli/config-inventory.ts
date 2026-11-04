@@ -55,7 +55,6 @@ export interface ConfigInventory {
 
 const SCOPES: ConfigScope[] = ['machine', 'connection', 'project', 'all'];
 const SECRET_KEY = /secret|token|password|credential|client_id|authorization/i;
-const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 /** Public observed values never include expressions, objects or credentials. */
 function observed(
@@ -369,13 +368,15 @@ export function inventoryConfig(
     const currentVersion = file.version.current;
     if (
       currentVersion !== null &&
-      markers.some((version) => version > currentVersion)
+      markers.some((version) => version !== currentVersion)
     ) {
       add(
-        'future_schema_version',
+        'unsupported_schema_version',
         'schema_version',
-        `Schema version is at most ${file.version.current}.`,
-        'Install a bakers.build release that supports this schema; do not downgrade the file.',
+        `Schema version is ${currentVersion}.`,
+        kind === 'machine'
+          ? 'Run bakers init to rewrite it at version 1.'
+          : `Remove ${shellQuote(path)} and run bakers init to recreate it.`,
         'schema',
         'error',
         field,
@@ -446,13 +447,19 @@ export function inventoryConfig(
           property.value > 0,
       );
     if (kind === 'machine') {
-      for (const key of ['machine_id', 'user_id'])
-        requireValue(
-          key,
-          'A nonempty identifier using letters, numbers, dots, underscores or hyphens.',
-          (property) =>
-            typeof property.value === 'string' &&
-            IDENTIFIER.test(property.value),
+      // New machines get a UUID from bakers init; existing ones keep their id.
+      requireValue('machine_id', 'A nonempty machine id.', nonempty);
+      requireValue('label', 'A nonempty display label.', nonempty);
+      const userId = source.properties.get('user_id');
+      if (userId)
+        add(
+          'retired_key',
+          'user_id',
+          'No user_id: the server takes the owner from sign-in.',
+          'Run bakers init to rewrite the file without it.',
+          'schema',
+          'error',
+          userId,
         );
       requireValue(
         'max_parallel',
@@ -505,7 +512,7 @@ export function inventoryConfig(
           'retired_key',
           'agents.addons',
           'Agent harnesses are listed in the top-level addons[].',
-          `Move agents.addons into the top-level addons[] of ${shellQuote(path)}: addons: [${items}] (or run bakers config upgrade --scope machine).`,
+          `Move agents.addons into the top-level addons[] of ${shellQuote(path)}: addons: [${items}].`,
           'schema',
           'error',
           agentAddons,
@@ -517,7 +524,7 @@ export function inventoryConfig(
           'retired_key',
           'ports',
           'The ports transport is set in the @bakers-build/addon-ports addons[] entry.',
-          `Move ports into the addons[] of ${shellQuote(path)}: addons: [{ use: '@bakers-build/addon-ports', with: ${fragmentOf(ports)} }] (or run bakers config upgrade --scope machine).`,
+          `Move ports into the addons[] of ${shellQuote(path)}: addons: [{ use: '@bakers-build/addon-ports', with: ${fragmentOf(ports)} }].`,
           'schema',
           'error',
           ports,
@@ -534,7 +541,7 @@ export function inventoryConfig(
             'misplaced_key',
             key,
             `Connection-owned ${key} belongs in ${connectionPath}.`,
-            `bakers config upgrade --scope all`,
+            `Move ${key} from ${shellQuote(path)} into ${shellQuote(connectionPath)}.`,
             'ownership',
             'error',
             property,
@@ -650,7 +657,7 @@ export function inventoryConfig(
             key === 'tunnel'
               ? `Machine-owned tunnel belongs in ${machinePath}.`
               : `Host capacity belongs in ${machinePath} at max_parallel.`,
-            'bakers config upgrade --scope all',
+            `Move ${key} from ${shellQuote(path)} into ${shellQuote(machinePath)}.`,
             'ownership',
             'error',
             property,
@@ -766,7 +773,7 @@ export function inventoryConfig(
         ...finding,
         code: 'conflicting_values',
         expected: 'Source and destination values agree before relocation.',
-        remediation: `Choose the intended ${finding.key} value between ${shellQuote(finding.path)} and ${shellQuote(destinationPath)}, then run bakers config upgrade --scope all.`,
+        remediation: `Choose the intended ${finding.key} value between ${shellQuote(finding.path)} and ${shellQuote(destinationPath)}, then keep it only in ${shellQuote(destinationPath)}.`,
       });
     }
     if (!resolved.includes(finding.owner)) {
@@ -774,7 +781,7 @@ export function inventoryConfig(
         ...finding,
         code: 'out_of_scope_write_required',
         expected: `Repair requires writing ${destinationPath}, outside selected scope ${scope}.`,
-        remediation: 'bakers config upgrade --scope all',
+        remediation: `Move ${finding.key} into ${shellQuote(destinationPath)}.`,
       });
     }
   }
