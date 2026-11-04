@@ -66,12 +66,18 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     And the band region "summary" comes before the band region "links"
 
   # AC 6's grouping, observed on the surface rather than on the grouper. BB-142
-  # carries five links spanning mr, ci, report, design and ddev — so Code, Test
-  # results and Try it yourself have rows and More (doc) has none. An empty
-  # group must be ABSENT, which is what the exact list asserts.
-  Scenario: The link groups that have rows are shown and the empty one is not
+  # carries six links spanning mr, ci, report, design, ddev and chat — so all
+  # four groups have rows. An empty group must be ABSENT, which is what the
+  # exact list asserts; TicketLinkGroupsTest covers a ticket without one.
+  Scenario: The link groups that have rows are shown
     When I visit the ticket "BB-142"
-    Then the band shows exactly the link groups "Code, Test results, Try it yourself"
+    Then the band shows exactly the link groups "Code, Test results, Try it yourself, More"
+
+  # A Slack thread permalink is a chat link: listed under More, with the inbox
+  # icon, not the doc icon.
+  Scenario: A Slack thread permalink is a chat row under More
+    When I visit the ticket "BB-142"
+    Then the link group "More" has a row for "https://example.slack.com/archives/C0123ABCD/p1700000000000100" with the icon "inbox"
 
   # AC 8. The shell layout puts local_tasks_block inside the content island, so
   # a tab row is what this route would render by default; its absence is a

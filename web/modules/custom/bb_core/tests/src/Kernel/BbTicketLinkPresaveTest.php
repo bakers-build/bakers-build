@@ -69,6 +69,7 @@ final class BbTicketLinkPresaveTest extends KernelTestBase {
         ],
         ['uri' => 'https://git.key-tec.de/g/p/-/tree/main', 'title' => 'Branch'],
         ['uri' => 'https://example.com/spec.pdf', 'title' => 'Doc'],
+        ['uri' => 'https://acme.slack.com/archives/C0123ABCD/p1700000000000100', 'title' => 'Slack thread'],
       ],
     ]);
     $this->assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -83,6 +84,7 @@ final class BbTicketLinkPresaveTest extends KernelTestBase {
     $this->assertSame(1, $items[0]->get('options')->getValue()['attributes']['x']);
     $this->assertSame(LinkKind::BRANCH, $items[1]->get('options')->getValue()['bakers']['kind']);
     $this->assertSame(LinkKind::DOC, $items[2]->get('options')->getValue()['bakers']['kind']);
+    $this->assertSame(LinkKind::CHAT, $items[3]->get('options')->getValue()['bakers']['kind']);
   }
 
   /**

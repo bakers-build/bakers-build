@@ -1,0 +1,108 @@
+# Hermes configuration of the PM bot, for the Hermes version its image is built on (Dockerfile).
+# The container's entrypoint renders it into $HERMES_HOME/config.yaml on every start, filling
+# each dollar-brace placeholder from the env. Nothing customer-specific belongs here: it all
+# comes from the env.
+# tests/contract/pm-bot.sh asserts the lock-down below.
+
+# The Hermes config schema version this file is written for; without it Hermes
+# refuses to load or migrate the file.
+_config_version: 51
+
+model:
+  provider: anthropic
+  default: ${PM_BOT_MODEL}
+
+# Slack over Socket Mode; the bot and app tokens are read from $HERMES_HOME/.env.
+# Users: every user in the allowed channels by default (entrypoint.sh exports
+# GATEWAY_ALLOW_ALL_USERS=true unless SLACK_ALLOWED_USERS is set); with SLACK_ALLOWED_USERS
+# only those. Hermes reads both from the environment, not from this file.
+# In a channel the bot answers only when mentioned; in a thread it answers freely,
+# and always in the thread.
+slack:
+  allowed_channels: ${SLACK_ALLOWED_CHANNELS}
+  # Slash commands only for the operators; customers keep /help and /whoami.
+  allow_admin_from: ${SLACK_ADMIN_USERS}
+  group_allow_admin_from: ${SLACK_ADMIN_USERS}
+  require_mention: true
+  thread_require_mention: false
+  reply_in_thread: true
+
+# One shared session per thread: everyone in the thread sees the same conversation.
+group_sessions_per_user: false
+
+platform_toolsets:
+  slack:
+    - skills
+    - memory
+    - session_search
+    - mcp-clone-reader
+    - mcp-bakers
+
+agent:
+  # Every toolset that can change the system or reach beyond bakers.build's tools and
+  # the read-only clone. Code access goes through the clone-reader MCP server instead
+  # of the file toolset, which cannot be limited to one directory.
+  disabled_toolsets:
+    - terminal
+    - code_execution
+    - browser
+    - web
+    - delegation
+    - file
+    - cronjob
+    - computer_use
+    - kanban
+    - todo
+    - vision
+    - image_gen
+    - video_gen
+    - tts
+    - x_search
+    - search
+    - connections
+    - catalog
+
+# What the bot learns waits for the operator: /memory pending, /skills pending.
+memory:
+  write_approval: true
+skills:
+  write_approval: true
+
+mcp_servers:
+  # The customer's code, read-only: the filesystem server may only see the
+  # secret-free clone, and only its read tools are exposed.
+  clone-reader:
+    command: npx
+    args:
+      - -y
+      - "@modelcontextprotocol/server-filesystem@2026.8.31"
+      - ${PM_BOT_CLONE_DIR}
+    tools:
+      resources: false
+      prompts: false
+      include:
+        - read_text_file
+        - list_directory
+        - directory_tree
+        - search_files
+        - get_file_info
+
+  # bakers.build: its own MCP endpoint, the bot's only way in. The service account's API
+  # key is the bearer; Hermes fills ${env:BAKERS_API_KEY} from $HERMES_HOME/.env, and the
+  # entrypoint's render leaves that form alone, so the key never lands in this file.
+  # Exactly the six tools the project-manager skill calls; never bakers_ticket_classify:
+  # the bot sets no type or recipe.
+  bakers:
+    url: ${BAKERS_URL}/mcp
+    headers:
+      Authorization: "Bearer ${env:BAKERS_API_KEY}"
+    tools:
+      resources: false
+      prompts: false
+      include:
+        - tool_api__bakers_ticket_create
+        - tool_api__bakers_ticket_read
+        - tool_api__bakers_ticket_search
+        - tool_api__bakers_ticket_update
+        - tool_api__bakers_ticket_transition
+        - tool_api__bakers_comment_publish
