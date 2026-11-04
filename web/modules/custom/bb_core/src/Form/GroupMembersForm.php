@@ -187,7 +187,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     if ($invites !== []) {
       $parts['pending'] = $this->listZone(
         $this->t('Pending invitations'),
-        $this->tenancyInvite->inviteItems($invites, $may_write, self::REVOKE),
+        $this->tenancyInvite->inviteItems($invites, $may_write),
         $this->t('No pending invitations.'),
         15,
       );

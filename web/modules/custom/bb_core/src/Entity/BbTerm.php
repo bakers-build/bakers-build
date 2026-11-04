@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Entity;
 
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\Form\BbTermForm;
 use Drupal\bb_core\Routing\BbTermRouteProvider;
 use Drupal\Core\Entity\Attribute\ContentEntityType;
@@ -24,8 +25,7 @@ use Drupal\user\EntityOwnerInterface;
  *
  * Bundled by bb_vocabulary (`type`, `recipe`, `label`). Flat (no hierarchy).
  * Used by the ticket's `ticket_type`, `recipe` and `labels` fields. Managed on
- * the workspace settings tabs: add and edit forms, no page of its own and no
- * delete route.
+ * the workspace settings tabs: add, edit and delete forms, no page of its own.
  *
  * Stays on ContentEntityBase: it has no created/changed fields, and inheriting
  * them from BbContentEntityBase would change its schema and API.
@@ -55,12 +55,14 @@ use Drupal\user\EntityOwnerInterface;
     'form' => [
       'add' => BbTermForm::class,
       'edit' => BbTermForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => BbTermRouteProvider::class],
   ],
   links: [
     'add-form' => '/_workspace/{bb_workspace}/term/{bb_vocabulary}/add',
     'edit-form' => '/_workspace/{bb_workspace}/term/{bb_term}/edit',
+    'delete-form' => '/_workspace/{bb_workspace}/term/{bb_term}/delete',
   ],
   base_table: 'bb_term',
   admin_permission: 'administer bakers',

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -50,7 +50,7 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
       'edit' => BbMachineForm::class,
       // Detail page cards, one Save each.
       'identity' => BbEntityDetailCardForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     // The canonical route pins the `full` entity view whose Display Builder
     // tree composes the Overview and its cards. Add, edit, delete and the

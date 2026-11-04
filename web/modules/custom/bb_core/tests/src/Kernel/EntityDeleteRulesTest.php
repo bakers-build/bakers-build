@@ -85,9 +85,16 @@ final class EntityDeleteRulesTest extends KernelTestBase {
    */
   public function testTicketCascadesCommentsAndRunsAndDetachesTickets(): void {
     $ticket = $this->ticket();
-    $comment = $this->make('bb_comment', ['ticket_id' => $ticket->id(), 'body' => ['value' => 'x', 'format' => 'bb_rich']]);
+    $comment = $this->make('bb_comment', [
+      'ticket_id' => $ticket->id(),
+      'body' => ['value' => 'x', 'format' => 'bb_rich'],
+    ]);
     $run = $this->make('bb_run', ['ticket_id' => $ticket->id()]);
-    $child = $this->ticket(['parent_id' => $ticket->id(), 'blocked_by' => [$ticket->id()], 'referenced_tickets' => [$ticket->id()]]);
+    $child = $this->ticket([
+      'parent_id' => $ticket->id(),
+      'blocked_by' => [$ticket->id()],
+      'referenced_tickets' => [$ticket->id()],
+    ]);
 
     $ticket->delete();
 
@@ -136,7 +143,7 @@ final class EntityDeleteRulesTest extends KernelTestBase {
   /**
    * A group a project uses is blocked.
    */
-  public function testGroupBlocksWhileAProjectUsesIt(): void {
+  public function testGroupBlocksWhileProjectUsesIt(): void {
     $group = $this->make('bb_group', ['name' => 'G']);
     $project = $this->make('bb_project', ['name' => 'P', 'group_id' => $group->id()]);
     $this->assertBlocked($group);
@@ -146,7 +153,7 @@ final class EntityDeleteRulesTest extends KernelTestBase {
   }
 
   /**
-   * A project's only team is blocked; a shared one is detached.
+   * A project's only team is blocked; a shared team and invites are detached.
    */
   public function testTeamBlocksAsOnlyTeamAndDetachesOtherwise(): void {
     $team = $this->make('bb_team', ['name' => 'A']);
@@ -161,7 +168,9 @@ final class EntityDeleteRulesTest extends KernelTestBase {
     $shared = $this->reload($shared);
     $this->assertNotNull($shared);
     $this->assertSame([['target_id' => $other->id()]], array_map(fn($v) => ['target_id' => (string) $v['target_id']], $shared->get('teams')->getValue()));
-    $this->assertNull($this->reload($invite));
+    $invite = $this->reload($invite);
+    $this->assertNotNull($invite);
+    $this->assertTrue($invite->get('team_id')->isEmpty());
   }
 
   /**
@@ -212,7 +221,11 @@ final class EntityDeleteRulesTest extends KernelTestBase {
     $conductor = $this->make('bb_conductor', ['label' => 'C', 'machine' => $machine->id()]);
     $ticket = $this->ticket(['conductor_id' => $conductor->id()]);
     // Finished: a detached ticket would cancel an active run first.
-    $run = $this->make('bb_run', ['ticket_id' => $ticket->id(), 'conductor_id' => $conductor->id(), 'state' => 'completed']);
+    $run = $this->make('bb_run', [
+      'ticket_id' => $ticket->id(),
+      'conductor_id' => $conductor->id(),
+      'state' => 'completed',
+    ]);
     $template = $this->make('bb_ticket_template', ['name' => 'Tpl', 'conductor_id' => $conductor->id()]);
 
     $machine->delete();

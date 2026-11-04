@@ -27,9 +27,9 @@ final class EntityDeleteAccessTest extends KernelTestBase {
   ];
 
   /**
-   * The types only a site administrator deletes.
+   * The types only a site administrator deletes; runs only outside the UI.
    */
-  private const array ADMIN_TYPES = ['bb_conductor', 'bb_machine', 'bb_workspace'];
+  private const array ADMIN_TYPES = ['bb_conductor', 'bb_machine', 'bb_workspace', 'bb_run'];
 
   /**
    * {@inheritdoc}

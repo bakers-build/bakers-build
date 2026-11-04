@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_track\Kernel;
 
 use Drupal\Core\Database\Database;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\bb_track\Entity\Account;
 use Drupal\bb_track\Entity\Worklog;
@@ -282,12 +283,68 @@ final class AccountTest extends WorkTimeTestBase {
   }
 
   /**
+   * A billing account is archived, never deleted, not even by an admin.
+   */
+  public function testNoOneDeletesBillingAccount(): void {
+    [$epic] = $this->epicAndChild();
+    $account = $this->linkedAccount($epic, 'Kept');
+    $admin = $this->createUser(['administer bakers'], 'billing-admin');
+    self::assertInstanceOf(UserInterface::class, $admin);
+    self::assertFalse($account->access('delete', $admin));
+    $this->expectExceptionMessage('Billing accounts must be archived instead of deleted.');
+    $account->delete();
+  }
+
+  /**
+   * A project without logged time takes its billing accounts with it.
+   */
+  public function testProjectDeleteTakesItsBillingAccounts(): void {
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_track_account');
+    $owned = fn() => $storage->getQuery()->accessCheck(FALSE)->condition('project_id', $this->project->id())->execute();
+    self::assertNotEmpty($owned());
+    $this->project->delete();
+    self::assertSame([], $owned());
+  }
+
+  /**
+   * Logged time keeps its ticket and project from being deleted.
+   */
+  public function testLoggedTimeBlocksTicketAndProjectDelete(): void {
+    [$epic] = $this->epicAndChild();
+    Worklog::create([
+      'owner_user_id' => $this->employee->id(),
+      'work_date' => '2026-10-07',
+      'timezone' => 'UTC',
+      'duration_seconds' => 3600,
+      'description' => 'Logged',
+      'derivation' => 'manual',
+      'state' => 'recorded',
+      'project_id' => $this->project->id(),
+      'ticket_id' => $epic->id(),
+    ])->save();
+    $etm = $this->container->get('entity_type.manager');
+    foreach ([$epic, $this->project] as $blocked) {
+      try {
+        $blocked->delete();
+        self::fail($blocked->getEntityTypeId() . ' with logged time was deleted.');
+      }
+      catch (EntityStorageException) {
+      }
+      $etm->getStorage($blocked->getEntityTypeId())->resetCache();
+      self::assertNotNull($etm->getStorage($blocked->getEntityTypeId())->load($blocked->id()));
+    }
+  }
+
+  /**
    * A linking account can still be archived after its ticket is gone.
    */
   public function testArchivableAfterTicketDeleted(): void {
     [$epic] = $this->epicAndChild();
     $account = $this->linkedAccount($epic, 'Epic work');
+    $epic_id = $epic->id();
     $epic->delete();
+    // The deleted ticket is detached; no dangling reference stays behind.
+    self::assertNotContains($epic_id, array_column($this->reload($account)->get('tickets')->getValue(), 'target_id'));
     $this->archive($account);
     self::assertFalse((bool) $this->reload($account)->get('active')->value);
   }

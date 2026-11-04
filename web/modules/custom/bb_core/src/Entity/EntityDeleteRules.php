@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityLastInstalledSchemaRepositoryInterface;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\FieldableEntityInterface;
 
 /**
  * What deleting an entity blocks, deletes with it and detaches from others.
  *
- * Each rule names a referencing entity type and field. A rule whose type or
- * field does not exist on this site (an optional module) is skipped.
+ * Each rule names a referencing entity type and field. A rule whose field is
+ * not installed on this site (an optional module) is skipped.
  */
 final class EntityDeleteRules {
 
@@ -44,6 +43,8 @@ final class EntityDeleteRules {
    */
   private const array RULES = [
     'bb_ticket' => [
+      // Logged time keeps its ticket; submitted time cannot change at all.
+      [self::BLOCK, 'bb_track_worklog', 'ticket_id'],
       [self::CASCADE, 'bb_comment', 'ticket_id'],
       [self::CASCADE, 'bb_run', 'ticket_id'],
       [self::CASCADE, 'bb_inbox_message', 'ticket_id'],
@@ -53,20 +54,25 @@ final class EntityDeleteRules {
       [self::DETACH, 'bb_ticket', 'referenced_tickets'],
       [self::DETACH, 'bb_ticket_trigger', 'last_ticket_id'],
       [self::DETACH, 'bb_track_account', 'tickets'],
-      [self::DETACH, 'bb_track_worklog', 'ticket_id'],
     ],
     'bb_project' => [
       [self::BLOCK, 'bb_ticket', 'project_id'],
       [self::BLOCK, 'bb_track_worklog', 'project_id'],
-      [self::BLOCK, 'bb_track_account', 'project_id'],
       [self::BLOCK, 'bb_conductor', 'project_id'],
+      // Worklogs block above, so no logged time goes with its account.
+      [self::CASCADE, 'bb_track_account', 'project_id'],
       [self::CASCADE, 'bb_environment', 'project_id'],
       // Their triggers follow through TicketTriggerHooks::entityDelete().
       [self::CASCADE, 'bb_ticket_template', 'project_id'],
     ],
+    'bb_track_account' => [
+      [self::BLOCK, 'bb_track_worklog', 'account_id'],
+    ],
     'bb_team' => [
       [self::SOLE, 'bb_project', 'teams'],
-      [self::CASCADE, 'bb_invite', 'team_id'],
+      // The invitation still joins the workspace; WorkspaceInvite skips a
+      // team that is gone.
+      [self::DETACH, 'bb_invite', 'team_id'],
     ],
     'bb_group' => [
       [self::BLOCK, 'bb_project', 'group_id'],
@@ -110,9 +116,16 @@ final class EntityDeleteRules {
     ],
   ];
 
+  /**
+   * The entities this service is deleting as a cascade, keyed type:id.
+   *
+   * @var array<string, true>
+   */
+  private array $cascading = [];
+
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly EntityFieldManagerInterface $entityFieldManager,
+    private readonly EntityLastInstalledSchemaRepositoryInterface $installedSchema,
   ) {}
 
   /**
@@ -156,9 +169,25 @@ final class EntityDeleteRules {
     }
     foreach ($matches as [$action, $referencing]) {
       if ($action === self::CASCADE) {
-        $referencing->delete();
+        $key = $referencing->getEntityTypeId() . ':' . $referencing->id();
+        $this->cascading[$key] = TRUE;
+        try {
+          $referencing->delete();
+        }
+        finally {
+          unset($this->cascading[$key]);
+        }
       }
     }
+  }
+
+  /**
+   * Whether the entity is being deleted along with an entity it belongs to.
+   *
+   * Lets a storage that refuses direct deletes accept this one.
+   */
+  public function isCascading(EntityInterface $entity): bool {
+    return isset($this->cascading[$entity->getEntityTypeId() . ':' . $entity->id()]);
   }
 
   /**
@@ -173,9 +202,7 @@ final class EntityDeleteRules {
       return [];
     }
     foreach (self::RULES[$entity->getEntityTypeId()] ?? [] as [$action, $type, $field]) {
-      $definition = $this->entityTypeManager->getDefinition($type, FALSE);
-      if ($definition === NULL || !$definition->entityClassImplements(FieldableEntityInterface::class)
-        || !isset($this->entityFieldManager->getFieldStorageDefinitions($type)[$field])) {
+      if (!$this->fieldExists($type, $field)) {
         continue;
       }
       $storage = $this->entityTypeManager->getStorage($type);
@@ -192,6 +219,13 @@ final class EntityDeleteRules {
       }
     }
     return $matches;
+  }
+
+  /**
+   * Whether the referencing field is installed; an absent table has no rows.
+   */
+  private function fieldExists(string $type, string $field): bool {
+    return isset($this->installedSchema->getLastInstalledFieldStorageDefinitions($type)[$field]);
   }
 
 }
