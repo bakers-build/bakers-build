@@ -32,6 +32,7 @@ anchor with an icon.
 | `/-/merge_requests/`                      | `mr`     |
 | `/-/pipelines/` or `/-/jobs/`             | `ci`     |
 | `/-/tree/`, `/-/commits/`, `/-/branches`  | `branch` |
+| `.slack.com/archives/` (a Slack thread)   | `chat`   |
 | anything else                             | `doc`    |
 
 **Descoped (product-owner decision):** no live MR/CI/branch **state** is ever

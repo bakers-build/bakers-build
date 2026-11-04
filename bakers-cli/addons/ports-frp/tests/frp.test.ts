@@ -674,6 +674,80 @@ describe('reconcileFrp', () => {
     expect(result.ok).toBe(true);
     expect(writes).toHaveLength(1);
   });
+
+  const storybookProxy = {
+    name: 'bb-99-storybook',
+    type: 'http',
+    customDomains: ['bb-99-storybook.preview.example'],
+    localIP: '127.0.0.1',
+    localPort: 6006,
+  };
+
+  it('accepts the file when a later record, not the first, carries its generation (stale record first)', async () => {
+    const current = computeGeneration(IDENTITY, [storybookProxy]);
+    const { deps, writes } = fakeWorld({
+      initialFile: JSON.stringify({ proxies: [storybookProxy] }),
+      statusSequence: [[{ http: [] }]],
+    });
+    const result = await reconcileFrp(
+      [
+        record({ key: 'old', data: { generation: 'stale-generation' } }),
+        record({ data: { generation: current } }),
+        record({ key: 'docs', hostname: 'bb-99-docs.preview.example' }),
+      ],
+      baseCfg({ pollTimeoutMs: 0 }),
+      deps,
+      noopCheckpoint,
+    );
+    expect(result.records.every((r) => !r.error?.includes('refusing'))).toBe(
+      true,
+    );
+    expect(writes).toHaveLength(1);
+  });
+
+  it('accepts a file whose write finished without its generation being recorded (lost write)', async () => {
+    const webProxy = {
+      ...storybookProxy,
+      name: 'bb-99-web',
+      customDomains: ['bb-99-web.preview.example'],
+    };
+    const { deps, writes } = fakeWorld({
+      initialFile: JSON.stringify({ proxies: [storybookProxy, webProxy] }),
+      statusSequence: [[{ http: [] }]],
+    });
+    const result = await reconcileFrp(
+      [
+        record({
+          data: { generation: computeGeneration(IDENTITY, [storybookProxy]) },
+        }),
+        record({ key: 'web', hostname: 'bb-99-web.preview.example' }),
+        record({ key: 'docs', hostname: 'bb-99-docs.preview.example' }),
+      ],
+      baseCfg({ pollTimeoutMs: 0 }),
+      deps,
+      noopCheckpoint,
+    );
+    expect(result.records.every((r) => !r.error?.includes('refusing'))).toBe(
+      true,
+    );
+    expect(writes).toHaveLength(1);
+  });
+
+  it('still refuses a {proxies} file that holds a proxy no record knows', async () => {
+    const { deps, writes } = fakeWorld({
+      initialFile: JSON.stringify({
+        proxies: [{ ...storybookProxy, name: 'someone-else' }],
+      }),
+    });
+    const result = await reconcileFrp(
+      [record()],
+      baseCfg(),
+      deps,
+      noopCheckpoint,
+    );
+    expect(result.records[0]?.error).toMatch(/refusing to overwrite/);
+    expect(writes).toHaveLength(0);
+  });
 });
 
 describe('validateSettings', () => {

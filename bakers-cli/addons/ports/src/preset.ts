@@ -9,6 +9,7 @@
 
 import type { Preset } from '@bakers-build/conductor/contract';
 import type { BbPreset } from '@bakers-build/core';
+import { PORTS_TOOL_DEFINITIONS } from './tool-definitions.js';
 
 export const commands: BbPreset['commands'] = (acc) => [
   ...acc,
@@ -37,3 +38,11 @@ export const scopes: BbPreset['scopes'] = ['machine', 'project'];
 
 // Merge and check the entry's own settings (services, all_node, transport).
 export { checkWith, mergeWith } from './service-config.js';
+
+// Agent tools the conductor serves to every run (and the CLI calls through
+// it): the conductor is the only writer of the tunnel routes.
+export const tools: Preset['tools'] = {
+  contract: 1,
+  tools: PORTS_TOOL_DEFINITIONS,
+  handlers: (options) => import('./tools.js').then((m) => m.toolsFor(options)),
+};

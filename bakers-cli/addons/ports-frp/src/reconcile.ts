@@ -54,7 +54,7 @@ export interface FrpReconcileConfig {
 // `generation` top-level key is unknown there and the whole include is
 // rejected. The file holds ONLY what frpc's schema allows; ownership/
 // generation tracking moves to the content hash below plus the ALREADY
-// recorded `record.data.generation` (`lastAcknowledgedGeneration`).
+// recorded `record.data.generation` (`recordedGenerations`).
 interface RoutesFile {
   readonly proxies: readonly FrpProxy[];
 }
@@ -69,7 +69,12 @@ interface RoutesFile {
 type ReadRoutesResult =
   | { readonly kind: 'absent' }
   | { readonly kind: 'malformed' }
-  | { readonly kind: 'ok'; readonly proxies: readonly FrpProxy[] };
+  | {
+      readonly kind: 'ok';
+      readonly proxies: readonly FrpProxy[];
+      /** Only the `proxies` key — the exact shape this addon writes. */
+      readonly onlyProxies: boolean;
+    };
 
 /** One frpc admin `/api/status` row — ponytail: plausible frpc 0.68.0 shape
  *  (name/status/err per proxy, grouped by type), not a verified capture. */
@@ -134,7 +139,11 @@ async function readRoutesFile(
   if (proxies.length === 0 && Object.keys(parsed as object).length === 1) {
     return { kind: 'absent' };
   }
-  return { kind: 'ok', proxies: proxies as FrpProxy[] };
+  return {
+    kind: 'ok',
+    proxies: proxies as FrpProxy[],
+    onlyProxies: Object.keys(parsed as object).length === 1,
+  };
 }
 
 async function writeRoutesFile(
@@ -149,14 +158,17 @@ async function writeRoutesFile(
   await deps.rename(tmp, path);
 }
 
-function lastAcknowledgedGeneration(
+/** Every generation a record carries — a stale record must not hide the
+ *  newest one, so the file is ours if it matches any of them. */
+function recordedGenerations(
   records: readonly TunnelDesiredRecord[],
-): string | undefined {
+): Set<string> {
+  const generations = new Set<string>();
   for (const r of records) {
     const g = r.data?.generation;
-    if (typeof g === 'string') return g;
+    if (typeof g === 'string') generations.add(g);
   }
-  return undefined;
+  return generations;
 }
 
 export async function reconcileFrp(
@@ -237,7 +249,10 @@ export async function reconcileFrp(
   }
 
   const desiredGeneration = computeGeneration(cfg.identity, proxies);
-  const lastGeneration = lastAcknowledgedGeneration(records);
+  const knownGenerations = recordedGenerations(records);
+  // Intent is persisted before reconcile, so a write whose generation was
+  // never recorded (lost write) still names only proxies of known records.
+  const knownNames = new Set(records.map((r) => `${r.ticket}-${r.key}`));
 
   const dir = cfg.routesPath.slice(0, cfg.routesPath.lastIndexOf('/'));
   const existing = await readRoutesFile(cfg.routesPath, deps);
@@ -256,7 +271,11 @@ export async function reconcileFrp(
     existing.kind === 'malformed' ||
     (existing.kind === 'ok' &&
       existingGeneration !== desiredGeneration &&
-      existingGeneration !== lastGeneration);
+      !knownGenerations.has(existingGeneration as string) &&
+      !(
+        existing.onlyProxies &&
+        existing.proxies.every((p) => knownNames.has(p.name))
+      ));
   if (isForeign) {
     // Foreign file (or one this client didn't write, or doesn't recognise
     // from the last acknowledged/current generation) — refuse to clobber it.

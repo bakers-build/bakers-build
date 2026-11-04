@@ -399,8 +399,8 @@ describe('loadConductorConfig', () => {
     expect(config.variant).toBe('conductor');
     expect(config.project).toBe('bakers');
     expect(config.states).toEqual(['todo', 'working']);
-    // Engine max_parallel is ignored; capacity comes from machine context (default 1).
-    expect(config.max_parallel).toBe(1);
+    // The run budget is a backend setting; the resolved config carries none.
+    expect('max_parallel' in config).toBe(false);
     expect(config.poll_interval_ms).toBe(5000);
     expect(config.lease_seconds).toBe(300);
     expect(config.set_git_auto_setup_merge).toBe(true);
@@ -474,10 +474,22 @@ describe('loadConductorConfig', () => {
     expect(config.hooks?.after_done).toBe('ddev delete -Oy');
   });
 
-  it('applies max_parallel default of 1', async () => {
-    const bad = VALID.replace('max_parallel: 2,\n', '');
-    const config = await loadConductorConfig(writeConfig(bad));
-    expect(config.max_parallel).toBe(1);
+  it('ignores a machine max_parallel with one warning naming the backend', async () => {
+    writeFileSync(
+      join(process.env.HOME as string, '.bakers/machine.config.js'),
+      `export default { max_parallel: 2, addons: ['@bakers-build/addon-codex'] };`,
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const config = await loadConductorConfig(writeConfig(VALID));
+    const budget = warn.mock.calls.filter((c) =>
+      /max_parallel/.test(String(c[0])),
+    );
+    warn.mockRestore();
+    expect('max_parallel' in config).toBe(false);
+    expect(budget).toHaveLength(1);
+    expect(String(budget[0]?.[0])).toMatch(
+      /machine\.config\.js.*ignored.*backend/,
+    );
   });
 
   it.each([
@@ -547,13 +559,20 @@ describe('loadConductorConfig', () => {
   // BB-201: site/base_url is a CONNECTION concern (bakers.config.js), no longer
   // required by the engine loader — see core's load-bakers-config tests.
 
-  it('rejects misplaced engine capacity with its owning path and repair command', async () => {
+  it('ignores a conductor-file max_parallel with one warning naming the backend', async () => {
     const path = writeConfig(
       VALID.replace('export default {', 'export default {max_parallel: 2,'),
     );
-    await expect(loadConductorConfig(path)).rejects.toThrow(
-      /max_parallel.*machine.config.js.*move it there/,
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const config = await loadConductorConfig(path);
+    const budget = warn.mock.calls.filter((c) =>
+      /max_parallel/.test(String(c[0])),
     );
+    warn.mockRestore();
+    expect('max_parallel' in config).toBe(false);
+    expect(budget).toHaveLength(1);
+    expect(String(budget[0]?.[0])).toContain(path);
+    expect(String(budget[0]?.[0])).toMatch(/ignored.*backend/);
   });
 });
 

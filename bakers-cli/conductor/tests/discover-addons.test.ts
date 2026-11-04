@@ -347,6 +347,32 @@ describe('addon inbox discovery (contract 2, BB-661)', () => {
     const result = await cfg.inboxAddons?.[0]?.handlers.ping?.(request);
     expect(result).toEqual({ markdown: 'req-1 hi' });
   });
+
+  it('loadConductorConfig collects a `tools` export into the tool registry', async () => {
+    const file = writeConductorConfig(`export default {
+  bakers: { project: 'demo' }, states: ['working'],
+  addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', ${JSON.stringify(entry)}],
+};
+`);
+    const dir = join(file, '..');
+    inboxAddon(dir);
+    writeFileSync(
+      join(dir, 'demo', 'preset.js'),
+      `export const tools = {
+  contract: 1,
+  tools: { demo_echo: { description: 'Echo' } },
+  handlers: async (options) => ({
+    demo_echo: async (request) => ({ text: request.worktreePath + ' ' + options?.greeting }),
+  }),
+};
+`,
+    );
+    const cfg = await loadConductorConfig(file);
+    expect(cfg.tools?.list().map((t) => t.name)).toEqual(['demo_echo']);
+    expect(
+      await cfg.tools?.call('demo_echo', {}, { worktreePath: '/w' }),
+    ).toEqual({ text: '/w hi' });
+  });
 });
 
 describe('loadBbConfig — addons[] discovery (AC-2, connection surface)', () => {

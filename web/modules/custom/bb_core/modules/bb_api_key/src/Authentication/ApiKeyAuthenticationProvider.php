@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Drupal\bb_api_key\Authentication;
 
 use Drupal\Core\Authentication\AuthenticationProviderInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\bb_api_key\ApiKeyManager;
+use Drupal\consumers\Entity\ConsumerInterface;
 use Drupal\simple_oauth\Authentication\TokenAuthUser;
 use Drupal\simple_oauth\Authentication\TokenAuthUserInterface;
 use Drupal\simple_oauth\Exception\OAuthUnauthorizedHttpException;
+use Drupal\user\UserInterface;
+use League\OAuth2\Server\Exception\OAuthServerException;
+use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -23,15 +28,29 @@ use Symfony\Component\HttpFoundation\Request;
  * a plain Drupal user entity — does that, because ordinary Drupal permission
  * checking (not the scope override) then applies.
  *
+ * On `/mcp` the key itself is accepted as the bearer too, as
+ * `Bearer <client_id>:<secret>`, for clients that send a fixed header and
+ * cannot refresh a token. It runs the same checks as the token exchange
+ * (ApiKeyClientRepository::validateClient()) on every request and
+ * authenticates as the key's owner; any failure is a 401. A key-shaped bearer
+ * anywhere else goes to the inner provider, which rejects it as before.
+ *
  * Every other request — ordinary machine consumers, human OAuth, cookie
  * sessions — is returned unchanged; this decorator narrows nothing except
  * requests that authenticated as a managed key.
  */
 final class ApiKeyAuthenticationProvider implements AuthenticationProviderInterface {
 
+  /**
+   * The only path that accepts a key as the bearer.
+   */
+  private const KEY_BEARER_PATH = '/mcp';
+
   public function __construct(
     private readonly AuthenticationProviderInterface $inner,
     private readonly ApiKeyManager $apiKeyManager,
+    private readonly ClientRepositoryInterface $clientRepository,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
   ) {}
 
   /**
@@ -45,6 +64,10 @@ final class ApiKeyAuthenticationProvider implements AuthenticationProviderInterf
    * {@inheritdoc}
    */
   public function authenticate(Request $request) {
+    $key = $this->keyBearer($request);
+    if ($key !== NULL) {
+      return $this->keyOwner($request, ...$key);
+    }
     try {
       $account = $this->inner->authenticate($request);
     }
@@ -83,6 +106,48 @@ final class ApiKeyAuthenticationProvider implements AuthenticationProviderInterf
   }
 
   /**
+   * The client id and secret of a key sent as the bearer on `/mcp`.
+   *
+   * Neither part can hold a `:` (both are base64), and a JWT has none either.
+   *
+   * @return array{0: string, 1: string}|null
+   *   The client id and secret, or NULL for any other request.
+   */
+  private function keyBearer(Request $request): ?array {
+    if ($request->getPathInfo() !== self::KEY_BEARER_PATH) {
+      return NULL;
+    }
+    $header = (string) $request->headers->get('Authorization');
+    if (!str_starts_with($header, 'Bearer ')) {
+      return NULL;
+    }
+    $credentials = trim(substr($header, 7));
+    if (!str_starts_with($credentials, ApiKeyManager::CLIENT_ID_PREFIX) || !str_contains($credentials, ':')) {
+      return NULL;
+    }
+    [$clientId, $secret] = explode(':', $credentials, 2);
+    return [$clientId, $secret];
+  }
+
+  /**
+   * The owner of a valid key, or a 401.
+   *
+   * @throws \Drupal\simple_oauth\Exception\OAuthUnauthorizedHttpException
+   */
+  private function keyOwner(Request $request, string $clientId, string $secret): UserInterface {
+    if ($secret === '' || !$this->clientRepository->validateClient($clientId, $secret, 'client_credentials')) {
+      throw $this->invalidTokenException($request, NULL);
+    }
+    $consumers = $this->entityTypeManager->getStorage('consumer')->loadByProperties(['client_id' => $clientId]);
+    $consumer = reset($consumers);
+    $owner = $consumer instanceof ConsumerInterface ? $consumer->get('user_id')->entity : NULL;
+    if (!$consumer instanceof ConsumerInterface || !$this->apiKeyManager->isManaged($consumer) || !$owner instanceof UserInterface) {
+      throw $this->invalidTokenException($request, NULL);
+    }
+    return $owner;
+  }
+
+  /**
    * Whether a TypeError originates in the inner provider's TokenAuthUser build.
    *
    * `SimpleOauthAuthenticationProvider::authenticate()` loads the token row by
@@ -99,13 +164,17 @@ final class ApiKeyAuthenticationProvider implements AuthenticationProviderInterf
 
   /**
    * Builds the 401 a resource-server client expects for a bad bearer token.
+   *
+   * The previous exception is always a League OAuthServerException:
+   * simple_oauth's exception logger reads its hint and fails on anything else.
    */
   private function invalidTokenException(Request $request, ?\Throwable $previous): OAuthUnauthorizedHttpException {
     $scheme = str_starts_with((string) $request->headers->get('Authorization'), 'Bearer') ? 'Bearer' : 'Basic';
+    $message = 'The access token is invalid.';
     return new OAuthUnauthorizedHttpException(
       sprintf('%s realm="OAuth", error="invalid_token"', $scheme),
-      'The access token is invalid.',
-      $previous,
+      $message,
+      new OAuthServerException($message, 9, 'invalid_token', 401, 'The key, token or owner is not valid.', NULL, $previous),
     );
   }
 

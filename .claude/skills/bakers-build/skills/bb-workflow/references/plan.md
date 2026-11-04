@@ -9,7 +9,8 @@ Apply [ensure qualification](ensure-qualification.md); continue only on `qualifi
 
 ## provision
 
-none
+A bug whose reproduction needs a runtime applies [provision](provision.md) with the project's
+`bb-phase-provision` hint, so its RED observation runs on the worktree's site; otherwise none.
 
 ## work
 

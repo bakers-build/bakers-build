@@ -1,9 +1,9 @@
 {
   "id": "pingpong-technical-decision",
   "synthetic": true,
-  "profile": "bb-pingpong",
+  "profile": "bb-label-pingpong",
   "execution": "simulated-tools",
-  "skill": "bb-pingpong",
+  "skill": "bb-label-pingpong",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",

@@ -571,6 +571,58 @@ describe('ClaudeAgent security: system, yolo, custom', () => {
   });
 });
 
+describe('ClaudeAgent conductor tools', () => {
+  const tools = { url: 'http://127.0.0.1:4100' };
+  const conductorServer = {
+    type: 'http',
+    url: 'http://127.0.0.1:4100',
+    headers: { Authorization: 'Bearer ${BB_CONDUCTOR_TOKEN}' },
+  };
+  const launch = (agent: ClaudeAgent) =>
+    captureArgv(
+      'claude',
+      agent.launchCommand('x', undefined, undefined, tools),
+    );
+
+  it('merges bakers-conductor into the sandbox MCP config, the token by env reference only', () => {
+    const a = launch(
+      new ClaudeAgent({
+        sandbox: { mcp_servers: { playwright: { command: 'npx' } } },
+      }),
+    );
+    expect(a).toContain('--strict-mcp-config');
+    expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+      mcpServers: {
+        playwright: { command: 'npx' },
+        'bakers-conductor': conductorServer,
+      },
+    });
+  });
+
+  it('adds bakers-conductor in the system, yolo and custom modes too', () => {
+    for (const options of [
+      { security: 'system' },
+      { security: 'yolo' },
+      { security: 'custom', config: {} },
+    ] as const) {
+      const a = launch(new ClaudeAgent(options));
+      expect(a).not.toContain('--strict-mcp-config');
+      expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+        mcpServers: { 'bakers-conductor': conductorServer },
+      });
+    }
+  });
+
+  it('leaves a measured run without MCP servers', () => {
+    const command = new ClaudeAgent({
+      security: 'system',
+      measure: true,
+    }).launchCommand('x', undefined, '/w', tools);
+    expect(command).not.toContain('bakers-conductor');
+    expect(command).toContain(`'--mcp-config' '{"mcpServers":{}}'`);
+  });
+});
+
 describe('ClaudeAgent security load errors', () => {
   it.each([
     [{ skip_permissions: true }, /security: 'yolo'/],

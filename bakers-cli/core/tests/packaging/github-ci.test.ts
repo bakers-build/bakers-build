@@ -76,7 +76,7 @@ describe('GitHub migration checks', () => {
     expect(workflow.on.push.branches).toEqual(['ci/ghcr-rehearsal']);
     expect(workflow.on.pull_request).toBeUndefined();
     const job = workflow.jobs.registry;
-    expect(job['runs-on']).toBe('blacksmith-8vcpu-ubuntu-2404');
+    expect(job['runs-on']).toEqual(['self-hosted', 'github-runner-1']);
     expect(job.permissions).toEqual({ contents: 'read', packages: 'write' });
     const commands = job.steps
       .map((step: { run?: string }) => step.run || '')
@@ -99,6 +99,8 @@ describe('GitHub migration checks', () => {
     'conductor',
     'tui',
     'web_ui',
+    'pm_bot',
+    'coder_pm_bot',
     'release_rehearsal',
   ])('%s prepares the mounted checkout for container Git and path consumers', (name) => {
     const workflow = parse(read('.github/workflows/checks.yml'));
@@ -171,6 +173,8 @@ describe('GitHub migration checks', () => {
       'mr_title',
       'config_sync',
       'compose_render',
+      'pm_bot',
+      'coder_pm_bot',
       'conductor',
       'tui',
       'tui_musl',
@@ -207,6 +211,8 @@ describe('GitHub migration checks', () => {
       'docs_pages',
       'config_sync',
       'compose_render',
+      'pm_bot',
+      'coder_pm_bot',
       'conductor',
       'tui',
       'tui_musl',

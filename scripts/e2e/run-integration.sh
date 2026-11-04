@@ -16,6 +16,9 @@ set -a
 source "${ENV_FILE}"
 set +a
 
+# The suite drives the conductor built from source, which reports bakers/0.0.1.
+drush ${TEST_URI} cset -y bb_core.settings min_client_version 0.0.1
+
 echo "==> Resolving dispatchable conductor fixture"
 BB_E2E_CONDUCTOR_TICKET_UUID="$(drush ${TEST_URI} ev '
 $etm = \Drupal::entityTypeManager();

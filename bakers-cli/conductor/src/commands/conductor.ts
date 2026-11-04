@@ -14,6 +14,7 @@ import {
   defaultProcProbe,
   deriveCheckoutRoot,
   deriveConductorLiveness,
+  homeBbDir,
   loadReadyBbConnection,
   type ProcProbe,
   printVersionLine,
@@ -546,6 +547,10 @@ async function cmdStartForeground(
   // Conductor too but never claim, so they cannot overwrite this pid.
   conductor.claimServeProcess();
   await conductor.start();
+  // The endpoint file is how `bakers ports` and other CLI calls reach the tools.
+  await conductor.startTools(
+    join(homeBbDir(), 'conductors', `${conductor.id}.json`),
+  );
   const controller = new AbortController();
   const onSignal = () => controller.abort();
   process.once('SIGINT', onSignal);
@@ -555,6 +560,7 @@ async function cmdStartForeground(
   } finally {
     process.removeListener('SIGINT', onSignal);
     process.removeListener('SIGTERM', onSignal);
+    await conductor.stopTools();
     // The exiting process writes its own `offline`. It has to be this process:
     // a heartbeat sets `online` unconditionally (ConductorRegistrar), so an
     // offline written by anyone else is erased by the next tick — the status

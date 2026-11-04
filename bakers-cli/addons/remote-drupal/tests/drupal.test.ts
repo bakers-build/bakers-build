@@ -212,6 +212,16 @@ describe('DrupalBbRemote', () => {
     expect(await remote.machineCapacity('missing')).toBeNull();
   });
 
+  it('machineCapacity returns null when the machine carries no budget', async () => {
+    const col = fakeCollection({
+      first: fakeResource('machine-uuid', { current_load: 1 }),
+    });
+    const remote = new DrupalBbRemote(
+      fakeClient({ collection: vi.fn(() => col) }),
+    );
+    expect(await remote.machineCapacity('dev-box')).toBeNull();
+  });
+
   it('listConductors maps maxParallel from linked machine, not conductor max_parallel (BB-353)', async () => {
     // Capacity lives on bb_machine; conductor.max_parallel was removed. A
     // stale/legacy conductor attribute must not be treated as SoT.
@@ -795,7 +805,6 @@ describe('DrupalBbRemote', () => {
       states: ['todo'],
       workspace: '/checkout',
       label: 'cw-laptop · bakers',
-      max_parallel: 2,
     });
 
     expect(uuid).toBe('drupal-uuid');
@@ -813,9 +822,10 @@ describe('DrupalBbRemote', () => {
       states: ['todo'],
       workspace_root: '/checkout',
       label: 'cw-laptop · bakers',
-      max_parallel: 2,
     });
     expect(body.data.attributes).not.toHaveProperty('current_load');
+    // The run budget is a backend setting; registration never sends it.
+    expect(body.data.attributes).not.toHaveProperty('max_parallel');
   });
 
   const takeoverReg = {
@@ -825,7 +835,6 @@ describe('DrupalBbRemote', () => {
     states: [],
     workspace: '/checkout',
     label: 'lbl',
-    max_parallel: 1,
   };
 
   it('registerConductor turns a takeover 409 into the offered conductors', async () => {
@@ -887,7 +896,6 @@ describe('DrupalBbRemote', () => {
       states: [],
       workspace: '/checkout',
       label: 'lbl',
-      max_parallel: 1,
     };
 
     await remote.registerConductor({ ...reg, adopt: 'old-uuid' });
@@ -914,7 +922,6 @@ describe('DrupalBbRemote', () => {
         states: ['todo'],
         workspace: '/checkout',
         label: 'lbl',
-        max_parallel: 2,
       }),
     ).rejects.toThrow(/data\.id/);
   });
@@ -933,7 +940,6 @@ describe('DrupalBbRemote', () => {
         states: ['todo'],
         workspace: '/checkout',
         label: 'lbl',
-        max_parallel: 2,
       },
       2,
       300,
@@ -964,7 +970,6 @@ describe('DrupalBbRemote', () => {
         states: [],
         workspace: '/c',
         label: 'l',
-        max_parallel: 1,
       },
       0,
     );

@@ -19,6 +19,7 @@ import type {
 } from './plugins/plugins.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import type { ToolRegistry } from './plugins/tools.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {
@@ -49,11 +50,6 @@ export interface ConductorSettings {
    * `{state}`, `{runUuid}`, `{ticketUuid}`. Defaults to `DEFAULT_AGENT_PROMPT`.
    */
   prompt: string;
-  /**
-   * Host concurrent-run budget. Sourced from machine context max_parallel
-   * (BB-353); engine-config leftovers are ignored with a warning.
-   */
-  max_parallel: number;
   /**
    * Machine preview-link policy. True when `machine.config.js` sets `tunnel: true`.
    * Runtime-derived; ticket and project env cannot override it.
@@ -120,6 +116,8 @@ export interface ConductorFileConfig extends ConductorSettings {
    * validated at load (BB-661). Absent means none.
    */
   inboxAddons?: LoadedInbox[];
+  /** Agent tools from the conductor `addons[]` `tools` exports. Absent means none. */
+  tools?: ToolRegistry;
   /**
    * Conductor process host from the `processHosts` accumulator (last wins).
    * Absent when no addon contributed one — `bakers oven start` then fails

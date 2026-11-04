@@ -34,7 +34,7 @@ Prepare a checkout to change bakers.build, run the checks that fit your change, 
 | `recipes/` and `config/sync/` | The two homes of Drupal configuration |
 | `tests/` | `contract/` shell checks, `playwright/` browser scenarios, `config-sync/` |
 | `.claude/skills/bakers-build/` | The bakers.build skills and the `WORKFLOW.md` template |
-| `docs/` and `website/` | The manual and the site that renders it |
+| `docs/` | The manual and the site that renders it |
 
 ## Checks by area
 
@@ -48,7 +48,7 @@ Prepare a checkout to change bakers.build, run the checks that fit your change, 
 | Drupal configuration | `bash tests/config-sync/check-config-sync.sh` |
 | The web UI | The theme's Storybook build, the layout contract script under `tests/contract/`, and the Playwright suite in `tests/playwright` |
 | A component directory added or removed | The data-display contract script under `tests/contract/`; it pins the component count |
-| The manual | `cd website && pnpm build` |
+| The manual | `cd docs && pnpm build` |
 
 Run PHPUnit classes by path, for example `ddev exec ./vendor/bin/phpunit --configuration=phpunit.xml <path/to/ChangedTest.php>`, not with `--filter` or `--group`, which can report success when no test ran. The full suite is the CI job's work.
 

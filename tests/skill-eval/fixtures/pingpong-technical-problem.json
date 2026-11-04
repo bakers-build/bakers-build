@@ -1,9 +1,9 @@
 {
   "id": "pingpong-technical-problem",
   "synthetic": true,
-  "profile": "bb-pingpong",
+  "profile": "bb-label-pingpong",
   "execution": "simulated-tools",
-  "skill": "bb-pingpong",
+  "skill": "bb-label-pingpong",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",
@@ -82,7 +82,7 @@
   "rubric": [
     {
       "id": "technical-problem",
-      "criterion": "The final answer reports the failed ddev start with the Docker daemon error published in a ticket comment, and one # Technical problem comment that only asks the user to contact the developers."
+      "criterion": "The final answer reports the failed ddev start with the Docker daemon error published in its own comment headed # Error, then a separate # Technical problem comment that only asks the user to contact the developers."
     },
     {
       "id": "label-freeze",

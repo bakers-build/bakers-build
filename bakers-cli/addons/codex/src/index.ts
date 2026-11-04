@@ -7,6 +7,8 @@ import {
   type AgentPlugin,
   type AgentRunIdentity,
   type BbAgent,
+  CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOLS_SERVER,
   type KnownOptionSpec,
   lastLine,
   type ResolvedSecurity,
@@ -210,7 +212,11 @@ export class CodexAgent implements BbAgent {
       `permissions.bakers=${profile}`,
     ];
     for (const id of this.userMcpServers()) {
-      if (!Object.hasOwn(sandbox.mcp_servers, id)) {
+      // The conductor's server is set per launch, never switched off.
+      if (
+        !Object.hasOwn(sandbox.mcp_servers, id) &&
+        id !== CONDUCTOR_TOOLS_SERVER
+      ) {
         flags.push(...pairs([[`mcp_servers.${id}.enabled`, false]]));
       }
     }
@@ -232,10 +238,23 @@ export class CodexAgent implements BbAgent {
     prompt: string,
     _run?: AgentRunIdentity,
     workspacePath = process.cwd(),
+    tools?: { url: string },
   ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
     const parts = ['codex', ...this.securityFlags(workspacePath).map(word)];
+    if (tools) {
+      // Codex reads the token from the run env, so it never enters argv.
+      const server = `mcp_servers.${CONDUCTOR_TOOLS_SERVER}`;
+      parts.push(
+        '-c',
+        word(`${server}.url=${JSON.stringify(tools.url)}`),
+        '-c',
+        word(
+          `${server}.bearer_token_env_var=${JSON.stringify(CONDUCTOR_TOKEN_ENV)}`,
+        ),
+      );
+    }
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));
     }

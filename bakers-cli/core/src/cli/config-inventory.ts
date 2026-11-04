@@ -461,14 +461,6 @@ export function inventoryConfig(
           'error',
           userId,
         );
-      requireValue(
-        'max_parallel',
-        'A positive integer host capacity.',
-        (property) =>
-          typeof property.value === 'number' &&
-          Number.isInteger(property.value) &&
-          property.value > 0,
-      );
       const tunnel = source.properties.get('tunnel');
       const tunnelExpected = 'A boolean tunnel sharing policy.';
       if (tunnel) {
@@ -648,22 +640,18 @@ export function inventoryConfig(
       }
     }
     if (kind !== 'machine') {
-      for (const key of ['max_parallel', 'conductor.max_parallel', 'tunnel']) {
-        const property = source.properties.get(key);
-        if (property)
-          add(
-            'misplaced_key',
-            key,
-            key === 'tunnel'
-              ? `Machine-owned tunnel belongs in ${machinePath}.`
-              : `Host capacity belongs in ${machinePath} at max_parallel.`,
-            `Move ${key} from ${shellQuote(path)} into ${shellQuote(machinePath)}.`,
-            'ownership',
-            'error',
-            property,
-            'machine',
-          );
-      }
+      const property = source.properties.get('tunnel');
+      if (property)
+        add(
+          'misplaced_key',
+          'tunnel',
+          `Machine-owned tunnel belongs in ${machinePath}.`,
+          `Move tunnel from ${shellQuote(path)} into ${shellQuote(machinePath)}.`,
+          'ownership',
+          'error',
+          property,
+          'machine',
+        );
     }
     const findings = report.findings.slice(startFindings);
     if (findings.some((finding) => finding.severity === 'error'))
@@ -736,7 +724,7 @@ export function inventoryConfig(
       destinationKey = finding.related[0].key;
     } else if (finding.owner === 'machine') {
       destinationPath = machinePath;
-      destinationKey = finding.key === 'tunnel' ? 'tunnel' : 'max_parallel';
+      destinationKey = finding.key;
     } else {
       destinationPath = connectionPath;
       destinationKey =

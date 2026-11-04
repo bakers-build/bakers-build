@@ -22,7 +22,6 @@ export interface ConductorRegistration {
   states: string[];
   workspace: string;
   label: string;
-  max_parallel: number;
   /**
    * The pid of the serve-loop process, when this conductor *is* that process.
    *
@@ -342,7 +341,7 @@ export interface BbRemote {
    * Shared host capacity for this `host_key` (bb_machine, BB-353 D5).
    * After a heartbeat that reported this process's load, `currentLoad` is the
    * sum of online conductors on the machine (peers + self). Null when the
-   * control plane has no machine row yet — callers fall back to local count.
+   * machine row or its budget is unreadable — callers claim nothing.
    */
   machineCapacity(
     hostKey: string,

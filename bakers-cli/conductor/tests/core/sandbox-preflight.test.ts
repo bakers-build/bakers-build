@@ -84,7 +84,6 @@ function setup(
     project: 'bakers',
     states: ['todo'],
     prompt: DEFAULT_AGENT_PROMPT,
-    max_parallel: 1,
     host_key: 'test-box',
     poll_interval_ms: 5000,
     lease_seconds: 300,
@@ -180,7 +179,8 @@ describe('sandbox preflight gate', () => {
     };
     const { conductor, remote, logs } = setup(agent);
     await conductor.start();
-    remote.seedMachineLoad('test-box', { currentLoad: 1 }); // a peer fills the budget of 1
+    // a peer fills the machine's budget of 1
+    remote.seedMachineLoad('test-box', { currentLoad: 1, maxParallel: 1 });
     probes = 0;
     await conductor.tick();
     expect(probes).toBe(0);

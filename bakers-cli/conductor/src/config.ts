@@ -16,6 +16,7 @@ import {
   scanTopLevelProperties,
   scopeAddons,
   stemForConfigFile,
+  warnIgnoredMaxParallel,
 } from '@bakers-build/core';
 import { readBbProjectSelection } from './cli/project-context.js';
 import { validateOptionalBoolean } from './plugins/agent-args.js';
@@ -34,6 +35,7 @@ import {
 } from './plugins/preset.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import { loadTools } from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`
@@ -119,7 +121,6 @@ type RawConfig = {
   project?: unknown;
   states?: unknown;
   prompt?: unknown;
-  max_parallel?: unknown;
   poll_interval_ms?: unknown;
   lease_seconds?: unknown;
   set_git_auto_setup_merge?: unknown;
@@ -440,19 +441,9 @@ export async function loadConductorConfig(
   const states = Array.isArray(config.states)
     ? config.states.map((state) => requireNonEmptyString(state, 'states'))
     : [];
-  // Host capacity has one owner. Stale engine values need an explicit migration.
-  if (config.max_parallel !== undefined) {
-    throw new Error(
-      `${configPath}: misplaced max_parallel belongs in ${machineContextPath()}; move it there`,
-    );
-  }
+  warnIgnoredMaxParallel(configPath, config);
   const machineCtx = await readMachineContext();
-  const maxParallel =
-    typeof machineCtx.max_parallel === 'number' &&
-    Number.isFinite(machineCtx.max_parallel) &&
-    machineCtx.max_parallel >= 1
-      ? Math.floor(machineCtx.max_parallel)
-      : 1;
+  warnIgnoredMaxParallel(machineContextPath(), machineCtx);
   const tunnel = machineCtx.tunnel === true;
   const variant = stemForConfigFile(basename(configPath)) ?? 'conductor';
 
@@ -510,6 +501,11 @@ export async function loadConductorConfig(
   const wired = resolveConductorSlots(discovered);
   const hookListeners = validateHookListeners(discovered.hooks);
   const inboxAddons = await loadInboxAddons(discovered.addonInbox);
+  // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
+  const tools =
+    discovered.addonTools.length > 0
+      ? await loadTools(discovered.addonTools)
+      : undefined;
   // Explicit executor/workspace descriptors still load those slots, but they
   // skip addons[] discovery — so a pre-BB-215 config never contributes a
   // process host unless we load that package's processHosts accumulator too.
@@ -748,6 +744,7 @@ export async function loadConductorConfig(
     workspace,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
+    ...(tools !== undefined ? { tools } : {}),
     ...(processHost !== undefined ? { processHost } : {}),
     bakers,
     ...identityOf(machineCtx, project, variant),
@@ -758,7 +755,6 @@ export async function loadConductorConfig(
       typeof config.prompt === 'string' && config.prompt.trim() !== ''
         ? config.prompt
         : DEFAULT_AGENT_PROMPT,
-    max_parallel: maxParallel,
     tunnel,
     poll_interval_ms: optionalPositiveInteger(
       config.poll_interval_ms,

@@ -60,7 +60,6 @@ describe('rendered schema versions', () => {
     const text = renderHostMachine({
       machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
       label: 'cw-laptop',
-      maxParallel: 2,
     });
     expect(text).toContain('// @bakers-schema-version 1\n');
     expect(text).toContain('schema_version: 1,');
@@ -69,6 +68,7 @@ describe('rendered schema versions', () => {
     );
     expect(text).toContain('label: "cw-laptop"');
     expect(text).not.toContain('user_id');
+    expect(text).not.toContain('max_parallel');
   });
 });
 

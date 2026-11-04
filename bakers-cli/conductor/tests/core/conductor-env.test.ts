@@ -23,9 +23,12 @@ import {
   emptyAgentFootprint,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { Conductor, resolveRunEnv } from '../../src/core/conductor.js';
+import { loadTools } from '../../src/plugins/tools.js';
 
 interface LogCall {
   level: 'debug' | 'info' | 'warn' | 'error';
@@ -72,7 +75,8 @@ function makeConfig(
     project: 'bakers',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
-    max_parallel: 2,
+    // The budget lives on the fake machine row for this host (default 5).
+    host_key: 'test-host',
     poll_interval_ms: 5000,
     lease_seconds: 300,
     config_path: `${CHECKOUT}/conductor.config.js`,
@@ -458,5 +462,82 @@ describe('Conductor dispatch env injection', () => {
     expect(env).not.toHaveProperty('BB_PROJECT_ID');
     expect(env).not.toHaveProperty('BB_WORKSPACE');
     expect(env).not.toHaveProperty('BB_WORKSPACE_ID');
+  });
+});
+
+describe('Conductor agent tools', () => {
+  async function dispatchOnce(withTools: boolean) {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+      },
+    });
+    remote.queue.push({
+      runUuid: 'r-1',
+      runId: 1,
+      ticketUuid: 't-1',
+      stateAtStart: 'working',
+      handler: 'code',
+    });
+    const executor = new RecordingExecutor();
+    const launched: unknown[] = [];
+    const agent: BbAgent = {
+      ...fakeAgent,
+      launchCommand: (_p, _run, _ws, tools) => {
+        launched.push(tools);
+        return 'claude';
+      },
+    };
+    const tools = await loadTools([
+      {
+        name: 'demo',
+        version: '1.0.0',
+        tools: {
+          contract: 1,
+          tools: { where: { description: 'Where am I' } },
+          handlers: async () => ({
+            where: async (req) => ({ text: req.worktreePath }),
+          }),
+        },
+      },
+    ]);
+    const conductor = new Conductor(
+      makeConfig(withTools ? { tools } : {}),
+      remote,
+      executor,
+      new RecordingWorkspace(),
+      [{ id: agent.id, agent }],
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.startTools();
+    await conductor.start();
+    await conductor.tick();
+    return { conductor, env: executor.started[0]?.env ?? {}, launched };
+  }
+
+  it('hands each run the tool server URL and a token bound to its worktree', async () => {
+    const { conductor, env, launched } = await dispatchOnce(true);
+    const url = (launched[0] as { url: string }).url;
+    expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(url), {
+        requestInit: {
+          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+        },
+      }),
+    );
+    const result = await client.callTool({ name: 'where', arguments: {} });
+    expect(result.content).toEqual([{ type: 'text', text: '/fake/BB-1' }]);
+    await client.close();
+    await conductor.stopTools();
+  });
+
+  it('offers no tools to a run when no addon declares any', async () => {
+    const { conductor, env, launched } = await dispatchOnce(false);
+    expect(launched).toEqual([undefined]);
+    expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
+    await conductor.stopTools();
   });
 });

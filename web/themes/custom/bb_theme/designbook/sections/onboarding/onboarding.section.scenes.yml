@@ -2,8 +2,8 @@ id: onboarding
 group: Designbook/Sections/Onboarding
 title: Onboarding
 description: >-
-  The four-step wizard: identity, About you, skill setup, then prepare your
-  first project. Chrome is `design-system:onboarding`. Finishing lands on the
+  The three-step wizard: identity, About you, then documentation links per
+  audience. Chrome is `design-system:onboarding`. Finishing lands on the
   workspace overview.
 status: planned
 order: 15
@@ -12,7 +12,7 @@ scenes:
     group: Onboarding
     section: onboarding
     docs: >-
-      Step 1 of 4: full name, nickname and picture, in the order the account
+      Step 1 of 3: full name, nickname and picture, in the order the account
       edit form uses too. Mark, heading and description sit above the form card
       in one centred column. Nickname is required to continue; Skip advances
       without writing. The picture uses the account form's image widget: a round
@@ -32,7 +32,7 @@ scenes:
           content:
             - component: bb_theme:form
               slots:
-                lead: Step 1 of 4
+                lead: Step 1 of 3
                 lines:
                   - component: bb_theme:form_label
                     props:
@@ -90,7 +90,7 @@ scenes:
     group: Onboarding
     section: onboarding
     docs: >-
-      Step 2 of 4: position and background, with the AI-use notice. The brand
+      Step 2 of 3: position and background, with the AI-use notice. The brand
       sits centred above the form card. Both fields are optional. Back returns
       to identity without writing. Next saves About you and opens setup; it does
       not complete onboarding.
@@ -104,7 +104,7 @@ scenes:
           content:
             - component: bb_theme:form
               slots:
-                lead: Step 2 of 4
+                lead: Step 2 of 3
                 lines:
                   - component: bb_theme:note
                     props:
@@ -149,403 +149,47 @@ scenes:
     group: Onboarding
     section: onboarding
     docs: >-
-      Step 3 of 4: install the bakers.build plugin, then the skill wizard prompt, with
-      an Agent segmented filter (Claude Code or Codex). Commands are copyable;
-      the page never runs them. Next opens prepare your first project. Set up
-      later goes to Home.
+      Step 3 of 3, the last step: documentation links only, grouped by
+      audience. Ticket only links the connector guide; Developer links the
+      machine and project guides. Each link opens in a new tab. Finish goes to
+      Home, Finish & create a new workspace to workspace create, and Set up
+      later to Home; each completes onboarding.
     items:
       - scene: design-system:onboarding
         with:
-          title: Get started - set up bakers.build on your machine
-          description: >-
-            Install the bakers.build plugin, then paste the skill wizard prompt into
-            your agent. This page never runs the commands for you.
+          title: Get started with bakers.build
+          description: Pick how you will work. Each guide opens in a new tab.
           content:
             - component: bb_theme:form
               slots:
-                lead: Step 3 of 4
-                lines:
-                  - component: bb_theme:note
-                    props:
-                      tone: attention
-                    slots:
-                      body: >-
-                        You need Node.js 20.19 or newer with npm, and git. The
-                        skill wizard walks you through the rest. You do not need
-                        Claude, Codex or a local conductor merely to use the web
-                        application.
-                  - component: bb_theme:setup_paths
-                    props:
-                      selected: claude
-                      filter_label: Agent
-                      items:
-                        - label: Claude Code
-                          value: claude
-                        - label: Codex
-                          value: codex
-                    slots:
-                      intro:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Install the bakers.build plugin first:'
-                            size: caption
-                            tone: light
-                      panel_a:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Inside Claude Code, each as its own command:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              /plugin marketplace add
-                              https://bakers.build/marketplace.json
-                            label: Copy the marketplace add command
-                        - component: bb_theme:setup_command
-                          props:
-                            command: /plugin install bakers@bakers
-                            label: Copy the plugin install command
-                      panel_b:
-                        - component: bb_theme:text
-                          props:
-                            text: 'With the Codex CLI, each as its own command:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              codex plugin marketplace add
-                              https://github.com/bakers-build/bakers-build --ref main
-                            label: Copy the Codex marketplace add command
-                        - component: bb_theme:setup_command
-                          props:
-                            command: codex plugin add bakers@bakers
-                            label: Copy the Codex plugin install command
-                      after:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Then paste this into your agent:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              Use `bakers:bb-init` to guide me through installing and
-                              setting up bakers.build.
-                            label: Copy the skill wizard prompt
-                  - component: bb_theme:link-group
-                    props:
-                      label: Guides
-                      links:
-                        - url: >-
-                            https://bakers.build/docs/get-started/
-                          title: bakers.build documentation
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/install
-                          title: Install bakers.build
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/install#skill-wizard-%E2%80%94-recommended
-                          title: Skill wizard
-                          kind: doc
-                actions:
-                  - component: bb_theme:button
-                    props:
-                      variant: ghost
-                      label: Back
-                  - component: bb_theme:button
-                    props:
-                      variant: ghost
-                      label: Set up later
-                  - component: bb_theme:button
-                    props:
-                      variant: primary
-                      label: Next
-  - name: setup-install-invited
-    group: Onboarding
-    section: onboarding
-    docs: >-
-      Step 3 of 4 for an invited account: the same skill setup as setup-install,
-      with Next and Set up later. Finish lives on the project page.
-    items:
-      - scene: design-system:onboarding
-        with:
-          title: Get started - set up bakers.build on your machine
-          description: >-
-            Install the bakers.build plugin, then paste the skill wizard prompt into
-            your agent. This page never runs the commands for you.
-          content:
-            - component: bb_theme:form
-              slots:
-                lead: Step 3 of 4
-                lines:
-                  - component: bb_theme:note
-                    props:
-                      tone: attention
-                    slots:
-                      body: >-
-                        You need Node.js 20.19 or newer with npm, and git. The
-                        skill wizard walks you through the rest. You do not need
-                        Claude, Codex or a local conductor merely to use the web
-                        application.
-                  - component: bb_theme:setup_paths
-                    props:
-                      selected: claude
-                      filter_label: Agent
-                      items:
-                        - label: Claude Code
-                          value: claude
-                        - label: Codex
-                          value: codex
-                    slots:
-                      intro:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Install the bakers.build plugin first:'
-                            size: caption
-                            tone: light
-                      panel_a:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Inside Claude Code, each as its own command:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              /plugin marketplace add
-                              https://bakers.build/marketplace.json
-                            label: Copy the marketplace add command
-                        - component: bb_theme:setup_command
-                          props:
-                            command: /plugin install bakers@bakers
-                            label: Copy the plugin install command
-                      panel_b:
-                        - component: bb_theme:text
-                          props:
-                            text: 'With the Codex CLI, each as its own command:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              codex plugin marketplace add
-                              https://github.com/bakers-build/bakers-build --ref main
-                            label: Copy the Codex marketplace add command
-                        - component: bb_theme:setup_command
-                          props:
-                            command: codex plugin add bakers@bakers
-                            label: Copy the Codex plugin install command
-                      after:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Then paste this into your agent:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              Use `bakers:bb-init` to guide me through installing and
-                              setting up bakers.build.
-                            label: Copy the skill wizard prompt
-                  - component: bb_theme:link-group
-                    props:
-                      label: Guides
-                      links:
-                        - url: >-
-                            https://bakers.build/docs/get-started/
-                          title: bakers.build documentation
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/install
-                          title: Install bakers.build
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/install#skill-wizard-%E2%80%94-recommended
-                          title: Skill wizard
-                          kind: doc
-                actions:
-                  - component: bb_theme:button
-                    props:
-                      variant: ghost
-                      label: Back
-                  - component: bb_theme:button
-                    props:
-                      variant: ghost
-                      label: Set up later
-                  - component: bb_theme:button
-                    props:
-                      variant: primary
-                      label: Next
-  - name: setup-reopen
-    group: Onboarding
-    section: onboarding
-    docs: >-
-      A completed account reopening Setup guide from Home. Progress is Setup.
-      There is no Back. Completion stays true. Commands match setup-install.
-    items:
-      - scene: design-system:onboarding
-        with:
-          title: Get started - set up bakers.build on your machine
-          description: >-
-            Install the bakers.build plugin, then paste the skill wizard prompt into
-            your agent. This page never runs the commands for you.
-          content:
-            - component: bb_theme:form
-              slots:
-                lead: Setup
-                lines:
-                  - component: bb_theme:note
-                    props:
-                      tone: attention
-                    slots:
-                      body: >-
-                        You need Node.js 20.19 or newer with npm, and git. The
-                        skill wizard walks you through the rest. You do not need
-                        Claude, Codex or a local conductor merely to use the web
-                        application.
-                  - component: bb_theme:setup_paths
-                    props:
-                      selected: claude
-                      filter_label: Agent
-                      items:
-                        - label: Claude Code
-                          value: claude
-                        - label: Codex
-                          value: codex
-                    slots:
-                      intro:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Install the bakers.build plugin first:'
-                            size: caption
-                            tone: light
-                      panel_a:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Inside Claude Code, each as its own command:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              /plugin marketplace add
-                              https://bakers.build/marketplace.json
-                            label: Copy the marketplace add command
-                        - component: bb_theme:setup_command
-                          props:
-                            command: /plugin install bakers@bakers
-                            label: Copy the plugin install command
-                      panel_b:
-                        - component: bb_theme:text
-                          props:
-                            text: 'With the Codex CLI, each as its own command:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              codex plugin marketplace add
-                              https://github.com/bakers-build/bakers-build --ref main
-                            label: Copy the Codex marketplace add command
-                        - component: bb_theme:setup_command
-                          props:
-                            command: codex plugin add bakers@bakers
-                            label: Copy the Codex plugin install command
-                      after:
-                        - component: bb_theme:text
-                          props:
-                            text: 'Then paste this into your agent:'
-                            size: caption
-                            tone: light
-                        - component: bb_theme:setup_command
-                          props:
-                            command: >-
-                              Use `bakers:bb-init` to guide me through installing and
-                              setting up bakers.build.
-                            label: Copy the skill wizard prompt
-                  - component: bb_theme:link-group
-                    props:
-                      label: Guides
-                      links:
-                        - url: >-
-                            https://bakers.build/docs/get-started/
-                          title: bakers.build documentation
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/install
-                          title: Install bakers.build
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/install#skill-wizard-%E2%80%94-recommended
-                          title: Skill wizard
-                          kind: doc
-                actions:
-                  - component: bb_theme:button
-                    props:
-                      variant: ghost
-                      label: Set up later
-                  - component: bb_theme:button
-                    props:
-                      variant: primary
-                      label: Next
-  - name: setup-project
-    group: Onboarding
-    section: onboarding
-    docs: >-
-      Step 4 of 4: prepare your first project. Copy the init-project
-      prompt and follow Initialize a project. Finish goes to Home; Finish &
-      create a new workspace goes to the create form. Set up later also goes to
-      Home.
-    items:
-      - scene: design-system:onboarding
-        with:
-          title: Prepare your first project
-          description: >-
-            Open a checkout and let init-project connect it as a bakers.build
-            project. This page never runs the skill for you.
-          content:
-            - component: bb_theme:form
-              slots:
-                lead: Step 4 of 4
-                lines:
-                  - component: bb_theme:note
-                    props:
-                      tone: attention
-                    slots:
-                      body: >-
-                        Open a repository checkout in your agent, then paste the
-                        prompt. The skill finds or creates the bakers.build project and
-                        writes the checkout configuration. You can finish here
-                        and do this later from any checkout.
+                lead: Step 3 of 3
+                lines: &setup_audiences
                   - component: bb_theme:text
                     props:
-                      text: 'Paste this into your agent:'
+                      text: Work through chat, without a local machine.
                       size: caption
                       tone: light
-                  - component: bb_theme:setup_command
-                    props:
-                      command: >-
-                        Use `bakers:bb-init-project` to connect this checkout as a
-                        bakers.build project.
-                      label: Copy the init-project prompt
                   - component: bb_theme:link-group
                     props:
-                      label: Guides
+                      label: Ticket only
                       links:
-                        - url: >-
-                            https://bakers.build/docs/get-started/
-                          title: bakers.build documentation
+                        - url: https://bakers.build/docs/get-started/connector
+                          title: Set up a connector
                           kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/connect-a-project
-                          title: Connect your project
+                  - component: bb_theme:text
+                    props:
+                      text: Run the agent on your own machine.
+                      size: caption
+                      tone: light
+                  - component: bb_theme:link-group
+                    props:
+                      label: Developer
+                      links:
+                        - url: https://bakers.build/docs/get-started/machine
+                          title: Set up a machine
                           kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/connect-a-project#skill-wizard-%E2%80%94-recommended
-                          title: Initialize a project
+                        - url: https://bakers.build/docs/get-started/connect-a-project
+                          title: Set up a project
                           kind: doc
                 actions:
                   - component: bb_theme:button
@@ -564,62 +208,23 @@ scenes:
                     props:
                       variant: primary
                       label: Finish & create a new workspace
-  - name: setup-project-invited
+  - name: setup-install-invited
     group: Onboarding
     section: onboarding
     docs: >-
-      Step 4 of 4 for an invited account: the same project prompt as
-      setup-project, with only Finish (to Home) and Set up later. Finish &
-      create a new workspace is absent because a pending invitation offer
-      exists.
+      Step 3 of 3 for an invited account: the same audiences as setup-install,
+      with only Finish (to Home) and Set up later. Finish & create a new
+      workspace is absent because a pending invitation offer exists.
     items:
       - scene: design-system:onboarding
         with:
-          title: Prepare your first project
-          description: >-
-            Open a checkout and let init-project connect it as a bakers.build
-            project. This page never runs the skill for you.
+          title: Get started with bakers.build
+          description: Pick how you will work. Each guide opens in a new tab.
           content:
             - component: bb_theme:form
               slots:
-                lead: Step 4 of 4
-                lines:
-                  - component: bb_theme:note
-                    props:
-                      tone: attention
-                    slots:
-                      body: >-
-                        Open a repository checkout in your agent, then paste the
-                        prompt. The skill finds or creates the bakers.build project and
-                        writes the checkout configuration. You can finish here
-                        and do this later from any checkout.
-                  - component: bb_theme:text
-                    props:
-                      text: 'Paste this into your agent:'
-                      size: caption
-                      tone: light
-                  - component: bb_theme:setup_command
-                    props:
-                      command: >-
-                        Use `bakers:bb-init-project` to connect this checkout as a
-                        bakers.build project.
-                      label: Copy the init-project prompt
-                  - component: bb_theme:link-group
-                    props:
-                      label: Guides
-                      links:
-                        - url: >-
-                            https://bakers.build/docs/get-started/
-                          title: bakers.build documentation
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/connect-a-project
-                          title: Connect your project
-                          kind: doc
-                        - url: >-
-                            https://bakers.build/docs/get-started/connect-a-project#skill-wizard-%E2%80%94-recommended
-                          title: Initialize a project
-                          kind: doc
+                lead: Step 3 of 3
+                lines: *setup_audiences
                 actions:
                   - component: bb_theme:button
                     props:
@@ -633,3 +238,32 @@ scenes:
                     props:
                       variant: primary
                       label: Finish
+  - name: setup-reopen
+    group: Onboarding
+    section: onboarding
+    docs: >-
+      A completed account reopening Setup guide from Home. Progress is Setup.
+      There is no Back. Completion stays true. Audiences match setup-install.
+    items:
+      - scene: design-system:onboarding
+        with:
+          title: Get started with bakers.build
+          description: Pick how you will work. Each guide opens in a new tab.
+          content:
+            - component: bb_theme:form
+              slots:
+                lead: Setup
+                lines: *setup_audiences
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Set up later
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Finish
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Finish & create a new workspace

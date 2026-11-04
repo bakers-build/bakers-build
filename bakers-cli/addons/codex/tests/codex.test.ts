@@ -749,3 +749,32 @@ describe('CodexAgent.sandboxPreflight', () => {
     expect(calls).toEqual([]);
   });
 });
+
+describe('CodexAgent conductor tools', () => {
+  it('adds bakers-conductor with the URL and the token by env var name only', async () => {
+    const home = await homeWithCodexMcp();
+    await writeFile(
+      join(home, '.codex', 'config.toml'),
+      '[mcp_servers.bakers-conductor]\nurl = "http://old"\n[mcp_servers.gitlab]\ncommand = "g"\n',
+    );
+    const argv = captureArgv(
+      'codex',
+      new CodexAgent({}, home).launchCommand('x', undefined, home, {
+        url: 'http://127.0.0.1:4100',
+      }),
+    );
+    expect(argv).toContain(
+      'mcp_servers.bakers-conductor.url="http://127.0.0.1:4100"',
+    );
+    expect(argv).toContain(
+      'mcp_servers.bakers-conductor.bearer_token_env_var="BB_CONDUCTOR_TOKEN"',
+    );
+    expect(argv).not.toContain('mcp_servers.bakers-conductor.enabled=false');
+    expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+  });
+
+  it('adds nothing without a tool server', () => {
+    const command = new CodexAgent({ security: 'yolo' }).launchCommand('x');
+    expect(command).not.toContain('bakers-conductor');
+  });
+});

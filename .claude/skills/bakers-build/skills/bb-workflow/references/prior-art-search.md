@@ -8,8 +8,9 @@ first.
   about what exists; fix it and run it again rather than reading it as absence.
 - **A well-formed search with the wrong noun returns zero rows and no error.** That is the failure
   that matters here, so when a search comes back **empty**, prove the call first with
-  `query: "ticket"`, which must return a row. A non-empty result is its own probe; run this only
-  for an empty one. Sibling work rarely uses this ticket's words.
+  `query: "ticket"`, which must return a row. Prove every empty search before judging any
+  candidate, even when another spelling returned rows. Sibling work rarely uses this ticket's
+  words.
 
 A returned row is a **candidate**, not yet a hit: a common noun matches widely, and only a ticket
 carrying **this ask** is a hit. **A ticket is never its own prior art** — where this run already has

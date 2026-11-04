@@ -1,5 +1,11 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -19,6 +25,11 @@ function gate(failure = '', overrides: Record<string, string> = {}) {
     writeFileSync(join(dir, 'git'), '#!/bin/sh\necho 0123456789abcdef\n', {
       mode: 0o755,
     });
+    mkdirSync(join(dir, 'tests/contract'), { recursive: true });
+    writeFileSync(
+      join(dir, 'tests/contract/pm-bot-image.sh'),
+      '#!/bin/bash\nprintf "images:pm-bot-image.sh %s\\n" "$*" >> "$CALLS"\nif [[ -n "$FAIL_AT" && "pm-bot-image.sh" == *"$FAIL_AT"* ]]; then exit 9; fi\n',
+    );
     const result = spawnSync('bash', [script], {
       cwd: dir,
       encoding: 'utf8',
@@ -76,10 +87,24 @@ describe('disposable image gate', () => {
     );
     expect(result.calls).not.toMatch(/docker (push|login)|compose pull/);
   });
+  it('builds the PM bot image from experimental/pm-bot/ with its pinned skill contexts and checks that same image before the browser suite', () => {
+    const result = gate();
+    expect(result.status).toBe(0);
+    expect(result.calls).toMatch(
+      /build .*-t bakers-gate\/pm-bot:local --build-context bundle=\.claude\/skills\/bakers-build --build-context superpowers=https:\/\/github\.com\/obra\/superpowers\.git#bb92a77741419a4ab5f06e711a283343f1ada0c3 --build-context mattpocock=https:\/\/github\.com\/mattpocock\/skills\.git#d1478fcb140db0b93c0c8df17bcfd311844749d0 experimental\/pm-bot\n/,
+    );
+    expect(result.calls).toContain(
+      'images:pm-bot-image.sh bakers-gate/pm-bot:local',
+    );
+    expect(result.calls.indexOf('pm-bot-image.sh')).toBeLessThan(
+      result.calls.indexOf('github-recipe:compose run --rm install'),
+    );
+  });
   it.each([
     'build --target php',
     'run --name phpunit',
     'compose run --name github-browser',
+    'pm-bot-image.sh',
   ])('fails closed when %s fails', (failure) => {
     const result = gate(failure);
     expect(result.status).not.toBe(0);

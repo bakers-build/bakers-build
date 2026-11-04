@@ -93,6 +93,7 @@ export function normalizeEntry(entry: AddonEntry): {
 function isPresetShaped(mod: Record<string, unknown>): boolean {
   if (Array.isArray(mod.addons)) return true;
   if (typeof mod.inbox === 'object' && mod.inbox !== null) return true;
+  if (typeof mod.tools === 'object' && mod.tools !== null) return true;
   if (Array.isArray(mod.scopes) || typeof mod.mergeWith === 'function')
     return true;
   return PRESET_FUNCTION_KEYS.some((k) => typeof mod[k] === 'function');
@@ -401,6 +402,17 @@ export async function discoverAddons(
         acc.addonInbox.push({
           ...addonPackage(key),
           inbox: preset.inbox,
+          ...(presetOpts !== undefined ? { options: presetOpts } : {}),
+        });
+      }
+      if (
+        surface === 'conductor' &&
+        preset.tools !== undefined &&
+        (!opts.only || opts.only.includes('addonTools'))
+      ) {
+        acc.addonTools.push({
+          ...addonPackage(key),
+          tools: preset.tools,
           ...(presetOpts !== undefined ? { options: presetOpts } : {}),
         });
       }

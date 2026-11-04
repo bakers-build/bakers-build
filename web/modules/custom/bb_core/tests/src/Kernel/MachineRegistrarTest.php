@@ -67,7 +67,8 @@ final class MachineRegistrarTest extends KernelTestBase {
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
     $this->assertSame('645ab895-b76a-5ada-8177-739c5b8ac740', $machine->getHostKey());
     $this->assertSame((int) $owner->id(), (int) $machine->get('owner_user_id')->target_id);
-    $this->assertSame(2, $machine->getMaxParallel());
+    // The budget is a backend setting: a legacy attribute is ignored.
+    $this->assertSame(5, $machine->getMaxParallel());
     $this->assertSame(1, $machine->getCurrentLoad());
     $this->assertFalse($conductor->hasField('max_parallel'));
   }
@@ -88,7 +89,7 @@ final class MachineRegistrarTest extends KernelTestBase {
     $this->assertFalse($conductor->hasField('max_parallel'));
     $this->assertFalse($conductor->hasField('current_load'));
     $this->assertSame(4, (int) $conductor->get('reported_load')->value);
-    $this->assertSame(9, $conductor->getMachine()?->getMaxParallel());
+    $this->assertSame(5, $conductor->getMachine()?->getMaxParallel());
   }
 
   /**

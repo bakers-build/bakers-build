@@ -27,6 +27,7 @@ import type {
 } from './plugins.js';
 import type { HerdrHost } from './process-host.js';
 import type { Ticket } from './remote.js';
+import type { AddonTools, DiscoveredTools } from './tools.js';
 
 /**
  * The conductor surface's concrete contributions — the strongly-typed view of
@@ -45,6 +46,8 @@ export interface ConductorContributions {
   processHosts: HerdrHost[];
   /** Addon `inbox` exports with their package name and version (contract 2, BB-661). */
   addonInbox: DiscoveredInbox[];
+  /** Addon `tools` exports with their package name and version. */
+  addonTools: DiscoveredTools[];
 }
 
 /**
@@ -97,6 +100,8 @@ export interface Preset<O = unknown> extends BbPreset<O> {
   ) => HerdrHost[] | Promise<HerdrHost[]>;
   /** Addon inbox messages: contract 2, BB-661. */
   inbox?: InboxMessages;
+  /** Agent tools served through the conductor's MCP server. */
+  tools?: AddonTools;
 }
 
 /**
@@ -116,6 +121,7 @@ export function narrowConductorContributions(
     | 'hooks'
     | 'processHosts'
     | 'addonInbox'
+    | 'addonTools'
   >,
 ): ConductorContributions {
   return discovered as unknown as ConductorContributions;

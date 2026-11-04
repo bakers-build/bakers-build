@@ -41,7 +41,6 @@ export interface ConfigPlanOptions extends ConfigInventoryOptions {
   inputs?: {
     /** Machine display label; the machine UUID is always generated. */
     label?: string;
-    maxParallel?: number;
     baseUrl?: string;
     clientId?: string;
     secret?: string;
@@ -216,7 +215,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         renderHostMachine({
           machineId: randomUUID(),
           ...(options.inputs?.label ? { label: options.inputs.label } : {}),
-          maxParallel: options.inputs?.maxParallel ?? 1,
         }),
       ),
     );
@@ -765,7 +763,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         editor(file).remove('user_id');
         fill(file, 'machine_id', randomUUID());
         fill(file, 'label', options.inputs?.label);
-        fill(file, 'max_parallel', options.inputs?.maxParallel);
         editor(file).stamp(1);
       }
       if (file.kind === 'conductor' || file.kind === 'local') {
@@ -899,13 +896,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       );
     }
   }
-  if (
-    machine.selected &&
-    !protectedFile(machine) &&
-    editors.has(machine.path) &&
-    !editor(machine).property('max_parallel')
-  )
-    editor(machine).set('max_parallel', '1');
   const overlay = new Map<string, string | null>(
     [...editors].map(([path, e]) => [path, e.text]),
   );

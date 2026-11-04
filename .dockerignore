@@ -18,5 +18,5 @@ web/themes/custom/*/dist/
 .impeccable/
 
 # Built docs site; the docs-build stage builds its own.
-website/.vitepress/dist/
-website/.vitepress/cache/
+docs/.vitepress/dist/
+docs/.vitepress/cache/

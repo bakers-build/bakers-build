@@ -4,7 +4,7 @@ import { globSync } from 'glob';
 import tailwindcss from '@tailwindcss/vite';
 import VitePluginSvgSpritemap from '@spiriit/vite-plugin-svg-spritemap';
 import { readFileSync } from 'fs';
-import { thirdPartyLicenses } from '../../../../website/scripts/third-party.mjs';
+import { thirdPartyLicenses } from '../../../../docs/scripts/third-party.mjs';
 
 export default defineConfig(() => {
   const projectRoot = __dirname;

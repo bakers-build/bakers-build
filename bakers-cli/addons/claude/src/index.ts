@@ -7,6 +7,8 @@ import {
   type AgentPlugin,
   type AgentRunIdentity,
   type BbAgent,
+  CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOLS_SERVER,
   installCommand,
   type KnownOptionSpec,
   lastLine,
@@ -110,9 +112,6 @@ function securityFlags(
     'project,local',
     '--settings',
     JSON.stringify(settings),
-    '--strict-mcp-config',
-    '--mcp-config',
-    JSON.stringify({ mcpServers: sandbox.mcp_servers }),
   ];
 }
 
@@ -158,6 +157,8 @@ export class ClaudeAgent implements BbAgent {
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly security: ResolvedSecurity;
+  /** The sandbox's own MCP servers, strict; undefined outside the sandbox. */
+  private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
   private readonly measure: boolean;
@@ -180,6 +181,8 @@ export class ClaudeAgent implements BbAgent {
         allow_write: withoutGitDirs(security.sandbox.allow_write),
       },
     };
+    this.sandboxMcpServers =
+      security.mode === 'sandbox' ? security.sandbox.mcp_servers : undefined;
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
@@ -189,11 +192,11 @@ export class ClaudeAgent implements BbAgent {
     prompt: string,
     run?: AgentRunIdentity,
     workspacePath?: string,
+    tools?: { url: string },
   ): string {
     if (prompt === '') {
       return 'claude';
     }
-    const flags = securityFlags(this.security, workspacePath);
     // Wait for project-declared plugins (extraKnownMarketplaces) to install
     // before the first turn; a fresh worktree otherwise starts without them.
     const parts = [
@@ -209,7 +212,12 @@ export class ClaudeAgent implements BbAgent {
       parts.push('--effort', shellQuote(this.effort));
     }
     // The flags are constants; only their generated values need quoting.
-    parts.push(...flags.map((t) => (t.startsWith('--') ? t : shellQuote(t))));
+    parts.push(
+      ...[
+        ...securityFlags(this.security, workspacePath),
+        ...this.mcpFlags(tools),
+      ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
+    );
     // Pin the transcript's own session id to the run's UUID (BB-473), so
     // `getRunLog` can read that ONE file directly instead of scanning the
     // worktree-keyed directory by mtime — the scan is what let a
@@ -221,12 +229,41 @@ export class ClaudeAgent implements BbAgent {
     if (this.measure) {
       // The wrapper folds an inline --settings JSON into its profile file.
       for (const pair of MEASURE_FLAGS) {
-        if (!flags.includes(pair[0] as string)) {
+        if (!parts.includes(pair[0] as string)) {
           parts.push(...pair.map(shellQuote));
         }
       }
     }
     return parts.join(' ');
+  }
+
+  /**
+   * The sandbox's strict MCP config, plus the conductor's tool server when
+   * the run has one. A measured run stays without MCP servers. The token is
+   * referenced from the run env, which Claude expands, so it is never in argv.
+   */
+  private mcpFlags(tools: { url: string } | undefined): string[] {
+    const conductor =
+      tools && !this.measure
+        ? {
+            [CONDUCTOR_TOOLS_SERVER]: {
+              type: 'http',
+              url: tools.url,
+              headers: { Authorization: `Bearer \${${CONDUCTOR_TOKEN_ENV}}` },
+            },
+          }
+        : {};
+    const config = (servers: Record<string, unknown>) =>
+      JSON.stringify({ mcpServers: servers });
+    if (this.sandboxMcpServers !== undefined)
+      return [
+        '--strict-mcp-config',
+        '--mcp-config',
+        config({ ...this.sandboxMcpServers, ...conductor }),
+      ];
+    return Object.keys(conductor).length > 0
+      ? ['--mcp-config', config(conductor)]
+      : [];
   }
 
   /**

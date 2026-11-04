@@ -1,6 +1,6 @@
 # Addon contracts
 
-An addon is an npm package that declares what it contributes to the bakers.build CLI through a fixed `./preset` export; this page lists the kinds of contribution, the entry fields a config uses, and how to write an addon. Packages under `bakers-cli/addons/` without a `./preset` (`ddev`, `docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
+An addon is an npm package that declares what it contributes to the bakers.build CLI through a fixed `./preset` export; this page lists the kinds of contribution, the entry fields a config uses, and how to write an addon. Packages under `bakers-cli/addons/` without a `./preset` (`docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
 
 To enable an addon, use [Addons](/addons/configure); this page is for people who change or add addons.
 
@@ -21,7 +21,7 @@ A preset declares contributions through named accumulator functions of the form 
 | conductor | `remotes`, `executors`, `workspaces` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
 | conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/configuration/provisioning/hooks#add-a-listener-from-an-addon) |
 | conductor | `agents` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AgentCandidate` |
-| conductor | `inbox` (a value, not an accumulator) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions) |
+| conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions); `AddonTools`: [agent tools](/addons/build/tools) |
 | connection | `connectionPlugins` | `addons` of a connection config | A dropsh plugin: authentication, renderers, schema, request hooks |
 | connection | `uiEntries` | `addons` of the machine, connection or conductor config | A module specifier, a string |
 
