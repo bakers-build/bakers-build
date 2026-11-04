@@ -108,11 +108,13 @@ final class EntityDeleteRules {
       [self::BLOCK, 'bb_group', 'workspace_id'],
       [self::BLOCK, 'bb_team', 'workspace_id'],
       [self::BLOCK, 'user', 'bb_service_workspace'],
-      [self::CASCADE, 'bb_term', 'workspace_id'],
+      // Cascades run in this order: templates go before the terms they use
+      // as type or recipe, which would otherwise block.
       [self::CASCADE, 'bb_invite', 'workspace_id'],
       [self::CASCADE, 'bb_ticket_trigger', 'workspace_id'],
       [self::CASCADE, 'bb_addon', 'workspace_id'],
       [self::CASCADE, 'bb_ticket_template', 'workspace_id'],
+      [self::CASCADE, 'bb_term', 'workspace_id'],
     ],
   ];
 

@@ -252,10 +252,15 @@ final class EntityDeleteRulesTest extends KernelTestBase {
 
     $group->delete();
     $team->delete();
-    BbVocabulary::create(['id' => 'label', 'label' => 'label'])->save();
-    $term = $this->make('bb_term', ['vid' => 'label', 'name' => 'ui', 'workspace_id' => $workspace->id()]);
+    BbVocabulary::create(['id' => 'type', 'label' => 'type'])->save();
+    $term = $this->make('bb_term', ['vid' => 'type', 'name' => 'feature', 'workspace_id' => $workspace->id()]);
     $invite = $this->make('bb_invite', ['email' => 'a@example.com', 'workspace_id' => $workspace->id()]);
-    $template = $this->make('bb_ticket_template', ['name' => 'Tpl', 'workspace_id' => $workspace->id()]);
+    // The template's own term goes with the workspace, not blocking it.
+    $template = $this->make('bb_ticket_template', [
+      'name' => 'Tpl',
+      'workspace_id' => $workspace->id(),
+      'ticket_type' => $term->id(),
+    ]);
     $workspace->delete();
     $this->assertNull($this->reload($workspace));
     $this->assertNull($this->reload($term));
