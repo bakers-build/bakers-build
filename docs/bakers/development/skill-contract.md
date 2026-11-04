@@ -17,7 +17,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
 | `bb-runtime-ddev` | the project's `bb-phase-provision` hint |
 | `bb-verdict` | the review state, as its subagent's start |
-| `bb-pingpong` | the project's `WORKFLOW.md` entry line, for a ticket labelled `pingpong` in `working` or `review` |
+| `bb-label-pingpong` | the `bb-workflow` frame, for a ticket labelled `pingpong`, in any state |
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person or a host, for a ticket or time proposals |
 

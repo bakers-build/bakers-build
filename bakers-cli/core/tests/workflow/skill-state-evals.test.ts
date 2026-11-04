@@ -84,8 +84,8 @@ describe('frame routing profile', () => {
       await judge('frame-recipe-route', intake, [...route, intakeFile]),
     ).toEqual(['intake-read']);
   });
-  it('checks that WORKFLOW.md routes to a skill only when it applies', async () => {
-    const path = 'skills/bb-pingpong/SKILL.md';
+  it('checks that a label routes to a skill only when it applies', async () => {
+    const path = 'skills/bb-label-pingpong/SKILL.md';
     const skill = (read: unknown) => (f: Record<string, any>) => ({
       ...f,
       expect: { ...f.expect, skill: { path, read } },
@@ -119,16 +119,16 @@ describe('frame routing profile', () => {
   });
 });
 
-describe('bb-pingpong profile', () => {
+describe('bb-label-pingpong profile', () => {
   const fixture = (
     expect: Record<string, unknown>,
     simulation: Record<string, unknown> = {},
   ) => ({
     id: 'pingpong-probe',
     synthetic: true,
-    profile: 'bb-pingpong',
+    profile: 'bb-label-pingpong',
     execution: 'simulated-tools',
-    skill: 'bb-pingpong',
+    skill: 'bb-label-pingpong',
     references: [],
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
@@ -768,6 +768,28 @@ describe('state run profile', () => {
         done.filter((row) => row !== classify),
       ),
     ).toEqual(['classified']);
+  });
+  it('requires every expected read: provision for a bug RED in plan', async () => {
+    const diagnose = [
+      readTicket(),
+      comment('debug_diagnose', 'HTTP 500 at c0ffee0'),
+      comment('plan'),
+      comment('test'),
+      comment('summary', 'Probe-plan: 0'),
+    ];
+    const provision = file('skills/bb-workflow/references/provision.md');
+    expect(
+      await judge('plan-bug-provision', 'Approve?', [...diagnose, provision]),
+    ).toEqual([]);
+    expect(await judge('plan-bug-provision', 'Approve?', diagnose)).toEqual([
+      'reads',
+    ]);
+    expect(
+      await judge('plan-bug-provision', 'Approve?', [
+        ...diagnose,
+        file('skills/bb-workflow/references/provision.md', 1),
+      ]),
+    ).toEqual(['reads']);
   });
 });
 
