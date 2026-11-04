@@ -1,0 +1,11 @@
+uuid: 098efe45-7321-4d34-9d5c-30a25702f812
+langcode: en
+status: true
+dependencies:
+  module:
+    - user
+id: user.profile
+label: Profile
+description: null
+targetEntityType: user
+cache: true

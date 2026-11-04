@@ -1455,6 +1455,9 @@ content:
       form_modes:
         default:
           template: field-map
+        profile:
+          template: field-map
+          label: Profile
       fields:
         user_picture:
           type: image

@@ -4,7 +4,8 @@ title: User
 description: >
   **Product place: account.** `/user/{user}` is the read route
   (`user.user.full`); `/user/{user}/edit` is the account form
-  (`user.user.default`). Reached from the shell person mark, which swaps the
+  (`user.user.default`); `/user/{user}/profile` is the Profile form
+  (`user.user.profile`). Reached from the shell person mark, which swaps the
   rail to Account, Conductors and Machines. Onboarding uses its own form and
   chrome.
 status: in-progress
@@ -45,6 +46,10 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-user-scenes--account-edit
                               active: false
+                            - label: Profile
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-profile
+                              active: false
                 main:
                   - entity: user.user
                     view_mode: full
@@ -54,10 +59,11 @@ scenes:
     section: user
     docs: >-
       THE ACCOUNT FORM on `/user/{user}/edit`, inside the app shell, under
-      core's View and Edit tasks (`entity.user.edit_form`, form mode `default`),
-      in the display's own order: developer title, full name, username and
-      email, picture, the AI-use notice and prior knowledge, on one Save. Labels
-      are the ones the live form renders. The picture is core's image widget;
+      core's View and Edit tasks and the Profile tab (`entity.user.edit_form`,
+      form mode `default`), in the display's own order: full name, username
+      and email, picture, on one Save. Position and background are on the
+      Profile tab. Labels are the ones the live form renders. The picture is
+      core's image widget;
       the completion flag is the only hidden field. Language and timezone are on
       the form too and left out of this preview; the social sign-in widget is
       hidden. The shared account rail anchors Workspaces (/home) directly above
@@ -88,6 +94,10 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-user-scenes--account-edit
                               active: true
+                            - label: Profile
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-profile
+                              active: false
                 main:
                   - component: bb_theme:zone
                     slots:
@@ -95,16 +105,6 @@ scenes:
                         - component: bb_theme:form
                           slots:
                             lines:
-                              - component: bb_theme:form_label
-                                props:
-                                  for: edit-field-developer-title
-                                slots:
-                                  title: Developer title
-                              - component: bb_theme:form_input
-                                props:
-                                  name: field_developer_title
-                                  id: edit-field-developer-title
-                                  value: Product Lead
                               - component: bb_theme:form_label
                                 props:
                                   for: edit-field-full-name
@@ -147,15 +147,73 @@ scenes:
                                   type: file
                                   name: files[user_picture_0]
                                   id: edit-user-picture
-                              - component: bb_theme:note
+                            actions:
+                              - component: bb_theme:button
                                 props:
-                                  tone: attention
+                                  variant: primary
+                                  type: submit
+                                  label: Save
+  - name: account-profile
+    group: User
+    section: user
+    docs: >-
+      THE PROFILE FORM on `/user/{user}/profile` (`bb_core.user.profile`, form
+      mode `profile`), the third tab after View and Edit, in the account area.
+      The AI-use notice is the page header's description; the form holds only
+      Position and background. A workspace lead reaches the same page for a
+      service account from the Service Accounts row menu.
+    items:
+      - scene: design-system:account-shell
+        with:
+          overlay: ''
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Christian Wiedemann
+                      description: >-
+                        bakers.build passes these details as context to the AI
+                        assistants it uses, so that explanations and support
+                        match your background and your goals. You can change or
+                        delete them later.
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Account
+                          items:
+                            - label: View
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-overview
+                              active: false
+                            - label: Edit
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-edit
+                              active: false
+                            - label: Profile
+                              url: >-
+                                /?path=/story/designbook-sections-user-scenes--account-profile
+                              active: true
+                main:
+                  - component: bb_theme:zone
+                    slots:
+                      content:
+                        - component: bb_theme:form
+                          slots:
+                            lines:
+                              - component: bb_theme:form_label
+                                props:
+                                  for: edit-field-developer-title
                                 slots:
-                                  body: >-
-                                    bakers.build passes these details as context to the
-                                    AI assistants it uses, so that explanations
-                                    and support match your background and your
-                                    goals. You can change or delete them later.
+                                  title: Position
+                              - component: bb_theme:form_input
+                                props:
+                                  name: field_developer_title
+                                  id: edit-field-developer-title
+                                  placeholder: e.g. Product Lead
+                                  value: Product Lead
                               - component: bb_theme:form_label
                                 props:
                                   for: edit-field-bakers-background

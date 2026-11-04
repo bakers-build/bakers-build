@@ -1,0 +1,20 @@
+# Public test credentials; this account exists only in recipe-test worlds.
+# Writes its own position and background, so no persona is modified.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 8ce97a5c-3967-4d1f-9583-6954efca7176
+  default_langcode: en
+default:
+  name:
+  - value: fixture-profile
+  mail:
+  - value: fixture-profile@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

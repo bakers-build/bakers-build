@@ -187,27 +187,6 @@ final class FormAlterHooks {
       $form['#cache']['max-age'] = $cache->getCacheMaxAge();
     }
     $form['#action'] = Url::fromRoute('<current>', [], ['query' => $query])->toString();
-
-    // Same AI-use notice the onboarding wizard shows, repeated verbatim so
-    // the string extractor sees a literal here too. Weight 3 sits right after
-    // full name, account and picture (display weights 0-2). Whether the
-    // nickname is editable here is core's `change own username` permission,
-    // which `authenticated` carries.
-    if (isset($form['field_developer_title']) || isset($form['field_bb_background'])) {
-      $form['bb_ai_use_notice'] = [
-        '#type' => 'component',
-        '#component' => 'bb_theme:note',
-        '#props' => ['tone' => 'attention'],
-        '#slots' => [
-          'body' => [
-            [
-              '#plain_text' => $this->t('bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.'),
-            ],
-          ],
-        ],
-        '#weight' => 3,
-      ];
-    }
   }
 
   /**
