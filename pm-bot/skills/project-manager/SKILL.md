@@ -11,7 +11,7 @@ Decide the branch from the message:
 
 - a **request**, something should change or be built → *Intake*;
 - a **status question**, how is it going, when, what happened → *Status*;
-- a **reply to a relayed question**, the thread holds a post "<identifier> · "<title>" has a question:" → *Answer*.
+- a **reply to a relayed question**, the thread holds a post `<identifier> · "<title>" has a question:` → *Answer*.
 
 ## The current thread
 

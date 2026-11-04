@@ -25,7 +25,7 @@ export function openQuestion(ticket, comments) {
  * @param {Array<{ticket: {identifier: string, title: string, thread: {channel: string, thread_ts: string}}, question: {id: string, body: string}}>} open
  *   the open questions of threaded tickets
  * @param {boolean} complete every frozen ticket was read; only then are answered questions forgotten
- * @param {string} lead the lead-in; `{identifier}` and `{title}` become the ticket's
+ * @param {string} lead the lead-in; `{identifier}` and `{title}` become the ticket's identifier and title, escaped
  * @returns {{posts: Array<{question: string, identifier: string, channel: string, thread_ts: string, text: string}>, relayed: string[]}}
  *   add each posted question to `relayed` after its post succeeded
  */
