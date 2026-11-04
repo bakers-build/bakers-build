@@ -15,7 +15,7 @@
  *   - the fixture ticket is pre-assigned (conductor_id → the seeded
  *     `bakers-e2e-dispatch-node` conductor); conductor assignment is the run-start
  *     trigger, the user assignee no longer participates. This process pins its
- *     conductor_id (config still accepts legacy machine_id; see makeConfig) to
+ *     conductor_id (see makeConfig) to
  *     `bakers-e2e-dispatch-node` so registerConductor upserts that same seeded
  *     entity and the claim matches.
  *     That conductor is distinct from `bakers-e2e-node` (writeback fixtures) and
@@ -94,11 +94,12 @@ function makeConfig(baseUrl: string): ConductorFileConfig {
     // Pin to the dedicated seeded conductor (recipe: bb_conductor conductor_id
     // `bakers-e2e-dispatch-node`) that GL-E2E-CONDUCTOR is pre-assigned to via
     // conductor_id — the run-start trigger. registerConductor upserts by
-    // conductor_id (config machine_id is the legacy alias), so this process
-    // resolves to that exact entity. It is separate from `bakers-e2e-node` (which
+    // conductor_id, so this process resolves to that exact entity; the seed
+    // binds it to no machine, so its first heartbeat binds this host_key. It is separate from `bakers-e2e-node` (which
     // owns the seeded DROPSH/writeback runs) so this conductor starts with zero
     // active runs.
-    machine_id: 'bakers-e2e-dispatch-node',
+    conductor_id: 'bakers-e2e-dispatch-node',
+    host_key: 'bakers-e2e-dispatch-host',
     project: E2E_PROJECT_NAME,
     states: E2E_STATES,
     prompt: DEFAULT_AGENT_PROMPT,
