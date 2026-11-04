@@ -133,6 +133,11 @@ export {
   setDefaultCommandRunner,
 } from './core/exec.js';
 export {
+  type GitSandboxPaths,
+  gitSandboxPaths,
+  withoutGitDirs,
+} from './core/git-sandbox.js';
+export {
   type ConductorLiveness,
   type ConductorLivenessInput,
   deriveConductorLiveness,
@@ -141,7 +146,10 @@ export {
 export { type ConductorLogger, createLogger } from './core/logger.js';
 export {
   defaultProcProbe,
+  defaultRunProcessProbe,
+  killRunProcesses,
   type ProcProbe,
+  type RunProcessProbe,
   type SignalFailureReason,
   type SignalOutcome,
   type SignalVerifiedInput,

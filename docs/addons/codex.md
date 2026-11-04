@@ -47,7 +47,7 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 
 | Key | Default | Becomes |
 |---|---|---|
-| `allow_write` | `[]` | Additional profile workspace roots; a leading `~/` is expanded |
+| `allow_write` | `[]` | Additional profile workspace roots; a leading `~/` is expanded; a `.git` entry is ignored with a warning, as [Git metadata](/configuration/agents/execution-security#git-metadata-in-codex-and-claude-sandboxes) is granted automatically |
 | `network` | `['*']` | network on when not empty; Codex has no host list, so any non-empty value allows every host |
 | `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled |
 | `trusted_commands`, `deny_read` | `[]` | Codex has no equivalent; a non-empty list fails loading rather than promise a protection Codex does not give |

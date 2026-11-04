@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
+  killRunProcesses,
   shellQuote,
   stemForConfigFile,
 } from '@bakers-build/core';
@@ -664,6 +665,21 @@ export class Conductor {
       this.logger.warn(
         { run: runUuid, err: String(err) },
         'run tab cleanup failed',
+      );
+    }
+    // Background commands and their sandboxes outlive the closed PTY.
+    try {
+      const { pids } = await killRunProcesses(runUuid);
+      if (pids.length > 0) {
+        this.logger.info(
+          { run: runUuid, pids },
+          'ended leftover run processes',
+        );
+      }
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'run process cleanup failed',
       );
     }
   }

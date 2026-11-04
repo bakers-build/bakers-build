@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import claudeAgentDefault, {
   ClaudeAgent,
   claudeAgent,
@@ -431,6 +431,86 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
       mcpServers: { playwright: { command: 'npx', args: ['pw-mcp'] } },
     });
+  });
+
+  it('grants the worktree its own Git metadata, never the shared Git dir', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'claude-git-'));
+    const main = join(dir, 'main');
+    const worktree = join(dir, 'work');
+    try {
+      execFileSync('git', ['init', '-q', main]);
+      execFileSync('git', [
+        '-C',
+        main,
+        '-c',
+        'user.name=Test',
+        '-c',
+        'user.email=test@example.invalid',
+        'commit',
+        '--allow-empty',
+        '-qm',
+        'initial',
+      ]);
+      execFileSync('git', [
+        '-C',
+        main,
+        'worktree',
+        'add',
+        '-qb',
+        't',
+        worktree,
+      ]);
+      const common = execFileSync(
+        'git',
+        ['-C', main, 'rev-parse', '--path-format=absolute', '--git-dir'],
+        { encoding: 'utf8' },
+      ).trim();
+      const allowWrite = (path: string) =>
+        JSON.parse(
+          flagValue(
+            captureArgv(
+              'claude',
+              new ClaudeAgent({
+                sandbox: { allow_write: ['/srv/cache'] },
+              }).launchCommand('x', undefined, path),
+            ),
+            '--settings',
+          ),
+        ).sandbox.filesystem.allowWrite;
+      expect(allowWrite(worktree)).toEqual([
+        '/srv/cache',
+        join(common, 'worktrees', 'work'),
+        join(common, 'objects'),
+        join(common, 'refs'),
+        join(common, 'logs'),
+      ]);
+      expect(allowWrite(main)).toEqual(['/srv/cache', common]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores an allow_write entry in a Git directory with one warning each', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const settings = JSON.parse(
+        flagValue(
+          captureArgv(
+            'claude',
+            new ClaudeAgent({
+              sandbox: { allow_write: ['/repo/.git', '/srv/cache'] },
+            }).launchCommand('x'),
+          ),
+          '--settings',
+        ),
+      );
+      expect(settings.sandbox.filesystem.allowWrite).toEqual(['/srv/cache']);
+      expect(warn.mock.calls.map(([m]) => m)).toEqual([
+        expect.stringContaining('/repo/.git;'),
+      ]);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('exposes a dropping env policy with the default deny list, or env_deny', () => {

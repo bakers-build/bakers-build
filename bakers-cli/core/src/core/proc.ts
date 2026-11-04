@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 
 /**
  * The platform-facing half of pid verification, injected so tests never touch a
@@ -223,4 +223,75 @@ export function defaultProcProbe(): ProcProbe {
       process.kill(pid, signal);
     },
   };
+}
+
+/** What `killRunProcesses` needs from the platform, injected for tests. */
+export interface RunProcessProbe {
+  readonly supported: boolean;
+  /** Every running pid. */
+  pids(): number[];
+  /** A process's environment entries, or `undefined` when gone or unreadable. */
+  environOf(pid: number): string[] | undefined;
+  uidOf(pid: number): number | undefined;
+  send(pid: number, signal: NodeJS.Signals): void;
+}
+
+export function defaultRunProcessProbe(): RunProcessProbe {
+  const base = defaultProcProbe();
+  return {
+    supported: base.supported,
+    pids() {
+      if (!base.supported) return [];
+      return readdirSync('/proc')
+        .filter((name) => /^\d+$/.test(name))
+        .map(Number);
+    },
+    environOf(pid) {
+      try {
+        return readFileSync(`/proc/${pid}/environ`, 'utf8').split('\0');
+      } catch {
+        return undefined;
+      }
+    },
+    uidOf: (pid) => base.uidOf(pid),
+    send: (pid, signal) => base.send(pid, signal),
+  };
+}
+
+/**
+ * Ends every process of this OS user that carries `BB_RUN_UUID=<runUuid>`:
+ * the run's agent, its sandbox and background commands that outlive the
+ * PTY. SIGTERM first, SIGKILL for survivors after `graceMs`. Best-effort.
+ * shortcut: a process that clears its environment is not found; track
+ * process groups or cgroups if that ever matters.
+ */
+export async function killRunProcesses(
+  runUuid: string,
+  probe: RunProcessProbe = defaultRunProcessProbe(),
+  graceMs = 2000,
+): Promise<{ supported: boolean; pids: number[] }> {
+  if (!probe.supported || runUuid === '') {
+    return { supported: probe.supported, pids: [] };
+  }
+  const marker = `BB_RUN_UUID=${runUuid}`;
+  const uid = process.getuid?.();
+  const ofRun = (pid: number) =>
+    probe.environOf(pid)?.includes(marker) === true;
+  const pids = probe
+    .pids()
+    .filter(
+      (pid) => pid !== process.pid && probe.uidOf(pid) === uid && ofRun(pid),
+    );
+  const signal = (signal: NodeJS.Signals) => (pid: number) => {
+    try {
+      probe.send(pid, signal);
+    } catch {
+      // Gone already.
+    }
+  };
+  if (pids.length === 0) return { supported: true, pids };
+  pids.forEach(signal('SIGTERM'));
+  if (graceMs > 0) await new Promise((r) => setTimeout(r, graceMs));
+  pids.filter(ofRun).forEach(signal('SIGKILL'));
+  return { supported: true, pids };
 }

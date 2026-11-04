@@ -1,4 +1,7 @@
+import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -1978,6 +1981,67 @@ describe('Conductor', () => {
       },
     ]);
   });
+
+  it.runIf(process.platform === 'linux')(
+    'ends processes left by the finalised run, and only those',
+    async () => {
+      const runUuid = randomUUID();
+      const start = (uuid: string) => {
+        const child = spawn('sleep', ['60'], {
+          detached: true,
+          stdio: 'ignore',
+          env: { ...process.env, BB_RUN_UUID: uuid },
+        });
+        child.unref();
+        return child.pid as number;
+      };
+      const ours = start(runUuid);
+      const theirs = start(randomUUID());
+      try {
+        const remote = new FakeBbRemote({
+          tickets: {
+            't-1': {
+              identifier: 'BB-1',
+              title: 'One',
+              state: 'done',
+              branchName: 'bakers/bb-1-one',
+            },
+          },
+          runs: [
+            {
+              runUuid,
+              ticketUuid: 't-1',
+              stateAtStart: 'review',
+              state: 'done',
+              worktreePath: '/wt/r-1',
+            },
+          ],
+        });
+        const executor = new RecordingExecutor();
+        executor.persistent = true;
+        const conductor = new Conductor(
+          makeConfig(),
+          remote,
+          executor,
+          new FakeWorkspace(),
+          resolved(agentReturning('X')),
+          spyLogger().log,
+          CHECKOUT,
+        );
+        await conductor.start();
+        await conductor.tick();
+        await new Promise((r) => setTimeout(r, 200));
+        expect(existsSync(`/proc/${ours}`)).toBe(false);
+        expect(existsSync(`/proc/${theirs}`)).toBe(true);
+      } finally {
+        for (const pid of [ours, theirs]) {
+          try {
+            process.kill(pid, 'SIGKILL');
+          } catch {}
+        }
+      }
+    },
+  );
 
   it('captures the run log before closing the tab (BB-171 AC-2)', async () => {
     const remote = new FakeBbRemote({

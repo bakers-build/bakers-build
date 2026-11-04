@@ -55,7 +55,7 @@ The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`,
 
 What the default blocks:
 
-- Shell commands that write outside the worktree, `$TMPDIR` and `allow_write`.
+- Shell commands that write outside the worktree, `$TMPDIR`, `allow_write` and the workspace's [Git metadata](#git-metadata-in-codex-and-claude-sandboxes).
 - Shell commands and Claude's Read tool reading a `deny_read` path.
 - Network access from shell commands to hosts outside `network`.
 - Your user-level MCP servers from `~/.claude.json`, your personal `~/.claude/settings.json` rules and claude.ai connectors.
@@ -71,7 +71,7 @@ What it does not block:
 
 What the default blocks:
 
-- Commands that write outside the worktree, configured `allow_write` paths, temporary directories and the workspace's resolved Git metadata.
+- Commands that write outside the worktree, configured `allow_write` paths, temporary directories and the workspace's [Git metadata](#git-metadata-in-codex-and-claude-sandboxes).
 - Approval prompts: `-a never` makes a refused action fail instead of waiting.
 - The MCP servers of your Codex config that `mcp_servers` does not name, whether declared as `[mcp_servers.<id>]` tables, dotted keys or inline tables. A declaration bakers.build cannot read, or a server id that is not a bare key (Codex splits `-c` keys on every dot, so `"my.server"` cannot be addressed), stops the launch with an error instead of leaving the server on.
 
@@ -79,7 +79,13 @@ What it does not block:
 
 - **Reads.** Codex's sandbox does not confine reads, so a command can still read `~/.ssh` and `~/.bakers`. Isolate the machine (below) when that matters.
 - Network access to any host while `network` is not empty.
-- The Codex sandbox profile grants write access to the dispatched workspace's resolved Git directory and shared Git directory. This supports staging/commits in linked worktrees without granting the parent checkout. Their `config`, `config.worktree`, `hooks`, `commondir`, `gitdir`, `modules` and `worktrees` are configured read-only so a run cannot plant code that a later unsandboxed Git command executes; enforcement by Codex, including for paths that do not exist yet, has not been observed on a host. Objects, refs and the index stay writable, so a run can still rewrite branches and history. Other protected workspace paths remain read-only. Permission-profile support is required; see [Codex security](/addons/codex#security) for validation limits. The hook-trust bypass is not passed, so a project with Codex hooks may stop at Codex's trust prompt.
+- [Git metadata](#git-metadata-in-codex-and-claude-sandboxes): objects and refs stay writable, so a run can rewrite branches. Permission-profile support is required; see [Codex security](/addons/codex#security). The hook-trust bypass is not passed, so Codex hooks may stop at Codex's trust prompt.
+
+## Git metadata in Codex and Claude sandboxes
+
+A linked worktree's run writes its own Git dir and the shared `objects`, `refs` and `logs`, never the shared `.git` itself. A main checkout's run writes its `.git`. Codex marks only existing `config`, `hooks`, `commondir` and similar entries read-only: a sandbox covers a missing one with an empty file that breaks Git. An `allow_write` entry in a `.git` is ignored with a warning. Setting an upstream needs the trusted `git`.
+
+At run end the conductor ends the processes carrying the run's `BB_RUN_UUID` (Linux).
 
 ## Grok in `sandbox` mode
 

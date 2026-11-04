@@ -166,6 +166,18 @@ describe('CodexAgent args and effort', () => {
   });
 });
 
+/** The profile's absolute-path filesystem entries: path → access. */
+function gitEntries(profile: string | undefined): Record<string, string> {
+  const entries: Record<string, string> = {};
+  for (const m of (profile ?? '').matchAll(
+    /("(?:[^"\\]|\\.)*") = "(read|write)"/g,
+  )) {
+    const path = JSON.parse(m[1] as string) as string;
+    if (path.startsWith('/')) entries[path] = m[2] as string;
+  }
+  return entries;
+}
+
 async function homeWithCodexMcp(): Promise<string> {
   const home = await mkdtemp(join(tmpdir(), 'codex-home-'));
   await mkdir(join(home, '.codex'), { recursive: true });
@@ -219,29 +231,23 @@ describe('CodexAgent security: sandbox (default)', () => {
       const profile = argv.find((arg) => arg.startsWith('permissions.bakers='));
       expect(argv).toContain('default_permissions="bakers"');
       expect(profile).toContain('extends = ":workspace"');
-      for (const option of ['--git-dir', '--git-common-dir']) {
-        const path = execFileSync(
-          'git',
-          ['-C', worktree, 'rev-parse', '--path-format=absolute', option],
-          { encoding: 'utf8' },
-        ).trim();
-        expect(profile).toContain(`${JSON.stringify(path)} = "write"`);
-        // Code an unsandboxed Git command would run, or a redirect to it, stays read-only.
-        for (const name of [
-          'config',
-          'config.worktree',
-          'hooks',
-          'commondir',
-          'gitdir',
-          'modules',
-          'worktrees',
-        ]) {
-          expect(profile).toContain(
-            `${JSON.stringify(join(path, name))} = "read"`,
-          );
-        }
-      }
-      expect(profile).not.toContain(`${JSON.stringify(main)} = "write"`);
+      const common = join(main, '.git');
+      const own = execFileSync(
+        'git',
+        ['-C', worktree, 'rev-parse', '--path-format=absolute', '--git-dir'],
+        { encoding: 'utf8' },
+      ).replace(/\n$/, '');
+      expect(own.startsWith(join(common, 'worktrees'))).toBe(true);
+      // The run writes its own git dir and the shared objects, refs and reflogs.
+      expect(gitEntries(profile)).toEqual({
+        [own]: 'write',
+        [join(common, 'objects')]: 'write',
+        [join(common, 'refs')]: 'write',
+        [join(common, 'logs')]: 'write',
+        // Redirects an unsandboxed Git command follows stay read-only.
+        [join(own, 'commondir')]: 'read',
+        [join(own, 'gitdir')]: 'read',
+      });
       expect(profile).not.toMatch(/"\.(codex|agents|aws)"\s*=\s*"write"/);
       for (const path of ['.git', '.codex', '.agents', '.aws']) {
         expect(profile).toContain(`${JSON.stringify(path)} = "read"`);
@@ -253,12 +259,20 @@ describe('CodexAgent security: sandbox (default)', () => {
         'codex',
         new CodexAgent().launchCommand('x', undefined, main),
       );
+      // Only protected entries that exist: no placeholder for bwrap to create.
       expect(
-        mainArgv.find((arg) => arg.startsWith('permissions.bakers=')),
-      ).toContain(`${JSON.stringify(join(main, '.git'))} = "write"`);
+        gitEntries(
+          mainArgv.find((arg) => arg.startsWith('permissions.bakers=')),
+        ),
+      ).toEqual({
+        [common]: 'write',
+        [join(common, 'config')]: 'read',
+        [join(common, 'hooks')]: 'read',
+        [join(common, 'worktrees')]: 'read',
+      });
       expect(() =>
         new CodexAgent().launchCommand('x', undefined, join(dir, 'missing')),
-      ).toThrow(/Cannot resolve Codex workspace Git directories/);
+      ).toThrow(/Cannot resolve workspace Git directories/);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
@@ -308,6 +322,33 @@ describe('CodexAgent security: sandbox (default)', () => {
     expect(argv.join(' ')).toContain(
       `workspace_roots = { "/srv/cache" = true, ${JSON.stringify(join(home, '.cache/pnpm'))} = true }`,
     );
+  });
+
+  it('ignores an allow_write entry in a Git directory with one warning each', async () => {
+    const home = await homeWithCodexMcp();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const argv = captureArgv(
+        'codex',
+        new CodexAgent(
+          {
+            sandbox: {
+              allow_write: ['/repo/.git', '/srv/cache', '/repo/.git/objects'],
+            },
+          },
+          home,
+        ).launchCommand('x', undefined, home),
+      );
+      expect(argv.join(' ')).toContain(
+        'workspace_roots = { "/srv/cache" = true }',
+      );
+      expect(warn.mock.calls.map(([m]) => m)).toEqual([
+        expect.stringContaining('/repo/.git;'),
+        expect.stringContaining('/repo/.git/objects;'),
+      ]);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('disables user servers in every TOML form, including prototype-like names', async () => {
