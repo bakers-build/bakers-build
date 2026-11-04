@@ -53,6 +53,13 @@ final class LinkKindTest extends UnitTestCase {
       // The ddev arm must not steal a GitLab MR URL — the specific MR arm wins,
       // even for a (hypothetical) ddev-hosted merge request.
       'ddev-hosted merge request stays mr' => ['https://bb-131.ddev.site/g/p/-/merge_requests/42', LinkKind::MR],
+      // A Slack thread permalink is a chat; other Slack pages stay doc.
+      'slack thread permalink' => ['https://acme.slack.com/archives/C0123ABCD/p1700000000000100', LinkKind::CHAT],
+      'slack permalink with thread query' => [
+        'https://acme.slack.com/archives/C0123ABCD/p1700000000000200?thread_ts=1700000000.000100&cid=C0123ABCD',
+        LinkKind::CHAT,
+      ],
+      'slack non-archive page stays doc' => ['https://acme.slack.com/team/U0123ABCD', LinkKind::DOC],
     ];
   }
 
@@ -60,7 +67,7 @@ final class LinkKindTest extends UnitTestCase {
    * The exposed constant lists every kind fromUri() can return.
    */
   public function testKindsConstantIsComplete(): void {
-    $this->assertSame(['mr', 'ci', 'branch', 'doc', 'report', 'design', 'ddev'], LinkKind::KINDS);
+    $this->assertSame(['mr', 'ci', 'branch', 'doc', 'report', 'design', 'ddev', 'chat'], LinkKind::KINDS);
   }
 
 }

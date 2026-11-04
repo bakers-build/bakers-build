@@ -13,7 +13,10 @@ for image in "${images[@]}"; do
     -t "bakers-gate/$image:local" .
 done
 docker build -f docker/e2e/Dockerfile -t bakers-gate/e2e:local .
-for image in php php-test nginx docs e2e; do
+# The PM bot (experimental/pm-bot/Dockerfile): its own build context, smoke-tested in check and run mode.
+docker build "${labels[@]}" --label "org.opencontainers.image.revision=$revision" -t bakers-gate/pm-bot:local experimental/pm-bot
+bash tests/contract/pm-bot-image.sh bakers-gate/pm-bot:local
+for image in php php-test nginx docs e2e pm-bot; do
   docker image inspect "bakers-gate/$image:local" > "gate-reports/$image.json"
 done
 printf '%s\n' "commit=$revision" "tree=$(git rev-parse 'HEAD^{tree}')" "run=$GITHUB_RUN_ID" "attempt=$GITHUB_RUN_ATTEMPT" > gate-reports/candidate.txt
