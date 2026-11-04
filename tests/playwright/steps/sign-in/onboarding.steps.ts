@@ -1,8 +1,8 @@
-// Four-step HTMX wizard: identity, About you, skill setup, then prepare your
-// first project. Signup and invitation scenarios finish this wizard before
+// Three-step HTMX wizard: identity, About you, then documentation links per
+// audience. Signup and invitation scenarios finish this wizard before
 // `I create the workspace {string}` / `I join the invited workspace {string}`.
-// `I finish the onboarding wizard` starts on About you, opens setup, opens
-// the project page, and Finishes on Home. Nickname is required; remaining
+// `I finish the onboarding wizard` starts on About you, opens setup and
+// Finishes on Home. Nickname is required; remaining
 // identity and about-you fields are optional.
 import { When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
@@ -13,8 +13,6 @@ import { expect as baseExpect, type Page } from '@playwright/test';
 const expect = baseExpect.configure({ timeout: 15_000 });
 
 /** Each step is recognised by its own heading in the onboarding chrome. */
-
-const SETUP_COMMAND = '[data-component-id="bb_theme:setup_command"]';
 
 /** The create-workspace finish control; `&` in the label must not be required as an entity. */
 function finishAndCreateButton(page: Page) {
@@ -51,39 +49,32 @@ When('I go back from the about-you step', async ({ page }) => {
 
 When('I continue from the about-you step', async ({ page }) => {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Get started - set up bakers.build on your machine' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
 });
 
 /**
- * From About you, open setup, then the project page, and Finish onto Home.
+ * From About you, open setup and Finish onto Home.
  *
  * Existing signup, invitation and crop scenarios call this from About you.
  */
 When('I finish the onboarding wizard', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Tell us about yourself' })).toBeVisible();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Get started - set up bakers.build on your machine' })).toBeVisible();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Prepare your first project' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
     await page.getByRole('button', { name: 'Finish', exact: true }).click();
     await expect(page).not.toHaveURL(/\/home\/onboarding\/?$/);
     await expect(page).toHaveURL(/\/home$/);
 });
 
-When('I continue from the setup step', async ({ page }) => {
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Prepare your first project' })).toBeVisible();
-});
-
 When('I finish the setup guide', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Prepare your first project' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
     await page.getByRole('button', { name: 'Finish', exact: true }).click();
     await expect(page).not.toHaveURL(/\/home\/onboarding\/?$/);
     await expect(page).toHaveURL(/\/home$/);
 });
 
 When('I choose finish and create a new workspace', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Prepare your first project' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
     await finishAndCreateButton(page).click();
     // Finish & create is either an HX-Redirect to workspace create or, when a
     // late invitation appears, an HX-Location onto Home. Both leave this path
@@ -104,18 +95,8 @@ When('I open the setup guide', async ({ page }) => {
     await expect(page).toHaveURL(/\/home\/onboarding/);
 });
 
-Then('the setup installation step is present', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Get started - set up bakers.build on your machine' })).toBeVisible();
-});
-
-Then('the project step is present', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Prepare your first project' })).toBeVisible();
-});
-
-Then('the project page links to init-project', async ({ page }) => {
-    const link = page.getByRole('link', { name: 'Initialize a project' });
-    await expect(link).toHaveAttribute('href', /connect-a-project/);
-    await expect(link).toHaveAttribute('target', '_blank');
+Then('the setup guide step is present', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
 });
 
 Then('only the home finish action is offered', async ({ page }) => {
@@ -128,87 +109,21 @@ Then('both finish actions are offered', async ({ page }) => {
     await expect(finishAndCreateButton(page)).toBeVisible();
 });
 
-Then('the command {string} is shown', async ({ page }, command: string) => {
-    await expect(page.locator(SETUP_COMMAND).getByText(command, { exact: true })).toBeVisible();
+Then('the wizard progress reads {string}', async ({ page }, text: string) => {
+    await expect(page.locator('[aria-current="step"]')).toHaveText(text);
 });
 
-When('I choose the {string} agent filter', async ({ page }, name: string) => {
-    await page.getByRole('group', { name: 'Agent' }).getByRole('button', { name, exact: true }).click();
+Then('the audience {string} links {string} to {string} in a new tab', async ({ page }, audience: string, title: string, url: string) => {
+    const group = page.locator('[data-component-id="bb_theme:link-group"]').filter({ hasText: audience });
+    const link = group.getByRole('link', { name: new RegExp(`^${title}`) });
+    await expect(link).toHaveAttribute('href', url);
+    await expect(link).toHaveAttribute('target', '_blank');
 });
 
-Then('the setup page links to the documentation and Claude skills', async ({ page }) => {
-    await expect(page.locator('[data-component-id="bb_theme:link-group"]')).toBeVisible();
-    const docs = page.getByRole('link', { name: 'bakers.build documentation' });
-    await expect(docs).toHaveAttribute('href', 'https://bakers.build/docs/get-started/');
-    await expect(docs).toHaveAttribute('target', '_blank');
-    const install = page.getByRole('link', { name: /Install bakers.build.*new tab/ });
-    await expect(install).toBeVisible();
-    await expect(install).toHaveAttribute('target', '_blank');
-    const skills = page.getByRole('link', { name: 'Skill wizard' });
-    await expect(skills).toHaveAttribute('href', /skill-wizard-/);
-    await expect(skills).toHaveAttribute('target', '_blank');
-});
-
-When('clipboard writes fail', async ({ page }) => {
-    await page.evaluate(() => {
-        Object.defineProperty(navigator, 'clipboard', {
-            configurable: true,
-            value: {
-                writeText() {
-                    return Promise.reject(new Error('denied'));
-                },
-            },
-        });
-    });
-});
-
-When('the clipboard API is unavailable', async ({ page }) => {
-    await page.evaluate(() => {
-        Reflect.deleteProperty(Navigator.prototype, 'clipboard');
-        Object.defineProperty(navigator, 'clipboard', {
-            configurable: true,
-            value: undefined,
-        });
-    });
-});
-
-When('clipboard writes succeed', async ({ page }) => {
-    await page.evaluate(`Object.defineProperty(navigator, 'clipboard', {
-            configurable: true,
-            value: {
-                writeText(text) {
-                    window.__bakersClipboard = text;
-                    return Promise.resolve();
-                },
-                readText() {
-                    return Promise.resolve(window.__bakersClipboard || '');
-                },
-            },
-        });`);
-});
-
-When('I copy the command {string}', async ({ page }, command: string) => {
-    const row = page.locator(SETUP_COMMAND).filter({ hasText: command }).first();
-    await row.getByRole('button', { name: /Copy/ }).click();
-});
-
-When('I copy the command {string} with the keyboard', async ({ page }, command: string) => {
-    const row = page.locator(SETUP_COMMAND).filter({ hasText: command }).first();
-    await row.getByRole('button', { name: /Copy/ }).focus();
-    await page.keyboard.press('Enter');
-});
-
-Then('the copy status for {string} is {string}', async ({ page }, command: string, status: string) => {
-    const row = page.locator(SETUP_COMMAND).filter({ hasText: command }).first();
-    await expect(row.getByRole('status')).toHaveText(status);
-});
-
-Then('the clipboard holds {string}', async ({ page }, command: string) => {
-    expect(await page.evaluate('window.__bakersClipboard || ""')).toBe(command);
-});
-
-When('I set the viewport to {int} by {int}', async ({ page }, width: number, height: number) => {
-    await page.setViewportSize({ width, height });
+Then('the setup guide shows no commands and no Next', async ({ page }) => {
+    await expect(page.locator('[data-component-id="bb_theme:setup_command"]')).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Agent' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toHaveCount(0);
 });
 
 Then('the account {string} has not completed onboarding', async ({}, address: string) => {
