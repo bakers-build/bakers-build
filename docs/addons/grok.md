@@ -1,76 +1,64 @@
 # Grok
 
-**Lets bakers.build run tickets with xAI Grok Build.**
+**Runs tickets with xAI Grok Build.**
 
-For anyone whose machine should run tickets with the Grok CLI.
-
-## AI first
-
-Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
-
-## Setup
-
-Follow the [vendor installation guide](https://docs.x.ai/build/overview), then authenticate `grok` as the conductor user and check it resolves on `PATH`.
+Install and authenticate using the [vendor guide](https://docs.x.ai/build/overview). Keep `grok` on the conductor's `PATH`.
 
 ## Enable it
 
-Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there. Keep the other fields there.
+In `~/.bakers/machine.config.js`:
 
 ```js
-addons: [{ use: '@bakers-build/addon-grok', with: { model: 'grok-4.5' } }],
+addons: [{ use: '@bakers-build/addon-grok', with: {} }],
 ```
 
-`grok-4.5` is an example pin, not a default. It publishes one alias, `grok`.
+The alias is `grok`; `bakers agents` lists it.
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `model` | string | Grok CLI default | Passed as `--model`. |
-| `effort` | string | none | Passed as `--reasoning-effort`. |
-| `reasoningEffort` | string | none | Older name for `effort`; `effort` wins. |
-| `security` | `'sandbox'` \| `'system'` \| `'yolo'` | `'sandbox'` | How strictly a run starts; see [Security](#security). `'custom'` fails loading. |
-| `sandbox` | object | see below | Only with `security: 'sandbox'`. Only the defaults are accepted. |
-| `env_deny` | string[] | the [default list](/configuration/agents/execution-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. A `-m`/`--model` here wins over `model`. |
+| Option | Default | Effect |
+|---|---|---|
+| `model` | CLI default | `--model` |
+| `effort` | none | `--reasoning-effort`; overrides `reasoningEffort` |
+| `security` | `sandbox` | See below |
+| `sandbox` | below | Only in sandbox mode |
+| `env_deny` | [default list](/configuration/agents/execution-security#ticket-env-vars) | Filters ticket environment |
+| `args` | `[]` | Shell-quoted arguments; explicit model flags win |
 
 ## Security
 
-What each mode blocks and misses: [Run security](/configuration/agents/execution-security#grok-in-sandbox-mode).
-
-| `security` | Launch flags |
+| Mode | Flags |
 |---|---|
 | `sandbox` | `--sandbox workspace --permission-mode acceptEdits --allow 'Bash(*)' --deny 'MCPTool(*)'` |
 | `system` | none |
 | `yolo` | `--permission-mode bypassPermissions` |
-| `custom` | fails loading; use `system` with `args: ['--sandbox', '<profile>']` |
+| `custom` | rejected |
 
-Custom Grok profiles live in `sandbox.toml`, which bakers.build does not write, so `sandbox` keys keep their defaults; any other value fails loading, naming the key:
+| Sandbox key | Accepted value |
+|---|---|
+| `network` | `['*']` |
+| `mcp_servers` | `{}` |
+| `trusted_commands`, `deny_read` | `[]` |
+| `allow_write` | Existing absolute or `~/` directories; default `[]` |
 
-| Key | Default | Why fixed |
-|---|---|---|
-| `network` | `['*']` | `workspace` allows every host |
-| `mcp_servers` | `{}` | every MCP tool is denied |
-| `trusted_commands` | `[]` | no narrow command exception |
-| `deny_read`, `allow_write` | `[]` | needs a `sandbox.toml` profile |
-
-`--permission-mode` and `--session-id` (`-s`) are reserved; in `sandbox` mode also `--sandbox`, `--always-approve`, `--allow`, `--allowedTools`, `--allowed-tools`, `--add-dir`, `--cwd`, `--worktree` (`-w`), `--agents` and `--agent`. A reserved flag in `args` fails loading, also inside a short-flag cluster such as `-cw`. In `sandbox` mode a bare token is allowed only as the value of a Grok flag that takes one, such as `-m`, `-r` or `--rules` (a cluster only after `-c`, `-h`, `-v`, as in `-cm`), because Grok would run any other bare token, such as `wrap`, as a subcommand.
-
-`bakers oven check` needs Landlock on Linux and nothing on macOS; other platforms fail.
-
-## Check it works
-
-The agent catalog lists `grok` with harness `grok`.
-
-::: details Per CLI
-```sh
-bakers agents
+```js
+with: {
+  sandbox: {
+    allow_write: ['/projects/example/.git', '~/.ddev', '~/.npm'],
+  },
+},
 ```
-:::
 
-## Good to know
+Nonempty `allow_write` selects a unique managed profile extending `workspace`. Globs, relative paths and whitespace edges fail; symlinks resolve before launch. Whole directory trees become writable, including granted Git hooks/configuration. This grants no Docker isolation or command exceptions.
 
-- Before `security` existed, Grok always ran with `--permission-mode bypassPermissions`. Set `security: 'yolo'` to keep that launch.
+Requires Grok 1.0.70+, Linux Landlock and bubblewrap, or macOS Seatbelt. macOS enforcement remains unverified. Unavailable custom-profile enforcement fails closed.
 
-More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
+Bakers appends to `~/.grok/sandbox.toml` and removes its appended bytes after exit, preserving existing configuration, authentication and transcripts. A newly created file remains empty. Nonempty enterprise requirements, symlinked Grok homes and symlinked/hard-linked profile files block launch.
 
+One managed run per Grok home: concurrent runs fail. After crashes, inspect `.bakers-profile.lock`, confirm its PID stopped, and remove only its recorded profile and lock. Concurrent operator edits are preserved and reported; unfinished profiles block launch.
+
+Reserved arguments: `--permission-mode`, `--session-id`/`-s`; in sandbox mode also `--sandbox`, `--always-approve`, `--allow`, `--allowedTools`, `--allowed-tools`, `--add-dir`, `--cwd`, `--worktree`/`-w`, `--agents`, `--agent`. Managed profiles additionally reserve `--continue`/`-c`, `--resume`/`-r`, `--fork-session`, `--restore-code`, `--leader-socket`. Clustered flags and bare subcommands cannot bypass these restrictions.
+
+`bakers oven check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended DDEV completion is unverified.
+
+More: [Run security](/configuration/agents/execution-security#grok-in-sandbox-mode), [Choose agents](/configuration/agents).

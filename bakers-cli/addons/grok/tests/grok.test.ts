@@ -67,6 +67,41 @@ const SANDBOXED_ARGV = [
 ];
 
 describe('GrokAgent security', () => {
+  it('starts writable-path runs through a managed native profile', () => {
+    const agent = new GrokAgent({ sandbox: { allow_write: ['/data/cache'] } });
+    const command = agent.launchCommand('work');
+    expect(command).toContain('managed-launch');
+    expect(command).toContain('--sandbox bakers-managed');
+    expect(command).not.toContain('bypassPermissions');
+  });
+
+  it('rejects malformed grants and managed-session reuse before launch', () => {
+    for (const path of [
+      'relative',
+      '/tmp/*',
+      '/tmp/a?',
+      '/tmp/[x]',
+      ' /tmp',
+      '/tmp\n',
+    ]) {
+      expect(() => new GrokAgent({ sandbox: { allow_write: [path] } })).toThrow(
+        /literal/,
+      );
+    }
+    for (const args of [
+      ['--resume=x'],
+      ['-cr'],
+      ['--continue'],
+      ['--fork-session'],
+      ['--restore-code'],
+      ['--leader-socket', '/tmp/leader'],
+    ]) {
+      expect(
+        () => new GrokAgent({ sandbox: { allow_write: ['/tmp/cache'] }, args }),
+      ).toThrow(/reserved flag/);
+    }
+  });
+
   it('regression: sandbox mode, explicit or default, launches the native sandbox with a preflight', () => {
     for (const options of [{ security: 'sandbox' as const }, {}]) {
       const agent = new GrokAgent(options);
@@ -120,11 +155,7 @@ describe('GrokAgent security', () => {
         { trusted_commands: ['ddev'] },
         /no command exception.*trusted_commands/,
       ],
-      [
-        { deny_read: ['~/.ssh'] },
-        /sandbox\.toml profile for sandbox\.deny_read/,
-      ],
-      [{ allow_write: ['/tmp/x'] }, /profile for sandbox\.allow_write/],
+      [{ deny_read: ['~/.ssh'] }, /sandbox\.deny_read is unsupported/],
     ];
     for (const [sandbox, error] of rejected) {
       expect(() => new GrokAgent({ sandbox })).toThrow(error);
@@ -237,6 +268,22 @@ describe('GrokAgent.sandboxPreflight', () => {
       ok: false,
       cause: "Grok's sandbox does not support win32",
       fix: "set security: 'system' or 'yolo' for Grok",
+    });
+  });
+
+  it('requires bubblewrap for managed profiles without changing the empty-grant preflight', async () => {
+    const linux = { ...host('linux'), onPath: () => false };
+    await expect(
+      new GrokAgent({
+        sandbox: { allow_write: ['/tmp/cache'] },
+      }).sandboxPreflight(linux),
+    ).resolves.toMatchObject({
+      ok: false,
+      cause: expect.stringContaining('bubblewrap'),
+    });
+    expect(linux.calls).toEqual([]);
+    await expect(new GrokAgent().sandboxPreflight(linux)).resolves.toEqual({
+      ok: true,
     });
   });
 
