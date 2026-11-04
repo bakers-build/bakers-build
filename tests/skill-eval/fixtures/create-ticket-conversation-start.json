@@ -8,12 +8,22 @@
     "bb-workflow/references/tools.md",
     "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
+    "bb-workflow/references/prior-art-build.md",
+    "bb-workflow/references/qualification.md",
+    "bb-workflow/references/plan.md",
     "bb-workflow/references/classify.md",
+    "bb-workflow/references/acceptance.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/agent-choice.md",
+    "bb-workflow/references/origin-status.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/transition-ticket.md",
     "bb-workflow/references/outtake.md",
-    "bb-create-ticket/references/handoff.md"
+    "bb-workflow/references/ensure-qualification.md",
+    "bb-workflow/references/boundaries.md"
   ],
   "input": {
-    "task": "You are the host agent of a conversation about a bakers.build request. The requester's first message is below; nothing else has happened yet. Run the skill with the actual fixture tools, then give your one reply to the conversation.",
+    "task": "You are the host agent of a conversation about a bakers.build request, in a checkout of the project. The requester's first message is below; nothing else has happened yet. Run the skill with the actual fixture tools, then give your one reply to the conversation.",
     "host": {
       "project": "55555555-5555-4555-8555-555555555555",
       "workflow": "bb_work",
@@ -21,22 +31,113 @@
       "requester": "Mara Lind (U-MARA)",
       "conversation_link": "https://chat.example.invalid/c/eval-31"
     },
-    "code_facts": "app/Invoice/ExportController.php serves only a JSON export; app/Invoice/InvoiceFilter.php holds the page filter.",
+    "workspace_uuid": "77777777-7777-4777-8777-777777777771",
+    "observations": [
+      "Agent defaults are confirmed; no agent override is requested. There is no origin platform, so origin status is not_required.",
+      "No web surface; test_as is no login needed, scenario_required false.",
+      "Repository Git operations are fixture-only literal commands. For the remote base check use base branch main, the terms invoice and invoices, the path app and the repository probe Invoice; the ticket is created today, 2026-11-04."
+    ],
     "conversation": [
       {
         "from": "Mara Lind (U-MARA)",
         "text": "Operators need to export the invoice list as CSV for accounting."
       }
     ],
-    "workspace_uuid": "77777777-7777-4777-8777-777777777771"
+    "repository": {
+      "base_branch": "main",
+      "terms": [
+        "invoice",
+        "invoices"
+      ],
+      "paths": [
+        "app"
+      ],
+      "probe": "Invoice"
+    }
   },
   "simulation": {
+    "comments": [],
     "files": {},
     "user": {
       "uuid": "66666666-6666-4666-8666-666666666666",
       "name": "PM bot",
       "position": "Project manager",
       "background": "An experienced project manager with deep Drupal experience. Specify every idea with the requester. Answer every technical question yourself; ask the customer only about content, in plain words."
+    },
+    "commands": {
+      "git": [
+        {
+          "argv": [
+            "git",
+            "fetch",
+            "origin",
+            "--quiet"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "rev-parse",
+            "origin/main"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "log",
+            "--oneline",
+            "origin/main",
+            "--since=2026-11-04"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "grep",
+            "-nEi",
+            "invoice|invoices",
+            "origin/main",
+            "--",
+            "app"
+          ],
+          "result": {
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "git",
+            "grep",
+            "-c",
+            "Invoice",
+            "origin/main",
+            "--",
+            "app"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "origin/main:app/README.md:1\n",
+            "stderr": ""
+          }
+        }
+      ]
     }
   },
   "expect": {

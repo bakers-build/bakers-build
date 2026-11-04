@@ -867,238 +867,151 @@ async function simulatedTrace(id: string, steps: Array<[string, unknown]>) {
   return { grade, trace };
 }
 describe('hand-over of a specified ticket', () => {
-  const qualification = [
-    '## Acceptance',
-    '- **AC1:** As an operator, I want an Export CSV button.',
-    '## Out of scope',
-    '- PDF export',
-    '| `reproduction` | `not_required` |',
-    '| `handoff_version` | `1` |',
-  ].join('\n');
-  const steps = (
-    changes: {
-      classify?: object;
-      spec?: string;
-      body?: string;
-      test?: string;
-      labels?: string[];
-      conductor?: string | null;
-    } = {},
-  ): Array<[string, unknown]> => [
-    [
-      'bakers_comment_publish',
-      {
-        ticket: 'EVAL-31',
-        type: 'qualification',
-        body: changes.body ?? qualification,
-      },
-    ],
-    [
-      'bakers_comment_publish',
-      {
-        ticket: 'EVAL-31',
-        type: 'spec',
-        body:
-          changes.spec ??
-          '## Acceptance criteria\n\nAC1\n\nApproved by Mara Lind (U-MARA).\n',
-      },
-    ],
-    [
-      'bakers_comment_publish',
-      {
-        ticket: 'EVAL-31',
-        type: 'plan',
-        body: '### Task 1: Export CSV button (AC1)\n',
-      },
-    ],
-    [
-      'bakers_comment_publish',
-      {
-        ticket: 'EVAL-31',
-        type: 'test',
-        body: changes.test ?? '| F1 | AC1 | the button exports the list |\n',
-      },
-    ],
-    [
-      'bakers_comment_publish',
-      {
-        ticket: 'EVAL-31',
-        type: 'summary',
-        body: 'Specified and handed over.',
-      },
-    ],
-    [
-      'bakers_ticket_classify',
-      {
-        ticket: 'EVAL-31',
-        type: 'feature',
-        recipe: 'pair',
-        ...changes.classify,
-      },
-    ],
-    ['bakers_ticket_transition', { ticket: 'EVAL-31', state: 'working' }],
-    [
-      'bakers_ticket_update',
-      {
-        ticket: 'EVAL-31',
-        labels_add: changes.labels ?? ['pingpong'],
-        ...(changes.conductor === null
-          ? {}
-          : {
-              conductor:
-                changes.conductor ?? '44444444-4444-4444-8444-444444444444',
-            }),
-      },
-    ],
+  const conductor = '44444444-4444-4444-8444-444444444444';
+  const specified = (
+    changes: { spec?: string; test?: string; ticket?: string } = {},
+  ): Array<[string, unknown]> => {
+    const ticket = changes.ticket ?? 'EVAL-31';
+    return [
+      [
+        'bakers_comment_publish',
+        {
+          ticket,
+          type: 'spec',
+          body:
+            changes.spec ??
+            '## Acceptance criteria\n\nAC1\n\nApproved by Mara Lind (U-MARA).\n',
+        },
+      ],
+      [
+        'bakers_comment_publish',
+        { ticket, type: 'plan', body: '### Task 1: Export CSV button (AC1)\n' },
+      ],
+      [
+        'bakers_comment_publish',
+        {
+          ticket,
+          type: 'test',
+          body: changes.test ?? '| F1 | AC1 | the button exports the list |\n',
+        },
+      ],
+      [
+        'bakers_comment_publish',
+        { ticket, type: 'summary', body: 'Specified.' },
+      ],
+      ['bakers_ticket_transition', { ticket, state: 'working' }],
+    ];
+  };
+  const setConductor = (extra: object = {}): [string, unknown] => [
+    'bakers_ticket_update',
+    { ticket: 'EVAL-31', conductor, ...extra },
   ];
 
-  it('publishes qualification, spec, plan, test and summary, then classifies with the picked recipe, moves to working and adds pingpong', async () => {
-    const { grade, trace } = await simulatedTrace(
-      'create-ticket-handover',
-      steps(),
-    );
+  it('publishes spec, plan, test and summary, moves to working and sets the host conductor last', async () => {
+    const { grade, trace } = await simulatedTrace('create-ticket-handover', [
+      ...specified(),
+      setConductor(),
+    ]);
     expect(grade('Work on EVAL-31 starts.')).toEqual([]);
     expect(
-      grade('Work on EVAL-31 starts.', [
-        ...trace.slice(0, 5),
-        trace[6],
-        trace[5],
-        trace[7],
-      ]),
-    ).toContain('handover-order');
+      grade('Work on EVAL-31 starts.', [trace[5], ...trace.slice(0, 5)]),
+    ).toEqual(['writes']);
     expect(
       grade('Work on EVAL-31 starts.', [
         ...trace.slice(0, 2),
-        ...trace.slice(4),
+        ...trace.slice(3),
       ]),
-    ).toContain('handover-order');
-    expect(
-      grade('Work on EVAL-31 starts.', [
-        ...trace.slice(0, 4),
-        ...trace.slice(5),
-      ]),
-    ).toContain('handover-order');
-    const fixed = await simulatedTrace(
-      'create-ticket-handover',
-      steps({ classify: { recipe: 'superpowers' } }),
-    );
-    expect(fixed.grade('Work on EVAL-31 starts.')).toContain(
-      'handover-arguments',
-    );
-    const labelled = await simulatedTrace(
-      'create-ticket-handover',
-      steps({ labels: ['ticket:pingpong'] }),
-    );
-    expect(labelled.grade('Work on EVAL-31 starts.')).toContain(
-      'handover-arguments',
-    );
-    const hashed = await simulatedTrace(
-      'create-ticket-handover',
-      steps({ body: `${qualification}\n${'a'.repeat(64)}` }),
-    );
-    expect(hashed.grade('Work on EVAL-31 starts.')).toContain('handoff-fields');
-    const unsigned = await simulatedTrace(
-      'create-ticket-handover',
-      steps({ spec: '## Acceptance criteria\n\nAC1\n' }),
-    );
-    expect(unsigned.grade('Work on EVAL-31 starts.')).toContain('spec-content');
-    const untested = await simulatedTrace(
-      'create-ticket-handover',
-      steps({ test: '| F1 | the button exports the list |\n' }),
-    );
-    expect(untested.grade('Work on EVAL-31 starts.')).toContain('plan-content');
-  });
-
-  it('fails eight-tools on a ninth tool', async () => {
-    const { grade } = await simulatedTrace('create-ticket-handover', [
-      ['bakers_workspace_list', {}],
-      ...steps(),
+    ).toEqual(['writes', 'plan-content']);
+    const unsigned = await simulatedTrace('create-ticket-handover', [
+      ...specified({ spec: '## Acceptance criteria\n\nAC1\n' }),
+      setConductor(),
     ]);
-    expect(grade('Work on EVAL-31 starts.')).toEqual(['eight-tools']);
+    expect(unsigned.grade('Work on EVAL-31 starts.')).toEqual(['spec-content']);
+    const untested = await simulatedTrace('create-ticket-handover', [
+      ...specified({ test: '| F1 | the button exports the list |\n' }),
+      setConductor(),
+    ]);
+    expect(untested.grade('Work on EVAL-31 starts.')).toEqual(['plan-content']);
   });
 
-  it('hands over without a conductor when the host supplies none', async () => {
-    const { grade } = await simulatedTrace(
+  it('fails a pingpong label and a tenth tool', async () => {
+    const labelled = await simulatedTrace('create-ticket-handover', [
+      ...specified(),
+      setConductor({ labels_add: ['pingpong'] }),
+    ]);
+    expect(labelled.grade('Work on EVAL-31 starts.')).toEqual(['no-pingpong']);
+    const tenth = await simulatedTrace('create-ticket-handover', [
+      ['bakers_workspace_list', {}],
+      ...specified(),
+      setConductor(),
+    ]);
+    expect(tenth.grade('Work on EVAL-31 starts.')).toEqual(['nine-tools']);
+  });
+
+  it('asks for a conductor when the host supplies none', async () => {
+    const { grade } = await simulatedTrace('create-ticket-no-conductor', [
+      ...specified(),
+      [
+        'bakers_conductor_list',
+        { project: '55555555-5555-4555-8555-555555555555' },
+      ],
+    ]);
+    expect(grade('Which conductor should run EVAL-31?')).toEqual([]);
+    const unasked = await simulatedTrace(
       'create-ticket-no-conductor',
-      steps({ conductor: null }),
+      specified(),
     );
-    expect(grade('EVAL-31 is ready.')).toEqual([]);
-    const conducted = await simulatedTrace(
-      'create-ticket-no-conductor',
-      steps(),
-    );
-    expect(conducted.grade('EVAL-31 is ready.')).toContain(
-      'handover-arguments',
-    );
+    expect(unasked.grade('EVAL-31 is ready.')).toEqual(['conductor-asked']);
   });
 
   it("changes nothing on another person's approval, without any call", async () => {
     const { grade } = await simulatedTrace('create-ticket-other-approval', []);
     expect(grade('Only Mara can approve.')).toEqual([]);
-    const handed = await simulatedTrace(
-      'create-ticket-other-approval',
-      steps(),
-    );
-    expect(handed.grade('Work starts.')).toContain('nothing-handed-over');
-  });
-});
-
-describe('a bug from a conversation', () => {
-  const bug = (
-    extra: Array<[string, unknown]> = [],
-  ): Array<[string, unknown]> => [
-    [
-      'bakers_comment_publish',
-      {
-        ticket: 'EVAL-32',
-        type: 'qualification',
-        body: '- **AC1:** full export\n| `reproduction` | Export CSV downloads the header row only |\n',
-      },
-    ],
-    [
-      'bakers_comment_publish',
-      { ticket: 'EVAL-32', type: 'summary', body: 'Qualified.' },
-    ],
-    [
-      'bakers_ticket_classify',
-      { ticket: 'EVAL-32', type: 'bug', recipe: 'probe' },
-    ],
-    ...extra,
-    ['bakers_ticket_transition', { ticket: 'EVAL-32', state: 'plan' }],
-  ];
-
-  it('publishes qualification and summary, sets bug and the recipe, and moves to plan', async () => {
-    const { grade, trace } = await simulatedTrace('create-ticket-bug', bug());
-    expect(grade('EVAL-32 is recorded.')).toEqual([]);
-    // Type and recipe may be set before the qualification.
-    expect(
-      grade('EVAL-32 is recorded.', [trace[2], trace[0], trace[1], trace[3]]),
-    ).toEqual([]);
-    expect(
-      grade('EVAL-32 is recorded.', [trace[1], trace[0], trace[2], trace[3]]),
-    ).toContain('bug-order');
-    const typed = await simulatedTrace('create-ticket-bug', [
-      ...bug().slice(0, 2),
-      [
-        'bakers_ticket_classify',
-        { ticket: 'EVAL-32', type: 'feature', recipe: 'probe' },
-      ],
-      bug()[3],
+    const handed = await simulatedTrace('create-ticket-other-approval', [
+      ...specified(),
+      setConductor(),
     ]);
-    expect(typed.grade('EVAL-32 is recorded.')).toEqual(['bug-arguments']);
+    expect(handed.grade('Work starts.')).toContain('writes');
   });
 
-  it('fails a bug handed over with pingpong', async () => {
+  it('moves an approved qualification to plan and nothing else', async () => {
     const { grade } = await simulatedTrace(
-      'create-ticket-bug',
-      bug([
-        [
-          'bakers_ticket_update',
-          { ticket: 'EVAL-32', labels_add: ['pingpong'] },
-        ],
-      ]),
+      'create-ticket-qualification-approval',
+      [['bakers_ticket_transition', { ticket: 'EVAL-31', state: 'plan' }]],
     );
-    expect(grade('Work on EVAL-32 starts.')).toEqual(['bug-order']);
+    expect(grade('Which invoices should the file hold?')).toEqual([]);
+    const early = await simulatedTrace('create-ticket-qualification-approval', [
+      ['bakers_ticket_transition', { ticket: 'EVAL-31', state: 'plan' }],
+      ...specified(),
+    ]);
+    expect(early.grade('Work starts.')).toContain('writes');
+  });
+
+  it('stops an approved bug in plan with the host conductor and no pingpong', async () => {
+    const plan: [string, unknown] = [
+      'bakers_ticket_transition',
+      { ticket: 'EVAL-32', state: 'plan' },
+    ];
+    const bugConductor = (extra: object = {}): [string, unknown] => [
+      'bakers_ticket_update',
+      { ticket: 'EVAL-32', conductor, ...extra },
+    ];
+    const { grade } = await simulatedTrace('create-ticket-bug', [
+      plan,
+      bugConductor(),
+    ]);
+    expect(grade('EVAL-32 is recorded.')).toEqual([]);
+    const labelled = await simulatedTrace('create-ticket-bug', [
+      plan,
+      bugConductor({ labels_add: ['pingpong'] }),
+    ]);
+    expect(labelled.grade('EVAL-32 is recorded.')).toEqual(['no-pingpong']);
+    const specifiedBug = await simulatedTrace('create-ticket-bug', [
+      plan,
+      ...specified({ ticket: 'EVAL-32' }),
+      bugConductor(),
+    ]);
+    expect(specifiedBug.grade('Work starts.')).toContain('writes');
   });
 });
 
@@ -1127,7 +1040,7 @@ describe('the start of a conversation', () => {
     ...extra,
   ];
 
-  it('reads its user, searches, creates the ticket with the link and writes nothing else', async () => {
+  it('reads its user, searches, creates the ticket with the link and routes nothing', async () => {
     const { grade, trace } = await simulatedTrace(
       'create-ticket-conversation-start',
       start(),
@@ -1136,15 +1049,12 @@ describe('the start of a conversation', () => {
     expect(grade('Who exports the list?', trace.slice(1))).toEqual([
       'user-first',
     ]);
-    const commented = await simulatedTrace(
+    const routed = await simulatedTrace(
       'create-ticket-conversation-start',
       start([
-        [
-          'bakers_comment_publish',
-          { ticket: 'EVAL-101', type: 'qualification', body: 'AC1' },
-        ],
+        ['bakers_ticket_transition', { ticket: 'EVAL-101', state: 'plan' }],
       ]),
     );
-    expect(commented.grade('Who exports the list?')).toEqual(['nothing-yet']);
+    expect(routed.grade('Who exports the list?')).toEqual(['nothing-routed']);
   });
 });
