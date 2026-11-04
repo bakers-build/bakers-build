@@ -1,19 +1,16 @@
-<svg width="440" height="120" viewBox="0 0 440 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="bakers.build">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1FA97A"/>
-      <stop offset="1" stop-color="#0E7C63"/>
-    </linearGradient>
-  </defs>
-  <!-- mark: orbiting nodes around a control-plane core (conductor motif) -->
-  <rect x="4" y="4" width="112" height="112" rx="26" fill="url(#g)"/>
-  <circle cx="60" cy="60" r="34" fill="none" stroke="#2e3438" stroke-opacity="0.35" stroke-width="3"/>
-  <circle cx="60" cy="60" r="10" fill="#2e3438"/>
-  <circle cx="60" cy="26" r="7" fill="#2e3438"/>
-  <circle cx="94" cy="60" r="7" fill="#2e3438"/>
-  <circle cx="60" cy="94" r="7" fill="#2e3438"/>
-  <circle cx="26" cy="60" r="7" fill="#2e3438" fill-opacity="0.75"/>
-  <!-- wordmark -->
-  <text x="140" y="60" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="58" font-weight="800" letter-spacing="2" fill="#12B886">bakers.build</text>
-  <text x="142" y="92" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="16" font-weight="500" letter-spacing="1" fill="#7A8891">ticket-driven agent orchestrator</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" role="img" aria-label="bakers.build">
+  <!-- The landing's bread-slice logo mark (LogoMark.vue): mark-face.svg and mark-crumb.svg on the butter tile. -->
+  <rect width="100" height="100" rx="21.5" fill="#f3ce3a"/>
+  <g transform="translate(20.22 20.22) scale(2.6315)" stroke="#2B2116" stroke-width="0.922857">
+    <path d="M0.461429 8.60429C0.461429 2.63286 4.80429 0.461429 11.3186 0.461429C17.8329 0.461429 22.1757 2.63286 22.1757 8.60429L21.6329 22.1757H1.00429L0.461429 8.60429Z" fill="white" stroke-linejoin="round"/>
+    <path d="M5.34718 4.26143L7.79003 6.97571M10.2329 3.17571L12.6757 5.89" stroke-linecap="round"/>
+    <circle cx="8.60432" cy="10.2329" r="2.17143" fill="white"/>
+    <circle cx="9.41859" cy="10.7757" r="0.76" fill="#2B2116" stroke="none"/>
+    <circle cx="14.5757" cy="10.2329" r="2.17143" fill="white"/>
+    <circle cx="15.3901" cy="10.7757" r="0.76" fill="#2B2116" stroke="none"/>
+    <path d="M10.2329 16.2043C11.1377 16.7471 12.0424 16.7471 12.9472 16.2043" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(81.105 16.105) rotate(45) translate(-7.5175 -4.305) scale(2.63)" stroke="#2B2116" stroke-width="0.830571" stroke-linecap="round">
+    <path d="M2.85816 0.415286V2.36957M0.415301 1.881L1.63673 2.85814M5.30102 1.881L4.07959 2.85814"/>
+  </g>
 </svg>
