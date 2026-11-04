@@ -49,11 +49,10 @@ Ensure `/assets-ai/` ignored; remove retired `/issues/` ignore. Verify `git chec
 and every generated secret-bearing override, including `.bakers/conductor.config.local.js`.
 
 For legacy archives (`docs/evidence/`, `docs/decisions/*-evidence/`, committed `issues/`), find/report
-readers before proposing deletion. Surviving readers need decisions. Authorized deletion rescues
-decision records into the project's decision-record directory and repoints readers. Ambiguous/destructive
-replacements require explicit approval; retain snapshots through verification.
+readers before proposing deletion. Authorized deletion rescues decision records into the project's
+decision-record directory and repoints readers. Ambiguous/destructive replacements require explicit approval; retain snapshots through verification.
 
 Verify skill references through supported discovery; report unavailable names. Upgrade installs
-no skills. Confirm `WORKFLOW.md` starts with the entry line and names only installed skills.
-Report configuration/workflow changes, deleted/rescued paths, validation, online readiness and follow-up
-separately. Stop; rotate no secrets or start ticket work.
+no skills. Ensure `WORKFLOW.md` starts with the entry line, without a `pingpong` clause, and names
+only installed skills. Report configuration/workflow changes, deleted/rescued paths, validation,
+online readiness and follow-up separately. Stop; rotate no secrets or start ticket work.

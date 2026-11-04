@@ -1,0 +1,90 @@
+{
+  "id": "pingpong-plan-transition",
+  "synthetic": true,
+  "profile": "state-run",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow",
+  "references": [
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/intake.md",
+    "bb-workflow/references/plan.md",
+    "bb-workflow/references/ensure-qualification.md",
+    "bb-workflow/references/boundaries.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/ticket-writes.md",
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/outtake/plan.md",
+    "bb-workflow/references/origin-status.md",
+    "bb-workflow/references/transition-ticket.md"
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ],
+  "input": {
+    "task": "Run the ticket's current state end to end. No approval has been given yet. The ticket has no origin. This is unattended: nobody answers in this session.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "installed_skills": "Installed skills are readable with read_file at skills/<name>/SKILL.md. Installed: bb-recipe-probe, bb-label-pingpong. No other skill file is installed.",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555",
+    "observations": [
+      "The ticket has its recipe, type and current state, and the latest qualification handoff carries acceptance criteria.",
+      "The repository is a Node CLI: invoices are listed by src/invoices/list.ts and tested in test/invoices.test.ts.",
+      "The ticket's probe_questions list is empty: the method has nothing to ask."
+    ]
+  },
+  "expect": {
+    "comments": [
+      "spec",
+      "plan",
+      "test",
+      "summary"
+    ],
+    "transition": "working",
+    "reads": [
+      "skills/bb-label-pingpong/SKILL.md"
+    ]
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-40",
+      "title": "Export invoices as CSV",
+      "state": "plan",
+      "workflow": "bb_feature",
+      "description": "Operators export the invoice list as CSV from the invoice page.",
+      "created": "2026-01-01",
+      "base_branch": "develop",
+      "changed": "fixture-revision-1",
+      "type": "feature",
+      "recipe": "probe",
+      "labels": [
+        "pingpong"
+      ]
+    },
+    "files": {
+      "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
+    },
+    "comments": [
+      {
+        "id": "77777777-7777-4777-8777-000000000001",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "qualification",
+        "body": "## Qualification handoff\n\n### Acceptance\n\n- **AC-1** As an operator, I want an Export CSV button on the invoice list, so that I can download the visible invoices.\n- **AC-2** As an operator, I want number, date, customer and total per invoice in the CSV, so that accounting can import it.\n- **AC-3** The change passes every matching bb-phase-validate row of WORKFLOW.md.\n\nTally: 3 passed, 0 rewritten.\n\n### Out of scope\n\nPDF export.\n\n### Handoff metadata\n\n- `recipe`: probe (project default)\n- `ticket_type`: feature\n- `reproduction`: not_required\n- `scenario_required`: false\n- `test_as`: no login needed\n- prior art: negative (ticket search and remote base check)\n- `handoff_version`: 1\n"
+      }
+    ]
+  },
+  "rubric": [
+    {
+      "id": "loads-pingpong",
+      "criterion": "Loads bb-label-pingpong from the ticket's label pingpong."
+    },
+    {
+      "id": "no-approval",
+      "criterion": "Publishes spec, plan, test and summary, asks for no approval and transitions once to working, because the label authorizes every transition."
+    }
+  ],
+  "virtual_references": [
+    "bb-label-pingpong/SKILL.md"
+  ]
+}

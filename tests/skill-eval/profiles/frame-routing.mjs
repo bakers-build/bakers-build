@@ -32,6 +32,6 @@ export function checkOutput(f, output, context) {
       ? check('stop-named', output.includes(e.stop), 'Stop and name the exact identifier that failed')
       : check('intake-rendered', output.includes(e.intake), 'Render the intake with its target gate; no write starts the state'),
     ...(e.skill ? [check('skill-read', skillReads.some(c => c.arguments.path === e.skill.path) === e.skill.read,
-      e.skill.read ? 'Load the skill WORKFLOW.md names for this ticket\'s labels and state' : 'Load no skill whose WORKFLOW.md condition does not hold')] : []),
+      e.skill.read ? 'Load the skill this ticket\'s labels route to' : 'Load no skill the ticket\'s labels do not route to')] : []),
   ];
 }

@@ -1,6 +1,6 @@
 ---
-name: bb-pingpong
-description: "Use when a ticket labelled `pingpong` runs in working or review: carry it to done on your own."
+name: bb-label-pingpong
+description: "Use when a ticket labelled `pingpong` runs, in any state: carry it to done on your own."
 ---
 
 # Pingpong
@@ -9,12 +9,13 @@ The label `pingpong` authorizes every transition, its origin status and the merg
 questions yourself and record each decision with its reason under `Decisions` in the handoff.
 
 Reach the user only through a user question or a technical problem in the ticket: publish its
-comments, add its label, freeze the ticket and end the run.
+comments, add its label, freeze the ticket and end the run. Collect every open question of the run
+into one user question.
 
 Until the user accepts the result, ask what should change or what done looks like as a
 **[user question](../bb-workflow/references/publish-comment.md#a-question-for-a-human)**: one
-`comment` headed `# Question` with the question, its context and numbered choices, the
-recommended one marked, and last the line "Answer in a comment, then remove the label *Question*
+`comment` headed `# Question` with each question numbered, its context and choices, the recommended
+choice marked per question, and last the line "Answer in a comment, then remove the label *Question*
 and unfreeze the ticket."; label `Question`. Once the user has accepted, decide those questions
 yourself too, a `criterion` cause included.
 

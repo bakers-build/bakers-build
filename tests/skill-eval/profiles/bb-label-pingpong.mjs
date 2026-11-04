@@ -9,7 +9,7 @@ const STOPS = ['none', 'question', 'technical-problem', 'transition'];
 const NOTE = '# Technical problem\n\nPlease contact the developers.';
 
 export function validate(f) {
-  validateTools(f, 'bb-pingpong');
+  validateTools(f, 'bb-label-pingpong');
   const e = f.expect;
   requireValue(uuid(f.input.ticket_uuid) && f.simulation.ticket?.id === f.input.ticket_uuid, 'Expected the simulated ticket');
   requireValue(STOPS.includes(e?.stop), `Expected expect.stop as one of ${STOPS.join(', ')}`);
