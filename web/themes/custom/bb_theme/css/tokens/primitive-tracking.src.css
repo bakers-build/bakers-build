@@ -1,0 +1,5 @@
+@theme static {
+  --tracking-tight: -0.01em;
+  --tracking-snug: -0.005em;
+  --tracking-wide: 0.04em;
+}

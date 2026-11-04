@@ -1,0 +1,14 @@
+decided_at: '2026-11-04T12:49:10.429Z'
+fingerprint: 5badb0e8d420dd88eae5707b9c3566fe370452dd43ec6e78e1bf031976a8a77b
+note: 'Approved by Pascal Glass 2026-11-04: screenshots correct; suitable as the reference for BAKERS-54 font, text-role, spacing and focus tokens (CI board wins on font family and weight).'
+scope:
+  states:
+    - rest
+  subjects:
+    - typo-system
+    - ci-board
+    - focus-keyboard
+    - data-formats
+  views:
+    - frame
+status: approved

@@ -22,6 +22,17 @@ primitive:
       space-6:
         $value: 24px
         $type: dimension
+      space-8:
+        $value: 32px
+        $type: dimension
+        $description: Space above a section heading.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:118'
+              - '68:135'
     row-h:
       $value: 34px
       $type: dimension
@@ -223,12 +234,41 @@ primitive:
     fontFamily:
       sans:
         $value: >-
-          system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-          sans-serif
+          'Spline Sans', system-ui, -apple-system, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif
         $type: fontFamily
+        $description: Text face of the CI, observed on the CI board.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '550:8978'
+              - '550:8992'
+              - '550:9016'
+              - '550:9024'
       mono:
-        $value: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace
+        $value: >-
+          'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, Consolas,
+          monospace
         $type: fontFamily
+        $description: Machine values only (keys, branches, IDs), observed on the CI board.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '550:9021'
+      display:
+        $value: '''Bricolage Grotesque'', ''Spline Sans'', system-ui, sans-serif'
+        $type: fontFamily
+        $description: Page titles only, observed on the CI board at opsz 14.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '550:8977'
     fontSize:
       '11':
         $value: 11px
@@ -239,6 +279,17 @@ primitive:
       '13':
         $value: 13px
         $type: dimension
+      '14':
+        $value: 14px
+        $type: dimension
+        $description: Item title size.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:60'
+              - '550:9024'
       '16':
         $value: 16px
         $type: dimension
@@ -259,6 +310,81 @@ primitive:
         $value: 700
         $type: fontWeight
     lineHeight:
+      '14':
+        $value: 14px
+        $type: dimension
+        $description: Whole-pixel line height 14px.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:81'
+              - '68:84'
+      '16':
+        $value: 16px
+        $type: dimension
+        $description: Whole-pixel line height 16px.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:72'
+              - '68:75'
+              - '68:78'
+      '20':
+        $value: 20px
+        $type: dimension
+        $description: Whole-pixel line height 20px.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:60'
+              - '68:63'
+              - '68:66'
+      '21':
+        $value: 21px
+        $type: dimension
+        $description: Whole-pixel line height 21px.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:69'
+      '22':
+        $value: 22px
+        $type: dimension
+        $description: Whole-pixel line height 22px.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:57'
+      '28':
+        $value: 28px
+        $type: dimension
+        $description: Whole-pixel line height 28px.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:87'
+      '30':
+        $value: 30px
+        $type: dimension
+        $description: Whole-pixel line height 30px.
+        $extensions:
+          designbook:
+            provenance: observation
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:54'
       tight:
         $value: 1.2
         $type: number
@@ -320,6 +446,55 @@ primitive:
       color:
         $value: '{primitive.style.color.violet-600}'
         $type: color
+      offset:
+        $value: 2px
+        $type: dimension
+        $description: Gap between a control and its focus ring.
+        $extensions:
+          designbook:
+            provenance: addition
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '61:3240'
+            note: >-
+              Observed as the focus-keyboard interaction (2px ring, 2px gap);
+              the tokens package does not project interactions.
+    letterSpacing:
+      tight:
+        $value: '-0.01em'
+        $type: dimension
+        $description: Page title tracking (-1 %).
+        $extensions:
+          designbook:
+            provenance: calculated
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:54'
+              - '550:8977'
+            note: Figma -1 % at 24px = -0.24px.
+      snug:
+        $value: '-0.005em'
+        $type: dimension
+        $description: Section title tracking (-0.5 %).
+        $extensions:
+          designbook:
+            provenance: calculated
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:57'
+              - '550:9016'
+            note: Figma -0.5 % at 16px = -0.08px.
+      wide:
+        $value: 0.04em
+        $type: dimension
+        $description: Eyebrow tracking (4 %).
+        $extensions:
+          designbook:
+            provenance: calculated
+            reference: 8c75dc05ca021b53/c666d120267b60a5
+            nodes:
+              - '68:81'
+            note: Figma 4 % at 11px.
 semantic:
   color:
     app:
@@ -485,62 +660,184 @@ semantic:
         in one of the two modes; this token stays constant in both and keeps
         ≥4.5:1 against every state hue.
   typography:
-    display:
+    page-title:
       $value:
-        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontFamily: '{primitive.style.fontFamily.display}'
         fontSize: '{primitive.style.fontSize.24}'
         fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
+        lineHeight: '{primitive.style.lineHeight.30}'
+        letterSpacing: '{primitive.style.letterSpacing.tight}'
       $type: typography
-    heading:
+      $description: Page title.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:54'
+            - '550:8977'
+    section-title:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.16}'
-        fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
+        fontWeight: '{primitive.style.fontWeight.semibold}'
+        lineHeight: '{primitive.style.lineHeight.22}'
+        letterSpacing: '{primitive.style.letterSpacing.snug}'
       $type: typography
-    section:
+      $description: Section heading; the CI board sets it semibold.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:57'
+            - '550:9016'
+    item-title:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
-        fontSize: '{primitive.style.fontSize.16}'
-        fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
+        fontSize: '{primitive.style.fontSize.14}'
+        fontWeight: '{primitive.style.fontWeight.semibold}'
+        lineHeight: '{primitive.style.lineHeight.20}'
       $type: typography
+      $description: Title of a list row or card.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:60'
+            - '550:9024'
+    body-strong:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.13}'
+        fontWeight: '{primitive.style.fontWeight.medium}'
+        lineHeight: '{primitive.style.lineHeight.20}'
+      $type: typography
+      $description: Emphasised body text, such as a person's name.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:63'
     body:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.13}'
         fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.20}'
       $type: typography
-    lead:
+      $description: Default text, also for otherwise unstyled text.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:66'
+    prose:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.13}'
         fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.21}'
       $type: typography
-    caption:
+      $description: Running text, at most the prose width.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:69'
+    label:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.12}'
+        fontWeight: '{primitive.style.fontWeight.medium}'
+        lineHeight: '{primitive.style.lineHeight.16}'
+      $type: typography
+      $description: Field and property label.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:72'
+            - '550:8992'
+    meta:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.12}'
         fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.16}'
       $type: typography
+      $description: Secondary information such as times and counts.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:75'
+            - '550:8978'
+            - '550:9011'
+    data:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.mono}'
+        fontSize: '{primitive.style.fontSize.12}'
+        fontWeight: '{primitive.style.fontWeight.medium}'
+        lineHeight: '{primitive.style.lineHeight.16}'
+      $type: typography
+      $description: 'Machine values: keys, branches, IDs.'
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:78'
+            - '550:9021'
     eyebrow:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.11}'
-        fontWeight: '{primitive.style.fontWeight.bold}'
-        lineHeight: '{primitive.style.lineHeight.tight}'
-      $type: typography
-    mono:
-      $value:
-        fontFamily: '{primitive.style.fontFamily.mono}'
-        fontSize: '{primitive.style.fontSize.12}'
         fontWeight: '{primitive.style.fontWeight.semibold}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
+        lineHeight: '{primitive.style.lineHeight.14}'
+        letterSpacing: '{primitive.style.letterSpacing.wide}'
       $type: typography
+      $description: Uppercase group label above content.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:81'
+    badge:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.11}'
+        fontWeight: '{primitive.style.fontWeight.semibold}'
+        lineHeight: '{primitive.style.lineHeight.14}'
+      $type: typography
+      $description: Badge and pill text.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:84'
+    stat-value:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.sans}'
+        fontSize: '{primitive.style.fontSize.24}'
+        fontWeight: '{primitive.style.fontWeight.semibold}'
+        lineHeight: '{primitive.style.lineHeight.28}'
+      $type: typography
+      $description: Large statistic value.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:87'
   fontWeight:
     regular:
       $value: '{primitive.style.fontWeight.regular}'
@@ -594,6 +891,75 @@ semantic:
     base:
       $value: '{primitive.style.duration.200}'
       $type: duration
+  spacing:
+    inline-xs:
+      $value: '{primitive.layout.spacing.space-1}'
+      $type: dimension
+      $description: Icon to text.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:98'
+            - '68:99'
+    inline:
+      $value: '{primitive.layout.spacing.space-2}'
+      $type: dimension
+      $description: Pills and buttons side by side.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:102'
+            - '68:103'
+    stack:
+      $value: '{primitive.layout.spacing.space-3}'
+      $type: dimension
+      $description: Label to control, row content, below a heading.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:106'
+            - '68:107'
+            - '68:137'
+    group:
+      $value: '{primitive.layout.spacing.space-4}'
+      $type: dimension
+      $description: Field groups and card padding.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:110'
+            - '68:111'
+    gutter:
+      $value: '{primitive.layout.spacing.space-6}'
+      $type: dimension
+      $description: Page edge from 1280px.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:114'
+            - '68:115'
+    section:
+      $value: '{primitive.layout.spacing.space-8}'
+      $type: dimension
+      $description: Above a section heading.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:118'
+            - '68:119'
+            - '68:135'
 component:
   empty-state:
     icon:
@@ -657,17 +1023,6 @@ component:
         $description: >-
           Gap between braid and wordmark in the compact brand (24 + 8 + 96 =
           128px combined).
-  gate:
-    body:
-      $value:
-        fontFamily: '{primitive.style.fontFamily.sans}'
-        fontSize: '{primitive.style.fontSize.16}'
-        fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
-      $type: typography
-      $description: >-
-        Body copy of a standalone gate result, such as the device sign-in
-        confirmation: readable at 16px rather than the 13px product body.
   zone:
     gap:
       sm:
@@ -682,6 +1037,17 @@ component:
         $value: '{primitive.layout.spacing.space-6}'
         $type: dimension
         $description: 'Zone cell gap `lg`: the space-6 step (24px, 32px cozy).'
+  prose:
+    max-width:
+      $value: 620px
+      $type: dimension
+      $description: Maximum width of running text (72ch).
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/c666d120267b60a5
+          nodes:
+            - '68:152'
 themes:
   cozy:
     primitive:
@@ -708,6 +1074,17 @@ themes:
           space-6:
             $value: 32px
             $type: dimension
+          space-8:
+            $value: 40px
+            $type: dimension
+            $description: Cozy step after 32px.
+            $extensions:
+              designbook:
+                provenance: addition
+                reference: 8c75dc05ca021b53/c666d120267b60a5
+                note: >-
+                  Intake decision 2026-11-04: continues the cozy scale 24, 32,
+                  40.
         row-h:
           $value: 40px
           $type: dimension
@@ -939,12 +1316,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"Source Sans 3", system-ui, sans-serif'
-            $type: fontFamily
   harbor-dark:
     $extensions:
       selector: '[data-skin="harbor"][data-mode="dark"]'
@@ -1057,12 +1428,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"IBM Plex Sans", system-ui, sans-serif'
-            $type: fontFamily
   grove-dark:
     $extensions:
       selector: '[data-skin="grove"][data-mode="dark"]'
@@ -1175,12 +1540,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"Public Sans", system-ui, sans-serif'
-            $type: fontFamily
   ember-dark:
     $extensions:
       selector: '[data-skin="ember"][data-mode="dark"]'
@@ -1293,12 +1652,6 @@ themes:
         on-primary:
           $value: '#ffffff'
           $type: color
-    primitive:
-      style:
-        fontFamily:
-          sans:
-            $value: '"Atkinson Hyperlegible Next", system-ui, sans-serif'
-            $type: fontFamily
   iris-dark:
     $extensions:
       selector: '[data-skin="iris"][data-mode="dark"]'
