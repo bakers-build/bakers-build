@@ -148,15 +148,15 @@ props:
         The block's sub-line, rendered below the `<h2>` in the same treatment
         `page_header` gives the screen's sub-line — one level of type smaller
         and recessive. It exists because ten block headers in the delivered
-        scenes needed one and `zone` had none (BB-378 D14 did not think of
-        it), so they were written as block-level `<span>`s with inline styles
-        inside the `heading` slot — scene YAML sits outside the CSS build's
-        source paths, so a utility class written there is never compiled and
-        inline styles were the only thing that worked. A prop is the better
-        answer: it is reviewable, it is styled once here, and it keeps the
-        heading slot for the heading. Omitted means no element, never an empty
-        one. It does NOT truncate: a block sub-line is a sentence and wraps,
-        where a screen sub-line is an identity line on one row.
+        scenes needed one and `zone` had none (BB-378 D14 did not think of it),
+        so they were written as block-level `<span>`s with inline styles inside
+        the `heading` slot — scene YAML sits outside the CSS build's source
+        paths, so a utility class written there is never compiled and inline
+        styles were the only thing that worked. A prop is the better answer: it
+        is reviewable, it is styled once here, and it keeps the heading slot for
+        the heading. Omitted means no element, never an empty one. It does NOT
+        truncate: a block sub-line is a sentence and wraps, where a screen
+        sub-line is an identity line on one row.
     list:
       type: boolean
       title: Content is an ARIA list

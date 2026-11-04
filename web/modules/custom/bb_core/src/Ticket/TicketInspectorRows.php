@@ -179,7 +179,7 @@ final class TicketInspectorRows extends InspectorRows {
           '#props' => [
             'text' => $label,
             'as' => 'span',
-            'size' => 'caption',
+            'size' => 'meta',
             'tone' => 'faint',
           ],
         ],

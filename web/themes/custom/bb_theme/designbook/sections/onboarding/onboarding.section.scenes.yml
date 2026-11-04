@@ -27,8 +27,8 @@ scenes:
         with:
           title: What should we call you?
           description: >-
-            A name and a picture — and bakers.build feels less like software and more
-            like your team.
+            A name and a picture — and bakers.build feels less like software and
+            more like your team.
           content:
             - component: bb_theme:form
               slots:

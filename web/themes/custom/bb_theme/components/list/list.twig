@@ -91,7 +91,7 @@
       <li data-list-item class="{{ item_classes|join(' ') }}"{% if item.url %} data-item-url="{{ item.url }}"{% endif %}{% if row_link %} x-data @click="$event.target.closest('a, button, input, select, textarea, label, summary, [role=button]') || String(window.getSelection()) || $el.querySelector('[data-list-region=headline] a')?.click()"{% endif %}>
         <span class="{{ (rail_classes|merge([accent_map[item.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>
         {%- if pattern %}
-          {#- THE PATTERNED ROW (BB-592): a headline line (one type step up, `text-heading`) and a meta line in a
+          {#- THE PATTERNED ROW (BB-592): a headline line (one type step up, `text-item-title`) and a meta line in a
               flexible left block, one compact right block that never exceeds the row. Each region walks its
               own key list in order and skips absent cells, so an optional fact
               leaves no gap. The left block's basis is what makes the right block
@@ -138,9 +138,9 @@
           {% if left is not empty %}
             <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col gap-1">
               {% for line in left %}
-                <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-2', 'gap-y-1', 'text-heading', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-3', 'gap-y-1', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-3', 'gap-y-1', 'text-caption', 'text-text-faint']))|join(' ') }}">
+                <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-2', 'gap-y-1', 'text-item-title', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-3', 'gap-y-1', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-3', 'gap-y-1', 'text-meta', 'text-text-faint']))|join(' ') }}">
                   {% for key in line.keys %}
-                    <span class="min-w-0 wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-caption text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="min-w-0 wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endfor %}
@@ -155,14 +155,14 @@
               {% if right is not empty %}
                 <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
                   {% for key in right %}
-                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-caption text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endif %}
               {% if right_meta is not empty %}
-                <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 text-caption text-text-faint">
+                <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 text-meta text-text-faint">
                   {% for key in right_meta %}
-                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-caption text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endif %}

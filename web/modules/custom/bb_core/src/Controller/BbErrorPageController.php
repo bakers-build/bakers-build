@@ -49,7 +49,7 @@ final class BbErrorPageController extends ControllerBase {
         'header' => [
           '#type' => 'component',
           '#component' => 'bb_theme:text',
-          '#props' => ['text' => (string) $title, 'as' => 'h1', 'size' => 'display', 'align' => 'center'],
+          '#props' => ['text' => (string) $title, 'as' => 'h1', 'size' => 'page-title', 'align' => 'center'],
         ],
         'main' => [
           'state' => [

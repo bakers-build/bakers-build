@@ -1706,7 +1706,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
    *   The monospaced values.
    */
   private function monoValuesIn(string $html): array {
-    preg_match_all('#<span class="font-mono text-mono text-text-light">([^<]*)</span>#', $html, $matches);
+    preg_match_all('#<span class="font-mono text-data text-text-light">([^<]*)</span>#', $html, $matches);
     return $matches[1];
   }
 
