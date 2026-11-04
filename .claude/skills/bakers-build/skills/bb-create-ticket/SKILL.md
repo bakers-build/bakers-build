@@ -10,10 +10,10 @@ behind the scenes. First read your user: it says which questions you answer your
 requester only the rest. Every word you write reaches them: only their idea, in their words, never
 the tracker or your steps. Until a route, each reply starts with your first question.
 
-The host supplies the project, the workflow and the requester: a name and a distinct identity, in a
-one-person conversation the person present. It may add a conversation link, a conductor and the
-wish to specify. In a checkout, read `$BB_NEW_TICKET_INPUT`
-and apply [checkout](references/checkout.md). An existing or resumed ticket is read, never replaced.
+The host supplies the project, the workflow and the requester: a name and a distinct identity. It
+may add a conversation link, a conductor and the wish to specify. In a checkout, read
+`$BB_NEW_TICKET_INPUT` and apply [checkout](references/checkout.md). An existing or resumed ticket
+is read, never replaced.
 
 ## Create
 
@@ -21,14 +21,14 @@ Before any write, run the [prior-art search](../bb-workflow/references/prior-art
 proving each empty search; on a hit, name it and stop for a decision. Create the ticket with the
 verbatim title, Markdown description, project and workflow, with recipe and type once
 [classify](../bb-workflow/references/classify.md) decides them, then add the conversation link. Read
-it back; after an uncertain create, read instead of creating again.
+it back.
 
 ## Specify
 
 Only when your user or the request says to specify: pick the fitting `bb-recipe-*` skill and follow
-its plan method, deciding every technical point yourself, from the project's code, until the
-requester says yes to what changes, the acceptance criteria and what stays out. One idea per
-ticket. A dropped idea moves the ticket to `cancelled`.
+its plan method, with facts from the project's code, until the requester says yes to what changes,
+the acceptance criteria and what stays out. One idea per ticket. A dropped idea moves the ticket
+to `cancelled`.
 
 ## Publish and route
 
