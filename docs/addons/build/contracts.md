@@ -21,8 +21,7 @@ A preset declares contributions through named accumulator functions of the form 
 | conductor | `remotes`, `executors`, `workspaces` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
 | conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/configuration/provisioning/hooks#add-a-listener-from-an-addon) |
 | conductor | `agents` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AgentCandidate` |
-| conductor | `inbox` (a value, not an accumulator) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions) |
-| conductor | `tools` (a value, not an accumulator) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AddonTools`: tool definitions and lazy `ToolHandler`s, contract 1, see [Agent tools](#agent-tools) |
+| conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions); `AddonTools`: [agent tools](/addons/build/tools) |
 | connection | `connectionPlugins` | `addons` of a connection config | A dropsh plugin: authentication, renderers, schema, request hooks |
 | connection | `uiEntries` | `addons` of the machine, connection or conductor config | A module specifier, a string |
 
@@ -35,40 +34,12 @@ What ships today:
 | Surface | Addons |
 |---|---|
 | command | `conductor` and `ui` (inside their own packages), `addon-dropsh`, `addon-deployment`, `addon-agents`, `addon-info`, `addon-ports`, `addon-track` |
-| conductor | `addon-remote-drupal` (remote), `addon-herdr` (executor and workspace), `addon-workspace-git` (workspace), the agents `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi`, the inbox and tools of `addon-ports`, and the tools of `addon-ddev` |
+| conductor | `addon-remote-drupal` (remote), `addon-herdr` (executor and workspace), `addon-workspace-git` (workspace), the agents `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi`, and the inbox of `addon-ports` |
 | connection | `addon-auth-basic`, `addon-essentials`, `addon-bakers-ui` (the terminal renderer), `addon-workspace`, and the cockpit tab `addon-bakers-ui-artifacts` |
 
 `addon-fake` is a workspace-only test fixture that contributes a remote, an executor, a workspace and an inbox. `addon-essentials` is a meta-addon that brings the Markdown renderer, the JSON:API schema plugin and the name resolver `addon-name-refs`, which has no preset of its own.
 
 Two packages have similar names. `@bakers-build/ui` is the `bakers ui` command, an application. `@bakers-build/addon-bakers-ui` is the renderer it loads, a connection addon.
-
-## Agent tools
-
-An addon gives agents tools by exporting `tools` from its preset. The conductor collects every addon's tools and serves them through its own MCP server, `bakers-conductor`, on `127.0.0.1`. Every claude and codex run gets that server in its MCP config at launch, with a bearer token in `BB_CONDUCTOR_TOKEN`; the token binds each call to the run's worktree and ticket.
-
-```ts
-import type { Preset } from '@bakers-build/conductor/contract';
-
-export const tools: Preset['tools'] = {
-  contract: 1,
-  tools: {
-    hello_where: {
-      description: 'The worktree this run works in.',
-      // Optional; a flat input like an inbox message's. Unknown keys are refused.
-      input: { type: 'object', properties: { note: { type: 'string' } } },
-    },
-  },
-  handlers: async (options) => ({
-    hello_where: async (req) => ({ text: req.worktreePath }),
-  }),
-};
-```
-
-- A handler gets `{ worktreePath, ticket, args, signal, logger, callTool }` and returns `{ text }`; a thrown error reaches the agent as a tool error.
-- The worktree always comes from the caller's binding, never from an argument. Do not declare a worktree, path or URL input that widens what a tool can reach.
-- `callTool(name, args)` calls another addon's tool on the same worktree. Inbox handlers get `callTool` too.
-- A tool name declared by two addons stops the conductor at start. `handlers` gets the entry's `with`.
-- Only `bakers oven start` (the serve process) runs the server, and only when some addon declares tools. It writes `<BB_HOME>/conductors/<conductor_id>.json` (mode 0600) with the URL and an operator token; a CLI command, such as `bakers ports up`, uses it to call a tool for a worktree under the conductor's checkout.
 
 ## Addon entry fields
 

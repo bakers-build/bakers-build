@@ -56,7 +56,7 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 | `deny_read` | `['~/.ssh', '~/.bakers']` | `sandbox.filesystem.denyRead` and the rules `Read(<path>)`, `Read(<path>/**)`; an absolute path becomes `//<path>` |
 | `allow_write` | `[]` | `sandbox.filesystem.allowWrite`; the worktree and `$TMPDIR` are always writable |
 | `network` | `['*']` | `sandbox.network.allowedDomains`; `['*']` allows every host |
-| `mcp_servers` | `{}` | `--mcp-config`, in Claude's `mcpServers` shape; the conductor adds `bakers-conductor` (its [agent tools](/addons/build/contracts#agent-tools)) at launch in every mode, except in a measured run |
+| `mcp_servers` | `{}` | `--mcp-config`, in Claude's `mcpServers` shape; plus [`bakers-conductor`](/addons/build/tools) |
 
 ```js
 { use: '@bakers-build/addon-claude', with: { sandbox: { trusted_commands: ['bakers', 'git', 'ddev', 'docker'] } } }

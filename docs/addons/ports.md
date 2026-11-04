@@ -47,21 +47,8 @@ bakers ports down [service-key]
 bakers ports reap                         # machine-wide reconciliation
 ```
 
-`list` shows a claimed service; `up` returns a public URL that serves it.
-
-`up`, `down`, `status` and `reap` need the running conductor of this checkout (`bakers oven start`): it is the only writer of the tunnel routes, and the commands call its tools. Without one they stop with `no running conductor …` and change nothing. `list` works without it.
+`list` shows a claimed service; `up` returns a public URL. Others need the [conductor](/addons/build/tools).
 :::
-
-## Agent tools
-
-Listed in a conductor's `addons`, Ports gives every claude and codex run these tools, on the run's own worktree:
-
-| Tool | Does |
-|---|---|
-| `ports_up(service?)` | Shares a service the worktree claims and returns its URL; every eligible one without `service`. Any other key, URL or IP is refused with the claimed keys. |
-| `ports_down(service?)` | Takes a tunnel down; every tunnel of the worktree without `service`. |
-| `ports_status()` | The worktree's tunnels as JSON rows: `service`, `status`, `local`, `url`. |
-| `ports_reap()` | Drops routes whose worktree or service is gone. |
 
 ## Good to know
 
