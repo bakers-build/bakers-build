@@ -46,6 +46,12 @@
   "simulation": {
     "files": {
       "/fixture/description.md": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n"
+    },
+    "user": {
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "name": "Dana Developer",
+      "position": "Developer",
+      "background": "Develops this project; ask technical questions too."
     }
   },
   "rubric": [

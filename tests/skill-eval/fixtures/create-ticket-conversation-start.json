@@ -1,0 +1,55 @@
+{
+  "id": "create-ticket-conversation-start",
+  "synthetic": true,
+  "profile": "create-ticket-handover",
+  "execution": "simulated-tools",
+  "skill": "bb-create-ticket",
+  "references": [
+    "bb-workflow/references/tools.md",
+    "bb-workflow/references/tools-lookup.md",
+    "bb-workflow/references/prior-art-search.md",
+    "bb-workflow/references/classify.md"
+  ],
+  "input": {
+    "task": "You are the host agent of a conversation about a bakers.build request. The requester's first message is below; nothing else has happened yet. Run the skill with the actual fixture tools, then give your one reply to the conversation.",
+    "host": {
+      "project": "55555555-5555-4555-8555-555555555555",
+      "workflow": "bb_work",
+      "conductor": "44444444-4444-4444-8444-444444444444",
+      "requester": "Mara Lind (U-MARA)",
+      "conversation_link": "https://chat.example.invalid/c/eval-31"
+    },
+    "code_facts": "app/Invoice/ExportController.php serves only a JSON export; app/Invoice/InvoiceFilter.php holds the page filter.",
+    "conversation": [
+      {
+        "from": "Mara Lind (U-MARA)",
+        "text": "Operators need to export the invoice list as CSV for accounting."
+      }
+    ]
+  },
+  "simulation": {
+    "files": {},
+    "user": {
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "name": "PM bot",
+      "position": "Project manager",
+      "background": "An experienced project manager with deep Drupal experience. Specify every idea with the requester. Answer every technical question yourself; ask the customer only about content, in plain words."
+    }
+  },
+  "expect": {
+    "start": true
+  },
+  "rubric": [
+    {
+      "id": "content-questions",
+      "criterion": "Asks the requester only about the content of the idea (for example who uses it, what the file holds, what stays out), and no technical or implementation question."
+    },
+    {
+      "id": "plain-words",
+      "criterion": "The reply uses plain words; apart from the ticket identifier it names no tracker state, label, recipe, conductor, comment type or file path, and reports no tracker action such as publishing, creating or moving."
+    }
+  ],
+  "recipes": [
+    "bb-recipe-pair"
+  ]
+}

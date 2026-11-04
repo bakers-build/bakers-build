@@ -1,0 +1,86 @@
+{
+  "id": "create-ticket-bug",
+  "synthetic": true,
+  "profile": "create-ticket-handover",
+  "execution": "simulated-tools",
+  "skill": "bb-create-ticket",
+  "references": [
+    "bb-workflow/references/tools.md",
+    "bb-workflow/references/tools-lookup.md",
+    "bb-workflow/references/prior-art-search.md",
+    "bb-workflow/references/classify.md"
+  ],
+  "input": {
+    "task": "You are the host agent of a conversation about a bakers.build request. Prior art, creation and specifying are done: you read your user, prior art was negative, ticket EVAL-32 was created in this conversation with the conversation link, you picked the recipe bb-recipe-probe, and its plan method ended with the summary below, shown to the requester. Continue the skill from the approval with the actual fixture tools, then give your one reply to the conversation.",
+    "host": {
+      "project": "55555555-5555-4555-8555-555555555555",
+      "workflow": "bb_work",
+      "conductor": "44444444-4444-4444-8444-444444444444",
+      "requester": "Mara Lind (U-MARA)",
+      "conversation_link": "https://chat.example.invalid/c/eval-32"
+    },
+    "user": {
+      "name": "PM bot",
+      "position": "Project manager",
+      "background": "An experienced project manager with deep Drupal experience. Specify every idea with the requester. Answer every technical question yourself; ask the customer only about content, in plain words."
+    },
+    "prior_art": "bakers_ticket_search for \"empty export\" and \"invoice export\": 0 rows each; probe \"ticket\": 3 rows.",
+    "code_facts": "app/Invoice/ExportController.php builds the rows from InvoiceFilter::current(), which returns no rows since the filter change on Monday.",
+    "conversation": [
+      {
+        "from": "Mara Lind (U-MARA)",
+        "text": "Since Monday the CSV export of the invoice list downloads an empty file."
+      },
+      {
+        "from": "host agent",
+        "text": "Summary for EVAL-32, The invoice export file is empty.\n\nWhat goes wrong: since Monday, Export CSV on the invoice page downloads a file with the header row only, although the page lists invoices.\n\nWhen it is fixed:\n- AC1: As an operator, I want Export CSV to hold every invoice the page lists, so that accounting gets the full list.\n\nOut of scope: new columns, other export formats.\n\nMara, do you approve this summary?"
+      },
+      {
+        "from": "Mara Lind (U-MARA)",
+        "text": "Yes, that is it."
+      }
+    ]
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111112",
+      "identifier": "EVAL-32",
+      "title": "The invoice export file is empty",
+      "state": "qualification",
+      "workflow": "bb_work",
+      "labels": [],
+      "links": [
+        {
+          "uri": "https://chat.example.invalid/c/eval-32",
+          "title": "Conversation"
+        }
+      ],
+      "description": "## Request\n\n> Since Monday the CSV export of the invoice list downloads an empty file.\n\nRequested by Mara Lind (U-MARA).\n"
+    },
+    "files": {},
+    "user": {
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "name": "PM bot",
+      "position": "Project manager",
+      "background": "An experienced project manager with deep Drupal experience. Specify every idea with the requester. Answer every technical question yourself; ask the customer only about content, in plain words."
+    }
+  },
+  "expect": {
+    "bug": true,
+    "recipe": "probe"
+  },
+  "rubric": [
+    {
+      "id": "bug-reply",
+      "criterion": "Tells the requester in about one line that EVAL-32 is recorded and that the cause is looked into next; claims nothing the tool trace does not show."
+    },
+    {
+      "id": "plain-words",
+      "criterion": "The reply uses plain words; apart from the ticket identifier it names no tracker state, label, recipe, conductor, comment type or file path, and reports no tracker action such as publishing, creating or moving."
+    }
+  ],
+  "recipes": [
+    "bb-recipe-pair",
+    "bb-recipe-probe"
+  ]
+}

@@ -61,6 +61,12 @@
         }
       ],
       "workflow": "bb_work"
+    },
+    "user": {
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "name": "Dana Developer",
+      "position": "Developer",
+      "background": "Develops this project; ask technical questions too."
     }
   },
   "rubric": [
