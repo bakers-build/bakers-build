@@ -40,8 +40,9 @@ it('shortName falls back to "New ticket" with no workflow at all', () => {
   expect(shortName(payload({ workflow: null }))).toBe('New ticket');
 });
 
-it('create launch points at bb-create-ticket and carries no BB_ID', () => {
+it('create launch points at WORKFLOW.md and bb-create-ticket and carries no BB_ID', () => {
   const req = buildCreateLaunch({ project: 'bakers', cwd: '/repo' });
+  expect(req.prompt).toMatch(/WORKFLOW\.md/);
   expect(req.prompt).toMatch(/bb-create-ticket/);
   expect(req.prompt).toMatch(/\$BB_NEW_TICKET_INPUT/);
   expect(req.prompt).toMatch(/Do not start work on the new ticket\./);
@@ -72,7 +73,7 @@ it('createPrompt overrides the built-in default create prompt', () => {
     createPrompt: 'CUSTOM: make a ticket',
   });
   expect(req.prompt).toBe('CUSTOM: make a ticket');
-  expect(req.prompt).not.toMatch(/bb-create-ticket/);
+  expect(req.prompt).not.toMatch(/WORKFLOW\.md/);
 });
 
 it('a blank createPrompt falls back to the default', () => {
@@ -81,7 +82,7 @@ it('a blank createPrompt falls back to the default', () => {
     cwd: '/repo',
     createPrompt: '   ',
   });
-  expect(req.prompt).toMatch(/bb-create-ticket/);
+  expect(req.prompt).toMatch(/WORKFLOW\.md/);
 });
 
 // ---- BB-309 D9 ------------------------------------------------------------
@@ -109,7 +110,7 @@ it('BB-309 D9: the title changes the LABEL and nothing else', () => {
   });
   expect(launch.label).toBe('T');
   // prompt and env are what AC-6 pins; neither knows about the title.
-  expect(launch.prompt).toContain('bb-create-ticket');
+  expect(launch.prompt).toContain('WORKFLOW.md');
   expect(launch.env.BB_ID).toBeUndefined();
   expect(JSON.stringify(launch.env)).not.toContain('"T"');
 });
