@@ -38,8 +38,9 @@ Approval is the requester's yes or an intake's confirmation, never someone else'
 1. **Hand-over**, after the requester's yes on a `feature` or `chore`: the `spec` (the design, the
    AC IDs, last `Approved by <name> (<identity>).`), then the `plan` and the `test` plan with checks
    per AC, both by the plan method without the requester; the `summary`; only then set the
-   type and the recipe's name without `bb-recipe-`; move to `working`; last add the label `pingpong`
-   and the host's conductor, if any.
+   type and the recipe's name without `bb-recipe-`; move to `working`; last set the host's
+   conductor, or else ask the requester which of the project's conductors runs it, whatever your
+   user says.
 2. **A confirmed intake with `spec`, `plan` and `test`:** publish them, the `summary`, then move to
    `working`.
 3. **Otherwise**, a bug included: set type and recipe if still open, publish the `summary`, then
@@ -48,7 +49,7 @@ Approval is the requester's yes or an intake's confirmation, never someone else'
 Each `summary` follows the [outtake](../bb-workflow/references/outtake.md). Route once every comment
 is confirmed; read back. A measurement baseline follows [baseline](references/baseline.md).
 
-Once routed, reply in one line. After specifying: `Work on <identifier> starts.` after a hand-over
-with a conductor, `<identifier> is ready for work.` without one, for a bug `<identifier> is
-recorded.` and that its diagnosis comes next. For an intake: the identifier and the state it moved
+Once routed, reply in one line. After specifying: `Work on <identifier> starts.` once the
+conductor is set, else the conductor question, for a bug `<identifier> is recorded.` and that its
+diagnosis comes next. For an intake: the identifier and the state it moved
 to.

@@ -3,23 +3,15 @@ import { nonempty, requireValue } from '../validation.mjs';
 import { priorArtSearched } from './create-ticket-calls.mjs';
 const NINE = ['bakers_user_read', 'bakers_ticket_create', 'bakers_ticket_read', 'bakers_ticket_search', 'bakers_comment_publish',
   'bakers_ticket_transition', 'bakers_ticket_update', 'bakers_ticket_classify', 'bakers_conductor_list'].map(tool);
-const STEP = /^(comment:[a-z_]+|transition:[a-z_]+|update:conductor|classify)$/;
 export function validate(f) {
   validateTools(f, 'bb-create-ticket');
   const e = f.expect;
   requireValue(Array.isArray(f.input.conversation) && (e?.start === true || nonempty(f.simulation.ticket?.identifier)),
     'Expected a conversation and, after its start, a simulated ticket');
-  requireValue(e?.start === true || (Array.isArray(e?.writes) && e.writes.every(w => STEP.test(w))), 'Expected expect.start or expect.writes steps');
-  requireValue(!e.writes?.includes('update:conductor') || (uuid(e.conductor) && e.conductor === f.input.host?.conductor),
-    'Setting a conductor expects the host conductor');
-  requireValue(!e.writes?.includes('comment:spec') || nonempty(e.requester), 'A spec names the requester who approved it');
-}
-// A write as its step: the comment type, the target state, a conductor, or classify.
-function step(c) {
-  if (c.name === tool('bakers_comment_publish')) return `comment:${arg(c, 'type')}`;
-  if (c.name === tool('bakers_ticket_transition')) return arg(c, 'state') ? `transition:${arg(c, 'state')}` : 'link';
-  if (c.name === tool('bakers_ticket_update')) return arg(c, 'conductor') ? 'update:conductor' : 'update';
-  return c.name === tool('bakers_ticket_classify') ? 'classify' : c.name;
+  requireValue(e?.start === true || e?.bug === true || typeof e?.hand_over === 'boolean', 'Expected expect.start, expect.bug or expect.hand_over');
+  requireValue(!e.hand_over || (nonempty(e.requester) && nonempty(e.recipe) && e.conductor === f.input.host?.conductor &&
+    (e.conductor === undefined || uuid(e.conductor))), 'A hand-over names the requester, the picked recipe and the host conductor, if any');
+  requireValue(!e.bug || nonempty(e.recipe), 'A bug names the picked recipe');
 }
 function analyze(f, context) {
   const trace = calls(context, f.simulation.files), e = f.expect;
@@ -27,41 +19,65 @@ function analyze(f, context) {
   const sent = writes(trace).filter(c => c.result?.exit_code !== 4);
   const created = payload(toolCalls(trace, 'bakers_ticket_create')[0]);
   const ticket = f.simulation.ticket ?? { id: created?.id, identifier: created?.identifier };
-  const body = type => String(arg(sent.find(c => step(c) === `comment:${type}`), 'body') ?? '');
+  const is = (c, id) => c?.name === tool(id) && names(c, ticket);
+  const published = (c, type) => is(c, 'bakers_comment_publish') && arg(c, 'type') === type;
+  const body = c => String(arg(c, 'body') ?? '');
+  const acts = e.start || e.bug || e.hand_over;
   const common = [
     // Without the requester's approval no call is needed at all.
-    ...commonChecks(trace, () => false, recovered).filter(c => e.start || e.writes.length || c.id !== 'actual-tool-calls'),
+    ...commonChecks(trace, () => false, recovered).filter(c => acts || c.id !== 'actual-tool-calls'),
     check('nine-tools', trace.filter(c => c.mode === 'call').every(c => NINE.includes(c.name)), 'Call only the nine bakers tools the skill\'s operations map to'),
     check('no-pingpong', !sent.some(c => [arg(c, 'labels_add')].flat().includes('pingpong')), 'The host adds pingpong, never the skill'),
   ];
   if (e.start) {
     const searches = toolCalls(trace, 'bakers_ticket_search'), creates = toolCalls(trace, 'bakers_ticket_create');
+    const linked = c => is(c, 'bakers_ticket_transition') && !arg(c, 'state') &&
+      (arg(c, 'links') ?? []).some(l => l?.uri === f.input.host.conversation_link);
     return { diagnostics, checks: [...common,
       check('user-first', toolCalls(trace, 'bakers_user_read').some(c => succeeded(c) && c.index < (sent[0]?.index ?? Infinity)),
         'Read your user before any write'),
-      check('prior-art-search', priorArtSearched(searches) && creates[0] && searches.some(c => c.index < creates[0].index),
+      check('prior-art-search', priorArtSearched(searches) && searches.every(c => c.index < (creates[0]?.index ?? -1)),
         'Search at least two spellings, proving an empty search with the probe, before creating'),
       check('start-create', creates.length === 1 && arg(creates[0], 'project') === f.input.host.project &&
-        arg(creates[0], 'workflow') === f.input.host.workflow && sent.some(c => step(c) === 'link' && names(c, ticket) &&
-          (arg(c, 'links') ?? []).some(l => l?.uri === f.input.host.conversation_link)),
+        arg(creates[0], 'workflow') === f.input.host.workflow && sent.some(linked),
       'Create one ticket in the host\'s project and workflow and add the conversation link'),
-      check('nothing-routed', !sent.some(c => step(c).startsWith('transition:') || step(c).startsWith('update')),
-        'Before the requester\'s approval, no state change and no conductor'),
+      check('nothing-yet', sent.every(c => c === creates[0] || linked(c) || is(c, 'bakers_ticket_classify')),
+        'Before the requester\'s approval, no comment, state, label or conductor'),
     ] };
   }
-  const update = sent.find(c => step(c) === 'update:conductor');
-  return { diagnostics, checks: [...common,
-    check('writes', sent.every(c => names(c, ticket)) && sent.map(step).join() === e.writes.join(),
-      `Write exactly, in order: ${e.writes.join(', ') || 'nothing'}`),
-    ...(update ? [check('conductor', arg(update, 'conductor') === e.conductor, 'Set the host\'s conductor')] : []),
-    ...(e.writes.includes('comment:spec') ? [
-      check('spec-content', /\bAC1\b/.test(body('spec')) && body('spec').includes(`Approved by ${e.requester}`),
-        'The spec carries the AC IDs and closes with the requester\'s approval'),
-      check('plan-content', body('plan').trim() !== '' && /\bAC1\b/.test(body('test')), 'The plan is written and the test plan names the AC IDs'),
-    ] : []),
-    ...(e.asks_conductor ? [check('conductor-asked', toolCalls(trace, 'bakers_conductor_list').some(succeeded),
-      'Without a host conductor, read the project\'s conductors to ask for one')] : []),
-  ] };
+  if (e.bug) {
+    const comments = sent.filter(c => is(c, 'bakers_comment_publish'));
+    const classify = sent.find(c => is(c, 'bakers_ticket_classify')), last = sent.at(-1);
+    return { diagnostics, checks: [...common,
+      check('bug-order', sent.length === 4 && comments.map(c => arg(c, 'type')).join() === 'qualification,summary' &&
+        classify && is(last, 'bakers_ticket_transition') && arg(last, 'state') === 'plan',
+      'Publish qualification and summary and set type and recipe, then move to plan; nothing else, so no pingpong'),
+      check('bug-arguments', arg(classify, 'type') === 'bug' && arg(classify, 'recipe') === e.recipe && /reproduction/i.test(body(comments[0])),
+        'Type bug with the picked recipe, and the reproduction in the qualification'),
+    ] };
+  }
+  const [qualification, spec, plan, test, summary, classify, transition, update] = sent;
+  // With a host conductor the update sets it last; without one the skill asks for one instead.
+  const asked = e.conductor === undefined;
+  return { diagnostics, checks: [...common, ...(e.hand_over ? [
+    check('handover-order', sent.length === (asked ? 7 : 8) && published(qualification, 'qualification') && published(spec, 'spec') &&
+      published(plan, 'plan') && published(test, 'test') && published(summary, 'summary') && is(classify, 'bakers_ticket_classify') &&
+      is(transition, 'bakers_ticket_transition') && (asked || is(update, 'bakers_ticket_update')),
+    'Publish qualification, spec, plan, test and summary, then classify and transition, and set the host conductor last'),
+    check('handover-arguments', arg(classify, 'recipe') === e.recipe && ['feature', 'chore'].includes(arg(classify, 'type')) &&
+      arg(transition, 'state') === 'working' && (asked ? toolCalls(trace, 'bakers_conductor_list').some(succeeded)
+        : arg(update, 'conductor') === e.conductor),
+    'The picked recipe and feature or chore, state working, then the host conductor, or the project\'s conductors read to ask for one'),
+    check('handoff-fields', /\bAC1\b/.test(body(qualification)) && /out of scope/i.test(body(qualification)) &&
+      /handoff_version/.test(body(qualification)) && !/\b[a-f0-9]{64}\b/.test(body(qualification)),
+    'The qualification carries AC IDs, out of scope and handoff_version, without a hash'),
+    check('spec-content', /\bAC1\b/.test(body(spec)) && body(spec).includes(`Approved by ${e.requester}`),
+      'The spec carries the AC IDs and closes with the requester\'s approval'),
+    check('plan-content', body(plan).trim() !== '' && /\bAC1\b/.test(body(test)),
+      'The plan is written and the test plan names the AC IDs'),
+  ] : [
+    check('nothing-handed-over', sent.length === 0, 'Another person\'s approval changes nothing on the ticket'),
+  ])] };
 }
 export const checkOutput = (f, _output, context) => analyze(f, context).checks;
 export const diagnose = (f, _output, context) => analyze(f, context).diagnostics;

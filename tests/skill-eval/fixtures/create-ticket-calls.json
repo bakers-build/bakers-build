@@ -8,20 +8,12 @@
     "bb-workflow/references/tools.md",
     "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-workflow/references/prior-art-build.md",
-    "bb-workflow/references/qualification.md",
-    "bb-workflow/references/plan.md",
     "bb-workflow/references/classify.md",
-    "bb-workflow/references/acceptance.md",
-    "bb-workflow/references/results.md",
-    "bb-workflow/references/agent-choice.md",
-    "bb-workflow/references/origin-status.md",
-    "bb-workflow/references/publish-comment.md",
-    "bb-workflow/references/transition-ticket.md",
     "bb-workflow/references/outtake.md",
-    "bb-workflow/references/ensure-qualification.md",
-    "bb-workflow/references/boundaries.md",
-    "bb-create-ticket/references/baseline.md"
+    "bb-create-ticket/references/handoff.md",
+    "bb-create-ticket/references/checkout.md",
+    "bb-workflow/references/agent-choice.md",
+    "bb-workflow/references/origin-status.md"
   ],
   "input": {
     "task": "Create the new confirmed feature intake using actual fixture tools, perform the required prior-art search, publish qualification and summary, and route it once. No confirmed design, implementation or test plan exists. Stop after initial routing.",
@@ -45,13 +37,9 @@
       "bb-recipe-matt is the only installed recipe and declares itself project default; it covers feature, bug and chore. The type and recipe terms feature and matt already exist. Existing agent defaults are confirmed; no agent override is requested.",
       "Qualification acceptance quality gate passed AC-1 without rewrites; implementation has not been tested.",
       "No web surface; test_as is no login needed, scenario_required false, reproduction not_required, out_of_scope no code or runtime changes.",
-      "The supplied Markdown description file is the confirmed exact description. There is no origin platform, so origin status is not_required.",
-      "Repository Git operations are fixture-only literal commands. For the remote base check use base branch main, the terms invoice and invoices, the path docs and the repository probe Guide; the ticket is created today, 2026-11-04.",
-      "The intake chose no conductor."
+      "The supplied Markdown description file is the confirmed exact description. There is no origin platform, so origin status is not_required."
     ],
-    "handoff_version": 1,
-    "base_branch": "main",
-    "created": "2026-11-04"
+    "handoff_version": 1
   },
   "simulation": {
     "files": {
@@ -62,81 +50,6 @@
       "name": "Dana Developer",
       "position": "Developer",
       "background": "Develops this project; ask technical questions too."
-    },
-    "commands": {
-      "git": [
-        {
-          "argv": [
-            "git",
-            "fetch",
-            "origin",
-            "--quiet"
-          ],
-          "result": {
-            "exit_code": 0,
-            "stdout": "",
-            "stderr": ""
-          }
-        },
-        {
-          "argv": [
-            "git",
-            "rev-parse",
-            "origin/main"
-          ],
-          "result": {
-            "exit_code": 0,
-            "stdout": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
-            "stderr": ""
-          }
-        },
-        {
-          "argv": [
-            "git",
-            "log",
-            "--oneline",
-            "origin/main",
-            "--since=2026-11-04"
-          ],
-          "result": {
-            "exit_code": 0,
-            "stdout": "",
-            "stderr": ""
-          }
-        },
-        {
-          "argv": [
-            "git",
-            "grep",
-            "-nEi",
-            "invoice|invoices",
-            "origin/main",
-            "--",
-            "docs"
-          ],
-          "result": {
-            "exit_code": 1,
-            "stdout": "",
-            "stderr": ""
-          }
-        },
-        {
-          "argv": [
-            "git",
-            "grep",
-            "-c",
-            "Guide",
-            "origin/main",
-            "--",
-            "docs"
-          ],
-          "result": {
-            "exit_code": 0,
-            "stdout": "origin/main:docs/README.md:1\n",
-            "stderr": ""
-          }
-        }
-      ]
     }
   },
   "rubric": [

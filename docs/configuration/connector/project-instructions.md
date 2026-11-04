@@ -17,8 +17,8 @@ re-derive this file; do not hand-edit it out of sync with them.
 
 - Agent routing (`bb-workflow` › `references/agent-choice.md`) — needs `bakers agents`, a local CLI command;
   no MCP tool exposes it. The connector never proposes or writes an `agent:*` label.
-- The `working` paths in `bb-create-ticket` (specifying with the requester and handing over as
-  `pingpong`, and a confirmed intake with `spec`, `plan` and `test`) — out of scope; this bundle
+- The `working` paths in `bb-create-ticket` (specifying with the requester and handing over to
+  `working`, and a confirmed intake with `spec`, `plan` and `test`) — out of scope; this bundle
   never transitions past `plan`.
 - The checkout steps (`bb-create-ticket/references/checkout.md`: parent from the branch, conductor,
   origin status) — they need a local checkout.
