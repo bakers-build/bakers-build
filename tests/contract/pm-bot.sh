@@ -12,7 +12,7 @@
 #   - one shared session per thread, not per user
 #   - bakers.build is reached only through its own MCP endpoint: the remote
 #     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
-#     Hermes fills from the env file, exactly six bakers tools, no OAuth
+#     Hermes fills from the env file, exactly eight bakers tools, no OAuth
 #   - the clone reader is a pinned filesystem server with read tools only
 #   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token, and the
 #     skill carries the relay's operations as bakers tool calls
@@ -101,10 +101,11 @@ need(bakers.get("url") == "${BAKERS_URL}/mcp", "bakers is not ${BAKERS_URL}/mcp"
 need("command" not in bakers, "bakers is started as a local process")
 need(bakers.get("headers") == {"Authorization": "Bearer ${env:BAKERS_API_KEY}"},
      "bakers does not send exactly Authorization: Bearer ${env:BAKERS_API_KEY}")
-six = ["tool_api__bakers_comment_publish", "tool_api__bakers_ticket_create", "tool_api__bakers_ticket_read",
-       "tool_api__bakers_ticket_search", "tool_api__bakers_ticket_transition", "tool_api__bakers_ticket_update"]
-need(sorted((bakers.get("tools") or {}).get("include") or []) == six,
-     "bakers does not include exactly the six tools: ticket create, read, search, update, transition and comment publish")
+eight = ["tool_api__bakers_comment_publish", "tool_api__bakers_ticket_classify", "tool_api__bakers_ticket_create",
+         "tool_api__bakers_ticket_read", "tool_api__bakers_ticket_search", "tool_api__bakers_ticket_transition",
+         "tool_api__bakers_ticket_update", "tool_api__bakers_user_read"]
+need(sorted((bakers.get("tools") or {}).get("include") or []) == eight,
+     "bakers does not include exactly the eight tools")
 
 # Hermes adds resource and prompt utility calls to every MCP server unless they are switched off.
 for name, server in (("clone-reader", reader), ("bakers", bakers)):

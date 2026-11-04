@@ -13,7 +13,7 @@
 #     ${env:BAKERS_API_KEY} Hermes fills, and without the key itself; Hermes
 #     connects to bakers.build's /mcp (a stub of it, pm-bot-mcp-stub.mjs, in a
 #     container of the same image) with the key as bearer and takes exactly the
-#     six included tools; with a wrong key the check fails; the skill's project
+#     eight included tools; with a wrong key the check fails; the skill's project
 #     reference is rendered
 #   - SOUL.md and the project-manager skill in the data directory are the
 #     image's (a hand edit to SOUL.md is restored); a learned skill and a
@@ -91,9 +91,9 @@ grep -qF "url: $BAKERS_URL/mcp" <<<"$config" || fail "config.yaml does not reach
 pass "config.yaml rendered, no placeholder left but the key Hermes fills, no key in it"
 
 grep -q 'Connected' <<<"$out" || { echo "$out" >&2; fail "Hermes does not connect to /mcp with the API key"; }
-grep -qx 'bakers tools: tool_api__bakers_comment_publish,tool_api__bakers_ticket_create,tool_api__bakers_ticket_read,tool_api__bakers_ticket_search,tool_api__bakers_ticket_transition,tool_api__bakers_ticket_update' <<<"$out" \
-  || { echo "$out" >&2; fail "Hermes does not register exactly the six included tools of the seven offered"; }
-pass "Hermes connects to /mcp with the API key as bearer and takes exactly the six tools"
+grep -qx 'bakers tools: tool_api__bakers_comment_publish,tool_api__bakers_ticket_classify,tool_api__bakers_ticket_create,tool_api__bakers_ticket_read,tool_api__bakers_ticket_search,tool_api__bakers_ticket_transition,tool_api__bakers_ticket_update,tool_api__bakers_user_read' <<<"$out" \
+  || { echo "$out" >&2; fail "Hermes does not register exactly the eight included tools of the nine offered"; }
+pass "Hermes connects to /mcp with the API key as bearer and takes exactly the eight tools"
 
 in_data "sed -i 's/^BAKERS_API_KEY=.*/BAKERS_API_KEY=wrong-key/' /d/.env"
 out="$(start --rm -e BAKERS_API_KEY=wrong-key "$IMAGE" check 2>&1)" && { echo "$out" >&2; fail "check passed with a wrong API key"; }

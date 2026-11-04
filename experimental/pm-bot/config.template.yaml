@@ -90,8 +90,7 @@ mcp_servers:
   # bakers.build: its own MCP endpoint, the bot's only way in. The service account's API
   # key is the bearer; Hermes fills ${env:BAKERS_API_KEY} from $HERMES_HOME/.env, and the
   # entrypoint's render leaves that form alone, so the key never lands in this file.
-  # Exactly the six tools the project-manager skill calls; never bakers_ticket_classify:
-  # the bot sets no type or recipe.
+  # Exactly the eight tools bb-create-ticket, the status reads and the answer path call.
   bakers:
     url: ${BAKERS_URL}/mcp
     headers:
@@ -106,3 +105,5 @@ mcp_servers:
         - tool_api__bakers_ticket_update
         - tool_api__bakers_ticket_transition
         - tool_api__bakers_comment_publish
+        - tool_api__bakers_ticket_classify
+        - tool_api__bakers_user_read
