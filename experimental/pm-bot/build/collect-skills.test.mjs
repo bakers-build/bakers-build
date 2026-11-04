@@ -1,7 +1,7 @@
 // The build-time closure of the bakers.build bundle skills the PM bot ships (collect-skills.mjs).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { collectSkills } from './collect-skills.mjs';
@@ -19,7 +19,7 @@ function bundle(files) {
   return { root, out: join(dir, 'out') };
 }
 
-test('copies the named skills and their transitive link closure', () => {
+test('copies the named skills and their transitive link closure into each skill folder', () => {
   const { root, out } = bundle({
     'skills/a/SKILL.md': 'See [x](../shared/x.md#h).',
     'skills/shared/x.md': 'Then [y](y.md).',
@@ -31,11 +31,44 @@ test('copies the named skills and their transitive link closure', () => {
   assert.deepEqual([...files].sort(), [
     '.claude-plugin/plugin.json',
     'a/SKILL.md',
-    'shared/x.md',
-    'shared/y.md',
+    'a/bundle/shared/x.md',
+    'a/bundle/shared/y.md',
   ]);
-  assert.ok(existsSync(join(out, 'shared/y.md')));
+  assert.ok(existsSync(join(out, 'a/bundle/shared/y.md')));
+  assert.ok(!existsSync(join(out, 'shared')));
   assert.ok(!existsSync(join(out, 'b/SKILL.md')));
+});
+
+// Hermes' skill_view serves only files inside the skill's own folder, so every link a shipped
+// skill holds must resolve there.
+test('rewrites the links so each one resolves inside its skill folder', () => {
+  const { root, out } = bundle({
+    'skills/a/SKILL.md': 'See [x](../shared/x.md#h "t") and [r](references/r.md).',
+    'skills/a/references/r.md': 'Back to [x](../../shared/x.md).',
+    'skills/shared/x.md': 'Then [y](y.md) and [r](../a/references/r.md#top).',
+    'skills/shared/y.md': 'End.',
+  });
+  collectSkills({ root, skills: ['a'], out });
+  const read = (path) => readFileSync(join(out, path), 'utf8');
+  assert.equal(read('a/SKILL.md'), 'See [x](bundle/shared/x.md#h "t") and [r](references/r.md).');
+  assert.equal(read('a/references/r.md'), 'Back to [x](../bundle/shared/x.md).');
+  assert.equal(read('a/bundle/shared/x.md'), 'Then [y](y.md) and [r](../../references/r.md#top).');
+});
+
+test('gives every named skill its own copy of a shared file', () => {
+  const { root, out } = bundle({
+    'skills/a/SKILL.md': '[x](../shared/x.md)',
+    'skills/b/SKILL.md': '[x](../shared/x.md)',
+    'skills/shared/x.md': 'X.',
+  });
+  const { files } = collectSkills({ root, skills: ['a', 'b'], out });
+  assert.deepEqual([...files].sort(), [
+    '.claude-plugin/plugin.json',
+    'a/SKILL.md',
+    'a/bundle/shared/x.md',
+    'b/SKILL.md',
+    'b/bundle/shared/x.md',
+  ]);
 });
 
 test('refuses a link that leaves the bundle', () => {

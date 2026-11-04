@@ -116,7 +116,8 @@ grep -qE '^bakers skills [0-9]+\.[0-9]+\.[0-9]+$' <<<"$out" || { echo "$out" >&2
 in_data '[ ! -e /d/skills/project-manager ]' || fail "the old project-manager skill was not removed"
 pass "the shipped skills are installed, the bundle version printed and project-manager removed"
 
-# Every relative Markdown link of the installed shipped skills resolves; web links and anchors
+# Every relative Markdown link of the installed shipped skills resolves to a file inside the
+# linking skill's own folder, the only files Hermes' skill_view serves; web links and anchors
 # aside. Hermes' own bundled skills in the same directory are not ours to check.
 in_data 'cd /d/skills && node --input-type=module -e "
 import { readFileSync, statSync, readdirSync } from \"node:fs\";
@@ -128,12 +129,13 @@ for (const f of shipped.filter((f) => f.endsWith(\".md\"))) {
   for (const [, l] of readFileSync(f, \"utf8\").matchAll(/\\]\\(\\s*<?([^)\\s>]+)>?/g)) {
     if (/^[a-z][a-z0-9+.-]*:/i.test(l) || l.startsWith(\"#\")) continue;
     const t = join(dirname(f), decodeURI(l.split(\"#\")[0]));
-    try { if (!statSync(t).isFile()) throw 0; } catch { console.error(f + \" -> \" + l); bad++; }
+    const own = f.split(\"/\")[0] + \"/\";
+    try { if (!t.startsWith(own) || !statSync(t).isFile()) throw 0; } catch { console.error(f + \" -> \" + l); bad++; }
   }
 }
 process.exit(bad ? 1 : 0);
-"' || fail "a shipped skill links a missing file"
-pass "every link in the shipped skills resolves"
+"' || fail "a shipped skill links a missing file or one outside its folder"
+pass "every link in the shipped skills resolves inside its skill folder"
 
 in_data 'cd /d/skills && sha256sum -c --quiet' <tests/contract/pm-bot-upstream.sha256 \
   || fail "an upstream skill differs from its pinned commit"
