@@ -4,7 +4,7 @@
 > develop control plane (dev2); bakers's own tickets now live on prod
 > (`https://app.bakers.build`), so `bakers` falls back to each developer's
 > `~/.bakers/bakers.config.js`. The committed `conductor.config.js` carries
-> no identity: bakers derives the conductor id from this machine's `machine_id` UUID (written by
+> no identity: bakers derives the conductor id from this machine's `machine_id` (a UUID for a new machine; an existing id stays; written by
 > `bakers init` to `~/.bakers/machine.config.js`), the project and the variant. The notes below
 > still apply to any project-level `bakers.config.js`.
 

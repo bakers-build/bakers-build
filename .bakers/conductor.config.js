@@ -40,7 +40,7 @@ async function loadLocal() {
 }
 
 // Optional, gitignored; carries local values such as the FRP transport (`frp`),
-// never an identity. The conductor is keyed by machine UUID + project + variant.
+// never an identity. The conductor is keyed by machine id + project + variant.
 const local = await loadLocal();
 
 export default {

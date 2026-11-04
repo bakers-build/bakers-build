@@ -31,7 +31,7 @@ export default {
 };
 ```
 
-The file carries no identity and is identical for everyone. A conductor is identified by machine + project + variant: the machine's `machine_id` from the [machine file](/configuration/machine), `bakers.project`, and the variant, which is the config file's stem (`conductor` for `conductor.config.js`, `review` for `review.conductor.config.js`). bakers derives the conductor id `<machine_id>-<project>-<variant>` from them at runtime; it is never written to a config, and `bakers oven ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card.
+The file carries no identity and is identical for everyone. A conductor is identified by machine + project + variant: the machine's `machine_id` from the [machine file](/configuration/machine), `bakers.project`, and the variant, which is the config file's stem (`conductor` for `conductor.config.js`, `review` for `review.conductor.config.js`). bakers derives the conductor id `<machine_id>-<project>-<variant>` from them at runtime; it is never written to a config, and `bakers oven ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card. When this machine, project and variant already have a conductor under an older id, the first `bakers oven start` offers to take it over ([Conductor commands](/configuration/project/conductor-commands)).
 
 ## Fields
 

@@ -440,7 +440,7 @@ export interface ConductorRowContext {
   /**
    * THIS machine's own `host_key` (BB-450 B10), resolved once by the caller
    * before the read — the same MachineContext value `signalVerifiedProcess`
-   * and the CLI's `hostKeyOf(config)` compare against. Compared against each
+   * and the CLI's `config.host_key` compare against. Compared against each
    * row's own `hostKey` to derive {@link ConductorRow.mine}.
    */
   thisHostKey: string;

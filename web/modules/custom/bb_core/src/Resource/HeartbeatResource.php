@@ -8,10 +8,12 @@ use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Conductor\ConductorRegistrar;
-use Drupal\jsonapi\ResourceResponse;
+use Drupal\bb_core\Conductor\ConductorTakeoverOffer;
 use Drupal\jsonapi_resources\Resource\EntityResourceBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Records a conductor heartbeat, upserting the registration server-side.
@@ -51,14 +53,26 @@ final class HeartbeatResource extends EntityResourceBase implements ContainerInj
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The incoming request carrying the conductor registration attributes.
    *
-   * @return \Drupal\jsonapi\ResourceResponse
-   *   A 200 response with the upserted conductor entity.
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   A 200 response with the upserted conductor entity, or a 409 whose
+   *   `errors[0].meta.candidates` lists the conductors offered for takeover.
    */
-  public function process(Request $request): ResourceResponse {
-    $conductor = $this->registrar->heartbeat(
-      $this->currentUser,
-      $this->requestAttributes($request),
-    );
+  public function process(Request $request): Response {
+    try {
+      $conductor = $this->registrar->heartbeat(
+        $this->currentUser,
+        $this->requestAttributes($request),
+      );
+    }
+    catch (ConductorTakeoverOffer $offer) {
+      $error = [
+        'status' => '409',
+        'title' => 'Conflict',
+        'detail' => $offer->getMessage(),
+        'meta' => ['candidates' => $offer->candidates],
+      ];
+      return new JsonResponse(['errors' => [$error]], 409, ['Content-Type' => 'application/vnd.api+json']);
+    }
     return $this->createJsonapiResponse($this->createIndividualDataFromEntity($conductor), $request, 200);
   }
 

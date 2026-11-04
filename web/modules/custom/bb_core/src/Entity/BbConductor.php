@@ -97,7 +97,8 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
-    // Process registration key (composed ${user_id}-${host}-${project}).
+    // Registration key, derived by the CLI as <machine_id>-<project>-<variant>;
+    // one owner per id.
     // Not `machine_id`, which would collide with the host concept
     // (bb_machine.host_key / MachineContext.machine_id).
     $fields['conductor_id'] = BaseFieldDefinition::create('string')

@@ -34,7 +34,6 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
-import { hostKeyOf } from './host-key.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 
@@ -299,9 +298,9 @@ export class Conductor {
     return id;
   }
 
-  /** This machine's UUID, bb_machine.host_key. */
+  /** This machine's id (machine_id), bb_machine.host_key. */
   private get hostKey(): string {
-    return hostKeyOf(this.config);
+    return this.config.host_key?.trim() ?? '';
   }
 
   /**

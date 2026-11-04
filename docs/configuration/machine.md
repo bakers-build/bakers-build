@@ -29,8 +29,8 @@ export default {
 | Field | Meaning and default |
 |---|---|
 | `schema_version` | Current schema is 1. The `// @bakers-schema-version 1` header and this field must agree. Any other version fails loading; run `bakers init`. |
-| `machine_id` | Required. This host's key on the server, so each machine has its own. `bakers init` generates a UUID for a new machine; an existing machine keeps the id it already has. A UUID in any case loads lowercased. |
-| `label` | Display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers; rename it there afterwards. |
+| `machine_id` | Required. This host's key on the server, so each machine has its own. `bakers init` generates a UUID for a new machine; an existing machine keeps the id it already has. A UUID in any case loads lowercased. Conductor ids are derived from it, so two users cannot share a `machine_id`: the second one's `bakers oven start` is refused; remove `machine_id` and run `bakers init` for a fresh UUID. |
+| `label` | Display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers, and a machine still named after its `machine_id` on its next start; rename it there afterwards. |
 | `max_parallel` | Positive integer, required by `bakers config check`. The conductor runtime falls back to `1` when it is missing or invalid. The budget is shared by every conductor on this host, not granted per project. |
 | `tunnel` | Optional literal boolean, default `false`. See below. |
 | `agents` | Object, described in the next section. An array is invalid. |

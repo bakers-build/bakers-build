@@ -24,7 +24,7 @@ export interface MachineAgentPolicy {
 
 /** Local host identity, display label and shared capacity. */
 export interface MachineContext {
-  /** UUID generated once by `bakers init`, normalised to lowercase. */
+  /** Host key: a UUID from `bakers init` for a new machine (lowercased); an existing id stays. */
   machine_id: string;
   /** Display name for people; never a key. */
   label: string;
@@ -63,7 +63,7 @@ export function resolveMachineContextPath(path?: string): string {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Whether a value is a UUID, in any case. */
-export function isUuid(value: unknown): value is string {
+function isUuid(value: unknown): value is string {
   return typeof value === 'string' && UUID.test(value);
 }
 

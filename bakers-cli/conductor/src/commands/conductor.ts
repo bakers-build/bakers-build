@@ -30,7 +30,6 @@ import { authStatus } from 'dropsh';
 import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
 import { Conductor, registrationOf } from '../core/conductor.js';
-import { hostKeyOf } from '../core/host-key.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
   type ResolvedAgent,
@@ -325,7 +324,7 @@ async function buildLsRows(
   // host_key (to gate it to rows that are this machine's own conductor) —
   // `config` used to be ignored here, which is why `ls`/`status` never probed
   // the local pid at all and relied purely on the record.
-  const thisHostKey = config ? hostKeyOf(config) : undefined;
+  const thisHostKey = config ? (config.host_key?.trim() ?? '') : undefined;
   return hub
     .filter((c) => !onlyId || c.id === onlyId)
     .map((c) => ({
@@ -520,7 +519,7 @@ async function cmdStartForeground(
   if (!(await ensureAuthenticated(config, logger))) return;
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
-  const thisHostKey = hostKeyOf(config);
+  const thisHostKey = config.host_key?.trim() ?? '';
   if (await refuseIfAlreadyRunning(remote, id, thisHostKey, force, deps))
     return;
   // This process is the conductor: its takeover registration carries its pid.
@@ -926,7 +925,7 @@ async function cmdStartBody(
   } catch {}
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
-  const thisHostKey = hostKeyOf(config);
+  const thisHostKey = config.host_key?.trim() ?? '';
 
   // Block on the DERIVED status, not the raw one. A crashed conductor keeps
   // `status: online` on its record until the cron reaper notices the lapsed
@@ -1106,7 +1105,7 @@ async function cmdStop(deps: BbCliDeps, now: boolean): Promise<void> {
   const config = await resolveConfig(deps);
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
-  const thisHostKey = hostKeyOf(config);
+  const thisHostKey = config.host_key?.trim() ?? '';
 
   const rows = await remote.listConductors('me');
   const row = rows.find((c) => c.id === id);

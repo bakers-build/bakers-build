@@ -263,7 +263,7 @@ describe('bakers oven start (herdr path)', () => {
 });
 
 describe('bakers oven start --force (BB-450 D10)', () => {
-  // Must match hostKeyOf(makeConfig()) — makeConfig's host_key.
+  // Must match makeConfig's host_key.
   const HOST = 'test-machine';
   const CONDUCTOR_CMDLINE =
     'node /usr/local/bin/bakers oven start --foreground --no-update-check';

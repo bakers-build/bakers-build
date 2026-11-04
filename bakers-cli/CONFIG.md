@@ -2,8 +2,8 @@
 
 The maintained reference is [Configuration](../docs/configuration/index.md).
 
-A machine is a UUID plus a label: `bakers init` generates `machine_id` once in
-`~/.bakers/machine.config.js` and asks for its `label`. A conductor is machine + project +
+A machine is an id plus a label: `bakers init` generates a UUID `machine_id` for a new machine in
+`~/.bakers/machine.config.js` (an existing machine keeps its id) and asks for its `label`. A conductor is machine + project +
 variant (the config file's stem): bakers derives its `conductor_id` as
 `<machine_id>-<project>-<variant>` at runtime and never writes it to a config. See [Machines](../docs/configuration/machine.md) and
 [Conductor configuration](../docs/configuration/project.md).

@@ -818,31 +818,61 @@ describe('DrupalBbRemote', () => {
     expect(body.data.attributes).not.toHaveProperty('current_load');
   });
 
+  const takeoverReg = {
+    id: 'framework-bakers-conductor',
+    host_key: 'framework',
+    project: 'bakers',
+    states: [],
+    workspace: '/checkout',
+    label: 'lbl',
+    max_parallel: 1,
+  };
+
   it('registerConductor turns a takeover 409 into the offered conductors', async () => {
-    const detail =
-      'This machine, project and variant already have "cw-framework" (bakers oven start --adopt 1cdd3fcb-2156-4e3c-877d-52665142268c); take it over, or create a new conductor with bakers oven start --new.';
+    const detail = 'Take over "cw-framework", or start a new conductor.';
     const post = vi.fn(async () => {
       throw new HttpError(409, 'HTTP 409', {
-        errors: [{ status: '409', detail }],
+        errors: [
+          {
+            status: '409',
+            detail,
+            meta: {
+              candidates: [
+                {
+                  uuid: '1cdd3fcb-2156-4e3c-877d-52665142268c',
+                  label: 'cw-framework',
+                  conductor_id: 'cw-framework',
+                  last_seen: 1762214400,
+                },
+              ],
+            },
+          },
+        ],
       });
     });
     const remote = new DrupalBbRemote(fakeClient({ post }));
 
-    const refused = remote.registerConductor({
-      id: 'framework-bakers-conductor',
-      host_key: 'framework',
-      project: 'bakers',
-      states: [],
-      workspace: '/checkout',
-      label: 'lbl',
-      max_parallel: 1,
-    });
+    const refused = remote.registerConductor(takeoverReg);
 
     await expect(refused).rejects.toBeInstanceOf(ConductorTakeoverRequired);
     await expect(refused).rejects.toMatchObject({
       message: detail,
       adoptable: ['1cdd3fcb-2156-4e3c-877d-52665142268c'],
     });
+  });
+
+  it('registerConductor passes on a 409 that offers no conductors', async () => {
+    const post = vi.fn(async () => {
+      throw new HttpError(409, 'HTTP 409', {
+        errors: [{ status: '409', detail: 'belongs to another user' }],
+      });
+    });
+    const remote = new DrupalBbRemote(fakeClient({ post }));
+
+    const refused = remote.registerConductor(takeoverReg);
+
+    await expect(refused).rejects.toBeInstanceOf(HttpError);
+    await expect(refused).rejects.not.toBeInstanceOf(ConductorTakeoverRequired);
   });
 
   it('registerConductor forwards the takeover decision', async () => {

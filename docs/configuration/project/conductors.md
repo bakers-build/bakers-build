@@ -129,7 +129,7 @@ Each config is its own variant (its stem), so each is a separate conductor with 
 
 A team host provides execution capacity so project managers need no conductor of their own.
 
-1. Prepare the host: herdr with a running session, the agent harnesses, repository access, and a machine file from `bakers init` (its own `machine_id` UUID and `label`) and a `max_parallel` that fits the hardware ([Machines](/configuration/machine)).
+1. Prepare the host: herdr with a running session, the agent harnesses, repository access, and a machine file from `bakers init` (its own `machine_id`, a UUID for a new machine, and `label`) and a `max_parallel` that fits the hardware ([Machines](/configuration/machine)).
 2. Give the host a service identity: a connection with the `client_credentials` profile and a secret kept in an environment variable ([Connections](/configuration/connector/connections)). The identity needs workspace and project access.
 3. Clone each project on the host, commit its `.bakers/conductor.config.js`, and start one conductor per checkout with `bakers oven start`. Under a service manager, run `bakers oven start --foreground` with herdr already running.
 4. Check `bakers oven ls` from any machine, assign a small ticket to the conductor and confirm a run appears.

@@ -430,7 +430,7 @@ export class DrupalBbRemote implements BbRemote {
       data: {
         attributes: {
           conductor_id: reg.id,
-          host_key: reg.host_key ?? reg.id,
+          host_key: reg.host_key,
           ...(reg.machine_label ? { machine_label: reg.machine_label } : {}),
           ...(reg.adopt ? { adopt: reg.adopt } : {}),
           ...(reg.create_new ? { create_new: true } : {}),
@@ -459,14 +459,20 @@ export class DrupalBbRemote implements BbRemote {
       res = await this.postHeartbeatRegistration(reg);
     } catch (err) {
       if (!(err instanceof HttpError) || err.status !== 409) throw err;
-      const detail = (err.body as { errors?: Array<{ detail?: unknown }> })
-        ?.errors?.[0]?.detail;
-      const message = typeof detail === 'string' ? detail : err.message;
+      const error = (
+        err.body as {
+          errors?: Array<{
+            detail?: unknown;
+            meta?: { candidates?: Array<{ uuid?: unknown }> };
+          }>;
+        }
+      )?.errors?.[0];
+      const candidates = error?.meta?.candidates;
+      // Any other 409 (concurrent registration, foreign id) is no offer.
+      if (!Array.isArray(candidates)) throw err;
       throw new ConductorTakeoverRequired(
-        message,
-        [...message.matchAll(/--adopt ([0-9a-f-]{36})/g)].map(
-          (m) => m[1] ?? '',
-        ),
+        typeof error?.detail === 'string' ? error.detail : err.message,
+        candidates.flatMap((c) => (typeof c.uuid === 'string' ? [c.uuid] : [])),
       );
     }
     const id = res?.data?.id;

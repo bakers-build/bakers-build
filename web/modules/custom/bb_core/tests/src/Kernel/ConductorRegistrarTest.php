@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 use Drupal\Core\Lock\DatabaseLockBackend;
 use Drupal\Core\Lock\LockBackendAbstract;
 use Drupal\bb_core\Conductor\ConductorRegistrar;
+use Drupal\bb_core\Conductor\ConductorTakeoverOffer;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\KernelTests\KernelTestBase;
@@ -156,11 +157,42 @@ final class ConductorRegistrarTest extends KernelTestBase {
       $this->registrar()->heartbeat($owner, $this->derivedAttrs());
       $this->fail('A matching conductor must be offered, not duplicated.');
     }
-    catch (ConflictHttpException $e) {
-      $this->assertStringContainsString('--adopt ' . $old->uuid(), $e->getMessage());
+    catch (ConductorTakeoverOffer $e) {
+      $this->assertSame(409, $e->getStatusCode());
       $this->assertStringContainsString('--new', $e->getMessage());
+      $this->assertSame([[
+        'uuid' => $old->uuid(),
+        'label' => '',
+        'conductor_id' => 'cw-framework',
+        'last_seen' => (int) $old->get('last_seen')->value,
+      ],
+      ], $e->candidates);
     }
     $this->assertSame(1, $this->conductorCount());
+  }
+
+  /**
+   * Adopting waits for a heartbeat still running under the conductor's old id.
+   *
+   * Otherwise an old CLI could save the conductor back under its old id.
+   */
+  public function testAdoptIsRefusedWhileTheOldIdIsRegistering(): void {
+    $owner = $this->createUser('owner-adopt-race');
+    $old = $this->legacyConductor($owner);
+    $other_request = new DatabaseLockBackend($this->container->get('database'));
+    self::assertTrue($other_request->acquire('bb_conductor_register:' . $owner->id() . ':cw-framework'));
+    try {
+      $this->lockingRegistrar()->heartbeat($owner, ['adopt' => $old->uuid()] + $this->derivedAttrs());
+      $this->fail('Adopting during a registration under the old id was not refused.');
+    }
+    catch (ConflictHttpException) {
+    }
+    finally {
+      $other_request->releaseAll();
+    }
+    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->loadUnchanged($old->id());
+    $this->assertInstanceOf(BbConductorInterface::class, $reloaded);
+    $this->assertSame('cw-framework', $reloaded->getConductorId());
   }
 
   /**
@@ -221,11 +253,35 @@ final class ConductorRegistrarTest extends KernelTestBase {
    * A conductor registered before the upgrade: string id, no variant recorded.
    */
   private function legacyConductor(UserInterface $owner): BbConductorInterface {
-    return $this->registrar()->heartbeat($owner, [
+    return $this->registrar()->heartbeat($owner, $this->legacyAttrs());
+  }
+
+  /**
+   * The heartbeat of a conductor registered before the upgrade.
+   *
+   * @return array<string, string>
+   *   Its identity attributes.
+   */
+  private function legacyAttrs(): array {
+    return [
       'conductor_id' => 'cw-framework',
       'host_key' => 'framework',
       'project' => 'default-project',
-    ]);
+    ];
+  }
+
+  /**
+   * A registrar with a real lock; kernel tests wire a NullLockBackend.
+   */
+  private function lockingRegistrar(): ConductorRegistrar {
+    return new ConductorRegistrar(
+      $this->container->get('entity_type.manager'),
+      $this->container->get('datetime.time'),
+      new DatabaseLockBackend($this->container->get('database')),
+      $this->container->get('bb_core.workspace_read_scope'),
+      $this->container->get('bb_core.rank_capability'),
+      $this->container->get('bb_core.workspace_resolver'),
+    );
   }
 
   /**
@@ -441,21 +497,44 @@ final class ConductorRegistrarTest extends KernelTestBase {
   }
 
   /**
-   * The same conductor_id owned by different users yields distinct conductors.
+   * A conductor_id another user holds is refused, and nothing is created.
+   *
+   * Derived ids carry no user, so two machines with the same hand-picked
+   * machine_id would otherwise share one id across owners.
    */
-  public function testHeartbeatIsScopedToOwner(): void {
-    $a = $this->createUser('owner-a');
-    $b = $this->createUser('owner-b');
+  public function testHeartbeatRefusesForeignConductorId(): void {
     $attrs = [
       'conductor_id' => 'shared-mid',
-      'host_key' => 'a15a9eb8-4acf-5b34-8045-1b5a79cdbdbb',
+      'host_key' => 'framework',
       'project' => 'default-project',
     ];
+    $this->registrar()->heartbeat($this->createUser('owner-a'), $attrs);
+    try {
+      $this->registrar()->heartbeat($this->createUser('owner-b'), $attrs);
+      $this->fail('A conductor id of another owner was registered.');
+    }
+    catch (ConflictHttpException $e) {
+      $this->assertStringContainsString('bakers init', $e->getMessage());
+    }
+    $this->assertSame(1, $this->conductorCount());
+  }
 
-    $ca = $this->registrar()->heartbeat($a, $attrs);
-    $cb = $this->registrar()->heartbeat($b, $attrs);
+  /**
+   * A machine still named after its host key takes the label it sends.
+   *
+   * A name someone has given it stays.
+   */
+  public function testHeartbeatNamesAnUnnamedMachineFromItsLabel(): void {
+    $owner = $this->createUser('owner-label');
+    $machine = $this->legacyConductor($owner)->getMachine();
+    $this->assertSame('framework', $machine?->label());
 
-    $this->assertNotSame($ca->id(), $cb->id());
+    $named = $this->registrar()->heartbeat($owner, ['machine_label' => 'cw-laptop'] + $this->legacyAttrs())->getMachine();
+    $this->assertSame('cw-laptop', $named?->label());
+
+    $named->set('name', 'Desk')->save();
+    $kept = $this->registrar()->heartbeat($owner, ['machine_label' => 'other'] + $this->legacyAttrs())->getMachine();
+    $this->assertSame('Desk', $kept?->label());
   }
 
   /**

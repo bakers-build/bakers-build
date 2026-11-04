@@ -89,7 +89,6 @@ export {
 export {
   type AgentRoutes,
   assertSchemaVersion1,
-  isUuid,
   type MachineContext,
   machineContextPath,
   readMachineContext,

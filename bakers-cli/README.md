@@ -148,7 +148,7 @@ and runs eight idempotent steps:
 6. **Config scaffold** — writes `.bakers/conductor.config.local.js` from
    `bakers-cli/templates/conductor.config.local.js`. If the file already exists it is left
    untouched. Interactive shells are prompted for `oauth.client_id` (default: `bakers-agent`);
-   non-interactive shells use the default. The file carries no identity: the machine's UUID
+   non-interactive shells use the default. The file carries no identity: the machine's id
    and label come from `bakers init`.
    **No secret is ever written** — the scaffold reads `client_secret` from
    `process.env.BB_CONSUMER_SECRET`.
@@ -368,12 +368,12 @@ distinguish the two outcomes.
 
 ## Conductor lifecycle: identity, not paths (BB-450)
 
-`bakers oven stop` finds its conductor by its `conductor_id` (machine UUID, project and variant) in the
+`bakers oven stop` finds its conductor by its `conductor_id` (machine id, project and variant) in the
 control-plane record — never by comparing the signalled process's working directory against
 `workspace_root`. That means `stop` (and `start`) work identically from the project root, from
 `.bakers/`, or from a linked worktree. Before signalling, the pid is verified as a live process
 whose command line identifies a bakers-conductor foreground loop, owned by the same OS user, on a
-machine whose UUID matches this machine's own `machine_id` — never a colleague's conductor on another host, and
+machine whose id matches this machine's own `machine_id` — never a colleague's conductor on another host, and
 never a recycled pid that happens to share the number. With no pid on record, `stop` refuses and
 says so; it never guesses which process to signal.
 
