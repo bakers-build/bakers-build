@@ -59,6 +59,7 @@ export type {
 } from './plugins/executor.js';
 export type {
   DiscoveredInbox,
+  InboxBinding,
   InboxMessageHandler,
   InboxMessageRequest,
   InboxMessages,

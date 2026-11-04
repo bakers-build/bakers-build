@@ -74,6 +74,8 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_comment_publish` | `ticket`, `type`, `body` | Publish a comment |
 | `bakers_metric_write` | `ticket`, `name`, `rows`; optional `label` | Record a measurement ([Ticket metrics](/configuration/workflows/metrics)) |
 | `bakers_run_cancel` | `ticket`, `reason` | Cancel a ticket's active runs |
+| `bakers_inbox_send` | `ticket`, `message` (e.g. `ports.tunnel`); optional `payload` | Send an addon message to the ticket's conductor, under the same access and payload rules as the web UI, and wait up to 30 s. Returns `id`, `status` (`pending`, `running`, `done` or `failed`) and the Markdown answer `markdown`; `failed` is the addon's answer, a refusal is a tool error |
+| `bakers_inbox_read` | `message` (the UUID `bakers_inbox_send` returned) | The message's current `status` and `markdown`, without waiting |
 
 The list printed by `bakers tools` is what your identity may call on this server; it can hold tools this table does not show. Type, recipe and label names are reused, or created in the ticket's workspace.
 
