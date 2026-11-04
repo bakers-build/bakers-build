@@ -27,7 +27,13 @@ script alone is not a selected setup.
 ## Establish readiness
 
 Check the selected runtime and surfaces before starting anything; an already-ready environment
-is a no-op. For a selected DDEV adapter, invoke `@bakers-build/bb-runtime-ddev` with the worktree,
+is a no-op. **Tool path:** when the run's tools include the runtime's status tool and
+`provision_up`, served by the `bakers-conductor` MCP server (decide by presence, never by agent or
+run mode), use them in this order: ready → no-op; stopped stack → the runtime's start tool; missing
+or wrong site → `provision_up(<profile the hint names>)`. Every `provision_up` reinstalls, so call it
+only when the confirmed instructions need that site. Then verify readiness.
+
+Otherwise, for a selected DDEV adapter, invoke `@bakers-build/bb-runtime-ddev` with the worktree,
 configured setup commands, and the `test_as` personas. For other providers use their
 existing configured commands or skills, then verify readiness. Keep provider mechanics there.
 

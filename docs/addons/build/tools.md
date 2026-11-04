@@ -47,5 +47,6 @@ export const tools: Preset['tools'] = {
 | `ddev_status()` | DDEV | `ddev describe` as a summary: name, status, primary URL, services. |
 | `ddev_start()` | DDEV | `ddev start`, up to 10 minutes. |
 | `ddev_exec(command)` | DDEV | Runs `command` in the web container, up to 5 minutes. |
+| `provision_up(profile?)` | Conductor | Runs the [`provision_up` hook](/configuration/provisioning/hooks#provision-on-an-agent-s-request), or its `profile` command, in the worktree, up to 30 minutes; offered only when the hook is set. |
 
-The ddev tools answer with the exit code and the last 64 KB of output; a non-zero exit is a tool error. `bakers ports up`, `down`, `status` and `reap` call the ports tools through the endpoint file, so the conductor stays the only writer of the tunnel routes.
+The ddev tools and `provision_up` answer with the exit code and the last 64 KB of output; a non-zero exit is a tool error. `bakers ports up`, `down`, `status` and `reap` call the ports tools through the endpoint file, so the conductor stays the only writer of the tunnel routes.

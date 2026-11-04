@@ -59,6 +59,12 @@ export default {
   hooks: {
     after_create: 'bash .ddev/worktree-post.sh',
     after_done: 'ddev delete -Oy',
+    // The `provision_up(profile)` agent tool: a sandboxed run reinstalls
+    // without trusting `ddev`. Each run reinstalls the site.
+    provision_up: {
+      'recipe-test': 'ddev init --provider recipe-test',
+      'existing-config': 'ddev init --provider existing-config',
+    },
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
   // Preview is opt-in; the FRP transport validates the operator's complete settings.

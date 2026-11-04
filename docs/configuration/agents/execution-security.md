@@ -63,7 +63,7 @@ What the default blocks:
 
 What it does not block:
 
-- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `ddev exec …` leaves the sandbox; that is the price of a working workflow. Remove a command you do not need.
+- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox; that is the price of a working workflow. Remove a command you do not need.
 - With `network: ['*']`, a sandboxed command can still reach any host.
 - Not confirmed: whether `--strict-mcp-config` also hides MCP servers that plugins bring.
 

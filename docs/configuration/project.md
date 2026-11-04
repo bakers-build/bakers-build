@@ -45,7 +45,7 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `states` | Workflow states this conductor serves. Omitted or empty serves every claimable state. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600 unless configured otherwise. It is an ownership duration, not a task timeout. |
-| `hooks` | Lifecycle commands `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`; see [Hooks](/configuration/provisioning/hooks). Omitted hooks do nothing. |
+| `hooks` | Lifecycle commands `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`, and the agent tool `provision_up`; see [Hooks](/configuration/provisioning/hooks). Omitted hooks do nothing. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}` and `{runUuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `selectAgent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/configuration/agents). |
 | `schema_version` | Written by `bakers config init` and `upgrade`; the current project schema is 1. |

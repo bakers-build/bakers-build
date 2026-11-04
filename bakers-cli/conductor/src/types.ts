@@ -19,7 +19,7 @@ import type {
 } from './plugins/plugins.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
-import type { ToolRegistry } from './plugins/tools.js';
+import type { ProvisionHook, ToolRegistry } from './plugins/tools.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {
@@ -81,6 +81,8 @@ export interface ConductorSettings {
     on_freeze?: string;
     /** Runs once in a ticket's worktree when a poll sees it unfrozen. */
     on_resume?: string;
+    /** Never runs on its own: offered to runs as the `provision_up(profile?)` tool. */
+    provision_up?: ProvisionHook;
   };
   /** Control-plane site settings used for dropsh and agent env. */
   site: { base_url: string; jsonapi_prefix: string };
