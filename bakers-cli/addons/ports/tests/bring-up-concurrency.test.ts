@@ -1,13 +1,17 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { nodeLockDeps } from '../src/lock.js';
+import { portsTools } from '../src/tools.js';
 import type { PortsTransport } from '../src/transport.js';
 import {
   bringUp,
   type OperationContext,
+  readTunnelState as readMachineTunnelRecords,
+  reap,
   type TunnelOpsDeps,
+  takeDown,
 } from '../src/tunnel-ops.js';
 import {
   nodeTunnelStateDeps,
@@ -118,5 +122,59 @@ describe('bringUp under real cross-process locking (AC5)', () => {
     const hostnames = ingress.map((r) => r.hostname);
     expect(hostnames).toContain('a-1-mailpit.preview.example');
     expect(hostnames).toContain('b-2-mailpit.preview.example');
+  }, 15000);
+});
+
+describe('ports_up tool calls under real cross-process locking (AC5)', () => {
+  it('parallel ports_up from two worktrees both end up applied', async () => {
+    const ingress: { hostname?: string; service: string }[] = [];
+    const transport = fakeTransport(ingress);
+    const d = deps();
+    const worktrees = [join(home, 'wt-a'), join(home, 'wt-b')];
+    await Promise.all(worktrees.map((wt) => mkdir(wt)));
+    const tools = portsTools({
+      loadTransport: async () => ({ ok: true, transport }),
+      discover: async () => ({
+        services: [
+          {
+            key: 'web',
+            claim: 'ddev',
+            status: 'healthy',
+            local: 'http://127.0.0.1:80',
+            rawPorts: [],
+            rules: [{ key: 'web', service: 'http://127.0.0.1:80' }],
+          },
+        ],
+        unclaimed: [],
+        diagnostics: [],
+      }),
+      readRecords: (wt) => readMachineTunnelRecords(wt, home, d),
+      bringUp: (rule, ctx) => bringUp(rule, ctx, d),
+      takeDown: (wt, key, ctx) => takeDown(wt, key, ctx, d),
+      reap: (ctx, isLive) => reap(ctx, isLive, d),
+      branch: () => null,
+      home: () => home,
+    });
+    const call = (wt: string, ticket: string) =>
+      tools.ports_up!({
+        worktreePath: wt,
+        ticket: { identifier: ticket },
+        args: { service: 'web' },
+        signal: new AbortController().signal,
+        logger: { debug() {}, info() {}, warn() {}, error() {} },
+        callTool: async () => ({ text: '' }),
+      });
+    const results = await Promise.all([
+      call(worktrees[0]!, 'a-1'),
+      call(worktrees[1]!, 'b-2'),
+    ]);
+    expect(results.map((r) => r.text)).toEqual([
+      expect.stringContaining('a-1-web.preview.example'),
+      expect.stringContaining('b-2-web.preview.example'),
+    ]);
+    expect(ingress.map((r) => r.hostname).sort()).toEqual([
+      'a-1-web.preview.example',
+      'b-2-web.preview.example',
+    ]);
   }, 15000);
 });

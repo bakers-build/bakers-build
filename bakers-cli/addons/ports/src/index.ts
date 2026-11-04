@@ -232,7 +232,7 @@ export function shouldKeepTunnelRecord(
   });
 }
 
-function currentBranch(worktree: string): string | null {
+export function currentBranch(worktree: string): string | null {
   try {
     return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
       cwd: worktree,

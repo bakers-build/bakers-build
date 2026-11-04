@@ -68,7 +68,7 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
 
 function isInside(root: string, path: string): boolean {
   const rel = relative(resolve(root), resolve(path));
-  return rel !== '' && !rel.startsWith('..') && !rel.startsWith('/');
+  return !rel.startsWith('..') && !rel.startsWith('/');
 }
 
 export async function startToolServer(
@@ -117,6 +117,7 @@ export async function startToolServer(
       tool?: unknown;
       args?: unknown;
       worktree?: unknown;
+      ticket?: unknown;
     };
     if (typeof body.tool !== 'string' || typeof body.worktree !== 'string')
       return send(res, 400, { error: 'tool and worktree are required' });
@@ -131,7 +132,12 @@ export async function startToolServer(
       const result = await registry.call(
         body.tool,
         body.args as Record<string, unknown> | undefined,
-        { worktreePath: resolve(body.worktree) },
+        {
+          worktreePath: resolve(body.worktree),
+          ...(typeof body.ticket === 'string'
+            ? { ticket: { identifier: body.ticket } }
+            : {}),
+        },
         logger ? { logger } : {},
       );
       send(res, 200, result);
