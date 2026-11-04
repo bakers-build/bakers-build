@@ -8,7 +8,9 @@
     "bb-workflow/references/tools.md",
     "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-workflow/references/classify.md"
+    "bb-workflow/references/classify.md",
+    "bb-workflow/references/outtake.md",
+    "bb-create-ticket/references/handoff.md"
   ],
   "input": {
     "task": "You are the host agent of a conversation about a bakers.build request. The requester's first message is below; nothing else has happened yet. Run the skill with the actual fixture tools, then give your one reply to the conversation.",
@@ -25,7 +27,8 @@
         "from": "Mara Lind (U-MARA)",
         "text": "Operators need to export the invoice list as CSV for accounting."
       }
-    ]
+    ],
+    "workspace_uuid": "77777777-7777-4777-8777-777777777771"
   },
   "simulation": {
     "files": {},
@@ -42,7 +45,7 @@
   "rubric": [
     {
       "id": "content-questions",
-      "criterion": "Asks the requester only about the content of the idea (for example who uses it, what the file holds, what stays out), and no technical or implementation question."
+      "criterion": "Asks the requester only about the content of the idea: what it should do for them, what the result holds or looks like for them, and what stays out; no question about code, architecture or how it is built."
     },
     {
       "id": "plain-words",

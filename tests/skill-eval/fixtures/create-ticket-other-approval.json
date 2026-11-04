@@ -8,7 +8,9 @@
     "bb-workflow/references/tools.md",
     "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-workflow/references/classify.md"
+    "bb-workflow/references/classify.md",
+    "bb-workflow/references/outtake.md",
+    "bb-create-ticket/references/handoff.md"
   ],
   "input": {
     "task": "You are the host agent of a conversation about a bakers.build request. Prior art, creation and specifying are done: you read your user, prior art was negative, ticket EVAL-31 was created in this conversation with the conversation link, you picked the recipe bb-recipe-pair, and its plan method ended with the spec summary below, shown to the requester. Continue the skill from the approval with the actual fixture tools, then give your one reply to the conversation.",
@@ -39,7 +41,8 @@
         "from": "Jonas Berg (U-JONAS)",
         "text": "Yes, I approve the spec."
       }
-    ]
+    ],
+    "workspace_uuid": "77777777-7777-4777-8777-777777777771"
   },
   "simulation": {
     "ticket": {

@@ -49,8 +49,8 @@ function analyze(f, context) {
     const classify = sent.find(c => is(c, 'bakers_ticket_classify')), last = sent.at(-1);
     return { diagnostics, checks: [...common,
       check('bug-order', sent.length === 4 && comments.map(c => arg(c, 'type')).join() === 'qualification,summary' &&
-        sent[0] === comments[0] && classify && is(last, 'bakers_ticket_transition') && arg(last, 'state') === 'plan',
-      'Publish qualification and summary, set type and recipe, then move to plan; nothing else, so no pingpong'),
+        classify && is(last, 'bakers_ticket_transition') && arg(last, 'state') === 'plan',
+      'Publish qualification and summary and set type and recipe, then move to plan; nothing else, so no pingpong'),
       check('bug-arguments', arg(classify, 'type') === 'bug' && arg(classify, 'recipe') === e.recipe && /reproduction/i.test(body(comments[0])),
         'Type bug with the picked recipe, and the reproduction in the qualification'),
     ] };

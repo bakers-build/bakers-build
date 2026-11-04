@@ -1068,8 +1068,15 @@ describe('a bug from a conversation', () => {
   ];
 
   it('publishes qualification and summary, sets bug and the recipe, and moves to plan', async () => {
-    const { grade } = await simulatedTrace('create-ticket-bug', bug());
+    const { grade, trace } = await simulatedTrace('create-ticket-bug', bug());
     expect(grade('EVAL-32 is recorded.')).toEqual([]);
+    // Type and recipe may be set before the qualification.
+    expect(
+      grade('EVAL-32 is recorded.', [trace[2], trace[0], trace[1], trace[3]]),
+    ).toEqual([]);
+    expect(
+      grade('EVAL-32 is recorded.', [trace[1], trace[0], trace[2], trace[3]]),
+    ).toContain('bug-order');
     const typed = await simulatedTrace('create-ticket-bug', [
       ...bug().slice(0, 2),
       [

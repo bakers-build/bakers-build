@@ -5,17 +5,15 @@
   "execution": "simulated-tools",
   "skill": "bb-create-ticket",
   "references": [
-    "bb-workflow/SKILL.md",
+    "bb-workflow/references/tools.md",
+    "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-workflow/references/read-ticket.md",
-    "bb-workflow/references/publish-comment.md",
-    "bb-workflow/references/transition-ticket.md",
-    "bb-workflow/references/qualification.md",
-    "bb-workflow/references/boundaries.md",
-    "bb-workflow/references/results.md",
-    "bb-workflow/references/outtake.md",
     "bb-workflow/references/classify.md",
-    "bb-workflow/references/agent-choice.md"
+    "bb-workflow/references/outtake.md",
+    "bb-create-ticket/references/handoff.md",
+    "bb-create-ticket/references/checkout.md",
+    "bb-workflow/references/agent-choice.md",
+    "bb-workflow/references/origin-status.md"
   ],
   "input": {
     "task": "Create the new confirmed feature intake using actual fixture tools, perform the required prior-art search, publish qualification and summary, and route it once. No confirmed design, implementation or test plan exists. Stop after initial routing.",
