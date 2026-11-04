@@ -1,3 +1,7 @@
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseClaudeTranscript } from '@bakers-build/addon-claude';
 import {
   FakeBbRemote,
@@ -37,7 +41,10 @@ function agentWith(results: SandboxPreflight[]) {
   return agent;
 }
 
-function setup(agent: BbAgent) {
+function setup(
+  agent: BbAgent,
+  { root = '/tmp/bakers-preflight-test', setGit = false } = {},
+) {
   const logs: { level: string; msg?: string }[] = [];
   const mk = (level: string) => (_obj: object, msg?: string) => {
     logs.push({ level, msg });
@@ -82,6 +89,7 @@ function setup(agent: BbAgent) {
     poll_interval_ms: 5000,
     lease_seconds: 300,
     config_path: '/tmp/bakers-preflight-test/conductor.config.js',
+    set_git_auto_setup_merge: setGit,
   };
   const conductor = new Conductor(
     config,
@@ -90,13 +98,49 @@ function setup(agent: BbAgent) {
     workspace,
     [{ id: 'claude', agent }],
     log,
-    '/tmp/bakers-preflight-test',
+    root,
   );
   return { conductor, remote, logs, ensured: () => ensured };
 }
 
 const SANDBOX_LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
+
+describe('start: branch.autoSetupMerge', () => {
+  it('sets it to false in the checkout, and only warns when the config is locked', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'bb-start-git-'));
+    const get = () =>
+      execFileSync(
+        'git',
+        ['-C', root, 'config', '--get', 'branch.autoSetupMerge'],
+        {
+          encoding: 'utf8',
+        },
+      ).trim();
+    try {
+      execFileSync('git', ['init', '-q', root]);
+      writeFileSync(join(root, '.git', 'config.lock'), '', { mode: 0o444 });
+      const locked = setup(agentWith([{ ok: true }]), { root, setGit: true });
+      await locked.conductor.start();
+      expect(locked.logs.map((l) => l.msg)).toContainEqual(
+        `could not set branch.autoSetupMerge=false; run: git -C ${root} config branch.autoSetupMerge false`,
+      );
+      rmSync(join(root, '.git', 'config.lock'));
+      await setup(agentWith([{ ok: true }]), {
+        root,
+        setGit: false,
+      }).conductor.start();
+      expect(get).toThrow();
+      await setup(agentWith([{ ok: true }]), {
+        root,
+        setGit: true,
+      }).conductor.start();
+      expect(get()).toBe('false');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('sandbox preflight gate', () => {
   it('start logs the unavailable sandbox at error', async () => {

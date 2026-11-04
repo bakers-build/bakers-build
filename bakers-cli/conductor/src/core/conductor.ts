@@ -35,6 +35,7 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
+import { setNoAutoSetupMerge } from './git-config.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 
@@ -359,6 +360,22 @@ export class Conductor {
     }
     for (const line of await sandboxFailures(this.agents)) {
       this.logger.error({ conductorId: this.id }, line);
+    }
+    // The loader defaults it to true; a hand-built config (tests) leaves Git alone.
+    if (this.config.set_git_auto_setup_merge === true) {
+      try {
+        if ((await setNoAutoSetupMerge(this.checkoutRoot)) === 'set') {
+          this.logger.info(
+            { conductorId: this.id },
+            'set branch.autoSetupMerge=false: new run worktrees write no upstream into .git/config',
+          );
+        }
+      } catch (err) {
+        this.logger.warn(
+          { conductorId: this.id, err: String(err) },
+          `could not set branch.autoSetupMerge=false; run: git -C ${this.checkoutRoot} config branch.autoSetupMerge false`,
+        );
+      }
     }
   }
 
