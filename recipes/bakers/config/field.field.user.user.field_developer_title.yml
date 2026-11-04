@@ -9,7 +9,7 @@ id: user.user.field_developer_title
 field_name: field_developer_title
 entity_type: user
 bundle: user
-label: Developer title
+label: Position
 description: ''
 required: false
 translatable: null
