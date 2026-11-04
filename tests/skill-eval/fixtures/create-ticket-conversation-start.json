@@ -10,7 +10,9 @@
     "bb-workflow/references/prior-art-search.md",
     "bb-workflow/references/classify.md",
     "bb-workflow/references/outtake.md",
-    "bb-workflow/references/qualification.md"
+    "bb-workflow/references/qualification.md",
+    "bb-workflow/references/specify.md",
+    "bb-workflow/references/plan.md"
   ],
   "input": {
     "task": "You are the host agent of a conversation about a bakers.build request. The requester's first message is below; nothing else has happened yet. Run the skill with the actual fixture tools, then give your one reply to the conversation.",
