@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   registry:
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    # Self-hosted github-runner-1 (keytec/infra github-runner stack, Docker via dind).
+    runs-on: [self-hosted, github-runner-1]
     permissions:
       contents: read
       packages: write
