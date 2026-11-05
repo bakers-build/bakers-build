@@ -6,6 +6,8 @@
 # agent added to package.json is installed, and the lockfile updated, before the next
 # run. Up to date this is a few milliseconds. A failure warns and never blocks the run.
 # `--all` (the `provision_up('deps')` profile) also installs packages not yet installed.
+# Not bb_theme: `ddev init` installs and builds it inside DDEV; a host install would
+# relink the same node_modules from a second store.
 set -uo pipefail
 
 all=false
@@ -24,7 +26,7 @@ if ! command -v pnpm >/dev/null 2>&1; then
   exit 0
 fi
 install_deps bakers-cli
-for dir in web/themes/custom/bb_theme website; do
+for dir in website; do
   if [ "${all}" = true ] || [ -d "${dir}/node_modules" ]; then
     install_deps "${dir}"
   fi
