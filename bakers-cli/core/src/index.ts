@@ -159,6 +159,7 @@ export {
   type VerifyProcessInput,
   verifyConductorProcess,
 } from './core/proc.js';
+export { normalizeRepoUrl } from './core/repo-url.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';
 // BB-215: the Storybook-style preset contract + the shared addon discovery.
