@@ -195,7 +195,7 @@ final class TicketConductorCleanupAccessTest extends KernelTestBase {
     $ticket = $this->createTicket('GL-CU-2', 'done');
 
     $this->assertTrue($ticket->get('cleaned_up')->access('edit', $user), 'cleaned_up must be editable.');
-    foreach (['title', 'state', 'description', 'closed', 'closed_date'] as $field) {
+    foreach (['title', 'state', 'description', 'closed', 'closed_date', 'environments'] as $field) {
       $this->assertFalse($ticket->get($field)->access('edit', $user), "$field must not be editable.");
     }
   }
@@ -308,6 +308,7 @@ final class TicketConductorCleanupAccessTest extends KernelTestBase {
 
     $this->assertTrue($ticket->access('update', $user));
     $this->assertFalse($ticket->get('title')->access('edit', $user), 'A closed ticket\'s title is frozen.');
+    $this->assertFalse($ticket->get('environments')->access('edit', $user), 'A closed ticket\'s environments are frozen.');
     $this->assertTrue($ticket->get('cleaned_up')->access('edit', $user), 'The cleanup flag stays writable.');
   }
 

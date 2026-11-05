@@ -8,6 +8,7 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Field\BaseBranchItemList;
 use Drupal\bb_core\Field\CommentsItemList;
+use Drupal\bb_core\Field\DeploymentsItemList;
 use Drupal\bb_core\Field\HandoffCommentsItemList;
 use Drupal\bb_core\Field\PendingReviewsItemList;
 use Drupal\bb_core\Field\RunsItemList;
@@ -80,6 +81,15 @@ final class BbTicketFieldMap {
       ->setComputed(TRUE)
       ->setClass(SubTicketsItemList::class)
       ->setDisplayConfigurable('view', TRUE);
+    // Where the ticket is deployed: the deployment tickets carrying it.
+    $fields['deployments'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(new TranslatableMarkup('Deployed to'))
+      ->setDescription(new TranslatableMarkup('Deployment tickets whose referenced tickets contain this ticket (computed; never writable).'))
+      ->setSetting('target_type', 'bb_ticket')
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setComputed(TRUE)
+      // Read directly by the inspector and the read tool; no display shows it.
+      ->setClass(DeploymentsItemList::class);
     $fields['runs'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Runs'))
       ->setSetting('target_type', 'bb_run')

@@ -735,6 +735,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'Branch' => 'mono',
         'Base branch' => 'mono',
         'Environments' => 'text',
+        'Deployed to' => 'text',
         'Env vars' => 'masked',
         'Parent' => 'badge',
         'Sub-tickets' => 'badge',
