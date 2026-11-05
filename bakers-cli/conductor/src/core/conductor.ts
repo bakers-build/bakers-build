@@ -1544,10 +1544,9 @@ export class Conductor {
         );
       }
     }
-    const tools = this.issueRunTools(run.runUuid, {
-      worktreePath: ws.path,
-      ticket: t,
-    });
+    const tools = chosen.agent.withoutConductorTools
+      ? undefined
+      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
     const command = chosen.agent.launchCommand(
       prompt,
       identity,

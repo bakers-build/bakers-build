@@ -1,4 +1,6 @@
 import { mkdtempSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -115,5 +117,54 @@ describe('bakers oven tools', () => {
     );
     expect(code).toBe(3);
     expect(err).not.toContain('stale-token');
+  });
+
+  it('exits 3 when the server forbids the token', async () => {
+    const forbidding = createServer((_req, res) =>
+      res.writeHead(403).end('no'),
+    );
+    await new Promise<void>((r) => forbidding.listen(0, '127.0.0.1', r));
+    const { port } = forbidding.address() as AddressInfo;
+    try {
+      const { code, err } = await run(
+        undefined,
+        {},
+        {
+          BB_CONDUCTOR_URL: `http://127.0.0.1:${port}`,
+          BB_CONDUCTOR_TOKEN: 'tok-403',
+        },
+      );
+      expect(code).toBe(3);
+      expect(err).not.toContain('tok-403');
+    } finally {
+      forbidding.close();
+    }
+  });
+
+  it('exits 4 for a malformed URL, sending nothing', async () => {
+    const { code, err } = await run(
+      undefined,
+      {},
+      { BB_CONDUCTOR_URL: 'not a url', BB_CONDUCTOR_TOKEN: 'tok-bad-url' },
+    );
+    expect(code).toBe(4);
+    expect(err).not.toContain('tok-bad-url');
+  });
+
+  it('exits 5 when nothing listens at the URL', async () => {
+    const probe = createServer();
+    await new Promise<void>((r) => probe.listen(0, '127.0.0.1', r));
+    const { port } = probe.address() as AddressInfo;
+    await new Promise((r) => probe.close(r));
+    const { code, err } = await run(
+      undefined,
+      {},
+      {
+        BB_CONDUCTOR_URL: `http://127.0.0.1:${port}`,
+        BB_CONDUCTOR_TOKEN: 'tok-closed',
+      },
+    );
+    expect(code).toBe(5);
+    expect(err).not.toContain('tok-closed');
   });
 });

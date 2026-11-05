@@ -147,6 +147,12 @@ export interface BbAgent {
    */
   readonly launchWarnings?: readonly string[];
   /**
+   * True when this agent's runs must not reach the conductor's tools (a
+   * measured claude run): the conductor issues no token and sets neither
+   * {@link CONDUCTOR_URL_ENV} nor {@link CONDUCTOR_TOKEN_ENV}.
+   */
+  readonly withoutConductorTools?: boolean;
+  /**
    * Build the full agent CLI invocation for a bakers.build prompt. With an empty
    * prompt, returns the bare launch command (no prompt argument).
    *

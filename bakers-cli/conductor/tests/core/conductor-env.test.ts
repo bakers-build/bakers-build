@@ -466,7 +466,7 @@ describe('Conductor dispatch env injection', () => {
 });
 
 describe('Conductor agent tools', () => {
-  async function dispatchOnce(withTools: boolean) {
+  async function dispatchOnce(withTools: boolean, agentWithholds = false) {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
@@ -483,6 +483,7 @@ describe('Conductor agent tools', () => {
     const launched: unknown[] = [];
     const agent: BbAgent = {
       ...fakeAgent,
+      ...(agentWithholds ? { withoutConductorTools: true } : {}),
       launchCommand: (_p, _run, _ws, tools) => {
         launched.push(tools);
         return 'claude';
@@ -537,6 +538,14 @@ describe('Conductor agent tools', () => {
 
   it('offers no tools to a run when no addon declares any', async () => {
     const { conductor, env, launched } = await dispatchOnce(false);
+    expect(launched).toEqual([undefined]);
+    expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
+    expect(env.BB_CONDUCTOR_URL).toBeUndefined();
+    await conductor.stopTools();
+  });
+
+  it('offers no tools to a run whose agent withholds them, like a measured claude run', async () => {
+    const { conductor, env, launched } = await dispatchOnce(true, true);
     expect(launched).toEqual([undefined]);
     expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
     expect(env.BB_CONDUCTOR_URL).toBeUndefined();

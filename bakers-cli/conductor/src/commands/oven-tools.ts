@@ -65,6 +65,10 @@ export async function ovenTools(
     );
     return EXIT.invalid;
   }
+  if (!URL.canParse(url)) {
+    io.err(`${CONDUCTOR_URL_ENV} is not a URL: ${url}`);
+    return EXIT.invalid;
+  }
   const args = parseData(opts.data);
   if (typeof args === 'string') {
     io.err(args);
@@ -97,7 +101,7 @@ export async function ovenTools(
     const result = await client.callTool({ name, arguments: args });
     const text = result.structuredContent
       ? JSON.stringify(result.structuredContent, null, 2)
-      : (result.content as { type: string; text?: string }[])
+      : ((result.content ?? []) as { type: string; text?: string }[])
           .filter((c) => c.type === 'text')
           .map((c) => c.text)
           .join('\n');
@@ -108,7 +112,10 @@ export async function ovenTools(
     io.out(text);
     return EXIT.ok;
   } catch (err) {
-    if (err instanceof StreamableHTTPError && err.code === 401) {
+    if (
+      err instanceof StreamableHTTPError &&
+      (err.code === 401 || err.code === 403)
+    ) {
       io.err(`run token rejected by ${url}: ${err.message}`);
       return EXIT.rejected;
     }
