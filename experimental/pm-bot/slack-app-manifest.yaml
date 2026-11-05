@@ -1,6 +1,8 @@
 # Slack app of the PM bot. Create it by hand: api.slack.com/apps → Create New App →
-# From a manifest, then install it and invite the bot to the allowed channels.
-# Socket Mode, channel messages and mentions only; no direct messages.
+# From a manifest, then install it and invite the bot to its channel.
+# Socket Mode, channel messages and mentions only; no direct messages. channels:manage lets
+# the bot create, invite to, rename and archive the public request channels it opens; an app
+# installed before it needs a reinstall.
 display_information:
   name: PM Bot
 features:
@@ -16,6 +18,7 @@ oauth_config:
     bot:
       - app_mentions:read
       - channels:history
+      - channels:manage
       - channels:read
       - chat:write
       - groups:history

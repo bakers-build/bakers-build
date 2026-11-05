@@ -13,7 +13,7 @@ const messages = {
 };
 
 const slackThread = { channel: 'C1', thread_ts: '1700000000.000100' };
-const ticket = (identifier, state, thread = slackThread) => ({ identifier, title: `Ticket ${identifier}`, state, thread });
+const ticket = (identifier, state, conversation = slackThread, extra = {}) => ({ identifier, title: `Ticket ${identifier}`, state, conversation, ...extra });
 
 test('the first run records every state and posts nothing', () => {
   const { posts, next } = diff(null, [ticket('ACME-1', 'plan'), ticket('ACME-2', 'working')], {}, messages);
@@ -29,7 +29,7 @@ test('a changed state posts its plain-words text into the ticket thread', () => 
   assert.deepEqual(next, { 'ACME-1': 'working' });
 });
 
-test('a ticket without a chat thread is skipped', () => {
+test('a ticket without a conversation is skipped', () => {
   const { posts, next } = diff({ 'ACME-1': 'plan' }, [ticket('ACME-1', 'working', null)], {}, messages);
   assert.deepEqual(posts, []);
   assert.deepEqual(next, {});
@@ -76,7 +76,7 @@ test('a ticket the poller has not seen before posts nothing', () => {
   assert.deepEqual(next, { 'ACME-1': 'plan', 'ACME-2': 'plan' });
 });
 
-test('reachedDone names only threaded tickets that changed to done', () => {
+test('reachedDone names only tickets with a conversation that changed to done', () => {
   const tickets = [ticket('ACME-1', 'done'), ticket('ACME-2', 'done'), ticket('ACME-3', 'done', null), ticket('ACME-4', 'done')];
   assert.deepEqual(reachedDone({ 'ACME-1': 'review', 'ACME-2': 'done', 'ACME-3': 'review' }, tickets), ['ACME-1']);
   assert.deepEqual(reachedDone(null, tickets), []);
@@ -120,4 +120,14 @@ test('done whose manual review holds only reviewer material says that none is re
     posts[0].text,
     'This is finished and ready for you to try.\n\nThe ticket does not say yet where or how to test this.',
   );
+});
+
+test('a post into a channel conversation goes flat, without thread_ts', () => {
+  const { posts } = diff({ 'ACME-1': 'plan' }, [ticket('ACME-1', 'working', { channel: 'C1' })], {}, messages);
+  assert.deepEqual(posts, [{ identifier: 'ACME-1', channel: 'C1', text: 'Work on this has started.' }]);
+});
+
+test('a sub-ticket posts into its ancestor\'s conversation behind its identifier', () => {
+  const { posts } = diff({ 'ACME-2': 'plan' }, [ticket('ACME-2', 'working', { channel: 'C1' }, { inherited: true })], {}, messages);
+  assert.deepEqual(posts, [{ identifier: 'ACME-2', channel: 'C1', text: 'ACME-2 · Work on this has started.' }]);
 });
