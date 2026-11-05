@@ -16,6 +16,8 @@ Each tool's wire name is `tool_api__<tool>` (`tool_api__bakers_ticket_read`).
   Write it, Markdown byte for byte, with a file tool or JSON encoder
   (`jq -n --rawfile body <file.md> --arg t <ticket> '{ticket: $t, type: "plan", body: $body}'`).
 
+In-run addon tools: [conductor](tools-conductor.md).
+
 ## Results and errors
 
 | Exit | Meaning | Next |

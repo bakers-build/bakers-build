@@ -128,6 +128,8 @@ export interface AgentRunIdentity {
 export const CONDUCTOR_TOOLS_SERVER = 'bakers-conductor';
 /** The run env var holding the run's bearer token for that server. */
 export const CONDUCTOR_TOKEN_ENV = 'BB_CONDUCTOR_TOKEN';
+/** The run env var holding that server's URL, for `bakers oven tools`. */
+export const CONDUCTOR_URL_ENV = 'BB_CONDUCTOR_URL';
 
 export interface BbAgent {
   /** Stable id, e.g. 'claude'. */
@@ -144,6 +146,12 @@ export interface BbAgent {
    * the current producer. Omitted when there is nothing to say.
    */
   readonly launchWarnings?: readonly string[];
+  /**
+   * True when this agent's runs must not reach the conductor's tools (a
+   * measured claude run): the conductor issues no token and sets neither
+   * {@link CONDUCTOR_URL_ENV} nor {@link CONDUCTOR_TOKEN_ENV}.
+   */
+  readonly withoutConductorTools?: boolean;
   /**
    * Build the full agent CLI invocation for a bakers.build prompt. With an empty
    * prompt, returns the bare launch command (no prompt argument).

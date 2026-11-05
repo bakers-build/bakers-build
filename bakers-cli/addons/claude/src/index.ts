@@ -188,6 +188,11 @@ export class ClaudeAgent implements BbAgent {
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
   }
 
+  /** A measured run stays without the conductor's tools, MCP or bridge. */
+  get withoutConductorTools(): boolean {
+    return this.measure;
+  }
+
   launchCommand(
     prompt: string,
     run?: AgentRunIdentity,

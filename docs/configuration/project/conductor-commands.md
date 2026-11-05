@@ -39,6 +39,7 @@ BB_LOG_LEVEL=debug bakers oven once
 | `ls` | none | One line per conductor the control plane holds for you |
 | `stop` | `--now` | Stop the conductor: graceful by default, hard kill with `--now` |
 | `clean` | none | Tear down herdr worktrees of finished tickets that were never cleaned up |
+| `tools` | `[name]`, `--data <json\|@file>`, `--schema` | List or call the conductor's addon tools from inside a run |
 
 ### start
 
@@ -74,6 +75,22 @@ Both print tab-separated columns, `status` only for this checkout's conductor an
 ```
 
 Liveness is derived, and uses the same three words as the cockpit and the control plane: `online` (heartbeating within its lease), `stale` (registered as online, but the heartbeat is older than 600 seconds or the lease has lapsed, which is what a crash looks like) and `offline` (shut down cleanly). For a conductor on this host whose recorded process no longer exists, the listing reports `offline`. With no conductors, the output is `no conductors on the control plane`. The `bakers oven ls --help` text says "on this machine"; the listing is not limited to it.
+
+### tools
+
+`tools` is the shell route to the conductor's [addon tools](../../addons/build/tools.md) for agents that load no MCP server for them. It needs no conductor config or connection: it reads `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` from the run environment.
+
+- `bakers oven tools` lists `name<TAB>description`.
+- `bakers oven tools <name> --schema` prints the tool's input schema.
+- `bakers oven tools <name> --data '<json>'` (or `--data @<file>`) calls it for the run's worktree and prints its result.
+
+| Exit | Meaning |
+|---|---|
+| 0 | success |
+| 1 | the tool reported an error |
+| 3 | run token rejected |
+| 4 | no conductor tools in this shell, unknown tool or invalid `--data`; nothing called |
+| 5 | HTTP or protocol error |
 
 ## Environment
 

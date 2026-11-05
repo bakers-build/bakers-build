@@ -8,6 +8,8 @@ import {
 } from '@bakers-build/core';
 import {
   type BbAgent,
+  CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_URL_ENV,
   DEFAULT_ENV_DENY,
   matchesEnvDeny,
   type RunEnvPolicy,
@@ -1562,10 +1564,9 @@ export class Conductor {
         );
       }
     }
-    const tools = this.issueRunTools(run.runUuid, {
-      worktreePath: ws.path,
-      ticket: t,
-    });
+    const tools = chosen.agent.withoutConductorTools
+      ? undefined
+      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
@@ -1587,7 +1588,13 @@ export class Conductor {
       instructions: ws.instructions,
       command,
       // The token travels in the env, never in argv or the launch log.
-      env: tools ? { ...env, BB_CONDUCTOR_TOKEN: tools.token } : env,
+      env: tools
+        ? {
+            ...env,
+            [CONDUCTOR_URL_ENV]: tools.url,
+            [CONDUCTOR_TOKEN_ENV]: tools.token,
+          }
+        : env,
     });
     launch.started = true;
     this.logger.info(
