@@ -129,10 +129,10 @@ props:
         Emits `role="listitem"`. It is a prop and not a guess because a badge
         cannot know whether it is a direct child of a `role="list"` container,
         and `role="list"`/`role="listitem"` must be direct parent and child or a
-        browser drops both. The caller that sets `bb_theme:zone`'s `list:
-        true` around a set of badges sets this too. IT HAS NO CONSUMING SURFACE
-        LEFT: the labels surface used to be the one, and it is a `list` node now
-        — a real `<ul>` of `<li>`, with the badges as cells — so nothing in the
+        browser drops both. The caller that sets `bb_theme:zone`'s `list: true`
+        around a set of badges sets this too. IT HAS NO CONSUMING SURFACE LEFT:
+        the labels surface used to be the one, and it is a `list` node now — a
+        real `<ul>` of `<li>`, with the badges as cells — so nothing in the
         theme pairs this prop with a `role="list"` container any more. It is
         still set by the label mapping, which renders one label standalone and
         cannot know its container, and it still has a story of its own; removing

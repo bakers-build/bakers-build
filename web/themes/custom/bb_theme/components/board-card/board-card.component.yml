@@ -1,18 +1,23 @@
-$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
 name: Board Card
 status: stable
 group: Data Display
-description: 'Compact card for one item of a board: an identifier, an optional priority tag, a clamped title, and a footer slot for the claim, the status and the assignee.
+description: >-
+  Compact card for one item of a board: an identifier, an optional priority tag,
+  a clamped title, and a footer slot for the claim, the status and the assignee.
 
 
-  ITS NAME WAS ALREADY GENERIC AND ITS CONTRACT WAS NOT. Every prop title named the one entity the board happened to hold, which made a card that draws an identifier, a title, a tag and an accent edge read as though it could draw nothing else. What a board holds is the BOARD''S knowledge, and the mapping''s: the card takes an identifier and a title, and it does not ask what they identify.'
+  ITS NAME WAS ALREADY GENERIC AND ITS CONTRACT WAS NOT. Every prop title named
+  the one entity the board happened to hold, which made a card that draws an
+  identifier, a title, a tag and an accent edge read as though it could draw
+  nothing else. What a board holds is the BOARD'S knowledge, and the mapping's:
+  the card takes an identifier and a title, and it does not ask what they
+  identify.
 provider: bb_theme
 libraryOverrides:
   dependencies:
     - core/drupal.dialog.ajax
-    # The card overlay anchor opens the ticket in Drupal's off-canvas tray
-    # (data-dialog-type="dialog.off_canvas"); that dialog type needs the
-    # off_canvas library present, or the click never opens the sidebar.
     - core/drupal.dialog.off_canvas
 props:
   type: object
@@ -42,7 +47,9 @@ props:
     type:
       type: string
       title: Kind — drives the card colour
-      description: 'Accepts the short type or the bb_<type> workflow id; the leading bb_ is stripped for the colour lookup.'
+      description: >-
+        Accepts the short type or the bb_<type> workflow id; the leading bb_ is
+        stripped for the colour lookup.
     state:
       type: string
       title: Workflow state key (e.g. qualification, plan, working)
@@ -58,8 +65,8 @@ props:
       type: string
       title: Machine holding the lease
       description: >-
-        Rendered in the footer when the footer slot is empty. Absent rather
-        than empty when no lease is held.
+        Rendered in the footer when the footer slot is empty. Absent rather than
+        empty when no lease is held.
     assignee_name:
       type: string
       title: Assignee name
@@ -81,7 +88,14 @@ props:
 slots:
   footer:
     title: Footer
-    description: 'Footer line, in this order: the lease badge where a lease is held, a spacer, a dotted badge whose label is the card''s EXACT workflow state as text (plan, working, review — the column carries only the phase), then the assignee. When this slot is empty the card composes that line from its lease, state and assignee props. The state must never be conveyed by colour alone: the badge''s label is what names it, while its dot and the card''s accent edge encode the derived status.'
+    description: >-
+      Footer line, in this order: the lease badge where a lease is held, a
+      spacer, a dotted badge whose label is the card's EXACT workflow state as
+      text (plan, working, review — the column carries only the phase), then the
+      assignee. When this slot is empty the card composes that line from its
+      lease, state and assignee props. The state must never be conveyed by
+      colour alone: the badge's label is what names it, while its dot and the
+      card's accent edge encode the derived status.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

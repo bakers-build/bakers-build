@@ -49,9 +49,9 @@
   'lease': 'bg-state-lease',
   'offline': 'bg-state-offline'
 } %}
-{% set size_classes = profile ? 'w-20 h-20 text-display' : (size == 'md' ? 'w-7 h-7 text-eyebrow' : 'w-6 h-6 text-eyebrow') %}
-{% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'leading-none', 'font-bold', 'text-state-ink', size_classes, color_map[color]|default('bg-state-running')] %}
-{% set stack_gap = profile ? 'gap-3' : (size == 'md' ? 'gap-2' : 'gap-1') %}
+{% set size_classes = profile ? 'w-20 h-20 text-page-title' : (size == 'md' ? 'w-7 h-7 text-badge' : 'w-6 h-6 text-badge') %}
+{% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'text-state-ink', size_classes, color_map[color]|default('bg-state-running')] %}
+{% set stack_gap = profile ? 'gap-stack' : (size == 'md' ? 'gap-inline' : 'gap-inline-xs') %}
 {% set root_classes = profile ? ['flex', 'flex-col', 'items-center', 'text-center', stack_gap, 'min-w-0'] : ['inline-flex', 'items-center', stack_gap, 'min-w-0'] %}
 {% set identity %}
 <span{{ (attributes ?: create_attribute()).addClass(root_classes) }}>
@@ -61,23 +61,23 @@
     <span data-person-mark class="{{ mark_classes|join(' ') }}">{{ initials }}</span>
   {%- endif %}
   {%- if compact %}
-    {%- if display_name %}<span class="truncate text-body text-text" data-collapse-hidden>{{ display_name }}</span>{% endif %}
+    {%- if display_name %}<span class="truncate text-body-strong text-text" data-collapse-hidden>{{ display_name }}</span>{% endif %}
   {%- elseif profile %}
-    <span class="flex flex-col items-center gap-1 min-w-0">
-      <span class="text-display text-text">{{ display_name|default(initials) }}</span>
+    <span class="flex flex-col items-center gap-inline-xs min-w-0">
+      <span class="text-page-title font-display text-text">{{ display_name|default(initials) }}</span>
       {%- if subtitle %}<span class="text-body text-text-light">{{ subtitle }}</span>{% endif %}
     </span>
   {%- else %}
     <span class="flex flex-col min-w-0 leading-tight">
-      <span class="truncate text-body text-text">{{ display_name|default(initials) }}</span>
-      {%- if subtitle %}<span class="truncate text-eyebrow text-text-light">{{ subtitle }}</span>{% endif %}
-      {%- if mail %}<span class="truncate text-eyebrow text-text-faint">{{ mail }}</span>{% endif %}
+      <span class="truncate text-body-strong text-text">{{ display_name|default(initials) }}</span>
+      {%- if subtitle %}<span class="truncate text-meta text-text-light">{{ subtitle }}</span>{% endif %}
+      {%- if mail %}<span class="truncate text-meta text-text-faint">{{ mail }}</span>{% endif %}
     </span>
   {%- endif %}
 </span>
 {% endset %}
 {%- if url -%}
-  <a href="{{ url }}" class="min-w-0 no-underline text-inherit">{{ identity }}</a>
+  <a href="{{ url }}" class="min-w-0 no-underline text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ identity }}</a>
 {%- else -%}
   {{ identity }}
 {%- endif -%}

@@ -55,9 +55,9 @@ props:
       type: string
       title: Profile picture URL
       description: >-
-        A rendered image URL for the circle, e.g. `user.user_picture`
-        (BB-507). Optional: initials are the fallback for any account without
-        one, which is why initials stays the required prop.
+        A rendered image URL for the circle, e.g. `user.user_picture` (BB-507).
+        Optional: initials are the fallback for any account without one, which
+        is why initials stays the required prop.
     image_fit:
       type: string
       enum:

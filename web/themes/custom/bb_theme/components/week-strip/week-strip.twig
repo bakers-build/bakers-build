@@ -12,7 +12,7 @@
       {%- set is_zero = day.total == '0:00' %}
       <li class="min-w-0">
         <a
-          class="flex min-w-0 flex-col items-center gap-inline-xs rounded-sm border px-inline-xs py-inline text-center no-underline
+          class="flex min-w-0 flex-col items-center gap-inline-xs rounded-sm border px-inline-xs py-inline text-center no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring
             {{ is_active
               ? 'border-primary bg-surface text-title shadow-sm'
               : 'border-border bg-surface-2 text-text hover:border-primary' }}"

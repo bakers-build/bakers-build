@@ -47,8 +47,8 @@ description: >-
   A STRUCTURED LEAD IS THE OTHER WAY TO FILL THE ENTRY. A caller that knows
   facts rather than prose passes a subject (label, optional URL), a statement,
   plain `facts`, `links` and one preformatted `detail` line; the template lays
-  them out and the same `rich-text` treatment styles them. `body` wins when
-  both arrive.
+  them out and the same `rich-text` treatment styles them. `body` wins when both
+  arrive.
 provider: bb_theme
 props:
   type: object
