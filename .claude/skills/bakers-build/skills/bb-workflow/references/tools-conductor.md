@@ -13,6 +13,12 @@ name and act on the run's worktree. They are **available** when the host lists t
 
   `bakers oven tools <tool> --schema` prints its arguments.
 
-Exit codes follow [tools](tools.md) › *Results and errors*; exit 3 means the run token was
-rejected. Exit 4 from the listing means this shell has no conductor tools: take the step's path
-without them. The run token stays in the environment; pass no token yourself.
+| Exit | Meaning | Next |
+|---|---|---|
+| 0 | success; the tool's text on stdout | use the result |
+| 1 | the tool refused; the message names the cause | report it; correct only arguments the message shows wrong |
+| 3 | run token rejected | report it |
+| 4 | no conductor tools in this shell, unknown tool or unreadable `--data`; no call made | from the listing: take the step's path without them; else fix against `bakers oven tools <tool> --schema` |
+| 5 | HTTP or protocol error | report it; a write may have happened, reconcile with a read |
+
+The run token stays in the environment; pass no token yourself.
