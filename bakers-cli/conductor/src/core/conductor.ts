@@ -36,7 +36,7 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
-import { setNoAutoSetupMerge } from './git-config.js';
+import { setNoAutoSetupMerge, setRunBranchUpstream } from './git-config.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
@@ -1392,9 +1392,25 @@ export class Conductor {
       run.stateAtStart,
       chosen.agent,
     );
-    const ws = await this.serialGit(() =>
-      this.workspace.ensure(t.identifier, t.branchName, baseRef),
-    );
+    const ws = await this.serialGit(async () => {
+      const ensured = await this.workspace.ensure(
+        t.identifier,
+        t.branchName,
+        baseRef,
+      );
+      // With branch.autoSetupMerge=false the branch tracks nothing, and a
+      // sandboxed `push -u` cannot set it (AC-9). Best-effort: a held
+      // config.lock must not fail the dispatch.
+      if (this.config.set_git_auto_setup_merge === true) {
+        await setRunBranchUpstream(ensured.path, t.branchName).catch((err) =>
+          this.logger.warn(
+            { ticket: t.identifier, err: String(err) },
+            `could not set the upstream of ${t.branchName}; run: git -C ${ensured.path} branch --set-upstream-to=origin/${t.branchName} after the first push`,
+          ),
+        );
+      }
+      return ensured;
+    });
     // A claimable state has no project policy without a WORKFLOW.md. Warn and
     // proceed so the missing project instructions are observable without
     // wedging the run. `ws.instructions` is the loaded file (null when absent).

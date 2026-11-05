@@ -3,7 +3,10 @@ import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setNoAutoSetupMerge } from '../../src/core/git-config.js';
+import {
+  setNoAutoSetupMerge,
+  setRunBranchUpstream,
+} from '../../src/core/git-config.js';
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }).trim();
@@ -61,5 +64,52 @@ describe('setNoAutoSetupMerge', () => {
   it('throws when the config cannot be written', async () => {
     writeFileSync(join(main, '.git', 'config.lock'), '', { mode: 0o444 });
     await expect(setNoAutoSetupMerge(main)).rejects.toThrow(/config/);
+  });
+});
+
+describe('setRunBranchUpstream', () => {
+  let dir: string;
+  let run: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'bb-git-upstream-'));
+    const origin = join(dir, 'origin.git');
+    const main = join(dir, 'main');
+    run = join(dir, 'run');
+    execFileSync('git', ['init', '-q', '--bare', origin]);
+    execFileSync('git', ['init', '-q', main]);
+    git(
+      main,
+      '-c',
+      'user.name=Test',
+      '-c',
+      'user.email=test@example.invalid',
+      'commit',
+      '--allow-empty',
+      '-qm',
+      'initial',
+    );
+    git(main, 'remote', 'add', 'origin', origin);
+    git(main, 'push', '-q', 'origin', 'HEAD:refs/heads/next');
+    git(main, 'fetch', '-q', 'origin');
+    git(main, 'config', 'branch.autoSetupMerge', 'false');
+    git(main, 'worktree', 'add', '-qb', 'run', run, 'origin/next');
+  });
+
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('makes the run branch track origin/<branch> after a push that writes no config', async () => {
+    await expect(setRunBranchUpstream(run, 'run')).resolves.toBe('set');
+    // A sandboxed push without -u: the remote-tracking ref is all it writes.
+    git(run, 'push', '-q', 'origin', 'run');
+    expect(git(run, 'rev-parse', '--abbrev-ref', '@{u}')).toBe('origin/run');
+    await expect(setRunBranchUpstream(run, 'run')).resolves.toBe('unchanged');
+  });
+
+  it('throws when the config cannot be written', async () => {
+    writeFileSync(join(dir, 'main', '.git', 'config.lock'), '', {
+      mode: 0o444,
+    });
+    await expect(setRunBranchUpstream(run, 'run')).rejects.toThrow(/config/);
   });
 });

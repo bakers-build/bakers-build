@@ -83,9 +83,9 @@ What it does not block:
 
 ## Git metadata in Codex and Claude sandboxes
 
-A linked worktree's run writes its Git dir and the shared `objects`, `refs`, `logs`; a main checkout's run, its `.git`. Only existing protected entries (`config`, `hooks`, …) are named; a missing one would become an empty placeholder. `allow_write` entries inside `.git` are ignored with a warning. Setting an upstream needs the trusted `git`.
+A linked worktree's run writes its Git dir and the shared `objects`, `refs`, `logs`; a main checkout's run, its `.git`. Only existing protected entries (`config`, `hooks`, …) are named; a missing one would become a placeholder. `allow_write` entries inside `.git` are ignored with a warning. The conductor presets each run branch's upstream.
 
-Known limit (reported upstream): in a linked worktree, Claude Code creates empty `config.lock`, `config.worktree`, `remotes/`, `branches/` in the shared `.git`; all but `config.lock` persist. See [`set_git_auto_setup_merge`](/configuration/project#fields).
+Known limit (upstream report pending): in a linked worktree, Claude Code creates empty `config.lock`, `config.worktree`, `remotes/`, `branches/` in the shared `.git`; all but `config.lock` persist. See [`set_git_auto_setup_merge`](/configuration/project#fields).
 
 At run end the conductor ends processes carrying the run's `BB_RUN_UUID` (Linux).
 
