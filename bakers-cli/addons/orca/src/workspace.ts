@@ -167,7 +167,7 @@ export class OrcaWorkspace implements BbWorkspace {
     validateBranch(branch);
     const extra = this.options.autoSetupMerge
       ? {}
-      : { env: await runBranchGit(this.root) };
+      : { env: await runBranchGit(this.root, this.logger) };
     await assertOrcaReachable(this.execOrca);
     await this.registerRepo();
 
@@ -331,6 +331,7 @@ export function orcaWorkspace(
     baseBranch?: string;
     open?: OrcaOpenLayout;
     adoptTimeoutMs?: number;
+    autoSetupMerge?: boolean;
     /** Overrideable git exec for root derivation (tests). */
     execGit?: RootGitExec;
   } = {},
@@ -352,6 +353,7 @@ export function orcaWorkspace(
         ...(opts.adoptTimeoutMs !== undefined
           ? { adoptTimeoutMs: opts.adoptTimeoutMs }
           : {}),
+        ...(opts.autoSetupMerge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
       });
     },

@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import type { ConductorLogger } from '@bakers-build/core';
 
 const run = promisify(execFile);
 
@@ -37,7 +38,8 @@ export async function setNoAutoSetupMerge(
 export function pushCurrentEnv(
   inherited: NodeJS.ProcessEnv,
 ): Record<string, string> {
-  const n = Number.parseInt(inherited.GIT_CONFIG_COUNT ?? '', 10) || 0;
+  const count = inherited.GIT_CONFIG_COUNT ?? '';
+  const n = /^\d+$/.test(count) ? Number(count) : 0;
   const env: Record<string, string> = { GIT_CONFIG_COUNT: String(n + 1) };
   for (let i = 0; i < n; i++) {
     for (const name of [`GIT_CONFIG_KEY_${i}`, `GIT_CONFIG_VALUE_${i}`]) {
@@ -52,12 +54,19 @@ export function pushCurrentEnv(
 /**
  * The Git setup of a workspace backend before it creates or reuses a run
  * worktree: `branch.autoSetupMerge=false` in `root`, then the run env from
- * {@link pushCurrentEnv}. Best-effort: when the write fails (a held
- * `config.lock`), `git worktree add` reports the real error.
+ * {@link pushCurrentEnv}. Best-effort: a failed write (a held `config.lock`)
+ * is logged with its repair command, since `worktree add` from
+ * `origin/<base>` then fails with a raw Git error.
  */
 export async function runBranchGit(
   root: string,
+  logger?: Pick<ConductorLogger, 'warn'>,
 ): Promise<Record<string, string>> {
-  await setNoAutoSetupMerge(root).catch(() => undefined);
+  await setNoAutoSetupMerge(root).catch((err: unknown) =>
+    logger?.warn(
+      { root, err: String(err) },
+      `could not set branch.autoSetupMerge=false; new worktrees fail while a sandbox holds config.lock. Repair: git -C ${root} config branch.autoSetupMerge false`,
+    ),
+  );
   return pushCurrentEnv(process.env);
 }

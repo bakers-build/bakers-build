@@ -661,6 +661,7 @@ describe('HerdrWorkspace open layout (BB-139/BB-234)', () => {
       }),
       execGit: async () => '',
       logger,
+      autoSetupMerge: true, // `/repo` is no repository; count only layout warnings
     });
 
     // ensure() still resolves with the created worktree, and applyOpenLayout
@@ -696,6 +697,7 @@ describe('HerdrWorkspace open layout (BB-139/BB-234)', () => {
         throwOnRun: true,
       }),
       execGit: async () => '/repo/.git\n',
+      autoSetupMerge: true, // `/repo` is no repository; count only layout warnings
     });
     const ws = await plugin.createWorkspace(
       { config_path: '/repo/.bakers/conductor.config.js' } as never,

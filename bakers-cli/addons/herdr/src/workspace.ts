@@ -262,7 +262,7 @@ export class HerdrWorkspace implements BbWorkspace {
     validateBranch(branch);
     const extra = this.options.autoSetupMerge
       ? {}
-      : { env: await runBranchGit(this.root) };
+      : { env: await runBranchGit(this.root, this.logger) };
 
     const worktrees = parseWorktreeList(
       await this.execHerdr(['worktree', 'list', '--cwd', this.root, '--json']),
@@ -498,6 +498,7 @@ export function herdrWorkspace(
     worktreeDir?: string;
     baseBranch?: string;
     open?: OpenLayout;
+    autoSetupMerge?: boolean;
     /** Overrideable git exec for root derivation (tests). */
     execGit?: RootGitExec;
     /** Overrideable herdr exec (tests) — sibling of `execGit`. */
@@ -522,6 +523,7 @@ export function herdrWorkspace(
         ...(opts.baseBranch ? { baseBranch: opts.baseBranch } : {}),
         ...(opts.open ? { open: opts.open } : {}),
         ...(opts.execHerdr ? { execHerdr: opts.execHerdr } : {}),
+        ...(opts.autoSetupMerge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
       });
     },

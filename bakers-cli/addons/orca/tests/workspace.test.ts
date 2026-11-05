@@ -274,7 +274,11 @@ describe('OrcaWorkspace.applyOpenLayout', () => {
         throw new Error('boom');
       },
     });
-    const ws = workspace(root, orca, fakeGit().git, { logger });
+    // tmpRoot() is no repository; count only layout warnings.
+    const ws = workspace(root, orca, fakeGit().git, {
+      logger,
+      autoSetupMerge: true,
+    });
     const { path } = await ws.ensure('BAKERS-1', 'feat/x');
     await expect(ws.applyOpenLayout(path, ctx)).resolves.toBeUndefined();
     expect(warnings).toHaveLength(1);

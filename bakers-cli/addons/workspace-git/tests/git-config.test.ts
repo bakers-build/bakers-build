@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import {
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -10,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { pushCurrentEnv, setNoAutoSetupMerge } from '../src/git-config.js';
-import { GitWorkspace } from '../src/index.js';
+import { GitWorkspace, gitWorkspace } from '../src/index.js';
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }).trim();
@@ -96,6 +97,16 @@ describe('pushCurrentEnv', () => {
       GIT_CONFIG_VALUE_1: 'current',
     });
   });
+
+  it('treats a non-numeric or negative GIT_CONFIG_COUNT as 0', () => {
+    for (const count of ['-1', 'abc']) {
+      expect(pushCurrentEnv({ GIT_CONFIG_COUNT: count })).toEqual({
+        GIT_CONFIG_COUNT: '1',
+        GIT_CONFIG_KEY_0: 'push.default',
+        GIT_CONFIG_VALUE_0: 'current',
+      });
+    }
+  });
 });
 
 describe('GitWorkspace run branches', () => {
@@ -131,6 +142,27 @@ describe('GitWorkspace run branches', () => {
     expect(git(main, 'config', '--get', 'branch.autoSetupMerge')).toBe('false');
   });
 
+  it('warns with the repair command when the first write meets a held config.lock', async () => {
+    writeFileSync(join(main, '.git', 'config.lock'), '', { mode: 0o444 });
+    const warnings: string[] = [];
+    const logger = {
+      debug() {},
+      info() {},
+      error() {},
+      warn: (_obj: object, msg?: string) => warnings.push(msg ?? ''),
+    };
+    const ws = await new GitWorkspace({ root: main, logger }).ensure(
+      'BB-1',
+      'one',
+    );
+    expect(warnings).toEqual([
+      expect.stringContaining(
+        `git -C ${main} config branch.autoSetupMerge false`,
+      ),
+    ]);
+    expect(Object.values(ws.env ?? {})).toContain('push.default');
+  });
+
   it('leaves Git alone with autoSetupMerge: true', async () => {
     const ws = await new GitWorkspace({
       root: main,
@@ -139,6 +171,16 @@ describe('GitWorkspace run branches', () => {
     expect(() =>
       git(main, 'config', '--get', 'branch.autoSetupMerge'),
     ).toThrow();
+    expect(ws.env).toBeUndefined();
+  });
+
+  it('honours autoSetupMerge: true from the addon options', async () => {
+    mkdirSync(join(main, '.bakers'));
+    const ws = await gitWorkspace({ autoSetupMerge: true })
+      .createWorkspace({
+        config_path: join(main, '.bakers', 'conductor.config.js'),
+      } as never)
+      .then((w) => w.ensure('BB-1', 'one'));
     expect(ws.env).toBeUndefined();
   });
 
