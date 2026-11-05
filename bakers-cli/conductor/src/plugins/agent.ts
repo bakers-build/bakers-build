@@ -167,12 +167,17 @@ export interface BbAgent {
    * `tools`, when given, is the conductor's MCP server for this run
    * ({@link CONDUCTOR_TOOLS_SERVER}); its bearer token is in the run env as
    * {@link CONDUCTOR_TOKEN_ENV}. An agent that cannot add an MCP server ignores it.
+   *
+   * `env` is the run env the command starts in, for an agent whose harness
+   * filters it (Codex). Its values may be secret: never put them in argv
+   * unless the harness drops them otherwise.
    */
   launchCommand(
     prompt: string,
     run?: AgentRunIdentity,
     workspacePath?: string,
     tools?: { url: string },
+    env?: Readonly<Record<string, string>>,
   ): string;
   /**
    * Locate and read this agent's run transcript for a run that executed in

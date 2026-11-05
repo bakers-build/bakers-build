@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
+  killRunProcesses,
   type MachineContext,
   shellQuote,
   stemForConfigFile,
@@ -730,6 +731,21 @@ export class Conductor {
         'run tab cleanup failed',
       );
     }
+    // Background commands and their sandboxes outlive the closed PTY.
+    try {
+      const { pids } = await killRunProcesses(runUuid);
+      if (pids.length > 0) {
+        this.logger.info(
+          { run: runUuid, pids },
+          'ended leftover run processes',
+        );
+      }
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'run process cleanup failed',
+      );
+    }
   }
 
   /**
@@ -1397,6 +1413,10 @@ export class Conductor {
     const ws = await this.serialGit(() =>
       this.workspace.ensure(t.identifier, t.branchName, baseRef),
     );
+    // The backend's own vars (Git config) join the run env; core keys still win.
+    for (const [key, value] of Object.entries(ws.env ?? {})) {
+      if (!isReservedEnvKey(key)) env[key] = value;
+    }
     // A claimable state has no project policy without a WORKFLOW.md. Warn and
     // proceed so the missing project instructions are observable without
     // wedging the run. `ws.instructions` is the loaded file (null when absent).
@@ -1585,6 +1605,7 @@ export class Conductor {
       identity,
       ws.path,
       tools ? { url: tools.url } : undefined,
+      env,
     );
     await this.executor.startRun({
       ticket: {

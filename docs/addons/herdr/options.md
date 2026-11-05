@@ -25,6 +25,7 @@ addons: [
 | `root` | Main clone path; derived from Git's common directory when omitted. |
 | `worktreeDir` | Worktree directory relative to the root, default `.bakers-worktrees`. |
 | `baseBranch` | Base ref for new branches; default the remote-tracking branch of the checked-out branch. |
+| `autoSetupMerge` | Default `false`: run branches have no upstream and push with `push.default=current`; see [`autoSetupMerge`](/addons/workspace-git#options). `true` leaves Git alone. |
 | `open` | Overview layout of a fresh worktree. Omitted runs `bakers ui --ticket {identifier}`; `{}` leaves a bare tab. Keys: `command`, `panes`, `tabLabel`, `panelLabel`. |
 | `default`, `states.<state>` | Per-run layout. A state value beats `default`, which beats the built-ins. |
 | `launchWatch` | Optional. `startTimeoutMs` (default 60000) waits for the launch wrapper to write `started`; `timeoutMs` (default 4000) then fails the run if the agent exits immediately. |

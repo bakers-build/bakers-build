@@ -1,3 +1,7 @@
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { BbWorkspace } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
@@ -74,6 +78,43 @@ describe('@bakers-build/addon-herdr workspace factory', () => {
 });
 
 describe('HerdrWorkspace', () => {
+  it('sets branch.autoSetupMerge=false in the root before creating, and gives the run push.default=current', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'herdr-ws-'));
+    try {
+      execFileSync('git', ['init', '-q', root]);
+      const autoSetupMerge = () =>
+        execFileSync('git', ['-C', root, 'config', 'branch.autoSetupMerge'], {
+          encoding: 'utf8',
+        }).trim();
+      let atCreate = '';
+      const ws = new HerdrWorkspace({
+        root,
+        execHerdr: async (args) => {
+          if (args.includes('list')) return listEmpty();
+          atCreate = autoSetupMerge();
+          return createResponse('bakers/GL-9', join(root, 'wt'));
+        },
+        execGit: async () => '',
+      });
+      const result = await ws.ensure('GL-9', 'bakers/GL-9');
+      expect(atCreate).toBe('false');
+      const env = result.env ?? {};
+      const last = Number(env.GIT_CONFIG_COUNT) - 1;
+      expect(env[`GIT_CONFIG_KEY_${last}`]).toBe('push.default');
+      expect(env[`GIT_CONFIG_VALUE_${last}`]).toBe('current');
+      const off = await new HerdrWorkspace({
+        root,
+        autoSetupMerge: true,
+        execHerdr: async () =>
+          listWithEntry('bakers/GL-9', join(root, 'wt'), 'w'),
+        execGit: async () => '',
+      }).ensure('GL-9', 'bakers/GL-9');
+      expect(off.env).toBeUndefined();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('creates a new worktree from the fetched remote branch (reports created=true)', async () => {
     const herdrCalls: string[][] = [];
     const gitCalls: string[][] = [];
@@ -620,6 +661,7 @@ describe('HerdrWorkspace open layout (BB-139/BB-234)', () => {
       }),
       execGit: async () => '',
       logger,
+      autoSetupMerge: true, // `/repo` is no repository; count only layout warnings
     });
 
     // ensure() still resolves with the created worktree, and applyOpenLayout
@@ -655,6 +697,7 @@ describe('HerdrWorkspace open layout (BB-139/BB-234)', () => {
         throwOnRun: true,
       }),
       execGit: async () => '/repo/.git\n',
+      autoSetupMerge: true, // `/repo` is no repository; count only layout warnings
     });
     const ws = await plugin.createWorkspace(
       { config_path: '/repo/.bakers/conductor.config.js' } as never,
