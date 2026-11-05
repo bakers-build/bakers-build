@@ -24,7 +24,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_create',
   label: new TranslatableMarkup('Create a ticket'),
-  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. Returns the new ticket’s UUID, identifier and state.'),
+  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. Returns the new ticket’s UUID, identifier, state and URL.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -102,6 +102,11 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The ticket’s git branch.'),
       nullable: TRUE,
     ),
+    'url' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('URL'),
+      description: new TranslatableMarkup('The ticket’s absolute URL, to link it.'),
+    ),
   ],
 )]
 final class TicketCreate extends ToolBase {
@@ -141,6 +146,7 @@ final class TicketCreate extends ToolBase {
       'identifier' => $ticket->getIdentifier() ?: NULL,
       'state' => $ticket->get('state')->value,
       'branch_name' => $ticket->get('branch_name')->value,
+      'url' => $ticket->toUrl()->setAbsolute()->toString(),
     ]);
   }
 

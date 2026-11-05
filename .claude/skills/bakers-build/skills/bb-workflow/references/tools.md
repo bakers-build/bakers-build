@@ -40,7 +40,7 @@ are term names, reused or created.
 |---|---|---|---|
 | Read a ticket | `bakers_ticket_read` | `ticket` | `id`, `identifier`, `title`, `state`, `workflow`, `description`, `type`, `recipe`, `labels`, `links`, `project`, `branch_name`, `base_branch`, `conductor`, `frozen`, `metrics`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
 | Search tickets | `bakers_ticket_search` | `query` (title or description) or exact `branch_name`; optional `project` | `tickets` (`identifier`, `title`, `state`, `type`, `branch_name`, `base_branch`, `parent`); newest first, at most 50 |
-| Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name` | `id`, `identifier`, initial `state`, `branch_name` |
+| Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name` | `id`, `identifier`, `state`, `branch_name`, `url` |
 | Edit a ticket | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor` (UUID), `labels_add` (names), `labels_remove` (names; absent ones ignored), `frozen` | saved values and `labels`; others kept; a name in both label lists or a closed ticket refused |
 | Set recipe and type | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | saved `recipe` and `type` |
 | Change state or add links | `bakers_ticket_transition` | `ticket`; `state`, `links` (`[{uri, title}]`) or both | saved `state` and all `links`; existing links kept, no duplicate `uri`; no `state` keeps it |
