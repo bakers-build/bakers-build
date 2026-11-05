@@ -85,7 +85,12 @@ else
   rm -rf "$tmp"
 fi
 
-if [ -f "$HOME/.cloudflared/tunnel-token" ]; then
+# The preview transport parameter (README › Optional previews) picks the tunnel client and writes
+# machine.config.js; at none nothing is installed or started. The edit never fails the start.
+preview="${PREVIEW_TRANSPORT:-none}"
+node /usr/local/bin/bakers-preview-config "$preview" || true
+
+if [ "$preview" = cloudflare-quick ] || [ "$preview" = cloudflare ]; then
   if command -v cloudflared >/dev/null; then
     echo "cloudflared: skipped (already installed)"
   else
@@ -98,7 +103,7 @@ if [ -f "$HOME/.cloudflared/tunnel-token" ]; then
   fi
 fi
 
-if [ -f "$HOME/.config/frp/frpc.json" ]; then
+if [ "$preview" = frp ]; then
   if command -v frpc >/dev/null; then
     echo "frpc: skipped (already installed)"
   else
@@ -115,12 +120,20 @@ fi
 # Own session (setsid): herdr treats a server outside one as not surviving SSH loss and refuses saved machines.
 setsid nohup herdr server >"${TMPDIR:-/tmp}/herdr-server.log" 2>&1 </dev/null &
 
-if [ -f "$HOME/.config/frp/frpc.json" ]; then
-  nohup frpc -c "$HOME/.config/frp/frpc.json" >"${TMPDIR:-/tmp}/frpc.log" 2>&1 </dev/null &
+if [ "$preview" = frp ]; then
+  if [ -f "$HOME/.config/frp/frpc.json" ]; then
+    nohup frpc -c "$HOME/.config/frp/frpc.json" >"${TMPDIR:-/tmp}/frpc.log" 2>&1 </dev/null &
+  else
+    echo "frpc: not started, ~/.config/frp/frpc.json is missing"
+  fi
 fi
 
-if [ -f "$HOME/.cloudflared/tunnel-token" ]; then
-  nohup cloudflared tunnel run --token-file "$HOME/.cloudflared/tunnel-token" >"${TMPDIR:-/tmp}/cloudflared.log" 2>&1 </dev/null &
+if [ "$preview" = cloudflare ]; then
+  if [ -f "$HOME/.cloudflared/tunnel-token" ]; then
+    nohup cloudflared tunnel run --token-file "$HOME/.cloudflared/tunnel-token" >"${TMPDIR:-/tmp}/cloudflared.log" 2>&1 </dev/null &
+  else
+    echo "cloudflared: not started, ~/.cloudflared/tunnel-token is missing"
+  fi
 fi
 
 # The PM bot, when the workspace has its parameters (README › PM bot). It never fails the start.
