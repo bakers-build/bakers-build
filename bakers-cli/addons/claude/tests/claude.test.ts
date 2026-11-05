@@ -470,18 +470,21 @@ describe('ClaudeAgent security: sandbox (default)', () => {
         ['-C', main, 'rev-parse', '--path-format=absolute', '--git-dir'],
         { encoding: 'utf8' },
       ).trim();
+      const launch = (path: string) =>
+        captureArgv(
+          'claude',
+          new ClaudeAgent({
+            sandbox: { allow_write: ['/srv/cache'] },
+          }).launchCommand('x', undefined, path, {
+            url: 'http://127.0.0.1:4100',
+          }),
+        );
       const filesystem = (path: string) =>
-        JSON.parse(
-          flagValue(
-            captureArgv(
-              'claude',
-              new ClaudeAgent({
-                sandbox: { allow_write: ['/srv/cache'] },
-              }).launchCommand('x', undefined, path),
-            ),
-            '--settings',
-          ),
-        ).sandbox.filesystem;
+        JSON.parse(flagValue(launch(path), '--settings')).sandbox.filesystem;
+      // Git grants and conductor tools combine in one sandboxed launch.
+      expect(
+        JSON.parse(flagValue(launch(worktree), '--mcp-config')).mcpServers,
+      ).toHaveProperty('bakers-conductor');
       const own = join(common, 'worktrees', 'work');
       expect(filesystem(worktree).allowWrite).toEqual([
         '/srv/cache',
