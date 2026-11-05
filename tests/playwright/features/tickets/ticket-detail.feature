@@ -85,6 +85,11 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     When I visit the ticket "BB-142"
     Then the workflow list marks the state of ticket "BB-142" as its one current step
 
+  # A test result names its source before its counts.
+  Scenario: The report row leads with its source
+    When I visit the ticket "BB-142"
+    Then every report row names its source before its counts
+
   # AC 8. The shell layout puts local_tasks_block inside the content island, so
   # a tab row is what this route would render by default; its absence is a
   # property of the screen and not of the shell.
@@ -104,6 +109,7 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     And the handoff stream is closed
     When I open the handoff stream
     Then the handoff stream is open
+    And every handoff time is a time element with its exact date on hover
 
   # AC 7's other half, and the reason collapsible.twig carries no .js file. Run
   # in the `chromium-nojs` project, where javaScriptEnabled is false — so this

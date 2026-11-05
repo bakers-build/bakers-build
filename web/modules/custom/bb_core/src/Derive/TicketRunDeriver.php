@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Derive;
 
 use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\Core\Datetime\FormattedDateDiff;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\user\UserInterface;
 
 /**
@@ -41,7 +40,7 @@ final class TicketRunDeriver {
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
-    private readonly DateFormatterInterface $dateFormatter,
+    private readonly BbDate $date,
   ) {
   }
 
@@ -132,12 +131,11 @@ final class TicketRunDeriver {
     if ($started <= 0) {
       return '';
     }
-    $diff = $this->dateFormatter->formatTimeDiffSince($started, ['granularity' => 1]);
-    return $diff instanceof FormattedDateDiff ? $diff->getString() : (string) $diff;
+    return $this->date->duration($this->time->getRequestTime() - $started);
   }
 
   /**
-   * Compact humanised duration of a finished run ("1m 12s"), or empty string.
+   * Duration of a finished run ("1 min", "1h 10m"), or empty string.
    *
    * Duration is closed_date − started_at. A run without both timestamps (still
    * running, or never started) has no measurable duration and yields an empty
@@ -149,39 +147,7 @@ final class TicketRunDeriver {
     if ($started <= 0 || $closed <= 0 || $closed < $started) {
       return '';
     }
-    return $this->humaniseDuration($closed - $started);
-  }
-
-  /**
-   * Formats a second count as a compact "1h 2m 3s" label (largest units first).
-   *
-   * Zero-valued leading units are dropped; seconds are always shown when no
-   * larger unit is present so a sub-minute run still reads "42s".
-   *
-   * @param int $seconds
-   *   The elapsed seconds; expected non-negative.
-   *
-   * @return string
-   *   The compact duration label.
-   */
-  private function humaniseDuration(int $seconds): string {
-    if ($seconds <= 0) {
-      return '0s';
-    }
-    $hours = intdiv($seconds, 3600);
-    $minutes = intdiv($seconds % 3600, 60);
-    $secs = $seconds % 60;
-    $parts = [];
-    if ($hours > 0) {
-      $parts[] = $hours . 'h';
-    }
-    if ($minutes > 0) {
-      $parts[] = $minutes . 'm';
-    }
-    if ($secs > 0 || $parts === []) {
-      $parts[] = $secs . 's';
-    }
-    return implode(' ', $parts);
+    return $this->date->duration($closed - $started);
   }
 
   /**

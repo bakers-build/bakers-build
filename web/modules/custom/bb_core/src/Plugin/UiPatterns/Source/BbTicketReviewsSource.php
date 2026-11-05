@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -17,6 +16,7 @@ use Drupal\bb_core\Entity\BbCommentInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Form\BbReviewCommentForm;
 use Drupal\bb_core\Form\ReviewStateTransitionForm;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -55,7 +55,7 @@ final class BbTicketReviewsSource extends SourcePluginBase implements ContainerF
   /**
    * Formats each review's time.
    */
-  private DateFormatterInterface $dateFormatter;
+  private BbDate $date;
 
   /**
    * {@inheritdoc}
@@ -65,7 +65,7 @@ final class BbTicketReviewsSource extends SourcePluginBase implements ContainerF
     $instance->currentUser = $container->get('current_user');
     $instance->storage = $container->get('entity_type.manager')->getStorage('bb_comment');
     $instance->formBuilder = $container->get('form_builder');
-    $instance->dateFormatter = $container->get('date.formatter');
+    $instance->date = $container->get(BbDate::class);
     return $instance;
   }
 
@@ -191,7 +191,7 @@ final class BbTicketReviewsSource extends SourcePluginBase implements ContainerF
               'display_name' => $known ? (string) $author->label() : (string) $this->t('Unknown author'),
               'initials' => $known ? (string) $review->get('author_initials')->value : '?',
               'color' => $known ? (string) $review->get('author_color')->value : 'offline',
-              'subtitle' => $this->dateFormatter->format((int) $time, 'medium'),
+              'subtitle' => $this->date->label((int) $time),
             ],
           ],
           'controls' => [

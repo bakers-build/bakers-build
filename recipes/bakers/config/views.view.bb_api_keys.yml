@@ -121,11 +121,9 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          type: timestamp
+          type: bb_time
           settings:
-            date_format: custom
-            custom_date_format: 'j M Y'
-            timezone: UTC
+            date_only: true
         bb_expires:
           id: bb_expires
           table: consumer_field_data
@@ -159,11 +157,9 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          type: timestamp
+          type: bb_time
           settings:
-            date_format: custom
-            custom_date_format: 'j M Y'
-            timezone: UTC
+            date_only: true
         bb_api_key_status:
           id: bb_api_key_status
           table: consumer_field_data

@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Derive;
 
 use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\Core\Datetime\FormattedDateDiff;
 use Drupal\bb_core\Entity\BbConductorInterface;
+use Drupal\bb_core\Time\BbDate;
 
 /**
  * Derives dashboard display values for a conductor.
@@ -25,7 +24,7 @@ final class ConductorDeriver {
 
   public function __construct(
     private readonly TimeInterface $time,
-    private readonly DateFormatterInterface $dateFormatter,
+    private readonly BbDate $date,
   ) {
   }
 
@@ -150,13 +149,7 @@ final class ConductorDeriver {
     if ($lastSeen <= 0) {
       return 'Never';
     }
-    $diff = $this->dateFormatter->formatTimeDiffSince(
-      $lastSeen,
-      ['granularity' => 1],
-    );
-    return $diff instanceof FormattedDateDiff
-      ? $diff->getString()
-      : (string) $diff;
+    return $this->date->label($lastSeen);
   }
 
 }

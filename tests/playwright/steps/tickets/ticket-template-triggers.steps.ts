@@ -195,7 +195,12 @@ Then('the trigger {string} runs next on the coming 1st at {string}', async ({ pa
     }
   }
   const expected = `${year}-${String(month).padStart(2, '0')}-01 ${time}`;
-  await expect(triggerRow(page, summary).getByText(new RegExp(`${expected} [A-Z]`))).toBeVisible();
+  // The label follows the reader's time zone; the machine value is compared in the trigger's.
+  const stamp = await triggerRow(page, summary).locator('time[datetime]').first().getAttribute('datetime');
+  const berlin = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .format(new Date(stamp ?? ''))
+    .replace(', ', ' ');
+  expect(berlin, `The next run is ${stamp}`).toBe(expected);
 });
 
 Then('no trigger {string} exists', async ({ page }, summary: string) => {

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\bb_board;
 
-use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Derive\TicketRunDeriver;
-use Drupal\bb_core\Link\LinkKind;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Link\LinkKind;
+use Drupal\bb_core\Time\BbDate;
 
 /**
  * Maps ticket entities to board-card props.
@@ -21,7 +20,7 @@ final class ProjectBoard {
 
   public function __construct(
     private readonly TicketRunDeriver $deriver,
-    private readonly DateFormatterInterface $dateFormatter,
+    private readonly BbDate $date,
   ) {}
 
   /**
@@ -106,9 +105,7 @@ final class ProjectBoard {
     $facts = [];
     $closed = $ticket->get('closed_date')->value;
     if ($closed !== NULL && $closed !== '') {
-      $facts['done_ago'] = (string) new TranslatableMarkup('@time ago', [
-        '@time' => $this->dateFormatter->formatTimeDiffSince((int) $closed, ['granularity' => 1]),
-      ]);
+      $facts['done_ago'] = $this->date->label((int) $closed);
     }
     foreach ($ticket->get('links')->getValue() as $link) {
       $uri = (string) ($link['uri'] ?? '');

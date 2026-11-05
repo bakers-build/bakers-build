@@ -238,7 +238,7 @@ final class BbTicketReviewsSourceTest extends KernelTestBase {
    * A timestamp the way an entry shows it.
    */
   private function formatted(int $timestamp): string {
-    return $this->container->get('date.formatter')->format($timestamp, 'medium');
+    return $this->container->get('bb_core.date')->label($timestamp);
   }
 
   /**
