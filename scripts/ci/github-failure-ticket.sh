@@ -6,11 +6,13 @@ set -euo pipefail
 
 : "${FAILED_JOBS:?}" "${GITHUB_SHA:?}" "${RUN_URL:?}"
 export TITLE='CI failure: scheduled GitHub checks on next'
+# Project BAKERS; ticket search accepts only the UUID, not the key.
+export PROJECT=07ab22a7-49ee-479d-8431-7202f5235898
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 # JSON is built with node so job names and URLs cannot break the quoting.
-node -e 'process.stdout.write(JSON.stringify({query: process.env.TITLE, project: "BAKERS"}))' \
+node -e 'process.stdout.write(JSON.stringify({query: process.env.TITLE, project: process.env.PROJECT}))' \
   >"$work/search.json"
 bakers tools tool_api__bakers_ticket_search --data @"$work/search.json" >"$work/found.json"
 
@@ -31,7 +33,7 @@ const body = [
 const [tool, args] = open
   ? ['bakers_comment_publish', { ticket: open.identifier, type: 'comment', body }]
   : ['bakers_ticket_create', {
-      title: env.TITLE, project: 'BAKERS', workflow: 'bb_work', type: 'bug', description: body,
+      title: env.TITLE, project: env.PROJECT, workflow: 'bb_work', type: 'bug', description: body,
     }];
 fs.writeFileSync(`${dir}/tool`, `tool_api__${tool}`);
 fs.writeFileSync(`${dir}/args.json`, JSON.stringify(args));

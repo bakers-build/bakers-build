@@ -9,6 +9,8 @@ const script = new URL(
   import.meta.url,
 ).pathname;
 const TITLE = 'CI failure: scheduled GitHub checks on next';
+// Project BAKERS; ticket search accepts only the UUID.
+const BAKERS = '07ab22a7-49ee-479d-8431-7202f5235898';
 
 type Call = { tool: string; args: Record<string, string> };
 
@@ -83,11 +85,11 @@ describe('GitHub checks failure ticket', () => {
       'bakers_ticket_create',
       'bakers_ticket_update',
     ]);
-    expect(result.calls[0].args).toEqual({ query: TITLE, project: 'BAKERS' });
+    expect(result.calls[0].args).toEqual({ query: TITLE, project: BAKERS });
     const created = result.calls[1].args;
     expect(created).toMatchObject({
       title: TITLE,
-      project: 'BAKERS',
+      project: BAKERS,
       workflow: 'bb_work',
       type: 'bug',
     });
