@@ -5,7 +5,7 @@
  *
  * Built exactly like stat-comparison.src.js — a Drupal behaviour guarded by
  * once, colours read from the token custom properties (no colour literals), a
- * MutationObserver re-reading them when the mode changes, and a detach
+ * MutationObserver re-reading them when the skin or mode changes, and a detach
  * on `unload` that releases chart and observer. See that file for the why.
  *
  * Chart.js's own legend and tooltip stay off: the legend is markup, and the
@@ -334,7 +334,7 @@ Drupal.behaviors.bakersFlowChart = {
       canvas.addEventListener('focus', () => show(state.active ?? model.sections.length - 1, true));
       canvas.addEventListener('blur', () => show(null, true));
 
-      // The mode lives as an attribute on <html>; switching it
+      // The skin and mode live as attributes on <html>; switching either one
       // repaints the CSS but not a canvas, so the colours are re-read here.
       const observer = new MutationObserver(() => {
         state.colours = palette(host);
@@ -347,7 +347,7 @@ Drupal.behaviors.bakersFlowChart = {
       });
       observer.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ['data-mode'],
+        attributeFilter: ['data-skin', 'data-mode'],
       });
       this.live.set(host, { chart, observer });
     });

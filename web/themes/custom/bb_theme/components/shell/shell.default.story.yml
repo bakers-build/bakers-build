@@ -70,7 +70,7 @@ slots:
             component: bb_theme:mode_toggle
             props:
               mode: light
-              label: Choose appearance
+              label: Choose theme
   content:
     - type: element
       tag: div

@@ -235,7 +235,7 @@ scenes:
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose appearance
+                    label: Choose theme
           content: $content
           footer:
             component: bb_theme:status_bar
@@ -349,7 +349,7 @@ scenes:
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose appearance
+                    label: Choose theme
           content: $content
           footer:
             component: bb_theme:status_bar
@@ -573,7 +573,7 @@ scenes:
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose appearance
+                    label: Choose theme
           content: $content
           footer:
             component: bb_theme:status_bar

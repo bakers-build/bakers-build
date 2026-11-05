@@ -12,24 +12,24 @@
    untagged entry, because both landed on the same branch. Now an absent tag
    renders no tag, and every tag that arrives is shown as itself. #}
 {% set accent_map = {
-  'spec': 'text-state-lease-ink',
-  'plan': 'text-state-lease-ink',
-  'debug_diagnose': 'text-state-attention-ink',
-  'summary': 'text-state-running-ink',
-  'acceptance': 'text-state-unassigned-ink',
-  'scenario': 'text-state-lease-ink',
-  'test': 'text-state-offline-ink',
-  'failed': 'text-state-attention-ink'
+  'spec': 'text-state-lease',
+  'plan': 'text-state-lease',
+  'debug_diagnose': 'text-state-attention',
+  'summary': 'text-state-running',
+  'acceptance': 'text-state-unassigned',
+  'scenario': 'text-state-lease',
+  'test': 'text-state-offline',
+  'failed': 'text-state-attention'
 } %}
 {% set rail_map = {
   'spec': 'before:bg-state-lease',
   'plan': 'before:bg-state-lease',
-  'debug_diagnose': 'before:bg-state-attention-mark',
+  'debug_diagnose': 'before:bg-state-attention',
   'summary': 'before:bg-state-running',
   'acceptance': 'before:bg-state-unassigned',
   'scenario': 'before:bg-state-lease',
   'test': 'before:bg-state-offline',
-  'failed': 'before:bg-state-attention-mark'
+  'failed': 'before:bg-state-attention'
 } %}
 {% set typed = tag is not empty %}
 {% set root_classes = ['event', 'group', 'relative', 'flex', 'gap-[10px]', 'pl-[14px]', 'py-[10px]', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-[2px]', 'before:rounded-[2px]', rail_map[tag]|default('before:bg-border')] %}

@@ -16,7 +16,7 @@
 4. **Butter means "waits for you", and nothing else in light mode.**
    - **Light mode:** butter appears only as a fill with rye text. It is never a dot or line on a light ground (1.5:1). Selection, the active tab and primary buttons are rye.
    - **Dark mode:** butter is also the primary colour.
-5. **Avatars get their own tokens.** Today `person.twig` colours initials with state colours, so a person can look like the "unassigned" error state. New tokens named after their colours, `avatar-rose`, `avatar-lime`, `avatar-peach` and `avatar-stone`, replace them.
+5. **Avatars get their own tokens.** Today `person.twig` colours initials with state colours, so a person can look like the "unassigned" error state. New tokens `avatar-a`…`avatar-d` replace them.
 6. **Type:** Spline Sans for text, Spline Sans Mono for IDs, states and numbers, and Bricolage Grotesque only for page titles.
 
 ## Tokens
@@ -59,20 +59,14 @@ The CSS name is `--color-<token>`. The values were exported from Figma on 2026-1
 | state-ink | #2B2116 | #17120B |
 | **state-review** (new) | #F4AFC0 | #F4AFC0 |
 | **state-done** (new) | #BFE07A | #BFE07A |
-| type-feature | #718F39 | #BFE07A |
+| type-feature | #8FB548 | #BFE07A |
 | type-bug | #C8432F | #E8644E |
 | type-chore | #B8692E | #D28A50 |
-| **avatar-rose** (new) | #F4AFC0 | #F4AFC0 |
-| **avatar-lime** (new) | #CFE69A | #BFE07A |
-| **avatar-peach** (new) | #EAC6A4 | #E3B48A |
-| **avatar-stone** (new) | #D9D3C9 | #BCB3A6 |
-| chart-series-a…f | #B8692E · #718F39 · #A28317 · #DE5779 · #C8432F · #6E5D49 | #D28A50 · #BFE07A · #F3CE3A · #F4AFC0 · #E8644E · #A8977E |
-| chart-flow-new | #B8692E | #D28A50 |
-| chart-flow-done | #718F39 | #BFE07A |
-| chart-flow-grows | #F8D9D0 | #4E2018 |
-| chart-flow-shrinks | #E8F1D6 | #2F3A1A |
-
-Light chart colours are darker than the exported values, with the same hue, so every series reaches 3:1 on `surface` and `surface-2`. The exported lime #8FB548, butter #E0B520 and rose #E88AA2 measured 2.33:1, 1.91:1 and 2.41:1 on `surface`. The owner chose this on 2026-11-02. The `chart-flow-*` tokens were not in the export; they reuse the series and state-tint values above.
+| **avatar-a** (new) | #F4AFC0 | #F4AFC0 |
+| **avatar-b** (new) | #CFE69A | #BFE07A |
+| **avatar-c** (new) | #EAC6A4 | #E3B48A |
+| **avatar-d** (new) | #D9D3C9 | #BCB3A6 |
+| chart-series-a…f | #B8692E · #8FB548 · #E0B520 · #E88AA2 · #C8432F · #6E5D49 | #D28A50 · #BFE07A · #F3CE3A · #F4AFC0 · #E8644E · #A8977E |
 
 Usage rules:
 - `state-attention-mark` is for dots and lines that mark "waits for you".
@@ -96,7 +90,7 @@ I measured every text and background pair in both Figma boards. Light has 28 pai
 | `state-lease-ink` on `state-lease-tint` | 7.5:1 | 7.8:1 | 4.5:1 |
 | `state-running-ink` on `state-running-tint` | 10.3:1 | 9.2:1 | 4.5:1 |
 | `state-offline-ink` on `state-offline-tint` | 8.4:1 | 8.0:1 | 4.5:1 |
-| `state-ink` on `avatar-rose` (lowest avatar) | 8.8:1 | 10.4:1 | 4.5:1 |
+| `state-ink` on `avatar-a` (lowest avatar) | 8.8:1 | 10.4:1 | 4.5:1 |
 | `state-ink` on `state-review` | 8.8:1 | 10.4:1 | 4.5:1 |
 | `state-ink` on `state-done` | 10.6:1 | 12.6:1 | 4.5:1 |
 | `control-border` on `surface` | 4.1:1 | 4.2:1 | 3:1 |
@@ -105,7 +99,7 @@ I measured every text and background pair in both Figma boards. Light has 28 pai
 | `state-unassigned` on `surface-2` | 4.0:1 | 4.8:1 | 3:1 |
 | `state-attention` on `surface` (dot) | **1.5:1** | 11.2:1 | 3:1 |
 
-The last row is why light mode needs `state-attention-mark`. The chart series reach at least 3:1 on `surface` and `surface-2` in both modes; `tests/contract/appearance.mjs` checks these pairs.
+The last row is why light mode needs `state-attention-mark`. The chart series have not been measured yet; that happens in the verification ticket.
 
 ## Tickets
 
@@ -122,7 +116,7 @@ Do them in this order: 1 and 2 belong together, and 3 to 5 build on them.
    - Add the brand colours (flour, rye, butter, lime, rose, crust, muted) as primitives in `primitive-color.src.css` and alias them.
    - Mirror the changes in `design-tokens.yml`.
 3. **Add the new tokens and use them.**
-   - Add `state-attention-mark`, `state-review`, `state-done` and `avatar-rose`, `avatar-lime`, `avatar-peach`, `avatar-stone`.
+   - Add `state-attention-mark`, `state-review`, `state-done` and `avatar-a`…`d`.
    - In `components/person/person.twig`, point `color_map` at the avatar tokens instead of the state colours.
    - Switch the "waits for you" dots and lines to `state-attention-mark`.
    - Give the review state `state-review`.

@@ -1,61 +1,55 @@
 /**
- * Apply the saved light/dark mode before CSS paints. Keep synchronous: Alpine loads later.
- * The choice is light, dark or system; system follows prefers-color-scheme and survives island swaps.
+ * Apply saved appearance before CSS paints. Keep synchronous: Alpine loads later.
+ * The selected palette and light/dark mode are independent and survive island swaps.
  */
 (function () {
   'use strict';
 
-  var choices = ['light', 'dark', 'system'];
+  var themes = ['bakers', 'harbor', 'grove', 'ember', 'iris'];
+  var modes = ['light', 'dark'];
   var root = document.documentElement;
-  var scheme = null;
+  var defaultMode = 'light';
   try {
-    scheme = window.matchMedia('(prefers-color-scheme: dark)');
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) defaultMode = 'dark';
   } catch (e) {
     // System preference may be unavailable in restricted contexts.
   }
 
-  function stored() {
+  function read(key, allowed, fallback) {
     try {
-      var value = window.localStorage.getItem('bakers-mode');
-      return choices.indexOf(value) !== -1 ? value : 'system';
+      var value = window.localStorage.getItem(key);
+      return allowed.indexOf(value) !== -1 ? value : fallback;
     } catch (e) {
-      return 'system';
+      return fallback;
     }
   }
 
-  function modeOf(choice) {
-    if (choice !== 'system') return choice;
-    return scheme && scheme.matches ? 'dark' : 'light';
-  }
-
-  // Storage may be blocked, so the current choice also lives in memory.
-  var current = stored();
-
   window.bakersRestoreAppearance = function () {
-    root.setAttribute('data-mode', modeOf(current));
+    root.setAttribute('data-skin', read('bakers-theme', themes, 'bakers'));
+    root.setAttribute('data-mode', read('bakers-mode', modes, defaultMode));
   };
   window.bakersRestoreAppearance();
 
-  if (scheme && scheme.addEventListener) {
-    scheme.addEventListener('change', function () {
-      if (current === 'system') window.bakersRestoreAppearance();
-    });
-  }
-
-  window.bakersModeChoice = function () {
-    return current;
-  };
-
-  window.bakersSetMode = function (choice) {
-    current = choices.indexOf(choice) !== -1 ? choice : 'system';
+  function apply(attribute, key, value) {
+    root.setAttribute(attribute, value);
     try {
-      window.localStorage.setItem('bakers-mode', current);
+      window.localStorage.setItem(key, value);
     } catch (e) {
       // The selection still works when storage is unavailable.
     }
-    window.bakersRestoreAppearance();
-    var mode = root.getAttribute('data-mode');
-    window.dispatchEvent(new CustomEvent('bakers-appearance', { detail: { mode: mode, choice: current } }));
-    return mode;
+    window.dispatchEvent(new CustomEvent('bakers-appearance', { detail: {
+      theme: root.getAttribute('data-skin'), mode: root.getAttribute('data-mode'),
+    } }));
+    return value;
+  }
+
+  window.bakersSetTheme = function (theme) {
+    return apply('data-skin', 'bakers-theme', themes.indexOf(theme) !== -1 ? theme : 'bakers');
+  };
+  window.bakersSetMode = function (mode) {
+    return apply('data-mode', 'bakers-mode', modes.indexOf(mode) !== -1 ? mode : defaultMode);
+  };
+  window.bakersToggleMode = function () {
+    return window.bakersSetMode(root.getAttribute('data-mode') === 'dark' ? 'light' : 'dark');
   };
 })();

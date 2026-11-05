@@ -78,7 +78,7 @@ Open core, like GitLab (decided 2026-10-23):
 
 ## Capabilities and Constraints
 
-- Web app on Drupal 11 with a single theme (`bb_theme`), Light and Dark mode only, plus System, which follows the operating system ([decision](docs/decisions/app-appearance.md)).
+- Web app on Drupal 11 with a single theme (`bb_theme`), Light and Dark mode only. The four extra skins (harbor, grove, ember, iris) and the theme picker are being retired.
 - UI strings and repo artifacts are English. The team communicates in German.
 - Ticket states and work states keep their technical names in the app: qualification, spec, coding, review, done, cancelled.
 - **Rename in progress:** the old product name gives way to **bakers.build** completely — UI, logo, domains, repository, CLI command, packages and ticket key prefix. This repo, `bakers-build/bakers-build`, is already largely renamed (`bb_theme`, `@bakers-build/*`, ticket prefix `BB-`).

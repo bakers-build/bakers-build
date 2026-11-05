@@ -135,7 +135,7 @@ placements:
                       label:
                         source_id: textfield
                         source:
-                          value: 'Choose appearance'
+                          value: 'Choose theme'
                     slots: {  }
                 _weight: '1'
       boost: true

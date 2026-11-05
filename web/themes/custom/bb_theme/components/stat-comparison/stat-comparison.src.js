@@ -154,12 +154,12 @@ Drupal.behaviors.bakersStatComparison = {
         return;
       }
       const chart = new Chart(canvas, configure(host, model));
-      // The mode lives as an attribute on <html>; switching it
+      // The skin and mode live as attributes on <html>; switching either one
       // repaints the CSS but not a canvas, so the colours are re-read here.
       const observer = new MutationObserver(() => recolour(host, model, chart));
       observer.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ['data-mode'],
+        attributeFilter: ['data-skin', 'data-mode'],
       });
       this.live.set(host, { chart, observer });
     });
