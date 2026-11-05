@@ -9,22 +9,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // `bakers deployment tickets` reads git history and resolves identifiers over
 // the connection; no conductor config is required. Git and the project-config
 // read stay real; only the connection (its client) and the Drupal remote are stubbed.
-const seen = vi.hoisted(() => ({ projects: [] as string[] }));
+const PROJECTS = [
+  {
+    name: 'bakers',
+    repository: { url: 'ssh://git@git.example/bakers-build/bakers.git' },
+  },
+  { name: 'shop', repository: { url: 'https://git.example/keytec/shop' } },
+];
+const seen = vi.hoisted(() => ({
+  projects: [] as string[],
+  rows: [] as { name: string; repository: { url: string } }[],
+}));
 
 vi.mock('@bakers-build/core', async (orig) => {
   const actual = await orig<typeof import('@bakers-build/core')>();
-  const rows = [
-    {
-      name: 'bakers',
-      repository: { url: 'ssh://git@git.example/bakers-build/bakers.git' },
-    },
-    { name: 'shop', repository: { url: 'https://git.example/keytec/shop' } },
-  ];
   const query = {
     fields: () => query,
     page: () => query,
     list: async () =>
-      rows.map((r) => ({
+      seen.rows.map((r) => ({
         id: r.name,
         attr: (k: string) => r[k as keyof typeof r],
       })),
@@ -64,30 +67,22 @@ beforeEach(() => {
   delete process.env.BB_CONDUCTOR_CONFIG;
   delete process.env.BB_CONDUCTOR;
   git('init', '-q');
-  git(
-    '-c',
-    'user.name=t',
-    '-c',
-    'user.email=t@t',
-    'commit',
-    '-q',
-    '--allow-empty',
-    '-m',
-    'init',
-  );
-  git(
-    '-c',
-    'user.name=t',
-    '-c',
-    'user.email=t@t',
-    'commit',
-    '-q',
-    '--allow-empty',
-    '-m',
-    'BAKERS-88: fix',
-  );
+  for (const message of ['init', 'BAKERS-88: fix']) {
+    git(
+      '-c',
+      'user.name=t',
+      '-c',
+      'user.email=t@t',
+      'commit',
+      '-q',
+      '--allow-empty',
+      '-m',
+      message,
+    );
+  }
   process.chdir(repo);
   seen.projects = [];
+  seen.rows = [...PROJECTS];
 });
 
 afterEach(() => {
@@ -142,6 +137,21 @@ describe('bakers deployment tickets without a working conductor', () => {
   it('with no conductor config and an unknown origin, fails naming --project', async () => {
     git('remote', 'add', 'origin', 'git@git.example:someone/else.git');
     await expect(tickets()).rejects.toThrow(/--project/);
+  });
+
+  it('with no conductor config and no origin remote, fails naming --project', async () => {
+    await expect(tickets()).rejects.toThrow(/no bakers project.*--project/);
+  });
+
+  it('with no conductor config and several projects owning origin, lists them and asks for --project', async () => {
+    seen.rows.push({
+      name: 'fork',
+      repository: { url: 'git@git.example:bakers-build/bakers.git' },
+    });
+    git('remote', 'add', 'origin', 'git@git.example:bakers-build/bakers.git');
+    await expect(tickets()).rejects.toThrow(
+      /several .*\(bakers, fork\).*--project/,
+    );
   });
 
   it('reads the project from a pre-UUID config that carries machine_id', async () => {

@@ -46,6 +46,7 @@ async function resolveProject(
     ),
   );
   // JSON:API cannot filter inside the `repository` field, so match client-side.
+  // shortcut: only the first 200 projects are searched (as `bakers ui --here`), paginate when a connection reads more.
   const rows = origin
     ? await (await client())
         .collection('bb_project')
