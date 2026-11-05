@@ -37,4 +37,11 @@ fs.writeFileSync(`${dir}/tool`, `tool_api__${tool}`);
 fs.writeFileSync(`${dir}/args.json`, JSON.stringify(args));
 NODE
 
-bakers tools "$(cat "$work/tool")" --data @"$work/args.json"
+bakers tools "$(cat "$work/tool")" --data @"$work/args.json" | tee "$work/result.json"
+
+# A new ticket goes straight to the cw-framework conductor so it is worked on.
+if [ "$(cat "$work/tool")" = tool_api__bakers_ticket_create ]; then
+  node -e 'const fs = require("fs"); const { identifier } = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); process.stdout.write(JSON.stringify({ticket: identifier, conductor: "4081d638-37ef-4bc3-80cd-72501492e6b3"}))' \
+    "$work/result.json" >"$work/assign.json"
+  bakers tools tool_api__bakers_ticket_update --data @"$work/assign.json"
+fi

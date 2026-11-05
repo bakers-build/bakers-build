@@ -81,6 +81,7 @@ describe('GitHub checks failure ticket', () => {
     expect(tools(result.calls)).toEqual([
       'bakers_ticket_search',
       'bakers_ticket_create',
+      'bakers_ticket_update',
     ]);
     expect(result.calls[0].args).toEqual({ query: TITLE, project: 'BAKERS' });
     const created = result.calls[1].args;
@@ -91,6 +92,11 @@ describe('GitHub checks failure ticket', () => {
       type: 'bug',
     });
     namesTheFailure(created.description);
+    // The new ticket goes straight to the cw-framework conductor.
+    expect(result.calls[2].args).toEqual({
+      ticket: 'BAKERS-999',
+      conductor: '4081d638-37ef-4bc3-80cd-72501492e6b3',
+    });
   });
 
   it('comments on the open CI-failure ticket instead of creating a duplicate', () => {
@@ -117,6 +123,7 @@ describe('GitHub checks failure ticket', () => {
     expect(tools(result.calls)).toEqual([
       'bakers_ticket_search',
       'bakers_ticket_create',
+      'bakers_ticket_update',
     ]);
   });
 });

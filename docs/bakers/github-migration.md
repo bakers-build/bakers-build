@@ -77,7 +77,8 @@ once by `scripts/ci/github-image-gate.sh` in `image_gate`. It runs:
 When a dispatched run on `next` has a failed job, `report_failure` runs
 `scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service account and
 comments on the open BAKERS ticket titled `CI failure: scheduled GitHub checks on next`, or creates
-that ticket as a `bug` (workflow `bb_work`) when none is open. The comment or ticket names the
+that ticket as a `bug` (workflow `bb_work`) when none is open and assigns it to the
+`cw-framework` conductor. The comment or ticket names the
 failed jobs, the commit and the run. The job needs repository secrets `BB_CI_CLIENT_ID` and
 `BB_CI_CLIENT_SECRET` (the service account's OAuth client).
 The public fork full check passed; a separate probe confirmed secrets were absent and a write
