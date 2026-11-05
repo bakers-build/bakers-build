@@ -18,7 +18,7 @@
   submit: action is not empty,
 } %}
 {% set focus_ring = 'focus-visible:outline-2 focus-visible:outline-focus-ring' %}
-{% set popover = 'absolute left-0 top-full mt-1 z-30 flex flex-col gap-2 p-3 bg-surface border border-border rounded-md shadow-shadow-2' %}
+{% set popover = 'absolute left-0 top-full mt-inline-xs z-30 flex flex-col gap-inline p-stack bg-surface border border-border rounded-md shadow-shadow-2' %}
 
 {#- Previous / next period, around the range control and the custom fields. #}
 {% set prev_button %}
@@ -43,7 +43,7 @@
 {#- Previous / heading / next of every picker. Week and custom calendars step
     by month, the month, quarter and year pickers by year. #}
 {% set picker_header %}
-  <div class="flex items-center justify-between gap-2">
+  <div class="flex items-center justify-between gap-inline">
     {{ include('bb_theme:button', {
       label: 'Previous month',
       variant: 'ghost',
@@ -54,7 +54,7 @@
         'x-bind:aria-label': "open === 'picker' && kind !== 'week' ? 'Previous year' : 'Previous month'",
       }),
     }, with_context = false) }}
-    <span class="text-body font-medium text-title" x-text="viewLabel"></span>
+    <span class="text-body-strong text-title" x-text="viewLabel"></span>
     {{ include('bb_theme:button', {
       label: 'Next month',
       variant: 'ghost',
@@ -75,17 +75,17 @@
 {% set chosen = "(open === 'from' && cell.value === draft.start) || (open === 'to' && cell.value === draft.end)" %}
 {% set on_primary = "(" ~ chosen ~ ") || (open === 'picker' && row.selected)" %}
 {% set day_calendar %}
-  <div role="grid" class="flex flex-col gap-1" x-on:keydown="moveFocus($event, 7)">
+  <div role="grid" class="flex flex-col gap-inline-xs" x-on:keydown="moveFocus($event, 7)">
     <div role="row" class="grid" x-bind:class="open === 'picker' ? 'grid-cols-8' : 'grid-cols-7'">
-      <span role="columnheader" class="flex items-center justify-center h-6 text-caption text-text-light" x-show="open === 'picker'">CW</span>
+      <span role="columnheader" class="flex items-center justify-center h-6 text-label text-text-light" x-show="open === 'picker'">CW</span>
       {%- for weekday in ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] %}
-      <span role="columnheader" class="flex items-center justify-center h-6 text-caption text-text-light">{{ weekday }}</span>
+      <span role="columnheader" class="flex items-center justify-center h-6 text-label text-text-light">{{ weekday }}</span>
       {%- endfor %}
     </div>
     <template x-for="row in weeks" x-bind:key="row.start">
       <div role="row" class="grid rounded-sm"
         x-bind:class="[open === 'picker' ? 'grid-cols-8' : 'grid-cols-7', open === 'picker' && row.selected ? 'bg-primary text-on-primary' : 'text-text']">
-        <span role="rowheader" class="flex items-center justify-center h-8 text-caption"
+        <span role="rowheader" class="flex items-center justify-center h-8 text-meta"
           x-show="open === 'picker'"
           x-bind:class="row.selected ? 'text-on-primary' : 'text-text-light'"
           x-text="row.week"></span>
@@ -110,7 +110,7 @@
   </div>
 {% endset %}
 
-<form{{ (attributes ?: create_attribute()).addClass(['period-range', 'relative', 'flex', 'flex-wrap', 'items-center', 'gap-2']) }}
+<form{{ (attributes ?: create_attribute()).addClass(['period-range', 'relative', 'flex', 'flex-wrap', 'items-center', 'gap-inline']) }}
   method="get"
   action="{{ action }}"
   x-data="periodRange({{ config|json_encode|escape('html_attr') }})"
@@ -128,7 +128,7 @@
       its kind, which a server-rendered option list cannot recompute. #}
   <div class="relative">
     <button type="button"
-      class="inline-flex items-center gap-1.5 h-8 px-3 bg-surface border rounded-sm text-body font-medium text-title cursor-pointer {{ focus_ring }}"
+      class="inline-flex items-center gap-1.5 h-8 px-stack bg-surface border rounded-sm text-body-strong text-title cursor-pointer {{ focus_ring }}"
       x-ref="kindTrigger"
       aria-haspopup="listbox"
       x-bind:aria-expanded="open === 'kind'"
@@ -140,18 +140,18 @@
       {{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}
     </button>
     <div role="listbox" aria-label="Period kind" x-ref="kindList"
-      class="absolute left-0 top-full mt-1 z-30 w-44 flex flex-col gap-0.5 p-1.5 bg-surface border border-border rounded-md shadow-shadow-2"
+      class="absolute left-0 top-full mt-inline-xs z-30 w-44 flex flex-col gap-0.5 p-1.5 bg-surface border border-border rounded-md shadow-shadow-2"
       x-cloak
       x-show="open === 'kind'"
       x-on:keydown="moveFocus($event, 1)">
       <template x-for="value in kinds" x-bind:key="value">
         <button type="button" role="option"
-          class="flex items-center justify-between gap-3 px-2.5 py-2 rounded-xs text-left cursor-pointer hover:bg-surface-2 {{ focus_ring }}"
+          class="flex items-center justify-between gap-stack px-2.5 py-inline rounded-xs text-left cursor-pointer hover:bg-surface-2 {{ focus_ring }}"
           x-bind:class="kind === value ? 'bg-surface-3 font-medium' : ''"
           x-bind:aria-selected="String(kind === value)"
           x-on:click="setKind(value)">
           <span class="text-body text-title" x-text="kindLabel(value)"></span>
-          <span class="text-caption text-text-light" x-text="kindHint(value)"></span>
+          <span class="text-meta text-text-light" x-text="kindHint(value)"></span>
         </button>
       </template>
     </div>
@@ -162,12 +162,12 @@
     <div class="inline-flex items-center h-8 bg-surface border rounded-sm"
       x-bind:class="open === 'picker' ? 'border-focus-ring' : 'border-control-border focus-within:border-focus-ring'">
       <template x-if="kind === 'all'">
-        <span class="px-3 text-body font-medium text-title">All time</span>
+        <span class="px-stack text-body-strong text-title">All time</span>
       </template>
       <span class="contents" x-show="kind !== 'all'">
         {{ prev_button }}
         <button type="button"
-          class="inline-flex items-center gap-1.5 h-full px-2 text-body font-medium text-title cursor-pointer {{ focus_ring }}"
+          class="inline-flex items-center gap-1.5 h-full px-inline text-body-strong text-title cursor-pointer {{ focus_ring }}"
           x-ref="pickerTrigger"
           aria-haspopup="dialog"
           x-bind:aria-expanded="open === 'picker'"
@@ -186,7 +186,7 @@
       {{ picker_header }}
       <div x-show="kind === 'week'">{{ day_calendar }}</div>
       <template x-if="kind === 'month'">
-        <div class="grid grid-cols-3 gap-1" x-on:keydown="moveFocus($event, 3)">
+        <div class="grid grid-cols-3 gap-inline-xs" x-on:keydown="moveFocus($event, 3)">
           <template x-for="cell in cells" x-bind:key="cell.range.start">
             <button type="button"
               class="h-8 rounded-sm text-body cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ focus_ring }}"
@@ -200,17 +200,17 @@
         </div>
       </template>
       <template x-if="kind === 'quarter'">
-        <div class="grid grid-cols-2 gap-1" x-on:keydown="moveFocus($event, 2)">
+        <div class="grid grid-cols-2 gap-inline-xs" x-on:keydown="moveFocus($event, 2)">
           <template x-for="cell in cells" x-bind:key="cell.range.start">
             <button type="button"
-              class="flex flex-col items-center gap-0.5 py-2 rounded-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ focus_ring }}"
+              class="flex flex-col items-center gap-0.5 py-inline rounded-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ focus_ring }}"
               x-bind:class="[cell.selected ? 'bg-primary text-on-primary' : 'text-text hover:bg-surface-2', cell.today ? 'ring-1 ' + (cell.selected ? 'ring-on-primary' : 'ring-border') : '']"
               x-bind:disabled="cell.disabled"
               x-bind:aria-current="cell.today ? 'date' : null"
               x-bind:aria-pressed="String(cell.selected)"
               x-on:click="pick(cell.range)">
-              <span class="text-body font-medium" x-text="cell.label"></span>
-              <span class="text-caption" x-bind:class="cell.selected ? 'text-on-primary' : 'text-text-light'" x-text="cell.sub"></span>
+              <span class="text-body-strong" x-text="cell.label"></span>
+              <span class="text-meta" x-bind:class="cell.selected ? 'text-on-primary' : 'text-text-light'" x-text="cell.sub"></span>
             </button>
           </template>
         </div>
@@ -219,7 +219,7 @@
         <div class="flex flex-col gap-0.5" x-on:keydown="moveFocus($event, 1)">
           <template x-for="cell in cells" x-bind:key="cell.range.start">
             <button type="button"
-              class="w-full h-8 px-3 rounded-sm text-left text-body cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ focus_ring }}"
+              class="w-full h-8 px-stack rounded-sm text-left text-body cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ focus_ring }}"
               x-bind:class="[cell.selected ? 'bg-primary text-on-primary' : 'text-text hover:bg-surface-2', cell.today ? 'ring-1 ' + (cell.selected ? 'ring-on-primary' : 'ring-border') : '']"
               x-bind:disabled="cell.disabled"
               x-bind:aria-current="cell.today ? 'date' : null"
@@ -235,11 +235,11 @@
   {#- Custom: ‹ From [date] to [date] › · Apply · day count. The fields are
       buttons styled as inputs, each opening a one-month day calendar; the
       arrows move the committed range by its own length. #}
-  <div class="relative flex items-center gap-2" x-cloak x-show="kind === 'custom'">
+  <div class="relative flex items-center gap-inline" x-cloak x-show="kind === 'custom'">
     {{ prev_button }}
     <span class="text-body text-text-light">From</span>
     <button type="button"
-      class="inline-flex items-center h-8 px-3 bg-input border border-control-border rounded-sm text-body text-text cursor-pointer {{ focus_ring }}"
+      class="inline-flex items-center h-8 px-stack bg-input border border-control-border rounded-sm text-body text-text cursor-pointer {{ focus_ring }}"
       x-ref="fromTrigger"
       aria-haspopup="dialog"
       x-bind:aria-expanded="open === 'from'"
@@ -248,7 +248,7 @@
       x-text="formatField(draft.start)"></button>
     <span class="text-body text-text-light">to</span>
     <button type="button"
-      class="inline-flex items-center h-8 px-3 bg-input border border-control-border rounded-sm text-body text-text cursor-pointer {{ focus_ring }}"
+      class="inline-flex items-center h-8 px-stack bg-input border border-control-border rounded-sm text-body text-text cursor-pointer {{ focus_ring }}"
       x-ref="toTrigger"
       aria-haspopup="dialog"
       x-bind:aria-expanded="open === 'to'"
@@ -261,7 +261,7 @@
       variant: 'primary',
       attributes: create_attribute({ 'x-bind:disabled': 'applyDisabled', 'x-on:click': 'apply()' }),
     }, with_context = false) }}
-    <span class="text-caption text-text-light" x-text="dayCount"></span>
+    <span class="text-meta text-text-light" x-text="dayCount"></span>
     <div role="dialog" class="{{ popover }} w-72"
       x-cloak
       x-show="open === 'from' || open === 'to'"
@@ -272,10 +272,10 @@
   </div>
 
   <button type="button"
-    class="text-body font-medium text-link cursor-pointer {{ focus_ring }}"
+    class="text-body-strong text-link cursor-pointer {{ focus_ring }}"
     x-cloak
     x-show="canReturn"
     x-on:click="returnToCurrent()"
     x-text="returnLabel"></button>
-  <span class="text-caption text-text-light" x-show="comparisonLabel" x-text="comparisonLabel"></span>
+  <span class="text-meta text-text-light" x-show="comparisonLabel" x-text="comparisonLabel"></span>
 </form>
