@@ -49,6 +49,7 @@ import type {
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
+import { ovenTools } from './oven-tools.js';
 
 export type { HerdrHost };
 
@@ -1324,6 +1325,23 @@ Examples:
     .action(async () => {
       await cmdStatus(deps);
     });
+
+  conductor
+    .command('tools')
+    .description(
+      "list or call the conductor's addon tools from inside a run (exit 4 outside one)",
+    )
+    .argument('[name]', 'the tool to call; omitted, list the tools')
+    .option('--data <json>', 'arguments as a JSON object, or @<file>')
+    .option('--schema', "print the tool's input schema instead of calling it")
+    .action(
+      async (
+        name: string | undefined,
+        opts: { data?: string; schema?: boolean },
+      ) => {
+        process.exitCode = await ovenTools(name, opts);
+      },
+    );
 
   // `bakers conductor rm` is gone (BB-232). Its only job was deleting the local
   // registry entry; with no registry there is nothing to remove, and deleting

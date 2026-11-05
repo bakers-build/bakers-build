@@ -466,7 +466,7 @@ describe('Conductor dispatch env injection', () => {
 });
 
 describe('Conductor agent tools', () => {
-  async function dispatchOnce(withTools: boolean) {
+  async function dispatchOnce(withTools: boolean, agentWithholds = false) {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
@@ -483,6 +483,7 @@ describe('Conductor agent tools', () => {
     const launched: unknown[] = [];
     const agent: BbAgent = {
       ...fakeAgent,
+      ...(agentWithholds ? { withoutConductorTools: true } : {}),
       launchCommand: (_p, _run, _ws, tools) => {
         launched.push(tools);
         return 'claude';
@@ -520,6 +521,7 @@ describe('Conductor agent tools', () => {
     const { conductor, env, launched } = await dispatchOnce(true);
     const url = (launched[0] as { url: string }).url;
     expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+    expect(env.BB_CONDUCTOR_URL).toBe(url);
     const client = new Client({ name: 'test', version: '1.0.0' });
     await client.connect(
       new StreamableHTTPClientTransport(new URL(url), {
@@ -538,6 +540,15 @@ describe('Conductor agent tools', () => {
     const { conductor, env, launched } = await dispatchOnce(false);
     expect(launched).toEqual([undefined]);
     expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
+    expect(env.BB_CONDUCTOR_URL).toBeUndefined();
+    await conductor.stopTools();
+  });
+
+  it('offers no tools to a run whose agent withholds them, like a measured claude run', async () => {
+    const { conductor, env, launched } = await dispatchOnce(true, true);
+    expect(launched).toEqual([undefined]);
+    expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
+    expect(env.BB_CONDUCTOR_URL).toBeUndefined();
     await conductor.stopTools();
   });
 });

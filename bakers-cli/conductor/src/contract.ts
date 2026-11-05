@@ -23,6 +23,7 @@ export {
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
+  CONDUCTOR_URL_ENV,
   DEFAULT_ENV_DENY,
   emptyAgentFootprint,
   matchesEnvDeny,

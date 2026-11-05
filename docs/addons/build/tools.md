@@ -32,9 +32,13 @@ export const tools: Preset['tools'] = {
 
 ## How runs get the server
 
-- **claude**: `bakers-conductor` (type `http`, header `Authorization: Bearer ${BB_CONDUCTOR_TOKEN}`) is merged into `--mcp-config`, beside `sandbox.mcp_servers` in the sandbox mode and on its own in `system`, `yolo` and `custom`. A measured run stays without MCP servers.
+- **claude**: `bakers-conductor` (type `http`, header `Authorization: Bearer ${BB_CONDUCTOR_TOKEN}`) is merged into `--mcp-config`, beside `sandbox.mcp_servers` in the sandbox mode and on its own in `system`, `yolo` and `custom`. A measured run gets neither the MCP server nor the run variables below, so it has no conductor tools.
 - **codex**: `-c mcp_servers.bakers-conductor.url=…` and `-c mcp_servers.bakers-conductor.bearer_token_env_var="BB_CONDUCTOR_TOKEN"`; the sandbox never switches this server off.
-- Other agents ignore it. The token is never in argv or the launch log, and it is revoked when the run is finalised.
+- **grok, opencode, pi and kimi** load no MCP server for it. Their runs call the tools through the shell with [`bakers oven tools`](../../configuration/project/conductor-commands.md#tools), which works in grok's sandbox mode too (`Bash(*)` is allowed; `MCPTool(*)` stays denied).
+
+Every other run with a tool server has `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` in its environment. The token is never in argv or the launch log, and it is revoked when the run is finalised.
+
+A grok `shell_environment_policy` with `ignore_default_excludes = false` drops `*TOKEN*` variables from grok's shell; `bakers oven tools` then finds no token and exits 4.
 
 ## Shipped tools
 

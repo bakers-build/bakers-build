@@ -28,8 +28,8 @@ script alone is not a selected setup.
 
 Check the selected runtime and surfaces before starting anything; an already-ready environment
 is a no-op. **Tool path:** when the run's tools include the runtime's status tool and
-`provision_up`, served by the `bakers-conductor` MCP server (decide by presence, never by agent or
-run mode), use them in this order: ready → no-op; stopped stack → the runtime's start tool; missing
+`provision_up` ([conductor tools](tools-conductor.md); decide by availability, never by agent
+or run mode), use them in this order: ready → no-op; stopped stack → the runtime's start tool; missing
 or wrong site → `provision_up(<profile the hint names>)`. Every `provision_up` reinstalls, so call it
 only when the confirmed instructions need that site. Then verify readiness.
 
