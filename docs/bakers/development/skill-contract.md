@@ -55,7 +55,7 @@ A runtime guide is one skill named `bb-runtime-<tech>` that says how to provisio
 
 ## Project hints
 
-`WORKFLOW.md` is the entry line plus optional `## bb-phase-<phase>` sections and nothing else. `## bb-phase-work` holds a `| When | Skill |` table and `## bb-phase-validate` a `| When | Command |` table; a run applies every matching row. `## bb-phase-outtake` names the test-user list and how personas get logins. `## bb-phase-transition` holds the origin-label table (`| State | Origin label |`), the only source `references/origin-status.md` reads; without the table no origin label is ever written. Repository conventions and test lore belong in repository docs that `CLAUDE.md` points to.
+`WORKFLOW.md` is the entry line plus optional `## bb-phase-<phase>` sections and nothing else. `## bb-phase-work` holds a `| When | Skill |` table and `## bb-phase-validate` a `| When | Command |` table; a run applies every matching row. `## bb-phase-outtake` names the test-user list and how personas get logins. `## bb-phase-transition` holds the origin-label table (`| State | Origin label |`), the only source `references/origin-status.md` reads; without the table no origin label is ever written, and a table label is written only in the spelling of an existing project or group label, matched ignoring case. Repository conventions and test lore belong in repository docs that `CLAUDE.md` points to.
 
 ## Binding and stop rules
 

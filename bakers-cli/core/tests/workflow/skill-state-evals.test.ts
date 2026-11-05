@@ -1041,7 +1041,7 @@ describe('recipe run profile', () => {
 
 describe('origin map profile', () => {
   const workflow = file('WORKFLOW.md');
-  const write = (label: string, remove: string) => ({
+  const write = (label: string | null, remove: string) => ({
     tool: 'glab',
     arguments: {
       argv: [
@@ -1049,19 +1049,33 @@ describe('origin map profile', () => {
         'issue',
         'update',
         'https://git.example.invalid/acme/shop/-/issues/7',
-        '--label',
-        label,
+        ...(label === null ? [] : ['--label', label]),
         '--unlabel',
         remove,
       ],
     },
     result: ok('updated'),
   });
+  const labels = {
+    tool: 'glab',
+    arguments: {
+      argv: [
+        'glab',
+        'api',
+        '--hostname',
+        'git.example.invalid',
+        '--paginate',
+        'projects/acme%2Fshop/labels?include_ancestor_groups=true&per_page=100',
+      ],
+    },
+    result: ok('[]'),
+  };
   it('writes the table label and removes the rest of its family', async () => {
     expect(
       await judge('origin-map', 'in progress', [
         readTicket(),
         workflow,
+        labels,
         write('in progress', 'ready for review'),
       ]),
     ).toEqual([]);
@@ -1069,9 +1083,52 @@ describe('origin map profile', () => {
       await judge('origin-map', 'doing', [
         readTicket(),
         workflow,
+        labels,
         write('doing', 'review'),
       ]),
-    ).toEqual(['label-write']);
+    ).toEqual(['label-write', 'existing-labels-only']);
+  });
+  it('reads the project labels before it writes', async () => {
+    expect(
+      await judge('origin-map', 'in progress', [
+        readTicket(),
+        workflow,
+        write('in progress', 'ready for review'),
+        labels,
+      ]),
+    ).toEqual(['label-read']);
+  });
+  it('writes the existing spelling of project and group labels', async () => {
+    expect(
+      await judge('origin-map-existing-spelling', 'Doing', [
+        workflow,
+        labels,
+        write('Doing', 'Review'),
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map-existing-spelling', 'doing', [
+        workflow,
+        labels,
+        write('doing', 'review'),
+      ]),
+    ).toEqual(['label-write', 'existing-labels-only']);
+  });
+  it('skips a missing label with a warning and creates nothing', async () => {
+    expect(
+      await judge(
+        'origin-map-missing-label',
+        'Warning: label `in progress` does not exist in acme/shop; removed Review.',
+        [workflow, labels, write(null, 'Review')],
+      ),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map-missing-label', 'Done.', [
+        workflow,
+        labels,
+        write('in progress', 'Review'),
+      ]),
+    ).toEqual(['label-write', 'existing-labels-only', 'missing-label-warning']);
   });
   it('writes nothing without a table', async () => {
     expect(
