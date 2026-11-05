@@ -21,7 +21,10 @@ Apply all matching rows.
 | Components and stories under `web/themes/custom/bb_theme/` | `designbook:design-component` |
 | Scenes under `web/themes/custom/bb_theme/` | `designbook:design-screen`, or `designbook:design-shell` for the application shell |
 | Entity mappings under `web/themes/custom/bb_theme/` | `designbook:design-entity` |
-| Design tokens under `web/themes/custom/bb_theme/` | `designbook:tokens` |
+| Design tokens under `web/themes/custom/bb_theme/` | `designbook:tokens`, then `designbook:css-generate` for the token CSS |
+| Storybook for Designbook work under `web/themes/custom/bb_theme/` | `designbook:sb` |
+| Work from a design reference (Figma, Claude Design) under `web/themes/custom/bb_theme/` | `designbook:extract-reference` first |
+| Scenes or screens built from a design reference | `designbook:design-verify` last, `designbook:repair` for its findings |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
 
 ## bb-phase-validate
