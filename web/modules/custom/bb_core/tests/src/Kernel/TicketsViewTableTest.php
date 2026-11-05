@@ -204,7 +204,7 @@ final class TicketsViewTableTest extends KernelTestBase {
     self::assertStringContainsString('role="img"', $avatar);
     self::assertStringContainsString('title="Working"', $avatar);
     self::assertStringContainsString('#status-running', $avatar, 'Working is the working disc.');
-    self::assertStringContainsString('bg-state-running', $item, 'A conductor paints the teal rail.');
+    self::assertStringContainsString('bg-state-running', $item, 'A conductor paints the running rail.');
 
     $headline = $this->regionOf($item, 'headline');
     self::assertStringContainsString('Wire the ticket list', $headline);
@@ -299,8 +299,8 @@ final class TicketsViewTableTest extends KernelTestBase {
     $this->assertRail($this->itemOf($html, $working_idle), 'bg-transparent');
     $this->assertRail($this->itemOf($html, $working_held), 'bg-state-running');
     $this->assertRail($this->itemOf($html, $plan_held), 'bg-state-running');
-    $this->assertRail($this->itemOf($html, $review_held), 'bg-state-attention');
-    $this->assertRail($this->itemOf($html, $review_idle), 'bg-state-attention');
+    $this->assertRail($this->itemOf($html, $review_held), 'bg-state-attention-mark');
+    $this->assertRail($this->itemOf($html, $review_idle), 'bg-state-attention-mark');
     $this->assertRail($this->itemOf($html, $plan_idle), 'bg-transparent');
     self::assertStringNotContainsString('data-row-url', $html);
   }

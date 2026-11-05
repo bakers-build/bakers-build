@@ -68,8 +68,8 @@
                 <a class="link-report-row__title min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text no-underline hover:underline" href="{{ link.url }}"{% if new_tab %} target="_blank" rel="noreferrer noopener"{% endif %}>{{ link.title|default(link.url) }}{% if new_tab %}<span class="sr-only"> (opens in a new tab)</span>{% endif %}</a>
                 <span class="flex-1"></span>
                 <span class="link-report-row__counts flex items-center gap-[8px] shrink-0">
-                  {% if link.passed is defined and link.passed is not null %}<span class="text-caption font-mono tabular-nums text-state-running">{{ link.passed }} passed</span>{% endif %}
-                  {% if link.failed %}<span class="text-caption font-mono tabular-nums text-state-attention">{{ link.failed }} failed</span>{% endif %}
+                  {% if link.passed is defined and link.passed is not null %}<span class="text-caption font-mono tabular-nums text-state-running-ink">{{ link.passed }} passed</span>{% endif %}
+                  {% if link.failed %}<span class="text-caption font-mono tabular-nums text-state-attention-ink">{{ link.failed }} failed</span>{% endif %}
                   {% if link.duration %}<span class="text-caption font-mono tabular-nums text-text-faint">{{ link.duration }}</span>{% endif %}
                 </span>
               </div>

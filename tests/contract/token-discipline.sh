@@ -202,7 +202,7 @@ check "1 zero arbitrary Tailwind values (prefix-[...]) in the scoped components"
 # directly as Tailwind v4 `@theme` keys, which means Tailwind's OWN utilities `font-bold`,
 # `leading-tight`, `font-mono` compile against those variables — there is no distinguishable
 # "semantic" spelling of a font weight, line height or font family the way `bg-app` is to
-# `bg-neutral-500` or `rounded-xs` is to `rounded-7`. There is no `semantic.fontWeight.*` /
+# `bg-rye` or `rounded-xs` is to `rounded-7`. There is no `semantic.fontWeight.*` /
 # `semantic.lineHeight.*` in design-tokens.yml either: weight/line-height only exist bundled
 # inside `semantic.typography.*` composites (`display`, `heading`, `body`, …), which check 3
 # already asserts positively via the `text-*` classes. A bare `font-bold`/`leading-tight`/
@@ -210,9 +210,9 @@ check "1 zero arbitrary Tailwind values (prefix-[...]) in the scoped components"
 # from this check rather than chased as an unfixable "violation" at the component level.
 check2_no_primitive_reference() {
   local rc=0 hits
-  local colors="neutral-50 neutral-100 neutral-200 neutral-300 neutral-400 neutral-500 neutral-600 neutral-700 neutral-800 neutral-900 accent-50 accent-100 accent-200 accent-300 accent-400 accent-500 accent-600 accent-700 accent-800 accent-900 red-50 red-100 red-200 red-300 red-400 red-500 red-600 red-700 red-800 red-900 amber-50 amber-100 amber-200 amber-300 amber-400 amber-500 amber-600 amber-700 amber-800 amber-900 teal-50 teal-100 teal-200 teal-300 teal-400 teal-500 teal-600 teal-700 teal-800 teal-900 indigo-50 indigo-100 indigo-200 indigo-300 indigo-400 indigo-500 indigo-600 indigo-700 indigo-800 indigo-900"
+  local colors="flour rye butter lime rose crust muted"
   local color_alt space_alt
-  color_alt="$(printf '%s\n' $colors | paste -sd'|')"
+  color_alt="$(printf '%s\n' $colors | paste -sd'|' -)"
   space_alt="space-1|space-2|space-3|space-4|space-5|space-6"
 
   # Colour families used as a bg/text/border/ring/shadow/decoration/divide/outline/fill/stroke/
