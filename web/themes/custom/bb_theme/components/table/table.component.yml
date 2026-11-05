@@ -244,6 +244,7 @@ props:
                     - masked
                     - action
                     - rendered
+                    - time
                     - status
                     - input
                   title: Cell kind
@@ -697,6 +698,16 @@ props:
                     A render ARRAY is rejected outright, and that rejection is
                     load-bearing: it is what forces a Views field handler's
                     output to be rendered before it is mapped.
+                datetime:
+                  type: string
+                  title: Machine-readable stamp
+                  description: >-
+                    A `time` cell's ISO 8601 stamp; its `label` is the displayed
+                    text.
+                title:
+                  type: string
+                  title: Full date and time
+                  description: A `time` cell's absolute stamp, shown on hover.
 slots:
   empty:
     title: Empty

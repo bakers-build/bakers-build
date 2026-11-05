@@ -225,6 +225,7 @@ props:
                     - action
                     - rendered
                     - status
+                    - time
                   title: Cell kind
 slots:
   empty:

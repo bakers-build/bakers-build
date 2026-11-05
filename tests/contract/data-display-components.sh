@@ -323,7 +323,10 @@ DELETED_ALLOWLIST=''
 # comparison text, with its own date math. No existing component offers a period: `option_picker`
 # picks values a server rendered, and `week-strip` shows days, it does not
 # choose a range. Data Display (kebab-case). 66 + 1 = 67.
-TARGET_COMPONENT_COUNT=67
+# 68 SINCE BAKERS-54: `time`, the one `<time datetime title>` every displayed
+# timestamp renders through, fed by `BbDate`. No component rendered a point in
+# time; `event` hand-wrote its own. Data Display (single word). 67 + 1 = 68.
+TARGET_COMPONENT_COUNT=68
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'
