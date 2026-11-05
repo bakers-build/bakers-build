@@ -43,7 +43,7 @@ The image supplies tools; your private home stores identity, credentials and che
 
    The first start installs `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab` and `ss` into your home volume, and starts `herdr server`. The log is `/tmp/coder-startup-script.log`.
 
-3. Sign in to your chosen agent and follow [skill installation](/configuration/agents/skills) for the bakers plugin. Open the agent from `~/projects` and run `/bb-init`. Trust that parent folder when asked so new worktrees inherit trust; otherwise the first run waits in its terminal. The wizard guides the remaining steps and confirms configuration writes.
+3. Sign in to your chosen agent and follow [skill installation](/configuration/agents/skills) for the bakers plugin. Open the agent from `~/projects`, answer its trust question for that folder and run `/bb-init`. Conductor runs of Claude Code trust their own ticket worktree, so a new ticket does not wait at the trust dialog. The wizard guides the remaining steps and confirms configuration writes.
 
 4. Sign in to bakers.build. An unattended conductor needs a machine consumer that an operator issues ([connections](/configuration/connector/connections)); give its secret to this command only. `bakers init` writes it into a private file under `~/.bakers`.
 

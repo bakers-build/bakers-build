@@ -39,6 +39,15 @@ const MEASURE_WRAPPER = fileURLToPath(
   ),
 );
 
+const TRUST_WRAPPER = fileURLToPath(
+  new URL(
+    import.meta.url.includes('/dist/')
+      ? '../../trust/claude-trust.mjs'
+      : '../trust/claude-trust.mjs',
+    import.meta.url,
+  ),
+);
+
 /** Flag → value pairs; a flag the security mode already passes is skipped. */
 const MEASURE_FLAGS: readonly (readonly string[])[] = [
   ['--setting-sources', 'project,local'],
@@ -177,7 +186,7 @@ export class ClaudeAgent implements BbAgent {
   launchCommand(
     prompt: string,
     run?: AgentRunIdentity,
-    _workspacePath?: string,
+    workspacePath?: string,
     tools?: { url: string },
   ): string {
     if (prompt === '') {
@@ -185,8 +194,12 @@ export class ClaudeAgent implements BbAgent {
     }
     // Wait for project-declared plugins (extraKnownMarketplaces) to install
     // before the first turn; a fresh worktree otherwise starts without them.
+    // A new worktree path would stop the run at Claude Code's trust dialog.
     const parts = [
       'CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1',
+      ...(workspacePath
+        ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]
+        : []),
       ...(this.measure
         ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
         : ['claude', shellQuote(prompt)]),

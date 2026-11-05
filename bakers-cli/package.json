@@ -21,8 +21,8 @@
     "test:integration": "vitest run -c vitest.config.integration.ts",
     "test:watch": "vitest",
     "typecheck": "pnpm -r run build && pnpm -r run typecheck",
-    "lint": "biome check core/src core/tests message/src message/tests host/src host/tests conductor/src conductor/tests ui/src ui/tests addons/*/src addons/*/tests addons/*/tests-bun addons/claude/measure",
-    "lint:fix": "biome check --write core/src core/tests message/src message/tests host/src host/tests conductor/src conductor/tests ui/src ui/tests addons/*/src addons/*/tests addons/*/tests-bun addons/claude/measure"
+    "lint": "biome check core/src core/tests message/src message/tests host/src host/tests conductor/src conductor/tests ui/src ui/tests addons/*/src addons/*/tests addons/*/tests-bun addons/claude/measure addons/claude/trust",
+    "lint:fix": "biome check --write core/src core/tests message/src message/tests host/src host/tests conductor/src conductor/tests ui/src ui/tests addons/*/src addons/*/tests addons/*/tests-bun addons/claude/measure addons/claude/trust"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
