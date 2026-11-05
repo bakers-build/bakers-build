@@ -3,7 +3,7 @@
    A listing with a Title search keeps its "Sort by" select beside it: the two
    share one `zone` row (`direction: fill`), the search taking the width. Every
    other exposed form keeps its controls stacked, sort first. #}
-<div{{ attributes.addClass(['flex', 'flex-col', 'gap-3']) }}>
+<div{{ attributes.addClass(['flex', 'flex-col', 'gap-stack']) }}>
   {% if form.title is defined and form.sort_bef_combine is defined %}
     {% embed 'bb_theme:zone' with { direction: 'fill', gap: 'sm', inset: 'none', search: form.title, sort: form.sort_bef_combine } only %}
       {% block content %}{{ search }}{{ sort }}{% endblock %}

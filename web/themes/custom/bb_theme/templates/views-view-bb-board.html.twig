@@ -12,14 +12,14 @@
 #}
 {% set done_keys = ['done_ago', 'mr_url', 'mr_label'] %}
 {% if rows is empty %}
-  <p class="text-caption text-text-faint text-center p-3">No matching tickets.</p>
+  <p class="text-meta text-text-faint text-center p-stack">No matching tickets.</p>
 {% else %}
   {% for card in rows %}
     {% set props = card|filter((value, key) => key not in done_keys) %}
     {% if card.done_ago is defined or card.mr_url is defined %}
       {% set footer %}
-        {%- if card.mr_url is defined -%}{{ include('bb_theme:text', {text: card.mr_label, href: card.mr_url, as: 'span', size: 'caption'}, with_context = false) }}{%- endif -%}
-        {%- if card.done_ago is defined -%}{{ include('bb_theme:text', {text: 'Done @time'|t({'@time': card.done_ago}), as: 'span', size: 'caption', tone: 'light'}, with_context = false) }}{%- endif -%}
+        {%- if card.mr_url is defined -%}{{ include('bb_theme:text', {text: card.mr_label, href: card.mr_url, as: 'span', size: 'meta'}, with_context = false) }}{%- endif -%}
+        {%- if card.done_ago is defined -%}{{ include('bb_theme:text', {text: 'Done @time'|t({'@time': card.done_ago}), as: 'span', size: 'meta', tone: 'light'}, with_context = false) }}{%- endif -%}
         {%- if card.assignee_initials -%}{{ include('bb_theme:person', {variant: 'compact', display_name: card.assignee_name, initials: card.assignee_initials, color: card.assignee_color|default('running')}, with_context = false) }}{%- endif -%}
       {% endset %}
       {{ include('bb_theme:board-card', props|merge({footer: footer}), with_context = false) }}
