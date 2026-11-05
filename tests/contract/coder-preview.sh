@@ -14,7 +14,9 @@
 #     and none restores the original byte for byte
 #   - frp keeps the marked tunnel line, drops the Cloudflare Quick block and
 #     names the missing operator ports entry
-#   - an unmarked addon-ports entry or tunnel key wins over the parameter
+#   - an unmarked addon-ports entry or tunnel key wins over the parameter; a
+#     nested tunnel key or a commented-out ports entry does not
+#   - a created addons key goes again at none, and the file mode stays
 #   - a broken machine file stays untouched, with exit 0 and a log line
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
@@ -98,6 +100,36 @@ cmp -s "$M" "$SCRATCH/own.js" || fail "an unmarked entry was overridden: $(diff 
 grep -qi 'addon-ports' "$OUT" || fail "the existing ports entry is not named: $(cat "$OUT")"
 grep -qi 'tunnel' "$OUT" || fail "the existing tunnel key is not named: $(cat "$OUT")"
 pass "an unmarked addon-ports entry and tunnel key win"
+
+# A tunnel key nested in an addon's options is not the machine's tunnel.
+sed 's#^  { use: .@bakers-build/addon-ddev.*#  { use: "@bakers-build/addon-ddev", with: {\n   tunnel: 1,\n  } },#' "$SCRATCH/hand.js" > "$M"
+edit cloudflare-quick
+[ "$(tunnel_value)" = true ] || fail "nested tunnel key: tunnel is $(tunnel_value)"
+[ "$(ports_entries)" = 1 ] || fail "nested tunnel key: $(ports_entries) addon-ports entries"
+pass "a nested tunnel key does not stop the marked tunnel line"
+
+sed 's#^ label: "box",$# label: "box",\n tunnel: true,#' "$SCRATCH/hand.js" > "$SCRATCH/own-tunnel.js"
+cp "$SCRATCH/own-tunnel.js" "$M"
+edit cloudflare-quick
+[ "$(grep -c 'tunnel:' "$M")" = 1 ] || fail "a hand tunnel key got a duplicate: $(cat "$M")"
+grep -qi 'sets tunnel itself' "$OUT" || fail "the hand tunnel key is not named: $(cat "$OUT")"
+[ "$(ports_entries)" = 1 ] || fail "hand tunnel key: $(ports_entries) addon-ports entries"
+pass "a hand top-level tunnel key wins, with no duplicate"
+
+sed 's#^  // my own addon$#  // { use: "@bakers-build/addon-ports" },\n  /* { use: "@bakers-build/addon-ports" }, */#' "$SCRATCH/hand.js" > "$M"
+edit cloudflare-quick
+[ "$(ports_entries)" = 1 ] || fail "a commented-out ports entry stopped the Quick entry: $(cat "$OUT")"
+pass "a commented-out addon-ports entry does not count as a hand entry"
+
+printf '// @bakers-schema-version 1\nexport default {\n machine_id: "x",\n};\n' > "$SCRATCH/bare.js"
+cp "$SCRATCH/bare.js" "$M"
+chmod 600 "$M"
+edit cloudflare-quick
+[ "$(ports_entries)" = 1 ] || fail "no addons key: $(ports_entries) addon-ports entries"
+[ "$(stat -c %a "$M" 2>/dev/null || stat -f %Lp "$M")" = 600 ] || fail "the edit changed the file mode"
+edit none
+cmp -s "$M" "$SCRATCH/bare.js" || fail "none did not restore a file without addons: $(diff "$SCRATCH/bare.js" "$M")"
+pass "a created addons key goes again at none, and the file mode stays"
 
 # --- F5: a broken file stays untouched -------------------------------------
 printf 'export default {\n machine_id: "x",\n' > "$M"
