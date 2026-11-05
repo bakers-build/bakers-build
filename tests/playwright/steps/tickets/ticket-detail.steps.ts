@@ -599,3 +599,21 @@ Then('no run history is shown', async ({ page }) => {
   await expect(runHistoryHeading(page)).toHaveCount(0);
   await expect(page.locator(`${MAIN_REGION} [data-cell="state"]`)).toHaveCount(0);
 });
+
+// ---------------------------------------------------------------------------
+// Semantics: the state flow marks one current step.
+// ---------------------------------------------------------------------------
+
+Then(
+  'the workflow list marks the state of ticket {string} as its one current step',
+  async ({ page }, identifier: string) => {
+    const state = php(
+      'print (($e = current(\\Drupal::entityTypeManager()->getStorage("bb_ticket")' +
+        `->loadByProperties(["identifier" => "${safe(identifier)}"]))) ? $e->get("state")->value : "");`,
+    );
+    const list = page.getByRole('list', { name: 'Workflow', exact: true });
+    const current = list.locator('li[aria-current="step"]');
+    await expect(current, 'the workflow list marks no single current step').toHaveCount(1);
+    await expect(current).toContainText(state);
+  },
+);

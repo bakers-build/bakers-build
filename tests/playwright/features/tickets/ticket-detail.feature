@@ -79,6 +79,12 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     When I visit the ticket "BB-142"
     Then the link group "More" has a row for "https://example.slack.com/archives/C0123ABCD/p1700000000000100" with the icon "inbox"
 
+  # The state flow is a list, not colour alone: exactly one step is current,
+  # and it is the ticket's own state.
+  Scenario: The state flow marks the ticket's state as the current step
+    When I visit the ticket "BB-142"
+    Then the workflow list marks the state of ticket "BB-142" as its one current step
+
   # AC 8. The shell layout puts local_tasks_block inside the content island, so
   # a tab row is what this route would render by default; its absence is a
   # property of the screen and not of the shell.
