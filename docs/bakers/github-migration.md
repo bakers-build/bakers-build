@@ -59,9 +59,9 @@ also apply to later GitLab integrations. Existing GitLab customer connectors are
 
 ## Runner selection
 
-Every job in `checks.yml` and the registry rehearsal runs on the self-hosted runner
-`[self-hosted, github-runner-1]` (Docker via dind). `release.yml` and `self-host-lifecycle.yml`
-still use Blacksmith. The single runner runs jobs one after another, so PR feedback is slower.
+Every job in `checks.yml`, the release and the registry rehearsal runs on the self-hosted
+runner `[self-hosted, github-runner-1]` (Docker via dind). `self-host-lifecycle.yml` still uses
+Blacksmith. The single runner runs jobs one after another, so PR feedback is slower.
 
 PHPUnit, browser/integration tests and config import continue using the images built
 once by `scripts/ci/github-image-gate.sh` in `image_gate`. It runs:

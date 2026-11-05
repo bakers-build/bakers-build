@@ -40,6 +40,7 @@ describe('GitHub migration checks', () => {
       expect(job.if).toContain(guard);
     expect(workflow.concurrency['cancel-in-progress']).toBe(false);
     expect(job.environment).toBe('release');
+    expect(job['runs-on']).toEqual(['self-hosted', 'github-runner-1']);
     const imported = job.steps.find(
       (step: { uses?: string; with?: { 'run-id'?: string } }) =>
         step.uses?.startsWith('actions/download-artifact@') &&

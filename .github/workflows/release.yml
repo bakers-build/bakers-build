@@ -13,7 +13,7 @@ jobs:
   release:
     if: ${{ vars.RELEASE_OWNER == 'github' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository }}
     environment: release
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 180
     permissions:
       contents: write
