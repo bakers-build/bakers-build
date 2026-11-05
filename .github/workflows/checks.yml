@@ -426,6 +426,7 @@ jobs:
           set -eu
           bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
           bash tests/contract/coder-pm-bot.sh
+          bash tests/contract/coder-preview.sh
   image_gate:
     runs-on: blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 180

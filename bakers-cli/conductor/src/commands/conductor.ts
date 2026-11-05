@@ -18,6 +18,7 @@ import {
   loadReadyBbConnection,
   type ProcProbe,
   printVersionLine,
+  readMachineContext,
   resolveConfigPath,
   setDefaultCommandRunner,
   signalVerifiedProcess,
@@ -392,6 +393,7 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
     logger,
     checkoutRoot,
     frozenStateFileOf(config),
+    () => readMachineContext(),
   );
   await conductor.start();
   await conductor.tick();
@@ -542,6 +544,7 @@ async function cmdStartForeground(
     logger,
     checkoutRoot,
     frozenStateFileOf(config),
+    () => readMachineContext(),
   );
   // This process IS the conductor, so it may report its own pid and config
   // name — the two values a cockpit needs to stop it later. poll/reap build a

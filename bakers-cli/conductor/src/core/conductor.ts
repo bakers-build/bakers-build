@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
+  type MachineContext,
   shellQuote,
   stemForConfigFile,
 } from '@bakers-build/core';
@@ -269,6 +270,9 @@ export class Conductor {
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
 
+  /** The last good machine `tunnel` policy, re-read for each run's env. */
+  private tunnel: boolean;
+
   constructor(
     private readonly config: ConductorFileConfig,
     private readonly remote: BbRemote,
@@ -278,7 +282,10 @@ export class Conductor {
     private readonly logger: ConductorLogger,
     private readonly checkoutRoot = process.cwd(),
     private readonly frozenStateFile?: string,
+    /** Re-reads machine.config.js per run; absent, `config.tunnel` stays. */
+    private readonly readMachine?: () => Promise<Partial<MachineContext>>,
   ) {
+    this.tunnel = config.tunnel === true;
     this.inboxAddons = new InboxRuntime(
       config.inboxAddons ?? [],
       remote,
@@ -1291,7 +1298,7 @@ export class Conductor {
       ...(t.identifier ? { BB_TICKET_IDENTIFIER: t.identifier } : {}),
       ...(state ? { BB_STATE: state } : {}),
       ...(runUuid ? { BB_RUN_UUID: runUuid } : {}),
-      BB_TUNNEL: this.config.tunnel === true ? '1' : '0',
+      BB_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
       ...(t.projectName ? { BB_PROJECT: t.projectName } : {}),
@@ -1304,6 +1311,32 @@ export class Conductor {
       ticket: t.identifier,
       ...(agent?.runEnvPolicy ? { policy: agent.runEnvPolicy } : {}),
     });
+  }
+
+  /**
+   * The machine's `tunnel` policy as of now, so a changed machine.config.js
+   * reaches the next run without a restart. A file without `machine_id`
+   * (missing or broken) or a failed read keeps the last good value.
+   */
+  private async currentTunnel(): Promise<boolean> {
+    if (!this.readMachine) return this.tunnel;
+    try {
+      const machine = await this.readMachine();
+      if (machine.machine_id) {
+        this.tunnel = machine.tunnel === true;
+        return this.tunnel;
+      }
+      this.logger.warn(
+        {},
+        'machine.config.js has no machine_id; keeping the last tunnel value',
+      );
+    } catch (err) {
+      this.logger.warn(
+        { err: String(err) },
+        'could not re-read machine.config.js; keeping the last tunnel value',
+      );
+    }
+    return this.tunnel;
   }
 
   /** Dispatches one claimed run; a failure terminalises it (BB-149). */
