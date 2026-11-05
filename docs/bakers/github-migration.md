@@ -59,16 +59,29 @@ also apply to later GitLab integrations. Existing GitLab customer connectors are
 
 ## Runner selection
 
-The private rehearsal uses `blacksmith-4vcpu-ubuntu-2404` for fast jobs and
-`blacksmith-8vcpu-ubuntu-2404` for the Docker image and private registry gates.
-PHPUnit uses eight processes on these 8-vCPU runners. The Blacksmith GitHub App must have access to the repository.
-The same-source conductor benchmark passed 4,679 tests (3 existing skips) in 3m07s,
-compared with 7m27s on GitHub standard runners and 2m21s on the existing GitLab runner.
-This single sample does not establish full-pipeline runtime or cost.
-[Benchmark evidence](https://github.com/bakers-build/bakers-build/actions/runs/41542518835).
+Every job in `checks.yml`, the release and the registry rehearsal runs on the self-hosted
+runner `[self-hosted, github-runner-1]` (Docker via dind). `self-host-lifecycle.yml` still uses
+Blacksmith. The single runner runs jobs one after another, so PR feedback is slower.
 
 PHPUnit, browser/integration tests and config import continue using the images built
-once by `scripts/ci/github-image-gate.sh`; runner selection does not change the gates.
+once by `scripts/ci/github-image-gate.sh` in `image_gate`. `image_gate`, `tui_musl` (musl
+compatibility) and `release_rehearsal` (package and release notes) are after-merge jobs. They run:
+
+- on every push to `next` and `main` and on manual dispatch. A push runs only these: the other
+  checks already passed in the PR on the same tree. The push run exports the tested images that
+  `release.yml` deploys (`next` to develop, `main` to app);
+- on every PR into `main`. There, the aggregate `required` check fails when one of them fails or
+  is skipped;
+- not on PRs into `next`. There, `required` passes with them skipped, so their failures show up on
+  the push to `next` and block that deployment.
+
+When a push or dispatch run on `next` has a failed job, `report_failure` runs
+`scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service
+account and comments on the open BAKERS ticket titled `CI failure: GitHub checks on next`, or
+creates that ticket as a `bug` (workflow `bb_work`) when none is open and assigns it to the
+`cw-framework` conductor. The comment or ticket names the failed jobs, the commit and the run.
+The job needs repository secrets `BB_CI_CLIENT_ID` and `BB_CI_CLIENT_SECRET` (the service
+account's OAuth client).
 The public fork full check passed; a separate probe confirmed secrets were absent and a write
 to the base repository failed with HTTP 403.
 
