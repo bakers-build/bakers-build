@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Files a failed scheduled `GitHub checks` run in bakers.build: comments on the open CI-failure
+# Files a failed `GitHub checks` run on next in bakers.build: comments on the open CI-failure
 # ticket if there is one, otherwise creates a bug. Needs a signed-in `bakers` CLI.
 # Inputs: FAILED_JOBS, GITHUB_SHA, RUN_URL.
 set -euo pipefail
 
 : "${FAILED_JOBS:?}" "${GITHUB_SHA:?}" "${RUN_URL:?}"
-export TITLE='CI failure: scheduled GitHub checks on next'
+export TITLE='CI failure: GitHub checks on next'
 # Project BAKERS; ticket search accepts only the UUID, not the key.
 export PROJECT=07ab22a7-49ee-479d-8431-7202f5235898
 work="$(mktemp -d)"
@@ -23,7 +23,7 @@ const env = process.env;
 const { tickets = [] } = JSON.parse(fs.readFileSync(`${dir}/found.json`, 'utf8'));
 const open = tickets.find((t) => t.title.startsWith(env.TITLE) && t.state !== 'done');
 const body = [
-  'Scheduled `GitHub checks` failed on `next`.',
+  '`GitHub checks` failed on `next`.',
   '',
   `- Failed jobs: ${env.FAILED_JOBS}`,
   `- Commit: ${env.GITHUB_SHA}`,

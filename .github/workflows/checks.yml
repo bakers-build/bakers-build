@@ -10,18 +10,17 @@ on:
       - reopened
       - edited
       - ready_for_review
-  # scheduled-checks.yml dispatches this on `next` for each untested head commit; image_gate
-  # (PHPUnit/E2E) runs then, not on PRs into `next`.
   workflow_dispatch: {}
 permissions:
   contents: read
 concurrency:
-  # A push to `next` must not cancel a running dispatched run.
-  group: checks-${{ github.event_name == 'workflow_dispatch' && 'dispatch-' || '' }}${{ github.event.pull_request.number || github.ref }}
+  group: checks-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   branch_policy:
     runs-on: [self-hosted, github-runner-1]
+    # A push follows a PR that already ran this on the same tree; only image_gate runs again.
+    if: &checks github.event_name != 'push'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +32,7 @@ jobs:
         run: bash scripts/ci/github-branch-policy.sh
   phpcs:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -66,6 +66,7 @@ jobs:
     container: php:8.4
   phpmd:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -99,6 +100,7 @@ jobs:
     container: php:8.4
   phpstan:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -132,6 +134,7 @@ jobs:
     container: php:8.4
   docs_pages:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -153,6 +156,7 @@ jobs:
     container: node:22
   config_sync:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -187,6 +191,7 @@ jobs:
     container: php:8.4
   compose_render:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -202,6 +207,7 @@ jobs:
           bash tests/contract/compose.sh
   conductor:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -238,6 +244,7 @@ jobs:
     container: node:22
   tui:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -271,6 +278,7 @@ jobs:
     container: node:22
   tui_musl:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -330,6 +338,7 @@ jobs:
           retention-days: 7
   web_ui:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     timeout-minutes: 45
     env:
       NODE_OPTIONS: --max-old-space-size=4096
@@ -370,6 +379,7 @@ jobs:
     container: node:22
   bb_skill_version_gate:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     steps:
       - uses: actions/checkout@v4
         with:
@@ -381,6 +391,7 @@ jobs:
         run: bash tests/contract/skill-version-gate.sh
   mr_title:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     steps:
       - uses: actions/checkout@v4
         with:
@@ -394,6 +405,7 @@ jobs:
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
   pm_bot:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     container: node:22
     timeout-minutes: 30
     steps:
@@ -413,6 +425,7 @@ jobs:
           bash tests/contract/pm-bot.sh
   coder_pm_bot:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     container: node:22
     timeout-minutes: 30
     steps:
@@ -431,8 +444,9 @@ jobs:
           bash tests/contract/coder-pm-bot.sh
   image_gate:
     runs-on: [self-hosted, github-runner-1]
-    # Keep identical to `required`'s IMAGE_GATE_REQUIRED.
-    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main'
+    # Every push (its images are what release.yml deploys), dispatch and PR into main; not PRs
+    # into next. Keep identical to `required`'s IMAGE_GATE_REQUIRED.
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
     timeout-minutes: 180
     env:
       DOMAIN: nginx
@@ -471,6 +485,7 @@ jobs:
           retention-days: 7
   release_rehearsal:
     runs-on: [self-hosted, github-runner-1]
+    if: *checks
     container: node:22
     timeout-minutes: 60
     steps:
@@ -522,15 +537,17 @@ jobs:
     steps:
       - env:
           RESULTS: ${{ toJSON(needs) }}
-          # Same expression as image_gate's `if`: a skipped image_gate passes only where it does not run.
-          IMAGE_GATE_REQUIRED: ${{ github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
-        run: node -e 'const jobs = JSON.parse(process.env.RESULTS); const ok = ([name, job]) => job.result === "success" || (name === "image_gate" && job.result === "skipped" && process.env.IMAGE_GATE_REQUIRED !== "true"); if (!Object.entries(jobs).every(ok)) process.exit(1)'
+          # Same expressions as the jobs' `if`: a skipped job passes only where it does not run.
+          CHECKS_REQUIRED: ${{ github.event_name != 'push' }}
+          IMAGE_GATE_REQUIRED: ${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}
+        run: |-
+          node -e 'const jobs = JSON.parse(process.env.RESULTS); const required = (name) => process.env[name === "image_gate" ? "IMAGE_GATE_REQUIRED" : "CHECKS_REQUIRED"] === "true"; const ok = ([name, job]) => job.result === "success" || (job.result === "skipped" && !required(name)); if (!Object.entries(jobs).every(ok)) process.exit(1)'
   report_failure:
     runs-on: [self-hosted, github-runner-1]
     container: node:22
     timeout-minutes: 15
     needs: *gates
-    if: always() && contains(needs.*.result, 'failure') && github.ref == 'refs/heads/next' && github.event_name == 'workflow_dispatch'
+    if: always() && contains(needs.*.result, 'failure') && github.ref == 'refs/heads/next' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     steps:
       - uses: actions/checkout@v4
         with:

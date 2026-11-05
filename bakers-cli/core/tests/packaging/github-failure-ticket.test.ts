@@ -8,7 +8,7 @@ const script = new URL(
   '../../../../scripts/ci/github-failure-ticket.sh',
   import.meta.url,
 ).pathname;
-const TITLE = 'CI failure: scheduled GitHub checks on next';
+const TITLE = 'CI failure: GitHub checks on next';
 // Project BAKERS; ticket search accepts only the UUID.
 const BAKERS = '07ab22a7-49ee-479d-8431-7202f5235898';
 

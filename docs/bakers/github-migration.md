@@ -66,21 +66,21 @@ still use Blacksmith. The single runner runs jobs one after another, so PR feedb
 PHPUnit, browser/integration tests and config import continue using the images built
 once by `scripts/ci/github-image-gate.sh` in `image_gate`. It runs:
 
-- on manual dispatch, and once per new `next` commit: every 2 hours `scheduled-checks.yml`
-  dispatches `GitHub checks` on `next` unless a dispatched run of that commit already exists
-  (a cancelled run does not count);
-- on every PR into `main` and every push to `main`. There, the aggregate `required` check fails
-  when `image_gate` fails or is skipped;
-- not on PRs into `next` or pushes to `next`. There, `required` passes with `image_gate` skipped.
-  Pushes to `next` therefore upload no `verified-images` for `release.yml`'s `next` channel.
+- on every push to `next` and `main` and on manual dispatch. A push runs only `image_gate`: the
+  other checks already passed in the PR on the same tree. The push run exports the tested images
+  that `release.yml` deploys (`next` to develop, `main` to app);
+- on every PR into `main`. There, the aggregate `required` check fails when `image_gate` fails or
+  is skipped;
+- not on PRs into `next`. There, `required` passes with `image_gate` skipped, so an image or test
+  failure shows up on the push to `next` and blocks that deployment.
 
-When a dispatched run on `next` has a failed job, `report_failure` runs
-`scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service account and
-comments on the open BAKERS ticket titled `CI failure: scheduled GitHub checks on next`, or creates
-that ticket as a `bug` (workflow `bb_work`) when none is open and assigns it to the
-`cw-framework` conductor. The comment or ticket names the
-failed jobs, the commit and the run. The job needs repository secrets `BB_CI_CLIENT_ID` and
-`BB_CI_CLIENT_SECRET` (the service account's OAuth client).
+When a push or dispatch run on `next` has a failed job, `report_failure` runs
+`scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service
+account and comments on the open BAKERS ticket titled `CI failure: GitHub checks on next`, or
+creates that ticket as a `bug` (workflow `bb_work`) when none is open and assigns it to the
+`cw-framework` conductor. The comment or ticket names the failed jobs, the commit and the run.
+The job needs repository secrets `BB_CI_CLIENT_ID` and `BB_CI_CLIENT_SECRET` (the service
+account's OAuth client).
 The public fork full check passed; a separate probe confirmed secrets were absent and a write
 to the base repository failed with HTTP 403.
 
