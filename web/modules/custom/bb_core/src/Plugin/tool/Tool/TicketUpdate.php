@@ -27,7 +27,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[Tool(
   id: 'bakers_ticket_update',
   label: new TranslatableMarkup('Update a ticket'),
-  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept), frozen flag, environments and referenced tickets (both add-only, existing ones kept); fields left out keep their values. A closed ticket only takes environments_add, so a deployment can stamp its batch. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.'),
+  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept), frozen flag, environments and referenced tickets (both add-only, existing ones kept); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -86,7 +86,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     ),
     'environments_add' => new ListInputDefinition(
       label: new TranslatableMarkup('Environments to add'),
-      description: new TranslatableMarkup('Names or UUIDs of environments of the ticket’s project, e.g. the deployment target. Existing environments are kept; also allowed on a closed ticket.'),
+      description: new TranslatableMarkup('Names or UUIDs of environments of the ticket’s project, e.g. the deployment target. Existing environments are kept.'),
       required: FALSE,
       item_definition: new InputDefinition(
         data_type: 'string',
@@ -212,9 +212,8 @@ final class TicketUpdate extends ToolBase {
     if ($both) {
       throw new \InvalidArgumentException(sprintf('Label %s is both added and removed.', reset($both)));
     }
-    // Closed tickets deny every field edit but environments; say why before
-    // the access check.
-    if (array_keys($given) !== ['environments_add'] && $this->readableTicket($values['ticket'])->isClosed()) {
+    // Closed tickets deny every field edit; say why before the access check.
+    if ($this->readableTicket($values['ticket'])->isClosed()) {
       throw new \InvalidArgumentException(sprintf('Ticket %s is closed and can no longer be changed.', $values['ticket']));
     }
     $ticket = $this->writableTicket($values['ticket'], array_values(array_intersect_key(self::FIELDS, $given)));

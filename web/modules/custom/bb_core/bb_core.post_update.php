@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Post update functions for bb_core.
+ */
+
+declare(strict_types=1);
+
+use Drupal\bb_core\Entity\BbTicketInterface;
+
+/**
+ * Removes the environments past deploys stamped onto the tickets they carried.
+ *
+ * A deployment ticket is now the only record of where its batch is deployed.
+ * From every non-deployment ticket a deployment references, the environments
+ * that deployment lists are removed; other environments stay.
+ */
+function bb_core_post_update_clear_deployment_stamps(array &$sandbox): string {
+  $storage = \Drupal::entityTypeManager()->getStorage('bb_ticket');
+  if (!isset($sandbox['ids'])) {
+    $sandbox['ids'] = array_values($storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('ticket_type.entity.name', 'deployment')
+      ->exists('referenced_tickets')
+      ->sort('id')
+      ->execute());
+    $sandbox['total'] = count($sandbox['ids']);
+    $sandbox['changed'] = 0;
+  }
+  foreach ($storage->loadMultiple(array_splice($sandbox['ids'], 0, 25)) as $deployment) {
+    assert($deployment instanceof BbTicketInterface);
+    $stamped = array_column($deployment->get('environments')->getValue(), 'target_id');
+    foreach ($deployment->get('referenced_tickets')->referencedEntities() as $ticket) {
+      assert($ticket instanceof BbTicketInterface);
+      if (mb_strtolower((string) $ticket->get('ticket_type')->entity?->label()) === 'deployment') {
+        continue;
+      }
+      $items = $ticket->get('environments')->getValue();
+      $kept = array_values(array_filter($items, static fn (array $item): bool => !in_array($item['target_id'], $stamped)));
+      if (count($kept) !== count($items)) {
+        $ticket->set('environments', $kept)->save();
+        $sandbox['changed']++;
+      }
+    }
+  }
+  $sandbox['#finished'] = $sandbox['total'] ? 1 - count($sandbox['ids']) / $sandbox['total'] : 1;
+  return (string) t('Removed deployment environments from @count tickets.', ['@count' => $sandbox['changed']]);
+}
