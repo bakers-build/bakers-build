@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -22,7 +21,11 @@ import {
   type SecurityOptions,
   systemSandboxHost,
 } from '@bakers-build/conductor/contract';
-import { shellQuote } from '@bakers-build/core';
+import {
+  gitSandboxPaths,
+  shellQuote,
+  withoutGitDirs,
+} from '@bakers-build/core';
 import { parseCodexTranscript } from './footprint.js';
 
 export { parseCodexTranscript } from './footprint.js';
@@ -129,6 +132,7 @@ export class CodexAgent implements BbAgent {
   private readonly effort: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
   private readonly security: ResolvedSecurity;
+  private readonly allowWrite: string[];
   readonly runEnvPolicy: RunEnvPolicy;
 
   constructor(
@@ -142,6 +146,7 @@ export class CodexAgent implements BbAgent {
     this.overrides = cli.overrides;
     this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
     this.runEnvPolicy = this.security.runEnvPolicy;
+    this.allowWrite = withoutGitDirs(this.security.sandbox.allow_write);
     // Codex has no read deny or unsandboxed-command list to map these onto.
     for (const key of ['trusted_commands', 'deny_read'] as const) {
       if (this.security.sandbox[key].length > 0) {
@@ -180,42 +185,22 @@ export class CodexAgent implements BbAgent {
         `${key}=${typeof value === 'string' ? value : JSON.stringify(value)}`,
       ]);
     if (mode === 'custom') return pairs(Object.entries(config ?? {}));
-    const gitDirs = new Set<string>();
-    for (const option of ['--git-dir', '--git-common-dir']) {
-      const git = spawnSync(
-        'git',
-        ['-C', workspacePath, 'rev-parse', '--path-format=absolute', option],
-        { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } },
-      );
-      if (git.error) throw git.error;
-      if (git.status !== 0) {
-        if (git.stderr.includes('not a git repository')) break;
-        throw new Error(
-          `Cannot resolve Codex workspace Git directories: ${git.stderr.trim()}`,
-        );
-      }
-      gitDirs.add(git.stdout.replace(/\r?\n$/, ''));
-    }
-    const roots = sandbox.allow_write.map(
+    const git = gitSandboxPaths(workspacePath);
+    const roots = this.allowWrite.map(
       (dir) =>
         `${JSON.stringify(dir.startsWith('~/') ? join(this.home, dir.slice(2)) : dir)} = true`,
     );
     // Filesystem overrides replace inherited entries, so retain workspace protections explicitly.
     const filesystem = [
       '":workspace_roots" = { ".git" = "read", ".agents" = "read", ".codex" = "read", ".aws" = "read" }',
-      ...[...gitDirs].flatMap((dir) => [
-        `${JSON.stringify(dir)} = "write"`,
-        // Unsandboxed Git later runs config/hooks code, or follows these redirects to it.
-        ...[
-          'config',
-          'config.worktree',
-          'hooks',
-          'commondir',
-          'gitdir',
-          'modules',
-          'worktrees',
-        ].map((name) => `${JSON.stringify(join(dir, name))} = "read"`),
-      ]),
+      // Codex mounts a read-only `.git`, `.agents`, `.codex` and `.aws` into every
+      // writable entry and creates each missing one; inside Git metadata, grant them.
+      ...git.write.flatMap((path) =>
+        ['', '/.git', '/.agents', '/.codex', '/.aws'].map(
+          (name) => `${JSON.stringify(path + name)} = "write"`,
+        ),
+      ),
+      ...git.protect.map((path) => `${JSON.stringify(path)} = "read"`),
     ];
     const profile = `{ extends = ":workspace", filesystem = { ${filesystem.join(', ')} }, workspace_roots = { ${roots.join(', ')} }, network = { enabled = ${sandbox.network.length > 0} } }`;
     const flags = [
@@ -254,10 +239,21 @@ export class CodexAgent implements BbAgent {
     _run?: AgentRunIdentity,
     workspacePath = process.cwd(),
     tools?: { url: string },
+    env: Readonly<Record<string, string>> = {},
   ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
     const parts = ['codex', ...this.securityFlags(workspacePath).map(word)];
+    // Codex's default shell env filter drops `*KEY*` names; without its key a
+    // `GIT_CONFIG_COUNT` entry makes every git call fail.
+    for (const [name, value] of Object.entries(env)) {
+      if (/^GIT_CONFIG_KEY_\d+$/.test(name)) {
+        parts.push(
+          '-c',
+          word(`shell_environment_policy.set.${name}=${JSON.stringify(value)}`),
+        );
+      }
+    }
     if (tools) {
       // Codex reads the token from the run env, so it never enters argv.
       const server = `mcp_servers.${CONDUCTOR_TOOLS_SERVER}`;

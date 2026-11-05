@@ -24,7 +24,11 @@ import {
   systemSandboxHost,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
-import { shellQuote } from '@bakers-build/core';
+import {
+  gitSandboxPaths,
+  shellQuote,
+  withoutGitDirs,
+} from '@bakers-build/core';
 import { parseClaudeTranscript } from './footprint.js';
 
 export { parseClaudeTranscript } from './footprint.js';
@@ -56,10 +60,18 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 };
 
 /** The launch flags a security mode owns (`docs/addons/claude.md`). */
-function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
+function securityFlags(
+  { mode, sandbox, config }: ResolvedSecurity,
+  workspacePath: string | undefined,
+): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
   if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  // Git metadata only for a known workspace; the conductor always passes one.
+  const git =
+    workspacePath === undefined
+      ? { write: [], protect: [] }
+      : gitSandboxPaths(workspacePath);
   const settings = {
     sandbox: {
       enabled: true,
@@ -72,7 +84,8 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       ),
       filesystem: {
         denyRead: sandbox.deny_read,
-        allowWrite: sandbox.allow_write,
+        allowWrite: [...sandbox.allow_write, ...git.write],
+        denyWrite: git.protect,
       },
       network: { allowedDomains: sandbox.network },
     },
@@ -143,7 +156,7 @@ export class ClaudeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
-  private readonly securityFlags: string[];
+  private readonly security: ResolvedSecurity;
   /** The sandbox's own MCP servers, strict; undefined outside the sandbox. */
   private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
@@ -161,7 +174,13 @@ export class ClaudeAgent implements BbAgent {
     this.effort = cli.effort;
     this.overrides = cli.overrides;
     const security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
-    this.securityFlags = securityFlags(security);
+    this.security = {
+      ...security,
+      sandbox: {
+        ...security.sandbox,
+        allow_write: withoutGitDirs(security.sandbox.allow_write),
+      },
+    };
     this.sandboxMcpServers =
       security.mode === 'sandbox' ? security.sandbox.mcp_servers : undefined;
     this.securityMode = security.mode;
@@ -177,7 +196,7 @@ export class ClaudeAgent implements BbAgent {
   launchCommand(
     prompt: string,
     run?: AgentRunIdentity,
-    _workspacePath?: string,
+    workspacePath?: string,
     tools?: { url: string },
   ): string {
     if (prompt === '') {
@@ -199,14 +218,10 @@ export class ClaudeAgent implements BbAgent {
     }
     // The flags are constants; only their generated values need quoting.
     parts.push(
-      ...this.securityFlags.map((t) =>
-        t.startsWith('--') ? t : shellQuote(t),
-      ),
-    );
-    parts.push(
-      ...this.mcpFlags(tools).map((t) =>
-        t.startsWith('--') ? t : shellQuote(t),
-      ),
+      ...[
+        ...securityFlags(this.security, workspacePath),
+        ...this.mcpFlags(tools),
+      ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );
     // Pin the transcript's own session id to the run's UUID (BB-473), so
     // `getRunLog` can read that ONE file directly instead of scanning the

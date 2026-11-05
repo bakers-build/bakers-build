@@ -1,5 +1,8 @@
 import { resolve } from 'node:path';
-import { loadInstructions } from '@bakers-build/addon-workspace-git';
+import {
+  loadInstructions,
+  runBranchGit,
+} from '@bakers-build/addon-workspace-git';
 import type {
   BbWorkspace,
   ConductorFileConfig,
@@ -116,6 +119,11 @@ export interface HerdrWorkspaceOptions {
   execGit?: GitExec;
   /** Optional logger for the best-effort open-layout path (defaults to noop). */
   logger?: ConductorLogger;
+  /**
+   * Default `false`: before creating a worktree, set `branch.autoSetupMerge=false`
+   * in `root`, and give runs `push.default=current`. `true` leaves Git alone.
+   */
+  autoSetupMerge?: boolean;
 }
 
 const defaultExec: HerdrExec = (args) => exec('herdr', args);
@@ -252,6 +260,9 @@ export class HerdrWorkspace implements BbWorkspace {
       throw new Error('herdr workspace requires a branch name');
     }
     validateBranch(branch);
+    const extra = this.options.autoSetupMerge
+      ? {}
+      : { env: await runBranchGit(this.root, this.logger) };
 
     const worktrees = parseWorktreeList(
       await this.execHerdr(['worktree', 'list', '--cwd', this.root, '--json']),
@@ -279,7 +290,12 @@ export class HerdrWorkspace implements BbWorkspace {
           'worktree open',
         );
       }
-      return { path, instructions: loadInstructions(path), created: false };
+      return {
+        path,
+        instructions: loadInstructions(path),
+        created: false,
+        ...extra,
+      };
     }
 
     // Fresh: create the git worktree + herdr workspace in one call. Base the
@@ -330,7 +346,12 @@ export class HerdrWorkspace implements BbWorkspace {
 
     // The `after_create` hook is run by the executor (BB-84), not here — the
     // workspace only reports that it created a fresh worktree.
-    return { path, instructions: loadInstructions(path), created: true };
+    return {
+      path,
+      instructions: loadInstructions(path),
+      created: true,
+      ...extra,
+    };
   }
 
   /**
@@ -477,6 +498,7 @@ export function herdrWorkspace(
     worktreeDir?: string;
     baseBranch?: string;
     open?: OpenLayout;
+    autoSetupMerge?: boolean;
     /** Overrideable git exec for root derivation (tests). */
     execGit?: RootGitExec;
     /** Overrideable herdr exec (tests) — sibling of `execGit`. */
@@ -501,6 +523,7 @@ export function herdrWorkspace(
         ...(opts.baseBranch ? { baseBranch: opts.baseBranch } : {}),
         ...(opts.open ? { open: opts.open } : {}),
         ...(opts.execHerdr ? { execHerdr: opts.execHerdr } : {}),
+        ...(opts.autoSetupMerge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
       });
     },
