@@ -8,3 +8,4 @@ props:
       value: claude
     - label: Codex
       value: codex
+  initial: claude

@@ -16,7 +16,7 @@
   {% if caption or lines %}
     <figcaption class="log-viewer__caption flex items-center gap-inline px-stack py-[7px] border-b border-border-2 bg-surface-2">
       {% if caption %}<span class="text-eyebrow text-text-faint uppercase">{{ caption }}</span>{% endif %}
-      <span class="text-meta text-text-faint font-mono tabular-nums">{{ lines|length }} {{ lines|length == 1 ? 'line' : 'lines' }}</span>
+      <span class="text-meta text-text-faint tabular-nums">{{ lines|length }} {{ lines|length == 1 ? 'line' : 'lines' }}</span>
     </figcaption>
   {% endif %}
   <div class="log-viewer__body overflow-x-auto">

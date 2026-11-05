@@ -172,7 +172,7 @@
       {#- An address outside bakers.build: styled like a prose link, opened apart. #}
       <a class="text-body text-link underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring break-all" href="{{ c.url|default('#') }}" target="_blank" rel="noopener noreferrer">{{ c.value }}</a>
     {%- else -%}
-    <a class="{{ c.mono ? 'font-mono text-data' : 'text-body' }} text-text no-underline hover:underline focus-visible:underline"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
+    <a class="{{ c.mono ? 'font-mono text-data' : 'text-body' }} text-text no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
     {%- endif -%}
   {%- elseif c.kind == 'badge' -%}
     {#- With `url` a badge is a linked chip; hover dims it, because underline

@@ -13,7 +13,9 @@
     'rounded-[8px]', 'border', 'border-border', 'bg-surface-2', 'p-[2px]',
   ]) }}
   role="group"
-  {%- if label %} aria-label="{{ label }}"{% endif %}>
+  {%- if label %} aria-label="{{ label }}"{% endif %}
+  {#- With `initial` the filter holds its state itself; without, an ancestor scope does. #}
+  {%- if state and initial is not empty %} x-data='{{ {(state): initial}|json_encode }}'{% endif %}>
   {%- for item in items %}
     {%- if item.value is defined and state -%}
       {%- set value_js = item.value|json_encode -%}
