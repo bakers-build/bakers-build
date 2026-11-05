@@ -8,6 +8,9 @@ import { parse } from 'yaml';
 const read = (path: string) =>
   readFileSync(new URL(`../../../../${path}`, import.meta.url), 'utf8');
 
+// Jobs that run after the merge (push) and before main, not on PRs into next.
+const AFTER_MERGE = ['image_gate', 'tui_musl', 'release_rehearsal'];
+
 describe('GitHub migration checks', () => {
   it('disables every GitLab publisher and deploy job before GitHub takes ownership', () => {
     const old = parse(read('.gitlab-ci.yml'));
@@ -191,9 +194,12 @@ describe('GitHub migration checks', () => {
     for (const name of required) {
       const job = workflow.jobs[name];
       expect(job.permissions).toBeUndefined();
-      // A push follows a PR that already ran these on the same tree; only image_gate runs again.
-      if (name !== 'image_gate')
-        expect(job.if, name).toBe("github.event_name != 'push'");
+      // After-merge jobs run on push, dispatch and PRs into main; the rest already ran in the PR.
+      expect(job.if, name).toBe(
+        AFTER_MERGE.includes(name)
+          ? "github.event_name != 'pull_request' || github.base_ref == 'main'"
+          : "github.event_name != 'push'",
+      );
       expect(job.steps[0].with['persist-credentials']).toBe(false);
     }
     const source = read('.github/workflows/checks.yml');
@@ -207,7 +213,7 @@ describe('GitHub migration checks', () => {
     expect(workflow.jobs.required.steps[0].run).toContain('success');
   });
 
-  it('runs image_gate on every push, dispatch and PR into main, never on PRs into next', () => {
+  it('runs the after-merge jobs on every push, dispatch and PR into main, never on PRs into next', () => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     const gate = workflow.jobs.image_gate.if;
     expect(gate).toBe(
@@ -229,7 +235,8 @@ describe('GitHub migration checks', () => {
     ).toBe(false);
     // `required` decides with the same expressions which skipped jobs are acceptable.
     const env = workflow.jobs.required.steps[0].env;
-    expect(env.IMAGE_GATE_REQUIRED).toBe(`\${{ ${gate} }}`);
+    expect(env.AFTER_MERGE_REQUIRED).toBe(`\${{ ${gate} }}`);
+    for (const name of AFTER_MERGE) expect(workflow.jobs[name].if).toBe(gate);
     expect(env.CHECKS_REQUIRED).toBe(`\${{ ${workflow.jobs.phpcs.if} }}`);
   });
 
@@ -271,10 +278,12 @@ describe('GitHub migration checks', () => {
         ...process.env,
         RESULTS: JSON.stringify({
           image_gate: { result: gate },
+          tui_musl: { result: gate },
+          release_rehearsal: { result: gate },
           phpcs: { result: other },
         }),
         CHECKS_REQUIRED: checks,
-        IMAGE_GATE_REQUIRED: gateRequired,
+        AFTER_MERGE_REQUIRED: gateRequired,
       },
     });
     expect(result.status).toBe(status);

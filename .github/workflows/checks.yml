@@ -19,7 +19,7 @@ concurrency:
 jobs:
   branch_policy:
     runs-on: [self-hosted, github-runner-1]
-    # A push follows a PR that already ran this on the same tree; only image_gate runs again.
+    # A push follows a PR that already ran this on the same tree; only the after-merge jobs run.
     if: &checks github.event_name != 'push'
     steps:
       - uses: actions/checkout@v4
@@ -278,7 +278,9 @@ jobs:
     container: node:22
   tui_musl:
     runs-on: [self-hosted, github-runner-1]
-    if: *checks
+    # After the merge (push), on dispatch and before main; not on PRs into next. Shared with
+    # image_gate and release_rehearsal and `required`'s AFTER_MERGE_REQUIRED.
+    if: &after_merge github.event_name != 'pull_request' || github.base_ref == 'main'
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -444,9 +446,8 @@ jobs:
           bash tests/contract/coder-pm-bot.sh
   image_gate:
     runs-on: [self-hosted, github-runner-1]
-    # Every push (its images are what release.yml deploys), dispatch and PR into main; not PRs
-    # into next. Keep identical to `required`'s IMAGE_GATE_REQUIRED.
-    if: github.event_name != 'pull_request' || github.base_ref == 'main'
+    # The push run's tested images are what release.yml deploys.
+    if: *after_merge
     timeout-minutes: 180
     env:
       DOMAIN: nginx
@@ -485,7 +486,7 @@ jobs:
           retention-days: 7
   release_rehearsal:
     runs-on: [self-hosted, github-runner-1]
-    if: *checks
+    if: *after_merge
     container: node:22
     timeout-minutes: 60
     steps:
@@ -539,9 +540,9 @@ jobs:
           RESULTS: ${{ toJSON(needs) }}
           # Same expressions as the jobs' `if`: a skipped job passes only where it does not run.
           CHECKS_REQUIRED: ${{ github.event_name != 'push' }}
-          IMAGE_GATE_REQUIRED: ${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}
+          AFTER_MERGE_REQUIRED: ${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}
         run: |-
-          node -e 'const jobs = JSON.parse(process.env.RESULTS); const required = (name) => process.env[name === "image_gate" ? "IMAGE_GATE_REQUIRED" : "CHECKS_REQUIRED"] === "true"; const ok = ([name, job]) => job.result === "success" || (job.result === "skipped" && !required(name)); if (!Object.entries(jobs).every(ok)) process.exit(1)'
+          node -e 'const jobs = JSON.parse(process.env.RESULTS); const afterMerge = ["image_gate", "tui_musl", "release_rehearsal"]; const required = (name) => process.env[afterMerge.includes(name) ? "AFTER_MERGE_REQUIRED" : "CHECKS_REQUIRED"] === "true"; const ok = ([name, job]) => job.result === "success" || (job.result === "skipped" && !required(name)); if (!Object.entries(jobs).every(ok)) process.exit(1)'
   report_failure:
     runs-on: [self-hosted, github-runner-1]
     container: node:22

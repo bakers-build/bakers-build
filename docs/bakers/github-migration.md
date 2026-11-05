@@ -64,15 +64,16 @@ runner `[self-hosted, github-runner-1]` (Docker via dind). `self-host-lifecycle.
 Blacksmith. The single runner runs jobs one after another, so PR feedback is slower.
 
 PHPUnit, browser/integration tests and config import continue using the images built
-once by `scripts/ci/github-image-gate.sh` in `image_gate`. It runs:
+once by `scripts/ci/github-image-gate.sh` in `image_gate`. `image_gate`, `tui_musl` (musl
+compatibility) and `release_rehearsal` (package and release notes) are after-merge jobs. They run:
 
-- on every push to `next` and `main` and on manual dispatch. A push runs only `image_gate`: the
-  other checks already passed in the PR on the same tree. The push run exports the tested images
-  that `release.yml` deploys (`next` to develop, `main` to app);
-- on every PR into `main`. There, the aggregate `required` check fails when `image_gate` fails or
+- on every push to `next` and `main` and on manual dispatch. A push runs only these: the other
+  checks already passed in the PR on the same tree. The push run exports the tested images that
+  `release.yml` deploys (`next` to develop, `main` to app);
+- on every PR into `main`. There, the aggregate `required` check fails when one of them fails or
   is skipped;
-- not on PRs into `next`. There, `required` passes with `image_gate` skipped, so an image or test
-  failure shows up on the push to `next` and blocks that deployment.
+- not on PRs into `next`. There, `required` passes with them skipped, so their failures show up on
+  the push to `next` and block that deployment.
 
 When a push or dispatch run on `next` has a failed job, `report_failure` runs
 `scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service
