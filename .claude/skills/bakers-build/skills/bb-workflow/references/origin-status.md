@@ -42,7 +42,8 @@ glab api --hostname "<host>" --paginate "projects/<encoded path>/labels?include_
 ```
 
 Replace `label` and each name in `remove` with the listed `name` that equals it ignoring case
-(`doing` → `Doing`). A name with no match is left out of the call, and the run warns naming it. If
+(`doing` → `Doing`). When several listed names match, take the exact spelling, else the one with
+`is_project_label: true`. A name with no match is left out of the call, and the run warns naming it. If
 `label` is left out, the call carries only `--unlabel`; if nothing is left, there is no call. If the
 read fails, write nothing and warn.
 

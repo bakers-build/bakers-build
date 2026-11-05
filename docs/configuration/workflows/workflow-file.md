@@ -82,7 +82,7 @@ A ticket whose origin is an issue gets a customer-facing label on that issue at 
 
 This is the default table the project template ships. Change the labels to your customer's vocabulary. A state without a row writes nothing, and a file without the table writes no origin label at all. The labels in the table form the family bakers.build owns: exactly one of them is on the issue at a time, and labels outside the table are never touched.
 
-bakers.build creates no origin labels: the table must name labels that exist in the GitLab project or one of its parent groups. Each table label is matched to an existing label ignoring case, and the existing spelling is written and removed, so `doing` in the table sets the project's `Doing`. A table label the project lacks is skipped with a warning, and the transition still goes ahead.
+bakers.build creates no origin labels: the table must name labels that exist in the GitLab project or one of its parent groups. Each table label is matched to an existing label ignoring case, and the existing spelling is written and removed, so `doing` in the table sets the project's `Doing`. Where both spellings exist, the exact one wins, otherwise the project's own label. A table label the project lacks is skipped with a warning, and the transition still goes ahead.
 
 **Done when:** the file starts with the entry line and every skill it names is installed for the agent. [How it works](/configuration/workflows#how-it-works) explains how a run reads it.
 

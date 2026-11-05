@@ -1114,6 +1114,22 @@ describe('origin map profile', () => {
       ]),
     ).toEqual(['label-write', 'existing-labels-only']);
   });
+  it('picks the exact spelling, then the project label, among duplicates', async () => {
+    expect(
+      await judge('origin-map-duplicate-spelling', 'doing', [
+        workflow,
+        labels,
+        write('doing', 'Review'),
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map-duplicate-spelling', 'Doing', [
+        workflow,
+        labels,
+        write('Doing', 'REVIEW'),
+      ]),
+    ).toEqual(['label-write']);
+  });
   it('skips a missing label with a warning and creates nothing', async () => {
     expect(
       await judge(
