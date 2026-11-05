@@ -93,8 +93,9 @@ final class TenancyGraphDriftTest extends UnitTestCase {
    * `resolveChain()` branches rather than through `HOP_FIELDS` — both are
    * covered by their own tests below instead of this generic loop.
    *
-   * `bb_term` is excluded from the resolver side: it has no product
-   * route — the resolver answering "no chain" is correct, not drift.
+   * `bb_term` and `bb_invite` are excluded from the resolver side: neither
+   * has a product route of its own — the resolver answering "no chain" is
+   * correct, not drift.
    * `bb_machine` has no fence hop (account-owned). `bb_conductor` now
    * has a product chain (`project_id` → `group_id` → `workspace_id`) and is
    * compared here.
@@ -102,7 +103,7 @@ final class TenancyGraphDriftTest extends UnitTestCase {
   public function testFenceHopsAreTheResolversFirstChainHop(): void {
     $hops = array_diff_key(
       BbRankEntityFence::HOP_FIELDS,
-      array_flip(['bb_term']),
+      array_flip(['bb_term', 'bb_invite']),
     );
     $chains = self::resolverChains();
 

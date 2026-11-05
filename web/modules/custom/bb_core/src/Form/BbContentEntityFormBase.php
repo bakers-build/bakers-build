@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 
 /**
@@ -143,11 +145,33 @@ class BbContentEntityFormBase extends ContentEntityForm {
    */
   protected function actions(array $form, FormStateInterface $form_state): array {
     $actions = parent::actions($form, $form_state);
-    if ($this->getOperation() !== 'settings') {
-      return $actions;
-    }
     unset($actions['delete']);
-    return $actions;
+    return $actions + static::deleteAction($this->getEntity());
+  }
+
+  /**
+   * The Delete action of a saved entity, shown only to who may delete it.
+   *
+   * @return array<string, array<string, mixed>>
+   *   The `delete` action, or nothing when the entity has no delete form.
+   */
+  public static function deleteAction(EntityInterface $entity): array {
+    if ($entity->isNew() || !$entity->hasLinkTemplate('delete-form') || !$entity->access('delete')) {
+      return [];
+    }
+    // A plain page link: the confirm form is its own page, never a swap.
+    return [
+      'delete' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:button',
+        '#props' => [
+          'label' => (string) new TranslatableMarkup('Delete'),
+          'href' => $entity->toUrl('delete-form')->toString(),
+          'variant' => 'ghost',
+        ],
+        '#weight' => 100,
+      ],
+    ];
   }
 
 }

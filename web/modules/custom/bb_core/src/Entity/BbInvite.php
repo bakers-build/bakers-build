@@ -8,8 +8,10 @@ use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
+use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\user\EntityOwnerInterface;
@@ -39,12 +41,17 @@ use Drupal\user\EntityOwnerTrait;
     // workspace's invitations, which is a list of who is being recruited.
     'query_access' => QueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
+    'form' => ['delete' => BbContentEntityDeleteForm::class],
+    'route_provider' => ['html' => AdminHtmlRouteProvider::class],
+  ],
+  // Only the revoke confirm form: an invitation has no canonical page;
+  // member screens list it and `bb_core.workspace_join` addresses it by id.
+  links: [
+    'delete-form' => '/_workspace/{bb_workspace}/invite/{bb_invite}/delete',
   ],
   base_table: 'bb_invite',
   admin_permission: 'administer bakers',
   constraints: ['BbInviteAssignment' => []],
-  // No links and no route provider: an invitation has no canonical page;
-  // member screens list it and `bb_core.workspace_join` addresses it by id.
 )]
 final class BbInvite extends BbContentEntityBase implements EntityOwnerInterface {
 

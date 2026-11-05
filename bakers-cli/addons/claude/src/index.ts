@@ -52,7 +52,7 @@ const MEASURE_FLAGS: readonly (readonly string[])[] = [
 ];
 
 const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
-  trusted_commands: ['bakers', 'git', 'ddev'],
+  trusted_commands: ['bakers', 'git'],
   deny_read: ['~/.ssh', '~/.bakers'],
   allow_write: [],
   network: ['*'],

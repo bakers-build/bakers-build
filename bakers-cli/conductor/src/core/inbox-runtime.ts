@@ -79,7 +79,9 @@ export class InboxRuntime {
       (a) => a.name === msg.messageId.slice(0, dot),
     );
     const key = msg.messageId.slice(dot + 1);
-    return dot > 0 && addon?.messages[key] && addon.handlers[key]
+    return dot > 0 &&
+      addon?.messages[key] &&
+      (addon.handlers[key] || addon.bindings[key])
       ? [addon, key]
       : undefined;
   }
@@ -101,15 +103,13 @@ export class InboxRuntime {
     }
   }
 
-  /** Runs one handler with the timeout and validates its result. */
+  /** Runs one handler or bound tool with the timeout and validates its result. */
   private async run(
     addon: LoadedInbox,
     key: string,
     ticket: Ticket,
     msg: InboxMessage,
   ): Promise<MessageResult> {
-    const handler = addon.handlers[key];
-    if (!handler) throw new Error(`no handler for ${key}`);
     const worktreePath = msg.worktreePath ?? '';
     const controller = new AbortController();
     let timer: NodeJS.Timeout | undefined;
@@ -120,6 +120,22 @@ export class InboxRuntime {
       }, HANDLER_TIMEOUT_MS);
     });
     try {
+      const binding = addon.bindings[key];
+      if (binding) {
+        if (!this.tools) throw new Error(`no tools for ${key}`);
+        const { text } = await Promise.race([
+          this.tools.call(
+            binding.tool,
+            binding.args ?? msg.payload,
+            { worktreePath, ticket },
+            { signal: controller.signal, logger: this.logger },
+          ),
+          timeout,
+        ]);
+        return { markdown: text };
+      }
+      const handler = addon.handlers[key];
+      if (!handler) throw new Error(`no handler for ${key}`);
       const result = await Promise.race([
         handler({
           id: msg.id,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_track\Kernel;
 
+use Drupal\Tests\bb_core\Kernel\DanglingReferenceTrait;
 use Drupal\Core\Entity\EntityReferenceSelection\SelectionInterface;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Form\FormState;
@@ -39,6 +40,8 @@ use Symfony\Component\Yaml\Yaml;
 #[Group('bb_track')]
 #[RunTestsInSeparateProcesses]
 final class WorklogFormTest extends KernelTestBase {
+
+  use DanglingReferenceTrait;
 
   use OgScopeFixtureTrait;
   use UserCreationTrait;
@@ -518,7 +521,7 @@ final class WorklogFormTest extends KernelTestBase {
   public function testUnresolvedTicketIsRemovedWithNoTicket(): void {
     $this->actAs($this->employee);
     $entry = $this->createRecorded($this->employee, ['ticket_id' => $this->ticketT->id()]);
-    $this->ticketT->delete();
+    $this->removeRowsOnly($this->ticketT);
     $form = $this->container->get('form_builder')->getForm(WorklogForm::class, $entry);
     self::assertArrayNotHasKey('clear_ticket', $form['ticket_wrapper']);
     $kept = $this->submitEdit($entry, ['duration' => '1:00', 'description' => 'Kept']);

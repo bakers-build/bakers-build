@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Routing;
 
 use Drupal\Core\Routing\RouteSubscriberBase;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\ParamConverter\BbWorkspaceSlugConverter;
 use Drupal\bb_core\PathProcessor\BbWorkspacePathProcessor;
 use Symfony\Component\Routing\Route;
@@ -125,6 +126,10 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
         }
         $parameters[$name]['converter'] = $slot['converter'];
         $route->setRequirement($name, $slot['pattern']);
+      }
+      if (str_ends_with((string) $route->getDefault('_entity_form'), '.delete')) {
+        // Core titles the route's first entity, which here is the workspace.
+        $route->setDefault('_title_callback', BbContentEntityDeleteForm::class . '::title');
       }
       $route->setOption('parameters', $parameters);
       $route->setRequirement('bb_workspace', self::SLUG_PATTERN);

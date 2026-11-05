@@ -5,8 +5,8 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 ## bb-phase-provision
 
 Runtime: DDEV through `@bakers-build/bb-runtime-ddev`. Drupal checks start from a verified
-`recipe-test` environment (`ddev init --provider recipe-test`; each explicit init reinstalls); `config/sync` validation uses a disposable `existing-config` site afterwards, at the
-same revision. Core tests, Playwright, conductor and skill-behavior setup:
+`recipe-test` environment (`ddev init --provider recipe-test`, or `provision_up('recipe-test')`; each explicit init reinstalls); `config/sync` validation uses a disposable `existing-config` site afterwards
+(`ddev init --provider existing-config`, or `provision_up('existing-config')`), at the same revision. Core tests, Playwright, conductor and skill-behavior setup:
 [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work

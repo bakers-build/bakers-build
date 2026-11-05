@@ -75,6 +75,21 @@ Optional values are omitted rather than empty. The `after_run` command gets them
 
 Hooks are best effort: a failing command or listener is logged and dispatch or cleanup continues. A required gate belongs in the `WORKFLOW.md` checks. A top-level `hooks` object replaces the herdr addon's `with.hooks` as a whole.
 
+## Provision on an agent's request
+
+`provision_up` never runs on its own. The conductor offers it to runs as the [tool](/addons/build/tools#shipped-tools) `provision_up(profile?)`, so a sandboxed agent can reinstall its environment without trusting the runtime's CLI. The value is one command, or a command per profile; the agent picks a configured profile, never the command:
+
+```js
+hooks: {
+  provision_up: {
+    'recipe-test': 'ddev init --provider recipe-test',
+    'existing-config': 'ddev init --provider existing-config',
+  },
+},
+```
+
+It runs through `sh -c` in the run's worktree with the conductor's environment, up to 30 minutes. Unlike the other hooks it is not best effort: a non-zero exit reaches the agent as a tool error. Like `after_create`, it runs worktree code with your permissions.
+
 ## Add a listener from an addon
 
 A conductor addon's preset can export a [`hooks` accumulator](/addons/build/contracts#surfaces-and-extension-points); each listener defines any of these slots:

@@ -3,15 +3,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FakeBbRemote } from '@bakers-build/addon-fake';
 import type { ConductorLogger } from '@bakers-build/core';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActionQueue } from '../../src/core/action-queue.js';
 import {
   answerV2,
+  HANDLER_TIMEOUT_MS,
   InboxRuntime,
   runInbox,
 } from '../../src/core/inbox-runtime.js';
 import { type LoadedInbox, loadInbox } from '../../src/plugins/message.js';
 import type { InboxMessage } from '../../src/plugins/remote.js';
+import { loadTools, type ToolRequest } from '../../src/plugins/tools.js';
 
 function spyLogger(): { log: ConductorLogger; calls: object[] } {
   const calls: object[] = [];
@@ -181,6 +183,138 @@ describe('InboxRuntime', () => {
     };
     await answerV2(remote, rt, message('m-1', 'demo.ping'), spyLogger().log);
     expect(statuses).toEqual(['running', 'done']);
+  });
+});
+
+describe('InboxRuntime bindings', () => {
+  const calls: { args: unknown; worktreePath: string }[] = [];
+  let behavior: 'ok' | 'throw' | 'hang' = 'ok';
+
+  async function boundRuntime(): Promise<InboxRuntime> {
+    calls.length = 0;
+    const registry = await loadTools([
+      {
+        name: 'demo-tools',
+        version: '1.0.0',
+        tools: {
+          contract: 1,
+          tools: {
+            up: { description: 'Up' },
+            echo: {
+              description: 'Echo',
+              input: {
+                type: 'object',
+                required: ['port'],
+                properties: { port: { type: 'integer' } },
+              },
+            },
+          },
+          handlers: async () => {
+            const run = async (req: ToolRequest) => {
+              calls.push({ args: req.args, worktreePath: req.worktreePath });
+              if (behavior === 'throw') throw new Error('tunnel broke');
+              if (behavior === 'hang')
+                await new Promise((_r, reject) =>
+                  req.signal.addEventListener('abort', () =>
+                    reject(new Error('aborted')),
+                  ),
+                );
+              return { text: `ran ${JSON.stringify(req.args)}` };
+            };
+            return { up: run, echo: run };
+          },
+        },
+      },
+    ]);
+    const demo = await loadInbox(
+      {
+        name: 'demo',
+        version: '0.3.0',
+        inbox: {
+          contract: 2,
+          messages: {
+            up: { label: 'Up', access: 'view' },
+            echo: {
+              label: 'Echo',
+              access: 'update',
+              input: {
+                type: 'object',
+                properties: { port: { type: 'integer' } },
+              },
+            },
+          },
+          bindings: {
+            up: { tool: 'up', args: {} },
+            echo: { tool: 'echo' },
+          },
+        },
+      },
+      undefined,
+      new Set(registry.list().map((t) => t.name)),
+    );
+    return new InboxRuntime(
+      [demo],
+      remote,
+      spyLogger().log,
+      async () => ({}),
+      registry,
+    );
+  }
+
+  beforeEach(() => {
+    behavior = 'ok';
+  });
+
+  it('calls the bound tool with fixed args on the worktree', async () => {
+    const rt = await boundRuntime();
+    const outcome = await rt.handle(
+      message('m-1', 'demo.up', { payload: { ignored: true } }),
+    );
+    expect(outcome).toEqual({ status: 'done', result: { markdown: 'ran {}' } });
+    expect(calls).toEqual([{ args: {}, worktreePath: worktree }]);
+  });
+
+  it('passes the payload through when the binding has no args', async () => {
+    const rt = await boundRuntime();
+    const outcome = await rt.handle(
+      message('m-1', 'demo.echo', { payload: { port: 443 } }),
+    );
+    expect(outcome).toEqual({
+      status: 'done',
+      result: { markdown: 'ran {"port":443}' },
+    });
+  });
+
+  it('fails with the tool error', async () => {
+    behavior = 'throw';
+    const rt = await boundRuntime();
+    const outcome = await rt.handle(message('m-1', 'demo.up'));
+    expect(outcome).toEqual({
+      status: 'failed',
+      result: { markdown: 'tunnel broke' },
+    });
+  });
+
+  it('fails when the tool refuses the arguments', async () => {
+    const rt = await boundRuntime();
+    const outcome = await rt.handle(message('m-1', 'demo.echo'));
+    expect(outcome.status).toBe('failed');
+    expect(outcome.result.markdown).toContain('echo: invalid arguments');
+  });
+
+  it('fails a tool that runs past the timeout', async () => {
+    vi.useFakeTimers();
+    try {
+      behavior = 'hang';
+      const rt = await boundRuntime();
+      const pending = rt.handle(message('m-1', 'demo.up'));
+      await vi.advanceTimersByTimeAsync(HANDLER_TIMEOUT_MS);
+      const outcome = await pending;
+      expect(outcome.status).toBe('failed');
+      expect(outcome.result.markdown).toContain('timed out after 60s');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

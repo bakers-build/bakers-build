@@ -106,7 +106,8 @@ final class ProjectSettingsRepositorySaveTest extends KernelTestBase {
    */
   private function createProject(array $values): ContentEntityInterface {
     $p = $this->container->get('entity_type.manager')->getStorage('bb_project')
-      ->create(['group_id' => $this->group->id(), 'teams' => [$this->teamId]] + $values);
+      // A valid key: the form links the project's delete page by it.
+      ->create(['group_id' => $this->group->id(), 'teams' => [$this->teamId], 'key' => 'PSAVE'] + $values);
     assert($p instanceof ContentEntityInterface);
     $p->save();
     return $p;

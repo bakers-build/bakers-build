@@ -52,7 +52,7 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 
 | Key | Default | Becomes |
 |---|---|---|
-| `trusted_commands` | `['bakers', 'git', 'ddev']` | `sandbox.excludedCommands` as `<name> *`, or unchanged if ending in `*`: these run outside the sandbox |
+| `trusted_commands` | `['bakers', 'git']` | `sandbox.excludedCommands` as `<name> *`, or unchanged if ending in `*`: these run outside the sandbox |
 | `deny_read` | `['~/.ssh', '~/.bakers']` | `sandbox.filesystem.denyRead` and the rules `Read(<path>)`, `Read(<path>/**)`; an absolute path becomes `//<path>` |
 | `allow_write` | `[]` | `sandbox.filesystem.allowWrite`, plus worktree, `$TMPDIR`, [Git metadata](/configuration/agents/execution-security#git-metadata-in-codex-and-claude-sandboxes); `.git` dropped |
 | `network` | `['*']` | `sandbox.network.allowedDomains`; `['*']` allows every host |

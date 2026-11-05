@@ -140,10 +140,10 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
       $canvas = Yaml::parseFile($root . '/views.view.groups.yml')['display']['workspace_list']['display_options']['display_extenders']['display_builder']['sources'][0]['source']['component'];
       self::assertSame('bb_theme:zone', $canvas['component_id']);
       self::assertArrayNotHasKey('actions', $canvas['slots'] ?? []);
-      // The search-and-sort toolbar (a `filters` component) leads; the exposed
-      // form it binds to follows the pager, holding only hidden parts.
+      // Status messages, then the search-and-sort toolbar (a `filters`
+      // component); the exposed form follows the pager, holding hidden parts.
       self::assertSame(
-        ['component', 'view_rows', 'view_pager', 'view_exposed'],
+        ['block', 'component', 'view_rows', 'view_pager', 'view_exposed'],
         array_column($canvas['slots']['content']['sources'] ?? [], 'source_id'),
       );
       self::assertArrayNotHasKey('heading', $canvas['slots'] ?? []);

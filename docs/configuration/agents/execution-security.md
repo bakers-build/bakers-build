@@ -63,7 +63,7 @@ What the default blocks:
 
 What it does not block:
 
-- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `ddev exec …` leaves the sandbox. Remove a command you do not need.
+- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox; that is the price of a working workflow. Remove a command you do not need.
 - With `network: ['*']`, a sandboxed command can still reach any host.
 - Unconfirmed: whether `--strict-mcp-config` hides plugin MCP servers.
 
@@ -83,7 +83,7 @@ What it does not block:
 
 ## Git metadata in Codex and Claude sandboxes
 
-A linked worktree's run writes its own Git dir plus the shared `objects`, `refs` and `logs`; a main checkout's run, its `.git`. Only existing protected entries (`config`, `hooks`, `commondir`, …) are named; a sandbox covers a missing one with an empty file that breaks Git. `allow_write` entries inside `.git` are ignored with a warning. Setting an upstream needs the trusted `git`.
+A linked worktree's run writes its Git dir and the shared `objects`, `refs`, `logs`; a main checkout's run, its `.git`. Only existing protected entries (`config`, `hooks`, …) are named; a missing one would become an empty placeholder. `allow_write` entries inside `.git` are ignored with a warning. Setting an upstream needs the trusted `git`.
 
 Known limit (reported upstream): in a linked worktree, Claude Code creates empty `config.lock`, `config.worktree`, `remotes/`, `branches/` in the shared `.git`; all but `config.lock` persist. See [`set_git_auto_setup_merge`](/configuration/project#fields).
 

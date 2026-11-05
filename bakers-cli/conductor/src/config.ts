@@ -35,7 +35,7 @@ import {
 } from './plugins/preset.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
-import { loadTools } from './plugins/tools.js';
+import { loadTools, provisionTools } from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`
@@ -142,11 +142,12 @@ const HOOK_SLOTS: HookName[] = [
  */
 async function loadInboxAddons(
   found: ConductorContributions['addonInbox'],
+  toolNames: ReadonlySet<string>,
 ): Promise<LoadedInbox[]> {
   const loaded: LoadedInbox[] = [];
   for (const addon of found) {
     try {
-      loaded.push(await loadInbox(addon, addon.options));
+      loaded.push(await loadInbox(addon, addon.options, toolNames));
     } catch (err) {
       console.error(
         `addon inbox skipped: ${err instanceof Error ? err.message : String(err)}`,
@@ -500,12 +501,17 @@ export async function loadConductorConfig(
   );
   const wired = resolveConductorSlots(discovered);
   const hookListeners = validateHookListeners(discovered.hooks);
-  const inboxAddons = await loadInboxAddons(discovered.addonInbox);
   // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
-  const tools =
-    discovered.addonTools.length > 0
-      ? await loadTools(discovered.addonTools)
-      : undefined;
+  // Tools load first so inbox bindings can be checked against them.
+  const toolSets = [
+    ...discovered.addonTools,
+    ...provisionTools(config.hooks?.provision_up),
+  ];
+  const tools = toolSets.length > 0 ? await loadTools(toolSets) : undefined;
+  const inboxAddons = await loadInboxAddons(
+    discovered.addonInbox,
+    new Set(tools?.list().map((t) => t.name)),
+  );
   // Explicit executor/workspace descriptors still load those slots, but they
   // skip addons[] discovery — so a pre-BB-215 config never contributes a
   // process host unless we load that package's processHosts accumulator too.
