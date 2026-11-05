@@ -121,3 +121,7 @@ fi
 if [ -f "$HOME/.cloudflared/tunnel-token" ]; then
   nohup cloudflared tunnel run --token-file "$HOME/.cloudflared/tunnel-token" >"${TMPDIR:-/tmp}/cloudflared.log" 2>&1 </dev/null &
 fi
+
+# The PM bot, when the workspace has its parameters (README › PM bot). It never fails the start.
+# Through bash: the Docker upload makes it root-owned, so neither coder nor the bot can change it.
+bash /usr/local/bin/pm-bot || true

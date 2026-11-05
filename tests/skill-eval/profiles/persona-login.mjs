@@ -1,9 +1,9 @@
 import { check } from '../outtake-checks.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 
-// The runtime guide hands each persona its issued login, reports a missing one, and never uses an admin.
+// The bb-workflow Provision rule hands each persona its issued login, reports a missing one, and never uses an admin.
 export function validate(f) {
-  requireValue(f.skill === 'bb-runtime-ddev' && Array.isArray(f.input.test_as) && f.input.test_as.length === 2, 'Expected two test_as personas');
+  requireValue(f.skill === 'bb-workflow' && Array.isArray(f.input.test_as) && f.input.test_as.length === 2, 'Expected two test_as personas');
   requireValue(nonempty(f.expect?.login) && f.input.observations.some(o => o.includes(f.expect.login)) &&
     f.input.test_as.some(p => p.persona === f.expect.missing), 'Expected the issued link and the missing persona');
 }

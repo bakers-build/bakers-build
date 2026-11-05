@@ -64,4 +64,6 @@ docker compose --project-name "$project" down
 
 A missing/invalid identity aborts cleanup. This stops/removes that Compose project's containers and networks while retaining named volumes. Export needed data before adding destructive volume removal; never run global prune as ticket cleanup. External resources need their own scoped lifecycle.
 
+**Agents need the running services?** Configure [`provision_up`](/configuration/provisioning/hooks#provision-on-an-agent-s-request) with a command that follows its contract.
+
 **Done when:** two ticket worktrees can run concurrently, both pass application readiness, and cleaning one leaves the other working. [Docker Compose discovery](/addons/docker-compose) can expose the resulting services to [Ports](/addons/ports).

@@ -8,6 +8,7 @@ import type { ConductorLogger } from '@bakers-build/core';
 import { type MessageResult, validateResult } from '@bakers-build/message';
 import type { LoadedInbox } from '../plugins/message.js';
 import type { BbRemote, InboxMessage, Ticket } from '../plugins/remote.js';
+import type { ToolRegistry } from '../plugins/tools.js';
 import type { ActionQueue } from './action-queue.js';
 
 /** Per-handler timeout; the request's `signal` aborts after it. */
@@ -31,6 +32,7 @@ export class InboxRuntime {
     private readonly remote: BbRemote,
     private readonly logger: ConductorLogger,
     private readonly env: (ticket: Ticket) => Promise<Record<string, string>>,
+    private readonly tools?: ToolRegistry,
   ) {}
 
   /** Whether this conductor runs no contract-2 addon. */
@@ -77,7 +79,9 @@ export class InboxRuntime {
       (a) => a.name === msg.messageId.slice(0, dot),
     );
     const key = msg.messageId.slice(dot + 1);
-    return dot > 0 && addon?.messages[key] && addon.handlers[key]
+    return dot > 0 &&
+      addon?.messages[key] &&
+      (addon.handlers[key] || addon.bindings[key])
       ? [addon, key]
       : undefined;
   }
@@ -99,15 +103,13 @@ export class InboxRuntime {
     }
   }
 
-  /** Runs one handler with the timeout and validates its result. */
+  /** Runs one handler or bound tool with the timeout and validates its result. */
   private async run(
     addon: LoadedInbox,
     key: string,
     ticket: Ticket,
     msg: InboxMessage,
   ): Promise<MessageResult> {
-    const handler = addon.handlers[key];
-    if (!handler) throw new Error(`no handler for ${key}`);
     const worktreePath = msg.worktreePath ?? '';
     const controller = new AbortController();
     let timer: NodeJS.Timeout | undefined;
@@ -118,6 +120,22 @@ export class InboxRuntime {
       }, HANDLER_TIMEOUT_MS);
     });
     try {
+      const binding = addon.bindings[key];
+      if (binding) {
+        if (!this.tools) throw new Error(`no tools for ${key}`);
+        const { text } = await Promise.race([
+          this.tools.call(
+            binding.tool,
+            binding.args ?? msg.payload,
+            { worktreePath, ticket },
+            { signal: controller.signal, logger: this.logger },
+          ),
+          timeout,
+        ]);
+        return { markdown: text };
+      }
+      const handler = addon.handlers[key];
+      if (!handler) throw new Error(`no handler for ${key}`);
       const result = await Promise.race([
         handler({
           id: msg.id,
@@ -132,6 +150,17 @@ export class InboxRuntime {
           env: await this.env(ticket),
           logger: this.logger,
           signal: controller.signal,
+          ...(this.tools
+            ? {
+                callTool: (name: string, args?: Record<string, unknown>) =>
+                  (this.tools as ToolRegistry).call(
+                    name,
+                    args,
+                    { worktreePath, ticket },
+                    { signal: controller.signal, logger: this.logger },
+                  ),
+              }
+            : {}),
         }),
         timeout,
       ]);

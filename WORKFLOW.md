@@ -1,13 +1,15 @@
 # bakers.build — WORKFLOW
 
-Invoke `bakers:bb-workflow` and follow it for the ticket's current state. When the ticket's labels include `pingpong` and its state is `working` or `review`, invoke `bakers:bb-pingpong` too and follow it with the frame.
+Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 ## bb-phase-provision
 
-Runtime: DDEV through `@bakers-build/bb-runtime-ddev`. Drupal checks start from a verified
-`recipe-test` environment (`ddev init --provider recipe-test`; each explicit init reinstalls); `config/sync` validation uses a disposable `existing-config` site afterwards, at the
-same revision. Core tests, Playwright, conductor and skill-behavior setup:
-[testing](docs/bakers/testing.md#setup).
+Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site;
+`config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
+`existing-config` install at the same revision. In a run with conductor tools, a `ddev <cmd>` row
+runs as `ddev_exec("<cmd>")`, and a project web command runs by path
+(`ddev_exec(".ddev/commands/web/<cmd>")`). Core tests, Playwright, conductor and skill-behavior
+setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
 
@@ -35,12 +37,13 @@ included in core tests. Ticket-specific functional checks apply separately.
 
 | When | Command |
 |---|---|
-| `docs/**`, `website/**`, or documentation links | `cd website && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs` |
+| `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs` |
 | bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
 | bakers.build CLI source | `cd bakers-cli && pnpm install && pnpm -r run build` |
 | PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
+| `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
 | `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |

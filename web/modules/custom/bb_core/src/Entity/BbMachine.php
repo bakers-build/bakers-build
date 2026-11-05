@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -24,9 +24,10 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
 /**
  * Represents a bakers.build machine — host capacity for concurrent runs.
  *
- * Capacity (max_parallel / current_load) is owned by the host, not by each
- * per-project conductor. host_key is the machine-context stem; it is not the
- * composed conductor registration key.
+ * Capacity (max_parallel / current_load) belongs to the machine, not to each
+ * per-project conductor; max_parallel is set here, default 5. host_key is
+ * the machine-context stem; it is not the composed conductor registration
+ * key.
  */
 #[ContentEntityType(
   id: 'bb_machine',
@@ -50,7 +51,7 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
       'edit' => BbMachineForm::class,
       // Detail page cards, one Save each.
       'identity' => BbEntityDetailCardForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     // The canonical route pins the `full` entity view whose Display Builder
     // tree composes the Overview and its cards. Add, edit, delete and the
@@ -99,7 +100,7 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
       ->setDisplayOptions('form', ['type' => 'string_textfield', 'weight' => 1]);
     $fields['max_parallel'] = BaseFieldDefinition::create('integer')
       ->setLabel(new TranslatableMarkup('Max parallel'))
-      ->setDefaultValue(1)
+      ->setDefaultValue(5)
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'number', 'weight' => 2]);
     $fields['current_load'] = BaseFieldDefinition::create('integer')

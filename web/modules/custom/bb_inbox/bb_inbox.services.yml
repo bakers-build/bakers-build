@@ -1,3 +1,6 @@
+parameters:
+  # How long bakers_inbox_send waits for the conductor's answer.
+  bb_inbox.send_wait_seconds: 30
 services:
   bb_inbox.sender:
     class: Drupal\bb_inbox\InboxSender

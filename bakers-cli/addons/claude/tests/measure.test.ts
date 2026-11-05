@@ -323,6 +323,11 @@ describe('ClaudeAgent measure', () => {
     expect(new ClaudeAgent({ measure: true }).launchCommand('')).toBe('claude');
   });
 
+  it('withholds the conductor tools from a measured run only', () => {
+    expect(new ClaudeAgent({ measure: true }).withoutConductorTools).toBe(true);
+    expect(new ClaudeAgent().withoutConductorTools).toBe(false);
+  });
+
   it('rejects a non-boolean measure option', () => {
     expect(() => new ClaudeAgent({ measure: 'yes' as never })).toThrow(
       /measure must be a boolean/,

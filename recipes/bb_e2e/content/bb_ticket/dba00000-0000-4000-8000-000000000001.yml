@@ -88,6 +88,9 @@ default:
     -
       uri: "https://bb-142.ddev.site/board"
       title: ""
+    -
+      uri: "https://example.slack.com/archives/C0123ABCD/p1700000000000100"
+      title: "Slack thread"
   closed:
     -
       value: false

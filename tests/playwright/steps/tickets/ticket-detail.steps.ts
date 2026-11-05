@@ -147,6 +147,20 @@ Then('the band shows exactly the link groups {string}', async ({ page }, expecte
   expect(labels.map((label) => label.trim())).toEqual(wanted);
 });
 
+Then(
+  'the link group {string} has a row for {string} with the icon {string}',
+  async ({ page }, group: string, url: string, icon: string) => {
+    // The group by its label's text (not innerText: the label is uppercased by CSS).
+    const groupEl = page
+      .locator('.summary-band__links .link-group')
+      .filter({ has: page.locator('.link-group__label', { hasText: new RegExp(`^\\s*${group}\\s*$`) }) });
+    await expect(groupEl).toHaveCount(1);
+    const row = groupEl.locator('.link-row').filter({ has: page.locator(`a[href="${url}"]`) });
+    await expect(row).toHaveCount(1);
+    await expect(row.locator('svg use')).toHaveAttribute('href', new RegExp(`#${icon}$`));
+  },
+);
+
 // ---------------------------------------------------------------------------
 // The tab row (AC 8).
 // ---------------------------------------------------------------------------

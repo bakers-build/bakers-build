@@ -8,6 +8,7 @@ import { HttpError } from 'dropsh/plugin';
 import { describe, expect, it, vi } from 'vitest';
 import {
   AmbiguousProjectNameError,
+  ConductorTakeoverRequired,
   createRunLogFetcher,
   DrupalBbRemote,
   drupalRemote,
@@ -209,6 +210,16 @@ describe('DrupalBbRemote', () => {
       fakeClient({ collection: vi.fn(() => col) }),
     );
     expect(await remote.machineCapacity('missing')).toBeNull();
+  });
+
+  it('machineCapacity returns null when the machine carries no budget', async () => {
+    const col = fakeCollection({
+      first: fakeResource('machine-uuid', { current_load: 1 }),
+    });
+    const remote = new DrupalBbRemote(
+      fakeClient({ collection: vi.fn(() => col) }),
+    );
+    expect(await remote.machineCapacity('dev-box')).toBeNull();
   });
 
   it('listConductors maps maxParallel from linked machine, not conductor max_parallel (BB-353)', async () => {
@@ -787,13 +798,13 @@ describe('DrupalBbRemote', () => {
     const remote = new DrupalBbRemote(api);
 
     const uuid = await remote.registerConductor({
-      id: 'machine-1',
-      host_key: 'host-1',
+      id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-conductor',
+      host_key: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+      machine_label: 'cw-laptop',
       project: 'bakers',
       states: ['todo'],
       workspace: '/checkout',
-      label: 'lbl',
-      max_parallel: 2,
+      label: 'cw-laptop · bakers',
     });
 
     expect(uuid).toBe('drupal-uuid');
@@ -804,15 +815,98 @@ describe('DrupalBbRemote', () => {
       data: { attributes: Record<string, unknown> };
     };
     expect(body.data.attributes).toMatchObject({
-      conductor_id: 'machine-1',
-      host_key: 'host-1',
+      conductor_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30-bakers-conductor',
+      host_key: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+      machine_label: 'cw-laptop',
       project: 'bakers',
       states: ['todo'],
       workspace_root: '/checkout',
-      label: 'lbl',
-      max_parallel: 2,
+      label: 'cw-laptop · bakers',
     });
     expect(body.data.attributes).not.toHaveProperty('current_load');
+    // The run budget is a backend setting; registration never sends it.
+    expect(body.data.attributes).not.toHaveProperty('max_parallel');
+  });
+
+  const takeoverReg = {
+    id: 'framework-bakers-conductor',
+    host_key: 'framework',
+    project: 'bakers',
+    states: [],
+    workspace: '/checkout',
+    label: 'lbl',
+  };
+
+  it('registerConductor turns a takeover 409 into the offered conductors', async () => {
+    const detail = 'Take over "cw-framework", or start a new conductor.';
+    const post = vi.fn(async () => {
+      throw new HttpError(409, 'HTTP 409', {
+        errors: [
+          {
+            status: '409',
+            detail,
+            meta: {
+              candidates: [
+                {
+                  uuid: '1cdd3fcb-2156-4e3c-877d-52665142268c',
+                  label: 'cw-framework',
+                  conductor_id: 'cw-framework',
+                  last_seen: 1762214400,
+                },
+              ],
+            },
+          },
+        ],
+      });
+    });
+    const remote = new DrupalBbRemote(fakeClient({ post }));
+
+    const refused = remote.registerConductor(takeoverReg);
+
+    await expect(refused).rejects.toBeInstanceOf(ConductorTakeoverRequired);
+    await expect(refused).rejects.toMatchObject({
+      message: detail,
+      adoptable: ['1cdd3fcb-2156-4e3c-877d-52665142268c'],
+    });
+  });
+
+  it('registerConductor passes on a 409 that offers no conductors', async () => {
+    const post = vi.fn(async () => {
+      throw new HttpError(409, 'HTTP 409', {
+        errors: [{ status: '409', detail: 'belongs to another user' }],
+      });
+    });
+    const remote = new DrupalBbRemote(fakeClient({ post }));
+
+    const refused = remote.registerConductor(takeoverReg);
+
+    await expect(refused).rejects.toBeInstanceOf(HttpError);
+    await expect(refused).rejects.not.toBeInstanceOf(ConductorTakeoverRequired);
+  });
+
+  it('registerConductor forwards the takeover decision', async () => {
+    const post = vi.fn(async () => ({
+      data: { id: 'drupal-uuid', attributes: { status: 'online' } },
+    }));
+    const remote = new DrupalBbRemote(fakeClient({ post }));
+    const reg = {
+      id: 'framework-bakers-conductor',
+      host_key: 'framework',
+      project: 'bakers',
+      states: [],
+      workspace: '/checkout',
+      label: 'lbl',
+    };
+
+    await remote.registerConductor({ ...reg, adopt: 'old-uuid' });
+    await remote.registerConductor({ ...reg, create_new: true });
+
+    const attrs = (n: number) =>
+      (post.mock.calls[n]?.[1] as { data?: { attributes?: object } })?.data
+        ?.attributes;
+    expect(attrs(0)).toMatchObject({ adopt: 'old-uuid' });
+    expect(attrs(0)).not.toHaveProperty('create_new');
+    expect(attrs(1)).toMatchObject({ create_new: true });
   });
 
   it('registerConductor fails when the heartbeat document omits data.id', async () => {
@@ -828,7 +922,6 @@ describe('DrupalBbRemote', () => {
         states: ['todo'],
         workspace: '/checkout',
         label: 'lbl',
-        max_parallel: 2,
       }),
     ).rejects.toThrow(/data\.id/);
   });
@@ -847,7 +940,6 @@ describe('DrupalBbRemote', () => {
         states: ['todo'],
         workspace: '/checkout',
         label: 'lbl',
-        max_parallel: 2,
       },
       2,
       300,
@@ -878,7 +970,6 @@ describe('DrupalBbRemote', () => {
         states: [],
         workspace: '/c',
         label: 'l',
-        max_parallel: 1,
       },
       0,
     );

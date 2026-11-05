@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="bakers.build" width="380">
+  <img src="docs/public/favicon.svg" alt="bakers.build" width="120">
 </p>
 
 <p align="center">

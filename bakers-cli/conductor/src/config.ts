@@ -1,8 +1,9 @@
 import { readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   type AddonEntry,
+  assertSchemaVersion1,
   type BbConnectionConfig,
   discoverAddons,
   discoverScoped,
@@ -14,6 +15,8 @@ import {
   resolveModuleEslintStyle,
   scanTopLevelProperties,
   scopeAddons,
+  stemForConfigFile,
+  warnIgnoredMaxParallel,
 } from '@bakers-build/core';
 import { readBbProjectSelection } from './cli/project-context.js';
 import type { HookListener, HookName } from './plugins/executor.js';
@@ -31,6 +34,7 @@ import {
 } from './plugins/preset.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import { loadTools, provisionTools } from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`
@@ -113,13 +117,9 @@ type RawConfig = {
   agent?: unknown;
   bb_workspace?: unknown;
   workspace?: unknown;
-  label?: unknown;
-  conductor_id?: unknown;
-  machine_id?: unknown;
   project?: unknown;
   states?: unknown;
   prompt?: unknown;
-  max_parallel?: unknown;
   poll_interval_ms?: unknown;
   lease_seconds?: unknown;
   hooks?: ConductorFileConfig['hooks'];
@@ -140,11 +140,12 @@ const HOOK_SLOTS: HookName[] = [
  */
 async function loadInboxAddons(
   found: ConductorContributions['addonInbox'],
+  toolNames: ReadonlySet<string>,
 ): Promise<LoadedInbox[]> {
   const loaded: LoadedInbox[] = [];
   for (const addon of found) {
     try {
-      loaded.push(await loadInbox(addon, addon.options));
+      loaded.push(await loadInbox(addon, addon.options, toolNames));
     } catch (err) {
       console.error(
         `addon inbox skipped: ${err instanceof Error ? err.message : String(err)}`,
@@ -349,8 +350,34 @@ function optionalPositiveInteger(
 }
 
 /**
+ * A conductor is machine + project + variant: its registration key and label
+ * are derived here and never written to a config.
+ */
+function identityOf(
+  machine: { machine_id?: string; label?: string },
+  project: string,
+  variant: string,
+): Pick<
+  ConductorFileConfig,
+  'label' | 'conductor_id' | 'host_key' | 'machine_label'
+> {
+  const suffix = variant === 'conductor' ? '' : `/${variant}`;
+  const label = machine.label?.trim() || undefined;
+  return {
+    label: `${label ? `${label} · ` : ''}${project}${suffix}`,
+    ...(machine.machine_id
+      ? {
+          host_key: machine.machine_id,
+          conductor_id: `${machine.machine_id}-${project}-${variant}`,
+        }
+      : {}),
+    ...(label ? { machine_label: label } : {}),
+  };
+}
+
+/**
  * Load the ENGINE half of a conductor config (BB-201 split model). Reads
- * remote/executor/agent/workspace + project/states/machine_id/label/prompt/
+ * remote/executor/agent/workspace + project/states/prompt/
  * scheduler/hooks — and deliberately NOT `site` or the auth `plugins`, which now
  * live in a `bakers.config.js` connection config. The conductor command composes
  * the two via `composeConductorConfig`. A legacy `conductor.config.js` still
@@ -382,6 +409,16 @@ export async function loadConductorConfig(
     );
   }
 
+  assertSchemaVersion1(configPath, raw);
+  // A conductor is machine + project + variant: the project config names no id.
+  const identity = ['conductor_id', 'machine_id', 'label'].filter(
+    (key) => key in raw,
+  );
+  if (identity.length > 0)
+    throw new Error(
+      `${configPath}: ${identity.join(', ')} no longer belong in a project config (a conductor is machine + project + variant); remove them and run bakers init`,
+    );
+
   const config = raw as RawConfig;
 
   const retiredAgentKeys = [
@@ -403,56 +440,11 @@ export async function loadConductorConfig(
   const states = Array.isArray(config.states)
     ? config.states.map((state) => requireNonEmptyString(state, 'states'))
     : [];
-  // conductor_id is required (BB-353 renamed from machine_id). Prefer the new
-  // key; accept legacy machine_id with a one-shot warning. No derived fallback.
-  // A repo's committed config composes it from the machine context
-  // (`${user_id}-${host}-${project}`); co-located configs each compose their
-  // own from their project.
-  let conductorId: string;
-  if (
-    typeof config.conductor_id === 'string' &&
-    config.conductor_id.trim() !== ''
-  ) {
-    conductorId = config.conductor_id.trim();
-  } else if (
-    typeof config.machine_id === 'string' &&
-    config.machine_id.trim() !== ''
-  ) {
-    console.warn(
-      `[bakers] ${configPath}: engine key "machine_id" is deprecated; use "conductor_id" (BB-353)`,
-    );
-    conductorId = config.machine_id.trim();
-  } else {
-    throw new Error(
-      `conductor config requires non-empty conductor_id (legacy machine_id accepted)`,
-    );
-  }
-  const label =
-    typeof config.label === 'string' && config.label.trim() !== ''
-      ? config.label
-      : conductorId;
-
-  // Host capacity has one owner. Stale engine values need an explicit migration.
-  if (config.max_parallel !== undefined) {
-    throw new Error(
-      `${configPath}: misplaced max_parallel belongs in ${machineContextPath()}; run bakers config upgrade --scope all`,
-    );
-  }
+  warnIgnoredMaxParallel(configPath, config);
   const machineCtx = await readMachineContext();
-  const maxParallel =
-    typeof machineCtx.max_parallel === 'number' &&
-    Number.isFinite(machineCtx.max_parallel) &&
-    machineCtx.max_parallel >= 1
-      ? Math.floor(machineCtx.max_parallel)
-      : 1;
+  warnIgnoredMaxParallel(machineContextPath(), machineCtx);
   const tunnel = machineCtx.tunnel === true;
-  // Host stem for bb_machine / registration (BB-353) — prefer the machine
-  // context id over hyphen-splitting the composed conductor_id.
-  const hostKey =
-    typeof machineCtx.machine_id === 'string' &&
-    machineCtx.machine_id.trim() !== ''
-      ? machineCtx.machine_id.trim()
-      : undefined;
+  const variant = stemForConfigFile(basename(configPath)) ?? 'conductor';
 
   // BB-215: discover the conductor `addons: []` surface (last-wins singletons,
   // agent candidate list). A pre-existing per-slot descriptor still loads and
@@ -470,7 +462,7 @@ export async function loadConductorConfig(
     throw new Error('machine agents must be an object');
   if ((policy as Record<string, unknown> | undefined)?.addons !== undefined)
     throw new Error(
-      'machine agents.addons is retired: move its entries into machine.config.js addons[] (run bakers config upgrade --scope machine)',
+      'machine agents.addons is retired: move its entries into machine.config.js addons[]',
     );
   const machineAddons = machineCtx.addons ?? [];
   if (!Array.isArray(machineAddons))
@@ -507,7 +499,17 @@ export async function loadConductorConfig(
   );
   const wired = resolveConductorSlots(discovered);
   const hookListeners = validateHookListeners(discovered.hooks);
-  const inboxAddons = await loadInboxAddons(discovered.addonInbox);
+  // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
+  // Tools load first so inbox bindings can be checked against them.
+  const toolSets = [
+    ...discovered.addonTools,
+    ...provisionTools(config.hooks?.provision_up),
+  ];
+  const tools = toolSets.length > 0 ? await loadTools(toolSets) : undefined;
+  const inboxAddons = await loadInboxAddons(
+    discovered.addonInbox,
+    new Set(tools?.list().map((t) => t.name)),
+  );
   // Explicit executor/workspace descriptors still load those slots, but they
   // skip addons[] discovery — so a pre-BB-215 config never contributes a
   // process host unless we load that package's processHosts accumulator too.
@@ -746,21 +748,18 @@ export async function loadConductorConfig(
     workspace,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
+    ...(tools !== undefined ? { tools } : {}),
     ...(processHost !== undefined ? { processHost } : {}),
     bakers,
-    label,
-    conductor_id: conductorId,
-    // Soft alias so callers that still read machine_id keep working this cut.
-    machine_id: conductorId,
+    ...identityOf(machineCtx, project, variant),
+    variant,
     project,
     states,
     prompt:
       typeof config.prompt === 'string' && config.prompt.trim() !== ''
         ? config.prompt
         : DEFAULT_AGENT_PROMPT,
-    max_parallel: maxParallel,
     tunnel,
-    ...(hostKey !== undefined ? { host_key: hostKey } : {}),
     poll_interval_ms: optionalPositiveInteger(
       config.poll_interval_ms,
       5000,

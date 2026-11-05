@@ -10,6 +10,12 @@ export interface EnsuredWorkspace {
    * them best-effort.
    */
   created: boolean;
+  /**
+   * Variables the run needs from its workspace backend (e.g. Git config via
+   * `GIT_CONFIG_COUNT`). The conductor adds them to the run env; core `BB_*`
+   * keys still win.
+   */
+  env?: Record<string, string>;
 }
 
 export interface BbWorkspace {

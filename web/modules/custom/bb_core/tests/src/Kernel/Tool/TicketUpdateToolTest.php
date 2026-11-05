@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel\Tool;
 
+use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -14,6 +15,17 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
 final class TicketUpdateToolTest extends BakersToolTestBase {
+
+  use ForeignWorkspaceTrait;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+    $this->installEntitySchema('bb_environment');
+    user_role_grant_permissions('skill_user', ['view bb_environment']);
+  }
 
   /**
    * Title and description change in one call; nothing else does.
@@ -32,6 +44,8 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
       'conductor' => NULL,
       'labels' => [],
       'frozen' => FALSE,
+      'environments' => [],
+      'referenced_tickets' => [],
     ], $out);
     $stored = $this->reload($ticket);
     self::assertSame('Clarified title', $stored->label());
@@ -63,7 +77,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $ticket = $this->ticket('TU-3');
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
-    ]), 'Give a title, a description, a conductor, labels to add or frozen.');
+    ]), 'Give a title, a description, a conductor, labels to add or remove, frozen, environments to add or referenced tickets to add.');
     self::assertSame('TU-3', $this->reload($ticket)->label());
   }
 
@@ -85,14 +99,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   public function testReaderWithoutUpdateAccessFails(): void {
     $ticket = $this->ticket('TU-5');
-    $etm = $this->container->get('entity_type.manager');
-    $etm->getStorage('user_role')->create(['id' => 'viewer', 'label' => 'Viewer'])->save();
-    user_role_grant_permissions('viewer', ['view bb_ticket', 'view bb_project']);
-    $reader = $this->account('reader', ['viewer']);
-    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
-      $this->addMembership($team, $reader);
-    }
-    $this->container->get('current_user')->setAccount($reader);
+    $this->actAsReader();
     self::assertSame('TU-5', $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['title']);
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
@@ -201,7 +208,100 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   public function testInputsAreLimitedToEditableFields(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_ticket_update');
-    self::assertSame(['ticket', 'title', 'description', 'conductor', 'labels_add', 'frozen'], array_keys($definition->getInputDefinitions()));
+    self::assertSame([
+      'ticket', 'title', 'description', 'conductor', 'labels_add', 'labels_remove', 'frozen',
+      'environments_add', 'referenced_tickets_add',
+    ], array_keys($definition->getInputDefinitions()));
+  }
+
+  /**
+   * Labels are removed by name; every other label stays in its order.
+   */
+  public function testRemovesNamedLabelsKeepingOthers(): void {
+    $labels = array_map(fn ($name) => $this->term('label', $name)->id(), ['keep', 'Question', 'other']);
+    $ticket = $this->ticket('TU-15', ['labels' => $labels]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question'],
+    ]));
+    self::assertSame(['keep', 'other'], $out['labels']);
+    $names = array_map(static fn ($term) => $term->label(), $this->reload($ticket)->get('labels')->referencedEntities());
+    self::assertSame(['keep', 'other'], $names);
+  }
+
+  /**
+   * Removing a label the ticket lacks changes nothing and creates no term.
+   */
+  public function testRemoveIgnoresAbsentNames(): void {
+    $this->term('label', 'Question');
+    $ticket = $this->ticket('TU-16', ['labels' => [$this->term('label', 'keep')->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question', 'never-created'],
+    ]));
+    self::assertSame(['keep'], $out['labels']);
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'never-created']));
+  }
+
+  /**
+   * A name resolves through the lookup labels_add uses, not only its spelling.
+   */
+  public function testRemoveResolvesNamesLikeAdd(): void {
+    $labels = array_map(fn ($name) => $this->term('label', $name)->id(), ['keep', 'Question']);
+    $ticket = $this->ticket('TU-19', ['labels' => $labels]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['question'],
+    ]));
+    self::assertSame(['keep'], $out['labels']);
+  }
+
+  /**
+   * A reader without update access may not remove labels either.
+   */
+  public function testReaderCannotRemoveLabels(): void {
+    $ticket = $this->ticket('TU-20', ['labels' => [$this->term('label', 'Question')->id()]]);
+    $this->actAsReader();
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question'],
+    ]), 'You may not change labels of ticket');
+    self::assertFalse($this->reload($ticket)->get('labels')->isEmpty());
+  }
+
+  /**
+   * An answer takes the question label off and unfreezes in one call.
+   */
+  public function testRemoveWithFrozenFalse(): void {
+    $ticket = $this->ticket('TU-17', ['labels' => [$this->term('label', 'Question')->id()]]);
+    $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'frozen' => TRUE,
+    ]));
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_remove' => ['Question'],
+      'frozen' => FALSE,
+    ]));
+    self::assertFalse($out['frozen']);
+    self::assertSame([], $out['labels']);
+    $stored = $this->reload($ticket);
+    self::assertFalse($stored->isFrozen());
+    self::assertTrue($stored->get('labels')->isEmpty());
+  }
+
+  /**
+   * A label named in both lists is refused and the ticket stays as it was.
+   */
+  public function testSameLabelAddedAndRemovedIsRefused(): void {
+    $ticket = $this->ticket('TU-18', ['labels' => [$this->term('label', 'x')->id()]]);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'labels_add' => ['x'],
+      'labels_remove' => ['x'],
+    ]), 'Label x is both added and removed.');
+    $names = array_map(static fn ($term) => $term->label(), $this->reload($ticket)->get('labels')->referencedEntities());
+    self::assertSame(['x'], $names);
   }
 
   /**
@@ -278,6 +378,197 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
       'title' => 'Rewritten history',
     ]), sprintf('Ticket %s is closed and can no longer be changed.', $ticket->getIdentifier()));
     self::assertSame('TU-6', $this->reload($ticket)->label());
+  }
+
+  /**
+   * Referenced tickets are added by identifier or UUID, each one only once.
+   */
+  public function testAddsReferencedTicketsKeepingExisting(): void {
+    $t1 = $this->ticket('TU-R1');
+    $t2 = $this->ticket('TU-R2');
+    $t3 = $this->ticket('TU-R3');
+    $deployment = $this->ticket('TU-D1', ['referenced_tickets' => [$t1->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $deployment->getIdentifier(),
+      'referenced_tickets_add' => [$t2->getIdentifier(), $t3->uuid(), $t1->getIdentifier()],
+    ]));
+    self::assertSame([$t1->getIdentifier(), $t2->getIdentifier(), $t3->getIdentifier()], $out['referenced_tickets']);
+    $ids = array_column($this->reload($deployment)->get('referenced_tickets')->getValue(), 'target_id');
+    self::assertSame([$t1->id(), $t2->id(), $t3->id()], array_map('strval', $ids));
+  }
+
+  /**
+   * An unknown or unreadable referenced ticket is refused, naming it.
+   */
+  public function testUnknownReferencedTicketIsRefused(): void {
+    $t1 = $this->ticket('TU-R4');
+    $deployment = $this->ticket('TU-D2', ['referenced_tickets' => [$t1->id()]]);
+    [$workspace] = $this->foreignWorkspace();
+    $group = $this->entity('bb_group', ['name' => 'foreign-group', 'workspace_id' => $workspace->id()]);
+    $project = $this->entity('bb_project', ['name' => 'foreign-project', 'group_id' => $group->id()]);
+    $foreign = $this->ticket('FX-1', ['project_id' => $project->id()])->getIdentifier();
+    $this->container->get('current_user')->setAccount($this->actor);
+    foreach (['NOPE-1', $foreign] as $missing) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', [
+        'ticket' => $deployment->getIdentifier(),
+        'referenced_tickets_add' => [$t1->getIdentifier(), $missing],
+      ]), "Ticket $missing does not exist or is not readable.");
+    }
+    $ids = array_column($this->reload($deployment)->get('referenced_tickets')->getValue(), 'target_id');
+    self::assertSame([(string) $t1->id()], array_map('strval', $ids));
+  }
+
+  /**
+   * A reader without update access may not stamp a ticket; the error names it.
+   */
+  public function testReaderCannotStamp(): void {
+    $this->environment('staging');
+    $ref = $this->ticket('TU-R5')->getIdentifier();
+    $ticket = $this->ticket('TU-D3');
+    $id = $ticket->getIdentifier();
+    $this->actAsReader();
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $id,
+      'environments_add' => ['staging'],
+    ]), "You may not change environments of ticket $id");
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $id,
+      'referenced_tickets_add' => [$ref],
+    ]), "You may not change referenced_tickets of ticket $id");
+    $stored = $this->reload($ticket);
+    self::assertTrue($stored->get('environments')->isEmpty());
+    self::assertTrue($stored->get('referenced_tickets')->isEmpty());
+  }
+
+  /**
+   * Environments are added by name or UUID; existing ones stay.
+   */
+  public function testAddsEnvironmentsKeepingExisting(): void {
+    $a = $this->environment('alpha');
+    $this->environment('beta');
+    $c = $this->environment('gamma');
+    $ticket = $this->ticket('TU-E1', ['environments' => [$a->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'environments_add' => ['beta', $c->uuid()],
+    ]));
+    self::assertSame(['alpha', 'beta', 'gamma'], $out['environments']);
+    self::assertSame(['alpha', 'beta', 'gamma'], $this->environmentNames($ticket));
+  }
+
+  /**
+   * Adding an environment the ticket already has changes nothing.
+   */
+  public function testAddingPresentEnvironmentChangesNothing(): void {
+    $a = $this->environment('alpha');
+    $ticket = $this->ticket('TU-E2', ['environments' => [$a->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'environments_add' => ['alpha', $a->uuid()],
+    ]));
+    self::assertSame(['alpha'], $out['environments']);
+    self::assertSame(['alpha'], $this->environmentNames($ticket));
+  }
+
+  /**
+   * An environment outside the ticket's project is refused, naming it.
+   */
+  public function testEnvironmentOfOtherProjectIsRefused(): void {
+    $a = $this->environment('alpha');
+    $other = $this->container->get('entity_type.manager')->getStorage('bb_project')->create([
+      'name' => 'other-project',
+      'group_id' => $this->project->get('group_id')->target_id,
+    ]);
+    $other->save();
+    $foreign = $this->environment('production', (int) $other->id());
+    $ticket = $this->ticket('TU-E3', ['environments' => [$a->id()]]);
+    foreach (['production', $foreign->uuid(), 'nowhere'] as $value) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', [
+        'ticket' => $ticket->getIdentifier(),
+        'environments_add' => [$value],
+      ]), "Environment $value is not one of the project’s environments.");
+    }
+    self::assertSame(['alpha'], $this->environmentNames($ticket));
+  }
+
+  /**
+   * A closed done ticket takes an environment; its other fields stay frozen.
+   */
+  public function testStampsEnvironmentOnClosedTicket(): void {
+    $this->environment('production');
+    $ticket = $this->ticket('TU-E4', ['state' => 'done']);
+    self::assertTrue($this->reload($ticket)->isClosed());
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'environments_add' => ['production'],
+    ]));
+    self::assertSame(['production'], $out['environments']);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Rewritten',
+      'environments_add' => ['production'],
+    ]), sprintf('Ticket %s is closed and can no longer be changed.', $ticket->getIdentifier()));
+    self::assertSame('TU-E4', $this->reload($ticket)->label());
+    self::assertSame(['production'], $this->environmentNames($ticket));
+  }
+
+  /**
+   * A session agent outside the run scope stamps a closed done ticket.
+   */
+  public function testSessionAgentStampsOutOfScopeDoneTicket(): void {
+    $this->environment('production');
+    $ticket = $this->ticket('TU-E5', ['state' => 'done']);
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'session_agent', 'label' => 'Session agent'])->save();
+    user_role_grant_permissions('session_agent', [
+      'view bb_ticket', 'view bb_project', 'view bb_environment', 'write bakers via session scope',
+    ]);
+    $agent = $this->account('agent', ['session_agent']);
+    $this->addMembership($this->workspace, $agent, ['member']);
+    $this->addMembership($this->project->get('teams')->entity, $agent);
+    $this->container->get('current_user')->setAccount($agent);
+    self::assertFalse($this->reload($ticket)->get('title')->access('edit', $agent));
+    self::assertFalse($this->container->get('bb_core.write_scope')->isTicketInScope($agent, (int) $ticket->id()));
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'environments_add' => ['production'],
+    ]));
+    self::assertSame(['production'], $out['environments']);
+    self::assertSame(['production'], $this->environmentNames($ticket));
+  }
+
+  /**
+   * An environment of the given project, or of the actor's project.
+   */
+  private function environment(string $name, ?int $project_id = NULL): ContentEntityInterface {
+    return $this->entity('bb_environment', [
+      'name' => $name,
+      'project_id' => $project_id ?? $this->project->id(),
+    ]);
+  }
+
+  /**
+   * The stored ticket's environment names, in order.
+   *
+   * @return array<string>
+   *   Environment names.
+   */
+  private function environmentNames(BbTicketInterface $ticket): array {
+    return array_map(static fn ($env) => (string) $env->label(), $this->reload($ticket)->get('environments')->referencedEntities());
+  }
+
+  /**
+   * Acts as a reading-team member who may view but not update tickets.
+   */
+  private function actAsReader(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'viewer', 'label' => 'Viewer'])->save();
+    user_role_grant_permissions('viewer', ['view bb_ticket', 'view bb_project']);
+    $reader = $this->account('reader', ['viewer']);
+    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
+      $this->addMembership($team, $reader);
+    }
+    $this->container->get('current_user')->setAccount($reader);
   }
 
   /**

@@ -15,11 +15,10 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-recipe-superpowers` | the ticket's `recipe` field; the superpowers method for the same types |
 | `bb-recipe-deploy-and-release` | the ticket's `recipe` field; for `deployment` tickets |
 | `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
-| `bb-runtime-ddev` | the project's `bb-phase-provision` hint |
 | `bb-verdict` | the review state, as its subagent's start |
-| `bb-pingpong` | the project's `WORKFLOW.md` entry line, for a ticket labelled `pingpong` in `working` or `review` |
+| `bb-label-pingpong` | the `bb-workflow` frame, for a ticket labelled `pingpong`, in any state |
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
-| `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person, for a ticket or time proposals |
+| `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person or a host, for a ticket or time proposals |
 
 Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, reading the ticket, publishing a comment, provisioning, verification, the browser surface, the intake and outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
 
@@ -52,7 +51,7 @@ The ticket's `recipe` field names the recipe, without the `bb-recipe-` prefix; e
 
 ## Runtime guides
 
-A runtime guide is one skill named `bb-runtime-<tech>` that says how to provision, execute, lint, test and hand over persona logins in one technology, under `## bb-phase-<phase>` sections. A project names its guide in its `## bb-phase-provision` hint. The shipped guide is `bb-runtime-ddev`.
+A runtime guide is one skill named `bb-runtime-<tech>` that says how to provision, execute, lint, test and hand over persona logins in one technology, under `## bb-phase-<phase>` sections. A project names its guide in its `## bb-phase-provision` hint. None ships: a run brings its environment up through the conductor tool `provision_up` (`bb-workflow` › *Rules* › *Provision*), whose commands the project configures, so no skill names a runtime.
 
 ## Project hints
 
@@ -75,7 +74,7 @@ Every state finishes in the same order. At `outtake` it publishes the typed hand
 ## Handoffs and review
 
 Qualification records `test_as`: the test personas who check the change and what each should see.
-Provisioning (`references/provision.md`) confirms each persona exists, and the runtime guide's `bb-phase-outtake` issues its login link.
+The `bb-workflow` *Provision* rule keeps every persona, and the method the `WORKFLOW.md` `bb-phase-outtake` hint names issues its login link; a missing persona stays **missing**.
 
 `bb-workflow/references/results.md` separates automated tests, agent inspection and human review.
 Results retain persona, environment, observation, revision and evidence. Authored tests are not

@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import claudeAgentDefault, {
   ClaudeAgent,
   claudeAgent,
@@ -376,8 +376,12 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       enabled: true,
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
-      excludedCommands: ['bakers *', 'git *', 'ddev *'],
-      filesystem: { denyRead: ['~/.ssh', '~/.bakers'], allowWrite: [] },
+      excludedCommands: ['bakers *', 'git *'],
+      filesystem: {
+        denyRead: ['~/.ssh', '~/.bakers'],
+        allowWrite: [],
+        denyWrite: [],
+      },
       network: { allowedDomains: ['*'] },
     });
     expect(settings.disableClaudeAiConnectors).toBe(true);
@@ -399,7 +403,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       'claude',
       new ClaudeAgent({
         sandbox: {
-          trusted_commands: ['git', 'docker compose *'],
+          trusted_commands: ['git', 'ddev', 'docker compose *'],
           deny_read: ['~/.aws', '/etc/secret', '~/.netrc'],
           allow_write: ['/srv/cache'],
           network: ['api.anthropic.com'],
@@ -410,11 +414,13 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     const settings = JSON.parse(flagValue(a, '--settings'));
     expect(settings.sandbox.excludedCommands).toEqual([
       'git *',
+      'ddev *',
       'docker compose *',
     ]);
     expect(settings.sandbox.filesystem).toEqual({
       denyRead: ['~/.aws', '/etc/secret', '~/.netrc'],
       allowWrite: ['/srv/cache'],
+      denyWrite: [],
     });
     expect(settings.sandbox.network.allowedDomains).toEqual([
       'api.anthropic.com',
@@ -431,6 +437,100 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
       mcpServers: { playwright: { command: 'npx', args: ['pw-mcp'] } },
     });
+  });
+
+  it('grants the worktree its own Git metadata, never the shared Git dir', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'claude-git-'));
+    const main = join(dir, 'main');
+    const worktree = join(dir, 'work');
+    try {
+      execFileSync('git', ['init', '-q', main]);
+      execFileSync('git', [
+        '-C',
+        main,
+        '-c',
+        'user.name=Test',
+        '-c',
+        'user.email=test@example.invalid',
+        'commit',
+        '--allow-empty',
+        '-qm',
+        'initial',
+      ]);
+      execFileSync('git', [
+        '-C',
+        main,
+        'worktree',
+        'add',
+        '-qb',
+        't',
+        worktree,
+      ]);
+      const common = execFileSync(
+        'git',
+        ['-C', main, 'rev-parse', '--path-format=absolute', '--git-dir'],
+        { encoding: 'utf8' },
+      ).trim();
+      const launch = (path: string) =>
+        captureArgv(
+          'claude',
+          new ClaudeAgent({
+            sandbox: { allow_write: ['/srv/cache'] },
+          }).launchCommand('x', undefined, path, {
+            url: 'http://127.0.0.1:4100',
+          }),
+        );
+      const filesystem = (path: string) =>
+        JSON.parse(flagValue(launch(path), '--settings')).sandbox.filesystem;
+      // Git grants and conductor tools combine in one sandboxed launch.
+      expect(
+        JSON.parse(flagValue(launch(worktree), '--mcp-config')).mcpServers,
+      ).toHaveProperty('bakers-conductor');
+      const own = join(common, 'worktrees', 'work');
+      expect(filesystem(worktree).allowWrite).toEqual([
+        '/srv/cache',
+        own,
+        join(common, 'objects'),
+        join(common, 'refs'),
+        join(common, 'logs'),
+      ]);
+      // The redirects inside the own git dir stay unwritable.
+      expect(filesystem(worktree).denyWrite).toEqual([
+        join(own, 'commondir'),
+        join(own, 'gitdir'),
+      ]);
+      expect(filesystem(main).allowWrite).toEqual(['/srv/cache', common]);
+      expect(filesystem(main).denyWrite).toEqual([
+        join(common, 'config'),
+        join(common, 'hooks'),
+        join(common, 'worktrees'),
+      ]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores an allow_write entry in a Git directory with one warning each', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const settings = JSON.parse(
+        flagValue(
+          captureArgv(
+            'claude',
+            new ClaudeAgent({
+              sandbox: { allow_write: ['/repo/.git', '/srv/cache'] },
+            }).launchCommand('x'),
+          ),
+          '--settings',
+        ),
+      );
+      expect(settings.sandbox.filesystem.allowWrite).toEqual(['/srv/cache']);
+      expect(warn.mock.calls.map(([m]) => m)).toEqual([
+        expect.stringContaining('/repo/.git;'),
+      ]);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('exposes a dropping env policy with the default deny list, or env_deny', () => {
@@ -472,6 +572,58 @@ describe('ClaudeAgent security: system, yolo, custom', () => {
       new ClaudeAgent({ security: 'custom', config }).launchCommand('x'),
     );
     expect(a).toEqual(['claude', 'x', '--settings', JSON.stringify(config)]);
+  });
+});
+
+describe('ClaudeAgent conductor tools', () => {
+  const tools = { url: 'http://127.0.0.1:4100' };
+  const conductorServer = {
+    type: 'http',
+    url: 'http://127.0.0.1:4100',
+    headers: { Authorization: 'Bearer ${BB_CONDUCTOR_TOKEN}' },
+  };
+  const launch = (agent: ClaudeAgent) =>
+    captureArgv(
+      'claude',
+      agent.launchCommand('x', undefined, undefined, tools),
+    );
+
+  it('merges bakers-conductor into the sandbox MCP config, the token by env reference only', () => {
+    const a = launch(
+      new ClaudeAgent({
+        sandbox: { mcp_servers: { playwright: { command: 'npx' } } },
+      }),
+    );
+    expect(a).toContain('--strict-mcp-config');
+    expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+      mcpServers: {
+        playwright: { command: 'npx' },
+        'bakers-conductor': conductorServer,
+      },
+    });
+  });
+
+  it('adds bakers-conductor in the system, yolo and custom modes too', () => {
+    for (const options of [
+      { security: 'system' },
+      { security: 'yolo' },
+      { security: 'custom', config: {} },
+    ] as const) {
+      const a = launch(new ClaudeAgent(options));
+      expect(a).not.toContain('--strict-mcp-config');
+      expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+        mcpServers: { 'bakers-conductor': conductorServer },
+      });
+    }
+  });
+
+  it('leaves a measured run without MCP servers', () => {
+    const command = new ClaudeAgent({
+      security: 'system',
+      measure: true,
+    }).launchCommand('x', undefined, '/w', tools);
+    expect(command).not.toContain('bakers-conductor');
+    expect(command).toContain(`'--mcp-config' '{"mcpServers":{}}'`);
   });
 });
 

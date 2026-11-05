@@ -26,7 +26,7 @@ export function readBbProjectSelection(path: string): BbProjectSelection {
   const editor = new ConfigSourceEditor(readFileSync(path, 'utf8'));
   const invalid = () =>
     new Error(
-      `Cannot read committed bakers.project in ${path}; run bakers config upgrade --scope project.`,
+      `Cannot read committed bakers.project in ${path}; set bakers: { project: '<name>' } as a literal, without a top-level project or bb_workspace.`,
     );
   const bakers = editor.property('bakers');
   const bakersExpression = editor.expression('bakers');

@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * Records a conductor heartbeat, upserting the registration server-side.
  *
- * Keys on conductor_id (legacy machine_id alias), so it never 404s: a vanished
+ * Keys on conductor_id, so it never 404s: a vanished
  * registration is recreated, an existing one is refreshed and brought online.
  * This moves the self-heal to the server — the conductor CLI just posts and
  * reads status.
@@ -52,7 +52,8 @@ final class HeartbeatResource extends EntityResourceBase implements ContainerInj
    *   The incoming request carrying the conductor registration attributes.
    *
    * @return \Drupal\jsonapi\ResourceResponse
-   *   A 200 response with the upserted conductor entity.
+   *   A 200 response with the upserted conductor entity. A takeover offer
+   *   propagates; ConductorTakeoverOfferSubscriber answers it with a 409.
    */
   public function process(Request $request): ResourceResponse {
     $conductor = $this->registrar->heartbeat(

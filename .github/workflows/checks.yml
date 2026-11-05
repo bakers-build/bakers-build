@@ -145,8 +145,8 @@ jobs:
         shell: sh
         run: |-
           set -eu
-          node website/scripts/check-pages.mjs
-          node --test website/scripts/manual.test.mjs website/scripts/marketplace.test.mjs website/scripts/third-party.test.mjs
+          node docs/scripts/check-pages.mjs
+          node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
     container: node:22
   config_sync:
     runs-on: blacksmith-4vcpu-ubuntu-2404
@@ -313,7 +313,7 @@ jobs:
           pnpm run build:all
           ./addons/bakers-ui/node_modules/.bin/bun --version
           mkdir -p ~/.bakers
-          echo "export default { schema_version: 4, site: { base_url: 'https://ci.invalid' }, workspace_id: '00000000-0000-4000-8000-000000000000' };" > ~/.bakers/bakers.config.js
+          echo "export default { schema_version: 1, site: { base_url: 'https://ci.invalid' }, workspace_id: '00000000-0000-4000-8000-000000000000' };" > ~/.bakers/bakers.config.js
           node bin/bakers ui --print-config
           ./addons/bakers-ui/node_modules/.bin/bun -e ' const { applyOpentuiLibc, nodeLibcFamily } = await import(`${process.cwd()}/ui/dist/src/bun-runtime.js`); if (nodeLibcFamily() !== "musl") throw new Error(`libc detection said ${nodeLibcFamily()}, expected musl`); applyOpentuiLibc(process.env); if (process.env.OPENTUI_LIBC !== "musl") throw new Error("applyOpentuiLibc did not set OPENTUI_LIBC"); const { createTestRenderer } = await import("@opentui/core/testing"); await createTestRenderer({ width: 20, height: 5 }); console.log("A1: musl auto-detected, libopentui.so loaded, no manual step"); '
 
@@ -389,6 +389,43 @@ jobs:
         run: |-
           bash tests/contract/mr-title.test.sh
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
+  pm_bot:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: node:22
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml
+          node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
+          bash tests/contract/pm-bot.sh
+  coder_pm_bot:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: node:22
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        run: |-
+          set -eu
+          bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
+          bash tests/contract/coder-pm-bot.sh
   image_gate:
     runs-on: blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 180
@@ -466,6 +503,8 @@ jobs:
       - docs_pages
       - config_sync
       - compose_render
+      - pm_bot
+      - coder_pm_bot
       - conductor
       - tui
       - tui_musl

@@ -5,9 +5,9 @@
 // THIS FILE IS THE ONLY AUTHORITY FOR THE ENGINE SURFACE. bakers.build's
 // `scripts/setup-test-project.sh` used to generate over it on every run and hide the
 // difference with `--skip-worktree`; it no longer does. What that script still writes
-// is the untracked machine override `conductor.config.local.js`, which supplies only
-// `project` and `machine_id` — the two values that cannot be committed because they
-// identify one machine's run. Everything structural is here and reviewable.
+// is the untracked local override `conductor.config.local.js`, which supplies only
+// the project. It carries no identity: the conductor is this machine + project +
+// variant, keyed by the control plane. Everything structural is here and reviewable.
 
 async function loadLocal() {
   try {
@@ -62,7 +62,6 @@ export default {
   // line changed to match (a per-machine override is not supported for this
   // key under the current engine).
   bakers: { project: 'bakers-e2e-project' },
-  conductor_id: local.conductor_id ?? local.machine_id,
   states: local.states ?? [],
   // Agent selection is a per-machine concern (~/.bakers/machine.config.js under
   // `agents`), not declared here — the stale `default_agent: { '*': 'opus' }`

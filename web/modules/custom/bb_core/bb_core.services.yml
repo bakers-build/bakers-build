@@ -83,6 +83,10 @@ services:
     arguments: ['@config.factory', '@session_configuration', '@page_cache_kill_switch']
     tags:
       - { name: event_subscriber }
+  bb_core.conductor_takeover_offer_subscriber:
+    class: Drupal\bb_core\EventSubscriber\ConductorTakeoverOfferSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_core.workspace_access_check:
     class: Drupal\bb_core\Access\BbWorkspaceAccessCheck
     arguments: ['@bb_core.workspace_resolver', '@bb_core.workspace_read_scope']
@@ -495,3 +499,9 @@ services:
       - '@datetime.time'
       - '@account_switcher'
       - '@bb_core.workspace_resolver'
+
+  # Per-type block, cascade and detach rules of an entity delete.
+  bb_core.entity_delete_rules:
+    class: Drupal\bb_core\Entity\EntityDeleteRules
+    autowire: true
+  Drupal\bb_core\Entity\EntityDeleteRules: '@bb_core.entity_delete_rules'

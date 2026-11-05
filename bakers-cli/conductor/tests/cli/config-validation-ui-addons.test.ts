@@ -23,7 +23,7 @@ function world() {
   const engine = join(cwd, '.bakers/conductor.config.js');
   writeFileSync(
     machine,
-    "export default { machine_id: 'host', user_id: 'operator', max_parallel: 2 };\n",
+    "export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator', max_parallel: 2 };\n",
   );
   writeFileSync(connection, connectionText());
   return { home, cwd, machine, connection, engine, scope: 'all' as const };
@@ -43,7 +43,6 @@ it('a UI-only addon does not make a conductor config opaque', () => {
     w.engine,
     `export default {
   bakers: { project: 'demo' },
-  conductor_id: 'my-worker',
   executor: { plugin: '@bakers-build/addon-herdr' },
   workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
   addons: ['@bakers-build/addon-bakers-ui-artifacts', '@bakers-build/addon-herdr'],
@@ -66,7 +65,6 @@ it('one Orca addon entry fills both the executor and the workspace slot', () => 
     w.engine,
     `export default {
   bakers: { project: 'demo' },
-  conductor_id: 'my-worker',
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-orca'],
 };\n`,
   );

@@ -236,7 +236,7 @@ final class ConductorOfflineResourceTest extends KernelTestBase {
   private function onlineConductor(UserInterface $owner, string $conductorId): BbConductorInterface {
     return $this->container->get('bb_core.conductor_registrar')->heartbeat($owner, [
       'conductor_id' => $conductorId,
-      'host_key' => 'host-' . $conductorId,
+      'host_key' => vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(md5($conductorId), 4)),
       'project' => 'default-project',
       'current_load' => 2,
     ]);

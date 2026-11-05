@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -65,7 +65,7 @@ use Drupal\user\EntityOwnerTrait;
       'action' => \Drupal\bb_core\Form\BbTicketActionForm::class,
       // Ticket Settings: the edit route renders this in the app shell.
       'settings' => BbTicketForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
       // The create dialog. The operation selects the `create` form mode
       // (`ContentEntityForm::init()`); `add` stays the admin form.
       'create' => BbTicketCreateForm::class,

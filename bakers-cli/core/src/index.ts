@@ -88,10 +88,12 @@ export {
 } from './cli/load-bakers-config.js';
 export {
   type AgentRoutes,
+  assertSchemaVersion1,
   type MachineContext,
   machineContextPath,
   readMachineContext,
   resolveMachineContextPath,
+  warnIgnoredMaxParallel,
 } from './cli/machine-context.js';
 export { corePackageRoot } from './cli/paths.js';
 export { resolveModuleEslintStyle } from './cli/resolve-module.js';
@@ -125,13 +127,17 @@ export {
   deriveCheckoutRoot,
   type RootGitExec,
 } from './core/checkout-root.js';
-export { conductorId } from './core/conductor-id.js';
 export {
   CommandRunner,
   ExecError,
   exec,
   setDefaultCommandRunner,
 } from './core/exec.js';
+export {
+  type GitSandboxPaths,
+  gitSandboxPaths,
+  withoutGitDirs,
+} from './core/git-sandbox.js';
 export {
   type ConductorLiveness,
   type ConductorLivenessInput,
@@ -141,7 +147,10 @@ export {
 export { type ConductorLogger, createLogger } from './core/logger.js';
 export {
   defaultProcProbe,
+  defaultRunProcessProbe,
+  killRunProcesses,
   type ProcProbe,
+  type RunProcessProbe,
   type SignalFailureReason,
   type SignalOutcome,
   type SignalVerifiedInput,

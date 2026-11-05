@@ -1,5 +1,6 @@
 # Integration-suite dispatch conductor. Seeded unbound: the runner's first
 # heartbeat binds it to its own host; a bound id refuses another host.
+# Import the owner's workspace lead grant before validating assigned tickets.
 _meta:
   version: '1.0'
   entity_type: bb_conductor
@@ -7,6 +8,7 @@ _meta:
   depends:
     25d160a3-a2cd-4ebf-acce-5273c92bf1bb: user
     262258a2-080f-4ab9-af1b-9028cef388da: bb_project
+    91f870cb-0551-50b6-a87e-136b972ea46c: og_membership
 default:
   conductor_id:
     -

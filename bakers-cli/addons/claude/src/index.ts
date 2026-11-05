@@ -7,6 +7,8 @@ import {
   type AgentPlugin,
   type AgentRunIdentity,
   type BbAgent,
+  CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOLS_SERVER,
   installCommand,
   type KnownOptionSpec,
   lastLine,
@@ -22,7 +24,11 @@ import {
   systemSandboxHost,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
-import { shellQuote } from '@bakers-build/core';
+import {
+  gitSandboxPaths,
+  shellQuote,
+  withoutGitDirs,
+} from '@bakers-build/core';
 import { parseClaudeTranscript } from './footprint.js';
 
 export { parseClaudeTranscript } from './footprint.js';
@@ -46,7 +52,7 @@ const MEASURE_FLAGS: readonly (readonly string[])[] = [
 ];
 
 const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
-  trusted_commands: ['bakers', 'git', 'ddev'],
+  trusted_commands: ['bakers', 'git'],
   deny_read: ['~/.ssh', '~/.bakers'],
   allow_write: [],
   network: ['*'],
@@ -54,10 +60,18 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 };
 
 /** The launch flags a security mode owns (`docs/addons/claude.md`). */
-function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
+function securityFlags(
+  { mode, sandbox, config }: ResolvedSecurity,
+  workspacePath: string | undefined,
+): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
   if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  // Git metadata only for a known workspace; the conductor always passes one.
+  const git =
+    workspacePath === undefined
+      ? { write: [], protect: [] }
+      : gitSandboxPaths(workspacePath);
   const settings = {
     sandbox: {
       enabled: true,
@@ -70,7 +84,8 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       ),
       filesystem: {
         denyRead: sandbox.deny_read,
-        allowWrite: sandbox.allow_write,
+        allowWrite: [...sandbox.allow_write, ...git.write],
+        denyWrite: git.protect,
       },
       network: { allowedDomains: sandbox.network },
     },
@@ -97,9 +112,6 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
     'project,local',
     '--settings',
     JSON.stringify(settings),
-    '--strict-mcp-config',
-    '--mcp-config',
-    JSON.stringify({ mcpServers: sandbox.mcp_servers }),
   ];
 }
 
@@ -144,7 +156,9 @@ export class ClaudeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
-  private readonly securityFlags: string[];
+  private readonly security: ResolvedSecurity;
+  /** The sandbox's own MCP servers, strict; undefined outside the sandbox. */
+  private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
   private readonly measure: boolean;
@@ -160,13 +174,31 @@ export class ClaudeAgent implements BbAgent {
     this.effort = cli.effort;
     this.overrides = cli.overrides;
     const security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
-    this.securityFlags = securityFlags(security);
+    this.security = {
+      ...security,
+      sandbox: {
+        ...security.sandbox,
+        allow_write: withoutGitDirs(security.sandbox.allow_write),
+      },
+    };
+    this.sandboxMcpServers =
+      security.mode === 'sandbox' ? security.sandbox.mcp_servers : undefined;
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
   }
 
-  launchCommand(prompt: string, run?: AgentRunIdentity): string {
+  /** A measured run stays without the conductor's tools, MCP or bridge. */
+  get withoutConductorTools(): boolean {
+    return this.measure;
+  }
+
+  launchCommand(
+    prompt: string,
+    run?: AgentRunIdentity,
+    workspacePath?: string,
+    tools?: { url: string },
+  ): string {
     if (prompt === '') {
       return 'claude';
     }
@@ -186,9 +218,10 @@ export class ClaudeAgent implements BbAgent {
     }
     // The flags are constants; only their generated values need quoting.
     parts.push(
-      ...this.securityFlags.map((t) =>
-        t.startsWith('--') ? t : shellQuote(t),
-      ),
+      ...[
+        ...securityFlags(this.security, workspacePath),
+        ...this.mcpFlags(tools),
+      ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );
     // Pin the transcript's own session id to the run's UUID (BB-473), so
     // `getRunLog` can read that ONE file directly instead of scanning the
@@ -201,12 +234,41 @@ export class ClaudeAgent implements BbAgent {
     if (this.measure) {
       // The wrapper folds an inline --settings JSON into its profile file.
       for (const pair of MEASURE_FLAGS) {
-        if (!this.securityFlags.includes(pair[0] as string)) {
+        if (!parts.includes(pair[0] as string)) {
           parts.push(...pair.map(shellQuote));
         }
       }
     }
     return parts.join(' ');
+  }
+
+  /**
+   * The sandbox's strict MCP config, plus the conductor's tool server when
+   * the run has one. A measured run stays without MCP servers. The token is
+   * referenced from the run env, which Claude expands, so it is never in argv.
+   */
+  private mcpFlags(tools: { url: string } | undefined): string[] {
+    const conductor =
+      tools && !this.measure
+        ? {
+            [CONDUCTOR_TOOLS_SERVER]: {
+              type: 'http',
+              url: tools.url,
+              headers: { Authorization: `Bearer \${${CONDUCTOR_TOKEN_ENV}}` },
+            },
+          }
+        : {};
+    const config = (servers: Record<string, unknown>) =>
+      JSON.stringify({ mcpServers: servers });
+    if (this.sandboxMcpServers !== undefined)
+      return [
+        '--strict-mcp-config',
+        '--mcp-config',
+        config({ ...this.sandboxMcpServers, ...conductor }),
+      ];
+    return Object.keys(conductor).length > 0
+      ? ['--mcp-config', config(conductor)]
+      : [];
   }
 
   /**

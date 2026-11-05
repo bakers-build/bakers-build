@@ -32,13 +32,14 @@ BB_LOG_LEVEL=debug bakers oven once
 
 | Subcommand | Options | What it does |
 |---|---|---|
-| `start` | `--foreground`, `--no-update-check`, `--force` | Start the conductor loop |
+| `start` | `--foreground`, `--no-update-check`, `--force`, `--adopt <uuid>`, `--new` | Start the conductor loop |
 | `once` | none | Run one conductor cycle, then exit |
 | `check` | none | Check that every enabled agent can start its sandbox |
 | `status` | none | One line for this checkout's conductor |
 | `ls` | none | One line per conductor the control plane holds for you |
 | `stop` | `--now` | Stop the conductor: graceful by default, hard kill with `--now` |
 | `clean` | none | Tear down herdr worktrees of finished tickets that were never cleaned up |
+| `tools` | `[name]`, `--data <json\|@file>`, `--schema` | List or call the conductor's addon tools from inside a run |
 
 ### start
 
@@ -46,6 +47,7 @@ By default `start` launches the loop in a herdr pane (handle `bakers-conductor:<
 
 - `--foreground` runs the loop in this process instead. It refuses to start while a verified live conductor already serves the checkout. Every foreground start, and every CI or non-TTY start, prints an update notice only and never prompts.
 - `--no-update-check` skips the lookup, cache, prompt and notice; the version banner still prints.
+- When the control plane does not know this conductor's id yet but this machine, project and variant already have a conductor under another id (for example from before the upgrade), `start` asks once in a terminal whether to take it over, or which one when there are several; it keeps its tickets and runs. Without a terminal it stops and names `--adopt <uuid>` (take it over) and `--new` (register another conductor); the two cannot be combined.
 - `--force` turns "already running" into a restart: a verified `SIGTERM`, a grace period, then `SIGKILL`, then the normal start. It fails rather than starting a second conductor when the running one cannot be verified or stopped.
 
 An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. The procedure, decline window, rerun and failure behaviour are in [Update bakers.build](/configuration/machine/updates).
@@ -69,10 +71,26 @@ A start on a machine where an enabled agent cannot start its sandbox prints `war
 Both print tab-separated columns, `status` only for this checkout's conductor and `ls` for every conductor you own, on any machine:
 
 ```
-<conductor_id>	<liveness>	<project>	<label>	<workspace_root>
+<label>	<liveness>	<project>	<workspace_root>	<conductor_id>
 ```
 
 Liveness is derived, and uses the same three words as the cockpit and the control plane: `online` (heartbeating within its lease), `stale` (registered as online, but the heartbeat is older than 600 seconds or the lease has lapsed, which is what a crash looks like) and `offline` (shut down cleanly). For a conductor on this host whose recorded process no longer exists, the listing reports `offline`. With no conductors, the output is `no conductors on the control plane`. The `bakers oven ls --help` text says "on this machine"; the listing is not limited to it.
+
+### tools
+
+`tools` is the shell route to the conductor's [addon tools](../../addons/build/tools.md) for agents that load no MCP server for them. It needs no conductor config or connection: it reads `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` from the run environment.
+
+- `bakers oven tools` lists `name<TAB>description`.
+- `bakers oven tools <name> --schema` prints the tool's input schema.
+- `bakers oven tools <name> --data '<json>'` (or `--data @<file>`) calls it for the run's worktree and prints its result.
+
+| Exit | Meaning |
+|---|---|
+| 0 | success |
+| 1 | the tool reported an error |
+| 3 | run token rejected |
+| 4 | no conductor tools in this shell, unknown tool or invalid `--data`; nothing called |
+| 5 | HTTP or protocol error |
 
 ## Environment
 

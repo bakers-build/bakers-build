@@ -331,9 +331,13 @@ class Simulation:
         return {'id': ticket['id'], 'identifier': ticket['identifier'], 'state': ticket['state'], 'branch_name': ticket['branch_name']}
 
     def ticket_update(self, args):
-        fields = ['title', 'description', 'conductor', 'labels_add', 'frozen']
+        fields = ['title', 'description', 'conductor', 'labels_add', 'labels_remove', 'frozen']
         if all(args.get(f) is None for f in fields):
-            raise refused('Give a title, a description, a conductor, labels to add or frozen.')
+            raise refused('Give a title, a description, a conductor, labels to add or remove, or frozen.')
+        removed = args.get('labels_remove') or []
+        both = [label for label in args.get('labels_add') or [] if label in removed]
+        if both:
+            raise refused(f'Label {both[0]} is both added and removed.')
         t = self.find(args['ticket'])
         for f in ['title', 'description', 'conductor', 'frozen']:
             if args.get(f) is not None:
@@ -341,6 +345,7 @@ class Simulation:
         for label in args.get('labels_add') or []:
             if label not in t['labels']:
                 t['labels'].append(label)
+        t['labels'] = [label for label in t['labels'] if label not in removed]
         return {'identifier': t.get('identifier'), 'title': t.get('title'), 'description': t.get('description'),
                 'conductor': t.get('conductor'), 'labels': list(t['labels']), 'frozen': bool(t.get('frozen'))}
 
@@ -351,6 +356,9 @@ class Simulation:
     def workspace_list(self, args):
         return {'workspaces': self.rows('workspaces', [{'uuid': self.input.get('workspace_uuid') or CONTRACT['project'], 'name': 'fixture', 'slug': 'fixture'}]),
                 'next_offset': None}
+
+    def user_read(self, args):
+        return self.rows('user', {'uuid': '66666666-6666-4666-8666-666666666666', 'name': 'fixture', 'position': '', 'background': ''})
 
     def group_list(self, args):
         groups = [g for g in self.rows('groups', []) if not args.get('group') or g['uuid'] == args['group']]

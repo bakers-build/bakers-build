@@ -14,7 +14,6 @@ export default {
   executor: slot('executor'),
   workspace: slot('workspace'),${addons ? `\n  addons: [${addons}],` : ''}
   bakers: { project: 'bakers' },
-  conductor_id: 'test-machine',
 };
 `;
 
@@ -94,7 +93,7 @@ describe('conductor addons per scope', () => {
     await expect(
       loadConductorConfig(writeProject(projectConfig())),
     ).rejects.toThrow(
-      'machine agents.addons is retired: move its entries into machine.config.js addons[] (run bakers config upgrade --scope machine)',
+      'machine agents.addons is retired: move its entries into machine.config.js addons[]',
     );
   });
 

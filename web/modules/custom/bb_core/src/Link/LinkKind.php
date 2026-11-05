@@ -51,9 +51,14 @@ final class LinkKind {
   public const DDEV = 'ddev';
 
   /**
+   * The kind for a chat thread permalink (a Slack thread).
+   */
+  public const CHAT = 'chat';
+
+  /**
    * All valid kinds, for reuse by the formatter.
    */
-  public const KINDS = [self::MR, self::CI, self::BRANCH, self::DOC, self::REPORT, self::DESIGN, self::DDEV];
+  public const KINDS = [self::MR, self::CI, self::BRANCH, self::DOC, self::REPORT, self::DESIGN, self::DDEV, self::CHAT];
 
   /**
    * Derives the kind from a link URI.
@@ -74,6 +79,8 @@ final class LinkKind {
       str_contains($uri, '/-/tree/'),
       str_contains($uri, '/-/commits/'),
       str_contains($uri, '/-/branches') => self::BRANCH,
+      // A Slack thread permalink; other Slack pages stay doc.
+      str_contains($uri, '.slack.com/archives/') => self::CHAT,
       // Least-specific host match, placed last before the fallback: any page
       // under a worktree ddev baseURL (a testable surface). Deliberately after
       // the GitLab shape arms so a hypothetical ddev-hosted MR/pipeline/branch

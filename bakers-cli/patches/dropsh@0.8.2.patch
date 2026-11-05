@@ -1,0 +1,20 @@
+diff --git a/dist/src/core/paths.js b/dist/src/core/paths.js
+index d992cecacae2584304461b93defc1a1c7da5cec8..98620fc94c274cf188cd9a1fd0e1a1ebcff7d660 100644
+--- a/dist/src/core/paths.js
++++ b/dist/src/core/paths.js
+@@ -1,12 +1,13 @@
+ import { homedir } from "node:os";
+-import { join } from "node:path";
++import { isAbsolute, join } from "node:path";
+ /**
+  * The user-global dropsh state directory. Single source of that path: the
+  * per-host auth store and the connections directory both hang off it, so the
+  * two cannot drift onto different roots.
+  */
+ export function defaultStateDir() {
+-    return join(homedir(), ".config", "dropsh");
++    const config = process.env.XDG_CONFIG_HOME;
++    return join(config && isAbsolute(config) ? config : join(homedir(), ".config"), "dropsh");
+ }
+ /** Default location of the named-connection files, one `<id>.js` per connection. */
+ export function defaultConnectionsDir() {

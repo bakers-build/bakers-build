@@ -29,11 +29,15 @@ import type {
 } from '@bakers-build/conductor/contract';
 import {
   AmbiguousProjectNameError,
+  ConductorTakeoverRequired,
   resolveBbProjectContext,
 } from '@bakers-build/conductor/contract';
 import type { MessageResult } from '@bakers-build/message';
 
-export { AmbiguousProjectNameError } from '@bakers-build/conductor/contract';
+export {
+  AmbiguousProjectNameError,
+  ConductorTakeoverRequired,
+} from '@bakers-build/conductor/contract';
 export { createRunLogHttp, RunLogSizeError } from './run-log-http.js';
 
 import type { BbProjectSelection } from '@bakers-build/conductor/project-context';
@@ -216,9 +220,10 @@ export class DrupalBbRemote implements BbRemote {
       .where('host_key', '=', hostKey)
       .fields(['max_parallel', 'current_load'])
       .first();
-    if (!row) return null;
+    const maxParallel = row?.attr<number>('max_parallel');
+    if (!row || maxParallel == null) return null;
     return {
-      maxParallel: row.attr<number>('max_parallel') ?? 1,
+      maxParallel,
       currentLoad: row.attr<number>('current_load') ?? 0,
     };
   }
@@ -426,12 +431,14 @@ export class DrupalBbRemote implements BbRemote {
       data: {
         attributes: {
           conductor_id: reg.id,
-          host_key: reg.host_key ?? reg.id,
+          host_key: reg.host_key,
+          ...(reg.machine_label ? { machine_label: reg.machine_label } : {}),
+          ...(reg.adopt ? { adopt: reg.adopt } : {}),
+          ...(reg.create_new ? { create_new: true } : {}),
           project: reg.project,
           states: reg.states,
           workspace_root: reg.workspace,
           label: reg.label,
-          max_parallel: reg.max_parallel,
           ...processIdentity(reg),
           ...(extras.current_load !== undefined
             ? { current_load: extras.current_load }
@@ -447,7 +454,27 @@ export class DrupalBbRemote implements BbRemote {
   }
 
   async registerConductor(reg: ConductorRegistration): Promise<string> {
-    const res = await this.postHeartbeatRegistration(reg);
+    let res: Awaited<ReturnType<typeof this.postHeartbeatRegistration>>;
+    try {
+      res = await this.postHeartbeatRegistration(reg);
+    } catch (err) {
+      if (!(err instanceof HttpError) || err.status !== 409) throw err;
+      const error = (
+        err.body as {
+          errors?: Array<{
+            detail?: unknown;
+            meta?: { candidates?: Array<{ uuid?: unknown }> };
+          }>;
+        }
+      )?.errors?.[0];
+      const candidates = error?.meta?.candidates;
+      // Any other 409 (concurrent registration, foreign id) is no offer.
+      if (!Array.isArray(candidates)) throw err;
+      throw new ConductorTakeoverRequired(
+        typeof error?.detail === 'string' ? error.detail : err.message,
+        candidates.flatMap((c) => (typeof c.uuid === 'string' ? [c.uuid] : [])),
+      );
+    }
     const id = res?.data?.id;
     if (typeof id !== 'string' || id === '') {
       throw new Error('registerConductor: heartbeat response omitted data.id');

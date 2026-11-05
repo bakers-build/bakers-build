@@ -14,6 +14,7 @@ import {
   defaultProcProbe,
   deriveCheckoutRoot,
   deriveConductorLiveness,
+  homeBbDir,
   loadReadyBbConnection,
   type ProcProbe,
   printVersionLine,
@@ -29,8 +30,7 @@ import { Command } from 'commander';
 import { authStatus } from 'dropsh';
 import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
-import { Conductor } from '../core/conductor.js';
-import { hostKeyOf } from '../core/host-key.js';
+import { Conductor, registrationOf } from '../core/conductor.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
   type ResolvedAgent,
@@ -40,10 +40,16 @@ import {
   selectWorkspace,
 } from '../plugins/plugins.js';
 import type { HerdrHost } from '../plugins/process-host.js';
-import type { BbRemote, ConductorStatus } from '../plugins/remote.js';
+import type {
+  BbRemote,
+  ConductorRegistration,
+  ConductorStatus,
+  ConductorTakeoverRequired,
+} from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
+import { ovenTools } from './oven-tools.js';
 
 export type { HerdrHost };
 
@@ -107,7 +113,10 @@ export interface BbCliDeps {
   stdoutIsTTY?: boolean;
   /** Environment for CI / selector detection. Defaults to process.env. */
   env?: NodeJS.ProcessEnv;
-  /** One prompt line; empty string is default yes. Reject to cancel. */
+  /**
+   * One prompt line (the update and the takeover question); empty string is
+   * default yes. Reject to cancel.
+   */
   askUpdate?: (question: string) => Promise<string>;
   /** Invoke `bakers` with an argv array (no binary name). */
   runBb?: (args: string[]) => Promise<void>;
@@ -179,14 +188,14 @@ function checkoutRootOf(config: ConductorFileConfig): Promise<string> {
 }
 
 /**
- * The conductor's stable identity (bb_conductor.conductor_id). Required —
- * the loader throws without it — so lifecycle commands read it here, never
- * re-derive. Soft-reads legacy machine_id during the BB-353 cutover.
+ * The conductor's identity (bb_conductor.conductor_id), derived by the
+ * loader from the machine UUID, project and variant; lifecycle commands read
+ * it here, never re-derive.
  */
 function conductorIdOf(config: ConductorFileConfig): string {
-  const id = config.conductor_id ?? config.machine_id;
+  const id = config.conductor_id;
   if (id === undefined || id.trim() === '') {
-    throw new Error('conductor config has no conductor_id');
+    throw new Error('machine.config.js has no machine_id; run bakers init');
   }
   return id;
 }
@@ -317,7 +326,7 @@ async function buildLsRows(
   // host_key (to gate it to rows that are this machine's own conductor) —
   // `config` used to be ignored here, which is why `ls`/`status` never probed
   // the local pid at all and relied purely on the record.
-  const thisHostKey = config ? hostKeyOf(config) : undefined;
+  const thisHostKey = config ? (config.host_key?.trim() ?? '') : undefined;
   return hub
     .filter((c) => !onlyId || c.id === onlyId)
     .map((c) => ({
@@ -336,7 +345,7 @@ function printRows(rows: LsRow[]): void {
   }
   for (const r of rows) {
     console.log(
-      `${r.id}\t${r.status}\t${r.project}\t${r.label}\t${r.workspaceRoot}`,
+      `${r.label}\t${r.status}\t${r.project}\t${r.workspaceRoot}\t${r.id}`,
     );
   }
 }
@@ -504,6 +513,7 @@ async function cmdStartForeground(
   deps: BbCliDeps,
   log: LogOpts = {},
   force = false,
+  choice: TakeoverChoice = {},
 ): Promise<void> {
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
@@ -511,9 +521,15 @@ async function cmdStartForeground(
   if (!(await ensureAuthenticated(config, logger))) return;
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
-  const thisHostKey = hostKeyOf(config);
+  const thisHostKey = config.host_key?.trim() ?? '';
   if (await refuseIfAlreadyRunning(remote, id, thisHostKey, force, deps))
     return;
+  // This process is the conductor: its takeover registration carries its pid.
+  const serve = {
+    ...registrationOf(config, checkoutRoot),
+    last_pid: process.pid,
+  };
+  if (!(await settleTakeover(deps, remote, serve, choice))) return;
   const executor = deps.executor ?? (await selectExecutor(config, logger));
   const workspace = deps.workspace ?? (await selectWorkspace(config, logger));
   const agents = deps.agents ?? (await selectAgents(config));
@@ -532,6 +548,10 @@ async function cmdStartForeground(
   // Conductor too but never claim, so they cannot overwrite this pid.
   conductor.claimServeProcess();
   await conductor.start();
+  // The endpoint file is how `bakers ports` and other CLI calls reach the tools.
+  await conductor.startTools(
+    join(homeBbDir(), 'conductors', `${conductor.id}.json`),
+  );
   const controller = new AbortController();
   const onSignal = () => controller.abort();
   process.once('SIGINT', onSignal);
@@ -541,6 +561,7 @@ async function cmdStartForeground(
   } finally {
     process.removeListener('SIGINT', onSignal);
     process.removeListener('SIGTERM', onSignal);
+    await conductor.stopTools();
     // The exiting process writes its own `offline`. It has to be this process:
     // a heartbeat sets `online` unconditionally (ConductorRegistrar), so an
     // offline written by anyone else is erased by the next tick — the status
@@ -585,6 +606,85 @@ async function defaultAskUpdate(question: string): Promise<string> {
   }
 }
 
+/** Whether a human can answer a question on this terminal. */
+function isInteractive(deps: BbCliDeps): boolean {
+  return (
+    (deps.stdinIsTTY ?? Boolean(process.stdin.isTTY)) &&
+    (deps.stdoutIsTTY ?? Boolean(process.stdout.isTTY)) &&
+    !(deps.env ?? process.env).CI
+  );
+}
+
+/** `oven start --adopt <uuid>` / `--new`: the takeover decision, given up front. */
+export interface TakeoverChoice {
+  adopt?: string;
+  createNew?: boolean;
+}
+
+/**
+ * Settles, once, a conductor whose derived id the control plane does not know
+ * yet: registering it either succeeds, or the control plane offers the
+ * conductor this machine, project and variant already have under an older id.
+ * A terminal asks whether to take it over (or which, when there are several);
+ * any other answer than a choice or no cancels. Without one the start stops with
+ * the control plane's own `--adopt`/`--new` hint. After this the id is known,
+ * so no later start (nor the herdr child, which has no terminal) asks again.
+ * Returns false when the start must stop.
+ */
+async function settleTakeover(
+  deps: BbCliDeps,
+  remote: BbRemote,
+  registration: ConductorRegistration,
+  choice: TakeoverChoice,
+): Promise<boolean> {
+  const id = registration.id;
+  if ((await remote.listConductors('me')).some((c) => c.id === id)) return true;
+  const reg = {
+    ...registration,
+    ...(choice.adopt ? { adopt: choice.adopt } : {}),
+    ...(choice.createNew ? { create_new: true } : {}),
+  };
+  try {
+    await remote.registerConductor(reg);
+    return true;
+  } catch (caught) {
+    // By name: the remote addon may load its own copy of the contract class.
+    if ((caught as Error)?.name !== 'ConductorTakeoverRequired') throw caught;
+    const err = caught as ConductorTakeoverRequired;
+    const { adoptable } = err;
+    if (!isInteractive(deps) || adoptable.length === 0) {
+      console.error(err.message);
+      process.exitCode = 1;
+      return false;
+    }
+    const one = adoptable.length === 1;
+    const question = one
+      ? `${err.message}\nTake it over? [Y/n]`
+      : `${err.message}\n${adoptable.map((uuid, i) => `${i + 1}) ${uuid}`).join('\n')}\nTake over which? [1-${adoptable.length}, n for a new one]`;
+    let answer: string;
+    try {
+      answer = (await (deps.askUpdate ?? defaultAskUpdate)(question))
+        .trim()
+        .toLowerCase();
+    } catch {
+      answer = 'cancel';
+    }
+    const adopt =
+      one && ['', 'y', 'yes'].includes(answer)
+        ? adoptable[0]
+        : adoptable[Number(answer) - 1];
+    if (!adopt && answer !== 'n' && answer !== 'no') {
+      console.error('Start cancelled.');
+      process.exitCode = 1;
+      return false;
+    }
+    await remote.registerConductor(
+      adopt ? { ...reg, adopt } : { ...reg, create_new: true },
+    );
+    return true;
+  }
+}
+
 async function cmdStart(
   deps: BbCliDeps,
   log: LogOpts = {},
@@ -611,11 +711,7 @@ async function cmdStart(
       ? updateNotice(current, result.latestVersion)
       : null;
     const env = deps.env ?? process.env;
-    const interactive =
-      !foreground &&
-      (deps.stdinIsTTY ?? Boolean(process.stdin.isTTY)) &&
-      (deps.stdoutIsTTY ?? Boolean(process.stdout.isTTY)) &&
-      !env.CI;
+    const interactive = !foreground && isInteractive(deps);
     if (notice && interactive && result.declined !== true) {
       console.log(
         'Installing accepts the newer release and runs configuration migration.',
@@ -829,6 +925,7 @@ async function cmdStartBody(
   deps: BbCliDeps,
   log: LogOpts,
   force = false,
+  choice: TakeoverChoice = {},
 ): Promise<void> {
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
@@ -845,7 +942,7 @@ async function cmdStartBody(
   } catch {}
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
-  const thisHostKey = hostKeyOf(config);
+  const thisHostKey = config.host_key?.trim() ?? '';
 
   // Block on the DERIVED status, not the raw one. A crashed conductor keeps
   // `status: online` on its record until the cron reaper notices the lapsed
@@ -913,8 +1010,17 @@ async function cmdStartBody(
     console.log(`stopped conductor ${id} for restart (--force)`);
   }
 
-  // The conductor registers itself with the control plane on start(); there is
-  // no local file to write, and nothing left that a second list could add.
+  // The herdr child has no terminal, so a takeover is settled here first.
+  if (
+    !existing &&
+    !(await settleTakeover(
+      deps,
+      remote,
+      registrationOf(config, checkoutRoot),
+      choice,
+    ))
+  )
+    return;
   const handle = `bakers-conductor:${id}`;
 
   const fgFlags = [
@@ -1016,7 +1122,7 @@ async function cmdStop(deps: BbCliDeps, now: boolean): Promise<void> {
   const config = await resolveConfig(deps);
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
-  const thisHostKey = hostKeyOf(config);
+  const thisHostKey = config.host_key?.trim() ?? '';
 
   const rows = await remote.listConductors('me');
   const row = rows.find((c) => c.id === id);
@@ -1132,15 +1238,36 @@ Examples:
         'a second conductor if the running one cannot be verified or stopped.',
       false,
     )
+    .option(
+      '--adopt <uuid>',
+      'take over the conductor this machine, project and variant already have',
+    )
+    .option('--new', 'register a new conductor instead of taking one over')
     .action(async function (
       this: Command,
-      opts: { foreground: boolean; updateCheck: boolean; force: boolean },
+      opts: {
+        foreground: boolean;
+        updateCheck: boolean;
+        force: boolean;
+        adopt?: string;
+        new?: boolean;
+      },
     ) {
+      if (opts.adopt && opts.new) {
+        console.error('Choose either --adopt <uuid> or --new, not both.');
+        process.exitCode = 1;
+        return;
+      }
+      const choice: TakeoverChoice = {
+        ...(opts.adopt ? { adopt: opts.adopt } : {}),
+        ...(opts.new ? { createNew: true } : {}),
+      };
+      const body = opts.foreground ? cmdStartForeground : cmdStartBody;
       await cmdStart(
         deps,
         logOptsOf(this),
         opts.updateCheck,
-        opts.foreground ? cmdStartForeground : cmdStartBody,
+        (d, l, f) => body(d, l, f, choice),
         opts.force,
         opts.foreground,
       );
@@ -1198,6 +1325,23 @@ Examples:
     .action(async () => {
       await cmdStatus(deps);
     });
+
+  conductor
+    .command('tools')
+    .description(
+      "list or call the conductor's addon tools from inside a run (exit 4 outside one)",
+    )
+    .argument('[name]', 'the tool to call; omitted, list the tools')
+    .option('--data <json>', 'arguments as a JSON object, or @<file>')
+    .option('--schema', "print the tool's input schema instead of calling it")
+    .action(
+      async (
+        name: string | undefined,
+        opts: { data?: string; schema?: boolean },
+      ) => {
+        process.exitCode = await ovenTools(name, opts);
+      },
+    );
 
   // `bakers conductor rm` is gone (BB-232). Its only job was deleting the local
   // registry entry; with no registry there is nothing to remove, and deleting

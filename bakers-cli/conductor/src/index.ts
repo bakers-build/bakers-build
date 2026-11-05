@@ -1,25 +1,10 @@
 export type * from '@bakers-build/core';
-// BB-224: the conductor registry lives ONLY in `@bakers-build/core` — the former
-// thin re-export shim under `./cli/` is deleted and importers name core direct.
-export { conductorId } from '@bakers-build/core';
 // BB-216: the connection-config schema version + its regex reader. BB-230:
 // the host's `bakers config upgrade` intro prints the `from → to` pair from these.
 export {
   BB_CONFIG_SCHEMA_VERSION,
   readConfigSchemaVersion,
 } from './cli/config-schema.js';
-// BB-224 (Finding 8b): the addon package-name rename pass `bakers config upgrade` runs
-// as its last step (`@bakers-build/plugin-*` + the deleted `@bakers-build/core/builtins`
-// and `@bakers-build/core/plugins` → `@bakers-build/addon-*`).
-export {
-  type AddonRenameResult,
-  type ConfigSurface,
-  HOST_BARREL_PATHS,
-  migrateAddonNames,
-  migrateAddonNamesInFile,
-  RENAMED_ADDONS,
-  runAddonRenameMigration,
-} from './cli/migrate-addon-names.js';
 // BB-201: the conductor is now a COMMAND PLUGIN mounted by the `@bakers-build/bakers`
 // host, not the CLI entrypoint. `main`/`runBbCli` are gone; the default export
 // is the `BbCommandPlugin`, exposed here as `./commands/conductor` too.

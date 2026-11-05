@@ -51,6 +51,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 
 | Tool | Arguments | What it does |
 |---|---|---|
+| `bakers_user_read` | none | Your own user: name, position and background, which describe you |
 | `bakers_workspace_list` | `limit`, `offset` | The workspaces you can reach |
 | `bakers_group_list` | `workspace`; optional `group` | A workspace's groups, or one group's subgroups |
 | `bakers_group_create` | `workspace`, `name`; optional `description` | Create a group |
@@ -62,8 +63,9 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_label_list` | `workspace`; optional `query` | A workspace's labels |
 | `bakers_ticket_read` | `ticket` (identifier or UUID) | A ticket with its comments, oldest first, as an agent run reads it first |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
+| `bakers_ticket_list` | `project` (UUID); `limit`, `offset` | Every ticket of the project you can read, closed ones included, oldest first. Each row has `id` (UUID), `identifier`, `title`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (the parent's UUID, `null` when absent or unreadable) and `closed` |
 | `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name` | Create a ticket |
-| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `labels_add`, `frozen` | Edit a ticket; values not given are kept |
+| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `labels_add`, `labels_remove`, `frozen`, `environments_add`, `referenced_tickets_add` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; a closed ticket takes only `environments_add` |
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |
 | `bakers_ticket_template_run` | `template` (UUID); optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | Create a ticket from a ticket template |
@@ -72,6 +74,8 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_comment_publish` | `ticket`, `type`, `body` | Publish a comment |
 | `bakers_metric_write` | `ticket`, `name`, `rows`; optional `label` | Record a measurement ([Ticket metrics](/configuration/workflows/metrics)) |
 | `bakers_run_cancel` | `ticket`, `reason` | Cancel a ticket's active runs |
+| `bakers_inbox_send` | `ticket`, `message` (e.g. `ports.tunnel`); optional `payload` | Send an addon message to the ticket's conductor, under the same access and payload rules as the web UI, and wait up to 30 s. Returns `id`, `status` (`pending`, `running`, `done` or `failed`) and the Markdown answer `markdown`; `failed` is the addon's answer, a refusal is a tool error |
+| `bakers_inbox_read` | `message` (the UUID `bakers_inbox_send` returned) | The message's current `status` and `markdown`, without waiting |
 
 The list printed by `bakers tools` is what your identity may call on this server; it can hold tools this table does not show. Type, recipe and label names are reused, or created in the ticket's workspace.
 

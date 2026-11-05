@@ -216,15 +216,19 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
    * {@inheritdoc}
    */
   protected function actions(array $form, FormStateInterface $form_state): array {
+    // The identity card is where a type without a Settings form is managed.
+    $delete = $this->getOperation() === 'identity' && $this->card()['edit'] !== []
+      ? BbContentEntityFormBase::deleteAction($this->entity)
+      : [];
     if (!$this->entity->access('update')) {
-      return [];
+      return $delete;
     }
     foreach ($this->card()['edit'] as $field) {
       if ($this->entity->get($field)->access('edit')) {
-        return parent::actions($form, $form_state);
+        return parent::actions($form, $form_state) + $delete;
       }
     }
-    return [];
+    return $delete;
   }
 
   /**

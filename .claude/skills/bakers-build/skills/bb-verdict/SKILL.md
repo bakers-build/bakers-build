@@ -19,7 +19,7 @@ limitation and any necessary fresh check, never a fabricated pass.
 
 Use [verify](../bb-workflow/references/verify.md) for suite commands, including browser suites; use
 [browser](../bb-workflow/references/browser.md) for agent browser inspection. Resolve required environments and personas
-through [provision](../bb-workflow/references/provision.md). Human review remains pending until a human supplies an observation.
+through the `bb-workflow` *Provision* rule. Human review remains pending until a human supplies an observation.
 
 ## The verdict
 

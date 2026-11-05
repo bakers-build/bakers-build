@@ -84,8 +84,8 @@ describe('frame routing profile', () => {
       await judge('frame-recipe-route', intake, [...route, intakeFile]),
     ).toEqual(['intake-read']);
   });
-  it('checks that WORKFLOW.md routes to a skill only when it applies', async () => {
-    const path = 'skills/bb-pingpong/SKILL.md';
+  it('checks that a label routes to a skill only when it applies', async () => {
+    const path = 'skills/bb-label-pingpong/SKILL.md';
     const skill = (read: unknown) => (f: Record<string, any>) => ({
       ...f,
       expect: { ...f.expect, skill: { path, read } },
@@ -119,16 +119,16 @@ describe('frame routing profile', () => {
   });
 });
 
-describe('bb-pingpong profile', () => {
+describe('bb-label-pingpong profile', () => {
   const fixture = (
     expect: Record<string, unknown>,
     simulation: Record<string, unknown> = {},
   ) => ({
     id: 'pingpong-probe',
     synthetic: true,
-    profile: 'bb-pingpong',
+    profile: 'bb-label-pingpong',
     execution: 'simulated-tools',
-    skill: 'bb-pingpong',
+    skill: 'bb-label-pingpong',
     references: [],
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
@@ -212,6 +212,33 @@ describe('bb-pingpong profile', () => {
         asked,
       ]),
     ).toEqual(['pingpong-question']);
+  });
+  it('a call rejected before sending and then recovered stays on the call surface', async () => {
+    const q = fixture({ stop: 'question' });
+    const rejected: Row = {
+      tool: 'bakers',
+      arguments: {
+        argv: [
+          'bakers',
+          'tools',
+          'tool_api__bakers_ticket_read',
+          '--data',
+          '@/dev/null',
+        ],
+      },
+      result: {
+        exit_code: 4,
+        stdout: '',
+        stderr: '{"error":{"code":"E_VALIDATION"}}',
+      },
+    };
+    expect(
+      await judge(q, 'Asked.', [rejected, readTicket(), question, asked]),
+    ).toEqual([]);
+    // Unrecovered, the rejection still fails.
+    expect(
+      await judge(q, 'Asked.', [readTicket(), question, asked, rejected]),
+    ).not.toEqual([]);
   });
   it('technical problem never asks the user', async () => {
     const p = fixture({
@@ -741,6 +768,28 @@ describe('state run profile', () => {
         done.filter((row) => row !== classify),
       ),
     ).toEqual(['classified']);
+  });
+  it('requires every expected read: the conductor tools for a bug RED in plan', async () => {
+    const diagnose = [
+      readTicket(),
+      comment('debug_diagnose', 'HTTP 500 at c0ffee0'),
+      comment('plan'),
+      comment('test'),
+      comment('summary', 'Probe-plan: 0'),
+    ];
+    const provision = file('skills/bb-workflow/references/tools-conductor.md');
+    expect(
+      await judge('plan-bug-provision', 'Approve?', [...diagnose, provision]),
+    ).toEqual([]);
+    expect(await judge('plan-bug-provision', 'Approve?', diagnose)).toEqual([
+      'reads',
+    ]);
+    expect(
+      await judge('plan-bug-provision', 'Approve?', [
+        ...diagnose,
+        file('skills/bb-workflow/references/tools-conductor.md', 1),
+      ]),
+    ).toEqual(['reads']);
   });
 });
 

@@ -15,7 +15,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import * as service from '../../src/cli/config-plan.js';
 import { ConfigSourceEditor } from '../../src/cli/config-source-edit.js';
 import {
-  configImportExpression,
   renderCommittedConfig,
   renderHostMachine,
 } from '../../src/cli/config-templates.js';
@@ -72,34 +71,8 @@ it.each([
   const w = world();
   writeFileSync(w.engine, source);
   expect(() => readBbProjectSelection(w.engine)).toThrow(
-    /bakers config upgrade --scope project/,
+    /set bakers: \{ project/,
   );
-});
-
-it('migrates legacy project identity without changing the technical workspace plugin', () => {
-  const w = world();
-  const original = `export default { project: 'demo', bb_workspace: 'Engineering', workspace: { plugin: '@bakers-build/addon-herdr' }, hooks: keepHooks };\n`;
-  writeFileSync(w.engine, original);
-  const plan = service.planConfig({
-    ...w,
-    scope: 'project',
-    operation: 'upgrade',
-  });
-  expect(plan.report.result).toBe('ok');
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  const migrated = readFileSync(w.engine, 'utf8');
-  expect(readBbProjectSelection(w.engine)).toEqual({
-    project: 'demo',
-    workspace: 'Engineering',
-  });
-  expect(migrated).toContain(
-    "workspace: { plugin: '@bakers-build/addon-herdr' }",
-  );
-  expect(migrated).toContain('hooks: keepHooks');
-  expect(
-    service.planConfig({ ...w, scope: 'project', operation: 'upgrade' }).report
-      .changes,
-  ).toEqual([]);
 });
 
 it('blocks a conflicting nested and legacy project name before writing', () => {
@@ -128,35 +101,6 @@ it('does not migrate through a spread bakers.build identity', () => {
   expect(service.applyConfigPlan(plan).result).toBe('blocked');
   expect(readFileSync(w.engine, 'utf8')).toBe(original);
 });
-it('migrates each conductor variant independently and preserves file modes', () => {
-  const w = world();
-  const variant = join(dirname(w.engine), 'night.conductor.config.js');
-  writeFileSync(
-    w.engine,
-    `export default { project: 'demo', workspace: { plugin: 'technical' } };`,
-  );
-  writeFileSync(
-    variant,
-    `export default { project: 'night', bb_workspace: 'Sales', workspace: { plugin: 'technical' } };`,
-    { mode: 0o640 },
-  );
-  const plan = service.planConfig({
-    ...w,
-    scope: 'project',
-    operation: 'upgrade',
-  });
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  expect(readBbProjectSelection(w.engine)).toEqual({ project: 'demo' });
-  expect(readBbProjectSelection(variant)).toEqual({
-    project: 'night',
-    workspace: 'Sales',
-  });
-  expect(readFileSync(variant, 'utf8')).toContain(
-    "workspace: { plugin: 'technical' }",
-  );
-  expect(statSync(variant).mode & 0o777).toBe(0o640);
-});
-
 it('blocks runtime loading of legacy top-level identity before evaluating source', async () => {
   const w = world();
   const sentinel = join(w.cwd, 'evaluated');
@@ -165,11 +109,11 @@ it('blocks runtime loading of legacy top-level identity before evaluating source
     `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)}, 'yes'); export default { project: 'demo' };`,
   );
   await expect(loadConductorConfig(w.engine)).rejects.toThrow(
-    /bakers config upgrade --scope project/,
+    /set bakers: \{ project/,
   );
   expect(existsSync(sentinel)).toBe(false);
 });
-it('config check names project upgrade for legacy identity', () => {
+it('config check names the nested bakers.project for legacy identity', () => {
   const w = world();
   writeFileSync(w.engine, `export default { project: 'demo' };`);
   const report = service.planConfig({
@@ -180,9 +124,7 @@ it('config check names project upgrade for legacy identity', () => {
   expect(report.findings).toContainEqual(
     expect.objectContaining({
       key: 'project',
-      remediation: expect.stringContaining(
-        'bakers config upgrade --scope project',
-      ),
+      remediation: expect.stringContaining('Move project to bakers.project'),
     }),
   );
 });
@@ -207,11 +149,12 @@ it('config check rejects a spread nested bakers.build identity', () => {
 });
 
 const roots: string[] = [];
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const workspace = '11111111-1111-4111-8111-111111111111';
 function engineText() {
   return `export default {
   bakers: { project: 'demo' },
-  conductor_id: 'my-worker',
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
   executor: { plugin: '@bakers-build/addon-herdr' },
   agent: { plugin: '@bakers-build/addon-claude' },
@@ -233,25 +176,24 @@ function world() {
   const engine = join(cwd, '.bakers/conductor.config.js');
   writeFileSync(
     machine,
-    "export default { machine_id: 'host', user_id: 'operator', max_parallel: 2 };\n",
+    "// @bakers-schema-version 1\nexport default { schema_version: 1, machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator', max_parallel: 2 };\n",
   );
   writeFileSync(connection, connectionText());
   writeFileSync(engine, engineText());
   return { home, cwd, machine, connection, engine, scope: 'all' as const };
 }
 function connectionText(secret = 'private-value') {
-  return `// @bakers-schema-version 3\nexport default { schema_version: 3, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: '${secret}' } }] };\n`;
+  return `// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: '${secret}' } }] };\n`;
 }
 afterEach(() => {
   for (const root of roots.splice(0))
     rmSync(root, { recursive: true, force: true });
 });
 describe('offline scoped configuration plan and apply', () => {
-  it('renders schema-v2 zero-config agent templates', () => {
+  it('renders schema-v1 zero-config agent templates', () => {
     const machine = renderHostMachine({
-      machineId: 'host',
-      userId: 'operator',
-      maxParallel: 2,
+      machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+      label: 'operator',
     });
     const conductor = renderCommittedConfig({
       project: 'demo',
@@ -261,9 +203,11 @@ describe('offline scoped configuration plan and apply', () => {
       },
     });
 
-    expect(machine).toContain('// @bakers-schema-version 2');
-    expect(machine).toContain('schema_version: 2');
+    expect(machine).toContain('// @bakers-schema-version 1');
+    expect(machine).toContain('schema_version: 1');
     expect(machine).not.toMatch(/^\s*agents:/m);
+    // The run budget is a backend setting.
+    expect(machine).not.toContain('max_parallel');
     expect(conductor).toContain(
       "addons: [{ use: '@bakers-build/addon-herdr' }, { use: '@bakers-build/addon-claude', alias: 'opus' }]",
     );
@@ -290,7 +234,7 @@ describe('offline scoped configuration plan and apply', () => {
       write.path.endsWith(join('.bakers', 'conductor.config.js')),
     );
     expect(committed?.after).toBeTruthy();
-    expect(committed?.after).toContain('process.env.BB_HOME');
+    expect(committed?.after).not.toContain('machine.config.js`');
     expect(committed?.after).not.toContain('file://');
     expect(committed?.after).not.toContain(home);
   });
@@ -345,8 +289,8 @@ describe('offline scoped configuration plan and apply', () => {
       `// @bakers-schema-version 1
 export default {
   schema_version: 1,
-  machine_id: 'host',
-  user_id: 'operator',
+  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+  label: 'operator',
   max_parallel: 2,
   agents: ['opus', 'k3-pi'],
   disabled_agents: ['codex'],
@@ -360,8 +304,7 @@ export default {
     writeFileSync(
       w.engine,
       `export default {
-  project: 'demo',
-  conductor_id: 'my-worker',
+  bakers: { project: 'demo' },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
   executor: { plugin: '@bakers-build/addon-herdr' },
   workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
@@ -384,11 +327,7 @@ export default {
     const machine = (
       await import(`${pathToFileURL(w.machine).href}?agents=${Date.now()}`)
     ).default;
-    expect(machine.schema_version).toBe(3);
-    expect(machine.addons).toEqual([
-      { use: '@bakers-build/addon-claude' },
-      { use: '@bakers-build/addon-pi' },
-    ]);
+    expect(machine.schema_version).toBe(1);
     expect(machine.agents).toEqual({
       catalog: [
         {
@@ -632,8 +571,7 @@ export default {
     writeFileSync(
       w.engine,
       `export default {
-  project: 'demo',
-  conductor_id: 'my-worker',
+  bakers: { project: 'demo' },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
   executor: { plugin: '@bakers-build/addon-herdr' },
   workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
@@ -651,12 +589,8 @@ export default {
       { harness: '@bakers-build/addon-claude', alias: 'writer' },
     ]);
     const conductor = readFileSync(w.engine, 'utf8');
-    // Non-agent packages (remote-drupal, herdr) are preserved in the conductor
-    // config. The agent harness (@bakers-build/addon-claude) is removed — agents are
-    // now owned exclusively by machine.config.js (machine 2→3 migration).
     expect(conductor).toContain("'@bakers-build/addon-remote-drupal'");
     expect(conductor).toContain("'@bakers-build/addon-herdr'");
-    expect(conductor).not.toContain('@bakers-build/addon-claude');
     expect(conductor).not.toMatch(/^\s*agent:/m);
   });
 
@@ -668,8 +602,8 @@ export default {
         "agent: { plugin: '@bakers-build/addon-claude', with: { model: 'opus' } },",
       )
       .replace(
-        "conductor_id: 'my-worker',",
-        "conductor_id: 'my-worker', addons: [...local.addons],",
+        "bakers: { project: 'demo' },",
+        "bakers: { project: 'demo' }, addons: [...local.addons],",
       );
     writeFileSync(w.engine, engine);
 
@@ -681,30 +615,8 @@ export default {
     expect(service.applyConfigPlan(plan).result).toBe('blocked');
     expect(readFileSync(w.engine, 'utf8')).toBe(engine);
   });
-  it('moves mixed machine values without evaluating modules and redacts preview', () => {
-    const w = world();
-    rmSync(w.connection);
-    const sentinel = join(w.home, 'executed');
-    writeFileSync(
-      w.machine,
-      `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)}, 'bad');\nexport default { machine_id:'host', user_id:'operator', max_parallel:2, base_url:'https://example.test', client_id:'client', client_secret:'private-value', workspace_id:'${workspace}', custom: process.env.EXTENSION /* keep me */ };`,
-    );
-    const plan = service.planConfig(w);
-    expect(plan.report.result).toBe('ok');
-    expect(existsSync(sentinel)).toBe(false);
-    expect(existsSync(w.connection)).toBe(false);
-    expect(JSON.stringify(plan.report)).not.toContain('private-value');
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = readFileSync(w.machine, 'utf8');
-    expect(machine).toContain('custom: process.env.EXTENSION /* keep me */');
-    expect(machine).not.toContain('client_secret');
-    expect(readFileSync(w.connection, 'utf8')).toContain('private-value');
-    expect(statSync(w.connection).mode & 0o777).toBe(0o600);
-    expect(service.planConfig(w).report.changes).toEqual([]);
-  });
   it.each([
     'machine',
-    'connection',
   ])('blocks mixed ownership movement in %s scope before any write', (scope) => {
     const w = world();
     const before = readFileSync(w.machine, 'utf8').replace(
@@ -780,37 +692,19 @@ export default {
         : undefined,
     ).toBe('SYNTHETIC_FINAL_SECRET');
   });
-  it('migrates conductor variant and local identity while preserving host references', () => {
-    const w = world();
-    const variant = join(w.cwd, '.bakers/night.conductor.config.js');
-    const local = join(w.cwd, '.bakers/conductor.config.local.js');
-    writeFileSync(
-      variant,
-      "const machine = {}; export default { project: 'night', machine_id: machine.machine_id + '-night', max_parallel: 2 };",
-    );
-    writeFileSync(local, "export default { machine_id: 'local-worker' };");
-    expect(service.applyConfigPlan(service.planConfig(w)).result).toBe(
-      'incomplete',
-    );
-    expect(readFileSync(variant, 'utf8')).toContain(
-      "conductor_id: machine.machine_id + '-night'",
-    );
-    expect(readFileSync(variant, 'utf8')).not.toContain('max_parallel');
-    expect(readFileSync(local, 'utf8')).toContain(
-      "conductor_id: 'local-worker'",
-    );
-  });
-  it('blocks future versions before generic renames', () => {
+  it.each([
+    0, 3, 99,
+  ])('blocks schema version %i before any write, naming bakers init', (version) => {
     const w = world();
     const source = connectionText()
-      .replaceAll('schema-version 3', 'schema-version 99')
-      .replace('schema_version: 3', 'schema_version: 99')
-      .replace('@dropsh/plugin-oauth2', '@bakers-build/plugin-dropsh');
+      .replaceAll('schema-version 1', `schema-version ${version}`)
+      .replace('schema_version: 1', `schema_version: ${version}`);
     writeFileSync(w.connection, source);
     const plan = service.planConfig(w);
     expect(
-      plan.report.findings.some((f) => f.code === 'future_schema_version'),
-    ).toBe(true);
+      plan.report.findings.find((f) => f.code === 'unsupported_schema_version')
+        ?.remediation,
+    ).toContain('bakers init');
     service.applyConfigPlan(plan);
     expect(readFileSync(w.connection, 'utf8')).toBe(source);
   });
@@ -818,18 +712,22 @@ export default {
     const w = world();
     writeFileSync(
       w.machine,
-      "// @bakers-schema-version 1\nexport default { schema_version: 1, machine_id:'custom', extra: 42 };\n",
+      "// @bakers-schema-version 1\nexport default { schema_version: 1, machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', extra: 42 };\n",
     );
     const plan = service.planConfig({
       ...w,
       scope: 'machine',
-      inputs: { machineId: 'ignored', userId: 'operator', maxParallel: 3 },
+      inputs: { label: 'operator' },
     });
     expect(service.applyConfigPlan(plan).result).toBe('ok');
-    // The custom values survive; biome normalizes spacing (machine_id:'custom' →
-    // machine_id: 'custom') as part of the best-effort format pass.
-    expect(readFileSync(w.machine, 'utf8')).toContain("machine_id: 'custom'");
-    expect(readFileSync(w.machine, 'utf8')).toContain('extra: 42');
+    // The existing UUID survives (a re-run never replaces it); biome
+    // normalizes spacing as part of the best-effort format pass.
+    const text = readFileSync(w.machine, 'utf8');
+    expect(text).toContain(
+      "machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30'",
+    );
+    expect(text).toContain('extra: 42');
+    expect(text).toMatch(/label: ['"]operator['"]/);
   });
   it('initializes project files without changing global prerequisites', () => {
     const w = world();
@@ -858,44 +756,28 @@ export default {
     ).toBe(true);
     expect(readdirSync(dirname(w.machine))).toHaveLength(2);
   });
-  it('does not create a project connection while repairing a legacy engine', () => {
-    const w = world();
-    writeFileSync(
-      w.engine,
-      connectionText('project-private')
-        .replace('https://example.test', 'https://project.test')
-        .replace('schema_version: 3,', "project: 'demo', machine_id: 'legacy',")
-        .replace('// @bakers-schema-version 3\n', ''),
-    );
-    const plan = service.planConfig(w);
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    expect(existsSync(join(w.cwd, '.bakers/bakers.config.js'))).toBe(false);
-    expect(readFileSync(w.connection, 'utf8')).toContain('private-value');
-  });
 });
 
 it('check reports actual missing keys and never plans a repair', () => {
   const w = world();
   writeFileSync(
     w.machine,
-    "export default { machine_id:'host', user_id:'operator' };",
+    "export default { machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label:'operator' };",
   );
   const plan = service.planConfig({
     ...w,
     operation: 'check',
     scope: 'machine',
   });
-  expect(
-    plan.report.findings.some(
-      (f) => f.code === 'missing_required_key' && f.key === 'max_parallel',
-    ),
-  ).toBe(true);
+  // The run budget is a backend setting, never a required machine key.
+  expect(plan.report.findings.some((f) => f.key === 'max_parallel')).toBe(
+    false,
+  );
   expect(plan.writes).toEqual([]);
   expect(plan.report.changes).toEqual([]);
 });
 it.each([
   'bakers.project',
-  'conductor_id',
   'remote',
   'executor',
   // 'agent' is intentionally absent: agents are owned by machine.config.js
@@ -929,7 +811,6 @@ it.each([
     name: 'the shipped fake engine and a shipped agent',
     source: `export default {
   bakers: { project: 'demo' },
-  conductor_id: 'my-worker',
   addons: ['@bakers-build/addon-fake', '@bakers-build/addon-codex'],
 };\n`,
   },
@@ -1050,166 +931,38 @@ it.each([
   else expect(plan.report.findings).toEqual([]);
 });
 it.each([
-  {
-    name: 'generated fallback when local identities are absent',
-    local: 'export default {};\n',
-    result: 'ok',
-    code: undefined,
-    key: undefined,
-    legacy: false,
-  },
-  {
-    name: 'generated fallback after a null current identity',
-    local: 'export default { conductor_id: null };\n',
-    result: 'ok',
-    code: undefined,
-    key: undefined,
-    legacy: false,
-  },
-  {
-    name: 'valid current identity override',
-    local: "export default { conductor_id: 'local-worker' };\n",
-    result: 'ok',
-    code: undefined,
-    key: undefined,
-    legacy: false,
-  },
-  {
-    name: 'empty current identity override',
-    local: "export default { conductor_id: '' };\n",
-    result: 'blocked',
-    code: 'invalid_value',
-    key: 'conductor_id',
-    legacy: false,
-  },
-  {
-    name: 'numeric current identity override',
-    local: 'export default { conductor_id: 42 };\n',
-    result: 'blocked',
-    code: 'invalid_value',
-    key: 'conductor_id',
-    legacy: false,
-  },
-  {
-    name: 'legacy machine identity after a null conductor identity',
-    local:
-      "export default { conductor_id: null, machine_id: 'legacy-worker' };\n",
-    result: 'ok',
-    code: undefined,
-    key: undefined,
-    legacy: true,
-  },
-  {
-    name: 'empty conductor identity before a valid legacy machine identity',
-    local:
-      "export default { conductor_id: '', machine_id: 'legacy-worker' };\n",
-    result: 'blocked',
-    code: 'invalid_value',
-    key: 'conductor_id',
-    legacy: true,
-  },
-  {
-    name: 'empty selected legacy machine identity',
-    local: "export default { conductor_id: null, machine_id: '' };\n",
-    result: 'blocked',
-    code: 'invalid_value',
-    key: 'machine_id',
-    legacy: true,
-  },
-  {
-    name: 'computed selected conductor identity',
-    local: 'export default { conductor_id: resolveIdentity() };\n',
-    result: 'incomplete',
-    code: 'unknown_value',
-    key: 'conductor_id',
-    legacy: false,
-  },
-])('validates $name in generated conductor wiring', (row) => {
+  ['conductor.config.js', 'conductor_id', "'my-worker'"],
+  ['conductor.config.js', 'machine_id', "'host'"],
+  ['conductor.config.js', 'label', "'Worker'"],
+  ['conductor.config.local.js', 'conductor_id', "'local-worker'"],
+  ['conductor.config.local.js', 'machine_id', 'resolveIdentity()'],
+])('check rejects %s carrying %s, naming bakers init', (file, key, value) => {
   const w = world();
-  const local = join(w.cwd, '.bakers/conductor.config.local.js');
-  const generated = renderCommittedConfig({
-    project: 'demo',
-    machinePath: w.machine,
-  });
-  writeFileSync(
-    w.engine,
-    row.legacy
-      ? generated.replace(
-          'local.conductor_id ?? composedConductorId',
-          'local.conductor_id ?? local.machine_id ?? composedConductorId',
-        )
-      : generated,
-  );
-  writeFileSync(local, row.local);
+  const path = join(w.cwd, '.bakers', file);
+  if (file === 'conductor.config.js')
+    writeFileSync(
+      w.engine,
+      engineText().replace(
+        "bakers: { project: 'demo' },",
+        `bakers: { project: 'demo' }, ${key}: ${value},`,
+      ),
+    );
+  else writeFileSync(path, `export default { ${key}: ${value} };\n`);
 
   const plan = service.planConfig({
     ...w,
     operation: 'check',
     scope: 'project',
-  });
-
-  expect(plan.report.result).toBe(row.result);
-  if (row.code)
-    expect(plan.report.findings).toContainEqual(
-      expect.objectContaining({ code: row.code, key: row.key, path: local }),
-    );
-  else expect(plan.report.findings).toEqual([]);
-});
-it.each([
-  'init',
-  'upgrade',
-] as const)('%s refuses to overwrite an invalid generated local identity', (operation) => {
-  const w = world();
-  const local = join(w.cwd, '.bakers/conductor.config.local.js');
-  writeFileSync(
-    w.engine,
-    renderCommittedConfig({ project: 'demo', machinePath: w.machine }),
-  );
-  writeFileSync(local, "export default { conductor_id: '' };\n");
-
-  const plan = service.planConfig({
-    ...w,
-    operation,
-    scope: 'project',
-    ...(operation === 'init' ? { project: 'demo' } : {}),
   });
 
   expect(plan.report.result).toBe('blocked');
-  // The plan may propose writes for the conductor config (agent-addon migration),
-  // but the invalid local identity blocks ALL writes from being applied.
-  expect(plan.writes.every((w) => w.path !== local)).toBe(true);
-  expect(service.applyConfigPlan(plan).result).toBe('blocked');
-  // The local file must remain unchanged regardless of other proposed writes.
-  expect(readFileSync(local, 'utf8')).toBe(
-    "export default { conductor_id: '' };\n",
-  );
   expect(plan.report.findings).toContainEqual(
     expect.objectContaining({
-      code: 'invalid_value',
-      key: 'conductor_id',
-      path: local,
+      code: 'retired_key',
+      key,
+      path,
+      remediation: expect.stringContaining('bakers init'),
     }),
-  );
-});
-it('check does not treat a computed legacy conductor identity as ready', () => {
-  const w = world();
-  writeFileSync(
-    w.engine,
-    engineText().replace(
-      "conductor_id: 'my-worker'",
-      'machine_id: createIdentity()',
-    ),
-  );
-
-  const plan = service.planConfig({
-    ...w,
-    operation: 'check',
-    scope: 'project',
-  });
-
-  expect(plan.report.result).toBe('incomplete');
-  expect(plan.report.findings).toContainEqual(
-    expect.objectContaining({ code: 'unknown_value', key: 'conductor_id' }),
   );
 });
 it.each([
@@ -1284,35 +1037,21 @@ it('does not treat project initialization as complete with broken prerequisites'
   service.applyConfigPlan(plan);
   expect(existsSync(w.engine)).toBe(false);
 });
-it('moves missing capacity from the engine before applying the default', () => {
+it('upgrade adds no max_parallel to a machine that names none', () => {
   const w = world();
   writeFileSync(
     w.machine,
-    "export default { machine_id:'host', user_id:'operator' };",
+    "export default { machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label:'operator' };",
   );
-  writeFileSync(w.engine, "export default { project:'demo', max_parallel:7 };");
-  const plan = service.planConfig(w);
+  const plan = service.planConfig({ ...w, scope: 'machine' });
   expect(service.applyConfigPlan(plan).result).toBe('ok');
-  expect(readFileSync(w.machine, 'utf8')).toMatch(/max_parallel["']?\s*:\s*7/);
+  expect(readFileSync(w.machine, 'utf8')).not.toContain('max_parallel');
 });
-it('retains comments containing historical names while renaming real addon descriptors', () => {
+it('upgrade leaves a leftover max_parallel alone', () => {
   const w = world();
-  writeFileSync(
-    w.engine,
-    engineText()
-      .replace(
-        'export default {',
-        "// '@bakers-build/plugin-herdr' is historical\nexport default {",
-      )
-      .replace('@bakers-build/addon-herdr', '@bakers-build/plugin-herdr'),
-  );
-  service.applyConfigPlan(service.planConfig(w));
-  expect(readFileSync(w.engine, 'utf8')).toContain(
-    "// '@bakers-build/plugin-herdr' is historical",
-  );
-  expect(readFileSync(w.engine, 'utf8')).toContain(
-    "plugin: '@bakers-build/addon-herdr'",
-  );
+  const plan = service.planConfig({ ...w, scope: 'machine' });
+  expect(service.applyConfigPlan(plan).result).toBe('ok');
+  expect(readFileSync(w.machine, 'utf8')).toMatch(/max_parallel:\s*2/);
 });
 it('blocks computed machine credentials without printing secret-bearing expressions', () => {
   const w = world();
@@ -1341,32 +1080,6 @@ it('restores already replaced files when a later atomic replacement fails', () =
   const report = service.applyConfigPlan(plan);
   expect(report.result).toBe('failed');
   expect(readFileSync(w.machine, 'utf8')).toBe(before);
-});
-it('migrates a shipped generated v3 global connection without retaining machine credential imports', async () => {
-  const w = world();
-  writeFileSync(
-    w.machine,
-    `export default { machine_id:'host', user_id:'operator', max_parallel:2, base_url:'https://example.test', client_id:'client', client_secret:'private-value', workspace_id:'${workspace}' };`,
-  );
-  writeFileSync(
-    w.connection,
-    readFileSync(
-      new URL('./fixtures/bb-448/connection-v3.js.txt', import.meta.url),
-      'utf8',
-    ),
-  );
-  const plan = service.planConfig(w);
-  expect(plan.report.result).toBe('ok');
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  const config = (await import(`${w.connection}?test=generated`)).default;
-  expect(config.site.base_url).toBe('https://example.test');
-  expect(config.workspace_id).toBe(workspace);
-  expect(
-    config.plugins.find(
-      (p: { plugin: string }) => p.plugin === '@dropsh/plugin-oauth2',
-    ).with.client_secret,
-  ).toBe('private-value');
-  expect(readFileSync(w.connection, 'utf8')).not.toContain('await loadMachine');
 });
 it('project init creates only the committed engine config', () => {
   const w = world();
@@ -1478,46 +1191,10 @@ it('check reports dead connection keys in conductor.config.local.js', () => {
     plan.report.findings.filter((f) => f.code === 'dead_key').length,
   ).toBeGreaterThanOrEqual(3);
 });
-it('preserves engine-owned addons without creating a project connection', () => {
-  const w = world();
-  writeFileSync(
-    w.engine,
-    connectionText('project-private')
-      .replace(
-        'schema_version: 3,',
-        "project:'demo',conductor_id:'my-worker',addons: [{ use:'@bakers-build/addon-herdr' }, { use:'@bakers-build/addon-remote-drupal' }, { use:'@bakers-build/addon-claude' }],",
-      )
-      .replace('// @bakers-schema-version 3\n', ''),
-  );
-  const plan = service.planConfig(w);
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  const engine = readFileSync(w.engine, 'utf8');
-  expect(engine).toContain('@bakers-build/addon-herdr');
-  expect(engine).toContain('@bakers-build/addon-remote-drupal');
-  expect(existsSync(join(w.cwd, '.bakers/bakers.config.js'))).toBe(false);
-});
-it('consolidates equal credential duplicates and preserves backups without overwriting earlier ones', () => {
-  const w = world();
-  writeFileSync(
-    w.machine,
-    readFileSync(w.machine, 'utf8').replace(
-      'max_parallel: 2',
-      "max_parallel:2, client_secret:'private-value'",
-    ),
-  );
-  writeFileSync(`${w.machine}.bakers.bak`, 'first-backup');
-  const plan = service.planConfig(w);
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  expect(readFileSync(`${w.machine}.bakers.bak`, 'utf8')).toBe('first-backup');
-  expect(
-    readdirSync(dirname(w.machine)).filter((name) => name.endsWith('.bak'))
-      .length,
-  ).toBeGreaterThan(1);
-});
 it('keeps disagreeing schema markers unchanged before any write', () => {
   const w = world();
   const before = connectionText().replace(
-    'schema_version: 3',
+    'schema_version: 1',
     'schema_version: 2',
   );
   writeFileSync(w.connection, before);
@@ -1544,52 +1221,6 @@ it('does not reinterpret an existing legacy project file as an engine config', (
   expect(existsSync(path)).toBe(true);
   expect(existsSync(w.engine)).toBe(false);
 });
-it('upgrades an old absolute machine import to the portable BB_HOME expression', () => {
-  const w = world();
-  writeFileSync(
-    w.engine,
-    `${engineText().replace(
-      'export default {',
-      `async function loadMachine() {
-  try {
-    return (await import(\`${w.machine}\`)).default ?? {};
-  } catch {}
-  return {};
-}
-const machine = await loadMachine();
-export default {`,
-    )}`,
-  );
-  const plan = service.planConfig(w);
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  const migrated = readFileSync(w.engine, 'utf8');
-  expect(migrated).toContain('process.env.BB_HOME');
-  expect(migrated).not.toContain('file://');
-  expect(migrated).not.toContain(w.home);
-});
-it('re-upgrading an already-portable machine import leaves it portable', () => {
-  const w = world();
-  writeFileSync(
-    w.engine,
-    engineText().replace(
-      'export default {',
-      `async function loadMachine() {
-  try {
-    return (await import(${configImportExpression('machine.config.js')})).default ?? {};
-  } catch {}
-  return {};
-}
-const machine = await loadMachine();
-export default {`,
-    ),
-  );
-  const plan = service.planConfig(w);
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  const migrated = readFileSync(w.engine, 'utf8');
-  expect(migrated).toContain('process.env.BB_HOME');
-  expect(migrated).not.toContain('file://');
-  expect(migrated).not.toContain(w.home);
-});
 // ~/.config/conductor belongs to other tools; an upgrade must neither merge nor delete it.
 it('never reads or removes a conductor machine file under ~/.config/conductor', () => {
   const w = world();
@@ -1606,17 +1237,6 @@ it('never reads or removes a conductor machine file under ~/.config/conductor', 
 });
 it('refuses a retired home-local override beside the global connection', () => {
   const w = world();
-  writeFileSync(
-    w.machine,
-    `export default {machine_id:'host',user_id:'operator',max_parallel:2,base_url:'https://example.test',client_id:'client',client_secret:'machine-secret',workspace_id:'${workspace}'};`,
-  );
-  writeFileSync(
-    w.connection,
-    readFileSync(
-      new URL('./fixtures/bb-448/connection-v3.js.txt', import.meta.url),
-      'utf8',
-    ),
-  );
   writeFileSync(
     join(w.home, '.bakers/conductor.config.local.js'),
     'export default { oauth: { client_secret:process.env.CUSTOM_SECRET } };',
@@ -1644,7 +1264,7 @@ it('an explicit isolated machine target never migrates or removes unrelated home
   const custom = join(w.home, 'fixture-machine.js');
   writeFileSync(
     custom,
-    "export default {schema_version:1,machine_id:'fixture',user_id:'fixture',max_parallel:1};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'fixture',max_parallel:1};",
   );
   const plan = service.planConfig({
     ...w,
@@ -1657,417 +1277,64 @@ it('an explicit isolated machine target never migrates or removes unrelated home
   expect(readFileSync(legacy, 'utf8')).toBe(original);
 });
 
-// ─── machine 2 → 3: agent harness seeding into addons[] ─────────────────────
-
-describe('machine schema 2→3: agent harness seeding', () => {
-  it('seeds agent_addons from conductor addons[] when conductor has agent packages', () => {
-    const w = world();
-    // Machine at v2: has agents policy but no agent_addons.
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 2\nexport default { schema_version: 2, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { enabled: ['opus'], default_agent: 'opus' } };\n`,
-    );
-    // Conductor config has agent packages in addons[].
-    writeFileSync(
-      w.engine,
-      `export default { bakers: { project: 'demo' }, conductor_id: 'my-worker', remote: { plugin: '@bakers-build/addon-remote-drupal' }, executor: { plugin: '@bakers-build/addon-herdr' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' }, addons: [{ use: '@bakers-build/addon-claude' }, { use: '@bakers-build/addon-codex' }] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(plan.report.findings.filter((f) => f.severity === 'error')).toEqual(
-      [],
-    );
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const text = readFileSync(w.machine, 'utf8');
-    expect(text).toMatch(/^\s*addons: \[/m);
-    expect(text).not.toMatch(/agents:\s*\{[^}]*addons/);
-    expect(text).toContain('@bakers-build/addon-claude');
-    expect(text).toContain('@bakers-build/addon-codex');
-    expect(text).toContain('// @bakers-schema-version 3');
-    // Idempotent: second plan produces no writes.
-    expect(service.planConfig({ ...w, scope: 'machine' }).writes).toEqual([]);
-  });
-
-  it('machine init writes harnesses to addons', () => {
-    const w = world();
-    // Machine at v2 with no agents.addons; remove conductor config.
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 2\nexport default { schema_version: 2, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { enabled: ['opus'] } };\n`,
-    );
-    rmSync(w.engine);
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(plan.report.findings.filter((f) => f.severity === 'error')).toEqual(
-      [],
-    );
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const text = readFileSync(w.machine, 'utf8');
-    expect(text).toMatch(/^\s*addons: \[/m);
-    expect(text).not.toMatch(/agents:\s*\{[^}]*addons/);
-    expect(text).toContain('@bakers-build/addon-claude');
-    expect(text).toContain('@bakers-build/addon-codex');
-    expect(text).toContain('@bakers-build/addon-grok');
-    expect(text).toContain('// @bakers-schema-version 3');
-    // Idempotent.
-    expect(service.planConfig({ ...w, scope: 'machine' }).writes).toEqual([]);
-  });
-
-  it('biome-formats the written config: nested keys aligned, single-quoted', () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 2\nexport default { schema_version: 2, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { enabled: ['opus'] } };\n`,
-    );
-    rmSync(w.engine);
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const text = readFileSync(w.machine, 'utf8');
-    // biome expands the single-line object; the seeded addons is a top-level
-    // key at 2 spaces, single-quoted.
-    expect(text).toMatch(/\n {2}addons: \[/);
-    expect(text).toContain("'@bakers-build/addon-claude'");
-    // The version marker survives the format pass.
-    expect(text).toContain('// @bakers-schema-version 3');
-  });
-
-  it('moves agents.addons into addons', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { addons: ['@bakers-build/addon-custom'], enabled: ['custom'] } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual(['@bakers-build/addon-custom']);
-    expect(machine.agents).toEqual({ enabled: ['custom'] });
-    expect(readFileSync(w.machine, 'utf8')).not.toContain(
-      '@bakers-build/addon-claude',
-    );
-    // No second write needed (idempotent).
-    expect(service.planConfig({ ...w, scope: 'machine' }).writes).toEqual([]);
-  });
-
-  it('dedupes moved agent addons', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@bakers-build/addon-claude'], agents: { addons: ['@bakers-build/addon-claude', { use: '@bakers-build/addon-codex', alias: 'x' }] } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual([
-      '@bakers-build/addon-claude',
-      { use: '@bakers-build/addon-codex', alias: 'x' },
-    ]);
-    expect(machine.agents).toBeUndefined();
-  });
-
-  it.each([
-    [
-      'different settings',
-      `'@bakers-build/addon-claude'`,
-      `{ use: '@bakers-build/addon-claude', with: { model: 'opus' } }`,
-    ],
-    [
-      'a variable alias',
-      `'@bakers-build/addon-claude'`,
-      `{ use: '@bakers-build/addon-claude', alias: n }`,
-    ],
-    ['a variable package', `'@bakers-build/addon-claude'`, `{ use: p }`],
-    [
-      'a listed variable package',
-      'p',
-      `{ use: '@bakers-build/addon-claude', with: { model: 'x' } }`,
-    ],
-  ])('leaves an agent addon that differs from a listed one by %s', (_, listed, entry) => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nconst n = 'second', p = '@bakers-build/addon-claude';\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: [${listed}], agents: { addons: [${entry}] } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(plan.writes).toEqual([]);
-    expect(plan.report.findings).toContainEqual(
-      expect.objectContaining({ code: 'retired_key', key: 'agents.addons' }),
-    );
-  });
-
-  it('moves a variable agent addon beside a literal one', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nconst codex = '@bakers-build/addon-codex';\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { addons: ['@bakers-build/addon-claude', codex] } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual([
-      '@bakers-build/addon-claude',
-      '@bakers-build/addon-codex',
-    ]);
-  });
-
-  it('moves the same variable listed in both arrays once', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nconst c = '@bakers-build/addon-claude';\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: [c], agents: { addons: [c] } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual(['@bakers-build/addon-claude']);
-  });
-
-  it('seeds harnesses for an empty agents.addons in one upgrade', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { addons: [] } };\n`,
-    );
-    rmSync(w.engine);
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual([
-      '@bakers-build/addon-claude',
-      '@bakers-build/addon-codex',
-      '@bakers-build/addon-grok',
-    ]);
-    expect(service.planConfig({ ...w, scope: 'machine' }).writes).toEqual([]);
-  });
-
-  it('seeds harnesses beside first-party non-agent addons', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@bakers-build/addon-essentials'] };\n`,
-    );
-    rmSync(w.engine);
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toContain('@bakers-build/addon-claude');
-  });
-
-  it('keeps every non-literal agent addon it moves', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nconst a = '@bakers-build/addon-claude', b = '@bakers-build/addon-codex';\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@bakers-build/addon-bakers-ui-artifacts'], agents: { addons: [a, { use: b }] } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual([
-      '@bakers-build/addon-bakers-ui-artifacts',
-      '@bakers-build/addon-claude',
-      { use: '@bakers-build/addon-codex' },
-    ]);
-    expect(machine.agents).toBeUndefined();
-  });
-
-  it('seeds harnesses when the machine lists only non-agent addons', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@bakers-build/addon-bakers-ui-artifacts'] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual([
-      '@bakers-build/addon-bakers-ui-artifacts',
-      '@bakers-build/addon-claude',
-      '@bakers-build/addon-codex',
-      '@bakers-build/addon-grok',
-    ]);
-    expect(service.planConfig({ ...w, scope: 'machine' }).writes).toEqual([]);
-  });
-
-  it('seeds harnesses beside the ports addon and its transport', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: [{ use: '@bakers-build/addon-ports', with: {} }, { use: '@bakers-build/addon-ports-cloudflare' }] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons.slice(2)).toEqual([
-      '@bakers-build/addon-claude',
-      '@bakers-build/addon-codex',
-      '@bakers-build/addon-grok',
-    ]);
-  });
-
-  it('seeds nothing beside a third-party harness', () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@acme/bakers-agent'] };\n`,
-    );
-    expect(service.planConfig({ ...w, scope: 'machine' }).writes).toEqual([]);
-  });
-
-  it('moves ports into the ports addon entry', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@bakers-build/addon-claude'], ports: { transport: { use: '@bakers-build/ports-cloudflare-quick' } } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.ports).toBeUndefined();
-    expect(machine.addons).toEqual([
-      '@bakers-build/addon-claude',
-      {
-        use: '@bakers-build/addon-ports',
-        with: { transport: { use: '@bakers-build/ports-cloudflare-quick' } },
-      },
-    ]);
-  });
-
-  it('merges ports into an existing ports entry without a transport', async () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@bakers-build/addon-claude', '@bakers-build/addon-ports'], ports: { transport: { use: 'q' } } };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const machine = await importMachine(w.machine);
-    expect(machine.addons).toEqual([
-      '@bakers-build/addon-claude',
-      { use: '@bakers-build/addon-ports', with: { transport: { use: 'q' } } },
-    ]);
-  });
-
-  it('leaves a machine addons list with a spread untouched', () => {
-    const w = world();
-    const original = `// @bakers-schema-version 3\nconst shared = ['@bakers-build/addon-pi'];\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: [...shared, '@bakers-build/addon-codex'], agents: { addons: ['@bakers-build/addon-claude'] }, ports: { transport: { use: 'q' } } };\n`;
-    writeFileSync(w.machine, original);
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(plan.writes).toEqual([]);
-    expect(plan.report.findings).toContainEqual(
-      expect.objectContaining({ code: 'retired_key', key: 'agents.addons' }),
-    );
-  });
-
-  it('leaves an opaque ports block', () => {
-    const w = world();
-    const original = `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'host', user_id: 'operator', max_parallel: 2, addons: ['@bakers-build/addon-claude'], ports: process.env.PORTS };\n`;
-    writeFileSync(w.machine, original);
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(plan.writes).toEqual([]);
-    expect(plan.report.findings).toContainEqual(
-      expect.objectContaining({ code: 'retired_key', key: 'ports' }),
-    );
-  });
-
-  it('filters non-agent packages from conductor addons[] when seeding agents.addons', () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 2\nexport default { schema_version: 2, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { enabled: ['opus'] } };\n`,
-    );
-    // addons[] has both a non-agent (remote-drupal) and an agent (addon-claude).
-    writeFileSync(
-      w.engine,
-      `export default { bakers: { project: 'demo' }, conductor_id: 'my-worker', remote: { plugin: '@bakers-build/addon-remote-drupal' }, executor: { plugin: '@bakers-build/addon-herdr' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' }, addons: [{ use: '@bakers-build/addon-remote-drupal' }, { use: '@bakers-build/addon-claude' }] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'machine' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const text = readFileSync(w.machine, 'utf8');
-    expect(text).toContain('@bakers-build/addon-claude');
-    // Remote-drupal is not an agent package; should not appear in agents.addons.
-    expect(text).not.toContain('@bakers-build/addon-remote-drupal');
-  });
+it.each([
+  'machine',
+  'connection',
+  'project',
+] as const)('repairs an independently partial %s layer from explicit inputs', async (layer) => {
+  const w = world();
+  const inputs = {
+    label: 'operator',
+    baseUrl: 'https://example.test',
+    clientId: 'client',
+    secret: 'private-value',
+    workspaceId: workspace,
+  };
+  const selected =
+    layer === 'machine'
+      ? w.machine
+      : layer === 'connection'
+        ? w.connection
+        : w.engine;
+  writeFileSync(selected, 'export default {};');
+  const repaired = service.planConfig({ ...w, inputs, project: 'demo' });
+  expect(service.applyConfigPlan(repaired).result).toBe('ok');
+  const config = (
+    await import(`${pathToFileURL(selected).href}?repair=${Date.now()}`)
+  ).default;
+  if (layer === 'machine') expect(config).not.toHaveProperty('max_parallel');
+  expect(config).toMatchObject(
+    layer === 'machine'
+      ? { label: 'operator' }
+      : layer === 'connection'
+        ? { workspace_id: workspace }
+        : {
+            bakers: { project: 'demo' },
+            remote: { plugin: '@bakers-build/addon-remote-drupal' },
+          },
+  );
+  if (layer === 'machine') expect(config.machine_id).toMatch(UUID_PATTERN);
+  expect(service.planConfig({ ...w, inputs, project: 'demo' }).writes).toEqual(
+    [],
+  );
 });
 
-// ─── conductor scope: agent-addon removal ───────────────────────────────────
-
-describe('conductor scope: strip agent addons from addons[]', () => {
-  it('removes agent-addon entries from conductor addons[], keeping remote/executor/workspace', () => {
-    const w = world();
-    writeFileSync(
-      w.engine,
-      `export default { bakers: { project: 'demo' }, conductor_id: 'my-worker', remote: { plugin: '@bakers-build/addon-remote-drupal' }, executor: { plugin: '@bakers-build/addon-herdr' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' }, addons: [{ use: '@bakers-build/addon-herdr' }, { use: '@bakers-build/addon-claude' }, { use: '@bakers-build/addon-codex' }] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'conductor' });
-    expect(plan.report.findings.filter((f) => f.severity === 'error')).toEqual(
-      [],
-    );
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const text = readFileSync(w.engine, 'utf8');
-    // Agent packages removed.
-    expect(text).not.toContain('@bakers-build/addon-claude');
-    expect(text).not.toContain('@bakers-build/addon-codex');
-    // Non-agent executor package kept.
-    expect(text).toContain('@bakers-build/addon-herdr');
-    // Idempotent.
-    expect(service.planConfig({ ...w, scope: 'conductor' }).writes).toEqual([]);
-  });
-
-  it('removes the addons key entirely when all entries are agent addons', () => {
-    const w = world();
-    writeFileSync(
-      w.engine,
-      `export default { bakers: { project: 'demo' }, conductor_id: 'my-worker', remote: { plugin: '@bakers-build/addon-remote-drupal' }, executor: { plugin: '@bakers-build/addon-herdr' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' }, addons: [{ use: '@bakers-build/addon-claude' }, { use: '@bakers-build/addon-codex' }] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'conductor' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    const text = readFileSync(w.engine, 'utf8');
-    expect(text).not.toContain('@bakers-build/addon-claude');
-    expect(text).not.toContain('@bakers-build/addon-codex');
-    // No dangling addons key with an empty array.
-    expect(text).not.toMatch(/\baddons\s*:/);
-    // Idempotent.
-    expect(service.planConfig({ ...w, scope: 'conductor' }).writes).toEqual([]);
-  });
-
-  it('does not touch conductor addons[] when there are no agent entries', () => {
-    const w = world();
-    const original = `export default { bakers: { project: 'demo' }, conductor_id: 'my-worker', remote: { plugin: '@bakers-build/addon-remote-drupal' }, executor: { plugin: '@bakers-build/addon-herdr' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' }, addons: [{ use: '@bakers-build/addon-herdr' }] };\n`;
-    writeFileSync(w.engine, original);
-    const plan = service.planConfig({ ...w, scope: 'conductor' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    // No agent packages, no change needed.
-    expect(service.planConfig({ ...w, scope: 'conductor' }).writes).toEqual([]);
-  });
-
-  it('conductor scope stamps schema version 1', () => {
-    const w = world();
-    writeFileSync(
-      w.engine,
-      `export default { bakers: { project: 'demo' }, conductor_id: 'my-worker', remote: { plugin: '@bakers-build/addon-remote-drupal' }, executor: { plugin: '@bakers-build/addon-herdr' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' }, addons: [{ use: '@bakers-build/addon-claude' }] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'conductor' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    expect(readFileSync(w.engine, 'utf8')).toContain(
-      '// @bakers-schema-version 1',
-    );
-  });
-
-  it('scope all runs both machine and conductor migrations', () => {
-    const w = world();
-    writeFileSync(
-      w.machine,
-      `// @bakers-schema-version 2\nexport default { schema_version: 2, machine_id: 'host', user_id: 'operator', max_parallel: 2, agents: { enabled: ['opus'] } };\n`,
-    );
-    writeFileSync(
-      w.engine,
-      `export default { bakers: { project: 'demo' }, conductor_id: 'my-worker', remote: { plugin: '@bakers-build/addon-remote-drupal' }, executor: { plugin: '@bakers-build/addon-herdr' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' }, addons: [{ use: '@bakers-build/addon-claude' }, { use: '@bakers-build/addon-codex' }] };\n`,
-    );
-    const plan = service.planConfig({ ...w, scope: 'all' });
-    expect(service.applyConfigPlan(plan).result).toBe('ok');
-    expect(readFileSync(w.machine, 'utf8')).toMatch(/^\s*addons: \[/m);
-    expect(readFileSync(w.engine, 'utf8')).not.toContain(
-      '@bakers-build/addon-claude',
-    );
-  });
+it('init generates a machine UUID and keeps it on a second run', async () => {
+  const w = world();
+  rmSync(w.machine);
+  const init = () =>
+    service.planConfig({
+      ...w,
+      operation: 'init',
+      scope: 'machine',
+      inputs: { label: 'cw-laptop' },
+    });
+  expect(service.applyConfigPlan(init()).result).toBe('ok');
+  const first = await importMachine(w.machine);
+  expect(first.machine_id).toMatch(UUID_PATTERN);
+  expect(first.label).toBe('cw-laptop');
+  expect(first).not.toHaveProperty('user_id');
+  expect(init().writes).toEqual([]);
 });
 
 it('writes a secret-free device-code connection that then checks clean', () => {

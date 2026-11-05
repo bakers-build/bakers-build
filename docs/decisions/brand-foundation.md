@@ -300,7 +300,7 @@ Added 2026-10-23 at the owner's request. Christian Wiedemann's earlier strategy 
 There is no persona or strategy document on any branch of `bakers-build/bakers-build` or the predecessor repo, and no issue about it. The audience thinking lives in:
 
 - The predecessor repo, `docs/archive/specs/role-model-target.md`, §4 "Product personas (for IA)", and `ia-home-nav-roles-decisions.md`, D2 "two job kinds, not eight personas" (2026-08-16): personas as app roles (project member, project lead, team member, team lead, workspace admin, agent) with their leading questions.
-- The landing page (`website/.vitepress/theme/landing/`), especially `ThreeWays.vue`: three ways in that act as audiences.
+- The landing page (`docs/.vitepress/theme/landing/`), especially `ThreeWays.vue`: three ways in that act as audiences.
 - The docs: `docs/get-started/work-in-the-browser.md`, `is-bakers-right-for-us.md`, `docs/advanced/hosted-or-self-run.md`, `docs/daily-work/who-sees-what.md`.
 
 ### Two layers, kept apart

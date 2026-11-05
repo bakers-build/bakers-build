@@ -35,7 +35,7 @@ Without a ports entry with `transport.use`, tunnel commands refuse with `bakers 
 
 ## Check it works
 
-The ticket's message card offers **Share tunnels**. Sending it shares every eligible service not yet shared and lists each service's state.
+The ticket's message card offers **Share tunnels**. Sending it shares every eligible service through `ports_up` and lists their URLs.
 
 ::: details Per CLI
 ```sh
@@ -47,7 +47,7 @@ bakers ports down [service-key]
 bakers ports reap                         # machine-wide reconciliation
 ```
 
-`list` shows a claimed service; `up` returns a public URL that serves it.
+`list` shows a claimed service; `up` returns a public URL. Others need the [conductor](/addons/build/tools).
 :::
 
 ## Good to know

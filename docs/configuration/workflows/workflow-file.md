@@ -30,7 +30,7 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 | Section | Job |
 |---|---|
-| `## bb-phase-provision` | The runtime guide and setup that bring the environment up, for example `@bakers-build/bb-runtime-ddev`. Leave it out when no work needs a runtime. |
+| `## bb-phase-provision` | The [`provision_up`](/configuration/provisioning/hooks#provision-on-an-agent-s-request) profile each kind of check needs, and how container commands run. Leave it out when no work needs a runtime. |
 | `## bb-phase-work` | A `\| When \| Skill \|` table: extra skills for matching changes, for example a Drupal skill for `web/modules/`. |
 | `## bb-phase-validate` | A `\| When \| Command \|` table: the checks for matching changes. |
 | `## bb-phase-deliver` | How a merge request is merged: the merge gate and what runs in it. |
@@ -38,7 +38,7 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. The engineering method is not in this file; each ticket carries a [recipe](/configuration/workflows/types-recipes-labels). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
 
-To let tickets labelled `pingpong` work on their own, add a second sentence to the entry line: "When the ticket's labels include `pingpong` and its state is `working` or `review`, invoke `bakers:bb-pingpong` too and follow it with the frame." Such a ticket then works on its own to `done`, asks the user only content questions and one acceptance through the ticket, and refers technical problems to the developers. Leave the sentence out where nobody answers questions on tickets.
+The label `pingpong` alone lets a ticket work on its own; the entry line needs no clause for it. In any state, such a ticket then works on its own to `done`, asks the user only content questions, collected into one question per run, and one acceptance through the ticket, and refers technical problems to the developers. Label no ticket `pingpong` where nobody answers questions on tickets.
 
 ## Example
 
@@ -47,7 +47,7 @@ A Drupal project on DDEV:
 ```md
 ## bb-phase-provision
 
-Runtime: DDEV through `@bakers-build/bb-runtime-ddev`.
+Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_exec("<cmd>")`.
 
 ## bb-phase-work
 

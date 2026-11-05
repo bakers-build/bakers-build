@@ -52,11 +52,11 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 
 | Key | Default | Becomes |
 |---|---|---|
-| `trusted_commands` | `['bakers', 'git', 'ddev']` | `sandbox.excludedCommands` as `<name> *`, or unchanged if ending in `*`: these run outside the sandbox |
+| `trusted_commands` | `['bakers', 'git']` | `sandbox.excludedCommands` as `<name> *`, or unchanged if ending in `*`: these run outside the sandbox |
 | `deny_read` | `['~/.ssh', '~/.bakers']` | `sandbox.filesystem.denyRead` and the rules `Read(<path>)`, `Read(<path>/**)`; an absolute path becomes `//<path>` |
-| `allow_write` | `[]` | `sandbox.filesystem.allowWrite`; the worktree and `$TMPDIR` are always writable |
+| `allow_write` | `[]` | `sandbox.filesystem.allowWrite`, plus worktree, `$TMPDIR`, [Git metadata](/configuration/agents/execution-security#git-metadata-in-codex-and-claude-sandboxes); `.git` dropped |
 | `network` | `['*']` | `sandbox.network.allowedDomains`; `['*']` allows every host |
-| `mcp_servers` | `{}` | `--mcp-config`, in Claude's `mcpServers` shape |
+| `mcp_servers` | `{}` | `--mcp-config`, in Claude's `mcpServers` shape; plus [`bakers-conductor`](/addons/build/tools) |
 
 ```js
 { use: '@bakers-build/addon-claude', with: { sandbox: { trusted_commands: ['bakers', 'git', 'ddev', 'docker'] } } }

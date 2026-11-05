@@ -10,7 +10,7 @@
  *     dispatches is invisible to its peers for the rest of the tick plus the
  *     whole poll interval.
  *  2. The gate compares that machine-wide load against the CONDUCTOR's own
- *     `config.max_parallel`, discarding the `maxParallel` the machine row
+ *     `config.max_parallel` (since removed), discarding the `maxParallel` the machine row
  *     carries — and the machine row's budget is itself last-writer-wins,
  *     rewritten by every heartbeat.
  *
@@ -75,7 +75,6 @@ function makeConfig(
     project: 'bakers',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
-    max_parallel: 2,
     poll_interval_ms: 5000,
     lease_seconds: 300,
     config_path: `${CHECKOUT}/conductor.config.js`,
@@ -165,6 +164,11 @@ function seedQueue(remote: FakeBbRemote, count: number): void {
   }
 }
 
+/** Sets the machine row's budget, as the machine form does. */
+function setBudget(remote: FakeBbRemote, maxParallel: number): void {
+  remote.seedMachineLoad(HOST, { currentLoad: 0, maxParallel });
+}
+
 function seedTickets(count: number): FakeRemoteSeed {
   const tickets: FakeRemoteSeed['tickets'] = {};
   for (let i = 1; i <= count; i++) {
@@ -183,12 +187,12 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     // scenario scaled down (there: budget 7, observed 10).
     const remote = new FakeBbRemote(seedTickets(4));
     seedQueue(remote, 4);
+    setBudget(remote, 2);
 
     const execA = new RecordingExecutor();
     const execB = new RecordingExecutor();
     const a = await startedConductor(
       makeConfig({
-        max_parallel: 2,
         host_key: HOST,
         conductor_id: 'cw-dev-box-shop',
         project: 'shop',
@@ -198,7 +202,6 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     );
     const b = await startedConductor(
       makeConfig({
-        max_parallel: 2,
         host_key: HOST,
         conductor_id: 'cw-dev-box-bibb',
         project: 'bibb',
@@ -218,10 +221,10 @@ describe('BB-464 — shared host budget is a ceiling', () => {
   it('the machine reports a load that accounts for the claims already dispatched', async () => {
     const remote = new FakeBbRemote(seedTickets(4));
     seedQueue(remote, 4);
+    setBudget(remote, 2);
 
     const a = await startedConductor(
       makeConfig({
-        max_parallel: 2,
         host_key: HOST,
         conductor_id: 'cw-dev-box-shop',
         project: 'shop',
@@ -243,7 +246,6 @@ describe('BB-464 — shared host budget is a ceiling', () => {
 
     const a = await startedConductor(
       makeConfig({
-        max_parallel: 1,
         host_key: HOST,
         conductor_id: 'cw-dev-box-shop',
         project: 'shop',
@@ -253,7 +255,6 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     );
     const b = await startedConductor(
       makeConfig({
-        max_parallel: 3,
         host_key: HOST,
         conductor_id: 'cw-dev-box-bibb',
         project: 'bibb',
@@ -277,11 +278,11 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     // one-run-per-tick drip on an idle host.
     const remote = new FakeBbRemote(seedTickets(3));
     seedQueue(remote, 3);
+    setBudget(remote, 3);
     const executor = new RecordingExecutor();
 
     const a = await startedConductor(
       makeConfig({
-        max_parallel: 3,
         host_key: HOST,
         conductor_id: 'cw-dev-box-solo',
         project: 'solo',
@@ -305,7 +306,6 @@ describe('BB-464 — shared host budget is a ceiling', () => {
 
     const a = await startedConductor(
       makeConfig({
-        max_parallel: 2,
         host_key: HOST,
         conductor_id: 'cw-dev-box-breach',
         project: 'breach',
@@ -326,5 +326,60 @@ describe('BB-464 — shared host budget is a ceiling', () => {
     expect(calls.some((c) => c.msg === 'at capacity, nothing claimed')).toBe(
       true,
     );
+  });
+
+  it('follows a budget changed on the machine between two ticks', async () => {
+    const remote = new FakeBbRemote(seedTickets(6));
+    seedQueue(remote, 6);
+    setBudget(remote, 1);
+    const executor = new RecordingExecutor();
+    const a = await startedConductor(
+      makeConfig({
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-live',
+        project: 'live',
+      }),
+      remote,
+      executor,
+    );
+
+    await a.tick();
+    expect(executor.started.length).toBe(1);
+
+    // A team lead raises the budget in the machine form; no restart. The
+    // fake counts no load for the recording executor, so the second tick
+    // claims the full new budget.
+    setBudget(remote, 3);
+    await a.tick();
+    expect(executor.started.length - 1).toBe(3);
+  });
+
+  it('claims nothing and warns when the machine budget is unreadable', async () => {
+    const remote = new FakeBbRemote(seedTickets(2));
+    seedQueue(remote, 2);
+    remote.machineCapacity = async () => null;
+    const { log, calls } = spyLogger();
+    const executor = new RecordingExecutor();
+    const a = await startedConductor(
+      makeConfig({
+        host_key: HOST,
+        conductor_id: 'cw-dev-box-blind',
+        project: 'blind',
+      }),
+      remote,
+      executor,
+      log,
+    );
+
+    await a.tick();
+
+    expect(executor.started.length).toBe(0);
+    expect(
+      calls.some(
+        (c) =>
+          c.level === 'warn' &&
+          c.msg === 'machine budget unreadable; claiming nothing this tick',
+      ),
+    ).toBe(true);
   });
 });

@@ -10,9 +10,8 @@ confirmed scope and verification plan; publish [acceptance](acceptance.md) if ab
 
 ## provision
 
-Before any environment-dependent execution, apply [provision](provision.md) with the confirmed
-target and the `test_as` personas. A **missing** persona blocks its checks; nobody else tests in its
-place. No need → skip silently.
+Before any environment-dependent execution, apply the frame's *Provision* rule. A
+**missing** persona blocks its checks; nobody else tests in its place. No need → skip silently.
 
 ## work
 
@@ -38,7 +37,7 @@ blocker in the records.
 
 ## outtake
 
-Issue each `test_as` persona's login link through the runtime guide's `bb-phase-outtake` and add it
+Issue each `test_as` persona's login link through the `WORKFLOW.md` `bb-phase-outtake` hint and add it
 to the records. Publish the typed coding handoff through [publish comment](publish-comment.md):
 confirmed scope IDs, base and head SHAs, MR, per-criterion evidence and the login links. Render it
 through [the outtake](outtake.md), publish that as its own comment of type `summary`, and print it.

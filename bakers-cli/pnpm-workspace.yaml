@@ -53,3 +53,7 @@ minimumReleaseAgeExclude:
   - '@dropsh/plugin-oauth2@0.7.1'
   - dropsh@0.7.1
   - dropsh@0.7.2
+
+# shortcut: source builds only; remove when dropsh ships XDG_CONFIG_HOME support.
+patchedDependencies:
+  dropsh@0.8.2: patches/dropsh@0.8.2.patch

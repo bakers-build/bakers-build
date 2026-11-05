@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_track\Kernel;
 
+use Drupal\Tests\bb_core\Kernel\DanglingReferenceTrait;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\EntityReferenceSelection\SelectionInterface;
@@ -34,6 +35,8 @@ use Symfony\Component\Routing\Exception\RouteNotFoundException;
 #[Group('bb_track')]
 #[RunTestsInSeparateProcesses]
 final class WorklogAccessTest extends KernelTestBase {
+
+  use DanglingReferenceTrait;
 
   use OgScopeFixtureTrait;
   use TeamWorldTrait;
@@ -260,7 +263,7 @@ final class WorklogAccessTest extends KernelTestBase {
     $owner = $this->rankOnlyOwner();
     $entry = $this->createEntry($owner, $this->projectP);
     $this->addMembership($this->workspaceA, $owner, ['guest']);
-    $this->projectP->delete();
+    $this->removeRowsOnly($this->projectP);
     $storage = $this->container->get('entity_type.manager')
       ->getStorage('bb_track_worklog');
     $storage->resetCache([$entry->id()]);
@@ -378,7 +381,7 @@ final class WorklogAccessTest extends KernelTestBase {
    */
   public function testOwnerCanViewAfterProjectDeleted(): void {
     $entry = $this->createEntry($this->employee, $this->projectP);
-    $this->projectP->delete();
+    $this->removeRowsOnly($this->projectP);
     $storage = $this->container->get('entity_type.manager')
       ->getStorage('bb_track_worklog');
     $storage->resetCache([$entry->id()]);

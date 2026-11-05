@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_ticket_trigger\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -56,7 +56,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
       'default' => BbTicketTriggerForm::class,
       'add' => BbTicketTriggerForm::class,
       'edit' => BbTicketTriggerForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
       'toggle' => TicketTriggerToggleForm::class,
     ],
     'route_provider' => ['html' => BbTicketTriggerRouteProvider::class],

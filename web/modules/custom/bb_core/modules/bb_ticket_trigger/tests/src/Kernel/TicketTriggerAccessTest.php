@@ -81,6 +81,9 @@ final class TicketTriggerAccessTest extends KernelTestBase {
     $this->assertTrue($trigger->access('view', $contributor));
     $this->assertFalse($trigger->access('update', $contributor));
     $this->assertFalse($trigger->access('delete', $contributor));
+    $guest = $this->createAccount('guest-a');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $guest, ['guest']);
+    $this->assertFalse($trigger->access('delete', $guest), 'a guest cannot delete a trigger');
     $anonymous = new AnonymousUserSession();
     foreach (['view', 'update', 'delete'] as $operation) {
       $this->assertFalse($trigger->access($operation, $anonymous));

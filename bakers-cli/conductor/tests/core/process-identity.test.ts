@@ -16,7 +16,8 @@ import { Conductor } from '../../src/core/conductor.js';
  * process.
  *
  * `last_pid` and `conductor_name` exist so a cockpit can stop a conductor it
- * did not start. They are reported on the registration payload the conductor
+ * did not start. The name is the config variant, the same from every command,
+ * so it is always sent; the pid is not. They are reported on the registration payload the conductor
  * already sends, which is sound only because the serve loop is the process
  * that owns the pid. `poll` and `reap` build a Conductor and call start() +
  * tick() too, then exit within seconds; if they reported a pid unconditionally
@@ -28,14 +29,24 @@ import { Conductor } from '../../src/core/conductor.js';
  * until a caller claims the process, and only cmdStartForeground claims it.
  */
 describe('conductor process identity', () => {
-  it('reports neither field by default, so poll and reap cannot clobber a pid', async () => {
+  it('reports no pid by default, so poll and reap cannot clobber it', async () => {
     const remote = new RecordingRemote();
     const conductor = makeConductor(remote);
 
     await conductor.start();
 
     expect(remote.lastRegistration?.last_pid).toBeUndefined();
-    expect(remote.lastRegistration?.conductor_name).toBeUndefined();
+  });
+
+  it('always reports its variant, so a first poll is matched to the right conductor', async () => {
+    const remote = new RecordingRemote();
+    const conductor = makeConductor(remote, {
+      config_path: `${CHECKOUT}/shop.conductor.config.js`,
+    });
+
+    await conductor.start();
+
+    expect(remote.lastRegistration?.conductor_name).toBe('shop');
   });
 
   it('reports both once the serve loop claims the process', async () => {
@@ -82,7 +93,7 @@ describe('conductor process identity', () => {
     const a = makeConductor(defaultRemote);
     const b = makeConductor(shopRemote, {
       config_path: `${CHECKOUT}/shop.conductor.config.js`,
-      machine_id: 'mid-shop',
+      conductor_id: 'mid-shop',
     });
     a.claimServeProcess();
     b.claimServeProcess();
@@ -135,7 +146,7 @@ function makeConductor(
       max_parallel: 1,
       poll_interval_ms: 5000,
       lease_seconds: 300,
-      machine_id: 'mid-default',
+      conductor_id: 'mid-default',
       config_path: `${CHECKOUT}/conductor.config.js`,
       ...overrides,
     } as any,

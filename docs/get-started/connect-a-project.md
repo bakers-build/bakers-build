@@ -40,6 +40,8 @@ The **environment** runs this repository's application and dependencies. Reuse i
 
 The AI proposes setup, readiness and cleanup; you confirm exact [hook commands](/configuration/provisioning/hooks). Separate ticket data/ports and test setup twice. Hooks log failures and continue: mandatory readiness belongs in `WORKFLOW.md`. Discovery addons find ports; they do not provision environments.
 
+When agents need the running application for a check, add a [`provision_up`](/configuration/provisioning/hooks#provision-on-an-agent-s-request) command per profile. Agents call it as a tool, and it reuses an environment that is already ready.
+
 ## Choose the workflow
 
 Tickets run [`bb_work`](/configuration/workflows/states); `WORKFLOW.md` supplies project rules. Matt is the shipped recipe. Install every named skill.
@@ -73,6 +75,6 @@ bakers info
 bakers oven check
 ```
 
-**Done when:** identities match, skills and client are ready, private files are ignored and application readiness passes. Keep conductor identity unique per host.
+**Done when:** identities match, skills and client are ready, private files are ignored and application readiness passes.
 
 **Next:** [Run the first ticket](/get-started/first-ticket).

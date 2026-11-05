@@ -9,7 +9,7 @@ function quietProgram() {
   return program;
 }
 
-it('mounts the oven group with start, once, check, clean, stop, ls and status', () => {
+it('mounts the oven group with start, once, check, clean, stop, ls, status and tools', () => {
   const oven = buildConductorProgram().commands.find(
     (c) => c.name() === 'oven',
   );
@@ -21,6 +21,7 @@ it('mounts the oven group with start, once, check, clean, stop, ls and status', 
     'start',
     'status',
     'stop',
+    'tools',
   ]);
   expect(oven?.options.map((o) => o.long)).toEqual([
     '--log-level',

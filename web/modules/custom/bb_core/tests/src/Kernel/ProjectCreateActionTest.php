@@ -345,7 +345,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
         "$where still paints a page_header; the heading is the shell island.",
       );
       self::assertSame(
-        ['component', 'view_rows', 'view_pager', 'view_exposed'],
+        ['block', 'component', 'view_rows', 'view_pager', 'view_exposed'],
         array_column($listing['slots']['content']['sources'] ?? [], 'source_id'),
         "$where must place the search toolbar above the listing rows.",
       );

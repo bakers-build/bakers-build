@@ -13,14 +13,15 @@ export interface AddonDefinitionV2 {
 export interface ConductorRegistration {
   /** Conductor process registration key (bb_conductor.conductor_id). */
   id: string;
-  /** Host identity stem (bb_machine.host_key / MachineContext.machine_id). */
+  /** This machine's UUID (bb_machine.host_key / MachineContext.machine_id). */
   host_key?: string;
+  /** This machine's display label; names a newly created bb_machine. */
+  machine_label?: string;
   project: string;
   /** Empty = serve all claimable states in the project (BB-207). */
   states: string[];
   workspace: string;
   label: string;
-  max_parallel: number;
   /**
    * The pid of the serve-loop process, when this conductor *is* that process.
    *
@@ -37,6 +38,27 @@ export interface ConductorRegistration {
    * conductor in a repo that holds several.
    */
   conductor_name?: string;
+  /**
+   * The answer to {@link ConductorTakeoverRequired}: take over this conductor
+   * (its UUID), or register another one (`create_new`).
+   */
+  adopt?: string;
+  create_new?: boolean;
+}
+
+/**
+ * A registration the control plane refused because this machine, project and
+ * variant already have a conductor under another id. `adoptable` are the
+ * UUIDs it offers; the message says how to decide.
+ */
+export class ConductorTakeoverRequired extends Error {
+  override readonly name = 'ConductorTakeoverRequired';
+  constructor(
+    message: string,
+    readonly adoptable: string[],
+  ) {
+    super(message);
+  }
 }
 
 export interface ClaimOptions {
@@ -319,7 +341,7 @@ export interface BbRemote {
    * Shared host capacity for this `host_key` (bb_machine, BB-353 D5).
    * After a heartbeat that reported this process's load, `currentLoad` is the
    * sum of online conductors on the machine (peers + self). Null when the
-   * control plane has no machine row yet — callers fall back to local count.
+   * machine row or its budget is unreadable — callers claim nothing.
    */
   machineCapacity(
     hostKey: string,
