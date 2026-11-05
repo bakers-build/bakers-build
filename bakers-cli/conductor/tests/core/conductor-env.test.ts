@@ -520,6 +520,7 @@ describe('Conductor agent tools', () => {
     const { conductor, env, launched } = await dispatchOnce(true);
     const url = (launched[0] as { url: string }).url;
     expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+    expect(env.BB_CONDUCTOR_URL).toBe(url);
     const client = new Client({ name: 'test', version: '1.0.0' });
     await client.connect(
       new StreamableHTTPClientTransport(new URL(url), {
@@ -538,6 +539,7 @@ describe('Conductor agent tools', () => {
     const { conductor, env, launched } = await dispatchOnce(false);
     expect(launched).toEqual([undefined]);
     expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
+    expect(env.BB_CONDUCTOR_URL).toBeUndefined();
     await conductor.stopTools();
   });
 });

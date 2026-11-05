@@ -128,6 +128,8 @@ export interface AgentRunIdentity {
 export const CONDUCTOR_TOOLS_SERVER = 'bakers-conductor';
 /** The run env var holding the run's bearer token for that server. */
 export const CONDUCTOR_TOKEN_ENV = 'BB_CONDUCTOR_TOKEN';
+/** The run env var holding that server's URL, for `bakers oven tools`. */
+export const CONDUCTOR_URL_ENV = 'BB_CONDUCTOR_URL';
 
 export interface BbAgent {
   /** Stable id, e.g. 'claude'. */

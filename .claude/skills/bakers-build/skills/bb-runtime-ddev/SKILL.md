@@ -12,12 +12,12 @@ prerequisite when setup is missing.
 
 ## bb-phase-provision
 
-**With the conductor's tools** (`ddev_status`, `ddev_start`, `ddev_exec` from the
-`bakers-conductor` server), follow [provision](../bb-workflow/references/provision.md)'s tool path:
+**With the conductor's tools** `ddev_status`, `ddev_start` and `ddev_exec`
+([tools](../bb-workflow/references/tools-conductor.md)), follow [provision](../bb-workflow/references/provision.md)'s tool path:
 `ddev_status` for readiness, `ddev_start` for a stopped stack, `provision_up(<profile>)` for a
 missing or wrong site. Run no host `ddev`.
 
-**Without them** (a measured run, or an agent the conductor serves no tools), use the CLI: first
+**Without them** (a measured run, or a run without a conductor tool server), use the CLI: first
 inspect `ddev describe` from the worktree root and check the selected site's readiness. A live stack
 serving the required site/fixtures is a successful no-op; never blindly re-init one. If setup is
 needed, run only the supplied commands, such as `ddev start`. Provider selection and defaults belong
