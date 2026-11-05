@@ -159,12 +159,11 @@ describe('GitHub migration checks', () => {
     expect(Object.keys(workflow.on)).toEqual([
       'push',
       'pull_request',
-      'schedule',
       'workflow_dispatch',
     ]);
-    expect(workflow.on.schedule).toEqual([{ cron: '0 */2 * * *' }]);
+    // Dispatched runs (scheduled or manual) must not be cancelled by a push to `next`.
     expect(workflow.concurrency.group).toContain(
-      "github.event_name == 'schedule'",
+      "github.event_name == 'workflow_dispatch'",
     );
     expect(workflow.permissions).toEqual({ contents: 'read' });
     expect(workflow.on.push.branches).toEqual(['next', 'main']);
@@ -209,17 +208,20 @@ describe('GitHub migration checks', () => {
     expect(workflow.jobs.required.steps[0].run).toContain('success');
   });
 
-  it('runs image_gate on schedule, dispatch and into main, never for next', () => {
+  it('runs image_gate on dispatch and into main, never for next', () => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     const gate = workflow.jobs.image_gate.if;
     for (const clause of [
-      "github.event_name == 'schedule'",
       "github.event_name == 'workflow_dispatch'",
       "github.base_ref == 'main'",
       "github.ref == 'refs/heads/main'",
     ])
       expect(gate).toContain(clause);
     expect(gate).not.toContain('next');
+    // The schedule lives in scheduled-checks.yml, which dispatches this workflow.
+    expect(read('.github/workflows/checks.yml')).not.toContain(
+      "event_name == 'schedule'",
+    );
     // `required` decides with the same expression whether a skipped image_gate is acceptable.
     expect(workflow.jobs.required.steps[0].env.IMAGE_GATE_REQUIRED).toBe(
       `\${{ ${gate} }}`,
@@ -248,7 +250,7 @@ describe('GitHub migration checks', () => {
     expect(result.status).toBe(status);
   });
 
-  it('files failures of scheduled or dispatched next runs as a bakers.build ticket', () => {
+  it('files failures of dispatched next runs as a bakers.build ticket', () => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     const job = workflow.jobs.report_failure;
     expect(job.needs.sort()).toEqual(workflow.jobs.required.needs.sort());
@@ -256,7 +258,6 @@ describe('GitHub migration checks', () => {
       'always()',
       "contains(needs.*.result, 'failure')",
       "github.ref == 'refs/heads/next'",
-      "github.event_name == 'schedule'",
       "github.event_name == 'workflow_dispatch'",
     ])
       expect(job.if).toContain(guard);
@@ -301,5 +302,81 @@ describe('GitHub migration checks', () => {
             : command,
         );
     }
+  });
+});
+
+describe('scheduled GitHub checks', () => {
+  type Run = { conclusion: string | null };
+  // Runs the dispatcher's github-script body against a fake API with the given earlier runs.
+  async function tick(runs: Run[]) {
+    const workflow = parse(read('.github/workflows/scheduled-checks.yml'));
+    const step = workflow.jobs.dispatch.steps.find((s: { uses?: string }) =>
+      s.uses?.startsWith('actions/github-script@'),
+    );
+    const listed: unknown[] = [];
+    const dispatched: unknown[] = [];
+    const github = {
+      rest: {
+        actions: {
+          listWorkflowRuns: async (args: unknown) => {
+            listed.push(args);
+            return { data: { total_count: runs.length, workflow_runs: runs } };
+          },
+          createWorkflowDispatch: async (args: unknown) => {
+            dispatched.push(args);
+          },
+        },
+      },
+    };
+    const context = { repo: { owner: 'o', repo: 'r' }, sha: 'abc123' };
+    const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+    await new AsyncFunction('github', 'context', 'core', step.with.script)(
+      github,
+      context,
+      { info() {} },
+    );
+    return { listed, dispatched };
+  }
+
+  it('ticks every 2 hours on the self-hosted runner with only actions access', () => {
+    const workflow = parse(read('.github/workflows/scheduled-checks.yml'));
+    expect(Object.keys(workflow.on)).toEqual(['schedule']);
+    expect(workflow.on.schedule).toEqual([{ cron: '0 */2 * * *' }]);
+    expect(workflow.permissions).toEqual({ actions: 'write' });
+    expect(workflow.jobs.dispatch['runs-on']).toEqual([
+      'self-hosted',
+      'github-runner-1',
+    ]);
+  });
+
+  it('dispatches GitHub checks on next when the head commit is untested', async () => {
+    const { listed, dispatched } = await tick([]);
+    expect(listed).toEqual([
+      expect.objectContaining({
+        owner: 'o',
+        repo: 'r',
+        workflow_id: 'checks.yml',
+        branch: 'next',
+        event: 'workflow_dispatch',
+        head_sha: 'abc123',
+      }),
+    ]);
+    expect(dispatched).toEqual([
+      { owner: 'o', repo: 'r', workflow_id: 'checks.yml', ref: 'next' },
+    ]);
+  });
+
+  it.each([
+    ['success'],
+    ['failure'],
+    [null],
+  ])('skips a head commit whose dispatched run ended %s', async (conclusion) => {
+    expect((await tick([{ conclusion }])).dispatched).toEqual([]);
+  });
+
+  it('retests a head commit whose only run was cancelled', async () => {
+    expect((await tick([{ conclusion: 'cancelled' }])).dispatched).toHaveLength(
+      1,
+    );
   });
 });

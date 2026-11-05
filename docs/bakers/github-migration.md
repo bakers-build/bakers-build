@@ -66,13 +66,15 @@ still use Blacksmith. The single runner runs jobs one after another, so PR feedb
 PHPUnit, browser/integration tests and config import continue using the images built
 once by `scripts/ci/github-image-gate.sh` in `image_gate`. It runs:
 
-- every 2 hours on `next` (`schedule`) and on manual dispatch;
+- on manual dispatch, and once per new `next` commit: every 2 hours `scheduled-checks.yml`
+  dispatches `GitHub checks` on `next` unless a dispatched run of that commit already exists
+  (a cancelled run does not count);
 - on every PR into `main` and every push to `main`. There, the aggregate `required` check fails
   when `image_gate` fails or is skipped;
 - not on PRs into `next` or pushes to `next`. There, `required` passes with `image_gate` skipped.
   Pushes to `next` therefore upload no `verified-images` for `release.yml`'s `next` channel.
 
-When a scheduled or dispatched run on `next` has a failed job, `report_failure` runs
+When a dispatched run on `next` has a failed job, `report_failure` runs
 `scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service account and
 comments on the open BAKERS ticket titled `CI failure: scheduled GitHub checks on next`, or creates
 that ticket as a `bug` (workflow `bb_work`) when none is open. The comment or ticket names the

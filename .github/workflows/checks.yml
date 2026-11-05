@@ -10,15 +10,14 @@ on:
       - reopened
       - edited
       - ready_for_review
-  # PHPUnit/E2E (image_gate) run here on the default branch `next`, not on PRs into it.
-  schedule:
-    - cron: '0 */2 * * *'
+  # scheduled-checks.yml dispatches this on `next` for each untested head commit; image_gate
+  # (PHPUnit/E2E) runs then, not on PRs into `next`.
   workflow_dispatch: {}
 permissions:
   contents: read
 concurrency:
-  # A push to `next` must not cancel a running scheduled run.
-  group: checks-${{ github.event_name == 'schedule' && 'schedule-' || '' }}${{ github.event.pull_request.number || github.ref }}
+  # A push to `next` must not cancel a running dispatched run.
+  group: checks-${{ github.event_name == 'workflow_dispatch' && 'dispatch-' || '' }}${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   branch_policy:
@@ -433,7 +432,7 @@ jobs:
   image_gate:
     runs-on: [self-hosted, github-runner-1]
     # Keep identical to `required`'s IMAGE_GATE_REQUIRED.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main'
     timeout-minutes: 180
     env:
       DOMAIN: nginx
@@ -524,14 +523,14 @@ jobs:
       - env:
           RESULTS: ${{ toJSON(needs) }}
           # Same expression as image_gate's `if`: a skipped image_gate passes only where it does not run.
-          IMAGE_GATE_REQUIRED: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
+          IMAGE_GATE_REQUIRED: ${{ github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
         run: node -e 'const jobs = JSON.parse(process.env.RESULTS); const ok = ([name, job]) => job.result === "success" || (name === "image_gate" && job.result === "skipped" && process.env.IMAGE_GATE_REQUIRED !== "true"); if (!Object.entries(jobs).every(ok)) process.exit(1)'
   report_failure:
     runs-on: [self-hosted, github-runner-1]
     container: node:22
     timeout-minutes: 15
     needs: *gates
-    if: always() && contains(needs.*.result, 'failure') && github.ref == 'refs/heads/next' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    if: always() && contains(needs.*.result, 'failure') && github.ref == 'refs/heads/next' && github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
         with:

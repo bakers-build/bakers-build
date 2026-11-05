@@ -1,0 +1,30 @@
+# Every 2 hours, run `GitHub checks` (with image_gate: PHPUnit/E2E) on `next` once per head
+# commit: dispatch it only when no earlier dispatched run on that commit exists, ignoring
+# cancelled ones. A failed dispatched run files a bakers.build ticket (checks.yml › report_failure).
+name: Scheduled checks
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+permissions:
+  actions: write
+jobs:
+  dispatch:
+    runs-on: [self-hosted, github-runner-1]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner, repo, workflow_id: 'checks.yml', branch: 'next',
+              event: 'workflow_dispatch', head_sha: context.sha,
+            });
+            if (data.workflow_runs.some((run) => run.conclusion !== 'cancelled')) {
+              core.info(`next ${context.sha} is already tested; nothing to do`);
+              return;
+            }
+            await github.rest.actions.createWorkflowDispatch({
+              owner, repo, workflow_id: 'checks.yml', ref: 'next',
+            });
+            core.info(`dispatched GitHub checks for next ${context.sha}`);
