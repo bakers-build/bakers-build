@@ -5,8 +5,9 @@
    becomes part of the field's value.
 #}
 <textarea{{ (attributes ?: create_attribute()).addClass([
-    'input', 'w-full', 'px-[11px]', 'py-[8px]', 'bg-app', 'border', 'border-control-border',
-    'rounded-sm', 'text-text', 'text-body', 'focus:outline-none', 'focus:border-primary',
+    'input', 'w-full', 'px-[11px]', 'py-inline', 'bg-app', 'border', 'border-control-border',
+    'rounded-sm', 'text-text', 'text-body', 'focus:border-primary',
+    'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
   ]) }}
   {%- if id %} id="{{ id }}"{% endif %}
   {%- if name %} name="{{ name }}"{% endif %}

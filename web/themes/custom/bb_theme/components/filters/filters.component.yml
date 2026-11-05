@@ -14,17 +14,17 @@ description: >-
   is where `facet_sidebar` already rendered it. Nothing here says "facet"
   either: the aside is where a list is narrowed, and whether that narrowing is a
   facet, an exposed filter or a saved view stays open (F11). THE PANEL COLLAPSES
-  by composing `bb_theme:collapsible` rather than by carrying a second
-  collapse of its own, and the reason that component is native carries over word
-  for word: Storybook never calls `Drupal.attachBehaviors`, so a scripted
-  collapse would be a dead control on the surface this screen is reviewed on,
-  and a click that answers with nothing is worse than no affordance at all.
-  Composing it keeps ONE collapse mechanism in the theme, and the `Filters`
-  heading becomes the real `<summary>`; the heading keeps its eyebrow treatment
-  because the label is a span of its own whose font size and colour win over the
-  summary's. WHAT THIS IS NOT: nothing here fetches, posts or persists anything.
-  Search API, the facets module, and Linear's saved views — a filter set kept as
-  a custom view in the aside, favouritable and settable as the default page,
+  by composing `bb_theme:collapsible` rather than by carrying a second collapse
+  of its own, and the reason that component is native carries over word for
+  word: Storybook never calls `Drupal.attachBehaviors`, so a scripted collapse
+  would be a dead control on the surface this screen is reviewed on, and a click
+  that answers with nothing is worse than no affordance at all. Composing it
+  keeps ONE collapse mechanism in the theme, and the `Filters` heading becomes
+  the real `<summary>`; the heading keeps its eyebrow treatment because the
+  label is a span of its own whose font size and colour win over the summary's.
+  WHAT THIS IS NOT: nothing here fetches, posts or persists anything. Search
+  API, the facets module, and Linear's saved views — a filter set kept as a
+  custom view in the aside, favouritable and settable as the default page,
   scoped to a workspace or a team — are all wiring, and wiring is out of scope
   for the whole 327 tree. Ad-hoc filter state lives in the URL in that model,
   which is likewise a wiring decision; the shape is agreed here so the ticket

@@ -4,8 +4,8 @@ name: Mode Toggle
 status: stable
 group: Action
 description: >-
-  Appearance picker with five palettes and independent light/dark mode.
-  Persists selections locally through the synchronous skin bootstrap.
+  Appearance picker with five palettes and independent light/dark mode. Persists
+  selections locally through the synchronous skin bootstrap.
 provider: bb_theme
 props:
   type: object

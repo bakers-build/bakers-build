@@ -186,7 +186,7 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
       '#props' => [
         'states' => array_keys($workflow->getStates()),
         'current' => (string) $ticket->getState()->getId(),
-        'label' => (string) $this->t('Workflow state flow'),
+        'label' => (string) $this->t('Workflow'),
       ],
     ];
   }

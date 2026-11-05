@@ -161,11 +161,11 @@
 {% endif %}
 {% set pill_classes = ['inline-flex',
   'items-center', 'gap-1.5', 'h-control', 'px-2.5', 'rounded-full', 'text-left',
-  'whitespace-nowrap', 'cursor-pointer', 'border', 'focus:outline-none', 'focus:border-primary'] %}
+  'whitespace-nowrap', 'cursor-pointer', 'border', 'focus:border-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'] %}
 {% set pill_weight = prominent
   ? ['bg-primary/10', 'border-primary/45', 'text-primary',
-     'text-caption', 'font-bold', 'hover:bg-primary/15']
-  : ['bg-app', 'border-control-border', 'text-text', 'text-caption', 'hover:bg-surface-3'] %}
+     'text-label', 'hover:bg-primary/15']
+  : ['bg-app', 'border-control-border', 'text-text', 'text-meta', 'hover:bg-surface-3'] %}
 {#- C19's bound on the displayed value, written as two LITERAL class strings rather than one
     interpolated arbitrary value: Tailwind generates a utility only when the candidate appears
     verbatim in the source it scans, so `max-w-[{{ … }}]` would compile to nothing at all and the
@@ -176,7 +176,7 @@
   ? ['inline-flex', 'items-center', 'gap-1.5', 'h-6', 'px-1.5',
      'bg-app', 'border', 'border-control-border', 'rounded-xs', 'text-body',
      'text-text', 'text-left', 'cursor-pointer', 'hover:bg-surface-3',
-     'focus:outline-none', 'focus:border-primary']
+     'focus:border-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring']
   : pill_classes|merge(pill_weight) %}
 <div{{ (attributes ?: create_attribute()).addClass(['relative', use_chips ? 'inline-flex flex-wrap items-center gap-1.5' : (is_facet ? 'block w-full' : 'inline-block')]) }}
   data-option-picker
@@ -197,8 +197,8 @@
   @click.outside="close()"
   @resize.window="reposition()"
   @scroll.window.capture="reposition()">
-  {% if is_facet %}<label for="{{ picker_id }}" class="block pb-1.5 text-caption text-text-light">{{ field_name }}</label>{% endif %}
-  {% set trigger_classes = is_facet ? ['flex', 'items-center', 'gap-2', 'w-full', 'min-h-control', 'px-2', 'py-2', 'rounded-xs', 'border', 'border-control-border', 'bg-app', 'text-body', 'text-text', 'text-left', 'cursor-pointer', 'focus-visible:outline-2', 'focus-visible:outline-focus-ring'] : trigger_classes %}
+  {% if is_facet %}<label for="{{ picker_id }}" class="block pb-1.5 text-label text-text-light">{{ field_name }}</label>{% endif %}
+  {% set trigger_classes = is_facet ? ['flex', 'items-center', 'gap-inline', 'w-full', 'min-h-control', 'px-inline', 'py-inline', 'rounded-xs', 'border', 'border-control-border', 'bg-app', 'text-body', 'text-text', 'text-left', 'cursor-pointer', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'] : trigger_classes %}
   <button type="button"{{ create_attribute().addClass(trigger_classes) }}
     id="{{ picker_id }}"
     data-option-picker-trigger
@@ -229,13 +229,13 @@
     {% if is_inline %}<span data-picker-part="chevron" class="shrink-0 text-text-faint" aria-hidden="true">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) }}</span>{% endif %}
   </button>
   {%- if use_chips %}
-  <span data-option-picker-chips class="inline-flex flex-wrap items-center gap-1" {%- if chip_items is empty %} hidden{% endif %}>
+  <span data-option-picker-chips class="inline-flex flex-wrap items-center gap-inline-xs" {%- if chip_items is empty %} hidden{% endif %}>
     {%- for item in chip_items %}
-    <span data-option-picker-chip data-value="{{ item.value }}" class="inline-flex items-center gap-1 h-6 max-w-40 px-1.5 rounded-full border border-control-border bg-app text-caption">
+    <span data-option-picker-chip data-value="{{ item.value }}" class="inline-flex items-center gap-inline-xs h-6 max-w-40 px-1.5 rounded-full border border-control-border bg-app text-meta">
       <span class="min-w-0 truncate" title="{{ item.label }}">{{ item.label }}</span>
       <button type="button"
         data-option-picker-chip-remove
-        class="shrink-0 text-text-faint hover:text-text"
+        class="shrink-0 text-text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         aria-label="Remove {{ item.label }} from {{ field_name|default('selection') }}">
         {{ include('bb_theme:icon', { name: 'x-circle', size: 'sm' }, with_context = false) }}
       </button>
