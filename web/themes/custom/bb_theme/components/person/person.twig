@@ -42,16 +42,17 @@
    developer title); `full` renders it too, `compact` has no room for it. #}
 {% set compact = variant == 'compact' %}
 {% set profile = variant == 'profile' %}
+{# Avatars have their own fills, so a person never reads as a state. #}
 {% set color_map = {
-  'running': 'bg-state-running',
-  'attention': 'bg-state-attention',
-  'unassigned': 'bg-state-unassigned',
-  'lease': 'bg-state-lease',
-  'offline': 'bg-state-offline'
+  'running': 'bg-avatar-a',
+  'attention': 'bg-avatar-b',
+  'unassigned': 'bg-avatar-a',
+  'lease': 'bg-avatar-c',
+  'offline': 'bg-avatar-d'
 } %}
-{% set size_classes = profile ? 'w-20 h-20 text-page-title' : (size == 'md' ? 'w-7 h-7 text-badge' : 'w-6 h-6 text-badge') %}
-{% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'text-state-ink', size_classes, color_map[color]|default('bg-state-running')] %}
-{% set stack_gap = profile ? 'gap-stack' : (size == 'md' ? 'gap-inline' : 'gap-inline-xs') %}
+{% set size_classes = profile ? 'w-20 h-20 text-display' : (size == 'md' ? 'w-7 h-7 text-eyebrow' : 'w-6 h-6 text-eyebrow') %}
+{% set mark_classes = ['inline-grid', 'place-items-center', 'rounded-full', 'shrink-0', 'overflow-hidden', 'leading-none', 'font-bold', 'text-state-ink', size_classes, color_map[color]|default('bg-avatar-a')] %}
+{% set stack_gap = profile ? 'gap-3' : (size == 'md' ? 'gap-2' : 'gap-1') %}
 {% set root_classes = profile ? ['flex', 'flex-col', 'items-center', 'text-center', stack_gap, 'min-w-0'] : ['inline-flex', 'items-center', stack_gap, 'min-w-0'] %}
 {% set identity %}
 <span{{ (attributes ?: create_attribute()).addClass(root_classes) }}>

@@ -44,7 +44,7 @@ comment for the exact classification rule.
 | `semantic.radius.sm` | layout | Small corner-radius role |
 | `semantic.radius.xs` | layout | Smallest corner-radius role |
 
-## Style axis (70)
+## Style axis (78)
 
 | Name | Axis | Purpose |
 | --- | --- | --- |
@@ -53,6 +53,10 @@ comment for the exact classification rule.
 | `component.gate.body` | style | Gate role: body |
 | `component.shell.offset` | style | Shell role: offset |
 | `semantic.color.app` | style | Outermost page/app background colour |
+| `semantic.color.avatar-a` | style | Color role: avatar-a |
+| `semantic.color.avatar-b` | style | Color role: avatar-b |
+| `semantic.color.avatar-c` | style | Color role: avatar-c |
+| `semantic.color.avatar-d` | style | Color role: avatar-d |
 | `semantic.color.border` | style | Default border colour |
 | `semantic.color.border-2` | style | Secondary (lighter) border colour |
 | `semantic.color.canvas` | style | Drawing/board canvas background colour |
@@ -74,13 +78,17 @@ comment for the exact classification rule.
 | `semantic.color.primary` | style | Primary accent/action colour |
 | `semantic.color.state-attention` | style | Attention-state indicator colour |
 | `semantic.color.state-attention-ink` | style | Attention-state text-on-tint colour |
+| `semantic.color.state-attention-mark` | style | Color role: state-attention-mark |
 | `semantic.color.state-attention-tint` | style | Attention-state background tint |
+| `semantic.color.state-done` | style | Color role: state-done |
 | `semantic.color.state-ink` | style | Mode-invariant text colour for content placed directly on a state-hue background (not its tint), constant in both light and dark mode |
 | `semantic.color.state-lease` | style | Leased-state indicator colour |
 | `semantic.color.state-lease-ink` | style | Leased-state text-on-tint colour |
 | `semantic.color.state-lease-tint` | style | Leased-state background tint |
 | `semantic.color.state-offline` | style | Offline-state indicator colour |
+| `semantic.color.state-offline-ink` | style | Color role: state-offline-ink |
 | `semantic.color.state-offline-tint` | style | Offline-state background tint |
+| `semantic.color.state-review` | style | Color role: state-review |
 | `semantic.color.state-running` | style | Running-state indicator colour |
 | `semantic.color.state-running-ink` | style | Running-state text-on-tint colour |
 | `semantic.color.state-running-tint` | style | Running-state background tint |

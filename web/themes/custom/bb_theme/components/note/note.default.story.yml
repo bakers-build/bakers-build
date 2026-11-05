@@ -6,6 +6,4 @@ slots:
   body:
     - type: element
       tag: span
-      value: >-
-        This is claimed at the next poll and an agent run starts on
-        cw-framework. Clear the field to let it wait for a human.
+      value: This is claimed at the next poll and an agent run starts on cw-framework. Clear the field to let it wait for a human.

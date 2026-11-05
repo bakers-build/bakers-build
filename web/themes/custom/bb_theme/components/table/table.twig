@@ -368,7 +368,7 @@
     {%- endif -%}
     {%- if c.error -%}
       {%- set input_attributes = input_attributes
-        .addClass(['border-state-attention'])
+        .addClass(['border-state-attention-mark'])
         .setAttribute('aria-invalid', 'true')
         .setAttribute('aria-describedby', input_id ~ '--error') -%}
     {%- endif -%}
@@ -465,7 +465,7 @@
       measures 2.76:1 there against the 4.5:1 the contrast criterion asks for. #}
   {% set accent_map = {
     'running': 'bg-state-running',
-    'attention': 'bg-state-attention',
+    'attention': 'bg-state-attention-mark',
     'wait': 'bg-state-unassigned',
     'idle': 'bg-transparent'
   } %}
