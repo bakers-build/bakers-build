@@ -62,19 +62,25 @@ export default {
     after_create: 'bash .ddev/worktree-post.sh',
     before_run: 'bash scripts/worktree-deps.sh',
     after_done: 'ddev delete -Oy',
-    // The `provision_up(profile)` agent tool, so a sandboxed run needs no
-    // trusted `ddev`. `ddev provision` reuses a ready site of that provider;
+    // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
+    // a trusted `ddev` nor `pnpm install`. Every profile installs the pnpm
+    // dependencies first; `deps` does only that, for every pnpm package.
+    // `ddev provision` reuses a ready site of that provider;
     // `existing-config-fresh` always reinstalls.
     provision_up: {
-      'recipe-test': 'ddev provision --provider recipe-test',
-      'existing-config': 'ddev provision --provider existing-config',
-      'existing-config-fresh': 'ddev init --provider existing-config',
+      deps: 'bash scripts/worktree-deps.sh --all',
+      'recipe-test': 'bash scripts/worktree-deps.sh && ddev provision --provider recipe-test',
+      'existing-config': 'bash scripts/worktree-deps.sh && ddev provision --provider existing-config',
+      'existing-config-fresh': 'bash scripts/worktree-deps.sh && ddev init --provider existing-config',
     },
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
+  // addon-ddev serves the `ddev_status`, `ddev_start` and `ddev_exec` agent
+  // tools, so runs reach DDEV only through the conductor, never directly.
   // Preview is opt-in; the FRP transport validates the operator's complete settings.
-  addons: local.frp ? [
-    {
+  addons: [
+    '@bakers-build/addon-ddev',
+    ...(local.frp ? [{
       use: '@bakers-build/addon-ports',
       with: {
         services: [{ key: 'docs', match: 'vitepress' }],
@@ -83,8 +89,8 @@ export default {
           with: local.frp,
         },
       },
-    },
-  ] : [],
+    }] : []),
+  ],
   // Layout per workflow state: project = workspace, run = tab.
   // No hard-wired diff pane for `review`: the review diff surface is hunk
   // (BB-55) — agent-driven + opt-in in the human's interactive pane

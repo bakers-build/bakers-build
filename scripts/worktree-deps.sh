@@ -5,7 +5,11 @@
 # other pnpm packages only once they have been installed. Not frozen: a dependency an
 # agent added to package.json is installed, and the lockfile updated, before the next
 # run. Up to date this is a few milliseconds. A failure warns and never blocks the run.
+# `--all` (the `provision_up('deps')` profile) also installs packages not yet installed.
 set -uo pipefail
+
+all=false
+[ "${1:-}" = "--all" ] && all=true
 
 install_deps() {
   local dir="$1"
@@ -21,7 +25,7 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 install_deps bakers-cli
 for dir in web/themes/custom/bb_theme website; do
-  if [ -d "${dir}/node_modules" ]; then
+  if [ "${all}" = true ] || [ -d "${dir}/node_modules" ]; then
     install_deps "${dir}"
   fi
 done
