@@ -59,11 +59,13 @@ export default {
   hooks: {
     after_create: 'bash .ddev/worktree-post.sh',
     after_done: 'ddev delete -Oy',
-    // The `provision_up(profile)` agent tool: a sandboxed run reinstalls
-    // without trusting `ddev`. Each run reinstalls the site.
+    // The `provision_up(profile)` agent tool, so a sandboxed run needs no
+    // trusted `ddev`. `ddev provision` reuses a ready site of that provider;
+    // `existing-config-fresh` always reinstalls.
     provision_up: {
-      'recipe-test': 'ddev init --provider recipe-test',
-      'existing-config': 'ddev init --provider existing-config',
+      'recipe-test': 'ddev provision --provider recipe-test',
+      'existing-config': 'ddev provision --provider existing-config',
+      'existing-config-fresh': 'ddev init --provider existing-config',
     },
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },

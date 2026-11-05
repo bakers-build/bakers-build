@@ -8,8 +8,8 @@ Resume the confirmed scope, the persisted MR link and coding's environment and e
 
 ## provision
 
-Apply [provision](provision.md) only when a chosen check needs runtime or access resolution; issue
-fresh login links there.
+Apply the frame's *Provision* rule only when a chosen check needs a running environment
+or logins; issue fresh login links.
 
 ## work
 

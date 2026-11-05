@@ -3,7 +3,7 @@
 Read only when the confirmed scope and verification plan select a browser surface. Automated
 browser suites, including Playwright, run through [verify](verify.md). Apply the
 [result records](results.md); personas come from qualification's `test_as`, environment and access
-from [provision](provision.md). Preserve anonymous, intentionally denied and missing personas;
+from the frame's *Provision* rule. Preserve anonymous, intentionally denied and missing personas;
 unresolved access blocks the dependent path, and an administrator session is never a substitute.
 
 ## Paths

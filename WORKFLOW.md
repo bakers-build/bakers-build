@@ -4,10 +4,12 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 ## bb-phase-provision
 
-Runtime: DDEV through `@bakers-build/bb-runtime-ddev`. Drupal checks start from a verified
-`recipe-test` environment (`ddev init --provider recipe-test`, or `provision_up('recipe-test')`; each explicit init reinstalls); `config/sync` validation uses a disposable `existing-config` site afterwards
-(`ddev init --provider existing-config`, or `provision_up('existing-config')`), at the same revision. Core tests, Playwright, conductor and skill-behavior setup:
-[testing](docs/bakers/testing.md#setup).
+Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site;
+`config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
+`existing-config` install at the same revision. In a run with conductor tools, a `ddev <cmd>` row
+runs as `ddev_exec("<cmd>")`, and a project web command runs by path
+(`ddev_exec(".ddev/commands/web/<cmd>")`). Core tests, Playwright, conductor and skill-behavior
+setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
 
@@ -38,6 +40,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
+| `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
 | `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |
