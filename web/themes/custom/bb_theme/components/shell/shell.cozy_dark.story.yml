@@ -83,7 +83,7 @@ slots:
             component: bb_theme:mode_toggle
             props:
               mode: dark
-              label: Choose theme
+              label: Choose appearance
   content:
     - type: element
       tag: div

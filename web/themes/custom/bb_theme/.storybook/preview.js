@@ -108,21 +108,19 @@ const withDialogModality = (storyFn, context) => {
   return rendered
 }
 
-/** Keep the app picker and Designbook toolbar on the same root attributes. */
+/** Keep the app toggle and Designbook toolbar on the same root attributes. */
 const withThemeAttributes = (storyFn, context) => {
   const apply = () => {
     window.bakersRestoreAppearance()
     const selection = context.globals.theme || 'light'
-    const named = /^(harbor|grove|ember|iris)(-dark)?$/.exec(selection)
-    const { layout = selection === 'cozy' ? 'cozy' : 'compact', mode, theme } = context.parameters.bakersTheme || {}
+    const { layout = selection === 'cozy' ? 'cozy' : 'compact', mode } = context.parameters.bakersTheme || {}
     document.documentElement.setAttribute('data-layout', layout)
-    if (theme || named) document.documentElement.setAttribute('data-skin', theme || named[1])
-    if (mode || named || selection === 'dark') document.documentElement.setAttribute('data-mode', mode || (named && !named[2] ? 'light' : 'dark'))
+    if (mode || selection === 'dark') document.documentElement.setAttribute('data-mode', mode || 'dark')
     // The addon paints its documentation canvas inline; stories use the app tokens.
     document.body.style.removeProperty('background-color')
     document.body.style.removeProperty('color')
     window.dispatchEvent(new CustomEvent('bakers-appearance', { detail: {
-      theme: document.documentElement.dataset.skin, mode: document.documentElement.dataset.mode,
+      mode: document.documentElement.dataset.mode,
     } }))
   }
   apply()
