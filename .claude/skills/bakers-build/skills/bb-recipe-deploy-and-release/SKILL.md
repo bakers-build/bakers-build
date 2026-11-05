@@ -50,8 +50,8 @@ In this order:
    The frame's merge never runs here, and nothing merges back into `develop`.
 2. An unplayed, running or red gate blocks the merge: publish an honest `summary` and STOP.
 3. Watch the deploy of the merged SHA (`glab ci status --branch <branch>`), then expect HTTP 200
-   from `<base_url>/user/login`. Then union the target into `environments` of each batch ticket and
-   this one, and write the batch as `referenced_tickets`.
+   from `<base_url>/user/login`. Then call `bakers_ticket_update` with `environments_add` (the
+   target) on each batch ticket and this one, and `referenced_tickets_add` (the batch) on this one.
 4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA, add its GitLab
    release to `links`.
 
