@@ -88,8 +88,8 @@ final class BbTicketFieldMap {
       ->setSetting('target_type', 'bb_ticket')
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setComputed(TRUE)
-      ->setClass(DeploymentsItemList::class)
-      ->setDisplayConfigurable('view', TRUE);
+      // Read directly by the inspector and the read tool; no display shows it.
+      ->setClass(DeploymentsItemList::class);
     $fields['runs'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Runs'))
       ->setSetting('target_type', 'bb_run')
