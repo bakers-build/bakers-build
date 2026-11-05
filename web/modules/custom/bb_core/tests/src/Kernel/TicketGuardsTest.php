@@ -43,7 +43,7 @@ final class TicketGuardsTest extends KernelTestBase {
     // field (RunsItemList) queries it during entity validation.
     $schemas = [
       'user', 'og_membership', 'bb_group', 'bb_project', 'bb_conductor',
-      'bb_ticket', 'bb_comment', 'bb_run',
+      'bb_ticket', 'bb_comment', 'bb_run', 'bb_term',
     ];
     foreach ($schemas as $type) {
       $this->installEntitySchema($type);
