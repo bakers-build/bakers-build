@@ -265,12 +265,12 @@ describe('GitHub migration checks', () => {
       s.run?.includes('github-failure-ticket.sh'),
     );
     expect(step.env).toMatchObject({
-      BB_CI_BASE_URL: '${{ vars.BB_CI_BASE_URL }}',
       BB_CI_CLIENT_ID: '${{ secrets.BB_CI_CLIENT_ID }}',
       BB_CI_CLIENT_SECRET: '${{ secrets.BB_CI_CLIENT_SECRET }}',
     });
     expect(step.run).toMatch(/npm install -g @bakers-build\/bakers@\d/);
     expect(step.run).toContain('--auth-type client_credentials');
+    expect(step.run).toContain('--base-url https://app.bakers.build');
     expect(step.run).toContain('--secret-env BB_CI_CLIENT_SECRET');
     expect(step.run).not.toContain('$BB_CI_CLIENT_SECRET');
   });

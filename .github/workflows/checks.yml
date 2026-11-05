@@ -540,7 +540,6 @@ jobs:
         env:
           NEEDS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          BB_CI_BASE_URL: ${{ vars.BB_CI_BASE_URL }}
           BB_CI_CLIENT_ID: ${{ secrets.BB_CI_CLIENT_ID }}
           BB_CI_CLIENT_SECRET: ${{ secrets.BB_CI_CLIENT_SECRET }}
         run: |-
@@ -548,5 +547,5 @@ jobs:
           FAILED_JOBS="$(node -e 'const jobs = JSON.parse(process.env.NEEDS); console.log(Object.keys(jobs).filter(name => jobs[name].result === "failure").join(", "))')"
           export FAILED_JOBS
           npm install -g @bakers-build/bakers@0.6.1-next.2
-          bakers config init --scope connection --auth-type client_credentials --base-url "$BB_CI_BASE_URL" --client-id "$BB_CI_CLIENT_ID" --secret-env BB_CI_CLIENT_SECRET --yes
+          bakers config init --scope connection --auth-type client_credentials --base-url https://app.bakers.build --client-id "$BB_CI_CLIENT_ID" --secret-env BB_CI_CLIENT_SECRET --yes
           bash scripts/ci/github-failure-ticket.sh

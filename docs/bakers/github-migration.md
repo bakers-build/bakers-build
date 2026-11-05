@@ -73,11 +73,11 @@ once by `scripts/ci/github-image-gate.sh` in `image_gate`. It runs:
   Pushes to `next` therefore upload no `verified-images` for `release.yml`'s `next` channel.
 
 When a scheduled or dispatched run on `next` has a failed job, `report_failure` runs
-`scripts/ci/github-failure-ticket.sh`. It signs in to bakers.build as a service account and
+`scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service account and
 comments on the open BAKERS ticket titled `CI failure: scheduled GitHub checks on next`, or creates
 that ticket as a `bug` (workflow `bb_work`) when none is open. The comment or ticket names the
 failed jobs, the commit and the run. The job needs repository secrets `BB_CI_CLIENT_ID` and
-`BB_CI_CLIENT_SECRET` (the service account's OAuth client) and repository variable `BB_CI_BASE_URL`.
+`BB_CI_CLIENT_SECRET` (the service account's OAuth client).
 The public fork full check passed; a separate probe confirmed secrets were absent and a write
 to the base repository failed with HTTP 403.
 
