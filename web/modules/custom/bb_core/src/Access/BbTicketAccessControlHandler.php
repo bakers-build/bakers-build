@@ -38,17 +38,13 @@ final class BbTicketAccessControlHandler extends EntityAccessControlHandler impl
   /**
    * Fields still writable on a closed ticket, keyed by `cleaned_up`.
    *
-   * The reaper's cleanup fields, and `environments` so a deployment can stamp
-   * its batch.
-   * shortcut: field access cannot tell an added environment from a removed
-   * one, so the edit form may also remove one; add a removal constraint if
-   * that starts to matter.
+   * The reaper's cleanup fields.
    *
    * @var array<int, array<string>>
    */
   private const CLOSED_WRITABLE_FIELDS = [
-    0 => ['cleaned_up', 'metrics', 'environments'],
-    1 => ['cleaned_up', 'environments'],
+    0 => ['cleaned_up', 'metrics'],
+    1 => ['cleaned_up'],
   ];
 
   /**
@@ -274,8 +270,8 @@ final class BbTicketAccessControlHandler extends EntityAccessControlHandler impl
    *
    * On ANY terminal ticket written OUTSIDE any active run's scope — `done`,
    * `cancelled`, or any other no-exit state a workflow declares — a
-   * session-scoped writer may only touch `cleaned_up`, `environments`, and
-   * `metrics` until teardown (isClosedWritable()). `closed`,
+   * session-scoped writer may only touch `cleaned_up`, and `metrics` until
+   * teardown (isClosedWritable()). `closed`,
    * `closed_date` and `cleaned_up_date` are stamped by BbTicket::preSave(),
    * so no client writes them. In-scope run writes are unaffected and defer to
    * the parent handler.
@@ -301,7 +297,7 @@ final class BbTicketAccessControlHandler extends EntityAccessControlHandler impl
     }
     assert($ticket instanceof BbTicketInterface);
     if (!$this->isClosedWritable($field_definition, $ticket)) {
-      return AccessResult::forbidden('A terminal ticket may only receive its cleanup fields or environments outside a run scope.')
+      return AccessResult::forbidden('A terminal ticket may only receive its cleanup fields outside a run scope.')
         ->setCacheMaxAge(0)
         ->cachePerUser()
         ->addCacheableDependency($ticket);
@@ -317,8 +313,7 @@ final class BbTicketAccessControlHandler extends EntityAccessControlHandler impl
    *
    * Keyed on the stored `closed` flag, not the in-memory state, so an illegal
    * transition into a terminal state still fails validation. `cleaned_up`
-   * (and `metrics` until teardown) stays writable for the reaper, and
-   * `environments` for a deployment stamping its batch. An account
+   * (and `metrics` until teardown) stays writable for the reaper. An account
    * with `administer bakers` may edit `state` while the current state is still
    * non-terminal, so a legacy closed intermediate row can be corrected; the
    * save then cancels it.
@@ -344,7 +339,7 @@ final class BbTicketAccessControlHandler extends EntityAccessControlHandler impl
   /**
    * Whether this field is still writable on a closed ticket.
    *
-   * `cleaned_up` and `environments` always; `metrics` only until teardown, so
+   * `cleaned_up` always; `metrics` only until teardown, so
    * the reaper can record the merge-request measurement first.
    */
   private function isClosedWritable(FieldDefinitionInterface $field_definition, BbTicketInterface $ticket): bool {
