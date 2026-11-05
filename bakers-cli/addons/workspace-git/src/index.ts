@@ -12,8 +12,14 @@ import type {
   WorkspacePlugin,
 } from '@bakers-build/conductor/contract';
 import { deriveCheckoutRoot, exec, slugify } from '@bakers-build/core';
+import { runBranchGit } from './git-config.js';
 import { loadInstructions } from './instructions.js';
 
+export {
+  pushCurrentEnv,
+  runBranchGit,
+  setNoAutoSetupMerge,
+} from './git-config.js';
 export { loadInstructions } from './instructions.js';
 
 /** Default branch template: `<prefix><key>-<title-slug>` (readable). */
@@ -46,6 +52,11 @@ export interface GitWorkspaceOptions {
    * {identifier}, {titleSlug}. Default: `{branchPrefix}{key}-{titleSlug}`.
    */
   branchTemplate?: string;
+  /**
+   * Default `false`: before creating a worktree, set `branch.autoSetupMerge=false`
+   * in `root`, and give runs `push.default=current`. `true` leaves Git alone.
+   */
+  autoSetupMerge?: boolean;
   runGit?: GitRunner;
 }
 
@@ -59,6 +70,7 @@ export class GitWorkspace implements BbWorkspace {
   private readonly worktreesRoot: string;
   private readonly branchPrefix: string;
   private readonly branchTemplate: string;
+  private readonly autoSetupMerge: boolean;
 
   constructor(options: GitWorkspaceOptions) {
     this.runGit = options.runGit ?? defaultGitRunner;
@@ -68,6 +80,7 @@ export class GitWorkspace implements BbWorkspace {
       : `${this.root}-worktrees`;
     this.branchPrefix = options.branchPrefix ?? 'bakers/';
     this.branchTemplate = options.branchTemplate ?? DEFAULT_BRANCH_TEMPLATE;
+    this.autoSetupMerge = options.autoSetupMerge ?? false;
   }
 
   /** Render the branch name for a ticket from the configured template. */
@@ -100,8 +113,15 @@ export class GitWorkspace implements BbWorkspace {
       throw new Error(`invalid workspace identifier: ${identifier}`);
     }
     const path = this.pathFor(key);
+    const env = this.autoSetupMerge ? undefined : await runBranchGit(this.root);
+    const extra = env ? { env } : {};
     if (existsSync(path)) {
-      return { path, instructions: loadInstructions(path), created: false };
+      return {
+        path,
+        instructions: loadInstructions(path),
+        created: false,
+        ...extra,
+      };
     }
     const branch = this.branchFor(identifier, title);
     await this.runGit(
@@ -110,7 +130,12 @@ export class GitWorkspace implements BbWorkspace {
     );
     // The `after_create` hook is run by the executor (BB-84), not here — the
     // workspace only reports that it created a fresh worktree.
-    return { path, instructions: loadInstructions(path), created: true };
+    return {
+      path,
+      instructions: loadInstructions(path),
+      created: true,
+      ...extra,
+    };
   }
 
   async remove(identifier: string): Promise<void> {

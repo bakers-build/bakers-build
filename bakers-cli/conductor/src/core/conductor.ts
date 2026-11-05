@@ -36,7 +36,6 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
-import { setNoAutoSetupMerge, setRunBranchUpstream } from './git-config.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
@@ -409,22 +408,6 @@ export class Conductor {
     }
     for (const line of await sandboxFailures(this.agents)) {
       this.logger.error({ conductorId: this.id }, line);
-    }
-    // The loader defaults it to true; a hand-built config (tests) leaves Git alone.
-    if (this.config.set_git_auto_setup_merge === true) {
-      try {
-        if ((await setNoAutoSetupMerge(this.checkoutRoot)) === 'set') {
-          this.logger.info(
-            { conductorId: this.id },
-            'set branch.autoSetupMerge=false: new run worktrees write no upstream into .git/config',
-          );
-        }
-      } catch (err) {
-        this.logger.warn(
-          { conductorId: this.id, err: String(err) },
-          `could not set branch.autoSetupMerge=false; run: git -C ${this.checkoutRoot} config branch.autoSetupMerge false`,
-        );
-      }
     }
   }
 
@@ -1392,25 +1375,13 @@ export class Conductor {
       run.stateAtStart,
       chosen.agent,
     );
-    const ws = await this.serialGit(async () => {
-      const ensured = await this.workspace.ensure(
-        t.identifier,
-        t.branchName,
-        baseRef,
-      );
-      // With branch.autoSetupMerge=false the branch tracks nothing, and a
-      // sandboxed `push -u` cannot set it (AC-9). Best-effort: a held
-      // config.lock must not fail the dispatch.
-      if (this.config.set_git_auto_setup_merge === true) {
-        await setRunBranchUpstream(ensured.path, t.branchName).catch((err) =>
-          this.logger.warn(
-            { ticket: t.identifier, err: String(err) },
-            `could not set the upstream of ${t.branchName}; run: git -C ${ensured.path} branch --set-upstream-to=origin/${t.branchName} after the first push`,
-          ),
-        );
-      }
-      return ensured;
-    });
+    const ws = await this.serialGit(() =>
+      this.workspace.ensure(t.identifier, t.branchName, baseRef),
+    );
+    // The backend's own vars (Git config) join the run env; core keys still win.
+    for (const [key, value] of Object.entries(ws.env ?? {})) {
+      if (!isReservedEnvKey(key)) env[key] = value;
+    }
     // A claimable state has no project policy without a WORKFLOW.md. Warn and
     // proceed so the missing project instructions are observable without
     // wedging the run. `ws.instructions` is the loaded file (null when absent).
@@ -1600,6 +1571,7 @@ export class Conductor {
       identity,
       ws.path,
       tools ? { url: tools.url } : undefined,
+      env,
     );
     await this.executor.startRun({
       ticket: {

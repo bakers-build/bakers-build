@@ -59,8 +59,6 @@ export interface ConductorSettings {
   host_key?: string;
   poll_interval_ms: number;
   lease_seconds: number;
-  /** Whether `start()` sets `branch.autoSetupMerge=false` in the checkout; the loader defaults it to true. */
-  set_git_auto_setup_merge?: boolean;
   /**
    * Whether to upload the agent transcript at finalize. Default true.
    *

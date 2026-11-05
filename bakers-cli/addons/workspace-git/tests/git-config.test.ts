@@ -1,12 +1,16 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  setNoAutoSetupMerge,
-  setRunBranchUpstream,
-} from '../../src/core/git-config.js';
+import { pushCurrentEnv, setNoAutoSetupMerge } from '../src/git-config.js';
+import { GitWorkspace } from '../src/index.js';
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }).trim();
@@ -67,23 +71,49 @@ describe('setNoAutoSetupMerge', () => {
   });
 });
 
-describe('setRunBranchUpstream', () => {
+describe('pushCurrentEnv', () => {
+  it('sets push.default=current at index 0', () => {
+    expect(pushCurrentEnv({})).toEqual({
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'push.default',
+      GIT_CONFIG_VALUE_0: 'current',
+    });
+  });
+
+  it('appends after an inherited GIT_CONFIG_COUNT', () => {
+    expect(
+      pushCurrentEnv({
+        GIT_CONFIG_COUNT: '1',
+        GIT_CONFIG_KEY_0: 'safe.directory',
+        GIT_CONFIG_VALUE_0: '/repo',
+      }),
+    ).toEqual({
+      GIT_CONFIG_COUNT: '2',
+      // Copied, so a run env without the conductor's own entries stays valid.
+      GIT_CONFIG_KEY_0: 'safe.directory',
+      GIT_CONFIG_VALUE_0: '/repo',
+      GIT_CONFIG_KEY_1: 'push.default',
+      GIT_CONFIG_VALUE_1: 'current',
+    });
+  });
+});
+
+describe('GitWorkspace run branches', () => {
   let dir: string;
-  let run: string;
+  let main: string;
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'bb-git-upstream-'));
+    dir = mkdtempSync(join(tmpdir(), 'bb-git-ws-'));
     const origin = join(dir, 'origin.git');
-    const main = join(dir, 'main');
-    run = join(dir, 'run');
+    main = join(dir, 'main');
     execFileSync('git', ['init', '-q', '--bare', origin]);
     execFileSync('git', ['init', '-q', main]);
     git(
       main,
       '-c',
-      'user.name=Test',
+      'user.name=T',
       '-c',
-      'user.email=test@example.invalid',
+      'user.email=t@example.invalid',
       'commit',
       '--allow-empty',
       '-qm',
@@ -92,24 +122,42 @@ describe('setRunBranchUpstream', () => {
     git(main, 'remote', 'add', 'origin', origin);
     git(main, 'push', '-q', 'origin', 'HEAD:refs/heads/next');
     git(main, 'fetch', '-q', 'origin');
-    git(main, 'config', 'branch.autoSetupMerge', 'false');
-    git(main, 'worktree', 'add', '-qb', 'run', run, 'origin/next');
   });
 
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  it('makes the run branch track origin/<branch> after a push that writes no config', async () => {
-    await expect(setRunBranchUpstream(run, 'run')).resolves.toBe('set');
-    // A sandboxed push without -u: the remote-tracking ref is all it writes.
-    git(run, 'push', '-q', 'origin', 'run');
-    expect(git(run, 'rev-parse', '--abbrev-ref', '@{u}')).toBe('origin/run');
-    await expect(setRunBranchUpstream(run, 'run')).resolves.toBe('unchanged');
+  it('turns off branch.autoSetupMerge before creating a worktree', async () => {
+    await new GitWorkspace({ root: main }).ensure('BB-1', 'one');
+    expect(git(main, 'config', '--get', 'branch.autoSetupMerge')).toBe('false');
   });
 
-  it('throws when the config cannot be written', async () => {
-    writeFileSync(join(dir, 'main', '.git', 'config.lock'), '', {
-      mode: 0o444,
+  it('leaves Git alone with autoSetupMerge: true', async () => {
+    const ws = await new GitWorkspace({
+      root: main,
+      autoSetupMerge: true,
+    }).ensure('BB-1', 'one');
+    expect(() =>
+      git(main, 'config', '--get', 'branch.autoSetupMerge'),
+    ).toThrow();
+    expect(ws.env).toBeUndefined();
+  });
+
+  it('lets a plain git push create the same-name remote branch while the shared config.lock is held', async () => {
+    const ws = await new GitWorkspace({ root: main }).ensure('BB-1', 'one');
+    const branch = git(ws.path, 'symbolic-ref', '--short', 'HEAD');
+    // An old run branch that tracks the base must still push to its own name.
+    git(main, 'branch', '--set-upstream-to=origin/next', branch);
+    const config = join(main, '.git', 'config');
+    const before = readFileSync(config);
+    writeFileSync(join(main, '.git', 'config.lock'), '', { mode: 0o444 });
+
+    execFileSync('git', ['-C', ws.path, 'push', '-q'], {
+      env: { ...process.env, ...ws.env },
     });
-    await expect(setRunBranchUpstream(run, 'run')).rejects.toThrow(/config/);
+
+    expect(git(join(dir, 'origin.git'), 'branch', '--list', branch)).toBe(
+      branch,
+    );
+    expect(readFileSync(config).equals(before)).toBe(true);
   });
 });

@@ -48,6 +48,35 @@ describe('CodexAgent.launchCommand', () => {
   });
 });
 
+describe('CodexAgent run env', () => {
+  it('restores the GIT_CONFIG_KEY_<n> names its default env filter drops (*KEY*)', () => {
+    const argv = captureArgv(
+      'codex',
+      new CodexAgent({ security: 'yolo' }).launchCommand(
+        'x',
+        undefined,
+        '/w',
+        undefined,
+        {
+          GIT_CONFIG_COUNT: '2',
+          GIT_CONFIG_KEY_0: 'safe.directory',
+          GIT_CONFIG_VALUE_0: '/w',
+          GIT_CONFIG_KEY_1: 'push.default',
+          GIT_CONFIG_VALUE_1: 'current',
+          API_KEY: 'secret',
+        },
+      ),
+    );
+    expect(argv).toContain(
+      'shell_environment_policy.set.GIT_CONFIG_KEY_0="safe.directory"',
+    );
+    expect(argv).toContain(
+      'shell_environment_policy.set.GIT_CONFIG_KEY_1="push.default"',
+    );
+    expect(argv.join(' ')).not.toContain('secret');
+  });
+});
+
 function captureArgv(binary: string, command: string): string[] {
   const output = execFileSync(
     'bash',

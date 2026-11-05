@@ -403,7 +403,6 @@ describe('loadConductorConfig', () => {
     expect('max_parallel' in config).toBe(false);
     expect(config.poll_interval_ms).toBe(5000);
     expect(config.lease_seconds).toBe(300);
-    expect(config.set_git_auto_setup_merge).toBe(true);
     expect(config.prompt).toBe(DEFAULT_AGENT_PROMPT);
     expect(config.config_path).toBe(path);
     // BB-201: the engine loader no longer carries site (connection config).
@@ -512,22 +511,6 @@ describe('loadConductorConfig', () => {
     );
     const config = await loadConductorConfig(writeConfig(VALID));
     expect(config.tunnel).toBe(false);
-  });
-
-  it('keeps set_git_auto_setup_merge: false and rejects a non-boolean', async () => {
-    const off = VALID.replace(
-      "states: ['todo', 'working'],",
-      "states: ['todo', 'working'], set_git_auto_setup_merge: false,",
-    );
-    const config = await loadConductorConfig(writeConfig(off));
-    expect(config.set_git_auto_setup_merge).toBe(false);
-    const bad = off.replace(
-      'set_git_auto_setup_merge: false',
-      "set_git_auto_setup_merge: 'no'",
-    );
-    await expect(loadConductorConfig(writeConfig(bad))).rejects.toThrow(
-      /set_git_auto_setup_merge/,
-    );
   });
 
   it('rejects a missing project', async () => {

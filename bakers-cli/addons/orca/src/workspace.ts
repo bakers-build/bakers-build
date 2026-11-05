@@ -6,7 +6,10 @@ import {
   truncateOpenTabTitle,
   validateBranch,
 } from '@bakers-build/addon-herdr/shared';
-import { loadInstructions } from '@bakers-build/addon-workspace-git';
+import {
+  loadInstructions,
+  runBranchGit,
+} from '@bakers-build/addon-workspace-git';
 import type {
   BbWorkspace,
   ConductorFileConfig,
@@ -120,6 +123,12 @@ export interface OrcaWorkspaceOptions {
   execGit?: GitExec;
   logger?: ConductorLogger;
   sleep?: Sleep;
+  /**
+   * Default `false`: before creating a worktree, set `branch.autoSetupMerge=false`
+   * in `root`, check out remote branches without `--track`, and give runs
+   * `push.default=current`. `true` leaves Git alone.
+   */
+  autoSetupMerge?: boolean;
 }
 
 /**
@@ -156,6 +165,9 @@ export class OrcaWorkspace implements BbWorkspace {
       throw new Error('orca workspace requires a branch name');
     }
     validateBranch(branch);
+    const extra = this.options.autoSetupMerge
+      ? {}
+      : { env: await runBranchGit(this.root) };
     await assertOrcaReachable(this.execOrca);
     await this.registerRepo();
 
@@ -177,7 +189,7 @@ export class OrcaWorkspace implements BbWorkspace {
     if (created) {
       this.pendingOpen.add(path);
     }
-    return { path, instructions: loadInstructions(path), created };
+    return { path, instructions: loadInstructions(path), created, ...extra };
   }
 
   /** Register the root with Orca once and make its git worktrees visible. */
@@ -253,7 +265,7 @@ export class OrcaWorkspace implements BbWorkspace {
     if (await this.refExists(`refs/remotes/origin/${branch}`)) {
       await this.execGit([
         ...add,
-        '--track',
+        ...(this.options.autoSetupMerge ? ['--track'] : []),
         '-b',
         branch,
         path,

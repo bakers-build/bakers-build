@@ -239,10 +239,21 @@ export class CodexAgent implements BbAgent {
     _run?: AgentRunIdentity,
     workspacePath = process.cwd(),
     tools?: { url: string },
+    env: Readonly<Record<string, string>> = {},
   ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
     const parts = ['codex', ...this.securityFlags(workspacePath).map(word)];
+    // Codex's default shell env filter drops `*KEY*` names; without its key a
+    // `GIT_CONFIG_COUNT` entry makes every git call fail.
+    for (const [name, value] of Object.entries(env)) {
+      if (/^GIT_CONFIG_KEY_\d+$/.test(name)) {
+        parts.push(
+          '-c',
+          word(`shell_environment_policy.set.${name}=${JSON.stringify(value)}`),
+        );
+      }
+    }
     if (tools) {
       // Codex reads the token from the run env, so it never enters argv.
       const server = `mcp_servers.${CONDUCTOR_TOOLS_SERVER}`;

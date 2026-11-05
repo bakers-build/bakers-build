@@ -465,6 +465,48 @@ describe('Conductor dispatch env injection', () => {
   });
 });
 
+describe('Conductor workspace env', () => {
+  it("adds the workspace backend's env to the agent and hook env, under the core vars", async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+      },
+    });
+    remote.queue.push({
+      runUuid: 'r-1',
+      runId: 1,
+      ticketUuid: 't-1',
+      stateAtStart: 'working',
+      handler: 'code',
+    });
+    const workspace: BbWorkspace = {
+      ensure: async (identifier) => ({
+        path: `/fake/${identifier}`,
+        instructions: null,
+        created: true,
+        env: { GIT_CONFIG_COUNT: '1', BB_ID: 'evil' },
+      }),
+    };
+    const executor = new RecordingExecutor();
+    const conductor = new Conductor(
+      makeConfig(),
+      remote,
+      executor,
+      workspace,
+      [{ id: fakeAgent.id, agent: fakeAgent }],
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    const env = executor.started[0]?.env ?? {};
+    expect(env.GIT_CONFIG_COUNT).toBe('1');
+    expect(env.BB_ID).toBe('t-1');
+    const beforeRun = executor.hookCalls.find((c) => c.name === 'before_run');
+    expect(beforeRun?.env?.GIT_CONFIG_COUNT).toBe('1');
+  });
+});
+
 describe('Conductor agent tools', () => {
   async function dispatchOnce(withTools: boolean) {
     const remote = new FakeBbRemote({

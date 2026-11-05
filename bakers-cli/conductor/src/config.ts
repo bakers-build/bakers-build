@@ -19,7 +19,6 @@ import {
   warnIgnoredMaxParallel,
 } from '@bakers-build/core';
 import { readBbProjectSelection } from './cli/project-context.js';
-import { validateOptionalBoolean } from './plugins/agent-args.js';
 import type { HookListener, HookName } from './plugins/executor.js';
 import { type LoadedInbox, loadInbox } from './plugins/message.js';
 import type {
@@ -123,7 +122,6 @@ type RawConfig = {
   prompt?: unknown;
   poll_interval_ms?: unknown;
   lease_seconds?: unknown;
-  set_git_auto_setup_merge?: unknown;
   hooks?: ConductorFileConfig['hooks'];
 };
 
@@ -772,11 +770,6 @@ export async function loadConductorConfig(
       300,
       'lease_seconds',
     ),
-    set_git_auto_setup_merge:
-      validateOptionalBoolean(
-        config.set_git_auto_setup_merge,
-        'set_git_auto_setup_merge',
-      ) ?? true,
     ...(config.hooks !== undefined ? { hooks: config.hooks } : {}),
     config_path: configPath,
   };
