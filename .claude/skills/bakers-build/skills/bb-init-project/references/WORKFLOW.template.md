@@ -4,8 +4,9 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 ## bb-phase-provision
 
-<!-- The runtime guide and setup that bring the environment up, e.g. `@bakers-build/bb-runtime-ddev`
-     and its provider. Leave empty when no work needs a runtime. -->
+<!-- The `provision_up` profile each kind of check needs (its commands live in the conductor's
+     `hooks.provision_up`), and how container commands run. Leave empty when no work needs a
+     runtime. -->
 
 ## bb-phase-work
 

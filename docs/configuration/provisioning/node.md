@@ -51,5 +51,6 @@ hooks: {
 - **Other package manager?** Use your project's existing locked-install command instead.
 - **Build and test:** put required commands such as `npm test` in `WORKFLOW.md`; a failing hook does not block dispatch.
 - **Long-running dev server?** Keep it out of this blocking hook. Give concurrent worktrees separate ports when you start previews.
+- **Agents need the running app?** Configure [`provision_up`](/configuration/provisioning/hooks#provision-on-an-agent-s-request) with a command that follows its contract.
 
 [Hook lifecycle and environment →](/configuration/provisioning/hooks)

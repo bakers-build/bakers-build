@@ -14,6 +14,10 @@ choices below. **Done when both choices and their owning files are understood.**
 2. Ask the operator for each lifecycle hook; an empty answer means none. Pass their exact commands
    with `--after-create <command>` / `--after-done <command>`. Never infer/probe a provisioning tool
    or command. Omitting both writes no `hooks` key. Unattended: write no hooks and report this.
+   When agents need the running application, explain `hooks.provision_up`
+   ([hooks](https://bakers.build/configuration/provisioning/hooks#provision-on-an-agent-s-request)):
+   one command per profile that reuses a ready environment. No flag writes it; the operator adds
+   it to `.bakers/conductor.config.js`.
 3. Preserve existing `WORKFLOW.md` and additions; create an absent file from
    [WORKFLOW.template.md](WORKFLOW.template.md). Keep its entry line verbatim.
 4. Fill the `## bb-phase-provision`, `## bb-phase-work`, `## bb-phase-validate`, `## bb-phase-deliver`

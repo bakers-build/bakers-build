@@ -77,16 +77,27 @@ Hooks are best effort: a failing command or listener is logged and dispatch or c
 
 ## Provision on an agent's request
 
-`provision_up` never runs on its own. The conductor offers it to runs as the [tool](/addons/build/tools#shipped-tools) `provision_up(profile?)`, so a sandboxed agent can reinstall its environment without trusting the runtime's CLI. The value is one command, or a command per profile; the agent picks a configured profile, never the command:
+`provision_up` never runs on its own. The conductor offers it to runs as the [tool](/addons/build/tools#shipped-tools) `provision_up(profile?)`, so a sandboxed agent can bring its environment up without trusting the runtime's CLI. An agent calls it before a check that needs a running environment, with the profile your `WORKFLOW.md` `bb-phase-provision` hint names. The value is one command, or a command per profile; the agent picks a configured profile, never the command:
 
 ```js
 hooks: {
   provision_up: {
-    'recipe-test': 'ddev init --provider recipe-test',
-    'existing-config': 'ddev init --provider existing-config',
+    test: 'sh scripts/provision.sh test',
+    'test-fresh': 'sh scripts/install.sh test',
   },
 },
 ```
+
+Agents call it whenever a check needs the environment, so make the command cheap to repeat. It follows this contract:
+
+| The environment is | The command |
+|---|---|
+| running the requested profile, and its base URL answers | changes nothing, prints the base URL and exits 0 |
+| stopped, with the requested profile installed | starts it, checks the URL and prints it |
+| missing, or running another profile | installs the requested profile, checks the URL and prints it |
+| failing to install, or its URL does not answer | exits non-zero with its output |
+
+The base URL *answers* when it returns an HTTP status below 500, so a site that fails with 500 is not ready. A profile that must start from a clean install every time, such as a disposable import check, gets its own key whose command always reinstalls (`test-fresh` above). The conductor runs the command as configured and checks nothing itself; a command that always reinstalls still works, it is only slower. The [DDEV example](/configuration/provisioning/ddev#provision-on-an-agent-s-request) shows one implementation.
 
 It runs through `sh -c` in the run's worktree with the conductor's environment, up to 30 minutes. Unlike the other hooks it is not best effort: a non-zero exit reaches the agent as a tool error. Like `after_create`, it runs worktree code with your permissions.
 
