@@ -1,7 +1,11 @@
+import { mkdtemp, realpath } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   type DiscoveredTools,
   loadTools,
+  provisionTools,
   type ToolHandler,
 } from '../../src/plugins/tools.js';
 
@@ -37,6 +41,7 @@ function addon(
 }
 
 const binding = { worktreePath: '/work/bb-1' };
+const here = { worktreePath: tmpdir() };
 
 describe('loadTools', () => {
   it("collects every addon's tools and calls them on the bound worktree", async () => {
@@ -77,6 +82,52 @@ describe('loadTools', () => {
     ).rejects.toThrow(/worktree|additional/);
     await expect(registry.call('nope', {}, binding)).rejects.toThrow(
       /unknown tool nope/,
+    );
+  });
+
+  it('offers no provision_up tool without the hook', () => {
+    expect(provisionTools(undefined)).toEqual([]);
+  });
+
+  it('runs a string provision_up hook in the bound worktree', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bb-provision-'));
+    const registry = await loadTools(provisionTools('pwd'));
+    expect(registry.list().map((t) => t.name)).toEqual(['provision_up']);
+    const { text } = await registry.call(
+      'provision_up',
+      {},
+      {
+        worktreePath: dir,
+      },
+    );
+    expect(text).toBe(`exit 0\n${await realpath(dir)}\n`);
+  });
+
+  it('runs the chosen profile and refuses an unknown or missing one', async () => {
+    const registry = await loadTools(
+      provisionTools({ a: 'echo first', b: 'echo second' }),
+    );
+    expect(
+      (await registry.call('provision_up', { profile: 'b' }, here)).text,
+    ).toBe('exit 0\nsecond\n');
+    await expect(
+      registry.call('provision_up', { profile: 'c' }, here),
+    ).rejects.toThrow(/unknown profile c.*a, b/);
+    await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
+      /profile required.*a, b/,
+    );
+  });
+
+  it('reports a failing provision_up as a tool error', async () => {
+    const registry = await loadTools(provisionTools('echo broken; exit 3'));
+    await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
+      'exit 3\nbroken\n',
+    );
+  });
+
+  it('refuses a malformed provision_up hook at load', () => {
+    expect(() => provisionTools({ a: 1 } as never)).toThrow(
+      /hooks.provision_up/,
     );
   });
 

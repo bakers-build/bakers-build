@@ -12,13 +12,22 @@ prerequisite when setup is missing.
 
 ## bb-phase-provision
 
-First inspect `ddev describe` from the worktree root and check the selected site's readiness.
-A live stack serving the required site/fixtures is a successful no-op; never blindly re-init
-one. If setup is needed, run only the supplied commands, such as `ddev start`. Provider selection
-and defaults belong to the project's setup instructions. Use a safe, self-contained
-subagent scoped to the worktree and selected commands, without tracker credentials. Await
-completion, then verify the base URL actually responds and the required site/provider is ready
-before returning.
+**With the conductor's tools** (`ddev_status`, `ddev_start`, `ddev_exec` from the
+`bakers-conductor` server), follow [provision](../bb-workflow/references/provision.md)'s tool path:
+`ddev_status` for readiness, `ddev_start` for a stopped stack, `provision_up(<profile>)` for a
+missing or wrong site. Run no host `ddev`.
+
+**Without them** (a measured run, or an agent the conductor serves no tools), use the CLI: first
+inspect `ddev describe` from the worktree root and check the selected site's readiness. A live stack
+serving the required site/fixtures is a successful no-op; never blindly re-init one. If setup is
+needed, run only the supplied commands, such as `ddev start`. Provider selection and defaults belong
+to the project's setup instructions. Use a safe, self-contained subagent scoped to the worktree and
+selected commands, without tracker credentials, and await completion.
+
+A `ddev` call the sandbox blocks, or a needed reinstall with neither `provision_up` nor host
+`ddev`, is an unresolved prerequisite naming `sandbox.trusted_commands`; report it, retry nothing.
+Either way, verify the base URL actually responds and the required site/provider is ready before
+returning.
 
 **Do not bootstrap the worktree here.** Its creation, environment overlay, and CLI
 (`node scripts/setup-worktree.mjs` and `.ddev/worktree-post.sh`) belong to the conductor's `after_create` hook. This adapter only brings
@@ -28,13 +37,15 @@ Return the live base URL and readiness, or explicit failures and their reasons.
 
 ## bb-phase-work
 
-Run container commands through `ddev exec …` or the project's configured DDEV commands.
-Read the project's work instructions for domain conventions and tooling.
+Run container commands through `ddev_exec` when the run has it: a hint's `ddev <cmd>` becomes
+`ddev_exec("<cmd>")`, and a project web command such as `ddev phpcs`, which is not on the container
+`PATH`, runs by path: `ddev_exec(".ddev/commands/web/phpcs")`. Without it, run `ddev exec …` or the
+configured DDEV commands. Read the project's work instructions for domain conventions and tooling.
 
 ## bb-phase-validate
 
 Before running or writing tests, read the testing guidance named by the project's `WORKFLOW.md`.
-Use its selected commands, data providers and test-selection rules. Missing setup is an unresolved
+Use its selected commands, data providers and test-selection rules, run as in `bb-phase-work`. Missing setup is an unresolved
 prerequisite, not permission to invent a test environment.
 
 ## bb-phase-outtake

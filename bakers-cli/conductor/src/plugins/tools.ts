@@ -4,6 +4,7 @@
 // server, and addons call each other's tools through the same registry.
 // Every call is bound to one worktree by the caller, never by an argument.
 
+import { spawn } from 'node:child_process';
 import type { ConductorLogger } from '@bakers-build/core';
 import {
   type MessageInput,
@@ -73,6 +74,109 @@ export interface ToolRegistry {
     binding: ToolBinding,
     options?: { signal?: AbortSignal; logger?: ConductorLogger },
   ): Promise<ToolResult>;
+}
+
+/** `hooks.provision_up`: one command, or a command per profile. */
+export type ProvisionHook = string | Record<string, string>;
+
+const PROVISION_TIMEOUT_MS = 30 * 60_000;
+const OUTPUT_CAP = 64 * 1024;
+
+/**
+ * The core `provision_up(profile?)` tool, offered only when the hook is set.
+ * The agent picks when and which configured profile, never the command.
+ */
+export function provisionTools(
+  hook: ProvisionHook | undefined,
+): DiscoveredTools[] {
+  if (hook === undefined) return [];
+  const profiles = typeof hook === 'string' ? undefined : hook;
+  if (
+    typeof hook !== 'string' &&
+    (typeof hook !== 'object' ||
+      hook === null ||
+      Object.values(hook).some((cmd) => typeof cmd !== 'string'))
+  )
+    throw new Error(
+      'hooks.provision_up must be a command or a { profile: command } map',
+    );
+  const keys = profiles ? Object.keys(profiles).join(', ') : '';
+  const commandFor = (profile: unknown): string => {
+    if (!profiles) return hook as string;
+    if (profile === undefined)
+      throw new Error(`provision_up: profile required, one of ${keys}`);
+    const cmd = Object.hasOwn(profiles, String(profile))
+      ? profiles[String(profile)]
+      : undefined;
+    if (cmd === undefined)
+      throw new Error(
+        `provision_up: unknown profile ${profile}, one of ${keys}`,
+      );
+    return cmd;
+  };
+  return [
+    {
+      name: 'conductor',
+      version: '1',
+      tools: {
+        contract: 1,
+        tools: {
+          provision_up: {
+            description: profiles
+              ? `Provision this worktree's environment from scratch with a configured profile (${keys}). Reinstalls.`
+              : "Provision this worktree's environment from scratch. Reinstalls.",
+            input: {
+              type: 'object',
+              properties: { profile: { type: 'string' } },
+            },
+          },
+        },
+        handlers: async () => ({
+          provision_up: async (req) => {
+            const command = commandFor(req.args.profile);
+            // shortcut: inherits the conductor's env, not the run's BB_* env; pass it through the binding once a hook needs it.
+            const { exitCode, output } = await shell(
+              command,
+              req.worktreePath,
+              req.signal,
+            );
+            const text = `exit ${exitCode}\n${output}`;
+            if (exitCode !== 0) throw new Error(text);
+            return { text };
+          },
+        }),
+      },
+    },
+  ];
+}
+
+/** `sh -c` with stdout and stderr interleaved, the tail kept, killed at the timeout. */
+function shell(
+  command: string,
+  cwd: string,
+  signal: AbortSignal,
+): Promise<{ exitCode: number; output: string }> {
+  return new Promise((done, fail) => {
+    const child = spawn('sh', ['-c', command], {
+      cwd,
+      signal,
+      timeout: PROVISION_TIMEOUT_MS,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    const collect = (chunk: Buffer) => {
+      output = (output + chunk.toString('utf8')).slice(-OUTPUT_CAP);
+    };
+    child.stdout.on('data', collect);
+    child.stderr.on('data', collect);
+    child.on('error', fail);
+    child.on('close', (code, sig) =>
+      done({
+        exitCode: code ?? 124,
+        output: sig ? `${output}\n(killed: ${sig})` : output,
+      }),
+    );
+  });
 }
 
 const silent: ConductorLogger = {
