@@ -468,7 +468,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
       ->setDisplayConfigurable('view', TRUE);
     $fields['referenced_tickets'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Referenced tickets'))
-      ->setDescription(new TranslatableMarkup('Tickets carried by this deployment (the release batch). Set when the deployment is planned; flagged with the target environment once it is deployed.'))
+      ->setDescription(new TranslatableMarkup('Tickets carried by this deployment (the release batch). Set when the deployment is planned. The environments of the deployment say where they are deployed; the carried tickets are not stamped.'))
       ->setSetting('target_type', 'bb_ticket')
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setDisplayConfigurable('form', TRUE)

@@ -492,30 +492,23 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
-   * A closed done ticket takes an environment; its other fields stay frozen.
+   * A closed done ticket refuses an environment like any other edit.
    */
-  public function testStampsEnvironmentOnClosedTicket(): void {
+  public function testClosedTicketRefusesEnvironments(): void {
     $this->environment('production');
     $ticket = $this->ticket('TU-E4', ['state' => 'done']);
     self::assertTrue($this->reload($ticket)->isClosed());
-    $out = $this->outputs($this->runTool('bakers_ticket_update', [
-      'ticket' => $ticket->getIdentifier(),
-      'environments_add' => ['production'],
-    ]));
-    self::assertSame(['production'], $out['environments']);
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
-      'title' => 'Rewritten',
       'environments_add' => ['production'],
     ]), sprintf('Ticket %s is closed and can no longer be changed.', $ticket->getIdentifier()));
-    self::assertSame('TU-E4', $this->reload($ticket)->label());
-    self::assertSame(['production'], $this->environmentNames($ticket));
+    self::assertSame([], $this->environmentNames($ticket));
   }
 
   /**
-   * A session agent outside the run scope stamps a closed done ticket.
+   * A session agent outside the run scope cannot stamp a closed done ticket.
    */
-  public function testSessionAgentStampsOutOfScopeDoneTicket(): void {
+  public function testSessionAgentCannotStampOutOfScopeDoneTicket(): void {
     $this->environment('production');
     $ticket = $this->ticket('TU-E5', ['state' => 'done']);
     $etm = $this->container->get('entity_type.manager');
@@ -527,14 +520,12 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $this->addMembership($this->workspace, $agent, ['member']);
     $this->addMembership($this->project->get('teams')->entity, $agent);
     $this->container->get('current_user')->setAccount($agent);
-    self::assertFalse($this->reload($ticket)->get('title')->access('edit', $agent));
     self::assertFalse($this->container->get('bb_core.write_scope')->isTicketInScope($agent, (int) $ticket->id()));
-    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
       'environments_add' => ['production'],
-    ]));
-    self::assertSame(['production'], $out['environments']);
-    self::assertSame(['production'], $this->environmentNames($ticket));
+    ]), sprintf('Ticket %s is closed and can no longer be changed.', $ticket->getIdentifier()));
+    self::assertSame([], $this->environmentNames($ticket));
   }
 
   /**
