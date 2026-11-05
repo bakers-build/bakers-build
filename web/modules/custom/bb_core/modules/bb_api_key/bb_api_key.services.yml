@@ -26,6 +26,8 @@ services:
     arguments:
       - '@.inner'
       - '@bb_api_key.manager'
+      - '@simple_oauth.repositories.client'
+      - '@entity_type.manager'
   bb_api_key.route_subscriber:
     class: Drupal\bb_api_key\Routing\ApiKeyRouteSubscriber
     tags:

@@ -10,9 +10,9 @@
 // declaration at the caller, so a swapped fragment came back bare and a boosted
 // navigation worked exactly once per page load. Every navigating scenario here
 // therefore picks at least twice and re-asserts after each pick.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { test } from '../../bdd.fixtures';

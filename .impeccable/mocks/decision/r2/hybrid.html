@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;background:#FAFAF9;color:#111;font-family:"Inter",system-ui,sans-serif;overflow:hidden}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+.top{display:flex;justify-content:space-between;align-items:center;padding:28px 64px;font-size:14px}
+.top b{font-weight:600}.cta{padding:11px 18px;background:#111;color:#fff;border-radius:6px}
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:64px;padding:56px 64px 0}
+h1{font-size:68px;font-weight:500;letter-spacing:-.03em;line-height:1.02}
+.lede{font-size:19px;line-height:1.55;color:#555;margin-top:24px;max-width:520px}
+.bars{display:flex;gap:2px;height:220px}.bars i{flex:1;background:#111}
+.table{margin:56px 64px 0;font-size:13px}
+.row{display:grid;grid-template-columns:110px 120px 1fr 220px 90px 120px;padding:15px 16px;border-bottom:1px solid #E4E4E2;align-items:center}
+.row.h{color:#8A8A8A;font-size:11px;letter-spacing:.1em;border-bottom:1px solid #111}
+.row.live{position:relative;background:#fff;border-radius:8px;border:none;margin:4px 0}
+.row.live::before{content:"";position:absolute;inset:0;border-radius:8px;padding:1.5px;background:linear-gradient(90deg,#9FE3C8,#A8C8FF,#F2B6C6,#F6D8A8);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.row.live::after{content:"";position:absolute;inset:-10px;background:linear-gradient(90deg,#9FE3C8,#A8C8FF,#F2B6C6,#F6D8A8);filter:blur(22px);opacity:.28;z-index:-1}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#111;margin-right:8px}
+</style></head><body>
+<div class="top"><b>Bakers Build</b><span class="cta">Demo vereinbaren →</span></div>
+<div class="hero"><div><h1>Jeder Lauf messbar. Jede Entscheidung bei Menschen.</h1><p class="lede">Schwarz auf weiß: wer an welchem Ticket arbeitet, mit welchem Ergebnis und welchen Kosten. Farbe nur dort, wo gerade etwas läuft.</p></div>
+<div class="bars" id="b"></div></div>
+<div class="table mono">
+<div class="row h"><span>TICKET</span><span>ZUSTAND</span><span>TITEL</span><span>BEARBEITER</span><span>LÄUFE</span><span>TOKENS</span></div>
+<div class="row"><span>BB-142</span><span>review</span><span>Magic link login</span><span><span class="dot"></span>Mensch · ms</span><span>03</span><span>184 220</span></div>
+<div class="row live"><span>BB-151</span><span>coding</span><span>CSV import</span><span>Agent · cw-framework</span><span>01</span><span>062 905</span></div>
+<div class="row"><span>BB-153</span><span>spec</span><span>Webhooks</span><span>Agent · ms-laptop</span><span>02</span><span>031 447</span></div>
+</div>
+<script>const b=document.getElementById('b');let s=11;for(let i=0;i<120;i++){s=(s*9301+49297)%233280;const e=document.createElement('i');const r=s/233280;e.style.flex=r<.55?'1':r<.85?'3':'6';if(r>.9)e.style.background='transparent';b.appendChild(e)}</script>
+</body></html>

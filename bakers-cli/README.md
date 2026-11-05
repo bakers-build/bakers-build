@@ -4,8 +4,8 @@
 surface-agnostic **core** kernel, the **conductor** run engine, the **ui** cockpit app, and
 every **addon** under `addons/*`. The **conductor** is the bakers.build Network node: it registers a
 machine, claims tickets over Drupal JSON:API, and drives agents through executor/agent addons
-(Claude, herdr, …). The CLI also exposes `bakers dropsh …` for raw JSON:API write-back used by the
-ticket workflows, `bakers ui …` for the cockpit, `bakers deployment …` for release helpers, and `bakers agents` for the local agent catalog.
+(Claude, herdr, …). The CLI also exposes `bakers tools …` for the server's named tools used by the
+ticket workflows, `bakers auth …` for sign-in, `bakers ui …` for the cockpit, `bakers deployment …` for release helpers, and `bakers agents` for the local agent catalog.
 
 **Vocabulary (BB-224).** An **addon** is a *package* under `addons/*` that self-declares its
 contributions through a fixed `./preset` export and is what you list in an `addons: []` config
@@ -18,7 +18,7 @@ prefix is `@bakers-build/addon-`.
 
 This document covers the **standalone CLI setup** — taking a *fresh clone* to a working
 `bakers`, with **no DDEV or worktree prerequisite**. If you work in a DDEV worktree, the
-`ddev init-worktree` command already does the equivalent build as its last step (see the
+`bash .ddev/worktree-post.sh` command already does the equivalent build as its last step (see the
 repo `WORKFLOW.md`); this README is the DDEV-free path.
 
 ## Quick start
@@ -35,8 +35,8 @@ Then set your OAuth consumer secret and log in:
 
 ```bash
 export BB_CONSUMER_SECRET=<your consumer secret>
-bakers dropsh auth login
-bakers dropsh auth status      # verify
+bakers auth login
+bakers auth status      # verify
 ```
 
 The setup script is **idempotent** — re-run it any time (e.g. after pulling changes that
@@ -99,7 +99,7 @@ and runs eight idempotent steps:
 1. **Prereq check** — verifies `pnpm` is on `PATH` (actionable message + non-zero exit if
    not) and sanity-checks Node ≥ 20.19.
 2. **Install** — `pnpm install --config.minimumReleaseAge=0` in `bakers-cli/`. The
-   `minimumReleaseAge=0` mirrors `ddev init-worktree`, dodging the workspace supply-chain
+   `minimumReleaseAge=0` mirrors `bash .ddev/worktree-post.sh`, dodging the workspace supply-chain
    deps-verify policy that would otherwise fail a plain install on a fresh tree.
 3. **Build the packages + addons** — `bakers-cli/bin/bakers` runs the compiled host
    (`host/dist/src/host.js`), and `.bakers/conductor.config.js` resolves the workspace packages
@@ -147,8 +147,9 @@ and runs eight idempotent steps:
    the shim), it warns about that too (BB-84).
 6. **Config scaffold** — writes `.bakers/conductor.config.local.js` from
    `bakers-cli/templates/conductor.config.local.js`. If the file already exists it is left
-   untouched. Interactive shells are prompted for `machine_id` (default: short hostname)
-   and `oauth.client_id` (default: `bakers-agent`); non-interactive shells use the defaults.
+   untouched. Interactive shells are prompted for `oauth.client_id` (default: `bakers-agent`);
+   non-interactive shells use the default. The file carries no identity: the machine's id
+   and label come from `bakers init`.
    **No secret is ever written** — the scaffold reads `client_secret` from
    `process.env.BB_CONSUMER_SECRET`.
 7. **herdr run-session plugins** — links the repo-local **spiceedit** herdr plugin
@@ -157,8 +158,8 @@ and runs eight idempotent steps:
    on `PATH` (it is the executor, not a conductor-CLI prereq), and a missing
    `spiceedit` binary only prints a note — the overlay degrades to a message at run
    time, so nothing here fails the bootstrap.
-8. **Summary** — prints the next steps (export the secret, `bakers dropsh auth login`,
-   verify with `bakers dropsh auth status`).
+8. **Summary** — prints the next steps (export the secret, `bakers auth login`,
+   verify with `bakers auth status`).
 
 ## `bakers ui` deep links (BB-223)
 
@@ -228,7 +229,7 @@ the build under test.
 
 ## Configuration setup and upgrades
 
-Coming from the old CLI? Follow [Switch to the bakers CLI](../docs/advanced/cli/switch-to-bakers.md).
+Coming from the old CLI? Follow [Switch to the bakers CLI](../docs/configuration/clients/switch-to-bakers.md).
 
 Initialize the scopes you need:
 
@@ -251,8 +252,8 @@ interview question, no personal secret. `--auth-type client_credentials` is the 
   local callback listener a browser needs to reach. Sign in with:
 
   ```bash
-  bakers dropsh auth login
-  bakers dropsh auth status
+  bakers auth login
+  bakers auth status
   ```
 
   The CLI prints a URL and a short code; open the URL on any device, confirm the code, and the CLI
@@ -277,7 +278,7 @@ Create and use a second connection by id:
 
 ```bash
 bakers config init --scope connection --connection staging
-bakers dropsh --connection staging --format md search bb_project
+bakers tools --connection staging tool_api__bakers_project_list
 BB_CONNECTION=staging bakers info
 bakers config check --scope connection --connection staging --format json
 ```
@@ -367,12 +368,12 @@ distinguish the two outcomes.
 
 ## Conductor lifecycle: identity, not paths (BB-450)
 
-`bakers oven stop` finds its conductor by `conductor_id` and `host_key` from the
+`bakers oven stop` finds its conductor by its `conductor_id` (machine id, project and variant) in the
 control-plane record — never by comparing the signalled process's working directory against
 `workspace_root`. That means `stop` (and `start`) work identically from the project root, from
 `.bakers/`, or from a linked worktree. Before signalling, the pid is verified as a live process
 whose command line identifies a bakers-conductor foreground loop, owned by the same OS user, on a
-`host_key` that matches this machine's own — never a colleague's conductor on another host, and
+machine whose id matches this machine's own `machine_id` — never a colleague's conductor on another host, and
 never a recycled pid that happens to share the number. With no pid on record, `stop` refuses and
 says so; it never guesses which process to signal.
 
@@ -387,7 +388,7 @@ stopped, `--force` **fails** rather than starting a second conductor on the same
 
 A `.bakers/` dir may hold **several** configs — the default `conductor.config.js` plus any
 `<variant>.conductor.config.js` — each a complete config bound to its own `bb_project` and its
-own conductor (own `machine_id`, claims, worktrees). **Naming rule (BB-137):** a file is a
+own conductor (own variant, claims, worktrees). **Naming rule (BB-137):** a file is a
 conductor config **iff** it is exactly `conductor.config.js` or ends with `.conductor.config.js`
 (so `vite.config.js` and the near-miss `myconductor.config.js` are ignored). This is a **clean
 break** from the earlier `<name>.config.js` variant naming — old variant files must be renamed.
@@ -404,10 +405,10 @@ With no selector: `conductor.config.js` present → it is the default (used auto
 single lone config → it (back-compat); else resolution errors and names the available stems plus
 the selector. `--conductor` wins over `$BB_CONDUCTOR`, and an explicit `--config <path>` /
 `$BB_CONDUCTOR_CONFIG` still wins over both. Two `conductor.config.js` cannot coexist in one
-dir, so an ambiguous default is structurally impossible. Each config must set its own
-`conductor_id` (composed from the machine context + its `bakers.project`); it is required — there is no
-derived fallback — so
-co-located conductors are distinct by construction. This is how a Drupal **multisite** repo maps
+dir, so an ambiguous default is structurally impossible. A config sets no identity: the
+`conductor_id` is derived from the machine id + `bakers.project` + variant (the file stem), so
+co-located conductors are distinct by construction. A config with `conductor_id`, `machine_id`
+or `label` is rejected; run `bakers init`. This is how a Drupal **multisite** repo maps
 each site to its own bakers.build project. Full model: [`CONFIG.md`](CONFIG.md) › *Multiple conductors per repo*.
 
 ## Rebuilding after editing sources
@@ -508,17 +509,16 @@ the overlay for `$SPICEEDIT_FILE`. Everything degrades gracefully: a missing
 ## Troubleshooting
 
 - **`ERR_MODULE_NOT_FOUND: Cannot find package '@bakers-build/bakers'`** (or `@bakers-build/addon-*` /
-  `@dropsh/*`) when a `bakers dropsh …` command loads the config → the resolution farm or the
+  `@dropsh/*`) when a `bakers tools …` or `bakers auth …` command loads the config → the resolution farm or the
   addon build is missing/stale. **Re-run `bakers-cli/scripts/setup.sh`.**
 - **`ERR_MODULE_NOT_FOUND: Cannot find package '@bakers-build/plugin-<name>'`** → the config still
-  names a pre-BB-224 addon package. Run **`bakers config upgrade`** (`--dry-run` first) to rewrite the
-  `.bakers/` configs to the `@bakers-build/addon-*` names.
+  names a pre-BB-224 addon package. Rename it to the `@bakers-build/addon-*` name in the `.bakers/` configs.
 - **`bakers: command not found`** → `~/.local/bin` is not on your `PATH`. Add it:
   `export PATH="$HOME/.local/bin:$PATH"`.
 - **`bakers: not in a bakers worktree and no global bakers on PATH`** → you are outside any bakers.build
   worktree and have no global `bakers`. `cd` into a clone/worktree, or re-run setup there.
-- **Auth failures** → confirm `BB_CONSUMER_SECRET` is exported and `bakers dropsh auth
-  login` has been run; check `bakers dropsh auth status`.
+- **Auth failures** → confirm `BB_CONSUMER_SECRET` is exported and `bakers auth
+  login` has been run; check `bakers auth status`.
 
 ## Agent aliases
 

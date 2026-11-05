@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -65,7 +65,7 @@ use Drupal\user\EntityOwnerTrait;
       'action' => \Drupal\bb_core\Form\BbTicketActionForm::class,
       // Ticket Settings: the edit route renders this in the app shell.
       'settings' => BbTicketForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
       // The create dialog. The operation selects the `create` form mode
       // (`ContentEntityForm::init()`); `add` stays the admin form.
       'create' => BbTicketCreateForm::class,
@@ -150,6 +150,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
   /**
    * {@inheritdoc}
    *
+   * Freezing cancels every active run, so a frozen ticket has no live agent.
    * A changed conductor cancels the runs still active on another one, so the
    * new conductor can claim the ticket. Server side: the editor's run access
    * plays no part.
@@ -161,6 +162,12 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     $original = $this->getOriginal();
     if (!$update || !$original instanceof BbTicketInterface) {
       return;
+    }
+    // Before the conductor check, so a save doing both leaves the freeze note.
+    if ($this->isFrozen() && !$original->isFrozen()) {
+      foreach (TicketInterventions::activeRuns($this, \Drupal::entityTypeManager()) as $run) {
+        TicketInterventions::cancelRun($run, 'frozen by ' . \Drupal::currentUser()->getAccountName());
+      }
     }
     $conductor = (int) $this->get('conductor_id')->target_id;
     if ($conductor === (int) $original->get('conductor_id')->target_id) {

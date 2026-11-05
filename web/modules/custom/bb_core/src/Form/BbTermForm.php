@@ -88,15 +88,4 @@ final class BbTermForm extends BbContentEntityFormBase {
     return $result;
   }
 
-  /**
-   * {@inheritdoc}
-   *
-   * Terms have no delete route.
-   */
-  protected function actions(array $form, FormStateInterface $form_state): array {
-    $actions = parent::actions($form, $form_state);
-    unset($actions['delete']);
-    return $actions;
-  }
-
 }

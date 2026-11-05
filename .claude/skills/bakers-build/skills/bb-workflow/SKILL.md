@@ -20,7 +20,8 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
 
 ## Routing
 
-1. Read complete context through [read ticket](references/read-ticket.md).
+1. Read complete context through [read ticket](references/read-ticket.md). For each label, load the
+   installed `@bakers-build/bb-label-<label>`, if any, and follow it in every state.
 2. Route by state:
 
    | State | Flow |
@@ -28,7 +29,7 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
    | `qualification` | [qualification](references/qualification.md) |
    | every other state | the recipe's `bb-state-<state>` section, run in the state file of that name: [plan](references/plan.md), [working](references/working.md), [review](references/review.md) |
 
-   A state without such a file, or a file that cannot be read: stop and name it, reading no recipe.
+   A state without a readable state file: stop and name it, reading no recipe.
 3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field; empty — always at
    qualification — means the installed recipe declaring itself project default. Read its slots for
    this state.
@@ -50,8 +51,8 @@ names the replacement and its reason.
 **If the recipe, its section for this state, the ticket's type among the recipe's declared types,
 or a required skill is missing** — it cannot be resolved or read — **stop and report the exact
 identifier that failed**. Stop *before* editing a file, committing, publishing a comment, asking for
-confirmation, or transitioning the ticket. Say plainly that you cannot do the work because it is
-unavailable; do not substitute your own method for it.
+confirmation, or transitioning the ticket. Say plainly that the work cannot proceed without it;
+substitute no method of your own.
 
 ## Rules
 

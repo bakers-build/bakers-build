@@ -1,4 +1,4 @@
-import { Then } from '@key-tec/playwright-core/bdd';
+import { Then } from '../../bdd.fixtures';
 import { expect, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
 import { documentWasKept, markDocument, PAGE_HEADER_ISLAND, RAIL_ISLAND, uidOf } from '../../support/shell';

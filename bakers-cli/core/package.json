@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "bakers.build surface-agnostic kernel: host contract, split-config helpers, addon preset/discovery machinery, shared primitives.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20.19"
   },

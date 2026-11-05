@@ -21,6 +21,8 @@ export {
   type AgentFootprint,
   type AgentRunIdentity,
   type BbAgent,
+  CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOLS_SERVER,
   DEFAULT_ENV_DENY,
   emptyAgentFootprint,
   matchesEnvDeny,
@@ -57,6 +59,7 @@ export type {
 } from './plugins/executor.js';
 export type {
   DiscoveredInbox,
+  InboxBinding,
   InboxMessageHandler,
   InboxMessageRequest,
   InboxMessages,
@@ -110,6 +113,7 @@ export type {
   TicketMetric,
   UncleanTicket,
 } from './plugins/remote.js';
+export { ConductorTakeoverRequired } from './plugins/remote.js';
 export {
   installCommand,
   lastLine,
@@ -118,6 +122,14 @@ export {
   sandboxFailures,
   systemSandboxHost,
 } from './plugins/sandbox-preflight.js';
+export type {
+  AddonTools,
+  ToolBinding,
+  ToolDefinition,
+  ToolHandler,
+  ToolRequest,
+  ToolResult,
+} from './plugins/tools.js';
 export type {
   BbWorkspace,
   EnsuredWorkspace,

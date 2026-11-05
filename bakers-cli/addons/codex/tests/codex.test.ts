@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -185,18 +185,100 @@ async function homeWithCodexMcp(): Promise<string> {
 }
 
 describe('CodexAgent security: sandbox (default)', () => {
-  it('starts in workspace-write without approvals, bypass flags or the user MCP servers', async () => {
+  it('grants Git metadata writes for the dispatched worktree without granting its parent repository', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'codex-git-'));
+    const main = join(dir, 'main "quoted" $name\nsecond line');
+    const worktree = join(dir, 'work "quoted" $name');
+    try {
+      execFileSync('git', ['init', '-q', main]);
+      execFileSync('git', [
+        '-C',
+        main,
+        '-c',
+        'user.name=Test',
+        '-c',
+        'user.email=test@example.invalid',
+        'commit',
+        '--allow-empty',
+        '-qm',
+        'initial',
+      ]);
+      execFileSync('git', [
+        '-C',
+        main,
+        'worktree',
+        'add',
+        '-qb',
+        'test',
+        worktree,
+      ]);
+      const argv = captureArgv(
+        'codex',
+        new CodexAgent().launchCommand('x', undefined, worktree),
+      );
+      const profile = argv.find((arg) => arg.startsWith('permissions.bakers='));
+      expect(argv).toContain('default_permissions="bakers"');
+      expect(profile).toContain('extends = ":workspace"');
+      for (const option of ['--git-dir', '--git-common-dir']) {
+        const path = execFileSync(
+          'git',
+          ['-C', worktree, 'rev-parse', '--path-format=absolute', option],
+          { encoding: 'utf8' },
+        ).trim();
+        expect(profile).toContain(`${JSON.stringify(path)} = "write"`);
+        // Code an unsandboxed Git command would run, or a redirect to it, stays read-only.
+        for (const name of [
+          'config',
+          'config.worktree',
+          'hooks',
+          'commondir',
+          'gitdir',
+          'modules',
+          'worktrees',
+        ]) {
+          expect(profile).toContain(
+            `${JSON.stringify(join(path, name))} = "read"`,
+          );
+        }
+      }
+      expect(profile).not.toContain(`${JSON.stringify(main)} = "write"`);
+      expect(profile).not.toMatch(/"\.(codex|agents|aws)"\s*=\s*"write"/);
+      for (const path of ['.git', '.codex', '.agents', '.aws']) {
+        expect(profile).toContain(`${JSON.stringify(path)} = "read"`);
+      }
+      expect(argv).not.toContain('--sandbox');
+      expect(argv).not.toContain('--dangerously-bypass-approvals-and-sandbox');
+      expect(argv).toContain('never');
+      const mainArgv = captureArgv(
+        'codex',
+        new CodexAgent().launchCommand('x', undefined, main),
+      );
+      expect(
+        mainArgv.find((arg) => arg.startsWith('permissions.bakers=')),
+      ).toContain(`${JSON.stringify(join(main, '.git'))} = "write"`);
+      expect(() =>
+        new CodexAgent().launchCommand('x', undefined, join(dir, 'missing')),
+      ).toThrow(/Cannot resolve Codex workspace Git directories/);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('extends workspace permissions without approvals, bypass flags or the user MCP servers', async () => {
     const home = await homeWithCodexMcp();
     expect(
-      captureArgv('codex', new CodexAgent({}, home).launchCommand('x')),
+      captureArgv(
+        'codex',
+        new CodexAgent({}, home).launchCommand('x', undefined, home),
+      ),
     ).toEqual([
       'codex',
-      '--sandbox',
-      'workspace-write',
       '-a',
       'never',
       '-c',
-      'sandbox_workspace_write.network_access=true',
+      'default_permissions="bakers"',
+      '-c',
+      'permissions.bakers={ extends = ":workspace", filesystem = { ":workspace_roots" = { ".git" = "read", ".agents" = "read", ".codex" = "read", ".aws" = "read" } }, workspace_roots = {  }, network = { enabled = true } }',
       '-c',
       'mcp_servers.gitlab.enabled=false',
       '-c',
@@ -205,7 +287,7 @@ describe('CodexAgent security: sandbox (default)', () => {
     ]);
   });
 
-  it('keeps the servers listed in sandbox.mcp_servers, adds a dir per allow_write and turns network off for []', async () => {
+  it('keeps allowed MCP servers, adds workspace roots for allow_write and turns network off for []', async () => {
     const home = await homeWithCodexMcp();
     const argv = captureArgv(
       'codex',
@@ -220,11 +302,11 @@ describe('CodexAgent security: sandbox (default)', () => {
         home,
       ).launchCommand('x'),
     );
-    expect(argv).toContain('sandbox_workspace_write.network_access=false');
+    expect(argv.join(' ')).toContain('network = { enabled = false }');
     expect(argv).toContain('mcp_servers.gitlab.enabled=false');
     expect(argv).not.toContain('mcp_servers.playwright.enabled=false');
     expect(argv.join(' ')).toContain(
-      `--add-dir /srv/cache --add-dir ${join(home, '.cache/pnpm')}`,
+      `workspace_roots = { "/srv/cache" = true, ${JSON.stringify(join(home, '.cache/pnpm'))} = true }`,
     );
   });
 
@@ -610,5 +692,34 @@ describe('CodexAgent.sandboxPreflight', () => {
       ok: true,
     });
     expect(calls).toEqual([]);
+  });
+});
+
+describe('CodexAgent conductor tools', () => {
+  it('adds bakers-conductor with the URL and the token by env var name only', async () => {
+    const home = await homeWithCodexMcp();
+    await writeFile(
+      join(home, '.codex', 'config.toml'),
+      '[mcp_servers.bakers-conductor]\nurl = "http://old"\n[mcp_servers.gitlab]\ncommand = "g"\n',
+    );
+    const argv = captureArgv(
+      'codex',
+      new CodexAgent({}, home).launchCommand('x', undefined, home, {
+        url: 'http://127.0.0.1:4100',
+      }),
+    );
+    expect(argv).toContain(
+      'mcp_servers.bakers-conductor.url="http://127.0.0.1:4100"',
+    );
+    expect(argv).toContain(
+      'mcp_servers.bakers-conductor.bearer_token_env_var="BB_CONDUCTOR_TOKEN"',
+    );
+    expect(argv).not.toContain('mcp_servers.bakers-conductor.enabled=false');
+    expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+  });
+
+  it('adds nothing without a tool server', () => {
+    const command = new CodexAgent({ security: 'yolo' }).launchCommand('x');
+    expect(command).not.toContain('bakers-conductor');
   });
 });

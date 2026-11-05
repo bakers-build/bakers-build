@@ -11,7 +11,7 @@
 // path processor that strips `/_workspace`. Criterion 5's chooser has the
 // second reason: its workspace list is an ARRAY PROP, and the only honest
 // assertion about an array prop is against the rendered DOM (spec R4).
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { markDocument } from '../shell';
 

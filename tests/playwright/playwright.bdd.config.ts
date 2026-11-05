@@ -1,6 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
 import { defineBddConfig } from 'playwright-bdd';
-import type { CoreTestOptions } from '@key-tec/playwright-core/fixtures';
 import { resolveBaseURL } from './resolve-base-url';
 
 // TWO generated suites, split by the `@nojs` tag, because "works with
@@ -25,7 +24,7 @@ const noJsTestDir = defineBddConfig({
     tags: '@nojs',
 });
 
-export default defineConfig<CoreTestOptions>({
+export default defineConfig({
     timeout: 60000,
     // Four workers, each with its own Drupal session (support/worker-auth-provider.ts).
     // What used to force serial execution was the session CACHE, not the account: every

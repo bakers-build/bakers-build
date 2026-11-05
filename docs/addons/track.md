@@ -29,6 +29,6 @@ bakers track evidence --from 2026-10-12 --to 2026-10-18
 - `complete: false` and `evidence_gaps` show what is missing. A `null` count means unknown, not zero.
 - It only reads. It never starts a timer or books time.
 
-More: [Record time](/daily-work/record-time).
+More: [Record time](/get-started/daily-work/record-time).
 
-Source: [`bakers-cli/addons/track`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/track)
+Package source in a checkout: `bakers-cli/addons/track`.

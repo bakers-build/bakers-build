@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { uidOf } from '../shell';
 
 When('I open the personal schedule of {string}', async ({ page }, account: string) => {

@@ -89,15 +89,32 @@ function toolModel(simulation) {
     },
     ticket_read: a => {
       const t = find(a.ticket);
-      return { ...pick(t, ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe']), approval: t.approval ?? 'human', labels: t.labels, links: t.links,
+      return { ...pick(t, ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe', 'branch_name', 'conductor']), labels: t.labels, links: t.links,
+        project: contractFixture.project, base_branch: t.base_branch ?? 'main', frozen: Boolean(t.frozen), metrics: structuredClone(t.metrics ?? []),
         comments: comments.filter(c => c.ticket === t.id).map(c => ({ id: c.id, type: c.type, body: c.body,
           created: c.created ?? '2026-01-01T00:00:00+00:00', author: c.author ?? 'fixture-agent' })) };
     },
     ticket_search: a => {
       if (a.project) project(a.project);
-      const q = a.query.toLowerCase();
-      return { tickets: [...tickets].reverse().filter(t => (t.title ?? '').toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q))
-        .slice(0, 50).map(t => pick(t, ['identifier', 'title', 'state', 'type'])) };
+      const q = (a.query ?? '').toLowerCase(), branch = a.branch_name;
+      if (!q && !branch) throw new Refused('Give a query or a branch_name.');
+      return { tickets: [...tickets].reverse()
+        .filter(t => (!q || (t.title ?? '').toLowerCase().includes(q) || (t.description ?? '').toLowerCase().includes(q)) && (!branch || t.branch_name === branch))
+        .slice(0, 50).map(t => ({ ...pick(t, ['identifier', 'title', 'state', 'type', 'branch_name']), base_branch: t.base_branch ?? 'main',
+          parent: tickets.find(p => p.id === t.parent)?.identifier ?? null })) };
+    },
+    ticket_update: a => {
+      if (['title', 'description', 'conductor', 'labels_add', 'labels_remove', 'frozen'].every(f => a[f] == null)) {
+        throw new Refused('Give a title, a description, a conductor, labels to add or remove, or frozen.');
+      }
+      const removed = a.labels_remove ?? [];
+      const both = (a.labels_add ?? []).find(label => removed.includes(label));
+      if (both !== undefined) throw new Refused(`Label ${both} is both added and removed.`);
+      const t = find(a.ticket);
+      for (const f of ['title', 'description', 'conductor', 'frozen']) if (a[f] != null) t[f] = a[f];
+      for (const label of a.labels_add ?? []) if (!t.labels.includes(label)) t.labels.push(label);
+      t.labels = t.labels.filter(label => !removed.includes(label));
+      return { ...pick(t, ['identifier', 'title', 'description', 'conductor']), labels: [...t.labels], frozen: Boolean(t.frozen) };
     },
     ticket_create: a => {
       project(a.project);
@@ -105,9 +122,9 @@ function toolModel(simulation) {
       created += 1;
       const t = { id: `33333333-3333-4333-8333-${String(created).padStart(12, '0')}`, identifier: `EVAL-${100 + created}`, title: a.title,
         state: 'qualification', workflow: a.workflow, description: a.description ?? null, type: a.type || null, recipe: a.recipe || null,
-        labels: [], links: [], parent };
+        labels: [], links: [], parent, branch_name: a.branch_name || `feat/eval-${100 + created}` };
       tickets.push(t);
-      return pick(t, ['id', 'identifier', 'state']);
+      return pick(t, ['id', 'identifier', 'state', 'branch_name']);
     },
     ticket_transition: a => {
       const state = a.state ?? '', links = a.links ?? [];
@@ -248,7 +265,7 @@ export function contractEnvironment(root, origin) {
 }
 
 /**
- * Execute argv (beginning with bakers dropsh) through the absolute repository launcher, without a
+ * Execute argv (beginning with bakers) through the absolute repository launcher, without a
  * shell. Runner-owned virtual files are materialized under the disposable root, keyed by the same
  * virtual path the simulator receives; argv references them as @<virtual path>.
  */

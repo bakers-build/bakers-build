@@ -4,7 +4,7 @@
 // received. `invitation.feature` seeds its invitation through the service; this
 // feature is the other half, proving the dialog is what creates one.
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import { test, expect } from '../../bdd.fixtures';
 import { messagesFor, clearMailboxFor } from '../../support/login-flow';
 import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
@@ -241,13 +241,17 @@ Then('exactly one invitation mail reaches each invited address', async ({ page, 
 });
 
 When('I revoke the pending invitation of the first invited address', async ({ page }) => {
-  const answered = page.waitForResponse((response) => response.request().method() === 'POST');
-  await page.getByRole('button', { name: `Revoke invitation for ${invitedAddress}` }).click();
-  await answered;
+  // Revoking asks for confirmation on its own page, then returns to Members.
+  await page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` }).click();
+  await page.waitForURL(/\/invite\/\d+\/delete$/);
+  await Promise.all([
+    page.waitForURL(/\/settings\/members$/),
+    page.getByRole('button', { name: 'Delete', exact: true }).click(),
+  ]);
 });
 
 Then('the first invited address is no longer listed as a pending invitation', async ({ page }) => {
-  await expect(page.getByRole('button', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
   expect(inviteCount(invitedAddress)).toBe('0');
   expect(inviteCount(invitedAddresses[1])).toBe('1');
 });
@@ -267,7 +271,7 @@ Then('the invite dialog refuses the workspace role', async ({ page }) => {
 });
 
 Then("the existing member's address is not listed as a pending invitation", async ({ page }) => {
-  await expect(page.getByRole('button', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
 });
 
 Then('no invitation mail reaches the existing member', async ({ page, baseURL }) => {

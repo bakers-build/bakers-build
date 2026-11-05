@@ -12,7 +12,7 @@ dependencies:
 id: bb_terms
 label: 'Workspace terms'
 module: views
-description: 'The workspace settings tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Rows carry an Edit operation; terms have no page of their own.'
+description: 'The workspace settings tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Rows carry Edit and Delete operations; terms have no page of their own.'
 tag: ''
 base_table: bb_term
 base_field: id

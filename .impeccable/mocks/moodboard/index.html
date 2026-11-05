@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>bakers.build Moodboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Young+Serif&family=Gloock&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Spline+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --flour:#F5EBDA;--paper:#FFFDF8;--rye:#2B2116;--rye-2:#5A4A38;--muted:#6E5D49;
+ --butter:#F3CE3A;--lime:#BFE07A;--rose:#F4AFC0;--crust:#B8692E;--line:rgba(43,33,22,.35);
+ --serif:"Instrument Serif",serif;--sans:"Spline Sans",system-ui,sans-serif;--mono:"Spline Sans Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0}
+html{scrollbar-color:var(--rye-2) var(--flour)}
+body{background:var(--flour);color:var(--rye);font:400 17px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--butter);color:var(--rye)}
+a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1.5px}
+:focus-visible{outline:2px solid var(--rye);outline-offset:3px;border-radius:2px}
+code{font:500 .88em var(--mono);background:var(--paper);border:1.5px solid var(--line);border-radius:6px;padding:1px 6px}
+
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+header.top{border-bottom:1.5px dashed var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:14px;padding-top:20px;padding-bottom:20px}
+header.top img{width:34px;height:34px}
+header.top .word{font:400 28px/1 var(--serif)}
+header.top .meta{margin-left:auto;font:500 13px var(--mono);color:var(--rye-2)}
+
+.intro{padding:72px 0 56px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:56px;align-items:end}
+.intro h1{font:400 clamp(52px,7vw,92px)/.95 var(--serif);letter-spacing:-.025em;text-wrap:balance}
+.intro p{max-width:46ch;color:var(--rye-2);font-size:19px}
+.intro p+p{margin-top:14px}
+
+section{padding:72px 0;border-top:1.5px dashed var(--line)}
+h2{font:400 clamp(38px,4.6vw,60px)/1 var(--serif);letter-spacing:-.02em;max-width:20ch;text-wrap:balance}
+h2+p.lead{margin-top:18px;max-width:62ch;color:var(--rye-2);font-size:18px}
+h3{font:400 32px/1.05 var(--serif);letter-spacing:-.01em}
+.lbl{font:600 13px/1.3 var(--mono);text-transform:lowercase;letter-spacing:.01em;margin-bottom:8px}
+
+/* start */
+.start{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:40px;margin-top:40px;align-items:start}
+figure.shot{background:var(--paper);border:2px solid var(--rye);border-radius:14px;overflow:hidden;box-shadow:0 16px 36px -20px rgba(43,33,22,.5)}
+figure.shot img{display:block;width:100%;height:auto}
+figure.shot figcaption{font:500 12.5px/1.4 var(--mono);padding:10px 14px;border-top:1.5px solid var(--line);color:var(--rye-2)}
+.verdict{display:grid;gap:22px}
+.verdict ul{list-style:none;padding:0;display:grid;gap:10px}
+.verdict li{padding-left:22px;position:relative;max-width:48ch}
+.verdict li::before{content:"";position:absolute;left:0;top:.62em;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--rye)}
+.verdict .keep li::before{background:var(--lime)}
+.verdict .change li::before{background:var(--butter)}
+
+/* references */
+.ref{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:40px;margin-top:56px;align-items:start}
+.ref:nth-of-type(even){grid-template-columns:minmax(0,1fr) minmax(0,1.35fr)}
+.ref:nth-of-type(even) .shots{order:2}
+.shots{display:grid;gap:14px}
+.ref.wide,.ref.wide:nth-of-type(even){grid-template-columns:1fr;gap:28px}
+.ref.wide .shots{order:0}
+.ref.wide .body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:40px;align-items:start}
+.ref.wide .body .tl{margin-top:0}
+@media (max-width:900px){.ref.wide .body{grid-template-columns:1fr;gap:0}.ref.wide .body .tl{margin-top:22px}}
+.shots.two{grid-template-columns:1fr 1fr}
+.ref .url{font:500 13px var(--mono);color:var(--rye-2);margin-top:6px}
+.ref .why{margin-top:14px;color:var(--rye-2);max-width:46ch}
+.tl{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px}
+.tl ul{padding-left:18px;display:grid;gap:6px;font-size:15.5px}
+.tl .take .lbl::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--lime);border:1.5px solid var(--rye);margin-right:8px;vertical-align:0}
+.tl .leave .lbl::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--rose);border:1.5px solid var(--rye);margin-right:8px;vertical-align:0}
+.flag{margin-top:22px;background:var(--butter);border:2px solid var(--rye);border-radius:14px;padding:16px 18px}
+.flag b{font-weight:600}
+.flag p+p{margin-top:8px}
+
+/* color */
+.swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:40px}
+.sw{border:2px solid var(--rye);border-radius:14px;overflow:hidden;background:var(--paper)}
+.sw .chip{height:120px;display:flex;align-items:flex-end;padding:12px 14px;font:400 30px/1 var(--serif)}
+.sw .txt{padding:12px 14px 14px;border-top:2px solid var(--rye)}
+.sw .hex{font:500 12.5px var(--mono);color:var(--rye-2)}
+.sw .role{font-size:15px;margin-top:4px;line-height:1.4}
+.sw .ratio{font:500 12px var(--mono);margin-top:8px;color:var(--rye-2)}
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:40px}
+.rules p{color:var(--rye-2);font-size:15.5px;margin-top:4px;max-width:40ch}
+.rules strong{display:block;font:400 24px/1.1 var(--serif);color:var(--rye)}
+
+/* type */
+.specimens{margin-top:40px;display:grid;gap:0;border:2px solid var(--rye);border-radius:16px;overflow:hidden;background:var(--paper)}
+.spec{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;padding:26px 28px;align-items:center}
+.spec+.spec{border-top:1.5px dashed var(--line)}
+.spec .name{font:600 14px var(--mono)}
+.spec .note{font-size:14.5px;color:var(--rye-2);margin-top:6px;line-height:1.45}
+.spec .sample{font-size:clamp(40px,5vw,64px);line-height:1;letter-spacing:-.02em}
+.spec .sample small{display:block;font:400 17px/1.5 var(--sans);letter-spacing:0;color:var(--rye-2);margin-top:12px}
+.spec.current{background:var(--flour)}
+.f-instr{font-family:"Instrument Serif",serif}
+.f-young{font-family:"Young Serif",serif;letter-spacing:-.03em}
+.f-gloock{font-family:"Gloock",serif}
+.f-brico{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-variation-settings:"opsz" 96;letter-spacing:-.035em}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-top:32px}
+.pair>div{min-width:0}
+.pair p:not(.lbl){color:var(--rye-2);font-size:15.5px;margin-top:6px}
+.pair .demo-sans{font:500 22px/1.35 var(--sans)}
+.pair .demo-mono{font:500 15px/1.6 var(--mono);white-space:pre;overflow-x:auto}
+
+/* illustration */
+.figs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-top:40px}
+.fig{background:var(--paper);border:2px solid var(--rye);border-radius:14px;padding:16px 10px 12px;text-align:center}
+.fig img{width:100%;max-width:120px;height:auto;display:block;margin:0 auto}
+.fig b{display:block;font:400 22px/1 var(--serif);margin-top:6px}
+.fig span{font:500 12px var(--mono);color:var(--rye-2)}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:32px}
+.dodont ul{padding-left:18px;display:grid;gap:6px;font-size:15.5px}
+
+/* people */
+.line-a{margin-top:40px;background:var(--paper);border:2px solid var(--rye);border-radius:18px;padding:28px 24px 0;overflow:hidden}
+.stations{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:start}
+.st{display:flex;flex-direction:column;align-items:center;text-align:center}
+.st .tag{font:400 24px/1 var(--serif);transform:rotate(-3deg)}
+.st .tag small{display:block;font:500 12px/1.4 var(--mono);margin-top:4px}
+.st .duo{display:flex;align-items:flex-end;justify-content:center;gap:0;margin-top:14px;height:150px}
+.st .duo img{width:104px;height:104px;margin-bottom:-8px}
+.st .duo svg{width:92px;height:auto;color:var(--rye);margin-left:-10px}
+.st .who{margin-top:10px;font:500 12.5px/1.35 var(--mono);background:var(--butter);border:1.5px solid var(--rye);border-radius:999px;padding:4px 10px}
+.counter{height:14px;background:var(--crust);border:2.5px solid var(--rye);border-radius:3px;margin:0 -30px;position:relative;top:7px}
+.line-b{margin-top:22px;background:var(--paper);border:2px solid var(--rye);border-radius:18px;padding:28px 24px 0;overflow:hidden}
+.line-b .duo{height:110px}
+.line-b .duo img{width:96px;height:96px}
+.youmark{margin-top:10px;font:600 12.5px/1.3 var(--mono);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.face{width:52px;height:52px;border-radius:50%;border:3px solid var(--butter);box-shadow:0 0 0 1.5px var(--rye);background:#E4D6BF;overflow:hidden;display:block}
+.face svg{width:100%;height:100%;display:block}
+.youmark i{width:20px;height:20px;border-radius:50%;background:var(--butter);border:1.5px solid var(--rye);display:inline-grid;place-items:center;font:600 10px var(--mono);font-style:normal}
+.option{display:flex;align-items:baseline;gap:14px;margin-top:40px}
+.option + p{color:var(--rye-2);margin-top:6px;max-width:68ch}
+.option b{font:600 13px var(--mono);background:var(--rye);color:var(--flour);border-radius:999px;padding:4px 10px}
+.option h3{font-size:28px}
+
+/* terminal */
+.tw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:40px;margin-top:40px;align-items:center}
+.tw ul{padding-left:18px;display:grid;gap:8px;color:var(--rye-2)}
+.term{background:var(--rye);color:#F3EADA;border-radius:16px;border:2.5px solid var(--rye);box-shadow:0 18px 40px -18px rgba(43,33,22,.55);font:400 14px/1.75 var(--mono);overflow:hidden}
+.term .bar{display:flex;gap:8px;align-items:center;padding:11px 16px;background:#3a2d1f;font-size:12px;color:#cdbda6}
+.term .bar i{width:11px;height:11px;border-radius:50%;background:#6e5b45;display:inline-block}
+.term .bar span{margin-left:10px}
+.term pre{padding:18px 22px 22px;font:inherit;white-space:pre;overflow-x:auto}
+.y{color:var(--butter)}.g{color:var(--lime)}.r{color:var(--rose)}.d{color:#b3a28a}
+
+/* refuse */
+.refuse{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:40px;border:2px solid var(--rye);border-radius:16px;overflow:hidden;background:var(--paper)}
+.refuse div{padding:20px 22px;border-right:1.5px dashed var(--line);border-bottom:1.5px dashed var(--line)}
+.refuse div:nth-child(3n){border-right:0}
+.refuse div:nth-last-child(-n+3){border-bottom:0}
+.refuse strong{display:block;font:400 24px/1.1 var(--serif)}
+.refuse p{font-size:15px;color:var(--rye-2);margin-top:6px}
+
+/* decisions */
+.decide{margin-top:36px;display:grid;gap:14px;counter-reset:d}
+.decide li{list-style:none;background:var(--paper);border:2px solid var(--rye);border-radius:14px;padding:18px 20px 18px 64px;position:relative;counter-increment:d}
+.decide li::before{content:counter(d);position:absolute;left:18px;top:16px;width:30px;height:30px;border-radius:50%;background:var(--butter);border:1.5px solid var(--rye);display:grid;place-items:center;font:600 13px var(--mono)}
+.decide b{font-weight:600}
+.decide p{color:var(--rye-2);margin-top:4px;max-width:72ch}
+
+footer{border-top:1.5px dashed var(--line);padding:28px 0 48px;font:500 13px var(--mono);color:var(--rye-2)}
+
+@media (max-width:900px){
+ .wrap{padding:0 16px}
+ .intro,.start,.ref,.ref:nth-of-type(even),.tw{grid-template-columns:1fr}
+ .ref:nth-of-type(even) .shots{order:0}
+ .intro{padding:48px 0 40px;gap:24px}
+ section{padding:56px 0}
+ .swatches{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rules,.pair,.dodont,.tl{grid-template-columns:1fr}
+ .spec{grid-template-columns:1fr;gap:12px}
+ .figs{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .stations{grid-template-columns:repeat(5,minmax(150px,1fr))}
+ .line-a,.line-b{overflow-x:auto}
+ .refuse{grid-template-columns:1fr}
+ .refuse div{border-right:0!important;border-bottom:1.5px dashed var(--line)!important}
+ .refuse div:last-child{border-bottom:0!important}
+ header.top .meta{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+ <img src="svg/bun.svg" alt="">
+ <span class="word">bakers.build</span>
+ <span class="meta">Moodboard · 2026-10-23 · Basis: brand-foundation.md</span>
+</div></header>
+
+<main class="wrap">
+
+<div class="intro">
+ <h1>Ein ehrliches Werkzeug, verpackt wie gutes Essen.</h1>
+ <div>
+  <p>Dieses Moodboard ist das gemeinsame Bild, mit dem der Corporate-Design-Schritt startet. Es zeigt die vier Referenzen, was wir von jeder übernehmen und was nicht, und leitet daraus Prinzipien ab: Farbe, Schrift, Illustration, Menschen an den Stationen.</p>
+  <p>Grundlage ist das freigegebene Fundament (<code>docs/decisions/brand-foundation.md</code>). Die Basis bleibt „Teig &amp; Terminal“. Hier geht es darum, wohin sie sich bewegt.</p>
+ </div>
+</div>
+
+<!-- start -->
+<section>
+ <h2>Wo wir stehen: „Teig &amp; Terminal“</h2>
+ <p class="lead">Freigegeben am 2026-10-22. Die visuelle Basis trägt, die Geschichte darin ist aber die alte: nur Werkzeuge an der Theke, der Mensch erst am Ende, Demo als Hauptaktion.</p>
+ <div class="start">
+  <figure class="shot"><img src="refs/teig-terminal.jpg" alt="Mock Teig und Terminal: Serifen-Headline links, rechts eine Theke mit Waage, Teigschaber, Ofen, Pinsel und Brötchen, darunter ein lindgrünes Demo-Band." loading="lazy"><figcaption>.impeccable/mocks/directions/a-kombi.html</figcaption></figure>
+  <div class="verdict">
+   <div class="keep"><p class="lbl">bleibt</p><ul>
+    <li>Mehl als Grund, Roggen statt Schwarz: hell, warm, nicht Sci-Fi.</li>
+    <li>Das Terminal in Roggenbraun als ehrlicher Kern.</li>
+    <li>Monoline-Werkzeuge als Agenten.</li>
+    <li>Butter für alles, was auf dich wartet.</li>
+    <li>Der Proof-Streifen: Open source, MIT · Your code stays on your machines · Every run recorded.</li>
+   </ul></div>
+   <div class="change"><p class="lbl">ändert sich</p><ul>
+    <li>An jeder Station steht ein Mensch, nicht nur am Ende.</li>
+    <li>Headline ohne „tickets“ und ohne Entscheidung nur am Schluss.</li>
+    <li>Hauptaktion „Start a free trial“ statt „Book a demo“.</li>
+    <li>Die Display-Schrift wird neu entschieden.</li>
+    <li>Die Figuren arbeiten, sie sind nicht niedlich.</li>
+   </ul></div>
+  </div>
+ </div>
+</section>
+
+<!-- references -->
+<section>
+ <h2>Vier Referenzen, und was wir von jeder nehmen</h2>
+ <p class="lead">Keine davon wird kopiert. Jede liefert genau eine Sache, die uns fehlt, und jede hat etwas, das wir ausdrücklich nicht wollen.</p>
+
+ <div class="ref wide">
+  <div class="shots two">
+   <figure class="shot"><img src="refs/graza.jpg" alt="graza.co Startseite mit Food-Foto und großer schmaler Serifen-Headline." loading="lazy"><figcaption>graza.co · Hero</figcaption></figure>
+   <figure class="shot"><img src="refs/graza-2.jpg" alt="graza.co Abschnitt mit handgezeichneter Olive mit Zapfhahn und der Zeile Olive oil so fresh, you can taste it." loading="lazy"><figcaption>graza.co · Illustration im Text</figcaption></figure>
+  </div>
+  <div>
+   <div class="body"><div><h3>graza.co</h3><div class="url">Olivenöl · Food-Marke</div>
+   <p class="why">Die Referenz für „lecker“: ein Produkt, das man mag, bevor man es versteht.</p></div>
+   <div class="tl">
+    <div class="take"><p class="lbl">übernehmen</p><ul>
+     <li>Flache, satte Food-Farben auf Seitengröße</li>
+     <li>Eine schmale Serife mit Charakter als Stimme</li>
+     <li>Eine schwarze Linie, die Illustration und Text verbindet</li>
+     <li>Der Witz steht klein am Rand („*DRIP“)</li>
+    </ul></div>
+    <div class="leave"><p class="lbl">nicht übernehmen</p><ul>
+     <li>Video-Hero mit Food-Fotos</li>
+     <li>Rabatt-Banner, Shop-Ton, drei Ausrufezeichen</li>
+     <li>Grün-Oliv als Markenfarbe</li>
+    </ul></div>
+   </div></div>
+  </div>
+ </div>
+
+ <div class="ref">
+  <div class="shots">
+   <figure class="shot"><img src="refs/raus.jpg" alt="raus.life Startseite: großes grünes RAUS-Logo, ruhiger cremefarbener Grund, gelbes Suchfeld als breites rundes Band über Fotos." loading="lazy"><figcaption>raus.life · Startseite</figcaption></figure>
+  </div>
+  <div>
+   <h3>raus.life</h3><div class="url">Cabins in der Natur</div>
+   <p class="why">Die Referenz für Ruhe: viel Luft, eine klare Handlung, nichts drängt.</p>
+   <div class="tl">
+    <div class="take"><p class="lbl">übernehmen</p><ul>
+     <li>Die Hauptaktion als ein breites, warmes Farbfeld</li>
+     <li>Große Ruhe auf hellem Grund</li>
+     <li>Eine freundliche, schlichte Grotesk für Fließtext</li>
+     <li>Runde, weiche Formen statt Kanten</li>
+    </ul></div>
+    <div class="leave"><p class="lbl">nicht übernehmen</p><ul>
+     <li>Naturfotografie als Träger</li>
+     <li>Das Grün und das Neon-Orange</li>
+     <li>Promo-Leiste oben</li>
+    </ul></div>
+   </div>
+  </div>
+ </div>
+
+ <div class="ref">
+  <div class="shots">
+   <figure class="shot"><img src="refs/typesafe.jpg" alt="typesafe.ai Startseite: pinke und blaue Wolken-Verläufe, ein Retro-Fenster mit Monospace-Text, riesige schwarze Grotesk-Headline." loading="lazy"><figcaption>typesafe.ai · Startseite</figcaption></figure>
+  </div>
+  <div>
+   <h3>typesafe.ai</h3><div class="url">AI-Lab · Terminal-Ästhetik</div>
+   <p class="why">Die Referenz für technische Ehrlichkeit. Gleichzeitig die, der wir am wenigsten ähneln dürfen.</p>
+   <div class="tl">
+    <div class="take"><p class="lbl">übernehmen</p><ul>
+     <li>Monospace nur dort, wo echte Daten und Befehle stehen</li>
+     <li>Fenster-Rahmen als ehrliches Zitat des Terminals</li>
+     <li>Selbstbewusste Größe der Headline</li>
+    </ul></div>
+    <div class="leave"><p class="lbl">nicht übernehmen</p><ul>
+     <li>Wolken-Verläufe in Pink und Blau: genau das Sci-Fi, das wir meiden</li>
+     <li>Schwarz-Weiß-Tech-Look und Grotesk-Wand</li>
+     <li>Funding-Pose („a really big Series A“)</li>
+    </ul></div>
+   </div>
+  </div>
+ </div>
+
+ <div class="ref wide">
+  <div class="shots two">
+   <figure class="shot"><img src="refs/monday.jpg" alt="monday.com Startseite mit der Headline Du steuerst. Agenten führen aus. und einem lila Button." loading="lazy"><figcaption>monday.com · Hero</figcaption></figure>
+   <figure class="shot"><img src="refs/monday-2.jpg" alt="monday.com Produktbild: Board mit 3D-Avatar-Agenten wie Jane, Lead Finder, daneben eine Liste ihrer Schritte." loading="lazy"><figcaption>monday.com · Agenten als Figuren</figcaption></figure>
+  </div>
+  <div>
+   <div class="body"><div><h3>monday.com</h3><div class="url">Work-Plattform mit Agenten</div>
+   <p class="why">Die Referenz für Agenten als Charaktere neben Menschen. Ohne den 3D-Look.</p></div>
+   <div class="tl">
+    <div class="take"><p class="lbl">übernehmen</p><ul>
+     <li>Agenten haben eine Rolle und stehen sichtbar neben Menschen</li>
+     <li>Jeder Agentenschritt als lesbare Statuszeile</li>
+     <li>Die Hand des Menschen im Bild („Follow-up“)</li>
+    </ul></div>
+    <div class="leave"><p class="lbl">nicht übernehmen</p><ul>
+     <li>3D-Avatare mit Gesichtern</li>
+     <li>Lila Verläufe, SaaS-Template-Layout</li>
+     <li>Fake-Personen und Fake-Daten im Produktbild</li>
+    </ul></div>
+   </div></div>
+   <div class="flag">
+    <p><b>Achtung, Kernzeile:</b> monday titelt „Du steuerst. Agenten führen aus.“ Unser Headline-Kandidat „You're the baker. Agents run the line.“ hat exakt dieselbe Struktur: Mensch-Satz, dann Agenten-Satz.</p>
+    <p>Neben der größten Plattform im Feld liest sich das wie eine Variante. Vorschlag: im Copy-Schritt Option 2 („Your recipes. Your line.“) als Headline prüfen oder Option 1 umbauen, so dass Bild und Satz die Station tragen statt die Arbeitsteilung.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- color -->
+<section>
+ <h2>Farbe: Mehl, Roggen und drei Zutaten</h2>
+ <p class="lead">Die Palette aus „Teig &amp; Terminal“ bleibt. Neu ist eine feste Rolle für jede Farbe, damit sie etwas bedeutet und nicht nur schmückt. Kontraste sind gegen Mehl gemessen, Food-Farben gegen Roggen.</p>
+ <div class="swatches">
+  <div class="sw"><div class="chip" style="background:var(--flour)">Mehl</div><div class="txt"><div class="hex">#F5EBDA</div><div class="role">Grund aller Flächen</div><div class="ratio">Roggen darauf 13,4 : 1</div></div></div>
+  <div class="sw"><div class="chip" style="background:var(--rye);color:var(--flour)">Roggen</div><div class="txt"><div class="hex">#2B2116</div><div class="role">Text, Linie, Terminal. Nie reines Schwarz.</div><div class="ratio">auf Papier 15,5 : 1</div></div></div>
+  <div class="sw"><div class="chip" style="background:var(--paper)">Papier</div><div class="txt"><div class="hex">#FFFDF8</div><div class="role">Karten, Felder, Füllung der Figuren</div><div class="ratio">Roggen darauf 15,5 : 1</div></div></div>
+  <div class="sw"><div class="chip" style="background:var(--rye-2);color:var(--flour)">Roggen 2</div><div class="txt"><div class="hex">#5A4A38</div><div class="role">Sekundärtext</div><div class="ratio">auf Mehl 7,2 : 1</div></div></div>
+  <div class="sw"><div class="chip" style="background:var(--butter)">Butter</div><div class="txt"><div class="hex">#F3CE3A</div><div class="role">Wartet auf dich: Hauptaktion, „your turn“, Markierungen</div><div class="ratio">Roggen darauf 10,3 : 1</div></div></div>
+  <div class="sw"><div class="chip" style="background:var(--lime)">Limette</div><div class="txt"><div class="hex">#BFE07A</div><div class="role">Läuft und ist gut: bestanden, fertig, Open-Source-Band</div><div class="ratio">Roggen darauf 10,6 : 1</div></div></div>
+  <div class="sw"><div class="chip" style="background:var(--rose)">Rose</div><div class="txt"><div class="hex">#F4AFC0</div><div class="role">Review und zurückgeschickt</div><div class="ratio">Roggen darauf 8,8 : 1</div></div></div>
+  <div class="sw"><div class="chip" style="background:var(--crust);color:var(--paper)">Kruste</div><div class="txt"><div class="hex">#B8692E</div><div class="role">Nur Grafik: Theke, Akzent im Logo</div><div class="ratio">auf Mehl 3,5 : 1, kein Text</div></div></div>
+ </div>
+ <div class="rules">
+  <div><strong>Felder, keine Verläufe</strong><p>Food-Farben kommen als ganze, flache Flächen auf Seitengröße, wie bei Graza. Kein Verlauf, kein Glow.</p></div>
+  <div><strong>Eine Zutat pro Abschnitt</strong><p>Jeder Abschnitt hat höchstens eine Food-Farbe als Fläche. Butter ist reserviert für das, was auf eine Person wartet.</p></div>
+  <div><strong>Ein Grau weniger</strong><p>Das bisherige Muted <code>#7D6C58</code> erreicht auf Mehl nur 4,3 : 1. Neu: <code>#6E5D49</code> mit 5,4 : 1, oder gleich Roggen 2.</p></div>
+ </div>
+</section>
+
+<!-- type -->
+<section>
+ <h2>Schrift: die Display-Stimme wird neu entschieden</h2>
+ <p class="lead">Instrument Serif ist als überstrapaziert markiert, und Graza nutzt eine sehr ähnliche schmale Serife. Hier stehen vier Kandidaten mit derselben Zeile. Die Entscheidung fällt im CD-Schritt.</p>
+ <div class="specimens">
+  <div class="spec current"><div><div class="name">Instrument Serif</div><div class="note">Heute im Mock. Elegant und schmal, aber oft gesehen und nah an Graza.</div></div><div class="sample f-instr">Your recipes. Your line.<small>BB-162 is waiting for you in spec.</small></div></div>
+  <div class="spec"><div><div class="name">Young Serif</div><div class="note">Kräftig, rund, wie ein Bäckerschild. Am wärmsten, am wenigsten Tech. Nur ein Schnitt.</div></div><div class="sample f-young">Your recipes. Your line.<small>BB-162 is waiting for you in spec.</small></div></div>
+  <div class="spec"><div><div class="name">Gloock</div><div class="note">Hoher Kontrast, eigenwillig, editorial. Selbstbewusst, aber kühler.</div></div><div class="sample f-gloock">Your recipes. Your line.<small>BB-162 is waiting for you in spec.</small></div></div>
+  <div class="spec"><div><div class="name">Bricolage Grotesque</div><div class="note">Die Grotesk-Option: Handwerk im Detail, variabel. Weg von der Serife, Risiko Tech-Look.</div></div><div class="sample f-brico">Your recipes. Your line.<small>BB-162 is waiting for you in spec.</small></div></div>
+ </div>
+ <div class="pair">
+  <div><p class="lbl">text bleibt: spline sans</p><div class="demo-sans">Agents do the work at every station. A person confirms, approves and authorizes the merge.</div><p>Freundlich und gut lesbar, hat den Raus-Ton.</p></div>
+  <div><p class="lbl">daten bleiben: spline sans mono</p><div class="demo-mono">BB-151  coding  running 12:08 · 62k tokens<br>playwright · 12 passed, 0 failed</div><p>Nur für Befehle, States, IDs und Zahlen. Nie als Kostüm für „technisch“.</p></div>
+ </div>
+</section>
+
+<!-- illustration -->
+<section>
+ <h2>Illustration: Werkzeuge arbeiten, sie posieren nicht</h2>
+ <p class="lead">Eine Roggenlinie, weiße Füllung, Glupschaugen nur an Werkzeugen. Aktionszeichen (Funken, Dampf, „!“) sagen, was gerade passiert. Keine Münder, keine Wangen.</p>
+ <div class="figs">
+  <div class="fig"><img src="svg/ln-scale.svg" alt="Waage mit Ticket"><b>Qualification</b><span>weighs it</span></div>
+  <div class="fig"><img src="svg/ln-scraper.svg" alt="Teigschaber"><b>Spec</b><span>cuts it up</span></div>
+  <div class="fig"><img src="svg/ln-oven.svg" alt="Ofen"><b>Coding</b><span>bakes it</span></div>
+  <div class="fig"><img src="svg/ln-brush.svg" alt="Backpinsel"><b>Review</b><span>glazes it</span></div>
+  <div class="fig"><img src="svg/roll.svg" alt="Fertiges Brötchen" style="max-width:88px;margin-top:22px;margin-bottom:22px"><b>Done</b><span>you ship it</span></div>
+ </div>
+ <div class="dodont">
+  <div class="tl"><div class="take" style="grid-column:1/-1"><p class="lbl">so</p><ul>
+   <li>Website: Hero und höchstens zwei weitere Stellen</li>
+   <li>App: leere Zustände und 22-px-Werkzeug-Icons</li>
+   <li>Die Figur zeigt eine Tätigkeit, keine Laune</li>
+   <li>Bäcker-Verben nur als Bildunterschrift auf der Website</li>
+  </ul></div></div>
+  <div class="tl"><div class="leave" style="grid-column:1/-1"><p class="lbl">nicht so</p><ul>
+   <li>Figuren als Tapete oder in jedem Abschnitt</li>
+   <li>Gesichter mit Mund, Wangen, Emotionen</li>
+   <li>Figuren in Fehlern oder Entscheidungsmomenten</li>
+   <li>Bäcker-Wörter als State-Namen in App oder Terminal</li>
+  </ul></div></div>
+ </div>
+</section>
+
+<!-- people -->
+<section>
+ <h2>Menschen an den Stationen</h2>
+ <p class="lead">Die größte Lücke im Mock. Die Bäcker sind die Menschen. Sie stehen an jeder Station neben dem Werkzeug. Wer das ist, wechselt: der Kunde in Qualification und Spec, Entwickler oder Lead in Coding und Review. Zwei Konzepte zur Wahl, beide skizzenhaft.</p>
+
+ <div class="option"><b>A</b><h3>Gezeichnete Menschen mit Schürze</h3></div>
+ <p>Dieselbe Linie wie die Werkzeuge, aber ruhiger: Punktaugen statt Glupschaugen, keine Aktionszeichen außer der Geste. Die Schürze macht sie zu Bäckern, ohne Mütze und ohne Kostüm.</p>
+ <div class="line-a">
+  <div class="stations" id="lineA"></div>
+  <div class="counter"></div>
+ </div>
+
+ <div class="option"><b>B</b><h3>Echte Menschen im Avatar-Kreis unter jedem Werkzeug</h3></div>
+ <p>Gewählt am 2026-10-23. Die Werkzeuge bleiben gezeichnet, die Menschen sind echt: ein Foto im Butter-Ring mit Rolle und Tätigkeit. In der App ist das der Avatar der Person, die an der Station wirklich dran ist. Die Platzhalter stehen für Porträts von Unsplash oder KI-generiert. Sie zeigen nur Rollen: keine Namen, keine Zitate, nie als Kunden ausgegeben.</p>
+ <div class="line-b">
+  <div class="stations" id="lineB"></div>
+  <div class="counter"></div>
+ </div>
+ <p style="margin-top:22px;color:var(--rye-2);max-width:70ch">Konzept A bleibt als verworfene Variante zum Vergleich stehen. Die gezeichneten Werkzeuge sind Konzept, keine Endzeichnung.</p>
+</section>
+
+<!-- terminal -->
+<section>
+ <h2>Das Terminal bleibt der ehrliche Kern</h2>
+ <p class="lead">Dieselben Farben und dieselben Wörter wie im Web. Butter heißt hier wie dort: wartet auf dich.</p>
+ <div class="tw">
+  <ul>
+   <li>Kleinschreibung im Terminal, Satzanfang groß im Web.</li>
+   <li>State-Namen bleiben technisch: qualification, spec, coding, review, done.</li>
+   <li>„you“ markiert, wo eine Person entscheidet.</li>
+   <li>Keine Bäcker-Wörter, keine Witze in Fehlern.</li>
+  </ul>
+  <div class="term" role="img" aria-label="Beispiel bakers ui im Terminal mit vier Ticketzeilen">
+   <div class="bar"><i></i><i></i><i></i><span>bakers ui · shop-relaunch</span></div>
+<pre><span class="d">$</span> bakers ui
+<span class="y">BB-162  qualification  waiting for you</span>
+BB-151  coding         running 12:08 · 62k tokens
+<span class="r">BB-149  review         verdict ready · your call</span>
+<span class="g">BB-140  done           merged by ms · 2 runs</span>
+
+<span class="d">[a] approve  [r] send back  [/] search  [?] help</span></pre>
+  </div>
+ </div>
+</section>
+
+<!-- refuse -->
+<section>
+ <h2>Was wir nicht sein wollen</h2>
+ <p class="lead">Die Anti-Ziele aus dem Fundament, als Bild gedacht. Woran ein Entwurf scheitert, auch wenn er technisch funktioniert.</p>
+ <div class="refuse">
+  <div><strong>Kosmos und Glow</strong><p>Schwarzes Loch, Sterne, lila Verlauf. Das ist die heutige Website. Sie fliegt raus.</p></div>
+  <div><strong>Zu dunkel</strong><p>Dark Mode als Markenauftritt. Dark gibt es in der App, nicht als Hero.</p></div>
+  <div><strong>3D-Avatare</strong><p>Glänzende Figuren mit Gesicht im monday-Stil.</p></div>
+  <div><strong>Tailwind-Standard</strong><p>Gleiche Karten mit Icon, Titel, Text als Seitenstruktur, Pillen überall, Kicker über jeder Überschrift.</p></div>
+  <div><strong>Zu verspielt</strong><p>Bäcker-Wortspiele, Emoji, Figuren als Dekoration. Ein Augenzwinkern pro Seite.</p></div>
+  <div><strong>Zu komplexe Geschichte</strong><p>Ein Satz, drei Takte. Der Rest gehört in Beispiele und Demos.</p></div>
+ </div>
+</section>
+
+<!-- decisions -->
+<section>
+ <h2>Entschieden für den CD-Schritt</h2>
+ <ol class="decide">
+  <li><b>Display-Schrift: Bricolage Grotesque</b><p>Entschieden 2026-10-23. Löst die Nähe zu Graza und den Overuse von Instrument Serif. Folge: die Wortmarke wird in Bricolage neu gesetzt, Wärme kommt aus Mehl, Farben und Figuren statt aus der Serife.</p></li>
+  <li><b>Menschen: Konzept B mit echten Fotos</b><p>Entschieden 2026-10-23. Echte Menschen im Avatar-Kreis unter jedem Werkzeug, in der App der echte Avatar.</p></li>
+  <li><b>Kernzeile bleibt</b><p>Entschieden 2026-10-23: „You're the baker. Agents run the line.“ bleibt Headline-Kandidat, die Nähe zu monday ist bekannt.</p></li>
+  <li><b>Farbrollen wie vorgeschlagen</b><p>Entschieden 2026-10-23. Butter wartet auf dich und trägt die Hauptaktion, Limette läuft und ist gut, Rose ist Review, Kruste nur Grafik.</p></li>
+ </ol>
+</section>
+
+</main>
+
+<footer><div class="wrap">bakers.build · Moodboard für die Corporate-Design-Revision · Screenshots der Referenzseiten nur zur internen Arbeit, aufgenommen am 2026-10-23</div></footer>
+
+<script>
+(()=>{
+const S='stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"';
+const W=`fill="#fff" ${S}`, L=`fill="none" ${S}`;
+const hair={
+ short:`<path d="M43 32 C 42 14 78 14 77 32 C 70 25 52 24 43 32 Z" fill="currentColor" ${S} stroke-width="2.6"/>`,
+ bun:`<circle cx="60" cy="13" r="8" ${W}/>`,
+ cap:`<path d="M42 31 C 42 11 78 11 78 31 Z" ${W}/><path d="M42 31 H 78" ${L}/>`,
+ curl:`<path d="M44 26 c 2 -10 10 -14 16 -12 c 6 -2 14 2 16 12" ${L}/>`
+};
+const gesture={
+ says:`<path d="M84 76 C 96 70 100 60 102 52" ${L}/><circle cx="103" cy="48" r="5" ${W}/>
+  <path d="M86 8 h 30 a 6 6 0 0 1 6 6 v 12 a 6 6 0 0 1 -6 6 h -16 l -8 7 v -7 h -6 a 6 6 0 0 1 -6 -6 v -12 a 6 6 0 0 1 6 -6 z" ${W}/>
+  <path d="M90 18 h 22 M90 25 h 14" ${L} stroke-width="2.6"/>`,
+ approves:`<path d="M84 76 C 96 68 100 56 102 46" ${L}/><circle cx="103" cy="42" r="5" ${W}/>
+  <path d="M96 22 l 7 7 l 14 -16" ${L} stroke-width="4"/>`,
+ confirms:`<path d="M36 78 C 24 84 20 96 22 104" ${L}/><circle cx="22" cy="108" r="5" ${W}/>
+  <path d="M84 76 C 94 82 98 92 98 100" ${L}/><circle cx="98" cy="104" r="5" ${W}/>`,
+ merges:`<path d="M84 76 C 96 70 102 64 106 58" ${L}/><circle cx="108" cy="55" r="5" ${W}/>
+  <path d="M100 14 v 24 M100 22 c 10 0 14 4 14 14" ${L} stroke-width="3"/><circle cx="100" cy="12" r="3.4" ${W}/><circle cx="114" cy="40" r="3.4" ${W}/>`,
+ ships:`<path d="M36 80 C 44 92 54 96 60 96 C 66 96 76 92 84 80" ${L}/>
+  <path d="M46 96 C 45 86 52 80 60 80 C 68 80 75 86 74 96 C 74 99 68 100 60 100 C 52 100 46 99 46 96 Z" fill="#F3CE3A" ${S} stroke-width="3"/>`
+};
+const person=(h,g,glasses)=>`<svg viewBox="0 0 124 150" aria-hidden="true">
+ <path d="M30 148 C 30 98 40 66 60 66 C 80 66 90 98 90 148" ${W}/>
+ <path d="M46 92 C 46 80 74 80 74 92" ${L} stroke-width="2.6"/>
+ <path d="M44 92 H 76 L 80 148 H 40 Z" ${W}/>
+ <path d="M52 118 h 16" ${L} stroke-width="2.6"/>
+ <path d="M54 52 v 14 M66 52 v 14" ${L}/>
+ <circle cx="60" cy="36" r="17" ${W}/>
+ ${hair[h]}
+ <circle cx="54" cy="38" r="2.3" fill="currentColor"/><circle cx="66" cy="38" r="2.3" fill="currentColor"/>
+ ${glasses?`<circle cx="54" cy="38" r="5.4" ${L} stroke-width="2.2"/><circle cx="66" cy="38" r="5.4" ${L} stroke-width="2.2"/><path d="M59.4 38 h1.2" ${L} stroke-width="2.2"/>`:''}
+ ${gesture[g]}
+</svg>`;
+const st=[
+ {tool:'ln-scale',t:'Qualification',v:'weighs it',who:'your client · says what’s needed',h:'curl',g:'says'},
+ {tool:'ln-scraper',t:'Spec',v:'cuts it up',who:'your client · approves the plan',h:'bun',g:'approves'},
+ {tool:'ln-oven',t:'Coding',v:'bakes it',who:'a developer or you · confirms',h:'cap',g:'confirms'},
+ {tool:'ln-brush',t:'Review',v:'glazes it',who:'you · authorize the merge',h:'short',g:'merges',gl:true},
+ {tool:'roll',t:'Done',v:'you ship it',who:'you · ship it',h:'short',g:'ships',gl:true}
+];
+const tag=s=>`<div class="tag">${s.t}<small>${s.v}</small></div>`;
+const img=s=>`<img src="svg/${s.tool}.svg" alt="" ${s.tool==='roll'?'style="width:56px;height:42px;margin-bottom:6px"':''}>`;
+document.getElementById('lineA').innerHTML=st.map(s=>`<div class="st">${tag(s)}<div class="duo">${s.tool==='roll'?'':img(s)}${person(s.h,s.g,s.gl)}</div><div class="who">${s.who}</div></div>`).join('');
+const face=`<span class="face" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="21" r="9" fill="#B9A788"/><path d="M8 52 C 9 38 17 32 26 32 C 35 32 43 38 44 52 Z" fill="#B9A788"/></svg></span>`;
+document.getElementById('lineB').innerHTML=st.map(s=>{const r=s.who.split(' · ');return `<div class="st">${tag(s)}<div class="duo">${img(s)}</div><div class="youmark">${face}<span>${r[0]}<br><span style="font-weight:500;color:var(--rye-2)">${r[1]}</span></span></div></div>`}).join('');
+})();
+</script>
+</body></html>

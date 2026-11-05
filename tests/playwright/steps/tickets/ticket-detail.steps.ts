@@ -7,8 +7,8 @@
 // so "the document was not reloaded" means one thing across both surfaces.
 //
 // THE SECOND CLICK IS THE ASSERTION. See the header of steps/team/team-islands.steps.ts.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { markDocument } from '../../support/shell';
@@ -146,6 +146,20 @@ Then('the band shows exactly the link groups {string}', async ({ page }, expecte
   const labels = await page.locator('.summary-band__links .link-group__label').allTextContents();
   expect(labels.map((label) => label.trim())).toEqual(wanted);
 });
+
+Then(
+  'the link group {string} has a row for {string} with the icon {string}',
+  async ({ page }, group: string, url: string, icon: string) => {
+    // The group by its label's text (not innerText: the label is uppercased by CSS).
+    const groupEl = page
+      .locator('.summary-band__links .link-group')
+      .filter({ has: page.locator('.link-group__label', { hasText: new RegExp(`^\\s*${group}\\s*$`) }) });
+    await expect(groupEl).toHaveCount(1);
+    const row = groupEl.locator('.link-row').filter({ has: page.locator(`a[href="${url}"]`) });
+    await expect(row).toHaveCount(1);
+    await expect(row.locator('svg use')).toHaveAttribute('href', new RegExp(`#${icon}$`));
+  },
+);
 
 // ---------------------------------------------------------------------------
 // The tab row (AC 8).

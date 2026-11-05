@@ -1,0 +1,44 @@
+name: Self-host lifecycle
+# Manual check of the operator guide against published images: anonymous
+# install, restart, backup, update and restore on a disposable runner.
+on:
+  workflow_dispatch:
+    inputs:
+      from_version:
+        description: Installed first (vX.Y.Z or full commit SHA)
+        required: true
+      to_version:
+        description: Updated to (vX.Y.Z or full commit SHA)
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: self-host-lifecycle
+  cancel-in-progress: false
+jobs:
+  lifecycle:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run the documented lifecycle
+        env:
+          FROM_VERSION: ${{ inputs.from_version }}
+          TO_VERSION: ${{ inputs.to_version }}
+        run: bash scripts/ci/self-host-lifecycle.sh "$FROM_VERSION" "$TO_VERSION" "$RUNNER_TEMP/lifecycle"
+      - name: Publish evidence
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/lifecycle/evidence/lifecycle.md" ]; then
+            cat "$RUNNER_TEMP/lifecycle/evidence/lifecycle.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: self-host-lifecycle-${{ github.run_attempt }}
+          # Evidence only: the backup and .env files hold secrets.
+          path: ${{ runner.temp }}/lifecycle/evidence/
+          retention-days: 14
+          if-no-files-found: warn

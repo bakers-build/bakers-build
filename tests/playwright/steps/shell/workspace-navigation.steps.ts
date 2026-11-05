@@ -1,4 +1,4 @@
-import { Then, When } from '@key-tec/playwright-core/bdd';
+import { Then, When } from '../../bdd.fixtures';
 import { expect, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
 import { RAIL_ISLAND } from '../../support/shell';

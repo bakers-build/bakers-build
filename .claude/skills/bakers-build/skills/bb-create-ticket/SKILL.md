@@ -1,62 +1,23 @@
 ---
 name: bb-create-ticket
-description: Use when creating a bakers.build ticket from an intake or resuming an interrupted ticket creation.
+description: Use when an idea or intake should become a bakers.build ticket, specified with its requester when asked, or to resume a creation.
 ---
 
 # Create a ticket
 
-Read supplied `$BB_NEW_TICKET_INPUT` first. For an existing or resumed ticket (`is_new: false`),
-resolve its UUID and use [read ticket](../bb-workflow/references/read-ticket.md); do not create a replacement. Collect title, project,
-workflow, Markdown description, scope and optional assignment/relationships from the intake.
+Your user's profile says whether to specify and which questions you answer; ask the requester only
+the rest. The host may add a conversation link, a conductor and the wish to specify.
 
-## Prior art — search before the live create
-
-Execute [prior-art search](../bb-workflow/references/prior-art-search.md) completely — every
-spelling — before judging it. On a hit, stop before writing; report identifier, title, state, assignee and available MR/merge, then obtain the decision.
-Retain searched terms and evidence. An error is not a negative.
-
-## Propose the branch's ticket as `parent`
-
-An explicit intake parent wins. Otherwise resolve the ticket whose `branch_name` matches this
-checkout and propose that parent; a rejection means no parent. No matching ticket means no proposal.
-`base_branch` is computed from the parent; never write it. Preserve explicit null conductor choices.
-
-## The write
-
-Apply [ticket writes](../bb-workflow/references/ticket-writes.md). Call `bakers_ticket_create`
-([tools](../bb-workflow/references/tools.md)) with `title` (the supplied title verbatim),
-`workflow`, `project` (UUID), `description` (the Markdown file's content), `recipe`, `type` and,
-when one was accepted, `parent`.
-
-Choose `recipe` and `type` under [classify](../bb-workflow/references/classify.md); a deployment
-takes `deploy-and-release` and `deployment`, a verification `verify` and `verification`. Retain the returned `id` and `identifier` immediately;
-read it back through [read ticket](../bb-workflow/references/read-ticket.md) and verify title, description, recipe, type and initial state.
-On uncertain creation reconcile the known UUID or uniquely matching context before retrying;
-ambiguous results remain unresolved.
-
-## Qualify and route in the same action
-
-Creation intake is the qualification confirmation; avoid a second human qualify pass.
-Apply [agent choice](../bb-workflow/references/agent-choice.md).
-Publish exactly `qualification` through [publish comment](../bb-workflow/references/publish-comment.md), using every required field from
-[qualification](../bb-workflow/references/qualification.md) › *outtake*, including `test_as`, `out_of_scope`, `handoff_version`, provenance,
-reproduction, `scenario_required`, recipe choice and prior-art evidence. Follow
-[result records](../bb-workflow/references/results.md) for missing user/environment questions.
-Use explicit `not_required`/`false` where applicable.
-
-Publish one [outtake](../bb-workflow/references/outtake.md) `summary` the same way. Each returns a confirmed UUID or a concrete failure.
-**Route only after both UUIDs are confirmed.** Otherwise leave the ticket in `qualification`,
-report the failure and STOP.
-
-Then publish authorized origin status and transition once through [transition ticket](../bb-workflow/references/transition-ticket.md)
-to `plan`. Verify readback and STOP.
-Create no phase artifacts or implementation unless the shortcut below applies.
-
-## A fully specified intake goes straight to `working`
-
-Only confirmed design, implementation plan and test plan permit this shortcut; bugs additionally
-require reproduction and diagnosis. Publish complete confirmed `spec`, `plan`, `test` comments,
-then use `working` as the single destination. Otherwise retain normal routing.
-
-For a scope-free measurement baseline, read [baseline creation](references/baseline.md).
-`create_ticket` is an on-demand action, not a workflow state. Return identifier, link and destination.
+1. **Create** after the [prior-art search](../bb-workflow/references/prior-art-search.md); a hit
+   stops for a decision. Use the verbatim title, the Markdown description and the intake's recipe,
+   type and parent; read it back; add the conversation link. An existing ticket is read, never
+   replaced.
+2. **Specify** it based on your user, when the profile or the request says so, as
+   [specify](../bb-workflow/references/specify.md) does.
+3. **Otherwise qualify** it based on the intake, its confirmation the approval: publish the
+   `qualification` as [qualification › outtake](../bb-workflow/references/qualification.md#outtake)
+   lists, then the `summary`, and move to `plan`; read it back. A confirmed intake with `spec`,
+   `plan` and `test` publishes them too and moves to `working`. Last, set the intake's conductor.
+   In a checkout, apply [agent choice](../bb-workflow/references/agent-choice.md) and
+   [origin status](../bb-workflow/references/origin-status.md). Reply with the identifier and its
+   state.

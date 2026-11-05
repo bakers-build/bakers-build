@@ -2,7 +2,7 @@
 // Properties and Epics inspector). Count figures belong on the Board.
 // `I visit the {string} listing` comes from projects-list.steps.ts;
 // tab/heading/document steps from shell.steps.ts.
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { php } from '../../support/drush';
 import { safe } from '../../support/listing';

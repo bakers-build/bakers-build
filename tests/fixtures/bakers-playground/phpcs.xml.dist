@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ruleset name="Keytec Drupal Project">
+<ruleset name="Bakers Drupal Project">
   <description>PHP CodeSniffer configuration for Drupal projects.</description>
   <arg name="extensions" value="php,module,inc,install,test,profile,theme,css,info,txt,md,yml"/>
   <arg name="colors"/>

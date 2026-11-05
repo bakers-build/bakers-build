@@ -1,6 +1,6 @@
 // Shared account steps: switching the browser to a named seed account.
 // Consumers: features/home, projects, tickets, user.
-import { Given } from '@key-tec/playwright-core/bdd';
+import { Given } from '../../bdd.fixtures';
 import { php } from '../drush';
 import { safe } from '../listing';
 

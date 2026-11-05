@@ -85,35 +85,43 @@ else
   rm -rf "$tmp"
 fi
 
-if command -v cloudflared >/dev/null; then
-  echo "cloudflared: skipped (already installed)"
-else
-  echo "cloudflared: installing $CLOUDFLARED_VERSION"
-  tmp=$(mktemp -d -p "$HOME/.local/tmp")
-  curl -fsSL -o "$tmp/cloudflared" "https://github.com/cloudflare/cloudflared/releases/download/$CLOUDFLARED_VERSION/cloudflared-linux-amd64"
-  chmod +x "$tmp/cloudflared"
-  mv "$tmp/cloudflared" "$HOME/.local/bin/cloudflared"
-  rm -rf "$tmp"
+if [ -f "$HOME/.cloudflared/tunnel-token" ]; then
+  if command -v cloudflared >/dev/null; then
+    echo "cloudflared: skipped (already installed)"
+  else
+    echo "cloudflared: installing $CLOUDFLARED_VERSION"
+    tmp=$(mktemp -d -p "$HOME/.local/tmp")
+    curl -fsSL -o "$tmp/cloudflared" "https://github.com/cloudflare/cloudflared/releases/download/$CLOUDFLARED_VERSION/cloudflared-linux-amd64"
+    chmod +x "$tmp/cloudflared"
+    mv "$tmp/cloudflared" "$HOME/.local/bin/cloudflared"
+    rm -rf "$tmp"
+  fi
 fi
 
-if command -v frpc >/dev/null; then
-  echo "frpc: skipped (already installed)"
-else
-  echo "frpc: installing $FRP_VERSION"
-  tmp=$(mktemp -d -p "$HOME/.local/tmp")
-  curl -fsSL "https://github.com/fatedier/frp/releases/download/v$FRP_VERSION/frp_${FRP_VERSION}_linux_amd64.tar.gz" | tar -xz -C "$tmp"
-  mv "$tmp/frp_${FRP_VERSION}_linux_amd64/frpc" "$HOME/.local/bin/frpc"
-  rm -rf "$tmp"
+if [ -f "$HOME/.config/frp/frpc.json" ]; then
+  if command -v frpc >/dev/null; then
+    echo "frpc: skipped (already installed)"
+  else
+    echo "frpc: installing $FRP_VERSION"
+    tmp=$(mktemp -d -p "$HOME/.local/tmp")
+    curl -fsSL "https://github.com/fatedier/frp/releases/download/v$FRP_VERSION/frp_${FRP_VERSION}_linux_amd64.tar.gz" | tar -xz -C "$tmp"
+    mv "$tmp/frp_${FRP_VERSION}_linux_amd64/frpc" "$HOME/.local/bin/frpc"
+    rm -rf "$tmp"
+  fi
 fi
 
 # Services run detached; the container's /tmp lives for one start. Conductors are the user's to start.
 # Own session (setsid): herdr treats a server outside one as not surviving SSH loss and refuses saved machines.
-setsid nohup herdr server >/tmp/herdr-server.log 2>&1 </dev/null &
+setsid nohup herdr server >"${TMPDIR:-/tmp}/herdr-server.log" 2>&1 </dev/null &
 
 if [ -f "$HOME/.config/frp/frpc.json" ]; then
-  nohup frpc -c "$HOME/.config/frp/frpc.json" >/tmp/frpc.log 2>&1 </dev/null &
+  nohup frpc -c "$HOME/.config/frp/frpc.json" >"${TMPDIR:-/tmp}/frpc.log" 2>&1 </dev/null &
 fi
 
 if [ -f "$HOME/.cloudflared/tunnel-token" ]; then
-  nohup cloudflared tunnel run --token-file "$HOME/.cloudflared/tunnel-token" >/tmp/cloudflared.log 2>&1 </dev/null &
+  nohup cloudflared tunnel run --token-file "$HOME/.cloudflared/tunnel-token" >"${TMPDIR:-/tmp}/cloudflared.log" 2>&1 </dev/null &
 fi
+
+# The PM bot, when the workspace has its parameters (README › PM bot). It never fails the start.
+# Through bash: the Docker upload makes it root-owned, so neither coder nor the bot can change it.
+bash /usr/local/bin/pm-bot || true

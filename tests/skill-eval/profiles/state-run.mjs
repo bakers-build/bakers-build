@@ -9,6 +9,7 @@ export function validate(f) {
   requireValue(uuid(f.input.ticket_uuid) && f.simulation.ticket?.id === f.input.ticket_uuid, 'Expected the simulated ticket');
   requireValue(Array.isArray(e?.comments) && e.comments.at(-1) === 'summary' && (e.transition === null || typeof e.transition === 'string'),
     'Expected the comment sequence ending in summary, and a transition or null');
+  requireValue(e.reads === undefined || (Array.isArray(e.reads) && e.reads.every(r => typeof r === 'string')), 'Expected expect.reads as skill paths');
 }
 
 export function checkOutput(f, output, context) {
@@ -26,14 +27,14 @@ export function checkOutput(f, output, context) {
         Boolean(readAfter(trace, states[0], ticket)), `After the comments, transition once to ${e.transition} and read it back`)
       : check('no-transition', states.length === 0, 'Stop at the approval: no state write'),
   ];
+  if (e.reads) {
+    checks.push(check('reads', e.reads.every(p => trace.some(c => c.tool === 'read_file' && succeeded(c) && c.arguments?.path === p)),
+      `Read ${e.reads.join(', ')}`));
+  }
   if (e.classify) {
     const classification = classified(trace, ticket);
     checks.push(check('classified', classification && comments.every(c => c.index > classification.index),
       'Classify recipe and type once, read them back, then publish the handoff'));
-  }
-  if (e.automatic) {
-    checks.push(check('approval-recorded', comments.some(c => String(arg(c, 'body') ?? '').includes('Approval: automatic')),
-      'A published comment records `Approval: automatic`'));
   }
   if (e.markers) {
     checks.push(check('summary-markers', summary && e.markers.every(m => arg(summary, 'body')?.includes(m)),

@@ -11,7 +11,7 @@
 // list's own "New ticket" trigger — that trigger belongs to Task 6, a task
 // numbered after this one, and depending on it here would be a circular
 // build order.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { php } from '../../support/drush';
@@ -929,11 +929,6 @@ function requireLastTypedTitle(): string {
 Then('the stored ticket has conductor {string}', async ({}, conductorLabel: string) => {
   const facts = loadCreatedTicketFacts(requireLastTypedTitle());
   expect(facts.conductorLabel, 'The stored ticket does not carry the expected conductor').toBe(conductorLabel);
-});
-
-Then('the stored ticket has workflow {string}', async ({}, workflow: string) => {
-  const facts = loadCreatedTicketFacts(requireLastTypedTitle());
-  expect(facts.workflow, 'The stored ticket does not carry the chosen workflow').toBe(workflow);
 });
 
 Then('the stored ticket has no conductor', async () => {

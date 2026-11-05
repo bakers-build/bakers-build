@@ -2,7 +2,7 @@
 // asserting on its form fields. Consumers: features/sign-in (auth-contract),
 // tickets (functional-forms), workspace (ambient-forms).
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../drush';
 import { test, expect } from '../../bdd.fixtures';
 
 const { Given, When, Then } = createBdd(test);

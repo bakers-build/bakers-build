@@ -28,27 +28,19 @@ import { applyMigrations, BB_CONFIG_SCHEMA_VERSION } from './config-schema.js';
 import {
   ConfigSourceEditor,
   redactConfigSource,
-  sameValue,
 } from './config-source-edit.js';
 import {
   type ConnectionAuthType,
-  configImportExpression,
-  DEFAULT_CONDUCTOR_AGENT_ADDONS,
   renderCommittedConfig,
   renderGlobalConnection,
   renderHostMachine,
 } from './config-templates.js';
-import {
-  CONDUCTOR_ADDON_SLOTS,
-  validateConfigSources,
-} from './config-validation.js';
-import { migrateAddonNames } from './migrate-addon-names.js';
+import { validateConfigSources } from './config-validation.js';
 
 export interface ConfigPlanOptions extends ConfigInventoryOptions {
   inputs?: {
-    machineId?: string;
-    userId?: string;
-    maxParallel?: number;
+    /** Machine display label; the machine UUID is always generated. */
+    label?: string;
     baseUrl?: string;
     clientId?: string;
     secret?: string;
@@ -71,22 +63,13 @@ export interface ConfigPlan {
   writes: ConfigWrite[];
   fingerprints: Map<string, string | null>;
 }
+// Every config file restarted at schema v1; no migration step exists.
 const CURRENT = {
-  machine: 3,
-  'legacy-machine': 3,
-  // v1 is the first versioned conductor shape: the conductor owns only
-  // remote/executor/workspace and declares no agent addons. Zero was the
-  // implicit pre-versioned state (no @bakers-schema-version marker present).
+  machine: 1,
   conductor: 1,
-  connection: 4,
-  'project-connection': 4,
+  connection: 1,
+  'project-connection': 1,
 };
-const CONNECTION_KEYS = [
-  'base_url',
-  'client_id',
-  'client_secret',
-  'workspace_id',
-] as const;
 function fingerprint(text: string) {
   return `sha256:${createHash('sha256').update(text).digest('hex')}`;
 }
@@ -134,8 +117,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
   const files = report.files;
   const machine = files.find((f) => f.kind === 'machine');
   const connection = files.find((f) => f.kind === 'connection');
-  const homeLocal = files.find((f) => f.kind === 'home-local');
-  const local = files.find((f) => f.kind === 'local');
   if (options.operation === 'check') {
     const validated = validateConfigSources(
       inventoryOptions,
@@ -152,7 +133,9 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     (f) =>
       (['scope', 'syntax', 'inventory'].includes(f.stage) &&
         f.code !== 'missing_required_file') ||
-      ['future_schema_version', 'version_marker_disagreement'].includes(f.code),
+      // An old machine file is rewritten below, keeping its machine_id.
+      (f.code === 'unsupported_schema_version' && f.path !== machine?.path) ||
+      f.code === 'version_marker_disagreement',
   );
   const recheck =
     configRecheckCommand(
@@ -200,7 +183,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       (e) =>
         e.path === file.path &&
         [
-          'future_schema_version',
+          'unsupported_schema_version',
           'version_marker_disagreement',
           'syntax_error',
           'unreadable_file',
@@ -223,74 +206,15 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     )
       e.set(key, JSON.stringify(value));
   };
-  const move = (
-    from: ConfigFileReport,
-    key: string,
-    to: ConfigFileReport,
-    target: string,
-  ) => {
-    const source = editors.get(from.path);
-    const p = source?.property(key);
-    if (!p || !source) return;
-    if (!from.selected && !to.selected) return;
-    if (!from.selected || !to.selected) {
-      problem(
-        from,
-        'out_of_scope_write_required',
-        key,
-        'Both source and destination are selected writable layers.',
-        [{ path: to.path, key: target }],
-      );
-      return;
-    }
-    if (protectedFile(from) || protectedFile(to)) return;
-    const dest = editor(to);
-    const existing = dest.property(target);
-    if (!p.staticallyDetermined || p.value === undefined) {
-      problem(
-        from,
-        'unknown_value',
-        key,
-        'The moved value must be a known literal.',
-        [{ path: to.path, key: target }],
-      );
-      return;
-    }
-    if (existing && !sameValue(p, existing)) {
-      problem(
-        from,
-        'conflicting_values',
-        key,
-        'Source and destination values agree.',
-        [
-          {
-            path: to.path,
-            key: target,
-            line: existing.line,
-            column: existing.column,
-          },
-        ],
-      );
-      return;
-    }
-    if (!existing) dest.set(target, source.expression(key) as string);
-    source.remove(key);
-  };
   if (!machine || !connection)
     return { report, writes: [], fingerprints: new Map() };
-  if (
-    machine.selected &&
-    !editors.has(machine.path) &&
-    options.inputs?.machineId &&
-    options.inputs?.userId
-  )
+  if (machine.selected && !editors.has(machine.path))
     editors.set(
       machine.path,
       new ConfigSourceEditor(
         renderHostMachine({
-          machineId: options.inputs.machineId,
-          userId: options.inputs.userId,
-          maxParallel: options.inputs.maxParallel ?? 1,
+          machineId: randomUUID(),
+          ...(options.inputs?.label ? { label: options.inputs.label } : {}),
         }),
       ),
     );
@@ -319,27 +243,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         }),
       ),
     );
-  const legacy = files.find((f) => f.kind === 'legacy-machine');
-  if (legacy?.selected && !protectedFile(legacy) && editors.has(legacy.path)) {
-    const old = editor(legacy);
-    const current = editors.get(machine.path);
-    if (!current) editors.set(machine.path, new ConfigSourceEditor(old.text));
-    else
-      for (const [key, p] of old.source.properties)
-        if (!key.includes('.') && !key.includes('[')) {
-          const other = current.property(key);
-          if (other && !sameValue(p, other))
-            problem(
-              legacy,
-              'conflicting_values',
-              key,
-              'Legacy and canonical machine values agree.',
-              [{ path: machine.path, key }],
-            );
-          else if (!other) current.set(key, old.expression(key) as string);
-        }
-    editors.delete(legacy.path);
-  }
 
   const machineEditor = editor(machine);
   const literalSubtreeIssue = (
@@ -814,8 +717,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
   }
   for (const file of files.filter(
     (candidate) =>
-      candidate.selected &&
-      ['conductor', 'local', 'home-local'].includes(candidate.kind),
+      candidate.selected && ['conductor', 'local'].includes(candidate.kind),
   )) {
     const source = editors.get(file.path);
     if (!source || protectedFile(file)) continue;
@@ -844,71 +746,8 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     if (file.kind === 'conductor') migrateCatalog(file, source);
     deriveMachineDefault();
   }
-  if (
-    editors.has(connection.path) &&
-    connection.selected &&
-    !protectedFile(connection) &&
-    !protectedFile(machine)
-  )
-    replaceGeneratedMachineWiring(
-      editor(connection),
-      editor(machine),
-      connection,
-      homeLocal ? editors.get(homeLocal.path) : undefined,
-      homeLocal,
-      machine.selected,
-      options.inputs,
-      problem,
-    );
-  // Machine connection values must move atomically with their connection destinations.
-  for (const key of CONNECTION_KEYS) {
-    const target =
-      key === 'base_url'
-        ? 'site.base_url'
-        : key === 'workspace_id'
-          ? key
-          : `plugins[0].with.${key}`;
-    const e = editors.get(machine.path);
-    if (!e?.property(key)) continue;
-    if (!machine.selected || !connection.selected) {
-      problem(
-        machine,
-        'out_of_scope_write_required',
-        key,
-        'Machine and connection scopes are both required.',
-        [{ path: connection.path, key: target }],
-      );
-      continue;
-    }
-    if (protectedFile(machine) || protectedFile(connection)) continue;
-    const conn = editor(connection);
-    // Generated v1-v3 wiring is resolved only from the recognized machine literal.
-
-    if (key === 'client_id' || key === 'client_secret') {
-      let prefix = oauthPrefix(conn);
-      if (!prefix) {
-        if (!conn.property('plugins'))
-          conn.set(
-            'plugins',
-            "[{ plugin: '@bakers-build/addon-essentials' }, { plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: { id: 'bakers', default: true, type: 'oauth2_client_credentials', scope: 'bb:session' } }]",
-          );
-        prefix = oauthPrefix(conn);
-      }
-      if (!prefix) {
-        problem(
-          connection,
-          'unsupported_source_shape',
-          'plugins',
-          'A statically known OAuth provider accepts migrated credentials.',
-        );
-        continue;
-      }
-      move(machine, key, connection, `${prefix}.with.${key}`);
-    } else move(machine, key, connection, target);
-  }
   for (const file of files) {
-    if (protectedFile(file) || !file.selected || file.kind === 'legacy-machine')
-      continue;
+    if (protectedFile(file) || !file.selected) continue;
     let e = editors.get(file.path);
     if (e && e.source.shape !== 'object') {
       problem(
@@ -921,81 +760,12 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     }
     try {
       if (file.kind === 'machine') {
-        fill(file, 'machine_id', options.inputs?.machineId);
-        fill(file, 'user_id', options.inputs?.userId);
-        fill(file, 'max_parallel', options.inputs?.maxParallel);
-        e = editors.get(file.path);
-        // Addon settings live only in the top-level addons[]: move the retired
-        // `agents.addons` and `ports` keys there first.
-        // Entries moved from agents.addons are the operator's harnesses; an
-        // empty list names none, so it seeds like a missing one.
-        const agentAddons = e?.property('agents.addons');
-        const hadAgentAddons = !!agentAddons && agentAddons.arrayLength !== 0;
-        if (e) migrateMachineAddons(e);
-        // Machine 2 → 3: seed agent harnesses into addons[] when the machine
-        // lists no harness (isHarness). Source: harness packages found in the
-        // project conductor.config.js addons[], or a known default set when no
-        // conductor config is available.
-        const machineAddons = e?.property('addons');
-        if (
-          e &&
-          !hadAgentAddons &&
-          (!machineAddons || machineAddons.nodeType === 'ArrayExpression') &&
-          arrayEntries(e, 'addons').every(
-            (x) => typeof x.pkg === 'string' && !isHarness(x.pkg),
-          )
-        ) {
-          const conductorFile = files.find((f) => f.kind === 'conductor');
-          const conductorEditor = conductorFile
-            ? editors.get(conductorFile.path)
-            : undefined;
-          let agentAddonsExpression: string | undefined;
-          if (conductorEditor) {
-            const agentEntries = [...conductorEditor.source.properties]
-              .filter(([key]) => /^addons\[\d+\](?:\.use)?$/.test(key))
-              .map(([, property]) => property.value)
-              .filter(
-                (value): value is string =>
-                  typeof value === 'string' && isHarness(value),
-              );
-            if (agentEntries.length > 0)
-              agentAddonsExpression = `[${agentEntries.map((pkg) => `{ use: ${JSON.stringify(pkg)} }`).join(', ')}]`;
-          }
-          if (!agentAddonsExpression) {
-            // No conductor config or no agent entries found — seed a known default
-            // set and surface a warning so the operator can review it.
-            agentAddonsExpression = `['@bakers-build/addon-claude', '@bakers-build/addon-codex', '@bakers-build/addon-grok']`;
-            report.findings.push({
-              code: 'missing_required_file',
-              severity: 'warning',
-              stage: 'planning',
-              path: file.path,
-              key: 'addons',
-              expected:
-                'addons seeded with a default set of agent harnesses; review it and adjust to match your installed agent packages.',
-              observed: null,
-              owner: file.layer,
-              related: [],
-              statically_determined: true,
-              remediation: `Edit ${file.path} to set addons to the packages you want, then run ${recheck}.`,
-              recheck,
-            });
-          }
-          const listed = arrayEntries(e, 'addons').map((x) => x.text);
-          e.set(
-            'addons',
-            listed.length
-              ? `[${[...listed, agentAddonsExpression.slice(1, -1)].join(', ')}]`
-              : agentAddonsExpression,
-          );
-        }
-        if (e) e.stamp(3);
+        editor(file).remove('user_id');
+        fill(file, 'machine_id', randomUUID());
+        fill(file, 'label', options.inputs?.label);
+        editor(file).stamp(1);
       }
-      if (
-        file.kind === 'conductor' ||
-        file.kind === 'local' ||
-        file.kind === 'home-local'
-      ) {
+      if (file.kind === 'conductor' || file.kind === 'local') {
         if (
           (!e || e.text.trim() === 'export default {};') &&
           file.required &&
@@ -1015,117 +785,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         if (!e) continue;
         if (file.kind === 'conductor') {
           e = editor(file);
-          const legacyProject = e.property('project');
-          const legacyWorkspace = e.property('bb_workspace');
-          const nestedBb = e.property('bakers');
-          const nestedExpression = e.expression('bakers');
-          const nestedHasSpread = nestedExpression
-            ? new ConfigSourceEditor(`export default ${nestedExpression};`)
-                .source.unknownKeys
-            : false;
-          let projectExpression = e.expression('project');
-          if (
-            projectExpression === 'project' &&
-            /const project\s*=\s*local\.project\s*\?\?\s*([^;]+);/.test(e.text)
-          ) {
-            const fallback =
-              /const project\s*=\s*local\.project\s*\?\?\s*([^;]+);/
-                .exec(e.text)?.[1]
-                ?.trim();
-            const literal = fallback
-              ? new ConfigSourceEditor(
-                  `export default { value: ${fallback} };`,
-                ).property('value')
-              : undefined;
-            if (
-              literal?.staticallyDetermined &&
-              typeof literal.value === 'string'
-            ) {
-              projectExpression = fallback;
-              e.text = e.text.replace(
-                /const project\s*=\s*local\.project\s*\?\?\s*[^;]+;/,
-                `const project = ${fallback};`,
-              );
-            }
-          }
-          const staticProject = projectExpression
-            ? new ConfigSourceEditor(
-                `export default { value: ${projectExpression} };`,
-              ).property('value')
-            : undefined;
-          if (
-            nestedBb &&
-            (nestedBb.nodeType !== 'ObjectExpression' ||
-              !nestedBb.staticallyDetermined ||
-              nestedHasSpread)
-          )
-            problem(
-              file,
-              'unsupported_source_shape',
-              'bakers',
-              'A literal bakers object is required.',
-            );
-          else if (
-            legacyProject &&
-            (!staticProject?.staticallyDetermined ||
-              typeof staticProject.value !== 'string')
-          )
-            problem(
-              file,
-              'unknown_value',
-              'project',
-              'A literal project name is required for migration.',
-            );
-          else if (
-            legacyWorkspace &&
-            (!legacyWorkspace.staticallyDetermined ||
-              typeof legacyWorkspace.value !== 'string')
-          )
-            problem(
-              file,
-              'unknown_value',
-              'bb_workspace',
-              'A literal workspace name is required for migration.',
-            );
-          else if (legacyProject || legacyWorkspace) {
-            const existingProject = e.property('bakers.project');
-            const existingWorkspace = e.property('bakers.workspace');
-            if (
-              legacyProject &&
-              existingProject &&
-              (!existingProject.staticallyDetermined ||
-                existingProject.value !== staticProject?.value)
-            )
-              problem(
-                file,
-                'conflicting_values',
-                'project',
-                'Legacy and nested project names must agree.',
-              );
-            else if (
-              legacyWorkspace &&
-              existingWorkspace &&
-              (!existingWorkspace.staticallyDetermined ||
-                existingWorkspace.value !== legacyWorkspace.value)
-            )
-              problem(
-                file,
-                'conflicting_values',
-                'bb_workspace',
-                'Legacy and nested workspace names must agree.',
-              );
-            else {
-              if (legacyProject && !existingProject)
-                e.set('bakers.project', projectExpression as string);
-              if (legacyWorkspace && !existingWorkspace)
-                e.set(
-                  'bakers.workspace',
-                  e.expression('bb_workspace') as string,
-                );
-              e.remove('project');
-              e.remove('bb_workspace');
-            }
-          }
           fill(file, 'bakers.project', options.project);
           const canonical = new ConfigSourceEditor(
             renderCommittedConfig({
@@ -1158,130 +817,13 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               continue;
             e.set(slot, canonical.expression(slot) as string);
           }
-          // Only seed default agent addons into an unversioned conductor config.
-          // A versioned config (schema v1+) has already been migrated: agents
-          // belong to machine.config.js and the conductor addons[] must not be
-          // repopulated with the old agent harnesses on re-run.
-          if (
-            !e.property('agent') &&
-            !e.property('addons') &&
-            !(file.version.effective ?? 0)
-          )
-            e.set('addons', DEFAULT_CONDUCTOR_AGENT_ADDONS);
           if (
             options.operation === 'init' &&
             options.inputs?.workspace &&
             !e.property('bakers.workspace')
           )
             e.set('bakers.workspace', JSON.stringify(options.inputs.workspace));
-          if (!e.property('conductor_id') && !e.property('machine_id')) {
-            const machineEditor = editors.get(machine.path);
-            const machineId = machineEditor?.property('machine_id');
-            const userId = machineEditor?.property('user_id');
-            const project = e.property('bakers.project');
-            if (
-              typeof machineId?.value === 'string' &&
-              typeof userId?.value === 'string' &&
-              typeof project?.value === 'string'
-            )
-              e.set(
-                'conductor_id',
-                JSON.stringify(
-                  `${userId.value}-${machineId.value}-${project.value}`,
-                ),
-              );
-          }
-        }
-        for (const key of ['max_parallel', 'conductor.max_parallel'])
-          move(file, key, machine, 'max_parallel');
-        const old = e.property('machine_id');
-        const current = e.property('conductor_id');
-        if (old) {
-          if (
-            current &&
-            !sameValue(old, current) &&
-            e.expression('machine_id') !== e.expression('conductor_id')
-          )
-            problem(
-              file,
-              'conflicting_values',
-              'machine_id',
-              'The deprecated and current conductor identity must agree.',
-              [
-                {
-                  path: file.path,
-                  key: 'conductor_id',
-                  line: current.line,
-                  column: current.column,
-                },
-              ],
-            );
-          else if (current) e.remove('machine_id');
-          else e.rename('machine_id', 'conductor_id');
-        }
-        if (
-          file.kind === 'conductor' &&
-          e.text.includes('async function loadMachine()')
-        )
-          // The committed conductor config never names this machine's path
-          // (AC 4): the replacement is the same portable BB_HOME/HOME
-          // expression init renders, not a serialised file:// URL. The match
-          // is widened past a single backtick pair so it also catches the
-          // nested-backtick form the current template emits.
-          e.text = e.text.replace(
-            /import\(`(?:[^`\\]|\\.|`[^`]*`)*\/(?:machine\.config\.js|conductor\.config\.machine\.js)`\)/g,
-            `import(${configImportExpression('machine.config.js')})`,
-          );
-        e.text = migrateAddonNames(e.text, 'engine').text;
-        if (file.kind === 'conductor') {
-          // Conductor 0 → 1: remove agent-addon entries from addons[], leaving
-          // only remote/executor/workspace provider packages (and any spread
-          // expressions such as `...(local.agent_addons ?? [])`). If addons[]
-          // becomes empty, remove the key. Idempotent: a file already at v1
-          // (effective version set) is left entirely unchanged on re-run.
-          // Agent packages are those NOT in the canonical non-agent provider set
-          // (same definition as the conductor slot-filling heuristic).
-          if (!(file.version.effective ?? 0)) {
-            const NON_AGENT_PACKAGES = new Set([
-              '@bakers-build/addon-remote-drupal',
-              '@bakers-build/addon-herdr',
-              '@bakers-build/addon-fake',
-              '@bakers-build/addon-workspace-git',
-            ]);
-            const addonsProperty = e.property('addons');
-            if (
-              addonsProperty?.staticallyDetermined &&
-              addonsProperty.nodeType === 'ArrayExpression'
-            ) {
-              const length = addonsProperty.arrayLength ?? 0;
-              const kept: string[] = [];
-              for (let i = 0; i < length; i++) {
-                const entryKey = `addons[${i}]`;
-                const entry = e.property(entryKey);
-                // Keep non-statically-known entries (e.g. spread) and entries
-                // whose package is a known non-agent provider.
-                const useProperty =
-                  e.property(`${entryKey}.use`) ??
-                  e.property(`${entryKey}.name`);
-                const pkg =
-                  entry?.staticallyDetermined && typeof entry.value === 'string'
-                    ? entry.value
-                    : useProperty?.staticallyDetermined &&
-                        typeof useProperty.value === 'string'
-                      ? useProperty.value
-                      : undefined;
-                if (pkg === undefined || NON_AGENT_PACKAGES.has(pkg)) {
-                  const expr = e.expression(entryKey);
-                  if (expr !== undefined) kept.push(expr);
-                }
-              }
-              if (kept.length === 0) e.remove('addons');
-              else if (kept.length < length)
-                e.set('addons', `[${kept.join(', ')}]`);
-            }
-            // Stamp v1 so subsequent runs skip this block (idempotent).
-            e.stamp(1);
-          }
+          e.stamp(1);
         }
       }
     } catch {
@@ -1341,33 +883,10 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
             );
         }
       }
-      if (file.kind === 'project-connection') migrateGeneratedProject(e);
       const version = file.version.effective ?? 1;
       if (version < BB_CONFIG_SCHEMA_VERSION)
         e.text = applyMigrations(e.text, version, BB_CONFIG_SCHEMA_VERSION);
-      e.text = migrateAddonNames(e.text, 'connection').text;
-      if (file.kind === 'project-connection' && local) {
-        const prefix = oauthPrefix(e);
-        const secret = prefix
-          ? e.property(`${prefix}.with.client_secret`)
-          : undefined;
-        if (secret?.staticallyDetermined && secret.value) {
-          move(
-            file,
-            `${prefix}.with.client_secret`,
-            local,
-            'oauth.client_secret',
-          );
-          if (!e.property(`${prefix}.with.client_secret`)) {
-            e.set(`${prefix}.with.client_secret`, 'local.oauth?.client_secret');
-            if (!/const local\s*=|let local\s*=/.test(e.text))
-              e.text =
-                "let local = {};\ntry { local = (await import('./conductor.config.local.js')).default; } catch (error) { if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error; }\n" +
-                e.text;
-          }
-        }
-      }
-      e.stamp(4);
+      e.stamp(BB_CONFIG_SCHEMA_VERSION);
     } catch {
       problem(
         file,
@@ -1377,13 +896,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       );
     }
   }
-  if (
-    machine.selected &&
-    !protectedFile(machine) &&
-    editors.has(machine.path) &&
-    !editor(machine).property('max_parallel')
-  )
-    editor(machine).set('max_parallel', '1');
   const overlay = new Map<string, string | null>(
     [...editors].map(([path, e]) => [path, e.text]),
   );
@@ -1423,15 +935,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       layer: file.layer,
       before_version: file.version.effective,
       after_version:
-        after === null
-          ? null
-          : ['machine', 'legacy-machine'].includes(file.kind)
-            ? 3
-            : ['connection', 'project-connection'].includes(file.kind)
-              ? 4
-              : file.kind === 'conductor'
-                ? 1
-                : null,
+        after === null || file.kind === 'local' ? null : CURRENT[file.kind],
       diff: `--- ${file.path}\n+++ ${file.path}\n${
         before === null
           ? ''
@@ -1456,101 +960,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
   return { report, writes, fingerprints };
 }
 
-const PORTS_ADDON = '@bakers-build/addon-ports';
-/** A package known to fill no agent slot is not a harness; an unknown one may be. */
-function isHarness(pkg: string): boolean {
-  return CONDUCTOR_ADDON_SLOTS[pkg]?.includes('agent') ?? true;
-}
-
-/**
- * Source text, package and alias of each element of the array at `key`; the
- * alias is '' when absent and undefined when not a literal.
- */
-function arrayEntries(
-  e: ConfigSourceEditor,
-  key: string,
-): Array<{ text: string; pkg: unknown; alias: unknown }> {
-  const length = e.property(key)?.arrayLength ?? 0;
-  return Array.from({ length }, (_, i) => {
-    const item = `${key}[${i}]`;
-    const alias = e.property(`${item}.alias`);
-    return {
-      text: e.expression(item) ?? '',
-      pkg:
-        e.property(item)?.value ??
-        e.property(`${item}.use`)?.value ??
-        e.property(`${item}.name`)?.value,
-      alias: !alias ? '' : alias.staticallyDetermined ? alias.value : undefined,
-    };
-  });
-}
-
-/**
- * Move the retired machine keys into the top-level `addons[]`: each
- * `agents.addons` entry not already listed with the same text, and `ports`
- * as the `@bakers-build/addon-ports` entry's `with`. Only literal arrays/objects
- * move; an opaque value stays for `bakers config check` to report.
- */
-function migrateMachineAddons(e: ConfigSourceEditor) {
-  const addons = e.property('addons');
-  if (addons && addons.nodeType !== 'ArrayExpression') return;
-  // A spread has no element span to carry over; rebuilding would drop it.
-  const opaque = (key: string) => arrayEntries(e, key).some((x) => !x.text);
-  if (opaque('addons') || opaque('agents.addons')) return;
-  const agentAddons = e.property('agents.addons');
-  if (agentAddons?.nodeType === 'ArrayExpression') {
-    const listed = arrayEntries(e, 'addons');
-    const merged = [...listed];
-    for (const x of arrayEntries(e, 'agents.addons')) {
-      if (merged.some((y) => y.text === x.text)) continue;
-      // Possibly the same package as a listed entry under a possibly equal
-      // alias but other text: moving would drop or override settings, so leave
-      // it for `bakers config check`. A variable package may be any harness; two
-      // variables still move, as distinct entries. Entries of agents.addons
-      // already stood together, so they are not compared with each other.
-      const clash = listed.some(
-        (y) =>
-          (typeof x.pkg === 'string' && typeof y.pkg === 'string'
-            ? x.pkg === y.pkg
-            : typeof x.pkg === 'string'
-              ? isHarness(x.pkg)
-              : typeof y.pkg === 'string' && isHarness(y.pkg)) &&
-          (x.alias === undefined ||
-            y.alias === undefined ||
-            x.alias === y.alias),
-      );
-      if (clash) return movePorts(e);
-      merged.push(x);
-    }
-    e.set('addons', `[${merged.map((x) => x.text).join(', ')}]`);
-    e.remove('agents.addons');
-    const agents = e.property('agents');
-    if (
-      agents?.nodeType === 'ObjectExpression' &&
-      ![...e.source.properties.keys()].some((k) => k.startsWith('agents.'))
-    )
-      e.remove('agents');
-  }
-  movePorts(e);
-}
-
-function movePorts(e: ConfigSourceEditor) {
-  const ports = e.property('ports');
-  if (ports?.nodeType !== 'ObjectExpression') return;
-  const settings = e.expression('ports') as string;
-  const listed = arrayEntries(e, 'addons');
-  const at = listed.findIndex((x) => x.pkg === PORTS_ADDON);
-  const entry = `{ use: '${PORTS_ADDON}', with: ${settings} }`;
-  if (at < 0) {
-    e.set('addons', `[${[...listed.map((x) => x.text), entry].join(', ')}]`);
-  } else if (e.property(`addons[${at}]`)?.nodeType === 'Literal') {
-    e.set(`addons[${at}]`, entry);
-  } else if (!e.property(`addons[${at}].with`)) {
-    e.set(`addons[${at}].with`, settings);
-  } else return; // both set: leave `ports` for the check to report
-  e.remove('ports');
-}
-
 function oauthPrefix(e: ConfigSourceEditor): string | undefined {
   return [...e.source.properties]
     .find(
@@ -1559,138 +968,6 @@ function oauthPrefix(e: ConfigSourceEditor): string | undefined {
         p.value === '@dropsh/plugin-oauth2',
     )?.[0]
     .replace(/\.plugin$/, '');
-}
-function replaceGeneratedMachineWiring(
-  e: ConfigSourceEditor,
-  machine: ConfigSourceEditor,
-  file: ConfigFileReport,
-  local: ConfigSourceEditor | undefined,
-  localFile: ConfigFileReport | undefined,
-  machineSelected: boolean,
-  inputs: ConfigPlanOptions['inputs'],
-  problem: (
-    file: ConfigFileReport,
-    code: ConfigFindingCode,
-    key: string | null,
-    expected: string,
-  ) => void,
-) {
-  if (!e.text.includes('async function loadMachine()')) return;
-  const mappings: Record<string, string> = {
-    baseUrl: 'base_url',
-    clientId: 'client_id',
-    clientSecret: 'client_secret',
-    workspaceId: 'workspace_id',
-  };
-  const resolved = new Map<string, string>();
-  for (const [name, key] of Object.entries(mappings)) {
-    const declaration = new RegExp(`const ${name} = ([^;]+);`).exec(e.text);
-    if (!declaration) continue;
-    const literal = new ConfigSourceEditor(
-      `export default {value:${declaration[1]}};`,
-    ).property('value');
-    if (literal?.staticallyDetermined && literal.value !== undefined)
-      resolved.set(name, JSON.stringify(literal.value));
-    else if (
-      new RegExp(
-        `^(?:local\\.[^;]+\\?\\? )?machine\\.${key}(?: \\?\\? 'bakers-agent')?$`,
-      ).test(declaration[1] ?? '')
-    ) {
-      const localKey = key.startsWith('client_') ? `oauth.${key}` : key;
-      const override = local?.property(localKey);
-      const parent = localKey.startsWith('oauth.')
-        ? local?.property('oauth')
-        : undefined;
-      if (
-        local?.source.unknownKeys ||
-        (parent && !parent.staticallyDetermined) ||
-        (override && !override.staticallyDetermined)
-      ) {
-        problem(
-          localFile ?? file,
-          'unknown_value',
-          localKey,
-          'The generated home-local override is a known literal.',
-        );
-        continue;
-      }
-      const p = override?.value != null ? override : machine.property(key);
-      const input = key === 'workspace_id' ? inputs?.workspaceId : undefined;
-      const value =
-        p?.staticallyDetermined && p.value != null
-          ? p.value
-          : (input ?? (key === 'client_id' ? 'bakers-agent' : undefined));
-      if (value !== undefined) {
-        resolved.set(name, JSON.stringify(value));
-        // This generated expression proves the override won before migration.
-        // Removing the shadowed machine value requires its selected write scope.
-        if (override?.value != null && machine.property(key) && machineSelected)
-          machine.remove(key);
-      }
-    }
-  }
-  for (const key of [...e.source.properties.keys()]) {
-    const expr = e.expression(key);
-    const value = expr ? resolved.get(expr) : undefined;
-    if (value !== undefined) e.set(key, value);
-  }
-  for (const [name, value] of resolved)
-    e.text = e.text.replace(
-      new RegExp(`const ${name} = [^;]+;`),
-      `const ${name} = ${value};`,
-    );
-  if (
-    [...e.source.properties.keys()].some((key) =>
-      Object.hasOwn(mappings, e.expression(key) ?? ''),
-    )
-  ) {
-    problem(
-      file,
-      'unknown_value',
-      null,
-      'Generated connection values require known inputs before removing machine ownership.',
-    );
-    return;
-  }
-  if (
-    [...e.source.properties.keys()].some((key) =>
-      /\bmachine\./.test(e.expression(key) ?? ''),
-    )
-  )
-    return;
-  e.text = e.text
-    .replace(/async function loadMachine\(\) \{[\s\S]*?\n\}\n/, '')
-    .replace(/const machine = await loadMachine\(\);\n?/, '');
-}
-function migrateGeneratedProject(e: ConfigSourceEditor) {
-  if (!e.text.includes('async function loadMachine()')) return;
-  if (
-    [...e.source.properties.keys()].some((key) =>
-      /\bmachine\./.test(e.expression(key) ?? ''),
-    )
-  )
-    return;
-  if (!e.property('workspace_id'))
-    e.set('workspace_id', 'local.workspace_id ?? connection.workspace_id');
-  // Both imports land in a COMMITTED file, so neither may carry this machine's
-  // path — the connection import leaks ~/.bakers just as the machine one does.
-  e.text = e.text
-    .replace(
-      /async function loadMachine\(\) \{[\s\S]*?\n\}\n/,
-      `async function loadConnection() { return (await import(${configImportExpression('bakers.config.js')})).default; }\n`,
-    )
-    .replace(
-      'const machine = await loadMachine();',
-      "const connection = await loadConnection();\nconst auth = connection.plugins.find(entry => entry.plugin === '@dropsh/plugin-oauth2')?.with;",
-    )
-    .replace(/machine\.base_url/g, 'connection.site.base_url')
-    .replace(/machine\.client_id(?: \?\? 'bakers-agent')?/g, 'auth?.client_id')
-    .replace(/machine\.client_secret/g, 'auth?.client_secret')
-    .replace(/machine\.workspace_id/g, 'connection.workspace_id');
-  if (/\bmachine\.(?:user_id|machine_id)/.test(e.text))
-    e.text =
-      `const machine = (await import(${configImportExpression('machine.config.js')})).default;\n` +
-      e.text;
 }
 /** Fingerprints are checked for the whole inventory before creating any backup. */
 /**

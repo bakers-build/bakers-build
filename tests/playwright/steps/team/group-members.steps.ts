@@ -12,8 +12,8 @@
 // cannot see it. The remove scenarios here click a tab AFTER the mutation, which
 // lands on the fragment the REMOVE handed back rather than one a navigation
 // produced — one swap deeper than any navigation-only scenario reaches.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import { MEMBERS_ISLAND, markDocument, uidOf } from '../../support/shell';
 

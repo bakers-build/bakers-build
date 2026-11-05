@@ -5,17 +5,14 @@
   "execution": "simulated-tools",
   "skill": "bb-create-ticket",
   "references": [
-    "bb-workflow/SKILL.md",
+    "bb-workflow/references/tools.md",
+    "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-workflow/references/read-ticket.md",
-    "bb-workflow/references/publish-comment.md",
-    "bb-workflow/references/transition-ticket.md",
-    "bb-workflow/references/qualification.md",
-    "bb-workflow/references/boundaries.md",
-    "bb-workflow/references/results.md",
-    "bb-workflow/references/outtake.md",
     "bb-workflow/references/classify.md",
-    "bb-workflow/references/agent-choice.md"
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/qualification.md",
+    "bb-workflow/references/agent-choice.md",
+    "bb-workflow/references/origin-status.md"
   ],
   "input": {
     "task": "Create the new confirmed feature intake using actual fixture tools, perform the required prior-art search, publish qualification and summary, and route it once. No confirmed design, implementation or test plan exists. Stop after initial routing.",
@@ -39,19 +36,9 @@
       "bb-recipe-matt is the only installed recipe and declares itself project default; it covers feature, bug and chore. The type and recipe terms feature and matt already exist. Existing agent defaults are confirmed; no agent override is requested.",
       "Qualification acceptance quality gate passed AC-1 without rewrites; implementation has not been tested.",
       "No web surface; test_as is no login needed, scenario_required false, reproduction not_required, out_of_scope no code or runtime changes.",
-      "The supplied Markdown description file is the confirmed exact description. There is no origin platform, so origin status is not_required.",
-      "The caller supplied provenance and its inputs for the simulator's initial revision fixture-revision-1; retain this value in qualification."
+      "The supplied Markdown description file is the confirmed exact description. There is no origin platform, so origin status is not_required."
     ],
-    "handoff_version": 1,
-    "provenance": "b3f7597d13b3161b12350d41fee83b35463ca29878637c0432635660714e1a3b",
-    "provenance_inputs": {
-      "title": "Document invoice export options",
-      "description": "## Goal\n\nDocument invoice export configuration for operators.\n\n## Acceptance\n\n- AC-1: An operator can find the documented invoice export command and its required project option.\n\n## Out of scope\n\nNo code or runtime change.\n",
-      "revision": "fixture-revision-1",
-      "labels": [],
-      "recipe": "matt",
-      "type": "feature"
-    }
+    "handoff_version": 1
   },
   "simulation": {
     "files": {
@@ -71,6 +58,12 @@
         }
       ],
       "workflow": "bb_work"
+    },
+    "user": {
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "name": "Dana Developer",
+      "position": "Developer",
+      "background": "Develops this project; ask technical questions too."
     }
   },
   "rubric": [

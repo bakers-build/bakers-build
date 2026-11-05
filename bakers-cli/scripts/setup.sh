@@ -56,7 +56,7 @@ if [ "$node_major" -lt 20 ] || { [ "$node_major" -eq 20 ] && [ "$node_minor" -lt
 fi
 
 # --- 2. install ---------------------------------------------------------------
-# --config.minimumReleaseAge=0 mirrors `ddev init-worktree`: it dodges the
+# --config.minimumReleaseAge=0 mirrors `bash .ddev/worktree-post.sh`: it dodges the
 # workspace supply-chain deps-verify policy that fails a plain install on a
 # fresh tree.
 echo "==> Installing conductor dependencies"
@@ -67,7 +67,7 @@ echo "==> Installing conductor dependencies"
 # .bakers/conductor.config.js resolves the workspace packages whose exports point
 # at dist/src. BB-215 reorg: the workspace is `core` (kernel) + `addons/*`
 # (mountables) + `host` (CLI) + `conductor` (run engine). Invoke tsc directly (not
-# `pnpm run build`) to stay fresh-tree-safe, same as `ddev init-worktree`.
+# `pnpm run build`) to stay fresh-tree-safe, same as `bash .ddev/worktree-post.sh`.
 #
 # ORDER MATTERS — it is the BB-224 layered dependency DAG, each step emitting
 # the .d.ts the next one consumes:
@@ -209,8 +209,9 @@ fi
 
 # --- 6. config scaffold -------------------------------------------------------
 # Write .bakers/conductor.config.local.js from the template. Idempotent: if it
-# already exists, leave it untouched. Interactive prompt for machine_id /
-# client_id; non-TTY falls back to defaults. The secret is never written here —
+# already exists, leave it untouched. Interactive prompt for client_id; non-TTY
+# falls back to the default. It carries no identity (bakers init owns the
+# machine UUID). The secret is never written here —
 # the template reads it from $BB_CONSUMER_SECRET.
 echo "==> Scaffolding .bakers/conductor.config.local.js"
 BB_DIR="$REPO_ROOT/.bakers"
@@ -220,23 +221,17 @@ if [ -f "$LOCAL_CFG" ]; then
   echo "    exists — leaving untouched"
 else
   mkdir -p "$BB_DIR"
-  default_machine_id=$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo bakers)
   default_client_id="bakers-agent"
   if [ -t 0 ]; then
-    printf '    machine_id [%s]: ' "$default_machine_id" >&2
-    read -r machine_id || machine_id=""
     printf '    oauth client_id [%s]: ' "$default_client_id" >&2
     read -r client_id || client_id=""
   else
     echo "    non-interactive shell — writing defaults" >&2
-    machine_id=""
     client_id=""
   fi
-  machine_id="${machine_id:-$default_machine_id}"
   client_id="${client_id:-$default_client_id}"
-  sed -e "s|__MACHINE_ID__|$machine_id|" -e "s|__CLIENT_ID__|$client_id|" \
-    "$TEMPLATE" > "$LOCAL_CFG"
-  echo "    wrote $LOCAL_CFG (machine_id=$machine_id, client_id=$client_id)"
+  sed -e "s|__CLIENT_ID__|$client_id|" "$TEMPLATE" > "$LOCAL_CFG"
+  echo "    wrote $LOCAL_CFG (client_id=$client_id)"
 fi
 
 # --- 7. herdr run-session plugins (spiceedit) ---------------------------------
@@ -271,10 +266,10 @@ Next steps:
   1. Export your OAuth consumer secret (never committed):
        export $SECRET_ENV=<your consumer secret>
   2. Authenticate:
-       bakers dropsh auth login
+       bakers auth login
   3. Verify:
-       bakers dropsh auth status
+       bakers auth status
 
-Edit .bakers/conductor.config.local.js to adjust machine_id / client_id.
+Edit .bakers/conductor.config.local.js to adjust client_id.
 Re-run this script (or: pnpm run bootstrap) any time — it is idempotent.
 MSG

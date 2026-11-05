@@ -19,22 +19,22 @@ import type {
 } from './plugins/plugins.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
+import type { ProvisionHook, ToolRegistry } from './plugins/tools.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {
-  /** Default: `${project} @ ${checkoutRoot}`. */
+  /** Display label, sent once at registration: `<machine label> · <project>[/<variant>]`. */
   label: string;
   /**
-   * Stable conductor registration key (bb_conductor.conductor_id). Composed
-   * as `${user_id}-${host}-${project}` from the machine context. Set it to pin
-   * a conductor to a known identity — e.g. so a ticket can be pre-assigned to
-   * it (conductor assignment is the run-start trigger).
+   * Conductor registration key (bb_conductor.conductor_id), derived at load
+   * time as `<machine_id>-<project>-<variant>` and never written to a config.
+   * Absent until `bakers init` gave the machine its UUID.
    */
   conductor_id?: string;
-  /**
-   * @deprecated BB-353 — alias for `conductor_id` during cutover.
-   */
-  machine_id?: string;
+  /** The selected config file's stem: `conductor` for `conductor.config.js`. */
+  variant: string;
+  /** This machine's display label (`machine.config.js` label). */
+  machine_label?: string;
   /** Project name (bb_project.name); resolved at registration. */
   project: string;
   /**
@@ -51,20 +51,11 @@ export interface ConductorSettings {
    */
   prompt: string;
   /**
-   * Host concurrent-run budget. Sourced from machine context max_parallel
-   * (BB-353); engine-config leftovers are ignored with a warning.
-   */
-  max_parallel: number;
-  /**
    * Machine preview-link policy. True when `machine.config.js` sets `tunnel: true`.
    * Runtime-derived; ticket and project env cannot override it.
    */
   tunnel?: boolean;
-  /**
-   * Host identity stem (bb_machine.host_key). Sourced from
-   * MachineContext.machine_id — not derived by hyphen-splitting conductor_id
-   * (that mis-parses when project or host segments contain hyphens).
-   */
+  /** This machine's UUID (bb_machine.host_key), from `machine.config.js` machine_id. */
   host_key?: string;
   poll_interval_ms: number;
   lease_seconds: number;
@@ -90,6 +81,8 @@ export interface ConductorSettings {
     on_freeze?: string;
     /** Runs once in a ticket's worktree when a poll sees it unfrozen. */
     on_resume?: string;
+    /** Never runs on its own: offered to runs as the `provision_up(profile?)` tool. */
+    provision_up?: ProvisionHook;
   };
   /** Control-plane site settings used for dropsh and agent env. */
   site: { base_url: string; jsonapi_prefix: string };
@@ -123,6 +116,8 @@ export interface ConductorFileConfig extends ConductorSettings {
    * validated at load (BB-661). Absent means none.
    */
   inboxAddons?: LoadedInbox[];
+  /** Agent tools from the conductor `addons[]` `tools` exports. Absent means none. */
+  tools?: ToolRegistry;
   /**
    * Conductor process host from the `processHosts` accumulator (last wins).
    * Absent when no addon contributed one — `bakers oven start` then fails

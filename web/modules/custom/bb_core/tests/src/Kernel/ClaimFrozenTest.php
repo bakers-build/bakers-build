@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\bb_core\Claim\ClaimConflictException;
-use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -127,35 +126,6 @@ final class ClaimFrozenTest extends ClaimKernelTestBase {
     $run = $this->claimService->claimNext($this->conductor);
     self::assertNotNull($run, 'The next cycle claims it again.');
     self::assertSame((int) $ticket->id(), (int) $run->get('ticket_id')->target_id);
-  }
-
-  /**
-   * Freezing a ticket does not retire, kill or interrupt its active run (AC-5).
-   *
-   * Freeze bites at the NEXT claim. Release stays server-owned: the agent ends
-   * its step with the state write and TicketTransitionSubscriber retires the
-   * run, exactly as before. The conductor's load is unchanged, so its capacity
-   * accounting cannot drift because an operator frozen something.
-   */
-  public function testFreezingDoesNotDisturbAnActiveRun(): void {
-    $ticket = $this->seedAssignedTicket('working');
-
-    $run = $this->claimService->claim($ticket, $this->conductor);
-    $loadBefore = (int) $this->conductor->get('reported_load')->value;
-
-    $ticket->setFrozen(TRUE)->save();
-
-    self::assertSame('claimed', $this->reloadRun($run)->getRunState(), 'The run is not retired by a freeze.');
-
-    $conductors = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
-    $conductors->resetCache([$this->conductor->id()]);
-    $conductor = $conductors->load($this->conductor->id());
-    self::assertInstanceOf(BbConductorInterface::class, $conductor);
-    self::assertSame(
-      $loadBefore,
-      (int) $conductor->get('reported_load')->value,
-      'reported_load is unchanged by a freeze.',
-    );
   }
 
   /**

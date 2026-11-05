@@ -34,7 +34,7 @@ The executable is `bakers-conductor`.
                                               # DROPSH_CONFIG points to this
                                               # same file for inherited dropsh.
 ~/.config/dropsh/<host>.json                  # Session store only, managed by
-                                              # dropsh auth login/status.
+                                              # bakers auth login/status.
 ```
 
 The conductor uses a single config file. There is no separate plugin registry
@@ -73,7 +73,6 @@ export default {
       // Placeholders: {identifier}, {state}, {runUuid}.
       prompt: 'You are working ticket {identifier}, current state: {state}. Read the ticket and all comments, then execute only the ordered "State: {state}" section of ./WORKFLOW.md. Do not start or prepare a later state.',
       workspace: '/srv/bakers/workspaces/platform',
-      max_parallel: 2,
       poll_interval_ms: 5000,
       lease_seconds: 300,
       retry: {
@@ -102,7 +101,6 @@ Config keys:
 | `conductors[].workspace` | yes | none | Root directory for ticket workspaces. |
 | `conductors[].label` | no | machine ID | Human label for the Drupal conductor entity. |
 | `conductors[].prompt` | no | built-in project-instruction pointer | Agent prompt template. Placeholders: `{identifier}`, `{state}`, `{runUuid}`. The Conductor names no agent skill and does not parse the file; projects compose any capabilities directly in `WORKFLOW.md`. |
-| `conductors[].max_parallel` | no | `1` | Local concurrent run limit for this project entry. |
 | `conductors[].poll_interval_ms` | no | `5000` | Delay between daemon ticks. |
 | `conductors[].lease_seconds` | no | `300` | Lease duration requested for conductor and run leases. |
 | `conductors[].retry.base_backoff_ms` | no | `2000` | Initial retry delay after failed plugin state. |
@@ -115,20 +113,19 @@ Each `conductors[]` entry registers one conductor for one project. A single
 daemon process can serve multiple projects, sharing the same transport,
 session store, and spawn plugin.
 
-## Auth And Inherited dropsh
+## Auth
 
 Authenticate with the same config file:
 
 ```bash
-bakers-conductor --config ~/.config/bakers-conductor/conductor.config.js dropsh auth login --provider oauth2_client_credentials
-bakers-conductor --config ~/.config/bakers-conductor/conductor.config.js dropsh auth status
+bakers auth login --config ~/.config/bakers-conductor/conductor.config.js --provider oauth2_client_credentials
+bakers auth status --config ~/.config/bakers-conductor/conductor.config.js
 ```
 
-When the conductor config loads, the CLI mounts dropsh as
-`bakers-conductor dropsh <command>` and sets `DROPSH_CONFIG` to the loaded
-`conductor.config.js`. Agent sessions should use this binary. Raw `dropsh`
-also works when `DROPSH_CONFIG` is already present, but it is not the
-documented session interface.
+When the conductor config loads, the CLI sets `DROPSH_CONFIG` to the loaded
+`conductor.config.js`. Agent sessions call the server's named tools, natively
+through the MCP connector or with `bakers tools <wire name> --data @args.json`
+(see `docs/configuration/clients/tools.md`).
 
 The conductor passes `DROPSH_CONFIG`, `BB_RUN_UUID`, and `BB_TICKET_UUID`
 into every spawned session.
@@ -248,6 +245,6 @@ own run leases.
 
 The conductor never writes ticket content or ticket state. Ticket updates,
 comments, subticket creation, and footprint logs are agent-session write-back
-operations through `bakers-conductor dropsh ...`, guarded by session scope and
+operations through the server's named tools (`bakers tools`), guarded by session scope and
 Drupal validation. See [api.md](api.md) and SPEC section 13 for the broader
 security model.

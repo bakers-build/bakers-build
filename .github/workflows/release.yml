@@ -1,0 +1,181 @@
+name: GitHub release
+on:
+  workflow_run:
+    workflows: [GitHub checks]
+    types: [completed]
+    branches: [next, main]
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+jobs:
+  release:
+    if: ${{ vars.RELEASE_OWNER == 'github' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository }}
+    environment: release
+    runs-on: blacksmith-8vcpu-ubuntu-2404
+    timeout-minutes: 180
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    env:
+      RELEASE_HEAD: ${{ github.event.workflow_run.head_sha }}
+      RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+      SOURCE_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      GH_TOKEN: ${{ github.token }}
+      PNPM_CONFIG_MINIMUM_RELEASE_AGE: '0'
+      PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: 'true'
+      DOMAIN: nginx
+      STACK_NAME: gate
+      DB_NAME: db
+      DB_USER: db
+      DB_PASSWORD: db
+      DB_ROOT_PASSWORD: root
+      DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
+      REGISTRY_IMAGE_PHP: bakers-gate/php:local
+      REGISTRY_IMAGE_NGINX: bakers-gate/nginx:local
+      REGISTRY_IMAGE_E2E: bakers-gate/e2e:local
+      REGISTRY_PACKAGE_PREFIX: bakers-build
+      REGISTRY_VISIBILITY: public
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check branch and candidate
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_BRANCH" --jq .object.sha)" = "$RELEASE_HEAD"
+          GITHUB_EVENT_NAME=push GITHUB_REF_NAME="$RELEASE_BRANCH" bash scripts/ci/github-branch-policy.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      - name: Build package set
+        run: |
+          corepack enable pnpm
+          cd bakers-cli
+          pnpm install --frozen-lockfile
+          pnpm run build:all
+          pnpm run verify:package
+      - uses: actions/download-artifact@v4
+        if: ${{ github.run_attempt > 1 }}
+        with:
+          name: release-plan
+          path: release-plan
+      - name: Allocate immutable release plan
+        if: ${{ github.run_attempt == 1 }}
+        run: |
+          mkdir -p release-plan
+          channel=next
+          if [ "$RELEASE_BRANCH" = main ]; then channel=latest; fi
+          node bakers-cli/scripts/github-release-plan.mjs "$channel" "$RELEASE_HEAD" release-plan/plan.json
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.run_attempt == 1 }}
+        with:
+          name: release-plan
+          path: release-plan/
+          retention-days: 90
+      - name: Verify saved plan
+        id: plan
+        run: |
+          set -euo pipefail
+          test "$(jq -r .head release-plan/plan.json)" = "$RELEASE_HEAD"
+          echo "version=$(jq -r .version release-plan/plan.json)" >> "$GITHUB_OUTPUT"
+          echo "CI_SOURCE_SHA=$(jq -r .commit release-plan/plan.json)" >> "$GITHUB_ENV"
+          echo "CI_SOURCE_REF=$RELEASE_BRANCH" >> "$GITHUB_ENV"
+          echo "CI_RELEASE_VERSION=$(jq -r .version release-plan/plan.json)" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-images-${{ github.event.workflow_run.run_attempt }}
+          path: verified-images
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Import tested runtime images
+        run: bash scripts/ci/github-image-import.sh
+      - name: Add reproducible release metadata without changing tested layers
+        run: bash scripts/ci/github-image-label.sh
+      - name: Reject superseded release
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_BRANCH" --jq .object.sha)" = "$RELEASE_HEAD"
+      - name: Publish verified public images
+        run: bash scripts/ci/github-registry-rehearsal.sh
+      - name: Promote verified image digests
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_BRANCH" --jq .object.sha)" = "$RELEASE_HEAD"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          for image in php nginx docs pm-bot; do
+            source=$(awk -v image="$image" '$1 == image { print $2 }' gate-reports/registry.txt)
+            test -n "$source"
+            base="ghcr.io/$GITHUB_REPOSITORY/$image"
+            for tag in "$CI_SOURCE_SHA" "$RELEASE_BRANCH"; do
+              docker tag "$source" "$base:$tag"
+              docker push "$base:$tag"
+            done
+          done
+      - name: Deploy and smoke-check
+        env:
+          KOMODO_URL: ${{ secrets.KOMODO_URL }}
+          KOMODO_API_KEY: ${{ secrets.KOMODO_API_KEY }}
+          KOMODO_API_SECRET: ${{ secrets.KOMODO_API_SECRET }}
+        run: |
+          set -euo pipefail
+          stack=bakers-develop
+          app=https://develop.dev.bakers.build
+          docs=https://docs-develop.dev.bakers.build
+          if [ "$RELEASE_BRANCH" = main ]; then
+            stack=bakers-prod
+            app=https://app.bakers.build
+            docs=https://bakers.build
+          fi
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_BRANCH" --jq .object.sha)" = "$RELEASE_HEAD"
+          node scripts/deploy/github-stack.mjs prepare "$stack" "$CI_SOURCE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$RELEASE_BRANCH" --jq .object.sha)" = "$RELEASE_HEAD"
+          status=0
+          npx -y -p keytec-ai-cli@0.4.0 keytec-ai deployer deploy "$RELEASE_BRANCH" || status=$?
+          CI_COMMIT_SHA="$CI_SOURCE_SHA" node scripts/deploy/deploy-report.mjs "$stack" "$app" "$docs" || status=1
+          node scripts/deploy/github-stack.mjs verify "$stack" "$CI_SOURCE_SHA" || status=1
+          exit "$status"
+      - name: Publish complete npm package set
+        if: ${{ steps.plan.outputs.version != '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          node bakers-cli/scripts/publish-github.mjs \
+            "$(jq -r .version release-plan/plan.json)" \
+            "$(jq -r .channel release-plan/plan.json)" \
+            "$(jq -r .commit release-plan/plan.json)" --publish
+      - name: Tag stable candidate and publish release notes
+        if: ${{ github.event.workflow_run.head_branch == 'main' && steps.plan.outputs.version != '' }}
+        run: |
+          set -euo pipefail
+          tag="v$CI_RELEASE_VERSION"
+          existing=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$tag" --jq ".[.[] | select(.ref == \"refs/tags/$tag\") | .object.sha] | .[]")
+          if [ -n "$existing" ]; then
+            test "$existing" = "$CI_SOURCE_SHA"
+          else
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -X POST -f ref="refs/tags/$tag" -f sha="$CI_SOURCE_SHA" >/dev/null
+          fi
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$tag" --notes-file release-plan/plan.json.notes.md
+          fi
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          for image in php nginx docs pm-bot; do
+            source=$(awk -v image="$image" '$1 == image { print $2 }' gate-reports/registry.txt)
+            for tag in "$CI_RELEASE_VERSION" latest; do
+              target="ghcr.io/$GITHUB_REPOSITORY/$image:$tag"
+              docker tag "$source" "$target"
+              docker push "$target"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-evidence-${{ github.run_attempt }}
+          path: gate-reports/
+          retention-days: 30

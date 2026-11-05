@@ -16,7 +16,7 @@ requires shared-setup authorization. Obtain missing scope authorization before s
 
 | Scope | Ownership |
 |---|---|
-| `machine` | `~/.bakers/machine.config.js`: `machine_id`, local operator `user_id`, positive `max_parallel`; local validation, no authentication. |
+| `machine` | `~/.bakers/machine.config.js`: generated UUID `machine_id`, display `label`; local validation, no authentication. |
 | `connection` | `~/.bakers/bakers.config.js`: URL, OAuth credentials/plugins, optional `workspace_id` consumed only by `bakers ui`. Authenticate identity; no workspace-access check or machine prerequisite. |
 | `project` | `.bakers/conductor.config.js`, local overrides, optional `.bakers/bakers.config.js`; independently requires machine/effective-connection readiness, leaves shared files unchanged. |
 | `all` | Selected shared/project layers; project requires its name. |
@@ -28,9 +28,9 @@ requires shared-setup authorization. Obtain missing scope authorization before s
 2. For project setup, independently check machine validity and effective connection authentication.
    With no machine identity or no authenticated user, invoke `@bakers-build/bb-init` for the missing layer
    and resume afterwards. Resolve other prerequisites in their owning authorized scope.
-3. Obtain only missing inputs; reuse explicit values. Machine: `--machine-id`, `--user-id`,
-   `--max-parallel`. Connection: `--base-url`, `--client-id`, optional `--workspace-id`,
-   `--secret-env <variable-name>`. Invent no identities, credentials or workspaces. Secrets stay
+3. Obtain only missing inputs; reuse explicit values. Machine: `--label`
+   (`bakers init` generates `machine_id`; the run budget is set in the backend). Connection: `--base-url`, `--client-id`,
+   optional `--workspace-id`, `--secret-env <variable-name>`. Invent no identities, credentials or workspaces. Secrets stay
    out of prompts, arguments and reports; CLI owns private storage. Supply workspace only if
    caller-named; otherwise `bakers ui` uses its picker.
 4. For project/all, follow [project setup](references/project-setup.md) before applying:

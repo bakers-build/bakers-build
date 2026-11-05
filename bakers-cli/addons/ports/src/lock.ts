@@ -1,6 +1,6 @@
 // BB-676 Task 3 — the one exclusive machine lock a tunnel reconciliation
 // runs under, covering read → desired-state update → DNS/ingress reconcile →
-// persisted result, across CLI processes AND inbox calls.
+// persisted result, across CLI processes AND conductor tool calls.
 //
 // A JS `Promise`-based mutex only serializes within one process; two
 // `bakers ports up` invocations from two worktrees are two OS processes, so the

@@ -1,7 +1,7 @@
 // Workspace My time steps on the time calendar. Consumer: features/worklog-overview.feature.
 // Shared calendar vocabulary (strip, grid, filters) lives in time-calendar.steps.ts.
 import { expect } from '@playwright/test';
-import { Given, Then, When } from '@key-tec/playwright-core/bdd';
+import { Given, Then, When } from '../../bdd.fixtures';
 import { php } from '../drush';
 import { markDocument } from '../shell';
 

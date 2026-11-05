@@ -6,7 +6,7 @@
 // hand-builds the join URL — it is read out of the mail body, the same way
 // `login-flow.ts`'s `loginLinkFor()` reads the one-time login link out of
 // core's mail rather than reconstructing it.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { php } from '../../support/drush';
 import { clearLoginFloodFor, clearMailboxFor, loginCodeFor, messagesFor, bodyOf, submitAddress, submitLoginCode } from '../../support/login-flow';

@@ -1,6 +1,6 @@
 // Canonical CONNECTION config for a bakers.build target repo (BB-215 addon form). This
 // is the CONNECTION surface only — `site` + the auth / renderer plugins. `bakers
-// dropsh`, `bakers ui`, and the conductor's auth all read this small file
+// tools`, `bakers auth`, `bakers ui`, and the conductor's auth all read this small file
 // (BB-201 split preserved); it carries NO engine settings. Local overrides
 // (`conductor.config.local.js`) supply base_url + credentials.
 //
@@ -24,15 +24,6 @@ async function loadLocal() {
   try {
     return (await import('./conductor.config.local.js')).default ?? {};
   } catch {}
-  try {
-    return (
-      (
-        await import(
-          `${process.env.HOME}/.config/conductor/conductor.config.local.js`
-        )
-      ).default ?? {}
-    );
-  } catch {}
   return {};
 }
 
@@ -43,7 +34,7 @@ export default {
     base_url: local.base_url,
     jsonapi_prefix: local.jsonapi_prefix ?? '/jsonapi',
   },
-  // BB-495: OPTIONAL, and `bakers ui`-facing only — `bakers dropsh` reads
+  // BB-495: OPTIONAL, and `bakers ui`-facing only — `bakers tools` reads
   // nothing here; the caller names a workspace explicitly on each call
   // instead. Set this so `bakers ui`'s picker starts focused and its lists are
   // scoped by construction; leave it out and pick from the UI's own picker.
@@ -51,7 +42,7 @@ export default {
   // committed:
   //   // conductor.config.local.js
   //   export default { workspace_id: '<bb_workspace uuid>' };
-  // Read the uuid with: bakers dropsh --format md list bb_workspace/bb_workspace
+  // Read the uuid with: bakers tools tool_api__bakers_workspace_list
   workspace_id: local.workspace_id,
   addons: [
     // Auth: oauth2 (preferred) — ONE provider on ONE scope — else inline HTTP Basic.

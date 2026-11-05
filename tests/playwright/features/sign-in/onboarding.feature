@@ -1,5 +1,5 @@
-# HTMX four-step wizard (identity, About you, skill setup, then prepare your
-# first project), then workspace overview. Completion is a stored Boolean;
+# HTMX three-step wizard (identity, About you, then documentation links per
+# audience), then workspace overview. Completion is a stored Boolean;
 # optional profile fullness does not skip the wizard.
 @feature:onboarding
 Feature: The onboarding wizard before the workspace overview
@@ -153,7 +153,7 @@ Feature: The onboarding wizard before the workspace overview
     And I finish the onboarding wizard
     Then the account "onboarding-iota@example.com" has no saved picture
 
-  Scenario: About-you Next opens the same setup guide for an uninvited account
+  Scenario: About-you Next opens the audience guide
     Given no account exists for "onboarding-setup@example.com"
     When I open anonymous login
     And I request an login link for "onboarding-setup@example.com"
@@ -163,21 +163,13 @@ Feature: The onboarding wizard before the workspace overview
     Then the about-you step is present
     When I mark the authenticated login document
     And I continue from the about-you step
-    Then the setup installation step is present
+    Then the setup guide step is present
     And the document was not reloaded
-    And the command "/plugin marketplace add https://bakers.build/marketplace.json" is shown
-    And the command "/plugin install bakers@bakers" is shown
-    And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
-    When I choose the "Codex" agent filter
-    Then the command "codex plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git" is shown
-    And the command "codex plugin add bakers@bakers" is shown
-    And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
-    And the setup page links to the documentation and Claude skills
-    And the account "onboarding-setup@example.com" has not completed onboarding
-    When I continue from the setup step
-    Then the project step is present
-    And the command "Use `bakers:bb-init-project` to connect this checkout as a bakers.build project." is shown
-    And the project page links to init-project
+    And the wizard progress reads "Step 3 of 3"
+    And the audience "Ticket only" links "Set up a connector" to "https://bakers.build/docs/get-started/connector" in a new tab
+    And the audience "Developer" links "Set up a machine" to "https://bakers.build/docs/get-started/machine" in a new tab
+    And the audience "Developer" links "Set up a project" to "https://bakers.build/docs/get-started/connect-a-project" in a new tab
+    And the setup guide shows no commands and no Next
     And both finish actions are offered
     And the account "onboarding-setup@example.com" has not completed onboarding
 
@@ -190,7 +182,6 @@ Feature: The onboarding wizard before the workspace overview
     Then the identity step is present
     When I continue from the identity step
     And I continue from the about-you step
-    And I continue from the setup step
     Then both finish actions are offered
     When I choose finish and create a new workspace
     Then the address is "/home/new-workspace"
@@ -200,45 +191,6 @@ Feature: The onboarding wizard before the workspace overview
     When I choose the workspace "/setup-create-gmbh/tickets"
     Then the address is "/setup-create-gmbh/tickets"
 
-  Scenario: Copy reports failure when the clipboard is denied and never submits the form
-    Given no account exists for "onboarding-copy@example.com"
-    When I open anonymous login
-    And I request an login link for "onboarding-copy@example.com"
-    And I follow the login link for "onboarding-copy@example.com"
-    Then the identity step is present
-    When I continue from the identity step
-    And I mark the authenticated login document
-    And I continue from the about-you step
-    Then the setup installation step is present
-    And the document was not reloaded
-    When I set the viewport to 390 by 844
-    And clipboard writes fail
-    And I copy the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build."
-    Then the copy status for "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is "Copy failed. Select the command and copy it yourself."
-    And the address is "/home/onboarding"
-    And the setup installation step is present
-    When I set the viewport to 1280 by 800
-    And clipboard writes succeed
-    And I copy the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." with the keyboard
-    Then the copy status for "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is "Copied"
-    And the clipboard holds "Use `bakers:bb-init` to guide me through installing and setting up bakers.build."
-    And the address is "/home/onboarding"
-
-  Scenario: Copy reports failure when the clipboard API is unavailable
-    Given no account exists for "onboarding-copy-missing@example.com"
-    When I open anonymous login
-    And I request an login link for "onboarding-copy-missing@example.com"
-    And I follow the login link for "onboarding-copy-missing@example.com"
-    Then the identity step is present
-    When I continue from the identity step
-    And I continue from the about-you step
-    Then the setup installation step is present
-    When the clipboard API is unavailable
-    And I copy the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build."
-    Then the copy status for "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is "Copy failed. Select the command and copy it yourself."
-    And the address is "/home/onboarding"
-    And the setup installation step is present
-
   Scenario: Progress resumes, Set up later dismisses, and Setup guide reopens twice
     Given no account exists for "onboarding-resume@example.com"
     When I open anonymous login
@@ -247,13 +199,13 @@ Feature: The onboarding wizard before the workspace overview
     Then the identity step is present
     When I continue from the identity step
     And I continue from the about-you step
-    Then the setup installation step is present
+    Then the setup guide step is present
     When I reload the page
-    Then the setup installation step is present
+    Then the setup guide step is present
     When I open anonymous login
     And I request an login link for "onboarding-resume@example.com"
     And I follow the login link for "onboarding-resume@example.com"
-    Then the setup installation step is present
+    Then the setup guide step is present
     And the account "onboarding-resume@example.com" has not completed onboarding
     When I set up later
     Then the address is "/home"
@@ -264,11 +216,11 @@ Feature: The onboarding wizard before the workspace overview
     And I follow the login link for "onboarding-resume@example.com"
     Then the address is "/home"
     When I open the setup guide
-    Then the setup installation step is present
+    Then the setup guide step is present
     When I set up later
     Then the address is "/home"
     When I open the setup guide
-    Then the setup installation step is present
+    Then the setup guide step is present
     And the account "onboarding-resume@example.com" has completed onboarding
 
   Scenario: A late invitation replaces Finish and create with Home
@@ -279,7 +231,6 @@ Feature: The onboarding wizard before the workspace overview
     Then the identity step is present
     When I continue from the identity step
     And I continue from the about-you step
-    And I continue from the setup step
     Then both finish actions are offered
     And a lead has invited "onboarding-late@example.com" to "bakers"
     When I choose finish and create a new workspace
@@ -288,7 +239,7 @@ Feature: The onboarding wizard before the workspace overview
     And the account holds no membership on "bakers"
 
   @nojs
-  Scenario: Setup commands and navigation work without JavaScript
+  Scenario: Setup navigation works without JavaScript
     Given no account exists for "onboarding-nojs@example.com"
     When I open anonymous login
     And I request an login link for "onboarding-nojs@example.com"
@@ -297,11 +248,7 @@ Feature: The onboarding wizard before the workspace overview
     When I continue from the identity step
     Then the about-you step is present
     When I continue from the about-you step
-    Then the setup installation step is present
-    And the command "Use `bakers:bb-init` to guide me through installing and setting up bakers.build." is shown
-    When I continue from the setup step
-    Then the project step is present
-    And the command "Use `bakers:bb-init-project` to connect this checkout as a bakers.build project." is shown
+    Then the setup guide step is present
     When I finish the setup guide
     Then the address is "/home"
     And the home overview empty state is present

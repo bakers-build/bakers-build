@@ -23,7 +23,7 @@ use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * The four-step HTMX onboarding wizard: identity, About you, setup, project.
+ * The three-step HTMX onboarding wizard: identity, About you, setup.
  *
  * The template composes `bb_theme:onboarding` from `#bb_copy` and the
  * fields, so heading, copy and inputs swap as one HTMX fragment. The step
@@ -33,7 +33,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * account form display — the same square-crop widget the account form uses —
  * and its file travels with the step's multipart POST.
  *
- * One Form API object owns the four pages and their exits; splitting it would
+ * One Form API object owns the three pages and their exits; splitting it would
  * add a second form and a nested POST, which this wizard must not do.
  *
  * @SuppressWarnings("PHPMD.TooManyMethods")
@@ -59,16 +59,11 @@ final class BbOnboardingWizardForm extends FormBase {
   private const int STEP_ABOUT = 2;
 
   /**
-   * Skill wizard and plugin installation.
-   */
-  private const int STEP_SETUP = 3;
-
-  /**
-   * Prepare your first project via init-project.
+   * Documentation links per audience.
    *
    * Last page: Finish lives here.
    */
-  private const int STEP_PROJECT = 4;
+  private const int STEP_SETUP = 3;
 
   /**
    * Core user.data provider for this wizard's saved step.
@@ -84,13 +79,6 @@ final class BbOnboardingWizardForm extends FormBase {
    * Published manual origin. Wizard pages never fetch these URLs.
    */
   private const string DOCS_BASE = 'https://bakers.build/docs';
-
-  /**
-   * Fallback git-group prefix when settings have no plugin_source_base.
-   *
-   * Must match the shipped default in bb_core.settings.yml.
-   */
-  private const string DEFAULT_PLUGIN_SOURCE_BASE = 'https://git.key-tec.de/bakers-build/';
 
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,
@@ -200,7 +188,6 @@ final class BbOnboardingWizardForm extends FormBase {
       self::STEP_IDENTITY => $this->buildIdentityFields($form, $form_state, $user),
       self::STEP_ABOUT => $this->buildAboutFields($form, $user),
       self::STEP_SETUP => $this->buildSetupFields($form),
-      self::STEP_PROJECT => $this->buildProjectFields($form),
       default => NULL,
     };
 
@@ -297,21 +284,11 @@ final class BbOnboardingWizardForm extends FormBase {
       return;
     }
 
-    if ($trigger === 'next' && $step === self::STEP_SETUP) {
-      $this->advanceTo($form_state, self::STEP_PROJECT);
+    if ($step !== self::STEP_SETUP) {
       return;
     }
 
-    if ($trigger === 'set_up_later' && ($step === self::STEP_SETUP || $step === self::STEP_PROJECT)) {
-      $this->leaveWizard($form_state, 'bb_core.home');
-      return;
-    }
-
-    if ($step !== self::STEP_PROJECT) {
-      return;
-    }
-
-    if ($trigger === 'finish') {
+    if ($trigger === 'finish' || $trigger === 'set_up_later') {
       $this->leaveWizard($form_state, 'bb_core.home');
       return;
     }
@@ -344,9 +321,13 @@ final class BbOnboardingWizardForm extends FormBase {
    */
   private function boundStep(int $step): int {
     if ($this->destination->isComplete($this->currentUser())) {
-      return $step === self::STEP_PROJECT ? self::STEP_PROJECT : self::STEP_SETUP;
+      return self::STEP_SETUP;
     }
-    return ($step >= self::STEP_IDENTITY && $step <= self::STEP_PROJECT)
+    // A step saved by the former four-step wizard resumes on its last page.
+    if ($step === self::STEP_SETUP + 1) {
+      return self::STEP_SETUP;
+    }
+    return ($step >= self::STEP_IDENTITY && $step <= self::STEP_SETUP)
       ? $step
       : self::STEP_IDENTITY;
   }
@@ -364,12 +345,8 @@ final class BbOnboardingWizardForm extends FormBase {
         'description' => (string) $this->t('So we speak your language — matched to your work and your background.'),
       ],
       self::STEP_SETUP => [
-        'title' => (string) $this->t('Get started - set up bakers.build on your machine'),
-        'description' => (string) $this->t('Install the bakers.build plugin, then paste the skill wizard prompt into your agent. This page never runs the commands for you.'),
-      ],
-      self::STEP_PROJECT => [
-        'title' => (string) $this->t('Prepare your first project'),
-        'description' => (string) $this->t('Open a checkout and let init-project connect it as a bakers.build project. This page never runs the skill for you.'),
+        'title' => (string) $this->t('Get started with bakers.build'),
+        'description' => (string) $this->t('Pick how you will work. Each guide opens in a new tab.'),
       ],
       default => [
         'title' => (string) $this->t('What should we call you?'),
@@ -387,7 +364,7 @@ final class BbOnboardingWizardForm extends FormBase {
     }
     return (string) $this->t('Step @current of @total', [
       '@current' => $step,
-      '@total' => self::STEP_PROJECT,
+      '@total' => self::STEP_SETUP,
     ]);
   }
 
@@ -449,98 +426,15 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * Installation commands and documentation links.
+   * Documentation links, one labelled group per audience.
    */
   private function buildSetupFields(array &$form): void {
-    $marketplace = $this->marketplaceGitUrl();
-    $form['fields']['prerequisites'] = $this->note(
-      (string) $this->t('You need Node.js 20.19 or newer with npm, and git. The skill wizard walks you through the rest. You do not need Claude, Codex or a local conductor merely to use the web application.'),
-    );
-    $claude = [
-      'label' => $this->plainText(
-        (string) $this->t('Inside Claude Code, each as its own command:'),
-      ),
-    ];
-    $i = 0;
-    foreach ([
-      '/plugin marketplace add ' . $this->claudeMarketplace($marketplace) => (string) $this->t('Copy the marketplace add command'),
-      '/plugin install bakers@bakers' => (string) $this->t('Copy the plugin install command'),
-    ] as $command => $label) {
-      $claude['cmd_' . $i] = $this->commandElement($command, $label);
-      $i++;
-    }
-    $codex = [
-      'label' => $this->plainText(
-        (string) $this->t('With the Codex CLI, each as its own command:'),
-      ),
-    ];
-    $i = 0;
-    foreach ([
-      'codex plugin marketplace add ' . $marketplace => (string) $this->t('Copy the Codex marketplace add command'),
-      'codex plugin add bakers@bakers' => (string) $this->t('Copy the Codex plugin install command'),
-    ] as $command => $label) {
-      $codex['cmd_' . $i] = $this->commandElement($command, $label);
-      $i++;
-    }
-    $form['fields']['paths'] = [
-      '#type' => 'component',
-      '#component' => 'bb_theme:setup_paths',
-      '#props' => [
-        'selected' => 'claude',
-        'filter_label' => (string) $this->t('Agent'),
-        'items' => [
-          [
-            'label' => (string) $this->t('Claude Code'),
-            'value' => 'claude',
-          ],
-          [
-            'label' => (string) $this->t('Codex'),
-            'value' => 'codex',
-          ],
-        ],
-      ],
-      '#slots' => [
-        'intro' => $this->plainText(
-          (string) $this->t('Install the bakers.build plugin first:'),
-        ),
-        'panel_a' => $claude,
-        'panel_b' => $codex,
-        'after' => [
-          'label' => $this->plainText(
-            (string) $this->t('Then paste this into your agent:'),
-          ),
-          'init_prompt' => $this->commandElement(
-            'Use `bakers:bb-init` to guide me through installing and setting up bakers.build.',
-            (string) $this->t('Copy the skill wizard prompt'),
-          ),
-        ],
-      ],
-    ];
-    $this->attachDocsLinks($form, [
-      (string) $this->t('bakers.build documentation') => '/get-started/',
-      (string) $this->t('Install bakers.build') => '/get-started/install',
-      (string) $this->t('Skill wizard') => '/get-started/install#skill-wizard-%E2%80%94-recommended',
+    $this->attachAudience($form, 'ticket_only', (string) $this->t('Ticket only'), (string) $this->t('Work through chat, without a local machine.'), [
+      (string) $this->t('Set up a connector') => '/get-started/connector',
     ]);
-  }
-
-  /**
-   * Initialize-project prompt and documentation link.
-   */
-  private function buildProjectFields(array &$form): void {
-    $form['fields']['note'] = $this->note(
-      (string) $this->t('Open a repository checkout in your agent, then paste the prompt. init-project needs a bakers.build workspace, then finds or creates the project and writes the checkout configuration. You can finish here and do this later from any checkout.'),
-    );
-    $form['fields']['prompt_label'] = $this->plainText(
-      (string) $this->t('Paste this into your agent:'),
-    );
-    $form['fields']['init_prompt'] = $this->commandElement(
-      'Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.',
-      (string) $this->t('Copy the init-project prompt'),
-    );
-    $this->attachDocsLinks($form, [
-      (string) $this->t('bakers.build documentation') => '/get-started/',
-      (string) $this->t('Connect your project') => '/get-started/connect-a-project',
-      (string) $this->t('Initialize a project') => '/get-started/connect-a-project#skill-wizard-%E2%80%94-recommended',
+    $this->attachAudience($form, 'developer', (string) $this->t('Developer'), (string) $this->t('Run the agent on your own machine.'), [
+      (string) $this->t('Set up a machine') => '/get-started/machine',
+      (string) $this->t('Set up a project') => '/get-started/connect-a-project',
     ]);
   }
 
@@ -563,11 +457,12 @@ final class BbOnboardingWizardForm extends FormBase {
       $form['actions']['back'] = $this->ghostSubmit($this->t('Back'), 'back');
     }
 
-    if ($step === self::STEP_ABOUT || $step === self::STEP_SETUP) {
+    if ($step === self::STEP_ABOUT) {
       $form['actions']['next'] = $this->primarySubmit($this->t('Next'), 'next');
+      return;
     }
 
-    if ($step === self::STEP_PROJECT) {
+    if ($step === self::STEP_SETUP) {
       $form['actions']['finish'] = $this->primarySubmit($this->t('Finish'), 'finish');
       if ($this->mayCreateWorkspaceOnFinish()) {
         $form['actions']['finish_create'] = [
@@ -577,9 +472,6 @@ final class BbOnboardingWizardForm extends FormBase {
           '#theme_wrappers' => ['input__submit__bb_button'],
         ];
       }
-    }
-
-    if ($step === self::STEP_SETUP || $step === self::STEP_PROJECT) {
       $form['actions']['set_up_later'] = $this->ghostSubmit($this->t('Set up later'), 'set_up_later');
     }
   }
@@ -591,7 +483,6 @@ final class BbOnboardingWizardForm extends FormBase {
     $previous = match ($step) {
       self::STEP_ABOUT => self::STEP_IDENTITY,
       self::STEP_SETUP => self::STEP_ABOUT,
-      self::STEP_PROJECT => self::STEP_SETUP,
       default => self::STEP_IDENTITY,
     };
     $this->advanceTo($form_state, $this->boundStep($previous));
@@ -751,47 +642,6 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * Public git clone URL of the bakers.build plugin marketplace.
-   *
-   * Built from bb_core.settings:plugin_source_base so a site can point at a
-   * different git host without a code change. The `.git` suffix is required so
-   * marketplace clients clone the repository instead of fetching HTML.
-   */
-  private function marketplaceGitUrl(): string {
-    $base = trim((string) $this->config('bb_core.settings')->get('plugin_source_base'));
-    if ($base === '') {
-      $base = self::DEFAULT_PLUGIN_SOURCE_BASE;
-    }
-    return rtrim($base, '/') . '/bakers-build.git';
-  }
-
-  /**
-   * Claude Code marketplace source: the published catalog, unless forked.
-   *
-   * Claude Code installs from the URL catalog on bakers.build; a site whose
-   * plugin_source_base points at another git host keeps its own git source.
-   */
-  private function claudeMarketplace(string $gitUrl): string {
-    return $gitUrl === rtrim(self::DEFAULT_PLUGIN_SOURCE_BASE, '/') . '/bakers-build.git'
-      ? 'https://bakers.build/marketplace.json'
-      : $gitUrl;
-  }
-
-  /**
-   * One displayed shell or slash command, never interpolated with account data.
-   */
-  private function commandElement(string $command, string $label): array {
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:setup_command',
-      '#props' => [
-        'command' => $command,
-        'label' => $label,
-      ],
-    ];
-  }
-
-  /**
    * A short instruction line.
    */
   private function plainText(string $text): array {
@@ -807,30 +657,22 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * A quiet aside for prerequisites and optional blocks.
-   */
-  private function note(string $body): array {
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:note',
-      '#props' => ['tone' => 'attention'],
-      '#slots' => [
-        'body' => [
-          ['#plain_text' => $body],
-        ],
-      ],
-    ];
-  }
-
-  /**
-   * Documentation links that open separately from the unfinished wizard.
+   * One audience: a caption, then its labelled documentation links.
+   *
+   * The links open in a new tab, separately from the unfinished wizard.
    *
    * @param array<string, mixed> $form
    *   The form being built.
+   * @param string $key
+   *   Render key of the audience's link group.
+   * @param string $label
+   *   Audience name, the group's label.
+   * @param string $caption
+   *   Who the audience is.
    * @param array<string, string> $links
    *   Label to path pairs under the published manual origin.
    */
-  private function attachDocsLinks(array &$form, array $links): void {
+  private function attachAudience(array &$form, string $key, string $label, string $caption, array $links): void {
     $rows = [];
     foreach ($links as $title => $path) {
       $rows[] = [
@@ -839,11 +681,12 @@ final class BbOnboardingWizardForm extends FormBase {
         'kind' => 'doc',
       ];
     }
-    $form['fields']['docs'] = [
+    $form['fields'][$key . '_caption'] = $this->plainText($caption);
+    $form['fields'][$key] = [
       '#type' => 'component',
       '#component' => 'bb_theme:link-group',
       '#props' => [
-        'label' => (string) $this->t('Guides'),
+        'label' => $label,
         'links' => $rows,
       ],
     ];

@@ -40,9 +40,7 @@ interface ConfigOptions {
   online?: boolean;
   dryRun?: boolean;
   projectConnection?: string;
-  machineId?: string;
-  userId?: string;
-  maxParallel?: string;
+  label?: string;
   baseUrl?: string;
   clientId?: string;
   workspaceId?: string;
@@ -290,9 +288,10 @@ function buildConfigCommand(
             'retired; use --connection',
           ),
         )
-        .option('--machine-id <id>', 'explicit host identity')
-        .option('--user-id <id>', 'local operator identifier')
-        .option('--max-parallel <number>', 'positive integer host capacity')
+        .option(
+          '--label <name>',
+          'machine display label (default: the short hostname)',
+        )
         .option('--base-url <url>', 'connection server URL')
         .option('--client-id <id>', 'OAuth client identifier')
         .option('--workspace-id <uuid>', 'explicit workspace UUID')
@@ -346,8 +345,7 @@ function buildConfigCommand(
       }
       const inputs: NonNullable<ConfigPlanOptions['inputs']> = {};
       for (const key of [
-        'machineId',
-        'userId',
+        'label',
         'baseUrl',
         'clientId',
         'workspaceId',
@@ -356,8 +354,10 @@ function buildConfigCommand(
         const value = options[key];
         if (value !== undefined) inputs[key] = value;
       }
-      if (options.maxParallel !== undefined)
-        inputs.maxParallel = Number(options.maxParallel);
+      // Without a terminal to ask, the machine label is the short hostname.
+      const defaultLabel = hostname().split('.')[0];
+      if (!interactive && inputs.label === undefined && defaultLabel)
+        inputs.label = defaultLabel;
       const secret = options.secretEnv ? env[options.secretEnv] : undefined;
       if (secret !== undefined) inputs.secret = secret;
       if (options.authType)
@@ -463,8 +463,7 @@ function buildConfigCommand(
         const deviceCode = inputs.authType === 'oauth2_device_code';
         const fields = (
           [
-            ['machineId', 'machine_id', 'Machine identity'],
-            ['userId', 'user_id', 'Local operator identifier'],
+            ['label', 'label', 'Machine label'],
             ['baseUrl', 'site.base_url', 'Server base URL'],
             ['clientId', 'client_id', 'OAuth client identifier'],
             ['secret', 'client_secret', 'OAuth client secret'],
@@ -492,8 +491,8 @@ function buildConfigCommand(
             continue;
           try {
             const suggested =
-              input === 'machineId'
-                ? hostname().split('.')[0]
+              input === 'label'
+                ? defaultLabel
                 : input === 'baseUrl'
                   ? // Suggests keytec's own fleet instance so pressing Enter
                     // reaches a working setup with no site to look up first;
@@ -639,7 +638,7 @@ function buildConfigCommand(
               },
             ))
             ? 'A session for this connection already exists; verify it with bakers config check --scope connection --online.'
-            : 'Sign-in is the next step: run bakers dropsh auth login, then bakers config check --scope connection --online.'
+            : 'Sign-in is the next step: run bakers auth login, then bakers config check --scope connection --online.'
           : 'Online validation skipped because offline errors require repair or input was cancelled.';
         report.verification.online.reason = reason;
         report.verification.skipped.push({

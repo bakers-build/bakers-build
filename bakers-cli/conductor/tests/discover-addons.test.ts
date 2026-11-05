@@ -47,7 +47,6 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
   it('wires remote/executor/workspace from addons[] and agents from the machine', async () => {
     const file = writeConductorConfig(`export default {
   bakers: { project: 'demo' },
-  machine_id: 'addons-test',
   states: ['working'],
   addons: [
     '@bakers-build/addon-remote-drupal',
@@ -76,7 +75,7 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
 
   it('a herdr entry listed ONCE wires executor + workspace (retires herdrWorkspace export)', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -88,7 +87,7 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
 
   it('an explicit herdr executor slot still contributes a process host', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
   executor: { plugin: '@bakers-build/addon-herdr' },
   workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
@@ -102,7 +101,7 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
     // addon-remote-drupal would contribute the drupal remote; the explicit slot
     // overrides it.
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
   remote: { kind: 'remote', id: 'explicit-remote', requiredModules: [] },
 };
@@ -139,7 +138,7 @@ export const hooks = (acc) => [...acc, {
     writeFileSync(
       file,
       `export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './parent.mjs', './parent.mjs'],
   hooks: { before_run: 'echo shell' },
 };
@@ -165,7 +164,10 @@ export const hooks = (acc) => [...acc, {
 
   it('loads the hooks guide example, whose before_run adds the env key it documents', async () => {
     const guide = readFileSync(
-      new URL('../../../docs/advanced/configuration/hooks.md', import.meta.url),
+      new URL(
+        '../../../docs/configuration/provisioning/hooks.md',
+        import.meta.url,
+      ),
       'utf8',
     );
     const section = guide.split('## Add a listener from an addon')[1] ?? '';
@@ -175,7 +177,7 @@ export const hooks = (acc) => [...acc, {
       .replace(/^import type .*\n/m, '')
       .replace(": Preset['hooks']", '');
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './guide.mjs'],
 };
 `);
@@ -208,7 +210,7 @@ export const hooks = () => { throw new Error('machine hook accumulator ran'); };
     machine.agentAddons = ['@bakers-build/addon-codex', hooky];
     try {
       const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -235,7 +237,7 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
     ];
     try {
       const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -266,7 +268,7 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
     writeFileSync(
       file,
       `export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './bad.mjs'],
 };
 `,
@@ -335,7 +337,7 @@ describe('addon inbox discovery (contract 2, BB-661)', () => {
 
   it('loadConductorConfig loads the discovered inbox and passes `with` to its handlers', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, machine_id: 'm', states: ['working'],
+  bakers: { project: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', ${JSON.stringify(entry)}],
 };
 `);
@@ -344,6 +346,32 @@ describe('addon inbox discovery (contract 2, BB-661)', () => {
     expect(cfg.inboxAddons?.map((a) => a.name)).toEqual(['demo']);
     const result = await cfg.inboxAddons?.[0]?.handlers.ping?.(request);
     expect(result).toEqual({ markdown: 'req-1 hi' });
+  });
+
+  it('loadConductorConfig collects a `tools` export into the tool registry', async () => {
+    const file = writeConductorConfig(`export default {
+  bakers: { project: 'demo' }, states: ['working'],
+  addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', ${JSON.stringify(entry)}],
+};
+`);
+    const dir = join(file, '..');
+    inboxAddon(dir);
+    writeFileSync(
+      join(dir, 'demo', 'preset.js'),
+      `export const tools = {
+  contract: 1,
+  tools: { demo_echo: { description: 'Echo' } },
+  handlers: async (options) => ({
+    demo_echo: async (request) => ({ text: request.worktreePath + ' ' + options?.greeting }),
+  }),
+};
+`,
+    );
+    const cfg = await loadConductorConfig(file);
+    expect(cfg.tools?.list().map((t) => t.name)).toEqual(['demo_echo']);
+    expect(
+      await cfg.tools?.call('demo_echo', {}, { worktreePath: '/w' }),
+    ).toEqual({ text: '/w hi' });
   });
 });
 
@@ -524,7 +552,13 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
       'command',
       bases,
     );
-    expect(cmds.commands.map((c) => c.name)).toEqual(['oven', 'ui', 'dropsh']);
+    expect(cmds.commands.map((c) => c.name)).toEqual([
+      'oven',
+      'ui',
+      'dropsh',
+      'tools',
+      'auth',
+    ]);
     // each descriptor carries a describe (for --help stubs)
     expect(cmds.commands.every((c) => c.describe.length > 0)).toBe(true);
   });

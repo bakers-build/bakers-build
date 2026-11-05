@@ -1,6 +1,6 @@
 // Notification settings in the user area, and the activity mails they select.
 // Consumers: features/user/notification-settings.feature, features/user/activity-mails.feature.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../bdd.fixtures';

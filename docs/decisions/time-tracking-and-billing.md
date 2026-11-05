@@ -196,7 +196,7 @@ weekly approval workflow. A week is only a date filter. Legacy approved rows rem
 read-only, and retired weekly history remains in storage. This delivered behavior
 supersedes the server-allocation and weekly-approval assumptions in the broader future concept below.
 AI adapters submit attributable activities; bakers.build does not fetch calendars or export
-to Harvest in this slice. See [Record time](../daily-work/record-time.md).
+to Harvest in this slice. See [Record time](../get-started/daily-work/record-time.md).
 
 Work Evidence is internal. It answers: "What did this employee plausibly spend their available
 working capacity on, and what did that allocation cost the company?"

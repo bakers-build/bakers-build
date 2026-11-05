@@ -43,7 +43,8 @@ complete `qualification` handoff: Outcome, Acceptance, Out of scope, then Handof
 Acceptance holds stable AC IDs, the gate's passed/rewritten tally, previous wording for rewrites and
 explicit assumptions; that tally is not a passed implementation test. Required fields:
 
-- `acceptance_criteria`: exhaustive role-named, checkable conditions.
+- `acceptance_criteria`: exhaustive role-named, checkable conditions; a confirmed intake's criteria
+  word for word.
 - `out_of_scope`: explicit boundary, including a reasoned none.
 - `recipe` and `ticket_type`, with the reason for the recipe choice.
 - `reproduction`: bug condition, otherwise `not_required`.
@@ -52,14 +53,12 @@ explicit assumptions; that tally is not a passed implementation test. Required f
 - searched terms, and each prior-art check's outcome (`negative`, `prior_art_hit` or `error`) with
   its evidence and the checked revision.
 - `handoff_version`: monotonically increasing; requalification supersedes older versions.
-- `provenance`: hash of title, description, type, recipe, labels and ticket revision.
 
 Second, render the handoff through [the outtake](outtake.md) and publish that as its own comment of
 type `summary`; print it.
 
 ## transition
 
-Obtain or reuse approval of the qualification handoff; under `approval: automatic`,
-[automatic approval](autopilot.md) gives it. Publish authorized
+Obtain or reuse approval of the qualification handoff. Publish authorized
 [origin status](origin-status.md) for `plan`, then perform one [transition](transition-ticket.md) to
 `plan` with its readback. STOP without starting the destination state.

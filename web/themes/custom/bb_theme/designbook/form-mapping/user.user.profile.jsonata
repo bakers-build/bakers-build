@@ -1,0 +1,53 @@
+(
+  /* Profile form (`user.user.profile`) on `/user/{user}/profile`.
+     Position and Background only; the AI-use notice is the page header's
+     description, not part of the form. */
+  $u := $;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form",
+      "slots": {
+        "lines": [
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-field-developer-title" },
+            "slots": { "title": "Position" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input",
+            "props": {
+              "name": "field_developer_title",
+              "id": "edit-field-developer-title",
+              "placeholder": "e.g. Product Lead",
+              "value": $u.field_developer_title
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-field-bakers-background" },
+            "slots": { "title": "What should bakers.build know about your background?" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_textarea",
+            "props": {
+              "name": "field_bb_background",
+              "id": "edit-field-bakers-background",
+              "rows": 3,
+              "value": $u.field_bb_background
+            }
+          }
+        ],
+        "actions": [
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:button",
+            "props": {
+              "variant": "primary",
+              "type": "submit",
+              "label": "Save"
+            }
+          }
+        ]
+      }
+    }
+  ]
+)

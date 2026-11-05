@@ -12,6 +12,7 @@ use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbInvite;
 use Drupal\user\UserInterface;
@@ -306,17 +307,14 @@ final class WorkspaceInvite {
    *   The invitations.
    * @param bool $may_write
    *   Whether the acting account may revoke them.
-   * @param string $revoke_prefix
-   *   The request-key prefix of a revoke trigger.
    *
    * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
    *   The same shape MemberItemBuilder::items() returns.
    */
-  public function inviteItems(array $invites, bool $may_write, string $revoke_prefix): array {
+  public function inviteItems(array $invites, bool $may_write): array {
     $items = [];
     $controls = [];
     foreach (array_values($invites) as $index => $invite) {
-      $id = (int) $invite->id();
       $mail = $invite->getEmail();
       $expired = $this->isExpired($invite);
       $cells = [
@@ -338,11 +336,13 @@ final class WorkspaceInvite {
         $controls[$index]['remove'] = [
           '#type' => 'component',
           '#component' => 'bb_theme:button',
+          // Opens the revoke confirm page; a revoke never happens in one click.
           '#props' => [
             'variant' => 'ghost',
-            'type' => 'submit',
             'icon_only' => TRUE,
             'label' => $this->t('Revoke invitation for @mail', ['@mail' => $mail]),
+            'href' => $invite->toUrl('delete-form')->toString(),
+            'attributes' => new Attribute(['data-hx-boost' => 'false']),
           ],
           '#slots' => [
             'icon' => [
@@ -350,11 +350,6 @@ final class WorkspaceInvite {
               '#component' => 'bb_theme:icon',
               '#props' => ['name' => 'x-circle', 'size' => 'sm'],
             ],
-          ],
-          '#attributes' => [
-            'name' => $revoke_prefix . $id,
-            'value' => (string) $id,
-            'formnovalidate' => 'formnovalidate',
           ],
         ];
       }

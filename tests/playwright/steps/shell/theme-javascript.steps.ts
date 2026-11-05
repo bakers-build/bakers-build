@@ -9,7 +9,7 @@
 // missing handler when you are reading a diff. A story cannot see them because
 // Storybook runs the module through Vite rather than through Drupal's asset
 // pipeline, and the pipeline is precisely what broke.
-import { Then, When } from '@key-tec/playwright-core/bdd';
+import { Then, When } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { pageErrors as errors } from '../../support/shell';
 

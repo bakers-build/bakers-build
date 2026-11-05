@@ -94,7 +94,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form_object = BbOnboardingWizardForm::create($this->container);
     $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
+    $form_state->set('bb_onboarding_step', 3);
     $form_state->setTriggeringElement(['#name' => 'finish']);
     $form = [];
     $form_object->submitForm($form, $form_state);
@@ -143,9 +143,9 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   }
 
   /**
-   * Setup Next opens the project page without completing.
+   * Setup is the last page: Finish is offered, Next is not.
    */
-  public function testSetupNextOpensTheProjectPage(): void {
+  public function testSetupIsTheLastPage(): void {
     $account = $this->createUser();
     self::assertInstanceOf(UserInterface::class, $account);
     $this->container->get('current_user')->setAccount($account);
@@ -153,37 +153,34 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form_state = new FormState();
     $form_state->set('bb_onboarding_step', 3);
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
-    self::assertArrayHasKey('next', $form['actions']);
-    self::assertArrayHasKey('set_up_later', $form['actions']);
-    self::assertArrayNotHasKey('finish', $form['actions']);
-    self::assertStringContainsString('Step 3 of 4', (string) $form['progress']['#props']['text']);
-
-    $form_state->setTriggeringElement(['#name' => 'next']);
-    $submit = [];
-    BbOnboardingWizardForm::create($this->container)->submitForm($submit, $form_state);
-    self::assertSame(4, (int) $form_state->get('bb_onboarding_step'));
-    self::assertSame(4, (int) $this->userData()->get('bb_core', (int) $account->id(), 'onboarding_step'));
-    self::assertFalse($this->container->get('bb_core.onboarding_destination')->isComplete($this->reloadAccount($account)));
-  }
-
-  /**
-   * The project page is last: Finish is offered, Next is not.
-   */
-  public function testProjectIsTheLastPage(): void {
-    $account = $this->createUser();
-    self::assertInstanceOf(UserInterface::class, $account);
-    $this->container->get('current_user')->setAccount($account);
-
-    $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
-    $form = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
     self::assertArrayHasKey('finish', $form['actions']);
     self::assertArrayHasKey('finish_create', $form['actions']);
     self::assertArrayHasKey('set_up_later', $form['actions']);
     self::assertArrayHasKey('back', $form['actions']);
     self::assertArrayNotHasKey('next', $form['actions']);
-    self::assertSame('Prepare your first project', $form['#bb_copy']['title']);
-    self::assertStringContainsString('Step 4 of 4', (string) $form['progress']['#props']['text']);
+    self::assertSame('Get started with bakers.build', $form['#bb_copy']['title']);
+    self::assertSame('Step 3 of 3', (string) $form['progress']['#props']['text']);
+
+    // A stale Next POST from an open step-3 page stays on step 3.
+    $form_state->setTriggeringElement(['#name' => 'next']);
+    $submit = [];
+    BbOnboardingWizardForm::create($this->container)->submitForm($submit, $form_state);
+    self::assertSame(3, (int) $form_state->get('bb_onboarding_step'));
+    self::assertFalse($this->container->get('bb_core.onboarding_destination')->isComplete($this->reloadAccount($account)));
+  }
+
+  /**
+   * Progress saved on the former project step resumes at setup.
+   */
+  public function testSavedProjectStepResumesAtSetup(): void {
+    $account = $this->createUser();
+    self::assertInstanceOf(UserInterface::class, $account);
+    $this->container->get('current_user')->setAccount($account);
+    $this->userData()->set('bb_core', (int) $account->id(), 'onboarding_step', 4);
+
+    $form = BbOnboardingWizardForm::create($this->container)->buildForm([], new FormState());
+    self::assertSame('3', $form['#attributes']['data-bakers-onboarding-step']);
+    self::assertSame('Step 3 of 3', (string) $form['progress']['#props']['text']);
   }
 
   /**
@@ -197,7 +194,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], new FormState());
     self::assertSame('3', $form['#attributes']['data-bakers-onboarding-step']);
-    self::assertSame('Get started - set up bakers.build on your machine', $form['#bb_copy']['title']);
+    self::assertSame('Get started with bakers.build', $form['#bb_copy']['title']);
   }
 
   /**
@@ -268,7 +265,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form_object = BbOnboardingWizardForm::create($this->container);
     $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
+    $form_state->set('bb_onboarding_step', 3);
     $form_state->setTriggeringElement(['#name' => 'finish_create']);
     $form = [];
     $form_object->submitForm($form, $form_state);
@@ -291,7 +288,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form_object = BbOnboardingWizardForm::create($this->container);
     $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
+    $form_state->set('bb_onboarding_step', 3);
     $form = $form_object->buildForm([], $form_state);
     self::assertArrayNotHasKey('finish_create', $form['actions']);
 
@@ -316,7 +313,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form_object = BbOnboardingWizardForm::create($this->container);
     $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
+    $form_state->set('bb_onboarding_step', 3);
     $form_state->setTriggeringElement(['#name' => 'finish']);
     $form = [];
     $form_object->submitForm($form, $form_state);
@@ -337,7 +334,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form_object = BbOnboardingWizardForm::create($this->container);
     $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
+    $form_state->set('bb_onboarding_step', 3);
     $form_state->setTriggeringElement(['#name' => 'finish']);
     $form = [];
     $form_object->submitForm($form, $form_state);
@@ -362,7 +359,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     self::assertInstanceOf(UserInterface::class, $account);
     $this->container->get('current_user')->setAccount($account);
     $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
+    $form_state->set('bb_onboarding_step', 3);
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
     self::assertArrayHasKey('finish', $form['actions']);
     self::assertArrayHasKey('finish_create', $form['actions']);
@@ -370,68 +367,9 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   }
 
   /**
-   * Displayed commands are complete lines in their owning documentation pages.
+   * Setup links each audience to its guides and teaches no commands.
    */
-  public function testSetupCommandsMatchOwningDocumentation(): void {
-    $account = $this->createUser();
-    self::assertInstanceOf(UserInterface::class, $account);
-    $this->container->get('current_user')->setAccount($account);
-
-    $install = $this->docLines('docs/get-started/install.md');
-    $form_object = BbOnboardingWizardForm::create($this->container);
-
-    $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 3);
-    $step3 = $form_object->buildForm([], $form_state);
-    $step3Commands = $this->commandsFromForm($step3);
-    foreach ($step3Commands as $command) {
-      self::assertContains($command, $install, $command . ' must be a complete line in install.md.');
-    }
-    self::assertNotContains('https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
-    self::assertContains('/plugin marketplace add https://bakers.build/marketplace.json', $step3Commands);
-    self::assertContains('codex plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git', $step3Commands);
-    self::assertContains('codex plugin add bakers@bakers', $step3Commands);
-    self::assertContains('Use `bakers:bb-init` to guide me through installing and setting up bakers.build.', $step3Commands);
-    $pluginInstall = array_search('/plugin install bakers@bakers', $step3Commands, TRUE);
-    $initPrompt = array_search('Use `bakers:bb-init` to guide me through installing and setting up bakers.build.', $step3Commands, TRUE);
-    self::assertIsInt($pluginInstall);
-    self::assertIsInt($initPrompt);
-    self::assertLessThan($initPrompt, $pluginInstall);
-    self::assertNotContains('npm install -g @bakers-build/bakers', $step3Commands);
-    self::assertNotContains('bakers --version', $step3Commands);
-    $step3Blob = serialize($step3);
-    self::assertStringContainsString('bb_theme:setup_paths', $step3Blob);
-    self::assertStringNotContainsString('Install with', $step3Blob);
-    self::assertStringContainsString('Agent', $step3Blob);
-    $this->assertDocsLinks($step3);
-    self::assertNotContains('bakers init', $step3Commands);
-    self::assertNotContains('bakers dropsh auth login', $step3Commands);
-    self::assertNotContains('herdr --version', $step3Commands);
-
-    $connect = $this->docLines('docs/get-started/connect-a-project.md');
-    $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 4);
-    $step4 = $form_object->buildForm([], $form_state);
-    $step4Commands = $this->commandsFromForm($step4);
-    foreach ($step4Commands as $command) {
-      self::assertContains($command, $connect, $command . ' must be a complete line in connect-a-project.md.');
-    }
-    self::assertContains('Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.', $step4Commands);
-    self::assertNotContains('bakers init', $step4Commands);
-    self::assertNotContains('bakers dropsh auth login', $step4Commands);
-    self::assertNotContains('herdr --version', $step4Commands);
-    $step4Blob = serialize($step4);
-    self::assertStringContainsString('bb_theme:link-group', $step4Blob);
-    self::assertStringContainsString('/get-started/connect-a-project', $step4Blob);
-    self::assertStringContainsString('Initialize a project', $step4Blob);
-  }
-
-  /**
-   * The Agent filter is an SDC.
-   *
-   * PHP passes props and slots, never classes or Alpine.
-   */
-  public function testSetupAgentFilterUsesSegmentedControlItems(): void {
+  public function testSetupLinksEachAudienceToItsGuides(): void {
     $account = $this->createUser();
     self::assertInstanceOf(UserInterface::class, $account);
     $this->container->get('current_user')->setAccount($account);
@@ -439,48 +377,39 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form_state = new FormState();
     $form_state->set('bb_onboarding_step', 3);
     $step3 = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
-    $paths = $step3['fields']['paths'];
-    self::assertSame('component', $paths['#type']);
-    self::assertSame('bb_theme:setup_paths', $paths['#component']);
-    self::assertArrayNotHasKey('#attributes', $paths);
-    self::assertSame('claude', $paths['#props']['items'][0]['value']);
-    self::assertSame('codex', $paths['#props']['items'][1]['value']);
-    self::assertArrayNotHasKey('filter_items', $paths['#slots'] ?? []);
-    $formFile = (new \ReflectionClass(BbOnboardingWizardForm::class))->getFileName();
-    self::assertIsString($formFile);
-    $src = (string) file_get_contents($formFile);
-    self::assertDoesNotMatchRegularExpression("/'x-data'\s*=>/", $src);
-    self::assertDoesNotMatchRegularExpression("/'x-show'\s*=>/", $src);
+
+    $groups = [];
+    foreach ($step3['fields'] as $key => $child) {
+      if (is_string($key) && $key[0] !== '#' && is_array($child) && ($child['#component'] ?? '') === 'bb_theme:link-group') {
+        $groups[(string) $child['#props']['label']] = array_map(
+          static fn (array $link): array => [$link['title'], $link['url'], $link['target'] ?? '_blank'],
+          $child['#props']['links'],
+        );
+      }
+    }
+    self::assertSame([
+      'Ticket only' => [
+        ['Set up a connector', 'https://bakers.build/docs/get-started/connector', '_blank'],
+      ],
+      'Developer' => [
+        ['Set up a machine', 'https://bakers.build/docs/get-started/machine', '_blank'],
+        ['Set up a project', 'https://bakers.build/docs/get-started/connect-a-project', '_blank'],
+      ],
+    ], $groups);
+
     $blob = serialize($step3);
-    self::assertDoesNotMatchRegularExpression('/\[[0-9]+px\]/', $blob);
-    self::assertStringNotContainsString("'x-data'", $blob);
-    self::assertStringNotContainsString("'x-show'", $blob);
+    foreach (['bb_theme:setup_command', 'bb_theme:setup_paths', 'bb_theme:note', 'bakers:bb-init', 'marketplace'] as $absent) {
+      self::assertStringNotContainsString($absent, $blob);
+    }
+    foreach (['connector', 'machine', 'connect-a-project'] as $page) {
+      self::assertFileExists(dirname($this->root) . "/docs/get-started/$page.md");
+    }
   }
 
   /**
-   * Plugin marketplace commands follow bb_core.settings:plugin_source_base.
+   * Account input never appears on the setup page.
    */
-  public function testSetupCommandsUseConfiguredPluginSourceBase(): void {
-    $account = $this->createUser();
-    self::assertInstanceOf(UserInterface::class, $account);
-    $this->container->get('current_user')->setAccount($account);
-    $this->config('bb_core.settings')
-      ->set('plugin_source_base', 'https://example.test/org/')
-      ->save();
-
-    $form_state = new FormState();
-    $form_state->set('bb_onboarding_step', 3);
-    $step3 = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
-    $commands = $this->commandsFromForm($step3);
-    self::assertContains('/plugin marketplace add https://example.test/org/bakers-build.git', $commands);
-    self::assertContains('codex plugin marketplace add https://example.test/org/bakers-build.git', $commands);
-    self::assertNotContains('/plugin marketplace add https://git.key-tec.de/bakers-build/bakers-build.git', $commands);
-  }
-
-  /**
-   * User-supplied data never becomes a shell command.
-   */
-  public function testCommandsContainNoAccountInput(): void {
+  public function testSetupContainsNoAccountInput(): void {
     $account = $this->createUser([], 'attacker', FALSE, [
       'mail' => 'evil@example.com',
       'name' => 'rm -rf /',
@@ -552,76 +481,6 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $invite->save();
     self::assertInstanceOf(BbInvite::class, $invite);
     return $invite;
-  }
-
-  /**
-   * Command strings rendered into the form.
-   *
-   * @return list<string>
-   *   The displayed commands.
-   */
-  private function commandsFromForm(array $form): array {
-    $commands = [];
-    $this->collectCommands($form, $commands);
-    return array_values(array_unique($commands));
-  }
-
-  /**
-   * Walks a render array for setup-command props.
-   *
-   * @param array<string, mixed> $element
-   *   A render element.
-   * @param list<string> $commands
-   *   Collected command strings.
-   */
-  private function collectCommands(array $element, array &$commands): void {
-    $component = (string) ($element['#component'] ?? '');
-    if ($component === 'bb_theme:setup_command') {
-      $command = (string) ($element['#props']['command'] ?? '');
-      if ($command !== '') {
-        $commands[] = $command;
-      }
-    }
-    if (isset($element['#slots']) && is_array($element['#slots'])) {
-      foreach ($element['#slots'] as $slot) {
-        if (is_array($slot)) {
-          $this->collectCommands($slot, $commands);
-        }
-      }
-    }
-    foreach ($element as $key => $child) {
-      if (!is_array($child)) {
-        continue;
-      }
-      if (!is_string($key) || ($key !== '' && $key[0] !== '#')) {
-        $this->collectCommands($child, $commands);
-      }
-    }
-  }
-
-  /**
-   * Documentation links on a setup page.
-   */
-  private function assertDocsLinks(array $form): void {
-    $blob = serialize($form);
-    self::assertStringContainsString('bb_theme:link-group', $blob);
-    self::assertStringContainsString('https://bakers.build/docs/get-started/', $blob);
-    self::assertStringContainsString('https://bakers.build/docs/get-started/install', $blob);
-    self::assertStringContainsString('skill-wizard-', $blob);
-  }
-
-  /**
-   * Trimmed lines of a repository documentation page.
-   *
-   * @return list<string>
-   *   Trimmed lines.
-   */
-  private function docLines(string $relative): array {
-    $path = dirname($this->root) . '/' . $relative;
-    $contents = file_get_contents($path);
-    self::assertNotFalse($contents, $relative . ' exists.');
-    $lines = preg_split('/\R/', $contents) ?: [];
-    return array_values(array_map(static fn (string $line): string => trim($line), $lines));
   }
 
   /**

@@ -12,7 +12,7 @@
  * — and it is asserted here by observing `existsSync(sentinel)` AT the moment
  * `applyOpenLayout` fires, not by checking that two calls happened in order.
  * `worktree-lifecycle.test.ts` drives a real dispatch but configures
- * `after_create: 'ddev init-worktree'`, asserts nothing about the hook's
+ * `after_create: 'bash .ddev/worktree-post.sh'`, asserts nothing about the hook's
  * outcome, has no failure case, and says nothing about the pane.
  *
  * DELIBERATELY CHEAP — no Drupal control plane, no DDEV, seconds not minutes:
@@ -84,7 +84,8 @@ const stubAgent: BbAgent = {
 function makeConfig(configPath: string): ConductorFileConfig {
   return {
     label: 'bb-237-bootstrap-dispatch',
-    machine_id: 'bb-237-int-node',
+    conductor_id: 'bb-237-int-node',
+    host_key: 'bb-237-int-host',
     project: 'bb-237-int',
     states: ['working'],
     prompt: '',
@@ -105,7 +106,7 @@ function makeConfig(configPath: string): ConductorFileConfig {
  * A throwaway parent repo shaped like a bakers checkout as far as the bootstrap
  * cares: a `.bakers/conductor.config.local.js` to copy, and a committed
  * `.env.ddev` so the worktree checkout carries the URL the script resolves.
- * (In production `.env.ddev` is gitignored and written by `ddev init-worktree`;
+ * (In production `.env.ddev` is gitignored and written by `bash .ddev/worktree-post.sh`;
  * committing it here is what makes the resolved URL deterministic without DDEV.)
  * Carries NO `bakers-cli/package.json`, so the script skips the pnpm build.
  */
@@ -126,6 +127,13 @@ async function makeParentRepo(slug: string): Promise<string> {
     `DDEV_WORKTREE_NAME=bb-237-int\nPLAYWRIGHT_BASE_URL=${WORKTREE_URL}\n`,
     'utf8',
   );
+  await mkdir(join(repo, 'scripts'), { recursive: true });
+  await mkdir(join(repo, '.ddev'), { recursive: true });
+  await writeFile(
+    join(repo, 'scripts/setup-worktree.mjs'),
+    readFileSync(join(repoRoot(), 'scripts/setup-worktree.mjs')),
+  );
+  await writeFile(join(repo, '.ddev/config.yaml'), 'name: bakers\n');
   await writeFile(join(repo, 'README.md'), 'x\n');
   git(repo, ['add', '-A']);
   git(repo, ['commit', '-qm', 'init']);
@@ -168,7 +176,7 @@ interface Fixture {
   runId: number;
   runUuid: string;
   branch: string;
-  /** `<identifier> · <state> #<runId>` — what `startRun` labels the tab. */
+  /** `<identifier> · <titleSlug>` — what `startRun` labels the tab. */
   tabLabel: string;
 }
 
@@ -214,7 +222,7 @@ async function makeFixture(slug: string, hook: string): Promise<Fixture> {
     // durable log.txt. Asserting the failure lands in the FILE is the AC-4
     // property: before BB-237 a TTY got stdout only and the record died with
     // the pane.
-    createLogger({ checkoutRoot: logDir, isTTY: true, env: {} }),
+    createLogger({ checkoutRoot: repo, isTTY: true, env: {} }),
   );
   const remote = new FakeBbRemote({
     tickets: {
@@ -239,7 +247,7 @@ async function makeFixture(slug: string, hook: string): Promise<Fixture> {
     executor,
     workspace,
     [{ id: stubAgent.id, agent: stubAgent }],
-    createLogger({ checkoutRoot: logDir, isTTY: true, env: {} }),
+    createLogger({ checkoutRoot: repo, isTTY: true, env: {} }),
     repo,
   );
   await conductor.start();
@@ -253,7 +261,7 @@ async function makeFixture(slug: string, hook: string): Promise<Fixture> {
     runId,
     runUuid,
     branch,
-    tabLabel: `${identifier} · ${state} #${runId}`,
+    tabLabel: `${identifier} · bootstrap dispatch`,
   };
 }
 
@@ -415,7 +423,7 @@ describe.skipIf(!HAS_HERDR)(
 
       // AC-6 — the run still started; a hook cannot wedge dispatch. Asserted on
       // THIS fixture's own tab label, in THIS fixture's own workspace: both are
-      // unique (`BB-237-FAIL · working #2`), so the success case's leftover tab
+      // unique (`BB-237-FAIL · bootstrap dispatch`), so the success case's leftover tab
       // cannot satisfy it. Mutation-checked — `if (!provisioning.ok) return;`
       // before `startRun` turns this line red.
       expect(tabLabelsOf(fx)).toContain(fx.tabLabel);

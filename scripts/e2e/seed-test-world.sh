@@ -34,7 +34,7 @@ mkdir -p "${ARTIFACT_DIR}"
 
 [ -d vendor ] || { echo "ERROR: vendor/ missing — run 'ddev composer install'." >&2; exit 1; }
 drush ${URI} status --fields=bootstrap --format=string 2>/dev/null | grep -q Successful \
-  || { echo "ERROR: site not installed — run 'ddev init --recipe --test' first." >&2; exit 1; }
+  || { echo "ERROR: site not installed — run 'ddev init --provider recipe-test' first." >&2; exit 1; }
 
 echo "==> Applying bb_e2e recipe"
 drush ${URI} recipe "$PWD/recipes/bb_e2e" -y

@@ -1,0 +1,51 @@
+DDEV-generated development files
+
+The files listed below originate from DDEV (https://github.com/ddev/ddev),
+whose LICENSE declares Apache License 2.0:
+https://github.com/ddev/ddev/blob/main/LICENSE
+
+The standard Apache-2.0 license text is included in LICENSE.DDEV. Existing
+headers and attribution in the generated files are retained. Project-specific
+configuration may differ from the upstream templates. This notice does not
+relicense project-owned commands or the adopted keytec QA wrappers.
+
+Inventory: tracked files containing the DDEV generation marker at branch
+10a384d9 (2026-11-02), relative to the repository root:
+
+.ddev/addon-metadata/README.txt
+.ddev/apache/README.apache.txt
+.ddev/apache/apache-site.conf
+.ddev/apache/seconddocroot.conf.example
+.ddev/commands/.gitattributes
+.ddev/commands/db/README.txt
+.ddev/commands/host/README.txt
+.ddev/commands/web/README.txt
+.ddev/db-build/Dockerfile.example
+.ddev/db-build/README.txt
+.ddev/homeadditions/README.txt
+.ddev/homeadditions/bash_aliases.example
+.ddev/mysql/README.txt
+.ddev/mysql/character-set.cnf.example
+.ddev/mysql/max-packet.cnf.example
+.ddev/nginx_full/README.nginx_full.txt
+.ddev/nginx_full/nginx-site.conf
+.ddev/nginx_full/seconddocroot.conf.example
+.ddev/php/README.txt
+.ddev/php/php-example.ini.example
+.ddev/providers/README.txt
+.ddev/providers/acquia.yaml
+.ddev/providers/git.yaml.example
+.ddev/providers/lagoon.yaml
+.ddev/providers/localfile.yaml.example
+.ddev/providers/pantheon.yaml
+.ddev/providers/platform.yaml
+.ddev/providers/rsync.yaml.example
+.ddev/providers/upsun.yaml
+.ddev/share-providers/README.txt
+.ddev/share-providers/cloudflared.sh
+.ddev/share-providers/localtunnel.sh.example
+.ddev/share-providers/ngrok.sh
+.ddev/web-build/Dockerfile.example
+.ddev/web-build/README.txt
+.ddev/web-entrypoint.d/README.txt
+.ddev/xhprof/xhprof_prepend.php

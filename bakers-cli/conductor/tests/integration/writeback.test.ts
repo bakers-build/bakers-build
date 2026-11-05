@@ -9,7 +9,7 @@
  * conductor, and the active-run resolver), which prove the JSON:API auth +
  * collection/resource read path works end-to-end.
  *
- * Fixture contract (`ddev init --test`):
+ * Fixture contract (`ddev init --provider recipe-test`):
  *   BB_E2E_TICKET_UUID     ticket GL-E2E-DROPSH (has a run owned by the
  *                            fixture-agent's conductor)
  *   BB_E2E_CONDUCTOR_UUID  the bakers-e2e-node conductor entity

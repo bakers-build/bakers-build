@@ -1,3 +1,6 @@
+For GitHub repositories, use [GitHub delivery](github-delivery.md) instead of the GitLab-specific
+client instructions below; preserve all shared gates and handoff requirements.
+
 ## Coding and review handoff
 
 Commit and push the scoped change, then create or update its MR with explicit `--target-branch
@@ -13,7 +16,7 @@ default or to the forge project's settings: **target** = the ticket's `base_bran
 commits** = enabled; **delete source branch** = enabled **because the source is this ticket's own
 `branch_name`**, a short-lived branch whose whole purpose was this MR and which the merge retires.
 That last one is the only conditional property: were the source a long-lived or shared branch
-(`main`, `master`, `develop`, `stage`/`staging`, any environment branch), a **release branch a later
+(`main`, `master`, `next`, `develop`, `stage`/`staging`, any environment branch), a **release branch a later
 promote reuses**, or a branch that other open MRs still target as their base, it would **not** be
 set. Here it always is — the `working` state opens an MR *from the ticket's own branch*, by
 construction.

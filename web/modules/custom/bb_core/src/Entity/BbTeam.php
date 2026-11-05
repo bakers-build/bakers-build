@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -54,7 +54,7 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
       'settings' => BbTeamForm::class,
       // Detail page cards, one Save each.
       'identity' => BbEntityDetailCardForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     // Canonical renders the Overview tab through core's `_entity_view` of the
     // `full` view mode; the provider adds the controller-backed tabs and a

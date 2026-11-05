@@ -8,9 +8,9 @@
 // the reason `project-board-drupal.steps.ts` records: open `working` tickets in
 // this workspace would change what `ticket-list` measures. No conductor also
 // means nothing here can ever be dispatched.
-import { Given, When, Then, test } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then, test } from '../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../support/drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { php } from '../support/drush';

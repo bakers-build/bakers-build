@@ -1,7 +1,7 @@
 // BB-421 Task 8 — the create-project dialog, from a real browser.
 //
 // ONLY THE STEPS NO OTHER FILE ALREADY PROVIDES. `I am logged in as {string}`
-// comes from the `@key-tec/playwright-core` catalog; `the document was not
+// comes from the shared `support/steps/core.ts`; `the document was not
 // reloaded` and its mark come from `support/steps/shell.steps.ts`, which OWNS that
 // detector; `php()` comes from `support/drush.ts`. playwright-bdd matches a
 // step by its TEXT and not by its keyword, so every registration below is
@@ -37,7 +37,7 @@
 // refusal, so the `<dialog>` hull is never re-swapped and keeps its own
 // behaviours, while the hull's `message` slot — which sits outside the form —
 // is updated out of band from the same response.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { php } from '../../support/drush';

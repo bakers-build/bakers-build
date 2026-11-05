@@ -1,8 +1,8 @@
 // The four workspace listings as `bb_theme:list` rows with one sort dropdown.
 // Consumer: features/workspace/listing-rows.feature. `I am signed in as a
 // member of the {string} workspace` comes from support/steps/listing.steps.ts.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
 import { closedControl, expectToolbarAbove, resetOverridePage, SEARCH_TOOLBAR } from '../../support/listing';

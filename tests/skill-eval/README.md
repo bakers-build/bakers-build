@@ -1,9 +1,9 @@
 # Single-skill behavioral evaluations
 
 One runner supports isolated generation, offline Promptfoo replay and explicit semantic judging.
-Start with [Test a skill](../../docs/advanced/development/test-skills.md).
-Use [Add a skill test](../../docs/advanced/development/add-skill-test.md) for the fixture/profile
-contract and CI checks, or the [run-outtake case](../../docs/advanced/development/test-run-outtake.md)
+Start with [Test a skill](../../docs/bakers/development/test-skills.md).
+Use [Add a skill test](../../docs/bakers/development/add-skill-test.md) for the fixture/profile
+contract and CI checks, or the [run-outtake case](../../docs/bakers/development/test-run-outtake.md)
 for exact-login and presentation coverage.
 
 ```sh
@@ -48,10 +48,11 @@ and `--output <new-report.html>`. The operator guide shows HTTP serving and cond
 through `bakers ports` when the tunnel policy is enabled. Serving remains separate from offline replay.
 
 For publish-comment, create-ticket and transition-ticket, see
-[Test a skill's tool calls](../../docs/advanced/development/test-skill-tools.md). Seven cases exercise
+[Test a skill's tool calls](../../docs/bakers/development/test-skill-tools.md). Twelve cases exercise
 actual MCP calls against a local simulator, including exact Markdown, prior-art decisions, confirmation,
-uncertain publication, links-only transitions and a refused transition. `bakers(argv)` simulates
-`bakers dropsh tool <tool> --data @<file>` for the bakers tools in `contract-fixture.json`; it never
+uncertain publication, links-only transitions, a refused transition, and a requester's conversation from
+its start to the hand-over. `bakers(argv)` simulates
+`bakers tools <tool> --data @<file>` for the bakers tools in `contract-fixture.json`; it never
 executes a command or contacts a tracker, and a JSON:API command fails as outside the skill contract.
 Final prose cannot substitute for the recorded call trace. `cli-contract.mjs` runs the same argv through
 the repository CLI against a loopback MCP endpoint serving the same tool definitions, so the simulator

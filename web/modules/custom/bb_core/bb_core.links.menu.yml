@@ -188,7 +188,7 @@ bb_core.account.profile:
   weight: 0
   options:
     icon: settings
-    active_routes: [entity.user.edit_form]
+    active_routes: [entity.user.edit_form, bb_core.user.profile]
 
 bb_core.account.conductors:
   title: 'Conductors'

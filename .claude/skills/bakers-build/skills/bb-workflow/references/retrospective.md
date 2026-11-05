@@ -51,8 +51,8 @@ the explicit rating and produces its comment with `causes: []`; it does not inve
 
 ### Pair only named causes with evidence
 
-Read the ticket's record only for causes the human actually names. Use its related `bb_run`
-entities, relevant handoff comments, its `recipe`, and `agent:*` labels. There is no queryable
+Read the ticket's record only for causes the human actually names. Use its runs from
+`bakers_ticket_runs_list` ([tools](tools.md)), following `next_offset` until it is null, relevant handoff comments, its `recipe`, and `agent:*` labels. There is no queryable
 transition history: tickets are not revisionable. The countable fields are `state_at_start` and
 `agent` on each run. Read every related run before reporting an exact count; a partial or denied
 read is unavailable evidence, not zero.
@@ -75,10 +75,9 @@ without named causes incurs no retrospective evidence queries. Copy no general f
 
 For an explicit rating, use the `job_rating` definition at
 `../../bb-verdict/measurements/definitions/job-rating.json` and invoke [measurement](measurement.md)
-with `score`. Its namespace is `job_rating`; its **label_term is `retro`**. Ensure that label exists
-in the ticket's workspace before the measurement write: search `bb_term/bb_labels` by name, create
-it only when absent and authorized with explicit `workspace_id` and the `bb_labels` vocabulary, then
-preserve existing ticket labels on update. A failed write is reported as a retrospective write
+with `score`. Its namespace is `job_rating`; its **label_term is `retro`**, which the measurement
+write adds itself, creating it in the ticket's workspace when absent and keeping existing labels. A
+failed write is reported as a retrospective write
 failure; it must not block or fail an otherwise authorized close. Never invent a score or silently
 claim a failed write succeeded.
 
@@ -105,7 +104,8 @@ Evidence: No direct measurement — <why, or the actual observable counterpart>.
 Use the selected level text verbatim, the stable cause keys above, and only blocks actually named.
 For a good rating with nothing to add, write the rating and `causes: []`. For cancellation replace
 the rating line with `Cancelled — no rating.` and `Reason: <human's reason>`; write **no metric row**.
-Attach the `retro` label to a reason-only cancellation too, preserving existing labels.
+Attach the `retro` label to a reason-only cancellation too, with `bakers_ticket_update`
+`labels_add: ["retro"]`; it writes no metric.
 If a metric, label, or comment write fails, report exactly which part was persisted before
 continuing; reconcile an uncertain create response rather than creating a duplicate comment.
 An unrated ticket remains complete and valid; missing data is never encoded as zero.

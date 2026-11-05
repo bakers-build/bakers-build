@@ -19,7 +19,7 @@ use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
 
 /**
- * Finds readable tickets whose title or description contains a text.
+ * Finds readable tickets by text, or the one ticket of an exact branch.
  *
  * An access-checked entity query rather than TicketSearchResolver: the
  * resolver needs the Search API index and matches titles only.
@@ -27,7 +27,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_search',
   label: new TranslatableMarkup('Search tickets'),
-  description: new TranslatableMarkup('Finds up to 50 readable tickets whose title or description contains the query, newest first, optionally within one project.'),
+  description: new TranslatableMarkup('Finds up to 50 readable tickets whose title or description contains the query, or whose branch is exactly branch_name, newest first, optionally within one project. Each row names its branch, base branch and parent.'),
   operation: ToolOperation::Read,
   permission: 'view bb_ticket',
   input_definitions: [
@@ -35,7 +35,13 @@ use Drupal\tool\TypedData\OutputDefinition;
       data_type: 'string',
       label: new TranslatableMarkup('Query'),
       description: new TranslatableMarkup('Text to find in ticket titles and descriptions.'),
-      constraints: ['NotBlank' => []],
+      required: FALSE,
+    ),
+    'branch_name' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Branch name'),
+      description: new TranslatableMarkup('Exact git branch of the ticket, e.g. feat/bakers-27-replace-the-pub.'),
+      required: FALSE,
     ),
     'project' => new InputDefinition(
       data_type: 'string',
@@ -73,6 +79,24 @@ use Drupal\tool\TypedData\OutputDefinition;
             description: new TranslatableMarkup('The ticket type name.'),
             nullable: TRUE,
           ),
+          'branch_name' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Branch name'),
+            description: new TranslatableMarkup('The ticket’s git branch.'),
+            nullable: TRUE,
+          ),
+          'base_branch' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Base branch'),
+            description: new TranslatableMarkup('The branch the ticket’s work is based on.'),
+            nullable: TRUE,
+          ),
+          'parent' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Parent'),
+            description: new TranslatableMarkup('The parent ticket’s identifier.'),
+            nullable: TRUE,
+          ),
         ],
       ),
     ),
@@ -86,11 +110,19 @@ final class TicketSearch extends ToolBase {
    * {@inheritdoc}
    */
   protected function doExecute(array $values): ExecutableResult {
+    if (empty($values['query']) && empty($values['branch_name'])) {
+      throw new \InvalidArgumentException('Give a query or a branch_name.');
+    }
     $storage = $this->entities()->getStorage('bb_ticket');
     $query = $storage->getQuery()->accessCheck(TRUE)->sort('id', 'DESC')->range(0, 50);
-    $query->condition($query->orConditionGroup()
-      ->condition('title', $values['query'], 'CONTAINS')
-      ->condition('description.value', $values['query'], 'CONTAINS'));
+    if (!empty($values['query'])) {
+      $query->condition($query->orConditionGroup()
+        ->condition('title', $values['query'], 'CONTAINS')
+        ->condition('description.value', $values['query'], 'CONTAINS'));
+    }
+    if (!empty($values['branch_name'])) {
+      $query->condition('branch_name', $values['branch_name']);
+    }
     if (!empty($values['project'])) {
       $projects = $this->entities()->getStorage('bb_project')->getQuery()->accessCheck(TRUE)
         ->condition('uuid', $values['project'])->execute();
@@ -107,11 +139,23 @@ final class TicketSearch extends ToolBase {
         'title' => $ticket->getTitle(),
         'state' => (string) $ticket->get('state')->value,
         'type' => $ticket->get('ticket_type')->entity?->label(),
+        'branch_name' => $ticket->get('branch_name')->value,
+        'base_branch' => $ticket->get('base_branch')->value,
+        // Unreadable parents stay hidden; the base branch still names theirs.
+        'parent' => $this->parentIdentifier($ticket),
       ];
     }
     return ExecutableResult::success(new TranslatableMarkup('@count tickets found.', ['@count' => count($tickets)]), [
       'tickets' => $tickets,
     ]);
+  }
+
+  /**
+   * The parent's identifier when the actor may read the parent.
+   */
+  private function parentIdentifier(BbTicketInterface $ticket): ?string {
+    $parent = $ticket->get('parent_id')->entity;
+    return $parent instanceof BbTicketInterface && $parent->access('view', $this->currentUser) ? $parent->getIdentifier() : NULL;
   }
 
   /**

@@ -88,11 +88,12 @@ export {
 } from './cli/load-bakers-config.js';
 export {
   type AgentRoutes,
-  legacyMachineContextPath,
+  assertSchemaVersion1,
   type MachineContext,
   machineContextPath,
   readMachineContext,
   resolveMachineContextPath,
+  warnIgnoredMaxParallel,
 } from './cli/machine-context.js';
 export { corePackageRoot } from './cli/paths.js';
 export { resolveModuleEslintStyle } from './cli/resolve-module.js';
@@ -126,7 +127,6 @@ export {
   deriveCheckoutRoot,
   type RootGitExec,
 } from './core/checkout-root.js';
-export { conductorId } from './core/conductor-id.js';
 export {
   CommandRunner,
   ExecError,

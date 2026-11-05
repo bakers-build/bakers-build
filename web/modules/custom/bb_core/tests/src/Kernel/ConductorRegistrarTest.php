@@ -4,30 +4,40 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Lock\DatabaseLockBackend;
 use Drupal\Core\Lock\LockBackendAbstract;
 use Drupal\bb_core\Conductor\ConductorRegistrar;
+use Drupal\bb_core\Conductor\ConductorTakeoverOffer;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\user\RoleInterface;
 use Drupal\user\UserInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * Covers the server-side heartbeat upsert (self-heal).
  *
- * A heartbeat keys on conductor_id (legacy machine_id alias): it creates the
- * conductor when missing, refreshes lease + reported load, links a machine,
- * and always brings it online.
+ * A heartbeat keys on conductor_id and the machine UUID in host_key: it
+ * creates the conductor when missing, refreshes lease + reported load, links
+ * a machine, and always brings it online.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
 final class ConductorRegistrarTest extends KernelTestBase {
 
   use OgScopeFixtureTrait;
+
+  /**
+   * A machine UUID for fixtures that do not care about the machine.
+   */
+  private const HOST = '7d3c1a52-0e4b-4f1d-9c2a-5b8e6f4a3d21';
 
   /**
    * {@inheritdoc}
@@ -38,6 +48,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
     'field', 'og',
+    'serialization', 'jsonapi', 'jsonapi_resources',
     'link', 'text', 'bb_core',
   ];
 
@@ -53,7 +64,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
-    $this->installConfig(['user']);
+    $this->installConfig(['user', 'jsonapi']);
     $this->installOgScopeFixture();
     $this->createUser('uid1-dummy');
     $this->createProjectWithWorkspace('default-project');
@@ -67,7 +78,8 @@ final class ConductorRegistrarTest extends KernelTestBase {
 
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-heal',
-      'host_key' => 'host-heal',
+      'host_key' => '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+      'machine_label' => 'cw-laptop',
       'project' => 'default-project',
       'states' => ['diagnose', 'coding'],
       'label' => 'healed',
@@ -86,26 +98,338 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $this->assertFalse($conductor->hasField('max_parallel'));
     $machine = $conductor->getMachine();
     $this->assertInstanceOf(BbMachineInterface::class, $machine);
-    $this->assertSame('host-heal', $machine->getHostKey());
-    $this->assertSame(3, $machine->getMaxParallel());
+    $this->assertSame('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', $machine->getHostKey());
+    $this->assertSame('cw-laptop', $machine->label());
+    $this->assertSame(5, $machine->getMaxParallel());
     $this->assertSame(1, $machine->getCurrentLoad());
   }
 
   /**
-   * Legacy machine_id payload is accepted as conductor_id.
+   * A heartbeat from a stale CLI is refused with a pointer to bakers init.
+   *
+   * @param array<string, mixed> $attrs
+   *   Identity attributes of the stale payload.
    */
-  public function testHeartbeatAcceptsLegacyMachineIdAlias(): void {
-    $owner = $this->createUser('owner-legacy');
-    $conductor = $this->registrar()->heartbeat($owner, [
-      'machine_id' => 'legacy-mid',
-      'host_key' => 'host-legacy',
+  #[DataProvider('staleIdentityProvider')]
+  public function testHeartbeatRefusesStaleIdentity(array $attrs): void {
+    $owner = $this->createUser('owner-stale');
+    try {
+      $this->registrar()->heartbeat($owner, $attrs + ['project' => 'default-project']);
+      $this->fail('A stale identity must be refused.');
+    }
+    catch (UnprocessableEntityHttpException $e) {
+      $this->assertStringContainsString('bakers init', $e->getMessage());
+    }
+    $this->assertSame(0, (int) $this->container->get('entity_type.manager')->getStorage('bb_machine')
+      ->getQuery()->accessCheck(FALSE)->count()->execute());
+  }
+
+  /**
+   * Stale identity payloads.
+   *
+   * @return array<string, array{array<string, string>}>
+   *   Identity attributes per case.
+   */
+  public static function staleIdentityProvider(): array {
+    return [
+      'legacy machine_id as conductor' => [['machine_id' => 'cw-framework', 'host_key' => self::HOST]],
+      'no host_key' => [['conductor_id' => 'u-framework-bakers']],
+    ];
+  }
+
+  /**
+   * An existing machine keeps its string host key.
+   */
+  public function testHeartbeatKeepsAnExistingStringHostKey(): void {
+    $conductor = $this->registrar()->heartbeat($this->createUser('owner-string'), [
+      'conductor_id' => 'cw-framework',
+      'host_key' => 'framework',
       'project' => 'default-project',
-      'current_load' => 2,
-      'max_parallel' => 4,
     ]);
-    $this->assertSame('legacy-mid', $conductor->getConductorId());
-    $this->assertSame(2, (int) $conductor->get('reported_load')->value);
-    $this->assertSame(4, $conductor->getMachine()?->getMaxParallel());
+    $this->assertSame('framework', $conductor->getMachine()?->getHostKey());
+  }
+
+  /**
+   * A new id for a known machine + project + variant is offered for takeover.
+   *
+   * The 409 names the matching conductor and creates nothing.
+   */
+  public function testHeartbeatOffersTheMatchingConductorForTakeover(): void {
+    $owner = $this->createUser('owner-takeover');
+    $old = $this->legacyConductor($owner);
+    try {
+      $this->registrar()->heartbeat($owner, $this->derivedAttrs());
+      $this->fail('A matching conductor must be offered, not duplicated.');
+    }
+    catch (ConductorTakeoverOffer $e) {
+      $this->assertSame(409, $e->getStatusCode());
+      $this->assertStringContainsString('--new', $e->getMessage());
+      $this->assertSame([[
+        'uuid' => $old->uuid(),
+        'label' => '',
+        'conductor_id' => 'cw-framework',
+        'last_seen' => (int) $old->get('last_seen')->value,
+      ],
+      ], $e->candidates);
+    }
+    $this->assertSame(1, $this->conductorCount());
+  }
+
+  /**
+   * The takeover offer reaches the client as a JSON:API 409 over HTTP.
+   */
+  public function testHeartbeatEndpointAnswersTheOfferWith409(): void {
+    $owner = $this->createUser('owner-takeover-http');
+    $old = $this->legacyConductor($owner);
+    user_role_grant_permissions(RoleInterface::AUTHENTICATED_ID, ['register bakers conductor']);
+    $this->config('jsonapi.settings')->set('read_only', FALSE)->save();
+    $this->container->get('current_user')->setAccount($owner);
+    $request = Request::create('/jsonapi/bakers/heartbeat', 'POST', [], [], [], [
+      'CONTENT_TYPE' => 'application/vnd.api+json',
+      'HTTP_ACCEPT' => 'application/vnd.api+json',
+      'HTTP_X_BAKERS_CLIENT' => 'bakers/99.0.0',
+    ],
+      json_encode(['data' => ['attributes' => $this->derivedAttrs()]], JSON_THROW_ON_ERROR));
+
+    $response = $this->container->get('http_kernel')->handle($request);
+
+    $this->assertSame(409, $response->getStatusCode(), (string) $response->getContent());
+    $body = json_decode((string) $response->getContent(), TRUE, 512, JSON_THROW_ON_ERROR);
+    $this->assertSame($old->uuid(), $body['errors'][0]['meta']['candidates'][0]['uuid']);
+    $this->assertSame(1, $this->conductorCount());
+  }
+
+  /**
+   * Adopting waits for a heartbeat still running under the conductor's old id.
+   *
+   * Otherwise an old CLI could save the conductor back under its old id.
+   */
+  public function testAdoptIsRefusedWhileTheOldIdIsRegistering(): void {
+    $owner = $this->createUser('owner-adopt-race');
+    $old = $this->legacyConductor($owner);
+    $other_request = new DatabaseLockBackend($this->container->get('database'));
+    self::assertTrue($other_request->acquire('bb_conductor_register:cw-framework'));
+    try {
+      $this->lockingRegistrar()->heartbeat($owner, ['adopt' => $old->uuid()] + $this->derivedAttrs());
+      $this->fail('Adopting during a registration under the old id was not refused.');
+    }
+    catch (ConflictHttpException) {
+    }
+    finally {
+      $other_request->releaseAll();
+    }
+    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->loadUnchanged($old->id());
+    $this->assertInstanceOf(BbConductorInterface::class, $reloaded);
+    $this->assertSame('cw-framework', $reloaded->getConductorId());
+  }
+
+  /**
+   * Another owner registering the same conductor_id at once is refused.
+   *
+   * Otherwise both pass the foreign-owner check and one id gets two owners.
+   */
+  public function testConcurrentRegistrationByAnotherOwnerIsRefused(): void {
+    $owner = $this->createUser('owner-same-id');
+    $other_request = new DatabaseLockBackend($this->container->get('database'));
+    self::assertTrue($other_request->acquire('bb_conductor_register:shared-id'));
+    try {
+      $this->lockingRegistrar()->heartbeat($owner, [
+        'conductor_id' => 'shared-id',
+        'host_key' => self::HOST,
+        'project' => 'default-project',
+      ]);
+      $this->fail('A registration under a conductor_id another owner is registering was not refused.');
+    }
+    catch (ConflictHttpException) {
+    }
+    finally {
+      $other_request->releaseAll();
+    }
+    $this->assertSame(0, $this->conductorCount());
+  }
+
+  /**
+   * A conductor that stopped matching before its lock was taken stays as is.
+   */
+  public function testAdoptIsRefusedWhenTheConductorChangedMeanwhile(): void {
+    $owner = $this->createUser('owner-adopt-changed');
+    $old = $this->legacyConductor($owner);
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
+    // Another request moves the conductor to variant `shop` just before the
+    // old id's lock is granted.
+    $lock = new class($storage, (int) $old->id()) extends LockBackendAbstract {
+
+      public function __construct(private readonly EntityStorageInterface $storage, private readonly int $id) {}
+
+      /**
+       * {@inheritdoc}
+       */
+      public function acquire($name, $timeout = 30.0) {
+        $conductor = $this->storage->loadUnchanged($this->id);
+        if (str_ends_with($name, ':cw-framework') && $conductor instanceof BbConductorInterface) {
+          $conductor->set('conductor_name', 'shop')->save();
+        }
+        return TRUE;
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function lockMayBeAvailable($name) {
+        return TRUE;
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function release($name): void {}
+
+      /**
+       * {@inheritdoc}
+       */
+      public function releaseAll($lockId = NULL): void {}
+
+    };
+    $registrar = new ConductorRegistrar(
+      $this->container->get('entity_type.manager'),
+      $this->container->get('datetime.time'),
+      $lock,
+      $this->container->get('bb_core.workspace_read_scope'),
+      $this->container->get('bb_core.rank_capability'),
+      $this->container->get('bb_core.workspace_resolver'),
+    );
+    try {
+      $registrar->heartbeat($owner, ['adopt' => $old->uuid()] + $this->derivedAttrs());
+      $this->fail('A conductor that no longer matches was adopted.');
+    }
+    catch (ConflictHttpException) {
+    }
+    $reloaded = $storage->loadUnchanged($old->id());
+    $this->assertInstanceOf(BbConductorInterface::class, $reloaded);
+    $this->assertSame('cw-framework', $reloaded->getConductorId());
+  }
+
+  /**
+   * Taking over keeps the conductor and its tickets and moves it to the new id.
+   */
+  public function testHeartbeatAdoptsTheMatchingConductor(): void {
+    $owner = $this->createUser('owner-adopt');
+    $old = $this->legacyConductor($owner);
+    $adopted = $this->registrar()->heartbeat($owner, ['adopt' => $old->uuid()] + $this->derivedAttrs());
+    $this->assertSame($old->id(), $adopted->id());
+    $this->assertSame('framework-default-project-conductor', $adopted->getConductorId());
+    $this->assertSame(1, $this->conductorCount());
+    // Taken over once: the next heartbeat finds it by its new id.
+    $again = $this->registrar()->heartbeat($owner, $this->derivedAttrs());
+    $this->assertSame($old->id(), $again->id());
+  }
+
+  /**
+   * Adopting a conductor that is not a match is refused.
+   */
+  public function testHeartbeatRefusesAdoptingAnotherConductor(): void {
+    $owner = $this->createUser('owner-adopt-other');
+    $this->legacyConductor($owner);
+    $other = $this->registrar()->heartbeat($owner, [
+      'conductor_id' => 'elsewhere',
+      'host_key' => self::HOST,
+      'project' => 'default-project',
+    ]);
+    $this->expectException(UnprocessableEntityHttpException::class);
+    $this->registrar()->heartbeat($owner, ['adopt' => $other->uuid()] + $this->derivedAttrs());
+  }
+
+  /**
+   * Declining the takeover creates a second conductor.
+   */
+  public function testHeartbeatCreatesAnotherConductorWhenAsked(): void {
+    $owner = $this->createUser('owner-new');
+    $old = $this->legacyConductor($owner);
+    $new = $this->registrar()->heartbeat($owner, ['create_new' => TRUE] + $this->derivedAttrs());
+    $this->assertNotSame($old->id(), $new->id());
+    $this->assertSame(2, $this->conductorCount());
+  }
+
+  /**
+   * Another variant is no match, so nothing is asked.
+   */
+  public function testHeartbeatCreatesAnotherVariantWithoutAsking(): void {
+    $owner = $this->createUser('owner-variant');
+    $this->legacyConductor($owner);
+    $this->registrar()->heartbeat($owner, [
+      'conductor_id' => 'framework-default-project-shop',
+      'conductor_name' => 'shop',
+    ] + $this->derivedAttrs());
+    $this->assertSame(2, $this->conductorCount());
+  }
+
+  /**
+   * The offer for a named variant names the start that selects it.
+   */
+  public function testVariantOfferNamesItsStart(): void {
+    $owner = $this->createUser('owner-variant-offer');
+    $shop = ['conductor_name' => 'shop'];
+    $old = $this->registrar()->heartbeat($owner, $shop + $this->legacyAttrs());
+    $this->expectExceptionMessage('bakers --conductor shop oven start --adopt ' . $old->uuid());
+    $this->registrar()->heartbeat($owner, ['conductor_id' => 'framework-default-project-shop'] + $shop + $this->derivedAttrs());
+  }
+
+  /**
+   * A conductor registered before the upgrade: string id, no variant recorded.
+   */
+  private function legacyConductor(UserInterface $owner): BbConductorInterface {
+    return $this->registrar()->heartbeat($owner, $this->legacyAttrs());
+  }
+
+  /**
+   * The heartbeat of a conductor registered before the upgrade.
+   *
+   * @return array<string, string>
+   *   Its identity attributes.
+   */
+  private function legacyAttrs(): array {
+    return [
+      'conductor_id' => 'cw-framework',
+      'host_key' => 'framework',
+      'project' => 'default-project',
+    ];
+  }
+
+  /**
+   * A registrar with a real lock; kernel tests wire a NullLockBackend.
+   */
+  private function lockingRegistrar(): ConductorRegistrar {
+    return new ConductorRegistrar(
+      $this->container->get('entity_type.manager'),
+      $this->container->get('datetime.time'),
+      new DatabaseLockBackend($this->container->get('database')),
+      $this->container->get('bb_core.workspace_read_scope'),
+      $this->container->get('bb_core.rank_capability'),
+      $this->container->get('bb_core.workspace_resolver'),
+    );
+  }
+
+  /**
+   * The heartbeat of the upgraded CLI on the same machine.
+   *
+   * @return array<string, string>
+   *   Its identity attributes.
+   */
+  private function derivedAttrs(): array {
+    return [
+      'conductor_id' => 'framework-default-project-conductor',
+      'host_key' => 'framework',
+      'project' => 'default-project',
+      'conductor_name' => 'conductor',
+    ];
+  }
+
+  /**
+   * Counts every conductor.
+   */
+  private function conductorCount(): int {
+    return (int) $this->container->get('entity_type.manager')->getStorage('bb_conductor')
+      ->getQuery()->accessCheck(FALSE)->count()->execute();
   }
 
   /**
@@ -115,7 +439,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner');
     $attrs = [
       'conductor_id' => 'mid-reuse',
-      'host_key' => 'host-reuse',
+      'host_key' => 'f4a82708-a5ea-5344-8904-adae5645ac14',
       'project' => 'default-project',
       'current_load' => 0,
     ];
@@ -140,7 +464,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-rebind');
     $attrs = [
       'conductor_id' => 'bound-cid',
-      'host_key' => 'host-original',
+      'host_key' => '2f4e9db2-ba15-5f2e-8b14-304b1c8efc4f',
       'project' => 'default-project',
       'current_load' => 2,
     ];
@@ -149,7 +473,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $this->assertInstanceOf(BbMachineInterface::class, $original);
 
     try {
-      $this->registrar()->heartbeat($owner, ['host_key' => 'host-other', 'current_load' => 4] + $attrs);
+      $this->registrar()->heartbeat($owner, ['host_key' => '48fa04c8-b79e-5a15-8543-8456988f1349', 'current_load' => 4] + $attrs);
       $this->fail('A second machine re-bound an existing conductor.');
     }
     catch (UnprocessableEntityHttpException $e) {
@@ -163,7 +487,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $this->assertSame(2, (int) $reloaded->get('reported_load')->value);
     $this->assertSame(2, $reloaded->getMachine()?->getCurrentLoad());
     $other = $this->container->get('entity_type.manager')->getStorage('bb_machine')
-      ->getQuery()->accessCheck(FALSE)->condition('host_key', 'host-other')->count()->execute();
+      ->getQuery()->accessCheck(FALSE)->condition('host_key', '48fa04c8-b79e-5a15-8543-8456988f1349')->count()->execute();
     $this->assertSame(0, (int) $other);
   }
 
@@ -176,7 +500,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
   public function testConcurrentRegistrationOfOneConductorIdIsRefused(): void {
     $owner = $this->createUser('owner-race');
     $other_request = new DatabaseLockBackend($this->container->get('database'));
-    self::assertTrue($other_request->acquire('bb_conductor_register:' . $owner->id() . ':race-cid'));
+    self::assertTrue($other_request->acquire('bb_conductor_register:race-cid'));
 
     try {
       // Kernel tests wire a NullLockBackend; this registrar locks for real.
@@ -190,7 +514,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
       );
       $registrar->heartbeat($owner, [
         'conductor_id' => 'race-cid',
-        'host_key' => 'host-race-b',
+        'host_key' => '5812a68e-1541-57e0-a50e-fabae8fc152b',
         'project' => 'default-project',
       ]);
       $this->fail('A concurrent registration was not refused.');
@@ -203,7 +527,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
 
     $etm = $this->container->get('entity_type.manager');
     $this->assertSame(0, (int) $etm->getStorage('bb_conductor')->getQuery()->accessCheck(FALSE)->condition('conductor_id', 'race-cid')->count()->execute());
-    $this->assertSame(0, (int) $etm->getStorage('bb_machine')->getQuery()->accessCheck(FALSE)->condition('host_key', 'host-race-b')->count()->execute());
+    $this->assertSame(0, (int) $etm->getStorage('bb_machine')->getQuery()->accessCheck(FALSE)->condition('host_key', '5812a68e-1541-57e0-a50e-fabae8fc152b')->count()->execute());
   }
 
   /**
@@ -255,7 +579,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
 
     $conductor = $registrar->heartbeat($owner, [
       'conductor_id' => 'overlap-cid',
-      'host_key' => 'host-overlap',
+      'host_key' => '49c6d47f-8712-5045-816e-bba49ae6dbad',
       'project' => 'default-project',
     ]);
 
@@ -267,13 +591,17 @@ final class ConductorRegistrarTest extends KernelTestBase {
    */
   public function testHeartbeatBindsAnUnboundConductor(): void {
     $owner = $this->createUser('owner-legacy');
-    $attrs = ['conductor_id' => 'legacy-unbound', 'host_key' => 'host-legacy', 'project' => 'default-project'];
+    $attrs = [
+      'conductor_id' => 'legacy-unbound',
+      'host_key' => '420d48cb-0e1e-5e9d-bc96-3834f0e90931',
+      'project' => 'default-project',
+    ];
     $conductor = $this->registrar()->heartbeat($owner, $attrs);
     $conductor->set('machine', NULL)->save();
 
     $again = $this->registrar()->heartbeat($owner, $attrs);
 
-    $this->assertSame('host-legacy', $again->getMachine()?->get('host_key')->value);
+    $this->assertSame('420d48cb-0e1e-5e9d-bc96-3834f0e90931', $again->getMachine()?->get('host_key')->value);
   }
 
   /**
@@ -283,7 +611,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner');
     $attrs = [
       'conductor_id' => 'mid-revive',
-      'host_key' => 'host-revive',
+      'host_key' => '7b4867db-d0de-5fa9-b6b6-ba2844a2e0be',
       'project' => 'default-project',
     ];
     $conductor = $this->registrar()->heartbeat($owner, $attrs);
@@ -294,21 +622,53 @@ final class ConductorRegistrarTest extends KernelTestBase {
   }
 
   /**
-   * The same conductor_id owned by different users yields distinct conductors.
+   * A conductor_id another user holds is refused, and nothing is created.
+   *
+   * Derived ids carry no user, so two machines with the same hand-picked
+   * machine_id would otherwise share one id across owners.
    */
-  public function testHeartbeatIsScopedToOwner(): void {
-    $a = $this->createUser('owner-a');
-    $b = $this->createUser('owner-b');
+  public function testHeartbeatRefusesForeignConductorId(): void {
     $attrs = [
       'conductor_id' => 'shared-mid',
-      'host_key' => 'shared-host',
+      'host_key' => 'framework',
       'project' => 'default-project',
     ];
+    $this->registrar()->heartbeat($this->createUser('owner-a'), $attrs);
+    try {
+      $this->registrar()->heartbeat($this->createUser('owner-b'), $attrs);
+      $this->fail('A conductor id of another owner was registered.');
+    }
+    catch (ConflictHttpException $e) {
+      $this->assertStringContainsString('bakers init', $e->getMessage());
+    }
+    $this->assertSame(1, $this->conductorCount());
+  }
 
-    $ca = $this->registrar()->heartbeat($a, $attrs);
-    $cb = $this->registrar()->heartbeat($b, $attrs);
+  /**
+   * A machine still named after its host key takes the label it sends.
+   *
+   * A name someone has given it stays.
+   */
+  public function testHeartbeatNamesAnUnnamedMachineFromItsLabel(): void {
+    $owner = $this->createUser('owner-label');
+    $machine = $this->legacyConductor($owner)->getMachine();
+    $this->assertSame('framework', $machine?->label());
 
-    $this->assertNotSame($ca->id(), $cb->id());
+    $named = $this->registrar()->heartbeat($owner, ['machine_label' => 'cw-laptop'] + $this->legacyAttrs())->getMachine();
+    $this->assertSame('cw-laptop', $named?->label());
+
+    $named->set('name', 'Desk')->save();
+    $kept = $this->registrar()->heartbeat($owner, ['machine_label' => 'other'] + $this->legacyAttrs())->getMachine();
+    $this->assertSame('Desk', $kept?->label());
+  }
+
+  /**
+   * A machine label longer than the name field is cut to fit.
+   */
+  public function testHeartbeatCutsAnOverlongMachineLabel(): void {
+    $owner = $this->createUser('owner-long-label');
+    $machine = $this->registrar()->heartbeat($owner, ['machine_label' => str_repeat('ä', 300)] + $this->legacyAttrs())->getMachine();
+    $this->assertSame(str_repeat('ä', 255), $machine?->label());
   }
 
   /**
@@ -326,7 +686,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $this->expectException(UnprocessableEntityHttpException::class);
     $this->registrar()->heartbeat($this->createUser('owner'), [
       'conductor_id' => 'mid-noproj',
-      'host_key' => 'host-noproj',
+      'host_key' => 'aeee0147-dd6e-5305-983a-6661dfd66529',
       'project' => 'does-not-exist',
     ]);
   }
@@ -338,15 +698,17 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-agg');
     $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'agg-a',
-      'host_key' => 'host-agg',
+      'host_key' => 'f6135178-679a-5895-8e2c-ea8fc71a30f0',
       'project' => 'default-project',
       'current_load' => 2,
       'max_parallel' => 5,
     ]);
     $second = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'agg-b',
-      'host_key' => 'host-agg',
+      'host_key' => 'f6135178-679a-5895-8e2c-ea8fc71a30f0',
       'project' => 'default-project',
+      // A second conductor of one machine and project is another variant.
+      'conductor_name' => 'shop',
       'current_load' => 3,
       'max_parallel' => 5,
     ]);
@@ -363,14 +725,14 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-preserve-load');
     $attrs = [
       'conductor_id' => 'mid-preserve',
-      'host_key' => 'host-preserve',
+      'host_key' => 'ae32e548-a723-5d3b-842d-8c21111ff9da',
       'project' => 'default-project',
       'current_load' => 3,
     ];
     $this->registrar()->heartbeat($owner, $attrs);
     $again = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-preserve',
-      'host_key' => 'host-preserve',
+      'host_key' => 'ae32e548-a723-5d3b-842d-8c21111ff9da',
       'project' => 'default-project',
     ]);
     $this->assertSame(3, (int) $again->get('reported_load')->value);
@@ -384,7 +746,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-zero-load');
     $attrs = [
       'conductor_id' => 'mid-zero',
-      'host_key' => 'host-zero',
+      'host_key' => 'ef16f14d-5b74-524c-92ab-5de38ca1278f',
       'project' => 'default-project',
       'current_load' => 4,
     ];
@@ -401,7 +763,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-default-load');
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-default-load',
-      'host_key' => 'host-default-load',
+      'host_key' => 'bfe05794-cab7-54d1-b5c7-043553eeacb2',
       'project' => 'default-project',
     ]);
     $this->assertSame(0, (int) $conductor->get('reported_load')->value);
@@ -414,7 +776,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-edits');
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-edits',
-      'host_key' => 'host-edits',
+      'host_key' => '719b5bdc-5aad-57a8-962b-d7dce413feb3',
       'project' => 'default-project',
       'label' => 'from-cli',
       'states' => ['coding'],
@@ -426,7 +788,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
 
     $again = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-edits',
-      'host_key' => 'host-edits',
+      'host_key' => '719b5bdc-5aad-57a8-962b-d7dce413feb3',
       'project' => 'default-project',
       'label' => 'from-cli-again',
       'states' => ['todo'],
@@ -443,14 +805,15 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-offline');
     $peer = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-off-peer',
-      'host_key' => 'host-off',
+      'host_key' => '065bec2b-5b04-59ee-a96f-6f0eb12bcafd',
       'project' => 'default-project',
       'current_load' => 1,
     ]);
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-off',
-      'host_key' => 'host-off',
+      'host_key' => '065bec2b-5b04-59ee-a96f-6f0eb12bcafd',
       'project' => 'default-project',
+      'conductor_name' => 'shop',
       'current_load' => 2,
       'lease_seconds' => 300,
     ]);
@@ -477,7 +840,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     $owner = $this->createUser('owner-off-twice');
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-off-twice',
-      'host_key' => 'host-off-twice',
+      'host_key' => '2673ed73-b4c0-565f-b6eb-a34973d31a9f',
       'project' => 'default-project',
       'current_load' => 1,
     ]);

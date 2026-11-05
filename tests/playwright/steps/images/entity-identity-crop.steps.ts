@@ -4,7 +4,7 @@
 // Consumer: features/images/entity-identity-crop.feature. The crop dialog's own
 // steps (drag, apply, moved) come from avatar-crop.steps.ts.
 import { join } from 'node:path';
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
 import { safe } from '../../support/listing';

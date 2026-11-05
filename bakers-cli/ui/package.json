@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "bakers.build project-first cockpit: the `bakers ui` command plugin (renderer resolved dynamically).",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20.19"
   },

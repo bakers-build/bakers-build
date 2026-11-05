@@ -1,9 +1,8 @@
-import { HOME_IMPORT_EXPRESSION_PATTERN } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
 import {
-  configImportExpression,
   renderCommittedConfig,
   renderGlobalConnection,
+  renderHostMachine,
 } from '../../src/cli/config-templates.js';
 
 const base = {
@@ -46,6 +45,33 @@ describe('rendered global connection', () => {
   });
 });
 
+describe('rendered schema versions', () => {
+  it('renders the connection at schema version 1', () => {
+    const text = renderGlobalConnection({
+      ...base,
+      clientId: 'bakers-cli',
+      authType: 'oauth2_device_code',
+    });
+    expect(text).toContain('// @bakers-schema-version 1\n');
+    expect(text).toContain('schema_version: 1,');
+  });
+
+  it('renders the machine at schema version 1 with a UUID and label, without user_id', () => {
+    const text = renderHostMachine({
+      machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+      label: 'cw-laptop',
+    });
+    expect(text).toContain('// @bakers-schema-version 1\n');
+    expect(text).toContain('schema_version: 1,');
+    expect(text).toContain(
+      'machine_id: "0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30"',
+    );
+    expect(text).toContain('label: "cw-laptop"');
+    expect(text).not.toContain('user_id');
+    expect(text).not.toContain('max_parallel');
+  });
+});
+
 describe('rendered committed conductor config', () => {
   const base = {
     project: 'demo',
@@ -55,34 +81,15 @@ describe('rendered committed conductor config', () => {
     },
   };
 
-  it('imports the machine context through BB_HOME, never an absolute path', () => {
+  it('carries no conductor or machine identity', () => {
+    // A conductor is machine + project + variant; the committed file is
+    // identical for everyone, so it names no id and reads no machine file.
     const text = renderCommittedConfig(base);
-    expect(text).toContain(
-      '`${process.env.BB_HOME ?? `${process.env.HOME}/.bakers`}/machine.config.js`',
-    );
-    // The file is committed: a path from the machine that generated it breaks
-    // every other checkout, and loadMachine() swallows the failure silently.
-    expect(text).not.toContain('file://');
-    expect(text).not.toContain('/home/');
-    expect(text).not.toContain('/Users/');
-  });
-
-  it("renders an expression importConfig()'s recogniser still matches", () => {
-    // The two drifted once already: the renderer moved to the BB_HOME-aware
-    // form and core's import-config.ts kept matching only the old
-    // `${process.env.HOME}/.bakers/…` shape, silently losing single-process
-    // freshness for every committed config. Pinning them against each other
-    // directly means changing one without the other fails here, not in CI.
-    expect(
-      HOME_IMPORT_EXPRESSION_PATTERN.test(
-        configImportExpression('machine.config.js'),
-      ),
-    ).toBe(true);
-    expect(
-      HOME_IMPORT_EXPRESSION_PATTERN.test(
-        configImportExpression('bakers.config.js'),
-      ),
-    ).toBe(true);
+    expect(text).not.toContain('conductor_id');
+    expect(text).not.toContain('machine_id');
+    expect(text).not.toContain('loadMachine');
+    expect(text).not.toContain('composedConductorId');
+    expect(text).not.toMatch(/^\s*label:/m);
   });
 
   it('states nothing about claimable states', () => {

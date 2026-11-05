@@ -137,28 +137,22 @@ fi
 # -----------------------------------------------------------------------------
 step "2. the control-plane entities — scoped to this machine's conductor"
 # -----------------------------------------------------------------------------
-# Composed exactly as setup composes it, so the two cannot disagree about which
-# conductor's work is being reclaimed. See setup step 7 for why the machine context
-# is imported rather than pattern-matched.
-machine_identity="$(MC="${HOME}/.bakers/machine.config.js" node -e '
+# Derived exactly as the conductor derives it (machine UUID + project + default
+# variant), so the two cannot disagree about which conductor's work is being
+# reclaimed. See setup step 7 for why the machine context is imported rather
+# than pattern-matched.
+MACHINE_UUID="$(MC="${HOME}/.bakers/machine.config.js" node -e '
   const p = process.env.MC;
   import("node:fs").then(async (fs) => {
-    if (!fs.existsSync(p)) return process.stdout.write("\t");
+    if (!fs.existsSync(p)) return;
     try {
       const d = (await import("file://" + p)).default ?? {};
-      process.stdout.write(`${d.user_id ?? ""}\t${d.machine_id ?? ""}`);
-    } catch { process.stdout.write("\t"); }
-  });' 2>/dev/null || printf '\t')"
-MACHINE_USER="$(printf '%s' "${machine_identity}" | cut -f1)"
-MACHINE_HOST="$(printf '%s' "${machine_identity}" | cut -f2)"
-if [ -z "${MACHINE_HOST}" ]; then
-  MACHINE_HOST="$( ( cd "${ROOT}" && ddev describe -j 2>/dev/null ) | jq -r '.raw.name // ""')"
-fi
-if [ -n "${MACHINE_USER}" ]; then
-  MACHINE_ID="${MACHINE_USER}-${MACHINE_HOST}-${PROJECT}"
-else
-  MACHINE_ID="${MACHINE_HOST}-${PROJECT}"
-fi
+      const id = String(d.machine_id ?? "");
+      process.stdout.write(/^[0-9a-f-]{36}$/i.test(id) ? id.toLowerCase() : id);
+    } catch {}
+  });' 2>/dev/null || true)"
+[ -n "${MACHINE_UUID}" ] || die "no machine_id in ~/.bakers/machine.config.js; run bakers init"
+MACHINE_ID="${MACHINE_UUID}-${PROJECT}-conductor"
 say "conductor_id: ${MACHINE_ID}"
 
 # Pre-escaped for the PHP snippet below — see php_str. The machine context is a JS
@@ -252,7 +246,7 @@ for wt_root in "${WORKSPACE}/.bakers-worktrees" "${WORKSPACE}-worktrees"; do
     worktree="${ddev_dir%/.ddev}"
     # Guarded exactly like its sibling below, and for the same reason: a per-ticket
     # worktree carries the fixture's TRACKED .ddev/config.yaml and gets no overlay
-    # of its own unless something ran `init-worktree` there, so the name it would be
+    # of its own unless something ran `setup-worktree.mjs` there, so the name it would be
     # deleted under can belong to an unrelated checkout.
     if wt_ddev="$(harness_ddev_name "${worktree}")"; then
       say "reclaiming worktree ddev project '${wt_ddev}' in ${worktree}"

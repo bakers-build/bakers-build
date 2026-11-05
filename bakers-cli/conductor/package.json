@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "bakers.build conductor engine + CLI: registers, claims tickets via JSON:API, dispatches agents.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20.19"
   },
@@ -31,6 +31,7 @@
     "@dropsh/plugin-oauth2": "^0.8.2",
     "@bakers-build/core": "workspace:^",
     "@bakers-build/message": "workspace:^",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "commander": "^12.1.0",
     "dropsh": "^0.8.2"
   },

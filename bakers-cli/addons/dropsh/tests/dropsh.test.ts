@@ -11,7 +11,11 @@ import { fileURLToPath } from 'node:url';
 import type { BbCommandHost } from '@bakers-build/core';
 import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import dropshCommandPlugin, { dropshConfigHint } from '../src/index.js';
+import dropshCommandPlugin, {
+  authCommandPlugin,
+  dropshConfigHint,
+  toolsCommandPlugin,
+} from '../src/index.js';
 
 const host: BbCommandHost = { resolveBases: [import.meta.url] };
 const here = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +41,29 @@ describe('@bakers-build/addon-dropsh command plugin', () => {
     await dropshCommandPlugin.register(program, host);
     const names = program.commands.map((c) => c.name());
     expect(names).toContain('dropsh');
+    expect(program.helpInformation()).not.toContain('dropsh');
+  });
+
+  it.each([
+    'tools',
+    'auth',
+  ])('mounts the public %s alias with local help', async (name) => {
+    const program = new Command().name('bakers');
+    const plugin = name === 'tools' ? toolsCommandPlugin : authCommandPlugin;
+    await plugin.register(program, host);
+    let output = '';
+    const write = process.stdout.write;
+    process.stdout.write = ((s: string) => {
+      output += s;
+      return true;
+    }) as typeof write;
+    try {
+      await program.parseAsync([name, '--help'], { from: 'user' });
+      expect(output).toContain(`bakers ${name}`);
+      expect(output).not.toContain('dropsh');
+    } finally {
+      process.stdout.write = write;
+    }
   });
 
   it('registration leaves connection resolution to dispatch', async () => {

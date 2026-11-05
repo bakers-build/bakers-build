@@ -15,7 +15,8 @@
 // tunnelling an unclaimed listener.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import type { RawPort } from '@bakers-build/addon-ddev';
 import type { BbCommandHost, BbCommandPlugin } from '@bakers-build/core';
 import { homeBbDir } from '@bakers-build/core';
@@ -232,7 +233,7 @@ export function shouldKeepTunnelRecord(
   });
 }
 
-function currentBranch(worktree: string): string | null {
+export function currentBranch(worktree: string): string | null {
   try {
     return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
       cwd: worktree,
@@ -244,7 +245,7 @@ function currentBranch(worktree: string): string | null {
 }
 
 /** Resolve the ports addon entry's transport for `worktree` via the SAME shared
- *  loader the inbox uses (`config.ts`'s `loadPortsTransport`) — one code
+ *  loader the conductor tools use (`config.ts`'s `loadPortsTransport`) — one code
  *  path for both, so a missing package, invalid settings, or unsupported
  *  contract always yields the same bounded, redacted diagnostic no matter
  *  which entry point asked. Never falls back to another transport: a
@@ -335,21 +336,6 @@ export function liveTunnel(
   return rule ? { live: true, rule } : { live: true };
 }
 
-async function checkLive(
-  record: TunnelDesiredRecord,
-  zone: string,
-): Promise<{ live: boolean; rule?: TunnelRule }> {
-  if (!existsSync(record.worktree)) return { live: false };
-  let discovery: ClaimedDiscovery;
-  try {
-    discovery = await discover(record.worktree, record.ticket, zone);
-  } catch {
-    // Unreadable settings are no evidence the route is gone: keep it.
-    return { live: true };
-  }
-  return liveTunnel(record, discovery);
-}
-
 /** Keys of present records whose freshly claimed rule no longer matches
  *  them (e.g. a new container IP after `ddev restart`). A key with no claim
  *  at all is `reap`'s business, not stale. */
@@ -377,6 +363,98 @@ export function quickTunnelNotice(url: string | undefined): string | undefined {
   if (!url || !URL.canParse(url)) return undefined;
   if (!/\.trycloudflare\.com$/i.test(new URL(url).hostname)) return undefined;
   return 'Quick Tunnel: no fixed name, no uptime guarantee, 200 in-flight request limit, no SSE';
+}
+
+const NO_CONDUCTOR =
+  'no running conductor for this checkout — the conductor is the only writer of the tunnel routes (start it with `bakers oven start`)';
+
+/** The live conductor endpoint whose workspace root holds `worktree`; the
+ *  most specific root wins. A dead pid's leftover file does not count. */
+function conductorEndpoint(
+  worktree: string,
+): { url: string; operatorToken: string } | undefined {
+  const dir = join(homeBbDir(), 'conductors');
+  let names: string[];
+  try {
+    names = readdirSync(dir).filter((n) => n.endsWith('.json'));
+  } catch {
+    return undefined;
+  }
+  const alive = (pid: unknown) => {
+    try {
+      process.kill(pid as number, 0);
+      return true;
+    } catch (err) {
+      return (err as NodeJS.ErrnoException).code === 'EPERM';
+    }
+  };
+  const holds = (root: string) => {
+    const rel = relative(resolve(root), resolve(worktree));
+    return !rel.startsWith('..') && !isAbsolute(rel);
+  };
+  const live = names
+    .map((n) => {
+      try {
+        return JSON.parse(readFileSync(join(dir, n), 'utf8'));
+      } catch {
+        return undefined;
+      }
+    })
+    .filter(
+      (e) =>
+        typeof e?.url === 'string' &&
+        typeof e.operatorToken === 'string' &&
+        typeof e.workspaceRoot === 'string' &&
+        e.workspaceRoot !== '' &&
+        Number.isInteger(e.pid) &&
+        alive(e.pid) &&
+        holds(e.workspaceRoot),
+    )
+    .sort((a, b) => b.workspaceRoot.length - a.workspaceRoot.length);
+  return live[0];
+}
+
+/** Call a ports tool on `worktree` through the conductor; prints its answer
+ *  and sets a failing exit code on an error. Returns the text on success. */
+async function viaConductor(
+  worktree: string,
+  tool: string,
+  args: Record<string, unknown>,
+  ticket?: string,
+  print = true,
+): Promise<string | undefined> {
+  const fail = (message: string) => {
+    process.stdout.write(`${message}\n`);
+    process.exitCode = 1;
+    return undefined;
+  };
+  const endpoint = conductorEndpoint(worktree);
+  if (!endpoint) return fail(NO_CONDUCTOR);
+  let body: { text?: unknown; error?: unknown };
+  try {
+    const res = await fetch(`${endpoint.url}/call`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${endpoint.operatorToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        tool,
+        args,
+        worktree,
+        ...(ticket ? { ticket } : {}),
+      }),
+    });
+    body = (await res.json()) as typeof body;
+    if (!res.ok) return fail(String(body.error ?? `HTTP ${res.status}`));
+  } catch (err) {
+    return fail(
+      `${NO_CONDUCTOR}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+  const text = String(body.text ?? '');
+  if (print && text !== '') process.stdout.write(`${text}\n`);
+  return text;
 }
 
 /** Register `bakers ports <sub>` on the program. Exported for a registration test. */
@@ -437,27 +515,31 @@ export function registerPorts(program: Command, worktree: () => string): void {
     .command('status')
     .description("this worktree's machine tunnel records")
     .action(async () => {
-      const wt = worktree();
-      const records = await readMachineTunnelRecords(
-        wt,
-        homeBbDir(),
-        nodeTunnelOpsDeps,
+      const text = await viaConductor(
+        worktree(),
+        'ports_status',
+        {},
+        undefined,
+        false,
       );
-      const [first] = records;
-      if (!first) {
+      if (text === undefined) return;
+      const rows = JSON.parse(text) as {
+        service: string;
+        status: string;
+        url?: string;
+        error?: string;
+        stale?: boolean;
+      }[];
+      if (rows.length === 0) {
         process.stdout.write('No tunnels recorded for this worktree.\n');
         return;
       }
-      const discovery = await discoverOrFail(wt, first.ticket, '');
-      if (!discovery) return;
-      const stale = staleKeys(records, discovery);
-      for (const r of records) {
-        const at = r.url ?? (r.hostname ? `https://${r.hostname}` : '-');
-        const staleMark = stale.has(r.key)
+      for (const r of rows) {
+        const staleMark = r.stale
           ? ' stale (origin changed — run bakers ports up)'
           : '';
         process.stdout.write(
-          `${r.key}\t${at}\t${r.applied}${r.error ? ` (${r.error})` : ''}${staleMark}\n`,
+          `${r.service}\t${r.url ?? '-'}\t${r.status}${r.error ? ` (${r.error})` : ''}${staleMark}\n`,
         );
         const notice = quickTunnelNotice(r.url);
         if (notice) process.stdout.write(`  (${notice})\n`);
@@ -478,91 +560,12 @@ export function registerPorts(program: Command, worktree: () => string): void {
       'ticket identifier, when it cannot be inferred from the branch',
     )
     .action(async (service: string | undefined, opts: { ticket?: string }) => {
-      const cfg = await resolveTransport(worktree());
-      if (!cfg.ok) {
-        process.stdout.write(`${cfg.message}\n`);
-        process.exitCode = 1;
-        return;
-      }
-      const wt = worktree();
-      const ticket = resolveTicketIdentifier(opts.ticket, currentBranch(wt));
-      if (!ticket.ok) {
-        process.stdout.write(`${ticket.message}\n`);
-        process.exitCode = 1;
-        return;
-      }
-      // A container IP reused by another DDEV project after `ddev restart`
-      // would serve that project under a stale route, so every `up` first
-      // re-checks every recorded route machine-wide, exactly like `reap`.
-      const recheck = await reapTunnels(
-        { home: homeBbDir(), transport: cfg.transport },
-        (record) => checkLive(record, cfg.transport.zone ?? ''),
-        nodeTunnelOpsDeps,
+      await viaConductor(
+        worktree(),
+        'ports_up',
+        service === undefined ? {} : { service },
+        opts.ticket,
       );
-      if (
-        !recheck.ok ||
-        recheck.removedRecords > 0 ||
-        (recheck.refreshedRecords ?? 0) > 0
-      ) {
-        process.stdout.write(`${recheck.message}\n`);
-      }
-      const discovery = await discoverOrFail(
-        wt,
-        ticket.identifier,
-        cfg.transport.zone ?? '',
-      );
-      if (!discovery) return;
-      const ctx: OperationContext = {
-        worktree: wt,
-        ticket: ticket.identifier,
-        home: homeBbDir(),
-        transport: cfg.transport,
-      };
-
-      if (service === undefined) {
-        // spec v5: no key ⇒ bring up everything eligible, same semantics as
-        // the `tunnel` inbox message ("Share tunnels") — skip what is
-        // already applied, keep going past a single failure, and report
-        // every outcome rather than stopping at the first one.
-        const toShare = servicesToShare(discovery);
-        if (toShare.length === 0) {
-          process.stdout.write('no eligible service to share\n');
-          return;
-        }
-        const outcomes = await shareAll(toShare, (claimed) =>
-          bringUpTunnel(claimed.rules[0]!, ctx, nodeTunnelOpsDeps),
-        );
-        let anyFailed = false;
-        for (const { service: claimed, result } of outcomes) {
-          process.stdout.write(`${claimed.key}: ${result.message}\n`);
-          if (!result.ok) anyFailed = true;
-        }
-        if (anyFailed) process.exitCode = 1;
-        return;
-      }
-
-      const selection = selectService(discovery, service);
-      if (!selection.ok) {
-        process.stdout.write(`${selection.message}\n`);
-        process.exitCode = 1;
-        return;
-      }
-      const claimed = selection.service;
-      if (claimed.rules.length === 0) {
-        process.stdout.write(
-          `${claimed.key} cannot be shared (${claimed.status}${claimed.limitation ? `: ${claimed.limitation}` : ''})\n`,
-        );
-        process.exitCode = 1;
-        return;
-      }
-      const result = await bringUpTunnel(
-        claimed.rules[0]!,
-        ctx,
-        nodeTunnelOpsDeps,
-      );
-      process.stdout.write(`${result.message}\n`);
-      if (claimed.limitation) process.stdout.write(`${claimed.limitation}\n`);
-      if (!result.ok) process.exitCode = 1;
     });
 
   ports
@@ -575,22 +578,11 @@ export function registerPorts(program: Command, worktree: () => string): void {
       'the service key to stop sharing; every key of this worktree when omitted',
     )
     .action(async (key: string | undefined) => {
-      const cfg = await resolveTransport(worktree());
-      if (!cfg.ok) {
-        process.stdout.write(`${cfg.message}\n`);
-        process.exitCode = 1;
-        return;
-      }
-      const wt = worktree();
-      const ctx: OperationContext = {
-        worktree: wt,
-        ticket: '',
-        home: homeBbDir(),
-        transport: cfg.transport,
-      };
-      const result = await takeDownTunnel(wt, key, ctx, nodeTunnelOpsDeps);
-      process.stdout.write(`${result.message}\n`);
-      if (!result.ok) process.exitCode = 1;
+      await viaConductor(
+        worktree(),
+        'ports_down',
+        key === undefined ? {} : { service: key },
+      );
     });
 
   ports
@@ -599,18 +591,9 @@ export function registerPorts(program: Command, worktree: () => string): void {
       'reconcile machine-wide tunnel records and kill orphaned legacy tunnel processes',
     )
     .action(async () => {
-      const cfg = await resolveTransport(worktree());
-      if (!cfg.ok) {
-        process.stdout.write(`${cfg.message}\n`);
-        process.exitCode = 1;
-        return;
-      }
-      const result = await reapTunnels(
-        { home: homeBbDir(), transport: cfg.transport },
-        (record) => checkLive(record, cfg.transport.zone ?? ''),
-        nodeTunnelOpsDeps,
-      );
-      process.stdout.write(`${result.message}\n`);
+      // The route reconcile runs in the conductor; a failure there still
+      // lets the host-local legacy cleanup below run.
+      await viaConductor(worktree(), 'ports_reap', {});
 
       let killed = 0;
       for (const proc of await listCloudflaredProcesses()) {
@@ -636,7 +619,6 @@ export function registerPorts(program: Command, worktree: () => string): void {
       }
       if (killed > 0)
         process.stdout.write(`killed ${killed} legacy tunnel process(es)\n`);
-      if (!result.ok) process.exitCode = 1;
     });
 }
 

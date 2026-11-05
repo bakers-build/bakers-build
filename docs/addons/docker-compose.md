@@ -22,4 +22,4 @@ Running DDEV services of a worktree appear in the ports list.
 - A failed check is reported as unknown, never as "nothing running".
 - Linux only. It needs the Docker CLI, and `ss` and `supervisorctl` inside the containers. It does not need root.
 
-Source: [`bakers-cli/addons/docker-compose`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/docker-compose)
+Package source in a checkout: `bakers-cli/addons/docker-compose`.

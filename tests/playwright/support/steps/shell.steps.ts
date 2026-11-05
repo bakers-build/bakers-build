@@ -2,8 +2,8 @@
 // and observing it (shell and rail present, the document mark, request counts).
 // Consumers: features/home, island-profiles, projects, runs, settings, shell,
 // sign-in, statistics, team, tickets, user, worklog.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, RAIL_ISLAND, documentWasKept, markDocument, pageErrors as errors } from '../shell';

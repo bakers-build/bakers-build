@@ -1,19 +1,4 @@
-# bakers.build recipe-as-installer provider (BB-142) — playground world.
-#
-# Recipe-as-installer on the single (default) site: `drush site:install <profile>` (the recipe
-# path in INIT_PROFILE, fed into the container by config.keytec.yaml) then seed the playground
-# content (bb_seed) via the in-container bakers-init-playground command. This is what you want
-# for a schema reset or a freshly seeded playground. Selected with `ddev init --provider recipe`.
-#
-# The seed is invoked (not duplicated) so bakers-init-playground stays the single source of the
-# playground wiring. Nothing to fetch -> NO db_pull_command. Honours KEYTEC_AI_SITE (--uri).
-# Project-owned (this file carries no addon marker) — `ddev add-on get` never touches it.
-#
-# PROFILE resolution + import logging live in the shared .ddev/providers/recipe-install.sh
-# (BB-142 review finding #4 — the block was byte-identical here and in recipe-test.yaml). It
-# prefers INIT_PROFILE, else reads init.profile straight from .keytec-ai.yml in the container
-# (never the `minimal` profile, which is not a recipe), and tees the import to
-# .ddev/.bakers-test/init-recipe.log since DDEV swallows db_import output non-interactively.
+# Project-owned recipe installation with the playground seed owner.
 db_import_command:
   command: |
     bash /var/www/html/.ddev/providers/recipe-install.sh recipe /var/www/html/.ddev/commands/web/bakers-init-playground

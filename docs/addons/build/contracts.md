@@ -1,6 +1,6 @@
 # Addon contracts
 
-An addon is an npm package that declares what it contributes to the bakers.build CLI through a fixed `./preset` export; this page lists the kinds of contribution, the entry fields a config uses, and how to write an addon. Packages under `bakers-cli/addons/` without a `./preset` (`ddev`, `docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in [`bakers-cli/addons/ports`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/ports).
+An addon is an npm package that declares what it contributes to the bakers.build CLI through a fixed `./preset` export; this page lists the kinds of contribution, the entry fields a config uses, and how to write an addon. Packages under `bakers-cli/addons/` without a `./preset` (`docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
 
 To enable an addon, use [Addons](/addons/configure); this page is for people who change or add addons.
 
@@ -19,9 +19,9 @@ A preset declares contributions through named accumulator functions of the form 
 |---|---|---|---|
 | command | `commands` | The registry of the `bakers` host | A descriptor: `name`, `plugin` module, `describe` text, optional `export` |
 | conductor | `remotes`, `executors`, `workspaces` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
-| conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/advanced/configuration/hooks#add-a-listener-from-an-addon) |
+| conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/configuration/provisioning/hooks#add-a-listener-from-an-addon) |
 | conductor | `agents` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AgentCandidate` |
-| conductor | `inbox` (a value, not an accumulator) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions) |
+| conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions); `AddonTools`: [agent tools](/addons/build/tools) |
 | connection | `connectionPlugins` | `addons` of a connection config | A dropsh plugin: authentication, renderers, schema, request hooks |
 | connection | `uiEntries` | `addons` of the machine, connection or conductor config | A module specifier, a string |
 
@@ -75,7 +75,7 @@ Singleton slots (remote, executor, workspace) resolve last-wins, with a warning 
 
 The machine file `~/.bakers/machine.config.js` and the project file `.bakers/conductor.config.js` each carry one `addons` list, merged into one effective list by `scopeAddons` (`bakers-cli/core/src/plugins/scoped-addons.ts`). The addon's `scopes` export (next section) decides where it may be listed; an entry elsewhere is not loaded and warns, and `bakers config check --online` reports `addon_scope_not_allowed`. The same resolved package and `alias` in both files becomes one entry at the machine position, machine entries first. An unresolvable machine entry is skipped with a warning; an unresolvable project entry fails the conductor load.
 
-Agent harnesses are machine-scoped. The machine `agents.catalog` entries select and name variants; each `harness` must also appear in the machine `addons`. [Machines](/advanced/machines) lists the fields.
+Agent harnesses are machine-scoped. The machine `agents.catalog` entries select and name variants; each `harness` must also appear in the machine `addons`. [Machines](/configuration/machine) lists the fields.
 
 ### Where an addon may be configured
 
@@ -128,7 +128,7 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
    export const workspaces: Preset['workspaces'] = (acc, opts) => [...acc, myWorkspace(opts)];
    ```
 
-4. Keep presets light. A `commands` accumulator returns descriptors, never a constructed plugin, so the host can list every command without importing any of them. A `uiEntries` accumulator returns module specifiers, never objects, because discovery runs on every connection load and the terminal toolkit is large. A UI addon's preset must import no UI code. Its entry module, exported as `./ui`, imports `register` from `@bakers-build/addon-bakers-ui/ui`, and the addon peer-depends on `@bakers-build/addon-bakers-ui`. [The tab guide](https://git.key-tec.de/bakers-build/bakers-build/-/blob/develop/bakers-cli/addons/bakers-ui/docs/tabs.md) documents `register`.
+4. Keep presets light. A `commands` accumulator returns descriptors, never a constructed plugin, so the host can list every command without importing any of them. A `uiEntries` accumulator returns module specifiers, never objects, because discovery runs on every connection load and the terminal toolkit is large. A UI addon's preset must import no UI code. Its entry module, exported as `./ui`, imports `register` from `@bakers-build/addon-bakers-ui/ui`, and the addon peer-depends on `@bakers-build/addon-bakers-ui`. [The tab guide](/addons/bakers-ui/tabs) documents `register`.
 5. To make the addon part of the stock CLI, add it to the dependencies of `bakers-cli/host/package.json`. A new command addon also needs its `commands` accumulator added to the list in `bakers-cli/host/src/host.ts`.
 6. Check the boundaries and the package set.
 
@@ -137,8 +137,8 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
    node scripts/assert-acyclic.mjs
    ```
 
-The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency; [architecture](/advanced/development/architecture) has the rules. A new non-private package under `addons/` is published without a list to edit. [Build from source](/advanced/development/build-from-source) covers `verify:package`, which installs the whole set the way npm users do.
+The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency; [architecture](/configuration/project/contributing#architecture) has the rules. A new non-private package under `addons/` is published without a list to edit. [Build from source](/configuration/project/contributing#build-from-source) covers `verify:package`, which installs the whole set the way npm users do.
 
 ## Addon inbox messages
 
-An addon can offer messages that run on the conductor's machine and are triggered from the message card inline in the ticket detail page's right column (web UI) or the ticket's own right-hand-column card in `bakers ui`. The preset exports them as `inbox` (contract 2): message definitions — a label, who may send it, an optional flat `input` — plus lazy `InboxMessageHandler`s, each returning one `{ markdown }` answer. Registration is unique per `(workspace, name, version)`: two conductors of one workspace registering the same identity share one record, and a differing definition is ignored rather than overwriting the first. [Write an addon with inbox messages](/addons/build/actions) is the guide and holds the contract and the lifecycle.
+An addon can offer messages that run on the conductor's machine and are triggered from the message card inline in the ticket detail page's right column (web UI) or the ticket's own right-hand-column card in `bakers ui`. The preset exports them as `inbox` (contract 2): message definitions — a label, who may send it, an optional flat `input` — plus lazy `InboxMessageHandler`s or tool `bindings`, each giving one `{ markdown }` answer. Registration is unique per `(workspace, name, version)`: two conductors of one workspace registering the same identity share one record, and a differing definition is ignored. [Write an addon with inbox messages](/addons/build/actions) is the guide and holds the contract and the lifecycle.

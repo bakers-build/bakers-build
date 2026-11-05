@@ -219,3 +219,12 @@ bb_core.bb_workspace.labels:
   route_name: view.bb_terms.labels
   base_route: bb_core.bb_workspace.settings
   weight: 7
+
+# --- User: Profile after core's View and Edit ---
+# Position and background only; the tab shows where `edit profile` allows.
+
+bb_core.user.profile:
+  title: 'Profile'
+  route_name: bb_core.user.profile
+  base_route: entity.user.canonical
+  weight: 20

@@ -1,17 +1,14 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { Drush, DrushAuthProvider } from '@key-tec/playwright-core';
+import { Drush } from './drush';
 import type { Page } from '@playwright/test';
 
 /**
  * One Drupal session PER WORKER, not per uid.
  *
- * The core `DrushAuthProvider` caches its storage state as `.auth/<uid>.json`, so every
- * worker signing in as the same account replays the SAME session cookie and therefore
- * shares one Drupal session row. Drupal's message queue lives in that row, so one worker
- * drains another's status message — which is why this suite ran serially. The account is
- * not the problem and is deliberately unchanged: the seeded users carry the memberships
- * the scenarios assert against.
+ * Sharing one uid's cached cookie across workers would share Drupal's session row
+ * and let one worker drain another's status messages. Keep the seeded accounts and
+ * their memberships, but cache a separate session for each worker/account pair.
  *
  * The file lives under the run's output directory because Playwright clears that
  * directory at the start of every run. A session cached across runs points at a database
@@ -21,12 +18,10 @@ export function sessionFileFor(outputDir: string, workerIndex: number, uid: stri
     return path.join(outputDir, `auth-w${workerIndex}-uid${uid}.json`);
 }
 
-export class WorkerAuthProvider extends DrushAuthProvider {
-    constructor(private readonly outputDir: string, private readonly workerIndex: number) {
-        super();
-    }
+export class WorkerAuthProvider {
+    constructor(private readonly outputDir: string, private readonly workerIndex: number) {}
 
-    override async login(page: Page, uid = '1', attempt = 1): Promise<void> {
+    async login(page: Page, uid = '1', attempt = 1): Promise<void> {
         const base = this.baseOf(page);
         const file = sessionFileFor(this.outputDir, this.workerIndex, uid);
         if (!fs.existsSync(file)) {
@@ -61,7 +56,7 @@ export class WorkerAuthProvider extends DrushAuthProvider {
         }
     }
 
-    override async logout(page: Page): Promise<void> {
+    async logout(page: Page): Promise<void> {
         await page.context().clearCookies();
         await page.goto(this.baseOf(page));
         await page.waitForLoadState('networkidle');

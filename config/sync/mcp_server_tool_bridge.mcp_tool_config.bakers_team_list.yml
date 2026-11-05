@@ -1,0 +1,8 @@
+uuid: 287fb20c-fa1d-4822-ba4c-18387550f303
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_team_list
+tool_id: bakers_team_list
+description: null
+

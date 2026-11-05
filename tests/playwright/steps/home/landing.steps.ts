@@ -1,4 +1,4 @@
-import { Then } from '@key-tec/playwright-core/bdd';
+import { Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 
 Then('the address is not {string}', async ({ page }, unexpected: string) => {

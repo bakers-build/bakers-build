@@ -5,9 +5,8 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 ## bb-phase-provision
 
 Runtime: DDEV through `@bakers-build/bb-runtime-ddev`. Drupal checks start from a verified
-`recipe-test` environment (`ddev init --provider recipe-test`; installation-config changes need
-`--fresh`); `config/sync` validation uses a disposable `existing-config` site afterwards, at the
-same revision. Core tests, Playwright, conductor and skill-behavior setup:
+`recipe-test` environment (`ddev init --provider recipe-test`, or `provision_up('recipe-test')`; each explicit init reinstalls); `config/sync` validation uses a disposable `existing-config` site afterwards
+(`ddev init --provider existing-config`, or `provision_up('existing-config')`), at the same revision. Core tests, Playwright, conductor and skill-behavior setup:
 [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
@@ -16,8 +15,9 @@ Apply all matching rows.
 
 | When | Skill |
 |---|---|
-| Planning, writing, changing or reviewing tests (any test tool) | `keytec-qa:keytec-testing` |
-| `web/modules/custom/`, `web/themes/custom/`, `recipes/`, `config/` | `keytec-drupal:keytec-drupal-developer` |
+| Planning, writing, changing or reviewing tests (any test tool) | `testing` |
+| `web/modules/custom/`, `web/themes/custom/`, `recipes/`, `config/` | `drupal-developer` |
+| Drupal core or contrib updates | `drupal-update` |
 | Components and stories under `web/themes/custom/bb_theme/` | `designbook:design-component` |
 | Scenes under `web/themes/custom/bb_theme/` | `designbook:design-screen`, or `designbook:design-shell` for the application shell |
 | Entity mappings under `web/themes/custom/bb_theme/` | `designbook:design-entity` |
@@ -32,6 +32,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 
 | When | Command |
 |---|---|
+| `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs` |
 | bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
 | bakers.build CLI source | `cd bakers-cli && pnpm install && pnpm -r run build` |
 | PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |
@@ -46,16 +47,18 @@ included in core tests. Ticket-specific functional checks apply separately.
 
 ## bb-phase-deliver
 
-PHPUnit and browser E2E run once, in the CI merge gate, immediately before the merge request is
-merged, against the images that deploy:
+PHPUnit, browser E2E and config import run against the built Docker images in CI.
 
-1. Bring the branch up to date with its target (rebase or merge), push, and wait for the fast checks.
-2. Play the manual `gate` job of the newest merge request pipeline. `build` builds the images once;
-   `phpunit`, `e2e` and `config_install` run against them in parallel.
-3. Merge only when the whole pipeline is green; GitLab blocks the merge until it is. A red gate job
-   is a failed check: fix it on the branch and play the gate again on the new pipeline.
+For GitHub, update the branch from its target, push and wait for the complete `GitHub checks`
+workflow, including `image_gate` and the required aggregate `required`. A failed gate blocks the
+PR; fix it on the branch and require green checks on the new revision. Protected `next` accepts
+squashed feature PRs. Stable `main` accepts merge commits only from this repository's `next`,
+preserving its tree and second parent.
 
-Local runs are for debugging a failure or selecting affected tests, never a substitute for the gate
+For a project still using GitLab, play the newest MR pipeline's manual `gate` after fast checks.
+Its `build`, `phpunit`, `e2e` and `config_install` jobs must all succeed before merging.
+
+Local runs are for debugging, never a substitute for the CI gate
 ([testing](docs/bakers/testing.md)).
 
 ### Before merge
@@ -71,7 +74,7 @@ and the merge refuse any other title; retitle the merge request before playing t
 `test_as` personas come from [testing › Test users](docs/bakers/testing.md#test-users): the one
 whose rank and team the change needs (default `north-lead`), plus every persona the criteria expect
 to be denied (e.g. `north-guest`, `no-bakery`). Manual review gives each a one-time login link
-(`@bakers-build/bb-runtime-ddev` › `bb-phase-outtake`); on a `recipe-test` site the *Test personas* buttons on
+using the project's [DDEV login instructions](docs/bakers/ddev-logins.md); on a `recipe-test` site the *Test personas* buttons on
 `/user/login` are the fallback.
 
 ## bb-phase-transition

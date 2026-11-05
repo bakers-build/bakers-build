@@ -94,17 +94,6 @@ final class BbTicketForm extends BbContentEntityFormBase {
       // administrator may still correct `state` on a non-terminal row.
       $actions['submit']['#access'] = !$ticket->isClosed()
         || $ticket->get('state')->access('edit');
-      $actions['delete'] = [
-        '#type' => 'component',
-        '#component' => 'bb_theme:button',
-        '#props' => [
-          'label' => (string) $this->t('Delete'),
-          'href' => $ticket->toUrl('delete-form')->toString(),
-          'variant' => 'ghost',
-        ],
-        '#access' => $ticket->access('delete'),
-        '#weight' => 100,
-      ];
     }
     return $actions;
   }

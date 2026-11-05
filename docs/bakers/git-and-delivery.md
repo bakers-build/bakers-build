@@ -37,13 +37,25 @@ bare occurrences of that same key are matched too. That parse reads the **whole*
 body citing another ticket's identifier pulls that ticket into the batch: cite neighbouring work
 by branch or commit, not by its ticket number.
 
-## Merge requests
+## GitHub pull requests
+
+GitHub's default branch is `next`; `main` is stable. Use `gh pr create --base <base_branch>
+--head <branch_name>` with the ticket's computed base. Feature PRs squash-merge with the title
+as subject and final-line `ref:<identifier>` in the body. GitHub has no per-PR squash/deletion
+preferences: send the merge method explicitly and delete only an eligible short-lived source
+branch after verified success. Preserve shared branches and branches targeted by other PRs.
+
+Only this repository's `next` promotes into `main`, by merge commit preserving the candidate
+tree and second parent. Keep both branches. The frozen second parent identifies the release.
+The GitLab-specific client instructions below apply only to repositories still hosted there.
+
+## GitLab merge requests
 
 a merge request title and description carry **no bakers.build reference**,
 without exception: the MR is the customer-facing artifact and the bakers.build identifier belongs in
 the commit trailer only. Work lands through a merge request, squash-merged, targeting the
 ticket's computed **`base_branch`** — the direct parent's branch for a sub-ticket, otherwise the
-project's default branch, which for this repo is `develop`. The coding step passes that value
+project's default branch, which for the legacy GitLab repository is `develop`. The coding step passes that value
 explicitly (`glab mr create --target-branch <base_branch>`); left implicit, glab targets the
 repository default and a sub-ticket lands beside its parent's work instead of on top of it.
 Because a squash collapses the branch's commits into one message — discarding their trailers —
@@ -64,7 +76,7 @@ property left unstated is decided somewhere else entirely.
 
 `main` is the exception: it is never squashed. Only a release branch reaches it, by merge commit,
 so the `release` job tags the merge's second parent, the frozen `develop` commit, which `develop`
-contains ([deployment](../advanced/cli/deployment.md)).
+contains ([deployment](../addons/deployment/reference.md)).
 
 ## Ticket identifiers by surface
 

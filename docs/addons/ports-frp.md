@@ -2,7 +2,7 @@
 
 **A ports transport that shares services through your own frp server under fixed names.**
 
-For teams that run their own [frp](https://github.com/fatedier/frp) server. It is used by [Ports](/addons/ports).
+For teams that run their own [frp](https://gofrp.org/en/docs/) server. It is used by [Ports](/addons/ports).
 
 ## Enable it
 
@@ -35,6 +35,23 @@ The operator provides:
 3. A client config whose `includes` is exactly `<BB_HOME>/frp/routes.json`, with no inline `proxies`, `visitors` or `store`.
 4. `webServer.addr` bound to `127.0.0.1`, and `transport.tls.enable: true` with a `trustedCaFile`.
 
+## Client example
+
+For a private Coder home (adapt paths for your host), create the includes directory before starting `frpc`. `loginFailExit: false` keeps it retrying when the server is temporarily unavailable:
+
+```json
+{
+  "serverAddr": "frps.example.org",
+  "serverPort": 7000,
+  "user": "bakers-<name>",
+  "loginFailExit": false,
+  "auth": { "method": "token", "token": "<frps token>" },
+  "transport": { "tls": { "enable": true, "trustedCaFile": "/home/coder/.config/frp/ca.pem", "serverName": "frps.example.org" } },
+  "webServer": { "addr": "127.0.0.1", "port": 7400, "user": "bakers", "password": "<admin password>" },
+  "includes": ["/home/coder/.bakers/frp/routes.json"]
+}
+```
+
 ## Options
 
 | Option | Type | Default | Effect |
@@ -56,4 +73,4 @@ Sharing a service returns a `https://<ticket>-<key>.<zone>` URL that serves it.
 - DDEV services are proxied straight to the container IP. An unreachable IP, for example on Docker Desktop, fails that service; OrbStack works.
 - An HTTPS origin is shared only when its rule allows skipping certificate checks, because frp's `http2https` plugin cannot verify it.
 
-Source: [`bakers-cli/addons/ports-frp`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/ports-frp)
+Package source in a checkout: `bakers-cli/addons/ports-frp`.

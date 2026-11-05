@@ -2,7 +2,7 @@
 // Project/tab navigation and the absent-tab assertion come from shell.steps.ts,
 // project-overview.steps.ts and group-detail.steps.ts; this file adds only the
 // fixture project, the face's rows and actions and the route's status.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php, phpUnderLock } from '../../support/drush';
 import { safe } from '../../support/listing';

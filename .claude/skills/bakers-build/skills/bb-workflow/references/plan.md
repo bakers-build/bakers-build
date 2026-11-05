@@ -9,7 +9,8 @@ Apply [ensure qualification](ensure-qualification.md); continue only on `qualifi
 
 ## provision
 
-none
+A bug whose reproduction needs a runtime applies [provision](provision.md) with the project's
+`bb-phase-provision` hint, so its RED observation runs on the worktree's site; otherwise none.
 
 ## work
 
@@ -39,7 +40,6 @@ Render through [the outtake](outtake.md), publish it as its own comment of type 
 ## transition
 
 Obtain **one** approval covering the proposal (for a bug: cause, fix direction and verification
-plan); reuse approval already given for this scope; under `approval: automatic`, [automatic
-approval](autopilot.md) gives it. Without it, STOP in `plan`. With it, record the
+plan); reuse approval already given for this scope. Without it, STOP in `plan`. With it, record the
 confirmed comment IDs, publish authorized [origin status](origin-status.md) for `working` and
 [transition](transition-ticket.md) once to `working`, with its readback. STOP.

@@ -197,7 +197,7 @@ final class MachineOverviewTest extends KernelTestBase {
     self::assertNotNull($view);
     $fields = $view->get('display')['default']['display_options']['fields'];
     self::assertTrue($fields['name']['settings']['link_to_entity']);
-    self::assertFalse($fields['host_key']['settings']['link_to_entity']);
+    self::assertArrayNotHasKey('host_key', $fields);
   }
 
   /**

@@ -187,7 +187,8 @@ function makeConfig(
     project: 'bakers',
     states: ['todo', 'working'],
     prompt: DEFAULT_AGENT_PROMPT,
-    max_parallel: 2,
+    // The budget lives on the fake machine row for this host (default 5).
+    host_key: 'test-host',
     poll_interval_ms: 5000,
     lease_seconds: 300,
     config_path: `${CHECKOUT}/conductor.config.js`,
@@ -383,9 +384,9 @@ describe('Conductor', () => {
     expect(conductor.id).toBe('cw-dev-box-bakers');
   });
 
-  it('throws rather than deriving an id from the checkout directory when neither conductor_id nor machine_id is set', () => {
+  it('throws naming bakers init rather than deriving an id from the checkout directory when the machine has no UUID', () => {
     const conductor = new Conductor(
-      makeConfig({ conductor_id: undefined, machine_id: undefined }),
+      makeConfig({ conductor_id: undefined }),
       new FakeBbRemote(),
       new FakeExecutor({ outcome: 'exited' }),
       new FakeWorkspace(),
@@ -393,7 +394,7 @@ describe('Conductor', () => {
       spyLogger().log,
       CHECKOUT,
     );
-    expect(() => conductor.id).toThrow('conductor config has no conductor_id');
+    expect(() => conductor.id).toThrow('run bakers init');
   });
 
   it('dispatches up to max_parallel and records markRunning per dispatch', async () => {
@@ -405,7 +406,8 @@ describe('Conductor', () => {
       },
     };
     const remote = new FakeBbRemote(seed);
-    // Three runs available to claim, max_parallel = 2.
+    // Three runs available to claim; the machine's budget is 2.
+    remote.seedMachineLoad('test-host', { currentLoad: 0, maxParallel: 2 });
     for (const i of [1, 2, 3]) {
       remote.queue.push({
         runUuid: `r-${i}`,
@@ -416,11 +418,7 @@ describe('Conductor', () => {
       });
     }
     const executor = new RecordingExecutor();
-    const conductor = await startedConductor(
-      makeConfig({ max_parallel: 2 }),
-      remote,
-      executor,
-    );
+    const conductor = await startedConductor(makeConfig(), remote, executor);
 
     await conductor.tick();
 
@@ -470,7 +468,6 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     const conductor = await startedConductor(
       makeConfig({
-        max_parallel: 2,
         host_key: 'dev-box',
         conductor_id: 'cw-dev-box-bakers',
       }),
@@ -507,7 +504,6 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     const conductor = await startedConductor(
       makeConfig({
-        max_parallel: 2,
         host_key: 'dev-box',
         conductor_id: 'cw-dev-box-bakers',
       }),
@@ -542,7 +538,6 @@ describe('Conductor', () => {
       makeConfig({
         conductor_id: 'cw-laptop-my-app',
         host_key: 'laptop',
-        max_parallel: 1,
       }),
       remote,
       new RecordingExecutor(),
@@ -575,7 +570,7 @@ describe('Conductor', () => {
       { id: 'hi', agent: mk('hi'), priority: () => 9 },
     ];
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       new FakeWorkspace(),
@@ -616,7 +611,7 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     const { log, calls } = spyLogger();
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       new FakeWorkspace(),
@@ -660,7 +655,7 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     const { log, calls } = spyLogger();
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       new FakeWorkspace(),
@@ -739,11 +734,17 @@ describe('Conductor', () => {
     // call sites (the fix for the mtime-trap: agents can pin/select a
     // transcript by this id instead of scanning a directory by mtime).
     const launchedWith: (AgentRunIdentity | undefined)[] = [];
+    const launchedIn: (string | undefined)[] = [];
     const readWith: (AgentRunIdentity | undefined)[] = [];
     const agent: BbAgent = {
       id: 'claude',
-      launchCommand: (p: string, run?: AgentRunIdentity) => {
+      launchCommand: (
+        p: string,
+        run?: AgentRunIdentity,
+        workspacePath?: string,
+      ) => {
         launchedWith.push(run);
+        launchedIn.push(workspacePath);
         return p === '' ? 'claude' : `claude '${p}'`;
       },
       getRunLog: async (_worktreePath: string, run?: AgentRunIdentity) => {
@@ -791,6 +792,7 @@ describe('Conductor', () => {
     await conductor.tick();
 
     expect(launchedWith).toEqual([{ sessionId: 'r-2' }]);
+    expect(launchedIn).toEqual(['/fake/BB-1']);
     expect(readWith).toEqual([
       { sessionId: 'r-1', attemptFamily: attemptFamily('r-1') },
     ]);
@@ -986,7 +988,7 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     const workspace = new FakeWorkspace();
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       workspace,
@@ -1043,7 +1045,7 @@ describe('Conductor', () => {
       handler: 'code',
     });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       new RecordingExecutor(),
       new RecordingWorkspace(),
@@ -1077,7 +1079,7 @@ describe('Conductor', () => {
       handler: 'code',
     });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       new RecordingExecutor(),
       new RecordingWorkspace(),
@@ -1102,7 +1104,7 @@ describe('Conductor', () => {
       handler: 'code',
     });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       new RecordingExecutor(),
     );
@@ -1129,11 +1131,7 @@ describe('Conductor', () => {
       handler: 'code',
     });
     const executor = new RecordingExecutor();
-    const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
-      remote,
-      executor,
-    );
+    const conductor = await startedConductor(makeConfig(), remote, executor);
 
     await conductor.tick();
 
@@ -1159,7 +1157,7 @@ describe('Conductor', () => {
       instructions: 'WORKFLOW content',
     });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       workspace,
@@ -1251,7 +1249,7 @@ describe('Conductor', () => {
       instructions: 'WORKFLOW content',
     });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       workspace,
@@ -1294,7 +1292,6 @@ describe('Conductor', () => {
     });
     const conductor = await startedConductor(
       makeConfig({
-        max_parallel: 1,
         prompt: 'Custom {identifier} {state} {runUuid}',
       }),
       remote,
@@ -1328,7 +1325,7 @@ describe('Conductor', () => {
       instructions: 'WORKFLOW content',
     });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       workspace,
@@ -1340,7 +1337,7 @@ describe('Conductor', () => {
     // The agent self-reads the ticket + comments at step 0 — the dispatch line
     // embeds neither the ticket body nor any comment text, and stays bounded.
     expect(command).toContain(
-      `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
     );
     expect(command).not.toContain('--- Ticket comments ---');
     expect(command).not.toContain('{comments}');
@@ -1384,7 +1381,7 @@ describe('Conductor', () => {
     };
     const { log, calls } = spyLogger();
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 2 }),
+      makeConfig(),
       remote,
       boom,
       new FakeWorkspace(),
@@ -1445,7 +1442,7 @@ describe('Conductor', () => {
       removeWorktree: async () => 'removed',
     };
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       boom,
       new FakeWorkspace(),
@@ -2232,11 +2229,7 @@ describe('Conductor', () => {
       handler: 'code',
     });
     const executor = new RecordingExecutor();
-    const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
-      remote,
-      executor,
-    );
+    const conductor = await startedConductor(makeConfig(), remote, executor);
 
     await conductor.tick();
 
@@ -3070,7 +3063,7 @@ describe('Conductor', () => {
         return track(() => ensure(...a));
       };
       const conductor = await startedConductor(
-        makeConfig({ max_parallel: 2 }),
+        makeConfig(),
         remote,
         new RecordingExecutor(),
         workspace,
@@ -3407,11 +3400,7 @@ describe('Conductor', () => {
     });
     const executor = new RecordingExecutor();
     // FakeWorkspace returns created=true (fresh) + instructions=null.
-    const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
-      remote,
-      executor,
-    );
+    const conductor = await startedConductor(makeConfig(), remote, executor);
 
     await conductor.tick();
 
@@ -3466,7 +3455,7 @@ describe('Conductor', () => {
       created: false, // exists, but nothing says it is provisioned
     });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       workspace,
@@ -3505,7 +3494,7 @@ describe('Conductor', () => {
     executor.failingHooks.add('after_create');
     const { log, calls } = spyLogger();
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       new FakeWorkspace(),
@@ -3582,7 +3571,7 @@ describe('Conductor', () => {
       order.push('applyOpenLayout');
     };
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       new OrderedExecutor(),
       workspace,
@@ -3652,7 +3641,7 @@ describe('Conductor', () => {
     const workspace = new FakeWorkspace();
     workspace.ensure = async () => ({ path, instructions: null, created });
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       workspace,
@@ -3785,7 +3774,7 @@ describe('Conductor', () => {
     // FakeWorkspace → instructions=null → no WORKFLOW.md.
     const { log, calls } = spyLogger();
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       new FakeWorkspace(),
@@ -3838,7 +3827,7 @@ describe('Conductor', () => {
     });
     const { log, calls } = spyLogger();
     const conductor = new Conductor(
-      makeConfig({ max_parallel: 1 }),
+      makeConfig(),
       remote,
       executor,
       workspace,
@@ -5199,7 +5188,7 @@ describe('action queue', () => {
     const rm = executor.removeWorktree.bind(executor);
     executor.removeWorktree = (...a) => track(() => rm(...a));
     const conductor = await startedConductor(
-      makeConfig({ max_parallel: 2 }),
+      makeConfig(),
       remote,
       executor,
       workspace,

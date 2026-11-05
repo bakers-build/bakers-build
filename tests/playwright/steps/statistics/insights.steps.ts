@@ -4,7 +4,7 @@
 // Login, rail clicks, headings and the address are NOT re-implemented here —
 // `support/steps/shell.steps.ts`, `support/steps/listing.steps.ts` and
 // `support/steps/accounts.steps.ts` own them. This file adds only what is new.
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { RAIL_ISLAND } from '../../support/shell';

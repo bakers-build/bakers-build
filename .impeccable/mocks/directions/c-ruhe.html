@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C · Morgenruhe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Hanken+Grotesk:wght@400;500;600;700&family=Libre+Caslon+Text:ital@0;1&family=Red+Hat+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FBF7EC;--forest:#1D4A33;--forest-2:#3E6650;--sun:#FFBE2E;--leaf:#CFE6B8;--blush:#F6C9C1;--ink:#1B231D;--line:rgba(29,74,51,.18);
+ --round:"Bagel Fat One",system-ui;--sans:"Hanken Grotesk",system-ui,sans-serif;--serif:"Libre Caslon Text",serif;--mono:"Red Hat Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0}
+body{background:#e3dccb;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--sun);color:var(--forest)}
+:focus-visible{outline:2px solid var(--forest);outline-offset:3px;border-radius:4px}
+.note{font:500 15px/1.5 var(--sans);color:#4b4a3d;max-width:1440px;margin:56px auto 16px;padding:0 8px}
+.board{width:1440px;margin:0 auto;background:var(--paper);position:relative;overflow:hidden}
+/* landing */
+.top{display:grid;grid-template-columns:1fr auto;padding:28px 48px 0}
+.mark{font:400 168px/.78 var(--round);color:var(--forest);letter-spacing:-.01em}
+.mark small{font-size:.5em}
+.links{display:flex;gap:26px;font:500 15px var(--sans);color:var(--forest);padding-top:8px}
+.links a{color:inherit;text-decoration:none}
+.claim{display:grid;grid-template-columns:420px 1fr;gap:40px;padding:26px 48px 0}
+.claim p{font:500 24px/1.3 var(--sans);color:var(--forest)}
+.stage{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:40px 48px 130px}
+.fig{background:#fff;border-radius:28px;height:390px;display:grid;place-items:center;position:relative}
+.stage>div:nth-child(1) .fig{background:#FFF3CF}.stage>div:nth-child(2) .fig{background:var(--leaf)}.stage>div:nth-child(3) .fig{background:var(--blush)}
+.fig svg{color:var(--forest)}
+.cap{font:400 14px/1.4 var(--serif);color:var(--forest);margin-top:12px;display:flex;gap:10px}
+.cap small{font:500 11px var(--mono);letter-spacing:.02em;padding-top:2px}
+.bar{position:absolute;left:50%;bottom:36px;transform:translateX(-50%);background:var(--sun);border-radius:22px;padding:14px 16px 14px 28px;display:flex;gap:22px;align-items:end;box-shadow:0 14px 30px -16px rgba(29,74,51,.55)}
+.bar label{display:flex;flex-direction:column;gap:2px;font:600 11px var(--sans);color:var(--forest)}
+.bar input,.bar select{font:500 16px var(--sans);border:0;border-bottom:1.5px solid var(--forest);background:transparent;padding:6px 0;width:190px;color:var(--ink)}
+.bar input::placeholder{color:var(--forest-2)}
+.go{font:600 15px var(--sans);background:var(--forest);color:var(--paper);border:0;border-radius:14px;padding:13px 20px;cursor:pointer}
+.go:hover{background:var(--ink)}
+.oss{position:absolute;right:48px;bottom:56px;font:400 14px/1.4 var(--serif);color:var(--forest);text-align:right}
+.oss code{font:500 13px var(--mono)}
+/* terminal */
+.tsec{display:grid;grid-template-columns:1fr 860px;gap:48px;padding:72px 48px;align-items:center}
+.tsec h3{font:400 64px/.95 var(--round);color:var(--forest)}
+.tsec p{font:400 18px/1.55 var(--sans);color:var(--forest-2);margin-top:18px;max-width:32ch}
+.term{background:#FFFDF6;border:1.5px solid var(--line);border-radius:22px;box-shadow:0 24px 50px -30px rgba(29,74,51,.5);font:400 15px/1.8 var(--mono);color:var(--ink);overflow:hidden}
+.term .hd{padding:14px 22px;border-bottom:1.5px solid var(--line);font:500 13px var(--sans);color:var(--forest-2);display:flex;justify-content:space-between}
+.term pre{padding:22px 26px;font:inherit;white-space:pre}
+.f{color:var(--forest);font-weight:500}.s{background:var(--sun);border-radius:4px;padding:0 4px}.m{color:var(--forest-2)}.ok{color:#2f7a4c}
+.cur{display:inline-block;width:9px;height:18px;background:var(--forest);vertical-align:-3px;animation:bl 1.1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}@media (prefers-reduced-motion:reduce){.cur{animation:none}}
+/* app: my work */
+.app{display:grid;grid-template-columns:240px 1fr}
+.side{padding:30px 22px;border-right:1.5px solid var(--line);min-height:680px}
+.side .mk{font:400 34px/1 var(--round);color:var(--forest);margin-bottom:34px}
+.side a{display:block;font:500 15px var(--sans);color:var(--forest);text-decoration:none;padding:10px 14px;border-radius:12px}
+.side a.on{background:var(--leaf)}
+.main{padding:40px 56px}
+.main h4{font:400 52px/1 var(--round);color:var(--forest)}
+.main .sub{font:400 16px/1.5 var(--serif);color:var(--forest-2);margin:10px 0 30px}
+.row{display:grid;grid-template-columns:72px 1fr 260px 230px;gap:20px;align-items:center;padding:18px 20px;border-radius:20px;background:#fff;margin-bottom:12px}
+.row .av{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;overflow:hidden}
+.row .av svg{width:44px;height:54px;color:var(--forest);margin-top:8px}
+.row .t{font:600 18px/1.3 var(--sans)}
+.row .t small{display:block;font:500 12px var(--mono);color:var(--forest-2);margin-bottom:3px}
+.row .st{font:400 14px/1.4 var(--serif);color:var(--forest-2)}
+.row .acts{display:flex;gap:8px;justify-content:flex-end}
+.b1{font:600 14px var(--sans);padding:10px 16px;border-radius:12px;border:1.5px solid var(--forest);background:#fff;color:var(--forest);cursor:pointer}
+.b1.p{background:var(--forest);color:var(--paper)}
+.sec{font:600 13px var(--sans);color:var(--forest-2);margin:28px 0 12px}
+.row.quiet{background:transparent;border:1.5px solid var(--line)}
+</style></head><body>
+<script src="bakers.js"></script>
+
+<p class="note"><b>C · Morgenruhe</b> — raus-Ruhe: ein dicker, runder Schriftzug als Marke, viel Luft, die Bäcker als Porträts. Die Demo-Buchung ist eine echte, sonnengelbe Leiste.</p>
+<section class="board" style="height:960px" aria-label="Landing">
+ <div class="top"><div class="mark" role="img" aria-label="bakers.build">bakers<small>.build</small></div>
+  <nav class="links"><a href="#">How it works</a><a href="#">Terminal</a><a href="#">Docs</a><a href="#">GitLab</a></nav></div>
+ <div class="claim"><p>AI agents work your tickets. You decide what ships.</p></div>
+ <div class="stage">
+  <div><div class="fig"><svg width="200" height="307" style="--apron:var(--sun)"><use href="#baker-spec"/></svg></div><p class="cap"><small>SPEC</small>Writes the plan before anyone codes.</p></div>
+  <div><div class="fig"><svg width="200" height="307" style="--apron:#fff;--screen:var(--forest)"><use href="#baker-coding"/></svg></div><p class="cap"><small>CODING</small>Works on your machine, in its own worktree.</p></div>
+  <div><div class="fig"><svg width="200" height="307" style="--apron:#fff"><use href="#baker-review"/></svg></div><p class="cap"><small>REVIEW</small>Checks the result. The merge is yours.</p></div>
+ </div>
+ <form class="bar" onsubmit="return false" aria-label="Book a demo">
+  <label>Team size<select><option>2–5 developers</option><option>6–20</option><option>20+</option></select></label>
+  <label>Work email<input type="email" placeholder="you@team.dev" required></label>
+  <button class="go" type="submit">Book a demo</button></form>
+ <p class="oss">Open source under MIT.<br><code>npm i -g @bakers-build/bakers</code></p>
+</section>
+
+<p class="note"><b>bakers ui</b> — helles Papier-Terminal, Sonnengelb markiert, was du tun musst.</p>
+<section class="board" aria-label="Terminal">
+ <div class="tsec"><div><h3>Write the ticket where you already work.</h3><p>Before your team is up, the prep is done. You approve the plan before any code is written.</p></div>
+  <div class="term" role="img" aria-label="bakers ui terminal session"><div class="hd"><span>bakers ui</span><span>shop-relaunch</span></div>
+<pre><span class="f">new ticket</span>
+  title    CSV import for product prices
+  detail   Editors upload a CSV; prices update, errors per row.
+
+<span class="ok">created BB-162</span>  <span class="m">qualification</span>
+
+<span class="f">waiting for you</span>
+  BB-162  qualification   <span class="s">approve the plan</span>
+  BB-149  review          <span class="s">merge or send back</span>
+
+<span class="f">working</span>
+  BB-151  coding          Coding on cw-framework   <span class="m">12:08</span>
+  BB-158  spec            Spec on ms-laptop        <span class="m">03:41</span>
+
+<span class="m">a approve · r send back · / search · ? help</span>  <span class="cur"></span></pre></div></div>
+</section>
+
+<p class="note"><b>Web-App</b> — statt Board zuerst „My work“: was auf dich wartet, groß und ruhig; was läuft, leise darunter.</p>
+<section class="board" aria-label="Web app">
+ <div class="app"><aside class="side"><div class="mk">bakers</div><a class="on" href="#">My work</a><a href="#">Board</a><a href="#">Tickets</a><a href="#">Runs</a><a href="#">Insights</a></aside>
+  <main class="main"><h4>Good morning, Michael.</h4><p class="sub">Two tickets wait for your decision. Everything else is moving on its own.</p>
+   <div class="row"><div class="av" style="background:#FFF3CF"><svg style="--apron:var(--sun)"><use href="#baker-head"/></svg></div><div class="t"><small>BB-162 · qualification</small>CSV import for product prices</div><div class="st">Spec drafted a plan with 4 steps.</div><div class="acts"><button class="b1">Read plan</button><button class="b1 p">Approve</button></div></div>
+   <div class="row"><div class="av" style="background:var(--blush)"><svg><use href="#baker-head"/></svg></div><div class="t"><small>BB-149 · review</small>Order export for accounting</div><div class="st">Review: tests pass, looks good.</div><div class="acts"><button class="b1">Send back</button><button class="b1 p">Merge</button></div></div>
+   <p class="sec">Working now</p>
+   <div class="row quiet"><div class="av" style="background:var(--leaf)"><svg><use href="#baker-head"/></svg></div><div class="t"><small>BB-151 · coding</small>Product search ranks by stock</div><div class="st">Coding on cw-framework, 12 min</div><div class="acts"><button class="b1">Open run</button></div></div>
+   <div class="row quiet"><div class="av" style="background:#FFF3CF"><svg><use href="#baker-head"/></svg></div><div class="t"><small>BB-158 · spec</small>Newsletter opt-in on checkout</div><div class="st">Spec on ms-laptop, 4 min</div><div class="acts"><button class="b1">Open run</button></div></div>
+  </main></div>
+</section>
+<div style="height:80px"></div>
+</body></html>

@@ -3,7 +3,7 @@
 // team-time, project-time and worklog-overview.
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { Given, Then, When } from '@key-tec/playwright-core/bdd';
+import { Given, Then, When } from '../../bdd.fixtures';
 import { php } from '../drush';
 import { facetRow, facetTrigger } from '../listing';
 import { safe } from '../picker';
@@ -249,7 +249,11 @@ Given(
         // Project creation already seeds its own active Internal billing account.
         '$project = \\Drupal::entityTypeManager()->getStorage("bb_project")->create(["name" => "Deleted " . $key, "key" => strtoupper($key), "group_id" => $group->id(), "owner_user_id" => $user->id()]); $project->save();' +
         `\\Drupal::entityTypeManager()->getStorage("bb_track_worklog")->create(["owner_user_id" => $user->id(), "work_date" => "${date.replace(/[^0-9-]/g, '')}", "timezone" => "Europe/Berlin", "duration_seconds" => 900, "description" => "${safe(description)}", "derivation" => "manual", "state" => "recorded", "project_id" => $project->id()])->save();` +
-        '$project->delete(); print "ok"; }',
+        // Logged time now blocks a project delete, so the project's rows go
+        // directly, as for data from before that rule.
+        '$s = \\Drupal::entityTypeManager()->getStorage("bb_project"); $m = $s->getTableMapping(); $db = \\Drupal::database();' +
+        'foreach ($m->getDedicatedTableNames() as $t) { if ($db->schema()->tableExists($t)) { $db->delete($t)->condition("entity_id", $project->id())->execute(); } }' +
+        '$db->delete($m->getBaseTable())->condition("id", $project->id())->execute(); $s->resetCache(); \\Drupal\\Core\\Cache\\Cache::invalidateTags(["bb_project_list"]); print "ok"; }',
     );
     if (result !== 'ok') {
       throw new Error(`Could not seed a deleted-project entry for ${account}: ${result}`);

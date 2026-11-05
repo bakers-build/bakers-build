@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -46,7 +46,7 @@ use Drupal\user\EntityOwnerInterface;
       'default' => BbEnvironmentForm::class,
       'add' => BbEnvironmentForm::class,
       'edit' => BbEnvironmentForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],
     'local_task_provider' => ['default' => DefaultEntityLocalTaskProvider::class],

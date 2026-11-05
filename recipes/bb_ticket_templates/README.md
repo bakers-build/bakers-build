@@ -2,7 +2,7 @@
 
 Example `bb_ticket_template` definitions. Today: **Drupal update**
 (`bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30`), a `bb_work` ticket of type `chore` whose
-description points to the `keytec-drupal-update` skill. It ships **disabled**; its monthly
+description points to the repository's `drupal-update` skill. It ships **disabled**; its monthly
 schedule is a trigger you add on the template (see *Monthly trigger* below).
 
 The recipe applies `bb_seed` for the `chore` type term. It creates **no template**, because a
@@ -11,28 +11,23 @@ template belongs to a project and only the target workspace knows it. The defini
 
 ## Import into a workspace
 
-Run as a user who may create `bb_ticket_template` in the project (workspace lead).
+Do this as a user who may add ticket templates in the project (workspace lead), on the web
+application's own screens.
 
-1. Check the UUID first. Any answer except `404` means the template exists, possibly
-   customised: **skip, never overwrite.**
+1. Open the project's *Templates* tab. If a template named **Drupal update** is already listed, it
+   exists, possibly customised: **skip, never overwrite.**
+2. Otherwise choose *Add template* and copy the values from
+   `templates/bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30.yml`: name, title pattern, description, workflow
+   `bb_work`, target state `qualification`, and the type `chore` (the target workspace's own term;
+   a term of another workspace fails validation). Leave it **disabled**, and save.
+3. Review it on the *Templates* tab, then enable it when the team wants it.
 
-   ```bash
-   bakers dropsh read bb_ticket_template/bb_ticket_template/bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30
-   ```
+Re-running the procedure is safe: step 1 finds the template and stops. The form assigns its own
+UUID, so the imported template does not carry the file's UUID; the check in step 1 goes by name.
 
-2. Only on `404`: create it with that UUID. Take the field values from
-   `templates/bd9e5a3c-7f21-4c68-9a04-2d1e6b8c5f30.yml`, substitute the project (its UUID in the
-   target workspace), the owner and the `chore` type term (`ticket_type`: the target workspace's own term;
-   a term of another workspace fails validation), keep `enabled: false`, and POST the JSON:API document (with
-   `data.id` set to the UUID) from a file:
-
-   ```bash
-   bakers dropsh create bb_ticket_template --bundle bb_ticket_template --data @template.json
-   ```
-
-3. Review it on the project's *Templates* tab, then enable it when the team wants it.
-
-Re-running the procedure is safe: step 1 finds the template and stops.
+To create one ticket from the template by hand once it is enabled, use the *Templates* tab or the
+`bakers_ticket_template_run` tool with the template's UUID (`bakers tools
+tool_api__bakers_ticket_template_run --data @args.json`).
 
 ## Monthly trigger
 

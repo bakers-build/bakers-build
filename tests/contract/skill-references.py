@@ -7,16 +7,16 @@ import tempfile
 
 repo = Path(__file__).resolve().parents[2]
 root = repo / '.claude/skills/bakers-build'
-SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-prepare-time',
-          'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers', 'bb-recipe-verify',
-          'bb-runtime-ddev',
-          'bb-scope-change', 'bb-upgrade-project', 'bb-verdict', 'bb-workflow')
+SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-label-pingpong',
+          'bb-prepare-time', 'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers',
+          'bb-recipe-verify', 'bb-runtime-ddev', 'bb-scope-change', 'bb-upgrade-project', 'bb-verdict',
+          'bb-workflow')
 STATES = ('qualification', 'plan', 'working', 'review')
 PHASES = ('read', 'provision', 'work', 'validate', 'deliver', 'outtake', 'transition')
 # Skills that became bb-workflow references or were deleted; none may be named anywhere.
 RETIRED = ('bb-acceptance', 'bb-ensure-qualification', 'bb-merge-mr', 'bb-post-deployment',
-           'bb-prepare-deployment', 'bb-publish-comment', 'bb-publish-origin-feedback',
-           'bb-publish-origin-status', 'bb-qualify-ticket', 'bb-read-ticket', 'bb-record-measurement',
+           'bb-pingpong', 'bb-prepare-deployment', 'bb-project-manager', 'bb-publish-comment',
+           'bb-publish-origin-feedback', 'bb-publish-origin-status', 'bb-qualify-ticket', 'bb-read-ticket', 'bb-record-measurement',
            'bb-resolve-environment', 'bb-review-ticket', 'bb-run-intake', 'bb-run-outtake', 'bb-scenario',
            'bb-summarize-verification', 'bb-transition-ticket', 'bb-verify-on-environment',
            'bb-verify-playwright-cli', 'bb-verify-tests')
@@ -60,6 +60,8 @@ def check(scan):
     count = 0
     for source in installed.rglob('*.md'):
         text = source.read_text()
+        if re.search(r'\b(?:drupal|drush|SIMPLETEST_DB|recipe-test|existing-config|keytec-ddev-addon)\b', text, re.I):
+            errors.append((source.relative_to(installed), 'project-specific Drupal instructions belong in project docs'))
         for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', text):
             if not target.startswith(('./', '../', 'references/', 'outtake/')) and not re.match(r'[\w-]+\.md', target) or '<' in target:
                 continue
@@ -84,7 +86,8 @@ def check(scan):
             errors.append((recipe.relative_to(scan), 'links a bakers.build reference or skill'))
     for guide in installed.glob('bb-runtime-*/SKILL.md'):
         errors += grid_errors(guide.relative_to(installed), guide.read_text())
-    for hints in (scan / 'WORKFLOW.md', installed / 'bb-init-project/references/WORKFLOW.template.md'):
+    for hints in (scan / 'WORKFLOW.md', scan / 'playground.WORKFLOW.md',
+                  installed / 'bb-init-project/references/WORKFLOW.template.md'):
         text = hints.read_text()
         errors += grid_errors(hints.name, text)
         errors += [(hints.name, h) for h in headings(text, 2) if not PHASE_HEADING.fullmatch(h)]
@@ -112,16 +115,46 @@ def layout(directory):
     """Copy the plugin as installed, plus the repository texts that may not name a retired skill."""
     scan = Path(directory)
     shutil.copytree(root / 'skills', scan / 'skills')
-    shutil.copytree(repo / 'docs', scan / 'docs')
+    shutil.copytree(repo / 'docs', scan / 'docs', ignore=shutil.ignore_patterns('node_modules', '.vitepress', 'scripts', 'public'))
     shutil.copytree(repo / 'tests/skill-eval/fixtures', scan / 'fixtures')
     shutil.copytree(repo / 'tests/skill-eval/recipes', scan / 'recipes')
     for source, name in ((root / 'README.md', 'README.md'), (repo / 'WORKFLOW.md', 'WORKFLOW.md'),
+                         (repo / 'tests/fixtures/bakers-playground/WORKFLOW.md', 'playground.WORKFLOW.md'),
                          (repo / 'tests/skill-eval/fixtures.json', 'fixtures.json'),
-                         (repo / 'website/.vitepress/manual.mjs', 'manual.mjs')):
+                         (repo / 'docs/.vitepress/manual.mjs', 'manual.mjs')):
         shutil.copy(source, scan / name)
     return scan
+
+
+PRIVATE = re.compile(r'keytec-(?:qa|drupal|deploy|testing|server-provision)|laws-of-robotics|@keytec(?![\w.-])')
+# Where a contributor's mandatory skills and rules are declared; the dependency ledger may name them.
+CONSUMERS = ('WORKFLOW.md', '.claude/settings.json', 'bakers-cli/addons/claude/measure/*.json',
+             'recipes/bb_ticket_templates/**/*', 'docs/**/*.md', 'tests/playwright/README.md',
+             '.ddev/commands/**/*', 'tests/fixtures/bakers-playground/WORKFLOW.md',
+             'tests/fixtures/bakers-playground/.claude/settings.json',
+             'tests/fixtures/bakers-playground/.ddev/commands/**/*')
+
+
+def dependency_errors(base=repo):
+    """No mandatory private skill; every rule WORKFLOW.md links exists in the repository."""
+    errors = []
+    for pattern in CONSUMERS:
+        for path in base.glob(pattern):
+            if path.is_file() and path.name != 'development-skills.md':
+                errors += [(path.relative_to(base), m) for m in PRIVATE.findall(path.read_text(errors='ignore'))]
+    workflow = (base / 'WORKFLOW.md').read_text()
+    for target in re.findall(r'\]\(((?:docs|recipes)/[^)#]+)', workflow):
+        if not (base / target).is_file():
+            errors.append(('WORKFLOW.md', target))
+    # An unprefixed skill in a hint row is a repository-owned project skill.
+    for name in re.findall(r'^\|[^|\n]*\|\s*`([a-z][a-z-]*)`\s*\|$', workflow, re.M):
+        if not (base / '.claude/skills' / name / 'SKILL.md').is_file():
+            errors.append(('WORKFLOW.md', f'project skill {name} missing'))
+    return errors
 
 
 if __name__ == '__main__':
     with tempfile.TemporaryDirectory() as directory:
         print(check(layout(directory)))
+    assert not dependency_errors(), dependency_errors()
+    print('PASS no private skill prerequisite, WORKFLOW.md links and project skills resolve')

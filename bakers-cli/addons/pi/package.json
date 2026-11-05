@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "bakers.build agent plugin for the pi coding CLI, with a real transcript footprint.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "exports": {
     ".": "./dist/src/index.js",
     "./preset": "./dist/src/preset.js"

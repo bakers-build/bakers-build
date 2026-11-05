@@ -7,9 +7,10 @@
 #                                 [--fixture-repo <url>]
 #   scripts/teardown-test-project.sh          # gives it all back
 #
-#     --project <name>  the bb_project of the recipe-test world to wire up. It is
-#                       also what the conductor's machine_id is composed from, so
-#                       teardown must be given the SAME name or it purges nothing.
+#     --project <name>  the bb_project of the recipe-test world to wire up. With
+#                       this machine and the default variant it keys the
+#                       conductor, so teardown must be given the SAME name or it
+#                       purges nothing.
 #                       Default: bakers-e2e-project.
 #     --fixture-repo <url>
 #                       clone the fixture project from this remote instead of the
@@ -25,20 +26,8 @@
 #                       Select existing local/remote branches only. Keep WORKFLOW.md
 #                       and local edits; never reset, create remote branches or push.
 #                       A failed checkout stops setup; only absent branches fall back.
-#     --workspace-only  the mode `ddev init-worktree` uses: THE WORKSPACE SIDE ONLY,
-#                       with no control-plane provisioning and no DDEV start. Steps
-#                       3, 4, 6 and 7 run; steps 2, 5, 8 and 9 are skipped. Step 2 is
-#                       the load-bearing exclusion — a worktree just built by
-#                       `ddev init-worktree` has the default world, in which the
-#                       project does not exist, so the unguarded script would take
-#                       its "not found" branch and run `ddev init --provider
-#                       recipe-test`, WIPING the database that bootstrap had just
-#                       built. Steps 5, 8 and 9 are control-plane writes only a
-#                       hand-driven run needs. A plain run performs all nine and
-#                       remains the command that prepares such a run. This mode needs
-#                       NO RUNNING DDEV: `ddev init-worktree` does not start the
-#                       worktree it configures, so when `ddev describe` cannot answer,
-#                       the project name and URL are derived (see step 1).
+#     --workspace-only  prepare the local playground checkout, CLI and connection;
+#                       start no DDEV, provision no world, write no control plane.
 #
 # It does NOT create a ticket and does NOT register a conductor. Those are yours:
 # the script hands you a working control plane and a working work workspace, and
@@ -72,7 +61,7 @@
 #     The fixture now commits a real BB-204 loader AND a real engine config, so both
 #     are hand-maintained there and this script leaves them alone. What remains
 #     generated is machine-local and untracked: the CONNECTION config (secrets, this
-#     run's control plane) and `.bakers/conductor.config.local.js` (project + machine_id).
+#     run's control plane) and `.bakers/conductor.config.local.js` (the project).
 #     The old arrangement cost a run: two authors for one path, `--skip-worktree`
 #     hiding the difference, and a correct committed fix silently overwritten on the
 #     next setup. A generated file that shadows a tracked one hides its own damage.
@@ -84,10 +73,8 @@
 #  3. The control plane's OAuth2 keys live outside any mounted volume, so a
 #     `ddev stop`/`start` DESTROYS them and the session mint then fails with an
 #     HTTP 500 naming neither DDEV nor the cause. Step 8 repairs that silently.
-#  4. The fixture repo carries a project-owned, pre-addon `init-worktree` that
-#     overwrites the tracked `.ddev/config.yaml`, derives a name identical in
-#     every checkout, and provisions a Drupal site. It is deliberately NOT used;
-#     step 4 writes the addon-shaped git-ignored overlay itself.
+#  4. The fixture uses the same public env setup as the main checkout. Step 4
+#     gives new playground clones a path-hashed overlay and preserves existing names.
 #  5. A BARE `bakers` INSIDE THE WORKSPACE IS THIS CHECKOUT'S BUILD, and the mechanism
 #     is a file THIS SCRIPT WRITES: step 6 drops `<workspace>/.bakers-testbuild`, whose
 #     single line is this checkout's absolute path, and `~/.local/bin/bakers` walks up
@@ -103,7 +90,7 @@
 #     state runs through `@bakers-build/bb-workflow`, and `plan`/`working`/`review` run
 #     the ticket's recipe (`bb-recipe-matt` by default). Read
 #     `workspaces/bakers-playground/WORKFLOW.md` before creating a ticket: its
-#     `## validate` row is the check a `working` run must report, and that file — not
+#     `## bb-phase-validate` row is the check a `working` run must report, and that file — not
 #     this script — is where the answer lives.
 #  7. RE-DRIVING THE SAME TICKET NEEDS ITS RUN DELETED, not released. A `bb_run`
 #     whose `state_at_start` equals the ticket's current state blocks re-claiming
@@ -155,7 +142,7 @@ CLIENT_ID='bakers-agent-e2e'
 CLIENT_SECRET='skill-eval-secret'
 # BB-495: the workspace the generated connection config focuses `bakers ui` on —
 # OPTIONAL at the top level of a bakers.config.js since BB-495, but still written
-# here, so it has to be a known value before step 7 writes that file. `bakers dropsh`
+# here, so it has to be a known value before step 7 writes that file. `bakers tools`
 # reads nothing from it; the caller names its workspace on each call.
 # A constant, because it IS one: it is
 # `BbWorkspace::DEFAULT_UUID`, seeded on every install path by
@@ -255,18 +242,24 @@ workspace_has_branch() {
 }
 
 parent_branch_for() {
-  local key response
+  local key response args
   key="$(test_branch_name "$1")"
   [[ "$key" =~ ^[[:alpha:]][[:alnum:]]*-[0-9]+$ ]] || return 0
   # Read through the source checkout's normal connection, before entering the
   # playground. A lookup failure is not evidence that the ticket has no parent.
-  response="$(bakers dropsh --format json search bb_ticket --bundle bb_ticket \
-    --filter "identifier:${key^^}")" || die "cannot resolve parent for $key"
+  # No `project`: the ticket lives on the source connection, not in ${PROJECT}.
+  args="$(mktemp)"
+  jq -n --arg branch "$1" '{branch_name: $branch}' >"$args"
+  response="$(bakers tools tool_api__bakers_ticket_search --data "@${args}")" \
+    || { rm -f "$args"; die "cannot resolve parent for $key"; }
+  rm -f "$args"
   jq -r '
-    if (.data | type) != "array" or (.data | length) > 1 then
-      error("ticket lookup did not return an unambiguous collection")
-    elif (.data | length) == 0 or .data[0].relationships.parent_id.data == null then ""
-    else .data[0].attributes.base_branch // error("parent branch is unavailable")
+    if (.tickets | type) != "array" or (.tickets | length) > 1 then
+      error("ticket lookup did not return an unambiguous result")
+    elif (.tickets | length) == 0 then ""
+    elif (.tickets[0] | has("parent") | not) then error("ticket lookup does not report the parent")
+    elif .tickets[0].parent == null then ""
+    else .tickets[0].base_branch // error("parent branch is unavailable")
     end' <<<"$response" || die "cannot resolve parent for $key"
 }
 
@@ -322,8 +315,8 @@ while [ $# -gt 0 ]; do
 done
 
 # `--project` names a bb_project and is reached by more sinks than PHP: it is
-# interpolated into the generated JS engine config and into the composed
-# machine_id. Escaping it per sink would mean three escapers; a machine name has
+# interpolated into the generated JS engine config. Escaping it per sink would
+# mean several escapers; a machine name has
 # no business carrying a quote, so it is refused at the door instead — which
 # leaves php_str responsible only for the values this script cannot constrain
 # (a git URL, a branch name).
@@ -448,20 +441,8 @@ start_ddev() {
 # -----------------------------------------------------------------------------
 step "1. control plane — this checkout's own bakers DDEV"
 # -----------------------------------------------------------------------------
-# DESCRIBE ONLY, and in `--workspace-only` not even that is guaranteed to answer.
-# `ddev init-worktree` deliberately does NOT start the worktree it configures —
-# `ddev init` owns the start — and this mode runs as its FINAL
-# step, in a worktree whose project is therefore neither running nor yet registered;
-# `ddev describe` then fails outright ("a project ... already exists for <parent>",
-# because the overlay is the only thing giving this checkout its own name).
-#
-# Nothing this mode does needs a running control plane: steps 2, 5, 8 and 9 are the
-# only ones that talk to it, and all four are skipped. So the name and URL are
-# DERIVED when describe cannot answer, exactly as `.ddev/worktree-post.sh` already
-# derives this worktree's base_url from DDEV_WORKTREE_NAME. That keeps the guard
-# below meaningful rather than bypassed: a `<name>.ddev.site` host is local by
-# construction. A FULL run still requires describe — it is about to write to that
-# control plane, so it must read it rather than assume it.
+# Workspace-only can derive identity without a registered/running DDEV project.
+# Full setup reads the local control plane before any write.
 described="$( ( cd "${ROOT}" && ddev describe -j 2>/dev/null ) | jq -c '.raw // empty' 2>/dev/null || true)"
 if [ -n "${described}" ]; then
   CP_NAME="$(printf '%s' "${described}" | jq -r '.name')"
@@ -476,20 +457,8 @@ else
     || die "'ddev describe' could not describe the checkout at ${ROOT}. A full run reads
        the control plane it is about to write to, so this is fatal here; 'ddev start' in
        the checkout, or run with --workspace-only, which needs no running DDEV."
-  # The project name, in falling order of authority: what init-worktree exported, the
-  # git-ignored per-checkout overlay it writes, then the tracked config (which names
-  # the PARENT project — last resort, and the reason the overlay exists at all).
-  CP_NAME="${DDEV_WORKTREE_NAME:-}"
-  if [ -z "${CP_NAME}" ] && [ -f "${ROOT}/.ddev/config.worktree.yaml" ]; then
-    CP_NAME="$(awk '/^name:/ { print $2; exit }' "${ROOT}/.ddev/config.worktree.yaml")"
-  fi
-  if [ -z "${CP_NAME}" ] && [ -f "${ROOT}/.ddev/config.yaml" ]; then
-    CP_NAME="$(awk '/^name:/ { print $2; exit }' "${ROOT}/.ddev/config.yaml")"
-  fi
-  [ -n "${CP_NAME}" ] \
-    || die "--workspace-only: 'ddev describe' answered nothing and no DDEV project name
-       could be read from DDEV_WORKTREE_NAME, .ddev/config.worktree.yaml or
-       .ddev/config.yaml, so the control-plane URL cannot be derived either."
+  ( cd "${ROOT}" && node scripts/setup-worktree.mjs )
+  CP_NAME="$(sed -n 's/^DDEV_WORKTREE_NAME=//p' "${ROOT}/.env.ddev" | tail -1)"
   CP_STATUS='not described'
   RAW_URL="https://${CP_NAME}.ddev.site"
 fi
@@ -522,17 +491,8 @@ say "${CP_NAME} at ${BASE_URL}"
 # -----------------------------------------------------------------------------
 step "2. the recipe-test world"
 # -----------------------------------------------------------------------------
-# Keyed on the project existing, not on a marker file — a marker survives a wiped
-# database. Provisioned only when absent: it is slow, and it would wipe a world the
-# operator may be mid-run against.
-#
-# THE LOAD-BEARING EXCLUSION OF `--workspace-only`. A worktree that
-# `ddev init-worktree` has just provisioned carries the default `existing-config`
-# world, in which the project does NOT exist — so the probe below would take its
-# "not found" branch and run `ddev init --provider recipe-test`, wiping the database
-# the bootstrap had just built and replacing the developer's branch site with the
-# e2e world. Nobody asked for that and re-running nothing recovers it. So the whole
-# step is skipped rather than made conditional on a guess about which world is live.
+# Reuse a bootstrapped test world. A different installed world is never reinstalled
+# automatically; only an unbootstrapped site can enter the explicit install path.
 if [ "${WORKSPACE_ONLY}" = 'yes' ]; then
   say "--workspace-only: skipped (this mode provisions no world and writes no"
   say "  control plane — see the header for why this exclusion is the important one)"
@@ -549,8 +509,9 @@ else
     if [ "${world_probe}" = 'yes' ]; then
       say "'${PROJECT}' already provisioned — skipping ddev init"
     else
-      say "project '${PROJECT}' not found — provisioning with the recipe-test provider"
-      ( cd "${ROOT}" && ddev init --provider recipe-test )
+      die "Drupal is already installed, but project '${PROJECT}' is absent. No data was changed.
+       To deliberately replace this local database with the test world, run:
+       ddev init --provider recipe-test"
     fi
   else
     say "Drupal is not bootstrapped — provisioning with the recipe-test provider"
@@ -666,22 +627,25 @@ step "4. the workspace's own DDEV"
 # the workspace lives inside the checkout and every bakers worktree has its own, so a
 # name derived from anything the clone itself carries (its committed `name:`, its
 # branch) would be identical across checkouts and two setups would fight over one
-# DDEV project. See fact 4 for why `ddev init-worktree` is not used here.
+# DDEV project. Preserve this identity on subsequent runs.
 WS_DDEV="bakers-pg-$(printf '%s' "${WORKSPACE}" | sha1sum | cut -c1-8)"
+# A symlink here would redirect the overlay write outside the workspace.
+for path in "${WORKSPACE}/.ddev" "${WORKSPACE}/.ddev/config.worktree.yaml"; do
+  [ ! -L "${path}" ] || die "refusing symlinked ${path}; replace it with a plain file or directory"
+done
 mkdir -p "${WORKSPACE}/.ddev"
-cat >"${WORKSPACE}/.ddev/config.worktree.yaml" <<YAML
-# GENERATED by scripts/setup-test-project.sh — git-ignored, never committed.
-# A DDEV overlay carrying only the key that must differ per checkout. DDEV deep-
-# merges every .ddev/config.*.yaml over config.yaml, so the committed
-# type/php_version/docroot of the fixture repo all survive.
-name: ${WS_DDEV}
-YAML
+if [ ! -e "${WORKSPACE}/.ddev/config.worktree.yaml" ]; then
+  printf 'name: %s\n' "${WS_DDEV}" >"${WORKSPACE}/.ddev/config.worktree.yaml"
+fi
+# The checkout's helper, not the clone's: a clone seeded before the migration has none.
+( cd "${WORKSPACE}" && node "${ROOT}/scripts/setup-worktree.mjs" )
+WS_DDEV="$(sed -n 's/^DDEV_WORKTREE_NAME=//p' "${WORKSPACE}/.env.ddev" | tail -1)"
 # DECLARED, NOT STARTED (BB-390). The workspace runs no Drupal of its own; its
 # DDEV exists purely so a skill under test can issue a real `ddev` command, which in
 # practice it never does. Writing the overlay costs nothing and is the only thing
 # giving the workspace a DDEV name that is unique per checkout, so it stays; the
 # `ddev start` is what this script stopped paying for on every setup and on every
-# `ddev init-worktree`. Start it by hand if a run needs it:
+# `bash .ddev/worktree-post.sh`. Start it by hand if a run needs it:
 #   cd ${WORKSPACE_RELPATH} && ddev start
 say "${WORKSPACE} (ddev project '${WS_DDEV}' declared, NOT started)"
 say "  start it only if a skill under test needs it: cd ${WORKSPACE_RELPATH} && ddev start"
@@ -711,7 +675,7 @@ Q_WS_BRANCH="$(php_str "${WS_BRANCH}")"
 # READING the clone's branch above is a local git read and always runs — the summary
 # reports it, and `--workspace-only` still wants it reported. What that mode skips is
 # THE WRITE: the project repo entry is control-plane state a hand-driven run sets up
-# once, and `ddev init-worktree` has no business touching the world on every worktree
+# once, and `bash .ddev/worktree-post.sh` has no business touching the world on every worktree
 # it creates.
 if [ "${WORKSPACE_ONLY}" = 'yes' ]; then
   say "--workspace-only: the clone works on '${WS_BRANCH}'; the project repo entry is"
@@ -789,7 +753,7 @@ done
 # BUILD WHEN NEEDED (BB-390). The assertions below used to be the whole of this
 # step, which made a missing or stale build a STOP SIGN where an action was
 # available: every worktree had to be built by hand (or by an unconditional build in
-# `ddev init-worktree`, paid for whether or not the ticket touches the CLI) before
+# `bash .ddev/worktree-post.sh`, paid for whether or not the ticket touches the CLI) before
 # this script would run at all. So the same probe now triggers the build instead of
 # refusing. What does NOT change is that a build which FAILS is fatal, and that the
 # assertions still run afterwards — they are what keeps a green skill test from being
@@ -908,30 +872,32 @@ say "wrote .bakers-testbuild → ${ROOT} (a bare 'bakers' in the workspace is no
 # -----------------------------------------------------------------------------
 step "7. generate the two machine-local files — neither of them committed"
 # -----------------------------------------------------------------------------
-# `machine_id` is REQUIRED (an engine config missing it fails to load) and is
-# composed exactly as `bakers conductor init` composes it:
-# ${user_id}-${machine_id}-${project} from ~/.bakers/machine.config.js. The context is
-# IMPORTED rather than pattern-matched, because that is what the CLI itself does and
-# a regex over a JS module hits comments and nested keys. Only these two fields are
-# read; the context's own base_url is a REMOTE control plane and is deliberately
-# ignored.
-machine_identity="$(MC="${HOME}/.bakers/machine.config.js" node -e '
+# The conductor is this machine + the project + the variant: no id is composed or
+# written. The machine is `~/.bakers/machine.config.js`, which `bakers init` owns;
+# when it is absent this writes one the same way — a generated UUID and a label —
+# so the run has a machine to register under. The context is IMPORTED rather than
+# pattern-matched, because that is what the CLI itself does. An old machine file
+# (a `user_id`) is refused, exactly as the CLI refuses it.
+MACHINE_FILE="${BB_HOME:-${HOME}/.bakers}/machine.config.js"
+machine_identity="$(MC="${MACHINE_FILE}" LABEL="$(hostname -s 2>/dev/null || echo "${CP_NAME}")" node -e '
+  const fs = require("node:fs");
+  const path = require("node:path");
   const p = process.env.MC;
-  import("node:fs").then(async (fs) => {
-    if (!fs.existsSync(p)) return process.stdout.write("\t");
-    try {
-      const d = (await import("file://" + p)).default ?? {};
-      process.stdout.write(`${d.user_id ?? ""}\t${d.machine_id ?? ""}`);
-    } catch { process.stdout.write("\t"); }
-  });' 2>/dev/null || printf '\t')"
-MACHINE_USER="$(printf '%s' "${machine_identity}" | cut -f1)"
-MACHINE_HOST="$(printf '%s' "${machine_identity}" | cut -f2)"
-[ -n "${MACHINE_HOST}" ] || MACHINE_HOST="${CP_NAME}"
-if [ -n "${MACHINE_USER}" ]; then
-  MACHINE_ID="${MACHINE_USER}-${MACHINE_HOST}-${PROJECT}"
-else
-  MACHINE_ID="${MACHINE_HOST}-${PROJECT}"
-fi
+  (async () => {
+    if (!fs.existsSync(p)) {
+      fs.mkdirSync(path.dirname(p), { recursive: true });
+      const id = require("node:crypto").randomUUID();
+      fs.writeFileSync(p, `// @bakers-schema-version 1\nexport default {\n  schema_version: 1,\n  machine_id: ${JSON.stringify(id)},\n  label: ${JSON.stringify(process.env.LABEL)},\n  max_parallel: 1,\n};\n`, { mode: 0o600 });
+    }
+    const d = (await import("file://" + p)).default ?? {};
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if ("user_id" in d || typeof d.machine_id !== "string" || d.machine_id === "") process.exit(3);
+    const id = uuid.test(d.machine_id) ? d.machine_id.toLowerCase() : d.machine_id;
+    process.stdout.write(`${id}\t${d.label ?? ""}`);
+  })().catch(() => process.exit(2));')" \
+  || die "${MACHINE_FILE} is not a current machine file (a machine_id, no user_id) — run 'bakers init' to rewrite it"
+MACHINE_ID="$(printf '%s' "${machine_identity}" | cut -f1)"
+MACHINE_LABEL="$(printf '%s' "${machine_identity}" | cut -f2)"
 
 mkdir -p "${WORKSPACE}/.bakers"
 
@@ -949,20 +915,20 @@ mkdir -p "${WORKSPACE}/.bakers"
 # no default scopes, and silently inherit that default when there is one.
 cat >"${WORKSPACE}/.bakers/bakers.config.js" <<JS
 // GENERATED by scripts/setup-test-project.sh — do not commit
-// @bakers-schema-version 3
+// @bakers-schema-version 1
 // The CONNECTION surface (BB-201): a dropsh-shaped { site, plugins } read by
-// 'bakers ui', 'bakers dropsh', and the conductor's auth.
+// 'bakers ui', 'bakers tools', 'bakers auth', and the conductor's auth.
 //
 // plugins[] is consumed by DROPSH, whose resolver has no sole-function auto-pick,
 // so @dropsh/plugin-oauth2 entries MUST name export: 'oauth2Plugin'.
 export default {
-  schema_version: 3,
+  schema_version: 1,
   site: { base_url: '${BASE_URL}', jsonapi_prefix: '/jsonapi' },
   // BB-495: OPTIONAL and top-level — a sibling of \`site\`, never a member of it
   // and never an addon's \`with\`. It is \`bakers ui\`-facing only: the UI attaches
   // @bakers-build/addon-workspace itself at startup so its picker starts focused and
-  // its lists are scoped by construction. \`bakers dropsh\` reads nothing here — the
-  // caller names the workspace on each call (\`--workspace_id …\`), and the server
+  // its lists are scoped by construction. \`bakers tools\` reads nothing here — the
+  // caller names the workspace in each tool call, and the server
   // refuses an unbound or cross-tenant write either way. It is written here
   // because the playground exists to drive \`bakers ui\`.
   workspace_id: '${WORKSPACE_ID}',
@@ -997,22 +963,18 @@ JS
 # state slice — now lives in the fixture repo alone, is reviewable in its own history,
 # and survives every run of this script.
 #
-# WHAT IS STILL GENERATED IS THE MACHINE OVERRIDE, and it is the reason the split
-# works: the committed config reads `project` and `machine_id` from
-# `.bakers/conductor.config.local.js` (`local.project ?? …`, `local.machine_id`), and
-# `machine_id` is REQUIRED — an engine config missing it fails to load. Those two are
-# the only values that cannot be committed, because they identify THIS machine and the
-# control plane this run provisioned. Everything structural stays in the fixture repo;
-# only the per-machine identity is written here. The file is untracked and already
-# listed in `hide_from_git`.
+# WHAT IS STILL GENERATED IS THE LOCAL OVERRIDE, and it carries no identity: the
+# conductor is this machine + the project + the variant, its id derived at
+# runtime. It names only the project this run provisioned. Everything structural
+# stays in the fixture repo. The file is untracked and already listed in
+# `hide_from_git`.
 cat >"${WORKSPACE}/.bakers/conductor.config.local.js" <<JS
 // GENERATED by scripts/setup-test-project.sh — do not commit
-// The per-machine override the committed .bakers/conductor.config.js reads. It carries
-// ONLY the two values that identify this machine's run; addons, hooks and the state
-// slice belong to the committed config and are deliberately absent here.
+// The local override the committed .bakers/conductor.config.js reads. It carries no
+// identity; addons, hooks and the state slice belong to the committed config and are
+// deliberately absent here.
 export default {
   project: '${PROJECT}',
-  machine_id: '${MACHINE_ID}',
 };
 JS
 
@@ -1029,14 +991,14 @@ JS
 # name (`provision`, `work`, `validate`, `deliver`). A `## Checks` table is never read,
 # so a run reports no project check at all.
 say "generated .bakers/bakers.config.js and .bakers/conductor.config.local.js"
-say "machine_id: ${MACHINE_ID}"
+say "machine: ${MACHINE_LABEL} (${MACHINE_ID})"
 say ".bakers/conductor.config.js is COMMITTED in the fixture repo — not written here"
 say "  → its addons, after_create hook and state slice are reviewed in that repo"
 
 # -----------------------------------------------------------------------------
 # `--workspace-only` ENDS HERE. Steps 8 and 9 are the two remaining control-plane
 # actions — repairing the OAuth2 keys and minting a session token — and both belong
-# to a hand-driven run that is about to drive a conductor. `ddev init-worktree`
+# to a hand-driven run that is about to drive a conductor. `bash .ddev/worktree-post.sh`
 # creates worktrees; it has no business logging a profile in on every one of them.
 # The closing text is its own, because the three next steps printed below assume the
 # repo entry and the session this mode deliberately did not create.
@@ -1051,7 +1013,7 @@ workspace ready (--workspace-only)
   workspace       ${WORKSPACE}
   workspace ddev  ${WS_DDEV}   (declared, NOT started)
   base branch     ${WS_BRANCH}   (read from the clone; not written to the world)
-  machine_id      ${MACHINE_ID}
+  machine         ${MACHINE_LABEL} (${MACHINE_ID})
   bakers binary     a bare 'bakers' inside the workspace IS this checkout's build,
                   via ${WORKSPACE_RELPATH}/.bakers-testbuild
 
@@ -1144,7 +1106,7 @@ step "9. mint the token"
 #
 # BB-391: `--provider` names the connection's ONE provider — it is not a
 # capability choice, and there is no second profile to switch to.
-( cd "${WORKSPACE}" && "${BB_BIN}" dropsh auth login --provider "${OAUTH_PROVIDER_ID}" )
+( cd "${WORKSPACE}" && "${BB_BIN}" auth login --provider "${OAUTH_PROVIDER_ID}" )
 say "${OAUTH_PROVIDER_ID} provider logged in against ${BASE_URL}"
 
 # -----------------------------------------------------------------------------
@@ -1158,7 +1120,7 @@ setup complete
   workspace       ${WORKSPACE}
   workspace ddev  ${WS_DDEV}  (declared, NOT started — 'cd ${WORKSPACE_RELPATH} && ddev start')
   base branch     ${WS_BRANCH}  (every per-ticket worktree is cut from this)
-  machine_id      ${MACHINE_ID}
+  machine         ${MACHINE_LABEL} (${MACHINE_ID})
   bakers binary     a bare 'bakers' in the workspace IS this checkout's build, because
                   ${WORKSPACE_RELPATH}/.bakers-testbuild names it (BB-390)
 
@@ -1172,18 +1134,30 @@ The ticket is yours. Three steps, and the last one spends real agent money.
 
        cd ${WORKSPACE} && bakers oven once
 
-  2. Create a chore ticket (recipe matt) in project '${PROJECT}' and set its conductor_id to
-     the conductor carrying machine_id '${MACHINE_ID}'. The claim keys on that
-     field, so without it nothing is ever claimed. Use the same connection as
+  2. Create a chore ticket (recipe matt) in project '${PROJECT}' and assign it to
+     this machine's conductor of that project (label '${MACHINE_LABEL} · …',
+     variant 'conductor'). The claim keys on that assignment, so without it
+     nothing is ever claimed. Use the same connection as
      registration; no separate assignment permission or auth profile is needed.
 
-       bakers dropsh --format md search bb_project --bundle bb_project --filter 'name:${PROJECT}'
-       bakers dropsh --format md search bb_conductor --bundle bb_conductor --filter 'conductor_id:${MACHINE_ID}'
-       bakers dropsh create bb_ticket --bundle bb_ticket --title 'Conductor verification' --workflow bb_work --type_names chore --recipe_names matt --project_id <project-uuid> --conductor_id <conductor-uuid>
+       echo '{"query": "${PROJECT}"}' > query.json
+       bakers tools tool_api__bakers_project_list --data @query.json
 
-     Substitute the UUIDs returned by the searches. Existing tickets can be assigned:
+     Take the key of the project named '${PROJECT}' from that list, then:
 
-       bakers dropsh update bb_ticket/bb_ticket/<ticket-uuid> --conductor_id <conductor-uuid>
+       echo '{"project": "<project-key>"}' > project.json
+       bakers tools tool_api__bakers_project_read --data @project.json
+       bakers tools tool_api__bakers_conductor_list --data @project.json
+
+     Pick the conductor whose machine is '${MACHINE_LABEL}' and variant 'conductor', then:
+
+       echo '{"title": "Conductor verification", "workflow": "bb_work", "type": "chore", "recipe": "matt", "project": "<project-uuid>"}' > ticket.json
+       bakers tools tool_api__bakers_ticket_create --data @ticket.json
+
+     and assign the returned ticket id to the conductor:
+
+       echo '{"ticket": "<ticket-id>", "conductor": "<conductor-uuid>"}' > assign.json
+       bakers tools tool_api__bakers_ticket_update --data @assign.json
 
   3. Drive the run and WATCH it:
 

@@ -340,7 +340,7 @@ export async function startIsolatedHerdr(): Promise<IsolatedHerdr> {
  *
  * Redirecting it process-wide instead is actively harmful, and not
  * hypothetically: `ddev` writes `$XDG_CONFIG_HOME/ddev`, so the
- * `after_create: ddev init-worktree` hook of worktree-lifecycle.test.ts
+ * `after_create: bash .ddev/worktree-post.sh` hook of worktree-lifecycle.test.ts
  * recreated a `ddev/` directory inside the temp state dir *after* teardown had
  * unlinked it — leaving exactly the `/tmp/bakers-herdr-*` residue this helper
  * exists to prevent. `git` ($XDG_CONFIG_HOME/git/config) would be next.

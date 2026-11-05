@@ -1,0 +1,20 @@
+{
+  "name": "bakers-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "node scripts/check-pages.mjs && vitepress build && node scripts/check-site.mjs && node scripts/marketplace.mjs",
+    "check:pages": "node scripts/check-pages.mjs",
+    "check:site": "node scripts/check-site.mjs",
+    "preview": "vitepress preview",
+    "test": "node --test scripts/manual.test.mjs scripts/marketplace.test.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "mermaid": "^11.17.2",
+    "tailwindcss": "^4.3.3",
+    "vitepress": "1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}

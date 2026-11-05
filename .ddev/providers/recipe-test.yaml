@@ -1,22 +1,4 @@
-# bakers.build recipe-as-installer provider (BB-142) — e2e/test world.
-#
-# Same recipe-as-installer as `recipe`, but seeds the e2e/test content (bb_e2e) via the
-# in-container bakers-init-test command instead of the playground: the local world of the
-# Playwright e2e suite. Selected with `ddev init --provider recipe-test`.
-#
-# The seed is invoked (not duplicated): bakers-init-test runs scripts/e2e/seed-test-world.sh, the
-# single source of the e2e fixtures that the CI merge gate's `e2e` job runs too. Nothing to fetch -> NO db_pull_command. Honours KEYTEC_AI_SITE (--uri).
-# Project-owned (this file carries no addon marker) — `ddev add-on get` never touches it.
-#
-# PROFILE resolution + import logging live in the shared .ddev/providers/recipe-install.sh
-# (BB-142 review finding #4 — the block was byte-identical here and in recipe.yaml). It prefers
-# INIT_PROFILE (surfaced from .keytec-ai.yml by the addon's config.keytec.yaml pre-start hook via
-# `keytec-ai config to-env`), but that hook needs `npx` on the HOST — which the CI runner image
-# (ddev-gitlab-ci) lacks, so INIT_PROFILE arrives unset there; it then reads init.profile straight
-# from .keytec-ai.yml in the container (never the wrong `minimal` profile, which is not a recipe and
-# fails the private-files requirements check recipe-as-installer defers). DDEV swallows
-# db_import_command output non-interactively (CI), so the import is teed to
-# .ddev/.bakers-test/init-recipe-test.log (an uploaded CI artifact) and re-emitted.
+# Project-owned recipe installation with the same test seed owner as CI.
 db_import_command:
   command: |
     bash /var/www/html/.ddev/providers/recipe-install.sh recipe-test /var/www/html/.ddev/commands/web/bakers-init-test

@@ -1,4 +1,4 @@
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from './drush';
 import { expect, type Page } from '@playwright/test';
 import { resolveMailpitURLFrom } from '../resolve-mailpit-url';
 

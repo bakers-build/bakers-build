@@ -1,7 +1,7 @@
 // The workspace addon overview. Probe addon versions are drush fixtures, one
 // run by a seeded conductor, and deleted after the scenario, so no seeded fixture
 // changes and the feature stays re-runnable.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';

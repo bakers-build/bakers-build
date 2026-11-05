@@ -1,0 +1,16 @@
+{
+  "states": {
+    "qualification": "We are looking at this request again to make sure we understand what is needed.",
+    "plan": "This request is written up and waits for the go-ahead to start.",
+    "working": "Work on this has started.",
+    "review": "The work is finished and is being checked.",
+    "done": "This is finished and ready for you to try.",
+    "cancelled": "This request was closed without a change."
+  },
+  "testHint": "Where and how to test:",
+  "noTestHint": "The ticket does not say yet where or how to test this.",
+  "questionLead": "{identifier} · \"{title}\" has a question:",
+  "technicalProblemLead": "The work on the \"{title}\" ticket is stuck on a technical problem that keytec has to solve:",
+  "subTicketThread": "{identifier} · {title} (sub-ticket of {parent})",
+  "subTicketPointer": "{identifier} · {title} continues in its own thread: {permalink}"
+}

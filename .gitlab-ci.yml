@@ -87,6 +87,7 @@ before_script:
   - bakers-cli/**/*
   # The conductor job tests the code of this guide.
   - docs/addons/build/actions.md
+  - docs/configuration/provisioning/hooks.md
   # The repository contracts the conductor job runs through vitest read these.
   - tests/contract/**/*
   - tests/skill-eval/**/*
@@ -130,9 +131,18 @@ before_script:
 .changes_bb_skills: &changes_bb_skills
   - .claude/skills/bakers-build/skills/**/*
   - .gitlab-ci.yml
+.changes_pm_bot: &changes_pm_bot
+  - experimental/pm-bot/**/*
+  - coder/bakers-ddev/pm-bot.compose.yaml
+  - tests/contract/pm-bot*
+  - .gitlab-ci.yml
+.changes_coder_pm_bot: &changes_coder_pm_bot
+  - coder/**/*
+  - experimental/pm-bot/**/*
+  - tests/contract/coder-pm-bot.sh
+  - .gitlab-ci.yml
 .changes_docs: &changes_docs
   - docs/**/*
-  - website/**/*
   - .gitlab-ci.yml
 
 # Linters run only in merge request pipelines, not on branch pushes (e.g.
@@ -216,8 +226,8 @@ docs_pages:
       changes: *changes_docs
   before_script: []
   script:
-    - node website/scripts/check-pages.mjs
-    - node --test website/scripts/marketplace.test.mjs
+    - node docs/scripts/check-pages.mjs
+    - node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
 
 # The MR title becomes the squash subject, from which `release:version` derives version and
 # release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a
@@ -367,6 +377,42 @@ conductor:
     expire_in: 1 week
     reports:
       junit: bakers-cli/junit-vitest.xml
+
+# The Slack PM bot (experimental/pm-bot/): its node tests against Slack and bakers.build stubs,
+# and its contract script. Node only, no Drupal, no LLM.
+pm_bot:
+  stage: test
+  tags:
+    - parallel
+  needs: []
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: *changes_pm_bot
+  image: node:22
+  before_script: []
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml
+    - node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
+    - bash tests/contract/pm-bot.sh
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: junit-pm-bot.xml
+
+coder_pm_bot:
+  stage: test
+  tags:
+    - parallel
+  needs: []
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: *changes_coder_pm_bot
+  image: node:22
+  before_script: []
+  script:
+    - bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
+    - bash tests/contract/coder-pm-bot.sh
 
 # BB-326: the renderer-coupled suite runs under Bun, because @opentui/core reaches its
 # native core through FFI that Node does not expose. It is its OWN job with its OWN junit
@@ -522,7 +568,7 @@ tui_musl:
     # indicator in a plain scalar, and an unquoted line here took the whole
     # pipeline to `failed` with zero jobs.
     - 'mkdir -p ~/.bakers'
-    - 'echo "export default { schema_version: 4, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/bakers.config.js'
+    - 'echo "export default { schema_version: 1, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/bakers.config.js'
     - node bin/bakers ui --print-config
     # PRODUCT leg (A1) — no OPENTUI_LIBC in this environment. Asserts our own detection
     # says musl, that it sets the variable, and that libopentui.so then really opens.
@@ -855,6 +901,8 @@ promote:
   # $CI_COMMIT_BRANCH for a scheduled pipeline against a branch ref just like a
   # push, so without this a misdirected schedule would trigger a real deploy.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
 
@@ -888,6 +936,8 @@ release_images:
       done
   # Same tag rule and schedule guard as publish:npm.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+([-+].+)?$/ && $CI_PIPELINE_SOURCE != "schedule"'
 
 # Publish the conductor CLI to public npm as @bakers-build/bakers. Triggered ONLY by a
@@ -941,6 +991,8 @@ publish:npm:
   # against a branch, so without this a misdirected schedule would trigger a
   # real publish to public npm.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+([-+].+)?$/ && $CI_PIPELINE_SOURCE != "schedule"'
 
 deploy:
@@ -970,6 +1022,8 @@ deploy:
   # See the same guard on the promote job above: excludes a schedule misdirected
   # at develop/main from triggering a real Komodo deploy.
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
       variables:
         DEPLOY_STACK: bakers-develop
@@ -1004,6 +1058,8 @@ publish:npm:next:
       base=$( [ -n "$last" ] && echo "${last#v}" | awk -F. '{print $1"."$2"."$3+1}' || echo 0.1.0 )
       pnpm run release:semver "${base}-next.${CI_PIPELINE_IID}" --tag next
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"'
 
 # Release on a main push after prod deployed: `release:version` computes the next version from the
@@ -1036,4 +1092,6 @@ release:
       cat release-notes.md
       glab release create "v$version" --ref "$release_commit" --name "v$version" --notes-file release-notes.md
   rules:
+    - if: '$RELEASE_OWNER == "github"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'

@@ -39,6 +39,8 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 #[RunTestsInSeparateProcesses]
 final class ConductorOverviewTest extends KernelTestBase {
 
+  use DanglingReferenceTrait;
+
   use ShippedDisplayTrait;
 
   use OgScopeFixtureTrait;
@@ -262,7 +264,26 @@ final class ConductorOverviewTest extends KernelTestBase {
     );
     self::assertTrue(class_exists(BbConductorRouteProvider::class));
     self::assertSame('Alpha', BbConductorRouteProvider::title($this->labelled));
-    self::assertSame('reg-blank', BbConductorRouteProvider::title($this->blank));
+    self::assertSame('(unnamed)', BbConductorRouteProvider::title($this->blank));
+  }
+
+  /**
+   * A blank-label row reads "(unnamed)", never the registration id.
+   */
+  public function testBlankLabelRowIsUnnamed(): void {
+    $this->installShippedView('views.view.conductors');
+    $this->container->get('account_switcher')->switchTo($this->accounts['lead']);
+
+    $view = Views::getView('conductors');
+    $view->setDisplay('user_list');
+    $view->setArguments([(string) $this->accounts['lead']->id()]);
+    $view->preExecute();
+    $view->execute();
+    $build = $view->style_plugin->render();
+    $html = (string) $this->container->get('renderer')->renderInIsolation($build);
+
+    $this->itemNamed($html, '(unnamed)');
+    self::assertStringNotContainsString('reg-blank', $html);
   }
 
   /**
@@ -713,7 +734,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     $ticket = $this->ticketOn($this->homeProject, 'Deleted occupancy');
     $identifier = $ticket->getIdentifier();
     $this->runOn($this->labelled, $ticket, 'running', self::FROZEN_NOW);
-    $ticket->delete();
+    $this->removeRowsOnly($ticket);
 
     $html = $this->occupancyHtml($this->labelled);
     self::assertStringContainsString('Live occupancy: 1', $html);

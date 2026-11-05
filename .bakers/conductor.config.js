@@ -1,3 +1,4 @@
+// @bakers-schema-version 1
 // Canonical conductor config for the bakers repo itself (dogfood). Targets the
 // deployed develop control-plane (develop.dev.bakers.build). Auth is OAuth2
 // client_credentials against simple_oauth (consumer `bakers-agent`), exposed as
@@ -31,34 +32,21 @@
 // `@bakers-build/addon-{claude,codex,grok,kimi,opencode,pi}`). The only `export:` left is for
 // a package shipping MORE than one slot: `@bakers-build/addon-herdr` default-exports
 // the EXECUTOR, so the workspace slot names `export: 'herdrWorkspace'`
-// (BB-139). `bakers upgrade` rewrites a pre-BB-224 config that still names the
-// deleted barrel or a `@bakers-build/plugin-*` package.
+// (BB-139).
 
 async function loadLocal() {
   try { return (await import('./conductor.config.local.js')).default ?? {}; } catch {}
-  try {
-    return (await import(`${process.env.HOME}/.config/conductor/conductor.config.local.js`)).default ?? {};
-  } catch {}
   return {};
 }
 
+// Optional, gitignored; carries local values such as the FRP transport (`frp`),
+// never an identity. The conductor is keyed by machine id + project + variant.
 const local = await loadLocal();
 
 export default {
   bakers: { project: 'bakers' },
-  // BB-353 renamed the engine key `machine_id` → `conductor_id`, and gave host
-  // capacity a SINGLE owner: `max_parallel` in the machine context
-  // (~/.bakers/machine.config.js). This file was the dogfood config that the
-  // migration missed — `bakers-cli/templates/conductor.config.js` had already been
-  // converted — so it kept both stale keys and every `bakers oven …` command
-  // in this repo died at load with
-  // `misplaced max_parallel belongs in …/machine.config.js`
-  // (`bakers-cli/conductor/src/config.ts:316`, an unconditional throw). Do NOT
-  // reintroduce `max_parallel` here: `bakers config upgrade` cannot repair it
-  // either, because the upgrader only relocates a KNOWN LITERAL and every value
-  // in this file is a `local.*` expression — it reports
-  // `unknown_value [max_parallel]` and refuses the whole plan.
-  conductor_id: local.conductor_id ?? local.machine_id,
+  // The run budget (`max_parallel`) is set on the machine in the backend,
+  // default 5. A `max_parallel` here is ignored with a warning.
   // Lifecycle hooks are executor-owned + best-effort (BB-84): the executor
   // invokes each (after_create/before_run/after_done), logs loudly + continues
   // on failure, and never wedges a run — so they live at the config TOP LEVEL,
@@ -66,52 +54,32 @@ export default {
   // create. after_done: reclaim the worktree's DDEV project (containers + db)
   // once its ticket is done, before the conductor tears the worktree down.
   //
-  // after_create belt-and-suspenders (BB-142): `ddev init-worktree` runs the
-  // bakers bootstrap (copy the parent .bakers config, then the skill-test workspace
-  // setup) via the addon's init.worktree_post step — but the addon only surfaces
-  // INIT_WORKTREE_POST when `keytec-ai`/`npx` is reachable on the host; on a host
-  // lacking BOTH it silently skips (no post-step vs post-step-configured-but-not-
-  // surfaced are indistinguishable to the addon). So we ALSO invoke the post script
-  // explicitly here — it is sentinel-guarded (.bakers/.worktree-post-done) so the pair
-  // never repeats the work, and it guarantees dropsh auth regardless of host tooling.
-  //
-  // BB-390: the bootstrap no longer BUILDS the CLI unconditionally, and a working
-  // `bakers` in the worktree no longer depends on it doing so — the PATH shim runs the
-  // globally installed CLI inside a bakers checkout now. What the post step still does
-  // is wire up `workspaces/bakers-playground` (no DDEV started, no control-plane
-  // write), building only when a dist artifact is missing or stale.
-  //
-  // BB-237: the sentinel now carries a second load. after_create is no longer
-  // gated on a fresh create — the conductor also runs it on a reuse with no
-  // recorded successful after_create (BB-663) so a worktree that exists but
-  // was never provisioned converges — and the sentinel is what keeps that
-  // repeat a cheap no-op. Provisioned-ness is the SCRIPT's business, not the
-  // conductor's: core deliberately knows nothing about this path.
+  // The project bootstrap validates env before its sentinel, then prepares the
+  // local test workspace. It starts no DDEV; hook failures remain best-effort.
   hooks: {
-    after_create: 'ddev init-worktree; bash .ddev/worktree-post.sh',
+    after_create: 'bash .ddev/worktree-post.sh',
     after_done: 'ddev delete -Oy',
+    // The `provision_up(profile)` agent tool: a sandboxed run reinstalls
+    // without trusting `ddev`. Each run reinstalls the site.
+    provision_up: {
+      'recipe-test': 'ddev init --provider recipe-test',
+      'existing-config': 'ddev init --provider existing-config',
+    },
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
-  // The Ports addon's inbox (contract 2): this conductor registers its
-  // `tunnel` message, answers it from the ticket's inline addons card (web)
-  // and addon card (`bakers ui`) with a Markdown list of shared tunnels. It
-  // fills no slot. `services` lets `bakers ports` share the VitePress docs dev
-  // server (`cd website && pnpm dev`) as `docs`. Tunnels go through the team's
-  // frp server under `*.preview.keytec.de`; each developer's frpc client
-  // config path and admin API credentials come from `local.frp`
-  // (conductor.config.local.js), never from this file.
-  addons: [
+  // Preview is opt-in; the FRP transport validates the operator's complete settings.
+  addons: local.frp ? [
     {
       use: '@bakers-build/addon-ports',
       with: {
         services: [{ key: 'docs', match: 'vitepress' }],
         transport: {
           use: '@bakers-build/addon-ports-frp',
-          with: { zone: 'preview.keytec.de', ...local.frp },
+          with: local.frp,
         },
       },
     },
-  ],
+  ] : [],
   // Layout per workflow state: project = workspace, run = tab.
   // No hard-wired diff pane for `review`: the review diff surface is hunk
   // (BB-55) — agent-driven + opt-in in the human's interactive pane

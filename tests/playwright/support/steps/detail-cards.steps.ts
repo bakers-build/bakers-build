@@ -2,7 +2,7 @@
 // with its own Save, or read-only rows) and the Activities feed with its
 // Refresh. Cards are named by their heading, fields by their label.
 // Consumers: features/entity-detail, conductors, machines, projects.
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Dialog, Page } from '@playwright/test';
 import { activities, activityRows, card, cardField, cardForm, cardRow, submitSaveForm } from '../detail-cards';

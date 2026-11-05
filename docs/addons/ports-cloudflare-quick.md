@@ -33,4 +33,4 @@ Sharing a service returns a `https://<random>.trycloudflare.com` URL that serves
 - No fixed name: every restart can hand back a different URL.
 - No uptime guarantee, a limit of 200 requests in flight per tunnel, and no Server-Sent Events.
 
-Source: [`bakers-cli/addons/ports-cloudflare-quick`](https://git.key-tec.de/bakers-build/bakers-build/-/tree/develop/bakers-cli/addons/ports-cloudflare-quick)
+Package source in a checkout: `bakers-cli/addons/ports-cloudflare-quick`.

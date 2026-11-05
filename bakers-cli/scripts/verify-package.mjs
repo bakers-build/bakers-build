@@ -44,7 +44,9 @@
 //      along with the addon;
 //   7. BB-582: no React package resolves from the installed
 //      `@bakers-build/addon-bakers-ui`, and its normal entry plus both optional demo
-//      entries import under the addon's own Bun.
+//      entries import under the addon's own Bun;
+//   8. every installed package keeps its declared license, LICENSE and NOTICE
+//      (docs/bakers/licensing.md).
 //
 // Run: `pnpm run verify:package` (from bakers-cli/). Exits non-zero on any
 // failure. Requires `dist/src` built for every package (`pnpm -r run build`);
@@ -156,6 +158,34 @@ function main() {
     ok(
       `all ${tarballs.length} tarballs installed together (no registry lookups needed)`,
     );
+
+    // Legal files must survive pack + install: the declared license, its text and
+    // any NOTICE, exactly as the source package (or the shared root LICENSE) has them.
+    TARGET_DIRS.forEach((src, i) => {
+      const installed = resolve(
+        proj,
+        'node_modules',
+        ...PUBLISH_PACKAGE_NAMES[i].split('/'),
+      );
+      const read = (p) => {
+        try {
+          return readFileSync(p, 'utf8');
+        } catch {
+          return undefined;
+        }
+      };
+      const name = PUBLISH_PACKAGE_NAMES[i];
+      const declared = JSON.parse(read(join(src, 'package.json'))).license;
+      if (JSON.parse(read(join(installed, 'package.json'))).license !== declared)
+        fail(`${name} installed with a license other than ${declared}`);
+      const license =
+        read(join(src, 'LICENSE')) ?? read(join(root, 'LICENSE'));
+      if (read(join(installed, 'LICENSE')) !== license)
+        fail(`${name} installed without its LICENSE text`);
+      if (read(join(installed, 'NOTICE')) !== read(join(src, 'NOTICE')))
+        fail(`${name} installed without its NOTICE`);
+    });
+    ok('every installed package carries its declared license, LICENSE and NOTICE');
 
     // The installed @bakers-build/addon-claude must ship the measure wrapper ClaudeAgent
     // resolves when measure: true, and that wrapper must write the state-group
@@ -342,7 +372,7 @@ console.log(m[1]);
       for (const marker of [
         'Read the ticket and all comments',
         'bakers_ticket_read',
-        `bakers dropsh tool tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+        `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
         './WORKFLOW.md',
         "that skill's {state} section",
         'Do not start or prepare a later state',
@@ -362,18 +392,23 @@ console.log(m[1]);
     if (!/bakers.build conductor/.test(help)) fail('`bakers --help` did not print usage');
     ok('`bakers --help` prints usage from the installed meta-package bin');
 
-    // 1b. --help lists all FOUR command plugins via describe-only stubs (AC-2:
-    //     lazy mount — help imports none of them). BB-224 Finding 7 added
-    //     `deployment` (@bakers-build/addon-deployment), which the `conductor` command
-    //     plugin used to register as a side effect.
-    for (const cmd of ['oven', 'ui', 'dropsh', 'deployment']) {
+    // Public commands remain discoverable without loading their runtimes.
+    for (const cmd of ['oven', 'ui', 'tools', 'auth', 'deployment']) {
       if (!new RegExp(`\\b${cmd}\\b`).test(help)) {
         fail(`\`bakers --help\` did not list the '${cmd}' command`);
       }
     }
-    ok(
-      '`bakers --help` lists oven/ui/dropsh/deployment command plugins (lazy stubs)',
-    );
+    if (/\bdropsh\b/.test(help)) fail('Compatibility command leaked into top-level help');
+    for (const [command, expected] of [['tools', '--schema'], ['auth', 'login']]) {
+      const aliasHelp = run(bin, [command, '--help']);
+      if (!aliasHelp.includes(`bakers ${command}`) || !aliasHelp.includes(expected) || /\bdropsh\b/.test(aliasHelp)) {
+        fail(`Installed ${command} alias did not expose its own help: ${aliasHelp}`);
+      }
+    }
+    if (!run(bin, ['dropsh', '--help']).includes('JSON:API')) {
+      fail('Hidden compatibility command no longer dispatches');
+    }
+    ok('public tools/auth help and hidden compatibility dispatch work in the installed package');
 
     // 1c. the deployment command really MOUNTS from its own package (not from the
     //     conductor command plugin): its subcommand help must render.
@@ -480,7 +515,6 @@ console.log(m[1]);
       join(proj, '.bakers', 'conductor.config.js'),
       `export default {
     bakers: { project: 'demo' },
-    conductor_id: 'verify-package',
     states: ['coding'],
     remote: { plugin: '@bakers-build/addon-remote-drupal' },
     executor: { plugin: '@bakers-build/addon-herdr' },
@@ -527,7 +561,6 @@ console.log(m[1]);
       join(proj, '.bakers-addons', 'conductor.config.js'),
       `export default {
     bakers: { project: 'demo-addons' },
-    conductor_id: 'verify-addons',
     states: ['coding'],
     addons: [
       '@bakers-build/addon-remote-drupal',

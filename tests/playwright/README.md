@@ -1,9 +1,9 @@
-# bakers.build BDD feature tests (keytec-playwright)
+# bakers.build BDD feature tests
 
 Behaviour-driven browser and HTTP contract tests built on [`playwright-bdd`](https://vitalets.github.io/playwright-bdd/)
-+ the `@key-tec/playwright-core` `bdd/` step catalog. Features are English Gherkin
-authored from the catalog vocabulary; missing assertions are wired project-locally in
-`steps/` and `support/steps/` against the merged `createBdd(test)` — no hand-written selectors in `.feature` files.
+and `@playwright/test`, with project-owned fixtures and steps. Features are English Gherkin;
+steps in `steps/` and `support/steps/` share the `test` and BDD bindings exported by
+`bdd.fixtures.ts`. No hand-written selectors belong in `.feature` files.
 
 The suite covers browser navigation and form behavior, plus the JSON:API contracts that
 previously used PHPUnit `BrowserTestBase`. API scenarios use Playwright request contexts;
@@ -14,11 +14,10 @@ Storybook and `tests/contract/` remain separate component gates.
 
 ```
 tests/playwright/
-├── .npmrc                     # keytec GitLab npm registry
 ├── package.json               # pinned deps + scripts
 ├── playwright.bdd.config.ts   # TWO defineBddConfig suites (see below); workers:4;
 │                              #   list + junit + html + json
-├── bdd.fixtures.ts            # merged BDD test + API cleanup and policy fixtures
+├── bdd.fixtures.ts            # BDD test + worker auth and API cleanup fixtures
 ├── resolve-base-url.ts        # baseURL precedence (env -> .env.ddev)
 ├── resolve-base-url.test.ts   # vitest unit test for the resolver (`npm run test:unit`)
 │                              #   scoped away from .features-gen/: vitest would otherwise
@@ -31,13 +30,13 @@ tests/playwright/
 │   ├── worker-auth-provider.ts #  per-worker session cache (+ its vitest test)
 │   ├── shell.ts               #   document mark, island selectors, seed-account handles
 │   ├── listing.ts             #   state + helpers of the faceted list screens
-│   ├── drush.ts               #   php(): one PHP snippet through drush
+│   ├── drush.ts               #   Drush.exec(), php() and billing-lock retry
 │   ├── login-flow.ts          #   Mailpit / login-link / flood helpers
 │   ├── picker.ts              #   option-picker locators
 │   ├── detail-cards.ts        #   detail-page cards, Activities, card save round trip
 │   ├── provision-state.ts     #   account/workspace provisioning snapshots
 │   └── steps/                 # SHARED steps; each file names its consumer folders
-│       ├── core.ts            #   loads the keytec core catalog (side-effect import)
+│       ├── core.ts            #   administrator/anonymous login and button click
 │       ├── accounts.steps.ts  #   switch to a named seed account
 │       ├── api.steps.ts       #   JSON:API client, requests, document assertions
 │       ├── contract-browser.steps.ts # recipe-account browser + form-field contracts
@@ -54,22 +53,18 @@ tests/playwright/
 **A step lives with the feature it expresses.** `steps/<folder>/` mirrors `features/<folder>/`
 (a folder whose steps are all shared, such as `deployments/`, has no `steps/` folder), and a step there is used by that folder's features only. A step that more than one feature
 folder uses lives in `support/steps/`, whose files open with the list of folders that consume
-them; a helper that registers nothing lives in `support/`. Reuse the core catalog
-(`@key-tec/playwright-core/bdd`) before adding a project-local generic step, and register a
-step text once: playwright-bdd matches by text, so a second copy is an ambiguity error.
+them; a helper that registers nothing lives in `support/`. Reuse existing shared steps
+before adding a generic step, and register a step text once: playwright-bdd matches by text, so a second copy is an ambiguity error.
 Module state (a `let` read by several steps) stays in the module of every step that reads
 it; state read across modules sits in a `support/` module (`listing.ts`). Both
 `defineBddConfig()` calls discover `./steps/**/*.ts` and `./support/steps/**/*.ts`.
 
-**`workers: 4`, each with its own Drupal session.** What used to force serial execution was
-never the shared account — it was `DrushAuthProvider` caching its storage state as
-`.auth/<uid>.json`, keyed only by uid: every worker signing in as the same account replayed
-the SAME session cookie, and Drupal's message queue lives in that session row, so one
-worker drained another's status message. `support/worker-auth-provider.ts`'s
-`WorkerAuthProvider` keys the cache by `(workerIndex, uid)` instead, under the run's own
-output directory (which Playwright clears at the start of every run). The seeded ACCOUNTS
-are deliberately unchanged, since they carry the workspace/team memberships roughly 80
-scenarios assert against, and a fresh user would carry none of them.
+**`workers: 4`, each with its own Drupal session.** Sharing a cookie across workers lets
+one worker drain another's server-side status messages. `support/worker-auth-provider.ts`
+keys sessions by `(workerIndex, uid)` under the run output directory, which Playwright clears
+at the start of each run. Seeded accounts keep their existing workspace/team memberships.
+Fresh login clears the previous account's cookies, retries one-time-link races up to three
+attempts, and regenerates stale cached sessions after logout.
 
 `fullyParallel: false` still keeps a FEATURE FILE as the unit of parallelism rather than a
 scenario: playwright-bdd generates one spec file per feature, and this setting keeps a
@@ -97,20 +92,20 @@ and steps, with complementary tag expressions (`not @nojs` / `@nojs`) and separa
 `outputDir`s — so every scenario is generated exactly once, into exactly one of them. Adding
 `@nojs` to a scenario is the whole of moving it to the JS-less browser.
 
-## Prerequisites
+## Runtime prerequisites
+
+Installation, unit checks and discovery require only Node/npm. Browser execution also needs:
 
 - DDEV running for this worktree (`ddev describe`). `baseURL` is **not**
   hardcoded and **nothing needs to pass one** — not you, not `validate.command`,
   not CI. `playwright.bdd.config.ts` resolves it through `resolve-base-url.ts`,
   in this order:
 
-  1. the keytec-ddev-addon's `ddev init-worktree` writes this worktree's DDEV
-     URL into a git-ignored `.env.ddev` at the repo root
-     (`PLAYWRIGHT_BASE_URL` / `DDEV_WORKTREE_NAME`) — this is the normal local
-     path, and the worktree's own statement wins;
-  2. failing that, `DDEV_PRIMARY_URL`, which DDEV exports inside the web
-     container. That is the CI path: the pipeline clones fresh and runs
-     `ddev init`, never `init-worktree`, so there is no `.env.ddev` there.
+  1. `node scripts/setup-worktree.mjs` writes this worktree's public identity and
+     derived URL into gitignored `.env.ddev` without starting DDEV.
+  2. The file URL (or its name-derived URL) wins over ambient `DDEV_PRIMARY_URL`.
+     An explicit `PLAYWRIGHT_BASE_URL` is still the highest-priority override.
+  3. Without a file, the resolver uses the container's `DDEV_PRIMARY_URL`.
 
   `PLAYWRIGHT_BASE_URL` in the environment still overrides both, for pointing
   the suite at a site that is not this worktree. It is an override, not the
@@ -119,10 +114,10 @@ and steps, with complementary tag expressions (`not @nojs` / `@nojs`) and separa
 - Seed data: the team feature reads the bb_e2e content — run
   `ddev init --provider recipe-test` first (single site, bb_e2e). It expects the
   seeded teams **"Platform Crew"** and **"Design Crew"**; the capital C matters.
-- `ddev` on `$PATH`: the bundled `DrushAuthProvider` logs in headlessly via
-  `ddev drush uli` (no managed credentials). Inside the web container `DDEV_DOCROOT`
-  is set and the helper calls `drush` natively instead.
-- keytec registry access (`.npmrc`) to install `@key-tec/playwright-core`.
+- Drush access for `WorkerAuthProvider` and fixture setup: `support/drush.ts` uses native
+  `drush` inside DDEV (`DDEV_DOCROOT`) or when it is on `PATH` (including the CI Docker shim).
+  Otherwise it uses `ddev drush` when available. `DRUSH_CWD` overrides the command directory;
+  the default is the current working directory. Command failures propagate to the test.
 - A built bakers-cli (`cd bakers-cli && pnpm install && pnpm -r run build`) for
   `features/sign-in/cli-refresh.feature`. Its CLI clients are forked
   `bakers-cli/core/tests/fixtures/shared-session-worker.mjs` processes, which import the built
@@ -134,17 +129,18 @@ and steps, with complementary tag expressions (`not @nojs` / `@nojs`) and separa
 
 ```bash
 cd tests/playwright
-npm ci
+npm ci --registry=https://registry.npmjs.org
+# Discovery works without Drupal, Drush, credentials, or generated entity definitions:
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:9 npm test -- --list
 npm run typecheck
 npm run test:unit               # pure helper checks, no browser or Drupal
 npx playwright install chromium
 npm test -- --list cli-refresh   # generate specs and verify a non-empty selection
 npm test -- cli-refresh          # run the same affected selection
-# Full suite when impact requires it; CI always runs it:
-# npm test
+# The CI merge gate runs the full suite.
 ```
 
-Before planning, writing, changing or reviewing tests, load `keytec-qa:keytec-testing`.
+Before planning, writing, changing or reviewing tests, load the repository's `testing` skill.
 Select the union of affected scenarios, including unchanged consumers of shared steps/helpers.
 For example, after generation the CLI-refresh path is
 `.features-gen/js/features/sign-in/cli-refresh.feature.spec.js`; pass that path to both
@@ -152,7 +148,8 @@ For example, after generation the CLI-refresh path is
 with the executed report. Do not use `--pass-with-no-tests`.
 
 Changes to `support/worker-auth-provider.ts` affect the shared `bdd.fixtures.ts`, so select
-all its consumers: list and run the full suite, including the complementary no-JS project.
+all its consumers: list the full suite, including the complementary no-JS project, and use
+the CI merge gate for full execution. Local execution is for debugging an affected selection.
 Keep role, permission and negative assertions; reuse existing scenarios, steps and fixtures.
 Run each selected command once per revision/environment; the full suite already includes
 `@functional`, so a second functional run duplicates coverage. Temporary visual probes stay
@@ -236,13 +233,29 @@ whole page (measured at ~64 KB, carrying `<html>`, `<head>` and both islands) an
 narrows it with `hx-select`. That is a declared deviation, so the checkable claims are the
 request count and the surviving document, never the shape of the response body.
 
-## Core version note
+## Dependency ownership and inventory
 
-The `bdd/` catalog ships **only on the `@key-tec/playwright-core@dev` tag**
-(`0.0.0-dev.<n>`). The published `latest` (1.0.0) has no `bdd/`; no `>= 1.2` release
-exists yet. `package.json` therefore pins `0.0.0-dev.72` — the version that both exposes
-`@key-tec/playwright-core/bdd` and provides the catalog steps this suite uses. Revisit the
-pin once a stable `>= 1.2` publishes the catalog.
+Bakers removed `@key-tec/playwright-core` after inspecting the exact pinned `0.0.0-dev.72`
+artifact. Its consumed surface was small; keeping its general widget, definition, mail,
+OAuth and visual-comparison framework added no needed behavior. No library project or
+other consumer is migrated or retired by this change.
+
+| Previously consumed export or surface | Consumers and replacement |
+|---|---|
+| `Given`, `When`, `Then` | 41/60/63 step-file imports respectively; now bound to the project test in `bdd.fixtures.ts` |
+| BDD `test` | `bdd.fixtures.ts` and tagged hooks in `board-summary`, `avatar-crop`, `profile-administration`; one fixture hierarchy based on `playwright-bdd` |
+| `Drush.exec` | 30 importing files across steps and support (one unused form import removed); narrow synchronous operation in `support/drush.ts` |
+| `DrushAuthProvider` | `WorkerAuthProvider` already owned login/logout; inheritance removed, worker/account caching retained |
+| `CoreTestOptions` | `playwright.bdd.config.ts`; unused mail options removed with the type |
+| Catalog side effects | `support/steps/core.ts`; only administrator/admin/anonymous login and accessible button click are consumed |
+| `entityForm`, `backendTheme` | `functional-forms.steps.ts` (Title) and `ambient-forms.steps.ts` (Name); direct Playwright fill/submit, original readback assertions and cleanup |
+| `generate definitions` / `pretest` | Removed with form metadata usage; discovery needs no running site or `.playdrop` data |
+
+The six former library dependencies were `@faker-js/faker`, `commander`, `js-yaml`,
+`looks-same`, `undici` and `yaml`. npm prunes only entries no longer used by the remaining
+public dependency graph; shared transitive dependencies remain. No private registry
+configuration or credentials are needed. The original 106 feature files and their JS/no-JS
+partition are preserved; pinned-baseline discovery expands to 837 Chromium and 27 no-JS tests.
 
 ## Login feature — messages region
 
@@ -342,23 +355,12 @@ fields instead of the zones and the collapsible. There is no `<details>` on the 
 assert against. The scenarios stay as written: they are the RED half of AC 7 and they go
 green when the module reaches the recipe path.
 
-## After a `ddev init`, delete `.auth/`
+## Authentication after provisioning
 
-The harness caches the uid=1 session in `.auth/` and reuses it across runs.
-`ddev init` rebuilds the database, so that cookie no longer resolves to a user
-and every scenario fails at `Then I am logged in` with `uid: 0` — a failure that
-looks like a product regression and is not one. The tell is the line
-`Using cached session for uid=1` in the run output, on a site that was just
-reinstalled.
-
-This is not hypothetical: on 2026-09-01 it presented as **11 failed, 1 passed** with the
-team scenarios timing out on missing `.shell` and `#island-content`, because every scenario
-was running anonymous and being redirected to the login form. Deleting `.auth/` turned the
-same commit green 18/18. Check this **first** whenever the whole suite fails at once.
-
-```bash
-rm -rf tests/playwright/.auth
-```
+Session files live under the current run's output directory and are cleared by Playwright
+on the next run. There is no persistent `.auth/` cache to delete after `ddev init`.
+Use the isolated `recipe-test` provider for runtime checks and preserve every required
+persona, including denied and anonymous users.
 
 ## Apps and Island Profiles
 
@@ -368,11 +370,8 @@ the generated placement IDs across rebuilds and save/reopen cycles, and remove
 their own saved profiles in an `After` hook. They do not mutate shipped profile
 configuration or create fixtures through Drush.
 
-The profile form is a config-entity Form API form. The pinned Key-Tec
-`EntityForm.fill()` requires Field API widget definitions, which these dynamic
-placement controls do not have. The steps therefore use controls inspected and
-recorded with `playwright-cli`, while retaining the existing Key-Tec BDD and
-authentication fixtures.
+The profile form is a config-entity Form API form. Its steps use the actual dynamic
+placement controls and the shared project BDD and authentication fixtures.
 
 `bb_browser_test`, installed only by `recipes/bb_e2e`, supplies a persisted
 app/profile and an administrator-only repeated-profile page. Its counter plugin
@@ -404,9 +403,8 @@ Run the migrated contracts after normal installation and recipe provisioning:
 npm test -- --grep @functional
 ```
 
-`npm test` first regenerates the Key-Tec form definitions from the installed site into
-ignored `.playdrop/`. This keeps form helpers aligned with actual widgets and works both
-on the host through DDEV and inside the web container through native Drush.
+`npm test` generates Playwright specs directly from Gherkin. Form steps interact with the
+actual browser controls; they do not generate or load Drupal widget definitions.
 
 The JSON:API contracts live with their feature: tenancy and ranks in `features/workspace/`,
 claims, assignment and machine registration in `features/conductors/`, schema discovery,

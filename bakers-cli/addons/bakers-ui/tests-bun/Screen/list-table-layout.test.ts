@@ -465,6 +465,7 @@ describe('BB-345 AC 5 — a free-text column grows on the conductors list too', 
     lastPid: 4242,
     conductorName: 'conductor',
     hostKey: 'cw-dev-box',
+    machineLabel: 'cw-laptop-workstation-bakers',
     derivedStatus: 'online',
     isLocal: true,
   } as ConductorRow;

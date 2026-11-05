@@ -1,5 +1,5 @@
 // Real-CLI contract: the same literal argv runs through the checked-out bakers.build CLI
-// (`bakers dropsh tool`, against a disposable loopback MCP fixture serving the shared bakers tool
+// (`bakers tools`, against a disposable loopback MCP fixture serving the shared bakers tool
 // definitions) and through the skill tool simulator. A disagreement, a wrong payload or an escaped
 // request fails a named check. No model, shell or tracker is involved.
 import { readFileSync } from 'node:fs';
@@ -41,7 +41,7 @@ type Endpoint = Awaited<ReturnType<typeof startEndpoint>> & {
 type Simulation = Record<string, any>;
 
 const ticketId = '11111111-1111-4111-8111-111111111111';
-const T = ['bakers', 'dropsh', 'tool'];
+const T = ['bakers', 'tools'];
 const MS = 120000;
 const wire = (id: string) => `tool_api__${id}`;
 const WRITES = [
@@ -200,6 +200,77 @@ beforeAll(() => {
 });
 
 describe('skill CLI contract: real repository CLI vs simulator', () => {
+  it(
+    'public tools alias preserves discovery, JSON files, validation and uncertain writes',
+    async () => {
+      const base = (await loadFixture('publish-comment-uncertain')).simulation;
+      const endpoint = await startEndpoint(
+        endpointSeed(base, { lostResponse: 'applied' }),
+      );
+      const body = "# Exact Markdown\n\n`literal` — 'quoted'\n\n";
+      const files = {
+        '/alias.json': JSON.stringify({
+          ticket: ticketId,
+          type: 'coding',
+          body,
+        }),
+      };
+      const options = { origin: endpoint.origin, files };
+      try {
+        for (const args of [
+          [],
+          [wire('bakers_ticket_read'), '--schema'],
+          [
+            wire('bakers_ticket_read'),
+            '--data',
+            JSON.stringify({ ticket: ticketId }),
+          ],
+        ]) {
+          const alias = await runCli(['bakers', 'tools', ...args], options);
+          const legacy = await runCli([...T, ...args], options);
+          expect(alias).toEqual(legacy);
+          expect(alias.exit_code).toBe(0);
+        }
+        const invalid = await runCli(
+          ['bakers', 'tools', wire('bakers_comment_publish'), '--data', '{}'],
+          options,
+        );
+        expect(invalid.exit_code).toBe(4);
+        const result = await runCli(
+          [
+            'bakers',
+            'tools',
+            wire('bakers_comment_publish'),
+            '--data',
+            '@/alias.json',
+          ],
+          options,
+        );
+        expect(result.exit_code).toBe(5);
+        expect(
+          endpoint
+            .calls()
+            .filter((r: Request) => r.tool === wire('bakers_comment_publish')),
+        ).toHaveLength(1);
+        const readback = await runCli(
+          [
+            'bakers',
+            'tools',
+            wire('bakers_ticket_read'),
+            '--data',
+            JSON.stringify({ ticket: ticketId }),
+          ],
+          options,
+        );
+        expect(json(readback).comments.at(-1).body).toBe(body);
+        expect(endpoint.unknown).toEqual([]);
+      } finally {
+        await endpoint.close();
+      }
+    },
+    MS,
+  );
+
   it('cli-identity: resolves and records the checked-out launcher, never another installation', () => {
     expect(identity.files.launcher.path).toBe(launcher);
     expect(identity.commit).toMatch(/^[0-9a-f]{40}$/);
@@ -228,7 +299,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         .simulation;
       const names = contractFixture.tools.map((t: { name: string }) => t.name);
       const steps = [
-        ['bakers', 'dropsh', '--help'],
+        ['bakers', '--help'],
         [...T, '--help'],
         T,
         ...names.map((name: string) => [...T, name, '--schema']),
@@ -712,6 +783,72 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
             /Give a recipe or a type/.test(error(real[3]!)?.message) &&
             real[4]!.exit_code === 4,
           'Neither name is a refusal; an unknown argument never leaves the client',
+        ),
+        ...boundary(endpoint),
+      ];
+      expect(failing(checks), observed(steps, real, sim)).toEqual([]);
+    },
+    MS,
+  );
+
+  it(
+    'update-labels: labels are added and removed by name, absent names ignored, one name in both lists refused',
+    async () => {
+      const simulation = (await loadFixture('qualify-classify-default'))
+        .simulation;
+      const { files, call } = script();
+      const steps = [
+        call('bakers_ticket_update', {
+          ticket: ticketId,
+          labels_add: ['keep', 'Question', 'other'],
+          frozen: true,
+        }),
+        call('bakers_ticket_update', {
+          ticket: ticketId,
+          labels_remove: ['Question', 'never-created'],
+          frozen: false,
+        }),
+        call('bakers_ticket_read', { ticket: ticketId }),
+        call('bakers_ticket_update', {
+          ticket: ticketId,
+          labels_add: ['x'],
+          labels_remove: ['x'],
+        }),
+        call('bakers_ticket_update', { ticket: ticketId }),
+        call('bakers_ticket_read', { ticket: ticketId }),
+      ];
+      const { real, sim, endpoint } = await pair(simulation, steps, files);
+      const checks = [
+        ...agreeAll(real, sim),
+        check(
+          'remove-arguments',
+          same(
+            sent(endpoint, 'bakers_ticket_update')[1]?.json?.params?.arguments,
+            {
+              ticket: ticketId,
+              labels_remove: ['Question', 'never-created'],
+              frozen: false,
+            },
+          ),
+          'The call sends the names to remove and the freeze flag as given',
+        ),
+        check(
+          'remove-keeps-others',
+          same(json(real[0]!)?.labels, ['keep', 'Question', 'other']) &&
+            same(json(real[1]!)?.labels, ['keep', 'other']) &&
+            json(real[1]!)?.frozen === false &&
+            same(json(real[2]!)?.labels, ['keep', 'other']),
+          'Removal drops only the named labels, ignores absent ones and keeps the order; readback agrees',
+        ),
+        check(
+          'refusals',
+          real[3]!.exit_code === 1 &&
+            error(real[3]!)?.message === 'Label x is both added and removed.' &&
+            real[4]!.exit_code === 1 &&
+            error(real[4]!)?.message ===
+              'Give a title, a description, a conductor, labels to add or remove, or frozen.' &&
+            same(json(real[5]!)?.labels, ['keep', 'other']),
+          'A name in both lists and an empty call are refused; nothing changes',
         ),
         ...boundary(endpoint),
       ];

@@ -64,6 +64,296 @@
       }
     },
     {
+      "name": "tool_api__bakers_conductor_list",
+      "title": "List conductors",
+      "description": "Lists the conductors of one readable project by label, with whether each is active and online. Assign one to a ticket with bakers_ticket_update.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project key (e.g. BAKERS) or UUID.",
+            "title": "Project"
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows per page, 1-100; default 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; default 0.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "project"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "conductors": {
+            "type": "array",
+            "description": "The viewable conductors of this page.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The conductor UUID, as bakers_ticket_update takes it.",
+                  "title": "UUID"
+                },
+                "conductor_id": {
+                  "type": "string",
+                  "description": "The process registration key.",
+                  "title": "Conductor ID"
+                },
+                "label": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The conductor label.",
+                  "title": "Label"
+                },
+                "active": {
+                  "type": "boolean",
+                  "description": "Whether the conductor can be assigned and claims work.",
+                  "title": "Active"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "online or offline.",
+                  "title": "Status"
+                }
+              },
+              "required": [
+                "uuid",
+                "conductor_id",
+                "label",
+                "active",
+                "status"
+              ],
+              "description": "One conductor.",
+              "title": "Conductor"
+            },
+            "title": "Conductors"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The offset of the next page, or null on the last page.",
+            "title": "Next offset"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_group_create",
+      "title": "Create group",
+      "description": "Creates a group in a workspace and returns it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Workspace UUID.",
+            "title": "Workspace"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The group name.",
+            "title": "Name"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Plain text, at most 280 characters.",
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "workspace",
+          "name"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The group UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The group name.",
+            "title": "Name"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The plain-text description.",
+            "title": "Description"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_group_list",
+      "title": "List groups",
+      "description": "Lists the groups of a workspace by name, or the one group with the given UUID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Workspace UUID.",
+            "title": "Workspace"
+          },
+          "group": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Group UUID, to read back one group.",
+            "title": "Group"
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows per page, 1-100; default 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; default 0.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "workspace"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "description": "The viewable groups.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The group UUID.",
+                  "title": "UUID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "The group name.",
+                  "title": "Name"
+                },
+                "description": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The plain-text description.",
+                  "title": "Description"
+                }
+              },
+              "required": [
+                "uuid",
+                "name",
+                "description"
+              ],
+              "description": "One group.",
+              "title": "Group"
+            },
+            "title": "Groups"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The offset of the next page, or null on the last page.",
+            "title": "Next offset"
+          }
+        }
+      }
+    },
+    {
       "name": "tool_api__bakers_metric_write",
       "title": "Record a measurement",
       "description": "Replaces the ticket’s metric rows whose name starts with the definition name and a dot with the given rows, keeping every other row and label, and optionally adds a label by name (created in the ticket’s workspace when missing).",
@@ -190,6 +480,430 @@
       }
     },
     {
+      "name": "tool_api__bakers_project_create",
+      "title": "Create a project",
+      "description": "Creates a project in a group for one or more teams of the same workspace; the key derives from the name and the ticket counter starts at 1. Returns the saved project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string",
+            "minLength": 1,
+            "description": "UUID of the group that owns the project.",
+            "title": "Group"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project name; the key, e.g. BAKERS, derives from it.",
+            "title": "Name"
+          },
+          "teams": {
+            "type": "array",
+            "description": "UUIDs of the teams the project belongs to, at least one, all of the group’s workspace.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One team UUID.",
+              "title": "Team"
+            },
+            "title": "Teams"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The description as Markdown source.",
+            "title": "Description"
+          },
+          "repository": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The clone URL, HTTPS or SSH.",
+                "title": "URL"
+              },
+              "default_branch": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The branch work bases on; main when omitted.",
+                "title": "Default branch"
+              },
+              "branch_convention": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The branch naming convention.",
+                "title": "Branch convention"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "description": "The source repository.",
+            "title": "Repository"
+          },
+          "coder_config": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {},
+            "description": "The coder configuration map, stored as given.",
+            "title": "Coder config"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "group",
+          "name",
+          "teams"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The project UUID.",
+            "title": "UUID"
+          },
+          "key": {
+            "type": "string",
+            "description": "The ticket identifier prefix, e.g. BAKERS.",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "description": "The project name.",
+            "title": "Name"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The description as Markdown source.",
+            "title": "Description"
+          },
+          "group": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The group UUID.",
+            "title": "Group"
+          },
+          "teams": {
+            "type": "array",
+            "description": "The UUIDs of the project’s teams.",
+            "items": {
+              "type": "string",
+              "description": "One team UUID.",
+              "title": "Team"
+            },
+            "title": "Teams"
+          },
+          "repository": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "description": "The clone URL.",
+                "title": "URL"
+              },
+              "default_branch": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The default branch; null means main.",
+                "title": "Default branch"
+              },
+              "branch_convention": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The branch naming convention.",
+                "title": "Branch convention"
+              }
+            },
+            "required": [
+              "url",
+              "default_branch",
+              "branch_convention"
+            ],
+            "description": "The repository; null when unset or not viewable.",
+            "title": "Repository"
+          },
+          "coder_config": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {},
+            "description": "The coder configuration map; null when unset or not viewable.",
+            "title": "Coder config"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_project_read",
+      "title": "Read a project",
+      "description": "Returns one readable project by key or UUID: name, description, group, teams, repository and coder config. Environment variables are never returned.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project key (e.g. BAKERS) or UUID.",
+            "title": "Project"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "project"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The project UUID.",
+            "title": "UUID"
+          },
+          "key": {
+            "type": "string",
+            "description": "The ticket identifier prefix, e.g. BAKERS.",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "description": "The project name.",
+            "title": "Name"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The description as Markdown source.",
+            "title": "Description"
+          },
+          "group": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The group UUID.",
+            "title": "Group"
+          },
+          "teams": {
+            "type": "array",
+            "description": "The UUIDs of the project’s teams.",
+            "items": {
+              "type": "string",
+              "description": "One team UUID.",
+              "title": "Team"
+            },
+            "title": "Teams"
+          },
+          "repository": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "description": "The clone URL.",
+                "title": "URL"
+              },
+              "default_branch": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The default branch; null means main.",
+                "title": "Default branch"
+              },
+              "branch_convention": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The branch naming convention.",
+                "title": "Branch convention"
+              }
+            },
+            "required": [
+              "url",
+              "default_branch",
+              "branch_convention"
+            ],
+            "description": "The repository; null when unset or not viewable.",
+            "title": "Repository"
+          },
+          "coder_config": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {},
+            "description": "The coder configuration map; null when unset or not viewable.",
+            "title": "Coder config"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_team_list",
+      "title": "List teams",
+      "description": "Lists the teams of a workspace by name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Workspace UUID.",
+            "title": "Workspace"
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows per page, 1-100; default 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; default 0.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "workspace"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "teams": {
+            "type": "array",
+            "description": "The viewable teams.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The team UUID.",
+                  "title": "UUID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "The team name.",
+                  "title": "Name"
+                }
+              },
+              "required": [
+                "uuid",
+                "name"
+              ],
+              "description": "One team.",
+              "title": "Team"
+            },
+            "title": "Teams"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The offset of the next page, or null on the last page.",
+            "title": "Next offset"
+          }
+        }
+      }
+    },
+    {
       "name": "tool_api__bakers_ticket_classify",
       "title": "Classify a ticket",
       "description": "Sets a ticket’s recipe and/or type by term name of its workspace, created there when missing and the caller may. Returns the saved names.",
@@ -278,7 +992,7 @@
           "workflow": {
             "type": "string",
             "minLength": 1,
-            "description": "The workflow id: bb_work, or bb_autopilot for automatic approvals.",
+            "description": "The workflow id, e.g. bb_work.",
             "title": "Workflow"
           },
           "project": {
@@ -335,6 +1049,18 @@
             ],
             "description": "Parent ticket identifier or UUID, in the same project.",
             "title": "Parent"
+          },
+          "branch_name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Git branch for a carrier ticket, e.g. release/1.2; omit to derive it from the identifier and title. Fixed after creation.",
+            "title": "Branch name"
           }
         },
         "additionalProperties": false,
@@ -368,6 +1094,18 @@
             "type": "string",
             "description": "The initial state id.",
             "title": "State"
+          },
+          "branch_name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The ticket’s git branch.",
+            "title": "Branch name"
           }
         }
       }
@@ -418,11 +1156,6 @@
             "type": "string",
             "description": "The workflow id.",
             "title": "Workflow"
-          },
-          "approval": {
-            "type": "string",
-            "description": "Who approves the current state's gates: automatic or human.",
-            "title": "Approval"
           },
           "description": {
             "oneOf": [
@@ -497,6 +1230,100 @@
             },
             "title": "Links"
           },
+          "project": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The project UUID.",
+            "title": "Project"
+          },
+          "branch_name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The ticket’s git branch.",
+            "title": "Branch name"
+          },
+          "base_branch": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The branch the ticket’s work is based on.",
+            "title": "Base branch"
+          },
+          "conductor": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The assigned conductor UUID.",
+            "title": "Conductor"
+          },
+          "frozen": {
+            "type": "boolean",
+            "description": "Whether the ticket is frozen for a release batch.",
+            "title": "Frozen"
+          },
+          "metrics": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "The ticket’s metric rows; null when not readable.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The metric name.",
+                  "title": "Name"
+                },
+                "value": {
+                  "type": "number",
+                  "description": "The numeric value.",
+                  "title": "Value"
+                },
+                "unit": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The unit.",
+                  "title": "Unit"
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ],
+              "description": "One metric row.",
+              "title": "Metric"
+            },
+            "title": "Metrics"
+          },
           "comments": {
             "type": "array",
             "description": "The readable comments, oldest first.",
@@ -546,17 +1373,180 @@
       }
     },
     {
+      "name": "tool_api__bakers_ticket_runs_list",
+      "title": "List ticket runs",
+      "description": "Lists the runs of a ticket you can view, newest first: state, the ticket state the run started in, agent, conductor, start time and whether the run is closed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket identifier (e.g. BAKERS-15) or UUID.",
+            "title": "Ticket"
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows per page, 1-100; default 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; default 0.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "runs": {
+            "type": "array",
+            "description": "The ticket’s viewable runs.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The run UUID.",
+                  "title": "UUID"
+                },
+                "state": {
+                  "type": "string",
+                  "description": "The run state, e.g. running or done.",
+                  "title": "State"
+                },
+                "state_at_start": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The ticket state the run started in.",
+                  "title": "State at start"
+                },
+                "agent": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The agent that ran.",
+                  "title": "Agent"
+                },
+                "conductor": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The conductor UUID.",
+                  "title": "Conductor"
+                },
+                "started_at": {
+                  "oneOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Unix time the run started.",
+                  "title": "Started at"
+                },
+                "closed": {
+                  "type": "boolean",
+                  "description": "Whether the run is fully wound up.",
+                  "title": "Closed"
+                }
+              },
+              "required": [
+                "uuid",
+                "state",
+                "state_at_start",
+                "agent",
+                "conductor",
+                "started_at",
+                "closed"
+              ],
+              "description": "One run.",
+              "title": "Run"
+            },
+            "title": "Runs"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The offset of the next page, or null on the last page.",
+            "title": "Next offset"
+          }
+        }
+      }
+    },
+    {
       "name": "tool_api__bakers_ticket_search",
       "title": "Search tickets",
-      "description": "Finds up to 50 readable tickets whose title or description contains the query, newest first, optionally within one project.",
+      "description": "Finds up to 50 readable tickets whose title or description contains the query, or whose branch is exactly branch_name, newest first, optionally within one project. Each row names its branch, base branch and parent.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "query": {
-            "type": "string",
-            "minLength": 1,
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "Text to find in ticket titles and descriptions.",
             "title": "Query"
+          },
+          "branch_name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exact git branch of the ticket, e.g. feat/bakers-27-replace-the-pub.",
+            "title": "Branch name"
           },
           "project": {
             "oneOf": [
@@ -571,10 +1561,7 @@
             "title": "Project"
           }
         },
-        "additionalProperties": false,
-        "required": [
-          "query"
-        ]
+        "additionalProperties": false
       },
       "outputSchema": {
         "type": "object",
@@ -611,18 +1598,178 @@
                   ],
                   "description": "The ticket type name.",
                   "title": "Type"
+                },
+                "branch_name": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The ticket’s git branch.",
+                  "title": "Branch name"
+                },
+                "base_branch": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The branch the ticket’s work is based on.",
+                  "title": "Base branch"
+                },
+                "parent": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The parent ticket’s identifier.",
+                  "title": "Parent"
                 }
               },
               "required": [
                 "identifier",
                 "title",
                 "state",
-                "type"
+                "type",
+                "branch_name",
+                "base_branch",
+                "parent"
               ],
               "description": "One matching ticket.",
               "title": "Ticket"
             },
             "title": "Tickets"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_ticket_template_run",
+      "title": "Run a ticket template",
+      "description": "Creates a new ticket from an enabled ticket template. Every call creates a ticket. Each given input replaces the template default; {{date}} and {{month}} in title and description are rendered. A workspace template needs a project. Returns the new ticket’s UUID and identifier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket template UUID.",
+            "title": "Template"
+          },
+          "title": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ticket title; {{date}} and {{month}} are rendered.",
+            "title": "Title"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ticket description as Markdown; {{date}} and {{month}} are rendered.",
+            "title": "Description"
+          },
+          "workflow": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ticket workflow, e.g. bb_work.",
+            "title": "Workflow"
+          },
+          "project": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UUID of the project to create the ticket in; required for a workspace template.",
+            "title": "Project"
+          },
+          "conductor": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UUID of a conductor of the ticket’s project; empty clears the template’s conductor.",
+            "title": "Conductor"
+          },
+          "labels": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Label term UUIDs, replacing the template labels.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One label term UUID.",
+              "title": "Label"
+            },
+            "title": "Labels"
+          },
+          "target_state": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "State the new ticket is moved to; empty keeps the initial state.",
+            "title": "Target state"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "template"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The new ticket’s UUID.",
+            "title": "UUID"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "The new ticket’s identifier, e.g. BAKERS-15.",
+            "title": "Identifier"
           }
         }
       }
@@ -727,6 +1874,156 @@
               "title": "Link"
             },
             "title": "Links"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_ticket_update",
+      "title": "Update a ticket",
+      "description": "Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept) and/or frozen flag; fields left out keep their values. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ticket identifier (e.g. BAKERS-15) or UUID.",
+            "title": "Ticket"
+          },
+          "title": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The new title, stored verbatim.",
+            "title": "Title"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The new description as Markdown source; replaces the whole text, empty clears it. Raw HTML is stripped.",
+            "title": "Description"
+          },
+          "conductor": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UUID of an active conductor of the ticket’s project.",
+            "title": "Conductor"
+          },
+          "labels_add": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Label names to add, e.g. agent:claude; created in the ticket’s workspace when missing and allowed. Existing labels are kept.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One label name.",
+              "title": "Label"
+            },
+            "title": "Labels to add"
+          },
+          "labels_remove": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Label names to remove; names the ticket does not carry are ignored. Every other label is kept.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "One label name.",
+              "title": "Label"
+            },
+            "title": "Labels to remove"
+          },
+          "frozen": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "TRUE freezes the ticket for a release batch, FALSE unfreezes it.",
+            "title": "Frozen"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ticket"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "The ticket identifier, e.g. BAKERS-15.",
+            "title": "Identifier"
+          },
+          "title": {
+            "type": "string",
+            "description": "The saved title.",
+            "title": "Title"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The saved description as Markdown source.",
+            "title": "Description"
+          },
+          "conductor": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The saved conductor UUID.",
+            "title": "Conductor"
+          },
+          "labels": {
+            "type": "array",
+            "description": "The saved label names.",
+            "items": {
+              "type": "string",
+              "description": "One label name.",
+              "title": "Label"
+            },
+            "title": "Labels"
+          },
+          "frozen": {
+            "type": "boolean",
+            "description": "Whether the ticket is frozen.",
+            "title": "Frozen"
           }
         }
       }
@@ -872,6 +2169,41 @@
               "title": "Worklog UUID"
             },
             "title": "Worklog UUIDs"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_user_read",
+      "title": "Read your user",
+      "description": "Reads your own user: name, position and background, which describe you.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Your user UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Your display name.",
+            "title": "Name"
+          },
+          "position": {
+            "type": "string",
+            "description": "Your position, or an empty string.",
+            "title": "Position"
+          },
+          "background": {
+            "type": "string",
+            "description": "What bakers.build should know about your background, or an empty string.",
+            "title": "Background"
           }
         }
       }
@@ -1115,6 +2447,90 @@
               }
             ],
             "description": "Offset of the next page, or null on the last page.",
+            "title": "Next offset"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_workspace_list",
+      "title": "List workspaces",
+      "description": "Lists the workspaces you can view, by name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows per page, 1-100; default 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; default 0.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "workspaces": {
+            "type": "array",
+            "description": "The viewable workspaces.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The workspace UUID.",
+                  "title": "UUID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "The workspace name.",
+                  "title": "Name"
+                },
+                "slug": {
+                  "type": "string",
+                  "description": "The workspace URL slug.",
+                  "title": "Slug"
+                }
+              },
+              "required": [
+                "uuid",
+                "name",
+                "slug"
+              ],
+              "description": "One workspace.",
+              "title": "Workspace"
+            },
+            "title": "Workspaces"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The offset of the next page, or null on the last page.",
             "title": "Next offset"
           }
         }

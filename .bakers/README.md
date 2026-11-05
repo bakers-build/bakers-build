@@ -3,14 +3,14 @@
 > **This repo no longer commits `bakers.config.js`.** It pointed every checkout at the
 > develop control plane (dev2); bakers's own tickets now live on prod
 > (`https://app.bakers.build`), so `bakers` falls back to each developer's
-> `~/.bakers/bakers.config.js`. The conductor identity comes from
-> `~/.config/conductor/conductor.config.local.js` (`export default { conductor_id: '<id>' }`)
-> unless a gitignored `.bakers/conductor.config.local.js` overrides it. The notes below
+> `~/.bakers/bakers.config.js`. The committed `conductor.config.js` carries
+> no identity: bakers derives the conductor id from this machine's `machine_id` (a UUID for a new machine; an existing id stays; written by
+> `bakers init` to `~/.bakers/machine.config.js`), the project and the variant. The notes below
 > still apply to any project-level `bakers.config.js`.
 
 Reference for `bakers.config.js`, the bakers.build **connection**
 config (BB-201): a dropsh-shaped `{ site, plugins }` read by `bakers ui`,
-`bakers dropsh`, and this conductor's auth. Connection host and credentials come
+`bakers tools`, `bakers auth`, and this conductor's auth. Connection host and credentials come
 from your user-global machine context (`~/.bakers/machine.config.js`). The engine
 wiring lives in the sibling [`conductor.config.js`](conductor.config.js)
 (engine-only).
@@ -22,7 +22,7 @@ used to sit in that file lives here instead. It is not tidiness; a larger file
 makes `bakers ui` fail to start.
 
 `bakers ui` re-execs itself under **Bun** (`bakers-cli/ui/src/bun-runtime.ts`), while
-`bakers dropsh` stays on Node. Since BB-448, `importConfig`
+`bakers tools` and `bakers auth` stay on Node. Since BB-448, `importConfig`
 (`bakers-cli/core/src/cli/import-config.ts`) loads a config not as a file but as a
 base64 `data:` URL, with `machine.config.js` and `conductor.config.local.js`
 inlined recursively as nested `data:` URLs of their own. Bun's module resolver
@@ -44,7 +44,7 @@ So: **add explanation here, not there.** If `bakers ui` starts failing with
 ## `schema_version` (BB-216)
 
 The connection-config schema version, kept in sync with the `@bakers-schema-version`
-marker in the file header so `bakers upgrade` can migrate a stale-shape config.
+marker in the file header; any version other than 1 fails loading, naming `bakers init`.
 
 ## `workspace_id` — the ambient workspace (BB-351)
 
@@ -70,7 +70,7 @@ export default { workspace_id: '<bb_workspace uuid>' };
 Read the uuid with:
 
 ```bash
-bakers dropsh --format md list bb_workspace/bb_workspace
+bakers tools tool_api__bakers_workspace_list
 ```
 
 ## `addons[]` — UI extensions (BB-373)
@@ -95,9 +95,9 @@ public client `bakers-cli`, and scope `bb:session`. It sends no client secret.
 Sign in and select this profile with:
 
 ```bash
-bakers dropsh auth login --provider bakers
-bakers dropsh auth use bakers
-bakers dropsh auth status
+bakers auth login --provider bakers
+bakers auth use bakers
+bakers auth status
 ```
 
 The browser account determines the signed-in user. The `machine` profile uses
@@ -105,10 +105,10 @@ the local client ID and secret with `client_credentials` and `bb:session`.
 Both authentication methods remain available:
 
 ```bash
-bakers dropsh auth login --provider machine
-bakers dropsh auth use machine
+bakers auth login --provider machine
+bakers auth use machine
 # Switch back to browser OAuth:
-bakers dropsh auth use bakers
+bakers auth use bakers
 ```
 
 An explicitly selected profile overrides the configured browser default.

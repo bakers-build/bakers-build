@@ -1,7 +1,0 @@
-# Default-site overlay for the keytec-ddev-addon (BB-142).
-#
-# `ddev init` always exports KEYTEC_AI_SITE=default and keytec-ai throws on a missing site
-# overlay (no silent fallback), so a single-site project must ship this file for `ddev init`
-# to resolve. Everything the default site needs lives in the base `.keytec-ai.yml`; this
-# overlay deep-merges over it and intentionally adds/overrides nothing (empty init map).
-init: {}

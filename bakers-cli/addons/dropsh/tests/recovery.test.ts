@@ -10,12 +10,54 @@ import {
 import * as dropsh from '../src/index.js';
 
 let f: Awaited<ReturnType<typeof workspaceFixture>>;
+const savedExitCode = process.exitCode;
 beforeEach(async () => {
   f = await workspaceFixture();
   await f.login();
 });
 afterEach(async () => {
+  process.exitCode = savedExitCode;
   await f.close();
+});
+
+it.each([
+  ['--auth-profile=missing'],
+  ['--auth-profile', 'missing'],
+])('rejects an unknown explicit profile %j instead of silently using the active profile', async (...profile) => {
+  let error = '';
+  await dropsh.dispatchBbDropsh(
+    { resolveBases: [] },
+    [
+      'search',
+      'bb_workspace',
+      '--bundle',
+      'bb_workspace',
+      '--config',
+      f.config,
+      ...profile,
+    ],
+    { stateDir: f.stateDir, stdout: () => {}, stderr: (s) => (error += s) },
+  );
+  expect(process.exitCode).toBe(2);
+  expect(error).toContain('missing');
+  expect(f.requests).toHaveLength(1);
+});
+
+it('directs an unauthenticated tool caller to the public auth command', async () => {
+  let error = '';
+  await dropsh.dispatchBbDropsh(
+    { resolveBases: [] },
+    ['tool', '--config', f.config],
+    {
+      publicCommand: 'tools',
+      stateDir: join(f.root, 'unlogged'),
+      stdout: () => {},
+      stderr: (s) => (error += s),
+    },
+  );
+  expect(process.exitCode).toBe(3);
+  expect(error).toContain("Run 'bakers auth login --provider bakers'");
+  expect(error).not.toContain('dropsh');
 });
 it('dispatches the exact bootstrap workspace search to the real bundle using configured OAuth', async () => {
   const before = readFileSync(f.config, 'utf8');

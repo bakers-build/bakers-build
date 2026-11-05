@@ -2,7 +2,7 @@
 
 Build an addon whose messages appear in the ticket detail page's right-hand column, in an inline message card (with two or more addons, one tab each, labeled with the addon's label), and in the matching card in `bakers ui` — run on the conductor that owns the ticket's worktree. No page or tab anywhere is named "Addons"; that word stays internal/author-facing.
 
-**You need:** a bakers.build CLI built from source (see [build from source](/advanced/development/build-from-source)), a conductor you can restart, and the package basics in [addon contracts](/addons/build/contracts#write-an-addon).
+**You need:** a bakers.build CLI built from source (see [build from source](/configuration/project/contributing#build-from-source)), a conductor you can restart, and the package basics in [addon contracts](/addons/build/contracts#write-an-addon).
 
 ## Write the addon
 
@@ -134,7 +134,7 @@ The example is `@bakers-build/addon-hello` with one message, `greet`, that takes
 ## How it fits together
 
 - **The addon package** declares its messages and ships the handlers. It ships no UI code — no tables, no views, no refresh cadence.
-- **The conductor** validates the inbox export and the one-to-one match of message keys and handlers when it loads the addon, registers the definition at start, runs a handler from its inbox in the ticket's worktree, validates its `{ markdown }` result and writes it back.
+- **The conductor** validates the inbox export when it loads the addon, registers the definition at start, runs a handler or bound tool from its inbox in the ticket's worktree, validates its `{ markdown }` result and writes it back.
 - **The server module `bb_addon`** validates the definition on register (workspace-unique by `(workspace, name, version)` — see [addon contracts](/addons/build/contracts)) and, on send, the payload against the message's `input` and the `access` check.
 - **The inbox (`bb_inbox`)** owns the message contract: it transports a message type, a payload and a result, and validates every `done` and `failed` result against `{ markdown }` on write; the message's `input` is the payload schema.
 - **The personal read model** selects each signed-in person's own newest request per addon (`requested_by`, newest by `created`/`id`), never another requester's. Earlier messages are a follow-up, out of scope.
@@ -150,7 +150,9 @@ Both UIs render from the message definitions and the personal result alone.
 
 - **`name` and `version` are not written by the author.** The conductor takes them from the addon's `package.json`, `@bakers-build/addon-ports` becoming `ports`.
 - **`label` and `icon` are optional.** `icon` is inline SVG markup of at most 8,192 characters; the addon overview shows it as an image only.
-- **`handlers` is lazy.** It is imported only when a conductor loads the addon, never on a command-only load. It maps every message key to an `InboxMessageHandler`. A key without a handler, or a handler without a key, is a load error naming the addon.
+- **`handlers` is lazy.** It is imported only when a conductor loads the addon, never on a command-only load.
+- **`bindings` answer with an [agent tool](/addons/build/tools)**, e.g. `{ tunnel: { tool: 'ports_up', args: {} } }`: the tool's text is the answer; an error or timeout answers `failed`. Without `args` the payload is passed through.
+- **Each key needs exactly one handler or binding**, a binding a loaded tool, and fixed `args` no `input`; otherwise loading fails naming addon and message.
 - **The request** carries `id` (the request's own UUID — never the message type), `messageType` (`<addon>.<key>`), `addonVersion`, `requestedBy`, `ticket`, an optional `payload`, `worktreePath`, `env`, `logger` and a `signal` that aborts after 60 seconds.
 - **`access`** names the ticket operation a person needs to send the message: `view` (anyone who may read the ticket, a reviewer included) or `update`, the default.
 - **A message with no `input`** renders as a single button; sending it carries no payload.
@@ -188,7 +190,7 @@ A message records the handler's version at send time, but the conductor runs it 
 
 ## Examples
 
-**Ports** (shipped, `bakers-cli/addons/ports`) is the reference. Its single message, `tunnel`, discovers every service in the worktree, shares every one not already shared, and answers with a Markdown list of all of them — including a stopped, orphaned or stale one, stated rather than omitted.
+**Ports** (shipped, `bakers-cli/addons/ports`) is the reference. Its single message, `tunnel`, is bound to `ports_up`: it shares every eligible service and answers with their URLs.
 
 ```ts
 export const inbox: Preset['inbox'] = {
@@ -197,7 +199,7 @@ export const inbox: Preset['inbox'] = {
   messages: {
     tunnel: { label: 'Share tunnels', access: 'view' },
   },
-  handlers: () => import('./inbox.js').then((m) => m.handlers),
+  bindings: { tunnel: { tool: 'ports_up', args: {} } },
 };
 ```
 

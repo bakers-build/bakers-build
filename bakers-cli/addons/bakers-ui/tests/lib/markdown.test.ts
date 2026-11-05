@@ -606,7 +606,7 @@ describe('R5 — `_` is emphasis only at word boundaries', () => {
     // states the safe direction: a `__…__` run is never emphasis, so a dunder
     // survives, and `**strong**` — which every bakers.build body already uses — is the
     // way to write bold. Documented as a degradation in the README and in
-    // `docs/advanced/cli/ui.md` (D10/AC-4).
+    // `docs/addons/bakers-ui/reference.md` (D10/AC-4).
     expect(text('__init__')).toBe('__init__');
     expect(text('the __init__ method')).toBe('the __init__ method');
     expect(text('__strong__')).toBe('__strong__');

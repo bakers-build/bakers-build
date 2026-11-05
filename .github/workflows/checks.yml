@@ -1,0 +1,519 @@
+# Migration rehearsal only. GitLab retains publication and deployment ownership.
+name: GitHub checks
+on:
+  push:
+    branches: [next, main]
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+      - ready_for_review
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  branch_policy:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Enforce next to stable promotion
+        env:
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: bash scripts/ci/github-branch-policy.sh
+  phpcs:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y git unzip libpng-dev default-mysql-client
+          docker-php-ext-install gd pdo_mysql
+          curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          set -e
+          for attempt in 1 2 3 4 5; do
+            echo "composer install attempt $attempt/5"
+            if composer install --no-interaction --no-progress --prefer-dist; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then
+              echo "dist downloads kept failing; falling back to --prefer-source"
+              composer install --no-interaction --no-progress --prefer-source
+              break
+            fi
+            sleep 10
+          done
+
+          ./vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist
+    container: php:8.4
+  phpmd:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y git unzip libpng-dev default-mysql-client
+          docker-php-ext-install gd pdo_mysql
+          curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          set -e
+          for attempt in 1 2 3 4 5; do
+            echo "composer install attempt $attempt/5"
+            if composer install --no-interaction --no-progress --prefer-dist; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then
+              echo "dist downloads kept failing; falling back to --prefer-source"
+              composer install --no-interaction --no-progress --prefer-source
+              break
+            fi
+            sleep 10
+          done
+
+          php -d error_reporting='E_ALL & ~E_DEPRECATED' ./vendor/bin/phpmd web/modules/custom,web/themes/custom text phpmd.xml.dist --exclude 'tests/*,**/tests/*,**/node_modules/*'
+    container: php:8.4
+  phpstan:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y git unzip libpng-dev default-mysql-client
+          docker-php-ext-install gd pdo_mysql
+          curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          set -e
+          for attempt in 1 2 3 4 5; do
+            echo "composer install attempt $attempt/5"
+            if composer install --no-interaction --no-progress --prefer-dist; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then
+              echo "dist downloads kept failing; falling back to --prefer-source"
+              composer install --no-interaction --no-progress --prefer-source
+              break
+            fi
+            sleep 10
+          done
+
+          ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 1G
+    container: php:8.4
+  docs_pages:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          node docs/scripts/check-pages.mjs
+          node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
+    container: node:22
+  config_sync:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y git unzip libpng-dev default-mysql-client
+          docker-php-ext-install gd pdo_mysql
+          curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          set -e
+          for attempt in 1 2 3 4 5; do
+            echo "composer install attempt $attempt/5"
+            if composer install --no-interaction --no-progress --prefer-dist; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then
+              echo "dist downloads kept failing; falling back to --prefer-source"
+              composer install --no-interaction --no-progress --prefer-source
+              break
+            fi
+            sleep 10
+          done
+
+          bash tests/config-sync/check-config-sync.sh
+          bash tests/config-sync/check-ci-wiring.sh
+    container: php:8.4
+  compose_render:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          bash tests/contract/compose.sh
+  conductor:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+      PNPM_CONFIG_MINIMUM_RELEASE_AGE: "0"
+      PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y --no-install-recommends jq python3
+          npm ci --prefix tests/skill-eval --no-audit --no-fund
+          corepack enable pnpm
+          cd bakers-cli
+          pnpm install --frozen-lockfile
+          pnpm run build:all
+          pnpm run typecheck
+          pnpm run lint
+          pnpm run test:vitest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conductor-report
+          path: bakers-cli/junit-vitest.xml
+          retention-days: 7
+    container: node:22
+  tui:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+      PNPM_CONFIG_MINIMUM_RELEASE_AGE: "0"
+      PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          corepack enable pnpm
+          cd bakers-cli
+          pnpm install --frozen-lockfile
+          pnpm run build:all
+          ./addons/bakers-ui/node_modules/.bin/bun --version
+          pnpm run test:tui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tui-report
+          path: bakers-cli/junit-tui.xml
+          retention-days: 7
+    container: node:22
+  tui_musl:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      CI_PROJECT_DIR: ${{ github.workspace }}
+      PNPM_CONFIG_MINIMUM_RELEASE_AGE: "0"
+      PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: musl renderer and product checks
+        run: |
+          docker run --rm -i -v "$PWD:/work" -w /work -e CI_PROJECT_DIR=/work -e PNPM_CONFIG_MINIMUM_RELEASE_AGE=0 -e PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS=true node:22-alpine sh -e <<'MUSL'
+          apk add --no-cache libstdc++
+          corepack enable pnpm
+          corepack prepare pnpm@11.25.0 --activate
+          cd bakers-cli
+          pnpm install --frozen-lockfile
+          set -e
+          BUN_VERSION=$(node -e "console.log(require('./addons/bakers-ui/package.json').dependencies.bun)")
+          # The `parallel` tag covers both amd64 (runner1, gitlab) and arm64 (runner2) hosts.
+          # An x64 ELF on arm64 is ENOEXEC, which busybox-ash then parses as a shell script
+          # ("bun.exe: line 3: syntax error") — pick the package by the real machine arch.
+          # arm64 has no -baseline variant; avx2 only exists on x86.
+          case "$(uname -m)" in
+            aarch64) BUN_MUSL_PKG=bun-linux-aarch64-musl ;;
+            *) if grep -q avx2 /proc/cpuinfo 2>/dev/null; then
+                 BUN_MUSL_PKG=bun-linux-x64-musl
+               else
+                 BUN_MUSL_PKG=bun-linux-x64-musl-baseline
+               fi ;;
+          esac
+          echo "tui_musl: forcing @oven/${BUN_MUSL_PKG}@${BUN_VERSION} into place (bun's own installer can pick the glibc build first even on musl)"
+          rm -rf /tmp/bun-musl-extract /tmp/bun-musl.tgz
+          mkdir -p /tmp/bun-musl-extract
+          wget -q -O /tmp/bun-musl.tgz "https://registry.npmjs.org/@oven/${BUN_MUSL_PKG}/-/${BUN_MUSL_PKG}-${BUN_VERSION}.tgz"
+          tar xzf /tmp/bun-musl.tgz -C /tmp/bun-musl-extract
+          test -x /tmp/bun-musl-extract/package/bin/bun
+          install -m 0755 /tmp/bun-musl-extract/package/bin/bun addons/bakers-ui/node_modules/bun/bin/bun.exe
+          install -m 0755 /tmp/bun-musl-extract/package/bin/bun addons/bakers-ui/node_modules/bun/bin/bunx.exe
+          rm -rf /tmp/bun-musl-extract /tmp/bun-musl.tgz
+
+          pnpm run build:all
+          ./addons/bakers-ui/node_modules/.bin/bun --version
+          mkdir -p ~/.bakers
+          echo "export default { schema_version: 1, site: { base_url: 'https://ci.invalid' }, workspace_id: '00000000-0000-4000-8000-000000000000' };" > ~/.bakers/bakers.config.js
+          node bin/bakers ui --print-config
+          ./addons/bakers-ui/node_modules/.bin/bun -e ' const { applyOpentuiLibc, nodeLibcFamily } = await import(`${process.cwd()}/ui/dist/src/bun-runtime.js`); if (nodeLibcFamily() !== "musl") throw new Error(`libc detection said ${nodeLibcFamily()}, expected musl`); applyOpentuiLibc(process.env); if (process.env.OPENTUI_LIBC !== "musl") throw new Error("applyOpentuiLibc did not set OPENTUI_LIBC"); const { createTestRenderer } = await import("@opentui/core/testing"); await createTestRenderer({ width: 20, height: 5 }); console.log("A1: musl auto-detected, libopentui.so loaded, no manual step"); '
+
+          OPENTUI_LIBC=musl pnpm run test:tui
+          MUSL
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tui_musl-report
+          path: bakers-cli/junit-tui.xml
+          retention-days: 7
+  web_ui:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        shell: sh
+        run: |-
+          set -eu
+          apt-get update -qq && apt-get install -y --no-install-recommends python3-yaml
+          corepack enable
+          cd web/themes/custom/bb_theme
+          pnpm install --frozen-lockfile
+          pnpm run build
+          pnpm exec storybook build
+          cd "$CI_PROJECT_DIR"
+          bash tests/contract/layout-components.sh
+          bash tests/contract/data-display-components.sh
+          bash tests/contract/token-discipline.sh
+          bash tests/contract/run-detail-overlay.sh
+          bash tests/contract/island-links.sh
+          node tests/contract/appearance.mjs
+          node tests/contract/period-range.mjs
+          node tests/contract/icon-storybook.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web_ui-report
+          path: web/themes/custom/bb_theme/storybook-static/
+          retention-days: 7
+    container: node:22
+  bb_skill_version_gate:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+          HEAD_REF: ${{ github.sha }}
+        run: bash tests/contract/skill-version-gate.sh
+  mr_title:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          EVENT: ${{ github.event_name }}
+        run: |-
+          bash tests/contract/mr-title.test.sh
+          if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
+  pm_bot:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: node:22
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        run: |-
+          set -eu
+          apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml
+          node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
+          bash tests/contract/pm-bot.sh
+  coder_pm_bot:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: node:22
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - name: Existing validation gates
+        run: |-
+          set -eu
+          bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
+          bash tests/contract/coder-pm-bot.sh
+  image_gate:
+    runs-on: blacksmith-8vcpu-ubuntu-2404
+    timeout-minutes: 180
+    env:
+      DOMAIN: nginx
+      STACK_NAME: gate
+      DB_NAME: db
+      DB_USER: db
+      DB_PASSWORD: db
+      DB_ROOT_PASSWORD: root
+      DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
+      REGISTRY_IMAGE_PHP: bakers-gate/php:local
+      REGISTRY_IMAGE_NGINX: bakers-gate/nginx:local
+      REGISTRY_IMAGE_E2E: bakers-gate/e2e:local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build and test the same images
+        run: bash scripts/ci/github-image-gate.sh
+      - name: Export tested runtime images
+        if: ${{ github.event_name == 'push' }}
+        run: bash scripts/ci/github-image-export.sh
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.event_name == 'push' }}
+        with:
+          name: verified-images-${{ github.run_attempt }}
+          path: verified-images/
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: image-gate-evidence
+          path: gate-reports/
+          retention-days: 7
+  release_rehearsal:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: node:22
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare container workspace
+        run: |
+          git config --global --add safe.directory "$PWD"
+          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+      - env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |-
+          corepack enable pnpm
+          cd bakers-cli
+          pnpm install --frozen-lockfile
+          pnpm run build:all
+          pnpm run verify:package
+          node scripts/release-version.mjs "$GITHUB_SHA" --notes ../release-notes.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-rehearsal
+          path: release-notes.md
+          if-no-files-found: ignore
+  required:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    if: always()
+    needs:
+      - branch_policy
+      - phpcs
+      - phpmd
+      - phpstan
+      - docs_pages
+      - config_sync
+      - compose_render
+      - pm_bot
+      - coder_pm_bot
+      - conductor
+      - tui
+      - tui_musl
+      - web_ui
+      - bb_skill_version_gate
+      - mr_title
+      - image_gate
+      - release_rehearsal
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: node -e 'const jobs = JSON.parse(process.env.RESULTS); if (Object.values(jobs).some(job => job.result !== "success")) process.exit(1)'

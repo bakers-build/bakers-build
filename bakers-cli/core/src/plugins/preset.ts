@@ -48,6 +48,10 @@ export interface CommandDescriptor {
   describe: string;
   /** Named export to pick instead of the module default. */
   export?: string;
+  /** Keep dispatch available while omitting the command from help. */
+  hidden?: boolean;
+  /** `bakers help <name>` runs `bakers <name> --help`, for plugins that render their own help. */
+  forwardHelp?: boolean;
 }
 
 /** The three surfaces, each named for its config home (surface = file = plugins). */
@@ -127,6 +131,17 @@ export interface DiscoveredContributions {
     name: string;
     version: string;
     inbox: unknown;
+    options?: unknown;
+  }>;
+  /**
+   * Addon agent tools (conductor surface): each addon's `tools` export with
+   * its name, version and `with` options, like `addonInbox`. Opaque here; the
+   * conductor types `tools` as its `AddonTools`.
+   */
+  addonTools: Array<{
+    name: string;
+    version: string;
+    tools: unknown;
     options?: unknown;
   }>;
 }
@@ -217,6 +232,8 @@ export interface BbPreset<O = unknown> {
   //    not an accumulator; discovery records it with the addon's package
   //    name, version and `with` options. ──
   inbox?: unknown;
+  /** Agent tools the conductor serves to runs and addons — a value, like `inbox`. */
+  tools?: unknown;
 }
 
 /** The preset function keys, for shape-detection during discovery. */
@@ -245,5 +262,6 @@ export function emptyContributions(): DiscoveredContributions {
     connectionPlugins: [],
     uiEntries: [],
     addonInbox: [],
+    addonTools: [],
   };
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityPublishedTrait;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityViewBuilder;
@@ -57,7 +57,7 @@ use Drupal\user\EntityOwnerTrait;
       'add' => BbContentEntityFormBase::class,
       'edit' => BbContentEntityFormBase::class,
       'review' => \Drupal\bb_core\Form\BbReviewCommentForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => BbCommentRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml. The default

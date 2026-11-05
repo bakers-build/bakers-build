@@ -3,10 +3,13 @@ import { join, relative } from 'path';
 import { globSync } from 'glob';
 import tailwindcss from '@tailwindcss/vite';
 import VitePluginSvgSpritemap from '@spiriit/vite-plugin-svg-spritemap';
+import { readFileSync } from 'fs';
+import { thirdPartyLicenses } from '../../../../docs/scripts/third-party.mjs';
 
 export default defineConfig(() => {
   const projectRoot = __dirname;
   const entries = {};
+  const { dependencies } = JSON.parse(readFileSync(join(projectRoot, 'package.json'), 'utf8'));
 
   // CSS: css/<name>.src.css (skip _partials) -> dist/css/<name>.css
   for (const file of globSync(join(projectRoot, 'css/[!_]*.src.css'))) {
@@ -33,6 +36,13 @@ export default defineConfig(() => {
         injectSVGOnDev: false,
         output: { filename: 'icons/sprite.svg', use: false, view: false },
         styles: false,
+      }),
+      // dist/THIRD-PARTY-LICENSES.txt: bundled runtime packages, Tailwind's generated CSS,
+      // Alpine's license (its packages ship none), the Feather/Lucide icons in the sprite
+      // and the OFL fonts copied into dist (docs/bakers/licensing.md).
+      thirdPartyLicenses({
+        packages: [...Object.keys(dependencies), 'tailwindcss'],
+        noticeFiles: ['js/alpine.NOTICE', 'assets/icons/NOTICE', ...globSync('css/fonts/*.LICENSE', { cwd: projectRoot }).sort()],
       }),
     ],
     css: { postcss: false },

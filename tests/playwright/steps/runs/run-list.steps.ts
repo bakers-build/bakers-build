@@ -3,8 +3,8 @@
 // address steps verbatim: the flat canvas the runs tabs use is the same
 // mechanism `project_tickets`/`team_tickets` already exercise, and those
 // steps are already written and must not be duplicated.
-import { Given, When, Then } from '@key-tec/playwright-core/bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Given, When, Then } from '../../bdd.fixtures';
+import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import { CONTENT_ISLAND } from '../../support/shell';
 import { markDocument } from '../../support/shell';

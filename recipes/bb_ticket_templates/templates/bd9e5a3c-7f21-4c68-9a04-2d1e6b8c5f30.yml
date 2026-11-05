@@ -27,7 +27,7 @@ default:
       value: "Update Drupal to the latest version — {{month}}"
   description:
     -
-      value: "Update Drupal core and contrib to the latest version. Follow the `keytec-drupal-update` skill: load it, pick the update mode it names (security, patch, minor or major) and finish through its review step."
+      value: "Update Drupal core and contrib to the latest version. Follow the `drupal-update` skill: load it, pick the update mode it names (security, patch, minor or major) and finish through the ticket's mandatory review."
       format: bb_rich
   workflow:
     -

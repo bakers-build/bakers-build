@@ -1,5 +1,5 @@
 import { createBdd } from 'playwright-bdd';
-import { Drush } from '@key-tec/playwright-core';
+import { Drush } from '../../support/drush';
 import { test, expect } from '../../bdd.fixtures';
 import world from '../../support/contract-world.json';
 

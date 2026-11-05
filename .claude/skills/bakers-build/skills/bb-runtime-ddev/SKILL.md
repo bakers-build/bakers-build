@@ -12,36 +12,49 @@ prerequisite when setup is missing.
 
 ## bb-phase-provision
 
-First inspect `ddev describe` from the worktree root and check the selected site's readiness.
-A live stack serving the required site/fixtures is a successful no-op; never blindly re-init
-one. If setup is needed, run only the supplied commands, such as `ddev start` or the project's
-`ddev init --provider <p>`; plain `ddev init` means `existing-config`. Use a safe, self-contained
-subagent scoped to the worktree and selected commands, without tracker credentials. Await
-completion, then verify the base URL actually responds and the required site/provider is ready
-before returning.
+**With the conductor's tools** (`ddev_status`, `ddev_start`, `ddev_exec` from the
+`bakers-conductor` server), follow [provision](../bb-workflow/references/provision.md)'s tool path:
+`ddev_status` for readiness, `ddev_start` for a stopped stack, `provision_up(<profile>)` for a
+missing or wrong site. Run no host `ddev`.
+
+**Without them** (a measured run, or an agent the conductor serves no tools), use the CLI: first
+inspect `ddev describe` from the worktree root and check the selected site's readiness. A live stack
+serving the required site/fixtures is a successful no-op; never blindly re-init one. If setup is
+needed, run only the supplied commands, such as `ddev start`. Provider selection and defaults belong
+to the project's setup instructions. Use a safe, self-contained subagent scoped to the worktree and
+selected commands, without tracker credentials, and await completion.
+
+A `ddev` call the sandbox blocks, or a needed reinstall with neither `provision_up` nor host
+`ddev`, is an unresolved prerequisite naming `sandbox.trusted_commands`; report it, retry nothing.
+Either way, verify the base URL actually responds and the required site/provider is ready before
+returning.
 
 **Do not bootstrap the worktree here.** Its creation, environment overlay, and CLI
-(`ddev init-worktree`) belong to the conductor's `after_create` hook. This adapter only brings
-the DB/site up and never runs `init-worktree` or invents a replacement setup hook.
+(`node scripts/setup-worktree.mjs` and `.ddev/worktree-post.sh`) belong to the conductor's `after_create` hook. This adapter only brings
+the DB/site up and never runs worktree bootstrap or invents a replacement setup hook.
 
 Return the live base URL and readiness, or explicit failures and their reasons.
 
 ## bb-phase-work
 
-Everything runs in the container: `ddev exec …`. Lint commands come from the keytec-ddev-addon
-(`ddev phpcs`, `ddev phpmd`, `ddev phpstan`).
+Run container commands through `ddev_exec` when the run has it: a hint's `ddev <cmd>` becomes
+`ddev_exec("<cmd>")`, and a project web command such as `ddev phpcs`, which is not on the container
+`PATH`, runs by path: `ddev_exec(".ddev/commands/web/phpcs")`. Without it, run `ddev exec …` or the
+configured DDEV commands. Read the project's work instructions for domain conventions and tooling.
 
 ## bb-phase-validate
 
-Before running or writing ANY test in DDEV, read [testing](references/testing.md) — it prevents
-the silent sqlite/MariaDB and empty-discovery traps.
+Before running or writing tests, read the testing guidance named by the project's `WORKFLOW.md`.
+Use its selected commands, data providers and test-selection rules, run as in `bb-phase-work`. Missing setup is an unresolved
+prerequisite, not permission to invent a test environment.
 
 ## bb-phase-outtake
 
-Before the outtake renders, every manual-review step names its persona from `test_as`. Read
-[login links](references/logins.md), issue one link per persona in the worktree, and add each to
-the handoff with the persona, its role and the environment; a persona that does not exist is
-recorded as **missing**.
+Before the outtake renders, every manual-review step names its persona from `test_as`. Use the
+project's `bb-phase-outtake` login method to check each account and issue fresh access against a
+reachable worktree URL. Return each issued link unchanged with persona, role and environment;
+`anonymous` gets the plain URL and denied personas still get their access. A missing account or
+login method is **missing**: create no account and substitute no administrator or other persona.
 
 ## Boundaries
 

@@ -20,7 +20,7 @@
 // Everything else is written against `SURFACES[name]`, so adding the coming
 // team-add and group-add dialogs to this parity gate is one entry rather than a
 // new scenario.
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { php } from '../../support/drush';
@@ -341,7 +341,7 @@ Then('the {string} create dialog puts its action row outside the form', async ({
 });
 
 // NO `Given` IS REGISTERED IN THIS FILE, deliberately. `I am logged in as
-// {string}` is the `@key-tec/playwright-core` catalog's own step, and a second
+// {string}` is the shared `support/steps/core.ts`'s own step, and a second
 // registration of that text would be a duplicate definition rather than an
 // override. And "both dialogs are on one hull" is a fact about where code IS
 // rather than about a running browser, so it is asserted by reflection in

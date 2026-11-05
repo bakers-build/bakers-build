@@ -6,7 +6,6 @@ namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
-use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
@@ -39,7 +38,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'workflow' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Workflow'),
-      description: new TranslatableMarkup('The workflow id: bb_work, or bb_autopilot for automatic approvals.'),
+      description: new TranslatableMarkup('The workflow id, e.g. bb_work.'),
       constraints: ['NotBlank' => []],
     ),
     'project' => new InputDefinition(
@@ -73,6 +72,12 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('Parent ticket identifier or UUID, in the same project.'),
       required: FALSE,
     ),
+    'branch_name' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Branch name'),
+      description: new TranslatableMarkup('Git branch for a carrier ticket, e.g. release/1.2; omit to derive it from the identifier and title. Fixed after creation.'),
+      required: FALSE,
+    ),
   ],
   output_definitions: [
     'id' => new OutputDefinition(
@@ -91,6 +96,12 @@ use Drupal\tool\TypedData\OutputDefinition;
       label: new TranslatableMarkup('State'),
       description: new TranslatableMarkup('The initial state id.'),
     ),
+    'branch_name' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Branch name'),
+      description: new TranslatableMarkup('The ticket’s git branch.'),
+      nullable: TRUE,
+    ),
   ],
 )]
 final class TicketCreate extends ToolBase {
@@ -104,9 +115,6 @@ final class TicketCreate extends ToolBase {
     if (!$this->entities()->getAccessControlHandler('bb_ticket')->createAccess('bb_ticket', $this->currentUser)) {
       throw new \InvalidArgumentException('You may not create tickets.');
     }
-    if (!array_key_exists($values['workflow'], TypeWorkflows::ticketWorkflowOptions())) {
-      throw new \InvalidArgumentException(sprintf('Unknown ticket workflow %s; use one of: %s.', $values['workflow'], implode(', ', array_keys(TypeWorkflows::ticketWorkflowOptions()))));
-    }
     $project = $this->readableProject($values['project']);
     $fields = [
       'title' => $values['title'],
@@ -118,14 +126,21 @@ final class TicketCreate extends ToolBase {
     foreach (array_intersect_key(['type' => 'ticket_type', 'recipe' => 'recipe'], array_filter($values)) as $vid => $field) {
       $fields[$field] = $this->term($project->getGroup()?->getWorkspace(), $vid, $values[$vid])->id();
     }
+    if (!empty($values['branch_name'])) {
+      $fields['branch_name'] = $values['branch_name'];
+    }
     $ticket = $this->entities()->getStorage('bb_ticket')->create($fields);
     assert($ticket instanceof BbTicketInterface);
+    if (isset($fields['branch_name']) && !$ticket->get('branch_name')->access('edit', $this->currentUser)) {
+      throw new \InvalidArgumentException('You may not set branch_name.');
+    }
     $this->assertValid($ticket);
     $ticket->save();
     return ExecutableResult::success(new TranslatableMarkup('Ticket created.'), [
       'id' => $ticket->uuid(),
       'identifier' => $ticket->getIdentifier() ?: NULL,
       'state' => $ticket->get('state')->value,
+      'branch_name' => $ticket->get('branch_name')->value,
     ]);
   }
 

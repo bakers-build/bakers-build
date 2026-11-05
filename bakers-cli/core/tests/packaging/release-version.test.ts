@@ -66,6 +66,27 @@ function notes(dir: string, ref = 'HEAD'): { out: string; notes: string } {
 }
 
 describe('release version and notes from conventional commits', () => {
+  it('links GitHub rehearsal notes to the GitHub commit', () => {
+    const dir = repo();
+    const sha = commit(dir, 'fix: support GitHub delivery');
+    const output = execFileSync('node', [SCRIPT, 'HEAD', '--notes', '-'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        CI_PROJECT_URL: '',
+        GITHUB_SERVER_URL: 'https://github.com',
+        GITHUB_REPOSITORY: 'bakers-build/bakers-build',
+      },
+    });
+    expect(output).toContain(
+      `https://github.com/bakers-build/bakers-build/commit/${sha}`,
+    );
+    expect(output).toContain(
+      'https://github.com/bakers-build/bakers-build/compare/v0.1.1...v0.1.2',
+    );
+  });
+
   afterEach(() => {
     for (const path of dirs.splice(0))
       rmSync(path, { recursive: true, force: true });

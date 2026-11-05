@@ -1,4 +1,4 @@
-import { When, Then } from '@key-tec/playwright-core/bdd';
+import { When, Then } from '../../bdd.fixtures';
 import { expect, type Page } from '@playwright/test';
 
 /** The picker's section on the sign-in page; only `bb_e2e` installs it. */

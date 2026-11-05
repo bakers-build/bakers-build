@@ -2,5 +2,5 @@ default_lease_seconds: 300
 max_lease_seconds: 3600
 failed_retry_cap: 3
 failed_retry_window_seconds: 7200
-plugin_source_base: 'https://git.key-tec.de/bakers-build/'
-min_client_version: '0.0.1'
+plugin_source_base: 'https://github.com/bakers-build/'
+min_client_version: '0.5.1-next.0'

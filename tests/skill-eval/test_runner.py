@@ -56,7 +56,7 @@ class RunnerTests(unittest.TestCase):
                 runner.read_stream(raw)
 
     def test_tool_mode_requires_exact_server_tools_and_independent_call_trace(self):
-        call = {"type": "tool_use", "id": "call-1", "name": "mcp__fixture__bakers", "input": {"argv": ["bakers", "dropsh", "tool", "tool_api__bakers_ticket_read", "--data", "@/args.json"]}}
+        call = {"type": "tool_use", "id": "call-1", "name": "mcp__fixture__bakers", "input": {"argv": ["bakers", "tools", "tool_api__bakers_ticket_read", "--data", "@/args.json"]}}
         raw = stream(tools=["mcp__fixture__bakers", "mcp__fixture__read_file", "mcp__fixture__write_file"], blocks=[call])
         raw = raw.replace('"mcp_servers": []', '"mcp_servers": [{"name":"fixture","status":"connected"}]')
         trace = [{"tool": "bakers", "arguments": call['input'], "result": {"exit_code": 0}}]

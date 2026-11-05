@@ -16,9 +16,9 @@ it('exposes no TYPE_* filter exports (BB-299 D2)', async () => {
   expect('TYPE_LABELS' in mod).toBe(false);
 });
 
-it('carries the two ticket workflows, bb_work first as the default', () => {
-  expect(WORKFLOW_KINDS.map((k) => k.id)).toEqual(['bb_work', 'bb_autopilot']);
-  expect(WORKFLOW_KINDS.map((k) => k.label)).toEqual(['work', 'autopilot']);
+it('carries exactly the one bakers.build work workflow (BAKERS-17)', () => {
+  expect(WORKFLOW_KINDS.map((k) => k.id)).toEqual(['bb_work']);
+  expect(WORKFLOW_KINDS.map((k) => k.label)).toEqual(['work']);
 });
 
 it('WORKFLOW_OPTIONS mirrors the kinds, id for id and label for label', () => {

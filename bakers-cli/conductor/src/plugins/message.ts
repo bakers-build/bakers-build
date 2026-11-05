@@ -13,6 +13,7 @@ import {
   validateMessageDefinition,
 } from '@bakers-build/message';
 import type { Ticket } from './remote.js';
+import type { ToolResult } from './tools.js';
 
 /** What a handler gets: its own request identity plus the ticket's worktree. */
 export interface InboxMessageRequest {
@@ -29,13 +30,27 @@ export interface InboxMessageRequest {
   logger: ConductorLogger;
   /** Aborts when the handler runs past its timeout. */
   signal: AbortSignal;
+  /** Call an addon tool on this worktree; absent when no addon declares tools. */
+  callTool?: (
+    name: string,
+    args?: Record<string, unknown>,
+  ) => Promise<ToolResult>;
 }
 
 export type InboxMessageHandler = (
   request: InboxMessageRequest,
 ) => Promise<MessageResult>;
 
-/** An addon preset's `inbox` export. */
+/**
+ * Answers a message by calling a conductor tool on the ticket's worktree.
+ * Without `args` the message's payload is passed through; never merged.
+ */
+export interface InboxBinding {
+  tool: string;
+  args?: Record<string, unknown>;
+}
+
+/** An addon preset's `inbox` export. Each message has a handler or a binding. */
 export interface InboxMessages {
   contract: 2;
   label?: string;
@@ -43,7 +58,10 @@ export interface InboxMessages {
   icon?: string;
   messages: Record<string, MessageDefinition>;
   /** Lazy: imported only when the conductor loads the addon. */
-  handlers: (options?: unknown) => Promise<Record<string, InboxMessageHandler>>;
+  handlers?: (
+    options?: unknown,
+  ) => Promise<Record<string, InboxMessageHandler>>;
+  bindings?: Record<string, InboxBinding>;
 }
 
 /** One `inbox` export as discovery found it. */
@@ -63,17 +81,20 @@ export interface LoadedInbox {
   icon?: string;
   messages: Record<string, MessageDefinition>;
   handlers: Record<string, InboxMessageHandler>;
+  bindings: Record<string, InboxBinding>;
 }
 
 /**
- * Validates every declared message definition, checks that handlers and
- * declared message types match one to one, and rejects a contract other than
- * 2. `handlers` gets `options` (the addon entry's `with`). Throws an Error naming
+ * Validates every declared message definition, checks that each declared
+ * message has exactly one handler or binding (and nothing undeclared), that a
+ * binding names one of `toolNames`, and rejects a contract other than 2.
+ * `handlers` gets `options` (the addon entry's `with`). Throws an Error naming
  * the addon on any violation.
  */
 export async function loadInbox(
   found: DiscoveredInbox,
   options?: unknown,
+  toolNames: ReadonlySet<string> = new Set(),
 ): Promise<LoadedInbox> {
   const fail = (msg: string) => new Error(`addon ${found.name}: ${msg}`);
   if (found.inbox.contract !== MESSAGE_CONTRACT_VERSION)
@@ -82,14 +103,26 @@ export async function loadInbox(
     const valid = validateMessageDefinition(def);
     if (!valid.ok) throw fail(`messages.${key}: ${valid.errors.join('; ')}`);
   }
-  const handlers = await found.inbox.handlers(options);
+  const handlers = (await found.inbox.handlers?.(options)) ?? {};
+  const bindings = found.inbox.bindings ?? {};
   const declared = Object.keys(found.inbox.messages);
-  for (const key of declared) {
-    if (typeof handlers[key] !== 'function')
-      throw fail(`no handler for message ${key}`);
-  }
   for (const key of Object.keys(handlers)) {
     if (!declared.includes(key)) throw fail(`handler ${key} is not declared`);
+  }
+  for (const key of Object.keys(bindings)) {
+    if (!declared.includes(key)) throw fail(`binding ${key} is not declared`);
+  }
+  for (const key of declared) {
+    const handled = typeof handlers[key] === 'function';
+    const binding = bindings[key];
+    if (handled && binding)
+      throw fail(`message ${key}: both a handler and a binding`);
+    if (!handled && !binding) throw fail(`no handler for message ${key}`);
+    if (!binding) continue;
+    if (!toolNames.has(binding.tool))
+      throw fail(`message ${key}: unknown tool ${binding.tool}`);
+    if (binding.args && found.inbox.messages[key]?.input)
+      throw fail(`message ${key}: fixed args with a declared input`);
   }
   return {
     name: found.name,
@@ -98,6 +131,7 @@ export async function loadInbox(
     ...(found.inbox.icon !== undefined ? { icon: found.inbox.icon } : {}),
     messages: found.inbox.messages,
     handlers,
+    bindings,
   };
 }
 

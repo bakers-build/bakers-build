@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Session\AccountInterface;
@@ -51,7 +51,7 @@ use Drupal\user\EntityOwnerTrait;
       'default' => BbConductorForm::class,
       'add' => BbConductorForm::class,
       'edit' => BbConductorForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
       // The Overview's card and its Disable/Enable confirmation.
       'identity' => BbEntityDetailCardForm::class,
       'action' => BbConductorActionForm::class,
@@ -97,7 +97,8 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
-    // Process registration key (composed ${user_id}-${host}-${project}).
+    // Registration key, derived by the CLI as <machine_id>-<project>-<variant>;
+    // one owner per id.
     // Not `machine_id`, which would collide with the host concept
     // (bb_machine.host_key / MachineContext.machine_id).
     $fields['conductor_id'] = BaseFieldDefinition::create('string')

@@ -82,7 +82,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
 
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-create',
-      'host_key' => 'host-default',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'workspace_root' => '/checkout/.bakers',
       'last_pid' => 4242,
@@ -109,7 +109,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
 
     $first = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-refresh',
-      'host_key' => 'host-default',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'workspace_root' => '/first/.bakers',
       'last_pid' => 1111,
@@ -118,7 +118,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
 
     $second = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-refresh',
-      'host_key' => 'host-default',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'workspace_root' => '/second/.bakers',
       'last_pid' => 2222,
@@ -147,7 +147,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
 
     $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-preserve',
-      'host_key' => 'host-default',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'last_pid' => 3333,
       'conductor_name' => 'conductor',
@@ -155,7 +155,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
 
     $after = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-preserve',
-      'host_key' => 'host-default',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
     ]);
 
@@ -171,7 +171,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
 
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-absent',
-      'host_key' => 'host-default',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
     ]);
 
@@ -187,7 +187,7 @@ final class ConductorProcessFieldsTest extends KernelTestBase {
 
     $conductor = $this->registrar()->heartbeat($owner, [
       'conductor_id' => 'mid-typed',
-      'host_key' => 'host-default',
+      'host_key' => '63655f9e-904a-5f43-92cc-c48a75ae7eae',
       'project' => 'default-project',
       'last_pid' => 'not-a-pid',
       'conductor_name' => ['not', 'a', 'string'],

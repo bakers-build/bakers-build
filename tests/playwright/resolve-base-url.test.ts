@@ -23,11 +23,7 @@ describe('resolveBaseURLFrom', () => {
         expect(resolveBaseURLFrom({}, env)).toBe('https://bakers-wt-xyz.ddev.site');
     });
 
-    // CI has no `.env.ddev`: the file is written by the addon's `init-worktree`
-    // and is gitignored, while the pipeline clones fresh and runs `ddev init`.
-    // The suite still runs inside the DDEV web container, where DDEV exports the
-    // project's own URL — so that is the third source, and it is what lets NO
-    // caller pass a URL anywhere.
+    // The container URL remains a fallback when no worktree file exists.
     it('falls back to DDEV_PRIMARY_URL when there is no .env.ddev', () => {
         expect(resolveBaseURLFrom({ DDEV_PRIMARY_URL: 'https://bb-396.ddev.site' }, '')).toBe(
             'https://bb-396.ddev.site',
@@ -50,7 +46,16 @@ describe('resolveBaseURLFrom', () => {
 
     it('throws when neither the environment nor .env.ddev provides a URL', () => {
         expect(() => resolveBaseURLFrom({}, '')).toThrow(
-            /PLAYWRIGHT_BASE_URL|init-worktree|DDEV_PRIMARY_URL/,
+            /PLAYWRIGHT_BASE_URL|setup-worktree|DDEV_PRIMARY_URL/,
         );
     });
+    it('rejects malformed selected assignments without evaluating them', () => {
+        for (const value of ['DDEV_WORKTREE_NAME=bad name', 'LOCAL="unterminated\nPLAYWRIGHT_BASE_URL=https://hidden.example\n', 'PLAYWRIGHT_BASE_URL=$(touch marker)', 'PLAYWRIGHT_BASE_URL', 'PLAYWRIGHT_BASE_URL=javascript:alert(1)']) {
+            expect(() => resolveBaseURLFrom({}, value)).toThrow();
+        }
+    });
+    it('ignores key-like lines within unrelated quoted multiline settings', () => {
+        expect(resolveBaseURLFrom({ DDEV_PRIMARY_URL: 'https://ambient.ddev.site' }, 'LOCAL="line\nPLAYWRIGHT_BASE_URL=https://wrong.example\n"\n')).toBe('https://ambient.ddev.site');
+    });
+
 });

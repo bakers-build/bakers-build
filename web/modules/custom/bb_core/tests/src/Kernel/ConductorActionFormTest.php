@@ -143,7 +143,8 @@ final class ConductorActionFormTest extends KernelTestBase {
       self::assertArrayNotHasKey($protected, $form, $protected . ' is not editable here.');
     }
     self::assertSame('Save', (string) $form['actions']['submit']['#value']);
-    self::assertArrayNotHasKey('delete', $form['actions']);
+    // The administrator may delete the conductor from its card.
+    self::assertArrayHasKey('delete', $form['actions']);
 
     // A heartbeat and a deactivation land after the box was opened.
     $fresh = $this->reload();

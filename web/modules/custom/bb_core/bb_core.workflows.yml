@@ -8,11 +8,6 @@
 #   done       finished (also bb_run `expired`/`failed`: nobody is on the
 #              hook; success versus failure is what `state` says)
 #   cancelled  stopped without finishing
-#
-# A ticket state may also declare `approval`: who gives its gate's
-# confirmation. `human` (the default when absent) or `automatic`, given by the
-# workflow itself. `TypeWorkflows::approval()` reads it and throws for any
-# other value. Merge authorization and real questions are never automatic.
 bb_work:
   id: bb_work
   group: bb_ticket
@@ -33,29 +28,6 @@ bb_work:
     to_plan: { label: 'Redo plan', from: [working], to: plan }
     to_review: { label: 'Request review', from: [working], to: review }
     # Optional review: finish may leave working or review.
-    finish: { label: Done, from: [working, review], to: done }
-    cancel: { label: Cancel, from: [qualification, plan, working, review], to: cancelled }
-
-# bb_work's state machine with automatic approval at every claimable state, so a
-# ticket can switch between the two in any state. It stops for a human only at
-# merge authorization and at a real question.
-bb_autopilot:
-  id: bb_autopilot
-  group: bb_ticket
-  label: 'bakers.build autopilot'
-  states:
-    qualification: { label: Qualification, claimable: true, phase: prepare, approval: automatic }
-    plan: { label: Plan, claimable: true, phase: prepare, approval: automatic }
-    working: { label: Working, claimable: true, phase: running, approval: automatic }
-    review: { label: Review, claimable: true, phase: review, approval: automatic }
-    done: { label: Done, phase: done }
-    cancelled: { label: Cancelled, phase: cancelled }
-  transitions:
-    qualify: { label: Qualify, from: [qualification], to: plan }
-    requalify: { label: Requalify, from: [plan, working], to: qualification }
-    to_working: { label: 'Start work', from: [qualification, plan, review], to: working }
-    to_plan: { label: 'Redo plan', from: [working], to: plan }
-    to_review: { label: 'Request review', from: [working], to: review }
     finish: { label: Done, from: [working, review], to: done }
     cancel: { label: Cancel, from: [qualification, plan, working, review], to: cancelled }
 

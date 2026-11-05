@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;background:#FBFBFA;color:#16181B;font-family:"Inter",system-ui,sans-serif;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:32px 72px;font-size:15px}
+.top b{font-weight:600;letter-spacing:-.01em}.cta{padding:12px 20px;border-radius:999px;background:#16181B;color:#fff}
+h1{font-size:76px;font-weight:500;letter-spacing:-.03em;line-height:1.02;padding:72px 72px 0;max-width:1080px}
+p.lede{font-size:21px;line-height:1.5;color:#5B6470;max-width:620px;padding:28px 72px 0}
+.stage{position:absolute;left:72px;right:72px;bottom:72px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.card{background:#fff;border-radius:18px;padding:22px;height:170px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 0 0 1px rgba(22,24,27,.07)}
+.card small{font-size:12px;color:#8A919B;letter-spacing:.04em;text-transform:uppercase}.card h3{font-size:18px;font-weight:500;margin-top:10px}
+.card .who{margin-top:46px;font-size:14px;color:#5B6470}
+.active{position:relative;box-shadow:none}
+.active::before{content:"";position:absolute;inset:-2px;border-radius:20px;padding:2px;background:conic-gradient(from 200deg,#9FE3C8,#A8C8FF,#F2B6C6,#F6D8A8,#9FE3C8);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.active::after{content:"";position:absolute;inset:-18px;border-radius:30px;background:conic-gradient(from 200deg,#9FE3C8,#A8C8FF,#F2B6C6,#F6D8A8,#9FE3C8);filter:blur(28px);opacity:.35;z-index:-1}
+</style></head><body>
+<div class="top"><b>Bakers Build</b><span class="cta">Demo vereinbaren</span></div>
+<h1>KI arbeitet. Du siehst genau, wo.</h1>
+<p class="lede">Agenten erledigen die Tickets, Menschen entscheiden an den Toren. Farbe zeigt nur, was gerade in Bewegung ist.</p>
+<div class="stage">
+<div class="card"><small>Qualification</small><h3>BB-160 · Rate limiting</h3><div class="who">Mensch · ms</div></div>
+<div class="card"><small>Spec</small><h3>BB-153 · Webhooks</h3><div class="who">Agent · ms-laptop</div></div>
+<div class="card active"><small>Coding</small><h3>BB-151 · CSV import</h3><div class="who">Agent · cw-framework · läuft</div></div>
+<div class="card"><small>Review</small><h3>BB-142 · Magic link</h3><div class="who">Mensch · wartet auf dich</div></div>
+</div></body></html>

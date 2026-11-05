@@ -30,13 +30,14 @@ import type {
   UncleanTicket,
 } from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
+import type { ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
-import { hostKeyOf } from './host-key.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
+import { startToolServer, type ToolServer } from './tool-server.js';
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -214,6 +215,31 @@ function renderPrompt(
     .replaceAll('{ticketUuid}', values.ticketUuid);
 }
 
+/**
+ * A conductor's registration payload, built from its config: what the engine
+ * heartbeats with, and what `oven start` registers before it spawns one.
+ * `conductor_name` is the variant (the config stem, derived through core's
+ * own mapping), which the control plane matches a takeover on.
+ */
+export function registrationOf(
+  config: ConductorFileConfig,
+  checkoutRoot: string,
+): ConductorRegistration {
+  const stem = config.config_path
+    ? stemForConfigFile(basename(config.config_path))
+    : undefined;
+  return {
+    id: config.conductor_id ?? '',
+    ...(config.host_key ? { host_key: config.host_key } : {}),
+    project: config.project,
+    states: config.states,
+    workspace: checkoutRoot,
+    label: config.label,
+    ...(config.machine_label ? { machine_label: config.machine_label } : {}),
+    conductor_name: stem ?? config.variant,
+  };
+}
+
 export class Conductor {
   private uuid: string | null = null;
   /**
@@ -233,6 +259,11 @@ export class Conductor {
   /** The per-item work each tick enqueues. */
   private readonly queue: ActionQueue;
 
+  /** The local MCP server for addon tools; only the serve process runs one. */
+  private toolServer: ToolServer | undefined;
+  /** The live run token per run UUID, revoked when the run is finalised. */
+  private readonly runTokens = new Map<string, string>();
+
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
 
@@ -251,6 +282,7 @@ export class Conductor {
       remote,
       logger,
       (ticket) => this.runEnv(ticket, undefined, ticket.state),
+      config.tools,
     );
     this.queue = new ActionQueue(logger);
   }
@@ -262,26 +294,20 @@ export class Conductor {
   }
 
   /**
-   * `conductor_id` is required and the loader throws without it (BB-353), so
-   * there is no directory-derived fallback here (BB-450 D5) — that fallback
-   * was the mechanism by which one checkout came to be registered under two
-   * different ids.
+   * `conductor_id` is derived by the loader from the machine UUID, project and
+   * variant; there is no directory-derived fallback (BB-450 D5).
    */
   get id() {
-    const id = this.config.conductor_id ?? this.config.machine_id;
+    const id = this.config.conductor_id;
     if (id === undefined || id.trim() === '') {
-      throw new Error('conductor config has no conductor_id');
+      throw new Error('machine.config.js has no machine_id; run bakers init');
     }
     return id;
   }
 
-  /**
-   * Host stem for bb_machine.host_key. Prefer config.host_key from
-   * MachineContext.machine_id; fall back to a best-effort parse of the composed
-   * conductor_id only when the loader could not supply the stem.
-   */
+  /** This machine's id (machine_id), bb_machine.host_key. */
   private get hostKey(): string {
-    return hostKeyOf(this.config);
+    return this.config.host_key?.trim() ?? '';
   }
 
   /**
@@ -309,33 +335,56 @@ export class Conductor {
 
   /** This conductor's registration payload, built from config. */
   private registration(): ConductorRegistration {
-    const base: ConductorRegistration = {
+    // `this.id` throws, naming bakers init, before anything is sent.
+    const base = {
+      ...registrationOf(this.config, this.checkoutRoot),
       id: this.id,
-      host_key: this.hostKey,
-      project: this.config.project,
-      states: this.config.states,
-      workspace: this.checkoutRoot,
-      label: this.config.label,
-      max_parallel: this.config.max_parallel,
     };
-    if (!this.ownsServeProcess) return base;
-    return {
-      ...base,
-      last_pid: process.pid,
-      ...(this.conductorName ? { conductor_name: this.conductorName } : {}),
-    };
+    // Only the serve process reports its pid; poll and reap must not
+    // overwrite the running conductor's.
+    return this.ownsServeProcess ? { ...base, last_pid: process.pid } : base;
   }
 
   /**
-   * The stem of the config file this conductor was loaded from.
-   *
-   * Derived through core's own mapping rather than by slicing the filename
-   * here, so the CLI and the conductor cannot disagree about which files count
-   * as a conductor config.
+   * Starts the tool server when an addon declares tools. Only the serve
+   * process calls this; `endpointFile` publishes it to the CLI.
    */
-  private get conductorName(): string | undefined {
-    const path = this.config.config_path;
-    return path ? stemForConfigFile(basename(path)) : undefined;
+  async startTools(endpointFile?: string): Promise<void> {
+    if (!this.config.tools || this.toolServer) return;
+    this.toolServer = await startToolServer({
+      registry: this.config.tools,
+      workspaceRoot: this.checkoutRoot,
+      logger: this.logger,
+      ...(endpointFile ? { endpointFile } : {}),
+    });
+    this.logger.info(
+      { conductorId: this.config.conductor_id, url: this.toolServer.url },
+      'tool server started',
+    );
+  }
+
+  async stopTools(): Promise<void> {
+    await this.toolServer?.stop();
+    this.toolServer = undefined;
+    this.runTokens.clear();
+  }
+
+  /** A fresh token for this run's worktree; a re-dispatch replaces the old one. */
+  private issueRunTools(
+    runUuid: string,
+    binding: ToolBinding,
+  ): { url: string; token: string } | undefined {
+    if (!this.toolServer) return undefined;
+    this.revokeRunTools(runUuid);
+    const token = this.toolServer.issueRunToken(binding);
+    this.runTokens.set(runUuid, token);
+    return { url: this.toolServer.url, token };
+  }
+
+  private revokeRunTools(runUuid: string): void {
+    const token = this.runTokens.get(runUuid);
+    if (token) this.toolServer?.revokeRunToken(token);
+    this.runTokens.delete(runUuid);
   }
 
   async start() {
@@ -402,10 +451,15 @@ export class Conductor {
     // pending dispatches count without a second round-trip.
     const capacity = await this.remote.machineCapacity(this.hostKey);
     let machineLoad = capacity?.currentLoad ?? count;
-    // BB-464 D3: gate on the MACHINE's own budget, not this conductor's
-    // config — the machine row is the one authority a shared host agrees on;
-    // falling back to config.max_parallel only when the row is unreadable.
-    const maxParallel = capacity?.maxParallel ?? this.config.max_parallel;
+    // The machine row is the only budget; when it is unreadable, claim
+    // nothing this tick and retry on the next.
+    const maxParallel = capacity?.maxParallel ?? 0;
+    if (!capacity) {
+      this.logger.warn(
+        { conductorId: this.id },
+        'machine budget unreadable; claiming nothing this tick',
+      );
+    }
     this.logger.info(
       {
         conductorId: this.id,
@@ -415,7 +469,7 @@ export class Conductor {
       },
       'conductor tick',
     );
-    if (machineLoad > maxParallel) {
+    if (capacity && machineLoad > maxParallel) {
       // BB-464 D4: a breach is its own signal, not merely the reason no
       // further claim was made — this server-side ceiling (TicketClaimService)
       // is the actual guard; this is visibility into how it was reached.
@@ -563,6 +617,7 @@ export class Conductor {
       const uploadedLog =
         (this.config.capture_logs ?? true) ? captured.log : '';
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+      this.revokeRunTools(r.runUuid);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',
@@ -1487,7 +1542,16 @@ export class Conductor {
         );
       }
     }
-    const command = chosen.agent.launchCommand(prompt, identity);
+    const tools = this.issueRunTools(run.runUuid, {
+      worktreePath: ws.path,
+      ticket: t,
+    });
+    const command = chosen.agent.launchCommand(
+      prompt,
+      identity,
+      ws.path,
+      tools ? { url: tools.url } : undefined,
+    );
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,
@@ -1501,7 +1565,8 @@ export class Conductor {
       workspacePath: ws.path,
       instructions: ws.instructions,
       command,
-      env,
+      // The token travels in the env, never in argv or the launch log.
+      env: tools ? { ...env, BB_CONDUCTOR_TOKEN: tools.token } : env,
     });
     launch.started = true;
     this.logger.info(
@@ -1540,6 +1605,7 @@ export class Conductor {
     launched: boolean,
   ): Promise<void> {
     const runUuid = ctx.run?.uuid ?? '';
+    this.revokeRunTools(runUuid);
     try {
       if (launched && this.executor.capabilities().persistent) {
         try {

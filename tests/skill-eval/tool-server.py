@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Local stdio MCP simulator. Never executes argv, accesses a tracker, or reads model-selected disk paths.
 
-It models `bakers dropsh tool [<tool>] [--schema] [--data <json|@file>] [--param k=v]` for the bakers
+It models `bakers tools [<tool>] [--schema] [--data <json|@file>] [--param k=v]` for the bakers
 tools in contract-fixture.json: argument validation, results and error classes follow the repository
 CLI (@dropsh/plugin-tool) and the Drupal tools as observed by the real-CLI contract suite
 (bakers-cli/core/tests/workflow/skill-cli-contract.test.ts), which fails when this model drifts.
@@ -19,7 +19,7 @@ CONTRACT = json.loads((HERE / 'contract-fixture.json').read_text())
 TOOL_DEFS = {t['name']: t for t in CONTRACT['tools']}
 
 TOOLS = [
-    {'name': 'bakers', 'description': 'Invoke the synthetic bakers.build CLI. Supply the complete argv array beginning with bakers, each flag/value as a separate token (or --flag=value). Values are literal: no shell expansion. argv ["bakers", "dropsh", "tool"] lists the tracker tools, ["bakers", "dropsh", "tool", "<tool>", "--schema"] describes one and ["bakers", "dropsh", "tool", "<tool>", "--data", "@<file>"] calls it with a JSON arguments file written by write_file. argv ["bakers", "info"] returns the project and workspace context. Returns exit_code, stdout and stderr as text, like the real CLI. State exists only in this fixture server.',
+    {'name': 'bakers', 'description': 'Invoke the synthetic bakers.build CLI. Supply the complete argv array beginning with bakers, each flag/value as a separate token (or --flag=value). Values are literal: no shell expansion. argv ["bakers", "tools"] lists the tracker tools, ["bakers", "tools", "<tool>", "--schema"] describes one and ["bakers", "tools", "<tool>", "--data", "@<file>"] calls it with a JSON arguments file written by write_file. argv ["bakers", "info"] returns the project and workspace context. Returns exit_code, stdout and stderr as text, like the real CLI. State exists only in this fixture server.',
      'inputSchema': {'type': 'object', 'properties': {'argv': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['argv'], 'additionalProperties': False}},
     {'name': 'read_file', 'description': 'Read a caller-supplied or previously written virtual file by its exact path. No host filesystem access.',
      'inputSchema': {'type': 'object', 'properties': {'path': {'type': 'string'}}, 'required': ['path'], 'additionalProperties': False}},
@@ -28,10 +28,10 @@ TOOLS = [
 ]
 
 EXIT = {'E_TOOL': 1, 'E_VALIDATION': 4, 'E_HTTP': 5}
-JSONAPI = {'read', 'search', 'create', 'update', 'delete', 'schema', 'upload-file'}
+SELECTORS = {'--config', '--connection', '--auth-profile', '--conductor'}
 HELP = {
-    None: 'Usage: dropsh [options] [command]\n\nCommands:\n  tool [options] [name]  List, describe or call the site\'s Drupal Tool API tools over its MCP endpoint\n',
-    'tool': 'Usage: dropsh tool [options] [name]\n\nList, describe or call the site\'s Drupal Tool API tools over its MCP endpoint\n\nOptions:\n  --schema              print the tool\'s input (and output) schema\n  --param <key=value>   tool argument; repeatable, overrides --data (default: [])\n  --data <json|@file>   tool arguments as a JSON object, or @file\n  -h, --help            display help for command\n',
+    None: 'Usage: bakers [options] [command]\n\nCommands:\n  tools [options] [name]  List, describe or call the site\'s Drupal Tool API tools over its MCP endpoint\n',
+    'tool': 'Usage: bakers tools [options] [name]\n\nList, describe or call the site\'s Drupal Tool API tools over its MCP endpoint\n\nOptions:\n  --schema              print the tool\'s input (and output) schema\n  --param <key=value>   tool argument; repeatable, overrides --data (default: [])\n  --data <json|@file>   tool arguments as a JSON object, or @file\n  -h, --help            display help for command\n',
 }
 DATE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
@@ -64,26 +64,32 @@ def dumps(value):
 
 
 def parse(argv):
-    """Commander-equivalent split of `bakers dropsh tool [name] [options]`."""
-    if not isinstance(argv, list) or not all(isinstance(a, str) for a in argv) or argv[:2] != ['bakers', 'dropsh']:
-        raise ValueError('Only bakers dropsh argument arrays are supported; commands are never executed')
-    rest = argv[2:]
-    if not rest or rest[0] in {'--help', '-h'}:
+    """Commander-equivalent split of `bakers tools [name] [options]`."""
+    if not isinstance(argv, list) or not all(isinstance(a, str) for a in argv) or not argv or argv[0] != 'bakers':
+        raise ValueError('Only bakers argument arrays are supported; commands are never executed')
+    args = argv[1:]
+    while args and args[0].partition('=')[0] in SELECTORS:
+        key, eq, _ = args.pop(0).partition('=')
+        if not eq:
+            if not args:
+                raise Commander(f"error: option '{key}' argument missing")
+            args.pop(0)
+    if args in [[], ['--help'], ['-h']]:
         return 'help', None, {}
-    if rest[0] in JSONAPI:
-        raise ValueError(f"'{rest[0]}' is a JSON:API command and not part of the skill contract; "
-                         'call a bakers tool: bakers dropsh tool <tool> --data @<args.json>')
-    if rest[0].startswith('-'):
-        raise Commander(f"error: unknown option '{rest[0]}'")
-    if rest[0] != 'tool':
-        raise Commander(f"error: unknown command '{rest[0]}'")
-    args, options, names = rest[1:], {'--param': []}, []
-    if '--help' in args or '-h' in args:
-        return 'help', 'tool', {}
+    if args.pop(0) != 'tools':
+        raise ValueError('This command is not part of the skill contract; call bakers tools <tool> --data @<args.json>')
+    options, names = {'--param': []}, []
     while args:
         token = args.pop(0)
         key, eq, value = token.partition('=')
-        if key == '--schema' and not eq:
+        if key in SELECTORS:
+            if not eq:
+                if not args:
+                    raise Commander(f"error: option '{key}' argument missing")
+                args.pop(0)
+        elif key in {'--help', '-h'}:
+            return 'help', 'tool', {}
+        elif key == '--schema' and not eq:
             options['--schema'] = True
         elif key in {'--data', '--param'}:
             if not eq:
@@ -204,6 +210,9 @@ class Simulation:
             return result(error='Undeclared fixture command', code=2)
         if name == 'read_file':
             path = arguments.get('path')
+            # A worktree-relative ./ names the same file, as on a real filesystem.
+            if isinstance(path, str) and path.startswith('./'):
+                path = path[2:]
             if path not in self.files:
                 return result(error='No such virtual fixture file', code=2)
             return result(self.files[path])
@@ -285,19 +294,30 @@ class Simulation:
         if reference not in (CONTRACT['project'], CONTRACT['project_key']):
             raise refused(f'Project {reference} does not exist or is not readable.')
 
+    def parent_identifier(self, t):
+        parent = self.tickets.get(t.get('parent'))
+        return parent.get('identifier') if parent else None
+
     def ticket_read(self, args):
         t = self.find(args['ticket'])
-        return {**{k: t.get(k) for k in ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe']},
-                'approval': t.get('approval', 'human'), 'labels': t['labels'], 'links': t['links'],
+        return {**{k: t.get(k) for k in ['id', 'identifier', 'title', 'state', 'workflow', 'description', 'type', 'recipe', 'branch_name', 'conductor']},
+                'labels': t['labels'], 'links': t['links'],
+                'project': CONTRACT['project'], 'base_branch': t.get('base_branch', 'main'), 'frozen': bool(t.get('frozen')),
+                'metrics': copy.deepcopy(t.get('metrics', [])),
                 'comments': [{'id': c['id'], 'type': c['type'], 'body': c['body'], 'created': c.get('created', '2026-01-01T00:00:00+00:00'),
                               'author': c.get('author', 'fixture-agent')} for c in self.comments if c['ticket'] == t['id']]}
 
     def ticket_search(self, args):
         if args.get('project'):
             self.project(args['project'])
-        query = args['query'].lower()
-        rows = [t for t in reversed(list(self.tickets.values())) if query in (t.get('title') or '').lower() or query in (t.get('description') or '').lower()]
-        return {'tickets': [{k: t.get(k) for k in ['identifier', 'title', 'state', 'type']} for t in rows[:50]]}
+        query, branch = (args.get('query') or '').lower(), args.get('branch_name')
+        if not query and not branch:
+            raise refused('Give a query or a branch_name.')
+        rows = [t for t in reversed(list(self.tickets.values()))
+                if (not query or query in (t.get('title') or '').lower() or query in (t.get('description') or '').lower())
+                and (not branch or t.get('branch_name') == branch)]
+        return {'tickets': [{**{k: t.get(k) for k in ['identifier', 'title', 'state', 'type', 'branch_name']},
+                             'base_branch': t.get('base_branch', 'main'), 'parent': self.parent_identifier(t)} for t in rows[:50]]}
 
     def ticket_create(self, args):
         self.project(args['project'])
@@ -305,9 +325,89 @@ class Simulation:
         self.created += 1
         ticket = {'id': f'33333333-3333-4333-8333-{self.created:012d}', 'identifier': f'EVAL-{100 + self.created}', 'title': args['title'],
                   'state': 'qualification', 'workflow': args['workflow'], 'description': args.get('description'),
-                  'type': args.get('type') or None, 'recipe': args.get('recipe') or None, 'labels': [], 'links': [], 'parent': parent}
+                  'type': args.get('type') or None, 'recipe': args.get('recipe') or None, 'labels': [], 'links': [], 'parent': parent,
+                  'branch_name': args.get('branch_name') or f'feat/eval-{100 + self.created}'}
         self.tickets[ticket['id']] = ticket
-        return {'id': ticket['id'], 'identifier': ticket['identifier'], 'state': ticket['state']}
+        return {'id': ticket['id'], 'identifier': ticket['identifier'], 'state': ticket['state'], 'branch_name': ticket['branch_name']}
+
+    def ticket_update(self, args):
+        fields = ['title', 'description', 'conductor', 'labels_add', 'labels_remove', 'frozen']
+        if all(args.get(f) is None for f in fields):
+            raise refused('Give a title, a description, a conductor, labels to add or remove, or frozen.')
+        removed = args.get('labels_remove') or []
+        both = [label for label in args.get('labels_add') or [] if label in removed]
+        if both:
+            raise refused(f'Label {both[0]} is both added and removed.')
+        t = self.find(args['ticket'])
+        for f in ['title', 'description', 'conductor', 'frozen']:
+            if args.get(f) is not None:
+                t[f] = args[f]
+        for label in args.get('labels_add') or []:
+            if label not in t['labels']:
+                t['labels'].append(label)
+        t['labels'] = [label for label in t['labels'] if label not in removed]
+        return {'identifier': t.get('identifier'), 'title': t.get('title'), 'description': t.get('description'),
+                'conductor': t.get('conductor'), 'labels': list(t['labels']), 'frozen': bool(t.get('frozen'))}
+
+    # Setup lookups read fixture rows (`simulation.<collection>`); one page, no workspace prerequisite.
+    def rows(self, collection, default):
+        return copy.deepcopy(self.config.get(collection, default))
+
+    def workspace_list(self, args):
+        return {'workspaces': self.rows('workspaces', [{'uuid': self.input.get('workspace_uuid') or CONTRACT['project'], 'name': 'fixture', 'slug': 'fixture'}]),
+                'next_offset': None}
+
+    def user_read(self, args):
+        return self.rows('user', {'uuid': '66666666-6666-4666-8666-666666666666', 'name': 'fixture', 'position': '', 'background': ''})
+
+    def group_list(self, args):
+        groups = [g for g in self.rows('groups', []) if not args.get('group') or g['uuid'] == args['group']]
+        return {'groups': groups, 'next_offset': None}
+
+    def team_list(self, args):
+        return {'teams': self.rows('teams', []), 'next_offset': None}
+
+    def group_create(self, args):
+        group = {'uuid': f'44444444-4444-4444-8444-{len(self.config.setdefault("groups", [])) + 1:012d}',
+                 'name': args['name'], 'description': args.get('description')}
+        self.config['groups'].append(group)
+        return copy.deepcopy(group)
+
+    def project_create(self, args):
+        if not args.get('teams'):
+            raise refused('teams: This value should not be null.')
+        project = {'uuid': f'66666666-6666-4666-8666-{len(self.config.setdefault("projects", [])) + 1:012d}',
+                   'key': ''.join(ch for ch in args['name'].upper() if ch.isalnum())[:10], 'name': args['name'],
+                   'description': args.get('description'), 'group': args['group'], 'teams': list(args['teams']),
+                   'repository': args.get('repository'), 'coder_config': args.get('coder_config')}
+        self.config['projects'].append(project)
+        return copy.deepcopy(project)
+
+    def project_read(self, args):
+        found = next((p for p in self.config.get('projects', []) if args['project'] in (p['uuid'], p['key'])), None)
+        if found is None:
+            raise refused(f"Project {args['project']} does not exist or is not readable.")
+        return copy.deepcopy(found)
+
+    def conductor_list(self, args):
+        self.project(args['project'])
+        return {'conductors': self.rows('conductors', []), 'next_offset': None}
+
+    # shortcut: fixture `templates` rows; no placeholder rendering, labels or target_state.
+    def ticket_template_run(self, args):
+        template = next((t for t in self.rows('templates', []) if t['uuid'] == args['template']), None)
+        if template is None:
+            raise refused(f"Template {args['template']} does not exist or is not readable.")
+        project = args.get('project') or template.get('project')
+        if not project:
+            raise refused('A project is required for a workspace template.')
+        created = self.ticket_create({'project': project, 'title': args.get('title') or template['title'],
+                                      'workflow': args.get('workflow') or template['workflow'], 'description': args.get('description')})
+        return {'uuid': created['id'], 'identifier': created['identifier']}
+
+    def ticket_runs_list(self, args):
+        t = self.find(args['ticket'])
+        return {'runs': copy.deepcopy(t.get('runs', [])), 'next_offset': None}
 
     # Term names (type, recipe, label) are reused or created: the fixture caller may create terms.
     def ticket_classify(self, args):

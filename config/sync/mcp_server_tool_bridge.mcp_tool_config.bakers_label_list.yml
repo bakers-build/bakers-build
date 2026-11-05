@@ -1,0 +1,8 @@
+uuid: 66f60a81-4886-41a4-8152-6b9e19e2db55
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_label_list
+tool_id: bakers_label_list
+description: null
+

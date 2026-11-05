@@ -6,7 +6,7 @@
  * worktree but with NO ticket/run. This one runs the whole chain real:
  *
  *   dropsh-minted ticket -> real claimed bb_run -> real HerdrWorkspace.ensure
- *   (git worktree off the real bakers checkout + `ddev init-worktree` hook ->
+ *   (git worktree off the real bakers checkout + `bash .ddev/worktree-post.sh` hook ->
  *   hardened web/sites/default) -> assert created -> ticket set done -> conductor
  *   tick -> reap -> HerdrExecutor.removeWorktree -> assert deleted.
  *
@@ -22,7 +22,7 @@
  *      daemon does not change that.
  *
  * Note the isolation boundary (BB-229 risk R4): only the herdr DAEMON is
- * private. The `after_create: ddev init-worktree` hook still runs against the
+ * private. The `after_create: bash .ddev/worktree-post.sh` hook still runs against the
  * real bakers checkout and the real DDEV project — the git worktree and the DDEV
  * stack are not isolated by this helper.
  *
@@ -136,7 +136,8 @@ const stubAgent: BbAgent = {
 function makeConfig(baseUrl: string): ConductorFileConfig {
   return {
     label: 'e2e-worktree-lifecycle',
-    machine_id: DISPATCH_MACHINE_ID,
+    conductor_id: DISPATCH_MACHINE_ID,
+    host_key: 'bakers-e2e-dispatch-host',
     project: E2E_PROJECT,
     states: ['working'],
     prompt: '',
@@ -169,7 +170,7 @@ $etm = \\Drupal::entityTypeManager();
 $first = static fn(array $r) => $r ? reset($r) : null;
 $project = $first($etm->getStorage('bb_project')->loadByProperties(['name' => '${E2E_PROJECT}']));
 $conductor = $first($etm->getStorage('bb_conductor')->loadByProperties(['conductor_id' => '${DISPATCH_MACHINE_ID}']));
-if (!$project || !$conductor) { fwrite(STDERR, 'missing e2e project or dispatch conductor - run ddev init --recipe --test'); exit(1); }
+if (!$project || !$conductor) { fwrite(STDERR, 'missing e2e project or dispatch conductor - run ddev init --provider recipe-test'); exit(1); }
 $t = $etm->getStorage('bb_ticket')->create([
   'identifier' => '${identifier}',
   'workflow' => 'bb_work',
@@ -287,7 +288,7 @@ print json_encode([
  *
  * Each instantiation owns its own private herdr daemon, ticket and worktree, so
  * the two are independent. That also means the cost doubles: each pass pays a
- * cold `ddev init-worktree`.
+ * cold `bash .ddev/worktree-post.sh`.
  */
 function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
   describe.skipIf(!HAS_ENV)(
@@ -338,7 +339,7 @@ function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
             root: herdrRoot,
             command: 'true',
             hooks: {
-              after_create: 'ddev init-worktree',
+              after_create: 'bash .ddev/worktree-post.sh',
               // Keeps its name on a cancelled ticket too: renaming the hook
               // would break the `hooks` block of every conductor.config.js in
               // every checkout for a cosmetic gain.
@@ -444,11 +445,7 @@ function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
           list.result.worktrees as Array<{ branch: string }>
         ).map((w) => w.branch);
         expect(branches).toContain(branchName);
-        // 20 min, not 10: dispatch runs `after_create: ddev init-worktree` on a
-        // COLD worktree — composer install + pnpm install + theme build + a whole
-        // new DDEV project (`ddev start` pulls and boots its own containers). A
-        // 600s cap timed this out on a developer machine before the assertions
-        // were ever reached.
+        // 20 min: dispatch runs the cold `after_create` hook (env, CLI and workspace setup).
       }, 1_200_000);
 
       it(`tears the worktree down on the next tick after the ticket is ${terminalState}`, async () => {
