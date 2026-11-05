@@ -154,13 +154,18 @@ describe('GitHub migration checks', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
-  it('runs all gates on disposable runners without publication authority', () => {
+  it('runs all gates on the self-hosted runner without publication authority', () => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     expect(Object.keys(workflow.on)).toEqual([
       'push',
       'pull_request',
+      'schedule',
       'workflow_dispatch',
     ]);
+    expect(workflow.on.schedule).toEqual([{ cron: '0 */2 * * *' }]);
+    expect(workflow.concurrency.group).toContain(
+      "github.event_name == 'schedule'",
+    );
     expect(workflow.permissions).toEqual({ contents: 'read' });
     expect(workflow.on.push.branches).toEqual(['next', 'main']);
     const required = [
@@ -183,23 +188,91 @@ describe('GitHub migration checks', () => {
       'release_rehearsal',
     ];
     expect(workflow.jobs.required.needs.sort()).toEqual(required.sort());
+    for (const [name, job] of Object.entries<Record<string, unknown>>(
+      workflow.jobs,
+    ))
+      expect(job['runs-on'], name).toEqual(['self-hosted', 'github-runner-1']);
     for (const name of required) {
       const job = workflow.jobs[name];
-      expect(job['runs-on']).toBe(
-        name === 'image_gate'
-          ? 'blacksmith-8vcpu-ubuntu-2404'
-          : 'blacksmith-4vcpu-ubuntu-2404',
-      );
       expect(job.permissions).toBeUndefined();
-      expect(job.if).toBeUndefined();
+      if (name !== 'image_gate') expect(job.if).toBeUndefined();
       expect(job.steps[0].with['persist-credentials']).toBe(false);
     }
     const source = read('.github/workflows/checks.yml');
     expect(source).not.toMatch(
-      /secrets\.|pull_request_target|self-hosted|packages: write|npm publish|docker push/,
+      /pull_request_target|blacksmith|packages: write|npm publish|docker push/,
     );
+    const { report_failure, ...others } = workflow.jobs;
+    expect(JSON.stringify(others)).not.toContain('secrets.');
+    expect(report_failure).toBeDefined();
     expect(workflow.jobs.required.if).toBe('always()');
     expect(workflow.jobs.required.steps[0].run).toContain('success');
+  });
+
+  it('runs image_gate on schedule, dispatch and into main, never for next', () => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    const gate = workflow.jobs.image_gate.if;
+    for (const clause of [
+      "github.event_name == 'schedule'",
+      "github.event_name == 'workflow_dispatch'",
+      "github.base_ref == 'main'",
+      "github.ref == 'refs/heads/main'",
+    ])
+      expect(gate).toContain(clause);
+    expect(gate).not.toContain('next');
+    // `required` decides with the same expression whether a skipped image_gate is acceptable.
+    expect(workflow.jobs.required.steps[0].env.IMAGE_GATE_REQUIRED).toBe(
+      `\${{ ${gate} }}`,
+    );
+  });
+
+  it.each([
+    ['image_gate skipped into next', 'skipped', 'success', 'false', 0],
+    ['image_gate skipped into main', 'skipped', 'success', 'true', 1],
+    ['image_gate failed into next', 'failure', 'success', 'false', 1],
+    ['image_gate passed into main', 'success', 'success', 'true', 0],
+    ['another job skipped', 'success', 'skipped', 'false', 1],
+  ])('required: %s', (_case, gate, other, gateRequired, status) => {
+    const step = parse(read('.github/workflows/checks.yml')).jobs.required
+      .steps[0];
+    const result = spawnSync('sh', ['-c', step.run], {
+      env: {
+        ...process.env,
+        RESULTS: JSON.stringify({
+          image_gate: { result: gate },
+          phpcs: { result: other },
+        }),
+        IMAGE_GATE_REQUIRED: gateRequired,
+      },
+    });
+    expect(result.status).toBe(status);
+  });
+
+  it('files failures of scheduled or dispatched next runs as a bakers.build ticket', () => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    const job = workflow.jobs.report_failure;
+    expect(job.needs.sort()).toEqual(workflow.jobs.required.needs.sort());
+    for (const guard of [
+      'always()',
+      "contains(needs.*.result, 'failure')",
+      "github.ref == 'refs/heads/next'",
+      "github.event_name == 'schedule'",
+      "github.event_name == 'workflow_dispatch'",
+    ])
+      expect(job.if).toContain(guard);
+    expect(job.steps[0].with['persist-credentials']).toBe(false);
+    const step = job.steps.find((s: { run?: string }) =>
+      s.run?.includes('github-failure-ticket.sh'),
+    );
+    expect(step.env).toMatchObject({
+      BB_CI_BASE_URL: '${{ vars.BB_CI_BASE_URL }}',
+      BB_CI_CLIENT_ID: '${{ secrets.BB_CI_CLIENT_ID }}',
+      BB_CI_CLIENT_SECRET: '${{ secrets.BB_CI_CLIENT_SECRET }}',
+    });
+    expect(step.run).toMatch(/npm install -g @bakers-build\/bakers@\d/);
+    expect(step.run).toContain('--auth-type client_credentials');
+    expect(step.run).toContain('--secret-env BB_CI_CLIENT_SECRET');
+    expect(step.run).not.toContain('$BB_CI_CLIENT_SECRET');
   });
   it('retains the existing validation commands', () => {
     const old = parse(read('.gitlab-ci.yml'));

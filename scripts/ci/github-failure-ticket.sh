@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Files a failed scheduled `GitHub checks` run in bakers.build: comments on the open CI-failure
+# ticket if there is one, otherwise creates a bug. Needs a signed-in `bakers` CLI.
+# Inputs: FAILED_JOBS, GITHUB_SHA, RUN_URL.
+set -euo pipefail
+
+: "${FAILED_JOBS:?}" "${GITHUB_SHA:?}" "${RUN_URL:?}"
+export TITLE='CI failure: scheduled GitHub checks on next'
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+
+# JSON is built with node so job names and URLs cannot break the quoting.
+node -e 'process.stdout.write(JSON.stringify({query: process.env.TITLE, project: "BAKERS"}))' \
+  >"$work/search.json"
+bakers tools tool_api__bakers_ticket_search --data @"$work/search.json" >"$work/found.json"
+
+node - "$work" <<'NODE'
+const fs = require('fs');
+const dir = process.argv[2];
+const env = process.env;
+const { tickets = [] } = JSON.parse(fs.readFileSync(`${dir}/found.json`, 'utf8'));
+const open = tickets.find((t) => t.title.startsWith(env.TITLE) && t.state !== 'done');
+const body = [
+  'Scheduled `GitHub checks` failed on `next`.',
+  '',
+  `- Failed jobs: ${env.FAILED_JOBS}`,
+  `- Commit: ${env.GITHUB_SHA}`,
+  `- Run: ${env.RUN_URL}`,
+  '',
+].join('\n');
+const [tool, args] = open
+  ? ['bakers_comment_publish', { ticket: open.identifier, type: 'comment', body }]
+  : ['bakers_ticket_create', {
+      title: env.TITLE, project: 'BAKERS', workflow: 'bb_work', type: 'bug', description: body,
+    }];
+fs.writeFileSync(`${dir}/tool`, `tool_api__${tool}`);
+fs.writeFileSync(`${dir}/args.json`, JSON.stringify(args));
+NODE
+
+bakers tools "$(cat "$work/tool")" --data @"$work/args.json"

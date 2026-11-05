@@ -10,15 +10,19 @@ on:
       - reopened
       - edited
       - ready_for_review
+  # PHPUnit/E2E (image_gate) run here on the default branch `next`, not on PRs into it.
+  schedule:
+    - cron: '0 */2 * * *'
   workflow_dispatch: {}
 permissions:
   contents: read
 concurrency:
-  group: checks-${{ github.event.pull_request.number || github.ref }}
+  # A push to `next` must not cancel a running scheduled run.
+  group: checks-${{ github.event_name == 'schedule' && 'schedule-' || '' }}${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   branch_policy:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +33,7 @@ jobs:
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: bash scripts/ci/github-branch-policy.sh
   phpcs:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -62,7 +66,7 @@ jobs:
           ./vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist
     container: php:8.4
   phpmd:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -95,7 +99,7 @@ jobs:
           php -d error_reporting='E_ALL & ~E_DEPRECATED' ./vendor/bin/phpmd web/modules/custom,web/themes/custom text phpmd.xml.dist --exclude 'tests/*,**/tests/*,**/node_modules/*'
     container: php:8.4
   phpstan:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -128,7 +132,7 @@ jobs:
           ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 1G
     container: php:8.4
   docs_pages:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -149,7 +153,7 @@ jobs:
           node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
     container: node:22
   config_sync:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -183,7 +187,7 @@ jobs:
           bash tests/config-sync/check-ci-wiring.sh
     container: php:8.4
   compose_render:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -198,7 +202,7 @@ jobs:
           set -eu
           bash tests/contract/compose.sh
   conductor:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -234,7 +238,7 @@ jobs:
           retention-days: 7
     container: node:22
   tui:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -267,7 +271,7 @@ jobs:
           retention-days: 7
     container: node:22
   tui_musl:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -326,7 +330,7 @@ jobs:
           path: bakers-cli/junit-tui.xml
           retention-days: 7
   web_ui:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     timeout-minutes: 45
     env:
       NODE_OPTIONS: --max-old-space-size=4096
@@ -366,7 +370,7 @@ jobs:
           retention-days: 7
     container: node:22
   bb_skill_version_gate:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -377,7 +381,7 @@ jobs:
           HEAD_REF: ${{ github.sha }}
         run: bash tests/contract/skill-version-gate.sh
   mr_title:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -390,7 +394,7 @@ jobs:
           bash tests/contract/mr-title.test.sh
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
   pm_bot:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     container: node:22
     timeout-minutes: 30
     steps:
@@ -409,7 +413,7 @@ jobs:
           node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
           bash tests/contract/pm-bot.sh
   coder_pm_bot:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     container: node:22
     timeout-minutes: 30
     steps:
@@ -427,7 +431,9 @@ jobs:
           bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
           bash tests/contract/coder-pm-bot.sh
   image_gate:
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
+    # Keep identical to `required`'s IMAGE_GATE_REQUIRED.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main'
     timeout-minutes: 180
     env:
       DOMAIN: nginx
@@ -465,7 +471,7 @@ jobs:
           path: gate-reports/
           retention-days: 7
   release_rehearsal:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
     container: node:22
     timeout-minutes: 60
     steps:
@@ -493,9 +499,10 @@ jobs:
           path: release-notes.md
           if-no-files-found: ignore
   required:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, github-runner-1]
+    container: node:22
     if: always()
-    needs:
+    needs: &gates
       - branch_policy
       - phpcs
       - phpmd
@@ -516,4 +523,30 @@ jobs:
     steps:
       - env:
           RESULTS: ${{ toJSON(needs) }}
-        run: node -e 'const jobs = JSON.parse(process.env.RESULTS); if (Object.values(jobs).some(job => job.result !== "success")) process.exit(1)'
+          # Same expression as image_gate's `if`: a skipped image_gate passes only where it does not run.
+          IMAGE_GATE_REQUIRED: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main' }}
+        run: node -e 'const jobs = JSON.parse(process.env.RESULTS); const ok = ([name, job]) => job.result === "success" || (name === "image_gate" && job.result === "skipped" && process.env.IMAGE_GATE_REQUIRED !== "true"); if (!Object.entries(jobs).every(ok)) process.exit(1)'
+  report_failure:
+    runs-on: [self-hosted, github-runner-1]
+    container: node:22
+    timeout-minutes: 15
+    needs: *gates
+    if: always() && contains(needs.*.result, 'failure') && github.ref == 'refs/heads/next' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: File the failure in bakers.build
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BB_CI_BASE_URL: ${{ vars.BB_CI_BASE_URL }}
+          BB_CI_CLIENT_ID: ${{ secrets.BB_CI_CLIENT_ID }}
+          BB_CI_CLIENT_SECRET: ${{ secrets.BB_CI_CLIENT_SECRET }}
+        run: |-
+          set -eu
+          FAILED_JOBS="$(node -e 'const jobs = JSON.parse(process.env.NEEDS); console.log(Object.keys(jobs).filter(name => jobs[name].result === "failure").join(", "))')"
+          export FAILED_JOBS
+          npm install -g @bakers-build/bakers@0.6.1-next.2
+          bakers config init --scope connection --auth-type client_credentials --base-url "$BB_CI_BASE_URL" --client-id "$BB_CI_CLIENT_ID" --secret-env BB_CI_CLIENT_SECRET --yes
+          bash scripts/ci/github-failure-ticket.sh

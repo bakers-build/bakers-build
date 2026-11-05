@@ -59,16 +59,25 @@ also apply to later GitLab integrations. Existing GitLab customer connectors are
 
 ## Runner selection
 
-The private rehearsal uses `blacksmith-4vcpu-ubuntu-2404` for fast jobs and
-`blacksmith-8vcpu-ubuntu-2404` for the Docker image and private registry gates.
-PHPUnit uses eight processes on these 8-vCPU runners. The Blacksmith GitHub App must have access to the repository.
-The same-source conductor benchmark passed 4,679 tests (3 existing skips) in 3m07s,
-compared with 7m27s on GitHub standard runners and 2m21s on the existing GitLab runner.
-This single sample does not establish full-pipeline runtime or cost.
-[Benchmark evidence](https://github.com/bakers-build/bakers-build/actions/runs/41542518835).
+Every job in `checks.yml` and the registry rehearsal runs on the self-hosted runner
+`[self-hosted, github-runner-1]` (Docker via dind). `release.yml` and `self-host-lifecycle.yml`
+still use Blacksmith. The single runner runs jobs one after another, so PR feedback is slower.
 
 PHPUnit, browser/integration tests and config import continue using the images built
-once by `scripts/ci/github-image-gate.sh`; runner selection does not change the gates.
+once by `scripts/ci/github-image-gate.sh` in `image_gate`. It runs:
+
+- every 2 hours on `next` (`schedule`) and on manual dispatch;
+- on every PR into `main` and every push to `main`. There, the aggregate `required` check fails
+  when `image_gate` fails or is skipped;
+- not on PRs into `next` or pushes to `next`. There, `required` passes with `image_gate` skipped.
+  Pushes to `next` therefore upload no `verified-images` for `release.yml`'s `next` channel.
+
+When a scheduled or dispatched run on `next` has a failed job, `report_failure` runs
+`scripts/ci/github-failure-ticket.sh`. It signs in to bakers.build as a service account and
+comments on the open BAKERS ticket titled `CI failure: scheduled GitHub checks on next`, or creates
+that ticket as a `bug` (workflow `bb_work`) when none is open. The comment or ticket names the
+failed jobs, the commit and the run. The job needs repository secrets `BB_CI_CLIENT_ID` and
+`BB_CI_CLIENT_SECRET` (the service account's OAuth client) and repository variable `BB_CI_BASE_URL`.
 The public fork full check passed; a separate probe confirmed secrets were absent and a write
 to the base repository failed with HTTP 403.
 
