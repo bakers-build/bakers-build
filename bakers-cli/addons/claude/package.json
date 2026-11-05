@@ -12,7 +12,8 @@
     "dist/src",
     "measure/*.json",
     "measure/agent-proxy.mjs",
-    "measure/claude-measure.mjs"
+    "measure/claude-measure.mjs",
+    "trust/claude-trust.mjs"
   ],
   "scripts": {
     "build": "tsc",

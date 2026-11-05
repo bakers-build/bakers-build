@@ -111,7 +111,7 @@ At api.slack.com/apps, choose **Create New App → From a manifest**, pick your 
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
 3. Invite the bot to the project's channel (`/invite @<bot>`). Its channel ID (channel name → **View channel details**, at the bottom) goes into `pm_bot_slack_allowed_channels`. The bot serves exactly one channel: Hermes shows it a channel's name, not its ID, and the thread link it writes into a ticket needs the ID. With more than one ID the container refuses to start.
 4. Copy the operators' member IDs (profile → **⋮ → Copy member ID**) into `pm_bot_slack_admin_users`.
-5. Optional: create a private channel with only the operators in it and invite the bot. That is Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`).
+5. Optional: create a private channel with only the operators in it and invite the bot. Set it as Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`); without one, the home channel is the allowed channel.
 
 ### 3. Parameters
 
@@ -125,7 +125,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 | `pm_bot_slack_allowed_users` | no | Member IDs the bot answers. Empty: every user in the allowed channels. Set: only these users |
 | `pm_bot_slack_admin_users` | yes | Operators' member IDs: the only users who may run Hermes slash commands |
 | `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for thread permalinks |
-| `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel |
+| `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel; empty means the first allowed channel |
 | `pm_bot_bakers_url` | yes | The bakers.build server, `https://…` |
 | `pm_bot_bakers_api_key` | yes | The service account's API key (masked) |
 | `pm_bot_project` | yes | Project UUID |
