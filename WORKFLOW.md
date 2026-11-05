@@ -26,6 +26,13 @@ Apply all matching rows.
 | Design tokens under `web/themes/custom/bb_theme/` | `designbook:tokens` |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
 
+**Recipe.** `superpowers` is this project's default recipe, whatever the recipe descriptions say.
+At qualification's classify, when `bb-recipe-matt` and `bb-recipe-superpowers` both declare the
+ticket's type, keep a recipe the intake, the description or the `recipe` field names. Otherwise an
+attended run asks the human which of the two to use, lists each with its method summary, recommends
+one with its reason and writes nothing before the answer; an unattended run takes `superpowers` and
+names the unattended run as the reason.
+
 ## bb-phase-validate
 
 Apply all matching rows to the plan and final diff. Run each distinct command once per revision and
