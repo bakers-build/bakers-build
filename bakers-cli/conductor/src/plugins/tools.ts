@@ -105,14 +105,8 @@ export function provisionTools(
     if (!profiles) return hook as string;
     if (profile === undefined)
       throw new Error(`provision_up: profile required, one of ${keys}`);
-    const cmd = Object.hasOwn(profiles, String(profile))
-      ? profiles[String(profile)]
-      : undefined;
-    if (cmd === undefined)
-      throw new Error(
-        `provision_up: unknown profile ${profile}, one of ${keys}`,
-      );
-    return cmd;
+    // The input schema's enum has already refused an unknown profile.
+    return profiles[String(profile)] as string;
   };
   return [
     {
@@ -122,12 +116,14 @@ export function provisionTools(
         contract: 1,
         tools: {
           provision_up: {
-            description: profiles
-              ? `Provision this worktree's environment from scratch with a configured profile (${keys}). Reinstalls.`
-              : "Provision this worktree's environment from scratch. Reinstalls.",
+            description: `Bring this worktree's environment up${profiles ? ` with a configured profile (${keys})` : ''}; the project's command reuses a ready environment. Returns the command's output, including the base URL.`,
             input: {
               type: 'object',
-              properties: { profile: { type: 'string' } },
+              properties: {
+                profile: profiles
+                  ? { type: 'string', enum: Object.keys(profiles) }
+                  : { type: 'string' },
+              },
             },
           },
         },

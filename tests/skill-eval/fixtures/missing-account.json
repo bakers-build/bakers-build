@@ -2,14 +2,14 @@
   "synthetic": true,
   "profile": "missing-account",
   "id": "missing-account",
-  "skill": "bb-workflow/references/provision.md",
+  "skill": "bb-workflow",
   "references": [
     "bb-workflow/references/results.md"
   ],
   "input": {
     "ticket": "EVAL-2: Auditor sees invoices but cannot approve them",
     "task": "Return the environment and actor access result for the confirmed auditor browser check.",
-    "project_adapter": "DDEV Drupal via bb-runtime-ddev",
+    "project_adapter": "a project runtime the conductor brings up with provision_up",
     "environment": "https://billing-preview.example.invalid",
     "revision": "b11ce02",
     "test_as": [
@@ -19,7 +19,7 @@
       }
     ],
     "observations": [
-      "DDEV environment is reachable.",
+      "The environment is reachable.",
       "Configured account lookup returned no auditor account.",
       "uid:1 exists and has administrator access.",
       "No browser check was run. Account creation is outside this fixture."

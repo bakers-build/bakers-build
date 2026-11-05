@@ -29,13 +29,12 @@ The ticket's state is the progress. [Follow a ticket](/get-started/daily-work/fo
 
 ## What your project decides
 
-Every run passes the same seven phases: read, provision, work, validate, deliver, outtake, transition. A run is a grid of state × phase: each state's file in `bb-workflow` has one section per phase, and that section always runs. Three kinds of guidance add **slots** to the cells:
+Every run passes the same seven phases: read, provision, work, validate, deliver, outtake, transition. A run is a grid of state × phase: each state's file in `bb-workflow` has one section per phase, and that section always runs. Two kinds of guidance add **slots** to the cells:
 
 - **The recipe** adds the engineering method to every state, chosen per ticket at qualification ([Ticket type, recipe and labels](/configuration/workflows/types-recipes-labels)). A slot for one ticket type, such as `bug`, wins over the general one.
-- **A runtime guide**, such as `bb-runtime-ddev`, says how to provision, run, lint, test and log in as a test persona in one technology. It is provisioned only when the work needs it.
 - **Your hints** in `WORKFLOW.md` add your runtime, extra skills, checks, merge rules and test users, each under the phase it refines.
 
-The frame, `bb-workflow`, holds the state files and the rules every run keeps; recipes, guides and hints never own gates, comments or transitions.
+The frame, `bb-workflow`, holds the state files and the rules every run keeps; recipes and hints never own gates, comments or transitions. A check that needs the running application calls the [`provision_up`](/configuration/provisioning/hooks#provision-on-an-agent-s-request) tool; your hook command decides how the environment comes up.
 
 Change your way of working with a text edit; no migration needed.
 

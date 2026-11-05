@@ -30,7 +30,7 @@
     "observations": [
       "The ticket has its recipe, type and current state, and the latest qualification handoff carries acceptance criteria.",
       "The failure shows only on the running site: the unit tests pass, and the export route is served by the site WORKFLOW.md's bb-phase-provision hint sets up.",
-      "Provision results, available once provision is applied: `npm run site:up` reports the site ready at http://localhost:4000 at revision c0ffee0, and `curl -s -o /dev/null -w '%{http_code}' 'http://localhost:4000/invoices/export?customer=M%C3%BCller'` there prints 500, with \"TypeError: Invalid character in header content\" from src/invoices/export.ts:42 in the site log."
+      "Provision results, available once provision_up is called: `provision_up('site')` printed the site ready at http://localhost:4000 at revision c0ffee0, and `curl -s -o /dev/null -w '%{http_code}' 'http://localhost:4000/invoices/export?customer=M%C3%BCller'` there prints 500, with \"TypeError: Invalid character in header content\" from src/invoices/export.ts:42 in the site log."
     ]
   },
   "expect": {
@@ -45,7 +45,7 @@
       "Probe-plan: 0"
     ],
     "reads": [
-      "skills/bb-workflow/references/provision.md"
+      "skills/bb-workflow/references/tools-conductor.md"
     ]
   },
   "simulation": {
@@ -63,7 +63,7 @@
       "recipe": "probe"
     },
     "files": {
-      "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-provision\n\nRuntime: `npm run site:up` brings the site up in the worktree at http://localhost:4000.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
+      "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-provision\n\nBug reproductions run on `provision_up('site')`, the site at http://localhost:4000.\n\n## bb-phase-validate\n\n| When | Command |\n|---|---|\n| Any change | `npm test` |\n"
     },
     "comments": [
       {
@@ -77,7 +77,7 @@
   "rubric": [
     {
       "id": "provisions",
-      "criterion": "Applies provision with the bb-phase-provision hint for the bug's reproduction and asks no permission to provision."
+      "criterion": "Calls provision_up with the bb-phase-provision hint's profile for the bug's reproduction and asks no permission to provision."
     },
     {
       "id": "red-recorded",
@@ -89,6 +89,6 @@
     }
   ],
   "virtual_references": [
-    "bb-workflow/references/provision.md"
+    "bb-workflow/references/tools-conductor.md"
   ]
 }

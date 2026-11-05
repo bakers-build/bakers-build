@@ -53,7 +53,7 @@
     "synthetic": true,
     "profile": "artifact",
     "id": "cli-non-ddev",
-    "skill": "bb-workflow/references/provision.md",
+    "skill": "bb-workflow",
     "references": ["bb-workflow/references/results.md"],
     "input": {
       "ticket": "EVAL-3: CLI reports invalid manifest",

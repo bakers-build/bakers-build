@@ -30,7 +30,7 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 | Section | Job |
 |---|---|
-| `## bb-phase-provision` | The runtime guide and setup that bring the environment up, for example `@bakers-build/bb-runtime-ddev`. Leave it out when no work needs a runtime. |
+| `## bb-phase-provision` | The [`provision_up`](/configuration/provisioning/hooks#provision-on-an-agent-s-request) profile each kind of check needs, and how container commands run. Leave it out when no work needs a runtime. |
 | `## bb-phase-work` | A `\| When \| Skill \|` table: extra skills for matching changes, for example a Drupal skill for `web/modules/`. |
 | `## bb-phase-validate` | A `\| When \| Command \|` table: the checks for matching changes. |
 | `## bb-phase-deliver` | How a merge request is merged: the merge gate and what runs in it. |
@@ -47,7 +47,7 @@ A Drupal project on DDEV:
 ```md
 ## bb-phase-provision
 
-Runtime: DDEV through `@bakers-build/bb-runtime-ddev`.
+Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_exec("<cmd>")`.
 
 ## bb-phase-work
 

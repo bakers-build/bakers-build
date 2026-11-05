@@ -5,7 +5,7 @@ contract](results.md). Verification runs automated suites,
 including browser suites such as Playwright, plus selected non-browser agent checks.
 [browser](browser.md) owns agent browser inspection; human checks await the human.
 
-Before execution use [provision](provision.md) to establish each check's prerequisites,
+Before execution apply the [provision rule](../SKILL.md#rules) for each check's environment,
 cwd/connection and persona access. CLI-only or no-runtime checks remain valid. Preserve every
 required persona, including anonymous, denied, and missing personas. A missing prerequisite
 blocks its dependent check; never substitute admin or another environment to obtain a pass.

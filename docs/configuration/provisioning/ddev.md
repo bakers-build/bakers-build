@@ -82,4 +82,47 @@ ddev delete --omit-snapshot --yes --clean-containers=false "$name"
 - **Keep the database instead?** Use `after_done: 'ddev stop'` to stop services without deleting their data.
 - **Application setup:** add your repository's repeatable install/import steps after startup. Required readiness checks belong in `WORKFLOW.md`.
 
+## Provision on an agent's request
+
+**For agents that need a running site.** The [`provision_up` hook](/configuration/provisioning/hooks#provision-on-an-agent-s-request) gives runs a tool that brings the site up. Merge a command per profile into `hooks`:
+
+```js
+hooks: {
+  provision_up: {
+    test: 'sh scripts/provision.sh test',
+  },
+},
+```
+
+Create `scripts/provision.sh`. It needs `jq` and `curl` on the host:
+
+```sh
+set -eu
+profile="${1:?usage: provision.sh <profile>}"
+marker=.ddev/.bakers-profile
+
+ready() {
+  url=$(ddev describe -j 2>/dev/null | jq -r 'select(.raw.status == "running") | .raw.primary_url' || true)
+  [ -n "$url" ] || return 1
+  code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 "$url" || true)
+  [ "${code:-0}" -ge 100 ] && [ "$code" -lt 500 ]
+}
+
+if [ "$(cat "$marker" 2>/dev/null || true)" = "$profile" ]; then
+  if ready; then echo "ready $url"; exit 0; fi
+  if ddev start && ready; then echo "started $url"; exit 0; fi
+fi
+rm -f "$marker"
+ddev start
+sh scripts/install.sh "$profile"
+if ! ready; then echo "Site does not answer: ${url:-not running}" >&2; exit 1; fi
+echo "$profile" > "$marker"
+echo "installed $url"
+```
+
+- **Ready site:** a running site of the requested profile whose URL answers is reused without any change.
+- **Marker:** `.ddev/.bakers-profile` records the installed profile. Add it to `.gitignore`. Anything else that reinstalls the site should delete it.
+- **Install step:** replace `scripts/install.sh` with your repository's install or import for the profile.
+- **Local certificate:** `curl -k` accepts DDEV's local certificate even when the host does not trust it.
+
 [Hook lifecycle and environment →](/configuration/provisioning/hooks)

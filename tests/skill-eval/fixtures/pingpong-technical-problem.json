@@ -10,8 +10,7 @@
     "bb-workflow/references/working.md",
     "bb-workflow/references/boundaries.md",
     "bb-workflow/references/publish-comment.md",
-    "bb-workflow/references/ticket-writes.md",
-    "bb-workflow/references/provision.md"
+    "bb-workflow/references/ticket-writes.md"
   ],
   "recipes": [
     "bb-recipe-probe"
@@ -24,9 +23,9 @@
     "project_uuid": "55555555-5555-4555-8555-555555555555",
     "observations": [
       "Routing, the intake and `read` ran in this run: the qualification handoff is valid; spec 77777777-7777-4777-8777-000000000002, plan …003 and test …004 are confirmed.",
-      "The run is in `provision`. The confirmed checks run in the project's DDEV environment through its runtime guide.",
-      "`ddev start` failed with: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
-      "The runtime guide's recovery, `ddev poweroff` and then `ddev start`, was tried twice; both attempts failed with the same error. No shell exists in this simulation; these results are final."
+      "The run is in `provision`. The confirmed checks need the running site, so `provision_up('site')` was called.",
+      "`provision_up('site')` failed: its `ddev start` reported: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+      "`provision_up('site')` was retried twice; both attempts failed with the same error. No shell exists in this simulation; these results are final."
     ]
   },
   "expect": {
@@ -82,7 +81,7 @@
   "rubric": [
     {
       "id": "technical-problem",
-      "criterion": "The final answer reports the failed ddev start with the Docker daemon error published in its own comment headed # Error, then a separate # Technical problem comment that only asks the user to contact the developers."
+      "criterion": "The final answer reports the failed provision_up (ddev start) with the Docker daemon error published in its own comment headed # Error, then a separate # Technical problem comment that only asks the user to contact the developers."
     },
     {
       "id": "label-freeze",

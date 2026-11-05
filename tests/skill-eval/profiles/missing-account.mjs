@@ -3,7 +3,7 @@ import { nonempty, requireValue } from '../validation.mjs';
 
 export function validate(fixture) {
   const i = fixture.input;
-  requireValue(fixture.skill === 'bb-workflow/references/provision.md' && Array.isArray(i.test_as) && i.test_as.length === 1 &&
+  requireValue(fixture.skill === 'bb-workflow' && Array.isArray(i.test_as) && i.test_as.length === 1 &&
     nonempty(i.test_as[0].persona) && nonempty(i.test_as[0].sees) && nonempty(i.ticket) && nonempty(i.task) &&
     nonempty(i.project_adapter) && nonempty(i.revision) && Array.isArray(i.observations) &&
     i.observations.length > 0 && i.observations.every(nonempty), 'Expected missing-account input and one test_as persona');

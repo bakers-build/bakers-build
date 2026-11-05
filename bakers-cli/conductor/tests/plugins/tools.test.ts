@@ -112,9 +112,25 @@ describe('loadTools', () => {
     ).toBe('exit 0\nsecond\n');
     await expect(
       registry.call('provision_up', { profile: 'c' }, here),
-    ).rejects.toThrow(/unknown profile c.*a, b/);
+    ).rejects.toThrow(/profile: must be equal to one of the allowed values/);
     await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
       /profile required.*a, b/,
+    );
+  });
+
+  it('describes provision_up as reusing a ready environment, profiles as an enum', async () => {
+    const [tool] = (
+      await loadTools(provisionTools({ a: 'true', b: 'true' }))
+    ).list();
+    expect(tool.description).toBe(
+      "Bring this worktree's environment up with a configured profile (a, b); the project's command reuses a ready environment. Returns the command's output, including the base URL.",
+    );
+    expect(tool.inputSchema).toMatchObject({
+      properties: { profile: { type: 'string', enum: ['a', 'b'] } },
+    });
+    const [single] = (await loadTools(provisionTools('true'))).list();
+    expect(single.description).toBe(
+      "Bring this worktree's environment up; the project's command reuses a ready environment. Returns the command's output, including the base URL.",
     );
   });
 
