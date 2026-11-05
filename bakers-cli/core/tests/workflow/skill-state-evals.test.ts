@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import {
   loadFixture,
@@ -572,6 +573,22 @@ describe('classify profile', () => {
         ),
       ]),
     ).toEqual(['nothing-else', 'asks']);
+  });
+  it('installs a shipped recipe when no test recipe has its name, and the project WORKFLOW.md', async () => {
+    const root = new URL('../../../../', import.meta.url);
+    const text = (path: string) => readFile(new URL(path, root), 'utf8');
+    const shipped = await loadFixture('qualify-recipe-workflow-ask');
+    for (const name of ['bb-recipe-matt', 'bb-recipe-superpowers'])
+      expect(shipped.simulation.files[`skills/${name}/SKILL.md`]).toBe(
+        await text(`.claude/skills/bakers-build/skills/${name}/SKILL.md`),
+      );
+    expect(shipped.simulation.files['WORKFLOW.md']).toBe(
+      await text('WORKFLOW.md'),
+    );
+    const test = await loadFixture('qualify-classify-default');
+    expect(test.simulation.files['skills/bb-recipe-probe/SKILL.md']).toBe(
+      await text('tests/skill-eval/recipes/bb-recipe-probe.md'),
+    );
   });
 });
 

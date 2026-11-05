@@ -1,0 +1,57 @@
+{
+  "id": "qualify-recipe-workflow-unattended",
+  "synthetic": true,
+  "profile": "classify",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow/references/classify.md",
+  "references": [
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/ticket-writes.md"
+  ],
+  "project_workflow": true,
+  "recipes": [
+    "bb-recipe-matt",
+    "bb-recipe-superpowers"
+  ],
+  "input": {
+    "task": "This is qualification's work phase of a bb-workflow run in this repository; both prior-art checks already came back negative. Apply classify with the slots the frame binds for this phase: choose the recipe and type and write them. This run is unattended: no human answers questions. Stop after classification; publish nothing and transition nothing.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "installed_skills": "Installed recipes are readable with read_file at skills/<name>/SKILL.md. Installed: bb-recipe-matt, bb-recipe-superpowers. No other skill file is installed. The project's WORKFLOW.md is at WORKFLOW.md.",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555"
+  },
+  "expect": {
+    "write": true,
+    "recipe": "superpowers",
+    "types": [
+      "feature"
+    ]
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-40",
+      "title": "Export invoices as CSV",
+      "state": "qualification",
+      "workflow": "bb_work",
+      "description": "Operators export the invoice list as CSV from the invoice page.",
+      "created": "2026-01-01",
+      "base_branch": "next",
+      "changed": "fixture-revision-1"
+    }
+  },
+  "rubric": [
+    {
+      "id": "default-recipe",
+      "criterion": "Takes bb-recipe-superpowers, this project's default recipe under WORKFLOW.md, and the type feature, without a question."
+    },
+    {
+      "id": "reason",
+      "criterion": "Names the unattended run as the reason for taking the default recipe."
+    },
+    {
+      "id": "readback",
+      "criterion": "Reports the recipe and type as read back from the ticket."
+    }
+  ]
+}

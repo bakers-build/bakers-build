@@ -32,7 +32,10 @@ async function installRecipes(fixture) {
   if (fixture.recipes === undefined) return;
   requireValue(Array.isArray(fixture.recipes) && fixture.recipes.every(recipeName), 'Expected recipes as bb-recipe-<name> list');
   for (const name of fixture.recipes) {
-    const content = await readFile(new URL(`./recipes/${name}.md`, import.meta.url), 'utf8');
+    const content = await readFile(new URL(`./recipes/${name}.md`, import.meta.url), 'utf8').catch(error => {
+      if (error.code !== 'ENOENT') throw error;
+      return readFile(new URL(`../../.claude/skills/bakers-build/skills/${name}/SKILL.md`, import.meta.url), 'utf8');
+    });
     if (fixture.execution === 'simulated-tools') (fixture.simulation.files ??= {})[`skills/${name}/SKILL.md`] = content;
     else (fixture.input.installed_recipes ??= {})[name] = content;
   }
@@ -40,6 +43,10 @@ async function installRecipes(fixture) {
 
 /** Tool fixtures may serve frame references and bundle skills as virtual files, so the trace counts each read. */
 async function installReferences(fixture) {
+  if (fixture.project_workflow !== undefined) {
+    requireValue(fixture.project_workflow === true && fixture.execution === 'simulated-tools', 'Expected project_workflow: true on a tool fixture');
+    fixture.simulation.files = { ...fixture.simulation.files, 'WORKFLOW.md': await readFile(new URL('../../WORKFLOW.md', import.meta.url), 'utf8') };
+  }
   if (fixture.virtual_references === undefined) return;
   const servable = path => reference(path) || /^bb-[a-z0-9-]+\/SKILL\.md$/.test(path);
   requireValue(fixture.execution === 'simulated-tools' && Array.isArray(fixture.virtual_references) &&

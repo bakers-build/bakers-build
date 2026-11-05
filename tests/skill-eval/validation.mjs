@@ -21,5 +21,5 @@ export function validateEnvelope(fixture) {
     fixture.rubric.every(c => slug(c.id) && nonempty(c.criterion)), 'Expected a complete named semantic rubric');
 }
 
-// Recipes are installed skills the frame resolves; tests use their own, never a shipped one.
+// Recipes are installed skills the frame resolves; frame and slot tests install test recipes, a classify case installs shipped ones by name to pin their descriptions.
 export const recipeName = value => typeof value === 'string' && /^bb-recipe-[a-z0-9-]+$/.test(value);
