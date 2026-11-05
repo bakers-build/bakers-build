@@ -6,7 +6,8 @@ state boundaries, ticket-link persistence or caller handoff.
 
 ## Open
 
-Commit and push the scoped work. Create/update a PR with explicit base and head:
+Commit the scoped work and push it with `git push -u origin <branch_name>`; the first push sets
+the upstream. Create/update a PR with explicit base and head:
 `gh pr create --base <base_branch> --head <branch_name>`. Keep the Conventional Commits title and
 description free of bakers.build references. Save the verified PR URL through delivery's links-only
 write. GitHub stores neither a per-PR squash preference nor a per-PR source deletion preference.

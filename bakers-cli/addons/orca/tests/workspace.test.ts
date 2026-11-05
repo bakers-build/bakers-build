@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -124,10 +125,41 @@ describe('OrcaWorkspace.ensure', () => {
     ]);
   });
 
-  it('tracks a branch that only exists on origin', async () => {
+  it('checks out a branch that only exists on origin without tracking it', async () => {
     const root = tmpRoot();
     const { git, calls } = fakeGit({ refs: ['refs/remotes/origin/feat/x'] });
     await workspace(root, fakeOrca().orca, git).ensure('BAKERS-1', 'feat/x');
+    const path = join(root, '.bakers-worktrees', 'feat/x');
+    expect(worktreeAdds(calls)).toEqual([
+      ['-C', root, 'worktree', 'add', '-b', 'feat/x', path, 'origin/feat/x'],
+    ]);
+  });
+
+  it('sets branch.autoSetupMerge=false in the root and gives the run push.default=current', async () => {
+    const root = tmpRoot();
+    execFileSync('git', ['init', '-q', root]);
+    const ws = await workspace(root, fakeOrca().orca, fakeGit().git).ensure(
+      'BAKERS-1',
+      'feat/x',
+    );
+    expect(
+      execFileSync('git', ['-C', root, 'config', 'branch.autoSetupMerge'], {
+        encoding: 'utf8',
+      }).trim(),
+    ).toBe('false');
+    const env = ws.env ?? {};
+    const last = Number(env.GIT_CONFIG_COUNT) - 1;
+    expect(env[`GIT_CONFIG_KEY_${last}`]).toBe('push.default');
+    expect(env[`GIT_CONFIG_VALUE_${last}`]).toBe('current');
+  });
+
+  it('tracks a branch that only exists on origin with autoSetupMerge: true', async () => {
+    const root = tmpRoot();
+    const { git, calls } = fakeGit({ refs: ['refs/remotes/origin/feat/x'] });
+    const ws = await workspace(root, fakeOrca().orca, git, {
+      autoSetupMerge: true,
+    }).ensure('BAKERS-1', 'feat/x');
+    expect(ws.env).toBeUndefined();
     const path = join(root, '.bakers-worktrees', 'feat/x');
     expect(worktreeAdds(calls)).toEqual([
       [
@@ -242,7 +274,11 @@ describe('OrcaWorkspace.applyOpenLayout', () => {
         throw new Error('boom');
       },
     });
-    const ws = workspace(root, orca, fakeGit().git, { logger });
+    // tmpRoot() is no repository; count only layout warnings.
+    const ws = workspace(root, orca, fakeGit().git, {
+      logger,
+      autoSetupMerge: true,
+    });
     const { path } = await ws.ensure('BAKERS-1', 'feat/x');
     await expect(ws.applyOpenLayout(path, ctx)).resolves.toBeUndefined();
     expect(warnings).toHaveLength(1);
