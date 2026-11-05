@@ -10,7 +10,7 @@ confirmed scope and verification plan; publish [acceptance](acceptance.md) if ab
 
 ## provision
 
-Before any environment-dependent execution, apply the [provision rule](../SKILL.md#rules). A
+Before any environment-dependent execution, apply the frame's *Provision* rule. A
 **missing** persona blocks its checks; nobody else tests in its place. No need → skip silently.
 
 ## work

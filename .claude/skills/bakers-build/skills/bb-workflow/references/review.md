@@ -8,7 +8,7 @@ Resume the confirmed scope, the persisted MR link and coding's environment and e
 
 ## provision
 
-Apply the [provision rule](../SKILL.md#rules) only when a chosen check needs a running environment
+Apply the frame's *Provision* rule only when a chosen check needs a running environment
 or logins; issue fresh login links.
 
 ## work

@@ -9,7 +9,7 @@ Apply [ensure qualification](ensure-qualification.md); continue only on `qualifi
 
 ## provision
 
-A bug whose reproduction needs a runtime applies the [provision rule](../SKILL.md#rules), so its RED observation runs on the worktree's site; otherwise none.
+A bug whose reproduction needs a runtime applies the frame's *Provision* rule, so its RED observation runs on the worktree's site; otherwise none.
 
 ## work
 
