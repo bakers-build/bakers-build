@@ -93,10 +93,17 @@ export function siteToolProxy(
         return owner;
       };
 
+      // The site reads an empty project or workspace as no filter, so empty counts as missing.
+      const blank = (v: unknown) => v === undefined || v === null || v === '';
       const scoped = { ...args };
-      if (FILLS_PROJECT.includes(name)) scoped.project ??= project;
-      if (name === 'bakers_label_list' && ticket.workspaceId)
-        scoped.workspace ??= ticket.workspaceId;
+      if (FILLS_PROJECT.includes(name) && blank(scoped.project))
+        scoped.project = project;
+      if (
+        name === 'bakers_label_list' &&
+        ticket.workspaceId &&
+        blank(scoped.workspace)
+      )
+        scoped.workspace = ticket.workspaceId;
 
       const refs: Array<['ticket' | 'project', string, unknown]> = [
         ['ticket', 'ticket', scoped.ticket],
@@ -111,7 +118,14 @@ export function siteToolProxy(
         ['project', 'project', scoped.project],
       ];
       for (const [kind, arg, value] of refs) {
-        if (value === undefined || value === null || value === '') continue;
+        if (value === undefined || value === null) continue;
+        if (value === '') {
+          // the site reads an empty ticket ref as none
+          if (kind === 'ticket') continue;
+          throw new Error(
+            `${name}: an empty ${arg} would mean every project; this run may only touch project ${project}`,
+          );
+        }
         const owner = await ownerOf(kind, String(value));
         if (owner !== project)
           throw new Error(

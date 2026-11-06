@@ -638,7 +638,7 @@ describe('ClaudeAgent conductor tools', () => {
         bakers: conductorServer,
       },
     });
-    expect(agent.launchWarnings).toBeUndefined();
+    expect(agent.launchWarnings).toEqual([]);
   });
 
   it("replaces a sandbox MCP server named bakers with the conductor's, and warns", () => {
@@ -651,6 +651,17 @@ describe('ClaudeAgent conductor tools', () => {
     expect(agent.launchWarnings).toEqual([
       "sandbox.mcp_servers.bakers is replaced by the conductor's bakers server",
     ]);
+  });
+
+  it('keeps a sandbox MCP server named bakers, without a warning, in a run without the conductor server', () => {
+    const agent = new ClaudeAgent({
+      sandbox: { mcp_servers: { bakers: { command: 'old-bakers-mcp' } } },
+    });
+    const a = captureArgv('claude', agent.launchCommand('x'));
+    expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+      mcpServers: { bakers: { command: 'old-bakers-mcp' } },
+    });
+    expect(agent.launchWarnings).toEqual([]);
   });
 
   it('adds the bakers server in the system, yolo and custom modes too', () => {

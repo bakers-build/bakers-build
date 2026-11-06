@@ -167,7 +167,8 @@ export class ClaudeAgent implements BbAgent {
   private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
-  readonly launchWarnings?: readonly string[];
+  /** Set by the last launch: the conductor's server replaced the sandbox's own `bakers`. */
+  private replacedBakersServer = false;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
 
@@ -193,15 +194,14 @@ export class ClaudeAgent implements BbAgent {
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
-    if (
-      !this.measure &&
-      this.sandboxMcpServers &&
-      Object.hasOwn(this.sandboxMcpServers, CONDUCTOR_TOOLS_SERVER)
-    ) {
-      this.launchWarnings = [
-        `sandbox.mcp_servers.${CONDUCTOR_TOOLS_SERVER} is replaced by the conductor's ${CONDUCTOR_TOOLS_SERVER} server`,
-      ];
-    }
+  }
+
+  get launchWarnings(): readonly string[] {
+    return this.replacedBakersServer
+      ? [
+          `sandbox.mcp_servers.${CONDUCTOR_TOOLS_SERVER} is replaced by the conductor's ${CONDUCTOR_TOOLS_SERVER} server`,
+        ]
+      : [];
   }
 
   /** A measured run stays without the conductor's tools, MCP or bridge. */
@@ -274,6 +274,9 @@ export class ClaudeAgent implements BbAgent {
             },
           }
         : {};
+    this.replacedBakersServer =
+      CONDUCTOR_TOOLS_SERVER in conductor &&
+      Object.hasOwn(this.sandboxMcpServers ?? {}, CONDUCTOR_TOOLS_SERVER);
     const config = (servers: Record<string, unknown>) =>
       JSON.stringify({ mcpServers: servers });
     if (this.sandboxMcpServers !== undefined)

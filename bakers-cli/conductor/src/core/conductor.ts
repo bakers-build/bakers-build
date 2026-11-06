@@ -1557,6 +1557,17 @@ export class Conductor {
     // field's accepted formats and the PATCH would be rejected (review round
     // 4, Critical 1).
     const dispatchedAt = Math.floor(Date.now() / 1000);
+    const tools = chosen.agent.withoutConductorTools
+      ? undefined
+      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+    const command = chosen.agent.launchCommand(
+      prompt,
+      identity,
+      ws.path,
+      tools ? { url: tools.url } : undefined,
+      env,
+    );
+    // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
     if (warnings?.length) {
       const alias = chosen.alias ?? chosen.id;
@@ -1572,16 +1583,6 @@ export class Conductor {
         );
       }
     }
-    const tools = chosen.agent.withoutConductorTools
-      ? undefined
-      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
-    const command = chosen.agent.launchCommand(
-      prompt,
-      identity,
-      ws.path,
-      tools ? { url: tools.url } : undefined,
-      env,
-    );
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,

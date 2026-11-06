@@ -317,6 +317,10 @@ describe('site tools on the bakers server', () => {
     ).toBe(
       `bakers_label_list: workspace other-workspace is not the workspace ${WORKSPACE_A} of project ${PROJECT_A}`,
     );
+    // an empty project reads as "every project" on the site
+    expect(await refused('bakers_project_read', { project: '' })).toBe(
+      `bakers_project_read: an empty project would mean every project; this run may only touch project ${PROJECT_A}`,
+    );
     expect(await refused('bakers_ticket_read', { ticket: 'NOPE-1' })).toMatch(
       /Ticket NOPE-1 does not exist/,
     );
@@ -364,6 +368,14 @@ describe('site tools on the bakers server', () => {
     });
     expect(search.isError).toBeFalsy();
     await client.callTool({ name: 'bakers_label_list', arguments: {} });
+    await client.callTool({
+      name: 'bakers_ticket_search',
+      arguments: { query: 'y', project: '' },
+    });
+    await client.callTool({
+      name: 'bakers_label_list',
+      arguments: { workspace: '' },
+    });
     const read = await client.callTool({
       name: 'bakers_ticket_read',
       arguments: { ticket: 'BB-1' },
@@ -382,6 +394,14 @@ describe('site tools on the bakers server', () => {
       {
         name: 'tool_api__bakers_ticket_search',
         args: { query: 'x', project: PROJECT_A },
+      },
+      {
+        name: 'tool_api__bakers_label_list',
+        args: { workspace: WORKSPACE_A },
+      },
+      {
+        name: 'tool_api__bakers_ticket_search',
+        args: { query: 'y', project: PROJECT_A },
       },
       {
         name: 'tool_api__bakers_label_list',
