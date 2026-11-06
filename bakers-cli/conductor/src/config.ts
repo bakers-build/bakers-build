@@ -34,7 +34,7 @@ import {
 } from './plugins/preset.js';
 import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
-import { loadTools, provisionTools } from './plugins/tools.js';
+import { loadTools, provisionRuns, provisionTools } from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`
@@ -501,9 +501,10 @@ export async function loadConductorConfig(
   const hookListeners = validateHookListeners(discovered.hooks);
   // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
   // Tools load first so inbox bindings can be checked against them.
+  const provisioning = provisionRuns();
   const toolSets = [
     ...discovered.addonTools,
-    ...provisionTools(config.hooks?.provision_up),
+    ...provisionTools(config.hooks?.provision_up, provisioning),
   ];
   const tools = toolSets.length > 0 ? await loadTools(toolSets) : undefined;
   const inboxAddons = await loadInboxAddons(
@@ -749,6 +750,7 @@ export async function loadConductorConfig(
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
     ...(tools !== undefined ? { tools } : {}),
+    ...(config.hooks?.provision_up !== undefined ? { provisioning } : {}),
     ...(processHost !== undefined ? { processHost } : {}),
     bakers,
     ...identityOf(machineCtx, project, variant),
