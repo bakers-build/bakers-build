@@ -9,7 +9,7 @@ drush site:install /var/www/html/recipes/bakers -y
 fail=0
 
 # Required modules present.
-for m in bb_core bb_connector simple_oauth jsonapi_resources; do
+for m in bb_core simple_oauth jsonapi_resources; do
   if ! drush pm:list --status=enabled --type=module --format=list | grep -qx "$m"; then
     echo "FAIL: module $m not enabled"; fail=1
   fi

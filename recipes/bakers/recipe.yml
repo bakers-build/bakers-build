@@ -34,7 +34,6 @@ install:
   # Ticket activities and their opt-in mails; an account's mail settings row
   # is written only when it saves its notifications page.
   - bb_activity
-  - bb_connector
   # The island link layer (BB-398). Path-based custom code, not a composer
   # package, so nothing enables it implicitly — and every hook it ships is
   # silently inert while it is uninstalled.

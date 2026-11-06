@@ -12,8 +12,8 @@ use PHPUnit\Framework\Attributes\Group;
 /**
  * Verifies the failed-run re-claim circuit breaker (BB-149, AC-4).
  *
- * A ticket is parked when its `failed_retry_cap` most-recent runs are all
- * `failed` and the newest changed within `failed_retry_window_seconds`; it
+ * A ticket is parked when its three most-recent runs are all
+ * `failed` and the newest changed within two hours; it
  * self-heals once the window elapses or a non-failed run appears. Defaults
  * (3 / 7200s) come from TicketClaimService constants, overridable via config.
  */
@@ -91,20 +91,6 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
       ->execute();
     $this->seedFailedRun($ticket, $this->now() - 100);
     $this->seedFailedRun($ticket, $this->now() - 50);
-    $run = $this->claimService->claim($this->reloadTicket($ticket), $this->conductor);
-    $this->assertSame('claimed', $run->getRunState());
-  }
-
-  /**
-   * Raising the cap in config lifts the parking threshold.
-   */
-  public function testConfigOverrideRaisesCap(): void {
-    $this->config('bb_core.settings')->set('failed_retry_cap', 5)->save();
-    $ticket = $this->seedAssignedTicket('plan');
-    // Three failures inside the window: below the raised cap of 5 → claimable.
-    for ($i = 0; $i < 3; $i++) {
-      $this->seedFailedRun($ticket, $this->now() - 600);
-    }
     $run = $this->claimService->claim($this->reloadTicket($ticket), $this->conductor);
     $this->assertSame('claimed', $run->getRunState());
   }

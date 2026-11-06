@@ -296,10 +296,10 @@ final class ShippedConfigDriftTest extends UnitTestCase {
    * `formblock` are retired — gone from `config/sync/core.extension.yml` and
    * (where they were ever named) from the recipe `install:` lists.
    * `dynamic_page_cache` is added to both. `field_ui`, `ui_patterns_library`,
-   * `ui_patterns_field`, `bb_connector` and `views_autocomplete_filters`
-   * are UNCHANGED: each still has an enabled dependent
-   * (`display_builder`/`display_builder_entity_view`, `island_ui_patterns`),
-   * live configuration (`bb_connector`), or live shipped Views consumers
+   * `ui_patterns_field` and `views_autocomplete_filters` are UNCHANGED: each
+   * still has an enabled dependent
+   * (`display_builder`/`display_builder_entity_view`, `island_ui_patterns`)
+   * or live shipped Views consumers
    * (`views_autocomplete_filters`, by plugin class, not module name), so
    * removing them is a separate, still-open decision — this test only pins
    * what this ticket actually did.
@@ -318,6 +318,8 @@ final class ShippedConfigDriftTest extends UnitTestCase {
       'update',
       'migrate',
       'formblock',
+      // Uninstalled; its code stays until it is deleted.
+      'bb_connector',
     ] as $retired) {
       self::assertArrayNotHasKey(
         $retired,
@@ -342,7 +344,7 @@ final class ShippedConfigDriftTest extends UnitTestCase {
       'recipes/bb_base installs dynamic_page_cache.',
     );
 
-    foreach (['field_ui', 'ui_patterns_library', 'ui_patterns_field', 'bb_connector', 'views_autocomplete_filters'] as $kept) {
+    foreach (['field_ui', 'ui_patterns_library', 'ui_patterns_field', 'views_autocomplete_filters'] as $kept) {
       self::assertArrayHasKey(
         $kept,
         $modules,

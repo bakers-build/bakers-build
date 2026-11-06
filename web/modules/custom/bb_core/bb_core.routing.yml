@@ -43,22 +43,6 @@ bb_core.workspace_join:
     _user_is_logged_in: 'TRUE'
     _custom_access: '\Drupal\bb_core\Form\BbWorkspaceJoinForm::access'
 
-bb_core.admin:
-  path: '/admin/bakers'
-  defaults:
-    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
-    _title: 'bakers.build'
-  requirements:
-    _permission: 'administer bakers'
-
-bb_core.settings:
-  path: '/admin/bakers/settings'
-  defaults:
-    _form: '\Drupal\bb_core\Form\BbSettingsForm'
-    _title: 'bakers.build settings'
-  requirements:
-    _permission: 'administer bakers'
-
 bb_core.claim_next:
   path: '/%jsonapi%/bakers/claim-next'
   methods: ['POST']

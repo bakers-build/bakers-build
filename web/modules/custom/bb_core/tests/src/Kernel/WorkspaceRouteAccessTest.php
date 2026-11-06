@@ -311,7 +311,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
   }
 
   /**
-   * Content entities have no admin pages; the site settings keep theirs.
+   * Content entities and the site settings have no admin pages.
    */
   public function testContentEntityAdminPathsAre404(): void {
     $this->actAs($this->createAccount('admin2', ['administer bakers']));
@@ -336,10 +336,12 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
       '/admin/bakers/comments',
       '/admin/bakers/runs',
       '/admin/bakers/ticket-templates',
+      '/admin/bakers',
+      '/admin/bakers/settings',
+      '/admin/bakers/config',
     ] as $path) {
       self::assertSame(404, $this->statusOf($path), sprintf('%s must be gone.', $path));
     }
-    self::assertSame(200, $this->statusOf('/admin/bakers/settings'));
   }
 
   /**

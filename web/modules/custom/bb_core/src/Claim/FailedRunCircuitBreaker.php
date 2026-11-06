@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Claim;
 
 use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -14,8 +13,8 @@ use Drupal\bb_core\Entity\BbTicketInterface;
  * Parks a ticket that is hot-reclaim-looping on a persistently-failing setup.
  *
  * The failed-run re-claim circuit breaker: a ticket is parked
- * when its `failed_retry_cap` most-recent runs are all `failed` AND the newest
- * of them changed within `failed_retry_window_seconds`. This complements the
+ * when its DEFAULT_RETRY_CAP most-recent runs are all `failed` AND the newest
+ * of them changed within DEFAULT_RETRY_WINDOW_SECONDS. This complements the
  * conductor terminalising a dead run to `failed` at once — without a cap a
  * `failed` run frees the ticket immediately, so a broken setup would re-claim +
  * re-fail every tick. Self-healing: once the window elapses (the newest failed
@@ -24,14 +23,12 @@ use Drupal\bb_core\Entity\BbTicketInterface;
  * runs, or a mixed recent set, is never parked.
  *
  * Split out of TicketClaimService so the claim service stays under the phpmd
- * class-complexity budget; the thresholds live in bb_core.settings with the
- * constants below as fallbacks.
+ * class-complexity budget. The thresholds are fixed constants.
  */
 final class FailedRunCircuitBreaker {
 
   public const DEFAULT_RETRY_CAP = 3;
   public const DEFAULT_RETRY_WINDOW_SECONDS = 7200;
-  private const SETTINGS = 'bb_core.settings';
 
   /**
    * Constructs a FailedRunCircuitBreaker.
@@ -40,13 +37,10 @@ final class FailedRunCircuitBreaker {
    *   The entity type manager, used to query the ticket's runs.
    * @param \Drupal\Component\Datetime\TimeInterface $time
    *   The time service, used to evaluate the retry window.
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Config factory, read for the cap/window thresholds.
    */
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
-    private readonly ConfigFactoryInterface $configFactory,
   ) {
   }
 
@@ -69,8 +63,8 @@ final class FailedRunCircuitBreaker {
    * Whether the ticket is parked by the failed-run circuit breaker.
    */
   public function isTripped(BbTicketInterface $ticket): bool {
-    $cap = $this->setting('failed_retry_cap', self::DEFAULT_RETRY_CAP);
-    $window = $this->setting('failed_retry_window_seconds', self::DEFAULT_RETRY_WINDOW_SECONDS);
+    $cap = self::DEFAULT_RETRY_CAP;
+    $window = self::DEFAULT_RETRY_WINDOW_SECONDS;
     $storage = $this->entityTypeManager->getStorage('bb_run');
     // The `cap` most-recent runs of this ticket, newest first.
     $ids = $storage->getQuery()
@@ -99,22 +93,6 @@ final class FailedRunCircuitBreaker {
     // All `cap` most-recent runs failed: park only while the newest is still
     // inside the retry window; past it the ticket self-heals.
     return $newest_changed > $this->time->getRequestTime() - $window;
-  }
-
-  /**
-   * Reads a positive integer setting, falling back to a default.
-   *
-   * @param string $key
-   *   The bb_core.settings key.
-   * @param int $fallback
-   *   The value used when the config is unset or not a positive integer.
-   *
-   * @return int
-   *   The effective setting value.
-   */
-  private function setting(string $key, int $fallback): int {
-    $value = $this->configFactory->get(self::SETTINGS)->get($key);
-    return is_numeric($value) && (int) $value > 0 ? (int) $value : $fallback;
   }
 
 }

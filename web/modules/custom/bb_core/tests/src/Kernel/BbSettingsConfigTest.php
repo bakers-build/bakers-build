@@ -46,10 +46,6 @@ final class BbSettingsConfigTest extends KernelTestBase {
     $this->config('bb_core.settings')->setData($defaults)->save();
 
     $config = $this->config('bb_core.settings');
-    $this->assertSame(300, $config->get('default_lease_seconds'));
-    $this->assertSame(3600, $config->get('max_lease_seconds'));
-    $this->assertSame(3, $config->get('failed_retry_cap'));
-    $this->assertSame(7200, $config->get('failed_retry_window_seconds'));
     $this->assertSame('https://github.com/bakers-build/', $config->get('plugin_source_base'));
   }
 

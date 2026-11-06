@@ -190,7 +190,6 @@ final class WorkspaceRouteThemeTest extends KernelTestBase {
    */
   public function testFormerAdminRoutesResolveToTheFrontEndTheme(): void {
     foreach ([
-      'bb_core.settings',
       'entity.bb_workspace.delete_form',
       'entity.bb_machine.delete_form',
       'entity.bb_figure.delete_form',

@@ -1,43 +1,6 @@
-# bakers.build's admin-backend menu links (site settings and statistics
-# configuration under `/admin/bakers`), and (below) the
-# `bakers-rail`/`bakers-account` navigation menus. Each rail/account entry is
+# The `bakers-rail`/`bakers-account` navigation menus. Each rail/account entry is
 # declared by the module owning its route or supplying its View. Links to
 # Drupal core routes (Account, Log out) are declared here as the exception.
-bb_core.admin:
-  title: 'bakers.build'
-  description: 'bakers.build site settings and configuration.'
-  parent: system.admin
-  route_name: bb_core.admin
-  weight: 0
-
-bb_core.settings:
-  title: 'Settings'
-  description: 'Claim lease bounds and failed-run retry policy.'
-  parent: bb_core.admin
-  route_name: bb_core.settings
-  weight: 5
-
-# Composite statistics configuration.
-entity.bb_figure.collection:
-  title: 'Statistics'
-  description: 'Atomic statistics figures composed from reusable measurements.'
-  parent: bb_connector.config
-  route_name: entity.bb_figure.collection
-  weight: 1
-
-entity.bb_measurement.collection:
-  title: 'Measurements'
-  description: 'Reusable statistics calculations.'
-  parent: entity.bb_figure.collection
-  route_name: entity.bb_measurement.collection
-  weight: 0
-
-entity.bb_figure_group.collection:
-  title: 'Figure groups'
-  description: 'Titled and ordered statistics sections.'
-  parent: entity.bb_figure.collection
-  route_name: entity.bb_figure_group.collection
-  weight: 2
 
 # --- bakers-rail ---------------------------------------------------------------
 # Rendered by `BbMenuSource`. `WorkspaceMenuLink` supplies `bb_workspace`
