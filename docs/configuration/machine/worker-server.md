@@ -1,6 +1,6 @@
 # Set up a worker server
 
-Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, DDEV and Claude Code; prepare the host with [machine setup](/get-started/machine) and choose tooling per [project](/get-started/connect-a-project). On a Coder deployment, the `bakers-ddev` template does this setup for you: [Set up a Coder workspace](/configuration/machine/coder-workspace).
+Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, Docker and Claude Code; prepare the host with [machine setup](/get-started/machine) and choose tooling per [project](/get-started/connect-a-project). On a Coder deployment, a workspace template does this setup for you: [Set up a Coder workspace](/configuration/machine/coder-workspace).
 
 **You need:** root over SSH, a bakers.build account with a workspace rank, the control-plane URL and a Claude Code account.
 
@@ -17,17 +17,17 @@ privileged steps for the operator and hand project setup to bb-init-project.
 
 If the host has no agent yet, an operator first creates the worker user and installs/signs in to one. The AI cannot perform an interactive browser login for you. Host preparation creates reusable tooling and private identity; each [project](/get-started/connect-a-project) still owns its client and environment.
 
-## Manual example: herdr and DDEV
+## Manual example: herdr and Docker
 
-This example assumes a project already chose herdr and DDEV. Other projects keep their own stack; these are not requirements for every machine.
+This example assumes a project already chose herdr and a Docker-based runtime. Other projects keep their own stack; these are not requirements for every machine.
 
-1. Create a non-root worker user; DDEV cannot run as root.
+1. Create a non-root worker user.
 
    ```sh
    useradd -m -s /bin/bash bakers
    ```
 
-2. Install the tools chosen for this example: [Node.js ≥ 20.19 with npm](https://nodejs.org/en/download), [Docker](https://docs.docker.com/engine/install/ubuntu/) and [DDEV](https://docs.ddev.com/en/stable/users/install/) using their vendor guides. Grant Docker access, then switch users:
+2. Install the tools chosen for this example: [Node.js ≥ 20.19 with npm](https://nodejs.org/en/download), [Docker](https://docs.docker.com/engine/install/ubuntu/) and your project's runtime using their vendor guides. Grant Docker access, then switch users:
 
    ```sh
    usermod -aG docker bakers
@@ -63,7 +63,6 @@ This example assumes a project already chose herdr and DDEV. Other projects keep
 
    ```sh
    docker info
-   ddev version
    herdr workspace list
    bakers config check --scope connection --online
    bakers info

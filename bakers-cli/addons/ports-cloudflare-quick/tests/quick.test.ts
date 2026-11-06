@@ -175,13 +175,13 @@ describe('buildArgs', () => {
       '/dir/gen-2/cloudflared.log',
       {
         service: 'http://127.0.0.1:443',
-        hostHeader: 'site.ddev.site',
+        hostHeader: 'site.local.test',
         insecureTls: true,
       },
     );
     expect(args).toContain('--no-tls-verify=true');
     expect(args).toEqual(
-      expect.arrayContaining(['--http-host-header', 'site.ddev.site']),
+      expect.arrayContaining(['--http-host-header', 'site.local.test']),
     );
   });
 });
@@ -206,7 +206,7 @@ describe('routeDirFor', () => {
   it('never collides for two different routes', () => {
     const a = routeDirFor('/home', '/work/a', 'BB-1', 'storybook');
     const b = routeDirFor('/home', '/work/b', 'BB-1', 'storybook');
-    const c = routeDirFor('/home', '/work/a', 'BB-1', 'ddev');
+    const c = routeDirFor('/home', '/work/a', 'BB-1', 'web');
     expect(a).not.toBe(b);
     expect(a).not.toBe(c);
   });

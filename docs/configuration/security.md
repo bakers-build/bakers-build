@@ -59,7 +59,7 @@ Claude and Codex default to their OS sandbox. Verify [sandbox prerequisites](/co
 
 Localhost previews are local by default. A public tunnel can expose the application to anyone with the URL while it runs; review authentication, sample data and secrets before sharing. Machine `tunnel: true` permits a single ad hoc preview; [Ports](/addons/ports) has separately configured transport policy. Stop tunnels when their purpose ends.
 
-Isolate each worktree's service names, ports and data. [DDEV cleanup](/configuration/provisioning/ddev) deletes the named project's database without a snapshot; export anything needed first. Native processes and Compose services also need scoped cleanup.
+Isolate each worktree's service names, ports and data. Cleanup that deletes a worktree's database, without a snapshot, loses its data; export anything needed first. Native processes and Compose services also need scoped cleanup.
 
 ## Hosting and data
 

@@ -70,7 +70,7 @@ Sharing a service returns a `https://<ticket>-<key>.<zone>` URL that serves it.
 
 - It writes only `<BB_HOME>/frp/routes.json`. It never starts `frpc` or reads its token.
 - A client config of the wrong shape is rejected before anything changes.
-- DDEV services are proxied straight to the container IP. An unreachable IP, for example on Docker Desktop, fails that service; OrbStack works.
+- A service whose claim names a container address is proxied straight to that IP. An unreachable IP, for example on Docker Desktop, fails that service; OrbStack works.
 - An HTTPS origin is shared only when its rule allows skipping certificate checks, because frp's `http2https` plugin cannot verify it.
 
 Package source in a checkout: `bakers-cli/addons/ports-frp`.

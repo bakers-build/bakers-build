@@ -163,7 +163,7 @@ const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
  *
  * Note what is NOT redirected process-wide: `XDG_CONFIG_HOME` (see
  * {@link redirectProcessEnv}). The private state dir stays private to the
- * server; the rest of the suite — `ddev`, `git` — keeps the real one.
+ * server; the rest of the suite — a container runtime CLI, `git` — keeps the real one.
  */
 export async function startIsolatedHerdr(): Promise<IsolatedHerdr> {
   const stateDir = mkdtempSync(join(tmpdir(), 'bakers-herdr-'));
@@ -339,9 +339,9 @@ export async function startIsolatedHerdr(): Promise<IsolatedHerdr> {
  * state, and the server gets it through its own environment.
  *
  * Redirecting it process-wide instead is actively harmful, and not
- * hypothetically: `ddev` writes `$XDG_CONFIG_HOME/ddev`, so the
- * `after_create: bash .ddev/worktree-post.sh` hook of worktree-lifecycle.test.ts
- * recreated a `ddev/` directory inside the temp state dir *after* teardown had
+ * hypothetically: the container runtime CLI writes under `$XDG_CONFIG_HOME`,
+ * so the `after_create` hook of worktree-lifecycle.test.ts recreated its
+ * config directory inside the temp state dir *after* teardown had
  * unlinked it — leaving exactly the `/tmp/bakers-herdr-*` residue this helper
  * exists to prevent. `git` ($XDG_CONFIG_HOME/git/config) would be next.
  */

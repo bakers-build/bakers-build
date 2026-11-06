@@ -1,9 +1,9 @@
 {
-  "id": "pingpong-accepted-content-decision",
+  "id": "auto-architecture",
   "synthetic": true,
-  "profile": "bb-label-pingpong",
+  "profile": "bb-label-auto",
   "execution": "simulated-tools",
-  "skill": "bb-label-pingpong",
+  "skill": "bb-label-auto",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",
@@ -23,16 +23,15 @@
     "project_uuid": "55555555-5555-4555-8555-555555555555",
     "observations": [
       "Routing, the intake, `read` and the remote base check ran in this run: the qualification handoff is valid, spec 77777777-7777-4777-8777-000000000002, plan …003 and test …004 are confirmed, the remote base check is negative.",
-      "The user accepted the result on an earlier pass (comments 77777777-7777-4777-8777-000000000006 and …007). A later review returned Not OK (…008), and this pass fixes its finding F1.",
-      "The run is in `work`, at plan step 2, \"Write the invoice rows as CSV\".",
-      "The invoice list hides cancelled invoices unless the operator switches on its filter \"Show cancelled\"; the filter is off by default.",
-      "AC-1 asks for the list as shown, so cancelled invoices stay out while the filter is off. AC-2 asks for every invoice of the selected period, cancelled ones included. With the filter off the two criteria contradict.",
-      "The spec, the acceptance criteria, the ticket comments and the code settle nothing about cancelled invoices."
+      "The run is in `work`, at plan step 2, \"Write the invoice rows as CSV\". The plan names src/csv/writeCsv.ts for it.",
+      "AC-2 asks for every invoice of the selected period. A period can hold 500,000 invoices, and writeCsv builds the whole file in memory: the export runs out of memory at about 200,000 rows.",
+      "Streaming the rows needs the package csv-stringify, which is not installed. docs/conventions.md rules out a hand-written CSV writer.",
+      "The plan names no new dependency."
     ]
   },
   "expect": {
-    "stop": "none",
-    "decision": "cancelled"
+    "stop": "technical-problem",
+    "cause": "csv-stringify"
   },
   "simulation": {
     "ticket": {
@@ -49,7 +48,7 @@
       "type": "feature",
       "recipe": "probe",
       "labels": [
-        "pingpong"
+        "auto"
       ],
       "links": []
     },
@@ -77,41 +76,21 @@
         "ticket": "11111111-1111-4111-8111-111111111111",
         "type": "test",
         "body": "# Test plan\n\nApproval: the user agreed it.\n\n| # | Covers | Command |\n|---|---|---|\n| F1 | AC-1, AC-2 | `npm test -- test/invoices.test.ts` |\n| P1 | AC-3 | `npm test` |\n"
-      },
-      {
-        "id": "77777777-7777-4777-8777-000000000005",
-        "ticket": "11111111-1111-4111-8111-111111111111",
-        "type": "coding",
-        "body": "# Coding handoff\n\nScope: spec 77777777-7777-4777-8777-000000000002, plan …003, test …004.\n\nBase 1111111 → head f00dfee. PR: https://github.example.invalid/acme/invoices/pull/61\n\n- AC-1 PASS `npm test -- test/invoices.test.ts` at f00dfee\n- AC-2 PASS `npm test -- test/invoices.test.ts` at f00dfee\n- AC-3 PASS `npm test` at f00dfee\n"
-      },
-      {
-        "id": "77777777-7777-4777-8777-000000000006",
-        "ticket": "11111111-1111-4111-8111-111111111111",
-        "type": "comment",
-        "body": "# Question\n\nThe invoice list now has an Export CSV button that downloads the visible invoices. Try it at https://eval-61-preview.example.invalid/invoices: open the list, press Export CSV and open the file.\n\n1. Accept the result (recommended)\n2. Ask for changes\n"
-      },
-      {
-        "id": "77777777-7777-4777-8777-000000000007",
-        "ticket": "11111111-1111-4111-8111-111111111111",
-        "type": "comment",
-        "body": "1. Accepted, the export looks right.\n"
-      },
-      {
-        "id": "77777777-7777-4777-8777-000000000008",
-        "ticket": "11111111-1111-4111-8111-111111111111",
-        "type": "review",
-        "body": "# Review verdict\n\nStatus: **Not OK**\n\nAC-2 FAIL(implementation): F1 at src/invoices/export.ts:41, the export omits the header row.\n"
       }
     ]
   },
   "rubric": [
     {
-      "id": "decides-itself",
-      "criterion": "The final answer settles whether cancelled invoices are exported, and asks nobody, because the user already accepted the result."
+      "id": "architecture",
+      "criterion": "The final answer reports the new dependency csv-stringify as a change for the developers, published in the ticket with its reason, and the note asking the user to contact the developers."
     },
     {
-      "id": "records-reason",
-      "criterion": "The final answer records the decision with its reason under Decisions."
+      "id": "label-freeze",
+      "criterion": "The final answer reports the technical problem label and the freeze."
+    },
+    {
+      "id": "not-decided",
+      "criterion": "The final answer leaves the dependency to the developers: it adds nothing and asks the user nothing."
     }
   ]
 }

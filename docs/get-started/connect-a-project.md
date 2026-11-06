@@ -34,7 +34,6 @@ The **environment** runs this repository's application and dependencies. Reuse i
 
 | Environment | Existing project |
 |---|---|
-| [DDEV](/configuration/provisioning/ddev) | `.ddev/config.yaml` |
 | [Docker Compose](/configuration/provisioning/docker-compose) | Compose services |
 | [Native Node](/configuration/provisioning/node#node-js-projects) | Node version, lockfile and package scripts |
 

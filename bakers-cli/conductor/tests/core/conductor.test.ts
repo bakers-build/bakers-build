@@ -2951,7 +2951,7 @@ describe('Conductor', () => {
   // alone, and a hook is a shell spawned with the worktree as its `cwd`. Against
   // an absent directory that spawn fails with ENOENT before the probe is ever
   // consulted, and the shared exec helper logs it at ERROR — so a configured
-  // hook (this repo's own engine config sets `after_done: 'ddev delete -Oy'`)
+  // hook (a project's engine config may delete its runtime project in `after_done`)
   // produced exactly the ERROR the criterion forbids.
   it('reap runs no after_done hook for a worktree that is absent on disk (BB-293)', async () => {
     const remote = new FakeBbRemote(doneTicketSeed(ABSENT_WORKTREE));
@@ -2971,8 +2971,8 @@ describe('Conductor', () => {
     // The hook is not invoked at all — no spawn, so nothing to fail.
     expect(afterDoneCwds(executor)).toEqual([]);
     // The absence is stated rather than passed over, because an `after_done`
-    // can reach beyond the directory it runs in (`ddev delete -Oy` also drops a
-    // DDEV project registration and its database) and that leftover is then an
+    // can reach beyond the directory it runs in (deleting a container runtime's
+    // project also drops its registration and database) and that leftover is then an
     // operator's to clear by hand.
     //
     // The exact wording is pinned deliberately. Hook commands are executor-owned
@@ -3528,7 +3528,7 @@ describe('Conductor', () => {
   it('dispatch runs after_create on an EXISTING but unprovisioned worktree (created=false)', async () => {
     // BB-237 AC-5. `created` answers "was this worktree born just now?", which
     // is NOT the question dispatch needs answered: a worktree whose bootstrap
-    // aborted (the BB-237 `.ddev/worktree-post.sh` abort), an aborted earlier
+    // aborted (the BB-237 bootstrap-hook abort), an aborted earlier
     // run, or a manual `git worktree add` all exist WITHOUT being provisioned,
     // and the creation gate means they never get another chance. Provisioning
     // must be driven by whether the worktree IS provisioned; the bootstrap

@@ -30,8 +30,9 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
    | every other state | the recipe's `bb-state-<state>` section, run in the state file of that name: [plan](references/plan.md), [working](references/working.md), [review](references/review.md) |
 
    A state without a readable state file: stop and name it, reading no recipe.
-3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field; empty — always at
-   qualification — means the installed recipe declaring itself project default.
+3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field, empty at qualification
+   until [classify](references/classify.md) chooses; slots and the stop rule wait
+   for it.
 4. Apply *Stop rule*, then render [the intake](references/intake.md) once and start the state
    file's `## read`.
 

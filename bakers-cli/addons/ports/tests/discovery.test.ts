@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { parseSocketListeners } from '../src/discovery.js';
 
 // A real `ss -ltnp` capture: a Storybook node listener, a Vite one, and a
-// docker-proxy row (DDEV's published container port) whose owning process is
+// docker-proxy row (a published container port) whose owning process is
 // NOT the worktree's — the socket table reports it while the /proc match
-// rejects it (this addon no longer resolves DDEV container identity itself;
-// `@bakers-build/addon-ddev` does — see `discoverHostPorts`'s own tests in
+// rejects it (this addon resolves no container identity itself; a claimer
+// package does — see `discoverHostPorts`'s own tests in
 // `raw-discovery.test.ts` for the worktree-match behavior).
 const SS_CAPTURE = `State  Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
 LISTEN 0      511    127.0.0.1:38581     0.0.0.0:*          users:(("node",pid=12345,fd=23))

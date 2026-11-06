@@ -1,22 +1,18 @@
 # Set up DDEV
 
-**Bring a container-based development environment.** DDEV is one option for your project; bakers.build does not require it.
-
-- **DDEV** manages the project's development services.
-- **Docker** provides the containers.
-- **bakers.build hooks** call your project's setup commands for each ticket worktree.
+**Install DDEV and give each ticket worktree its own DDEV project, through hooks.**
 
 ## AI first
 
 ```text
-Read https://bakers.build/configuration/provisioning/ddev.
+Read https://bakers.build/addons/ddev/setup.
 Read this repository’s DDEV setup. Propose repeatable per-ticket setup,
 readiness and cleanup using this reference. Explain data deletion and
 isolation, then confirm exact hook commands before wiring them with bb-init-
 project.
 ```
 
-The reference below explains the commands and configuration changes.
+## Install DDEV
 
 **You need:** a non-root worker user, a Docker provider supported by DDEV, and a project that uses DDEV.
 
@@ -40,8 +36,6 @@ The reference below explains the commands and configuration changes.
 
 **Done when:** Docker and DDEV work as the worker user, and the project's documented setup and readiness checks pass in a ticket worktree.
 
-**Using another stack?** Keep your own tools and [connect them through hooks](/configuration/provisioning/hooks). No DDEV installation is needed.
-
 ## Example: one DDEV project per ticket
 
 **For a repository with an existing `.ddev/config.yaml`.** Merge these entries into `hooks` in `.bakers/conductor.config.js`:
@@ -50,6 +44,8 @@ The reference below explains the commands and configuration changes.
 hooks: {
   after_create: 'sh scripts/prepare-ddev.sh',
   after_done: 'sh scripts/cleanup-ddev.sh',
+  on_freeze: 'ddev stop',
+  on_resume: 'ddev start',
 },
 ```
 

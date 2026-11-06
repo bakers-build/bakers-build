@@ -198,8 +198,8 @@ describe('offline scoped configuration plan and apply', () => {
     const conductor = renderCommittedConfig({
       project: 'demo',
       hooks: {
-        after_create: 'ddev init-worktree',
-        after_done: 'ddev delete -Oy',
+        after_create: 'make worktree',
+        after_done: 'make clean',
       },
     });
 
@@ -257,7 +257,7 @@ describe('offline scoped configuration plan and apply', () => {
       write.path.endsWith(join('.bakers', 'conductor.config.js')),
     );
     expect(committed?.after).not.toContain('hooks');
-    expect(committed?.after).not.toContain('ddev');
+    expect(committed?.after).not.toContain('after_create');
   });
 
   it("writes exactly the operator's answered hooks, and no others", () => {

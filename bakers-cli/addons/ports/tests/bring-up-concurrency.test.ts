@@ -138,7 +138,7 @@ describe('ports_up tool calls under real cross-process locking (AC5)', () => {
         services: [
           {
             key: 'web',
-            claim: 'ddev',
+            claim: 'container',
             status: 'healthy',
             local: 'http://127.0.0.1:80',
             rawPorts: [],

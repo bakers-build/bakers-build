@@ -1,11 +1,4 @@
-// BB-676 pass-6 review cleanup — `parseSocketListeners`/`SocketListener`
-// live in `@bakers-build/addon-docker-compose` (the lower-level package); routed
-// through here because `@bakers-build/addon-ports` may not edge to
-// `@bakers-build/addon-docker-compose` directly (see `scripts/assert-acyclic.mjs`).
-export {
-  parseSocketListeners,
-  type SocketListener,
-} from '@bakers-build/addon-docker-compose';
+export { claimer } from './claimer.js';
 export { claimDdev } from './claims.js';
 export {
   discoverDdevPorts,
@@ -24,6 +17,8 @@ export type {
   ClaimedDiscovery,
   ClaimedService,
   ClaimStatus,
+  DdevClaimContext,
+  DdevContext,
   HttpProbe,
   RawDiagnostic,
   RawDiscovery,

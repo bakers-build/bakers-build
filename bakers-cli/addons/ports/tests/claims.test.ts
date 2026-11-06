@@ -1,14 +1,19 @@
-import type { RawDiscovery, RawPort } from '@bakers-build/addon-ddev';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   type ClaimContext,
+  type Claimer,
   claimServices,
   discoverClaimedServices,
   type HttpProbe,
   inspectorPorts,
   publicHostname,
 } from '../src/claims.js';
+import { loadClaimers } from '../src/config.js';
 import { serviceRules } from '../src/service-config.js';
+import type { RawDiscovery, RawPort } from '../src/types.js';
 
 const defaults = serviceRules(undefined);
 
@@ -170,46 +175,49 @@ describe('claimServices — Storybook', () => {
   });
 });
 
-describe('claimServices — orchestration (DDEV claims now live in @bakers-build/addon-ddev)', () => {
-  it('runs Storybook before the DDEV claimer, each over what the other left unclaimed', async () => {
+/** A neutral claimer: every container row becomes `web`, and it reports
+ *  whatever context it was handed on its claims' `local`. */
+const fakeClaimer: Claimer<{ readonly label?: string }> = {
+  discover: async () => ({ ports: [], diagnostics: [] }),
+  claim: (raw, remaining, c) =>
+    [...remaining]
+      .filter((i) => raw[i]!.containerId !== undefined)
+      .map((i) => {
+        remaining.delete(i);
+        return {
+          key: 'web',
+          claim: 'fake',
+          status: 'healthy' as const,
+          local: c.label ?? 'http://web.test',
+          rawPorts: [raw[i]!],
+          rules: [],
+        };
+      }),
+};
+
+const containerRow = rawPort({
+  containerId: 'web123',
+  containerPort: 80,
+  exposed: true,
+  listening: true,
+});
+
+describe('claimServices — orchestration with configured claimers', () => {
+  it('runs Storybook before a claimer, each over what the other left unclaimed', async () => {
     const storybookRow = rawPort({
       hostAddress: '127.0.0.1',
       hostPort: 6006,
       cmdline: 'node storybook dev',
     });
-    const webRow = rawPort({
-      containerId: 'web123',
-      containerPort: 443,
-      routerPort: 443,
-      virtualHost: 'admin.pynq.pynq-42.ddev.site',
-      serviceType: 'web',
-      containerState: 'running',
-      exposed: true,
-      listening: true,
-    });
     const result = await claimServices(
-      discovery([storybookRow, webRow]),
+      discovery([storybookRow, containerRow]),
       ctx(),
       defaults,
+      [fakeClaimer],
     );
     const keys = result.services.map((s) => s.key).sort();
     expect(keys).toEqual(['storybook', 'web']);
     expect(result.unclaimed).toHaveLength(0);
-  });
-
-  it('E: a non-Drupal project (no manifest, no drupal* project type) keeps the plain `web` key', async () => {
-    const drupalRow = rawPort({
-      containerId: 'web123',
-      containerPort: 443,
-      routerPort: 443,
-      virtualHost: 'laravel-42.ddev.site',
-      serviceType: 'web',
-      containerState: 'running',
-      exposed: true,
-      listening: true,
-    });
-    const result = await claimServices(discovery([drupalRow]), ctx(), defaults);
-    expect(result.services.map((s) => s.key)).toEqual(['web']);
   });
 
   it('an unexposed, not-claimed listener never produces a rule', async () => {
@@ -227,26 +235,101 @@ describe('claimServices — orchestration (DDEV claims now live in @bakers-build
     expect(result.services).toEqual([]);
     expect(result.unclaimed).toHaveLength(1);
   });
+
+  it('loads a configured claimer package by name and runs it between the process claimers and the all-Node rule, over `remaining`', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'bakers-ports-claimer-'));
+    try {
+      const pkg = join(home, 'node_modules', 'fake-claimer');
+      await mkdir(pkg, { recursive: true });
+      await writeFile(
+        join(pkg, 'package.json'),
+        JSON.stringify({
+          name: 'fake-claimer',
+          type: 'module',
+          main: 'index.js',
+        }),
+      );
+      // Claims the 3000 listener and records which raw indices it was offered.
+      await writeFile(
+        join(pkg, 'index.js'),
+        `export const claimer = {
+          discover: async () => ({ ports: [], diagnostics: [] }),
+          claim(raw, remaining) {
+            globalThis.fakeClaimerSaw = [...remaining].sort();
+            const i = raw.findIndex((p) => p.hostPort === 3000);
+            remaining.delete(i);
+            return [{ key: 'api', claim: 'fake', status: 'healthy', local: 'x', rawPorts: [raw[i]], rules: [] }];
+          },
+        };`,
+      );
+      const claimers = await loadClaimers({ claimers: ['fake-claimer'] }, home);
+      const probe: HttpProbe = async () => ({
+        ok: true,
+        status: 200,
+        body: 'hi',
+      });
+      const result = await claimServices(
+        discovery([
+          rawPort({
+            hostAddress: '127.0.0.1',
+            hostPort: 6006,
+            cmdline: 'node storybook dev',
+          }),
+          rawPort({
+            hostAddress: '127.0.0.1',
+            hostPort: 3000,
+            cmdline: 'node api.js',
+          }),
+          rawPort({
+            hostAddress: '127.0.0.1',
+            hostPort: 3001,
+            cmdline: 'node other.js',
+          }),
+        ]),
+        ctx({ probe }),
+        serviceRules({ all_node: true }),
+        claimers,
+      );
+      // Storybook (index 0) was already taken; the all-Node rule had not run.
+      expect(
+        (globalThis as { fakeClaimerSaw?: number[] }).fakeClaimerSaw,
+      ).toEqual([1, 2]);
+      expect(
+        Object.fromEntries(result.services.map((s) => [s.key, s.claim])),
+      ).toEqual({ storybook: 'process', api: 'fake', 'node-3001': 'node' });
+    } finally {
+      await rm(home, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('discoverClaimedServices', () => {
-  it('BB-681 review I1: a failed `ddev utility configyaml` read leaves a diagnostic, never silently dropping alias evidence', async () => {
+  it("adds each claimer's own ports and diagnostics to the pass and its context to the claim", async () => {
     const deps = {
-      run: async (cmd: string) => {
-        if (cmd === 'ddev') return { stdout: '', ok: false };
-        return { stdout: '', ok: true };
-      },
+      run: async () => ({ stdout: '', ok: true }),
       processInfo: async () => null,
       readFile: async () => null,
+    };
+    const discovering: Claimer<{ readonly label?: string }> = {
+      ...fakeClaimer,
+      discover: async (worktree) => ({
+        ports: [{ ...containerRow, worktree }],
+        diagnostics: [
+          { source: 'claimer', keyPrefix: 'web', message: 'blind' },
+        ],
+        context: { label: 'from-discover' },
+      }),
     };
     const result = await discoverClaimedServices('/work', deps, {
       ticket: 'pynq-42',
       zone: 'preview.example',
       probe: async () => null,
       rules: defaults,
+      claimers: [discovering],
     });
+    expect(result.services.map((s) => s.local)).toEqual(['from-discover']);
     expect(result.diagnostics).toContainEqual(
-      expect.objectContaining({ source: 'ddev-hosts' }),
+      expect.objectContaining({ source: 'claimer', keyPrefix: 'web' }),
     );
   });
 });
@@ -408,26 +491,17 @@ describe('claimServices — configured process rules', () => {
     expect(inspectorPorts('node server.js --port 3000')).toEqual([]);
   });
 
-  it('renames a process claim colliding with a DDEV key', async () => {
-    const webRow = rawPort({
-      containerId: 'web123',
-      containerPort: 443,
-      routerPort: 443,
-      virtualHost: 'pynq-42.ddev.site',
-      serviceType: 'web',
-      containerState: 'running',
-      exposed: true,
-      listening: true,
-    });
+  it('renames a process claim colliding with a claimer key', async () => {
     const result = await claimServices(
-      discovery([nodeOn(3000, 'node web-server.js'), webRow]),
+      discovery([nodeOn(3000, 'node web-server.js'), containerRow]),
       ctx(),
       serviceRules({ services: [{ key: 'web', match: 'web-server' }] }),
+      [fakeClaimer],
     );
     const byClaim = Object.fromEntries(
       result.services.map((s) => [s.claim, s.key]),
     );
-    expect(byClaim).toEqual({ ddev: 'web', process: 'web-3000' });
+    expect(byClaim).toEqual({ fake: 'web', process: 'web-3000' });
   });
 
   it('an overriding storybook entry keeps the static index.json fallback', async () => {

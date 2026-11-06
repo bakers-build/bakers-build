@@ -1,7 +1,7 @@
 {
   "name": "@bakers-build/addon-docker-compose",
   "version": "0.1.0",
-  "description": "Generic Docker Compose discovery: containers, bound ports, in-container sockets and supervisor status for a worktree — no DDEV knowledge.",
+  "description": "Generic Docker Compose discovery: containers, bound ports, in-container sockets and supervisor status for a worktree.",
   "type": "module",
   "license": "MIT",
   "exports": {

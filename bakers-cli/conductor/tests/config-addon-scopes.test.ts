@@ -124,7 +124,7 @@ describe('shared run security from the machine and project config', () => {
     };`);
     const project = writeProject(
       projectWithSecurity(
-        "{ sandbox: { trusted_commands: ['$inherit', 'ddev'], deny_read: ['$inherit', '~/.aws'] } }",
+        "{ sandbox: { trusted_commands: ['$inherit', 'make'], deny_read: ['$inherit', '~/.aws'] } }",
       ),
     );
     const { warnings, result } = await captureWarnings(() =>
@@ -133,7 +133,7 @@ describe('shared run security from the machine and project config', () => {
     const security = (alias: string) =>
       result.agents.find((c) => c.alias === alias)?.agent.security;
     expect(security('opus')?.sandbox.trusted_commands.entries).toContainEqual({
-      value: 'ddev',
+      value: 'make',
       source: 'project',
     });
     expect(security('opus')?.sandbox.allow_write.entries).toEqual([
@@ -147,7 +147,7 @@ describe('shared run security from the machine and project config', () => {
     const loosening = warnings.filter((w) => w.includes('loosens'));
     expect(loosening).toHaveLength(1);
     expect(loosening[0]).toContain('trusted_commands');
-    expect(loosening[0]).toContain('ddev');
+    expect(loosening[0]).toContain('make');
     expect(loosening[0]).toContain(project);
     const skipped = warnings.filter((w) => w.includes('not applied'));
     expect(skipped).toEqual([

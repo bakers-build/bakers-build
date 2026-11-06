@@ -35,7 +35,7 @@
       "out_of_scope": "PDF export; scheduled exports.",
       "recipe": "probe",
       "ticket_type": "feature",
-      "recipe_reason": "Project default; the ask is under-specified about columns.",
+      "recipe_reason": "Its method fits: the ask is under-specified about columns.",
       "reproduction": "not_required",
       "scenario_required": true,
       "test_as": [

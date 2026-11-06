@@ -11,7 +11,7 @@ Read before sharing the URL of a local service.
    Without the tools (a measured run, or a run without a conductor tool server), run
    `bakers ports list`, then `bakers ports up <service-key>` in the service worktree. Use the
    returned public origin, preserve path/query/fragment, verify links and redirects. For multiple
-   aliased hosts, pass the full per-host key the list shows (e.g. `web-admin-ddev-site`) — no
+   aliased hosts, pass the full per-host key the list shows (e.g. `web-admin-example-test`) — no
    `--host` flag. bakers.build shares whatever is claimed; the project owns public-hostname login.
 3. Disabled: share locally. Unknown policy or failure: state the reason and label the URL
    **local-only**.

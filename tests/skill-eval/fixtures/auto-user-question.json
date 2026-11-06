@@ -1,9 +1,9 @@
 {
-  "id": "pingpong-user-question",
+  "id": "auto-user-question",
   "synthetic": true,
-  "profile": "bb-label-pingpong",
+  "profile": "bb-label-auto",
   "execution": "simulated-tools",
-  "skill": "bb-label-pingpong",
+  "skill": "bb-label-auto",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",
@@ -47,7 +47,7 @@
       "type": "feature",
       "recipe": "probe",
       "labels": [
-        "pingpong"
+        "auto"
       ],
       "links": []
     },

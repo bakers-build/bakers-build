@@ -1547,7 +1547,7 @@ describe('HerdrExecutor.runHook (best-effort)', () => {
       throw new Error('hook boom'); // the command fails honestly
     };
     const executor = new HerdrExecutor(
-      { hooks: { after_create: 'ddev init-worktree' } },
+      { hooks: { after_create: 'make worktree' } },
       stubHerdr,
       logger,
       runShell,
@@ -1560,7 +1560,7 @@ describe('HerdrExecutor.runHook (best-effort)', () => {
       executor.runHook('after_create', '/wt/x', { ticket: 'BB-1' }),
     ).resolves.toMatchObject({ hook: 'after_create', ran: true, ok: false });
 
-    expect(ran).toEqual([{ command: 'ddev init-worktree', cwd: '/wt/x' }]);
+    expect(ran).toEqual([{ command: 'make worktree', cwd: '/wt/x' }]);
     expect(errors).toHaveLength(1);
     expect(errors[0]?.msg).toBe('lifecycle hook failed');
     expect(errors[0]?.obj).toMatchObject({
@@ -1602,7 +1602,7 @@ describe('HerdrExecutor.runHook (best-effort)', () => {
       ran.push({ command, cwd });
     };
     const executor = new HerdrExecutor(
-      { hooks: { after_done: 'ddev delete -Oy' } },
+      { hooks: { after_done: 'make clean' } },
       stubHerdr,
       logger,
       runShell,
@@ -1612,7 +1612,7 @@ describe('HerdrExecutor.runHook (best-effort)', () => {
       ticket: 'BB-9',
     });
 
-    expect(ran).toEqual([{ command: 'ddev delete -Oy', cwd: '/wt/done' }]);
+    expect(ran).toEqual([{ command: 'make clean', cwd: '/wt/done' }]);
     expect(errors).toEqual([]);
     expect(result).toEqual({ hook: 'after_done', ran: true, ok: true });
   });

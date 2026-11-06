@@ -1,8 +1,7 @@
-// BB-676 spec v2 — host-listener discovery only. Docker/DDEV discovery
-// moved to `@bakers-build/addon-docker-compose`/`@bakers-build/addon-ddev` (operator
-// decision 2026-10-15: `bakers ports` must not fire `docker` itself). This file
-// now does exactly one thing: `ss -ltnpH` plus `/proc/<pid>` — no external
-// binary beyond `ss`, no root.
+// BB-676 spec v2 — host-listener discovery only. Container discovery belongs
+// to the configured claimer packages (`bakers ports` must not fire `docker`
+// itself). This file does exactly one thing: `ss -ltnpH` plus `/proc/<pid>` —
+// no external binary beyond `ss`, no root.
 //
 // The parsers are pure and exported so a test drives them with captured
 // output; the orchestrator takes an injected `run`/`processInfo` so no real
@@ -10,17 +9,11 @@
 
 import {
   parseSocketListeners,
-  type RawDiagnostic,
-  type RawDiscovery,
-  type RawPort,
   type SocketListener,
-} from '@bakers-build/addon-ddev';
+} from '@bakers-build/addon-docker-compose';
+import type { RawDiagnostic, RawDiscovery, RawPort } from './types.js';
 
-// BB-676 pass-6 review cleanup — `parseSocketListeners`/`SocketListener`
-// used to be reimplemented here byte-for-byte; `@bakers-build/addon-docker-compose`
-// is the one home now (the lower-level package), re-exported through
-// `@bakers-build/addon-ddev` because this addon may not edge to
-// `@bakers-build/addon-docker-compose` directly (`scripts/assert-acyclic.mjs`).
+// `@bakers-build/addon-docker-compose` is the one home of the `ss` parser.
 export { parseSocketListeners, type SocketListener };
 
 /** The injected seams for host-listener discovery. */
@@ -72,7 +65,7 @@ export async function discoverHostPorts(
   // netstat parity is out of scope). Rather than let a raw `ENOENT` surface
   // as "ss -ltnpH failed" with no further context, name the real cause when
   // we know it, so this reads as an honest platform limitation rather than a
-  // mysterious probe failure. Docker/DDEV-routed services are unaffected —
+  // mysterious probe failure. Container-routed services are unaffected —
   // the Linux VM behind Docker Desktop still answers these probes fine
   // in-container; only THIS host-process scan is skipped.
   const host = await deps.run('ss', ['-ltnpH']);

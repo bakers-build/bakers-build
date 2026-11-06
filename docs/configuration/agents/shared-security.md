@@ -13,14 +13,14 @@ security: {
   sandbox: {
     deny_read: ['$inherit', '~/.aws'],
     allow_write: ['$inherit', '~/.designbook'],
-    trusted_commands: ['$inherit', 'ddev'],
+    trusted_commands: ['$inherit', 'docker'],
   },
 },
 ```
 
 **One rule for every layer.** The layers, from bottom to top, are: harness default, project, machine, then the harness entry's `with`. A layer that sets a key replaces the value below it. The list element `'$inherit'` inserts the value of the layer below at that position; duplicates are dropped. `mode` replaces, with no placeholder; an entry's `security` replaces both shared modes.
 
-- Add one command without restating `bakers` and `git`: `trusted_commands: ['$inherit', 'ddev']`, on any layer.
+- Add one command without restating `bakers` and `git`: `trusted_commands: ['$inherit', 'docker']`, on any layer.
 - Veto a project grant on your machine: `trusted_commands: []`, or a list without `'$inherit'`, in `machine.config.js`.
 - A harness entry's list without `'$inherit'` replaces everything below it, so existing entries behave as before.
 

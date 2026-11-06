@@ -989,9 +989,9 @@ describe('hand-over of a specified ticket', () => {
     );
     const labelled = await simulatedTrace(
       'create-ticket-handover',
-      steps({ labels: ['pingpong'] }),
+      steps({ labels: ['auto'] }),
     );
-    expect(labelled.grade('Work on EVAL-31 starts.')).toEqual(['no-pingpong']);
+    expect(labelled.grade('Work on EVAL-31 starts.')).toEqual(['no-auto']);
     const hashed = await simulatedTrace(
       'create-ticket-handover',
       steps({ body: `${qualification}\n${'a'.repeat(64)}` }),
@@ -1091,20 +1091,14 @@ describe('a bug from a conversation', () => {
     expect(typed.grade('EVAL-32 is recorded.')).toEqual(['bug-arguments']);
   });
 
-  it('fails a bug handed over with pingpong', async () => {
+  it('fails a bug handed over with auto', async () => {
     const { grade } = await simulatedTrace(
       'create-ticket-bug',
       bug([
-        [
-          'bakers_ticket_update',
-          { ticket: 'EVAL-32', labels_add: ['pingpong'] },
-        ],
+        ['bakers_ticket_update', { ticket: 'EVAL-32', labels_add: ['auto'] }],
       ]),
     );
-    expect(grade('Work on EVAL-32 starts.')).toEqual([
-      'no-pingpong',
-      'bug-order',
-    ]);
+    expect(grade('Work on EVAL-32 starts.')).toEqual(['no-auto', 'bug-order']);
   });
 });
 

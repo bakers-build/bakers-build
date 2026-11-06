@@ -25,7 +25,8 @@ export function checkOutput(f, output, context) {
   const classification = classified(trace, ticket, (recipe, type) => recipe === e.recipe && e.types.includes(type));
   const common = [
     check('ticket-read', toolCalls(trace, 'bakers_ticket_read').some(c => names(c, ticket) && succeeded(c)), 'Read the ticket'),
-    check('recipes-read', recipes.length >= 2, 'Read the descriptions of the installed recipes'),
+    check('recipes-read', f.recipes.every(name => recipes.some(c => c.arguments.path === `skills/${name}/SKILL.md`)),
+      'Load every installed recipe completely'),
     check('nothing-else', all.every(c => e.write && c.name === tool('bakers_ticket_classify')),
       e.write ? 'Publish no comment, write no label and transition nothing' : 'Write nothing before the human answers'),
   ];

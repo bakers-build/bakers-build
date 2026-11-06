@@ -6,7 +6,7 @@ const points = props.t.recipe.points.map((text, i) => ({ icon: ['icon-basket', '
 const excerpt = [
   ['## Loaded skills', true],
   ['- @bakers-build/essential-skills', false],
-  ['- @bakers-build/ddev-drupal-feature', false],
+  ['- drupal-developer', false],
   ['', false],
   ['## Checks', true],
   ['| When            | Command              |', false],

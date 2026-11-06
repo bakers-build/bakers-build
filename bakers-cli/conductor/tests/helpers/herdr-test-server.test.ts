@@ -129,8 +129,8 @@ describe('redirectProcessEnv', () => {
   });
 
   it('leaves XDG_CONFIG_HOME alone — only the spawned server gets the private one', () => {
-    // Regression: redirecting XDG_CONFIG_HOME process-wide made `ddev` (which
-    // writes $XDG_CONFIG_HOME/ddev) recreate a directory inside the isolated
+    // Regression: redirecting XDG_CONFIG_HOME process-wide made a container
+    // runtime CLI (which writes under $XDG_CONFIG_HOME) recreate a directory inside the isolated
     // state dir *after* teardown unlinked it, leaving /tmp/bakers-herdr-*
     // residue. The socket alone routes CLI calls to the private daemon, so the
     // process-wide redirect must stay that narrow. `git` would be next.
