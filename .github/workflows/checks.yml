@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   branch_policy:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     # A push follows a PR that already ran this on the same tree; only the after-merge jobs run.
     if: &checks github.event_name != 'push'
     steps:
@@ -31,7 +31,7 @@ jobs:
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: bash scripts/ci/github-branch-policy.sh
   phpcs:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -65,7 +65,7 @@ jobs:
           ./vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist
     container: php:8.4
   phpmd:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -99,7 +99,7 @@ jobs:
           php -d error_reporting='E_ALL & ~E_DEPRECATED' ./vendor/bin/phpmd web/modules/custom,web/themes/custom text phpmd.xml.dist --exclude 'tests/*,**/tests/*,**/node_modules/*'
     container: php:8.4
   phpstan:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -133,7 +133,7 @@ jobs:
           ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 1G
     container: php:8.4
   docs_pages:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -155,7 +155,7 @@ jobs:
           node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
     container: node:22
   config_sync:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -190,7 +190,7 @@ jobs:
           bash tests/config-sync/check-ci-wiring.sh
     container: php:8.4
   compose_render:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -206,7 +206,7 @@ jobs:
           set -eu
           bash tests/contract/compose.sh
   conductor:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -243,7 +243,7 @@ jobs:
           retention-days: 7
     container: node:22
   tui:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -277,7 +277,7 @@ jobs:
           retention-days: 7
     container: node:22
   tui_musl:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}
     # After the merge (push), on dispatch and before main; not on PRs into next. Shared with
     # image_gate and release_rehearsal and `required`'s AFTER_MERGE_REQUIRED.
     if: &after_merge github.event_name != 'pull_request' || github.base_ref == 'main'
@@ -339,7 +339,7 @@ jobs:
           path: bakers-cli/junit-tui.xml
           retention-days: 7
   web_ui:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     timeout-minutes: 45
     env:
@@ -380,7 +380,7 @@ jobs:
           retention-days: 7
     container: node:22
   bb_skill_version_gate:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     steps:
       - uses: actions/checkout@v4
@@ -392,7 +392,7 @@ jobs:
           HEAD_REF: ${{ github.sha }}
         run: bash tests/contract/skill-version-gate.sh
   mr_title:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     steps:
       - uses: actions/checkout@v4
@@ -406,7 +406,7 @@ jobs:
           bash tests/contract/mr-title.test.sh
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
   pm_bot:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     container: node:22
     timeout-minutes: 30
@@ -426,7 +426,7 @@ jobs:
           node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
           bash tests/contract/pm-bot.sh
   coder_pm_bot:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     if: *checks
     container: node:22
     timeout-minutes: 30
@@ -445,7 +445,7 @@ jobs:
           bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
           bash tests/contract/coder-pm-bot.sh
   image_gate:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}
     # The push run's tested images are what release.yml deploys.
     if: *after_merge
     timeout-minutes: 180
@@ -485,7 +485,7 @@ jobs:
           path: gate-reports/
           retention-days: 7
   release_rehearsal:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}
     if: *after_merge
     container: node:22
     timeout-minutes: 60
@@ -514,7 +514,7 @@ jobs:
           path: release-notes.md
           if-no-files-found: ignore
   required:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     container: node:22
     if: always()
     needs: &gates
@@ -544,7 +544,7 @@ jobs:
         run: |-
           node -e 'const jobs = JSON.parse(process.env.RESULTS); const afterMerge = ["image_gate", "tui_musl", "release_rehearsal"]; const required = (name) => process.env[afterMerge.includes(name) ? "AFTER_MERGE_REQUIRED" : "CHECKS_REQUIRED"] === "true"; const ok = ([name, job]) => job.result === "success" || (job.result === "skipped" && !required(name)); if (!Object.entries(jobs).every(ok)) process.exit(1)'
   report_failure:
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}
     container: node:22
     timeout-minutes: 15
     needs: *gates

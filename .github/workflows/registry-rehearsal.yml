@@ -10,8 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   registry:
-    # Self-hosted github-runner-1 (keytec/infra github-runner stack, Docker via dind).
-    runs-on: [self-hosted, github-runner-1]
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}
     permissions:
       contents: read
       packages: write
@@ -56,7 +55,7 @@ jobs:
 
   transfer:
     needs: registry
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}
     permissions:
       contents: read
     env:

@@ -59,9 +59,27 @@ also apply to later GitLab integrations. Existing GitLab customer connectors are
 
 ## Runner selection
 
-Every job in `checks.yml`, the release and the registry rehearsal runs on the self-hosted
-runner `[self-hosted, github-runner-1]` (Docker via dind). `self-host-lifecycle.yml` still uses
-Blacksmith. The single runner runs jobs one after another, so PR feedback is slower.
+Jobs run on WarpBuild runners in two tiers. Each tier reads a repository variable and falls back
+to its WarpBuild label when the variable is unset:
+
+| Tier | Variable | Default label | Jobs |
+|---|---|---|---|
+| checks | `RUNNER_CHECKS` | `warp-ubuntu-2404-x64-2x` | every `checks.yml` job except the after-merge jobs, including `required` and `report_failure` |
+| after-merge | `RUNNER_AFTER_MERGE` | `warp-ubuntu-2404-x64-4x` | `tui_musl`, `image_gate`, `release_rehearsal` in `checks.yml`; `release` in `release.yml`; `registry` and `transfer` in `registry-rehearsal.yml` |
+
+The variable holds a JSON label or label array. To send a tier back to the self-hosted
+`github-runner-1` (Docker via dind, one job at a time), set its variable; deleting it returns the
+tier to WarpBuild:
+
+```sh
+gh variable set RUNNER_CHECKS --body '["self-hosted","github-runner-1"]'
+gh variable set RUNNER_AFTER_MERGE --body '["self-hosted","github-runner-1"]'
+gh variable delete RUNNER_CHECKS
+gh variable delete RUNNER_AFTER_MERGE
+```
+
+`self-host-lifecycle.yml` runs on a fixed `warp-ubuntu-2404-x64-4x` with no fallback: it
+installs, restores and wipes a self-host stack and needs a disposable runner.
 
 PHPUnit, browser/integration tests and config import continue using the images built
 once by `scripts/ci/github-image-gate.sh` in `image_gate`. `image_gate`, `tui_musl` (musl
