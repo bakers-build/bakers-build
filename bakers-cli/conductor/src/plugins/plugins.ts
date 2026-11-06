@@ -8,6 +8,7 @@ import type { AgentRoutes, ConductorLogger } from '@bakers-build/core';
 import type { DropSHPlugin } from 'dropsh/plugin';
 import type { ConductorFileConfig } from '../types.js';
 import type { BbAgent } from './agent.js';
+import type { SecurityReport } from './agent-args.js';
 import type { BbExecutor } from './executor.js';
 import type { BbRemote, Ticket } from './remote.js';
 import type { BbWorkspace } from './workspace.js';
@@ -57,6 +58,8 @@ export interface AgentPlugin extends DropSHPlugin {
   readonly kind: 'agent';
   readonly id: string;
   readonly requiredModules: string[];
+  /** The effective run security and its source layers (`bakers agents`). */
+  readonly security?: SecurityReport;
   createAgent(config: ConductorFileConfig): Promise<BbAgent>;
 }
 

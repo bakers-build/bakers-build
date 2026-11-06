@@ -12,6 +12,7 @@ import {
   resolveSecurityOptions,
   type SecurityMode,
   type SecurityOptions,
+  type SecurityReport,
   validateOptionalBoolean,
   validateOptionalString,
 } from '@bakers-build/conductor/contract';
@@ -145,8 +146,9 @@ const NO_SANDBOX_DEFAULTS = {
 function piSecurity(options: PiAgentOptions): {
   extensions: string[] | undefined;
   runEnvPolicy: RunEnvPolicy;
+  report: SecurityReport;
 } {
-  const { mode, config, runEnvPolicy } = resolveSecurityOptions(
+  const { mode, config, runEnvPolicy, report } = resolveSecurityOptions(
     {
       ...options,
       security: (validateOptionalString(options.security, 'security') ??
@@ -154,7 +156,7 @@ function piSecurity(options: PiAgentOptions): {
     },
     NO_SANDBOX_DEFAULTS,
   );
-  if (mode === 'system') return { extensions: undefined, runEnvPolicy };
+  if (mode === 'system') return { extensions: undefined, runEnvPolicy, report };
   if (mode !== 'custom') {
     throw new Error(
       `Pi does not support security: '${mode}'; use 'system' or 'custom'`,
@@ -174,12 +176,13 @@ function piSecurity(options: PiAgentOptions): {
       "Pi security: 'custom' needs config: { extensions: ['<path or builtin:name>', ...] } and nothing else",
     );
   }
-  return { extensions: [...extensions], runEnvPolicy };
+  return { extensions: [...extensions], runEnvPolicy, report };
 }
 
 export class PiAgent implements BbAgent {
   readonly id = 'pi';
   readonly runEnvPolicy: RunEnvPolicy;
+  readonly security: SecurityReport;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly provider: string | undefined;
@@ -193,8 +196,11 @@ export class PiAgent implements BbAgent {
     options: PiAgentOptions = {},
     private readonly home: string = homedir(),
   ) {
-    ({ extensions: this.extensions, runEnvPolicy: this.runEnvPolicy } =
-      piSecurity(options));
+    ({
+      extensions: this.extensions,
+      runEnvPolicy: this.runEnvPolicy,
+      report: this.security,
+    } = piSecurity(options));
     const cli = resolveAgentCliOptions(options, PI_RESERVED, PI_KNOWN);
     this.args = cli.args;
     this.model = cli.model;
@@ -290,6 +296,7 @@ export function piAgent(options: PiAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'pi',
     requiredModules: [],
+    security: agent.security,
     async createAgent() {
       return agent;
     },

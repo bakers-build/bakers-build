@@ -80,7 +80,7 @@ export class OpencodeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
-  private readonly security: ResolvedSecurity;
+  readonly security: ResolvedSecurity;
   readonly runEnvPolicy: RunEnvPolicy;
 
   constructor(
@@ -232,6 +232,7 @@ export function opencodeAgent(options: OpencodeAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'opencode',
     requiredModules: [],
+    security: agent.security.report,
     async createAgent() {
       return agent;
     },

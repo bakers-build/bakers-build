@@ -156,7 +156,7 @@ export class ClaudeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
-  private readonly security: ResolvedSecurity;
+  readonly security: ResolvedSecurity;
   /** The sandbox's own MCP servers, strict; undefined outside the sandbox. */
   private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
@@ -449,6 +449,7 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'claude',
     requiredModules: [],
+    security: agent.security.report,
     async createAgent() {
       return agent;
     },

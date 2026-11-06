@@ -183,14 +183,17 @@ export class GrokAgent implements BbAgent {
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
-  private readonly security: ResolvedSecurity;
+  readonly security: ResolvedSecurity;
   readonly runEnvPolicy: RunEnvPolicy;
 
   constructor(
     options: GrokAgentOptions = {},
     private readonly home: string = homedir(),
   ) {
-    this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
+    // Shared deny_read and trusted_commands have nothing to map onto here.
+    this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS, {
+      unsupported: ['deny_read', 'trusted_commands'],
+    });
     this.runEnvPolicy = this.security.runEnvPolicy;
     if (this.security.mode === 'custom') {
       throw new Error(
@@ -508,6 +511,7 @@ export function grokAgent(options: GrokAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'grok',
     requiredModules: [],
+    security: agent.security.report,
     async createAgent() {
       return agent;
     },

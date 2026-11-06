@@ -42,6 +42,8 @@ export interface MachineContext {
    * Omitted or false keeps the original local URL.
    */
   tunnel?: boolean;
+  /** Shared run security for every agent; the conductor validates it. */
+  security?: unknown;
 }
 
 /**
