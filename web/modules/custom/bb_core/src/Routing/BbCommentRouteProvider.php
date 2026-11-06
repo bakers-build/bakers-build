@@ -13,9 +13,9 @@ use Symfony\Component\Routing\Route;
 /**
  * Product canonical for a comment: full view in the workspace shell.
  *
- * Edit, delete, add and the collection stay the admin routes the parent
- * provides. This provider does not nest the comment under its ticket, does
- * not add parentage checks, and does not add an overlay.
+ * Edit, delete, add and the collection stay the routes the parent provides.
+ * This provider does not nest the comment under its ticket, does not add
+ * parentage checks, and does not add an overlay.
  */
 final class BbCommentRouteProvider extends AdminHtmlRouteProvider {
 

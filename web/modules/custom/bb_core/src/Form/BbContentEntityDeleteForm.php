@@ -74,30 +74,46 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
     $label = $this->getEntity()->label() ?: $this->getEntity()->getEntityType()->getSingularLabel();
     $build = [];
     if ($references[EntityDeleteRules::BLOCK] !== []) {
-      $count = count($references[EntityDeleteRules::BLOCK]);
       $build['blocked'] = $this->consequence('bb_theme:message', ['status' => 'warning'], $this->formatPlural(
-        $count,
-        "%label can't be deleted: 1 item still uses it. Remove or reassign it first.",
-        "%label can't be deleted: @count items still use it. Remove or reassign them first.",
-        ['%label' => $label],
+        count($references[EntityDeleteRules::BLOCK]),
+        "%label can't be deleted: @counts still uses it. Remove or reassign it first.",
+        "%label can't be deleted: @counts still use it. Remove or reassign them first.",
+        ['%label' => $label, '@counts' => $this->counts($references[EntityDeleteRules::BLOCK])],
       ), $references[EntityDeleteRules::BLOCK], TRUE);
       return $build;
     }
     if ($references[EntityDeleteRules::CASCADE] !== []) {
-      $build['cascade'] = $this->consequence('bb_theme:note', ['tone' => 'attention'], $this->formatPlural(
-        count($references[EntityDeleteRules::CASCADE]),
-        'This also deletes 1 item:',
-        'This also deletes @count items:',
+      $build['cascade'] = $this->consequence('bb_theme:note', ['tone' => 'attention'], $this->t(
+        'This also deletes @counts:',
+        ['@counts' => $this->counts($references[EntityDeleteRules::CASCADE])],
       ), $references[EntityDeleteRules::CASCADE], FALSE);
     }
     if ($references[EntityDeleteRules::DETACH] !== []) {
-      $build['detach'] = $this->consequence('bb_theme:note', ['tone' => 'neutral'], $this->formatPlural(
-        count($references[EntityDeleteRules::DETACH]),
-        '1 item will be detached from it:',
-        '@count items will be detached from it:',
+      $build['detach'] = $this->consequence('bb_theme:note', ['tone' => 'neutral'], $this->t(
+        '@counts will be detached from it:',
+        ['@counts' => $this->counts($references[EntityDeleteRules::DETACH])],
       ), $references[EntityDeleteRules::DETACH], FALSE);
     }
     return $build;
+  }
+
+  /**
+   * The count per entity type, e.g. "3 tickets and 1 environment".
+   *
+   * @param list<\Drupal\Core\Entity\ContentEntityInterface> $entities
+   *   The referencing entities.
+   */
+  private function counts(array $entities): string {
+    $counts = array_count_values(array_map(static fn ($entity) => $entity->getEntityTypeId(), $entities));
+    $parts = [];
+    foreach ($counts as $type => $count) {
+      $parts[] = (string) $this->entityTypeManager->getDefinition($type)->getCountLabel($count);
+    }
+    $last = array_pop($parts);
+    return $parts === [] ? $last : (string) $this->t('@list and @last', [
+      '@list' => implode(', ', $parts),
+      '@last' => $last,
+    ]);
   }
 
   /**

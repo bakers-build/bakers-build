@@ -12,10 +12,9 @@ use Symfony\Component\Routing\Route;
 /**
  * Uses the full Display Builder view for the canonical machine screen.
  *
- * Add, edit, delete and the collection stay admin routes. The product
- * Overview is core's `_entity_view: bb_machine.full`, whose cards edit the
- * machine. Only the title callback is replaced. Do not add a controller that
- * merely renders the view mode.
+ * The product Overview is core's `_entity_view: bb_machine.full`, whose
+ * cards edit the machine. Only the title callback is replaced. Do not add a
+ * controller that merely renders the view mode.
  *
  * @see \Drupal\bb_core\Routing\BbConductorRouteProvider
  */

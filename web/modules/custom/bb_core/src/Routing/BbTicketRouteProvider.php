@@ -12,8 +12,7 @@ use Symfony\Component\Routing\Route;
 /**
  * Uses the full Display Builder view for the canonical ticket screen.
  *
- * Edit (the `settings` operation) and delete render in the app shell; add
- * and the collection stay admin routes.
+ * Edit (the `settings` operation) and delete render in the app shell.
  *
  * @see \Drupal\bb_core\Routing\BbTeamRouteProvider
  */

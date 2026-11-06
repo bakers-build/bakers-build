@@ -42,7 +42,7 @@ Feature: Delete opens its confirmation as a dialog over the page
     And I am logged in as the account "north-lead"
     When I open the page where the disposable entity is managed
     And I open the Delete dialog of the disposable entity
-    Then the delete dialog names "can't be deleted: 1 item still uses it"
+    Then the delete dialog names "can't be deleted: 1 bakers.build ticket still uses it"
     And the delete dialog links the blocking ticket
     And the delete dialog offers only Close
     When I cancel the delete dialog

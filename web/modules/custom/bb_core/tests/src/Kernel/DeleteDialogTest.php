@@ -113,7 +113,7 @@ final class DeleteDialogTest extends KernelTestBase {
   }
 
   /**
-   * The config entity delete forms answer the same hull.
+   * A config entity's Delete stays core's page; its list opens no overlay.
    *
    * @param string $type
    *   The config entity type.
@@ -121,23 +121,30 @@ final class DeleteDialogTest extends KernelTestBase {
    *   The values of a minimal entity of it.
    */
   #[DataProvider('configTypes')]
-  public function testConfigDeleteAnswersTheHull(string $type, array $values): void {
+  public function testConfigDeleteKeepsThePage(string $type, array $values): void {
     $this->setCurrentUser($this->createAccount('config-admin', [
       'administer bakers',
       'administer island apps',
       'administer island profiles',
+      'administer permissions',
     ]));
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_measurement');
     $storage->create(['id' => 'probe_count'] + self::MEASUREMENT)->save();
     $entity = $this->container->get('entity_type.manager')->getStorage($type)->create($values);
     $entity->save();
+    $this->openScreenUnder();
 
-    $this->assertDialog($entity, FALSE);
-    self::assertMatchesRegularExpression('/<form[^>]*-delete-form/', (string) $this->get($entity->toUrl('delete-form')->toString())->getContent(), 'and a page without the format');
+    $operation = $this->container->get('entity_type.manager')->getListBuilder($type)->getOperations($entity)['delete'] ?? [];
+    $markup = (string) $this->get($entity->toUrl('delete-form')->toString())->getContent();
+
+    self::assertArrayNotHasKey('data-hx-get', $operation['attributes'] ?? [], 'the list operation opens no overlay');
+    self::assertStringContainsString('<html', $markup, 'the delete route renders a page');
+    self::assertMatchesRegularExpression('/<form[^>]*-delete-form/', $markup);
+    self::assertStringNotContainsString('hx-post', $markup);
   }
 
   /**
-   * The config entity delete routes of the inventory.
+   * The config entities that keep core's delete page.
    *
    * @return array<string, array{string, array<string, mixed>}>
    *   The entity type and minimal values of each case.
@@ -159,6 +166,7 @@ final class DeleteDialogTest extends KernelTestBase {
       'bb_connector' => ['bb_connector', ['id' => 'probe', 'label' => 'Probe connector']],
       'island_app' => ['island_app', ['id' => 'probe', 'label' => 'Probe app', 'provider' => 'bb_core']],
       'island_profile' => ['island_profile', ['id' => 'probe', 'label' => 'Probe profile']],
+      'user_role' => ['user_role', ['id' => 'probe', 'label' => 'Probe role']],
     ];
   }
 
@@ -231,7 +239,7 @@ final class DeleteDialogTest extends KernelTestBase {
 
     $markup = (string) $this->get($project->toUrl('delete-form')->toString() . '?_wrapper_format=island_dialog')->getContent();
 
-    self::assertMatchesRegularExpression('/data-component-id="bb_theme:message"[^>]*>.*project-a<\/em> can\'t be deleted: 2 items still use it\. Remove or reassign them first\./s', $markup);
+    self::assertMatchesRegularExpression('/data-component-id="bb_theme:message"[^>]*>.*project-a<\/em> can\'t be deleted: [^<]*\b1 bakers\.build ticket\b[^<]* and [^<]*still use it\. Remove or reassign them first\./s', $markup, 'the counts per type');
     self::assertMatchesRegularExpression('/<h3>bakers\.build ticket \(1\)<\/h3>\s*<ul><li><a href="[^"]*' . preg_quote((string) $ticket->toUrl()->toString(), '/') . '"[^>]*>ticket-a<\/a>/', $markup, 'blockers are grouped and linked');
     self::assertStringNotContainsString('This action cannot be undone', $markup);
   }
@@ -242,7 +250,7 @@ final class DeleteDialogTest extends KernelTestBase {
   public function testCascadeIsAnAttentionNote(): void {
     $markup = (string) $this->get($this->fixture('a', 'bb_ticket')->toUrl('delete-form')->toString() . '?_wrapper_format=island_dialog')->getContent();
 
-    self::assertMatchesRegularExpression('/data-component-id="bb_theme:note" class="[^"]*border-state-attention[^"]*">.*This also deletes 2 items:.*<h3>bakers\.build comment \(1\)<\/h3>/s', $markup);
+    self::assertMatchesRegularExpression('/data-component-id="bb_theme:note" class="[^"]*border-state-attention[^"]*">.*This also deletes [^<]*\b1 bakers\.build comment\b[^<]*:.*<h3>bakers\.build comment \(1\)<\/h3>/s', $markup);
   }
 
   /**
@@ -298,16 +306,14 @@ final class DeleteDialogTest extends KernelTestBase {
    * A list's Delete operation opens the overlay instead of core's modal.
    */
   public function testListDeleteOperationOpensTheOverlay(): void {
-    $group = $this->container->get('entity_type.manager')->getStorage('bb_figure_group')
-      ->create(['id' => 'probe', 'label' => 'Probe group']);
-    $group->save();
+    $run = $this->fixture('a', 'bb_run');
     $this->openScreenUnder();
 
-    $operation = $this->container->get('entity_type.manager')->getListBuilder('bb_figure_group')->getOperations($group)['delete'];
+    $operation = $this->container->get('entity_type.manager')->getListBuilder('bb_run')->getOperations($run)['delete'];
 
     self::assertArrayNotHasKey('class', $operation['attributes'], 'no core use-ajax modal');
     self::assertArrayNotHasKey('data-dialog-type', $operation['attributes']);
-    $this->assertOpensOverlay($group->toUrl('delete-form')->toString(), $operation['attributes']);
+    $this->assertOpensOverlay($run->toUrl('delete-form')->toString(), $operation['attributes']);
   }
 
   /**

@@ -6,10 +6,10 @@ namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\Attribute\ConfigEntityType;
+use Drupal\Core\Entity\EntityDeleteForm;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
-use Drupal\bb_core\Form\BbConfigEntityDeleteForm;
 use Drupal\bb_core\Form\BbFigureGroupForm;
 use Drupal\bb_core\BbFigureInterface;
 use Drupal\bb_core\BbFigureGroupInterface;
@@ -31,7 +31,7 @@ use Drupal\bb_core\ListBuilder\BbFigureGroupListBuilder;
     'form' => [
       'add' => BbFigureGroupForm::class,
       'edit' => BbFigureGroupForm::class,
-      'delete' => BbConfigEntityDeleteForm::class,
+      'delete' => EntityDeleteForm::class,
     ],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],
   ],

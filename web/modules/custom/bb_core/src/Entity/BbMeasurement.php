@@ -6,10 +6,10 @@ namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\Attribute\ConfigEntityType;
+use Drupal\Core\Entity\EntityDeleteForm;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
-use Drupal\bb_core\Form\BbConfigEntityDeleteForm;
 use Drupal\bb_core\Form\BbMeasurementForm;
 use Drupal\bb_core\BbMeasurementInterface;
 use Drupal\bb_core\ListBuilder\BbMeasurementListBuilder;
@@ -30,7 +30,7 @@ use Drupal\bb_core\ListBuilder\BbMeasurementListBuilder;
     'form' => [
       'add' => BbMeasurementForm::class,
       'edit' => BbMeasurementForm::class,
-      'delete' => BbConfigEntityDeleteForm::class,
+      'delete' => EntityDeleteForm::class,
     ],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],
   ],
