@@ -367,8 +367,9 @@ export class Conductor {
   }
 
   async stopTools(): Promise<void> {
-    await this.config.provisioning?.stop();
+    // Server first, so no new provision_up starts a run after the stop.
     await this.toolServer?.stop();
+    await this.config.provisioning?.stop();
     this.toolServer = undefined;
     this.runTokens.clear();
   }

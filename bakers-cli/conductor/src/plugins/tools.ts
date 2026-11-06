@@ -84,14 +84,10 @@ const OUTPUT_CAP = 64 * 1024;
 
 type ShellResult = { exitCode: number; output: string };
 
-/** Provisioning runs the conductor owns, one per worktree and profile. */
+/** Provisioning runs the conductor owns, one per worktree and command. */
 export interface ProvisionRuns {
-  /** Joins the running command of this worktree and profile, or starts it. */
-  run(
-    worktreePath: string,
-    profile: string,
-    command: string,
-  ): Promise<ShellResult>;
+  /** Joins the running command of this worktree, or starts it. */
+  run(worktreePath: string, command: string): Promise<ShellResult>;
   /** Kills the runs of one worktree, or all; resolves once they closed. */
   stop(worktreePath?: string): Promise<void>;
 }
@@ -102,8 +98,8 @@ export function provisionRuns(timeoutMs = PROVISION_TIMEOUT_MS): ProvisionRuns {
     { worktreePath: string; abort: AbortController; done: Promise<ShellResult> }
   >();
   return {
-    run(worktreePath, profile, command) {
-      const key = JSON.stringify([worktreePath, profile]);
+    run(worktreePath, command) {
+      const key = JSON.stringify([worktreePath, command]);
       const current = running.get(key);
       if (current) return current.done;
       const abort = new AbortController();
@@ -176,7 +172,6 @@ export function provisionTools(
             // shortcut: inherits the conductor's env, not the run's BB_* env; pass it through the binding once a hook needs it.
             const { exitCode, output } = await runs.run(
               req.worktreePath,
-              String(req.args.profile ?? ''),
               command,
             );
             const text = `exit ${exitCode}\n${output}`;
@@ -205,29 +200,36 @@ function shell(
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+    let killed = false;
     const kill = () => {
       try {
         if (child.pid) process.kill(-child.pid, 'SIGTERM');
+        killed = true;
       } catch {
         // The group is already gone.
       }
     };
+    // Armed until 'close', not 'exit': a child of sh can hold the output open after sh exits.
     const timer = setTimeout(kill, timeoutMs);
     signal.addEventListener('abort', kill, { once: true });
-    child.on('exit', () => clearTimeout(timer));
     let output = '';
     const collect = (chunk: Buffer) => {
       output = (output + chunk.toString('utf8')).slice(-OUTPUT_CAP);
     };
     child.stdout.on('data', collect);
     child.stderr.on('data', collect);
-    child.on('error', fail);
-    child.on('close', (code, sig) =>
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      fail(err);
+    });
+    child.on('close', (code, sig) => {
+      clearTimeout(timer);
+      const by = sig ?? (killed ? 'SIGTERM' : null);
       done({
-        exitCode: code ?? 124,
-        output: sig ? `${output}\n(killed: ${sig})` : output,
-      }),
-    );
+        exitCode: by ? 124 : (code ?? 124),
+        output: by ? `${output}\n(killed: ${by})` : output,
+      });
+    });
   });
 }
 

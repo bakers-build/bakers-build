@@ -210,6 +210,30 @@ describe('loadTools', () => {
       );
     });
 
+    it('kills a run at its timeout after sh exited, while a child holds the output', async () => {
+      const registry = await loadTools(
+        provisionTools('sleep 5 & echo bg', provisionRuns(100)),
+      );
+      const started = Date.now();
+      await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
+        'exit 124\nbg\n\n(killed: SIGTERM)',
+      );
+      expect(Date.now() - started).toBeLessThan(2000);
+    });
+
+    it('spawns a string hook once for overlapping calls with different profile values', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'bb-provision-'));
+      const registry = await loadTools(
+        provisionTools('echo x >> count; sleep 0.2'),
+      );
+      const at = { worktreePath: dir };
+      await Promise.all([
+        registry.call('provision_up', {}, at),
+        registry.call('provision_up', { profile: 'x' }, at),
+      ]);
+      expect(await lines(join(dir, 'count'))).toEqual(['x']);
+    });
+
     it('stop(worktree) kills that worktree only; stop() kills all', async () => {
       const [a, b] = await Promise.all([
         mkdtemp(join(tmpdir(), 'bb-provision-')),
