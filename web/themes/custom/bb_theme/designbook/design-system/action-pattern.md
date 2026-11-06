@@ -82,6 +82,20 @@ and two actions**, not a second component. There is deliberately no
 content, not in its structure, and a separate component would drift from
 the hull it was copied from.
 
+### Delete confirmations
+
+Every *Delete* opens its confirm form as that `dialog` in the `overlay`
+slot, over the page it was clicked on; the delete route stays a page for a
+deep link or a browser without JavaScript. The title names the subject
+("Delete project X"). *Cancel*, the close control and Esc close it in
+place; confirming lands where the delete always lands, never on the page
+underneath, which is often the deleted entity's own. What the delete
+touches sits in `body` above the actions: a delete that something still
+blocks is a `message` with `status: warning` naming the label and the
+count, the blockers grouped by type and linked, and only *Close*; what it
+also deletes is a `note` with `tone: attention`; what it detaches is a
+`note` with `tone: neutral`.
+
 ## Create and edit surfaces
 
 A create or edit surface is a centered `dialog` in the shell's `overlay`

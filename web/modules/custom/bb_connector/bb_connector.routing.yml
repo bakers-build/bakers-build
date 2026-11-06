@@ -5,5 +5,3 @@ bb_connector.config:
     _title: 'bakers.build configuration'
   requirements:
     _permission: 'administer bakers'
-  options:
-    _admin_route: TRUE

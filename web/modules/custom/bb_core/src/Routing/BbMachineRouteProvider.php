@@ -81,7 +81,6 @@ final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
     $parameters = $route->getOption('parameters') ?? [];
     $parameters['user'] = ['type' => 'entity:user'];
     $route->setOption('parameters', $parameters);
-    $route->setOption('_admin_route', FALSE);
     $route->setRequirement('user', '\d+');
     $route->setRequirement('_bb_machine_owner_match', 'TRUE');
   }

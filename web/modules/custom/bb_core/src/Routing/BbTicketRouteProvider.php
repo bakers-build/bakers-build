@@ -45,17 +45,7 @@ final class BbTicketRouteProvider extends AdminHtmlRouteProvider {
       $route->setDefault('_entity_form', 'bb_ticket.settings');
       // The shell's page header keeps the ticket headline on its Settings.
       $route->setDefault('_title_callback', BbTicketDetailController::class . '::title');
-      $route->setOption('_admin_route', FALSE);
     }
-    return $route;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getDeleteFormRoute(EntityTypeInterface $entity_type): ?Route {
-    $route = parent::getDeleteFormRoute($entity_type);
-    $route?->setOption('_admin_route', FALSE);
     return $route;
   }
 

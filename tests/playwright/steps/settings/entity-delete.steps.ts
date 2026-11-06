@@ -1,10 +1,12 @@
-// Delete action, confirm page and denials on disposable entities of every
-// deletable type. Each scenario creates its own entity and removes what is left.
+// Delete action, confirm dialog, confirm page and denials on disposable
+// entities of every deletable type. Each scenario creates its own entity and
+// removes what is left.
 import { createBdd } from 'playwright-bdd';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
 import { lastLine } from '../../support/disposable-ticket';
 import { disposableSnippet } from '../../support/disposable-entity';
+import { markDocument } from '../../support/shell';
 
 const { Given, When, Then, After } = createBdd(test);
 
@@ -14,6 +16,8 @@ type Disposable = {
   label: string;
   manage: string;
   deletePath: string;
+  // The address the delete dialog was opened over.
+  openedOver?: string;
 };
 
 const disposables = new WeakMap<Page, Disposable>();
@@ -29,7 +33,7 @@ function exists(reference: string): boolean {
   return lastLine(`print \\Drupal::entityTypeManager()->getStorage("${type}")->load("${id}") ? "yes" : "no";`) === 'yes';
 }
 
-After({ tags: '@feature:entity-delete' }, async ({ page }) => {
+After({ tags: '@feature:entity-delete or @feature:delete-dialog' }, async ({ page }) => {
   const record = disposables.get(page);
   disposables.delete(page);
   if (!record) return;
@@ -104,4 +108,74 @@ Then('the disposable entity still exists', async ({ page }) => {
 Then('the delete page of the disposable entity answers {int}', async ({ page }, status: number) => {
   const response = await page.goto(subject(page).deletePath);
   expect(response?.status()).toBe(status);
+});
+
+// The open delete dialog: the shell's hull holding a delete confirm form.
+function deleteDialog(page: Page) {
+  return page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])');
+}
+
+When('I open the Delete dialog of the disposable entity', async ({ page }) => {
+  const record = subject(page);
+  const trigger = page.locator(`a[href^="${record.deletePath}"][data-hx-get]`).first();
+  await expect(trigger, 'The Delete action does not open the overlay').toBeAttached();
+  // A click before htmx owns the anchor would follow its page href instead.
+  await expect
+    .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
+      message: 'htmx never processed the Delete action',
+      timeout: 20000,
+    })
+    .toBe(true);
+  record.openedOver = page.url();
+  await markDocument(page);
+  const answered = page.waitForResponse(
+    (candidate) => candidate.request().method() === 'GET' && candidate.url().includes('_wrapper_format=island_dialog'),
+    { timeout: 20000 },
+  );
+  await trigger.click();
+  await answered;
+  await expect(deleteDialog(page)).toBeVisible();
+});
+
+Then('the delete dialog is titled after the disposable entity', async ({ page }) => {
+  await expect(deleteDialog(page).getByRole('heading', { level: 2 })).toHaveText(`Delete ${subject(page).label}`);
+});
+
+Then('the delete dialog names {string}', async ({ page }, text: string) => {
+  await expect(deleteDialog(page)).toContainText(text);
+});
+
+Then('the delete dialog links the blocking ticket', async ({ page }) => {
+  await expect(deleteDialog(page).getByRole('link', { name: subject(page).label, exact: true })).toBeVisible();
+});
+
+Then('the delete dialog offers only Close', async ({ page }) => {
+  const dialog = deleteDialog(page);
+  await expect(dialog.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0);
+  await expect(dialog.locator('[data-dialog-cancel]')).toHaveText('Close');
+});
+
+Then('the address is still the page the dialog was opened over', async ({ page }) => {
+  expect(page.url()).toBe(subject(page).openedOver);
+});
+
+When('I cancel the delete dialog', async ({ page }) => {
+  await deleteDialog(page).locator('[data-dialog-cancel]').click();
+});
+
+When('I close the delete dialog by its close control', async ({ page }) => {
+  await deleteDialog(page).locator('[data-dialog-close]').click();
+});
+
+Then('the delete dialog is closed', async ({ page }) => {
+  await expect(page.locator('dialog[data-dialog]:has(form[id$="-delete-form"])')).toHaveCount(0);
+  expect(page.url()).toBe(subject(page).openedOver);
+});
+
+When('I confirm the deletion in the dialog', async ({ page }) => {
+  const before = page.url();
+  await Promise.all([
+    page.waitForURL((url) => url.toString() !== before),
+    deleteDialog(page).getByRole('button', { name: 'Delete', exact: true }).click(),
+  ]);
 });

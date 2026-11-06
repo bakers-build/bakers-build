@@ -6,11 +6,11 @@ namespace Drupal\bb_connector\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\Attribute\ConfigEntityType;
-use Drupal\Core\Entity\EntityDeleteForm;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Drupal\bb_connector\Form\BbConnectorForm;
 use Drupal\bb_connector\ListBuilder\BbConnectorListBuilder;
+use Drupal\bb_core\Form\BbConfigEntityDeleteForm;
 
 /**
  * Represents one configured external system instance (e.g. a GitLab).
@@ -35,7 +35,7 @@ use Drupal\bb_connector\ListBuilder\BbConnectorListBuilder;
     'form' => [
       'add' => BbConnectorForm::class,
       'edit' => BbConnectorForm::class,
-      'delete' => EntityDeleteForm::class,
+      'delete' => BbConfigEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],
   ],

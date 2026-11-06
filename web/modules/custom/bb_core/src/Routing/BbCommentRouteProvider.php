@@ -39,7 +39,7 @@ final class BbCommentRouteProvider extends AdminHtmlRouteProvider {
   /**
    * Pins the full view and product title.
    *
-   * The UUID converter, its requirement pattern and `_admin_route: FALSE`
+   * The UUID converter and its requirement pattern
    * come from `BbWorkspaceRouteSubscriber::alterRoutes()`, which already
    * applies them to every `/_workspace` route carrying `{bb_comment}`.
    */

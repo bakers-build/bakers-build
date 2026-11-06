@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityDeleteForm;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -18,9 +17,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Confirms a delete, naming what goes with it, what is detached or blocks it.
  *
- * Returns to the page the entity is managed from, not the admin collection.
+ * Returns to the page the entity is managed from, not the admin collection;
+ * opened from a Delete trigger, it is the dialog over the current page.
  */
 class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
+
+  use DeleteDialogFormTrait;
 
   /**
    * How many referencing entities a list names before it summarizes.
@@ -50,45 +52,117 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
     // into the island instead of leaving the page of a deleted entity.
     $form['#attributes']['data-hx-boost'] = 'false';
     $references = $this->deleteRules->references($this->getEntity());
-    $lists = [
-      EntityDeleteRules::BLOCK => $this->t('Cannot be deleted while these still use it:'),
-      EntityDeleteRules::CASCADE => $this->t('These will also be deleted:'),
-      EntityDeleteRules::DETACH => $this->t('These will be detached from it:'),
-    ];
-    $weight = -10;
-    foreach ($lists as $action => $title) {
-      if ($references[$action] !== []) {
-        $form['references_' . $action] = [
-          '#theme' => 'item_list',
-          '#title' => $title,
-          '#items' => $this->listItems($references[$action]),
-          '#weight' => $weight++,
-        ];
-      }
-    }
+    $form['consequences'] = $this->consequences($references) + ['#weight' => -10];
     if ($references[EntityDeleteRules::BLOCK] !== []) {
       $form['actions']['submit']['#access'] = FALSE;
-      $form['description']['#markup'] = $this->t('Remove or reassign them first.');
+      unset($form['description']);
     }
+    $this->attachDeleteDialog($form);
     return $form;
+  }
+
+  /**
+   * What the delete would block on, take along or detach.
+   *
+   * @param array<string, list<\Drupal\Core\Entity\ContentEntityInterface>> $references
+   *   The referencing entities, keyed by delete rule.
+   *
+   * @return array<string, mixed>
+   *   A warning when blocked, else a note per cascade and detach.
+   */
+  private function consequences(array $references): array {
+    $label = $this->getEntity()->label() ?: $this->getEntity()->getEntityType()->getSingularLabel();
+    $build = [];
+    if ($references[EntityDeleteRules::BLOCK] !== []) {
+      $count = count($references[EntityDeleteRules::BLOCK]);
+      $build['blocked'] = $this->consequence('bb_theme:message', ['status' => 'warning'], $this->formatPlural(
+        $count,
+        "%label can't be deleted: 1 item still uses it. Remove or reassign it first.",
+        "%label can't be deleted: @count items still use it. Remove or reassign them first.",
+        ['%label' => $label],
+      ), $references[EntityDeleteRules::BLOCK], TRUE);
+      return $build;
+    }
+    if ($references[EntityDeleteRules::CASCADE] !== []) {
+      $build['cascade'] = $this->consequence('bb_theme:note', ['tone' => 'attention'], $this->formatPlural(
+        count($references[EntityDeleteRules::CASCADE]),
+        'This also deletes 1 item:',
+        'This also deletes @count items:',
+      ), $references[EntityDeleteRules::CASCADE], FALSE);
+    }
+    if ($references[EntityDeleteRules::DETACH] !== []) {
+      $build['detach'] = $this->consequence('bb_theme:note', ['tone' => 'neutral'], $this->formatPlural(
+        count($references[EntityDeleteRules::DETACH]),
+        '1 item will be detached from it:',
+        '@count items will be detached from it:',
+      ), $references[EntityDeleteRules::DETACH], FALSE);
+    }
+    return $build;
+  }
+
+  /**
+   * One consequence: a sentence, then the entities grouped by type.
+   *
+   * @param string $component
+   *   The component that carries it.
+   * @param array<string, string> $props
+   *   Its props.
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $sentence
+   *   The sentence.
+   * @param list<\Drupal\Core\Entity\ContentEntityInterface> $entities
+   *   The referencing entities.
+   * @param bool $linked
+   *   Whether each label links to its entity.
+   *
+   * @return array<string, mixed>
+   *   The component.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+   */
+  private function consequence(string $component, array $props, TranslatableMarkup $sentence, array $entities, bool $linked): array {
+    $groups = [];
+    foreach ($entities as $entity) {
+      $groups[$entity->getEntityTypeId()][] = $entity;
+    }
+    $body = ['sentence' => ['#markup' => $sentence]];
+    foreach ($groups as $type => $members) {
+      $body[$type] = [
+        '#theme' => 'item_list',
+        '#title' => $this->t('@type (@count)', [
+          '@type' => $members[0]->getEntityType()->getSingularLabel(),
+          '@count' => count($members),
+        ]),
+        '#items' => $this->listItems($members, $linked),
+      ];
+    }
+    return [
+      '#type' => 'component',
+      '#component' => $component,
+      '#props' => $props,
+      '#slots' => ['body' => $body],
+    ];
   }
 
   /**
    * One line per referencing entity, then a count of the rest.
    *
    * @param list<\Drupal\Core\Entity\ContentEntityInterface> $entities
-   *   The referencing entities.
+   *   The referencing entities of one type.
+   * @param bool $linked
+   *   Whether each label links to its entity, where the user may see it.
    *
-   * @return list<\Drupal\Core\StringTranslation\TranslatableMarkup>
+   * @return list<mixed>
    *   The list items.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
    */
-  private function listItems(array $entities): array {
+  private function listItems(array $entities, bool $linked): array {
     $items = [];
     foreach (array_slice($entities, 0, self::LIST_LIMIT) as $entity) {
-      $items[] = $this->t('@type: @label', [
-        '@type' => $entity->getEntityType()->getSingularLabel(),
-        '@label' => $entity->label() ?: '#' . $entity->id(),
-      ]);
+      $label = $entity->label() ?: '#' . $entity->id();
+      $items[] = $linked && $entity->hasLinkTemplate('canonical') && $entity->access('view')
+        ? ['#type' => 'link', '#title' => $label, '#url' => $entity->toUrl()]
+        : $label;
     }
     $rest = count($entities) - self::LIST_LIMIT;
     if ($rest > 0) {
@@ -100,19 +174,12 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
-    $entity = parent::validateForm($form, $form_state);
-    // The page may have been open while a new reference appeared.
-    if ($this->deleteRules->references($this->getEntity())[EntityDeleteRules::BLOCK] !== []) {
-      $form_state->setErrorByName('', $this->t('%label is still in use and was not deleted.', ['%label' => $this->getEntity()->label()]));
-    }
-    return $entity;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function submitForm(array &$form, FormStateInterface $form_state): void {
+    // A reference appeared while the form was open: show the blocked form.
+    if ($this->deleteRules->references($this->getEntity())[EntityDeleteRules::BLOCK] !== []) {
+      $form_state->setRebuild();
+      return;
+    }
     if ($this->getEntity()->getEntityTypeId() !== 'bb_invite') {
       parent::submitForm($form, $form_state);
       return;
@@ -148,6 +215,14 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
         ? ($entity->label() ?: $entity->getEntityType()->getSingularLabel())
         : $this->t('item'),
     ]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getQuestion(): TranslatableMarkup {
+    $entity = $this->getEntity();
+    return $this->t('Delete @label', ['@label' => $entity->label() ?: $entity->getEntityType()->getSingularLabel()]);
   }
 
   /**

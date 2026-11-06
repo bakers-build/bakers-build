@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
@@ -15,6 +14,7 @@ use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\file\FileInterface;
 use Drupal\bb_core\Access\BbOwnerGrantQueryAccessHandler;
 use Drupal\bb_core\Access\BbRunAccessControlHandler;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\Form\BbRunForm;
 use Drupal\bb_core\ListBuilder\BbRunListBuilder;
 use Drupal\bb_core\Routing\BbRunRouteProvider;
@@ -51,7 +51,7 @@ use Drupal\user\EntityOwnerTrait;
       'default' => BbRunForm::class,
       'add' => BbRunForm::class,
       'edit' => BbRunForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     // Views integration is declared HERE rather than attached by a hook. It
     // came from bb_dashboard's hook_entity_type_alter(), which was a detour:

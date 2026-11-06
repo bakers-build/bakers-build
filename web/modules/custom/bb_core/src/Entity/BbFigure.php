@@ -8,10 +8,10 @@ use Drupal\Core\Condition\ConditionInterface;
 use Drupal\Core\Condition\ConditionPluginCollection;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\Attribute\ConfigEntityType;
-use Drupal\Core\Entity\EntityDeleteForm;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
+use Drupal\bb_core\Form\BbConfigEntityDeleteForm;
 use Drupal\bb_core\Form\BbFigureForm;
 use Drupal\bb_core\BbFigureInterface;
 use Drupal\bb_core\BbMeasurementInterface;
@@ -34,7 +34,7 @@ use Drupal\bb_core\Statistics\Period\PeriodResolver;
     'form' => [
       'add' => BbFigureForm::class,
       'edit' => BbFigureForm::class,
-      'delete' => EntityDeleteForm::class,
+      'delete' => BbConfigEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],
   ],

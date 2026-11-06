@@ -149,7 +149,7 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The instance admin's maintenance form stays an admin route.
+   * The instance admin's maintenance form renders in the shell like any route.
    */
   public function testEditFormIsTheAdministrativeForm(): void {
     $edit = $this->container->get('router.route_provider')
@@ -157,7 +157,7 @@ final class MachineOverviewTest extends KernelTestBase {
     self::assertSame('/admin/bakers/machine/{bb_machine}/edit', $edit->getPath());
     self::assertSame('bb_machine.edit', $edit->getDefault('_entity_form'));
     self::assertSame('bb_machine.update', $edit->getRequirement('_entity_access'));
-    self::assertTrue($edit->getOption('_admin_route'));
+    self::assertFalse($edit->getOption('_admin_route'));
   }
 
   /**

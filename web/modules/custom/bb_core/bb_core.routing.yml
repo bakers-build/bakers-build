@@ -50,8 +50,6 @@ bb_core.admin:
     _title: 'bakers.build'
   requirements:
     _permission: 'administer bakers'
-  options:
-    _admin_route: TRUE
 
 bb_core.settings:
   path: '/admin/bakers/settings'
@@ -60,8 +58,6 @@ bb_core.settings:
     _title: 'bakers.build settings'
   requirements:
     _permission: 'administer bakers'
-  options:
-    _admin_route: TRUE
 
 bb_core.claim_next:
   path: '/%jsonapi%/bakers/claim-next'

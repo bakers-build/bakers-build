@@ -27,6 +27,10 @@ services:
     class: Drupal\bb_core\Routing\BbWorkspaceRouteSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.front_end_route_subscriber:
+    class: Drupal\bb_core\Routing\FrontEndRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_core.entity_form_surface_subscriber:
     class: Drupal\bb_core\EventSubscriber\EntityFormSurfaceSubscriber
     tags:
