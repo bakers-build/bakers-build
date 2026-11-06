@@ -442,8 +442,9 @@ jobs:
       - name: Existing validation gates
         run: |-
           set -eu
-          bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
+          bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh coder/bakers-ddev/scripts/conductors.sh
           bash tests/contract/coder-pm-bot.sh
+          bash tests/contract/coder-conductors.sh
   image_gate:
     runs-on: [self-hosted, github-runner-1]
     # The push run's tested images are what release.yml deploys.
