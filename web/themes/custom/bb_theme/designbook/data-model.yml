@@ -2099,6 +2099,32 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_addon records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_addon
+              bundle: bb_addon
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_empty.'
+          required: false
+          multiple: false
     conductors:
       title: Conductors
       purpose: >-
@@ -2135,6 +2161,32 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_conductor records the View lists; Drupal renders each row with
+            the `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_conductor
+              bundle: bb_conductor
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: text_custom.'
+          required: false
+          multiple: false
     conductor_tickets:
       title: Conductor tickets
       purpose: |-
@@ -2153,6 +2205,27 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_ticket records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_ticket
+              bundle: bb_ticket
+              view_mode: default
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: text_custom.'
+          required: false
+          multiple: false
     groups:
       title: Groups
       purpose: >-
@@ -2176,6 +2249,32 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_group records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_group
+              bundle: bb_group
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_empty.'
+          required: false
+          multiple: false
     machines:
       title: Machines
       purpose: |-
@@ -2198,6 +2297,32 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_machine records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_machine
+              bundle: bb_machine
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: text_custom.'
+          required: false
+          multiple: false
     project_board:
       title: Project board
       purpose: >-
@@ -2231,6 +2356,26 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_ticket records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_ticket
+              bundle: bb_ticket
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
     projects:
       title: Projects
       purpose: >-
@@ -2427,6 +2572,32 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_project records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_project
+              bundle: bb_project
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_empty.'
+          required: false
+          multiple: false
     runs:
       title: Runs
       base_table: search_api_index_bb_runs
@@ -2451,6 +2622,38 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_run records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_run
+              bundle: bb_run
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        header:
+          type: text
+          title: Header
+          description: 'Drupal header area: views_filters_summary.'
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_contextual_empty.'
+          required: false
+          multiple: false
     tickets:
       title: Tickets
       base_table: search_api_index_bb_tickets
@@ -2484,3 +2687,35 @@ config:
       view_modes:
         default:
           template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_ticket records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_ticket
+              bundle: bb_ticket
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        header:
+          type: text
+          title: Header
+          description: 'Drupal header area: views_filters_summary.'
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_contextual_empty.'
+          required: false
+          multiple: false

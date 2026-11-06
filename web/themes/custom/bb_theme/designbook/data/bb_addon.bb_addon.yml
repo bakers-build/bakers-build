@@ -1,0 +1,29 @@
+- id: '1'
+  name: ports
+  version: 1.2.3
+  contract: 1
+  definition: '{"label":"Ports","views":[],"actions":[]}'
+  conductors:
+    - '1'
+  created: '2026-06-02T09:00:00+00:00'
+  __designbook:
+    section: projects
+- id: '2'
+  name: ports
+  version: 1.1.0
+  contract: 1
+  definition: '{"label":"Ports","views":[],"actions":[]}'
+  conductors:
+    - '2'
+  created: '2026-05-11T09:00:00+00:00'
+  __designbook:
+    section: projects
+- id: '3'
+  name: bare
+  version: 1.0.0
+  contract: 1
+  definition: '{"label":"Bare","views":[],"actions":[]}'
+  conductors: []
+  created: '2026-06-20T09:00:00+00:00'
+  __designbook:
+    section: projects
