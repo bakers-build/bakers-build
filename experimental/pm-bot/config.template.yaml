@@ -16,8 +16,9 @@ model:
 # Users: every user in the allowed channels by default (entrypoint.sh exports
 # GATEWAY_ALLOW_ALL_USERS=true unless SLACK_ALLOWED_USERS is set); with SLACK_ALLOWED_USERS
 # only those. Hermes reads both from the environment, not from this file.
-# In a channel the bot answers only when mentioned; in a thread it answers freely,
-# and always in the thread.
+# Channels: the bot-channels plugin (plugins.enabled below) turns a mention in the bot's
+# channel into a request channel and admits only the bot's own open channels, where it
+# answers without a mention, flat. A thread from before channels is still answered there.
 slack:
   allowed_channels: ${SLACK_ALLOWED_CHANNELS}
   # Slash commands only for the operators; customers keep /help and /whoami.
@@ -25,10 +26,15 @@ slack:
   group_allow_admin_from: ${SLACK_ADMIN_USERS}
   require_mention: true
   thread_require_mention: false
-  reply_in_thread: true
+  reply_in_thread: false
 
-# One shared session per thread: everyone in the thread sees the same conversation.
+# One shared session per channel: everyone in a request channel sees the same conversation.
 group_sessions_per_user: false
+
+# Only the bot's own plugin, which entrypoint.sh copies from the image on every start.
+plugins:
+  enabled:
+    - bot-channels
 
 platform_toolsets:
   slack:

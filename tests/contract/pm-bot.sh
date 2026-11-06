@@ -9,7 +9,8 @@
 #   - every toolset that can change the system is disabled, and Slack enables
 #     only the bot's own toolsets
 #   - memory writes and self-written skills wait for approval
-#   - one shared session per thread, not per user
+#   - one shared session per channel, not per user, and flat replies (reply_in_thread: false)
+#   - only the bot's own plugin, bot-channels, is enabled; its pure core passes its unit tests
 #   - bakers.build is reached only through its own MCP endpoint: the remote
 #     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
 #     Hermes fills from the env file, exactly eight bakers tools, no OAuth
@@ -20,7 +21,7 @@
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller and client call no LLM
-#   - the Slack app neither reads nor opens direct messages
+#   - the Slack app neither reads nor opens direct messages, and may manage public channels
 #   - persona, skill and scripts name no customer; only .env.example may
 #   - the bot passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
@@ -45,7 +46,8 @@ BOT=experimental/pm-bot
 TEMPLATE="$BOT/config.template.yaml"
 for f in "$TEMPLATE" "$BOT/SOUL.template.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
-         "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/lib/bakers-client.mjs" \
+         "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/poller/channels.mjs" "$BOT/lib/bakers-client.mjs" \
+         "$BOT/plugins/bot-channels/plugin.yaml" "$BOT/plugins/bot-channels/__init__.py" "$BOT/plugins/bot-channels/channels.py" \
          "$BOT/slack-app-manifest.yaml"; do
   [ -f "$f" ] || fail "$f is missing"
 done
@@ -77,6 +79,8 @@ need(cfg.get("memory", {}).get("write_approval") is True, "memory.write_approval
 need(cfg.get("skills", {}).get("write_approval") is True, "skills.write_approval is not true")
 need(cfg.get("group_sessions_per_user") is False, "group_sessions_per_user is not false")
 slack = cfg.get("slack") or {}
+need(slack.get("reply_in_thread") is False, "slack.reply_in_thread is not false: the bot answers flat in its channels")
+need((cfg.get("plugins") or {}).get("enabled") == ["bot-channels"], "plugins.enabled is not exactly [bot-channels]")
 for key in ("allow_admin_from", "group_allow_admin_from"):
     need(slack.get(key) == "${SLACK_ADMIN_USERS}", f"slack.{key} does not limit slash commands to SLACK_ADMIN_USERS")
 
@@ -136,12 +140,12 @@ SOUL="$BOT/SOUL.template.md"
 [ ! -e "$BOT/SOUL.md" ] || fail "$BOT/SOUL.md is back; the entrypoint renders SOUL.template.md"
 for word in bb-create-ticket 'Slack user' /archives/ labels_remove frozen 'Answered in Slack by' Question \
   'technical problem' mcp_bakers__tool_api__ bakers_ticket_search bakers_ticket_read 'your user' bakers_user_read 'not in a checkout' '${PM_BOT_PROJECT}' \
-  '${PM_BOT_TICKET_WORKFLOW}' '${PM_BOT_CONDUCTOR_TEXT}' '${SLACK_WORKSPACE_URL}/archives/${SLACK_ALLOWED_CHANNELS}/p'; do
+  '${PM_BOT_TICKET_WORKFLOW}' '${PM_BOT_CONDUCTOR_TEXT}' '${SLACK_WORKSPACE_URL}/archives/<channel ID>' 'trusted line' 'Slack channel'; do
   grep -qF -- "$word" "$SOUL" || fail "$SOUL does not name $word"
 done
 pass "SOUL.template.md gives bb-create-ticket its host context and carries status and answers"
 
-python3 - "$BOT/slack-app-manifest.yaml" <<'PY' || fail "Slack app manifest lets the bot read or open direct messages (see above)"
+python3 - "$BOT/slack-app-manifest.yaml" <<'PY' || fail "Slack app manifest breaks the channel contract (see above)"
 import sys, yaml
 
 with open(sys.argv[1]) as fh:
@@ -154,12 +158,16 @@ home = (manifest.get("features") or {}).get("app_home") or {}
 for scope in sorted(scopes & {"im:write", "im:history", "im:read", "mpim:history", "mpim:read", "mpim:write"}): errors.append(f"bot scopes include {scope}")
 for event in sorted(events & {"message.im", "message.mpim"}): errors.append(f"bot events include {event}")
 if home.get("messages_tab_enabled") is not False: errors.append("app_home.messages_tab_enabled is not false")
+if "channels:manage" not in scopes: errors.append("bot scopes lack channels:manage (create, invite, rename, archive)")
 if not (manifest.get("settings") or {}).get("socket_mode_enabled"): errors.append("socket mode is off")
 for e in errors:
     print("FAIL:", e, file=sys.stderr)
 sys.exit(1 if errors else 0)
 PY
-pass "Slack app talks in channels only, over Socket Mode"
+pass "Slack app talks in channels only, over Socket Mode, and manages public channels"
+
+python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qx OK || fail "the bot-channels plugin core fails its unit tests"
+pass "bot-channels plugin core passes its unit tests"
 
 # Questions are ticket comments under the Question label; the old question entity is gone.
 if git grep --untracked -nIE 'bb_question|bakers_question_|client_id: *hermes|bring_in_expert|chat_thread' -- "$BOT"; then
@@ -173,10 +181,10 @@ grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=tr
 pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 
 # The poller and the relay relay; they never call a model.
-if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib"; then
-  fail "poller or client call an LLM"
+if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib" "$BOT/plugins"; then
+  fail "poller, client or plugin call an LLM"
 fi
-pass "poller and client make no LLM call"
+pass "poller, client and plugin make no LLM call"
 
 # Customer specifics live in the env file only; .env.example may show them as examples.
 if git grep --untracked -nIiE 'pnf|park ?(and|&|n) ?fly' -- "$BOT" ":!$BOT/.env.example"; then

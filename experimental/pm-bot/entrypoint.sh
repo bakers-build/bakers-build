@@ -4,14 +4,15 @@
 #   1. checks the required env (from the data directory's .env) and names what is missing;
 #   2. renders config.yaml and SOUL.md, with the skill's host context, from the env (render.mjs);
 #   3. puts the shipped skills (bb-create-ticket, its recipes and their method
-#      skills, with the bundle files they link to) into the data directory, replacing them,
-#      and removes the retired project-manager skill; sessions, memories, learned skills and
-#      the poller state stay;
+#      skills, with the bundle files they link to) and the bot-channels plugin into the data
+#      directory, replacing them, and removes the retired project-manager skill; sessions,
+#      memories, learned skills, the poller state and the bot's channel list stay;
 #   4. runs the poller and the Hermes gateway. When either exits, the container exits and
 #      its restart policy starts it again.
 #
 #   entrypoint.sh [run]   start the bot (the image's default)
-#   entrypoint.sh check   steps 1-3, then print the versions and shipped skills, test the connection to
+#   entrypoint.sh check   steps 1-3, then print the versions, shipped skills and plugins, assert the
+#                         Hermes internals the plugin relies on, test the connection to
 #                         bakers.build's MCP endpoint and exit (CI's image check)
 set -euo pipefail
 
@@ -27,8 +28,8 @@ for key in "${REQUIRED[@]}"; do
   [ -n "${!key:-}" ] || missing+=("$key")
 done
 [ ${#missing[@]} -eq 0 ] || { echo "pm-bot: missing: ${missing[*]}" >&2; exit 1; }
-# The bot serves one channel: Hermes shows the model a channel's name, not its ID, and the
-# thread link SOUL.md has the bot build needs the ID.
+# The bot has one channel, where a mention opens a request channel; the plugin admits the
+# request channels beside it by ID.
 case "$SLACK_ALLOWED_CHANNELS" in
   *[,\ ]*) echo "pm-bot: SLACK_ALLOWED_CHANNELS must name exactly one channel" >&2; exit 1 ;;
 esac
@@ -53,6 +54,12 @@ for src in "$BOT/skills"/* "$BOT/skills"/.claude-plugin; do
   [ -f "$src/SKILL.md" ] && shipped+=("${src##*/}")
 done
 rm -rf "$DATA/skills/project-manager"
+# The bot's plugin, replaced on every start.
+mkdir -p "$DATA/plugins"
+rm -rf "$DATA/plugins/bot-channels.new"
+cp -R "$BOT/plugins/bot-channels" "$DATA/plugins/bot-channels.new"
+rm -rf "$DATA/plugins/bot-channels"
+mv "$DATA/plugins/bot-channels.new" "$DATA/plugins/bot-channels"
 
 if [ "$mode" = check ]; then
   version="$(hermes --version)"
@@ -60,6 +67,27 @@ if [ "$mode" = check ]; then
   echo "node $(node --version)"
   echo "bakers skills $(node -p 'require(process.argv[1]).version' "$BOT/skills/.claude-plugin/plugin.json")"
   echo "skills: $(printf '%s\n' "${shipped[@]}" | LC_ALL=C sort | paste -sd, -)"
+  # The plugins Hermes loads, and the Hermes internals bot-channels relies on: a Hermes
+  # upgrade that moves one fails here instead of silently in Slack.
+  (cd /opt/hermes && .venv/bin/python - <<'PY'
+import inspect
+from gateway.platforms.base import resolve_channel_prompt
+from hermes_cli.plugins import PluginContext, get_plugin_manager
+from plugins.platforms.slack.adapter import SlackAdapter
+
+manager = get_plugin_manager()
+manager.discover_and_load()
+ours = sorted(p.manifest.name for p in manager._plugins.values() if p.enabled and p.manifest.source == "user")
+print("plugins: " + ",".join(ours))
+assert any(name == "bot-channels" for _, name in manager.get_platform_handler_factories("slack")), "bot-channels registered no Slack handler"
+assert inspect.iscoroutinefunction(SlackAdapter._handle_slack_message), "SlackAdapter._handle_slack_message is gone"
+for getter in ("_slack_allowed_channels", "_slack_free_response_channels"):
+    assert callable(getattr(SlackAdapter, getter, None)), f"SlackAdapter.{getter} is gone"
+assert "channel_prompts" in inspect.getsource(resolve_channel_prompt), "resolve_channel_prompt no longer reads channel_prompts"
+assert callable(getattr(PluginContext, "register_platform_handler", None)), "PluginContext.register_platform_handler is gone"
+print("plugin seams: ok")
+PY
+  )
   # bakers.build's MCP endpoint exactly as the rendered config reaches it, with the key
   # Hermes fills from the env file: connected ...
   hermes mcp test bakers

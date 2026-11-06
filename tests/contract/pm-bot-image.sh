@@ -14,6 +14,9 @@
 #     connects to bakers.build's /mcp (a stub of it, pm-bot-mcp-stub.mjs, in a
 #     container of the same image) with the key as bearer and takes exactly the
 #     eight included tools; with a wrong key the check fails
+#   - the bot-channels plugin is installed and loaded, and the Hermes internals it relies on
+#     (SlackAdapter._handle_slack_message, the channel getters, resolve_channel_prompt,
+#     register_platform_handler) exist
 #   - the shipped skills (bb-create-ticket, both recipes and the upstream method
 #     skills) are installed, the bundle version is printed, every relative link
 #     in them resolves, the upstream ones match pm-bot-upstream.sha256 (their
@@ -116,6 +119,11 @@ grep -qE '^bakers skills [0-9]+\.[0-9]+\.[0-9]+$' <<<"$out" || { echo "$out" >&2
 in_data '[ ! -e /d/skills/project-manager ]' || fail "the old project-manager skill was not removed"
 pass "the shipped skills are installed, the bundle version printed and project-manager removed"
 
+grep -qx 'plugins: bot-channels' <<<"$out" || { echo "$out" >&2; fail "Hermes does not load exactly the bot-channels plugin"; }
+grep -qx 'plugin seams: ok' <<<"$out" || { echo "$out" >&2; fail "a Hermes internal the bot-channels plugin relies on is gone"; }
+in_data '[ -f /d/plugins/bot-channels/__init__.py ]' || fail "the bot-channels plugin is not in the data directory"
+pass "the bot-channels plugin is installed and loaded, and its Hermes seams exist"
+
 # Every relative Markdown link of the installed shipped skills resolves to a file inside the
 # linking skill's own folder, the only files Hermes' skill_view serves; web links and anchors
 # aside. Hermes' own bundled skills in the same directory are not ours to check.
@@ -158,7 +166,7 @@ pass "a missing key stops the start and is named"
 
 out="$(start --rm -e SLACK_ALLOWED_CHANNELS=C0000000001,C0000000002 "$IMAGE" check 2>&1)" && fail "check passed with two channels"
 grep -q 'SLACK_ALLOWED_CHANNELS must name exactly one channel' <<<"$out" || { echo "$out" >&2; fail "two channels are not refused by name"; }
-pass "more than one channel stops the start: the thread link needs the one channel's ID"
+pass "more than one channel stops the start: the bot has one main channel"
 
 # Starts the bot in a new container on the data volume, as a workspace start does, and
 # checks that the poller and exactly one gateway run in it, as hermes.

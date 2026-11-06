@@ -1,18 +1,18 @@
-// Pure core of the PM bot's poller: which thread posts a set of ticket states
-// calls for, given the states the poller saw last time. No I/O.
+// Pure core of the PM bot's poller: which posts a set of ticket states calls for,
+// given the states the poller saw last time. No I/O.
 
 /**
  * @param {Record<string, string> | null} previous identifier → state from the last run; null on the first run
- * @param {Array<{identifier: string, title: string, state: string, thread: {channel: string, thread_ts: string} | null}>} tickets
+ * @param {Array<{identifier: string, title: string, state: string, conversation: {channel: string, thread_ts?: string} | null, inherited?: boolean}>} tickets
  * @param {Record<string, string>} summaries identifier → latest summary comment (Markdown), for tickets that reached done
  * @param {{states: Record<string, string>, testHint: string, noTestHint: string}} messages
- * @returns {{posts: Array<{identifier: string, channel: string, thread_ts: string, text: string}>, next: Record<string, string>}}
+ * @returns {{posts: Array<{identifier: string, channel: string, thread_ts?: string, text: string}>, next: Record<string, string>}}
  */
 export function diff(previous, tickets, summaries, messages) {
   const next = {};
   const posts = [];
   for (const t of tickets) {
-    if (!t.thread) continue;
+    if (!t.conversation) continue;
     next[t.identifier] = t.state;
     const before = previous?.[t.identifier];
     if (before === undefined || before === t.state) continue;
@@ -22,20 +22,25 @@ export function diff(previous, tickets, summaries, messages) {
       const hint = manualReview(summaries[t.identifier] ?? '');
       text += hint ? `\n\n${messages.testHint}\n\n${hint}` : `\n\n${messages.noTestHint}`;
     }
-    posts.push({ identifier: t.identifier, channel: t.thread.channel, thread_ts: t.thread.thread_ts, text });
+    posts.push({ identifier: t.identifier, ...target(t.conversation), text: named(t, text) });
   }
   return { posts, next };
 }
 
 /**
- * The identifiers whose `done` post needs the latest summary: threaded
- * tickets that were seen before in another state and are now done.
+ * The identifiers whose `done` post needs the latest summary: tickets with a conversation that were seen before in another state and are now done.
  */
 export function reachedDone(previous, tickets) {
   return tickets
-    .filter((t) => t.thread && t.state === 'done' && previous?.[t.identifier] !== undefined && previous[t.identifier] !== 'done')
+    .filter((t) => t.conversation && t.state === 'done' && previous?.[t.identifier] !== undefined && previous[t.identifier] !== 'done')
     .map((t) => t.identifier);
 }
+
+// Where a post goes: the channel, and the thread only when the conversation is one.
+export const target = ({ channel, thread_ts }) => (thread_ts ? { channel, thread_ts } : { channel });
+
+// A sub-ticket shares its ancestor's conversation, so its posts start with its identifier.
+export const named = (t, text) => (t.inherited && !text.startsWith(`${t.identifier} · `) ? `${t.identifier} · ${text}` : text);
 
 // The customer-facing part of a summary's "Manual review" section: where and
 // how to test, as the ticket's last state run recorded it. That section is
