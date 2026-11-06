@@ -30,9 +30,26 @@ family = the unique labels of the table
 remove = family minus label
 ```
 
+## Match existing labels
+
+bakers.build never creates a label in the Git project; it writes only labels the project already
+has. For a GitLab issue URL `https://<host>/<path>/-/issues/<n>`, read the project's labels,
+inherited group labels included, in one call, with `<path>` URL-encoded (`acme/shop` →
+`acme%2Fshop`):
+
+```bash
+glab api --hostname "<host>" --paginate "projects/<encoded path>/labels?include_ancestor_groups=true&per_page=100"
+```
+
+Replace `label` and each name in `remove` with the listed `name` that equals it ignoring case
+(`doing` → `Doing`). When several listed names match, take the exact spelling, else the one with
+`is_project_label: true`. A name with no match is left out of the call, and the run warns naming it. If
+`label` is left out, the call carries only `--unlabel`; if nothing is left, there is no call. If the
+read fails, write nothing and warn.
+
 ## Write it
 
-For a GitLab issue URL, one call:
+For a GitLab issue URL, one call with the matched names:
 
 ```bash
 glab issue update "$origin" --label "$label" --unlabel "$remove"
