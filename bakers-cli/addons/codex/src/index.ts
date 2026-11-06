@@ -131,7 +131,7 @@ export class CodexAgent implements BbAgent {
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
-  private readonly security: ResolvedSecurity;
+  readonly security: ResolvedSecurity;
   private readonly allowWrite: string[];
   readonly runEnvPolicy: RunEnvPolicy;
 
@@ -144,7 +144,10 @@ export class CodexAgent implements BbAgent {
     this.model = cli.model;
     this.effort = cli.effort;
     this.overrides = cli.overrides;
-    this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
+    // Shared deny_read and trusted_commands have nothing to map onto here.
+    this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS, {
+      unsupported: ['deny_read', 'trusted_commands'],
+    });
     this.runEnvPolicy = this.security.runEnvPolicy;
     this.allowWrite = withoutGitDirs(this.security.sandbox.allow_write);
     // Codex has no read deny or unsandboxed-command list to map these onto.
@@ -388,6 +391,7 @@ export function codexAgent(options: CodexAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'codex',
     requiredModules: [],
+    security: agent.security.report,
     async createAgent() {
       return agent;
     },

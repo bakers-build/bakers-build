@@ -35,6 +35,7 @@ describe('agent catalog report', () => {
           description: 'Implementation',
           harness: 'test-harness',
           model: 'model-test',
+          security: null,
         },
       ],
       enabled_agents: ['fast'],
@@ -64,5 +65,29 @@ describe('agent catalog report', () => {
       default_agent: 'local',
       routes: { default: { '*': 'local' } },
     });
+  });
+
+  it('shows the effective run security of every alias with its source layers', () => {
+    const security = {
+      mode: { value: 'sandbox', source: 'default' },
+      sandbox: {
+        deny_read: { entries: [], removed: [] },
+        allow_write: { entries: [], removed: [] },
+        trusted_commands: {
+          entries: [{ value: 'ddev', source: 'project' }],
+          removed: ['bakers', 'git'],
+        },
+      },
+      not_applied: [],
+    } as const;
+    const withSecurity = candidate('fast');
+    const report = agentReport({
+      agents: [{ ...withSecurity, agent: { ...withSecurity.agent, security } }],
+      enabled_agents: ['fast'],
+      disabled_agents: [],
+      default_agent: 'fast',
+      routes: { default: { '*': 'fast' } },
+    });
+    expect(report.agents[0]?.security).toEqual(security);
   });
 });

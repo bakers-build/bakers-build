@@ -38,7 +38,7 @@ The alias is `grok`; `bakers agents` lists it.
 |---|---|
 | `network` | `['*']` |
 | `mcp_servers` | `{}` |
-| `trusted_commands`, `deny_read` | `[]` |
+| `trusted_commands`, `deny_read` | `[]`; a value from a shared machine or project [`security` block](/configuration/agents/shared-security) is skipped with a warning |
 | `allow_write` | Existing absolute or `~/` directories; default `[]` |
 
 ```js
