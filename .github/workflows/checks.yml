@@ -565,4 +565,6 @@ jobs:
           export FAILED_JOBS
           npm install -g @bakers-build/bakers@0.6.1-next.2
           bakers config init --scope connection --auth-type client_credentials --base-url https://app.bakers.build --client-id "$BB_CI_CLIENT_ID" --secret-env BB_CI_CLIENT_SECRET --yes
+          # config init stores no token; bakers tools needs one even with client credentials (BAKERS-105).
+          bakers auth login --provider bakers
           bash scripts/ci/github-failure-ticket.sh
