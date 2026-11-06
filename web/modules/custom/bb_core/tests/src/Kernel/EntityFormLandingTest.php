@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -73,13 +74,16 @@ final class EntityFormLandingTest extends KernelTestBase {
     $form_object = $this->container->get('entity_type.manager')
       ->getFormObject($type, 'edit')
       ->setEntity($this->fixture('a', $type));
-    $form_state = new FormState();
+    // Posted like a browser: without `op` the Save button's handlers never run.
+    $form_state = (new FormState())->setValues(['op' => 'Save']);
 
     $this->container->get('form_builder')->submitForm($form_object, $form_state);
 
     self::assertSame([], array_map('strval', $form_state->getErrors()));
+    // Core hides the redirect of a programmed submission; read the one set.
+    $form_state->setProgrammed(FALSE);
     $redirect = $form_state->getRedirect();
-    self::assertNotNull($redirect);
+    self::assertInstanceOf(Url::class, $redirect);
     self::assertSame($this->fixture('a', $landing)->toUrl()->toString(), $redirect->toString());
   }
 

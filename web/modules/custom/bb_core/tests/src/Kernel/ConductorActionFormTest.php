@@ -129,14 +129,16 @@ final class ConductorActionFormTest extends KernelTestBase {
   }
 
   /**
-   * Identity Save writes only the label onto fresh data.
+   * Identity Save writes only the offered fields onto fresh data.
    */
   public function testIdentitySaveKeepsActivityAndTelemetry(): void {
     $form_object = $this->container->get('entity_type.manager')->getFormObject('bb_conductor', 'identity');
     $form = $this->container->get('entity.form_builder')->getForm($this->reload(), 'identity');
     self::assertArrayHasKey('label', $form);
+    // The card offers the states the conductor serves.
+    self::assertArrayHasKey('states', $form);
     $protected_fields = [
-      'states', 'active', 'status', 'owner_user_id', 'project_id',
+      'active', 'status', 'owner_user_id', 'project_id',
       'machine', 'reported_load', 'conductor_id', 'last_seen',
     ];
     foreach ($protected_fields as $protected) {
@@ -154,7 +156,6 @@ final class ConductorActionFormTest extends KernelTestBase {
     $state = (new FormState())->setRequestMethod('POST')->setValues([
       'label' => [['value' => 'Renamed']],
       // Forged values for fields the box does not offer.
-      'states' => ['coding' => 'coding'],
       'active' => ['value' => 1],
       'status' => 'online',
       'reported_load' => [['value' => 9]],
@@ -165,7 +166,6 @@ final class ConductorActionFormTest extends KernelTestBase {
 
     $saved = $this->reload();
     self::assertSame('Renamed', $saved->label());
-    self::assertSame($fresh->getStates(), $saved->getStates(), 'States are read-only here.');
     self::assertSame($fresh->get('status')->value, $saved->get('status')->value);
     self::assertFalse((bool) $saved->get('active')->value, 'Save does not re-activate.');
     self::assertSame(3, (int) $saved->get('reported_load')->value, 'Save keeps the heartbeat.');
