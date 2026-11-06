@@ -135,7 +135,7 @@ Then('the ticket page offers no intervention', async ({ page }) => {
 
 Then('the Settings screen renders inside the app shell', async ({ page }) => {
   await expect(page).toHaveURL(/\/edit$/);
-  // The app shell's rail exists only in the front theme, never in Gin.
+  // The app shell's rail is the proof the screen rendered in the shell.
   await expect(page.locator('[data-sidebar]')).toBeVisible();
 });
 

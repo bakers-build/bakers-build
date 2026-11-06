@@ -156,7 +156,7 @@ scenes:
                   workspace_color: running
                   multiple: true
                   collapsed: false
-                  workspace_picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                  workspace_picture: /themes/custom/bb_theme/logo.svg
                 slots:
                   workspace_panel:
                     - component: bb_theme:menu_item
@@ -168,7 +168,7 @@ scenes:
                           initials: KE
                           color: running
                           picture: >-
-                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                            /themes/custom/bb_theme/logo.svg
                     - component: bb_theme:menu_item
                       props:
                         label: bakers.build
@@ -519,7 +519,7 @@ scenes:
                           initials: KE
                           color: running
                           picture: >-
-                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                            /themes/custom/bb_theme/logo.svg
                     - component: bb_theme:menu_item
                       props:
                         label: bakers.build

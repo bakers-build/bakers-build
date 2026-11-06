@@ -460,7 +460,7 @@ scenes:
                           initials: KE
                           color: attention
                           image_fit: contain
-                          picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                          picture: /themes/custom/bb_theme/logo.svg
                       tabs:
                         component: bb_theme:tabs
                         props:
@@ -1087,7 +1087,7 @@ scenes:
                           initials: GP
                           color: attention
                           image_fit: contain
-                          picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                          picture: /themes/custom/bb_theme/logo.svg
                       tabs:
                         component: bb_theme:tabs
                         props:
@@ -1146,7 +1146,7 @@ scenes:
                           initials: GP
                           color: attention
                           image_fit: contain
-                          picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                          picture: /themes/custom/bb_theme/logo.svg
                       tabs:
                         component: bb_theme:tabs
                         props:

@@ -220,7 +220,7 @@ DELETED_ALLOWLIST=''
 # rebuild — a pure client-side attribute flip and localStorage write, same mechanism `skin.src.js`
 # itself uses), and carries zero outer margin as every CONTENT component in this theme must; the
 # `gap-2` between it and `person` is owned by `sidebar.twig`'s own footer row. 46 + 1 (BB-504) = 47.
-# 48 SINCE BB-547: `brand` owns the shared login braid and wordmark.
+# 48 SINCE BB-547: `brand` owns the shared login logo and wordmark.
 # It is a Shell component, not an entity-specific data display. 47 + 1 = 48.
 # 49: `stat-comparison` is the shared-axis two-series plot. Existing
 # `stat-series` bars cannot carry two measurements on one time/value scale.

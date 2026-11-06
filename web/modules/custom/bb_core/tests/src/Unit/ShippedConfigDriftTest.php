@@ -354,6 +354,28 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   }
 
   /**
+   * Neither install path ships an admin theme or the menu administration UI.
+   *
+   * Every route renders in bb_theme; `field_ui` stays pinned by the test
+   * above because `display_builder_entity_view` depends on it.
+   */
+  public function testNoAdminThemeOrMenuUiOnEitherPath(): void {
+    $extensions = $this->parse('config/sync/core.extension.yml');
+    $recipe_install = array_merge(
+      $this->parse('recipes/bb_base/recipe.yml')['install'] ?? [],
+      $this->recipe()['install'] ?? [],
+    );
+    foreach (['menu_ui', 'gin', 'claro'] as $retired) {
+      self::assertArrayNotHasKey($retired, $extensions['module'] ?? [], "config/sync does not install the module $retired.");
+      self::assertArrayNotHasKey($retired, $extensions['theme'] ?? [], "config/sync does not install the theme $retired.");
+      self::assertNotContains($retired, $recipe_install, "No bakers recipe installs $retired.");
+    }
+    self::assertSame('', $this->parse('config/sync/system.theme.yml')['admin'] ?? NULL, 'config/sync sets no admin theme.');
+    $base = $this->parse('recipes/bb_base/recipe.yml')['config']['actions']['system.theme']['simpleConfigUpdate'] ?? [];
+    self::assertSame('', $base['admin'] ?? NULL, 'recipes/bb_base sets no admin theme.');
+  }
+
+  /**
    * RETIRED (BB-389) — Drupal\Tests\bb_dashboard\Functional\FrontPageTest.
    *
    * Recorded here because that class is deleted and this one is what remains of

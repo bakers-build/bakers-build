@@ -23,14 +23,11 @@ split into: **layout** (geometry — spacing, sizing) or **style**
 (colour, type, elevation, motion). See the generator script's header
 comment for the exact classification rule.
 
-## Layout axis (16)
+## Layout axis (13)
 
 | Name | Axis | Purpose |
 | --- | --- | --- |
-| `component.brand.compact.braid-height` | layout | Brand role: braid-height |
-| `component.brand.compact.braid-width` | layout | Brand role: braid-width |
-| `component.brand.compact.gap` | layout | Brand role: gap |
-| `component.brand.compact.wordmark-width` | layout | Brand role: wordmark-width |
+| `component.brand.compact.width` | layout | Brand role: width |
 | `component.container.max-width` | layout | Maximum width of a content container |
 | `component.control.height` | layout | Control role: height |
 | `component.grid.gap` | layout | Gap between items in a grid layout |
