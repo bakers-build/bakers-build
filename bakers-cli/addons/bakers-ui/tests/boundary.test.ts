@@ -16,10 +16,9 @@ import { describe, expect, it } from 'vitest';
 //      agents";
 //   4. and the CONVERSE: a data module never depends on the SHARED form kernel
 //      (`src/Form/`) or on another slice's `Form/`. A data service returns data for
-//      whatever purpose; only the two adapters (`create-form-data.ts`,
-//      `edit-form-data.ts`) build form vocabulary out of it. Left to convention this
-//      eroded twice — the arrow pointed at `Form/` from every loader — so it is
-//      asserted mechanically here.
+//      whatever purpose; only the adapter (`edit-data.ts`) builds form
+//      vocabulary out of it. Left to convention this eroded twice — the arrow
+//      pointed at `Form/` from every loader — so it is asserted mechanically here.
 //
 //      What that rule does NOT forbid, and never did: naming the OWN slice's form
 //      PAYLOAD type — a type-only import of a sibling in its own slice, which G2
@@ -273,8 +272,8 @@ describe('a DATA SERVICE knows nothing about forms (BB-236)', () => {
   // The converse of kernel purity, and the invariant the third re-cut exists to
   // establish: `Option` is form vocabulary, so a service returning it is coupled to
   // the popup that consumes it. Left to convention the arrow pointed the wrong way
-  // in both earlier cuts, so it is asserted mechanically. Only the two adapters
-  // (`create-form-data.ts` / `edit-form-data.ts`) may build that vocabulary — the
+  // in both earlier cuts, so it is asserted mechanically. Only the adapter
+  // (`edit-data.ts`) may build that vocabulary — the
   // one thing a data module may do is NAME its own slice's payload type, which G7
   // below holds to type-only and to a named list.
   const formDir = join(srcDir, 'Form');

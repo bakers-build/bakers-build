@@ -16,8 +16,7 @@ import { bootTui } from '../tui-harness.js';
 // The Node tests prove the insertion point is declared with the right text and
 // offset. They cannot prove it reaches the terminal: that is the mounted
 // `FieldTextarea` calling `setCursorPosition`. `renderer.getCursorState()` is
-// where that lands, and it is the same seam `create-form-keys.test.ts` reads for
-// `title`/`description`.
+// where that lands, and it is the same seam the edit form's `text` fields reach.
 //
 // Why this needed no new seam: both filter screens are MODAL, so the widget is a
 // node inside the tree the modal box holds —

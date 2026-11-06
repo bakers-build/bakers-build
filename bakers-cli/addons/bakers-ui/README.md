@@ -15,7 +15,7 @@ tab navigation.
 | Level | Screens | Tabs |
 |-------|---------|------|
 | Root | Personal work, projects, conductors, and workspace members for leads | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
-| Project | Project-scoped screens | **Overview** · **Work** · **Tickets** · **Runs** · **Conductors** |
+| Project | Project-scoped screens | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | Independent ticket screens | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Workspace member | A selected workspace member, for workspace leads only | **Overview** · **Tickets** · **Runs** |
 | Conductor | A selected conductor, reached with Enter from any Conductors list | **Overview** · **Held work** · **Assigned** · **Log** |

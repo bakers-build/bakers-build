@@ -46,7 +46,7 @@ Navigation has five tab scopes. Tabbed screens show the bar for their current sc
 | Level | Tabs |
 |-------|------|
 | Root | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
-| Project | **Overview** · **Work** · **Tickets** · **Runs** · **Conductors** |
+| Project | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Workspace member | **Overview** · **Tickets** · **Runs** |
 | Conductor | **Overview** · **Held work** · **Assigned** · **Log** |

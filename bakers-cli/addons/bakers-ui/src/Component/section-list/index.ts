@@ -11,9 +11,9 @@ import { plainLine } from '../markdown/index.js';
 /**
  * A section body row that is COLUMNS rather than prose — BB-340 Task 13.
  *
- * The two producers are the dashboard's bars and the ticket detail's Runs
- * table, and both used to compose their columns into one padded string with
- * `lib/format.ts`'s `pad`. They describe their cells instead: the tree lays them
+ * The original producer is the ticket detail's Runs table, which used to
+ * compose its columns into one padded string with `lib/format.ts`'s `pad`.
+ * Producers describe their cells instead: the tree lays them
  * out with Yoga budgets, and a surface with no layout — the pipe — prints
  * {@link lineText}'s join. That is the operator-approved cost of retiring the
  * padding, and it is what lets `pad` (and with it two of `lib/width.ts`'s
@@ -263,7 +263,7 @@ export function sectionRows(
  * One flattened row as the node a converted screen hands over — BB-340 D1.
  *
  * The ONE place a `SectionRow` becomes a renderable, so the two screens that
- * render section rows (the dashboard and the ticket detail's tabs) cannot
+ * render section rows (the ticket detail's tabs, the project overview) cannot
  * disagree about what a columned row looks like. `prefix` is the screen's own
  * body id, which is what keeps two screens' rows apart in one tree.
  */

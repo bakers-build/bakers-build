@@ -76,16 +76,6 @@ describe('form screens own their complete interaction', () => {
   });
 });
 
-// ---- BB-309: what the direct-create path HANDS BACK ------------------------
-//
-// Driven against the screen rather than through the kernel harness of
-// `tests/Kernel/create-form-direct.test.ts`, for one reason: the value under
-// test is the RESULT the popup passes to `context.back(...)`, and the kernel
-// routes that straight into the destination screen's `receiveResult` where no
-// assertion can reach it. Here `back` is a spy, so the result is observable —
-// which is what makes "the created ticket's id" an observation rather than a
-// claim. Everything the kernel CAN see stays in that file.
-
 describe("a closed ticket's edit popup", () => {
   it('is read-only: no Save, no value changes, and Ctrl+S writes nothing', async () => {
     const read = fakeClient({
