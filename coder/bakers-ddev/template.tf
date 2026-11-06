@@ -342,6 +342,34 @@ data "coder_parameter" "pm_bot_repo_token" {
   styling      = jsonencode({ mask_input = true })
 }
 
+# Preview links (README › Optional previews). Mutable; a change applies on the next start.
+data "coder_parameter" "preview_transport" {
+  name         = "preview_transport"
+  display_name = "Preview transport"
+  description  = "How runs share preview links. Each start writes tunnel and, for Cloudflare Quick, the ports entry into ~/.bakers/machine.config.js and installs the client. Named Cloudflare and FRP need their operator files and ports entry (README › Optional previews)."
+  type         = "string"
+  default      = "none"
+  mutable      = true
+  order        = 20
+  form_type    = "dropdown"
+  option {
+    name  = "None"
+    value = "none"
+  }
+  option {
+    name  = "Cloudflare Quick"
+    value = "cloudflare-quick"
+  }
+  option {
+    name  = "Named Cloudflare"
+    value = "cloudflare"
+  }
+  option {
+    name  = "FRP"
+    value = "frp"
+  }
+}
+
 resource "coder_agent" "main" {
   arch           = "amd64"
   os             = "linux"
@@ -362,6 +390,7 @@ resource "coder_agent" "main" {
     GLAB_VERSION            = var.glab_version
     CLOUDFLARED_VERSION     = var.cloudflared_version
     FRP_VERSION             = var.frp_version
+    PREVIEW_TRANSPORT       = data.coder_parameter.preview_transport.value
     # The PM bot (scripts/pm-bot.sh). Never in coder_metadata: secrets stay off the workspace page.
     PM_BOT_IMAGE                  = var.pm_bot_image
     PM_BOT_REGISTRY_USER          = var.pm_bot_registry_user
@@ -456,6 +485,13 @@ resource "docker_container" "workspace" {
   upload {
     content = file("${path.module}/pm-bot.compose.yaml")
     file    = "/usr/local/share/pm-bot/compose.yaml"
+  }
+
+  # Writes the preview transport into machine.config.js (scripts/install.sh).
+  upload {
+    content    = file("${path.module}/scripts/preview-config.mjs")
+    file       = "/usr/local/bin/bakers-preview-config"
+    executable = true
   }
 
   env = ["CODER_AGENT_TOKEN=${coder_agent.main.token}"]
