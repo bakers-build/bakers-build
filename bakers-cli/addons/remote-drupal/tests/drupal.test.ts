@@ -1757,6 +1757,46 @@ describe('drupalRemote.createRemote', () => {
     expect(api).toBe(fakeContextClient);
   });
 
+  it("serves the site's /mcp tools with the conductor's own auth profile", async () => {
+    const { createServer } = await import('node:http');
+    const seen: Array<{ url?: string; authorization?: string }> = [];
+    const stub = createServer((req, res) => {
+      seen.push({ url: req.url, authorization: req.headers.authorization });
+      res.writeHead(503).end();
+    });
+    await new Promise<void>((done) => stub.listen(0, '127.0.0.1', done));
+    const { port } = stub.address() as { port: number };
+    const { createBbConnectionContext } = await import('@bakers-build/core');
+    vi.mocked(createBbConnectionContext).mockResolvedValueOnce({
+      client: fakeContextClient,
+      http: { send: vi.fn() },
+      auth: {
+        apply: async (r: any) => ({
+          ...r,
+          headers: {
+            ...r.headers,
+            authorization: 'Bearer conductor-site-token',
+          },
+        }),
+      },
+      baseUrl: `http://127.0.0.1:${port}`,
+    } as any);
+    const remote = await drupalRemote().createRemote({
+      site: { base_url: 'https://x', jsonapi_prefix: '/jsonapi' },
+      plugins: [],
+    } as any);
+    try {
+      await expect(remote.siteTools?.list()).rejects.toThrow();
+      expect(seen[0]).toEqual({
+        url: '/mcp',
+        authorization: 'Bearer conductor-site-token',
+      });
+    } finally {
+      await remote.siteTools?.close();
+      stub.close();
+    }
+  });
+
   it('wires a real fetchRunLog built from the connection context http/auth/baseUrl', async () => {
     const config = {
       site: {

@@ -96,7 +96,13 @@ function securityFlags(
     // Bash command is either sandboxed or a trusted command, and the Read
     // deny covers the Read tool, which the OS sandbox does not confine.
     permissions: {
-      allow: ['Bash', 'Edit(./**)', 'AskUserQuestion'],
+      // The conductor's server binds every call to this run's worktree and project.
+      allow: [
+        'Bash',
+        'Edit(./**)',
+        'AskUserQuestion',
+        `mcp__${CONDUCTOR_TOOLS_SERVER}`,
+      ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
       deny: sandbox.deny_read.flatMap((path) => {
@@ -161,6 +167,7 @@ export class ClaudeAgent implements BbAgent {
   private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
+  readonly launchWarnings?: readonly string[];
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
 
@@ -186,6 +193,15 @@ export class ClaudeAgent implements BbAgent {
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
+    if (
+      !this.measure &&
+      this.sandboxMcpServers &&
+      Object.hasOwn(this.sandboxMcpServers, CONDUCTOR_TOOLS_SERVER)
+    ) {
+      this.launchWarnings = [
+        `sandbox.mcp_servers.${CONDUCTOR_TOOLS_SERVER} is replaced by the conductor's ${CONDUCTOR_TOOLS_SERVER} server`,
+      ];
+    }
   }
 
   /** A measured run stays without the conductor's tools, MCP or bridge. */

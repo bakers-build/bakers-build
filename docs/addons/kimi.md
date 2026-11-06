@@ -45,7 +45,7 @@ bakers agents
 - `-p`, `--prompt` and `--output-format` are reserved; putting them in `args` fails loading.
 - The addon starts `kimi`; it does not install it or sign it in. The binary must be on `PATH`.
 - Listed in a conductor config, an agent addon is ignored with a warning.
-- Runs reach the conductor's [addon tools](build/tools.md) through `bakers oven tools`, not through MCP.
+- Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
 More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
 

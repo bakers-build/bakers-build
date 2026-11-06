@@ -4,19 +4,14 @@ Read before the first tool call. The site serves tracker operations at `/mcp`.
 
 ## Transport
 
-Each tool's wire name is `tool_api__<tool>` (`tool_api__bakers_ticket_read`).
+- **The host lists the tool**, as `<tool>` on the `bakers` server or `tool_api__<tool>` on a site
+  connector: call it.
+- **Otherwise**: `bakers tools <tool> --data @<args.json>`, which uses the run token in a conductor
+  run ([conductor](tools-conductor.md)) and your credentials elsewhere.
 
-- **The host lists the tool** (an MCP connector): call it with the step's arguments.
-- **Otherwise** write the arguments to a JSON file and call it alone, with literal values; chaining sandboxes it:
-
-  ```bash
-  bakers tools tool_api__<tool> --data @<args.json>
-  ```
-
-  Write it, Markdown byte for byte, with a file tool or JSON encoder
-  (`jq -n --rawfile body <file.md> --arg t <ticket> '{ticket: $t, type: "plan", body: $body}'`).
-
-In-run addon tools: [conductor](tools-conductor.md).
+A CLI call runs alone, with literal values; chaining sandboxes it. Write its JSON file byte for byte
+with a JSON encoder
+(`jq -n --rawfile body <file.md> --arg t <ticket> '{ticket: $t, type: "plan", body: $body}'`).
 
 ## Results and errors
 
@@ -24,7 +19,7 @@ In-run addon tools: [conductor](tools-conductor.md).
 |---|---|---|
 | 0 | success; JSON result on stdout | use the result |
 | 1 | the tool refused; the message names the cause | report it; correct only arguments the message shows wrong |
-| 3 | credentials rejected | `bakers auth status`, then report |
+| 3 | credentials rejected | `bakers auth status` outside a run; report |
 | 4 | invalid arguments or unknown tool, nothing sent | fix the arguments against `bakers tools <tool> --schema` |
 | 5 | HTTP or protocol error | report it |
 

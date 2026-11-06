@@ -33,7 +33,7 @@ import type {
   UncleanTicket,
 } from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
-import type { ToolBinding } from '../plugins/tools.js';
+import { loadTools, type ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
@@ -349,16 +349,19 @@ export class Conductor {
   }
 
   /**
-   * Starts the tool server when an addon declares tools. Only the serve
-   * process calls this; `endpointFile` publishes it to the CLI.
+   * Starts the tool server when an addon declares tools or the remote serves
+   * site tools. Only the serve process calls this; `endpointFile` publishes
+   * it to the CLI.
    */
   async startTools(endpointFile?: string): Promise<void> {
-    if (!this.config.tools || this.toolServer) return;
+    const { siteTools } = this.remote;
+    if ((!this.config.tools && !siteTools) || this.toolServer) return;
     this.toolServer = await startToolServer({
-      registry: this.config.tools,
+      registry: this.config.tools ?? (await loadTools([])),
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
+      ...(siteTools ? { siteTools } : {}),
     });
     this.logger.info(
       { conductorId: this.config.conductor_id, url: this.toolServer.url },
@@ -370,6 +373,7 @@ export class Conductor {
     // Server first, so no new provision_up starts a run after the stop.
     await this.toolServer?.stop();
     await this.config.provisioning?.stop();
+    await this.remote.siteTools?.close();
     this.toolServer = undefined;
     this.runTokens.clear();
   }

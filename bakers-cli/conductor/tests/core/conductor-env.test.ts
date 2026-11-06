@@ -508,12 +508,17 @@ describe('Conductor workspace env', () => {
 });
 
 describe('Conductor agent tools', () => {
-  async function dispatchOnce(withTools: boolean, agentWithholds = false) {
+  async function dispatchOnce(
+    withTools: boolean,
+    agentWithholds = false,
+    siteTools?: FakeBbRemote['siteTools'],
+  ) {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
+    if (siteTools) remote.siteTools = siteTools;
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
@@ -575,6 +580,39 @@ describe('Conductor agent tools', () => {
     const result = await client.callTool({ name: 'where', arguments: {} });
     expect(result.content).toEqual([{ type: 'text', text: '/fake/BB-1' }]);
     await client.close();
+    await conductor.stopTools();
+  });
+
+  it('serves the site tools to a run even when no addon declares tools, and hands it no site credential', async () => {
+    const siteTools = {
+      list: async () => [
+        { name: 'tool_api__bakers_user_read', inputSchema: { type: 'object' } },
+      ],
+      call: async () => ({ content: [] }),
+      close: async () => {},
+    };
+    const { conductor, env, launched } = await dispatchOnce(
+      false,
+      false,
+      siteTools,
+    );
+    const url = (launched[0] as { url: string }).url;
+    expect(env.BB_CONDUCTOR_URL).toBe(url);
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(url), {
+        requestInit: {
+          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+        },
+      }),
+    );
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).toEqual(['bakers_user_read']);
+    await client.close();
+    // The run's only credential is its run token.
+    expect(
+      Object.keys(env).filter((k) => /TOKEN|SECRET|AUTH|PASSWORD/i.test(k)),
+    ).toEqual(['BB_CONDUCTOR_TOKEN']);
     await conductor.stopTools();
   });
 
