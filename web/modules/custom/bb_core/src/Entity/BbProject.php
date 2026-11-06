@@ -15,7 +15,6 @@ use Drupal\views\EntityViewsData;
 use Drupal\bb_core\Access\BbProjectAccessControlHandler;
 use Drupal\bb_core\Field\EnvironmentsItemList;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\bb_core\Routing\BbProjectRouteProvider;
 use Drupal\bb_core\Form\BbProjectCreateForm;
 use Drupal\bb_core\Form\BbProjectForm;
@@ -73,7 +72,6 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
     'route_provider' => ['html' => BbProjectRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml, so no
     // `local_task_provider` handler is registered.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
@@ -83,10 +81,8 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
     'add-form' => '/_workspace/{bb_workspace}/project/add',
     'edit-form' => '/_workspace/{bb_workspace}/project/{bb_project}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/project/{bb_project}/delete',
-    'collection' => '/admin/bakers/projects',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_project.collection',
   base_table: 'bb_project',
 )]
 final class BbProject extends BbContentEntityBase implements BbProjectInterface, EntityOwnerInterface {

@@ -1,6 +1,6 @@
 # Machines
 
-`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/configuration/agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. Create, delete and the admin collection stay under `/admin/bakers/machine`.
+`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/configuration/agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
 
 ## Location
 

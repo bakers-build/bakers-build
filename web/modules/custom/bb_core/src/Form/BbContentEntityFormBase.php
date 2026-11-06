@@ -111,9 +111,21 @@ class BbContentEntityFormBase extends ContentEntityForm {
     }
     $result = parent::save($form, $form_state);
     $this->addSavedMessage();
-    $form_state->setRedirectUrl($this->getEntity()->toUrl('collection'));
+    $form_state->setRedirectUrl($this->landing());
 
     return $result;
+  }
+
+  /**
+   * The product page a save lands on: the entity's own, a comment's ticket.
+   */
+  private function landing(): Url {
+    $entity = $this->entity;
+    $ticket = $entity->getEntityTypeId() === 'bb_comment' ? $entity->get('ticket_id')->entity : NULL;
+    if ($ticket instanceof EntityInterface) {
+      return $ticket->toUrl();
+    }
+    return $entity->hasLinkTemplate('canonical') ? $entity->toUrl() : Url::fromRoute('<front>');
   }
 
   /**

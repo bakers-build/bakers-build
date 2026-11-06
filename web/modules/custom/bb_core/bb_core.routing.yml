@@ -237,7 +237,7 @@ entity.bb_ticket_template.add_for_workspace:
 # `?_wrapper_format=island_dialog` it answers as a dialog fragment; without,
 # as an ordinary page.
 #
-# Not `entity.bb_ticket.add_form`, which is the full admin form: `create` is
+# Not `entity.bb_ticket.add_form`, which is the full form: `create` is
 # a second form operation and the form mode owning the dialog's widgets.
 # Gated by `_entity_create_access`; the form checks the permission again.
 # The public address is `/{workspace}/ticket/create`.
@@ -254,7 +254,7 @@ entity.bb_ticket.create_form:
 
 # The create-project dialog, built like the create-ticket dialog above: a
 # route whose form is main content. `create` is a second form operation and
-# mode beside the admin `entity.bb_project.add_form`;
+# mode beside the full `entity.bb_project.add_form`;
 # `_entity_create_access` gates it and the form checks again.
 # The public address is `/{workspace}/project/create`.
 entity.bb_project.create_form:

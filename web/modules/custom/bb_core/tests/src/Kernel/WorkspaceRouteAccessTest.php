@@ -97,7 +97,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
       'bb_project', 'bb_ticket', 'bb_environment', 'bb_run',
       // The add forms below render entity-reference widgets for the
       // conductor and the label vocabulary, which query these tables.
-      'bb_comment', 'bb_conductor', 'bb_term', 'bb_invite',
+      'bb_comment', 'bb_conductor', 'bb_term', 'bb_invite', 'bb_machine',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -311,16 +311,70 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
   }
 
   /**
-   * The instance-level admin surfaces D2 keeps are still reachable.
-   *
-   * The counterpart to the assertion above: the move must not have taken the
-   * plural listings, the workspace routes or the settings form with it.
+   * Content entities have no admin pages; the site settings keep theirs.
    */
-  public function testUnmovedAdminPathsSurvive(): void {
+  public function testContentEntityAdminPathsAre404(): void {
     $this->actAs($this->createAccount('admin2', ['administer bakers']));
+    $conductor = $this->conductor($this->createAccount('runner', []));
 
-    self::assertSame(200, $this->statusOf('/admin/bakers/workspace/' . $this->home->id()));
+    foreach ([
+      '/admin/bakers/workspaces',
+      '/admin/bakers/workspace/add',
+      '/admin/bakers/workspace/' . $this->home->id(),
+      '/admin/bakers/workspace/' . $this->home->id() . '/edit',
+      '/admin/bakers/workspace/' . $this->home->id() . '/delete',
+      '/admin/bakers/conductors',
+      '/admin/bakers/conductor/add',
+      '/admin/bakers/conductor/' . $conductor->id() . '/edit',
+      '/admin/bakers/conductor/' . $conductor->id() . '/delete',
+      '/admin/bakers/machines',
+      '/admin/bakers/machine/add',
+      '/admin/bakers/tickets',
+      '/admin/bakers/projects',
+      '/admin/bakers/teams',
+      '/admin/bakers/groups',
+      '/admin/bakers/comments',
+      '/admin/bakers/runs',
+      '/admin/bakers/ticket-templates',
+    ] as $path) {
+      self::assertSame(404, $this->statusOf($path), sprintf('%s must be gone.', $path));
+    }
     self::assertSame(200, $this->statusOf('/admin/bakers/settings'));
+  }
+
+  /**
+   * Workspace, conductor and machine delete on product paths, as before.
+   */
+  public function testProductDeleteRoutesKeepDeleteAccess(): void {
+    $owner = $this->createAccount('owner', [
+      'delete any bb_workspace', 'delete any bb_conductor', 'delete any bb_machine',
+    ]);
+    $this->addMembership($this->home, $owner);
+    $guest = $this->createAccount('guest', []);
+    $this->addMembership($this->home, $guest);
+    $conductor = $this->conductor($owner);
+    $machine = $this->create('bb_machine', ['name' => 'host', 'host_key' => 'host-1', 'owner_user_id' => $owner->id()]);
+
+    $this->actAs($owner);
+    self::assertSame(200, $this->statusOf('/bakers/delete'));
+    self::assertSame(200, $this->statusOf('/bakers/conductor/' . $conductor->id() . '/delete'));
+    self::assertSame(200, $this->statusOf('/user/' . $owner->id() . '/machine/' . $machine->id() . '/delete'));
+
+    $this->actAs($guest);
+    self::assertSame(403, $this->statusOf('/bakers/delete'));
+    self::assertSame(403, $this->statusOf('/bakers/conductor/' . $conductor->id() . '/delete'));
+  }
+
+  /**
+   * A conductor of the fixture project.
+   */
+  private function conductor(UserInterface $owner): ContentEntityInterface {
+    return $this->create('bb_conductor', [
+      'conductor_id' => 'c-' . $owner->id(),
+      'label' => 'Conductor',
+      'project_id' => $this->project->id(),
+      'owner_user_id' => $owner->id(),
+    ]);
   }
 
   /**

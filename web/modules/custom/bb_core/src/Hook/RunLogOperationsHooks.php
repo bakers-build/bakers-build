@@ -11,14 +11,11 @@ use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbRunInterface;
 
 /**
- * AC4/AC10 — links the run-log download route from the runs View.
+ * AC4/AC10 — links the run-log download route from a run's operations.
  *
- * `views.view.bb_runs` already carries an `entity_operations` field (the
- * `Operations` column, populated by this hook), so a new operation here
- * reaches that listing with no Views change at all — the standard extension
- * point core ships for exactly this, rather than a bespoke Views field
- * plugin for one link. The same hook applies to any other operations
- * listing a bb_run might gain later.
+ * Every operations listing of a bb_run picks these up with no Views change:
+ * the standard extension point core ships for exactly this, rather than a
+ * bespoke Views field plugin for one link.
  */
 final class RunLogOperationsHooks {
 

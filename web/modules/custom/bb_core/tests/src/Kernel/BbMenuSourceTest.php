@@ -174,7 +174,7 @@ final class BbMenuSourceTest extends KernelTestBase {
   public function testNoProjectsEntryOffWorkspaceRoute(): void {
     self::assertContains('Projects', array_column($this->emitted(), 'title'));
 
-    $this->visit('entity.bb_workspace.collection');
+    $this->visit('bb_core.home');
 
     self::assertSame([], $this->emitted());
   }
@@ -360,7 +360,7 @@ final class BbMenuSourceTest extends KernelTestBase {
    */
   public function testNoTeamIsDisclosedOffWorkspaceRoutes(): void {
     $this->createTeam('Platform Crew');
-    $this->visit('entity.bb_workspace.collection');
+    $this->visit('bb_core.home');
 
     $items = $this->emitted();
 

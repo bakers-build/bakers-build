@@ -51,8 +51,8 @@ install:
   # Swaps the 'string'/'combine'/'search_api_text'/'search_api_fulltext' Views
   # filter handler CLASS for every view (hook_views_plugins_filter_alter), not
   # only for a view that names this module — so it stays installed as long as
-  # any shipped view has such an exposed filter. `views.view.bb_tickets`,
-  # `views.view.runs`, `views.view.bb_runs`, `views.view.projects`,
+  # any shipped view has such an exposed filter. `views.view.runs`,
+  # `views.view.projects`,
   # `views.view.conductors`, `views.view.machines`, `views.view.groups`,
   # `views.view.files` and `views.view.user_admin_people` all do (BB-683:
   # confirmed by plugin ID, not a module-name text match — removing this

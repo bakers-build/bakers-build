@@ -41,6 +41,16 @@ Feature: Ambient workspace form contracts
     When the contract browser opens the edit form for fixture "group.home"
     Then the contract field "workspace_id[0][target_id]" is absent
 
+  Scenario: Content has no admin pages; the site settings keep theirs
+    Given I am logged in as the account "site-admin"
+    When the contract browser opens "/admin/bakers/workspaces" with status 404
+    And the contract browser opens "/admin/bakers/conductors" with status 404
+    And the contract browser opens "/admin/bakers/conductor/add" with status 404
+    And the contract browser opens "/admin/bakers/machines" with status 404
+    And the contract browser opens "/admin/bakers/tickets" with status 404
+    And the contract browser opens "/admin/bakers/runs" with status 404
+    And the contract browser opens "/admin/bakers/settings" with status 200
+
   Scenario: Environments can only be created within a project
     Given the browser uses recipe account "lead"
     When the contract browser opens "/admin/bakers/environment/add" with status 404

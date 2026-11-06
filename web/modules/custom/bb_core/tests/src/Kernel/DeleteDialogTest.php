@@ -41,7 +41,7 @@ final class DeleteDialogTest extends KernelTestBase {
   protected static $modules = [
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
-    'link', 'text', 'field', 'filter', 'markdown_easy', 'og',
+    'link', 'text', 'field', 'filter', 'markdown_easy', 'og', 'views',
     'island', 'bb_core', 'bb_connector',
   ];
 
@@ -228,6 +228,53 @@ final class DeleteDialogTest extends KernelTestBase {
       ['Deleted <em class="placeholder">env-a</em>.'],
       array_map('strval', $this->container->get('messenger')->messagesByType('status')),
     );
+  }
+
+  /**
+   * A conductor, machine or run delete lands on a product page.
+   */
+  public function testDeleteLandsInTheProduct(): void {
+    $this->installUserListStubs();
+    $user = $this->container->get('current_user')->id();
+    $machine = $this->fixture('a', 'bb_machine');
+    $run = $this->fixture('a', 'bb_run');
+    $expected = [
+      'bb_conductor' => [$this->fixture('a', 'bb_conductor'), '/user/' . $user . '/conductors'],
+      'bb_machine' => [$machine, '/user/' . $machine->get('owner_user_id')->target_id . '/machines'],
+      'bb_run' => [$run, $this->fixture('a', 'bb_ticket')->toUrl()->toString()],
+    ];
+
+    foreach ($expected as $type => [$entity, $landing]) {
+      $response = $this->confirmInDialog($entity);
+
+      self::assertNull($this->reload($entity), $type . ' is deleted');
+      self::assertSame($landing, (string) $response->headers->get('HX-Location'), $type . ' lands in the product');
+    }
+  }
+
+  /**
+   * Registers the two account listings a delete lands on.
+   */
+  private function installUserListStubs(): void {
+    $this->installConfig(['views']);
+    $storage = $this->container->get('entity_type.manager')->getStorage('view');
+    foreach (['conductors', 'machines'] as $id) {
+      $storage->create([
+        'id' => $id,
+        'base_table' => 'users_field_data',
+        'display' => [
+          'default' => ['display_plugin' => 'default', 'id' => 'default', 'display_title' => 'Default', 'position' => 0, 'display_options' => []],
+          'user_list' => [
+            'display_plugin' => 'page',
+            'id' => 'user_list',
+            'display_title' => 'User list',
+            'position' => 1,
+            'display_options' => ['path' => 'user/%user/' . $id],
+          ],
+        ],
+      ])->save();
+    }
+    $this->container->get('router.builder')->rebuild();
   }
 
   /**

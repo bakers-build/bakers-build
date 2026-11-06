@@ -60,7 +60,7 @@ abstract class BbContentEntityBase extends ContentEntityBase implements BbConten
     if (!is_string($template) || !str_contains($template, '{bb_workspace}')) {
       return $parameters;
     }
-    $workspace = \Drupal::service(WorkspaceResolverInterface::class)->resolve($this);
+    $workspace = $this instanceof BbWorkspaceInterface ? $this : \Drupal::service(WorkspaceResolverInterface::class)->resolve($this);
     if ($workspace instanceof BbWorkspaceInterface && $workspace->getSlug() !== '') {
       $parameters['bb_workspace'] = $workspace->getSlug();
     }

@@ -88,9 +88,8 @@ entity.bb_ticket_template.edit_form:
   weight: 1
 
 # --- Machine: View ---
-# Product tabs in the user area. Add, delete and the collection stay
-# under /admin/bakers. Name and capacity are edited on the View cards; the
-# former Settings url redirects there.
+# Product tabs in the user area. Name and capacity are edited on the View
+# cards; the former Settings url redirects there.
 
 entity.bb_machine.canonical:
   title: 'View'
@@ -99,7 +98,7 @@ entity.bb_machine.canonical:
   weight: 0
 
 # --- Conductor: Overview ---
-# One product tab. Edit, delete and the collection stay under /admin/bakers.
+# One product tab. The heartbeat creates conductors; the card edits one.
 
 entity.bb_conductor.canonical:
   title: 'Overview'

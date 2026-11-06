@@ -28,7 +28,6 @@ final class GinIntegrationHooks {
       'bb_group',
       'bb_project',
       'bb_ticket',
-      'bb_conductor',
       'bb_run',
     ] as $entity_type_id) {
       $routes[] = "entity.$entity_type_id.add_form";
