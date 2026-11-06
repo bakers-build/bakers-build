@@ -19,6 +19,9 @@ content:
           template: field-map
         full:
           template: field-map
+        epics:
+          template: field-map
+          label: Epics
       fields:
         created:
           type: datetime
@@ -622,6 +625,75 @@ content:
         last_seen_label:
           type: string
           title: Last seen
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_machine:
+    bb_machine:
+      title: bakers.build machine
+      purpose: >-
+        Host capacity for concurrent runs, owned by one user account. Capacity
+        (max_parallel / current_load) belongs to the machine, not to each
+        per-project conductor; a conductor links its machine. host_key is the
+        machine-context stem, not the composed conductor registration key.
+        Machines are not in the workspace read scope: the owner sees them under
+        the account Machines listing, and the full view is the machine page
+        /user/{user}/machine/{bb_machine}.
+      view_modes:
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        host_key:
+          type: string
+          title: Host key
+          description: Machine-context machine_id stem, unique per machine.
+          required: true
+          multiple: false
+        max_parallel:
+          type: integer
+          title: Max parallel
+          description: Concurrent runs this machine accepts; default 5.
+          required: false
+          multiple: false
+        current_load:
+          type: integer
+          title: Current load
+          description: Runs currently claimed on this machine; default 0.
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+          settings:
+            target_type: user
+        owner_label:
+          type: string
+          title: Owner label
+          description: >-
+            Display name of the owner, read through owner_user_id; the machine
+            page shows it.
           required: false
           multiple: false
           computed: true
@@ -1318,6 +1390,30 @@ content:
           title: Agent
           required: false
           multiple: false
+        harness:
+          type: string
+          title: Harness
+          description: >-
+            Id of the agent harness package that drove the session, e.g. claude
+            or codex.
+          required: false
+          multiple: false
+        model:
+          type: string
+          title: Model
+          description: >-
+            The candidate's configured model, or the raw transcript model id
+            when unconfigured. Empty only when both are unresolved.
+          required: false
+          multiple: false
+        model_version:
+          type: string
+          title: Model version
+          description: >-
+            The candidate's configured exact version, or the raw transcript
+            model id when unconfigured. Empty only when both are unresolved.
+          required: false
+          multiple: false
         error_log:
           type: text
           title: Error log
@@ -1868,110 +1964,110 @@ config:
     bb_core.bb_vocabulary: >-
       The vocabulary IS the bb_term bundle; no screen renders it as an object of
       its own.
-  og.og_role:
-    title: OG role
-    entity_type: og_role
-    purpose: >-
-      The role vocabulary of the OG groups — what a Settings screen assigns a
-      person on a workspace or a team. Contrib Organic Groups' own config
-      entity. AS-IS, MEASURED IN config/sync AT BB-462: NINE objects, not ten —
-      bb_project carries no role at all any more (D7 deregisters it as an OG
-      group entirely). Five for bb_workspace (non-member, member, contributor,
-      lead, guest) and four for bb_team (non-member, member, lead, owner). `app`
-      is GONE (D9: a conductor's OAuth identity is bound to its owning user, so
-      it sees exactly what that user's own rank sees — no separate machine rank
-      exists to list here). `owner` is NEW (D3): governs the team itself, who
-      may join it and its own settings. The key is the Drupal config-name
-      PREFIX, so this is one entry per config entity TYPE; the instances live in
-      sample data. Three facts a screen must not get wrong. First, `permissions`
-      is NOT an empty list on every role: bb_workspace-lead and -contributor
-      carry real permission strings (create/edit/delete rights),
-      bb_workspace-guest carries read-only, and bb_team-owner carries `manage
-      members`/`update group`. It IS empty on exactly four: the three non-member
-      roles and bb_team-bb_team-member — the implicit member rank is
-      deliberately emptied everywhere (D1: OG ranks are additive and cannot be
-      narrowed, so any right left on an implicit rank is inherited by every
-      membership including guests). Second, `is_admin` is FALSE on all nine.
-      Third, "a workspace admin sees every project of their workspace" (D4) is a
-      VISIBILITY rule computed from the rank id, never an OG admin flag or a
-      project-level role — there is no project-level role left to read at all.
-      TARGET: product roles are OG ranks only; team ownership is the one new
-      rank this ticket adds.
-    fields:
-      id:
-        type: string
-        title: Machine name
-        description: >-
-          Composed as <group_type>-<group_bundle>-<role name>, e.g.
-          bb_workspace-bb_workspace-lead. This full id is what
-          og_membership.roles references.
-        required: true
-        multiple: false
-      label:
-        type: string
-        title: Label
-        description: The human name a Settings screen shows, e.g. "Administrator".
-        required: true
-        multiple: false
-      weight:
-        type: integer
-        title: Weight
-        description: >-
-          Display order within a group type; 0 for non-member, rising to 5 for
-          the workspace app role.
-        required: false
-        multiple: false
-      is_admin:
-        type: boolean
-        title: Is admin
-        description: >-
-          FALSE on every shipped role — measured in config/sync at BB-435 across
-          all ten og.og_role objects, and the role it used to name does not
-          exist. Read the role id, never this flag. See the purpose above.
-        required: false
-        multiple: false
-      permissions:
-        type: string
-        title: Permissions
-        description: >-
-          OG permission strings. Empty in exactly four of the ten shipped roles
-          — the three non-member roles and bb_team-bb_team-member — see the
-          purpose above before designing anything that edits this.
-        required: false
-        multiple: true
-      group_type:
-        type: string
-        title: Group entity type
-        required: true
-        multiple: false
-        settings:
-          allowed_values:
-            - bb_workspace
-            - bb_project
-            - bb_team
-      group_bundle:
-        type: string
-        title: Group bundle
-        required: true
-        multiple: false
-      role_type:
-        type: string
-        title: Role type
-        description: >-
-          `required` for the two roles OG creates for every group (non-member,
-          member); `standard` for the roles bakers.build adds. A screen must not
-          offer to delete a required role.
-        required: true
-        multiple: false
-        settings:
-          allowed_values:
-            - required
-            - standard
-    omitted:
-      uuid: >-
-        Config entities carry a uuid that is not part of the modelled key set
-        and is never rendered.
-      group_id: >-
-        Null in all ten shipped roles. OG sets it only for a role scoped to one
-        single group instance, which bakers.build ships none of, so no screen
-        renders it.
+  og_role:
+    og_role:
+      title: OG role
+      purpose: >-
+        The role vocabulary of the OG groups — what a Settings screen assigns a
+        person on a workspace or a team. Contrib Organic Groups' own config
+        entity. AS-IS, MEASURED IN config/sync AT BB-462: NINE objects, not ten
+        — bb_project carries no role at all any more (D7 deregisters it as an OG
+        group entirely). Five for bb_workspace (non-member, member, contributor,
+        lead, guest) and four for bb_team (non-member, member, lead, owner).
+        `app` is GONE (D9: a conductor's OAuth identity is bound to its owning
+        user, so it sees exactly what that user's own rank sees — no separate
+        machine rank exists to list here). `owner` is NEW (D3): governs the team
+        itself, who may join it and its own settings. The key is the Drupal
+        config-name PREFIX, so this is one entry per config entity TYPE; the
+        instances live in sample data. Three facts a screen must not get wrong.
+        First, `permissions` is NOT an empty list on every role:
+        bb_workspace-lead and -contributor carry real permission strings
+        (create/edit/delete rights), bb_workspace-guest carries read-only, and
+        bb_team-owner carries `manage members`/`update group`. It IS empty on
+        exactly four: the three non-member roles and bb_team-bb_team-member —
+        the implicit member rank is deliberately emptied everywhere (D1: OG
+        ranks are additive and cannot be narrowed, so any right left on an
+        implicit rank is inherited by every membership including guests).
+        Second, `is_admin` is FALSE on all nine. Third, "a workspace admin sees
+        every project of their workspace" (D4) is a VISIBILITY rule computed
+        from the rank id, never an OG admin flag or a project-level role — there
+        is no project-level role left to read at all. TARGET: product roles are
+        OG ranks only; team ownership is the one new rank this ticket adds.
+      fields:
+        id:
+          type: string
+          title: Machine name
+          description: >-
+            Composed as <group_type>-<group_bundle>-<role name>, e.g.
+            bb_workspace-bb_workspace-lead. This full id is what
+            og_membership.roles references.
+          required: true
+          multiple: false
+        label:
+          type: string
+          title: Label
+          description: The human name a Settings screen shows, e.g. "Administrator".
+          required: true
+          multiple: false
+        weight:
+          type: integer
+          title: Weight
+          description: >-
+            Display order within a group type; 0 for non-member, rising to 5 for
+            the workspace app role.
+          required: false
+          multiple: false
+        is_admin:
+          type: boolean
+          title: Is admin
+          description: >-
+            FALSE on every shipped role — measured in config/sync at BB-435
+            across all ten og.og_role objects, and the role it used to name does
+            not exist. Read the role id, never this flag. See the purpose above.
+          required: false
+          multiple: false
+        permissions:
+          type: string
+          title: Permissions
+          description: >-
+            OG permission strings. Empty in exactly four of the ten shipped
+            roles — the three non-member roles and bb_team-bb_team-member — see
+            the purpose above before designing anything that edits this.
+          required: false
+          multiple: true
+        group_type:
+          type: string
+          title: Group entity type
+          required: true
+          multiple: false
+          settings:
+            allowed_values:
+              - bb_workspace
+              - bb_project
+              - bb_team
+        group_bundle:
+          type: string
+          title: Group bundle
+          required: true
+          multiple: false
+        role_type:
+          type: string
+          title: Role type
+          description: >-
+            `required` for the two roles OG creates for every group (non-member,
+            member); `standard` for the roles bakers.build adds. A screen must
+            not offer to delete a required role.
+          required: true
+          multiple: false
+          settings:
+            allowed_values:
+              - required
+              - standard
+      omitted:
+        uuid: >-
+          Config entities carry a uuid that is not part of the modelled key set
+          and is never rendered.
+        group_id: >-
+          Null in all ten shipped roles. OG sets it only for a role scoped to
+          one single group instance, which bakers.build ships none of, so no
+          screen renders it.
