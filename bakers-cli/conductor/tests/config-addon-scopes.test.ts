@@ -109,3 +109,96 @@ describe('conductor addons per scope', () => {
     );
   });
 });
+
+describe('shared run security from the machine and project config', () => {
+  const projectWithSecurity = (security: string) =>
+    projectConfig().replace(
+      "bakers: { project: 'bakers' },",
+      `bakers: { project: 'bakers' },\n  security: ${security},`,
+    );
+
+  it('every harness gets both layers, with sources and warnings', async () => {
+    writeMachine(`export default {
+      addons: ['@bakers-build/addon-claude', '@bakers-build/addon-codex'],
+      security: { sandbox: { allow_write: ['$inherit', '/srv/cache'] } },
+    };`);
+    const project = writeProject(
+      projectWithSecurity(
+        "{ sandbox: { trusted_commands: ['$inherit', 'ddev'], deny_read: ['$inherit', '~/.aws'] } }",
+      ),
+    );
+    const { warnings, result } = await captureWarnings(() =>
+      loadConductorConfig(project),
+    );
+    const security = (alias: string) =>
+      result.agents.find((c) => c.alias === alias)?.agent.security;
+    expect(security('opus')?.sandbox.trusted_commands.entries).toContainEqual({
+      value: 'ddev',
+      source: 'project',
+    });
+    expect(security('opus')?.sandbox.allow_write.entries).toEqual([
+      { value: '/srv/cache', source: 'machine' },
+    ]);
+    expect(security('codex')?.not_applied).toContainEqual({
+      key: 'trusted_commands',
+      source: 'project',
+      reason: 'unsupported',
+    });
+    const loosening = warnings.filter((w) => w.includes('loosens'));
+    expect(loosening).toHaveLength(1);
+    expect(loosening[0]).toContain('trusted_commands');
+    expect(loosening[0]).toContain('ddev');
+    expect(loosening[0]).toContain(project);
+    const skipped = warnings.filter((w) => w.includes('not applied'));
+    expect(skipped).toEqual([
+      expect.stringContaining('codex: project security.sandbox.deny_read'),
+      expect.stringContaining(
+        'codex: project security.sandbox.trusted_commands',
+      ),
+    ]);
+  });
+
+  it('warns once per project loosening of mode, lists and default reads', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const { warnings } = await captureWarnings(() =>
+      loadConductorConfig(
+        writeProject(
+          projectWithSecurity(
+            "{ mode: 'yolo', sandbox: { allow_write: ['/x'], deny_read: [] } }",
+          ),
+        ),
+      ),
+    );
+    const loosening = warnings.filter((w) => w.includes('loosens'));
+    expect(loosening).toHaveLength(3);
+    expect(loosening.join('\n')).toMatch(/mode 'yolo'/);
+    expect(loosening.join('\n')).toMatch(/allow_write/);
+    expect(loosening.join('\n')).toMatch(/deny_read.*without '\$inherit'/);
+  });
+
+  it('a project that only adds read denials is not a loosening', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
+    const { warnings } = await captureWarnings(() =>
+      loadConductorConfig(
+        writeProject(
+          projectWithSecurity(
+            "{ sandbox: { deny_read: ['$inherit', '~/.aws'] } }",
+          ),
+        ),
+      ),
+    );
+    expect(warnings.filter((w) => w.includes('loosens'))).toEqual([]);
+  });
+
+  it('a malformed shared block fails loading and names its file', async () => {
+    const machine = writeMachine(`export default {
+      addons: ['@bakers-build/addon-codex'],
+      security: { sandbox: { network: [] } },
+    };`);
+    await expect(
+      loadConductorConfig(writeProject(projectConfig())),
+    ).rejects.toThrow(
+      `${machine}: machine security.sandbox: unknown key network`,
+    );
+  });
+});
