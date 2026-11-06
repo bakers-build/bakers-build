@@ -80,7 +80,7 @@ it('select: → / ← cycle, Enter advances, everything else is inert', () => {
 });
 
 it('select: Del/Backspace clear ONLY a clearable field', () => {
-  // BB-233's edit form declares both selects clearable; the create form
+  // BB-233's edit form declares both selects clearable; a plain select
   // declares none, and there `\x7f` must stay inert — which is also why it never
   // collides with the text field's backspace: different `kind`.
   expect(keyToIntent('delete', clearable)).toEqual({ kind: 'clear' });

@@ -55,7 +55,7 @@ it('select names its option list by BAG KEY, not by a projection function', () =
   expect(field.from).toBe('users');
 });
 
-it('clearable is ABSENT unless asked for — the create form declares none', () => {
+it('clearable is ABSENT unless asked for — a plain select declares none', () => {
   const plain = f.select('assignee', 'Assignee', { from: 'users' });
   expect(Object.hasOwn(plain, 'clearable')).toBe(false);
   expect(plain.clearable).toBeUndefined();

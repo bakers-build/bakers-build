@@ -14,7 +14,7 @@ import { fakeClient } from '../../../test-support.js';
 // The whole argument for this module is REUSE: the parent picker searches
 // through the same `buildTicketQueryParams` the project screen's `/` search
 // uses, so the two cannot drift. How WIDE the search matches is the caller's
-// choice: the create form keeps the server-resolved identifier+title search (BB-257 S5),
+// choice: the edit form keeps the server-resolved identifier+title search (BB-257 S5),
 // the parent FILTER picker matches by identifier only (BB-284, PM steer —
 // the operator knows `BB-273`, not the title). The cases below assert the
 // query that goes on the wire, not a re-spelled copy of the builder's own
@@ -72,7 +72,7 @@ it('a query becomes the server-resolved filter[search] (AC-5)', async () => {
 
 it("match 'identifier' narrows by identifier only — top-level CONTAINS, no title, no OR group (BB-284 PM steer)", async () => {
   // The parent FILTER picker matches by identifier alone: the operator
-  // filtering a list knows `BB-273`, not the title. The create form keeps
+  // filtering a list knows `BB-273`, not the title. The edit form keeps
   // the default server-resolved search above.
   const client = fakeClient({ documents: doc });
   await loadParentCandidates(client, PROJECT, 'BB-2', 'identifier');
@@ -91,11 +91,11 @@ it("match 'identifier' with an empty query adds no CONTAINS filter at all", asyn
   expect(queryString(client.requests[0]?.params)).not.toContain('CONTAINS');
 });
 
-it('the picker path filters to tickets with children; the create form path does not (BB-300 D1, AC-1/AC-7)', async () => {
+it('the picker path filters to tickets with children; the edit form path does not (BB-300 D1, AC-1/AC-7)', async () => {
   // The parent FILTER picker offers only tickets that HAVE children — the
   // server rewrites filter[has_children]=1 into a stock id IN (…) filter
   // (bb_core's HasChildrenFilterSubscriber), so paging stays honest. The
-  // create form deliberately emits NO such filter: a ticket must be fileable
+  // edit form deliberately emits NO such filter: a ticket must be fileable
   // under a childless parent.
   const picker = fakeClient({ documents: doc });
   await loadParentCandidates(picker, PROJECT, '', 'identifier');
