@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Template\Attribute;
@@ -111,9 +112,23 @@ class BbContentEntityFormBase extends ContentEntityForm {
     }
     $result = parent::save($form, $form_state);
     $this->addSavedMessage();
-    $form_state->setRedirectUrl($this->getEntity()->toUrl('collection'));
+    $form_state->setRedirectUrl($this->landing());
 
     return $result;
+  }
+
+  /**
+   * The product page a save lands on: the entity's own, a comment's ticket.
+   */
+  private function landing(): Url {
+    $entity = $this->getEntity();
+    $ticket = $entity instanceof FieldableEntityInterface && $entity->getEntityTypeId() === 'bb_comment'
+      ? $entity->get('ticket_id')->entity
+      : NULL;
+    if ($ticket instanceof EntityInterface) {
+      return $ticket->toUrl();
+    }
+    return $entity->hasLinkTemplate('canonical') ? $entity->toUrl() : Url::fromRoute('<front>');
   }
 
   /**

@@ -1,23 +1,19 @@
 bb_browser_test.profiles:
-  path: '/admin/structure/island/browser-fixture'
+  path: '/island-browser/browser-fixture'
   defaults:
     _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::page'
     _title: 'Repeated Island Profile fixture'
   requirements:
     _permission: 'administer island profiles'
-  options:
-    _admin_route: true
 
 bb_browser_test.mapping:
-  path: '/admin/structure/island/browser-mapping'
+  path: '/island-browser/browser-mapping'
   defaults:
     _controller: '\Drupal\bb_browser_test\Controller\ProfilesController::page'
     _title: 'Mapped Island Profile fixture'
     profile_id: 'browser_mapping'
   requirements:
     _permission: 'administer island profiles'
-  options:
-    _admin_route: true
 
 bb_browser_test.menu_first:
   path: '/island-browser/menu/first'

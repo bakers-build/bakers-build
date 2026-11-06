@@ -130,7 +130,7 @@ final class BbWorkspaceScopeConstraintValidator extends ConstraintValidator impl
    * `bb_group.workspace_id` and `bb_team.workspace_id` reference a
    * `bb_workspace` directly, so the referenced value itself is already the
    * workspace in that case. `WorkspaceResolverInterface::CHAINS` deliberately
-   * has no `bb_workspace` entry (its own routes stay at `/admin/bakers`), so a
+   * has no `bb_workspace` entry (a workspace is not inside one), so a
    * bare `resolve()` call would answer NULL for exactly those two fields and
    * reject every legitimate group/team write. The identity case has to be
    * checked here, before delegating anything else to the resolver.

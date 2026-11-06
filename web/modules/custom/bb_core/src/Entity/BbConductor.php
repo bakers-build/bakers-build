@@ -11,11 +11,9 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\bb_core\Access\BbConductorAccessControlHandler;
 use Drupal\bb_core\Access\BbOwnerGrantQueryAccessHandler;
 use Drupal\bb_core\Form\BbConductorActionForm;
-use Drupal\bb_core\Form\BbConductorForm;
 use Drupal\bb_core\Form\BbEntityDetailCardForm;
 use Drupal\bb_core\ListBuilder\BbConductorListBuilder;
 use Drupal\bb_core\Routing\BbConductorRouteProvider;
@@ -48,9 +46,6 @@ use Drupal\user\EntityOwnerTrait;
     'permission_provider' => EntityPermissionProvider::class,
     'list_builder' => BbConductorListBuilder::class,
     'form' => [
-      'default' => BbConductorForm::class,
-      'add' => BbConductorForm::class,
-      'edit' => BbConductorForm::class,
       'delete' => BbContentEntityDeleteForm::class,
       // The Overview's card and its Disable/Enable confirmation.
       'identity' => BbEntityDetailCardForm::class,
@@ -67,20 +62,15 @@ use Drupal\user\EntityOwnerTrait;
     // Tabs are declared statically in bb_core.links.task.yml, so no
     // `local_task_provider` handler is registered. The default one would
     // synthesise a View/Edit tab row from the `edit-form` link.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
   // BbWorkspacePathProcessor bridges the two forms in both directions.
   links: [
     'canonical' => '/_workspace/{bb_workspace}/conductor/{bb_conductor}',
-    'add-form' => '/admin/bakers/conductor/add',
-    'edit-form' => '/admin/bakers/conductor/{bb_conductor}/edit',
-    'delete-form' => '/admin/bakers/conductor/{bb_conductor}/delete',
-    'collection' => '/admin/bakers/conductors',
+    'delete-form' => '/_workspace/{bb_workspace}/conductor/{bb_conductor}/delete',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_conductor.collection',
   base_table: 'bb_conductor',
 )]
 final class BbConductor extends BbContentEntityBase implements BbConductorInterface, EntityOwnerInterface {

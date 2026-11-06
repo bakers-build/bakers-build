@@ -31,7 +31,7 @@
               "accent": $r.state = "running" ? "running" : "idle",
               "cells": $merge([
                 {
-                  "identifier": { "kind": "link", "value": $r.identifier, "url": "/admin/bakers/ticket/" & $r.ticket_id, "mono": true },
+                  "identifier": { "kind": "link", "value": $r.identifier, "url": "/bakers/ticket/" & $r.ticket_id, "mono": true },
                   "state": { "kind": "badge", "label": $r.state, "tone": $r.state = "running" ? "running" : "neutral", "dot": true },
                   "duration_s": $exists($r.duration_s) ? { "kind": "text", "value": $string($r.duration_s) & " s", "emphasis": "strong" } : $dash
                 },

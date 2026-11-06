@@ -12,7 +12,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\bb_core\Access\BbTicketAccessControlHandler;
 use Drupal\bb_core\Storage\BbTicketStorage;
@@ -77,7 +76,6 @@ use Drupal\user\EntityOwnerTrait;
     // Deliberately no `local_task_provider`: the default one would synthesise
     // a View/Edit tab row from the `edit-form` link, and a ticket has a single
     // face. The shell keeps drawing tabs for entities that declare them.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
@@ -87,12 +85,8 @@ use Drupal\user\EntityOwnerTrait;
     'add-form' => '/_workspace/{bb_workspace}/ticket/add',
     'edit-form' => '/_workspace/{bb_workspace}/ticket/{bb_ticket}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/ticket/{bb_ticket}/delete',
-    // views.view.bb_tickets overrides this route with a page display;
-    // without the View it falls back to BbTicketListBuilder.
-    'collection' => '/admin/bakers/tickets',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_ticket.collection',
   base_table: 'bb_ticket',
 )]
 final class BbTicket extends BbContentEntityBase implements BbTicketInterface, EntityOwnerInterface {

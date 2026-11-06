@@ -11,7 +11,6 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\bb_core\Field\ProjectsItemList;
 use Drupal\bb_core\Form\BbTeamForm;
@@ -63,7 +62,6 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
     'route_provider' => ['html' => BbTeamRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml, so no
     // `local_task_provider` handler is registered.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
@@ -73,10 +71,8 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
     'add-form' => '/_workspace/{bb_workspace}/team/add',
     'edit-form' => '/_workspace/{bb_workspace}/team/{bb_team}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/team/{bb_team}/delete',
-    'collection' => '/admin/bakers/teams',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_team.collection',
   base_table: 'bb_team',
 )]
 final class BbTeam extends BbContentEntityBase implements BbTeamInterface, EntityOwnerInterface {
