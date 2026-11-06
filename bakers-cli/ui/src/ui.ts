@@ -75,7 +75,6 @@ export interface RunBbUiOptions {
   restartProcess?: (() => void) | undefined;
   /** Persist a product-workspace name through the conductor-owned contract. */
   selectWorkspace?: ((name: string) => Promise<void>) | undefined;
-  createPrompt?: string | undefined;
   buildProgram: (opts: { plugins: unknown[] }) => DropshProgram;
   renderer?: ((opts: unknown) => unknown) | undefined;
   /** BB-223: the deep-link target, still UNRESOLVED (the entry has no JSON:API

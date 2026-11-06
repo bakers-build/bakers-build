@@ -146,7 +146,7 @@ export class EditAssignmentFormScreen extends AsyncModalScreen<EditAssignmentDat
       supplied?.document ??
       (await loadTicketDetail(context.services.client, ticketId));
     const projectId = relationshipId(document, 'project_id');
-    // BB-460 fix round 1: `currentUser` is a username; `ownerUserId` must be
+    // BB-460 fix round 1: `currentUser` is a uuid or a username; `ownerUserId` must be
     // the operator's uuid (`Conductor.ownerUserId`'s shape), so it is resolved
     // once per screen lifetime through `OwnerIdentity` rather than threaded
     // straight through. Fails open: `unavailable` omits the hint entirely.

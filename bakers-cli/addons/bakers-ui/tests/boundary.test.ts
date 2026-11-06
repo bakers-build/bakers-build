@@ -639,10 +639,10 @@ describe('shared code stays entity-agnostic — G4 (AC-18)', () => {
     // may not import `Entity/`, so neither could live with one owner. The
     // second assertion below holds them to the same no-entity rule as the rest.
     //
-    // Statistics left `bakers ui`, and `stats-panel`, `bar-chart` and `heat-map`
-    // with it: they had no other owner.
+    // Statistics left `bakers ui`, and `stats-panel`, `bar-chart`, `heat-map`
+    // and `badge` (painted only by the ticket's Statistics tab) with it: they
+    // had no other owner.
     expect(subDirs(join(srcDir, 'Component')).sort()).toEqual([
-      'badge',
       'card',
       'divider',
       'footer-actions',

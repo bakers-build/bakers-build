@@ -27,4 +27,4 @@ Read the open tickets of this project as bb-workflow's references/read-ticket.md
 
 **Done when:** you know which tickets need a person and which run on their own.
 
-The same figures in the terminal: [Terminal UI](/addons/bakers-ui/usage). What each figure measures: [Ticket metrics](/configuration/workflows/metrics).
+What each figure measures: [Ticket metrics](/configuration/workflows/metrics).
