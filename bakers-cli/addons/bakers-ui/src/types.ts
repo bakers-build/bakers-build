@@ -53,14 +53,6 @@ export interface DropshClient {
   /** PATCH `{ data: { type, id, ...body } }` — dropsh 0.5.8's `update`. */
   update(type: string, id: string, body: ResourceWriteBody): Promise<unknown>;
   /**
-   * POST `{ data: { type, ...body } }` — dropsh 0.5.8's `create` (BB-309 D4).
-   *
-   * Added for the same reason `update` was in BB-233: the read-only shape was
-   * the TYPE, never the object. The real client has always had this method, so
-   * declaring it costs no HTTP plumbing and no new dependency.
-   */
-  create(type: string, body: ResourceWriteBody): Promise<unknown>;
-  /**
    * POST a raw document to a path — dropsh's `post`, for the custom resources
    * that are not an entity create (the addon inbox send).
    */

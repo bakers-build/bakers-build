@@ -40,9 +40,9 @@ export default function bakersUiPlugin(options: BbUiOptions = {}) {
                 });
           // BB-232 (D9): the second thing resolved here, for the same reason.
           // `~/.bakers/conductors.json` used to tell the entry which project this
-          // checkout belongs to and which conductor is this machine's; the
-          // control plane knows both, and this is the first place a client
-          // exists to ask. Only when the entry handed over a `.bakers` dir — no
+          // checkout belongs to; the control plane knows it from the conductor
+          // record matching the `.bakers` dir, and this is the first place a
+          // client exists to ask. Only when the entry handed over a `.bakers` dir — no
           // dir, no read, so a cockpit outside any project boots as before.
           const own =
             options.bakersDir === undefined

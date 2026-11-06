@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import type { DropshClient, Resource } from '../src/types.js';
+import type { DropshClient } from '../src/types.js';
 import {
   fakeClient,
   resolveCollectionPath,
@@ -118,36 +118,14 @@ it('rows and failingCollections may be keyed in EITHER form', async () => {
   ).rejects.toThrow('no user/user');
 });
 
-// ---- BB-309: the double records `create()` --------------------------------
+// ---- the client contract offers no entity create --------------------------
 //
-// APPENDED. The direct-create path POSTs one ticket, so "exactly one ticket was
-// written and no agent was launched" (AC-2) is an assertion over recorded
-// creates — and "nothing partial is left" (AC-8) needs the rejected attempt to
-// be visible too, which is why a rejection still records.
+// Ticket creation left the TUI, and with it the only caller of
+// `DropshClient.create`. The double mirrors the narrowed contract, so a create
+// slipping back in shows up here as well as in the type check.
 
-it('the double records create() and can reject it', async () => {
-  const client = fakeClient({ createdId: 'new-uuid' });
-  const made = await client.create('bb_ticket--bb_ticket', {
-    attributes: { title: 'T' },
-  });
-  expect(client.creates).toEqual([
-    { type: 'bb_ticket--bb_ticket', body: { attributes: { title: 'T' } } },
-  ]);
-  // The RESOURCE dropsh hands back, not the document it posted: `id` sits at the
-  // top level, and the accessor contract is `toResource`'s.
-  expect(made).toMatchObject({
-    id: 'new-uuid',
-    type: 'bb_ticket--bb_ticket',
-  });
-  expect((made as Resource).attr('title')).toBeUndefined();
-
-  const failing = fakeClient({ createError: new Error('nope') });
-  await expect(failing.create('bb_ticket--bb_ticket', {})).rejects.toThrow(
-    'nope',
-  );
-  // A rejected create is still RECORDED: "no partial ticket" (AC-8) is a claim
-  // about the server, and the test must be able to see the attempt.
-  expect(failing.creates).toHaveLength(1);
+it('the double offers no create()', () => {
+  expect('create' in fakeClient()).toBe(false);
 });
 
 it('fakeClient can be told to fail a collection or a write', async () => {

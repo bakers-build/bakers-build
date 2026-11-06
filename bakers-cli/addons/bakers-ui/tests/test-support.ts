@@ -90,12 +90,6 @@ export interface RecordedWrite {
   body: ResourceWriteBody;
 }
 
-/** A recorded `client.create(...)` call (BB-309). */
-export interface RecordedCreate {
-  type: string;
-  body: ResourceWriteBody;
-}
-
 /** A recorded `client.post(...)` call. */
 export interface RecordedPost {
   path: string;
@@ -106,8 +100,6 @@ export interface RecordedPost {
 export interface FakeClient extends DropshClient {
   /** Every `update()` in call order — the AC-6 "no write happened" assertion. */
   readonly writes: RecordedWrite[];
-  /** Every `create()` in call order — the AC-2 "exactly one ticket" assertion. */
-  readonly creates: RecordedCreate[];
   /** Every `get()` path in call order. */
   readonly gets: string[];
   /**
@@ -151,10 +143,6 @@ export interface FakeClientOptions {
   failingPaths?: string[];
   /** When set, every `update()` rejects with this value (the AC-5 path). */
   writeError?: unknown;
-  /** When set, every `create()` rejects with this value (the AC-8 path). */
-  createError?: unknown;
-  /** The uuid the created resource reports back; defaults to a fixed one. */
-  createdId?: string;
   /** What every `post()` answers (the instantiate document). */
   postDocument?: unknown;
   /** When set, every `post()` rejects with this value. */
@@ -173,15 +161,12 @@ export function fakeClient(options: FakeClientOptions = {}): FakeClient {
     failingCollections = [],
     failingPaths = [],
     writeError,
-    createError,
-    createdId,
     postDocument,
     postError,
   } = options;
   const posts: RecordedPost[] = [];
   const filters: string[][] = [];
   const writes: RecordedWrite[] = [];
-  const creates: RecordedCreate[] = [];
   const gets: string[] = [];
   const requests: RecordedGet[] = [];
   const collections: string[] = [];
@@ -217,7 +202,6 @@ export function fakeClient(options: FakeClientOptions = {}): FakeClient {
 
   return {
     writes,
-    creates,
     gets,
     requests,
     collections,
@@ -245,18 +229,6 @@ export function fakeClient(options: FakeClientOptions = {}): FakeClient {
       writes.push({ type, id, body });
       if (writeError !== undefined) throw writeError;
       return { data: { type, id } };
-    },
-    create: async (type: string, body: ResourceWriteBody) => {
-      creates.push({ type, body });
-      if (createError !== undefined) throw createError;
-      // dropsh 0.5.8's `create` ends `return toResource(doc.data)` — it hands
-      // back a RESOURCE, with a top-level `id`, not the JSON:API document it
-      // received (`dropsh/dist/src/core/jsonapi/client.js`). The document shape
-      // this used to return was copied from the `update` double, whose return
-      // value no production code reads; BB-309 is the first caller to read a
-      // write's result, and a double that disagrees with its seam is exactly
-      // where that starts costing something.
-      return toResource({ id: createdId ?? 'created-ticket-uuid', type });
     },
   };
 }

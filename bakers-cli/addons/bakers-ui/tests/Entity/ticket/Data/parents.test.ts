@@ -107,9 +107,9 @@ it('the picker path filters to tickets with children; the create form path does 
   expect(queryString(create.requests[0]?.params)).not.toContain('has_children');
 });
 
-it('the create form offers OPEN tickets only; the filter picker still sees closed ones (BB-309 D13, AC-13)', async () => {
-  // The human's decision during `coding`: filing NEW work under a closed parent
-  // is not a case the create form should offer, so its read carries
+it('the edit form offers OPEN tickets only; the filter picker still sees closed ones (BB-309 D13, AC-13)', async () => {
+  // The human's decision during `coding`: filing work under a closed parent
+  // is not a case the edit form should offer, so its read carries
   // `filter[closed]=0`. The parent FILTER picker asks a different question — an
   // operator narrowing a list by a parent that has since been closed is
   // legitimate, and its children are still open — so it keeps sending no

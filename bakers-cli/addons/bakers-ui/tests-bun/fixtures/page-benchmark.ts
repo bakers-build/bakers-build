@@ -155,10 +155,6 @@ export function benchWorld(): BenchWorld {
       writes++;
       return {};
     },
-    create: async () => {
-      writes++;
-      return {};
-    },
   };
   return {
     services: {

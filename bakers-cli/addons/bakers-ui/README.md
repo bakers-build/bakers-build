@@ -71,7 +71,7 @@ Conductors tab lists that project's conductors. Only registered screens appear
 in a tab bar.
 
 The root **Members** tab is registered only for a confirmed workspace lead; its
-member routes use workspace-wide user figures and lists.
+member routes use workspace-wide user lists.
 
 ## Screens & keys
 
@@ -382,10 +382,10 @@ await runBbUi({
 });
 ```
 
-The `bakers ui` command is a **thin, home-rooted entry** (AC-1): it reads the
-user-global machine context (connection + identity) and the conductor registry
-(default project) — NOT a project `conductor.config.js` — and delegates to
-`runBbUi`. That one composition
+The `bakers ui` command is a **thin, home-rooted entry** (AC-1): it resolves the
+connection and the `.bakers` dir of the project it was started in — NOT a
+project `conductor.config.js` — and delegates to `runBbUi`; the renderer reads
+the default project from the conductor record matching that dir. That one composition
 point is the only wiring left in the command.
 
 **Which dropsh config it reads** (`connection.configPath` → `$DROPSH_CONFIG`):

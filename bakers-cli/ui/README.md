@@ -231,8 +231,8 @@ without launching the UI.
 
 It also reports **`bb_dir`**: the `.bakers` dir of the project you are standing in, which is a
 separate question from which connection won (an explicit `--config` must not be able to
-relocate the agents). Since BB-232 that dir is also how the cockpit finds *this checkout's*
-conductor — the record whose `workspace_root` matches it supplies the new-ticket form's default
-project and its preselected conductor. That lookup is a control-plane read and therefore
+move it). Since BB-232 that dir is also how the cockpit finds *this checkout's*
+conductor — the record whose `workspace_root` matches it supplies the default project when
+`--project` is not given. That lookup is a control-plane read and therefore
 happens in the renderer, not here, which is why the `project:` line reports the `--project`
 flag and otherwise says where the value comes from rather than naming it.
