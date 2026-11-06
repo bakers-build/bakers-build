@@ -378,6 +378,10 @@ final class DeleteDialogTest extends KernelTestBase {
         'form_id' => $form_id,
         'form_token' => $this->container->get('csrf_token')->get('form_token_placeholder_' . Crypt::hashBase64($form_id)),
       ],
+      [],
+      [],
+      // An htmx post, on which core disables form redirects.
+      ['HTTP_HX_REQUEST' => 'true'],
     );
     $request->setSession(new Session(new MockArraySessionStorage()));
     $this->container->get('request_stack')->push($request);

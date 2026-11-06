@@ -76,8 +76,14 @@ trait DeleteDialogFormTrait {
    * @SuppressWarnings("PHPMD.UnusedFormalParameter")
    */
   public function landAfterDelete(array &$form, FormStateInterface $form_state): void {
+    if (!$this->isDialogRequest() || $form_state->isRebuilding()) {
+      return;
+    }
+    // Core disables redirects on htmx posts, which hides the stored one.
+    $form_state->disableRedirect(FALSE);
     $redirect = $form_state->getRedirect();
-    if (!$this->isDialogRequest() || !$redirect instanceof Url || $form_state->isRebuilding()) {
+    $form_state->disableRedirect();
+    if (!$redirect instanceof Url) {
       return;
     }
     $response = new Response('', 200, ['Content-Type' => 'text/html; charset=UTF-8']);

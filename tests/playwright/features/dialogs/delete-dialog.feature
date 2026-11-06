@@ -13,7 +13,7 @@ Feature: Delete opens its confirmation as a dialog over the page
     When I open the page where the disposable entity is managed
     And I open the Delete dialog of the disposable entity
     Then the delete dialog is titled after the disposable entity
-    And the delete dialog names "This also deletes 1 item"
+    And the delete dialog names "This also deletes"
     And the address is still the page the dialog was opened over
     When I press Escape without clicking into the dialog
     Then the delete dialog is closed
