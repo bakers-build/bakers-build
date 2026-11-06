@@ -2,24 +2,22 @@
 
 The bakers.build terminal UI: a dropsh `tui` renderer plugin (`bakers ui`). It opens on
 **My work**, the current operator's open assigned tickets, and also shows
-project/team current work, a searchable/filterable ticket list, and ticket
+project current work, a searchable/filterable ticket list, and ticket
 detail.
 
-## Navigation — seven scopes
+## Navigation — five scopes
 
-Navigation has seven tab scopes. Tabbed screens show the bar for their current
+Navigation has five tab scopes. Tabbed screens show the bar for their current
 scope; compact ticket views, forms and run detail have no separate tab bar. `Tab`/`Shift-Tab` cycle the tabs of the current level, and
 a **left click on a tab** goes straight to it; there are no letter shortcuts for
 tab navigation.
 
 | Level | Screens | Tabs |
 |-------|---------|------|
-| Root | Personal work, projects, teams, conductors, and workspace members for leads | **My work** · **Projects** · **Teams** · **Members** (workspace lead only) · **Conductors** |
+| Root | Personal work, projects, conductors, and workspace members for leads | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
 | Project | Project-scoped screens | **Overview** · **Work** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | Independent ticket screens | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
-| Team | Team current work and roster | **Overview** · **Work** · **Members** |
 | Workspace member | A selected workspace member, for workspace leads only | **Overview** · **Tickets** · **Runs** |
-| Team member | A selected member within one team | **Overview** · **Tickets** · **Runs** |
 | Conductor | A selected conductor, reached with Enter from any Conductors list | **Overview** · **Held work** · **Assigned** · **Log** |
 | — | Run detail | none — `Esc` returns to the preceding screen |
 
@@ -28,8 +26,8 @@ insert a normal screen into any of these scopes using `weight` (10, 20, 30, …)
 with intermediate values such as 25 or optional `before` / `after` anchors. See [Adding a screen as a tab](docs/tabs.md) for registration, placement,
 validation and migration examples.
 
-Project, Team, Workspace Member, and Team Member **Overview** are intentional
-empty landing places. Ticket Overview remains populated and unchanged.
+Project **Overview** shows the project and its current work; Workspace Member
+**Overview** shows the person's username, position and About me. Ticket Overview remains populated and unchanged.
 
 **Every bar is drawn in the same row** — under the header box (BB-346). The
 ticket detail's sections used to be drawn *inside* that box, as its last content
@@ -72,19 +70,14 @@ Every project tab is **project-scoped**, so open a project first. The project
 Conductors tab lists that project's conductors. Only registered screens appear
 in a tab bar.
 
-**Team Members** is a read-only OG roster reached through Root → Teams → one
-team. It shows each active member's current Open, Running, and Waiting counts,
-including zeroes. Enter opens that person inside the selected team. Team-member
-Tickets and Runs are constrained by both the person and the team's linked
-projects. The
-root **Members** tab is separate and is registered only for a confirmed
-workspace lead; its member routes use workspace-wide user figures and lists.
+The root **Members** tab is registered only for a confirmed workspace lead; its
+member routes use workspace-wide user figures and lists.
 
 ## Screens & keys
 
 | Screen | Keys |
 |--------|------|
-| Workspace/Team Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
+| Workspace Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Projects | `↑↓` select · `Enter` open project · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Project | `↑↓` select · `Enter` open ticket · `Tab`/`Shift-Tab` cycle tabs · `/` search · `s` status filter · `t` type filter · `p` parent filter · `x` closed filter · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
 | Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel) · `Esc` back |

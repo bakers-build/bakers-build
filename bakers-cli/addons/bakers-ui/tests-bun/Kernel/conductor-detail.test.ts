@@ -169,8 +169,7 @@ describe('the conductor detail scope', () => {
       rows: 44,
       tui: { conductorProcess: host },
     });
-    // Same product order as `conductors.test.ts`: My work → Projects → Teams → Conductors.
-    await tui.press('\t');
+    // Same product order as `conductors.test.ts`: My work → Projects → Conductors.
     await tui.press('\t');
     await tui.press('\t');
     return tui;

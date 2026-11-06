@@ -65,12 +65,12 @@ const referenceTabNote = unwrap(section(reference, TAB_NOTE, /\n##+ /));
 // different widths and a claim is a sentence, not a line.
 const readmeNavSection = section(
   readme,
-  '## Navigation — seven scopes',
+  '## Navigation — five scopes',
   /\n##+ /,
 );
 const referenceNavSection = section(
   reference,
-  '## Navigation - seven scopes',
+  '## Navigation - five scopes',
   /\n##+ /,
 );
 const readmeNav = unwrap(readmeNavSection);
@@ -294,7 +294,7 @@ const referenceKeys = section(reference, '## Keybindings', /\n##+ /);
 it.each([
   ['README', readmeNav],
   ['reference', referenceNav],
-])('the %s documents Members as a team tab', (_name, nav) => {
+])('the %s documents the Members tab', (_name, nav) => {
   expect(nav).toMatch(/\*\*Members\*\*/);
   expect(nav).not.toMatch(/Members[^*]*planned/i);
 });
@@ -302,13 +302,13 @@ it.each([
 it.each([
   ['README', readmeNavSection],
   ['reference', referenceNavSection],
-])('the %s documents the exact revision-3 seven-scope sitemap', (_name, nav) => {
-  expect(nav).toMatch(/^## Navigation [-—] seven scopes/);
-  expect(nav).toMatch(/Navigation has seven tab scopes/);
+])('the %s documents the exact five-scope sitemap', (_name, nav) => {
+  expect(nav).toMatch(/^## Navigation [-—] five scopes/);
+  expect(nav).toMatch(/Navigation has five tab scopes/);
   for (const [level, tabs] of [
     [
       'Root',
-      '**My work** · **Projects** · **Teams** · **Members** (workspace lead only) · **Conductors**',
+      '**My work** · **Projects** · **Members** (workspace lead only) · **Conductors**',
     ],
     [
       'Project',
@@ -318,13 +318,13 @@ it.each([
       'Ticket',
       '**Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card',
     ],
-    ['Team', '**Overview** · **Work** · **Members**'],
     ['Workspace member', '**Overview** · **Tickets** · **Runs**'],
-    ['Team member', '**Overview** · **Tickets** · **Runs**'],
   ]) {
     expect(section(nav, `| ${level} |`, /\n/)).toContain(tabs);
   }
   expect(nav).not.toMatch(/^\| User \|/m);
+  expect(nav).not.toMatch(/^\| Team( member)? \|/m);
+  expect(nav).not.toMatch(/\*\*Teams\*\*/);
   expect(nav).not.toMatch(/\*\*Dashboard\*\*/);
 });
 
@@ -339,29 +339,15 @@ it.each([
 });
 
 it('the README key table makes member rosters navigable', () => {
-  const row = section(readmeKeys, '| Workspace/Team Members |', /\n/);
+  const row = section(readmeKeys, '| Workspace Members |', /\n/);
   expect(row).toMatch(/↑↓.*select|select/);
   expect(row).toMatch(/Enter.*open member/);
 });
 
-it('the reference key table makes contextual member rosters navigable', () => {
-  const row = section(referenceKeys, '| Workspace/Team Members |', /\n/);
+it('the reference key table makes member rosters navigable', () => {
+  const row = section(referenceKeys, '| Workspace Members |', /\n/);
   expect(row).toMatch(/↑↓.*select|select/);
   expect(row).toMatch(/Enter.*open member/);
-});
-
-it('the README documents contextual team-member navigation', () => {
-  expect(readmeNav).toMatch(/\*\*Team Members\*\* is a read-only OG roster/);
-  expect(readmeNav).toContain('Root → Teams → one team');
-  expect(readmeNav).toMatch(/Enter opens that person inside the selected team/);
-});
-
-it('the reference documents contextual team-member navigation', () => {
-  expect(referenceNav).toMatch(/\*\*Team Members\*\* is a read-only OG roster/);
-  expect(referenceNav).toContain('Root → Teams → one team');
-  expect(referenceNav).toMatch(
-    /Enter opens that person inside the selected team/,
-  );
 });
 
 it('the reference documents the project deep-link escape fallbacks', () => {

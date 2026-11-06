@@ -8,7 +8,7 @@ export interface TicketSearchHost {
   /** The typed line; the host's loader sends it as `filter[search]`. */
   searchQuery: string;
   /** The rows on screen, narrowed locally while the server read is in flight.
-   *  Absent on a screen that shows no ticket rows (Team → Work). */
+   *  Absent on a screen that shows no ticket rows. */
   readonly rows?: readonly TicketRow[];
   /** Show these rows until the server answers; `[]` after a refusal. */
   showRows(rows: readonly TicketRow[]): void;

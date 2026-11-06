@@ -103,7 +103,6 @@ describe('relative tab registration', () => {
     expect(routes.tabs('root').map((t) => t.id)).toEqual([
       'my-work',
       'projects',
-      'teams',
       'members',
       'conductors',
     ]);
@@ -113,13 +112,8 @@ describe('relative tab registration', () => {
       'runs',
       'conductors',
     ]);
-    expect(routes.tabs('team').map((t) => t.id)).toEqual([
-      'overview',
-      'work',
-      'members',
-    ]);
     expect(routes.ids()).toEqual(
-      expect.arrayContaining(['my.work', 'project.overview', 'team.overview']),
+      expect.arrayContaining(['my.work', 'project.overview']),
     );
   });
   it('derives active bars from routes, including alternate and hidden presentations', () => {
@@ -171,6 +165,14 @@ it('offers no statistics or ticket creation at any scope, react experiment inclu
       [],
     );
   }
+});
+
+it('offers no Teams tab and no team or team-member level', () => {
+  const routes = buildRoutes([], true);
+  expect(routes.tabs('root').map((t) => t.id)).not.toContain('teams');
+  expect(routes.ids().filter((id) => id.startsWith('team.'))).toEqual([]);
+  expect(routes.tabs('team')).toEqual([]);
+  expect(routes.tabs('team-member')).toEqual([]);
 });
 
 it('positions relative to defaults that have no numeric order', () => {

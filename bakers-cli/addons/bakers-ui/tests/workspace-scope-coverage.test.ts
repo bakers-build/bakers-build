@@ -82,7 +82,6 @@ describe('every UI collection is workspace-scoped or a recorded exception (BB-49
     const collections = collectionsReadByUi();
     for (const known of [
       'bb_conductor',
-      'bb_team',
       'bb_ticket',
       'bb_workspace',
       'bb_project',

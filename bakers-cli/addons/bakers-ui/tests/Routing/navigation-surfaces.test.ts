@@ -28,22 +28,12 @@ describe('contextual member navigation', () => {
     userId: 'user-1',
     userName: 'Ada',
   };
-  const teamParams = {
-    teamId: 'team-1',
-    teamName: 'Platform',
-    userId: 'user-1',
-    userName: 'Ada',
-  };
 
   it('returns direct member routes to their originating roster', () => {
     const navigation = buildRoutes([], true).navigation;
     expect(
       navigation.fallback('workspace.member.overview', workspaceParams),
     ).toEqual({ routeId: 'workspace.members', params: workspaceParams });
-    expect(navigation.fallback('team.member.overview', teamParams)).toEqual({
-      routeId: 'team.members',
-      params: teamParams,
-    });
   });
 
   it('registers the entire workspace-member surface only for leads', () => {
@@ -55,15 +45,12 @@ describe('contextual member navigation', () => {
     expect(buildRoutes([], true).ids()).toContain('workspace.member.overview');
   });
 
-  it('retains both parent and selected-member route contexts', () => {
+  it('retains the parent route context of a selected member', () => {
     const navigation = buildRoutes([], true).navigation;
     expect(
       navigation
         .contexts('workspace.member.overview', workspaceParams)
         .scopeKey(),
     ).toContain('workspace:workspace-1');
-    expect(
-      navigation.contexts('team.member.overview', teamParams).scopeKey(),
-    ).toBe('team:team-1|user:user-1');
   });
 });

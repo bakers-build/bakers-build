@@ -354,22 +354,18 @@ describe('entity slices: the target layout EXISTS — AC-15/AC-16/AC-17', () => 
   // the layout itself the thing under test, so a slice cannot be quietly dissolved
   // back into a flat drawer.
   //
-  // BB-391 (AC4) — `team` is the SEVENTH slice, and it is argued the same way.
-  // It mirrors a resource the control plane serves (`bb_team`, BB-321) and it
-  // is a clean G2 leaf: its `Data/` reads `bb_team` and `og_membership` and
-  // imports nothing from another slice.
-  // BB-472 — `workspace` is the EIGHTH slice, argued the same way: it mirrors
+  // BB-391 (AC4) added a `team` slice; it left with the team screens.
+  // BB-472 — `workspace` is a slice, argued the same way: it mirrors
   // a resource the control plane serves (`bb_workspace`), and it is a clean
   // G2 leaf — its `Data/` reads `bb_workspace` alone and imports nothing
   // from another slice.
-  // `ticket-template` is the NINTH slice, argued the same way: it mirrors
+  // `ticket-template` is a slice too, argued the same way: it mirrors
   // `bb_ticket_template`, and its `Data/` reads that type alone; the create
   // popup's adapter in `ticket/Form/` maps its rows, not the other way round.
   const SLICES = [
     'conductor',
     'project',
     'run',
-    'team',
     'term',
     'ticket',
     'ticket-template',
@@ -377,7 +373,7 @@ describe('entity slices: the target layout EXISTS — AC-15/AC-16/AC-17', () => 
     'workspace',
   ];
 
-  it('all nine entity slices exist', () => {
+  it('all eight entity slices exist', () => {
     expect(subDirs(entityDir).sort()).toEqual(SLICES);
   });
 
@@ -453,8 +449,6 @@ describe('entity slices: Data/ is a leaf — G2 (AC-18)', () => {
   // review rather than slipped in.
   const ALLOWED_CROSS_SLICE: ReadonlyArray<readonly [string, string]> = [
     ['project', 'ticket'],
-    // A team workload is derived from the tickets assigned to its active crew.
-    ['team', 'ticket'],
     ['project', 'conductor'],
   ];
 
@@ -659,7 +653,6 @@ describe('shared code stays entity-agnostic — G4 (AC-18)', () => {
       'list-chrome',
       'markdown',
       'section-list',
-      'team-member-workload-list',
       'top-tabs',
       'work-ticket-list',
       'workload-summary',

@@ -1817,9 +1817,9 @@ const COL_TOP_TICKETS = 18; // Tickets column
 const COL_TOP_RUNS = 27; // Runs column
 /** The root bar's second tab sits where the project bar's `Tickets` does. */
 const COL_TOP_PROJECTS = 18;
-/** Root bar: My work 2–10 · Projects 13–22 · Teams 25–31 · Conductors 34–45. */
+/** Root bar: My work 2–10 · Projects 13–22 · Conductors 25–36. */
 const COL_ROOT_MY_WORK = 6;
-const COL_ROOT_CONDUCTORS = 40;
+const COL_ROOT_CONDUCTORS = 30;
 // BB-346 — the ticket bar's own columns. ` Comments ` is unchanged at 14..23
 // (the old detail bar started one column further right and joined with one space
 // instead of two, which cancelled exactly); ` Runs ` moved from 35..40 to 37..42.
@@ -2247,15 +2247,15 @@ describe('a bar click acts at the current level (AC-13)', () => {
       '[My work]',
     );
     expect(tabBarRow(tui)).toContain('Projects');
-    expect(tabBarRow(tui)).toContain('Teams');
+    expect(tabBarRow(tui)).not.toContain('Teams');
     expect(tabBarRow(tui)).not.toContain('Users');
     expect(tabBarRow(tui)).not.toContain('Tickets');
     const before = styledFrame(tui);
     const painted = tui.paints();
 
     // Columns past the root bar must stay inert (not resolve to a project tab).
-    // The root bar is ~46 columns wide, so COL_TOP_RUNS (27) sits INSIDE it
-    // (on Teams); only past-the-bar empties remain safe for this sweep.
+    // COL_TOP_RUNS (27) sits INSIDE the root bar (on Conductors); only
+    // past-the-bar empties remain safe for this sweep.
     for (const col of [COL_BAR_EMPTY]) {
       await click(tui, TOP_TAB_ROW, col);
       expect(styledFrame(tui), `column ${col}`).toBe(before);
@@ -2301,8 +2301,8 @@ describe('a bar click acts at the current level (AC-13)', () => {
 // — every narrower terminal renders AS 40, so 40 is also the narrowest case there
 // is:
 //
-//   root     47 columns (four tabs ending in Teams, BB-391 AC4) → cut at the
-//            floor, same as project.
+//   root     36 columns (My work · Projects · Conductors) → never cut; the
+//            Members tab of a workspace lead does not change that verdict here.
 //   project  48 columns → cut at the floor, which is what BB-256 changed by
 //            putting `Dashboard` first: the bar was 35 columns and could not
 //            truncate at any terminal size, and this comment said so, adding that
@@ -2319,14 +2319,13 @@ describe('a bar click acts at the current level (AC-13)', () => {
 //            wrong derivation; the widths 41 and 40 are read off the two ticket
 //            cases below, which is where they are asserted.
 describe('a truncated tab bar publishes no span the user cannot see (AC-11)', () => {
-  it('ROOT and PROJECT bars both exceed the width floor', () => {
-    // The root bar is ~46 cols (My work · Projects · Teams · Conductors). Both
-    // chrome bars can truncate at the 40-column floor; the click cases below
-    // guard the cut.
+  it('the PROJECT bar exceeds the width floor; the ROOT bar fits', () => {
+    // The project bar can truncate at the 40-column floor; the click cases below
+    // guard the cut. The root bar (My work · Projects · Conductors) fits.
     expect(
       displayWidth(` ${topTabBar('root', 'my-work')}`),
-      'the root bar is wider than the floor — it can be cut',
-    ).toBeGreaterThan(40);
+      'the root bar fits within the floor',
+    ).toBeLessThanOrEqual(40);
     expect(
       displayWidth(` ${topTabBar('project', 'overview')}`),
       'the project bar is still wider than the floor — it can be cut',

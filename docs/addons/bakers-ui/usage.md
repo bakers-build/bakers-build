@@ -17,7 +17,7 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
 
    | Level | Tabs |
    |---|---|
-   | Root | My work, Projects, Teams, Members (workspace leads only), Conductors |
+   | Root | My work, Projects, Members (workspace leads only), Conductors |
    | Project | Overview, Work, Tickets, Runs, Conductors |
    | Ticket | Overview, Planning, History, Runs, then addon tabs such as Artifacts and Ports |
 
@@ -33,7 +33,7 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
 
    A bare number or bare uuid is refused; prefix it with `ticket:`.
 
-   **Find a ticket by its origin issue**, the issue it was created from. `#19` uses the repository of your projects when exactly one has one (quote it in the shell); `shop#19` names the repository by its last path segment or a unique prefix of it; an issue URL works in any spelling (`http` or `https`, with or without `/-/`, a trailing slash). Issue `19` never matches issue `190`. One ticket opens; several are listed with their `ticket:<uuid>`; an unknown or ambiguous repository prints a message naming the known ones, and two repositories sharing a last path segment need the issue URL. On every ticket list (Tickets, My work, a conductor's Assigned, a member's Tickets, Team Work), `/` reads the same forms besides identifiers, a bare ticket number (`123`) and title words, and so does the search box of the web ticket list.
+   **Find a ticket by its origin issue**, the issue it was created from. `#19` uses the repository of your projects when exactly one has one (quote it in the shell); `shop#19` names the repository by its last path segment or a unique prefix of it; an issue URL works in any spelling (`http` or `https`, with or without `/-/`, a trailing slash). Issue `19` never matches issue `190`. One ticket opens; several are listed with their `ticket:<uuid>`; an unknown or ambiguous repository prints a message naming the known ones, and two repositories sharing a last path segment need the issue URL. On every ticket list (Tickets, My work, a conductor's Assigned, a member's Tickets), `/` reads the same forms besides identifiers, a bare ticket number (`123`) and title words, and so does the search box of the web ticket list.
 
 4. **Read a ticket.** Overview leads with the latest `summary`, then the description. Planning holds the latest `spec`, `plan` and `test`. History lists every comment, rendered as Markdown. Runs lists the runs; `Enter` opens one. `Enter` or `Space` expands the selected entry.
 

@@ -294,6 +294,19 @@ it('resolveWhoCandidate filters name EXACTLY — no CONTAINS — and pages at WH
   expect(s).toContain(`page[limit]=${WHO_PAGE_SIZE}`);
 });
 
+// `me()` answers with the account's uuid since machines are identified by uuid,
+// so the current user arrives as a uuid; a name must still resolve by name.
+it('resolveWhoCandidate looks a uuid up by id, not by name', async () => {
+  const client = fakeClient({ documents: { 'user/user': { data: [] } } });
+  await resolveWhoCandidate(client, '7ec10a10-9703-4f6b-8ae1-7087315d2471');
+  const params = client.requests[0]?.params as {
+    getQueryString(): string;
+  };
+  const s = decodeURIComponent(params.getQueryString());
+  expect(s).toContain('filter[id]=7ec10a10-9703-4f6b-8ae1-7087315d2471');
+  expect(s).not.toContain('filter[name]');
+});
+
 it('resolveWhoCandidate returns at most the FIRST match, mapped like a Who candidate', async () => {
   const client = fakeClient({
     documents: {

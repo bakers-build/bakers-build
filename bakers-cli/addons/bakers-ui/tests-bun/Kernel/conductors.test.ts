@@ -507,8 +507,7 @@ describe('the Conductors screen', () => {
       tui: { conductorProcess: host },
     });
     // Boot lands on My work. From there the product order is Projects →
-    // Teams → Conductors.
-    await tui.press('\t');
+    // Conductors.
     await tui.press('\t');
     await tui.press('\t');
     return { ...tui, reads: () => conductorReads };

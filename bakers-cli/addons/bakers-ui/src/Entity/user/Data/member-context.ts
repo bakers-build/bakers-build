@@ -6,7 +6,7 @@ import type {
 } from '../../../types.js';
 import { LIST_PAGE_SIZE } from '../../cycle.js';
 
-export type MemberParentType = 'bb_team' | 'bb_workspace';
+export type MemberParentType = 'bb_workspace';
 
 const relationshipId = (
   relationship: JsonApiRelationship | undefined,

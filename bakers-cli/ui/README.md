@@ -191,7 +191,7 @@ project's conductors.
 
 ## The Conductors tab (BB-232)
 
-The root tab bar reads `My work · Projects · Teams · Conductors`. The Conductors screen lists every
+The root tab bar reads `My work · Projects · Conductors` (plus `Members` for workspace leads). The Conductors screen lists every
 `bb_conductor` the connected control plane holds for you — label, machine label, project,
 derived liveness (`running | stale | offline`), age, workspace and last known pid.
 

@@ -74,10 +74,10 @@ Expose that preset and UI module as `./preset` and `./ui` package exports.
 
 ## Scope and placement
 
-The existing scopes are `root`, `project`, `ticket`, `team`,
-`workspace-member`, and `team-member`. Tab navigation preserves route parameters
-in entity scopes; root navigation clears them. Member scopes retain both the
-selected user and their workspace or team parent. Tab changes do not add
+The existing scopes are `root`, `project`, `ticket`, `workspace-member` and
+`conductor`. Tab navigation preserves route parameters in entity scopes; root
+navigation clears them. The member scope retains both the selected user and
+their workspace. Tab changes do not add
 browser-style back-history entries.
 
 | Metadata | Meaning |
@@ -125,8 +125,8 @@ and cycles fail with an identifying error. For example, placing a tab after
 Most routes need only `tab`. The optional route-level `activeTab` handles
 presentations that differ from the route's primary tab:
 
-- Member routes belong to either workspace-member or team-member; their explicit
-  route metadata selects the contextual bar and roster fallback.
+- Member routes belong to workspace-member; their explicit route metadata
+  selects the contextual bar and roster fallback.
 - ProjectPicker has no separate tab; `{ scope: 'root', id: 'projects' }` highlights
   the existing Projects tab.
 - Compact ticket presentations return `null` to hide the bar.

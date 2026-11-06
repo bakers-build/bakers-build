@@ -15,7 +15,6 @@ describe('production routing composition', () => {
     expect(sharedScreenModules).toEqual([
       'async-modal-screen.ts',
       'async-screen.ts',
-      'empty-overview.ts',
       'full-screen.ts',
       'list-screen.ts',
       'modal-screen.ts',

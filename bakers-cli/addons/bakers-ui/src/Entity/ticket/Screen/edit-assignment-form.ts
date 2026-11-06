@@ -125,8 +125,8 @@ export class EditAssignmentFormScreen extends AsyncModalScreen<EditAssignmentDat
   private optionLoader: OptionLoader | undefined;
   /**
    * The operator's uuid, resolved at most once per screen lifetime (BB-460
-   * fix round 1). `context.services.currentUser` is a USERNAME, not the uuid
-   * `Conductor.ownerUserId` compares against — threading it straight through
+   * fix round 1). `context.services.currentUser` may be a username, not the
+   * uuid `Conductor.ownerUserId` compares against — threading it straight through
    * silently no-oped the owner-first ordering.
    */
   private readonly ownerIdentity = new OwnerIdentity(resolveWhoCandidate);

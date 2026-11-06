@@ -51,8 +51,8 @@ The file is transient and git-ignored; nothing in bakers.build writes it.
 
 | Screen | Keys |
 |--------|------|
-| Workspace/Team Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
-| Assigned, Member Tickets, Team Work | `/` search |
+| Workspace Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
+| Assigned, Member Tickets | `/` search |
 | Projects | `↑↓` select · `Enter` open project · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | My work | `↑↓` select · `Enter` open · `/` search · `s` state · `p` parent · `r` project · `x` closed · `c` clear · `Tab`/`Shift-Tab` cycle tabs |
 | Tickets | `↑↓` select · `Enter` open ticket · `/` search · `s` state filter · `w` who · `o` owner · `p` parent · `m` mine · `x` closed filter · `c` clear · `e` edit · `y`/`Y` copy id/link · `←`/`→` page · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |

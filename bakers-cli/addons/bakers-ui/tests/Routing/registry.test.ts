@@ -145,7 +145,6 @@ describe('defineRoutes', () => {
 
   it.each([
     'workspace-member',
-    'team-member',
   ])('preserves params throughout the %s tab scope', (scope) => {
     class Overview {
       static readonly route = {
@@ -164,8 +163,6 @@ describe('defineRoutes', () => {
     const registry = defineRoutes([Overview, Stats], `${scope}.overview`);
     const params = {
       workspaceId: 'workspace-1',
-      teamId: 'team-1',
-      teamName: 'Platform',
       userId: 'user-1',
       userName: 'Ada',
     };

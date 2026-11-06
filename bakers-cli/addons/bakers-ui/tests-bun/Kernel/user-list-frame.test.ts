@@ -35,12 +35,17 @@ function services(): RendererServices {
       where: () => c,
       sort: () => c,
       page: () => c,
-      first: async () => null,
+      first: async () =>
+        type === 'bb_workspace'
+          ? ({
+              attr: (key: string) =>
+                key === 'drupal_internal__id' ? 7 : undefined,
+            } as unknown as Resource)
+          : null,
       // `Collection.list()` resolves an ARRAY (`src/types.ts`), and this fixture
       // used to resolve `{ rows, hasNext }` — a shape `listOutcome`'s `.map`
-      // throws on, which the root Users list swallowed into an empty table. The
-      // crew list reports a refused read instead of drawing an empty crew, so the
-      // fixture's shape is now load-bearing rather than merely wrong.
+      // throws on, which the root Users list swallowed into an empty table, so
+      // the fixture's shape is load-bearing rather than merely wrong.
       list: async () =>
         type === 'user' || type.startsWith('user') ? users : [],
     };
@@ -65,20 +70,7 @@ function services(): RendererServices {
           links: {},
         };
       }
-      // BB-391 AC4 — the users LIST is the team level's Users tab now, so the
-      // crew and its membership are part of this fixture's world: without them
-      // there is no route to a users list at all.
-      if (path.startsWith('bb_team/'))
-        return {
-          data: [
-            {
-              id: 't-1',
-              attributes: { name: 'Platform', drupal_internal__id: 7 },
-            },
-          ],
-          included: [],
-          links: {},
-        };
+      // The workspace roster is read through its memberships.
       if (path.startsWith('og_membership/'))
         return {
           data: [
@@ -105,48 +97,40 @@ async function quit(tui: BootedTui): Promise<void> {
 /** First body-window row after chrome header + gap + tab bar. */
 const BODY_TOP = 6;
 
+const LEAD = {
+  isWorkspaceAdmin: true,
+  workspaceId: 'workspace-1',
+  workspace: 'Bb',
+} as const;
+
 describe('BB-375 — user screens paint the shared content FRAME', () => {
-  // BB-391 AC4 — the users list moved under the crew by operator ruling, so the
-  // route to it is Teams → one crew → Users rather than a fourth root tab. The
-  // FRAME property this case exists for is unchanged; only the way there is.
-  it('the crew’s Users list: frame top sits flush under the tab bar', async () => {
+  it('the workspace Members list: frame top sits flush under the tab bar', async () => {
     const tui = await bootTui({
       services: services(),
       columns: 100,
       rows: 30,
+      tui: LEAD,
     });
-    // My work → Projects → Teams.
+    // My work → Projects → Members (workspace leads only).
     await tui.press('\t');
-    await tui.press('\t');
-    expect(tui.rows()[5], 'Teams tab bracketed').toMatch(/\[Teams\]/);
-
-    // Enter opens the crew on Work, which draws the TEAM level's own bar.
-    await tui.press('\r');
-    expect(tui.rows()[5], 'team Work bracketed').toMatch(/\[Work\]/);
-
-    // …and one Tab within that level reaches the crew's people.
     await tui.press('\t');
     expect(tui.rows()[5], 'Members tab bracketed').toMatch(/\[Members\]/);
     expect(tui.rows()[BODY_TOP], 'body FRAME top').toMatch(/╭/);
-    expect(tui.rows().join('\n')).toMatch(/USER/);
+    expect(tui.rows().join('\n')).toMatch(/MEMBER/);
 
     await quit(tui);
   });
 
-  it('the team roster opens a contextual member and keeps its body FRAME', async () => {
+  it('the workspace roster opens a contextual member and keeps its body FRAME', async () => {
     const tui = await bootTui({
       services: services(),
       columns: 100,
       rows: 30,
+      tui: LEAD,
     });
-    // A user's overview is reached the same way the sibling test above reaches
-    // the crew's Users list: My work → Projects → Teams, open the crew, move
-    // from Work to Members, Enter the (only) row.
     await tui.press('\t'); // -> projects
-    await tui.press('\t'); // -> teams
-    await tui.press('\r'); // open the crew
-    await tui.press('\t'); // -> Members tab
-    expect(tui.rows()[1] ?? '', 'roster title').toMatch(/Platform · members/);
+    await tui.press('\t'); // -> members
+    expect(tui.frame(), 'roster title').toContain('Workspace members');
     expect(tui.rows()[BODY_TOP], 'roster FRAME').toMatch(/╭/);
 
     await tui.press('\r');
@@ -158,8 +142,8 @@ describe('BB-375 — user screens paint the shared content FRAME', () => {
     );
 
     await tui.press('\x1b');
-    expect(tui.rows()[1] ?? '', 'Esc returns to the roster').toMatch(
-      /Platform · members/,
+    expect(tui.frame(), 'Esc returns to the roster').toContain(
+      'Workspace members',
     );
 
     await quit(tui);

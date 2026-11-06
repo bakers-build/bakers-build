@@ -276,15 +276,6 @@ function fakeMemberServices(): RendererServices {
             },
           ],
         };
-      if (path === 'bb_team/bb_team')
-        return {
-          data: [
-            {
-              id: 'team-1',
-              attributes: { name: 'Platform', drupal_internal__id: 7 },
-            },
-          ],
-        };
       if (path === 'og_membership/default')
         return {
           data: [
@@ -526,7 +517,7 @@ describe('current-work product landings', () => {
 
 describe('contextual member sitemap', () => {
   const adminRoutes = buildRoutes([], true);
-  const memberBar = (scope: 'workspace-member' | 'team-member', tab: string) =>
+  const memberBar = (scope: 'workspace-member', tab: string) =>
     ` ${tabBarFor({ level: scope, tab, tabs: adminRoutes.tabs(scope) })}`.replace(
       /\s+$/,
       '',
@@ -543,7 +534,7 @@ describe('contextual member sitemap', () => {
         workspace: 'Bb',
       },
     });
-    for (let i = 0; i < 3; i++) await tui.press(TAB);
+    for (let i = 0; i < 2; i++) await tui.press(TAB);
     expect(tui.frame()).toContain('Workspace members');
     await tui.press('\r');
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(
@@ -555,28 +546,6 @@ describe('contextual member sitemap', () => {
     }
     await tui.press('\x1b');
     expect(tui.frame()).toContain('Workspace members');
-    await quit(tui);
-  });
-
-  it('enters a team member, cycles all tabs, and Esc returns to Team Members', async () => {
-    const tui = await bootTui({
-      services: fakeMemberServices(),
-      columns: COLUMNS,
-      rows: ROWS,
-      tui: {},
-    });
-    for (let i = 0; i < 2; i++) await tui.press(TAB);
-    await tui.press('\r');
-    await tui.press(TAB);
-    expect(tui.frame()).toContain('Platform · members');
-    await tui.press('\r');
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(memberBar('team-member', 'overview'));
-    for (const tab of ['tickets', 'runs', 'overview']) {
-      await tui.press(TAB);
-      expect(rowsOf(tui)[BAR_ROW - 1]).toBe(memberBar('team-member', tab));
-    }
-    await tui.press('\x1b');
-    expect(tui.frame()).toContain('Platform · members');
     await quit(tui);
   });
 });
@@ -623,8 +592,7 @@ describe('BB-256 AC-2 — the root Projects tab still reaches the overview', () 
 
     await tui.press(TAB); // my work -> projects
     expect(frameOf(tui)).toContain('bakers.build projects');
-    await tui.press(TAB); // projects -> teams
-    await tui.press(TAB); // teams -> conductors
+    await tui.press(TAB); // projects -> conductors
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('conductors'));
 
     // Had either swap pushed a frame, this Esc would unwind it instead.
@@ -1083,9 +1051,6 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('projects'));
 
     await tui.press(TAB);
-    expect(rowsOf(tui)[BAR_ROW - 1], 'then Teams').toBe(rootBarRow('teams'));
-
-    await tui.press(TAB);
     expect(rowsOf(tui)[BAR_ROW - 1], 'then Conductors').toBe(
       rootBarRow('conductors'),
     );
@@ -1098,7 +1063,6 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
       rootBarRow('conductors'),
     );
     // …all the way back round: one Shift-Tab per remaining root tab.
-    await tui.press(SHIFT_TAB);
     await tui.press(SHIFT_TAB);
     await tui.press(SHIFT_TAB);
     expect(frameOf(tui)).toBe(before);
