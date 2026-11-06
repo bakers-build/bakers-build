@@ -17,10 +17,10 @@ use Symfony\Component\Yaml\Yaml;
  *
  * The human's decision during the BB-350 coding run, beyond the spec:
  * `/{workspace}/…` is the product front end, entity EDIT FORMS included. That
- * is not the default outcome. Two mechanisms hand routes to an admin theme
- * and only one of them reads the path: core's AdminRouteSubscriber stamps `_admin_route` on
- * `/admin/…`, but the entity module's AdminHtmlRouteProvider stamps it by
- * ROUTE NAME — add_page, add_form, edit_form, delete_form,
+ * is not the default outcome. Two mechanisms hand routes to an admin theme and
+ * only one of them reads the path: core's AdminRouteSubscriber stamps
+ * `_admin_route` on `/admin/…`, but the entity module's AdminHtmlRouteProvider
+ * stamps it by ROUTE NAME — add_page, add_form, edit_form, delete_form,
  * delete_multiple_form, duplicate_form — wherever those routes live. So moving
  * the paths out of /admin fixes canonical and the dashboard by itself and does
  * NOT fix the forms; BbWorkspaceRouteSubscriber has to clear the option.

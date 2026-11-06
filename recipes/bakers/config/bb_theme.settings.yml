@@ -1,9 +1,9 @@
 favicon:
-  use_default: false
-  path: themes/custom/bb_theme/logo.svg
   mimetype: image/svg+xml
+  path: themes/custom/bb_theme/logo.svg
+  use_default: false
 features:
   favicon: true
 logo:
-  use_default: true
   path: ''
+  use_default: true
