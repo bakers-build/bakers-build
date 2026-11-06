@@ -499,6 +499,35 @@ describe('CodexAgent security: system, yolo, custom', () => {
   });
 });
 
+describe('CodexAgent security: shared project and machine layers', () => {
+  it('applies a shared allow_write and reports the keys it cannot express', async () => {
+    const options = {
+      shared_security: {
+        project: { sandbox: { trusted_commands: ['$inherit', 'ddev'] } },
+        machine: {
+          sandbox: { allow_write: ['/srv/cache'], deny_read: ['~/.aws'] },
+        },
+      },
+    } as never;
+    const agent = new CodexAgent(options, await homeWithCodexMcp());
+    expect(agent.launchCommand('x')).toContain('"/srv/cache" = true');
+    expect(codexAgent(options).security?.not_applied).toEqual([
+      { key: 'deny_read', source: 'machine', reason: 'unsupported' },
+      { key: 'trusted_commands', source: 'project', reason: 'unsupported' },
+    ]);
+  });
+
+  it('still fails loading on an entry deny_read', () => {
+    expect(
+      () =>
+        new CodexAgent({
+          shared_security: { machine: { sandbox: { deny_read: ['~/.a'] } } },
+          sandbox: { deny_read: ['$inherit', '~/.b'] },
+        } as never),
+    ).toThrow(/Codex does not support sandbox.deny_read/);
+  });
+});
+
 describe('CodexAgent security load errors', () => {
   it.each([
     [

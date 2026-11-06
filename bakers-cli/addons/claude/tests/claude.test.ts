@@ -355,6 +355,42 @@ function flagValue(argv: string[], flag: string): string {
   return argv[at + 1] as string;
 }
 
+describe('ClaudeAgent security: shared project and machine layers', () => {
+  const shared_security = {
+    project: { sandbox: { trusted_commands: ['$inherit', 'ddev'] } },
+    machine: {
+      sandbox: {
+        allow_write: ['/srv/cache'],
+        deny_read: ['$inherit', '~/.aws'],
+      },
+    },
+  };
+
+  it('applies them in the generated settings and reports their sources', async () => {
+    const plugin = claudeAgent({ shared_security } as never);
+    const agent = await plugin.createAgent({} as never);
+    const settings = JSON.parse(
+      flagValue(captureArgv('claude', agent.launchCommand('x')), '--settings'),
+    );
+    expect(settings.sandbox.excludedCommands).toEqual([
+      'bakers *',
+      'git *',
+      'ddev *',
+    ]);
+    expect(settings.sandbox.filesystem.allowWrite).toEqual(['/srv/cache']);
+    expect(settings.sandbox.filesystem.denyRead).toEqual([
+      '~/.ssh',
+      '~/.bakers',
+      '~/.aws',
+    ]);
+    expect(settings.permissions.deny).toContain('Read(~/.aws/**)');
+    expect(plugin.security?.sandbox.trusted_commands.entries).toContainEqual({
+      value: 'ddev',
+      source: 'project',
+    });
+  });
+});
+
 describe('ClaudeAgent security: sandbox (default)', () => {
   const argv = () =>
     captureArgv('claude', new ClaudeAgent({}).launchCommand('x'));

@@ -343,3 +343,18 @@ describe('OpencodeAgent run log → footprint (end-to-end, AC-1/AC-2)', () => {
     expect(agent.parseFootprint('not json')).toEqual(emptyAgentFootprint());
   });
 });
+
+describe('OpencodeAgent shared run security', () => {
+  it('ignores a shared mode and shows shared lists as not applied', async () => {
+    const { opencodeAgent } = await loadOpencodeModule();
+    const plugin = opencodeAgent({
+      shared_security: {
+        project: { mode: 'sandbox', sandbox: { allow_write: ['/x'] } },
+      },
+    } as never);
+    expect(plugin.security?.mode).toEqual({ value: 'system', source: 'agent' });
+    expect(plugin.security?.not_applied).toEqual([
+      { key: 'allow_write', source: 'project', reason: 'mode' },
+    ]);
+  });
+});
