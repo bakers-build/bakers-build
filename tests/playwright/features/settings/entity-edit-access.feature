@@ -1,8 +1,8 @@
 @functional @api @feature:entity-edit-access
 Feature: Entity edit access across browser, session token and CLI
   Workspace lead, referenced team lead, and machine/conductor owners may edit
-  the fields the product exposes. A machine is edited on its detail page
-  card; its form address here is the card's own route. Peers, foreign leads and rankless accounts
+  the fields the product exposes. A machine and a conductor are edited on
+  their detail page Identity card; their form address here is the card's own route. Peers, foreign leads and rankless accounts
   are refused. Session tokens are real OAuth Bearers. Server-maintained fields
   stay read-only on a saved row.
 
@@ -205,18 +205,15 @@ Feature: Entity edit access across browser, session token and CLI
       {"data":{"attributes":{"name":"API edit project"},"relationships":{"teams":{"data":[{"type":"bb_team--bb_team","id":"{team.home}"}]}}}}
       """
 
-  # The owner edits the machine on its detail page Identity card; the
-  # instance admin keeps the administrative maintenance form.
-  Scenario: Protected widgets are absent on ordinary forms and present for the instance admin
+  # Server-maintained fields have no browser form; the instance admin writes
+  # them through the API only.
+  Scenario: Protected widgets are absent on the forms and the instance admin writes them through the API
     Given I am logged in as the account "fixture-lead"
     When the contract browser opens the form of fixture "workspace.home" twice with status 200
     Then the contract field "slug[0][value]" is absent
     Given I am logged in as the account "fixture-conductor-owner"
     When the contract browser opens the form of fixture "machine.edit" twice with status 200
     Then the contract field "current_load[0][value]" is absent
-    Given I am logged in as the account "site-admin"
-    When the contract browser opens the administrative form of fixture "machine.edit" twice with status 200
-    Then the contract field "current_load[0][value]" is visible
     Given the API client is "site-admin"
     When the API client sends "PATCH" to "/jsonapi/bb_machine/bb_machine/{machine.edit}":
       """

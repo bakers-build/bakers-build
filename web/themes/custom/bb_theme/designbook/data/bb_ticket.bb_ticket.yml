@@ -57,7 +57,7 @@
           passed: 46
           failed: 2
           duration: 3m 41s
-    - uri: https://bb-142.ddev.site/admin/bakers/ticket
+    - uri: https://bb-142.ddev.site/bakers/ticket
       title: Tickets screen on the bb-142 worktree
       options:
         bakers:

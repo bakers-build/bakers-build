@@ -14,8 +14,8 @@ use PHPUnit\Framework\Attributes\Group;
  *
  * A ticket is parked when its three most-recent runs are all
  * `failed` and the newest changed within two hours; it
- * self-heals once the window elapses or a non-failed run appears. Defaults
- * (3 / 7200s) come from TicketClaimService constants, overridable via config.
+ * self-heals once the window elapses or a non-failed run appears. The cap and
+ * window (3 / 7200s) are FailedRunCircuitBreaker constants, not configuration.
  */
 #[Group('bb_core')]
 final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {

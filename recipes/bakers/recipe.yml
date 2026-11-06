@@ -216,7 +216,7 @@ config:
       # bb_core install without editor (kernel tests) skips it. The file is
       # the saved form, key for key (editor.editor.* is FullyValidatable).
       - editor.editor.bb_rich
-      # bakers.build settings (lease + failed-run retry policy, BB-149). config/install
+      # bakers.build settings (minimum client version, plugin source). config/install
       # is not applied reliably at recipe-install time (unmet module deps at
       # enable → silently skipped), so import it by name here — idempotent.
       - bb_core.settings

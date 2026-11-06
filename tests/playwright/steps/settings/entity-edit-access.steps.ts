@@ -25,9 +25,9 @@ function fixtureMeta(name: string): { uuid: string; entityType: string } {
 
 /**
  * The browser form that edits the fixture. Workspace, project and group keep
- * their Settings form; a machine is edited on its detail page card, whose
- * own route answers like the form did: 200 with update access, 403 without.
- * Conductor keeps its administrative edit form.
+ * their Settings form; a machine and a conductor are edited on their detail
+ * page Identity card, whose own route answers 200 with update access, 403
+ * without.
  */
 function formPath(entityType: string, uuid: string): string {
   if (entityType === 'bb_workspace') {
@@ -35,14 +35,17 @@ function formPath(entityType: string, uuid: string): string {
       `print "/" . \\Drupal::service("entity.repository")->loadEntityByUuid("bb_workspace", "${uuid}")->get("slug")->value . "/settings";`,
     );
   }
-  const card: Record<string, string> = { bb_project: '/settings', bb_group: '/settings', bb_machine: '/card/identity' };
-  if (card[entityType]) {
-    return php(
-      `print \\Drupal::service("entity.repository")->loadEntityByUuid("${entityType}", "${uuid}")->toUrl()->toString() . "${card[entityType]}";`,
-    );
+  const card: Record<string, string> = {
+    bb_project: '/settings',
+    bb_group: '/settings',
+    bb_machine: '/card/identity',
+    bb_conductor: '/card/identity',
+  };
+  if (!card[entityType]) {
+    throw new Error(`No browser form for ${entityType}`);
   }
   return php(
-    `print \\Drupal::service("entity.repository")->loadEntityByUuid("${entityType}", "${uuid}")->toUrl("edit-form")->toString();`,
+    `print \\Drupal::service("entity.repository")->loadEntityByUuid("${entityType}", "${uuid}")->toUrl()->toString() . "${card[entityType]}";`,
   );
 }
 
@@ -64,19 +67,6 @@ When(
   'the contract browser opens the form of fixture {string} twice with status {int}',
   async ({ page, apiClient }, name: string, status: number) => {
     const path = formPath(fixtureMeta(name).entityType, apiClient.fixtureId(name));
-    await page.goto(path);
-    const response = await page.goto(path);
-    expect(response?.status(), page.url()).toBe(status);
-  },
-);
-
-When(
-  'the contract browser opens the administrative form of fixture {string} twice with status {int}',
-  async ({ page, apiClient }, name: string, status: number) => {
-    const { entityType } = fixtureMeta(name);
-    const path = php(
-      `print \\Drupal::service("entity.repository")->loadEntityByUuid("${entityType}", "${apiClient.fixtureId(name)}")->toUrl("edit-form")->toString();`,
-    );
     await page.goto(path);
     const response = await page.goto(path);
     expect(response?.status(), page.url()).toBe(status);
