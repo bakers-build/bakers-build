@@ -130,7 +130,7 @@ writing (`Esc close` in the chrome). The server remains the only transition
 guard — a forbidden cancel comes back as a 422 rendered in the popup.
 
 `bakers ui | cat` prints My work and `bakers ui project:<name> | cat` prints that
-project's current Work surface, following the TTY.
+project's Overview, following the TTY.
 
 ### The ticket sections
 

@@ -182,7 +182,7 @@ navigation model instead of leaving `q` as the only way out.
 Without a TTY the command prints **the route's** content once and exits: the ticket's lines
 (honouring `--view`), the project's ticket table, or the picker's candidate list plus its
 hint. With no target it prints **My work**, the routeless default screen; `project:<name>`
-prints that project's current Work surface.
+prints that project's Overview.
 
 There is consequently **no non-interactive way to print the project list** in `bakers ui` any
 more: the deep-link grammar has no `projects:` target. `bakers tools

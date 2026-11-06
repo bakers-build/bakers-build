@@ -18,7 +18,7 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
    | Level | Tabs |
    |---|---|
    | Root | My work, Projects, Members (workspace leads only), Conductors |
-   | Project | Overview, Work, Tickets, Runs, Conductors |
+   | Project | Overview, Tickets, Runs, Conductors |
    | Ticket | Overview, Planning, History, Runs, then addon tabs such as Artifacts and Ports |
 
 3. **Jump straight to something.** One target at most:
