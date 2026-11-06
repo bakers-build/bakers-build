@@ -80,7 +80,7 @@ member routes use workspace-wide user figures and lists.
 | Workspace Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Projects | `↑↓` select · `Enter` open project · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Project | `↑↓` select · `Enter` open ticket · `Tab`/`Shift-Tab` cycle tabs · `/` search · `s` status filter · `t` type filter · `p` parent filter · `x` closed filter · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
-| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel) · `Esc` back |
+| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel); on Runs, `e` edits the selected claimed or running run · `Esc` back |
 | Run detail | `↑↓` scroll · `e` cancel a claimed/running run · `Esc` back to the ticket's Runs tab · `q` quit |
 | Runs | `↑↓` select · `Enter` open the run's ticket (Runs sub-tab) · `Tab`/`Shift-Tab` cycle tabs · `x` closed filter · `R` reload · `←`/`→` previous/next page · `Esc` back |
 
