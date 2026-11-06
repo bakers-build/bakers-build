@@ -9,6 +9,7 @@ use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Url;
+use Drupal\bb_core\Form\DeleteDialogFormTrait;
 use Drupal\bb_track\Entity\Worklog;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -16,6 +17,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Confirms deletion of a recorded Worklog row.
  */
 final class WorklogDeleteForm extends ConfirmFormBase {
+
+  use DeleteDialogFormTrait;
 
   /**
    * Constructs the form.
@@ -89,6 +92,7 @@ final class WorklogDeleteForm extends ConfirmFormBase {
       ];
     }
     $form['actions']['cancel']['#url'] = $this->cancelUrl($bb_track_worklog);
+    $this->attachDeleteDialog($form);
     return $form;
   }
 
@@ -152,7 +156,9 @@ final class WorklogDeleteForm extends ConfirmFormBase {
       return;
     }
     $this->messenger()->addStatus($this->t('Time entry deleted.'));
-    $form_state->setRedirect('bb_track.worklog.add');
+    // Back to the overview it was opened from, on the page and in the dialog.
+    $overview = WorklogOverviewDestination::fromRequest($this->getRequest());
+    $form_state->setRedirectUrl($overview !== NULL ? Url::fromUserInput($overview) : Url::fromRoute('bb_track.worklog.add'));
   }
 
 }

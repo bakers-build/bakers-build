@@ -8,4 +8,7 @@
 !poller/**
 !lib/**
 !build/**
+!plugins/**
 **/*.test.mjs
+**/test_*.py
+**/slug-examples.json

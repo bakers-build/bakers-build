@@ -30,7 +30,6 @@ final class BbTicketTriggerRouteProvider extends AdminHtmlRouteProvider {
       $parameters = $route->getOption('parameters') ?? [];
       $parameters['bb_ticket_template'] = ['type' => 'entity:bb_ticket_template'];
       $route->setOption('parameters', $parameters);
-      $route->setOption('_admin_route', FALSE);
     }
     return $collection;
   }

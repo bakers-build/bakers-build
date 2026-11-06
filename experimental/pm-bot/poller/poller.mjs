@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // The PM bot's poller. Every interval it reads the project's tickets from
-// bakers.build through its tools and, for each ticket whose first `chat` link is a Slack thread:
-// posts each state change into that thread once, relays its open question or
-// technical problem once, and opens a thread of its own for each sub-ticket. No LLM, no dependencies.
+// bakers.build through its tools and, for each ticket with a Slack conversation (its newest
+// channel link, else the thread of its first `chat` link; a sub-ticket without one shares its
+// ancestor's): posts each state change there once and relays its open question or technical
+// problem once. For the channels the bot created it renames a request channel after its
+// ticket, archives it after the final post, opens a fresh one when the ticket is reopened, and
+// closes a request channel that stayed silent for a week without a ticket. No LLM, no dependencies.
 //
 //   node experimental/pm-bot/poller/poller.mjs          # loop
 //   node experimental/pm-bot/poller/poller.mjs --once   # one pass, then exit
@@ -15,10 +18,11 @@ import { spawn } from 'node:child_process';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createBakersClient } from '../lib/bakers-client.mjs';
+import { channelSteps, ticketChannelName, WEEK } from './channels.mjs';
 import { diff, reachedDone } from './diff.mjs';
 import { pollInterval } from './interval.mjs';
-import { escape, openNote, QUESTION_LABEL, relay, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
-import { chatThread, pendingSubTickets } from './tickets.mjs';
+import { openNote, QUESTION_LABEL, relay, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
+import { conversation, conversations } from './tickets.mjs';
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
 
@@ -31,21 +35,34 @@ export function createSlack({ url = 'https://slack.com/api', token }) {
       body: JSON.stringify(body),
     });
     const answer = await res.json();
-    if (!answer.ok) throw new Error(`${method} failed: ${answer.error}`);
+    if (!answer.ok) throw Object.assign(new Error(`${method} failed: ${answer.error}`), { code: answer.error });
     return answer;
   }
+  // A call whose listed errors mean it is already done.
+  const settled = (codes) => (error) => {
+    if (!codes.includes(error.code)) throw error;
+  };
   return {
     // A message, in a thread when thread_ts is given; returns its ts.
     post: async ({ channel, thread_ts, text }) => (await call('chat.postMessage', { channel, thread_ts, text })).ts,
-    permalink: async (channel, ts) => (await call('chat.getPermalink', { channel, message_ts: ts })).permalink,
+    // A public channel; returns its ID.
+    create: async (name) => (await call('conversations.create', { name, is_private: false })).channel.id,
+    invite: (channel, user) => call('conversations.invite', { channel, users: user }).catch(settled(['already_in_channel'])),
+    rename: (channel, name) => call('conversations.rename', { channel, name }),
+    archive: (channel) => call('conversations.archive', { channel }).catch(settled(['already_archived'])),
+    // The newest message's ts in epoch milliseconds, or null.
+    lastMessage: async (channel) => {
+      const [latest] = (await call('conversations.history', { channel, limit: 1 })).messages ?? [];
+      return latest ? Number(latest.ts) * 1000 : null;
+    },
   };
 }
 
-// A relayed note goes through Hermes, which also adds it to the thread's
-// session: the agent knows the question or technical problem when someone in the thread answers.
+// A relayed note goes through Hermes, which also adds it to the conversation's
+// session: the agent knows the question or technical problem when someone there answers.
 export function hermesSend({ channel, thread_ts, text }) {
   return new Promise((resolve, reject) => {
-    const child = spawn('hermes', ['send', '--to', `slack:${channel}:${thread_ts}`, '--quiet', '--file', '-'], { stdio: ['pipe', 'ignore', 'pipe'] });
+    const child = spawn('hermes', ['send', '--to', thread_ts ? `slack:${channel}:${thread_ts}` : `slack:${channel}`, '--quiet', '--file', '-'], { stdio: ['pipe', 'ignore', 'pipe'] });
     let stderr = '';
     child.stderr.on('data', (chunk) => (stderr += chunk));
     child.on('error', reject);
@@ -56,10 +73,12 @@ export function hermesSend({ channel, thread_ts, text }) {
 
 /**
  * @param {{client: ReturnType<typeof createBakersClient>, slack: ReturnType<typeof createSlack>,
- *   send: (message: {comment: string, kind: 'question' | 'technical_problem', identifier: string, channel: string, thread_ts: string, text: string}) => Promise<void>,
- *   stateFile: string, project: string, messages: any, log?: {log: Function, error: Function}}} options
+ *   send: (message: {comment: string, kind: 'question' | 'technical_problem', identifier: string, channel: string, thread_ts?: string, text: string}) => Promise<void>,
+ *   stateFile: string, botChannelsFile: string, workspaceUrl: string, now?: () => number,
+ *   project: string, messages: any, log?: {log: Function, error: Function}}} options
+ *   botChannelsFile: the request channels the bot's plugin opened, which only the plugin writes
  */
-export function createPoller({ client, slack, send, stateFile, project, messages, log = console }) {
+export function createPoller({ client, slack, send, stateFile, botChannelsFile, workspaceUrl, now = Date.now, project, messages, log = console }) {
   const stamp = () => new Date().toISOString();
 
   // Every ticket of the project, page by page, through the bakers list tool.
@@ -74,7 +93,7 @@ export function createPoller({ client, slack, send, stateFile, project, messages
           identifier: t.identifier,
           title: t.title,
           state: t.state,
-          thread: chatThread(t.links),
+          conversation: conversation(t.links),
           labels: t.labels ?? [],
           frozen: Boolean(t.frozen),
           frozen_at: t.frozen_at ?? null,
@@ -84,6 +103,7 @@ export function createPoller({ client, slack, send, stateFile, project, messages
       }
       offset = page.next_offset;
     }
+    conversations(out);
     return out;
   }
 
@@ -96,16 +116,21 @@ export function createPoller({ client, slack, send, stateFile, project, messages
       .sort((a, b) => Date.parse(b.created) - Date.parse(a.created));
   }
 
-  // The state file: {tickets: identifier → state, relayed: comment UUIDs,
-  // threads: identifier → the sub-ticket thread opened for it}.
-  async function readState() {
+  // The state file: {tickets: identifier → posted state, relayed: comment UUIDs,
+  // channels: channel ID → {ticket, requester, name, generation, renamed, archived, seen,
+  // closing, successor, previous}}. The plugin reads `channels` for the open channels.
+  async function readJson(file, empty) {
     try {
-      const state = JSON.parse(await readFile(stateFile, 'utf8'));
-      return { tickets: state.tickets ?? null, relayed: state.relayed ?? [], threads: state.threads ?? {} };
+      return JSON.parse(await readFile(file, 'utf8'));
     } catch (error) {
-      if (error.code === 'ENOENT') return { tickets: null, relayed: [], threads: {} };
+      if (error.code === 'ENOENT') return empty;
       throw error;
     }
+  }
+
+  async function readState() {
+    const state = await readJson(stateFile, {});
+    return { tickets: state.tickets ?? null, relayed: state.relayed ?? [], channels: state.channels ?? {} };
   }
 
   async function writeState(state) {
@@ -113,13 +138,18 @@ export function createPoller({ client, slack, send, stateFile, project, messages
     await rename(`${stateFile}.tmp`, stateFile);
   }
 
-  async function postStates(state, current) {
+  const archived = (state, t) => Boolean(t.conversation && !t.conversation.thread_ts && state.channels[t.conversation.channel]?.archived);
+
+  async function postStates(state, all) {
+    // An archived channel takes no post; a reopen posts the ticket's new state in its fresh channel.
+    const current = all.filter((t) => !archived(state, t));
     const summaries = {};
     for (const identifier of reachedDone(state.tickets, current)) {
       const [summary] = await comments(current.find((t) => t.identifier === identifier).id, 'summary');
       summaries[identifier] = summary?.body ?? '';
     }
     const { posts, next } = diff(state.tickets, current, summaries, messages);
+    for (const t of all) if (archived(state, t) && state.tickets?.[t.identifier] !== undefined) next[t.identifier] = state.tickets[t.identifier];
     for (const p of posts) {
       try {
         await slack.post(p);
@@ -138,7 +168,7 @@ export function createPoller({ client, slack, send, stateFile, project, messages
     const open = [];
     let complete = true;
     const noted = (t) => t.labels.includes(QUESTION_LABEL) || t.labels.includes(TECHNICAL_PROBLEM_LABEL);
-    for (const ticket of current.filter((t) => t.thread && t.frozen && noted(t))) {
+    for (const ticket of current.filter((t) => t.conversation && !archived(state, t) && t.frozen && noted(t))) {
       try {
         const note = openNote(ticket, await comments(ticket.id));
         if (note) open.push({ ticket, note });
@@ -162,50 +192,84 @@ export function createPoller({ client, slack, send, stateFile, project, messages
     }
   }
 
-  // Each step is recorded before the next, so a failure resumes at the step
-  // not yet done and never opens a second thread.
-  async function subTicketThreads(state, current) {
-    const byId = new Map(current.map((t) => [t.id, t]));
-    for (;;) {
-      const pending = pendingSubTickets(current);
-      const pendingIds = new Set(pending.map((p) => p.ticket.id));
-      // Parents first: a sub-ticket waits while its own parent is getting a thread.
-      const ready = pending.filter((p) => !pendingIds.has(p.parent.id) && !state.threads[p.ticket.identifier]?.failed);
-      if (!ready.length) break;
-      for (const { ticket, parent, ancestor } of ready) {
-        try {
-          let record = state.threads[ticket.identifier];
-          if (!record) {
-            const text = fill(messages.subTicketThread, { identifier: ticket.identifier, title: escape(ticket.title), parent: parent.identifier });
-            const ts = await slack.post({ channel: ancestor.thread.channel, text });
-            record = { channel: ancestor.thread.channel, ts, linked: false, pointed: false, parentChannel: ancestor.thread.channel, parentTs: ancestor.thread.thread_ts };
-            state.threads[ticket.identifier] = record;
-            await writeState(state);
-          }
-          record.permalink ??= await slack.permalink(record.channel, record.ts);
-          await writeState(state);
-          await client.tool('bakers_ticket_transition', { ticket: ticket.id, links: [{ uri: record.permalink, title: 'Slack thread' }] });
-          record.linked = true;
-          await writeState(state);
-          byId.get(ticket.id).thread = chatThread([{ uri: record.permalink, options: { bakers: { kind: 'chat' } } }]);
-        } catch (error) {
-          // Tried again on the next pass; this pass moves on.
-          state.threads[ticket.identifier] && (state.threads[ticket.identifier].failed = true);
-          log.error(`${stamp()} sub-ticket thread of ${ticket.identifier}: ${error.message}`);
-        }
+  // The first free name from generation n on: Slack answers name_taken for a name in use.
+  async function freeName(ticket, n, use) {
+    for (let tries = 0; ; tries += 1, n += 1) {
+      const name = ticketChannelName(ticket.identifier, ticket.title, n);
+      try {
+        return { name, generation: n, id: await use(name) };
+      } catch (error) {
+        if (error.code !== 'name_taken' || tries >= 20) throw error;
       }
     }
-    for (const [identifier, record] of Object.entries(state.threads)) {
-      delete record.failed;
-      if (!record.linked || record.pointed) continue;
-      const ticket = current.find((t) => t.identifier === identifier);
-      try {
-        const text = fill(messages.subTicketPointer, { identifier, title: escape(ticket?.title ?? identifier), permalink: record.permalink });
-        await slack.post({ channel: record.parentChannel, thread_ts: record.parentTs, text });
-        record.pointed = true;
+  }
+
+  // Each step is recorded before the next, so a failure resumes at the step not yet done
+  // and never repeats a finished one.
+  const steps = {
+    async rename(state, { channel, ticket }, bot) {
+      const record = (state.channels[channel] ??= { ticket: ticket.identifier, requester: bot[channel]?.requester ?? null });
+      const { name, generation } = await freeName(ticket, 1, (n) => slack.rename(channel, n));
+      Object.assign(record, { name, generation, renamed: true });
+    },
+    async archive(state, { channel }) {
+      await slack.archive(channel);
+      state.channels[channel].archived = true;
+    },
+    async reopen(state, { channel, ticket }) {
+      const old = state.channels[channel];
+      const next = (old.successor ??= {});
+      if (!next.channel) {
+        const created = await freeName(ticket, (old.generation ?? 1) + 1, (n) => slack.create(n));
+        Object.assign(next, { channel: created.id, name: created.name, generation: created.generation });
         await writeState(state);
+      }
+      if (!next.invited) {
+        if (old.requester) await slack.invite(next.channel, old.requester);
+        next.invited = true;
+        await writeState(state);
+      }
+      if (!next.posted) {
+        const text = `${messages.states[ticket.state] ?? ''}\n\n${fill(messages.reopened, { previous: `<#${channel}>` })}`.trim();
+        await slack.post({ channel: next.channel, text });
+        next.posted = true;
+        state.tickets = { ...state.tickets, [ticket.identifier]: ticket.state };
+        await writeState(state);
+      }
+      const uri = `${workspaceUrl.replace(/\/$/, '')}/archives/${next.channel}`;
+      await client.tool('bakers_ticket_transition', { ticket: ticket.id, links: [{ uri, title: 'Slack channel' }] });
+      state.channels[next.channel] = { ticket: ticket.identifier, requester: old.requester, name: next.name, generation: next.generation, renamed: true, previous: channel };
+      delete old.successor;
+      old.reopened = next.channel;
+      ticket.conversation = { channel: next.channel, url: uri };
+    },
+    async abandon(state, { channel }) {
+      const record = (state.channels[channel] ??= {});
+      if (!record.closing) {
+        const last = await slack.lastMessage(channel);
+        if (last && now() - last < WEEK) {
+          record.seen = last;
+          return;
+        }
+        await slack.post({ channel, text: messages.abandoned });
+        record.closing = true;
+        await writeState(state);
+      }
+      await slack.archive(channel);
+      record.archived = true;
+    },
+  };
+
+  async function channelWork(state, current, kinds) {
+    const bot = await readJson(botChannelsFile, {});
+    for (const step of channelSteps(state, current, bot, now()).filter((s) => kinds.includes(s.kind))) {
+      try {
+        await steps[step.kind](state, step, bot);
+        await writeState(state);
+        log.log(`${stamp()} ${step.kind} ${step.channel}${step.ticket ? ` of ${step.ticket.identifier}` : ''}`);
       } catch (error) {
-        log.error(`${stamp()} pointer to ${identifier}: ${error.message}`);
+        // Tried again on the next pass, from the step not yet recorded.
+        log.error(`${stamp()} ${step.kind} ${step.channel}: ${error.message}`);
       }
     }
   }
@@ -214,8 +278,10 @@ export function createPoller({ client, slack, send, stateFile, project, messages
     try {
       const state = await readState();
       const current = await tickets();
-      await subTicketThreads(state, current);
+      await channelWork(state, current, ['reopen', 'rename']);
       await postStates(state, current);
+      // After the posts: a channel is archived only once its final state is posted.
+      await channelWork(state, current, ['archive', 'abandon']);
       // Notes are relayed on the first pass too: they wait for an answer or for keytec.
       await relayNotes(state, current);
       await writeState(state);
@@ -241,6 +307,8 @@ if (isMain) {
     slack: createSlack({ url: process.env.SLACK_API_URL || undefined, token: env('SLACK_BOT_TOKEN') }),
     send: hermesSend,
     stateFile: join(env('HERMES_HOME'), 'poller-state.json'),
+    botChannelsFile: join(env('HERMES_HOME'), 'bot-channels.json'),
+    workspaceUrl: env('SLACK_WORKSPACE_URL'),
     project: env('PM_BOT_PROJECT'),
     messages: JSON.parse(await readFile(new URL('./messages.json', import.meta.url), 'utf8')),
   });

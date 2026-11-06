@@ -24,10 +24,10 @@ Feature: Deleting an entity where it is managed
       | team        | This action cannot be undone   |
       | group       | This action cannot be undone   |
       | environment | This action cannot be undone   |
-      | label       | These will be detached from it |
+      | label       | will be detached from it       |
       | template    | This action cannot be undone   |
       | trigger     | This action cannot be undone   |
-      | ticket      | These will also be deleted     |
+      | ticket      | This also deletes              |
       | comment     | This action cannot be undone   |
       | invite      | This action cannot be undone   |
 
@@ -35,7 +35,7 @@ Feature: Deleting an entity where it is managed
     Given a disposable "busy project" exists in the Northside workspace
     And I am logged in as the account "north-lead"
     When I open the Delete action of the disposable entity
-    Then the delete page names "Cannot be deleted while these still use it"
+    Then the delete page names "can't be deleted"
     And the delete page offers no confirm button
 
   Scenario Outline: <account> is refused the delete page of a <kind>

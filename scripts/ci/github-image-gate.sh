@@ -26,9 +26,12 @@ for image in php php-test nginx docs e2e pm-bot; do
 done
 printf '%s\n' "commit=$revision" "tree=$(git rev-parse 'HEAD^{tree}')" "run=$GITHUB_RUN_ID" "attempt=$GITHUB_RUN_ATTEMPT" > gate-reports/candidate.txt
 
+# The runner is persistent: a named container left by an earlier run blocks the name.
+docker rm -f phpunit github-browser >/dev/null 2>&1 || true
 docker run --name phpunit --user root -e SIMPLETEST_DB=sqlite://localhost/:memory: \
   bakers-gate/php-test:local sh -c 'cd /var/www/html && ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 8 --log-junit /tmp/junit.xml' || phpunit_status=$?
 docker cp phpunit:/tmp/junit.xml gate-reports/junit-phpunit.xml
+docker rm phpunit >/dev/null
 if [ "${phpunit_status:-0}" != 0 ]; then exit "$phpunit_status"; fi
 
 export COMPOSE_PROJECT_NAME=github-recipe

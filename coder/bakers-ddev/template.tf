@@ -165,7 +165,7 @@ data "coder_parameter" "pm_bot_slack_app_token" {
 data "coder_parameter" "pm_bot_slack_allowed_channels" {
   name         = "pm_bot_slack_allowed_channels"
   display_name = "PM bot: allowed channels"
-  description  = "The one Slack channel ID the bot answers in (C0123). The bot refuses to start with more."
+  description  = "The bot's main Slack channel ID (C0123), where a mention opens a request channel. The bot refuses to start with more."
   type         = "string"
   default      = ""
   mutable      = true
@@ -176,7 +176,7 @@ data "coder_parameter" "pm_bot_slack_allowed_channels" {
 data "coder_parameter" "pm_bot_slack_allowed_users" {
   name         = "pm_bot_slack_allowed_users"
   display_name = "PM bot: allowed users"
-  description  = "Optional. Slack member IDs the bot answers, separated by spaces or commas. Empty: everyone in the allowed channels."
+  description  = "Optional. Slack member IDs the bot answers, separated by spaces or commas. Empty: everyone in its channels."
   type         = "string"
   default      = ""
   mutable      = true
@@ -198,7 +198,7 @@ data "coder_parameter" "pm_bot_slack_admin_users" {
 data "coder_parameter" "pm_bot_slack_workspace_url" {
   name         = "pm_bot_slack_workspace_url"
   display_name = "PM bot: Slack workspace URL"
-  description  = "The Slack workspace URL, for thread permalinks (https://example.slack.com)."
+  description  = "The Slack workspace URL, for channel links (https://example.slack.com)."
   type         = "string"
   default      = ""
   mutable      = true
