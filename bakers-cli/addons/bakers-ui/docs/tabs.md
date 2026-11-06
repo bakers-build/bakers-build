@@ -203,4 +203,4 @@ with `context.requestDraw()` after a change. No JSX compiler setting is needed.
 
 ### Brand mark
 
-The startup splash pairs the bakers wordmark with the bread-slice mark of `docs/public/logo.svg`, drawn in half blocks: a butter tile, a dark outline with eyes and a white slice. The persistent header uses `╳ bakers.build`. Non-interactive output skips the splash.
+The startup splash pairs the bakers wordmark with the original six-row line-art braid in copper, with a turquoise clasp. The persistent header uses `╳ bakers.build`. Non-interactive output skips the splash.

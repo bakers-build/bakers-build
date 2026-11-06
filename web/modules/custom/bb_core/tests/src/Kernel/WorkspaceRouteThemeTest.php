@@ -17,8 +17,8 @@ use Symfony\Component\Yaml\Yaml;
  *
  * The human's decision during the BB-350 coding run, beyond the spec:
  * `/{workspace}/…` is the product front end, entity EDIT FORMS included. That
- * is not the default outcome. Two mechanisms hand routes to Gin and only one
- * of them reads the path: core's AdminRouteSubscriber stamps `_admin_route` on
+ * is not the default outcome. Two mechanisms hand routes to an admin theme
+ * and only one of them reads the path: core's AdminRouteSubscriber stamps `_admin_route` on
  * `/admin/…`, but the entity module's AdminHtmlRouteProvider stamps it by
  * ROUTE NAME — add_page, add_form, edit_form, delete_form,
  * delete_multiple_form, duplicate_form — wherever those routes live. So moving
@@ -29,10 +29,11 @@ use Symfony\Component\Yaml\Yaml;
  * force bb_theme on four route names by hand. Once the default theme is what
  * these routes resolve to anyway, that class asserts something untrue and is
  * removed — so this test was written and watched PASS while the negotiator was
- * still installed, then watched pass again after it was deleted. Without the
- * negative control below that would prove nothing, which is why an actual
- * admin route is asserted to resolve to Gin in the same run: the test can tell
- * the two themes apart.
+ * still installed, then watched pass again after it was deleted.
+ *
+ * The site ships no admin theme, so even an actual admin route, requested by
+ * an account allowed to see the administration theme, resolves to the
+ * front-end theme.
  *
  * Resolution is asked of the real theme negotiator rather than inferred from
  * the `_admin_route` option, because the option is the input and the theme is
@@ -91,11 +92,6 @@ final class WorkspaceRouteThemeTest extends KernelTestBase {
   private string $frontEndTheme;
 
   /**
-   * The site's admin theme, as `config/sync` ships it.
-   */
-  private string $adminTheme;
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -126,24 +122,16 @@ final class WorkspaceRouteThemeTest extends KernelTestBase {
     $shipped = Yaml::parseFile(dirname(__DIR__, 7) . '/config/sync/system.theme.yml');
     self::assertIsArray($shipped);
     $this->frontEndTheme = (string) ($shipped['default'] ?? '');
-    $this->adminTheme = (string) ($shipped['admin'] ?? '');
     self::assertNotSame('', $this->frontEndTheme, 'config/sync names a default theme.');
-    self::assertNotSame('', $this->adminTheme, 'config/sync names an admin theme.');
-    self::assertNotSame(
-      $this->frontEndTheme,
-      $this->adminTheme,
-      'The two themes differ, or neither assertion below could fail.',
-    );
+    self::assertSame('', $shipped['admin'] ?? NULL, 'config/sync names no admin theme.');
 
-    $this->container->get('theme_installer')
-      ->install([$this->frontEndTheme, $this->adminTheme]);
+    $this->container->get('theme_installer')->install([$this->frontEndTheme]);
     $this->config('system.theme')
       ->set('default', $this->frontEndTheme)
-      ->set('admin', $this->adminTheme)
+      ->set('admin', '')
       ->save();
     // Core's AdminNegotiator only applies to an AUTHENTICATED account holding
-    // `view the administration theme`. Without one, every route resolves to
-    // the default theme and the negative control below could not fail.
+    // `view the administration theme`; the admin-route case below needs one.
     $this->setUpCurrentUser([], ['view the administration theme']);
     $this->installRunsNavigationViews();
     $this->container->get('router.builder')->rebuild();
@@ -153,8 +141,8 @@ final class WorkspaceRouteThemeTest extends KernelTestBase {
    * Every workspace-prefixed route resolves to the front-end theme.
    *
    * The edit form is the load-bearing case: it is the one the entity module
-   * stamps by route name, so it is the one that would still be Gin if only
-   * the paths had moved.
+   * stamps by route name, so it is the one that would still be an admin route
+   * if only the paths had moved.
    */
   public function testWorkspaceRoutesResolveToTheFrontEndTheme(): void {
     foreach ([
@@ -203,15 +191,12 @@ final class WorkspaceRouteThemeTest extends KernelTestBase {
   }
 
   /**
-   * The negative control: an admin route would resolve to the admin theme.
-   *
-   * Without this the assertions above would also hold on a site with no admin
-   * theme at all, and the test would be measuring nothing.
+   * Even an admin route resolves to the front-end theme: none is shipped.
    */
-  public function testAnAdminRouteWouldResolveToTheAdminTheme(): void {
+  public function testAnAdminRouteResolvesToTheFrontEndTheme(): void {
     $route = new Route('/admin/probe', [], [], ['_admin_route' => TRUE]);
     self::assertSame(
-      $this->adminTheme,
+      $this->frontEndTheme,
       (string) $this->container->get('theme.negotiator')->determineActiveTheme(new RouteMatch('probe', $route)),
     );
   }

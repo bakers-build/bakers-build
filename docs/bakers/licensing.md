@@ -48,9 +48,11 @@ The phpcs/phpmd/phpstan DDEV wrappers come from keytec's own keytec-ddev-addon. 
 owner permitted adopting these three wrappers, each of which keeps its provenance line.
 
 Own assets with no third-party part: the logos and brand files (`docs/assets/`, `docs/public/`,
-`bb_theme/assets/brand/`, `bb_core/assets/email/`), `bakers-design/`, Designbook references rendered from the project's
+`bb_theme/logo.svg`), `bakers-design/`, Designbook references rendered from the project's
 own Storybook/Figma, the synthetic Playwright fixtures, and the measure profiles in `bakers-cli/addons/claude/measure/`
-(settings that name plugins and carry none of their content).
+(settings that name plugins and carry none of their content). `bb_theme/logo-wordmark.svg` and its PNG render set the
+"bakers.build" text as outlines drawn from Bricolage Grotesque (SIL OFL 1.1); they are artwork, not font software, and
+embed no font file.
 
 ## Surfaces
 

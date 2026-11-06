@@ -7,4 +7,4 @@ props:
   mark:
     initials: KE
     color: running
-    picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+    picture: /themes/custom/bb_theme/logo.svg

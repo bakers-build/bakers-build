@@ -21,10 +21,9 @@ install:
   # name below (BB-316 D2/D3).
   - og
   # The navigation rail and the account area are Drupal menus (`bakers-rail`,
-  # `bakers-account`). `menu_ui` and `menu_link_content` provide the standard
-  # menu administration; the shipped state is config.
+  # `bakers-account`). `menu_link_content` stores their links; the shipped
+  # state is config, so no menu administration UI is installed.
   - menu_link_content
-  - menu_ui
   # Core's Editor API, BEFORE bb_core, which depends on it: the bb_markdown
   # text editor (the Markdown toolbar) is bound to bb_rich by
   # editor.editor.bb_rich, imported by name below.
