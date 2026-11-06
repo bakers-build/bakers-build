@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Template\Attribute;
@@ -120,8 +121,10 @@ class BbContentEntityFormBase extends ContentEntityForm {
    * The product page a save lands on: the entity's own, a comment's ticket.
    */
   private function landing(): Url {
-    $entity = $this->entity;
-    $ticket = $entity->getEntityTypeId() === 'bb_comment' ? $entity->get('ticket_id')->entity : NULL;
+    $entity = $this->getEntity();
+    $ticket = $entity instanceof FieldableEntityInterface && $entity->getEntityTypeId() === 'bb_comment'
+      ? $entity->get('ticket_id')->entity
+      : NULL;
     if ($ticket instanceof EntityInterface) {
       return $ticket->toUrl();
     }

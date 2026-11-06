@@ -263,7 +263,13 @@ final class DeleteDialogTest extends KernelTestBase {
         'id' => $id,
         'base_table' => 'users_field_data',
         'display' => [
-          'default' => ['display_plugin' => 'default', 'id' => 'default', 'display_title' => 'Default', 'position' => 0, 'display_options' => []],
+          'default' => [
+            'display_plugin' => 'default',
+            'id' => 'default',
+            'display_title' => 'Default',
+            'position' => 0,
+            'display_options' => [],
+          ],
           'user_list' => [
             'display_plugin' => 'page',
             'id' => 'user_list',
