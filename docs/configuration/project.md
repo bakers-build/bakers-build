@@ -44,7 +44,7 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `addons` | Packages that contribute the slots: a name, or `{ use, with }`. A direct slot beats an addon; otherwise the last contributor wins with a warning. |
 | `states` | Workflow states this conductor serves. Omitted or empty serves every claimable state. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
-| `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600 unless configured otherwise. It is an ownership duration, not a task timeout. |
+| `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
 | `hooks` | Lifecycle commands `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`, and the agent tool `provision_up`, which brings the environment up and reuses a ready one; see [Hooks](/configuration/provisioning/hooks). Omitted hooks do nothing. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}` and `{runUuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `security` | Run security for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/configuration/agents/shared-security). |
