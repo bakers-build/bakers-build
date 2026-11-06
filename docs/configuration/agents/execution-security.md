@@ -63,7 +63,7 @@ What the default blocks:
 
 What it does not block:
 
-- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox; that is the price of a working workflow. Remove a command you do not need.
+- `trusted_commands` run with your full rights: an injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox. Drop unneeded ones: with the [`bakers` server](/addons/build/tools#site-tools), only `bakers deployment tickets` and `bakers ui` need `bakers`.
 - With `network: ['*']`, a sandboxed command can still reach any host.
 - Unconfirmed: whether `--strict-mcp-config` hides plugin MCP servers.
 

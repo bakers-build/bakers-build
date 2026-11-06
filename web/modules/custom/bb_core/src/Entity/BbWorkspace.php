@@ -11,10 +11,8 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\DefaultEntityLocalTaskProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
-use Drupal\entity\Routing\AdminHtmlRouteProvider;
+use Drupal\entity\Routing\DefaultHtmlRouteProvider;
 use Drupal\bb_core\Form\BbWorkspaceForm;
 use Drupal\bb_core\ListBuilder\BbWorkspaceListBuilder;
 use Drupal\user\EntityOwnerInterface;
@@ -48,26 +46,19 @@ use Drupal\user\EntityOwnerTrait;
     'list_builder' => BbWorkspaceListBuilder::class,
     'form' => [
       'default' => BbWorkspaceForm::class,
-      'add' => BbWorkspaceForm::class,
-      'edit' => BbWorkspaceForm::class,
       // The Settings surface: exists so `EntityForm::init()` picks the
       // `settings` form mode of the same name.
       'settings' => BbWorkspaceForm::class,
       'delete' => BbContentEntityDeleteForm::class,
     ],
-    'route_provider' => ['html' => AdminHtmlRouteProvider::class],
-    'local_task_provider' => ['default' => DefaultEntityLocalTaskProvider::class],
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
+    // Only the delete route: /home lists and creates workspaces, Settings
+    // edits one.
+    'route_provider' => ['html' => DefaultHtmlRouteProvider::class],
   ],
   links: [
-    'canonical' => '/admin/bakers/workspace/{bb_workspace}',
-    'add-form' => '/admin/bakers/workspace/add',
-    'edit-form' => '/admin/bakers/workspace/{bb_workspace}/edit',
-    'delete-form' => '/admin/bakers/workspace/{bb_workspace}/delete',
-    'collection' => '/admin/bakers/workspaces',
+    'delete-form' => '/_workspace/{bb_workspace}/delete',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_workspace.collection',
   base_table: 'bb_workspace',
 )]
 final class BbWorkspace extends BbContentEntityBase implements BbWorkspaceInterface, EntityOwnerInterface {

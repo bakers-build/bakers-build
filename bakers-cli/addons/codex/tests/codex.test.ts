@@ -809,30 +809,50 @@ describe('CodexAgent.sandboxPreflight', () => {
 });
 
 describe('CodexAgent conductor tools', () => {
-  it('adds bakers-conductor with the URL and the token by env var name only', async () => {
+  it('adds the bakers server with the URL and the token by env var name only', async () => {
     const home = await homeWithCodexMcp();
     await writeFile(
       join(home, '.codex', 'config.toml'),
-      '[mcp_servers.bakers-conductor]\nurl = "http://old"\n[mcp_servers.gitlab]\ncommand = "g"\n',
+      '[mcp_servers.gitlab]\ncommand = "g"\n',
     );
+    const agent = new CodexAgent({}, home);
     const argv = captureArgv(
       'codex',
-      new CodexAgent({}, home).launchCommand('x', undefined, home, {
+      agent.launchCommand('x', undefined, home, {
         url: 'http://127.0.0.1:4100',
       }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers-conductor.url="http://127.0.0.1:4100"',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN"}',
+    );
+    expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+    expect(agent.launchWarnings).toEqual([]);
+  });
+
+  it('replaces a config.toml server named bakers as a whole, and warns', async () => {
+    const home = await homeWithCodexMcp();
+    await writeFile(
+      join(home, '.codex', 'config.toml'),
+      '[mcp_servers.bakers]\ncommand = "old-bakers-mcp"\n',
+    );
+    const agent = new CodexAgent({}, home);
+    const argv = captureArgv(
+      'codex',
+      agent.launchCommand('x', undefined, home, {
+        url: 'http://127.0.0.1:4100',
+      }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers-conductor.bearer_token_env_var="BB_CONDUCTOR_TOKEN"',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN"}',
     );
-    expect(argv).not.toContain('mcp_servers.bakers-conductor.enabled=false');
-    expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+    expect(argv).not.toContain('mcp_servers.bakers.enabled=false');
+    expect(agent.launchWarnings).toEqual([
+      "~/.codex/config.toml mcp_servers.bakers is replaced by the conductor's bakers server",
+    ]);
   });
 
   it('adds nothing without a tool server', () => {
     const command = new CodexAgent({ security: 'yolo' }).launchCommand('x');
-    expect(command).not.toContain('bakers-conductor');
+    expect(command).not.toContain('mcp_servers.bakers');
   });
 });

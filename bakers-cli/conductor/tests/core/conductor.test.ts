@@ -1340,7 +1340,7 @@ describe('Conductor', () => {
     // The agent self-reads the ticket + comments at step 0 — the dispatch line
     // embeds neither the ticket body nor any comment text, and stays bounded.
     expect(command).toContain(
-      `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `bakers tools bakers_ticket_read --data '{"ticket":"t-1"}'`,
     );
     expect(command).not.toContain('--- Ticket comments ---');
     expect(command).not.toContain('{comments}');

@@ -170,8 +170,17 @@ export class CodexAgent implements BbAgent {
     }
   }
 
+  /** A `config.toml` server the conductor's own replaces, named once per dispatch. */
+  get launchWarnings(): readonly string[] {
+    return this.userMcpServers().includes(CONDUCTOR_TOOLS_SERVER)
+      ? [
+          `~/.codex/config.toml mcp_servers.${CONDUCTOR_TOOLS_SERVER} is replaced by the conductor's ${CONDUCTOR_TOOLS_SERVER} server`,
+        ]
+      : [];
+  }
+
   /** The launch flags a security mode owns (`docs/addons/codex.md`). */
-  private securityFlags(workspacePath: string): string[] {
+  private securityFlags(workspacePath: string, withTools: boolean): string[] {
     const { mode, sandbox, config } = this.security;
     if (mode === 'system') return [];
     if (mode === 'yolo') {
@@ -215,10 +224,10 @@ export class CodexAgent implements BbAgent {
       `permissions.bakers=${profile}`,
     ];
     for (const id of this.userMcpServers()) {
-      // The conductor's server is set per launch, never switched off.
+      // A launch with the conductor's server replaces that id whole below.
       if (
         !Object.hasOwn(sandbox.mcp_servers, id) &&
-        id !== CONDUCTOR_TOOLS_SERVER
+        !(withTools && id === CONDUCTOR_TOOLS_SERVER)
       ) {
         flags.push(...pairs([[`mcp_servers.${id}.enabled`, false]]));
       }
@@ -246,7 +255,10 @@ export class CodexAgent implements BbAgent {
   ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
-    const parts = ['codex', ...this.securityFlags(workspacePath).map(word)];
+    const parts = [
+      'codex',
+      ...this.securityFlags(workspacePath, tools !== undefined).map(word),
+    ];
     // Codex's default shell env filter drops `*KEY*` names; without its key a
     // `GIT_CONFIG_COUNT` entry makes every git call fail.
     for (const [name, value] of Object.entries(env)) {
@@ -258,14 +270,12 @@ export class CodexAgent implements BbAgent {
       }
     }
     if (tools) {
-      // Codex reads the token from the run env, so it never enters argv.
-      const server = `mcp_servers.${CONDUCTOR_TOOLS_SERVER}`;
+      // A whole inline table replaces any config.toml entry of that id. Codex
+      // reads the token from the run env, so it never enters argv.
       parts.push(
         '-c',
-        word(`${server}.url=${JSON.stringify(tools.url)}`),
-        '-c',
         word(
-          `${server}.bearer_token_env_var=${JSON.stringify(CONDUCTOR_TOKEN_ENV)}`,
+          `mcp_servers.${CONDUCTOR_TOOLS_SERVER}={url=${JSON.stringify(tools.url)},bearer_token_env_var=${JSON.stringify(CONDUCTOR_TOKEN_ENV)}}`,
         ),
       );
     }

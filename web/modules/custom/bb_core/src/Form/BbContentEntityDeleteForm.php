@@ -280,10 +280,33 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
       'bb_invite' => Url::fromRoute('bb_core.bb_workspace.members'),
       'bb_comment' => ($ticket = $reference('ticket_id')) ? $ticket->toUrl() : NULL,
       'bb_workspace' => Url::fromRoute('<front>'),
-      // Conductor and machine: their admin collection.
-      default => NULL,
+      default => $this->accountRedirectUrl($reference),
     };
     return $url ?? parent::getRedirectUrl();
+  }
+
+  /**
+   * Where a conductor, machine or run delete lands; NULL for other types.
+   *
+   * @param callable(string): ?\Drupal\Core\Entity\EntityInterface $reference
+   *   Resolves a reference field of the deleted entity.
+   */
+  private function accountRedirectUrl(callable $reference): ?Url {
+    $type = $this->getEntity()->getEntityTypeId();
+    if ($type === 'bb_conductor') {
+      return Url::fromRoute('view.conductors.user_list', ['user' => $this->currentUser()->id()]);
+    }
+    $target = match ($type) {
+      'bb_machine' => $reference('owner_user_id'),
+      'bb_run' => $reference('ticket_id'),
+      default => NULL,
+    };
+    if ($target === NULL) {
+      return NULL;
+    }
+    return $type === 'bb_machine'
+      ? Url::fromRoute('view.machines.user_list', ['user' => $target->id()])
+      : $target->toUrl();
   }
 
 }

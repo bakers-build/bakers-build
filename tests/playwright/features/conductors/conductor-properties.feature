@@ -1,12 +1,12 @@
 @feature:conductor-properties
 Feature: A conductor owner edits and disables a conductor on its Overview
   The conductor Overview is a detail page: Activities beside one Identity
-  card. Its label is editable; conductor ID, project, machine and owner are
-  read-only, and Disable or Enable sits below it. The page shows none of the
-  conductor's states, status, last seen and load: the heartbeat writes the
-  last three, the states are set at registration. The owner saves the label with its own Save and disables or enables
-  the conductor through a confirmation. A peer only reads the card. There is
-  no Settings tab; the administrative edit form stays where it was.
+  card. Its label and served states are editable; conductor ID, project,
+  machine and owner are read-only, and Disable or Enable sits below it. The
+  page shows none of the conductor's status, last seen and load: the
+  heartbeat writes them. The owner saves the card with its own Save and
+  disables or enables the conductor through a confirmation. A peer only reads
+  the card. There is no Settings tab and no administrative edit form.
   Activities list the claims of this conductor's own runs that the reader may
   inspect. The scenarios work on dedicated fixture conductors, restored
   afterwards.
@@ -23,13 +23,14 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     And the detail page has no "Live occupancy" card
     And the "Identity" card offers "Label" with Save
     And the "Identity" card shows "Conductor ID" as "bdd-properties-conductor"
-    And the "Identity" card has no row "States"
+    And the "Identity" card offers "States" with Save
     When I set "Label" to "Owner renamed conductor" in the "Identity" card
+    And I choose "plan, working" for "States" in the "Identity" card
     And I save the "Identity" card
     Then the "Identity" card says "saved."
     And the page heading is "Owner renamed conductor"
     And the fixture conductor "conductor.properties" has the label "Owner renamed conductor"
-    And the fixture conductor "conductor.properties" serves the states "working"
+    And the fixture conductor "conductor.properties" serves the states "plan, working"
 
   Scenario: The owner disables and enables the conductor behind a confirmation
     Given I am logged in as the account "fixture-conductor-owner"
@@ -62,14 +63,15 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     When I visit the fixture conductor "conductor.properties"
     Then the Activities say "No activity yet."
 
-  Scenario: The instance admin keeps the card and the administrative edit form
+  Scenario: The instance admin keeps the card; the administrative edit form is gone
     Given I am logged in as the account "site-admin"
     When I visit the fixture conductor "conductor.properties"
     Then the "Identity" card offers "Label" with Save
+    And the "Identity" card offers "States" with Save
     When I open "Disable conductor"
     And I choose "Keep enabled" in the dialog
     Then the fixture conductor "conductor.properties" is active
-    And the fixture conductor "conductor.properties" administrative edit form answers 200
+    And the fixture conductor "conductor.properties" administrative edit form answers 404
 
   @nojs
   Scenario: Disable and enable work without JavaScript as pages

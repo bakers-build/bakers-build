@@ -2,6 +2,8 @@
 
 `bakers tools` lists, describes and calls the bakers.build server's named tools over its MCP endpoint, bound to the same connection `bakers ui` uses. Every tracker operation an agent performs is one of these tools; an agent that has the bakers.build MCP connector calls the tool of the same name natively, and `bakers tools` is the transport for everyone else.
 
+Inside a conductor run (`BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` set), `bakers tools` calls the run's [`bakers` server](/addons/build/tools#site-tools) with the run token instead, needs no connection config and reaches only that run's project. Name a tool plainly (`bakers_ticket_read`) in either place; the `tool_api__` wire name works too.
+
 ## Synopsis
 
 ```

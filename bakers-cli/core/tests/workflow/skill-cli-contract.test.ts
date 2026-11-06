@@ -1192,10 +1192,10 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
       const { files, call } = script();
       const steps = [
         call('bakers_ticket_read', { ticket: ticketId }),
-        // The tool id without its wire prefix is not a tool the server lists.
+        // A tool the server does not list.
         [
           ...T,
-          'bakers_ticket_read',
+          'bakers_ticket_frobnicate',
           '--data',
           JSON.stringify({ ticket: ticketId }),
         ],

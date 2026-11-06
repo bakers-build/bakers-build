@@ -61,6 +61,6 @@ Reserved arguments: `--permission-mode`, `--session-id`/`-s`; in sandbox mode al
 
 `bakers oven check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended DDEV completion is unverified.
 
-Runs reach the conductor's [addon tools](build/tools.md) through `bakers oven tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
+Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
 
 More: [Run security](/configuration/agents/execution-security#grok-in-sandbox-mode), [Choose agents](/configuration/agents).

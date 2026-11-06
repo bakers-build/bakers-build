@@ -10,10 +10,8 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\bb_core\Access\BbMachineAccessControlHandler;
 use Drupal\bb_core\Access\BbMachineQueryAccessHandler;
-use Drupal\bb_core\Form\BbMachineForm;
 use Drupal\bb_core\ListBuilder\BbMachineListBuilder;
 use Drupal\bb_core\Routing\BbMachineRouteProvider;
 use Drupal\user\EntityOwnerInterface;
@@ -46,9 +44,6 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
     // Views integration is declared HERE rather than attached by a hook.
     'views_data' => EntityViewsData::class,
     'form' => [
-      'default' => BbMachineForm::class,
-      'add' => BbMachineForm::class,
-      'edit' => BbMachineForm::class,
       // Detail page cards, one Save each.
       'identity' => BbEntityDetailCardForm::class,
       'delete' => BbContentEntityDeleteForm::class,
@@ -59,18 +54,13 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
     // Tabs are declared statically in bb_core.links.task.yml, so no
     // `local_task_provider` handler is registered. The default one would
     // synthesise a View/Edit tab row from the `edit-form` link.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // Product View sits next to the account Machines listing.
   links: [
     'canonical' => '/user/{user}/machine/{bb_machine}',
-    'add-form' => '/admin/bakers/machine/add',
-    'edit-form' => '/admin/bakers/machine/{bb_machine}/edit',
-    'delete-form' => '/admin/bakers/machine/{bb_machine}/delete',
-    'collection' => '/admin/bakers/machines',
+    'delete-form' => '/user/{user}/machine/{bb_machine}/delete',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_machine.collection',
   base_table: 'bb_machine',
 )]
 final class BbMachine extends BbContentEntityBase implements BbMachineInterface, EntityOwnerInterface {

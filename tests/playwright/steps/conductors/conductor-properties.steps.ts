@@ -81,9 +81,9 @@ Then('the conductor offers no Disable or Enable', async ({ page }) => {
   }
 });
 
-Then('the fixture conductor {string} administrative edit form answers 200', async ({ page }, name: string) => {
+Then('the fixture conductor {string} administrative edit form answers {int}', async ({ page }, name: string, status: number) => {
   const response = await page.request.get(`/admin/bakers/conductor/${fixture(name).id}/edit`);
-  expect(response.status()).toBe(200);
+  expect(response.status()).toBe(status);
 });
 
 Then('the conductor confirmation is a page of its own', async ({ page }) => {

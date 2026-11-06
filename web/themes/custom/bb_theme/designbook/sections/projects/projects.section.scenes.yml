@@ -275,7 +275,7 @@ scenes:
                           variant: primary
                           label: New project
                           icon_only: true
-                          href: /admin/bakers/project/add
+                          href: /bakers/project/add
                         slots:
                           icon:
                             component: bb_theme:icon

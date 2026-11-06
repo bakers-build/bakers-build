@@ -217,16 +217,17 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     expect(DEFAULT_AGENT_PROMPT).not.toContain('--- Ticket comments ---');
   });
 
-  it('instructs the step-0 read through the bakers_ticket_read tool, with and without a connector', () => {
-    // The run reads its ticket through the same tool as every skill step, not a
-    // second JSON:API read; the fallback is the transport `tools.md` defines.
-    expect(DEFAULT_AGENT_PROMPT).toContain('bakers_ticket_read');
-    expect(DEFAULT_AGENT_PROMPT).toContain('MCP: tool_api__bakers_ticket_read');
-    expect(DEFAULT_AGENT_PROMPT).toContain(
-      `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
-    );
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('dropsh --format md read');
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('stays sandboxed');
+  it('instructs the step-0 read through the MCP tool, else bakers tools, which picks the route itself', () => {
+    // The run reads its ticket through the same tool as every skill step;
+    // `bakers tools` goes to the run's conductor when the run has one.
+    const paths = [
+      'the MCP tool bakers_ticket_read when it is listed',
+      `bakers tools bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+    ].map((p) => DEFAULT_AGENT_PROMPT.indexOf(p));
+    expect(paths.every((at) => at >= 0)).toBe(true);
+    expect([...paths].sort((a, b) => a - b)).toEqual(paths);
+    expect(DEFAULT_AGENT_PROMPT).not.toContain('bakers oven tools');
+    expect(DEFAULT_AGENT_PROMPT).not.toContain('tool_api__');
   });
 
   it('routes through the loader to the skill that owns the step', () => {
@@ -281,7 +282,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
       .replaceAll('{ticketUuid}', 't-1');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `bakers tools bakers_ticket_read --data '{"ticket":"t-1"}'`,
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -319,7 +320,7 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
   const NEUTRAL_CONTRACT = [
     'Read the ticket and all comments',
     'bakers_ticket_read',
-    `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+    `bakers tools bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
     './WORKFLOW.md',
     "that skill's {state} section",
     'Do not start or prepare a later state',

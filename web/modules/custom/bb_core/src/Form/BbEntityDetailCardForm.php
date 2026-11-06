@@ -54,11 +54,11 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
     'bb_machine' => [
       'identity' => ['edit' => ['name', 'max_parallel'], 'show' => ['host_key', 'owner_user_id', 'current_load']],
     ],
-    // The heartbeat writes status and load; states are set at registration
-    // and changed in the administrative form or the API, not on a card.
+    // The heartbeat writes status and load; the served states are set at
+    // registration and edited here.
     'bb_conductor' => [
       'identity' => [
-        'edit' => ['label'],
+        'edit' => ['label', 'states'],
         'show' => ['conductor_id', 'project_id', 'machine', 'owner_user_id'],
       ],
     ],

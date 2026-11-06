@@ -1,27 +1,17 @@
 # Conductor tools
 
-Inside a conductor run, addon tools (`ddev_status`, `provision_up`, `ports_up`, …) carry their plain
-name and act on the run's worktree. They are **available** when the host lists them, or when
-`bakers oven tools` lists them (exit 0). Call them like every tool in [tools](tools.md):
+Inside a conductor run, the `bakers` MCP server serves two kinds of tools under their plain name:
 
-- **The host lists the tool** (an MCP connector): call it with the step's arguments.
-- **Otherwise** write the arguments to a JSON file and call it alone:
+- addon tools (`ddev_status`, `provision_up`, `ports_up`, …), acting on the run's worktree;
+- the site's tools of [tools](tools.md) › Operations except `bakers_run_cancel`, plus
+  `bakers_ticket_runs_list`, `bakers_label_list`, `bakers_project_read` and `bakers_user_read`. The
+  conductor calls the site with its own credentials and refuses a ticket, parent, project or
+  workspace outside the run ticket's project (exit 1); a missing `project` or `workspace` means the
+  run's.
 
-  ```bash
-  bakers oven tools <tool> --data @<args.json>
-  ```
-
-  `bakers oven tools <tool> --schema` prints its arguments.
-
-| Exit | Meaning | Next |
-|---|---|---|
-| 0 | success; the tool's text on stdout | use the result |
-| 1 | the tool refused; the message names the cause | report it; correct only arguments the message shows wrong |
-| 3 | run token rejected | report it |
-| 4 | no conductor tools in this shell, unknown tool or unreadable `--data`; no call made | from the listing: take the step's path without them; else fix against `bakers oven tools <tool> --schema` |
-| 5 | HTTP or protocol error | report it; a write may have happened, reconcile with a read |
-
-The run token stays in the environment; pass no token yourself.
+Call them like every tool in [tools](tools.md); the run token stays in the environment, so pass no
+token yourself. An addon tool that is neither listed nor known to the CLI (exit 4) is not available
+in this run: take the step's path without it.
 
 ## `provision_up`
 
