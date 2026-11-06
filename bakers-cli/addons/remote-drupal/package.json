@@ -25,6 +25,7 @@
     "@bakers-build/message": "workspace:^"
   },
   "dependencies": {
+    "@dropsh/plugin-tool": "^0.8.2",
     "dropsh": "^0.8.2"
   },
   "devDependencies": {

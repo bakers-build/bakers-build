@@ -115,6 +115,7 @@ export type {
   InboxSnapshot,
   RunMetrics,
   RunWriteAttributes,
+  SiteToolClient,
   Ticket,
   TicketMetric,
   UncleanTicket,

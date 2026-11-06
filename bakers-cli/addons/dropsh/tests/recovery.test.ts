@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   firstWorkspace,
   secondWorkspace,
@@ -12,10 +12,14 @@ import * as dropsh from '../src/index.js';
 let f: Awaited<ReturnType<typeof workspaceFixture>>;
 const savedExitCode = process.exitCode;
 beforeEach(async () => {
+  // These calls go to the site; a run's conductor env would reroute them.
+  vi.stubEnv('BB_CONDUCTOR_URL', '');
+  vi.stubEnv('BB_CONDUCTOR_TOKEN', '');
   f = await workspaceFixture();
   await f.login();
 });
 afterEach(async () => {
+  vi.unstubAllEnvs();
   process.exitCode = savedExitCode;
   await f.close();
 });

@@ -40,14 +40,17 @@ class ToolServerTests(unittest.TestCase):
         read = simulation.call('bakers', {'argv': TOOL + ['tool_api__bakers_ticket_read', '--data', '{"ticket": "EVAL-20"}']})
         self.assertEqual([(c['id'], c['type']) for c in json.loads(read['stdout'])['comments']], [(seeded['id'], 'qualification')])
 
-    def test_jsonapi_commands_and_unprefixed_names_are_outside_the_contract(self):
+    def test_jsonapi_commands_are_outside_the_contract_and_bare_names_mean_the_wire_name(self):
         simulation = load_server().Simulation({'simulation': {'ticket': {'id': 'x', 'identifier': 'EVAL-20', 'state': 'plan'}}})
         for verb in ['read', 'search', 'create', 'update', 'delete', 'schema', 'tool']:
             rejected = simulation.call('bakers', {'argv': ['bakers', 'dropsh', verb, 'bb_ticket/bb_ticket/x']})
             self.assertEqual(rejected['exit_code'], 2)
             self.assertIn('not part of the skill contract', rejected['stderr'])
-        unprefixed = simulation.call('bakers', {'argv': TOOL + ['bakers_ticket_read', '--data', '{"ticket": "EVAL-20"}']})
-        self.assertEqual((unprefixed['exit_code'], json.loads(unprefixed['stderr'])['error']['code']), (4, 'E_VALIDATION'))
+        bare = simulation.call('bakers', {'argv': TOOL + ['bakers_ticket_read', '--data', '{"ticket": "EVAL-20"}']})
+        wire = simulation.call('bakers', {'argv': TOOL + ['tool_api__bakers_ticket_read', '--data', '{"ticket": "EVAL-20"}']})
+        self.assertEqual(bare, wire)
+        unknown = simulation.call('bakers', {'argv': TOOL + ['bakers_ticket_frobnicate']})
+        self.assertEqual((unknown['exit_code'], json.loads(unknown['stderr'])['error']['code']), (4, 'E_VALIDATION'))
         invalid = simulation.call('bakers', {'argv': TOOL + ['tool_api__bakers_ticket_read', '--data', '{"tick": "EVAL-20"}']})
         self.assertEqual(invalid['exit_code'], 4)
         refused = simulation.call('bakers', {'argv': TOOL + ['tool_api__bakers_ticket_read', '--data', '{"ticket": "EVAL-404"}']})

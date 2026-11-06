@@ -78,7 +78,7 @@ Liveness is derived, and uses the same three words as the cockpit and the contro
 
 ### tools
 
-`tools` is the shell route to the conductor's [addon tools](../../addons/build/tools.md) for agents that load no MCP server for them. It needs no conductor config or connection: it reads `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` from the run environment.
+`tools` is the shell route to the conductor's [addon tools](../../addons/build/tools.md) for agents that load no MCP server for them; inside a run, [`bakers tools`](/configuration/clients/tools) takes the same route. It needs no conductor config or connection: it reads `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` from the run environment.
 
 - `bakers oven tools` lists `name<TAB>description`.
 - `bakers oven tools <name> --schema` prints the tool's input schema.
