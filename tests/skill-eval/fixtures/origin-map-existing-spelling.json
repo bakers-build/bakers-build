@@ -1,0 +1,98 @@
+{
+  "id": "origin-map-existing-spelling",
+  "synthetic": true,
+  "profile": "origin-map",
+  "execution": "simulated-tools",
+  "skill": "bb-workflow/references/origin-status.md",
+  "references": [
+    "bb-workflow/references/read-ticket.md"
+  ],
+  "input": {
+    "task": "Publish the origin status for destination `review`; the caller authorized it and owns the state write. The ticket's origin is https://git.example.invalid/acme/shop/-/issues/7. Read the project's WORKFLOW.md with read_file. Return what was written.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555"
+  },
+  "expect": {
+    "label": "Doing",
+    "remove": "Review"
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-70",
+      "title": "Export invoices as CSV",
+      "state": "working",
+      "workflow": "bb_work",
+      "description": "Operators export invoices.",
+      "created": "2026-10-26",
+      "base_branch": "develop",
+      "changed": "fixture-revision-1",
+      "origin": "https://git.example.invalid/acme/shop/-/issues/7",
+      "type": "deployment",
+      "recipe": "deploy-and-release"
+    },
+    "files": {
+      "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-transition\n\n| State | Origin label |\n|---|---|\n| plan | doing |\n| working | doing |\n| review | doing |\n| done | review |\n"
+    },
+    "commands": {
+      "glab": [
+        {
+          "argv": [
+            "glab",
+            "api",
+            "--hostname",
+            "git.example.invalid",
+            "--paginate",
+            "projects/acme%2Fshop/labels?include_ancestor_groups=true&per_page=100"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "[{\"id\": 21, \"name\": \"Doing\", \"is_project_label\": true}, {\"id\": 3, \"name\": \"Review\", \"is_project_label\": false}, {\"id\": 4, \"name\": \"Bug\", \"is_project_label\": false}]\n",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "glab",
+            "issue",
+            "update",
+            "https://git.example.invalid/acme/shop/-/issues/7",
+            "--label",
+            "Doing",
+            "--unlabel",
+            "Review"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "updated\n",
+            "stderr": ""
+          }
+        },
+        {
+          "argv": [
+            "glab",
+            "issue",
+            "update",
+            "https://git.example.invalid/acme/shop/-/issues/7",
+            "--label",
+            "doing",
+            "--unlabel",
+            "review"
+          ],
+          "result": {
+            "exit_code": 0,
+            "stdout": "updated\n",
+            "stderr": ""
+          }
+        }
+      ]
+    }
+  },
+  "rubric": [
+    {
+      "id": "existing-spelling",
+      "criterion": "The table's doing and review are matched case-insensitively to the project label Doing and the group label Review; the call writes Doing and removes Review, and no new label is created."
+    }
+  ]
+}

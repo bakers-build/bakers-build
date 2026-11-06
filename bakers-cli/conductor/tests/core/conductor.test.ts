@@ -171,7 +171,7 @@ const fakeAgent: BbAgent = {
 /** Wrap a BbAgent as the 1-element ResolvedAgent[] the Conductor now takes. */
 const resolved = (a: BbAgent): ResolvedAgent[] => [{ id: a.id, agent: a }];
 
-const CHECKOUT = '/tmp/bakers-conductor-test-checkout';
+const CHECKOUT = join(tmpdir(), 'bakers-conductor-test-checkout');
 
 function makeConfig(
   overrides: Partial<ConductorFileConfig> = {},
@@ -2397,6 +2397,41 @@ describe('Conductor', () => {
     ]);
     // Verified teardown → cleaned_up set (drops the ticket off the work list).
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
+  it('stops a done ticket’s provisioning before after_done, and all provisioning at stopTools', async () => {
+    const remote = new FakeBbRemote(doneTicketSeed());
+    const executor = new RecordingExecutor();
+    const events: string[] = [];
+    const runHook = executor.runHook.bind(executor);
+    executor.runHook = async (name, ...rest) => {
+      events.push(name);
+      return runHook(name, ...rest);
+    };
+    const conductor = new Conductor(
+      makeConfig({
+        provisioning: {
+          stop: async (path) => {
+            events.push(`stop ${path ?? 'all'}`);
+          },
+        },
+      }),
+      remote,
+      executor,
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    expect(events.slice(0, 2)).toEqual([
+      `stop ${PRESENT_WORKTREE}`,
+      'after_done',
+    ]);
+    events.length = 0;
+    await conductor.stopTools();
+    expect(events).toEqual(['stop all']);
   });
 
   it('tick does not mark cleaned_up when teardown fails on a closed ticket (no withholding of anything else)', async () => {
