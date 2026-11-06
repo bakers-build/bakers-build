@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ProjectsScreen } from '../../src/Entity/project/Screen/projects-screen.js';
 import { RunsScreen } from '../../src/Entity/run/Screen/runs.js';
-import { TicketAgentsScreen } from '../../src/Entity/ticket/Screen/ticket-agents.js';
 import { TicketsScreen } from '../../src/Entity/ticket/Screen/tickets.js';
 import type { Screen, ScreenContext } from '../../src/Screen/screen.js';
-import type { DropshClient, RendererServices } from '../../src/types.js';
+import type { DropshClient } from '../../src/types.js';
 import { idsOf, nodeById, renderTree } from '../render-tree.js';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -20,11 +19,7 @@ const bodyRows = (screen: Screen, context: ScreenContext): string[] =>
   screen.renderNonInteractive?.(context) ??
   renderTree(screen.present(context).body);
 
-function harness(
-  screen: Screen,
-  get: DropshClient['get'],
-  agents?: RendererServices['agents'],
-) {
+function harness(screen: Screen, get: DropshClient['get']) {
   const events: string[] = [];
   const context: ScreenContext = {
     sessionGeneration: 1,
@@ -37,7 +32,6 @@ function harness(
         },
         collection: vi.fn(),
       },
-      ...(agents ? { agents } : {}),
     },
     requestDraw: () => events.push(`draw:${bodyRows(screen, context)[0]}`),
     isActive: () => true,
@@ -57,11 +51,7 @@ describe('project tab screens own their asynchronous lifecycle', () => {
   });
   it('Projects offers no way to create a ticket', () => {
     const screen = new ProjectsScreen();
-    const { context } = harness(
-      screen,
-      async () => ({ data: [] }),
-      {} as never,
-    );
+    const { context } = harness(screen, async () => ({ data: [] }));
     expect(screen.present(context).actions?.map((a) => a.label)).not.toContain(
       'new',
     );
@@ -334,30 +324,6 @@ describe('project tab screens own their asynchronous lifecycle', () => {
     ).toBe('x closed');
   });
 
-  it('Ticket-Agents draws loading before list and retries an isolated error', async () => {
-    const list = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('host down'))
-      .mockResolvedValueOnce([]);
-    const agents = {
-      list,
-      focus: vi.fn(),
-      hide: vi.fn(),
-      kill: vi.fn(),
-      launch: vi.fn(),
-    };
-    const screen = new TicketAgentsScreen();
-    const { context, events } = harness(screen, async () => ({}), agents);
-    screen.enter(context);
-    await tick();
-    expect(events[0]).toBe('draw:Loading ticket agents…');
-    expect(bodyRows(screen, context)[0]).toBe('host down');
-    screen.retry(context);
-    await tick();
-    expect(list).toHaveBeenCalledTimes(2);
-    expect(bodyRows(screen, context)).toContain('No ticket agents.');
-  });
-
   it('Runs owns cursor movement and routes activation through screen context', async () => {
     const screen = new RunsScreen();
     const { context } = harness(screen, async () => ({
@@ -403,31 +369,5 @@ describe('project tab screens own their asynchronous lifecycle', () => {
     expect(navigate).toHaveBeenCalledWith('ticket.runs', {
       ticketId: 'ticket-2',
     });
-  });
-
-  it('Ticket-Agents owns cursor, focus, hide and kill actions', async () => {
-    const agents = {
-      list: vi.fn().mockResolvedValue([
-        { id: 'agent-1', group: 'bakers', label: 'One' },
-        { id: 'agent-2', group: 'bakers', label: 'Two' },
-      ]),
-      focus: vi.fn().mockResolvedValue(undefined),
-      hide: vi.fn().mockResolvedValue(undefined),
-      kill: vi.fn().mockResolvedValue(undefined),
-      launch: vi.fn(),
-    };
-    const screen = new TicketAgentsScreen();
-    const { context } = harness(screen, async () => ({}), agents);
-    screen.enter(context);
-    await tick();
-
-    expect(screen.handleInput('j', context)).toBe(true);
-    expect(screen.selectedIndex).toBe(1);
-    expect(screen.handleInput('enter', context)).toBe(true);
-    expect(screen.handleInput('h', context)).toBe(true);
-    expect(screen.handleInput('x', context)).toBe(true);
-    expect(agents.focus).toHaveBeenCalledWith('agent-2');
-    expect(agents.hide).toHaveBeenCalledWith('bakers');
-    expect(agents.kill).toHaveBeenCalledWith('agent-2');
   });
 });

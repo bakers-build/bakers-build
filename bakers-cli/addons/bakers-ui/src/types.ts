@@ -86,49 +86,11 @@ export interface TicketDetailDocument {
   included?: JsonApiResource[];
 }
 
-/** A hosted agent as reported by the injected agent service (herdr-backed in
- *  production). `id` is the host-owned stable handle, `group` the project it was
- *  launched under, `label` a human tag for the list. */
-export interface HostedAgent {
-  id: string;
-  group: string;
-  label: string;
-}
-
-/**
- * Intent-level agent hosting the TUI drives (BB-190). The TUI says launch /
- * list / focus / hide / kill by an opaque `group` (the project) + an `id` — it
- * never names panes, tabs, splits or zoom. The host (herdr) owns all layout.
- * We don't know what the next herdr does; this intent contract survives a
- * different pane model unchanged.
- */
-export interface TuiAgentService {
-  /** Start an agent for a group; the host places + shows it. */
-  launch(opts: {
-    group: string;
-    cwd: string;
-    prompt: string;
-    env: Record<string, string | undefined>;
-    isNew?: boolean | undefined;
-    label?: string | undefined;
-  }): Promise<HostedAgent>;
-  /** The live agents of a group (source of truth for the list + restart). */
-  list(group: string): Promise<HostedAgent[]>;
-  /** Bring an agent to the foreground. */
-  focus(id: string): Promise<void>;
-  /** Stop showing a group's agents, back to the caller. Durable — never kills. */
-  hide(group: string): Promise<void>;
-  /** Terminate an agent for good. */
-  kill(id: string): Promise<void>;
-}
-
 /** The dropsh renderer `services` bag the TUI consumes. */
 export interface RendererServices {
   client: DropshClient;
   baseUrl?: string;
   project?: string;
-  /** Intent-level agent host for `bakers ui` ticket-agents (herdr-backed). */
-  agents?: TuiAgentService;
   /** This machine's user id — preselected as the new-ticket assignee. */
   currentUser?: string;
   /** Fail-closed workspace-lead capability resolved from the active membership. */
@@ -144,8 +106,6 @@ export interface RendererServices {
   now?: () => number;
   /** This machine's conductor `machine_id` — preselected in the new-ticket form. */
   ownConductorMachineId?: string;
-  /** Config override for the ticket-create agent's base prompt. */
-  createPrompt?: string;
   /**
    * A WRITE-scoped JSON:API client, when the host resolved a separate one.
    *
@@ -344,12 +304,10 @@ export interface TuiOptions {
   selectWorkspace?: ((name: string) => Promise<void>) | undefined;
   /** BB-472 — see `RendererServices.configPath`. */
   configPath?: string | undefined;
-  agents?: TuiAgentService;
   currentUser?: string;
   /** Workspace-lead capability resolved by the plugin before routing starts. */
   isWorkspaceAdmin?: boolean;
   ownConductorMachineId?: string;
-  createPrompt?: string;
   /** BB-223: the unresolved deep-link target, as it arrived from the CLI. */
   initialRoute?: UiInitialRoute | undefined;
   /** BB-223: the RESOLVED route the plugin's `run()` produced. The kernel
@@ -357,7 +315,7 @@ export interface TuiOptions {
   route?: ResolvedRoute | undefined;
   /** The write-scoped client — see `RendererServices.writeClient`, and BB-391
    *  for why it no longer names a profile. Optional at every hop, resolved
-   *  `services?.x ?? options?.x`, like `agents`. */
+   *  `services?.x ?? options?.x`. */
   writeClient?: DropshClient | undefined;
   /**
    * BB-232: the seam the Conductors screen starts and stops through.
@@ -381,7 +339,7 @@ export interface TuiOptions {
   /**
    * BB-326: a test supplies its own `CliRenderer`; production creates one.
    *
-   * The same shape the kernel already takes `writeClient`, `agents`,
+   * The same shape the kernel already takes `writeClient`,
    * `conductorProcess` and `debounce` in — and the only production-code
    * concession the OpenTUI swap makes to the tests. Present ALSO means
    * interactive: `@opentui/core/testing`'s renderer has no TTY behind it, so

@@ -357,7 +357,7 @@ describe('BB-241 Amendment A — rendered row geometry (AC-13)', () => {
       // The project bar is checked first: it also opens on [Overview].
       if (
         rows.some((row) =>
-          /Ticket-Agents|\[My work\]|\[Work\]|\[Tickets\]/.test(row),
+          /Conductors|\[My work\]|\[Work\]|\[Tickets\]/.test(row),
         )
       )
         return BAR_CHROME;
@@ -366,11 +366,11 @@ describe('BB-241 Amendment A — rendered row geometry (AC-13)', () => {
     };
 
     // BB-239's own guarantee, asserted as such and unchanged by BB-346: no
-    // chrome row of the ticket screen carries ANOTHER level's bar. `Ticket-Agents`
+    // chrome row of the ticket screen carries ANOTHER level's bar. `Conductors`
     // is a project-level label and appears on no ticket-level bar.
     for (const row of ticket.slice(0, firstBody(ticket))) {
       expect(row, 'no chrome row carries the project bar').not.toContain(
-        'Ticket-Agents',
+        'Conductors',
       );
     }
     // And the other half of "exactly one": the ticket level's own bar IS drawn.

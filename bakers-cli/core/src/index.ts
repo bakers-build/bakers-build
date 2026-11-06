@@ -201,6 +201,5 @@ export {
   readEffectiveAddon,
   scopeAddons,
 } from './plugins/scoped-addons.js';
-// BB-194 AC-2: the agent-host contract (`AgentLaunchHost` / `HostedAgent` /
-// `supportsAgentHost`) is likewise NOT here — it is the TUI renderer's own plugin
-// seam (`@bakers-build/addon-bakers-ui`), and herdr types its impl locally.
+// BB-194 AC-2: there is no agent-host contract here; `bakers ui` no longer
+// hosts agents.

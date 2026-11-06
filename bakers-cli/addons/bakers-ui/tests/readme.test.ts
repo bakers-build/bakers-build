@@ -82,7 +82,7 @@ const referenceDeepLinks = unwrap(
 // The ONE row of each key table that is the ticket screen's. The two documents
 // head their key table differently (`## Screens & keys` vs `## Keybindings`), so
 // the section is sliced first and the row looked up inside it — `| Ticket |`
-// matches neither `| Tickets |` nor `| Ticket-Agents |`, and slicing first keeps
+// does not match `| Tickets |`, and slicing first keeps
 // it from finding the level table's `| Ticket | Ticket detail | …` row instead.
 const readmeTicketKeyRow = section(
   section(readme, '## Screens & keys', /\n##+ /),
@@ -312,7 +312,7 @@ it.each([
     ],
     [
       'Project',
-      '**Overview** · **Work** · **Tickets** · **Ticket-Agents** · **Runs** · **Conductors**',
+      '**Overview** · **Work** · **Tickets** · **Runs** · **Conductors**',
     ],
     [
       'Ticket',

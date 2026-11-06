@@ -79,7 +79,6 @@ export async function runTicketTui(
   const environment = {
     services: {
       ...services,
-      ...(options.agents ? { agents: options.agents } : {}),
       ...(options.writeClient ? { writeClient: options.writeClient } : {}),
       ...(options.conductorProcess
         ? { conductorProcess: options.conductorProcess }

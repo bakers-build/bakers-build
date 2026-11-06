@@ -2,10 +2,6 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  type AgentLaunchHost,
-  herdrAgentHost,
-} from '@bakers-build/addon-herdr';
 import { workspacePlugin } from '@bakers-build/addon-workspace';
 import {
   type BbCommandHost,
@@ -19,9 +15,6 @@ import {
   exec,
   fetchUpdateNotice,
   loadReadyBbConnection,
-  type MachineContext,
-  machineContextPath,
-  readMachineContext,
   resolveCliVersion,
   setDefaultCommandRunner,
   type WorkspaceRecoveryOptions,
@@ -40,11 +33,7 @@ import {
   UI_VIEW_MODES,
   type UiInitialRoute,
 } from './route.js';
-import {
-  type HomeConnection,
-  resolveAgentCommand,
-  resolveProjectRooting,
-} from './ui-home.js';
+import { type HomeConnection, resolveProjectRooting } from './ui-home.js';
 
 // BB-201 / BB-219: the `bakers ui` command plugin. The cockpit resolves its
 // connection through core: explicit → project → global. Workspace recovery
@@ -54,22 +43,6 @@ import {
 // The TUI renderer `@bakers-build/addon-bakers-ui` is resolved DYNAMICALLY at runtime
 // (never statically imported), so this package stays independent of the
 // renderer and of the conductor.
-
-/** Prompt-level agent service the renderer consumes (mirror of bakers-ui's `TuiAgentService`). */
-interface TuiAgentService {
-  launch(o: {
-    group: string;
-    cwd: string;
-    prompt: string;
-    env: Record<string, string | undefined>;
-    isNew?: boolean | undefined;
-    label?: string | undefined;
-  }): Promise<{ id: string; group: string; label: string }>;
-  list(group: string): Promise<{ id: string; group: string; label: string }[]>;
-  focus(id: string): Promise<void>;
-  hide(group: string): Promise<void>;
-  kill(id: string): Promise<void>;
-}
 
 /** A dropsh program (only the `parseAsync` the launcher drives). */
 interface DropshProgram {
@@ -81,7 +54,6 @@ export interface RunBbUiOptions {
   connection: HomeConnection;
   cwd: string;
   project?: string | undefined;
-  agents?: TuiAgentService | undefined;
   currentUser?: string | undefined;
   /**
    * The `.bakers` dir of the project the ui was started in, when there is one.
@@ -163,11 +135,7 @@ interface BbUiModule {
 
 /** Test/composition seams for `bakers ui`. */
 export interface UiDeps {
-  /** Local operator identity; default: read the host context from disk. */
-  machine?: Partial<MachineContext>;
   workspaceRecovery?: WorkspaceRecoveryOptions;
-  /** herdr-backed agent host; default: `herdrAgentHost(exec herdr)`. */
-  agentHost?: AgentLaunchHost;
   /** The renderer launcher; default: the dynamically-resolved `runBbUi`. */
   runUi?: (opts: RunBbUiOptions) => Promise<void>;
   /** Host contract (resolveBases) for renderer resolution; default: cwd + this install. */
@@ -359,9 +327,7 @@ async function loadBbUiModule(
 
 /**
  * `bakers ui` — launch the interactive terminal UI. Resolves the connection
- * through core's shared ready loader (explicit → project → global), roots the agents in the project it was started in, reads the
- * machine context for identity + the agent binary, adapts a herdr-backed agent
- * host to the renderer's prompt-level service, and delegates to
+ * through core's shared ready loader (explicit → project → global) and delegates to
  * `@bakers-build/addon-bakers-ui`'s `runBbUi`. `--print-config` reports the
  * resolution and exits without launching. `$BB_UI_PLUGIN` overrides the
  * renderer module (dev).
@@ -444,17 +410,6 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
         readRemoteUrl: deps.readRemoteUrl ?? readOriginRemoteUrl,
       });
     }
-  } catch (err) {
-    fail(err instanceof Error ? err.message : String(err));
-    return;
-  }
-
-  const mcPath = machineContextPath();
-  // The machine context supplies the agent binary; it is NOT the connection
-  // any more — core resolves that. A stale file stops here, naming bakers init.
-  let machine: Partial<MachineContext>;
-  try {
-    machine = deps.machine ?? (await readMachineContext(mcPath));
   } catch (err) {
     fail(err instanceof Error ? err.message : String(err));
     return;
@@ -629,24 +584,6 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
     return;
   }
 
-  const agentCommand = resolveAgentCommand(machine);
-  const agentHost =
-    deps.agentHost ?? herdrAgentHost((args) => exec('herdr', args));
-  const agents: TuiAgentService = {
-    launch: (o) =>
-      agentHost.launch({
-        group: o.group,
-        cwd: o.cwd,
-        command: agentCommand(o.prompt),
-        env: o.env,
-        ...(o.label !== undefined ? { label: o.label } : {}),
-      }),
-    list: (group) => agentHost.list(group),
-    focus: (id) => agentHost.focus(id),
-    hide: (group) => agentHost.hide(group),
-    kill: (id) => agentHost.kill(id),
-  };
-
   let renderer: ((opts: unknown) => unknown) | undefined;
   const override = process.env.BB_UI_PLUGIN;
   if (override) {
@@ -689,7 +626,6 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
       connection,
       cwd: rooting.cwd,
       ...(project !== undefined ? { project } : {}),
-      agents,
       ...(currentUser ? { currentUser } : {}),
       ...(rooting.bakersDir ? { bakersDir: rooting.bakersDir } : {}),
       ...(resolved.workspace_id ? { workspaceId: resolved.workspace_id } : {}),

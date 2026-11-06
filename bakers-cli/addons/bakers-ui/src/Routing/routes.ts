@@ -30,7 +30,6 @@ import {
   AddonActionFormScreen,
   TicketAddonsScreen,
 } from '../Entity/ticket/Screen/ticket-addons.js';
-import { TicketAgentsScreen } from '../Entity/ticket/Screen/ticket-agents.js';
 import { TicketCommentsScreen } from '../Entity/ticket/Screen/ticket-comments.js';
 import { TicketDetailScreen } from '../Entity/ticket/Screen/ticket-detail.js';
 import { TicketPlanningScreen } from '../Entity/ticket/Screen/ticket-planning.js';
@@ -103,7 +102,6 @@ const BUILT_IN: readonly ScreenClass[] = [
   TeamMemberTicketsScreen,
   TeamMemberRunsScreen,
   TicketsScreen,
-  TicketAgentsScreen,
   WhoFilterScreen,
   RunsScreen,
   ProjectConductorsScreen,

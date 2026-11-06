@@ -30,8 +30,8 @@ import { type BootedTui, bootTui, settle } from '../tui-harness.js';
 // bar: the one of its own level.
 //
 //   root     my work, projects, project-picker    → My work · Projects · …
-//   project  overview, project, ticket-agents,    → Overview · Tickets ·
-//            project-runs                           Ticket-Agents · Runs · …
+//   project  overview, project, project-runs     → Overview · Tickets ·
+//                                                   Runs · …
 //   ticket   overview, comments, related, runs    → the sections of one open
 //                                                    ticket, in the bar row (BB-346)
 //
@@ -138,11 +138,11 @@ const conductorDoc = {
 // Typed, because the AC-3 row-count identity DERIVES the body height from this
 // very document via `tabViewTree` instead of hardcoding a frame length.
 //
-// The description deliberately QUOTES `Ticket-Agents`, which is what review
-// finding F2 was about: the first round asserted `Ticket-Agents` absent from the
-// whole frame and passed only because no fixture mentioned it. Against the real
-// BB-239 ticket, whose body quotes the label twice, that assertion would have
-// failed while AC-1 was perfectly satisfied. Every absence assertion below is
+// The description deliberately QUOTES a project tab label (`Conductors`), which
+// is what review finding F2 was about: the first round asserted such a label
+// absent from the whole frame and passed only because no fixture mentioned it.
+// Against the real BB-239 ticket, whose body quotes a label twice, that
+// assertion would have failed while AC-1 was perfectly satisfied. Every absence assertion below is
 // BAR-SCOPED, and this fixture is what proves it.
 const ticketDoc: TicketDetailDocument = {
   data: {
@@ -155,7 +155,7 @@ const ticketDoc: TicketDetailDocument = {
       derived_status: 'idle',
       workflow: 'bb_work',
       description:
-        'The ticket description body, quoting Ticket-Agents and Runs on purpose.',
+        'The ticket description body, quoting Conductors and Runs on purpose.',
     },
     relationships: { runs: { data: [] } },
   },
@@ -199,9 +199,8 @@ const CANDIDATES = [
 ];
 
 /**
- * Every read the kernel can make on these screens. No `agents` service, so the
- * Ticket-Agents screen lists nothing; every unmatched path answers an empty
- * collection, which is what makes `project-runs` deterministic.
+ * Every read the kernel can make on these screens. Every unmatched path
+ * answers an empty collection, which is what makes `project-runs` deterministic.
  */
 function fakeServices(
   /**
@@ -400,7 +399,7 @@ const SHIFT_TAB = '\x1b[Z';
  *
  * The bar is written as `' ' + <bar>`, so the bar's own column 0 is terminal
  * column 2. The project bar is `[Overview](10) '  ' Tickets(9) '  '
- * Ticket-Agents(15) '  ' Runs(6) …` — ` Runs ` at terminal columns 42..47.
+ * Runs(6) …` — ` Runs ` at terminal columns 25..30.
  */
 const click = async (
   tui: BootedTui,
@@ -415,8 +414,8 @@ const click = async (
 /** Terminal row 5 — the bar row on a screen that draws one (frame index 4). */
 /** 1-based tab row on a two-content-row bar screen (gap above tabs, BB-375). */
 const BAR_ROW = chromeRowOf(chromeShape(2, true), TAB_BAR_ID);
-/** Inside the project bar's ` Runs ` label (terminal columns 42–47). */
-const COL_RUNS = 44;
+/** Inside the project bar's ` Runs ` label (terminal columns 25–30). */
+const COL_RUNS = 27;
 /** Inside the project bar's `[Overview]`/` Overview ` label — the first tab. */
 const COL_OVERVIEW = 6;
 
@@ -463,7 +462,7 @@ const ticketBarRow = (activeId: string): string =>
 /**
  * Every bar the renderer could possibly write, on ALL THREE levels, with any tab
  * bracketed. This is what makes the absence assertions BAR-SCOPED (review
- * finding F2): a ticket body may legitimately quote `Ticket-Agents` or `Runs`,
+ * finding F2): a ticket body may legitimately quote `Conductors` or `Runs`,
  * so only a whole rendered BAR counts as "a bar is on screen".
  *
  * "Either level" is what this said while there were two, and it stayed while
@@ -919,27 +918,10 @@ describe('BB-239 AC-5 — the project screens carry the project tab bar', () => 
     await quit(tui);
   });
 
-  it('ticket-agents — [Ticket-Agents] bracketed, no root tab', async () => {
-    const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(TAB); // overview -> tickets
-    await tui.press(TAB); // tickets -> ticket-agents
-
-    expect(frameOf(tui)).toContain('Ticket-Agents');
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('ticket-agents'));
-    // BB-375 — SEPARATOR_ROWS = 0; body (frame/content) sits under the bar.
-    expect(rowsOf(tui)[4], 'gap above the bar').toBe('');
-    expect(rowsOf(tui)[BAR_ROW - 1]).toMatch(/\[/);
-    expect(rowsOf(tui)[BAR_ROW], 'frame under the bar').toMatch(/╭|│/);
-    expect(rootBarRows(tui)).toEqual([]);
-
-    await quit(tui);
-  });
-
   it('project-runs — [Runs] bracketed, no root tab', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
     await tui.press(TAB); // overview -> tickets
-    await tui.press(TAB); // tickets -> ticket-agents
-    await tui.press(TAB); // ticket-agents -> runs
+    await tui.press(TAB); // tickets -> runs
 
     expect(frameOf(tui)).toContain('bakers · runs');
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('runs'));
@@ -1004,8 +986,7 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     const { tui } = await boot(PROJECT_ROUTE, gate);
 
     await tui.press(TAB); // overview -> tickets
-    await tui.press(TAB); // tickets -> ticket-agents (synchronous)
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('ticket-agents'));
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('tickets'));
 
     await tui.press(TAB); // -> runs, parked on the gate
 
@@ -1040,8 +1021,7 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     const { tui } = await boot(PROJECT_ROUTE, gate);
 
     await tui.press(TAB); // overview -> tickets
-    await tui.press(TAB); // tickets -> ticket-agents
-    await tui.press(TAB); // ticket-agents -> runs, parked
+    await tui.press(TAB); // tickets -> runs, parked
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('runs'));
 
     reject?.(new Error('boom'));
@@ -1199,7 +1179,7 @@ describe('BB-239 AC-7 — the removed shortcuts no longer navigate', () => {
 describe('BB-239 AC-8 — no frame advertises a removed shortcut', () => {
   const DEAD = ['a agents', 'u runs', 'Tab/a agents', 'Tab/t tickets'];
 
-  it('My work, project, ticket-agents, project-runs and ticket are clean', async () => {
+  it('My work, project, project-tickets, project-runs and ticket are clean', async () => {
     // Each frame is captured while its screen is ON SCREEN and the string kept:
     // the renderer is torn down between boots, so a frame read afterwards would
     // read nothing at all rather than a transcript.
@@ -1210,9 +1190,9 @@ describe('BB-239 AC-8 — no frame advertises a removed shortcut', () => {
     const project = await boot(PROJECT_ROUTE);
     const projectFrame = frameOf(project.tui); // overview
     await project.tui.press(TAB); // overview -> tickets
-    const agentsFrame = frameOf(project.tui); // tickets (was ticket-agents)
-    await project.tui.press(TAB); // tickets -> ticket-agents
-    const runsFrame = frameOf(project.tui); // ticket-agents (was runs)
+    const ticketsFrame = frameOf(project.tui);
+    await project.tui.press(TAB); // tickets -> runs
+    const runsFrame = frameOf(project.tui);
     await quit(project.tui);
 
     const ticket = await boot(TICKET_ROUTE);
@@ -1222,7 +1202,7 @@ describe('BB-239 AC-8 — no frame advertises a removed shortcut', () => {
     for (const [name, text] of [
       ['my work', myWorkFrame],
       ['project', projectFrame],
-      ['ticket-agents', agentsFrame],
+      ['project-tickets', ticketsFrame],
       ['project-runs', runsFrame],
       ['ticket', ticketFrame],
     ] as const) {
@@ -1257,7 +1237,7 @@ describe('BB-239 AC-1..3 — the ticket detail screen draws exactly one tab bar'
 
     // BAR-SCOPED on purpose (review finding F2, and spec R1/R2). `Runs` is a
     // legitimate label of the ticket level's bar and this fixture's description
-    // quotes `Ticket-Agents` — exactly like the real BB-239 ticket. Only a
+    // quotes `Conductors`, a project-only label. Only a
     // whole rendered BAR counts, which is what lets the absence assertions below
     // stand beside a body that mentions the labels.
     expect(rootBarRows(tui), 'not the root level’s').toEqual([]);

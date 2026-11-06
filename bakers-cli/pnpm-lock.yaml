@@ -740,9 +740,6 @@ importers:
 
   ui:
     dependencies:
-      '@bakers-build/addon-herdr':
-        specifier: workspace:^
-        version: link:../addons/herdr
       '@bakers-build/addon-workspace':
         specifier: workspace:^
         version: link:../addons/workspace

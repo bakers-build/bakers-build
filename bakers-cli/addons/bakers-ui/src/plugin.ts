@@ -4,8 +4,7 @@ import { loadWorkspaceMemberships } from './Entity/workspace/Data/members.js';
 import { resolveRoute } from './route.js';
 import type { RendererServices, TuiOptions } from './types.js';
 
-/** Options the launcher passes into the factory (a superset of the injected
- *  intent-level agent service so `bakers ui` can drive launch/list/focus/…). */
+/** Options the launcher passes into the factory. */
 export type BbUiOptions = TuiOptions;
 
 // The dropsh `tui` renderer plugin: a single interactive renderer that hands off

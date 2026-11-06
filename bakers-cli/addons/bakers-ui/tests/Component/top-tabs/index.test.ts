@@ -8,11 +8,7 @@ import { buildRoutes } from '../../../src/Routing/routes.js';
 const routes = buildRoutes();
 it.each([
   ['root', 'projects', ' My work   [Projects]   Teams    Conductors '],
-  [
-    'project',
-    'tickets',
-    ' Overview   [Tickets]   Ticket-Agents    Runs    Conductors ',
-  ],
+  ['project', 'tickets', ' Overview   [Tickets]   Runs    Conductors '],
   ['ticket', 'comments', ' Overview    Planning   [History]   Runs '],
   ['team', 'members', ' Overview    Work   [Members]'],
   ['team-member', 'runs', ' Overview    Tickets   [Runs]'],

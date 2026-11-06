@@ -14,11 +14,9 @@ import {
   TICKET_TABLE,
   type TicketRow,
 } from '../../src/Entity/ticket/Data/tickets.js';
-import { AGENT_TABLE } from '../../src/Entity/ticket/Screen/ticket-agents.js';
 import { mountTree } from '../../src/Kernel/mount.js';
 import { THEME_SLOTS } from '../../src/lib/theme.js';
 import { columnNode, seamlessRowNode, textNode } from '../../src/lib/vnode.js';
-import type { HostedAgent } from '../../src/types.js';
 import { type BareHarness, createHarness } from '../tui-harness.js';
 
 /**
@@ -662,102 +660,9 @@ describe('BB-345 AC 5 — a free-text column grows on the conductors list too', 
   });
 });
 
-describe('BB-345 (re-entry) — the AGENTS list is the sixth configuration', () => {
-  // The surface the review returned the ticket over. `Agent/Component/agent-list`
-  // was a hand-written per-entity renderer with a fixed `LABEL_WIDTH = 32`, a
-  // `width: 0` second column, no `bold` anywhere and a `selected` sitting on each
-  // cell's CONTENT — so all three of this ticket's findings were live on the
-  // Ticket-Agents tab while the other five surfaces had them fixed. It is a
-  // `ListTable` configuration now, and the three claims are asserted here on the
-  // real renderer because none of them is visible to a text-level harness.
-  const AGENT: HostedAgent = {
-    id: 'p1',
-    group: 'keytec-bakers-platform',
-    // 45 columns — an ordinary agent label (they are built from the ticket's own
-    // title by `shortName`), and longer than the 32 the old renderer fixed the
-    // column at. A fixed 32 cut this every time; a grower shows it whole.
-    label: 'BB-345 render every list through one tab',
-  };
-
-  const agentsAt = async (
-    columns: number,
-    selectedIndex = -1,
-    rows: HostedAgent[] = [AGENT],
-  ): Promise<BareHarness> => {
-    const harness = await createHarness({ columns, rows: 6 });
-    live.push(harness);
-    mountTree(
-      harness.renderer,
-      harness.root,
-      listTableTree(AGENT_TABLE, rows, undefined, { selectedIndex }),
-    );
-    await harness.renderOnce();
-    return harness;
-  };
-
-  const agentChars = async (
-    columns: number,
-    rows: HostedAgent[] = [AGENT],
-  ): Promise<string[]> =>
-    (await agentsAt(columns, -1, rows))
-      .captureCharFrame()
-      .split('\n')
-      .map((line) => line.replace(/\s+$/, ''));
-
-  it('has bold header cells where its data row has none (finding 2)', async () => {
-    const lines = (await agentsAt(120)).captureSpans().lines as {
-      spans: { text: string; attributes: number }[];
-    }[];
-    expect(boldCells(lines[0])).toBeGreaterThan(0);
-    expect(boldCells(lines[1])).toBe(0);
-  });
-
-  for (const columns of [80, 120, 160]) {
-    it(`the selected agent row is ONE FOREGROUND_ACTIVE fg run across ${columns} columns`, async () => {
-      // Finding 1 on this tab: `selected` was a text attribute on each cell's
-      // content and the cells were not filled, so the highlight came back as one
-      // fragment per cell with a hole between them. BB-375: FOREGROUND_ACTIVE fg.
-      const lines = (await agentsAt(columns, 0)).captureSpans()
-        .lines as SpanLine[];
-      const run = runOf(lines[1], isActiveSelection);
-      expect(run.fragments).toBe(1);
-      expect(run.start).toBe(0);
-      expect(run.marked).toBe(run.painted);
-      expect(run.painted).toBe(columns);
-    });
-
-    it(`AGENT grows rather than cutting at 32, at ${columns} columns (finding 3)`, async () => {
-      const frame = await agentChars(columns);
-      // The label is whole and unmarked — the old fixed 32 cut it to
-      // `BB-345 render every list thro…` at every width, including 160.
-      expect(frame[1]).toContain(AGENT.label);
-      expect(frame[1]).not.toContain('…');
-      // The project slug behind it is whole too.
-      expect(frame[1]).toContain(AGENT.group);
-      // Nothing is painted past the right edge.
-      for (const line of frame)
-        expect(line.length).toBeLessThanOrEqual(columns);
-      // …and the columns are in the declared order.
-      expect(frame[0]?.indexOf('PROJECT')).toBeGreaterThan(
-        frame[0]?.indexOf('AGENT') ?? -1,
-      );
-    });
-  }
-
-  it('the columns do not move when the page`s data changes (spec D4)', async () => {
-    // The same guard the ticket list carries: a width read off the widest cell
-    // of the current page would satisfy AC 4 and shift the columns under the
-    // operator on every refresh.
-    const short = await agentChars(120, [{ ...AGENT, label: 'x' }]);
-    const long = await agentChars(120, [AGENT]);
-    expect(short[0]?.indexOf('PROJECT')).toBe(long[0]?.indexOf('PROJECT'));
-    expect(short[0]?.indexOf('PROJECT')).toBeGreaterThan(0);
-  });
-});
-
 describe('BB-345 (re-entry) — a `width: 0` column HONOURS its `max`', () => {
   // The latent trap the review found in a brand-new API, and the one behaviour
-  // change of this round outside the agents list. `tableRow` computes a grower's
+  // change of this round. `tableRow` computes a grower's
   // ellipsis against `column.max`, so a `width: 0, max: N` column MARKED its cut
   // at N — while `textNode`'s `width === 0` branch spread only `minWidth`, so the
   // cap itself was never handed to Yoga and the cell grew straight past it. The

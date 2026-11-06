@@ -4,27 +4,16 @@ import {
   type DropshProgram,
   runBbUi,
 } from '../src/launcher.js';
-import type { TuiAgentService } from '../src/types.js';
 
 // AC-4: the dropsh-tui invocation lives in the renderer launcher. With a faked
 // dropsh `buildProgram` (returning a program that records its argv) and a faked
 // renderer factory (recording its options), assert `runBbUi`:
 //  (a) builds the program from connection.authPlugins + the renderer instance,
-//  (b) passes agents/currentUser/ownConductorMachineId/createPrompt/project/cwd
+//  (b) passes currentUser/ownConductorMachineId/project/cwd
 //      into the renderer factory (→ the renderer's services),
 //  (c) runs the `--format tui search bb_project …` seed.
 
 const authPlugin = { id: 'session-oauth2' };
-
-function fakeAgents(): TuiAgentService {
-  return {
-    launch: async () => ({ id: 'a1', group: 'g', label: 'agent' }),
-    list: async () => [],
-    focus: async () => {},
-    hide: async () => {},
-    kill: async () => {},
-  };
-}
 
 /** A launcher run with a faked buildProgram + renderer; returns what was captured. */
 async function runWithFakes(over: Partial<BbUiLauncherOptions> = {}) {
@@ -46,10 +35,8 @@ async function runWithFakes(over: Partial<BbUiLauncherOptions> = {}) {
     },
     cwd: '/home/dev',
     project: 'bakers',
-    agents: fakeAgents(),
     currentUser: 'cw',
     ownConductorMachineId: 'cw-host-bakers',
-    createPrompt: 'work this',
     buildProgram: (o) => {
       builtWith = o;
       return program;
@@ -97,16 +84,15 @@ describe('runBbUi (BB-194 AC-4)', () => {
     ]);
   });
 
-  it('injects agents + identity + project + cwd into the renderer', async () => {
+  it('injects identity + project + cwd into the renderer', async () => {
     const { rendererOpts } = await runWithFakes();
     expect(rendererOpts).toMatchObject({
       cwd: '/home/dev',
       project: 'bakers',
       currentUser: 'cw',
       ownConductorMachineId: 'cw-host-bakers',
-      createPrompt: 'work this',
     });
-    expect(rendererOpts?.agents).toBeDefined();
+    expect(rendererOpts).not.toHaveProperty('agents');
   });
 
   // BB-391 (AC2), the INVERTED form of what this case used to assert. It used
@@ -150,19 +136,5 @@ describe('runBbUi (BB-194 AC-4)', () => {
     const { rendererOpts } = await runWithFakes();
     expect(rendererOpts).toBeDefined();
     expect('initialRoute' in (rendererOpts as object)).toBe(false);
-  });
-
-  it('never imports herdr — the agent host is injected (AC-3)', async () => {
-    // Structural: a fake agents service (no herdr) drives launch; the launcher
-    // only reads the injected `agents`, proving no herdr coupling.
-    const { rendererOpts } = await runWithFakes();
-    const agents = rendererOpts?.agents as TuiAgentService;
-    const a = await agents.launch({
-      group: 'g',
-      cwd: '/x',
-      prompt: 'p',
-      env: {},
-    });
-    expect(a).toEqual({ id: 'a1', group: 'g', label: 'agent' });
   });
 });

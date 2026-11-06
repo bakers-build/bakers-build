@@ -58,7 +58,6 @@ The file is transient and git-ignored; nothing in bakers.build writes it.
 | Tickets | `↑↓` select · `Enter` open ticket · `/` search · `s` state filter · `w` who · `o` owner · `p` parent · `m` mine · `x` closed filter · `c` clear · `e` edit · `y`/`Y` copy id/link · `←`/`→` page · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries and fall through to the body scroll at either end · `PgUp`/`PgDn` page the body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket · `f` freeze or unfreeze · `y`/`Y` copy id/link · `Esc` back |
 | Run detail | `↑↓` scroll · `e` cancel a claimed or running run · `Esc` back to the ticket's Runs tab · `q` quit |
-| Ticket-Agents | `↑↓` select · `Enter` switch to agent · `z` tiled overview · `x` close · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Runs | `↑↓` select · `Enter` open the run's ticket · `x` closed filter · `←`/`→` page · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Conductors | `↑↓` select · `Enter` open the conductor · `s`/`x` start/stop (mine only) · `m` mine filter · `c` clear · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Conductor detail | `Tab`/`Shift-Tab` cycle its tabs · `↑↓` select on Held work and Assigned · `Enter` opens the ticket · `Esc` back |

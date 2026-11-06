@@ -703,8 +703,9 @@ it('settling an assignment read after leaving Tickets cannot open its popup', as
 
   // BB-326: the raw SGR report is gone — OpenTUI parses the mouse itself,
   // and `mockMouse.click` sends press AND release. Coordinates are 0-BASED.
-  // BB-375 — tab bar is terminal row 6 (gap above tabs), so buffer y = 5.
-  await tui.mockMouse.click(44, 5);
+  // BB-375 — tab bar is terminal row 6 (gap above tabs), so buffer y = 5;
+  // x = 26 lands inside the project bar's ` Runs ` (terminal columns 25–30).
+  await tui.mockMouse.click(26, 5);
   await settle();
   h.releaseDetail();
   await settle();

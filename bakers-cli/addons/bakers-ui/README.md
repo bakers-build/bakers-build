@@ -3,8 +3,7 @@
 The bakers.build terminal UI: a dropsh `tui` renderer plugin (`bakers ui`). It opens on
 **My work**, the current operator's open assigned tickets, and also shows
 project/team current work, a searchable/filterable ticket list, and ticket
-detail, and lists the project's **ticket agents** — hideable, re-attachable
-agent sessions.
+detail.
 
 ## Navigation — seven scopes
 
@@ -16,7 +15,7 @@ tab navigation.
 | Level | Screens | Tabs |
 |-------|---------|------|
 | Root | Personal work, projects, teams, conductors, and workspace members for leads | **My work** · **Projects** · **Teams** · **Members** (workspace lead only) · **Conductors** |
-| Project | Project-scoped screens | **Overview** · **Work** · **Tickets** · **Ticket-Agents** · **Runs** · **Conductors** |
+| Project | Project-scoped screens | **Overview** · **Work** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | Independent ticket screens | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Team | Team current work and roster | **Overview** · **Work** · **Members** |
 | Workspace member | A selected workspace member, for workspace leads only | **Overview** · **Tickets** · **Runs** |
@@ -90,7 +89,6 @@ workspace lead; its member routes use workspace-wide user figures and lists.
 | Project | `↑↓` select · `Enter` open ticket · `Tab`/`Shift-Tab` cycle tabs · `/` search · `s` status filter · `t` type filter · `p` parent filter · `x` closed filter · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
 | Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel) · `Esc` back |
 | Run detail | `↑↓` scroll · `e` cancel a claimed/running run · `Esc` back to the ticket's Runs tab · `q` quit |
-| Ticket-Agents | `↑↓` select · `Enter` switch to agent (zoom full-screen) · `z` tiled overview · `r` retry · `x` close · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Runs | `↑↓` select · `Enter` open the run's ticket (Runs sub-tab) · `Tab`/`Shift-Tab` cycle tabs · `x` closed filter · `R` reload · `←`/`→` previous/next page · `Esc` back |
 
 ### Auto-refresh (`.bakers/ui-refresh`)
@@ -369,37 +367,12 @@ the rows on screen.
 > (~36 s) for the closed ones. The walk and its read budget are **deleted**, not
 > bypassed.
 
-## herdr as the durable backend
-
-The TUI drives agents at the level of **intent**, never mechanics. It says
-`launch / list / focus / hide / kill` keyed by an opaque `group` (the project)
-and an agent `id` — it never names panes, tabs, splits or zoom. The renderer owns
-this seam itself: the prompt-level **`TuiAgentService`** contract lives in this
-package (`src/types.ts`), NOT in `@bakers-build/core` (BB-194 — core is the
-conductor engine contract, not a TUI concern). `@bakers-build/addon-herdr` provides
-the impl (`herdrAgentHost`, typed against its own local host interface + exposed
-on `HerdrWorkspace.agentHost`) and owns the whole layout policy: one durable tab
-per group (`bakers-agents:<group>`), a new agent splits off a live pane, the shown
-agent is zoomed, hide un-zooms + returns to the caller. Agents survive a TUI
-restart — `list(group)` rediscovers them from the live tab, so the
-`Ticket-Agents` screen is exactly the host's live set. The renderer never imports
-herdr; the conductor `bakers ui` entry injects the adapted host.
-
-Why intent, not the earlier pane-level host: we don't know what the next herdr
-does. This contract survives a different pane model or layout engine unchanged —
-only `herdrAgentHost` swaps (and, when herdr grows real `herdr agent …` verbs, it
-shrinks further). The conductor launcher only adapts the prompt→command step
-(config picks the agent binary) and forwards to `agentHost`; no herdr CLI in the
-conductor, none in this plugin (it consumes only `TuiAgentService`, `src/types.ts`).
-
 ## Home-rooted launcher — `runBbUi(opts)`
 
 This package owns the dropsh-tui invocation (BB-194 AC-4). `runBbUi` builds
 the dropsh program (renderer + the connection's auth plugins), runs the trivial
 `--format tui search bb_project` seed (the renderer discards it and boots
-My work), and injects the given agent host into the
-renderer's `services`. It is **herdr-agnostic** (the `agents` impl is injected,
-never imported) and **dropsh-decoupled** (dropsh's `buildProgram` is injected, so
+My work). It is **dropsh-decoupled** (dropsh's `buildProgram` is injected, so
 this package needs no `dropsh` dependency — AC-5):
 
 ```ts
@@ -408,9 +381,8 @@ import { buildProgram } from 'dropsh';
 
 await runBbUi({
   connection,          // { baseUrl, jsonapiPrefix?, authPlugins, configPath? }
-  cwd,                 // repo/home root the launched agents run in
+  cwd,                 // repo/home root `bakers ui` was started in
   project,             // default project (opaque group), from the registry
-  agents,              // herdr-backed host, already adapted prompt→command
   currentUser,         // preselected new-ticket assignee
   ownConductorMachineId,
   buildProgram,        // dropsh's real buildProgram, injected
@@ -420,8 +392,8 @@ await runBbUi({
 
 The `bakers ui` command is a **thin, home-rooted entry** (AC-1): it reads the
 user-global machine context (connection + identity) and the conductor registry
-(default project) — NOT a project `conductor.config.js` — builds a herdr agent
-host, adapts prompt→command, and delegates to `runBbUi`. That one composition
+(default project) — NOT a project `conductor.config.js` — and delegates to
+`runBbUi`. That one composition
 point is the only wiring left in the command.
 
 **Which dropsh config it reads** (`connection.configPath` → `$DROPSH_CONFIG`):
@@ -446,9 +418,7 @@ only its public `buildProgram` + config seam are used (AC-5).
 ## Testing
 
 Vitest covers the pure modules (liveness/status derivation, the dropsh reads, the
-seven `ListTable` configurations — the Ticket-Agents
-list among them, which is where `Agent/Component/agent-list/` went in BB-345 —
-and the ticket/run render blocks)
+`ListTable` configurations and the ticket/run render blocks)
 and, under `tests/Kernel/`, boots the **real** `runTicketTui` over a fake TTY pair
 at 120×40 — emitting real keystrokes and real SGR mouse reports and asserting on
 the real rendered transcript, including the row geometry at several widths against
@@ -465,8 +435,6 @@ form for this addon had been passing by running no tests at all. Judge either
 form by its **exit code**; `--reporter=basic` no longer exists in vitest 4, so a
 grep verdict goes silently blind.
 
-`@bakers-build/addon-herdr` covers the `herdrAgentHost` layout policy + command
-construction (mocked exec). The interactive PTY walk — start / hide / re-open /
-parallel / errors, and the click/scroll walk over a real emulator — is
+The click/scroll walk over a real emulator is
 spec-designated **manual acceptance** (a terminal, not a browser, so no
 Playwright-BDD; same as BB-175).

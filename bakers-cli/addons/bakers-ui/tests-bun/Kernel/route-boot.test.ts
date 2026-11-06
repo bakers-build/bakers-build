@@ -7,10 +7,8 @@ import { displayWidth } from '../../src/lib/width.js';
 import type {
   Collection,
   DropshClient,
-  HostedAgent,
   RendererServices,
   ResolvedRoute,
-  TuiAgentService,
 } from '../../src/types.js';
 import {
   chromeRowCount,
@@ -361,22 +359,6 @@ function fakeServices(
     paths,
     baseUrl: 'https://bakers.example',
     currentUser: 'cw',
-  };
-}
-
-/** An agent host with a fixed live list — the Ticket-Agents screen's input. */
-function fakeAgents(labels: string[]): TuiAgentService {
-  const rows: HostedAgent[] = labels.map((label, i) => ({
-    id: `agent-${i}`,
-    group: 'bakers',
-    label,
-  }));
-  return {
-    launch: async () => rows[0] as HostedAgent,
-    list: async () => rows,
-    focus: async () => {},
-    hide: async () => {},
-    kill: async () => {},
   };
 }
 
@@ -881,7 +863,7 @@ const click = async (tui: BootedTui, row: number, col = 12): Promise<void> => {
  *
  * BB-239 removed the `a` / `u` letter shortcuts, so `Tab` is the keyboard route
  * — one keystroke per step of the registry order, which BB-256 extended to
- * `overview → tickets → ticket-agents → runs`. A project route LANDS on
+ * `overview → tickets → runs`. A project route LANDS on
  * `overview`.
  * The settle per step (inside `press`) is load-bearing, not decoration:
  * `handleKey` returns early while `loading` is true, so a second keystroke sent
@@ -1043,8 +1025,7 @@ const bodyBounds = (rows: string[]): { first: number; end: number } => {
         row.includes('Tickets') ||
         row.includes('Projects') ||
         row.includes('Overview') ||
-        row.includes('Conductors') ||
-        row.includes('Ticket-Agents')),
+        row.includes('Conductors')),
   );
   let first =
     bar >= 0 ? bar + 1 + SEPARATOR_ROWS : chromeRowCount(chromeShape(2, true));
@@ -1125,7 +1106,7 @@ const selectedRow = (tui: BootedTui): string => {
   return hit;
 };
 
-/** Frame top border + table header — projects/agents frame-only lists. */
+/** Frame top border + table header — the projects frame-only list. */
 const LIST_TABLE_HEADER_ROW = FIRST_BODY_ROW + TICKETS_TABLE_FRAME_TOP;
 /**
  * Runs: filter + frame top + header (count/page are header meta).
@@ -1159,13 +1140,9 @@ interface Tty extends BootedTui {
 async function bootTty(
   route?: ResolvedRoute,
   overrides: ServiceOverrides = {},
-  agents?: TuiAgentService,
   columns?: number,
 ): Promise<Tty> {
   const services = fakeServices(overrides);
-  // Before the boot, as it always was: the kernel reads `services.agents` while
-  // it builds its environment.
-  if (agents) services.agents = agents;
   const tui = await bootTui({
     services,
     tui: { ...(route ? { route } : {}) },
@@ -1215,10 +1192,9 @@ async function quit(tui: BootedTui): Promise<void> {
 /** Boot with no route and land on the PROJECTS OVERVIEW (one Tab from root). */
 async function bootProjects(
   overrides: ServiceOverrides = {},
-  agents?: TuiAgentService,
   columns?: number,
 ): Promise<Tty> {
-  const tty = await bootTty(undefined, overrides, agents, columns);
+  const tty = await bootTty(undefined, overrides, columns);
   await tabTo(tty, 1);
   return tty;
 }
@@ -1226,10 +1202,9 @@ async function bootProjects(
 /** Boot a project route and land on its TICKET LIST (one Tab from its Overview). */
 async function bootProjectTickets(
   overrides: ServiceOverrides = {},
-  agents?: TuiAgentService,
   columns?: number,
 ): Promise<Tty> {
-  const tty = await bootTty(PROJECT_ROUTE, overrides, agents, columns);
+  const tty = await bootTty(PROJECT_ROUTE, overrides, columns);
   await tabTo(tty, 1);
   return tty;
 }
@@ -1356,7 +1331,6 @@ describe('BB-241 — the wheel scrolls the viewport (AC-3)', () => {
         view: 'full',
       },
       {},
-      undefined,
       80,
     );
     // Description starts expanded so the long fixture overflows immediately.
@@ -1388,7 +1362,6 @@ describe('BB-241 — the wheel scrolls the viewport (AC-3)', () => {
         view: 'full',
       },
       {},
-      undefined,
       80,
     );
     const top = bodyRows(tui);
@@ -1469,24 +1442,12 @@ describe('BB-241 — a left click selects the row it landed on (AC-4)', () => {
     await quit(tui);
   });
 
-  it('a click selects the right entry on ticket-agents and project-runs', async () => {
-    const agentsTui = await bootTty(
-      PROJECT_ROUTE,
-      { tickets: clickTicketListDoc },
-      fakeAgents(['agent-one', 'agent-two', 'agent-three']),
-    );
-    await tabTo(agentsTui, 2);
-    expect(frameOf(agentsTui)).toContain('AGENT');
-    await click(agentsTui, LIST_TABLE_HEADER_ROW + 1 + 1);
-    expect(selectedRow(agentsTui)).toContain('agent-two');
-
-    await quit(agentsTui);
-
+  it('a click selects the right entry on project-runs', async () => {
     const runsTui = await bootTty(PROJECT_ROUTE, {
       tickets: clickTicketListDoc,
       runs: runListDoc,
     });
-    await tabTo(runsTui, 3);
+    await tabTo(runsTui, 2);
     expect(frameOf(runsTui)).toContain('RUN');
     await click(runsTui, RUNS_TABLE_HEADER_ROW + 1 + 2);
     expect(selectedRow(runsTui)).toContain('#903');
@@ -1729,34 +1690,12 @@ describe('BB-241 — keyboard navigation is unchanged on every list screen (AC-8
     await quit(tui);
   });
 
-  it('ticket-agents: j/k/g/G move the selection and Enter switches', async () => {
-    const tui = await bootTty(
-      PROJECT_ROUTE,
-      { tickets: clickTicketListDoc },
-      fakeAgents(['agent-one', 'agent-two', 'agent-three']),
-    );
-    await tabTo(tui, 2);
-    expect(selectedRow(tui)).toContain('agent-one');
-
-    await tui.press('j');
-    expect(selectedRow(tui)).toContain('agent-two');
-    await tui.press('G');
-    expect(selectedRow(tui)).toContain('agent-three');
-    await tui.press('g');
-    expect(selectedRow(tui)).toContain('agent-one');
-
-    await tui.press('\r');
-    expect(statusBar(tui)).toContain('switched to');
-
-    await quit(tui);
-  });
-
   it('project-runs: j/k/g/G move the selection and Enter opens the ticket', async () => {
     const tui = await bootProjectTickets({
       tickets: clickTicketListDoc,
       runs: runListDoc,
     });
-    await tabTo(tui, 2);
+    await tabTo(tui, 1);
     expect(selectedRow(tui)).toContain('#901');
 
     await tui.press('j');
@@ -1841,8 +1780,8 @@ describe('BB-241 — keyboard navigation is unchanged on every list screen (AC-8
 //
 //   row 5: ' ' + topTabBar(active) ⇒ in-bar offset = col - 2
 //          the project bar is '[Overview]'(10) '  ' ' Tickets '(9) '  '
-//          ' Ticket-Agents '(15) '  ' ' Runs '(6) ⇒ Overview cols 2..11 ·
-//          Tickets cols 14..22 · Ticket-Agents cols 25..39 · Runs cols 42..47;
+//          ' Runs '(6) ⇒ Overview cols 2..11 · Tickets cols 14..22 ·
+//          Runs cols 25..30;
 //          and the root bar is '[My work]'(9) '  ' ' Projects '(10) ⇒
 //          Projects cols 13..22.
 //   ticket level (BB-346): the same COMPOSITION, with
@@ -1870,13 +1809,12 @@ const TICKET_SHAPE = chromeShape(2, true);
 const TICKET_BAR_ROW = chromeRowOf(TICKET_SHAPE, TAB_BAR_ID);
 /** First body row (1-based) — framed top under the bar (SEPARATOR_ROWS = 0). */
 const TICKET_BODY_ROW = chromeRowCount(TICKET_SHAPE) + 1;
-// The project bar: Overview(1) Tickets(20) Ticket-Agents Runs(40) Conductors(50).
-// Overview: cols 2–11 · Tickets: cols 14–22 · Ticket-Agents: cols 25–39 ·
-// Runs: cols 42–47 · Conductors: cols 50–61.
+// The project bar: Overview(1) Tickets(20) Runs(40) Conductors(50).
+// Overview: cols 2–11 · Tickets: cols 14–22 · Runs: cols 25–30 ·
+// Conductors: cols 33–44.
 const COL_TOP_OVERVIEW = 6; // Overview column (first tab)
 const COL_TOP_TICKETS = 18; // Tickets column
-const COL_TOP_AGENTS = 32; // Ticket-Agents column
-const COL_TOP_RUNS = 44; // Runs column
+const COL_TOP_RUNS = 27; // Runs column
 /** The root bar's second tab sits where the project bar's `Tickets` does. */
 const COL_TOP_PROJECTS = 18;
 /** Root bar: My work 2–10 · Projects 13–22 · Teams 25–31 · Conductors 34–45. */
@@ -1899,54 +1837,51 @@ const COL_DETAIL_RUNS_LAST = 41;
  */
 const COL_BAR_EMPTY = 60;
 /**
- * Past the last label on the PROJECT bar specifically. BB-450 added
- * `Conductors` as its fifth tab, so 60 — past `Runs` but inside
- * `[Conductors]` (columns 51..62) — is no longer empty on this bar; the
- * ticket-level bar's four tabs are unaffected and keep using
- * {@link COL_BAR_EMPTY}.
+ * Past the last label on the PROJECT bar specifically, kept well clear of
+ * `[Conductors]` (columns 33..44) should the bar grow again; the ticket-level
+ * bar keeps using {@link COL_BAR_EMPTY}.
  */
 const COL_PROJECT_BAR_EMPTY = 90;
 
 describe('BB-241 — the top tab bar is clickable (AC-11)', () => {
   it('a click on a top tab switches to it', async () => {
-    const tui = await bootTty(
-      PROJECT_ROUTE,
-      { tickets: clickTicketListDoc, runs: runListDoc },
-      fakeAgents(['agent-one', 'agent-two']),
-    );
-
-    await click(tui, TOP_TAB_ROW, COL_TOP_AGENTS);
-    expect(frameOf(tui), 'the Ticket-Agents screen renders').toContain(
-      'agent-one',
-    );
-    expect(frameOf(tui)).toContain('[Ticket-Agents]');
+    const tui = await bootTty(PROJECT_ROUTE, {
+      tickets: clickTicketListDoc,
+      runs: runListDoc,
+    });
 
     await click(tui, TOP_TAB_ROW, COL_TOP_RUNS);
     expect(frameOf(tui), 'the run table renders').toContain('#901');
     expect(frameOf(tui)).toContain('[Runs]');
 
+    await click(tui, TOP_TAB_ROW, COL_TOP_TICKETS);
+    expect(frameOf(tui), 'the ticket table renders').toContain(
+      CLICK_TICKETS[0]?.identifier ?? '',
+    );
+    expect(frameOf(tui)).toContain('[Tickets]');
+
     await quit(tui);
   });
 
-  // BB-239 re-authors the KEY half: the key that reaches Ticket-Agents is `Tab`,
+  // BB-239 re-authors the KEY half: the key that reaches Runs is `Tab`,
   // not `a` (AC-7 removed the letter shortcuts). What the test asserts is unchanged
   // and is exactly what matters — click and key converge on ONE code path, so they
   // cannot drift into two answers.
   it('a click on a top tab reaches the same state its key does', async () => {
-    const clicked = await bootProjectTickets(
-      { tickets: clickTicketListDoc },
-      fakeAgents(['agent-one', 'agent-two']),
-    );
-    await click(clicked, TOP_TAB_ROW, COL_TOP_AGENTS);
+    const clicked = await bootProjectTickets({
+      tickets: clickTicketListDoc,
+      runs: runListDoc,
+    });
+    await click(clicked, TOP_TAB_ROW, COL_TOP_RUNS);
     // Styled, so the convergence covers the SELECTION as well as the text —
     // exactly what the transcript's inline escapes used to cover.
     const byClick = styledFrame(clicked);
     await quit(clicked);
 
-    const keyed = await bootProjectTickets(
-      { tickets: clickTicketListDoc },
-      fakeAgents(['agent-one', 'agent-two']),
-    );
+    const keyed = await bootProjectTickets({
+      tickets: clickTicketListDoc,
+      runs: runListDoc,
+    });
     await tabTo(keyed, 1);
     expect(styledFrame(keyed), 'the click and `Tab` converge').toBe(byClick);
 
@@ -2089,17 +2024,17 @@ describe('a tab click cannot strand the TUI in search mode (AC-11)', () => {
     // unreachable from the keyboard (`a`/`t`/`u`/Tab are all swallowed while
     // typing), so the click invented it.
     //
-    // BB-239 re-authors the RECOVERY PROBE only. `t` used to be the
-    // Ticket-Agents screen's "back to Tickets" key; AC-7 removed it, so the probe
-    // is `Tab`, which wraps `ticket-agents → runs → tickets`. Same question — does
-    // the keyboard still work after the click — asked with a key that exists.
+    // BB-239 re-authors the RECOVERY PROBE only. AC-7 removed the letter
+    // shortcuts, so the probe is `Tab`, which wraps `runs → conductors →
+    // overview → tickets`. Same question — does the keyboard still work after
+    // the click — asked with a key that exists.
     //
     // BB-256: on the project's TICKET LIST, which is where `/` is bound — a
     // project route lands on Overview, where it is not.
-    const tui = await bootProjectTickets(
-      { tickets: clickTicketListDoc },
-      fakeAgents(['agent-one', 'agent-two']),
-    );
+    const tui = await bootProjectTickets({
+      tickets: clickTicketListDoc,
+      runs: runListDoc,
+    });
 
     await tui.press('/');
     await tui.press('a');
@@ -2108,15 +2043,13 @@ describe('a tab click cannot strand the TUI in search mode (AC-11)', () => {
       'search: ab',
     );
 
-    await click(tui, TOP_TAB_ROW, COL_TOP_AGENTS);
-    expect(frameOf(tui), 'the Ticket-Agents screen renders').toContain(
-      'agent-one',
-    );
+    await click(tui, TOP_TAB_ROW, COL_TOP_RUNS);
+    expect(frameOf(tui), 'the run table renders').toContain('#901');
 
-    // Four `Tab`s wrap Ticket-Agents → Runs → Conductors → Overview →
-    // Tickets. If search mode survived the click they are typed into the filter
-    // instead and nothing moves.
-    await tabTo(tui, 4);
+    // Three `Tab`s wrap Runs → Conductors → Overview → Tickets. If search mode
+    // survived the click they are typed into the filter instead and nothing
+    // moves.
+    await tabTo(tui, 3);
     expect(frameOf(tui), 'the keyboard still works after the click').toContain(
       '[Tickets]',
     );
@@ -2158,19 +2091,18 @@ describe('a tab click cannot strand the TUI in search mode (AC-11)', () => {
 });
 
 /** Open the ticket detail the way a user does: from a project's ticket table, so
- *  the project context the Runs / Ticket-Agents tabs need really exists. Booting
- *  a bare `ticket` route leaves `currentProjectId` unset, and then BOTH tabs are
+ *  the project context the Runs tab needs really exists. Booting
+ *  a bare `ticket` route leaves `currentProjectId` unset, and then the tab is
  *  inert for a reason that has nothing to do with the predicate under test. */
 async function bootTicketDetailFromProject(
   overrides: ServiceOverrides = {},
-  agents?: TuiAgentService,
 ): Promise<Tty> {
   // A project route lands on its Overview, where Enter selects nothing — one
   // Tab first, to the ticket list Enter actually opens from.
-  const tty = await bootProjectTickets(
-    { tickets: clickTicketListDoc, ...overrides },
-    agents,
-  );
+  const tty = await bootProjectTickets({
+    tickets: clickTicketListDoc,
+    ...overrides,
+  });
   await tty.press('\r');
   return tty;
 }
@@ -2225,7 +2157,6 @@ describe('the ticket detail screen’s bar row reaches ITS OWN tabs only (AC-14)
     for (const col of [
       COL_TOP_OVERVIEW,
       COL_TOP_TICKETS,
-      COL_TOP_AGENTS,
       COL_TOP_RUNS,
       COL_BAR_EMPTY,
     ]) {
@@ -2240,7 +2171,6 @@ describe('the ticket detail screen’s bar row reaches ITS OWN tabs only (AC-14)
     for (const col of [
       COL_TOP_OVERVIEW,
       COL_TOP_TICKETS,
-      COL_TOP_AGENTS,
       COL_TOP_RUNS,
       COL_BAR_EMPTY,
     ]) {
@@ -2275,16 +2205,13 @@ describe('the ticket detail screen’s bar row reaches ITS OWN tabs only (AC-14)
   // stays clickable, so the screen did not lose mouse navigation, it lost only the
   // bar that was not its own.
   it('its own bar is still clickable, and it is not another level’s', async () => {
-    const tui = await bootTicketDetailFromProject(
-      {},
-      fakeAgents(['agent-one']),
-    );
+    const tui = await bootTicketDetailFromProject({ runs: runListDoc });
     // Aimed at `TICKET_BAR_ROW`: since BB-369 D1 the ticket's bar is a row below
     // every other level's, so the click reaches the ticket's Runs section and
     // never another level.
     await click(tui, TICKET_BAR_ROW, COL_DETAIL_RUNS);
-    expect(frameOf(tui), 'no Ticket-Agents screen from here').not.toContain(
-      'agent-one',
+    expect(frameOf(tui), 'no project run table from here').not.toContain(
+      '#901',
     );
     expect(frameOf(tui), 'a section of this ticket instead').toContain(
       '[Runs]',
@@ -2299,7 +2226,7 @@ describe('the ticket detail screen’s bar row reaches ITS OWN tabs only (AC-14)
     // stops at the separator, so it covers the bar row itself.
     for (const row of rowsOf(tui).slice(0, TICKET_BODY_ROW - 1)) {
       expect(row, 'no chrome row renders a top-level bar').not.toContain(
-        'Ticket-Agents',
+        'Conductors',
       );
     }
 
@@ -2322,13 +2249,13 @@ describe('a bar click acts at the current level (AC-13)', () => {
     expect(tabBarRow(tui)).toContain('Projects');
     expect(tabBarRow(tui)).toContain('Teams');
     expect(tabBarRow(tui)).not.toContain('Users');
-    expect(tabBarRow(tui)).not.toContain('Ticket-Agents');
+    expect(tabBarRow(tui)).not.toContain('Tickets');
     const before = styledFrame(tui);
     const painted = tui.paints();
 
     // Columns past the root bar must stay inert (not resolve to a project tab).
-    // The root bar is ~46 columns wide, so COL_TOP_RUNS (44) sits INSIDE it
-    // (on Conductors); only past-the-bar empties remain safe for this sweep.
+    // The root bar is ~46 columns wide, so COL_TOP_RUNS (27) sits INSIDE it
+    // (on Teams); only past-the-bar empties remain safe for this sweep.
     for (const col of [COL_BAR_EMPTY]) {
       await click(tui, TOP_TAB_ROW, col);
       expect(styledFrame(tui), `column ${col}`).toBe(before);
@@ -2342,7 +2269,7 @@ describe('a bar click acts at the current level (AC-13)', () => {
     // A root Conductors click remains a ROOT tab, never a project one.
     await click(tui, TOP_TAB_ROW, COL_ROOT_CONDUCTORS);
     expect(tabBarRow(tui), 'the root bar, still').toContain('[Conductors]');
-    expect(frameOf(tui)).not.toContain('Ticket-Agents');
+    expect(tabBarRow(tui)).not.toContain('Tickets');
 
     // The root bar's OTHER tab is live, which is what makes the sweep above a
     // real result rather than a bar that refuses every click.
@@ -2423,7 +2350,6 @@ describe('a truncated tab bar publishes no span the user cannot see (AC-11)', ()
     const tui = await bootTty(
       PROJECT_ROUTE,
       { tickets: clickTicketListDoc, runs: runListDoc },
-      undefined,
       20,
     );
     expect(tabBarRow(tui), '` Runs ` is not on screen').not.toContain(' Runs ');
@@ -2442,7 +2368,6 @@ describe('a truncated tab bar publishes no span the user cannot see (AC-11)', ()
     const tui = await bootTty(
       PROJECT_ROUTE,
       { tickets: clickTicketListDoc, runs: runListDoc },
-      undefined,
       20,
     );
 
@@ -2479,7 +2404,6 @@ describe('a truncated tab bar publishes no span the user cannot see (AC-11)', ()
     const tui = await bootTty(
       { screen: 'ticket', ticketId: TICKET, view: 'full' },
       {},
-      undefined,
       40,
     );
     expect(
@@ -2504,7 +2428,6 @@ describe('a truncated tab bar publishes no span the user cannot see (AC-11)', ()
     const tui = await bootTty(
       { screen: 'ticket', ticketId: TICKET, view: 'full' },
       {},
-      undefined,
       35,
     );
     await click(tui, TICKET_BAR_ROW, 36);
@@ -2520,7 +2443,6 @@ describe('a truncated tab bar publishes no span the user cannot see (AC-11)', ()
     const tui = await bootTty(
       { screen: 'ticket', ticketId: TICKET, view: 'full' },
       {},
-      undefined,
       40,
     );
     await click(tui, TICKET_BAR_ROW, COL_DETAIL_PLANNING);

@@ -110,7 +110,6 @@ describe('relative tab registration', () => {
     expect(routes.tabs('project').map((t) => t.id)).toEqual([
       'overview',
       'tickets',
-      'ticket-agents',
       'runs',
       'conductors',
     ]);
@@ -156,6 +155,7 @@ it('offers no statistics or ticket creation at any scope, react experiment inclu
     'team.member.stats',
     'ticket.react',
     'ticket.create',
+    'project.ticket-agents',
   ]) {
     expect(routes.ids()).not.toContain(id);
   }

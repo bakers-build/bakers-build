@@ -1,6 +1,6 @@
 # bakers ui
 
-`bakers ui` is bakers.build's terminal cockpit: it opens on **My work**, your open assigned tickets, and adds projects, teams, ticket lists, ticket and run detail, conductors and ticket agents, all against one control plane.
+`bakers ui` is bakers.build's terminal cockpit: it opens on **My work**, your open assigned tickets, and adds projects, teams, ticket lists, ticket and run detail and conductors, all against one control plane.
 
 This page covers how the cockpit connects and what each screen shows; deep links, auto-refresh and every key are on [bakers ui keys](/addons/bakers-ui-keys), and a first walk-through is in [Terminal UI](/addons/bakers-ui/usage).
 
@@ -46,7 +46,7 @@ Navigation has seven tab scopes. Tabbed screens show the bar for their current s
 | Level | Tabs |
 |-------|------|
 | Root | **My work** · **Projects** · **Teams** · **Members** (workspace lead only) · **Conductors** |
-| Project | **Overview** · **Work** · **Tickets** · **Ticket-Agents** · **Runs** · **Conductors** |
+| Project | **Overview** · **Work** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Team | **Overview** · **Work** · **Members** |
 | Workspace member | **Overview** · **Tickets** · **Runs** |
