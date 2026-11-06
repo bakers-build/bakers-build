@@ -192,32 +192,9 @@ function harness(opts: HarnessOpts = {}) {
     return c;
   };
 
-  /**
-   * BB-256 — the minimum `/jsonapi/bakers/statistics` document the Dashboard needs
-   * to render. Scoped shape (no `by_project`), because every boot here carries a
-   * `project` route.
-   */
-  const statsDoc = () => ({
-    data: {
-      type: 'bakers-statistics',
-      id: PROJECT,
-      attributes: {
-        generated: '2026-08-02T10:05:57+00:00',
-        windows: { day: 86400, week: 604800, month: 2592000 },
-        tickets: { total: { day: 0, week: 0, month: 0 }, by_user: [] },
-        runs: { total: { day: 0, week: 0, month: 0 }, by_user: [] },
-      },
-    },
-  });
-
   const read: DropshClient = {
     collection: () => emptyCollection(),
     get: async (path: string) => {
-      // BB-256: a `project` route now lands on the project's Dashboard, which
-      // reads this endpoint before `openList` Tabs on to the ticket list. Served
-      // and deliberately NOT recorded in `rec.reads` — several tests below assert
-      // on the exact read sequence, and the Dashboard's read is not theirs.
-      if (path === 'bakers/statistics') return statsDoc();
       if (path === 'bb_project/bb_project') {
         return {
           data: [
@@ -351,9 +328,8 @@ async function openList(
   over: Partial<TuiOptions> = {},
 ) {
   const tui = await bootProject(h, over);
-  // BB-256 spec D12, a disclosed deviation: a deep-linked project lands on its
-  // DASHBOARD, so the ticket list — what every test below is about — is one Tab
-  // away. Tabbing here rather than routing around it keeps these tests on the
+  // A deep-linked project lands on its OVERVIEW, so the ticket list — what
+  // every test below is about — is one Tab away. Tabbing here rather than routing around it keeps these tests on the
   // path a human actually walks.
   await tui.press('\t');
   const press = (key: string): Promise<void> => tui.press(key);
@@ -578,7 +554,7 @@ it('AC-5: `e` is inert on an EMPTY list — no read, no popup', async () => {
 it('AC-5: `e` is inert while the list is still LOADING', async () => {
   // BB-326 — RE-STAGED, because the old staging could not reach the state it
   // names. It booted the project route and pressed `e` before settling, but
-  // BB-256 put the DASHBOARD on that route: the key landed on a screen that
+  // the project route lands on Overview: the key landed on a screen that
   // has no `e` at all, so the case proved nothing about a loading ticket list.
   // Here the LIST read itself is held, so the Tickets screen really is in its
   // loading state when the key arrives.

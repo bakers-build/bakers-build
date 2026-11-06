@@ -4,7 +4,6 @@ import { RunsScreen } from '../../src/Entity/run/Screen/runs.js';
 import { TicketAgentsScreen } from '../../src/Entity/ticket/Screen/ticket-agents.js';
 import { TicketsScreen } from '../../src/Entity/ticket/Screen/tickets.js';
 import type { Screen, ScreenContext } from '../../src/Screen/screen.js';
-import { ProjectStatsScreen } from '../../src/Statistics/dashboard.js';
 import type { DropshClient, RendererServices } from '../../src/types.js';
 import { idsOf, nodeById, renderTree } from '../render-tree.js';
 
@@ -56,23 +55,17 @@ describe('project tab screens own their asynchronous lifecycle', () => {
     screen.restoreState(token);
     expect(screen.selectedIndex).toBe(3);
   });
-  it('Stats draws loading before statistics I/O and caches success', async () => {
-    const screen = new ProjectStatsScreen();
-    const { context, events } = harness(screen, async () => ({
-      data: {
-        attributes: {
-          generated: 'now',
-          windows: {},
-          tickets: { total: {} },
-          runs: { total: {} },
-        },
-      },
-    }));
-    screen.enter(context);
-    await tick();
-    screen.enter(context);
-    expect(events.slice(0, 2)).toEqual(['draw:Loading stats…', 'load']);
-    expect(events.filter((e) => e === 'load')).toHaveLength(1);
+  it('Projects offers no way to create a ticket', () => {
+    const screen = new ProjectsScreen();
+    const { context } = harness(
+      screen,
+      async () => ({ data: [] }),
+      {} as never,
+    );
+    expect(screen.present(context).actions?.map((a) => a.label)).not.toContain(
+      'new',
+    );
+    expect(screen.actionForInput?.('n', context)).toBeUndefined();
   });
 
   it('Projects owns cursor movement and routed project activation', async () => {

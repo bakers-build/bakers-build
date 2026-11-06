@@ -14,7 +14,7 @@ import {
 // Uuids and nothing else. Resolving a uuid to a person is the `user` slice's job
 // and a `Data/` module may not reach into another slice (boundary G2), so the
 // SCREEN composes the two reads — the same shape `Entity/user/Screen/` already
-// used to merge a user collection with the statistics document.
+// uses to merge a user collection with its own reads.
 //
 // The join is `drupal_internal__id`: `og_membership.entity_id` is a plain STRING
 // base field carrying the group's NUMERIC id (BB-321 Fact 12), never its uuid.

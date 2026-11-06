@@ -38,7 +38,7 @@ Use bb-create-ticket to write a small documentation ticket for this project,
 with checkable acceptance criteria, and assign my online conductor.
 ```
 
-Confirm the proposed scope and workflow. Alternatively, open `bakers ui` and press `n`: **Create with agent** (`Ctrl+S`) interviews you; **Create directly** (`Ctrl+D`) writes your input. Clearing the conductor leaves the ticket waiting.
+Confirm the proposed scope and workflow.
 
 Open the ticket on the web or in the terminal:
 

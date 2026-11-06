@@ -12,7 +12,6 @@
 
 import type { CapturedFrame } from '@opentui/core';
 import { ticketInputContext } from '../../src/Entity/ticket/Data/input.js';
-import { TicketReactScreen } from '../../src/Entity/ticket/Screen/ticket-react.js';
 import { TicketReactMarkdownScreen } from '../../src/Entity/ticket/Screen/ticket-react-markdown.js';
 import { register, resetCollector } from '../../src/Extension/store.js';
 import { columnNode, textNode } from '../../src/lib/vnode.js';
@@ -31,7 +30,6 @@ import type {
 import { type BootedTui, bootTui, settle } from '../tui-harness.js';
 import {
   DESCRIPTION_FIRST,
-  LONG_PROJECT_ID,
   LONG_TICKET_ID,
   longTicketDocument,
 } from './long-ticket.js';
@@ -40,12 +38,6 @@ export const BENCH_ROUTES = [
   'ticket.detail',
   'ticket.planning',
   'ticket.comments',
-  'my.stats',
-  'project.stats',
-  'team.stats',
-  'workspace.member.stats',
-  'team.member.stats',
-  'ticket.react',
   'ticket.react-markdown',
 ] as const;
 export type BenchRoute = (typeof BENCH_ROUTES)[number];
@@ -77,12 +69,9 @@ export const SMOKE_PROTOCOL: Protocol = { warmups: 0, ready: 1, inputs: 1 };
 /** Fixed clock for relative dates, identical on both legs. */
 export const FIXED_NOW_SECONDS = Date.parse('2026-09-28T12:00:00Z') / 1000;
 
-const TEAM_ID = '019d3518-5180-7000-8000-00000000a001';
 const WORKSPACE_ID = '019d3518-5180-7000-8000-00000000a002';
-const MEMBER_ID = '019d3518-5180-7000-8000-00000000a003';
 const LAUNCHER_MARKER = 'BENCH-LAUNCHER-READY';
 const SPEC_MARKER = 'PLANNING-SPEC-MARKER';
-const OVERVIEW_VALUE = 424242;
 
 // ---- fixtures --------------------------------------------------------------
 
@@ -121,156 +110,6 @@ export const benchTicketDocument = () => {
   };
 };
 
-const PERIODS = [
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
-  { value: 'quarter', label: 'Quarter' },
-  { value: 'year', label: 'Year' },
-  { value: 'all', label: 'All time' },
-  { value: 'custom', label: 'Custom' },
-];
-
-const days = (count: number) =>
-  Array.from({ length: count }, (_, index) => {
-    const date = new Date(Date.UTC(2026, 8, 1 + index));
-    const key = date.toISOString().slice(0, 10);
-    return { key, label: key.slice(5) };
-  });
-
-const statFigure = (
-  id: string,
-  label: string,
-  widget: 'matrix' | 'line' | 'grouped_horizontal_bars',
-  period: string,
-  categories: Array<{ key: string; label: string; partial?: boolean }>,
-  measurements: Array<{
-    id: string;
-    label: string;
-    values: Record<string, number | null>;
-  }>,
-  withPeriod = true,
-) => ({
-  id,
-  label,
-  widget,
-  description: `${label} description`,
-  generated: '2026-09-28T00:00:00Z',
-  filters: withPeriod
-    ? { period: { label: 'Period', value: period, options: PERIODS } }
-    : {},
-  categories,
-  measurements: measurements.map((measurement) => ({
-    value_type: 'integer' as const,
-    unit: 'count',
-    ...measurement,
-  })),
-  empty: { is_empty: false, message: null },
-  cache: { max_age: 0, contexts: [], tags: [] },
-});
-
-const statisticsGroups = (period: string) => {
-  const categories =
-    period === 'year' || period === 'all'
-      ? Array.from({ length: 12 }, (_, index) => {
-          const key = `2025-${String(index + 1).padStart(2, '0')}`;
-          return { key, label: key };
-        })
-      : days(period === 'week' ? 7 : 30);
-  const series = (seed: number) =>
-    Object.fromEntries(
-      categories.map((category, index) => [
-        category.key,
-        ((index * 7 + seed * 13) % 23) + seed,
-      ]),
-    );
-  const models = ['claude-opus', 'claude-sonnet', 'gpt-mini', 'Unattributed'];
-  return [
-    {
-      id: 'overview',
-      label: 'Overview',
-      figures: [
-        statFigure(
-          'bench-overview',
-          'Totals',
-          'matrix',
-          period,
-          [
-            { key: 'day', label: 'Last 24 hours' },
-            { key: 'week', label: 'Last 7 days' },
-            { key: 'month', label: 'Last 30 days' },
-          ],
-          [
-            {
-              id: 'tickets',
-              label: 'Tickets',
-              values: { day: 3, week: 21, month: OVERVIEW_VALUE },
-            },
-            {
-              id: 'runs',
-              label: 'Runs',
-              values: { day: 0, week: null, month: 987654 },
-            },
-          ],
-          false,
-        ),
-      ],
-    },
-    {
-      id: 'activity',
-      label: 'Activity',
-      figures: [
-        statFigure(
-          'bench-trend',
-          'Tickets and runs',
-          'line',
-          period,
-          categories,
-          [
-            { id: 'tickets', label: 'Tickets', values: series(1) },
-            { id: 'runs', label: 'Runs', values: series(4) },
-          ],
-        ),
-        statFigure('bench-matrix', 'Per period', 'matrix', period, categories, [
-          { id: 'opened', label: 'Opened', values: series(2) },
-          { id: 'closed', label: 'Closed', values: series(3) },
-        ]),
-      ],
-    },
-    {
-      id: 'tokens',
-      label: 'Tokens',
-      figures: [
-        statFigure(
-          'bench-models',
-          'Tokens by model',
-          'grouped_horizontal_bars',
-          period,
-          models.map((model) => ({ key: model, label: model })),
-          [
-            {
-              id: 'input',
-              label: 'Input',
-              values: Object.fromEntries(
-                models.map((model, index) => [
-                  model,
-                  1_200_000_000 / (index + 1),
-                ]),
-              ),
-            },
-            {
-              id: 'output',
-              label: 'Output',
-              values: Object.fromEntries(
-                models.map((model, index) => [model, 90_000_000 * (index + 1)]),
-              ),
-            },
-          ],
-        ),
-      ],
-    },
-  ];
-};
-
 const resource = (
   id: string,
   attributes: Record<string, unknown>,
@@ -297,8 +136,8 @@ export function benchWorld(): BenchWorld {
       sort: () => result,
       page: () => result,
       first: async () =>
-        type === 'bb_team' || type === 'bb_workspace'
-          ? resource(type === 'bb_team' ? TEAM_ID : WORKSPACE_ID, {
+        type === 'bb_workspace'
+          ? resource(WORKSPACE_ID, {
               drupal_internal__id: 7,
             })
           : null,
@@ -308,30 +147,8 @@ export function benchWorld(): BenchWorld {
   };
   const client: DropshClient = {
     collection,
-    get: async (path: string, params?: unknown) => {
+    get: async (path: string) => {
       if (path.includes(LONG_TICKET_ID)) return ticket;
-      if (path === 'user/user') return { data: [{ id: MEMBER_ID }] };
-      if (path === 'og_membership/default')
-        return {
-          data: [
-            {
-              id: 'membership',
-              type: 'og_membership--default',
-              relationships: { uid: { data: { id: MEMBER_ID } } },
-            },
-          ],
-        };
-      if (path === 'bakers/statistics') {
-        const query = decodeURIComponent(
-          String(
-            (
-              params as { getQueryString?: () => string } | undefined
-            )?.getQueryString?.() ?? '',
-          ),
-        );
-        const period = /filter\[period\]=(\w+)/.exec(query)?.[1] ?? 'week';
-        return { data: { attributes: { groups: statisticsGroups(period) } } };
-      }
       return { data: [] };
     },
     update: async () => {
@@ -394,28 +211,8 @@ const routeParams = (route: BenchRoute): Record<string, string> => {
     case 'ticket.detail':
     case 'ticket.planning':
     case 'ticket.comments':
-    case 'ticket.react':
     case 'ticket.react-markdown':
       return { ...TICKET };
-    case 'my.stats':
-      return {};
-    case 'project.stats':
-      return {
-        projectId: LONG_PROJECT_ID,
-        projectName: 'bakers',
-        projectSlug: 'bakers',
-      };
-    case 'team.stats':
-      return { teamId: TEAM_ID, teamName: 'crew' };
-    case 'workspace.member.stats':
-      return { userId: MEMBER_ID, userName: 'member' };
-    case 'team.member.stats':
-      return {
-        teamId: TEAM_ID,
-        teamName: 'crew',
-        userId: MEMBER_ID,
-        userName: 'member',
-      };
   }
 };
 
@@ -446,21 +243,10 @@ interface Marker {
   readonly node?: string;
 }
 
-const STATS_MARKER: Marker = {
-  text: String(OVERVIEW_VALUE),
-  node: 'figure-bench-overview',
-};
-
 const MARKERS: Record<BenchRoute, Marker> = {
   'ticket.detail': { text: DESCRIPTION_FIRST },
   'ticket.planning': { text: SPEC_MARKER },
   'ticket.comments': { text: 'planner-3' },
-  'my.stats': STATS_MARKER,
-  'project.stats': STATS_MARKER,
-  'team.stats': STATS_MARKER,
-  'workspace.member.stats': STATS_MARKER,
-  'team.member.stats': STATS_MARKER,
-  'ticket.react': { text: 'Click to count: 0', node: 'figure-demo-states' },
   'ticket.react-markdown': { text: 'Ticket description' },
 };
 
@@ -494,8 +280,6 @@ async function paintUntil(
 
 // ---- actions ---------------------------------------------------------------
 
-const RIGHT = '\x1b[C';
-const LEFT = '\x1b[D';
 const ENTER = '\r';
 const PAGE_DOWN = '\x1b[6~';
 const PAGE_UP = '\x1b[5~';
@@ -533,43 +317,10 @@ const wheel = async (tui: BootedTui, index: number, size: Size) => {
 const SELECT: InputAction = { name: 'select', dispatch: key('j', 'k') };
 const TOGGLE: InputAction = { name: 'expand', dispatch: key(ENTER) };
 const WHEEL: InputAction = { name: 'wheel', dispatch: wheel };
-const GROUP: InputAction = {
-  name: 'group',
-  dispatch: key(RIGHT, LEFT),
-  // At 80x24 the group tab bar sits below the viewport; a change nobody can
-  // see is not a sample, so scroll it into view first.
-  prepare: async (tui, size) => {
-    for (let notch = 0; notch < 40 && !tui.frame().includes('Tokens'); notch++)
-      await wheel(tui, 0, size).then(() => tui.renderOnce());
-  },
-};
-const RANGE_LABELS = ['Month', 'Quarter', 'Year', 'All time', 'Week'];
-const RANGE: InputAction = {
-  name: 'range',
-  dispatch: key('t'),
-  verify: (tui, index) =>
-    tui.frame().includes(`Range(${RANGE_LABELS[index % RANGE_LABELS.length]})`),
-};
-const STATS_ACTIONS = [GROUP, RANGE];
-
 const ACTIONS: Record<BenchRoute, readonly InputAction[]> = {
   'ticket.detail': [SELECT, TOGGLE, WHEEL],
   'ticket.planning': [SELECT, TOGGLE],
   'ticket.comments': [SELECT, TOGGLE, WHEEL],
-  'my.stats': STATS_ACTIONS,
-  'project.stats': STATS_ACTIONS,
-  'team.stats': STATS_ACTIONS,
-  'workspace.member.stats': STATS_ACTIONS,
-  'team.member.stats': STATS_ACTIONS,
-  'ticket.react': [
-    {
-      name: 'counter',
-      dispatch: key(ENTER),
-      verify: (tui, index) => tui.frame().includes(`count: ${index + 1}`),
-    },
-    { name: 'dialog', dispatch: key('d') },
-    { name: 'scenario', dispatch: key('n') },
-  ],
   'ticket.react-markdown': [
     WHEEL,
     { name: 'page', dispatch: key(PAGE_DOWN, PAGE_UP) },
@@ -585,7 +336,6 @@ async function bootBench(size: Size): Promise<{
 }> {
   resetCollector();
   register('bench/pages', (api) => {
-    api.add(TicketReactScreen);
     api.add(TicketReactMarkdownScreen);
     api.add(BenchLauncherScreen);
   });

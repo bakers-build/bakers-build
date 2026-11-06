@@ -23,10 +23,10 @@ bakers ui [target] [--ticket <id>] [--project <id>] [--run <uuid>] [--here]
 
 | Form | Example | Opens |
 |---|---|---|
-| *(nothing)* | `bakers ui` | the root **Dashboard** (ticket/run statistics) |
+| *(nothing)* | `bakers ui` | **My work**, your open assigned tickets |
 | bare identifier | `bakers ui BB-221` · `bakers ui bb-221` | that ticket's detail screen |
 | `ticket:<id\|uuid>` | `bakers ui ticket:BB-221` · `bakers ui ticket:<uuid>` | that ticket |
-| `project:<name\|uuid>` | `bakers ui project:bakers` | that project's **Dashboard** (its ticket list is one `Tab` away) |
+| `project:<name\|uuid>` | `bakers ui project:bakers` | that project's **Overview** (its ticket list is one `Tab` away) |
 | `run:<uuid>` | `bakers ui run:<uuid>` | the run's **owning ticket**, Runs tab active |
 | `--ticket <id>` | `bakers ui --ticket BB-221` | the flag equivalent of `ticket:` |
 | `--project <id>` | `bakers ui --project bakers` | the flag equivalent of `project:` |
@@ -174,20 +174,15 @@ terminal is taken. Ambiguity is not a failure.
 ## Deep links are not a dead end
 
 Booting straight into a ticket, project or picker pushes no back-history frame. `Esc` on an
-empty history therefore opens the **Dashboard** — since BB-256 the statistics screen, not
-the all-projects list — so a deep-linked session converges on the normal navigation model
-instead of leaving `q` as the only way out. From a project's Dashboard `Esc` un-scopes it to
-the instance-wide one; the project list is its `Tab` sibling.
+empty history therefore opens **My work**, so a deep-linked session converges on the normal
+navigation model instead of leaving `q` as the only way out.
 
 ## Piping (`| cat`, `< /dev/null`)
 
 Without a TTY the command prints **the route's** content once and exits: the ticket's lines
 (honouring `--view`), the project's ticket table, or the picker's candidate list plus its
-hint. With no target it prints the **Dashboard's statistics rows** — since BB-256 that is
-the routeless default screen, where it used to be the all-projects list; `project:<name>`
-prints the same rows scoped to that project. A control plane that does not serve
-`/jsonapi/bakers/statistics` yields the named message on **stderr** and exit code `1`, so a
-script sees a failure rather than empty output.
+hint. With no target it prints **My work**, the routeless default screen; `project:<name>`
+prints that project's current Work surface.
 
 There is consequently **no non-interactive way to print the project list** in `bakers ui` any
 more: the deep-link grammar has no `projects:` target. `bakers tools
@@ -196,7 +191,7 @@ project's conductors.
 
 ## The Conductors tab (BB-232)
 
-The root tab bar reads `Dashboard · Projects · Conductors`. The Conductors screen lists every
+The root tab bar reads `My work · Projects · Teams · Conductors`. The Conductors screen lists every
 `bb_conductor` the connected control plane holds for you — label, machine label, project,
 derived liveness (`running | stale | offline`), age, workspace and last known pid.
 

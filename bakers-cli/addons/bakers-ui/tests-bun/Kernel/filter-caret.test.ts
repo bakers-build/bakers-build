@@ -73,7 +73,7 @@ async function boot(over: Partial<TuiOptions> = {}) {
     },
   });
   const press = (key: string): Promise<void> => tui.press(key);
-  /** The project boots on its Dashboard tab; the picker lives under Tickets. */
+  /** The project boots on its Overview tab; the picker lives under Tickets. */
   const openPicker = async (): Promise<void> => {
     await press('\t');
     await press('p');
@@ -135,10 +135,9 @@ it('typing moves the cursor along the query, one column per character', async ()
 });
 
 it('the slot does not double a keystroke on the query row EITHER', async () => {
-  // `field-textarea-view-only.test.ts` pins this for the New-ticket popup's
-  // `title`.
-  // It has to be pinned again HERE, and the reason is a measured near-miss: on
-  // this control the doubling is INVISIBLE to the ordinary harness.
+  // `field-textarea-view-only.test.ts` pins this for the picker's insert and
+  // backspace too. The reason for capturing unsettled is a measured near-miss:
+  // on this control the doubling is INVISIBLE to the ordinary harness.
   //
   // Per keystroke the order is: global ladder → reducer → `draw()` → `place()`
   // resets the widget to the reducer's value → THEN the focused renderable's
@@ -169,8 +168,7 @@ it('the slot does not double a keystroke on the query row EITHER', async () => {
 
 it('leaving the picker takes the cursor with it', async () => {
   // A cursor left blinking over the ticket list behind a closed picker is the
-  // failure this catches — the same one `create-form-keys.test.ts` catches for
-  // the New-ticket popup.
+  // failure this catches.
   const d = await boot();
   await d.openPicker();
   expect(d.tui.renderer.getCursorState().visible).toBe(true);

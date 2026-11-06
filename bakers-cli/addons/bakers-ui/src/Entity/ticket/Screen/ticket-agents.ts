@@ -57,9 +57,9 @@ export const AGENT_TABLE = {
        * FREE TEXT, and therefore THE GROWER of this list — the operator's rule
        * applied to the surface the review found still breaking it.
        *
-       * An agent's label is built from its ticket's own title (`Agent/launch.ts`'s
-       * `shortName`), so it is exactly the value class the projects list's
-       * PROJECT and the conductors list's NAME grow for. The old renderer fixed
+       * An agent's label is built from its ticket's own title, so it is
+       * exactly the value class the projects list's PROJECT and the conductors
+       * list's NAME grow for. The old renderer fixed
        * it at 32 columns, which cut an ordinary label at 80, 120 and 160 alike
        * while the second column held the whole surplus in whitespace — finding 3
        * of this very ticket, reproduced on the Ticket-Agents tab.

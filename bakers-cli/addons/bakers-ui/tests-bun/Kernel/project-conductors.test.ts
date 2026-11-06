@@ -106,7 +106,7 @@ describe('the project-scoped Conductors tab', () => {
   });
 
   /**
-   * A catch-all fake: every screen the project's Dashboard, Tickets,
+   * A catch-all fake: every screen the project's Overview, Tickets,
    * Ticket-Agents and Runs tabs read from answers with an empty collection —
    * this suite only cares that navigation REACHES Conductors intact — and
    * `bb_conductor/bb_conductor` answers with this test's own rows.
@@ -180,7 +180,7 @@ describe('the project-scoped Conductors tab', () => {
       rows: 44,
       tui: { route: PROJECT_ROUTE, conductorProcess: host },
     });
-    // Project route lands on the Dashboard (BB-256 D12); one Tab per step of
+    // Project route lands on Overview (BB-256 D12); one Tab per step of
     // the registry order reaches: tickets(1) → ticket-agents(2) → runs(3) →
     // conductors(4).
     for (let i = 0; i < 4; i += 1) await tui.press('\t');
@@ -303,7 +303,7 @@ describe('the project-scoped Conductors tab', () => {
 
     const tui = await openProjectConductors({ client });
 
-    // Every screen the navigation passes through (Dashboard, Tickets,
+    // Every screen the navigation passes through (Overview, Tickets,
     // Ticket-Agents, Runs) issues its OWN `client.get()`, all recorded in
     // order — the request that matters is the CONDUCTOR one, not index 0.
     const conductorRequest = client.requests.find(

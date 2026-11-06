@@ -6,9 +6,7 @@ import { countActiveMembersByTeam, teamsFrom } from './teams.js';
 // BB-391 (AC4) — ONE team. The twin of `Entity/project/Data/project.ts`, which
 // resolves a project's identity without reading anything the project owns.
 //
-// The member count comes along because it is the only figure the team DETAIL has
-// that the team-scoped statistics do not already serve: `?team_id=` narrows the
-// counts to the team's active members but reports no headcount of its own.
+// The member count comes along as the team DETAIL's headcount.
 
 /** One team, resolved: identity, workspace, and headcount when countable. */
 export interface ResolvedTeam {

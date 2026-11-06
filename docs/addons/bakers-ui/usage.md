@@ -1,6 +1,6 @@
 # Use the terminal UI
 
-Open the `bakers ui` cockpit, find a ticket, read it, edit or create one, and keep the screen current.
+Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the screen current.
 
 **You need:** `bakers` installed and a checkout connected to bakers.build ([Install and sign in](/get-started/machine)).
 
@@ -17,11 +17,9 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit or create one, and ke
 
    | Level | Tabs |
    |---|---|
-   | Root | My work, Stats, Projects, Teams, Members (workspace leads only), Conductors |
-   | Project | Overview, Work, Stats, Tickets, Ticket-Agents, Runs, Conductors |
+   | Root | My work, Projects, Teams, Members (workspace leads only), Conductors |
+   | Project | Overview, Work, Tickets, Ticket-Agents, Runs, Conductors |
    | Ticket | Overview, Planning, History, Runs, then addon tabs such as Artifacts and Ports |
-
-   Stats shows tickets and runs over the last 24 hours, 7 days and 30 days.
 
 3. **Jump straight to something.** One target at most:
 
@@ -41,9 +39,7 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit or create one, and ke
 
 5. **Edit.** On a ticket press `e`: assignee, conductor, estimate and spent, parent and labels. `Ctrl+S` saves. **Cancel ticket** writes `cancelled` at once, without a confirmation step.
 
-6. **Create.** Press `n` on Stats, Projects or a project. `Ctrl+S` creates with an agent, `Ctrl+D` creates directly ([Create a ticket](/get-started/daily-work/create-a-ticket)).
-
-7. **Reload** with `R`. Anything that can write a file can do the same with `touch .bakers/ui-refresh` inside the project.
+6. **Reload** with `R`. Anything that can write a file can do the same with `touch .bakers/ui-refresh` inside the project.
 
 Piped output prints the target once and exits, so scripts and agents read what you would see: `bakers ui <identifier> | cat`.
 

@@ -11,11 +11,6 @@ import { AsyncScreen } from '../../../Screen/async-screen.js';
 import { EmptyOverviewScreen } from '../../../Screen/empty-overview.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import type { ScreenContext } from '../../../Screen/screen.js';
-import {
-  type GroupStatisticsResult,
-  loadGroupStatistics,
-} from '../../../Statistics/client.js';
-import { StatisticsScreen } from '../../../Statistics/screen.js';
 import { listRowIds, listTableTree } from '../../collection.js';
 import {
   loadTeamRows,
@@ -26,8 +21,7 @@ import {
 } from '../Data/teams.js';
 import { TeamWorkScreen } from './team-work.js';
 
-// BB-391 (AC4) — the team SURFACE: a list on the root level and a detail that
-// is the team-scoped statistics.
+// BB-391 (AC4) — the team SURFACE: a list on the root level and its detail.
 //
 // Both screens live in one module because they are one surface, exactly as
 // `Entity/project/Screen/projects-screen.ts` is one list and
@@ -35,8 +29,7 @@ import { TeamWorkScreen } from './team-work.js';
 // because the user OVERVIEW owns a whole tab LEVEL (Overview · Tickets · Runs),
 // and a team owns no level — there is nothing under it to tab between.
 //
-// The detail reads `?team_id=` and nothing else, matching the user statistics
-// overview. BB-321 decided a team is a reporting crew, not an access carrier,
+// BB-321 decided a team is a reporting crew, not an access carrier,
 // so this surface deliberately does
 // not offer membership editing (BB-320's work) and there is no team filter
 // on the ticket list: `bb_ticket` carries no `team_id`, and expanding one
@@ -221,77 +214,5 @@ export class TeamOverviewScreen extends EmptyOverviewScreen {
 
   protected actions() {
     return [actionItem('team-overview-tab', 'Tab', 'tabs')];
-  }
-}
-
-export class TeamStatsScreen extends StatisticsScreen<GroupStatisticsResult> {
-  readonly frameId = 'team-stats';
-  static readonly route = {
-    id: 'team.stats',
-    path: '/teams/:teamId/stats',
-    tab: { id: 'stats', label: 'Stats', scope: 'team', weight: 10 },
-    fallback: { routeId: TeamOverviewScreen.route.id, preserveParams: true },
-  } satisfies RouteMetadata;
-  readonly id = TeamStatsScreen.route.id;
-
-  reload(context: ScreenContext): void {
-    this.retry(context);
-  }
-
-  protected load(context: ScreenContext): Promise<GroupStatisticsResult> {
-    if (!context.services) throw new Error('Team overview requires services');
-    const teamId = context.params?.teamId;
-    if (!teamId) throw new Error('Team overview requires teamId');
-    return loadGroupStatistics(
-      context.services.client,
-      { team: teamId },
-      this.statisticsFilters(),
-    );
-  }
-
-  protected renderLoading(): string[] {
-    return ['Loading team overview…'];
-  }
-
-  protected readyRows(statistics: GroupStatisticsResult): SectionRow[] {
-    if (statistics.kind === 'unsupported')
-      return plainRows('unsupported', [
-        'This control plane does not serve /jsonapi/bakers/statistics.',
-      ]);
-    if (statistics.kind === 'error')
-      return plainRows('error', [
-        'Could not read /jsonapi/bakers/statistics.',
-        '',
-        statistics.message,
-      ]);
-    if (statistics.groups.length === 0)
-      return plainRows('empty', ['No figures configured for this team.']);
-    // A zero month is a real answer — a crew that closed nothing this month is
-    // not an empty screen.
-    return [];
-  }
-
-  protected statistics(value: GroupStatisticsResult) {
-    return value;
-  }
-
-  protected chrome(context: ScreenContext): FullScreenChrome {
-    const result = this.readyValue;
-    // The RESOLVED name wins over the param: the param is what the list happened
-    // to be showing when the operator pressed Enter, and a deep link carries
-    // none at all. It is the placeholder while the read is in flight, which is
-    // the one thing it is good for.
-    const name = context.params?.teamName ?? context.params?.teamId ?? 'team';
-    const meta =
-      result?.kind === 'ok'
-        ? `${result.groups.reduce((sum, group) => sum + group.figures.length, 0)} figure(s)`
-        : this.state === 'loading'
-          ? 'loading…'
-          : 'statistics unavailable';
-    return { title: `${name} · stats`, meta };
-  }
-
-  protected actions() {
-    return [actionItem('team-stats-tab', 'Tab', 'tabs')];
   }
 }

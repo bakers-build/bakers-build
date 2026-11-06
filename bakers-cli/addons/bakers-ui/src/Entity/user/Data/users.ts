@@ -37,8 +37,8 @@ export interface UserListRow {
 }
 
 /**
- * The Users list table — labels come from the user collection; the 30d numbers
- * are filled by the screen from unscoped statistics (G2: Data/ stays a leaf).
+ * The Users list table — labels come from the user collection; the workload
+ * numbers are filled by the screen (G2: Data/ stays a leaf).
  */
 export const USER_TABLE = {
   noun: 'user',

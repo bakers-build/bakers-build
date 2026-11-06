@@ -236,7 +236,7 @@ export const panelSectionKey = (heading: string): string =>
  * The one description of what a section renders as. {@link flattenSections}
  * derives the row surface from it and a converted screen derives its nodes from
  * it, so the two cannot answer differently for the same document — which is the
- * property that lets Stats hand over renderables while its pipe keeps
+ * property that lets a screen hand over renderables while its pipe keeps
  * emitting the bytes it always did (spec F5).
  */
 export function sectionRows(

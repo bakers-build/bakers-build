@@ -73,7 +73,7 @@ A cycle never writes ticket state; the agent does that. A dispatch error marks t
 A conductor claims tickets that:
 
 - belong to its project;
-- are assigned to it (set on the ticket's create or edit popup in `bakers ui`), or have no workflow yet, in which case any conductor of the project may qualify them;
+- are assigned to it (set on the ticket's edit popup in `bakers ui`), or have no workflow yet, in which case any conductor of the project may qualify them;
 - are in a claimable state, and in `states` if the config narrows it;
 - have no open blockers and no live claim;
 - are not frozen.

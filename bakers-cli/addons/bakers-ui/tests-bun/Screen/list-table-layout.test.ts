@@ -932,8 +932,7 @@ describe('BB-345 (pass 3) — a `max` BELOW the width caps the cell AND the cut'
   // have fixed the blank cell and left the ellipsis marked in the wrong place.
   //
   // Latent today: no shipped column declares a `max` at all (`rg 'max:' src/`
-  // finds only a `stats-panel` function parameter and `tableRow`'s own
-  // pass-through), so this is pinned before one does.
+  // finds only `tableRow`'s own pass-through), so this is pinned before one does.
   const capped = (max: number) =>
     ({
       noun: 'capped',

@@ -51,7 +51,7 @@ it('uses a contributed root screen for Tab, Shift+Tab and mouse navigation', asy
   register('test/reports', (api) => api.add(ReportsScreen));
   const tui = await bootTui({ services });
   try {
-    expect(tui.frame()).toContain('My work   [Stats]   Reports    Projects');
+    expect(tui.frame()).toContain('[My work]   Reports    Projects');
     await tui.press('\t');
     expect(tui.frame()).toContain('[Reports]');
     expect(tui.frame()).toContain('Contributed report body');
@@ -60,10 +60,10 @@ it('uses a contributed root screen for Tab, Shift+Tab and mouse navigation', asy
     await tui.press('\x1b[Z');
     expect(tui.frame()).toContain('[Reports]');
     await tui.press('\x1b[Z');
-    expect(tui.frame()).toContain('[Stats]');
+    expect(tui.frame()).toContain('[My work]');
     const row = tui
       .rows()
-      .findIndex((line) => line.includes('[Stats]   Reports'));
+      .findIndex((line) => line.includes('[My work]   Reports'));
     expect(row).toBeGreaterThanOrEqual(0);
     const column = (tui.rows()[row] ?? '').indexOf('Reports');
     expect(column).toBeGreaterThanOrEqual(0);

@@ -42,7 +42,8 @@ describe('the boundary is a renderable tree (BB-340 A1)', () => {
     // BB-540 added the project-filter picker (My work, `ProjectFilterScreen`)
     // and the no-project parent picker (`MyWorkParentFilterScreen`), 35 → 37.
     // The ticket Addons tab and its action form took 37 → 39.
-    expect(screens).toHaveLength(39);
+    // Statistics (My, Project, Team, Team-member) and the create form left, 39 → 34.
+    expect(screens).toHaveLength(34);
   });
 
   for (const screen of screens) {

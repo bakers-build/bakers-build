@@ -144,7 +144,7 @@ Both UIs render from the message definitions and the personal result alone.
 ## Where it shows up
 
 - **Web:** open a ticket; the right-hand column carries a card; with two or more message-capable addons it shows one tab per addon (label = the addon's `label`, e.g. "Ports"). Each addon stacks its `MessageForm`s, one per message type, each with a *send* button — switching tabs never sends. The requester's own latest answer renders below the forms; sending replaces it in place.
-- **`bakers ui`:** **Overview** has a second card under Details/Stats/Related. `↓`/`j` reaches it (`Tab` switches panes, not this card). `Enter` opens the send/poll screen: `←`/`→` switch addon, `Enter` sends or opens a form, `l` copies a link, `Esc` returns.
+- **`bakers ui`:** **Overview** has a second card under Details/Related. `↓`/`j` reaches it (`Tab` switches panes, not this card). `Enter` opens the send/poll screen: `←`/`→` switch addon, `Enter` sends or opens a form, `l` copies a link, `Esc` returns.
 
 ## Reference
 

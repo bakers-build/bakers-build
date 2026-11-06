@@ -1,4 +1,4 @@
-// BB-236 — the ADAPTER between the data services and the NEW-TICKET popup. The
+// BB-236 — the ADAPTER between the data services and the ticket forms. The
 // division of labour: a data service (`users.ts`, `conductors.ts`, `terms.ts`) returns
 // data and knows nothing about forms; this module knows BOTH sides, which is exactly
 // its job, and therefore owns the mapping to `Option` and this popup's policy. That

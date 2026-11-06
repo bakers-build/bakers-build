@@ -46,44 +46,9 @@ function services(): RendererServices {
     };
     return c;
   };
-  const stats = {
-    data: {
-      type: 'bakers-statistics',
-      id: 'root',
-      attributes: {
-        generated: '2026-08-18T12:00:00+00:00',
-        windows: { day: 86400, week: 604800, month: 2592000 },
-        tickets: {
-          total: { day: 1, week: 2, month: 3 },
-          by_user: [{ id: 'u-cw', label: 'cw', day: 1, week: 2, month: 30 }],
-          by_project: [
-            { id: 'p1', label: 'bakers', day: 1, week: 2, month: 3 },
-          ],
-          by_day: Array.from({ length: 7 }, (_, i) => ({
-            date: `2026-08-${12 + i}`,
-            label: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'][i],
-            count: i % 2,
-          })),
-        },
-        runs: {
-          total: { day: 1, week: 2, month: 3 },
-          by_user: [{ id: 'u-cw', label: 'cw', day: 1, week: 2, month: 10 }],
-          by_project: [
-            { id: 'p1', label: 'bakers', day: 1, week: 2, month: 3 },
-          ],
-          by_day: Array.from({ length: 7 }, (_, i) => ({
-            date: `2026-08-${12 + i}`,
-            label: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'][i],
-            count: (i + 1) % 2,
-          })),
-        },
-      },
-    },
-  };
   const client: DropshClient = {
     collection,
     get: async (path: string) => {
-      if (path.includes('statistics')) return stats;
       if (path.startsWith('bb_conductor/')) return { data: [], included: [] };
       if (path === 'user/user') {
         return {
@@ -150,7 +115,7 @@ describe('BB-375 — user screens paint the shared content FRAME', () => {
       columns: 100,
       rows: 30,
     });
-    // Dashboard → Projects → Teams.
+    // My work → Projects → Teams.
     await tui.press('\t');
     await tui.press('\t');
     expect(tui.rows()[5], 'Teams tab bracketed').toMatch(/\[Teams\]/);
@@ -159,8 +124,7 @@ describe('BB-375 — user screens paint the shared content FRAME', () => {
     await tui.press('\r');
     expect(tui.rows()[5], 'team Work bracketed').toMatch(/\[Work\]/);
 
-    // …and two Tabs within that level reach the crew's people.
-    await tui.press('\t');
+    // …and one Tab within that level reaches the crew's people.
     await tui.press('\t');
     expect(tui.rows()[5], 'Members tab bracketed').toMatch(/\[Members\]/);
     expect(tui.rows()[BODY_TOP], 'body FRAME top').toMatch(/╭/);
@@ -175,17 +139,12 @@ describe('BB-375 — user screens paint the shared content FRAME', () => {
       columns: 100,
       rows: 30,
     });
-    // BB-456 D6 dropped the root Dashboard's PER-USER cursor: the new
-    // discovery-plus-values contract carries no per-row target type, and the
-    // shipped root/user-scope figures carry no breakdown axis at all (that
-    // now lives at TEAM scope only — see `dashboard.ts`'s own comment). A
-    // user's overview is reached the same way the sibling test above reaches
-    // the crew's Users list: Dashboard → Projects → Teams, open the crew,
-    // move from Work through Overview to Users, Enter the (only) row.
+    // A user's overview is reached the same way the sibling test above reaches
+    // the crew's Users list: My work → Projects → Teams, open the crew, move
+    // from Work to Members, Enter the (only) row.
     await tui.press('\t'); // -> projects
     await tui.press('\t'); // -> teams
     await tui.press('\r'); // open the crew
-    await tui.press('\t'); // -> Overview tab
     await tui.press('\t'); // -> Members tab
     expect(tui.rows()[1] ?? '', 'roster title').toMatch(/Platform · members/);
     expect(tui.rows()[BODY_TOP], 'roster FRAME').toMatch(/╭/);

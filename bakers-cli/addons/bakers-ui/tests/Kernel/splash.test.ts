@@ -1,4 +1,6 @@
+import type { StyledText, VNode } from '@opentui/core';
 import { describe, expect, it, vi } from 'vitest';
+import { LOGO_WIDTH } from '../../src/Kernel/logo.js';
 import {
   awaitSplash,
   SPLASH_FONT,
@@ -10,11 +12,14 @@ import {
 } from '../../src/Kernel/splash.js';
 import {
   BORDER,
+  BRAND_LINE,
+  BRAND_SLICE,
+  BRAND_TILE,
   DEFAULT_BACKGROUND,
   DEFAULT_FOREGROUND,
   SPLASH_MS,
 } from '../../src/lib/theme.js';
-import { nodeById } from '../render-tree.js';
+import { childrenOf, nodeById } from '../render-tree.js';
 
 describe('splash (BB-375 D6)', () => {
   it('pins SPLASH_MS to 500', () => {
@@ -57,6 +62,35 @@ describe('splash (BB-375 D6)', () => {
       (tree.props as { backgroundColor?: unknown } | undefined)
         ?.backgroundColor,
     ).toBe(DEFAULT_BACKGROUND);
+  });
+
+  it('draws the bread-slice logo in the brand slots, not the braid', () => {
+    const tree = splashTree();
+    expect(nodeById(tree, 'splash-braid')).toBeUndefined();
+    const logo = nodeById(tree, 'splash-logo');
+    expect((logo?.props as { width?: number } | undefined)?.width).toBe(
+      LOGO_WIDTH,
+    );
+    const rows = childrenOf(logo as VNode);
+    expect(rows.length).toBeGreaterThanOrEqual(5);
+    const brand = new Set([BRAND_TILE, BRAND_LINE, BRAND_SLICE]);
+    const colours = new Set<unknown>();
+    for (const row of rows) {
+      const props = row.props as { id: string; content: StyledText };
+      expect(props.id).toMatch(/^splash-logo-row-\d+$/);
+      const chunks = props.content.chunks;
+      expect(chunks.map((chunk) => chunk.text).join('')).toHaveLength(
+        LOGO_WIDTH,
+      );
+      for (const chunk of chunks) {
+        for (const colour of [chunk.fg, chunk.bg]) {
+          if (colour === undefined) continue;
+          expect(brand.has(colour as never)).toBe(true);
+          colours.add(colour);
+        }
+      }
+    }
+    expect(colours).toEqual(brand);
   });
 
   it('splash-root is an absolute inset-0 overlay that centres its frame', () => {

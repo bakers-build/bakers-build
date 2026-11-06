@@ -83,7 +83,6 @@ it('registers the workspace roster and every member route only for leads', () =>
   expect(memberRoutes(true)).toEqual([
     'workspace.members',
     'workspace.member.overview',
-    'workspace.member.stats',
     'workspace.member.tickets',
     'workspace.member.runs',
   ]);

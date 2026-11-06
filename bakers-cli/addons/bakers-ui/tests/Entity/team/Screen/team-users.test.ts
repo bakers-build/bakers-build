@@ -145,11 +145,10 @@ it('registers the crew’s Users list in the production route registry', () => {
   );
 });
 
-it('puts Overview, Work, Stats and Members on the TEAM level, in that order', () => {
+it('puts Overview, Work and Members on the TEAM level, in that order', () => {
   expect(routes.tabs('team').map((tab) => tab.id)).toEqual([
     'overview',
     'work',
-    'stats',
     'members',
   ]);
   expect(routes.routeForTab('team', 'overview')?.metadata.id).toBe(
@@ -166,7 +165,6 @@ it('puts Overview, Work, Stats and Members on the TEAM level, in that order', ()
 it('leaves no Users tab on the root level', () => {
   expect(routes.tabs('root').map((tab) => tab.id)).toEqual([
     'my-work',
-    'stats',
     'projects',
     'teams',
     'conductors',

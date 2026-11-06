@@ -162,30 +162,6 @@ export interface FakeClientOptions {
 }
 
 /**
- * BB-256: the Dashboard is the landing screen, so EVERY kernel boot reads
- * `/jsonapi/bakers/statistics` before anything else. A double that answered it
- * with `{ data: [] }` would put a "malformed statistics document" error in the
- * status bar of every test that never mentions statistics — and that error wins
- * over `status`, so unrelated assertions would fail for an unrelated reason.
- *
- * The default is therefore a well-formed EMPTY document (spec R7's case): the
- * Dashboard renders "No activity in the last 30 days." and no error. A test that
- * cares about real figures overrides it through `documents`.
- */
-const EMPTY_STATISTICS = {
-  data: {
-    type: 'bakers-statistics',
-    id: 'root',
-    attributes: {
-      generated: '2026-08-02T00:00:00+00:00',
-      windows: { day: 86400, week: 604800, month: 2592000 },
-      tickets: { total: { day: 0, week: 0, month: 0 } },
-      runs: { total: { day: 0, week: 0, month: 0 } },
-    },
-  },
-};
-
-/**
  * The shared client double. Widening `DropshClient` with `update()` (spec
  * Decision 2) means every fake must carry it; building them in ONE place keeps
  * a future contract change to a single edit instead of one per test file.
@@ -263,7 +239,6 @@ export function fakeClient(options: FakeClientOptions = {}): FakeClient {
         path.startsWith(prefix),
       );
       if (hit !== undefined) return documents[hit];
-      if (path === 'bakers/statistics') return EMPTY_STATISTICS;
       return { data: [] };
     },
     update: async (type: string, id: string, body: ResourceWriteBody) => {

@@ -1,6 +1,5 @@
 // BB-284 D4 — the parent-filter picker as a one-field modal screen over the
-// BB-236 kernel, modelled on `CreateTicketFormScreen` minus everything the
-// second field onward owns. The kernel's `autocomplete` kind and the
+// BB-236 kernel. The kernel's `autocomplete` kind and the
 // `Widget/option-source.ts` driver supply the mechanics: type to filter,
 // debounced server re-query, ←/→ to browse, Enter to pick, Esc to cancel.
 //

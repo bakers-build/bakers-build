@@ -506,8 +506,8 @@ describe('the Conductors screen', () => {
       rows: 44,
       tui: { conductorProcess: host },
     });
-    // The harness positions legacy screen tests on Dashboard. From there the
-    // product order is Projects → Teams → Conductors.
+    // Boot lands on My work. From there the product order is Projects →
+    // Teams → Conductors.
     await tui.press('\t');
     await tui.press('\t');
     await tui.press('\t');

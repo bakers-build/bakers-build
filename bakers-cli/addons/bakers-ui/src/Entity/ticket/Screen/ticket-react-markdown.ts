@@ -41,7 +41,7 @@ const EXAMPLE = [
   '',
   '```ts',
   'const screen = "NativeScreen";',
-  'render({ statistics: true, markdown: true });',
+  'render({ markdown: true });',
   '```',
   '',
   ...Array.from({ length: 18 }, (_, index) =>
@@ -51,7 +51,7 @@ const EXAMPLE = [
       'A longer paragraph checks wrapping at narrow terminal widths. Inline **formatting** must remain part of the same text flow, so the words continue naturally after resizing the window.',
       '',
       '- Inspect layout and readable spacing.',
-      '- Switch between Statistics, Markdown and the native ticket tabs.',
+      '- Switch between Markdown and the native ticket tabs.',
       '',
     ].join('\n'),
   ),

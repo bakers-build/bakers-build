@@ -29,9 +29,9 @@ import { type BootedTui, bootTui, settle } from '../tui-harness.js';
 // BB-239 — navigation has THREE levels and every screen shows exactly ONE tab
 // bar: the one of its own level.
 //
-//   root     dashboard, projects, project-picker  → Dashboard · Projects
-//   project  dashboard, project, ticket-agents,   → Dashboard · Tickets ·
-//            project-runs                           Ticket-Agents · Runs
+//   root     my work, projects, project-picker    → My work · Projects · …
+//   project  overview, project, ticket-agents,    → Overview · Tickets ·
+//            project-runs                           Ticket-Agents · Runs · …
 //   ticket   overview, comments, related, runs    → the sections of one open
 //                                                    ticket, in the bar row (BB-346)
 //
@@ -113,7 +113,7 @@ const TICKET = 'ffffffff-2390-0000-0000-000000000001';
 
 // Deterministic fixtures only: nothing in the chrome rows may derive from
 // Date.now(). `last_seen` is a FIXED past timestamp — its relative age lands in
-// the dashboard's body rows, which nothing here asserts on.
+// the conductor list's body rows, which nothing here asserts on.
 const conductorDoc = {
   data: [
     {
@@ -198,20 +198,6 @@ const CANDIDATES = [
   { id: 'ffffffff-2390-0000-0000-000000000009', name: 'shop-at' },
 ];
 
-// Stats reads one grouped atomic document. None of the
-// tab-bar/navigation behaviour this file drives depends on a figure's actual
-// numbers — root-scope reads
-// also resolve `user/user` first (spec D6: root now means "my own figures",
-// not a workspace total) — so the fixture below stays deliberately minimal:
-// an empty, well-formed grouped answer by default, and an HTTP status a case
-// can force the read to reject with.
-
-/** How the statistics DISCOVERY read behaves for a given boot. */
-interface StatsBehaviour {
-  /** Reject the discovery read with this HTTP status instead of answering. */
-  status?: number;
-}
-
 /**
  * Every read the kernel can make on these screens. No `agents` service, so the
  * Ticket-Agents screen lists nothing; every unmatched path answers an empty
@@ -224,7 +210,6 @@ function fakeServices(
    * still loading. On the real control plane that window was measured at ~6s.
    */
   runsGate?: Promise<unknown>,
-  stats: StatsBehaviour = {},
 ): RendererServices {
   const collection = (type: string): Collection => {
     const c: Collection = {
@@ -242,21 +227,6 @@ function fakeServices(
     collection,
     get: async (path: string) => {
       if (path === 'user/user') return { data: [{ id: 'u-cw' }] };
-      if (
-        path === 'bakers/statistics' ||
-        path.startsWith('bakers/statistics/')
-      ) {
-        if (stats.status !== undefined) {
-          throw Object.assign(new Error(`HTTP ${stats.status}`), {
-            status: stats.status,
-          });
-        }
-        // An empty, well-formed answer either way: no figure configured is
-        // exactly R7's case (spec), and no test in this file asserts on a
-        // figure's own numbers — only that the bar/navigation around it
-        // still works.
-        return { data: { attributes: { groups: [] } } };
-      }
       if (path.startsWith('bb_conductor/')) return conductorDoc;
       if (path === 'bb_project/bb_project') return projectListDoc;
       if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`)) return ticketDoc;
@@ -346,9 +316,8 @@ function fakeMemberServices(): RendererServices {
 async function boot(
   route?: ResolvedRoute,
   runsGate?: Promise<unknown>,
-  stats: StatsBehaviour = {},
 ): Promise<{ tui: BootedTui }> {
-  const services = fakeServices(runsGate, stats);
+  const services = fakeServices(runsGate);
   const tui = await bootTui({
     services,
     columns: COLUMNS,
@@ -430,9 +399,8 @@ const SHIFT_TAB = '\x1b[Z';
  * proves it is not off by one.
  *
  * The bar is written as `' ' + <bar>`, so the bar's own column 0 is terminal
- * column 2. BB-256 put `Dashboard` first on both levels, so the
- * project bar is now `[Dashboard](11) '  ' Tickets(9) '  ' Ticket-Agents(15)
- * '  ' Runs(6)` — ` Runs ` at bar offsets 41..47, i.e. terminal columns 43..49.
+ * column 2. The project bar is `[Overview](10) '  ' Tickets(9) '  '
+ * Ticket-Agents(15) '  ' Runs(6) …` — ` Runs ` at terminal columns 42..47.
  */
 const click = async (
   tui: BootedTui,
@@ -447,8 +415,8 @@ const click = async (
 /** Terminal row 5 — the bar row on a screen that draws one (frame index 4). */
 /** 1-based tab row on a two-content-row bar screen (gap above tabs, BB-375). */
 const BAR_ROW = chromeRowOf(chromeShape(2, true), TAB_BAR_ID);
-/** Inside the project bar's ` Runs ` label. */
-const COL_RUNS = 53;
+/** Inside the project bar's ` Runs ` label (terminal columns 42–47). */
+const COL_RUNS = 44;
 /** Inside the project bar's `[Overview]`/` Overview ` label — the first tab. */
 const COL_OVERVIEW = 6;
 
@@ -533,42 +501,12 @@ const projectBarRows = (tui: BootedTui): string[] =>
 const anyBarRows = (tui: BootedTui): string[] =>
   rowsContaining(tui, [...ROOT_BARS, ...PROJECT_BARS, ...TICKET_BARS]);
 
-// ---------------------------------------------------------------------------
-// BB-256 — ONE Dashboard screen, filtered by project or not.
-//
-// Spec D2: the root Dashboard and the project Dashboard are the SAME screen with
-// its filter unset or set, and its tab-bar LEVEL is the same bit as its filter.
-// So every assertion below is really one assertion twice: the bar and the
-// figures must always agree, because they read one value.
-// ---------------------------------------------------------------------------
-
-/**
- * The body window of a frame that carries a bar: 4 box + bar (SEPARATOR_ROWS =
- * 0), up to but not including the status bar (BB-375).
- *
- * BB-326 — the escape stripping is GONE, and with it the last reason the
- * assertions below read as a byte stream. `styleVisibleLines` still wraps a bold
- * row (every section heading) in `ANSI.bold`/`ANSI.reset`, but the renderer turns
- * those into an attribute of the cells, so a heading really is `=== 'TICKETS
- * CLOSED'` on screen. The slice is only meaningful because `rowsOf` dropped
- * the blank tail — against the raw grid, `-1` would be terminal row 39.
- */
-const _bodyOf = (tui: BootedTui): string[] =>
-  rowsOf(tui).slice(chromeRowCount(chromeShape(2, true)), -1);
-
-// BB-456 D6 deleted `lastNumber`/`BLOCK_HEADINGS`/`withoutFrameRules`/
-// `blockRows`/`groupRows`: every consumer read a titled block or group off the
-// withdrawn workspace-wide TICKETS/RUNS document (`PER PROJECT`/`PER USER`
-// headings, a bar-scaled breakdown row). No figure this file's fixture serves
-// carries that shape any more, and no surviving test needs it.
-
 describe('current-work product landings', () => {
   it('boots My work at root and Work for a project deep link', async () => {
     const root = await bootTui({
       services: fakeServices(),
       columns: COLUMNS,
       rows: ROWS,
-      useProductLanding: true,
       tui: {},
     });
     expect(root.frame()).toContain('[My work]');
@@ -579,7 +517,6 @@ describe('current-work product landings', () => {
       services: fakeServices(),
       columns: COLUMNS,
       rows: ROWS,
-      useProductLanding: true,
       tui: { route: PROJECT_ROUTE },
     });
     expect(project.frame()).toContain('[Overview]');
@@ -601,20 +538,19 @@ describe('contextual member sitemap', () => {
       services: fakeMemberServices(),
       columns: COLUMNS,
       rows: ROWS,
-      useProductLanding: true,
       tui: {
         isWorkspaceAdmin: true,
         workspaceId: 'workspace-1',
         workspace: 'Bb',
       },
     });
-    for (let i = 0; i < 4; i++) await tui.press(TAB);
+    for (let i = 0; i < 3; i++) await tui.press(TAB);
     expect(tui.frame()).toContain('Workspace members');
     await tui.press('\r');
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(
       memberBar('workspace-member', 'overview'),
     );
-    for (const tab of ['stats', 'tickets', 'runs', 'overview']) {
+    for (const tab of ['tickets', 'runs', 'overview']) {
       await tui.press(TAB);
       expect(rowsOf(tui)[BAR_ROW - 1]).toBe(memberBar('workspace-member', tab));
     }
@@ -628,17 +564,15 @@ describe('contextual member sitemap', () => {
       services: fakeMemberServices(),
       columns: COLUMNS,
       rows: ROWS,
-      useProductLanding: true,
       tui: {},
     });
-    for (let i = 0; i < 3; i++) await tui.press(TAB);
+    for (let i = 0; i < 2; i++) await tui.press(TAB);
     await tui.press('\r');
-    await tui.press(TAB);
     await tui.press(TAB);
     expect(tui.frame()).toContain('Platform · members');
     await tui.press('\r');
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(memberBar('team-member', 'overview'));
-    for (const tab of ['stats', 'tickets', 'runs', 'overview']) {
+    for (const tab of ['tickets', 'runs', 'overview']) {
       await tui.press(TAB);
       expect(rowsOf(tui)[BAR_ROW - 1]).toBe(memberBar('team-member', tab));
     }
@@ -648,17 +582,13 @@ describe('contextual member sitemap', () => {
   });
 });
 
-describe('the root Stats destination', () => {
-  it('draws the ROOT bar with [Stats] bracketed', async () => {
+describe('the root My work destination', () => {
+  it('draws the ROOT bar with [My work] bracketed', async () => {
     const { tui } = await boot();
 
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('stats'));
-    // The frameless statistics content starts directly under the tab bar.
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('my-work'));
     expect(rowsOf(tui)[4], 'gap above the bar').toBe('');
-    expect(rowsOf(tui)[BAR_ROW - 1]).toMatch(/\[/);
-    expect(rowsOf(tui)[BAR_ROW], 'content under the bar').toContain(
-      'No figures configured',
-    );
+    expect(rowsOf(tui)[BAR_ROW], 'content under the bar').not.toBe('');
     expect(projectBarRows(tui), 'no project bar at the root').toEqual([]);
 
     await quit(tui);
@@ -669,50 +599,34 @@ describe('the root Stats destination', () => {
     expect(anyBarRows(tui)).toHaveLength(1);
     await quit(tui);
   });
-
-  // BB-456 D6 deleted 'carries the TICKETS and RUNS bar blocks in its body'
-  // and 'reads the statistics through the READ client, never the write one':
-  // both pinned the withdrawn workspace-wide document (fixed TICKETS/RUNS
-  // headings, a hard 237/48 total). Root scope now reads the account's OWN
-  // configured figures (spec D6); that contract, and which client it reads
-  // through, is exercised in `route-boot.test.ts` and the Kernel PHP tests.
 });
 
-// BB-456 D6 deleted 'BB-256 AC-4..AC-6 — the root Dashboard breaks the
-// counts down' in full: every case in it (PER PROJECT/PER USER blocks, the
-// unattributed row, per-entity-type bar scaling, the sum invariant) asserted
-// against the withdrawn workspace-wide breakdown. Root/user scope now ships
-// no breakdown figure at all (plan stage 7); the sum invariant (spec D8) and
-// the unattributed-row guard are pinned server-side by the adapted
-// the composite statistics kernel tests and exercised over JSON:API.
-
 describe('BB-256 AC-2 — the root Projects tab still reaches the overview', () => {
-  it('Tab reaches Projects, and its bar carries the Stats entry', async () => {
+  it('Tab reaches Projects, and its bar carries the My work entry', async () => {
     const { tui } = await boot();
     await tui.press(TAB);
 
     expect(frameOf(tui)).toContain('bakers.build projects');
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('projects'));
-    expect(rowsOf(tui)[BAR_ROW - 1]).toContain('Stats');
+    expect(rowsOf(tui)[BAR_ROW - 1]).toContain('My work');
+    expect(rowsOf(tui)[BAR_ROW - 1]).not.toContain('Stats');
     expect(projectBarRows(tui)).toEqual([]);
 
     await quit(tui);
   });
 
-  // D14b: `dashboard` and `projects` are both BASE screens — neither is an
-  // overlay of the other, so switching between them pushes and pops NO history
-  // frame. The observable form: Esc after the swap converges on the Dashboard
-  // rather than unwinding a stack that should never have grown.
+  // D14b: root tabs are all BASE screens — neither is an overlay of another,
+  // so switching between them pushes and pops NO history frame. The observable
+  // form: Esc after the swaps converges on My work rather than unwinding a
+  // stack that should never have grown.
   it('the root level swaps FLAT — no history frame either way', async () => {
     const { tui } = await boot();
 
-    await tui.press(TAB); // stats -> projects
+    await tui.press(TAB); // my work -> projects
     expect(frameOf(tui)).toContain('bakers.build projects');
     await tui.press(TAB); // projects -> teams
     await tui.press(TAB); // teams -> conductors
-    await tui.press(TAB); // conductors -> my work
-    await tui.press(TAB); // my work -> stats
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('stats'));
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('conductors'));
 
     // Had either swap pushed a frame, this Esc would unwind it instead.
     await tui.press('\x1b');
@@ -738,14 +652,12 @@ describe('opening a project lands on its Overview tab', () => {
   });
 
   it('a `--here`/deep-link boot with a project route lands on Overview', async () => {
-    // Spec D12: `bakers ui project:<name>` / `--here` now lands on Overview
-    // (weight 1), not on Stats. The harness boots with useProductLanding so the
-    // auto-Tab is suppressed and the raw landing is observable.
+    // Spec D12: `bakers ui project:<name>` / `--here` lands on Overview
+    // (weight 1).
     const tui = await bootTui({
       services: fakeServices(),
       columns: COLUMNS,
       rows: ROWS,
-      useProductLanding: true,
       tui: { route: PROJECT_ROUTE },
     });
     await settle();
@@ -755,7 +667,7 @@ describe('opening a project lands on its Overview tab', () => {
     expect(frameOf(tui)).toContain('bakers');
 
     await tui.press(TAB);
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('stats'));
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('tickets'));
 
     await quit(tui);
   });
@@ -775,18 +687,18 @@ describe('opening a project lands on its Overview tab', () => {
 
 // Spec D2 — the invariant that REPLACES the retired "tab ids are globally
 // unique" test. `gotoTopTab` must resolve a tab id WITHIN the current level;
-// driven from the project level, `Dashboard` must produce the PROJECT bar. That
+// driven from the project level, `Overview` must produce the PROJECT bar. That
 // is the exact defect the level-blind `locateTab` would cause, and it is a test
 // now rather than a naming convention.
 describe('project tabs resolve within the CURRENT level', () => {
-  it('Shift-Tab from Tickets returns to project Stats', async () => {
+  it('Shift-Tab from Tickets returns to project Overview', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('tickets'));
 
-    await tui.press(SHIFT_TAB); // back onto Stats
+    await tui.press(SHIFT_TAB); // back onto Overview
 
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('stats'));
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('overview'));
     expect(rootBarRows(tui), 'never the root bar').toEqual([]);
 
     await quit(tui);
@@ -796,7 +708,7 @@ describe('project tabs resolve within the CURRENT level', () => {
     // Both routes converge on `gotoTopTab`, so both are driven — "it is the same
     // function" is exactly the claim a future refactor breaks.
     const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('tickets'));
 
     await click(tui, BAR_ROW, COL_OVERVIEW);
@@ -827,7 +739,7 @@ describe('project tabs resolve within the CURRENT level', () => {
   // differently.
   it('a click one row below the bar does not switch tabs — the 0-based/1-based seam', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('tickets'));
     // The two coordinate systems agree on this row by construction: the bar is
     // frame index 4 (0-based, like `mockMouse`) and terminal row 5 (1-based,
@@ -839,7 +751,6 @@ describe('project tabs resolve within the CURRENT level', () => {
       projectBarRow('overview'),
     );
 
-    await tui.press(TAB); // -> stats
     await tui.press(TAB); // -> tickets, so the next click has work to do
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('tickets'));
 
@@ -854,32 +765,17 @@ describe('project tabs resolve within the CURRENT level', () => {
   });
 });
 
-// Spec D14c / fact 24 — `currentProjectId` did not round-trip through
-// `Snapshot`. Harmless while the root level had one tab and nothing there read
-// it; under D2 the Dashboard's LEVEL is `currentProjectId !== null`, so a stale
-// id after Esc would draw the project bar on the root Dashboard and filter the
-// figures to a project the operator has left.
-// BB-456 D6 deleted 'BB-256 D14c — Esc out of a project un-scopes the
-// Dashboard' in full: there is no unfiltered/workspace-wide state left for
-// Esc to un-scope BACK TO — root scope is now the account's own figures, a
-// project's figures are that project's own config-entity figures, and neither
-// is "the same figures, filtered". The 'stale `currentProjectId`' hazard this
-// test guarded is still real and is exercised where it can still mean
-// something: `route-boot.test.ts`'s project/root boot cases.
-
 describe('the project level cycles every sitemap tab', () => {
   it('Tab cycles in registry order and wraps', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
 
-    // The harness auto-tabs from the overview landing to stats; the cycle
-    // starts and ends there (the project tab set is overview→stats→tickets→…).
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('stats'));
+    // The cycle starts and ends on the Overview landing.
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('overview'));
 
-    // One Tab per remaining registry entry, then two more to wrap back to stats.
+    // One Tab per remaining registry entry, then one more to wrap to overview.
     for (const id of [
-      ...PROJECT_TABS.slice(2).map((t) => t.id),
+      ...PROJECT_TABS.slice(1).map((t) => t.id),
       'overview' as const,
-      'stats' as const,
     ]) {
       await tui.press(TAB);
       expect(rowsOf(tui)[BAR_ROW - 1], `Tab lands on ${id}`).toBe(
@@ -897,9 +793,6 @@ describe('the project level cycles every sitemap tab', () => {
   it('Esc from the last project tab returns to Overview', async () => {
     const lastTab = PROJECT_TABS.at(-1)?.id ?? 'conductors';
     const { tui } = await boot(PROJECT_ROUTE);
-    // The harness auto-tabs from overview to stats; from stats, one SHIFT_TAB
-    // reaches overview, and a second wraps to the last tab.
-    await tui.press(SHIFT_TAB); // stats -> overview
     await tui.press(SHIFT_TAB); // overview -> last tab (wraps)
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow(lastTab));
 
@@ -914,55 +807,13 @@ describe('the project level cycles every sitemap tab', () => {
   });
 });
 
-// BB-456 D6 deleted 'BB-377 — Dashboard ↓ selects PER USER rows' in full:
-// `dashboard.ts`'s own comment records why on purpose — the per-row user
-// cursor read `by_user` off the withdrawn fixed document, the new contract
-// exposes no per-row target type at all, and the shipped root/user-scope
-// figures carry no breakdown axis in the first place (that now lives at TEAM
-// scope only). Re-introducing the interaction needs a figure and a contract
-// addition, not a client fix.
-//
-// BB-456 also deleted 'BB-256 R7 — an empty control plane': the wording it
-// pinned, "No activity in the last 30 days.", is the withdrawn document's own;
-// the new contract's empty state ("No figures configured for this group.") is
-// covered where the discovery-plus-values contract itself is exercised
-// (`route-boot.test.ts`).
-
-// Spec D9 — a missing endpoint is a NAMED message, and no numbers. A real outage
-// must never be reported as "your control plane is old", which is why only a 404
-// reaches this branch.
-describe('BB-256 D9 — a control plane without the endpoint says so', () => {
-  // BB-456 deleted the sibling cases 'renders the named message and NO
-  // figures' and 'a 500 is surfaced as an error, NOT as an outdated control
-  // plane': both pinned the withdrawn 'It predates BB-256.'/'TICKETS'/'237'
-  // wording. The discovery-vs-values 404/500 classification itself is
-  // exercised on the new contract in `route-boot.test.ts`; this survivor keeps
-  // owning what is specific to THIS file — that the tab bar stays usable while
-  // the message is on screen.
-  it('Tab still reaches Projects from the message', async () => {
-    const { tui } = await boot(undefined, undefined, {
-      status: 404,
-    });
-    await tui.press(TAB);
-    expect(frameOf(tui)).toContain('bakers.build projects');
-    await quit(tui);
-  });
-});
-
-// BB-456 D6/D8 deleted 'BB-256 review finding 1 — a failed read leaves no
-// stale figures' in full: both its cases depended on `failUnscoped`, the
-// unscoped-vs-scoped-read distinction spec D6 withdrew along with the
-// workspace scope it existed to fail independently of a project's own read.
-
 describe('a project open arrives once', () => {
   it('lands on that project’s Overview tab and Esc returns to Projects exactly once', async () => {
     // `openSelectedProject` pushes the history frame itself, so while
     // `openDashboard` could fail to arrive that frame outlived the screen it was
     // taken for, and Esc popped back onto the screen the operator never left.
     // Now the opener always lands, which makes the pushed frame honest.
-    const { tui } = await boot(undefined, undefined, {
-      status: 500,
-    });
+    const { tui } = await boot();
     await tui.press(TAB); // -> projects
     expect(frameOf(tui)).toContain('bakers.build projects');
 
@@ -987,21 +838,9 @@ describe('a project open arrives once', () => {
 
 // ---------------------------------------------------------------------------
 // BB-256 review finding 3 — the status bar advertises only keys that work.
-// The Dashboard is the screen `bakers ui` now opens on, so it is the first thing
-// every operator reads: a wrong key here is the worst-placed wrong key there is.
 // ---------------------------------------------------------------------------
-describe('BB-256 review finding 3 — the Dashboard advertises working keys', () => {
-  // BB-456 D6/D9 deleted, named here rather than left silently unmet:
-  // - 'the root Dashboard offers select, Tab and quit — and nothing dead' and
-  // - 'the project Dashboard offers Esc, because Esc un-scopes it' asserted a
-  //   root Dashboard drawing WORKSPACE-WIDE figures and a project Dashboard
-  //   whose Esc un-scoped back to them — both withdrawn (spec D6: there are no
-  //   workspace statistics, so root scope is now the account's OWN figures and
-  //   a project's Esc leaves the project entirely rather than un-scoping it).
-  // - 'the unsupported message names the tab of the CURRENT level' pinned
-  //   'It predates BB-256.', the literal wording `dashboard.ts` no longer
-  //   emits (it now names the ticket that replaced it, BB-456).
-  it('the Projects screen advertises Tab, now that Dashboard is its sibling', async () => {
+describe('BB-256 review finding 3 — the root screens advertise working keys', () => {
+  it('the Projects screen advertises Tab, now that My work is its sibling', async () => {
     const { tui } = await boot();
     await tui.press(TAB); // -> projects
 
@@ -1020,8 +859,8 @@ describe('BB-256 review finding 3 — the Dashboard advertises working keys', ()
 // `currentProjectId == null` guard and `a` landed on `0 agent(s)`.
 describe('BB-239 AC-4 — the root screens carry the root tab bar', () => {
   it('projects — [Projects] bracketed, no project-level tab', async () => {
-    // BB-256: the root landing screen is the Dashboard now, so the projects
-    // overview is one Tab away. The property under test is unchanged — a root
+    // The root landing screen is My work, so the projects overview is one Tab
+    // away. The property under test is unchanged — a root
     // screen carries the ROOT bar and no project-level tab.
     const { tui } = await boot();
     await tui.press(TAB);
@@ -1065,9 +904,9 @@ describe('BB-239 AC-4 — the root screens carry the root tab bar', () => {
 // of these tests could not simply be kept.
 describe('BB-239 AC-5 — the project screens carry the project tab bar', () => {
   it('project — [Tickets] bracketed, no root tab', async () => {
-    // The harness auto-tabs from overview to stats; one more Tab reaches tickets.
+    // The project lands on Overview; one Tab reaches tickets.
     const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
 
     expect(frameOf(tui)).toContain('bakers · tickets');
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('tickets'));
@@ -1082,7 +921,7 @@ describe('BB-239 AC-5 — the project screens carry the project tab bar', () => 
 
   it('ticket-agents — [Ticket-Agents] bracketed, no root tab', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
     await tui.press(TAB); // tickets -> ticket-agents
 
     expect(frameOf(tui)).toContain('Ticket-Agents');
@@ -1098,7 +937,7 @@ describe('BB-239 AC-5 — the project screens carry the project tab bar', () => 
 
   it('project-runs — [Runs] bracketed, no root tab', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
     await tui.press(TAB); // tickets -> ticket-agents
     await tui.press(TAB); // ticket-agents -> runs
 
@@ -1119,15 +958,13 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
   it('Tab cycles the project tabs in registry order and wraps', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
 
-    // The harness auto-tabs from the overview landing to stats; the cycle
-    // starts and wraps at stats.
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('stats'));
+    // The cycle starts and wraps at the Overview landing.
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('overview'));
 
-    // One Tab per remaining registry entry, then two more to wrap to stats.
+    // One Tab per remaining registry entry, then one more to wrap to overview.
     for (const id of [
-      ...PROJECT_TABS.slice(2).map((t) => t.id),
+      ...PROJECT_TABS.slice(1).map((t) => t.id),
       'overview' as const,
-      'stats' as const,
     ]) {
       await tui.press(TAB);
       expect(rowsOf(tui)[BAR_ROW - 1], `Tab lands on ${id}`).toBe(
@@ -1141,7 +978,6 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
 
   it('Shift-Tab cycles the project tabs backwards', async () => {
     const { tui } = await boot(PROJECT_ROUTE);
-    await tui.press(SHIFT_TAB); // stats -> overview
     await tui.press(SHIFT_TAB); // overview -> conductors (last, wraps)
 
     // Backwards from the first tab (Overview) wraps to the LAST project tab
@@ -1167,7 +1003,7 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     });
     const { tui } = await boot(PROJECT_ROUTE, gate);
 
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
     await tui.press(TAB); // tickets -> ticket-agents (synchronous)
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('ticket-agents'));
 
@@ -1203,7 +1039,7 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     });
     const { tui } = await boot(PROJECT_ROUTE, gate);
 
-    await tui.press(TAB); // stats -> tickets
+    await tui.press(TAB); // overview -> tickets
     await tui.press(TAB); // tickets -> ticket-agents
     await tui.press(TAB); // ticket-agents -> runs, parked
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('runs'));
@@ -1232,7 +1068,7 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
       release = resolve;
     });
     const { tui } = await boot(PROJECT_ROUTE, gate);
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('stats'));
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(projectBarRow('overview'));
 
     await click(tui, BAR_ROW, COL_RUNS); // -> runs, parked on the gate
 
@@ -1256,12 +1092,11 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     await quit(tui);
   });
 
-  // Current work adds a fifth root tab. The cycle must still close: a full
-  // round trip returns the identical frame.
+  // The cycle must close: a full round trip returns the identical frame.
   it('Tab round-trips the root tabs back to the same frame', async () => {
     const { tui } = await boot();
     const before = frameOf(tui);
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('stats'));
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('my-work'));
 
     await tui.press(TAB);
     expect(frameOf(tui), 'Tab reaches Projects').not.toBe(before);
@@ -1276,61 +1111,17 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     );
 
     await tui.press(TAB);
-    expect(rowsOf(tui)[BAR_ROW - 1], 'then My work').toBe(
-      rootBarRow('my-work'),
-    );
-
-    await tui.press(TAB);
-    expect(frameOf(tui), 'and back to Stats, unchanged').toBe(before);
+    expect(frameOf(tui), 'and back to My work, unchanged').toBe(before);
 
     await tui.press(SHIFT_TAB);
     expect(rowsOf(tui)[BAR_ROW - 1], 'Shift-Tab goes the other way').toBe(
-      rootBarRow('my-work'),
+      rootBarRow('conductors'),
     );
     // …all the way back round: one Shift-Tab per remaining root tab.
     await tui.press(SHIFT_TAB);
     await tui.press(SHIFT_TAB);
     await tui.press(SHIFT_TAB);
-    await tui.press(SHIFT_TAB);
     expect(frameOf(tui)).toBe(before);
-
-    await quit(tui);
-  });
-
-  // BB-346 R1 — THE TAB KEY CHANGED OWNER, AND THESE TWO CASES ARE THE GUARD.
-  //
-  // Kept verbatim in intent: the same keystrokes in the same order against the
-  // same route, still asserting that Tab moves the ticket screen's sections and
-  // wraps. What changed is only WHERE the answer is read — the sections are the
-  // `ticket` level's entries drawn in the bar row, not a `metaRow` inside the
-  // header box — and WHO moves them: the screen's own `tab` branch is gone and
-  // the kernel's branch reaches each screen through `Router.navigateTab`. The observable
-  // behaviour, wrap included, has to be identical, which is exactly what a case
-  // whose intent did not move can show.
-  it('Tab still cycles the sections on the ticket screen', async () => {
-    const { tui } = await boot(TICKET_ROUTE);
-
-    await tui.press(TAB);
-    expect(rowsOf(tui)[TICKET_BAR_INDEX]).toBe(ticketBarRow('planning'));
-
-    await tui.press(TAB);
-    expect(rowsOf(tui)[TICKET_BAR_INDEX]).toBe(ticketBarRow('comments'));
-    // Still exactly ONE bar, and still not another level's — the property
-    // BB-239 was about, now satisfied by the ticket screen HAVING a level.
-    expect(rootBarRows(tui), 'not the root level’s').toEqual([]);
-    expect(projectBarRows(tui), 'nor the project level’s').toEqual([]);
-
-    await quit(tui);
-  });
-
-  it('Shift-Tab cycles the sections backwards', async () => {
-    const { tui } = await boot(TICKET_ROUTE);
-    await tui.press(SHIFT_TAB);
-
-    // Backwards from Overview wraps to the LAST section. The addons tab is
-    // retired (BB-661): the inline message card lives on Overview now, so
-    // the last section is Runs.
-    expect(rowsOf(tui)[TICKET_BAR_INDEX]).toBe(ticketBarRow('runs'));
 
     await quit(tui);
   });
@@ -1340,7 +1131,7 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
 // Tab/Shift-Tab and nothing else.
 describe('BB-239 AC-7 — the removed shortcuts no longer navigate', () => {
   for (const key of ['a', 'u'] as const) {
-    it(`${key} does nothing on the dashboard`, async () => {
+    it(`${key} does nothing on My work`, async () => {
       const { tui } = await boot();
       const before = frameOf(tui);
 
@@ -1408,17 +1199,17 @@ describe('BB-239 AC-7 — the removed shortcuts no longer navigate', () => {
 describe('BB-239 AC-8 — no frame advertises a removed shortcut', () => {
   const DEAD = ['a agents', 'u runs', 'Tab/a agents', 'Tab/t tickets'];
 
-  it('dashboard, project, ticket-agents, project-runs and ticket are clean', async () => {
+  it('My work, project, ticket-agents, project-runs and ticket are clean', async () => {
     // Each frame is captured while its screen is ON SCREEN and the string kept:
     // the renderer is torn down between boots, so a frame read afterwards would
     // read nothing at all rather than a transcript.
-    const dashboard = await boot();
-    const dashboardFrame = frameOf(dashboard.tui);
-    await quit(dashboard.tui);
+    const myWork = await boot();
+    const myWorkFrame = frameOf(myWork.tui);
+    await quit(myWork.tui);
 
     const project = await boot(PROJECT_ROUTE);
-    const projectFrame = frameOf(project.tui); // stats (harness auto-tabbed from overview)
-    await project.tui.press(TAB); // stats -> tickets
+    const projectFrame = frameOf(project.tui); // overview
+    await project.tui.press(TAB); // overview -> tickets
     const agentsFrame = frameOf(project.tui); // tickets (was ticket-agents)
     await project.tui.press(TAB); // tickets -> ticket-agents
     const runsFrame = frameOf(project.tui); // ticket-agents (was runs)
@@ -1429,7 +1220,7 @@ describe('BB-239 AC-8 — no frame advertises a removed shortcut', () => {
     await quit(ticket.tui);
 
     for (const [name, text] of [
-      ['dashboard', dashboardFrame],
+      ['my work', myWorkFrame],
       ['project', projectFrame],
       ['ticket-agents', agentsFrame],
       ['project-runs', runsFrame],
@@ -1512,16 +1303,13 @@ describe('BB-239 AC-1..3 — the ticket detail screen draws exactly one tab bar'
     await quit(ticket.tui);
 
     const project = await boot(PROJECT_ROUTE);
-    // The harness auto-tabs from overview to stats; both share the same chrome.
     const projectRows = rowsOf(project.tui);
     await quit(project.tui);
 
     // BB-326 Step C — MEASURED AT THE CHROME, NOT VIA THE TOTAL.
     const firstBodyRow = (rows: string[]): number => {
       // Body starts after the tab bar and SEPARATOR_ROWS blank(s).
-      const bar = rows.findIndex((row) =>
-        /\[Overview\]|\[Stats\]|\[Tickets\]|\[Dashboard\]/.test(row),
-      );
+      const bar = rows.findIndex((row) => /\[Overview\]|\[Tickets\]/.test(row));
       return bar >= 0 ? bar + 1 + SEPARATOR_ROWS : -1;
     };
 

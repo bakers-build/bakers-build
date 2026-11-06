@@ -1,9 +1,5 @@
 import { expect, it } from 'bun:test';
-import type {
-  HostedAgent,
-  RendererServices,
-  TuiAgentService,
-} from '../../src/types.js';
+import type { RendererServices } from '../../src/types.js';
 import { fakeClient } from '../../tests/test-support.js';
 import { bootTui } from '../tui-harness.js';
 
@@ -37,22 +33,10 @@ import { bootTui } from '../tui-harness.js';
 // property is an interaction between three things no unit test holds at once: the
 // renderer's dispatch order, the kernel's ladder, and the widget's lifecycle.
 
-/** The popup's first field. Typing here is what puts the slot on screen. */
-const TITLE = 'Title';
-
-/** The popup refuses to open without an agent host — it is the `n` key's target. */
-const agentHost: TuiAgentService = {
-  launch: async (o): Promise<HostedAgent> => ({
-    id: 'agent-1',
-    group: o.group,
-    label: o.label ?? '',
-  }),
-  list: async () => [],
-  focus: async () => {},
-  hide: async () => {},
-  kill: async () => {},
-};
-
+/**
+ * The project Tickets parent-filter picker (`p`): its query is a caret field,
+ * so typing there puts the `FieldTextarea` on screen.
+ */
 async function openPopup() {
   const services: RendererServices = {
     client: fakeClient({ rows: {} }),
@@ -60,27 +44,40 @@ async function openPopup() {
   };
   const tui = await bootTui({
     services,
-    tui: { agents: agentHost, project: 'bakers', cwd: '/repo' },
+    tui: {
+      project: 'bakers',
+      cwd: '/repo',
+      route: { screen: 'project', projectId: 'p1', projectName: 'bakers' },
+    },
   });
-  await tui.press('n');
-  // BB-664 AC-8: with no project in scope the popup opens on the new
-  // Project field, one row ahead of Title.
-  await tui.press('\x1b[B');
+  await tui.press('\t'); // Overview -> Tickets
+  await tui.press('p');
+  expect(tui.frame()).toContain('Filter by parent');
   return tui;
 }
 
 /**
- * The active field's value row — the cells the widget owns.
- *
- * Read off the rendered grid rather than from the reducer on purpose: the
- * reducer is exactly the thing that stays correct when the widget doubles a key,
- * so asking it would answer the wrong question.
+ * The query the widget owns, read off the rendered grid rather than from the
+ * reducer on purpose: the reducer is exactly the thing that stays correct when
+ * the widget doubles a key, so asking it would answer the wrong question.
  */
-const valueRow = (tui: { rows(): string[] }, label: string): string => {
-  const all = tui.rows();
-  const at = all.findIndex((row) => row.includes(`▸ ${label}:`));
-  expect(at).toBeGreaterThan(-1);
-  return (all[at + 1] ?? '').replace(/[│\s]/g, '');
+const queryRow = (tui: { rows(): string[] }): string => {
+  const row = tui.rows().find((line) => line.includes('search:'));
+  expect(row).toBeDefined();
+  return (row ?? '').replace(/^.*search:/, '').replace(/[│\s]/g, '');
+};
+
+/**
+ * One key, frame captured the instant the handlers have run. `press()`'s settle
+ * would let the picker's debounced re-query redraw first and reset the widget,
+ * masking a doubling (see `filter-caret.test.ts`).
+ */
+const typeRaw = async (
+  tui: Awaited<ReturnType<typeof openPopup>>,
+  key: string,
+): Promise<void> => {
+  tui.mockInput.pressKey(key);
+  await tui.renderOnce();
 };
 
 it('the caret slot never applies a keystroke the ladder already applied', async () => {
@@ -88,10 +85,10 @@ it('the caret slot never applies a keystroke the ladder already applied', async 
 
   // Four distinct characters, so a doubling shows up as `aabb…` rather than as a
   // length that could be explained by a stray repeat.
-  for (const key of ['a', 'b', 'c', 'd']) await tui.press(key);
+  for (const key of ['a', 'b', 'c', 'd']) await typeRaw(tui, key);
 
   expect(
-    valueRow(tui, TITLE),
+    queryRow(tui),
     'each key lands exactly once — `abcd`, never `aabbccdd` or `abcdd`',
   ).toBe('abcd');
 
@@ -103,16 +100,14 @@ it('the caret slot never applies a keystroke the ladder already applied', async 
 
 it('a backspace is not applied twice either', async () => {
   const tui = await openPopup();
-  for (const key of ['a', 'b', 'c']) await tui.press(key);
-  expect(valueRow(tui, TITLE)).toBe('abc');
+  for (const key of ['a', 'b', 'c']) await typeRaw(tui, key);
+  expect(queryRow(tui)).toBe('abc');
 
   // The mirror image of the insert case: a widget that also handled the delete
   // would remove one character too many, so the row would read `a` not `ab`.
-  await tui.press('\x7f');
+  await typeRaw(tui, '\x7f');
 
-  expect(valueRow(tui, TITLE), 'one backspace removes one character').toBe(
-    'ab',
-  );
+  expect(queryRow(tui), 'one backspace removes one character').toBe('ab');
 
   await tui.press('\x1b');
   tui.mockInput.pressKey('q');

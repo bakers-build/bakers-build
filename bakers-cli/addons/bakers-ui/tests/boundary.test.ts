@@ -22,12 +22,10 @@ import { describe, expect, it } from 'vitest';
 //      asserted mechanically here.
 //
 //      What that rule does NOT forbid, and never did: naming the OWN slice's form
-//      PAYLOAD type. `Entity/ticket/Data/write.ts` takes a `CreateFormPayload` and
-//      returns the JSON:API body for it (BB-309 D4) — a type-only import of a
-//      sibling in its own slice, which G2 permits structurally. G7 below is what
-//      keeps that a decision rather than a hole: the importer is named, and the
-//      import must be type-only, so the module can describe a payload without being
-//      able to run any of the kernel.
+//      PAYLOAD type — a type-only import of a sibling in its own slice, which G2
+//      permits structurally. G7 below is what keeps that a decision rather than a
+//      hole: the importer is named, and the import must be type-only, so the module
+//      can describe a payload without being able to run any of the kernel.
 
 const packageDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 const srcDir = join(packageDir, 'src');
@@ -359,10 +357,7 @@ describe('entity slices: the target layout EXISTS — AC-15/AC-16/AC-17', () => 
   // BB-391 (AC4) — `team` is the SEVENTH slice, and it is argued the same way.
   // It mirrors a resource the control plane serves (`bb_team`, BB-321) and it
   // is a clean G2 leaf: its `Data/` reads `bb_team` and `og_membership` and
-  // imports nothing from another slice. The team-scoped statistics it renders are
-  // read in `Screen/`, where a cross-slice import is ordinary — putting that read
-  // in `Data/` would have needed an `ALLOWED_CROSS_SLICE` entry, which is exactly
-  // the pressure this guard exists to apply.
+  // imports nothing from another slice.
   // BB-472 — `workspace` is the EIGHTH slice, argued the same way: it mirrors
   // a resource the control plane serves (`bb_workspace`), and it is a clean
   // G2 leaf — its `Data/` reads `bb_workspace` alone and imports nothing
@@ -411,30 +406,7 @@ describe('entity slices: the target layout EXISTS — AC-15/AC-16/AC-17', () => 
   });
 });
 
-describe('statistics is a domain module, not an entity slice', () => {
-  const statisticsDir = join(srcDir, 'Statistics');
-
-  it('exists beside Entity/ and has no Entity/statistics shadow', () => {
-    expect(tsFiles(statisticsDir).length).toBeGreaterThan(0);
-    expect(existsSync(join(entityDir, 'statistics'))).toBe(false);
-  });
-
-  it('owns statistics behavior without importing entity slices', () => {
-    const offenders: string[] = [];
-    for (const file of sourceFiles(statisticsDir)) {
-      for (const spec of specifiers(file)) {
-        const target = resolve(file, spec);
-        if (
-          target !== undefined &&
-          (target === entityDir || target.startsWith(entityDir + sep))
-        ) {
-          offenders.push(`${relative(packageDir, file)} → ${spec}`);
-        }
-      }
-    }
-    expect(offenders).toEqual([]);
-  });
-
+describe('shared widgets', () => {
   it('has no Vendor tree: shared widgets are ordinary components', () => {
     expect(existsSync(join(srcDir, 'Vendor'))).toBe(false);
   });
@@ -532,17 +504,14 @@ describe('entity slices: Data/ is a leaf — G2 (AC-18)', () => {
 describe('entity slices: a Data/ module may NAME its slice`s payload, not run it — G7 (BB-309)', () => {
   // The rule the file stated in prose and did not check. G2 above forbids a data
   // module the shared kernel and every other slice, and permits its OWN slice's
-  // `Form/` structurally — which is what `Entity/ticket/Data/write.ts` uses: it
-  // takes a `CreateFormPayload` and returns the JSON:API body for it, the first
-  // `Data/ → own-slice Form/` import in the package (spec D4 put it there on
-  // purpose — the create body is ticket knowledge, and the popup that supplies
-  // the payload is not the only thing that could).
+  // `Form/` structurally. `Entity/ticket/Data/write.ts` used that for the create
+  // body; with ticket creation gone from `bakers ui`, no data module needs it.
   //
   // Two assertions, so the permission stays a decision: WHO does it, and HOW.
   // Type-only is the load-bearing half — a data module that could call into the
   // kernel would be the coupling the guard above exists to prevent, while one
   // that names a type cannot execute a line of it.
-  const OWN_SLICE_FORM_IMPORTERS = ['src/Entity/ticket/Data/write.ts'];
+  const OWN_SLICE_FORM_IMPORTERS: string[] = [];
 
   const ownSliceFormImports = (): { file: string; typeOnly: boolean }[] => {
     const found: { file: string; typeOnly: boolean }[] = [];
@@ -678,18 +647,18 @@ describe('shared code stays entity-agnostic — G4 (AC-18)', () => {
     // `heat-map` already serve two owners in different layers — `Statistics/`
     // may not import `Entity/`, so neither could live with one owner. The
     // second assertion below holds them to the same no-entity rule as the rest.
+    //
+    // Statistics left `bakers ui`, and `stats-panel`, `bar-chart` and `heat-map`
+    // with it: they had no other owner.
     expect(subDirs(join(srcDir, 'Component')).sort()).toEqual([
       'badge',
-      'bar-chart',
       'card',
       'divider',
       'footer-actions',
-      'heat-map',
       'key-value',
       'list-chrome',
       'markdown',
       'section-list',
-      'stats-panel',
       'team-member-workload-list',
       'top-tabs',
       'work-ticket-list',
@@ -837,7 +806,6 @@ describe('the widget layer is entity-agnostic — G6 (BB-257 AC-15)', () => {
 // ---------------------------------------------------------------------------
 
 const POPUPS = [
-  join(srcDir, 'Entity', 'ticket', 'Component', 'create-form', 'index.ts'),
   join(srcDir, 'Entity', 'ticket', 'Component', 'edit-form', 'index.ts'),
 ];
 
@@ -860,7 +828,7 @@ function codeOf(file: string): string {
 }
 
 describe('a popup component adds chrome and nothing else — AC-10/AC-13', () => {
-  it('both popup components exist (the guard cannot pass by finding nothing)', () => {
+  it('the popup component exists (the guard cannot pass by finding nothing)', () => {
     expect(POPUPS.filter((f) => existsSync(f))).toEqual(POPUPS);
   });
 
@@ -925,7 +893,7 @@ describe('a popup component adds chrome and nothing else — AC-10/AC-13', () =>
     // code units while every other measurement in the package is in display
     // columns, so a server message carrying CJK or an emoji wrapped past the
     // frame. It is not a style point — it is a second unit of measure.
-    const source = codeOf(POPUPS[1] as string);
+    const source = codeOf(POPUPS[0] as string);
     expect(source).not.toMatch(/function wrap\b/);
     expect(source).not.toMatch(/\blabelOf\b/);
     expect(source).not.toMatch(/\bmark\(\d/);

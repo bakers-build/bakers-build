@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import {
+  drainContributions,
+  resetCollector,
+} from '../../src/Extension/store.js';
 import { defineRoutes } from '../../src/Routing/registry.js';
 import type { RouteMetadata, TabMetadata } from '../../src/Routing/route.js';
 import { buildRoutes } from '../../src/Routing/routes.js';
@@ -98,7 +102,6 @@ describe('relative tab registration', () => {
     const routes = buildRoutes([], true);
     expect(routes.tabs('root').map((t) => t.id)).toEqual([
       'my-work',
-      'stats',
       'projects',
       'teams',
       'members',
@@ -106,7 +109,6 @@ describe('relative tab registration', () => {
     ]);
     expect(routes.tabs('project').map((t) => t.id)).toEqual([
       'overview',
-      'stats',
       'tickets',
       'ticket-agents',
       'runs',
@@ -115,25 +117,18 @@ describe('relative tab registration', () => {
     expect(routes.tabs('team').map((t) => t.id)).toEqual([
       'overview',
       'work',
-      'stats',
       'members',
     ]);
     expect(routes.ids()).toEqual(
-      expect.arrayContaining([
-        'my.stats',
-        'project.overview',
-        'project.stats',
-        'team.overview',
-        'team.stats',
-      ]),
+      expect.arrayContaining(['my.work', 'project.overview', 'team.overview']),
     );
   });
   it('derives active bars from routes, including alternate and hidden presentations', () => {
     const routes = buildRoutes();
-    expect(routes.tabLocation('my.stats', {})?.level).toBe('root');
-    expect(routes.tabLocation('project.stats', { projectId: 'p' })?.level).toBe(
-      'project',
-    );
+    expect(routes.tabLocation('my.work', {})?.level).toBe('root');
+    expect(
+      routes.tabLocation('project.overview', { projectId: 'p' })?.level,
+    ).toBe('project');
     expect(routes.tabLocation('project.picker', {})).toMatchObject({
       level: 'root',
       tab: 'projects',
@@ -147,6 +142,35 @@ describe('relative tab registration', () => {
     );
     expect(routes.tabLocation('run.detail', {})).toBeNull();
   });
+});
+
+it('offers no statistics or ticket creation at any scope, react experiment included', async () => {
+  resetCollector();
+  await import('../../src/react-experiment.js');
+  const routes = buildRoutes(drainContributions(), true);
+  for (const id of [
+    'my.stats',
+    'project.stats',
+    'team.stats',
+    'workspace.member.stats',
+    'team.member.stats',
+    'ticket.react',
+    'ticket.create',
+  ]) {
+    expect(routes.ids()).not.toContain(id);
+  }
+  for (const scope of [
+    'root',
+    'project',
+    'team',
+    'workspace-member',
+    'team-member',
+    'ticket',
+  ]) {
+    expect(routes.tabs(scope).filter((t) => /^stat/i.test(t.label))).toEqual(
+      [],
+    );
+  }
 });
 
 it('positions relative to defaults that have no numeric order', () => {

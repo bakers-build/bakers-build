@@ -239,7 +239,7 @@ async function drawnRows(
 const WIDTHS = [40, 41, 80, 100, 120, 200];
 
 const SCREENS: { name: string; route?: ResolvedRoute; keys?: string[] }[] = [
-  { name: 'dashboard' },
+  { name: 'my work' },
   {
     name: 'project table',
     route: { screen: 'project', projectId: PROJECT, projectName: WIDE_PROJECT },
@@ -292,7 +292,7 @@ describe('BB-241 Amendment A — rendered row geometry (AC-13)', () => {
     // after the FRAME top and list header — exactly `BAR_CHROME` chrome lines
     // precede the body. If a chrome line wraps, this index shifts and every
     // click lands one row too high.
-    // BB-256 AC-1: the root landing screen is the Dashboard, so one Tab to the
+    // The root landing screen is My work, so one Tab to the
     // projects overview — which is the screen carrying the wide-character name
     // this geometry check needs.
     // BB-345 D6 — the projects list has a HEADER row now, so the row carrying
@@ -354,13 +354,14 @@ describe('BB-241 Amendment A — rendered row geometry (AC-13)', () => {
 
     const firstBody = (rows: string[]): number => {
       // Body index = chromeRowCount for the screen's shape (incl. SEPARATOR_ROWS).
-      if (rows.some((row) => /\[Overview\]/.test(row))) return TICKET_CHROME;
+      // The project bar is checked first: it also opens on [Overview].
       if (
         rows.some((row) =>
           /Ticket-Agents|\[My work\]|\[Work\]|\[Tickets\]/.test(row),
         )
       )
         return BAR_CHROME;
+      if (rows.some((row) => /\[Overview\]/.test(row))) return TICKET_CHROME;
       return TWO_ROW_NO_BAR_CHROME;
     };
 

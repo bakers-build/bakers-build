@@ -2,7 +2,6 @@ import { expect, it, vi } from 'vitest';
 import { TeamWorkScreen } from '../../../../src/Entity/team/Screen/team-work.js';
 import {
   TeamOverviewScreen,
-  TeamStatsScreen,
   TeamsScreen,
 } from '../../../../src/Entity/team/Screen/teams-screen.js';
 import { buildRoutes } from '../../../../src/Routing/routes.js';
@@ -20,11 +19,6 @@ import { renderTree } from '../../../render-tree.js';
 // `route.tab` puts it on a level's tab bar — that is exactly how
 // `Entity/project`'s list is reached, and the two assertions below read the real
 // production registry rather than a fixture of it.
-//
-// The DETAIL is the team-scoped statistics, over the `?team_id=` the control
-// plane has served since BB-321. It reads that and nothing else: `by_team` is
-// what the server omits under that scope, so a team's own page shows its
-// TOTALS — which is the whole point of scoping.
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -70,72 +64,6 @@ const serve =
     if (!(path in world)) throw new Error(`unexpected read: ${path}`);
     return world[path];
   };
-
-// BB-391 second round — `resolveTeam` is WIRED, not dead code.
-//
-// It existed for exactly the case the detail could not handle: a deep link
-// (`bakers ui` → `/teams/<uuid>`) carries no `teamName`, so the header rendered the
-// raw uuid, and the two figures a crew's own page has that its statistics do not
-// — the workspace it lives in and its headcount — were never shown at all. The
-// detail therefore reads BOTH: the identity and the team-scoped statistics.
-const DETAIL_WORLD: Record<string, unknown> = {
-  ...TEAM_WORLD,
-  'bakers/statistics': {
-    data: {
-      attributes: {
-        groups: [
-          {
-            id: 'breakdown',
-            label: 'Breakdown',
-            figures: [
-              {
-                id: 'team_projects',
-                label: 'Projects',
-                description: '',
-                widget: 'grouped_horizontal_bars',
-                generated: '2026-08-21T19:00:00+00:00',
-                filters: {
-                  period: {
-                    label: 'Period',
-                    value: 'year',
-                    options: [
-                      { value: 'week', label: 'Week' },
-                      { value: 'month', label: 'Month' },
-                      { value: 'quarter', label: 'Quarter' },
-                      { value: 'year', label: 'Year' },
-                      { value: 'all', label: 'All time' },
-                      { value: 'custom', label: 'Custom' },
-                    ],
-                  },
-                },
-                period: { grouping: 'month' },
-                categories: [{ key: 'project-1', label: 'bakers.build' }],
-                measurements: [
-                  {
-                    id: 'closed_tickets',
-                    label: 'Tickets closed',
-                    value_type: 'integer',
-                    unit: 'tickets',
-                    values: { 'project-1': 30 },
-                  },
-                  {
-                    id: 'runs',
-                    label: 'Runs created',
-                    value_type: 'integer',
-                    unit: 'runs',
-                    values: { 'project-1': 31 },
-                  },
-                ],
-                empty: { is_empty: false, message: null },
-                cache: { max_age: 0, contexts: [], tags: [] },
-              },
-            ],
-          },
-        ],
-      },
-    },
-  },
-};
 
 // ---- reachability ---------------------------------------------------------
 
@@ -292,109 +220,4 @@ it('reports truncation from links.next, never from a full page of rows', async (
   more.enter(moreContext);
   await tick();
   expect(more.present(moreContext).meta ?? '').toContain('first page');
-});
-
-// ---- the detail -----------------------------------------------------------
-
-it('scopes the detail read with ?team_id= and renders the figures', async () => {
-  const paths: string[] = [];
-  const queries: string[] = [];
-  const screen = new TeamStatsScreen();
-  const { context } = harness(async (path, params) => {
-    paths.push(path);
-    queries.push(
-      decodeURIComponent(
-        (
-          params as { getQueryString?: () => string } | undefined
-        )?.getQueryString?.() ?? '',
-      ),
-    );
-    if (!(path in DETAIL_WORLD)) throw new Error(`unexpected read: ${path}`);
-    return DETAIL_WORLD[path];
-  });
-  screen.enter({ ...context, params: { teamId: 'team-uuid-1' } });
-  await tick();
-
-  expect(paths).toContain('bakers/statistics');
-  expect(paths).not.toContain('bb_team/bb_team');
-  const statsQuery = queries[paths.indexOf('bakers/statistics')] ?? '';
-  expect(statsQuery).toContain('team_id=team-uuid-1');
-  expect(statsQuery).not.toContain('filter[period]');
-  const text = screen
-    .renderNonInteractive({ ...context, params: { teamId: 'team-uuid-1' } })
-    .join('\n');
-  expect(text).toContain('Tickets closed');
-  expect(text).toContain('Runs created');
-  expect(text).toContain('30');
-});
-
-it('renders figures without loading or displaying crew metadata', async () => {
-  const screen = new TeamStatsScreen();
-  const { context } = harness(serve(DETAIL_WORLD));
-  const scoped = {
-    ...context,
-    params: { teamId: 'team-uuid-1', teamName: 'Platform' },
-  };
-  screen.enter(scoped);
-  await tick();
-
-  const text = screen.renderNonInteractive(scoped).join('\n');
-  expect(text).toContain('Tickets closed');
-  expect(text).toContain('Runs created');
-  expect(text).not.toContain('CREW');
-  expect(text).not.toContain('Workspace');
-  expect(text).not.toContain('Members');
-});
-
-it('reports a statistics failure without making an identity read', async () => {
-  const screen = new TeamStatsScreen();
-  const paths: string[] = [];
-  const { context } = harness(async (path) => {
-    paths.push(path);
-    if (path === 'bakers/statistics') throw new Error('500 Server Error');
-    throw new Error(`unexpected read: ${path}`);
-  });
-  const scoped = { ...context, params: { teamId: 'team-uuid-1' } };
-  screen.enter(scoped);
-  await tick();
-
-  expect(paths).toEqual(['bakers/statistics']);
-  expect(screen.renderNonInteractive(scoped).join('\n')).toContain(
-    '500 Server Error',
-  );
-});
-
-it('reports when no team figures are configured', async () => {
-  const screen = new TeamStatsScreen();
-  const { context } = harness(
-    serve({
-      'bakers/statistics': { data: { attributes: { groups: [] } } },
-    }),
-  );
-  const scoped = { ...context, params: { teamId: 'team-uuid-1' } };
-  screen.enter(scoped);
-  await tick();
-
-  expect(screen.renderNonInteractive(scoped).join('\n')).toContain(
-    'No figures configured for this team.',
-  );
-});
-
-// A control plane predating the statistics route must be reported as OLD, not as
-// a team with no work — the same discrimination spec D9 draws for every other
-// consumer of this read.
-it('reports an absent statistics endpoint rather than an empty team', async () => {
-  const screen = new TeamStatsScreen();
-  const { context } = harness(async () => {
-    throw Object.assign(new Error('HTTP 404'), {
-      status: 404,
-      body: '<!DOCTYPE html><html><body>Page not found</body></html>',
-    });
-  });
-  const scoped = { ...context, params: { teamId: 'team-uuid-1' } };
-  screen.enter(scoped);
-  await tick();
-  expect(screen.renderNonInteractive(scoped).join('\n')).toContain(
-    '/jsonapi/bakers/statistics',
-  );
 });
